@@ -1,0 +1,638 @@
+paths:
+  /positions:
+    get:
+      tags: [portfolio]
+      operationId: listPositions
+      x-book-role: read
+      summary: Positions of the security accounts at the end of a date, valued with stored prices.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          description: Currency of market_value; the base currency by default. A missing price to it is price_missing.
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /realized-results:
+    get:
+      tags: [portfolio]
+      operationId: listRealizedResults
+      x-book-role: read
+      summary: Results of the sales of a year at average cost (D1).
+      parameters:
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RealizedResultList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /income-events:
+    get:
+      tags: [portfolio]
+      operationId: listIncomeEvents
+      x-book-role: read
+      summary: Investment income of a year by tax treatment (D1).
+      parameters:
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncomeEventList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /investment-income-types:
+    get:
+      tags: [portfolio]
+      operationId: listInvestmentIncomeTypes
+      x-book-role: read
+      summary: Income types the book's jurisdiction accepts.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IncomeTypeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /reports/return:
+    get:
+      tags: [portfolio]
+      operationId: getReturn
+      x-book-role: read
+      summary: Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
+      description: |
+        The flows are the money that entered or left the tree in transactions that also touch a balance account
+        outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
+        on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
+        return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
+        of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
+        no money was invested.
+
+        period_bp is the time-weighted return of the period: the period splits at each flow date, a flow earns from the
+        next day, and the growth of each piece is chained (amendment A208). benchmark compares it with a daily index:
+        index names an enabled index; without it, the default index of the book's region applies, and benchmark is absent
+        when that index has no rate. until is the last rate date in [from, to]; return_bp is the time-weighted return up
+        to until, index_bp the growth of the index over the same days, and percent_bp the percent of the index (10000 is
+        100%) that grows as much. 400 on index when the named index is not enabled, has no rate or is not daily.
+      parameters:
+        - name: account_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+        - name: index
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReturnReport"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /reports/allocation:
+    get:
+      tags: [portfolio]
+      operationId: getAllocation
+      x-book-role: read
+      summary: Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
+      description: |
+        Each account counts its own balance, valued in value_in (the base currency by default) with the stored prices
+        of the date. type groups by the type of the instrument held (currency for cash); currency by the quotation
+        currency of a security or the currency itself; institution by the institution id, empty without one. Groups are
+        ordered by value, largest first; shares are in basis points, rounded down, and the last group takes the
+        remainder so they add up to 10000. A total that is not positive has no shares.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: by
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [type, currency, institution]
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Allocation"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /reports/net-worth:
+    get:
+      tags: [portfolio]
+      operationId: getNetWorth
+      x-book-role: read
+      summary: Assets, liabilities and their difference at a date (investments design 4.3).
+      description: Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetWorth"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /reports/net-worth/days:
+    get:
+      tags: [portfolio]
+      operationId: getNetWorthDays
+      x-book-role: read
+      summary: Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
+      description: Each day is valued as getNetWorth values a date. 400 invalid_request when from is after to or the range exceeds 62 days.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: value_in
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetWorthDays"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instrument-subtypes:
+    get:
+      tags: [portfolio]
+      operationId: listInstrumentSubtypes
+      x-book-role: read
+      summary: Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction.
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/InstrumentType"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubtypeList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+parameters:
+  Year:
+    name: year
+    in: query
+    required: true
+    description: Year in which the tax year of the owner's jurisdiction starts.
+    schema:
+      type: integer
+      minimum: 1900
+      maximum: 2200
+schemas:
+  IncomeTypeList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/IncomeType"
+  AllocationGroup:
+    type: object
+    required: [key, value, share_bp]
+    properties:
+      key:
+        type: string
+      value:
+        $ref: "#/components/schemas/Money"
+      share_bp:
+        type: integer
+  Allocation:
+    type: object
+    required: [total, groups]
+    properties:
+      total:
+        $ref: "#/components/schemas/Money"
+      groups:
+        type: array
+        items:
+          $ref: "#/components/schemas/AllocationGroup"
+  NetWorth:
+    type: object
+    required: [assets, liabilities, net]
+    properties:
+      assets:
+        $ref: "#/components/schemas/Money"
+      liabilities:
+        $ref: "#/components/schemas/Money"
+      net:
+        $ref: "#/components/schemas/Money"
+  NetWorthDay:
+    type: object
+    required: [date, assets, liabilities, net]
+    properties:
+      date:
+        type: string
+        format: date
+      assets:
+        $ref: "#/components/schemas/Money"
+      liabilities:
+        $ref: "#/components/schemas/Money"
+      net:
+        $ref: "#/components/schemas/Money"
+  NetWorthDays:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/NetWorthDay"
+  ReturnFlow:
+    type: object
+    required: [date, amount]
+    properties:
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+  ReturnReport:
+    type: object
+    required: [annual_bp, flows, opening, closing, profile]
+    properties:
+      annual_bp:
+        type: integer
+      flows:
+        type: array
+        items:
+          $ref: "#/components/schemas/ReturnFlow"
+      opening:
+        $ref: "#/components/schemas/Money"
+      closing:
+        $ref: "#/components/schemas/Money"
+      profile:
+        type: string
+        enum: [rate, market]
+        description: rate when every holding is the value_in currency or a fixed income instrument quoted in it; market otherwise (amendment A208 R11).
+      period_bp:
+        type: integer
+      index:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: The daily index the report compares with, the named one or the region's default; absent only when the region has none and none is named (amendment A208 R21).
+      benchmark:
+        $ref: "#/components/schemas/ReturnBenchmark"
+      inflation:
+        $ref: "#/components/schemas/ReturnInflation"
+      unavailable_reason:
+        type: string
+        pattern: "^[a-z_]{2,40}$"
+        description: Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined (amendment A208 R21).
+      excluded:
+        $ref: "#/components/schemas/ReturnExcluded"
+  ReturnExcluded:
+    type: object
+    description: For a tree of cash whose yield is what the ledger records against the Yield account, the income and expense of the period that the comparison treated as flows, not as yield (amendment A208 R19).
+    properties:
+      income:
+        $ref: "#/components/schemas/ReturnExcludedPart"
+      expense:
+        $ref: "#/components/schemas/ReturnExcludedPart"
+  ReturnExcludedPart:
+    type: object
+    required: [amount, categories]
+    properties:
+      amount:
+        $ref: "#/components/schemas/Money"
+      categories:
+        type: array
+        maxItems: 3
+        items:
+          type: string
+        description: The names of the categories that hold most of the amount.
+  ReturnBenchmark:
+    type: object
+    required: [index, from, until, days, skipped, credits, restarted, started_late, index_bp]
+    properties:
+      started_late:
+        type: boolean
+        description: True when at least one rate of the period dated before from was left out, so the comparison starts after the first rate day of the window (amendment A208 R21).
+      credits:
+        type: integer
+        description: For a tree whose yield is recorded, the yield credits the return covers, the positive credits after the first credit compared (amendment A208 R20); 0 otherwise.
+      restarted:
+        type: boolean
+        description: True when a flow between two credits more than 7 days apart moved the start of the comparison to the credit after it (amendment A208 R20).
+      percent_error_bp:
+        type: integer
+        description: The relative bound of percent_bp and annual_bp in basis points of themselves, from rounding each tree posting of a credit to the minor unit; percent_bp and annual_bp are absent above 500 (amendment A208 R22).
+      index:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      from:
+        type: string
+        format: date
+        description: The date of the first rate compared; the rates of the days the tree held nothing leave the comparison (amendment A208 R14).
+      days:
+        type: integer
+        description: The number of rates compared.
+      skipped:
+        type: integer
+        description: The rates of the period left out, on days the tree held nothing or, for a rate profile, before its first recorded yield (amendment A208 R14, R18).
+      until:
+        type: string
+        format: date
+      return_bp:
+        type: integer
+      index_bp:
+        type: integer
+      percent_bp:
+        type: integer
+      annual_bp:
+        type: integer
+        description: return_bp as a rate a year on the year basis of the index (252 rate days for cdi); absent when the basis is unknown or the profile is market.
+      index_annual_bp:
+        type: integer
+        description: index_bp as a rate a year on the same basis.
+      excess_bp:
+        type: integer
+        description: return_bp minus index_bp, in basis points of percentage points.
+  ReturnInflation:
+    type: object
+    required: [index, from, until, index_bp, return_bp, real_bp]
+    description: The return net of inflation over the whole months of the period with a stored rate (amendment A208 R16).
+    properties:
+      index:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      from:
+        type: string
+        format: date
+      until:
+        type: string
+        format: date
+      index_bp:
+        type: integer
+      return_bp:
+        type: integer
+      real_bp:
+        type: integer
+  SubtypeList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+  Position:
+    type: object
+    required: [account_id, instrument, quantity, cost_basis]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      instrument:
+        type: string
+      quantity:
+        $ref: "#/components/schemas/Money"
+      cost_basis:
+        $ref: "#/components/schemas/Money"
+      average_cost:
+        description: Cost basis per unit; absent unless quantity and cost basis are positive.
+        allOf:
+          - $ref: "#/components/schemas/Rate"
+      market_value:
+        description: Quantity valued in the base currency; absent without a price.
+        allOf:
+          - $ref: "#/components/schemas/Money"
+      prices:
+        type: array
+        items:
+          $ref: "#/components/schemas/Price"
+  PositionList:
+    type: object
+    required: [items, quote_warnings]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Position"
+      quote_warnings:
+        type: array
+        description: The held instruments whose quote is stale or missing at the date (A222 MQ26).
+        items:
+          $ref: "#/components/schemas/PositionQuoteWarning"
+  PositionQuoteWarning:
+    type: object
+    additionalProperties: false
+    required: [instrument, last]
+    properties:
+      instrument:
+        type: string
+      last:
+        type: string
+        format: date
+        nullable: true
+        description: The date of the last stored price, or null.
+  RealizedResult:
+    type: object
+    required: [transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+      instrument:
+        type: string
+      date:
+        type: string
+        format: date
+      month:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+      quantity:
+        $ref: "#/components/schemas/Money"
+      cost:
+        $ref: "#/components/schemas/Money"
+      proceeds:
+        $ref: "#/components/schemas/Money"
+      result:
+        $ref: "#/components/schemas/Money"
+      tax_class:
+        type: string
+        nullable: true
+        pattern: "^[a-z0-9_]{2,40}$"
+  RealizedResultList:
+    type: object
+    required: [from, to, items]
+    properties:
+      from:
+        type: string
+        format: date
+        description: First day of the tax year.
+      to:
+        type: string
+        format: date
+        description: Last day of the tax year, included.
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/RealizedResult"
+  IncomeEvent:
+    type: object
+    required: [transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+      instrument:
+        type: string
+      date:
+        type: string
+        format: date
+      income_type:
+        $ref: "#/components/schemas/IncomeType"
+      tax_treatment:
+        type: string
+        nullable: true
+        pattern: "^[a-z0-9_]{2,40}$"
+      gross:
+        $ref: "#/components/schemas/Money"
+      withheld:
+        $ref: "#/components/schemas/Money"
+  IncomeEventList:
+    type: object
+    required: [from, to, items]
+    properties:
+      from:
+        type: string
+        format: date
+        description: First day of the tax year.
+      to:
+        type: string
+        format: date
+        description: Last day of the tax year, included.
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/IncomeEvent"

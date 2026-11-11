@@ -1,0 +1,860 @@
+paths:
+  /rules:
+    get:
+      tags: [classification]
+      operationId: listRules
+      x-book-role: read
+      summary: Categorization rules by priority.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulePage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [classification]
+      operationId: createRule
+      x-book-role: write
+      summary: Create a rule at the last priority.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rules/reorder:
+    post:
+      tags: [classification]
+      operationId: reorderRules
+      x-book-role: write
+      summary: Give every rule a new priority, in the order listed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleOrder"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rules/preview:
+    post:
+      tags: [classification]
+      operationId: previewRule
+      x-book-role: write
+      summary: What a rule would do alone over the transactions of the last 365 days (A81).
+      description: |
+        would_categorize counts the uncategorized transactions the rule categorizes; conflicts counts the categorized
+        ones whose category postings differ from the rule's allocation. Each list holds the newest 50 ids. Nothing is written.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RulePreview"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rules/run:
+    post:
+      tags: [classification]
+      operationId: runRules
+      x-book-role: write
+      summary: Run categorization (F5) on every uncategorized transaction.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleRun"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/categorization:
+    get:
+      tags: [classification]
+      operationId: getCategorization
+      x-book-role: read
+      summary: How the categories of a transaction were decided (P5 amendment A20).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categorization"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /categorizations:
+    get:
+      tags: [classification]
+      operationId: listCategorizations
+      x-book-role: read
+      summary: How the categories of several transactions were decided (A79).
+      description: A transaction without a categorization record, or voided, is absent from items.
+      parameters:
+        - name: transaction_id
+          in: query
+          required: true
+          explode: true
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 200
+            items:
+              type: string
+              format: uuid
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategorizationList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /source-categories:
+    get:
+      tags: [classification]
+      operationId: listSourceCategories
+      x-book-role: read
+      summary: Categories aggregators assigned to imported lines, by name (P6 amendment A41).
+      description: count is the number of imported lines that carried the category.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceCategoryList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /source-categories/{id}:
+    put:
+      tags: [classification]
+      operationId: mapSourceCategory
+      x-book-role: write
+      summary: Set the category of lines that carry the source category and no rule decides.
+      description: category_id null clears it. The mapping applies to lines imported afterwards (method source, F5).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourceCategoryMapping"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceCategory"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /categorization-statistics:
+    get:
+      tags: [classification]
+      operationId: getCategorizationStatistics
+      x-book-role: read
+      summary: Transactions dated in [from, to] by categorization method (SC5).
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategorizationStatistics"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /rule-suggestions:
+    get:
+      tags: [classification]
+      operationId: listRuleSuggestions
+      x-book-role: read
+      summary: Rules suggested from repeated manual corrections (P5 amendment A24).
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, dismissed]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSuggestionPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /rule-suggestions/{id}/accept:
+    post:
+      tags: [classification]
+      operationId: acceptRuleSuggestion
+      x-book-role: write
+      summary: Create the suggested rule at the last priority.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptSuggestionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSuggestion"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /rule-suggestions/{id}/dismiss:
+    post:
+      tags: [classification]
+      operationId: dismissRuleSuggestion
+      x-book-role: write
+      summary: Dismiss a suggestion; it is not proposed again.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuleSuggestion"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /rules/{id}:
+    get:
+      tags: [classification]
+      operationId: getRule
+      x-book-role: read
+      summary: One rule.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [classification]
+      operationId: changeRule
+      x-book-role: write
+      summary: Replace a rule; its priority does not change.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RuleInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Rule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [classification]
+      operationId: deleteRule
+      x-book-role: write
+      summary: Delete a rule; categorizations it decided keep the method rule.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /payee-aliases:
+    get:
+      tags: [classification]
+      operationId: listPayeeAliases
+      x-book-role: read
+      summary: Payee aliases, oldest first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAliasPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [classification]
+      operationId: createPayeeAlias
+      x-book-role: write
+      summary: Map raw descriptions to a payee (P5 amendment A22).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeAliasInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAlias"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payee-aliases/{id}:
+    get:
+      tags: [classification]
+      operationId: getPayeeAlias
+      x-book-role: read
+      summary: One payee alias.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAlias"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [classification]
+      operationId: changePayeeAlias
+      x-book-role: write
+      summary: Replace a payee alias.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeAliasInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeAlias"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [classification]
+      operationId: deletePayeeAlias
+      x-book-role: write
+      summary: Delete a payee alias.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+schemas:
+  SourceCategory:
+    type: object
+    required: [id, aggregator, external_id, name, count]
+    properties:
+      id:
+        type: string
+        format: uuid
+      aggregator:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      external_id:
+        type: string
+      name:
+        type: string
+      count:
+        type: integer
+      category_id:
+        type: string
+        format: uuid
+        description: Absent while unmapped.
+  SourceCategoryList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/SourceCategory"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  SourceCategoryMapping:
+    type: object
+    additionalProperties: false
+    required: [category_id]
+    properties:
+      category_id:
+        type: string
+        format: uuid
+        nullable: true
+  RuleCondition:
+    type: object
+    additionalProperties: false
+    required: [field, operator, value]
+    description: The value type depends on the field (P5 amendment A21); between and in_list take an array.
+    properties:
+      field:
+        type: string
+        enum: [description, raw_description, payee, amount, absolute_amount, account, account_kind, source, weekday, day_of_month, installment]
+      operator:
+        type: string
+        enum: [equals, contains, starts_with, regex, between, greater_than, less_than, in_list]
+      value: {}
+  RuleSplitPart:
+    type: object
+    additionalProperties: false
+    required: [category_id]
+    description: Exactly one of percent (basis points), amount and remainder.
+    properties:
+      category_id:
+        type: string
+        format: uuid
+      percent:
+        type: integer
+        minimum: 1
+        maximum: 9999
+      amount:
+        $ref: "#/components/schemas/Money"
+      remainder:
+        type: boolean
+  RuleAction:
+    type: object
+    additionalProperties: false
+    required: [type]
+    properties:
+      type:
+        type: string
+        enum: [set_category, set_payee, add_tags, split, transfer, mark_reimbursable]
+      category_id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+        description: Target of transfer (an asset or liability account) and mark_reimbursable (a receivable), P5b amendment A31.
+      payee_id:
+        type: string
+        format: uuid
+      tags:
+        type: array
+        minItems: 1
+        maxItems: 10
+        items:
+          type: string
+          pattern: '^[\p{Ll}\p{Lm}\p{Lo}\p{N}][\p{Ll}\p{Lm}\p{Lo}\p{N}-]{0,59}$'
+      parts:
+        type: array
+        minItems: 2
+        maxItems: 10
+        items:
+          $ref: "#/components/schemas/RuleSplitPart"
+  RuleInput:
+    type: object
+    additionalProperties: false
+    required: [name, conditions, actions]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      enabled:
+        type: boolean
+        default: true
+      stop_processing:
+        type: boolean
+        default: false
+      conditions:
+        type: array
+        minItems: 1
+        maxItems: 20
+        items:
+          $ref: "#/components/schemas/RuleCondition"
+      actions:
+        type: array
+        minItems: 1
+        maxItems: 10
+        items:
+          $ref: "#/components/schemas/RuleAction"
+  Rule:
+    type: object
+    required: [id, name, priority, enabled, stop_processing, conditions, actions, categorized_count]
+    properties:
+      categorized_count:
+        type: integer
+        description: Current, non-voided categorizations this rule decided (A80).
+      last_categorized_at:
+        type: string
+        format: date-time
+        description: The latest of those decisions; absent at zero.
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      priority:
+        type: integer
+      enabled:
+        type: boolean
+      stop_processing:
+        type: boolean
+      conditions:
+        type: array
+        items:
+          $ref: "#/components/schemas/RuleCondition"
+      actions:
+        type: array
+        items:
+          $ref: "#/components/schemas/RuleAction"
+  RulePage:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Rule"
+      next_cursor:
+        type: string
+  RuleList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Rule"
+  RuleOrder:
+    type: object
+    additionalProperties: false
+    required: [rule_ids]
+    properties:
+      rule_ids:
+        type: array
+        minItems: 1
+        maxItems: 500
+        items:
+          type: string
+          format: uuid
+  PayeeAliasInput:
+    type: object
+    additionalProperties: false
+    required: [pattern, match_type, payee_id]
+    properties:
+      pattern:
+        type: string
+        minLength: 1
+        maxLength: 200
+      match_type:
+        type: string
+        enum: [equals, starts_with, contains, regex]
+      payee_id:
+        type: string
+        format: uuid
+  PayeeAlias:
+    type: object
+    required: [id, pattern, match_type, payee_id]
+    properties:
+      id:
+        type: string
+        format: uuid
+      pattern:
+        type: string
+      match_type:
+        type: string
+        enum: [equals, starts_with, contains, regex]
+      payee_id:
+        type: string
+        format: uuid
+  PayeeAliasPage:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/PayeeAlias"
+      next_cursor:
+        type: string
+  RuleRun:
+    type: object
+    required: [examined, categorized]
+    properties:
+      examined:
+        type: integer
+      categorized:
+        type: integer
+  Categorization:
+    type: object
+    required: [transaction_id, method, decided_at]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      method:
+        type: string
+        nullable: true
+        enum: [rule, source, history, manual]
+        description: Null while the transaction is uncategorized.
+      rule_id:
+        type: string
+        format: uuid
+      decided_at:
+        type: string
+        format: date-time
+  RulePreview:
+    type: object
+    required: [would_categorize, conflicts]
+    properties:
+      would_categorize:
+        $ref: "#/components/schemas/RulePreviewSet"
+      conflicts:
+        $ref: "#/components/schemas/RulePreviewSet"
+  RulePreviewSet:
+    type: object
+    required: [count, transaction_ids]
+    properties:
+      count:
+        type: integer
+      transaction_ids:
+        type: array
+        maxItems: 50
+        items:
+          type: string
+          format: uuid
+  CategorizationList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Categorization"
+  CategorizationStatistics:
+    type: object
+    required: [from, to, total, rule, source, history, manual, uncategorized]
+    properties:
+      from:
+        type: string
+        format: date
+      to:
+        type: string
+        format: date
+      total:
+        type: integer
+      rule:
+        type: integer
+      source:
+        type: integer
+      history:
+        type: integer
+      manual:
+        type: integer
+      uncategorized:
+        type: integer
+  AcceptSuggestionInput:
+    type: object
+    additionalProperties: false
+    required: [name]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+  RuleSuggestion:
+    type: object
+    required: [id, state, conditions, actions, example_transaction_ids, created_at]
+    properties:
+      id:
+        type: string
+        format: uuid
+      state:
+        type: string
+        enum: [pending, accepted, dismissed]
+      conditions:
+        type: array
+        items:
+          $ref: "#/components/schemas/RuleCondition"
+      actions:
+        type: array
+        items:
+          $ref: "#/components/schemas/RuleAction"
+      example_transaction_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+      rule_id:
+        type: string
+        format: uuid
+      created_at:
+        type: string
+        format: date-time
+      decided_at:
+        type: string
+        format: date-time
+  RuleSuggestionPage:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/RuleSuggestion"
+      next_cursor:
+        type: string

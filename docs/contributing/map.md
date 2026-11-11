@@ -8,7 +8,7 @@ Start from the `operationId` in `api/openapi.yaml`. Replace `<module>` with the 
 
 | Hop | Location | How to find it |
 |---|---|---|
-| Contract | `api/openapi.yaml`, under `paths:` | Search the `operationId`. |
+| Contract | `internal/<module>/openapi.yaml`, under `paths:` | Search the `operationId` in `internal/*/openapi.yaml`. `api/openapi.yaml` is the generated bundle; never edit it. |
 | Request and response types, router | `internal/<module>/httpapi/api.gen.go` | Generated. Search the `operationId`; the handler method has the same name in upper camel case. |
 | Handler | `internal/<module>/httpapi/<topic>.go`, or `server.go` | Search `func (s *Server) <OperationId>`. |
 | Use case | `internal/<module>/app/<topic>.go` | Search the method the handler calls on `s.svc`. |
@@ -25,10 +25,10 @@ Modules whose layout differs from this table are listed in "Modules" below.
 
 ## Add an endpoint
 
-1. Add the operation under `paths:` in `api/openapi.yaml`: `tags`, `operationId`, `x-book-role`, request and response schemas. Reuse `#/components/responses/Problem` for errors.
+1. Add the operation under `paths:` in `internal/<module>/openapi.yaml`: `tags`, `operationId`, `x-book-role`, request and response schemas. Reuse `#/components/responses/Problem` for errors.
 2. Write the failing test first (`docs/contributing/agents.md`, `CONTRIBUTING.md`, Tests).
 3. Add the query to `internal/<module>/postgres/queries/<topic>.sql` when the operation reads or writes a table.
-4. Run `make gen`. It regenerates `api.gen.go` in every module, `*.sql.gen.go` and `web/src/api/schema.gen.ts`.
+4. Run `make gen`. It rebuilds `api/openapi.yaml` from `api/base.yaml`, `api/shared.yaml` and the module files, then regenerates `api.gen.go` in every module, `*.sql.gen.go` and `web/src/api/schema.gen.ts`.
 5. Add the rule to `internal/<module>/domain/<topic>.go` when the operation has one.
 6. Add the use case to `internal/<module>/app/<topic>.go`. Add a port method to `ports.go` when the use case needs new data access, and implement it in `internal/<module>/postgres/<topic>.go`.
 7. Add the handler `func (s *Server) <OperationId>` to `internal/<module>/httpapi/<topic>.go`. The compiler rejects the build while a generated operation has no handler.

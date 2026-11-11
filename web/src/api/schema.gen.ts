@@ -4,6 +4,626 @@
  */
 
 export interface paths {
+    "/assistant/presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Known language model services, their notices and suggested models. */
+        get: operations["listPresets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The book's providers in creation order, then the instance providers; never a key. */
+        get: operations["listProviders"];
+        put?: never;
+        /**
+         * Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
+         * @description 422 key_required when the preset requires a key and none is sent; 409 secret_key_missing
+         *     when a key is sent and EQUORI_SECRET_KEY is not set.
+         */
+        post: operations["createProvider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/providers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a provider and its chain targets; their uses fall back to the default. */
+        delete: operations["deleteProvider"];
+        options?: never;
+        head?: never;
+        /** Change a provider's name, base URL or key; an absent key keeps the stored one. */
+        patch: operations["updateProvider"];
+        trace?: never;
+    };
+    "/assistant/providers/{id}/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ask the provider's API for its models, which also checks its key.
+         * @description 502 provider_unauthorized when the provider rejects the key; 502 provider_unavailable otherwise.
+         */
+        get: operations["listProviderModels"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
+         * @description Today is the instance's date; a provider resets its quota on its own schedule.
+         */
+        get: operations["listUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/usage/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The book's usage per day, provider and model over a range of at most 90 days.
+         * @description Both ends are included and the figures sum the uses. A day without use has no row.
+         */
+        get: operations["listUsageDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/usage/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Declare the daily limits of a provider and model; absent quotas remove them. */
+        put: operations["setUsageLimit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether the conversation can be used now, with the target it would reach and when to retry. */
+        get: operations["getAssistantChat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run one conversation turn and stream its progress as Server-Sent Events.
+         * @description Events: turn {conversation_id, message_id}, delta {text}, step {tool}, answer (AssistantMessage) and error (Problem).
+         *     Text received since the previous step belongs to a model call that asked for tools; a client drops it at the step.
+         *     The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
+         *     429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
+         *     empty or over 4000 characters after trimming. An error event carries assistant_exhausted,
+         *     assistant_unavailable or assistant_failed.
+         */
+        post: operations["sendAssistantMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The book's conversations, most recently updated first. */
+        get: operations["listAssistantConversations"];
+        put?: never;
+        post?: never;
+        /** Delete every conversation of the book with its messages and proposals. */
+        delete: operations["deleteAssistantConversations"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A conversation with its messages and their proposals. */
+        get: operations["getAssistantConversation"];
+        put?: never;
+        post?: never;
+        /** Delete a conversation with its messages and proposals; 404 conversation_not_found. */
+        delete: operations["deleteAssistantConversation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/proposals/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute a pending proposal once, after checking that its data did not change.
+         * @description Answers 409 with Problem code proposal_closed, proposal_expired, proposal_stale or proposal_waiting (the proposal waits for the confirmation of another).
+         */
+        post: operations["confirmAssistantProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/proposals/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a pending proposal. */
+        post: operations["rejectAssistantProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/uses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every declared use with its effective chain for the book. */
+        get: operations["listUses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assistant/uses/{use}/chain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace the book's chain of a use; an empty list restores the default.
+         * @description 422 capability_missing when a model lacks a capability the use needs.
+         */
+        put: operations["setUseChain"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read each line of a text as a transaction draft; records nothing (A106). */
+        post: operations["previewCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/capture/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Name a category for descriptions classification left uncategorized (ADR 014).
+         * @description Kept answers are served without a model call; the others are asked of a language model in one request.
+         */
+        post: operations["suggestCaptureCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/category-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Name a category for existing uncategorized transactions (ADR 014 L1a).
+         * @description Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
+         *     Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
+         *     one of the book's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
+         *     income.
+         */
+        post: operations["suggestTransactionCategories"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Categorization rules by priority. */
+        get: operations["listRules"];
+        put?: never;
+        /** Create a rule at the last priority. */
+        post: operations["createRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rules/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give every rule a new priority, in the order listed. */
+        post: operations["reorderRules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rules/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * What a rule would do alone over the transactions of the last 365 days (A81).
+         * @description would_categorize counts the uncategorized transactions the rule categorizes; conflicts counts the categorized
+         *     ones whose category postings differ from the rule's allocation. Each list holds the newest 50 ids. Nothing is written.
+         */
+        post: operations["previewRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rules/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run categorization (F5) on every uncategorized transaction. */
+        post: operations["runRules"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/transactions/{id}/categorization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How the categories of a transaction were decided (P5 amendment A20). */
+        get: operations["getCategorization"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categorizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How the categories of several transactions were decided (A79).
+         * @description A transaction without a categorization record, or voided, is absent from items.
+         */
+        get: operations["listCategorizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/source-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Categories aggregators assigned to imported lines, by name (P6 amendment A41).
+         * @description count is the number of imported lines that carried the category.
+         */
+        get: operations["listSourceCategories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/source-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the category of lines that carry the source category and no rule decides.
+         * @description category_id null clears it. The mapping applies to lines imported afterwards (method source, F5).
+         */
+        put: operations["mapSourceCategory"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/categorization-statistics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Transactions dated in [from, to] by categorization method (SC5). */
+        get: operations["getCategorizationStatistics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rule-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rules suggested from repeated manual corrections (P5 amendment A24). */
+        get: operations["listRuleSuggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rule-suggestions/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create the suggested rule at the last priority. */
+        post: operations["acceptRuleSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rule-suggestions/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss a suggestion; it is not proposed again. */
+        post: operations["dismissRuleSuggestion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One rule. */
+        get: operations["getRule"];
+        /** Replace a rule; its priority does not change. */
+        put: operations["changeRule"];
+        post?: never;
+        /** Delete a rule; categorizations it decided keep the method rule. */
+        delete: operations["deleteRule"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payee-aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payee aliases, oldest first. */
+        get: operations["listPayeeAliases"];
+        put?: never;
+        /** Map raw descriptions to a payee (P5 amendment A22). */
+        post: operations["createPayeeAlias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/payee-aliases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One payee alias. */
+        get: operations["getPayeeAlias"];
+        /** Replace a payee alias. */
+        put: operations["changePayeeAlias"];
+        post?: never;
+        /** Delete a payee alias. */
+        delete: operations["deletePayeeAlias"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/session": {
         parameters: {
             query?: never;
@@ -556,6 +1176,526 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ingestion/sync-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How often the scheduler checks the bank connections of the instance (ADR 029 BK23). */
+        get: operations["getSyncSchedule"];
+        /** Change the sync interval of the instance; admin only. */
+        put: operations["setSyncSchedule"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import-batches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Import batches, newest first. */
+        get: operations["listImportBatches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/csv-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How the CSV files of the account are read. */
+        get: operations["getCsvProfile"];
+        /**
+         * Set how the CSV files of the account are read (P4 amendment A13).
+         * @description Columns are header names, or 1-based positions when header_rows is 0. Set amount_column, or
+         *     debit_column and credit_column. Defaults: delimiter comma, header_rows 1, amount_sign as_is.
+         */
+        put: operations["saveCsvProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/csv-profile/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the language model which columns of a CSV file hold what.
+         * @description Stores nothing. Each sample cell is masked before it leaves the instance; a header cell with
+         *     a digit is masked too. 503 csv_suggestion_unavailable when no target answers, 422
+         *     csv_suggestion_unusable when the answer fails validation.
+         */
+        post: operations["suggestCsvColumns"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import an OFX or CSV statement into a balance account.
+         * @description Each line is deduplicated (I10), matched to an existing transaction of the account with the
+         *     same amount within 3 days, or created against an uncategorized account; ambiguous matches
+         *     wait for review. A file balance becomes a balance assertion (chapter 3, F4). At most 10 MiB
+         *     (P4 amendment A16); a CSV file needs the account's CSV profile.
+         */
+        post: operations["importFile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import-batches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One import batch with its counts. */
+        get: operations["getImportBatch"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import-batches/{id}/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The external records of a batch, in file order. */
+        get: operations["listBatchRecords"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/unconfirmed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Entries of the account that neither an institution line nor balance confirmed (A103, A133).
+         * @description The first posting of each transaction that carries no external record and that no
+         *     balance assertion or statement reconciled, expected on or after the start of the
+         *     account's lines from an institution (the mapping's start date, or the first imported
+         *     file's period) and more than 10 days before the last synced date or the end of the
+         *     last imported period, oldest first. A card posting is expected at its statement's
+         *     closing date. An installment and its reversal on one statement offset and are not
+         *     listed. An account without lines from an institution lists none.
+         */
+        get: operations["listUnconfirmed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/external-records/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return a discarded record to review (A140).
+         * @description The record waits for review again, with the candidates the ledger holds now; a record that
+         *     is not discarded returns record_not_discarded.
+         */
+        post: operations["reopenExternalRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/external-records/{id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve a record that needs review.
+         * @description match links the record to one of its candidates and clears that posting; create records a
+         *     transaction against an uncategorized account; discard leaves the line out of the ledger.
+         */
+        post: operations["resolveExternalRecord"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/external-records/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve several records that need review, each item decided on its own (A201).
+         * @description Each item runs as resolveExternalRecord. An item that fails reports its status and leaves the others
+         *     applied.
+         */
+        post: operations["resolveExternalRecords"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/external-records/{id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo the record's last automatic decision (A148).
+         * @description linked releases the posting and returns the record to review (probable); followed returns
+         *     the transaction to its amount and date before the change and leaves the record in review
+         *     (changed); withdrawn links the record to its posting again and keeps it from later
+         *     withdrawals; re_identified returns the record to its previous external id and records the
+         *     line as a new record in review (probable). A record without a decision returns no_decision.
+         */
+        post: operations["undoExternalRecordDecision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/aggregators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregators this instance offers, with the credential fields each requires. */
+        get: operations["listAggregators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregator integrations, by name. */
+        get: operations["listIntegrations"];
+        put?: never;
+        /**
+         * Store the credentials of an aggregator application (P6 amendment A34).
+         * @description The aggregator validates the credentials before they are stored, sealed under
+         *     EQUORI_SECRET_KEY (ADR 008); no response returns them. 409 integration_unavailable
+         *     without the key; 422 aggregator_unauthorized when the aggregator rejects them; 502
+         *     aggregator_unavailable when it does not answer.
+         */
+        post: operations["createIntegration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return an integration, without its credentials. */
+        get: operations["getIntegration"];
+        put?: never;
+        post?: never;
+        /** Delete an integration without connections (409 integration_in_use otherwise). */
+        delete: operations["deleteIntegration"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/integrations/{id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the credentials of an integration after the aggregator validates them. */
+        put: operations["updateIntegrationCredentials"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connections with their external accounts, by name. */
+        get: operations["listConnections"];
+        put?: never;
+        /**
+         * Connect an aggregator item and list its accounts (P6 amendments A34, A35).
+         * @description external_id is the identifier the aggregator gives the item (one item per institution).
+         *     The name defaults to the item's connector name. Every external account starts pending.
+         */
+        post: operations["createConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Return a connection with its external accounts. */
+        get: operations["getConnection"];
+        put?: never;
+        post?: never;
+        /** Delete a connection and its mappings; imported records and batches stay. */
+        delete: operations["deleteConnection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync every mapped account of the connection now (P6 amendment A43).
+         * @description One import batch per mapped account. An item that needs its owner at the aggregator
+         *     (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
+         *     connection shows the status. A sync of an account waits for any other sync or import
+         *     of it. A failure is stored in the connection's last_error.
+         */
+        post: operations["syncConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}/syncs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
+         * @description Newest first. Each run lists its batches, one per mapped account, and the records its
+         *     summary lists: those the run linked, changed, withdrew, re-identified, created, matched or
+         *     placed in review. A record a later run decided belongs to that run. A run that changed
+         *     nothing is not listed.
+         */
+        get: operations["listConnectionSyncs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/connections/{id}/accounts/{external_account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Map an external account to a ledger account, or ignore it (P6 amendment A35).
+         * @description account_id is a leaf balance account of the external account's currency and a compatible
+         *     kind (CHECKING_ACCOUNT to checking, SAVINGS_ACCOUNT to savings or reserve, CREDIT_CARD to
+         *     credit_card, RESERVED_BALANCE to reserve) that no other external account feeds; sync_from is the first date to import.
+         *     Only mapped accounts sync.
+         */
+        put: operations["mapExternalAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instance/backup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backups and encrypted copy of the instance; admin only (P13 A157). */
+        get: operations["getBackup"];
+        put?: never;
+        /** Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed. */
+        post: operations["runBackup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instance/backup/copy-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the password of the encrypted copies; admin only. 400 password_too_short below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY. */
+        put: operations["setCopyPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instance/diagnostic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The diagnostic file, without amounts, names or descriptions; admin only (P13 A158). */
+        get: operations["getDiagnostic"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instance/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version of the binary and the newest release found; admin only (P13 A159). */
+        get: operations["getVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instance/version/update-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Allow or refuse the daily request for the latest release; admin only. */
+        put: operations["setUpdateCheck"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/settings": {
         parameters: {
             query?: never;
@@ -1013,187 +2153,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/positions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Positions of the security accounts at the end of a date, valued with stored prices. */
-        get: operations["listPositions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/realized-results": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Results of the sales of a year at average cost (D1). */
-        get: operations["listRealizedResults"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/income-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Investment income of a year by tax treatment (D1). */
-        get: operations["listIncomeEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/investment-income-types": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Income types the book's jurisdiction accepts. */
-        get: operations["listInvestmentIncomeTypes"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/return": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
-         * @description The flows are the money that entered or left the tree in transactions that also touch a balance account
-         *     outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
-         *     on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
-         *     return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
-         *     of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
-         *     no money was invested.
-         *
-         *     period_bp is the time-weighted return of the period: the period splits at each flow date, a flow earns from the
-         *     next day, and the growth of each piece is chained (amendment A208). benchmark compares it with a daily index:
-         *     index names an enabled index; without it, the default index of the book's region applies, and benchmark is absent
-         *     when that index has no rate. until is the last rate date in [from, to]; return_bp is the time-weighted return up
-         *     to until, index_bp the growth of the index over the same days, and percent_bp the percent of the index (10000 is
-         *     100%) that grows as much. 400 on index when the named index is not enabled, has no rate or is not daily.
-         */
-        get: operations["getReturn"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/allocation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
-         * @description Each account counts its own balance, valued in value_in (the base currency by default) with the stored prices
-         *     of the date. type groups by the type of the instrument held (currency for cash); currency by the quotation
-         *     currency of a security or the currency itself; institution by the institution id, empty without one. Groups are
-         *     ordered by value, largest first; shares are in basis points, rounded down, and the last group takes the
-         *     remainder so they add up to 10000. A total that is not positive has no shares.
-         */
-        get: operations["getAllocation"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/net-worth": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Assets, liabilities and their difference at a date (investments design 4.3).
-         * @description Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
-         */
-        get: operations["getNetWorth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/net-worth/days": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
-         * @description Each day is valued as getNetWorth values a date. 400 invalid_request when from is after to or the range exceeds 62 days.
-         */
-        get: operations["getNetWorthDays"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instrument-subtypes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction. */
-        get: operations["listInstrumentSubtypes"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/transactions/{id}": {
         parameters: {
             query?: never;
@@ -1394,532 +2353,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/exports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
-         * @description The archive is built after the response and replaces the previous export. 409 export_pending while one is
-         *     pending. With credentials_passphrase the archive also carries the credentials of the book's integrations,
-         *     sealed by that passphrase, which the server never stores (export design C1 to C4); this needs the owner
-         *     role (403 book_role_required otherwise), 400 invalid_request for a passphrase outside 8 to 256 characters
-         *     and 409 integration_unavailable without EQUORI_SECRET_KEY.
-         */
-        post: operations["requestExport"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exports/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The book's export and its status; 404 when none was requested. */
-        get: operations["getExport"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/exports/current/content": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Download the archive of a ready export; 409 export_not_ready otherwise. */
-        get: operations["getExportContent"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/imports/archive": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Restore an export archive into books without facts (N13, export design E4).
-         * @description The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
-         *     a checksum that differs, a table the instance does not export or an archive_version below 1; 422
-         *     archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
-         *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
-         *     role and the request has no replace_books_name; 422 confirmation_mismatch when replace_books_name differs from
-         *     the name of the active book; with the name, the import deletes the content of the book, its assistant
-         *     conversations and usage, and writes the archive in the same transaction; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
-         *     writes nothing. With the passphrase of an archive that carries credentials, the credentials are restored
-         *     under the key of the instance (export design C5 to C7): 422 passphrase_required when the archive carries
-         *     credentials and the request has neither passphrase nor skip_credentials, 422 passphrase_invalid for a wrong
-         *     passphrase and 409 integration_unavailable without EQUORI_SECRET_KEY.
-         */
-        post: operations["importArchive"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/statements/{id}/analytics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * A statement split into purchases, installments, charges and credits, per category (P9).
-         * @description Each category amount of the statement falls in one part (docs/plans/2026-10-26-p9-cash-view.md,
-         *     section Statement analytics); categories are ordered by total, largest first, then by id.
-         */
-        get: operations["getStatementAnalytics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/statement-analytics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics. */
-        get: operations["getCardStatementAnalytics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/balances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Daily balance of an account and its sub-accounts, one item per day in [from, to]. */
-        get: operations["getBalanceSeries"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/flows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
-         * @description Inflow is the sum of the positive amounts of the account's non-voided postings booked on the date; outflow is the sum of the absolute values of the negative ones. Sub-accounts are not included. The range holds at most 366 days.
-         */
-        get: operations["getAccountFlows"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
-         * @description Spending of an expense category and earnings of an income category are positive. An account is listed
-         *     when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
-         */
-        get: operations["getCategoryTotals"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/categories/{id}/cash-payments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
-         * @description Each item is the share a card payment gives the category (docs/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
-         *     signed as the category's postings, in the order the payments apply. Amounts of transactions without a card line are not
-         *     listed; they count on their own date. The items of a category sum to the card part of its cash total.
-         */
-        get: operations["listCategoryCashPayments"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reports/indicators": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4). */
-        get: operations["getIndicators"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calendars": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Business-day calendars of the instance in identifier order. */
-        get: operations["listCalendars"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/calendars/{name}/holidays": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Non-business days of a calendar in a year, weekends excluded. */
-        get: operations["listHolidays"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/indexes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3). */
-        get: operations["listIndexes"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/indexes/{id}/rates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first. */
-        get: operations["listIndexRates"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/indexes/{id}/expectations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5). */
-        get: operations["listIndexExpectations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/market-data/feeds": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Every price and index feed of the instance with its state (ADR 025 F5). */
-        get: operations["listMarketDataFeeds"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/market-data/feeds/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8). */
-        put: operations["setMarketDataFeed"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/market-data/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Run the enabled feeds now; admin only (ADR 025 F7, F8).
-         * @description The tick runs after the response. 409 refresh_running while a tick, scheduled or requested, runs.
-         */
-        post: operations["refreshMarketData"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/market-data/catalog": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29). */
-        get: operations["searchInstrumentCatalog"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/market-data/probe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** The latest quote each enabled source gives for an instrument not yet defined; nothing is stored (A222 MQ27). */
-        post: operations["probeQuote"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instruments": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Instruments of the instance in code order. */
-        get: operations["listInstruments"];
-        put?: never;
-        /** Define a security for the whole instance (P8 amendment A59). */
-        post: operations["defineInstrument"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instruments/{code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One instrument. */
-        get: operations["getInstrument"];
-        put?: never;
-        post?: never;
-        /** Delete a security with its prices, terms, history requests and symbols; a security that a record references is refused (A223). */
-        delete: operations["deleteInstrument"];
-        options?: never;
-        head?: never;
-        /** Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134). */
-        patch: operations["editInstrument"];
-        trace?: never;
-    };
-    "/instruments/{code}/terms": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        /** The terms of a fixed income instrument (investments design 4.2). */
-        get: operations["getInstrumentTerms"];
-        /** Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them. */
-        put: operations["putInstrumentTerms"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instruments/{code}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8). */
-        post: operations["requestInstrumentHistory"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/instruments/{code}/prices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32). */
-        post: operations["recordInstrumentPrices"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/prices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30). */
-        get: operations["listPrices"];
-        put?: never;
-        /** Record a manual price; a manual price of the same date is replaced. */
-        post: operations["recordPrice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/prices/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Record the prices of a CSV file as source csv, all or nothing.
-         * @description Header `instrument,quote_instrument,date,value`, at most 10,000 lines. A rejected line returns
-         *     422 with field `line N`, N counting the header as line 1.
-         */
-        post: operations["importPrices"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/accounts/{id}/billing-cycle-rules": {
         parameters: {
             query?: never;
@@ -2054,352 +2487,6 @@ export interface paths {
         put?: never;
         /** Record a card purchase in installments. */
         post: operations["createInstallmentPurchase"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/capture/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Read each line of a text as a transaction draft; records nothing (A106). */
-        post: operations["previewCapture"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/capture/suggestions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Name a category for descriptions classification left uncategorized (ADR 014).
-         * @description Kept answers are served without a model call; the others are asked of a language model in one request.
-         */
-        post: operations["suggestCaptureCategories"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/transactions/category-suggestions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Name a category for existing uncategorized transactions (ADR 014 L1a).
-         * @description Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
-         *     Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
-         *     one of the book's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
-         *     income.
-         */
-        post: operations["suggestTransactionCategories"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/presets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Known language model services, their notices and suggested models. */
-        get: operations["listPresets"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/providers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The book's providers in creation order, then the instance providers; never a key. */
-        get: operations["listProviders"];
-        put?: never;
-        /**
-         * Store a provider; its key is sealed under EQUORI_SECRET_KEY (ADR 008).
-         * @description 422 key_required when the preset requires a key and none is sent; 409 secret_key_missing
-         *     when a key is sent and EQUORI_SECRET_KEY is not set.
-         */
-        post: operations["createProvider"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/providers/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete a provider and its chain targets; their uses fall back to the default. */
-        delete: operations["deleteProvider"];
-        options?: never;
-        head?: never;
-        /** Change a provider's name, base URL or key; an absent key keeps the stored one. */
-        patch: operations["updateProvider"];
-        trace?: never;
-    };
-    "/assistant/providers/{id}/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Ask the provider's API for its models, which also checks its key.
-         * @description 502 provider_unauthorized when the provider rejects the key; 502 provider_unavailable otherwise.
-         */
-        get: operations["listProviderModels"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/usage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The book's usage per provider and model today and over the last 30 days, with declared limits (ADR 019 U6).
-         * @description Today is the instance's date; a provider resets its quota on its own schedule.
-         */
-        get: operations["listUsage"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/usage/days": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The book's usage per day, provider and model over a range of at most 90 days.
-         * @description Both ends are included and the figures sum the uses. A day without use has no row.
-         */
-        get: operations["listUsageDays"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/usage/limits": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Declare the daily limits of a provider and model; absent quotas remove them. */
-        put: operations["setUsageLimit"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/chat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Whether the conversation can be used now, with the target it would reach and when to retry. */
-        get: operations["getAssistantChat"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/turns": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Run one conversation turn and stream its progress as Server-Sent Events.
-         * @description Events: turn {conversation_id, message_id}, delta {text}, step {tool}, answer (AssistantMessage) and error (Problem).
-         *     Text received since the previous step belongs to a model call that asked for tools; a client drops it at the step.
-         *     The stream ends after answer or error. Problems before the stream: 404 conversation_not_found,
-         *     429 assistant_exhausted with retry_at, 503 assistant_unavailable, 400 invalid_request for text that is
-         *     empty or over 4000 characters after trimming. An error event carries assistant_exhausted,
-         *     assistant_unavailable or assistant_failed.
-         */
-        post: operations["sendAssistantMessage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The book's conversations, most recently updated first. */
-        get: operations["listAssistantConversations"];
-        put?: never;
-        post?: never;
-        /** Delete every conversation of the book with its messages and proposals. */
-        delete: operations["deleteAssistantConversations"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/conversations/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** A conversation with its messages and their proposals. */
-        get: operations["getAssistantConversation"];
-        put?: never;
-        post?: never;
-        /** Delete a conversation with its messages and proposals; 404 conversation_not_found. */
-        delete: operations["deleteAssistantConversation"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/proposals/{id}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Execute a pending proposal once, after checking that its data did not change.
-         * @description Answers 409 with Problem code proposal_closed, proposal_expired, proposal_stale or proposal_waiting (the proposal waits for the confirmation of another).
-         */
-        post: operations["confirmAssistantProposal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/proposals/{id}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reject a pending proposal. */
-        post: operations["rejectAssistantProposal"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/uses": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Every declared use with its effective chain for the book. */
-        get: operations["listUses"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/assistant/uses/{use}/chain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Replace the book's chain of a use; an empty list restores the default.
-         * @description 422 capability_missing when a model lacks a capability the use needs.
-         */
-        put: operations["setUseChain"];
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2789,25 +2876,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/rules": {
+    "/calendars": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Categorization rules by priority. */
-        get: operations["listRules"];
+        /** Business-day calendars of the instance in identifier order. */
+        get: operations["listCalendars"];
         put?: never;
-        /** Create a rule at the last priority. */
-        post: operations["createRule"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/rules/reorder": {
+    "/calendars/{name}/holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Non-business days of a calendar in a year, weekends excluded. */
+        get: operations["listHolidays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3). */
+        get: operations["listIndexes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexes/{id}/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first. */
+        get: operations["listIndexRates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexes/{id}/expectations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5). */
+        get: operations["listIndexExpectations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market-data/feeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every price and index feed of the instance with its state (ADR 025 F5). */
+        get: operations["listMarketDataFeeds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market-data/feeds/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2815,63 +2986,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        /** Give every rule a new priority, in the order listed. */
-        post: operations["reorderRules"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rules/preview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * What a rule would do alone over the transactions of the last 365 days (A81).
-         * @description would_categorize counts the uncategorized transactions the rule categorizes; conflicts counts the categorized
-         *     ones whose category postings differ from the rule's allocation. Each list holds the newest 50 ids. Nothing is written.
-         */
-        post: operations["previewRule"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rules/run": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Run categorization (F5) on every uncategorized transaction. */
-        post: operations["runRules"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/transactions/{id}/categorization": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** How the categories of a transaction were decided (P5 amendment A20). */
-        get: operations["getCategorization"];
-        put?: never;
+        /** Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8). */
+        put: operations["setMarketDataFeed"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2879,248 +2995,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/categorizations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * How the categories of several transactions were decided (A79).
-         * @description A transaction without a categorization record, or voided, is absent from items.
-         */
-        get: operations["listCategorizations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/source-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Categories aggregators assigned to imported lines, by name (P6 amendment A41).
-         * @description count is the number of imported lines that carried the category.
-         */
-        get: operations["listSourceCategories"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/source-categories/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Set the category of lines that carry the source category and no rule decides.
-         * @description category_id null clears it. The mapping applies to lines imported afterwards (method source, F5).
-         */
-        put: operations["mapSourceCategory"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/categorization-statistics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Transactions dated in [from, to] by categorization method (SC5). */
-        get: operations["getCategorizationStatistics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rule-suggestions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Rules suggested from repeated manual corrections (P5 amendment A24). */
-        get: operations["listRuleSuggestions"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rule-suggestions/{id}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create the suggested rule at the last priority. */
-        post: operations["acceptRuleSuggestion"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rule-suggestions/{id}/dismiss": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Dismiss a suggestion; it is not proposed again. */
-        post: operations["dismissRuleSuggestion"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/rules/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One rule. */
-        get: operations["getRule"];
-        /** Replace a rule; its priority does not change. */
-        put: operations["changeRule"];
-        post?: never;
-        /** Delete a rule; categorizations it decided keep the method rule. */
-        delete: operations["deleteRule"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payee-aliases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Payee aliases, oldest first. */
-        get: operations["listPayeeAliases"];
-        put?: never;
-        /** Map raw descriptions to a payee (P5 amendment A22). */
-        post: operations["createPayeeAlias"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/payee-aliases/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One payee alias. */
-        get: operations["getPayeeAlias"];
-        /** Replace a payee alias. */
-        put: operations["changePayeeAlias"];
-        post?: never;
-        /** Delete a payee alias. */
-        delete: operations["deletePayeeAlias"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ingestion/sync-schedule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** How often the scheduler checks the bank connections of the instance (ADR 029 BK23). */
-        get: operations["getSyncSchedule"];
-        /** Change the sync interval of the instance; admin only. */
-        put: operations["setSyncSchedule"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/import-batches": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Import batches, newest first. */
-        get: operations["listImportBatches"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/csv-profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** How the CSV files of the account are read. */
-        get: operations["getCsvProfile"];
-        /**
-         * Set how the CSV files of the account are read (P4 amendment A13).
-         * @description Columns are header names, or 1-based positions when header_rows is 0. Set amount_column, or
-         *     debit_column and credit_column. Defaults: delimiter comma, header_rows 1, amount_sign as_is.
-         */
-        put: operations["saveCsvProfile"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/csv-profile/suggestion": {
+    "/market-data/refresh": {
         parameters: {
             query?: never;
             header?: never;
@@ -3130,19 +3005,160 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Ask the language model which columns of a CSV file hold what.
-         * @description Stores nothing. Each sample cell is masked before it leaves the instance; a header cell with
-         *     a digit is masked too. 503 csv_suggestion_unavailable when no target answers, 422
-         *     csv_suggestion_unusable when the answer fails validation.
+         * Run the enabled feeds now; admin only (ADR 025 F7, F8).
+         * @description The tick runs after the response. 409 refresh_running while a tick, scheduled or requested, runs.
          */
-        post: operations["suggestCsvColumns"];
+        post: operations["refreshMarketData"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/accounts/{id}/imports": {
+    "/market-data/catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29). */
+        get: operations["searchInstrumentCatalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/market-data/probe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The latest quote each enabled source gives for an instrument not yet defined; nothing is stored (A222 MQ27). */
+        post: operations["probeQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instruments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Instruments of the instance in code order. */
+        get: operations["listInstruments"];
+        put?: never;
+        /** Define a security for the whole instance (P8 amendment A59). */
+        post: operations["defineInstrument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instruments/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One instrument. */
+        get: operations["getInstrument"];
+        put?: never;
+        post?: never;
+        /** Delete a security with its prices, terms, history requests and symbols; a security that a record references is refused (A223). */
+        delete: operations["deleteInstrument"];
+        options?: never;
+        head?: never;
+        /** Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134). */
+        patch: operations["editInstrument"];
+        trace?: never;
+    };
+    "/instruments/{code}/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        /** The terms of a fixed income instrument (investments design 4.2). */
+        get: operations["getInstrumentTerms"];
+        /** Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them. */
+        put: operations["putInstrumentTerms"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instruments/{code}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8). */
+        post: operations["requestInstrumentHistory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instruments/{code}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32). */
+        post: operations["recordInstrumentPrices"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30). */
+        get: operations["listPrices"];
+        put?: never;
+        /** Record a manual price; a manual price of the same date is replaced. */
+        post: operations["recordPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/prices/import": {
         parameters: {
             query?: never;
             header?: never;
@@ -3152,345 +3168,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Import an OFX or CSV statement into a balance account.
-         * @description Each line is deduplicated (I10), matched to an existing transaction of the account with the
-         *     same amount within 3 days, or created against an uncategorized account; ambiguous matches
-         *     wait for review. A file balance becomes a balance assertion (chapter 3, F4). At most 10 MiB
-         *     (P4 amendment A16); a CSV file needs the account's CSV profile.
+         * Record the prices of a CSV file as source csv, all or nothing.
+         * @description Header `instrument,quote_instrument,date,value`, at most 10,000 lines. A rejected line returns
+         *     422 with field `line N`, N counting the header as line 1.
          */
-        post: operations["importFile"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/import-batches/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** One import batch with its counts. */
-        get: operations["getImportBatch"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/import-batches/{id}/records": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** The external records of a batch, in file order. */
-        get: operations["listBatchRecords"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/accounts/{id}/unconfirmed": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Entries of the account that neither an institution line nor balance confirmed (A103, A133).
-         * @description The first posting of each transaction that carries no external record and that no
-         *     balance assertion or statement reconciled, expected on or after the start of the
-         *     account's lines from an institution (the mapping's start date, or the first imported
-         *     file's period) and more than 10 days before the last synced date or the end of the
-         *     last imported period, oldest first. A card posting is expected at its statement's
-         *     closing date. An installment and its reversal on one statement offset and are not
-         *     listed. An account without lines from an institution lists none.
-         */
-        get: operations["listUnconfirmed"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/external-records/{id}/reopen": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Return a discarded record to review (A140).
-         * @description The record waits for review again, with the candidates the ledger holds now; a record that
-         *     is not discarded returns record_not_discarded.
-         */
-        post: operations["reopenExternalRecord"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/external-records/{id}/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resolve a record that needs review.
-         * @description match links the record to one of its candidates and clears that posting; create records a
-         *     transaction against an uncategorized account; discard leaves the line out of the ledger.
-         */
-        post: operations["resolveExternalRecord"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/external-records/resolve": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resolve several records that need review, each item decided on its own (A201).
-         * @description Each item runs as resolveExternalRecord. An item that fails reports its status and leaves the others
-         *     applied.
-         */
-        post: operations["resolveExternalRecords"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/external-records/{id}/undo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Undo the record's last automatic decision (A148).
-         * @description linked releases the posting and returns the record to review (probable); followed returns
-         *     the transaction to its amount and date before the change and leaves the record in review
-         *     (changed); withdrawn links the record to its posting again and keeps it from later
-         *     withdrawals; re_identified returns the record to its previous external id and records the
-         *     line as a new record in review (probable). A record without a decision returns no_decision.
-         */
-        post: operations["undoExternalRecordDecision"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/aggregators": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Aggregators this instance offers, with the credential fields each requires. */
-        get: operations["listAggregators"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/integrations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Aggregator integrations, by name. */
-        get: operations["listIntegrations"];
-        put?: never;
-        /**
-         * Store the credentials of an aggregator application (P6 amendment A34).
-         * @description The aggregator validates the credentials before they are stored, sealed under
-         *     EQUORI_SECRET_KEY (ADR 008); no response returns them. 409 integration_unavailable
-         *     without the key; 422 aggregator_unauthorized when the aggregator rejects them; 502
-         *     aggregator_unavailable when it does not answer.
-         */
-        post: operations["createIntegration"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/integrations/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return an integration, without its credentials. */
-        get: operations["getIntegration"];
-        put?: never;
-        post?: never;
-        /** Delete an integration without connections (409 integration_in_use otherwise). */
-        delete: operations["deleteIntegration"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/integrations/{id}/credentials": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Replace the credentials of an integration after the aggregator validates them. */
-        put: operations["updateIntegrationCredentials"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Connections with their external accounts, by name. */
-        get: operations["listConnections"];
-        put?: never;
-        /**
-         * Connect an aggregator item and list its accounts (P6 amendments A34, A35).
-         * @description external_id is the identifier the aggregator gives the item (one item per institution).
-         *     The name defaults to the item's connector name. Every external account starts pending.
-         */
-        post: operations["createConnection"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connections/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Return a connection with its external accounts. */
-        get: operations["getConnection"];
-        put?: never;
-        post?: never;
-        /** Delete a connection and its mappings; imported records and batches stay. */
-        delete: operations["deleteConnection"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connections/{id}/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sync every mapped account of the connection now (P6 amendment A43).
-         * @description One import batch per mapped account. An item that needs its owner at the aggregator
-         *     (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
-         *     connection shows the status. A sync of an account waits for any other sync or import
-         *     of it. A failure is stored in the connection's last_error.
-         */
-        post: operations["syncConnection"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connections/{id}/syncs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
-         * @description Newest first. Each run lists its batches, one per mapped account, and the records its
-         *     summary lists: those the run linked, changed, withdrew, re-identified, created, matched or
-         *     placed in review. A record a later run decided belongs to that run. A run that changed
-         *     nothing is not listed.
-         */
-        get: operations["listConnectionSyncs"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/connections/{id}/accounts/{external_account_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Map an external account to a ledger account, or ignore it (P6 amendment A35).
-         * @description account_id is a leaf balance account of the external account's currency and a compatible
-         *     kind (CHECKING_ACCOUNT to checking, SAVINGS_ACCOUNT to savings or reserve, CREDIT_CARD to
-         *     credit_card, RESERVED_BALANCE to reserve) that no other external account feeds; sync_from is the first date to import.
-         *     Only mapped accounts sync.
-         */
-        put: operations["mapExternalAccount"];
-        post?: never;
+        post: operations["importPrices"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3893,25 +3575,188 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/instance/backup": {
+    "/positions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Backups and encrypted copy of the instance; admin only (P13 A157). */
-        get: operations["getBackup"];
+        /** Positions of the security accounts at the end of a date, valued with stored prices. */
+        get: operations["listPositions"];
         put?: never;
-        /** Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed. */
-        post: operations["runBackup"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/instance/backup/copy-password": {
+    "/realized-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Results of the sales of a year at average cost (D1). */
+        get: operations["listRealizedResults"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/income-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Investment income of a year by tax treatment (D1). */
+        get: operations["listIncomeEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/investment-income-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Income types the book's jurisdiction accepts. */
+        get: operations["listInvestmentIncomeTypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
+         * @description The flows are the money that entered or left the tree in transactions that also touch a balance account
+         *     outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
+         *     on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
+         *     return, days over 365, rounded half to even to basis points. Without account_id the tree is every brokerage account
+         *     of the book with its sub-accounts, and a transfer between two of them is not a flow. 422 return_undefined when
+         *     no money was invested.
+         *
+         *     period_bp is the time-weighted return of the period: the period splits at each flow date, a flow earns from the
+         *     next day, and the growth of each piece is chained (amendment A208). benchmark compares it with a daily index:
+         *     index names an enabled index; without it, the default index of the book's region applies, and benchmark is absent
+         *     when that index has no rate. until is the last rate date in [from, to]; return_bp is the time-weighted return up
+         *     to until, index_bp the growth of the index over the same days, and percent_bp the percent of the index (10000 is
+         *     100%) that grows as much. 400 on index when the named index is not enabled, has no rate or is not daily.
+         */
+        get: operations["getReturn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/allocation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Value of the asset accounts at a date grouped by instrument type, currency or institution (investments design 4.3).
+         * @description Each account counts its own balance, valued in value_in (the base currency by default) with the stored prices
+         *     of the date. type groups by the type of the instrument held (currency for cash); currency by the quotation
+         *     currency of a security or the currency itself; institution by the institution id, empty without one. Groups are
+         *     ordered by value, largest first; shares are in basis points, rounded down, and the last group takes the
+         *     remainder so they add up to 10000. A total that is not positive has no shares.
+         */
+        get: operations["getAllocation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/net-worth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Assets, liabilities and their difference at a date (investments design 4.3).
+         * @description Liabilities are the balances of the liability accounts as a positive amount, valued like the assets.
+         */
+        get: operations["getNetWorth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/net-worth/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Assets, liabilities and their difference at the end of each day of [from, to], at most 62 days (net worth days design, D1).
+         * @description Each day is valued as getNetWorth values a date. 400 invalid_request when from is after to or the range exceeds 62 days.
+         */
+        get: operations["getNetWorthDays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/instrument-subtypes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Subtypes of an instrument type that the book's jurisdiction knows; none without a jurisdiction. */
+        get: operations["listInstrumentSubtypes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/exports": {
         parameters: {
             query?: never;
             header?: never;
@@ -3919,24 +3764,31 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Set the password of the encrypted copies; admin only. 400 password_too_short below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY. */
-        put: operations["setCopyPassword"];
-        post?: never;
+        put?: never;
+        /**
+         * Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
+         * @description The archive is built after the response and replaces the previous export. 409 export_pending while one is
+         *     pending. With credentials_passphrase the archive also carries the credentials of the book's integrations,
+         *     sealed by that passphrase, which the server never stores (export design C1 to C4); this needs the owner
+         *     role (403 book_role_required otherwise), 400 invalid_request for a passphrase outside 8 to 256 characters
+         *     and 409 integration_unavailable without EQUORI_SECRET_KEY.
+         */
+        post: operations["requestExport"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/instance/diagnostic": {
+    "/exports/current": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** The diagnostic file, without amounts, names or descriptions; admin only (P13 A158). */
-        get: operations["getDiagnostic"];
+        /** The book's export and its status; 404 when none was requested. */
+        get: operations["getExport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3945,15 +3797,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/instance/version": {
+    "/exports/current/content": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Version of the binary and the newest release found; admin only (P13 A159). */
-        get: operations["getVersion"];
+        /** Download the archive of a ready export; 409 export_not_ready otherwise. */
+        get: operations["getExportContent"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3962,7 +3814,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/instance/version/update-check": {
+    "/imports/archive": {
         parameters: {
             query?: never;
             header?: never;
@@ -3970,8 +3822,156 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Allow or refuse the daily request for the latest release; admin only. */
-        put: operations["setUpdateCheck"];
+        put?: never;
+        /**
+         * Restore an export archive into books without facts (N13, export design E4).
+         * @description The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
+         *     a checksum that differs, a table the instance does not export or an archive_version below 1; 422
+         *     archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
+         *     an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
+         *     role and the request has no replace_books_name; 422 confirmation_mismatch when replace_books_name differs from
+         *     the name of the active book; with the name, the import deletes the content of the book, its assistant
+         *     conversations and usage, and writes the archive in the same transaction; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
+         *     writes nothing. With the passphrase of an archive that carries credentials, the credentials are restored
+         *     under the key of the instance (export design C5 to C7): 422 passphrase_required when the archive carries
+         *     credentials and the request has neither passphrase nor skip_credentials, 422 passphrase_invalid for a wrong
+         *     passphrase and 409 integration_unavailable without EQUORI_SECRET_KEY.
+         */
+        post: operations["importArchive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/statements/{id}/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A statement split into purchases, installments, charges and credits, per category (P9).
+         * @description Each category amount of the statement falls in one part (docs/plans/2026-10-26-p9-cash-view.md,
+         *     section Statement analytics); categories are ordered by total, largest first, then by id.
+         */
+        get: operations["getStatementAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/statement-analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics. */
+        get: operations["getCardStatementAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily balance of an account and its sub-accounts, one item per day in [from, to]. */
+        get: operations["getBalanceSeries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
+         * @description Inflow is the sum of the positive amounts of the account's non-voided postings booked on the date; outflow is the sum of the absolute values of the negative ones. Sub-accounts are not included. The range holds at most 366 days.
+         */
+        get: operations["getAccountFlows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
+         * @description Spending of an expense category and earnings of an income category are positive. An account is listed
+         *     when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
+         */
+        get: operations["getCategoryTotals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/categories/{id}/cash-payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
+         * @description Each item is the share a card payment gives the category (docs/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
+         *     signed as the category's postings, in the order the payments apply. Amounts of transactions without a card line are not
+         *     listed; they count on their own date. The items of a category sum to the card part of its cash total.
+         */
+        get: operations["listCategoryCashPayments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4). */
+        get: operations["getIndicators"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -3983,6 +3983,72 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto";
+        /**
+         * @description Positive exact decimal with at most 12 decimals (ADR 005).
+         * @example 5.4830
+         */
+        Rate: string;
+        Price: {
+            instrument: string;
+            quote_instrument: string;
+            /** Format: date */
+            date: string;
+            value: components["schemas"]["Rate"];
+            source: string;
+        };
+        Money: {
+            /**
+             * Format: int64
+             * @description Integer units of the instrument scale (ADR 005).
+             */
+            amount: number;
+            /**
+             * @description Instrument code; a currency or a security (P8 amendment A58).
+             * @example BRL
+             */
+            currency: string;
+        };
+        IncomeType: string;
+        Problem: {
+            type: string;
+            title: string;
+            status: number;
+            detail?: string;
+            /**
+             * @description Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
+             *     too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
+             *     server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
+             *     account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
+             *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
+             *     record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
+             *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
+             *     csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
+             *     budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
+             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
+             *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
+             *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
+             *     confirmation_mismatch, books_has_members, last_books,
+             *     backup_off, backup_failed, password_too_short, institution_in_use.
+             */
+            code: string;
+            request_id?: string;
+            /**
+             * Format: date-time
+             * @description Instant after which the same request can succeed.
+             */
+            retry_at?: string;
+            /** @description The archive_version of a refused archive (archive_too_new, ADR 021). */
+            archive_version?: number;
+            /** @description The highest archive_version the instance imports (archive_too_new, ADR 021). */
+            instance_version?: number;
+            errors?: components["schemas"]["FieldError"][];
+        };
+        FieldError: {
+            field: string;
+            message: string;
+        };
         /** @enum {string} */
         Capability: "tools" | "structured_output" | "image_input";
         /**
@@ -4222,340 +4288,117 @@ export interface components {
         ChainInput: {
             targets: components["schemas"]["ChainTargetInput"][];
         };
-        /** @enum {string} */
-        ScheduleKind: "bill" | "income" | "subscription" | "transfer" | "savings";
-        /**
-         * @description A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
-         *     the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
-         */
-        Recurrence: {
-            /** @enum {string} */
-            frequency: "daily" | "weekly" | "monthly" | "yearly";
-            interval: number;
-            day_of_month?: number;
-            /** @enum {string} */
-            weekday?: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
-            ordinal?: number;
-            business_day_ordinal?: number;
-            /**
-             * @default none
-             * @enum {string}
-             */
-            adjustment: "none" | "following" | "preceding" | "modified_following";
-            /** Format: date */
-            start: string;
-            /** Format: date */
-            until?: string;
-            count?: number;
-        };
-        ScheduleInput: {
-            kind: components["schemas"]["ScheduleKind"];
-            /** Format: uuid */
-            account_id: string;
-            /** Format: uuid */
-            counterpart_id: string;
-            /** Format: uuid */
-            payee_id?: string;
-            description: string;
-            amount: components["schemas"]["Money"];
-            recurrence: components["schemas"]["Recurrence"];
-            /** @description Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region. */
-            calendar?: string;
-            /** @default 1000 */
-            match_tolerance_bp: number;
-            /** @default 3 */
-            grace_days: number;
-            match_window_days?: number;
-        };
-        ScheduleTerms: {
-            /** Format: date */
-            effective_from: string;
-            amount: components["schemas"]["Money"];
-            recurrence: components["schemas"]["Recurrence"];
-        };
-        SchedulePause: {
-            /** Format: date */
-            from: string;
-            /**
-             * Format: date
-             * @description Inclusive.
-             */
-            to: string;
-        };
-        Schedule: {
-            /** Format: uuid */
-            id: string;
-            kind: components["schemas"]["ScheduleKind"];
-            /** @description Business-day calendar id the schedule follows. */
-            calendar: string;
-            /** Format: uuid */
-            account_id: string;
-            /** Format: uuid */
-            counterpart_id: string;
-            /** Format: uuid */
-            payee_id?: string;
-            description: string;
-            match_tolerance_bp: number;
-            grace_days: number;
-            /** @default 7 */
-            match_window_days: number;
-            /**
-             * Format: date
-             * @description No occurrence on or after this date; absent while the schedule has no end.
-             */
-            ends_on?: string;
-            /** @description Versions by effective date. */
-            terms: components["schemas"]["ScheduleTerms"][];
-            pauses: components["schemas"]["SchedulePause"][];
-        };
-        SchedulePage: {
-            items: components["schemas"]["Schedule"][];
-            /** @description Absent on the last page. */
-            next_cursor?: string;
-        };
-        /** @enum {string} */
-        OccurrenceState: "expected" | "overdue" | "realized" | "skipped";
-        Occurrence: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            schedule_id: string;
-            sequence: number;
-            /** Format: date */
-            expected_on: string;
-            expected_amount: components["schemas"]["Money"];
-            actual_amount?: components["schemas"]["Money"];
-            state: components["schemas"]["OccurrenceState"];
+        CapturePreviewInput: {
+            text: string;
             /**
              * Format: uuid
-             * @description Present when realized.
+             * @description Account of a line that names none (A111).
              */
-            transaction_id?: string;
+            default_account_id?: string;
             /**
              * Format: date
-             * @description The generated date of a moved occurrence.
+             * @description The day the text was written; date phrases resolve against it (A128). Today when absent; at most today plus one day.
              */
-            moved_from?: string;
+            reference_date?: string;
         };
-        BudgetAmount: {
-            effective_from: string;
-            amount: components["schemas"]["Money"];
+        CapturePreview: {
+            lines: components["schemas"]["CaptureLine"][];
         };
-        BudgetInput: {
-            /** Format: uuid */
-            category_id: string;
-            amount: components["schemas"]["Money"];
-            effective_from: string;
-            rollover: boolean;
-        };
-        Budget: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            category_id: string;
-            rollover: boolean;
-            /** @description Versions by month. */
-            amounts: components["schemas"]["BudgetAmount"][];
-        };
-        BudgetPage: {
-            items: components["schemas"]["Budget"][];
-            /** @description Absent on the last page. */
-            next_cursor?: string;
-        };
-        /**
-         * @description carried is the previous month's available amount when rollover is set, else zero; available is
-         *     planned + carried - spent, negative when overspent.
-         */
-        BudgetProgress: {
-            month: string;
-            planned: components["schemas"]["Money"];
-            carried: components["schemas"]["Money"];
-            spent: components["schemas"]["Money"];
-            available: components["schemas"]["Money"];
-        };
-        /** @enum {string} */
-        BudgetPlanSource: "expected_income" | "average_income" | "fixed";
-        BudgetPlanIncome: {
-            /** Format: uuid */
-            schedule_id: string;
-            description: string;
-            amount: components["schemas"]["Money"];
-        };
-        /**
-         * @description A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
-         *     of another; counted is false for a budget under a category whose budget is in force.
-         */
-        BudgetPlanRow: {
-            /** Format: uuid */
-            category_id: string;
-            /** Format: uuid */
-            budget_id?: string;
-            planned: components["schemas"]["Money"];
-            last_month: components["schemas"]["Money"];
-            average: components["schemas"]["Money"];
-            counted: boolean;
-            /** @description The month of the budget's first amount after this month. */
-            next_change?: string;
-        };
-        BudgetPlanAmount: {
-            /** Format: uuid */
-            category_id: string;
-            amount: components["schemas"]["Money"];
-        };
-        BudgetPlanInput: {
-            source: components["schemas"]["BudgetPlanSource"];
-            fixed?: components["schemas"]["Money"];
-            /**
-             * @description The share of the reference set aside, in basis points, from 0 to 10000 (savings target A187, checked by the
-             *     server as a 422 on this field). A save without it clears the stored target.
-             */
-            savings_target_bp?: number;
-            /** @description The changed categories only. */
-            amounts: components["schemas"]["BudgetPlanAmount"][];
-        };
-        /**
-         * @description installments are those billed on the month's statements for purchases booked before it; savings are the month's
-         *     occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
-         *     reference, which is absent when the source has no figure.
-         */
-        BudgetPlan: {
-            month: string;
-            currency: string;
-            source: components["schemas"]["BudgetPlanSource"];
-            fixed?: components["schemas"]["Money"];
-            expected_income?: components["schemas"]["Money"];
-            expected_items?: components["schemas"]["BudgetPlanIncome"][];
-            average_income?: components["schemas"]["Money"];
-            average_months?: number;
-            received_income: components["schemas"]["Money"];
-            reference?: components["schemas"]["Money"];
-            installments: components["schemas"]["Money"];
-            savings: components["schemas"]["Money"];
-            planned: components["schemas"]["Money"];
-            unassigned?: components["schemas"]["Money"];
-            /** @description The stored savings target in basis points of the reference; absent without one (A187). */
-            savings_target_bp?: number;
-            /** @description savings as basis points of reference, truncated; absent without a reference above zero (A188). */
-            savings_rate_bp?: number;
-            savings_target?: components["schemas"]["Money"];
-            savings_gap?: components["schemas"]["Money"];
-            /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
-            prices?: components["schemas"]["Price"][];
-            rows: components["schemas"]["BudgetPlanRow"][];
-        };
-        GoalInput: {
-            name: string;
-            target: components["schemas"]["Money"];
-            /** Format: date */
-            due_on: string;
-            account_ids: string[];
-        };
-        GoalPatch: {
-            name?: string;
-            target?: components["schemas"]["Money"];
-            /** Format: date */
-            due_on?: string;
-            account_ids?: string[];
-        };
-        /**
-         * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
-         *     stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
-         *     in basis points, rounded down, between 0 and 10000.
-         */
-        Goal: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            target: components["schemas"]["Money"];
-            /** Format: date */
-            due_on: string;
-            account_ids: string[];
-            current: components["schemas"]["Money"];
-            remaining: components["schemas"]["Money"];
-            progress_bp: number;
-            /** @description Prices that value accounts in another currency (P8 amendment A72). */
-            prices?: components["schemas"]["Price"][];
-            /**
-             * @description What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
-             *     non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
-             */
-            parts?: components["schemas"]["GoalPart"][];
-            trailing_return?: components["schemas"]["TrailingReturn"];
-        };
-        /**
-         * @description The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
-         *     first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
-         *     months of postings or no external flow in the window.
-         */
-        TrailingReturn: {
-            period_months: number;
-            annual_bp: number;
-        };
-        GoalPart: {
-            /** Format: uuid */
-            account_id: string;
-            instrument: string;
-            quantity: components["schemas"]["Money"];
-            value: components["schemas"]["Money"];
-        };
-        GoalPage: {
-            items: components["schemas"]["Goal"][];
-            /** @description Absent on the last page. */
-            next_cursor?: string;
-        };
-        ProjectionPoint: {
-            /** Format: date */
-            date: string;
-            /** Format: uuid */
-            occurrence_id: string;
-            /** Format: uuid */
-            schedule_id: string;
-            amount: components["schemas"]["Money"];
-            balance: components["schemas"]["Money"];
-        };
-        Projection: {
-            /** Format: uuid */
-            account_id: string;
-            /** Format: date */
-            from: string;
-            /** Format: date */
-            to: string;
-            opening: components["schemas"]["Money"];
-            closing: components["schemas"]["Money"];
-            points: components["schemas"]["ProjectionPoint"][];
-        };
-        Committed: {
-            month: string;
-            installments: components["schemas"]["Money"];
-            occurrences: components["schemas"]["Money"];
-            total: components["schemas"]["Money"];
-            /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
-            prices?: components["schemas"]["Price"][];
-        };
-        SkipInput: {
-            reason?: string;
-        };
-        MoveInput: {
-            /** Format: date */
-            date: string;
-        };
-        /** @description At least one of amount and recurrence. */
-        TermsInput: {
-            /** Format: date */
-            effective_from: string;
+        CaptureLine: {
+            /** @description 1-based position among the pieces of the text cut at line breaks and semicolons (A107). */
+            line: number;
+            text: string;
+            /** @description The line cut by what each part was read as; the texts joined equal the line. */
+            segments: components["schemas"]["CaptureSegment"][];
+            /** @enum {string} */
+            kind: "expense" | "income" | "transfer";
             amount?: components["schemas"]["Money"];
-            recurrence?: components["schemas"]["Recurrence"];
-        };
-        EndInput: {
             /** Format: date */
-            from: string;
+            date: string;
+            /** Format: uuid */
+            account_id?: string;
+            /** @enum {string} */
+            account_source?: "text" | "default";
+            /** Format: uuid */
+            to_account_id?: string;
+            /** @description Installment count of a card purchase; absent for one payment. */
+            installments?: number;
+            description: string;
+            /** Format: uuid */
+            payee_id?: string;
+            /** Format: uuid */
+            category_id?: string;
+            /** @enum {string} */
+            category_source?: "rule" | "history";
+            tags: string[];
+            /** @description Why the draft cannot be recorded as read; empty when it can. */
+            issues: components["schemas"]["CaptureIssue"][];
         };
-        RealizeInput: {
+        CaptureSegment: {
+            text: string;
+            /** @enum {string} */
+            role: "amount" | "date" | "installments" | "account" | "kind" | "tag" | "text";
+        };
+        CaptureIssue: {
+            /** @enum {string} */
+            code: "missing_amount" | "ambiguous_amount" | "invalid_amount" | "invalid_date" | "ambiguous_date" | "invalid_installments" | "installments_not_allowed" | "missing_account" | "ambiguous_account" | "unknown_account" | "missing_destination" | "ambiguous_transfer" | "too_many_accounts" | "same_account" | "currency_mismatch" | "possible_account";
+            /** @enum {string} */
+            field: "amount" | "date" | "installments" | "account" | "to_account";
+            choices: components["schemas"]["CaptureChoice"][];
+        };
+        /** @description An account for an account issue; an amount for an amount issue; the description the line has once the choice is made. */
+        CaptureChoice: {
+            /** Format: uuid */
+            account_id?: string;
+            amount?: components["schemas"]["Money"];
+            description?: string;
+        };
+        CaptureSuggestionInput: {
+            items: components["schemas"]["CaptureSuggestionItem"][];
+        };
+        CaptureSuggestionItem: {
+            description: string;
+            /** @enum {string} */
+            kind: "expense" | "income";
+        };
+        CaptureSuggestions: {
+            /** @description False when the language model could not be asked; the items then hold kept answers only. */
+            available: boolean;
+            items: components["schemas"]["CaptureSuggestion"][];
+        };
+        CaptureSuggestion: {
+            /**
+             * Format: uuid
+             * @description Absent when no category is named.
+             */
+            category_id?: string;
+            /**
+             * @description Absent when no category is named.
+             * @enum {string}
+             */
+            source?: "kept" | "model";
+        };
+        TransactionSuggestionInput: {
+            transaction_ids: string[];
+        };
+        TransactionSuggestions: {
+            /** @description False when the language model could not be asked; the items then hold kept answers only. */
+            available: boolean;
+            items: components["schemas"]["TransactionSuggestion"][];
+        };
+        TransactionSuggestion: {
             /** Format: uuid */
             transaction_id: string;
-        };
-        OccurrenceList: {
-            items: components["schemas"]["Occurrence"][];
+            /**
+             * Format: uuid
+             * @description Absent when no category is named.
+             */
+            category_id?: string;
+            /**
+             * @description Absent when no category is named.
+             * @enum {string}
+             */
+            source?: "kept" | "model";
         };
         SourceCategory: {
             /** Format: uuid */
@@ -4578,6 +4421,401 @@ export interface components {
         SourceCategoryMapping: {
             /** Format: uuid */
             category_id: string | null;
+        };
+        /** @description The value type depends on the field (P5 amendment A21); between and in_list take an array. */
+        RuleCondition: {
+            /** @enum {string} */
+            field: "description" | "raw_description" | "payee" | "amount" | "absolute_amount" | "account" | "account_kind" | "source" | "weekday" | "day_of_month" | "installment";
+            /** @enum {string} */
+            operator: "equals" | "contains" | "starts_with" | "regex" | "between" | "greater_than" | "less_than" | "in_list";
+            value: unknown;
+        };
+        /** @description Exactly one of percent (basis points), amount and remainder. */
+        RuleSplitPart: {
+            /** Format: uuid */
+            category_id: string;
+            percent?: number;
+            amount?: components["schemas"]["Money"];
+            remainder?: boolean;
+        };
+        RuleAction: {
+            /** @enum {string} */
+            type: "set_category" | "set_payee" | "add_tags" | "split" | "transfer" | "mark_reimbursable";
+            /** Format: uuid */
+            category_id?: string;
+            /**
+             * Format: uuid
+             * @description Target of transfer (an asset or liability account) and mark_reimbursable (a receivable), P5b amendment A31.
+             */
+            account_id?: string;
+            /** Format: uuid */
+            payee_id?: string;
+            tags?: string[];
+            parts?: components["schemas"]["RuleSplitPart"][];
+        };
+        RuleInput: {
+            name: string;
+            /** @default true */
+            enabled: boolean;
+            /** @default false */
+            stop_processing: boolean;
+            conditions: components["schemas"]["RuleCondition"][];
+            actions: components["schemas"]["RuleAction"][];
+        };
+        Rule: {
+            /** @description Current, non-voided categorizations this rule decided (A80). */
+            categorized_count: number;
+            /**
+             * Format: date-time
+             * @description The latest of those decisions; absent at zero.
+             */
+            last_categorized_at?: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            priority: number;
+            enabled: boolean;
+            stop_processing: boolean;
+            conditions: components["schemas"]["RuleCondition"][];
+            actions: components["schemas"]["RuleAction"][];
+        };
+        RulePage: {
+            items: components["schemas"]["Rule"][];
+            next_cursor?: string;
+        };
+        RuleList: {
+            items: components["schemas"]["Rule"][];
+        };
+        RuleOrder: {
+            rule_ids: string[];
+        };
+        PayeeAliasInput: {
+            pattern: string;
+            /** @enum {string} */
+            match_type: "equals" | "starts_with" | "contains" | "regex";
+            /** Format: uuid */
+            payee_id: string;
+        };
+        PayeeAlias: {
+            /** Format: uuid */
+            id: string;
+            pattern: string;
+            /** @enum {string} */
+            match_type: "equals" | "starts_with" | "contains" | "regex";
+            /** Format: uuid */
+            payee_id: string;
+        };
+        PayeeAliasPage: {
+            items: components["schemas"]["PayeeAlias"][];
+            next_cursor?: string;
+        };
+        RuleRun: {
+            examined: number;
+            categorized: number;
+        };
+        Categorization: {
+            /** Format: uuid */
+            transaction_id: string;
+            /**
+             * @description Null while the transaction is uncategorized.
+             * @enum {string|null}
+             */
+            method: "rule" | "source" | "history" | "manual" | null;
+            /** Format: uuid */
+            rule_id?: string;
+            /** Format: date-time */
+            decided_at: string;
+        };
+        RulePreview: {
+            would_categorize: components["schemas"]["RulePreviewSet"];
+            conflicts: components["schemas"]["RulePreviewSet"];
+        };
+        RulePreviewSet: {
+            count: number;
+            transaction_ids: string[];
+        };
+        CategorizationList: {
+            items: components["schemas"]["Categorization"][];
+        };
+        CategorizationStatistics: {
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            total: number;
+            rule: number;
+            source: number;
+            history: number;
+            manual: number;
+            uncategorized: number;
+        };
+        AcceptSuggestionInput: {
+            name: string;
+        };
+        RuleSuggestion: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            state: "pending" | "accepted" | "dismissed";
+            conditions: components["schemas"]["RuleCondition"][];
+            actions: components["schemas"]["RuleAction"][];
+            example_transaction_ids: string[];
+            /** Format: uuid */
+            rule_id?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            decided_at?: string;
+        };
+        RuleSuggestionPage: {
+            items: components["schemas"]["RuleSuggestion"][];
+            next_cursor?: string;
+        };
+        Credentials: {
+            email: string;
+            password: string;
+        };
+        AccessTokenInput: {
+            name: string;
+            /** @description read lists and calls only the read tools; write every tool of the chat set. */
+            scope: string;
+            /** @description 30, 90 or 365. */
+            expires_in_days: number;
+        };
+        AccessToken: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            scope: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            last_used_at?: string;
+            /** @description Present only in the answer of createAccessToken. */
+            token?: string;
+        };
+        AccessTokenList: {
+            items: components["schemas"]["AccessToken"][];
+        };
+        User: {
+            /** Format: int64 */
+            id: number;
+            email: string;
+            /** @description Absent while the member has not chosen one. */
+            display_name?: string;
+            /** @enum {string} */
+            role: "admin" | "member";
+            /** Format: int64 */
+            books_id: number;
+            book_role: components["schemas"]["BookRole"];
+            language: string;
+            region: string;
+        };
+        UpdateUserInput: {
+            language?: string;
+            /**
+             * @description Trimmed; at most 60 characters, no control characters (422 validation_failed on
+             *     display_name). An empty value clears it.
+             */
+            display_name?: string;
+        };
+        /** @description Appearance choices by name (scheme, accent, themes, ...); the web defines names and values. */
+        Appearance: {
+            [key: string]: unknown;
+        };
+        BooksSettings: {
+            name: string;
+            region: string;
+            /** @description IANA time zone name; null while the book uses default_time_zone. */
+            time_zone: string | null;
+            /** @description The IANA time zone name of the region (BK18). */
+            default_time_zone: string;
+        };
+        DeleteBooksInput: {
+            /** @description The name of the active book, typed again to confirm. */
+            name: string;
+        };
+        BooksSettingsInput: {
+            region: string;
+            time_zone: string | null;
+            name?: string;
+        };
+        /** @enum {string} */
+        BookRole: "owner" | "write" | "read";
+        BooksMembership: {
+            /** Format: int64 */
+            id: number;
+            name: string;
+            role: components["schemas"]["BookRole"];
+            /** @description True for the book of the current session. */
+            active: boolean;
+        };
+        BooksMembershipList: {
+            items: components["schemas"]["BooksMembership"][];
+        };
+        BooksMember: {
+            /** Format: int64 */
+            member_id: number;
+            email: string;
+            /** @description Absent while the member has not chosen one. */
+            display_name?: string;
+            role: components["schemas"]["BookRole"];
+            /** Format: date-time */
+            created_at: string;
+        };
+        BooksMemberList: {
+            items: components["schemas"]["BooksMember"][];
+        };
+        MemberRoleInput: {
+            role: components["schemas"]["BookRole"];
+        };
+        InvitationInput: {
+            email: string;
+            role: components["schemas"]["BookRole"];
+        };
+        Invitation: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            role: components["schemas"]["BookRole"];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @description Present only in the answer of createInvitation. */
+            token?: string;
+        };
+        InvitationList: {
+            items: components["schemas"]["Invitation"][];
+        };
+        InvitationToken: {
+            token: string;
+        };
+        AccountInvitationInput: {
+            email: string;
+            region: string;
+            base_currency?: string;
+        };
+        AccountInvitation: {
+            email: string;
+            region: string;
+            base_currency: string;
+            /** Format: date-time */
+            expires_at: string;
+            token: string;
+        };
+        InvitationPreview: {
+            /**
+             * @description account is an invitation to a book of its own; books_name is then empty.
+             * @enum {string}
+             */
+            kind: "books" | "account";
+            books_name: string;
+            inviter_email: string;
+            role: components["schemas"]["BookRole"];
+            email: string;
+            member_exists: boolean;
+        };
+        AcceptInvitationInput: {
+            token: string;
+            /** @description Required when no member has the invited email. */
+            password?: string;
+            language?: string;
+        };
+        SecondFactor: {
+            /** @description True with a confirmed TOTP secret. */
+            totp: boolean;
+            passkeys: components["schemas"]["Passkey"][];
+            recovery_codes_left: number;
+        };
+        Passkey: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            last_used_at?: string;
+        };
+        /** @description Base64url values without padding. */
+        PasskeyOptions: {
+            challenge: string;
+            user_id: string;
+            user_name: string;
+            exclude_credentials: string[];
+        };
+        /** @description Base64url values without padding. */
+        PasskeyInput: {
+            name: string;
+            client_data_json: string;
+            authenticator_data: string;
+            public_key: string;
+            algorithm: number;
+        };
+        PasskeyCreated: {
+            passkey: components["schemas"]["Passkey"];
+            /** @description As in RecoveryCodes. */
+            recovery_codes: string[];
+        };
+        TotpSetup: {
+            /** @description Base32 without padding, 32 characters. */
+            secret: string;
+            /** @description otpauth URI for a QR code. */
+            uri: string;
+        };
+        TotpCodeInput: {
+            code: string;
+        };
+        PasswordInput: {
+            password: string;
+        };
+        RecoveryCodes: {
+            /** @description 16 base32 characters each; empty when a second factor existed before. */
+            recovery_codes: string[];
+        };
+        SecondFactorChallenge: {
+            methods: ("totp" | "passkey" | "recovery_code")[];
+            /** @description Null when no passkey of the member has the RP ID of the request; base64url values. */
+            passkey: {
+                challenge: string;
+                allow_credentials: string[];
+            } | null;
+        };
+        SecondFactorInput: {
+            totp_code?: string;
+            recovery_code?: string;
+            /** @description Base64url values without padding. */
+            passkey?: {
+                credential_id: string;
+                client_data_json: string;
+                authenticator_data: string;
+                signature: string;
+            };
+        };
+        CreateBooksInput: {
+            name?: string;
+            region: string;
+            base_currency?: string;
+        };
+        SwitchBooksInput: {
+            /** Format: int64 */
+            books_id: number;
+        };
+        SetupStatus: {
+            required: boolean;
+        };
+        SetupInput: {
+            token: string;
+            email: string;
+            password: string;
+            language: string;
+            region: string;
+            base_currency?: string;
+            update_check: boolean;
+            books_name?: string;
+            time_zone?: string;
         };
         IntegrationInput: {
             aggregator: string;
@@ -4822,111 +5060,6 @@ export interface components {
             /** @description Absent on the last page. */
             next_cursor?: string;
         };
-        BackupStatus: {
-            backups: components["schemas"]["BackupState"];
-            copy: components["schemas"]["CopyStatus"];
-        };
-        BackupState: {
-            /** @enum {string} */
-            state: "on" | "off";
-            /** Format: date-time */
-            periodic_at: string | null;
-            /** Format: date-time */
-            pre_migration_at: string | null;
-            late: boolean;
-        };
-        CopyStatus: {
-            /** @enum {string} */
-            state: "folder_unset" | "password_unset" | "ok" | "folder_not_writable" | "failed";
-            /** Format: date-time */
-            copied_at: string | null;
-            file: string | null;
-            late: boolean;
-        };
-        CopyPasswordInput: {
-            password: string;
-        };
-        UpdateCheckInput: {
-            update_check: boolean;
-        };
-        VersionStatus: {
-            version: string;
-            update_check: boolean | null;
-            latest: components["schemas"]["Release"];
-            newer: boolean;
-            /**
-             * @description The form of the instance, whose upgrade differs: compose for compose.yaml, managed for managed mode, other otherwise (A194).
-             * @enum {string}
-             */
-            distribution: "compose" | "managed" | "other";
-        };
-        Release: {
-            version: string;
-            url: string;
-            /** Format: date-time */
-            checked_at: string;
-        } | null;
-        Diagnostic: {
-            /** Format: date-time */
-            generated_at: string;
-            version: string;
-            schema: {
-                /** Format: int64 */
-                database: number;
-                /** Format: int64 */
-                binary: number;
-            };
-            go: string;
-            os: string;
-            arch: string;
-            /** @enum {string} */
-            mode: "managed" | "external";
-            postgres: {
-                version: string;
-                locale_provider: string;
-                locale: string;
-            };
-            environment: string[];
-            tables: {
-                name: string;
-                /** Format: int64 */
-                rows: number;
-            }[];
-            backup: {
-                backups: components["schemas"]["BackupState"];
-                copy: {
-                    state: string;
-                    /** Format: date-time */
-                    copied_at: string | null;
-                    late: boolean;
-                };
-            };
-            connections: {
-                /** Format: uuid */
-                id: string;
-                aggregator: string;
-                state: string;
-                /** Format: date-time */
-                last_update: string | null;
-                failed: boolean;
-            }[];
-            outbox: {
-                type: string;
-                /** Format: int64 */
-                pending: number;
-                /** Format: int64 */
-                failed: number;
-            }[];
-            log: {
-                /** Format: date-time */
-                time: string;
-                level: string;
-                message: string;
-                attrs: {
-                    [key: string]: string;
-                };
-            }[];
-        };
         SyncSchedule: {
             /** Format: int32 */
             minutes: number;
@@ -5048,6 +5181,111 @@ export interface components {
             items: components["schemas"]["ImportBatch"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
+        };
+        BackupStatus: {
+            backups: components["schemas"]["BackupState"];
+            copy: components["schemas"]["CopyStatus"];
+        };
+        BackupState: {
+            /** @enum {string} */
+            state: "on" | "off";
+            /** Format: date-time */
+            periodic_at: string | null;
+            /** Format: date-time */
+            pre_migration_at: string | null;
+            late: boolean;
+        };
+        CopyStatus: {
+            /** @enum {string} */
+            state: "folder_unset" | "password_unset" | "ok" | "folder_not_writable" | "failed";
+            /** Format: date-time */
+            copied_at: string | null;
+            file: string | null;
+            late: boolean;
+        };
+        CopyPasswordInput: {
+            password: string;
+        };
+        UpdateCheckInput: {
+            update_check: boolean;
+        };
+        VersionStatus: {
+            version: string;
+            update_check: boolean | null;
+            latest: components["schemas"]["Release"];
+            newer: boolean;
+            /**
+             * @description The form of the instance, whose upgrade differs: compose for compose.yaml, managed for managed mode, other otherwise (A194).
+             * @enum {string}
+             */
+            distribution: "compose" | "managed" | "other";
+        };
+        Release: {
+            version: string;
+            url: string;
+            /** Format: date-time */
+            checked_at: string;
+        } | null;
+        Diagnostic: {
+            /** Format: date-time */
+            generated_at: string;
+            version: string;
+            schema: {
+                /** Format: int64 */
+                database: number;
+                /** Format: int64 */
+                binary: number;
+            };
+            go: string;
+            os: string;
+            arch: string;
+            /** @enum {string} */
+            mode: "managed" | "external";
+            postgres: {
+                version: string;
+                locale_provider: string;
+                locale: string;
+            };
+            environment: string[];
+            tables: {
+                name: string;
+                /** Format: int64 */
+                rows: number;
+            }[];
+            backup: {
+                backups: components["schemas"]["BackupState"];
+                copy: {
+                    state: string;
+                    /** Format: date-time */
+                    copied_at: string | null;
+                    late: boolean;
+                };
+            };
+            connections: {
+                /** Format: uuid */
+                id: string;
+                aggregator: string;
+                state: string;
+                /** Format: date-time */
+                last_update: string | null;
+                failed: boolean;
+            }[];
+            outbox: {
+                type: string;
+                /** Format: int64 */
+                pending: number;
+                /** Format: int64 */
+                failed: number;
+            }[];
+            log: {
+                /** Format: date-time */
+                time: string;
+                level: string;
+                message: string;
+                attrs: {
+                    [key: string]: string;
+                };
+            }[];
         };
         Attachment: {
             /** Format: uuid */
@@ -5399,6 +5637,500 @@ export interface components {
             credit_limit?: components["schemas"]["Money"];
             available_limit?: components["schemas"]["Money"];
         };
+        Settings: {
+            base_currency: string;
+        };
+        InstitutionInput: {
+            name: string;
+            code?: string;
+            identifier?: components["schemas"]["InstitutionIdentifier"];
+        };
+        /** @description Identifier of the institution in a scheme, unique per book and scheme (ADR 013). */
+        InstitutionIdentifier: {
+            scheme: string;
+            identifier: string;
+        };
+        /** @description Both null clear the identifier. */
+        InstitutionIdentifierInput: {
+            scheme: string | null;
+            identifier: string | null;
+        };
+        InstitutionIdentifierScheme: {
+            id: string;
+            pattern: string;
+        };
+        InstitutionIdentifierSchemeList: {
+            items: components["schemas"]["InstitutionIdentifierScheme"][];
+        };
+        Institution: components["schemas"]["InstitutionInput"] & {
+            /** Format: uuid */
+            id: string;
+        };
+        InstitutionList: {
+            items: components["schemas"]["Institution"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        PayeeInput: {
+            name: string;
+        };
+        Payee: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        PayeeList: {
+            items: components["schemas"]["Payee"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        TagList: {
+            items: string[];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        /** @enum {string} */
+        AccountClass: "asset" | "liability" | "equity" | "income" | "expense";
+        AccountInput: {
+            name: string;
+            class: components["schemas"]["AccountClass"];
+            /** @enum {string} */
+            kind?: "checking" | "savings" | "cash" | "wallet" | "benefit" | "reserve" | "brokerage" | "receivable" | "credit_card" | "loan" | "payable";
+            /** @description Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63). */
+            currency: string;
+            /** Format: uuid */
+            parent_id?: string;
+            /** Format: uuid */
+            institution_id?: string;
+            /** Format: date */
+            opened_on?: string;
+            /** @enum {string} */
+            yield_mode?: "none" | "auto";
+            /** @description Data slot of the theme (--slotted-data-n), A83. */
+            color?: number;
+            icon?: components["schemas"]["CategoryIcon"];
+        };
+        Account: components["schemas"]["AccountInput"] & {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            closed_on?: string;
+            system_role?: string;
+            card?: components["schemas"]["CardSummary"];
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
+        };
+        AccountList: {
+            items: components["schemas"]["Account"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        AccountPatch: {
+            name?: string;
+            /** Format: uuid */
+            parent_id?: string;
+            /** Format: uuid */
+            institution_id?: string;
+            /** @enum {string} */
+            yield_mode?: "none" | "auto";
+            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
+            excluded_from_liquidity?: boolean;
+            /**
+             * Format: date
+             * @description Moves the opening date earlier, so history before it can be recorded; a later date is refused (A210).
+             */
+            opened_on?: string;
+        };
+        /**
+         * @description Kebab-case name of a lucide-react icon of the curated category set (A83).
+         * @enum {string}
+         */
+        CategoryIcon: "house" | "building-2" | "key-round" | "sofa" | "lamp" | "wrench" | "hammer" | "zap" | "droplet" | "flame" | "wifi" | "smartphone" | "tv" | "shopping-cart" | "shopping-basket" | "utensils" | "coffee" | "pizza" | "croissant" | "apple" | "wine" | "beer" | "car" | "fuel" | "bus" | "train-front" | "bike" | "plane" | "circle-parking" | "car-taxi-front" | "heart-pulse" | "pill" | "stethoscope" | "dumbbell" | "hospital" | "graduation-cap" | "book-open" | "school" | "film" | "music" | "gamepad-2" | "ticket" | "palette" | "party-popper" | "shirt" | "gift" | "shopping-bag" | "package" | "scissors" | "receipt" | "briefcase" | "laptop" | "cloud" | "globe" | "landmark" | "piggy-bank" | "wallet" | "credit-card" | "banknote" | "coins" | "percent" | "trending-up" | "chart-pie" | "hand-coins" | "file-text" | "shield" | "baby" | "users" | "heart" | "dog" | "cat" | "paw-print" | "luggage" | "map" | "hotel" | "tent" | "smile" | "sparkles" | "tag";
+        /** @description null clears the colour or the icon. */
+        AccountAppearance: {
+            color: number | null;
+            icon: components["schemas"]["CategoryIcon"] | null;
+        };
+        /** @description null makes the account top level (A84). */
+        AccountParent: {
+            /** Format: uuid */
+            parent_id: string | null;
+        };
+        TagUsage: {
+            name: string;
+            /** @description Non-voided transactions that carry the tag. */
+            transactions: number;
+        };
+        TagInput: {
+            name: string;
+        };
+        MergeTagInput: {
+            into: string;
+        };
+        MergePayeeInput: {
+            /** Format: uuid */
+            into: string;
+        };
+        MergeAccountInput: {
+            /** Format: uuid */
+            into: string;
+        };
+        CloseAccountInput: {
+            /** Format: date */
+            closed_on: string;
+        };
+        Balance: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: date */
+            date: string;
+            /** @enum {string} */
+            basis: "booked" | "settled";
+            balance: components["schemas"]["Money"];
+            /** @description The balance valued in value_in; with several instruments in the sub-accounts, balance equals value. */
+            value?: components["schemas"]["Money"];
+            /** @description Prices used for value (B05). */
+            prices?: components["schemas"]["Price"][];
+        };
+        BalanceList: {
+            items: components["schemas"]["Balance"][];
+        };
+        /** @enum {string} */
+        TradeSide: "buy" | "sell";
+        TradeInput: {
+            /**
+             * Format: uuid
+             * @description The account holding the security.
+             */
+            account_id: string;
+            /**
+             * Format: uuid
+             * @description A cash account of the same brokerage, in the base currency.
+             */
+            cash_account_id: string;
+            side: components["schemas"]["TradeSide"];
+            /** Format: date */
+            date: string;
+            quantity: components["schemas"]["Money"];
+            unit_price: components["schemas"]["Rate"];
+            fees?: components["schemas"]["Money"];
+            taxes?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Default the system account taxes.
+             */
+            taxes_category_id?: string;
+            description?: string;
+        };
+        Trade: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            cash_account_id: string;
+            side: components["schemas"]["TradeSide"];
+            quantity: components["schemas"]["Money"];
+            unit_price: components["schemas"]["Rate"];
+            gross: components["schemas"]["Money"];
+            fees: components["schemas"]["Money"];
+            taxes: components["schemas"]["Money"];
+            /** @description Cost basis removed by a sale at average cost. */
+            cost?: components["schemas"]["Money"];
+        };
+        InvestmentIncomeInput: {
+            /**
+             * Format: uuid
+             * @description The account holding the security that pays.
+             */
+            account_id: string;
+            /**
+             * Format: uuid
+             * @description A cash account of the same brokerage, in the base currency.
+             */
+            cash_account_id: string;
+            income_type: components["schemas"]["IncomeType"];
+            /** Format: date */
+            date: string;
+            gross: components["schemas"]["Money"];
+            /** @description Default 0, and 15 % of gross for jcp. */
+            withheld?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Income category of the gross amount.
+             */
+            category_id: string;
+            /**
+             * Format: uuid
+             * @description Default the system account taxes.
+             */
+            withheld_category_id?: string;
+            description?: string;
+        };
+        InvestmentIncome: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            cash_account_id: string;
+            income_type: components["schemas"]["IncomeType"];
+            gross: components["schemas"]["Money"];
+            withheld: components["schemas"]["Money"];
+        };
+        ForeignPurchaseInput: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            category_id: string;
+            /** Format: date */
+            date: string;
+            description?: string;
+            /** Format: uuid */
+            payee_id?: string;
+            original: components["schemas"]["Money"];
+            rate: components["schemas"]["Rate"];
+            /** @description Default the foreign_charge_bp of the card. */
+            foreign_charge_rate_bp?: number;
+            /**
+             * Format: uuid
+             * @description Default the system account taxes.
+             */
+            foreign_charge_category_id?: string;
+            statement?: string;
+        };
+        ExchangeInput: {
+            /** Format: uuid */
+            from_account_id: string;
+            /** Format: uuid */
+            to_account_id: string;
+            /** Format: date */
+            date: string;
+            description?: string;
+            from_amount: components["schemas"]["Money"];
+            to_amount: components["schemas"]["Money"];
+            fee?: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Default the system account fees.
+             */
+            fee_category_id?: string;
+        };
+        PostingInput: {
+            /** Format: uuid */
+            account_id: string;
+            amount: components["schemas"]["Money"];
+            weight?: components["schemas"]["Money"];
+            /** @enum {string} */
+            status?: "pending" | "cleared" | "reconciled";
+            /** Format: date */
+            settled_on?: string;
+            original?: components["schemas"]["Money"];
+            memo?: string;
+            /** @description Card postings only. Reference month of the statement; derived from the date when absent. */
+            statement?: string;
+            /**
+             * @description Card postings only; derived from the amount and the other postings when absent.
+             * @enum {string}
+             */
+            card_role?: "charge" | "credit" | "payment";
+        };
+        Installment: {
+            /** Format: uuid */
+            plan_id: string;
+            number: number;
+            count: number;
+        };
+        Posting: components["schemas"]["PostingInput"] & {
+            /** Format: uuid */
+            id: string;
+            installment?: components["schemas"]["Installment"];
+        };
+        /** @description A relation to another transaction. amount is the part of the target that a reimbursement_of link repays (A117); other types carry none. */
+        Link: {
+            /** @enum {string} */
+            type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
+            /** Format: uuid */
+            target: string;
+            amount?: components["schemas"]["Money"];
+        };
+        /** @description An inbound link; source is the non-voided transaction that links to this one. amount is the part of this transaction that a reimbursement_of link repays (A117). */
+        LinkReference: {
+            /** @enum {string} */
+            type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
+            /** Format: uuid */
+            source: string;
+            amount?: components["schemas"]["Money"];
+        };
+        TransactionInput: {
+            /** Format: date */
+            date: string;
+            description?: string;
+            /** Format: uuid */
+            payee_id?: string;
+            tags?: string[];
+            links?: components["schemas"]["Link"][];
+            postings: components["schemas"]["PostingInput"][];
+        };
+        TransactionBatchInput: {
+            entries: components["schemas"]["TransactionBatchEntry"][];
+        };
+        /** @description Exactly one member is set. */
+        TransactionBatchEntry: {
+            transaction?: components["schemas"]["TransactionInput"];
+            installment_purchase?: components["schemas"]["InstallmentPurchaseInput"];
+        };
+        TransactionBatch: {
+            items: components["schemas"]["Transaction"][];
+        };
+        CorrectionInput: {
+            /** Format: date */
+            date: string;
+            description?: string;
+            /** Format: uuid */
+            payee_id?: string;
+            tags?: string[];
+            links?: components["schemas"]["Link"][];
+            postings: components["schemas"]["PostingInput"][];
+            expected_version: number;
+            reason: string;
+        };
+        Transaction: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            /** Format: uuid */
+            payee_id?: string;
+            balancing_currency: string;
+            /** @enum {string} */
+            origin: "manual" | "import" | "schedule" | "system";
+            version: number;
+            /** Format: date-time */
+            voided_at?: string;
+            void_reason?: string;
+            tags: string[];
+            links: components["schemas"]["Link"][];
+            /** @description Set only by GET /transactions/{id}; ordered by type, then source. */
+            referenced_by?: components["schemas"]["LinkReference"][];
+            investment_income?: components["schemas"]["InvestmentIncome"];
+            trade?: components["schemas"]["Trade"];
+            postings: components["schemas"]["Posting"][];
+        };
+        TransactionPage: {
+            items: components["schemas"]["Transaction"][];
+            next_cursor?: string;
+        };
+        TransferInput: {
+            expected_version: number;
+            /** Format: uuid */
+            account_id: string;
+            /**
+             * Format: uuid
+             * @description The pairing candidate to use when there are several.
+             */
+            pair_with?: string;
+        };
+        ReimbursementInput: {
+            expected_version: number;
+            allocations: components["schemas"]["ReimbursementAllocation"][];
+        };
+        ReimbursementAllocation: {
+            /**
+             * Format: uuid
+             * @description The expense this transaction repays.
+             */
+            original_id: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description Expense category that replaces the categories of the expense and takes the reimbursement.
+             */
+            category_id?: string;
+        };
+        ReimbursementCandidate: {
+            transaction: components["schemas"]["Transaction"];
+            remaining: components["schemas"]["Money"];
+            allocated: components["schemas"]["Money"];
+        };
+        ReimbursementCandidateList: {
+            items: components["schemas"]["ReimbursementCandidate"][];
+            suggestion?: string[];
+        };
+        ReimbursementSource: {
+            transaction: components["schemas"]["Transaction"];
+            free: components["schemas"]["Money"];
+        };
+        ReimbursementSourceList: {
+            items: components["schemas"]["ReimbursementSource"][];
+        };
+        TransferResult: {
+            transaction: components["schemas"]["Transaction"];
+            /**
+             * Format: uuid
+             * @description The paired transaction that was voided.
+             */
+            voided_transaction_id?: string;
+        };
+        BulkCategorizeInput: {
+            /** Format: uuid */
+            category_id: string;
+            items: {
+                /** Format: uuid */
+                id: string;
+                expected_version: number;
+            }[];
+        };
+        BulkCategorizeResult: {
+            /** @description One result per item, in request order. */
+            results: components["schemas"]["BulkCategorizeItemResult"][];
+        };
+        BulkCategorizeItemResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "categorized" | "version_conflict" | "transaction_voided" | "not_categorizable" | "not_found";
+            /** @description The new version when status is categorized. */
+            version?: number;
+        };
+        BulkVoidInput: {
+            reason: string;
+            items: {
+                /** Format: uuid */
+                id: string;
+            }[];
+        };
+        BulkVoidResult: {
+            /** @description One result per item, in request order. */
+            results: components["schemas"]["BulkVoidItemResult"][];
+        };
+        BulkVoidItemResult: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "voided" | "not_found" | "transaction_voided" | "posting_reconciled" | "later_sale_exists";
+        };
+        CategorizeInput: {
+            expected_version: number;
+            parts: components["schemas"]["CategoryPart"][];
+            /** Format: uuid */
+            payee_id?: string;
+        };
+        CategoryPart: {
+            /** Format: uuid */
+            account_id: string;
+            amount: components["schemas"]["Money"];
+        };
+        VoidInput: {
+            reason: string;
+        };
+        TransactionVersion: {
+            version: number;
+            reason: string;
+            /** Format: date-time */
+            replaced_at: string;
+            transaction: components["schemas"]["Transaction"];
+        };
+        TransactionVersionList: {
+            items: components["schemas"]["TransactionVersion"][];
+        };
         CalendarList: {
             /** @description Calendar id the owner's region gives a new record (ADR 016). */
             default: string;
@@ -5495,8 +6227,6 @@ export interface components {
         IndexRateList: {
             items: components["schemas"]["IndexRate"][];
         };
-        /** @enum {string} */
-        InstrumentType: "currency" | "stock" | "etf" | "reit" | "depositary_receipt" | "fixed_income" | "fund" | "crypto";
         Instrument: {
             code: string;
             type: components["schemas"]["InstrumentType"];
@@ -5663,19 +6393,6 @@ export interface components {
         };
         /** @enum {string} */
         TermsDayCount: "bus252" | "act365";
-        /**
-         * @description Positive exact decimal with at most 12 decimals (ADR 005).
-         * @example 5.4830
-         */
-        Rate: string;
-        Price: {
-            instrument: string;
-            quote_instrument: string;
-            /** Format: date */
-            date: string;
-            value: components["schemas"]["Rate"];
-            source: string;
-        };
         PriceInput: {
             instrument: string;
             quote_instrument: string;
@@ -5704,295 +6421,341 @@ export interface components {
             /** @enum {string} */
             source: "rule" | "instance";
         };
-        BalanceSeries: {
-            items: components["schemas"]["BalancePoint"][];
-        };
-        AccountFlows: {
-            items: components["schemas"]["FlowDay"][];
-        };
-        FlowDay: {
-            /** Format: date */
-            date: string;
-            inflow: components["schemas"]["Money"];
-            outflow: components["schemas"]["Money"];
-        };
-        BalancePoint: {
-            /** Format: date */
-            date: string;
-            balance: components["schemas"]["Money"];
-        };
-        Money: {
+        /** @enum {string} */
+        ScheduleKind: "bill" | "income" | "subscription" | "transfer" | "savings";
+        /**
+         * @description A monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal; -1 means
+         *     the last one. Business days follow the calendar of the schedule. until is inclusive (P7 amendment A48).
+         */
+        Recurrence: {
+            /** @enum {string} */
+            frequency: "daily" | "weekly" | "monthly" | "yearly";
+            interval: number;
+            day_of_month?: number;
+            /** @enum {string} */
+            weekday?: "sunday" | "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday";
+            ordinal?: number;
+            business_day_ordinal?: number;
             /**
-             * Format: int64
-             * @description Integer units of the instrument scale (ADR 005).
+             * @default none
+             * @enum {string}
              */
-            amount: number;
+            adjustment: "none" | "following" | "preceding" | "modified_following";
+            /** Format: date */
+            start: string;
+            /** Format: date */
+            until?: string;
+            count?: number;
+        };
+        ScheduleInput: {
+            kind: components["schemas"]["ScheduleKind"];
+            /** Format: uuid */
+            account_id: string;
+            /** Format: uuid */
+            counterpart_id: string;
+            /** Format: uuid */
+            payee_id?: string;
+            description: string;
+            amount: components["schemas"]["Money"];
+            recurrence: components["schemas"]["Recurrence"];
+            /** @description Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region. */
+            calendar?: string;
+            /** @default 1000 */
+            match_tolerance_bp: number;
+            /** @default 3 */
+            grace_days: number;
+            match_window_days?: number;
+        };
+        ScheduleTerms: {
+            /** Format: date */
+            effective_from: string;
+            amount: components["schemas"]["Money"];
+            recurrence: components["schemas"]["Recurrence"];
+        };
+        SchedulePause: {
+            /** Format: date */
+            from: string;
             /**
-             * @description Instrument code; a currency or a security (P8 amendment A58).
-             * @example BRL
+             * Format: date
+             * @description Inclusive.
              */
-            currency: string;
+            to: string;
         };
-        Settings: {
-            base_currency: string;
-        };
-        InstitutionInput: {
-            name: string;
-            code?: string;
-            identifier?: components["schemas"]["InstitutionIdentifier"];
-        };
-        /** @description Identifier of the institution in a scheme, unique per book and scheme (ADR 013). */
-        InstitutionIdentifier: {
-            scheme: string;
-            identifier: string;
-        };
-        /** @description Both null clear the identifier. */
-        InstitutionIdentifierInput: {
-            scheme: string | null;
-            identifier: string | null;
-        };
-        InstitutionIdentifierScheme: {
-            id: string;
-            pattern: string;
-        };
-        InstitutionIdentifierSchemeList: {
-            items: components["schemas"]["InstitutionIdentifierScheme"][];
-        };
-        Institution: components["schemas"]["InstitutionInput"] & {
+        Schedule: {
             /** Format: uuid */
             id: string;
-        };
-        InstitutionList: {
-            items: components["schemas"]["Institution"][];
-            /** @description Absent on the last page. */
-            next_cursor?: string;
-        };
-        PayeeInput: {
-            name: string;
-        };
-        Payee: {
+            kind: components["schemas"]["ScheduleKind"];
+            /** @description Business-day calendar id the schedule follows. */
+            calendar: string;
             /** Format: uuid */
-            id: string;
-            name: string;
+            account_id: string;
+            /** Format: uuid */
+            counterpart_id: string;
+            /** Format: uuid */
+            payee_id?: string;
+            description: string;
+            match_tolerance_bp: number;
+            grace_days: number;
+            /** @default 7 */
+            match_window_days: number;
+            /**
+             * Format: date
+             * @description No occurrence on or after this date; absent while the schedule has no end.
+             */
+            ends_on?: string;
+            /** @description Versions by effective date. */
+            terms: components["schemas"]["ScheduleTerms"][];
+            pauses: components["schemas"]["SchedulePause"][];
         };
-        PayeeList: {
-            items: components["schemas"]["Payee"][];
-            /** @description Absent on the last page. */
-            next_cursor?: string;
-        };
-        TagList: {
-            items: string[];
+        SchedulePage: {
+            items: components["schemas"]["Schedule"][];
             /** @description Absent on the last page. */
             next_cursor?: string;
         };
         /** @enum {string} */
-        AccountClass: "asset" | "liability" | "equity" | "income" | "expense";
-        AccountInput: {
-            name: string;
-            class: components["schemas"]["AccountClass"];
-            /** @enum {string} */
-            kind?: "checking" | "savings" | "cash" | "wallet" | "benefit" | "reserve" | "brokerage" | "receivable" | "credit_card" | "loan" | "payable";
-            /** @description Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63). */
-            currency: string;
-            /** Format: uuid */
-            parent_id?: string;
-            /** Format: uuid */
-            institution_id?: string;
-            /** Format: date */
-            opened_on?: string;
-            /** @enum {string} */
-            yield_mode?: "none" | "auto";
-            /** @description Data slot of the theme (--slotted-data-n), A83. */
-            color?: number;
-            icon?: components["schemas"]["CategoryIcon"];
-        };
-        Account: components["schemas"]["AccountInput"] & {
+        OccurrenceState: "expected" | "overdue" | "realized" | "skipped";
+        Occurrence: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            sequence: number;
             /** Format: date */
-            closed_on?: string;
-            system_role?: string;
-            card?: components["schemas"]["CardSummary"];
-            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
-            excluded_from_liquidity?: boolean;
-        };
-        AccountList: {
-            items: components["schemas"]["Account"][];
-            /** @description Absent on the last page. */
-            next_cursor?: string;
-        };
-        AccountPatch: {
-            name?: string;
-            /** Format: uuid */
-            parent_id?: string;
-            /** Format: uuid */
-            institution_id?: string;
-            /** @enum {string} */
-            yield_mode?: "none" | "auto";
-            /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
-            excluded_from_liquidity?: boolean;
-            /**
-             * Format: date
-             * @description Moves the opening date earlier, so history before it can be recorded; a later date is refused (A210).
-             */
-            opened_on?: string;
-        };
-        Indicators: {
-            /** @description The base currency of every amount. */
-            currency: string;
-            /** @description Oldest first; the last entry is the month asked. */
-            months: components["schemas"]["IndicatorMonth"][];
-        };
-        IndicatorMonth: {
-            month: string;
-            income: components["schemas"]["Money"];
-            expense: components["schemas"]["Money"];
-            committed: components["schemas"]["Money"];
-            debt_service: components["schemas"]["Money"];
-            liquid_balance: components["schemas"]["Money"];
-            liabilities: components["schemas"]["Money"];
-            mean_income?: components["schemas"]["Money"];
-            mean_expense?: components["schemas"]["Money"];
-            savings_rate: components["schemas"]["IndicatorRatio"];
-            trailing_savings_rate: components["schemas"]["IndicatorRatio"];
-            liquidity: components["schemas"]["IndicatorRatio"];
-            committed_share: components["schemas"]["IndicatorRatio"];
-            debt_service_share: components["schemas"]["IndicatorRatio"];
-        };
-        /** @description Either bp, in basis points truncated toward zero, or the reason there is no value. */
-        IndicatorRatio: {
-            /** Format: int64 */
-            bp?: number;
-            /** @enum {string} */
-            reason?: "no_income" | "no_expense" | "insufficient_history";
-        };
-        CategoryTotals: {
-            items: components["schemas"]["CategoryTotal"][];
-        };
-        CategoryTotal: {
-            /** Format: uuid */
-            account_id: string;
-            total: components["schemas"]["Money"];
-            subtree_total: components["schemas"]["Money"];
-        };
-        CategoryCashPayments: {
-            items: components["schemas"]["CategoryCashPayment"][];
-        };
-        CategoryCashPayment: {
-            /**
-             * Format: date
-             * @description The payment's date.
-             */
-            date: string;
-            amount: components["schemas"]["Money"];
-            /** Format: uuid */
-            card_account_id: string;
+            expected_on: string;
+            expected_amount: components["schemas"]["Money"];
+            actual_amount?: components["schemas"]["Money"];
+            state: components["schemas"]["OccurrenceState"];
             /**
              * Format: uuid
-             * @description The statement the payment pays.
+             * @description Present when realized.
              */
-            statement_id: string;
-            /** @description The reference month of that statement, YYYY-MM. */
-            statement_reference: string;
+            transaction_id?: string;
+            /**
+             * Format: date
+             * @description The generated date of a moved occurrence.
+             */
+            moved_from?: string;
+        };
+        BudgetAmount: {
+            effective_from: string;
+            amount: components["schemas"]["Money"];
+        };
+        BudgetInput: {
             /** Format: uuid */
-            payment_transaction_id: string;
+            category_id: string;
+            amount: components["schemas"]["Money"];
+            effective_from: string;
+            rollover: boolean;
+        };
+        Budget: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            category_id: string;
+            rollover: boolean;
+            /** @description Versions by month. */
+            amounts: components["schemas"]["BudgetAmount"][];
+        };
+        BudgetPage: {
+            items: components["schemas"]["Budget"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
         };
         /**
-         * @description Kebab-case name of a lucide-react icon of the curated category set (A83).
-         * @enum {string}
+         * @description carried is the previous month's available amount when rollover is set, else zero; available is
+         *     planned + carried - spent, negative when overspent.
          */
-        CategoryIcon: "house" | "building-2" | "key-round" | "sofa" | "lamp" | "wrench" | "hammer" | "zap" | "droplet" | "flame" | "wifi" | "smartphone" | "tv" | "shopping-cart" | "shopping-basket" | "utensils" | "coffee" | "pizza" | "croissant" | "apple" | "wine" | "beer" | "car" | "fuel" | "bus" | "train-front" | "bike" | "plane" | "circle-parking" | "car-taxi-front" | "heart-pulse" | "pill" | "stethoscope" | "dumbbell" | "hospital" | "graduation-cap" | "book-open" | "school" | "film" | "music" | "gamepad-2" | "ticket" | "palette" | "party-popper" | "shirt" | "gift" | "shopping-bag" | "package" | "scissors" | "receipt" | "briefcase" | "laptop" | "cloud" | "globe" | "landmark" | "piggy-bank" | "wallet" | "credit-card" | "banknote" | "coins" | "percent" | "trending-up" | "chart-pie" | "hand-coins" | "file-text" | "shield" | "baby" | "users" | "heart" | "dog" | "cat" | "paw-print" | "luggage" | "map" | "hotel" | "tent" | "smile" | "sparkles" | "tag";
-        /** @description null clears the colour or the icon. */
-        AccountAppearance: {
-            color: number | null;
-            icon: components["schemas"]["CategoryIcon"] | null;
-        };
-        /** @description null makes the account top level (A84). */
-        AccountParent: {
-            /** Format: uuid */
-            parent_id: string | null;
-        };
-        TagUsage: {
-            name: string;
-            /** @description Non-voided transactions that carry the tag. */
-            transactions: number;
-        };
-        TagInput: {
-            name: string;
-        };
-        MergeTagInput: {
-            into: string;
-        };
-        MergePayeeInput: {
-            /** Format: uuid */
-            into: string;
-        };
-        MergeAccountInput: {
-            /** Format: uuid */
-            into: string;
-        };
-        CloseAccountInput: {
-            /** Format: date */
-            closed_on: string;
-        };
-        Balance: {
-            /** Format: uuid */
-            account_id: string;
-            /** Format: date */
-            date: string;
-            /** @enum {string} */
-            basis: "booked" | "settled";
-            balance: components["schemas"]["Money"];
-            /** @description The balance valued in value_in; with several instruments in the sub-accounts, balance equals value. */
-            value?: components["schemas"]["Money"];
-            /** @description Prices used for value (B05). */
-            prices?: components["schemas"]["Price"][];
-        };
-        BalanceList: {
-            items: components["schemas"]["Balance"][];
+        BudgetProgress: {
+            month: string;
+            planned: components["schemas"]["Money"];
+            carried: components["schemas"]["Money"];
+            spent: components["schemas"]["Money"];
+            available: components["schemas"]["Money"];
         };
         /** @enum {string} */
-        TradeSide: "buy" | "sell";
-        TradeInput: {
+        BudgetPlanSource: "expected_income" | "average_income" | "fixed";
+        BudgetPlanIncome: {
+            /** Format: uuid */
+            schedule_id: string;
+            description: string;
+            amount: components["schemas"]["Money"];
+        };
+        /**
+         * @description A category of the plan. last_month and average read the subtree of a budgeted category and the own postings
+         *     of another; counted is false for a budget under a category whose budget is in force.
+         */
+        BudgetPlanRow: {
+            /** Format: uuid */
+            category_id: string;
+            /** Format: uuid */
+            budget_id?: string;
+            planned: components["schemas"]["Money"];
+            last_month: components["schemas"]["Money"];
+            average: components["schemas"]["Money"];
+            counted: boolean;
+            /** @description The month of the budget's first amount after this month. */
+            next_change?: string;
+        };
+        BudgetPlanAmount: {
+            /** Format: uuid */
+            category_id: string;
+            amount: components["schemas"]["Money"];
+        };
+        BudgetPlanInput: {
+            source: components["schemas"]["BudgetPlanSource"];
+            fixed?: components["schemas"]["Money"];
             /**
-             * Format: uuid
-             * @description The account holding the security.
+             * @description The share of the reference set aside, in basis points, from 0 to 10000 (savings target A187, checked by the
+             *     server as a 422 on this field). A save without it clears the stored target.
              */
+            savings_target_bp?: number;
+            /** @description The changed categories only. */
+            amounts: components["schemas"]["BudgetPlanAmount"][];
+        };
+        /**
+         * @description installments are those billed on the month's statements for purchases booked before it; savings are the month's
+         *     occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
+         *     reference, which is absent when the source has no figure.
+         */
+        BudgetPlan: {
+            month: string;
+            currency: string;
+            source: components["schemas"]["BudgetPlanSource"];
+            fixed?: components["schemas"]["Money"];
+            expected_income?: components["schemas"]["Money"];
+            expected_items?: components["schemas"]["BudgetPlanIncome"][];
+            average_income?: components["schemas"]["Money"];
+            average_months?: number;
+            received_income: components["schemas"]["Money"];
+            reference?: components["schemas"]["Money"];
+            installments: components["schemas"]["Money"];
+            savings: components["schemas"]["Money"];
+            planned: components["schemas"]["Money"];
+            unassigned?: components["schemas"]["Money"];
+            /** @description The stored savings target in basis points of the reference; absent without one (A187). */
+            savings_target_bp?: number;
+            /** @description savings as basis points of reference, truncated; absent without a reference above zero (A188). */
+            savings_rate_bp?: number;
+            savings_target?: components["schemas"]["Money"];
+            savings_gap?: components["schemas"]["Money"];
+            /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
+            prices?: components["schemas"]["Price"][];
+            rows: components["schemas"]["BudgetPlanRow"][];
+        };
+        GoalInput: {
+            name: string;
+            target: components["schemas"]["Money"];
+            /** Format: date */
+            due_on: string;
+            account_ids: string[];
+        };
+        GoalPatch: {
+            name?: string;
+            target?: components["schemas"]["Money"];
+            /** Format: date */
+            due_on?: string;
+            account_ids?: string[];
+        };
+        /**
+         * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
+         *     stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
+         *     in basis points, rounded down, between 0 and 10000.
+         */
+        Goal: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            target: components["schemas"]["Money"];
+            /** Format: date */
+            due_on: string;
+            account_ids: string[];
+            current: components["schemas"]["Money"];
+            remaining: components["schemas"]["Money"];
+            progress_bp: number;
+            /** @description Prices that value accounts in another currency (P8 amendment A72). */
+            prices?: components["schemas"]["Price"][];
+            /**
+             * @description What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
+             *     non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
+             */
+            parts?: components["schemas"]["GoalPart"][];
+            trailing_return?: components["schemas"]["TrailingReturn"];
+        };
+        /**
+         * @description The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
+         *     first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
+         *     months of postings or no external flow in the window.
+         */
+        TrailingReturn: {
+            period_months: number;
+            annual_bp: number;
+        };
+        GoalPart: {
+            /** Format: uuid */
             account_id: string;
-            /**
-             * Format: uuid
-             * @description A cash account of the same brokerage, in the base currency.
-             */
-            cash_account_id: string;
-            side: components["schemas"]["TradeSide"];
+            instrument: string;
+            quantity: components["schemas"]["Money"];
+            value: components["schemas"]["Money"];
+        };
+        GoalPage: {
+            items: components["schemas"]["Goal"][];
+            /** @description Absent on the last page. */
+            next_cursor?: string;
+        };
+        ProjectionPoint: {
             /** Format: date */
             date: string;
-            quantity: components["schemas"]["Money"];
-            unit_price: components["schemas"]["Rate"];
-            fees?: components["schemas"]["Money"];
-            taxes?: components["schemas"]["Money"];
-            /**
-             * Format: uuid
-             * @description Default the system account taxes.
-             */
-            taxes_category_id?: string;
-            description?: string;
+            /** Format: uuid */
+            occurrence_id: string;
+            /** Format: uuid */
+            schedule_id: string;
+            amount: components["schemas"]["Money"];
+            balance: components["schemas"]["Money"];
         };
-        Trade: {
+        Projection: {
             /** Format: uuid */
             account_id: string;
-            /** Format: uuid */
-            cash_account_id: string;
-            side: components["schemas"]["TradeSide"];
-            quantity: components["schemas"]["Money"];
-            unit_price: components["schemas"]["Rate"];
-            gross: components["schemas"]["Money"];
-            fees: components["schemas"]["Money"];
-            taxes: components["schemas"]["Money"];
-            /** @description Cost basis removed by a sale at average cost. */
-            cost?: components["schemas"]["Money"];
+            /** Format: date */
+            from: string;
+            /** Format: date */
+            to: string;
+            opening: components["schemas"]["Money"];
+            closing: components["schemas"]["Money"];
+            points: components["schemas"]["ProjectionPoint"][];
         };
-        IncomeType: string;
+        Committed: {
+            month: string;
+            installments: components["schemas"]["Money"];
+            occurrences: components["schemas"]["Money"];
+            total: components["schemas"]["Money"];
+            /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
+            prices?: components["schemas"]["Price"][];
+        };
+        SkipInput: {
+            reason?: string;
+        };
+        MoveInput: {
+            /** Format: date */
+            date: string;
+        };
+        /** @description At least one of amount and recurrence. */
+        TermsInput: {
+            /** Format: date */
+            effective_from: string;
+            amount?: components["schemas"]["Money"];
+            recurrence?: components["schemas"]["Recurrence"];
+        };
+        EndInput: {
+            /** Format: date */
+            from: string;
+        };
+        RealizeInput: {
+            /** Format: uuid */
+            transaction_id: string;
+        };
+        OccurrenceList: {
+            items: components["schemas"]["Occurrence"][];
+        };
         IncomeTypeList: {
             items: components["schemas"]["IncomeType"][];
         };
@@ -6099,44 +6862,6 @@ export interface components {
         SubtypeList: {
             items: string[];
         };
-        InvestmentIncomeInput: {
-            /**
-             * Format: uuid
-             * @description The account holding the security that pays.
-             */
-            account_id: string;
-            /**
-             * Format: uuid
-             * @description A cash account of the same brokerage, in the base currency.
-             */
-            cash_account_id: string;
-            income_type: components["schemas"]["IncomeType"];
-            /** Format: date */
-            date: string;
-            gross: components["schemas"]["Money"];
-            /** @description Default 0, and 15 % of gross for jcp. */
-            withheld?: components["schemas"]["Money"];
-            /**
-             * Format: uuid
-             * @description Income category of the gross amount.
-             */
-            category_id: string;
-            /**
-             * Format: uuid
-             * @description Default the system account taxes.
-             */
-            withheld_category_id?: string;
-            description?: string;
-        };
-        InvestmentIncome: {
-            /** Format: uuid */
-            account_id: string;
-            /** Format: uuid */
-            cash_account_id: string;
-            income_type: components["schemas"]["IncomeType"];
-            gross: components["schemas"]["Money"];
-            withheld: components["schemas"]["Money"];
-        };
         Position: {
             /** Format: uuid */
             account_id: string;
@@ -6216,211 +6941,82 @@ export interface components {
             to: string;
             items: components["schemas"]["IncomeEvent"][];
         };
-        ForeignPurchaseInput: {
+        BalanceSeries: {
+            items: components["schemas"]["BalancePoint"][];
+        };
+        AccountFlows: {
+            items: components["schemas"]["FlowDay"][];
+        };
+        FlowDay: {
+            /** Format: date */
+            date: string;
+            inflow: components["schemas"]["Money"];
+            outflow: components["schemas"]["Money"];
+        };
+        BalancePoint: {
+            /** Format: date */
+            date: string;
+            balance: components["schemas"]["Money"];
+        };
+        Indicators: {
+            /** @description The base currency of every amount. */
+            currency: string;
+            /** @description Oldest first; the last entry is the month asked. */
+            months: components["schemas"]["IndicatorMonth"][];
+        };
+        IndicatorMonth: {
+            month: string;
+            income: components["schemas"]["Money"];
+            expense: components["schemas"]["Money"];
+            committed: components["schemas"]["Money"];
+            debt_service: components["schemas"]["Money"];
+            liquid_balance: components["schemas"]["Money"];
+            liabilities: components["schemas"]["Money"];
+            mean_income?: components["schemas"]["Money"];
+            mean_expense?: components["schemas"]["Money"];
+            savings_rate: components["schemas"]["IndicatorRatio"];
+            trailing_savings_rate: components["schemas"]["IndicatorRatio"];
+            liquidity: components["schemas"]["IndicatorRatio"];
+            committed_share: components["schemas"]["IndicatorRatio"];
+            debt_service_share: components["schemas"]["IndicatorRatio"];
+        };
+        /** @description Either bp, in basis points truncated toward zero, or the reason there is no value. */
+        IndicatorRatio: {
+            /** Format: int64 */
+            bp?: number;
+            /** @enum {string} */
+            reason?: "no_income" | "no_expense" | "insufficient_history";
+        };
+        CategoryTotals: {
+            items: components["schemas"]["CategoryTotal"][];
+        };
+        CategoryTotal: {
             /** Format: uuid */
             account_id: string;
-            /** Format: uuid */
-            category_id: string;
-            /** Format: date */
-            date: string;
-            description?: string;
-            /** Format: uuid */
-            payee_id?: string;
-            original: components["schemas"]["Money"];
-            rate: components["schemas"]["Rate"];
-            /** @description Default the foreign_charge_bp of the card. */
-            foreign_charge_rate_bp?: number;
-            /**
-             * Format: uuid
-             * @description Default the system account taxes.
-             */
-            foreign_charge_category_id?: string;
-            statement?: string;
+            total: components["schemas"]["Money"];
+            subtree_total: components["schemas"]["Money"];
         };
-        ExchangeInput: {
-            /** Format: uuid */
-            from_account_id: string;
-            /** Format: uuid */
-            to_account_id: string;
-            /** Format: date */
-            date: string;
-            description?: string;
-            from_amount: components["schemas"]["Money"];
-            to_amount: components["schemas"]["Money"];
-            fee?: components["schemas"]["Money"];
-            /**
-             * Format: uuid
-             * @description Default the system account fees.
-             */
-            fee_category_id?: string;
+        CategoryCashPayments: {
+            items: components["schemas"]["CategoryCashPayment"][];
         };
-        PostingInput: {
-            /** Format: uuid */
-            account_id: string;
-            amount: components["schemas"]["Money"];
-            weight?: components["schemas"]["Money"];
-            /** @enum {string} */
-            status?: "pending" | "cleared" | "reconciled";
-            /** Format: date */
-            settled_on?: string;
-            original?: components["schemas"]["Money"];
-            memo?: string;
-            /** @description Card postings only. Reference month of the statement; derived from the date when absent. */
-            statement?: string;
-            /**
-             * @description Card postings only; derived from the amount and the other postings when absent.
-             * @enum {string}
-             */
-            card_role?: "charge" | "credit" | "payment";
-        };
-        Installment: {
-            /** Format: uuid */
-            plan_id: string;
-            number: number;
-            count: number;
-        };
-        Posting: components["schemas"]["PostingInput"] & {
-            /** Format: uuid */
-            id: string;
-            installment?: components["schemas"]["Installment"];
-        };
-        /** @description A relation to another transaction. amount is the part of the target that a reimbursement_of link repays (A117); other types carry none. */
-        Link: {
-            /** @enum {string} */
-            type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
-            /** Format: uuid */
-            target: string;
-            amount?: components["schemas"]["Money"];
-        };
-        /** @description An inbound link; source is the non-voided transaction that links to this one. amount is the part of this transaction that a reimbursement_of link repays (A117). */
-        LinkReference: {
-            /** @enum {string} */
-            type: "refund_of" | "reimbursement_of" | "cancellation_of" | "anticipation_of" | "chargeback_of" | "correction_of";
-            /** Format: uuid */
-            source: string;
-            amount?: components["schemas"]["Money"];
-        };
-        TransactionInput: {
-            /** Format: date */
-            date: string;
-            description?: string;
-            /** Format: uuid */
-            payee_id?: string;
-            tags?: string[];
-            links?: components["schemas"]["Link"][];
-            postings: components["schemas"]["PostingInput"][];
-        };
-        CapturePreviewInput: {
-            text: string;
-            /**
-             * Format: uuid
-             * @description Account of a line that names none (A111).
-             */
-            default_account_id?: string;
+        CategoryCashPayment: {
             /**
              * Format: date
-             * @description The day the text was written; date phrases resolve against it (A128). Today when absent; at most today plus one day.
+             * @description The payment's date.
              */
-            reference_date?: string;
-        };
-        CapturePreview: {
-            lines: components["schemas"]["CaptureLine"][];
-        };
-        CaptureLine: {
-            /** @description 1-based position among the pieces of the text cut at line breaks and semicolons (A107). */
-            line: number;
-            text: string;
-            /** @description The line cut by what each part was read as; the texts joined equal the line. */
-            segments: components["schemas"]["CaptureSegment"][];
-            /** @enum {string} */
-            kind: "expense" | "income" | "transfer";
-            amount?: components["schemas"]["Money"];
-            /** Format: date */
             date: string;
+            amount: components["schemas"]["Money"];
             /** Format: uuid */
-            account_id?: string;
-            /** @enum {string} */
-            account_source?: "text" | "default";
-            /** Format: uuid */
-            to_account_id?: string;
-            /** @description Installment count of a card purchase; absent for one payment. */
-            installments?: number;
-            description: string;
-            /** Format: uuid */
-            payee_id?: string;
-            /** Format: uuid */
-            category_id?: string;
-            /** @enum {string} */
-            category_source?: "rule" | "history";
-            tags: string[];
-            /** @description Why the draft cannot be recorded as read; empty when it can. */
-            issues: components["schemas"]["CaptureIssue"][];
-        };
-        CaptureSegment: {
-            text: string;
-            /** @enum {string} */
-            role: "amount" | "date" | "installments" | "account" | "kind" | "tag" | "text";
-        };
-        CaptureIssue: {
-            /** @enum {string} */
-            code: "missing_amount" | "ambiguous_amount" | "invalid_amount" | "invalid_date" | "ambiguous_date" | "invalid_installments" | "installments_not_allowed" | "missing_account" | "ambiguous_account" | "unknown_account" | "missing_destination" | "ambiguous_transfer" | "too_many_accounts" | "same_account" | "currency_mismatch" | "possible_account";
-            /** @enum {string} */
-            field: "amount" | "date" | "installments" | "account" | "to_account";
-            choices: components["schemas"]["CaptureChoice"][];
-        };
-        /** @description An account for an account issue; an amount for an amount issue; the description the line has once the choice is made. */
-        CaptureChoice: {
-            /** Format: uuid */
-            account_id?: string;
-            amount?: components["schemas"]["Money"];
-            description?: string;
-        };
-        CaptureSuggestionInput: {
-            items: components["schemas"]["CaptureSuggestionItem"][];
-        };
-        CaptureSuggestionItem: {
-            description: string;
-            /** @enum {string} */
-            kind: "expense" | "income";
-        };
-        CaptureSuggestions: {
-            /** @description False when the language model could not be asked; the items then hold kept answers only. */
-            available: boolean;
-            items: components["schemas"]["CaptureSuggestion"][];
-        };
-        CaptureSuggestion: {
+            card_account_id: string;
             /**
              * Format: uuid
-             * @description Absent when no category is named.
+             * @description The statement the payment pays.
              */
-            category_id?: string;
-            /**
-             * @description Absent when no category is named.
-             * @enum {string}
-             */
-            source?: "kept" | "model";
-        };
-        TransactionSuggestionInput: {
-            transaction_ids: string[];
-        };
-        TransactionSuggestions: {
-            /** @description False when the language model could not be asked; the items then hold kept answers only. */
-            available: boolean;
-            items: components["schemas"]["TransactionSuggestion"][];
-        };
-        TransactionSuggestion: {
+            statement_id: string;
+            /** @description The reference month of that statement, YYYY-MM. */
+            statement_reference: string;
             /** Format: uuid */
-            transaction_id: string;
-            /**
-             * Format: uuid
-             * @description Absent when no category is named.
-             */
-            category_id?: string;
-            /**
-             * @description Absent when no category is named.
-             * @enum {string}
-             */
-            source?: "kept" | "model";
+            payment_transaction_id: string;
         };
         Export: {
             /** Format: uuid */
@@ -6483,602 +7079,6 @@ export interface components {
         CardStatementAnalytics: {
             items: components["schemas"]["StatementAnalyticsItem"][];
         };
-        TransactionBatchInput: {
-            entries: components["schemas"]["TransactionBatchEntry"][];
-        };
-        /** @description Exactly one member is set. */
-        TransactionBatchEntry: {
-            transaction?: components["schemas"]["TransactionInput"];
-            installment_purchase?: components["schemas"]["InstallmentPurchaseInput"];
-        };
-        TransactionBatch: {
-            items: components["schemas"]["Transaction"][];
-        };
-        CorrectionInput: {
-            /** Format: date */
-            date: string;
-            description?: string;
-            /** Format: uuid */
-            payee_id?: string;
-            tags?: string[];
-            links?: components["schemas"]["Link"][];
-            postings: components["schemas"]["PostingInput"][];
-            expected_version: number;
-            reason: string;
-        };
-        Transaction: {
-            /** Format: uuid */
-            id: string;
-            /** Format: date */
-            date: string;
-            description: string;
-            /** Format: uuid */
-            payee_id?: string;
-            balancing_currency: string;
-            /** @enum {string} */
-            origin: "manual" | "import" | "schedule" | "system";
-            version: number;
-            /** Format: date-time */
-            voided_at?: string;
-            void_reason?: string;
-            tags: string[];
-            links: components["schemas"]["Link"][];
-            /** @description Set only by GET /transactions/{id}; ordered by type, then source. */
-            referenced_by?: components["schemas"]["LinkReference"][];
-            investment_income?: components["schemas"]["InvestmentIncome"];
-            trade?: components["schemas"]["Trade"];
-            postings: components["schemas"]["Posting"][];
-        };
-        TransactionPage: {
-            items: components["schemas"]["Transaction"][];
-            next_cursor?: string;
-        };
-        /** @description The value type depends on the field (P5 amendment A21); between and in_list take an array. */
-        RuleCondition: {
-            /** @enum {string} */
-            field: "description" | "raw_description" | "payee" | "amount" | "absolute_amount" | "account" | "account_kind" | "source" | "weekday" | "day_of_month" | "installment";
-            /** @enum {string} */
-            operator: "equals" | "contains" | "starts_with" | "regex" | "between" | "greater_than" | "less_than" | "in_list";
-            value: unknown;
-        };
-        /** @description Exactly one of percent (basis points), amount and remainder. */
-        RuleSplitPart: {
-            /** Format: uuid */
-            category_id: string;
-            percent?: number;
-            amount?: components["schemas"]["Money"];
-            remainder?: boolean;
-        };
-        RuleAction: {
-            /** @enum {string} */
-            type: "set_category" | "set_payee" | "add_tags" | "split" | "transfer" | "mark_reimbursable";
-            /** Format: uuid */
-            category_id?: string;
-            /**
-             * Format: uuid
-             * @description Target of transfer (an asset or liability account) and mark_reimbursable (a receivable), P5b amendment A31.
-             */
-            account_id?: string;
-            /** Format: uuid */
-            payee_id?: string;
-            tags?: string[];
-            parts?: components["schemas"]["RuleSplitPart"][];
-        };
-        RuleInput: {
-            name: string;
-            /** @default true */
-            enabled: boolean;
-            /** @default false */
-            stop_processing: boolean;
-            conditions: components["schemas"]["RuleCondition"][];
-            actions: components["schemas"]["RuleAction"][];
-        };
-        Rule: {
-            /** @description Current, non-voided categorizations this rule decided (A80). */
-            categorized_count: number;
-            /**
-             * Format: date-time
-             * @description The latest of those decisions; absent at zero.
-             */
-            last_categorized_at?: string;
-            /** Format: uuid */
-            id: string;
-            name: string;
-            priority: number;
-            enabled: boolean;
-            stop_processing: boolean;
-            conditions: components["schemas"]["RuleCondition"][];
-            actions: components["schemas"]["RuleAction"][];
-        };
-        RulePage: {
-            items: components["schemas"]["Rule"][];
-            next_cursor?: string;
-        };
-        RuleList: {
-            items: components["schemas"]["Rule"][];
-        };
-        RuleOrder: {
-            rule_ids: string[];
-        };
-        PayeeAliasInput: {
-            pattern: string;
-            /** @enum {string} */
-            match_type: "equals" | "starts_with" | "contains" | "regex";
-            /** Format: uuid */
-            payee_id: string;
-        };
-        PayeeAlias: {
-            /** Format: uuid */
-            id: string;
-            pattern: string;
-            /** @enum {string} */
-            match_type: "equals" | "starts_with" | "contains" | "regex";
-            /** Format: uuid */
-            payee_id: string;
-        };
-        PayeeAliasPage: {
-            items: components["schemas"]["PayeeAlias"][];
-            next_cursor?: string;
-        };
-        RuleRun: {
-            examined: number;
-            categorized: number;
-        };
-        Categorization: {
-            /** Format: uuid */
-            transaction_id: string;
-            /**
-             * @description Null while the transaction is uncategorized.
-             * @enum {string|null}
-             */
-            method: "rule" | "source" | "history" | "manual" | null;
-            /** Format: uuid */
-            rule_id?: string;
-            /** Format: date-time */
-            decided_at: string;
-        };
-        RulePreview: {
-            would_categorize: components["schemas"]["RulePreviewSet"];
-            conflicts: components["schemas"]["RulePreviewSet"];
-        };
-        RulePreviewSet: {
-            count: number;
-            transaction_ids: string[];
-        };
-        CategorizationList: {
-            items: components["schemas"]["Categorization"][];
-        };
-        CategorizationStatistics: {
-            /** Format: date */
-            from: string;
-            /** Format: date */
-            to: string;
-            total: number;
-            rule: number;
-            source: number;
-            history: number;
-            manual: number;
-            uncategorized: number;
-        };
-        AcceptSuggestionInput: {
-            name: string;
-        };
-        RuleSuggestion: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            state: "pending" | "accepted" | "dismissed";
-            conditions: components["schemas"]["RuleCondition"][];
-            actions: components["schemas"]["RuleAction"][];
-            example_transaction_ids: string[];
-            /** Format: uuid */
-            rule_id?: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            decided_at?: string;
-        };
-        RuleSuggestionPage: {
-            items: components["schemas"]["RuleSuggestion"][];
-            next_cursor?: string;
-        };
-        TransferInput: {
-            expected_version: number;
-            /** Format: uuid */
-            account_id: string;
-            /**
-             * Format: uuid
-             * @description The pairing candidate to use when there are several.
-             */
-            pair_with?: string;
-        };
-        ReimbursementInput: {
-            expected_version: number;
-            allocations: components["schemas"]["ReimbursementAllocation"][];
-        };
-        ReimbursementAllocation: {
-            /**
-             * Format: uuid
-             * @description The expense this transaction repays.
-             */
-            original_id: string;
-            amount: components["schemas"]["Money"];
-            /**
-             * Format: uuid
-             * @description Expense category that replaces the categories of the expense and takes the reimbursement.
-             */
-            category_id?: string;
-        };
-        ReimbursementCandidate: {
-            transaction: components["schemas"]["Transaction"];
-            remaining: components["schemas"]["Money"];
-            allocated: components["schemas"]["Money"];
-        };
-        ReimbursementCandidateList: {
-            items: components["schemas"]["ReimbursementCandidate"][];
-            suggestion?: string[];
-        };
-        ReimbursementSource: {
-            transaction: components["schemas"]["Transaction"];
-            free: components["schemas"]["Money"];
-        };
-        ReimbursementSourceList: {
-            items: components["schemas"]["ReimbursementSource"][];
-        };
-        TransferResult: {
-            transaction: components["schemas"]["Transaction"];
-            /**
-             * Format: uuid
-             * @description The paired transaction that was voided.
-             */
-            voided_transaction_id?: string;
-        };
-        BulkCategorizeInput: {
-            /** Format: uuid */
-            category_id: string;
-            items: {
-                /** Format: uuid */
-                id: string;
-                expected_version: number;
-            }[];
-        };
-        BulkCategorizeResult: {
-            /** @description One result per item, in request order. */
-            results: components["schemas"]["BulkCategorizeItemResult"][];
-        };
-        BulkCategorizeItemResult: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            status: "categorized" | "version_conflict" | "transaction_voided" | "not_categorizable" | "not_found";
-            /** @description The new version when status is categorized. */
-            version?: number;
-        };
-        BulkVoidInput: {
-            reason: string;
-            items: {
-                /** Format: uuid */
-                id: string;
-            }[];
-        };
-        BulkVoidResult: {
-            /** @description One result per item, in request order. */
-            results: components["schemas"]["BulkVoidItemResult"][];
-        };
-        BulkVoidItemResult: {
-            /** Format: uuid */
-            id: string;
-            /** @enum {string} */
-            status: "voided" | "not_found" | "transaction_voided" | "posting_reconciled" | "later_sale_exists";
-        };
-        CategorizeInput: {
-            expected_version: number;
-            parts: components["schemas"]["CategoryPart"][];
-            /** Format: uuid */
-            payee_id?: string;
-        };
-        CategoryPart: {
-            /** Format: uuid */
-            account_id: string;
-            amount: components["schemas"]["Money"];
-        };
-        VoidInput: {
-            reason: string;
-        };
-        TransactionVersion: {
-            version: number;
-            reason: string;
-            /** Format: date-time */
-            replaced_at: string;
-            transaction: components["schemas"]["Transaction"];
-        };
-        TransactionVersionList: {
-            items: components["schemas"]["TransactionVersion"][];
-        };
-        Credentials: {
-            email: string;
-            password: string;
-        };
-        AccessTokenInput: {
-            name: string;
-            /** @description read lists and calls only the read tools; write every tool of the chat set. */
-            scope: string;
-            /** @description 30, 90 or 365. */
-            expires_in_days: number;
-        };
-        AccessToken: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            scope: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** Format: date-time */
-            last_used_at?: string;
-            /** @description Present only in the answer of createAccessToken. */
-            token?: string;
-        };
-        AccessTokenList: {
-            items: components["schemas"]["AccessToken"][];
-        };
-        User: {
-            /** Format: int64 */
-            id: number;
-            email: string;
-            /** @description Absent while the member has not chosen one. */
-            display_name?: string;
-            /** @enum {string} */
-            role: "admin" | "member";
-            /** Format: int64 */
-            books_id: number;
-            book_role: components["schemas"]["BookRole"];
-            language: string;
-            region: string;
-        };
-        UpdateUserInput: {
-            language?: string;
-            /**
-             * @description Trimmed; at most 60 characters, no control characters (422 validation_failed on
-             *     display_name). An empty value clears it.
-             */
-            display_name?: string;
-        };
-        /** @description Appearance choices by name (scheme, accent, themes, ...); the web defines names and values. */
-        Appearance: {
-            [key: string]: unknown;
-        };
-        BooksSettings: {
-            name: string;
-            region: string;
-            /** @description IANA time zone name; null while the book uses default_time_zone. */
-            time_zone: string | null;
-            /** @description The IANA time zone name of the region (BK18). */
-            default_time_zone: string;
-        };
-        DeleteBooksInput: {
-            /** @description The name of the active book, typed again to confirm. */
-            name: string;
-        };
-        BooksSettingsInput: {
-            region: string;
-            time_zone: string | null;
-            name?: string;
-        };
-        /** @enum {string} */
-        BookRole: "owner" | "write" | "read";
-        BooksMembership: {
-            /** Format: int64 */
-            id: number;
-            name: string;
-            role: components["schemas"]["BookRole"];
-            /** @description True for the book of the current session. */
-            active: boolean;
-        };
-        BooksMembershipList: {
-            items: components["schemas"]["BooksMembership"][];
-        };
-        BooksMember: {
-            /** Format: int64 */
-            member_id: number;
-            email: string;
-            /** @description Absent while the member has not chosen one. */
-            display_name?: string;
-            role: components["schemas"]["BookRole"];
-            /** Format: date-time */
-            created_at: string;
-        };
-        BooksMemberList: {
-            items: components["schemas"]["BooksMember"][];
-        };
-        MemberRoleInput: {
-            role: components["schemas"]["BookRole"];
-        };
-        InvitationInput: {
-            email: string;
-            role: components["schemas"]["BookRole"];
-        };
-        Invitation: {
-            /** Format: uuid */
-            id: string;
-            email: string;
-            role: components["schemas"]["BookRole"];
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            expires_at: string;
-            /** @description Present only in the answer of createInvitation. */
-            token?: string;
-        };
-        InvitationList: {
-            items: components["schemas"]["Invitation"][];
-        };
-        InvitationToken: {
-            token: string;
-        };
-        AccountInvitationInput: {
-            email: string;
-            region: string;
-            base_currency?: string;
-        };
-        AccountInvitation: {
-            email: string;
-            region: string;
-            base_currency: string;
-            /** Format: date-time */
-            expires_at: string;
-            token: string;
-        };
-        InvitationPreview: {
-            /**
-             * @description account is an invitation to a book of its own; books_name is then empty.
-             * @enum {string}
-             */
-            kind: "books" | "account";
-            books_name: string;
-            inviter_email: string;
-            role: components["schemas"]["BookRole"];
-            email: string;
-            member_exists: boolean;
-        };
-        AcceptInvitationInput: {
-            token: string;
-            /** @description Required when no member has the invited email. */
-            password?: string;
-            language?: string;
-        };
-        SecondFactor: {
-            /** @description True with a confirmed TOTP secret. */
-            totp: boolean;
-            passkeys: components["schemas"]["Passkey"][];
-            recovery_codes_left: number;
-        };
-        Passkey: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            last_used_at?: string;
-        };
-        /** @description Base64url values without padding. */
-        PasskeyOptions: {
-            challenge: string;
-            user_id: string;
-            user_name: string;
-            exclude_credentials: string[];
-        };
-        /** @description Base64url values without padding. */
-        PasskeyInput: {
-            name: string;
-            client_data_json: string;
-            authenticator_data: string;
-            public_key: string;
-            algorithm: number;
-        };
-        PasskeyCreated: {
-            passkey: components["schemas"]["Passkey"];
-            /** @description As in RecoveryCodes. */
-            recovery_codes: string[];
-        };
-        TotpSetup: {
-            /** @description Base32 without padding, 32 characters. */
-            secret: string;
-            /** @description otpauth URI for a QR code. */
-            uri: string;
-        };
-        TotpCodeInput: {
-            code: string;
-        };
-        PasswordInput: {
-            password: string;
-        };
-        RecoveryCodes: {
-            /** @description 16 base32 characters each; empty when a second factor existed before. */
-            recovery_codes: string[];
-        };
-        SecondFactorChallenge: {
-            methods: ("totp" | "passkey" | "recovery_code")[];
-            /** @description Null when no passkey of the member has the RP ID of the request; base64url values. */
-            passkey: {
-                challenge: string;
-                allow_credentials: string[];
-            } | null;
-        };
-        SecondFactorInput: {
-            totp_code?: string;
-            recovery_code?: string;
-            /** @description Base64url values without padding. */
-            passkey?: {
-                credential_id: string;
-                client_data_json: string;
-                authenticator_data: string;
-                signature: string;
-            };
-        };
-        CreateBooksInput: {
-            name?: string;
-            region: string;
-            base_currency?: string;
-        };
-        SwitchBooksInput: {
-            /** Format: int64 */
-            books_id: number;
-        };
-        SetupStatus: {
-            required: boolean;
-        };
-        SetupInput: {
-            token: string;
-            email: string;
-            password: string;
-            language: string;
-            region: string;
-            base_currency?: string;
-            update_check: boolean;
-            books_name?: string;
-            time_zone?: string;
-        };
-        Problem: {
-            type: string;
-            title: string;
-            status: number;
-            detail?: string;
-            /**
-             * @description Stable error identifier. Values: invalid_request, request_too_large, invalid_credentials,
-             *     too_many_attempts, unauthenticated, forbidden, not_found, validation_failed, internal_error,
-             *     server_busy, invalid_account, version_conflict, transaction_voided, posting_reconciled,
-             *     account_not_empty, settings_locked, statement_not_closed, statement_financed, dispute_open, dispute_resolved,
-             *     already_reconciled, difference_remains, method_not_allowed, unsupported_media_type,
-             *     record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
-             *     integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
-             *     csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-             *     budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
-             *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
-             *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
-             *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
-             *     confirmation_mismatch, books_has_members, last_books,
-             *     backup_off, backup_failed, password_too_short, institution_in_use.
-             */
-            code: string;
-            request_id?: string;
-            /**
-             * Format: date-time
-             * @description Instant after which the same request can succeed.
-             */
-            retry_at?: string;
-            /** @description The archive_version of a refused archive (archive_too_new, ADR 021). */
-            archive_version?: number;
-            /** @description The highest archive_version the instance imports (archive_too_new, ADR 021). */
-            instance_version?: number;
-            errors?: components["schemas"]["FieldError"][];
-        };
-        FieldError: {
-            field: string;
-            message: string;
-        };
     };
     responses: {
         /** @description Error. */
@@ -7092,17 +7092,17 @@ export interface components {
         };
     };
     parameters: {
-        /** @description Year in which the tax year of the owner's jurisdiction starts. */
-        Year: number;
         ID: string;
-        PlanMonth: string;
-        TagName: string;
         Limit: number;
         Cursor: string;
         SessionCookie: string;
         LoginCookie: string;
         /** @description The browser's origin; its host name is the WebAuthn RP ID (HA42). */
         Origin: string;
+        TagName: string;
+        PlanMonth: string;
+        /** @description Year in which the tax year of the owner's jurisdiction starts. */
+        Year: number;
     };
     requestBodies: never;
     headers: never;
@@ -7110,6 +7110,1094 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listPresets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresetList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    listProviders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    createProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Provider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    updateProvider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProviderPatch"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Provider"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listProviderModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderModels"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    listUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    listUsageDays: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageDayList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    setUsageLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsageLimitInput"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getAssistantChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantChat"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    sendAssistantMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantTurnInput"];
+            };
+        };
+        responses: {
+            /** @description Event stream. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    listAssistantConversations: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationPage"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteAssistantConversations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    getAssistantConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationDetail"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    deleteAssistantConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    confirmAssistantProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    rejectAssistantProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantProposal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    listUses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UseList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setUseChain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                use: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChainInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Use"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    previewCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapturePreviewInput"];
+            };
+        };
+        responses: {
+            /** @description One draft per non-blank line, in text order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapturePreview"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    suggestCaptureCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaptureSuggestionInput"];
+            };
+        };
+        responses: {
+            /** @description One suggestion per item, in input order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaptureSuggestions"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    suggestTransactionCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionSuggestionInput"];
+            };
+        };
+        responses: {
+            /** @description One suggestion per transaction, in input order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionSuggestions"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listRules: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulePage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    createRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    reorderRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleOrder"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    previewRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulePreview"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    runRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleRun"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    getCategorization: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Categorization"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listCategorizations: {
+        parameters: {
+            query: {
+                transaction_id: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizationList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listSourceCategories: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCategoryList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    mapSourceCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceCategoryMapping"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceCategory"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getCategorizationStatistics: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizationStatistics"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listRuleSuggestions: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+                state?: "pending" | "accepted" | "dismissed";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleSuggestionPage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    acceptRuleSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptSuggestionInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleSuggestion"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    dismissRuleSuggestion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleSuggestion"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    getRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    changeRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuleInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Rule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listPayeeAliases: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayeeAliasPage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    createPayeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayeeAliasInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayeeAlias"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getPayeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayeeAlias"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    changePayeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayeeAliasInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayeeAlias"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deletePayeeAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
     createSession: {
         parameters: {
             query?: never;
@@ -8043,6 +9131,865 @@ export interface operations {
             409: components["responses"]["Problem"];
         };
     };
+    getSyncSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The interval; 60 minutes while none is stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSchedule"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setSyncSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncSchedule"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSchedule"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
+    listImportBatches: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBatchList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    getCsvProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvProfile"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    saveCsvProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvProfile"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvProfile"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    suggestCsvColumns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CsvColumnSample"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CsvColumnSuggestion"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    importFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @enum {string} */
+                    format: "ofx" | "csv";
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBatch"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getImportBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportBatch"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listBatchRecords: {
+        parameters: {
+            query?: {
+                state?: "received" | "matched" | "created" | "needs_review" | "discarded" | "withdrawn";
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRecordList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listUnconfirmed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnconfirmedList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    reopenExternalRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRecord"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    resolveExternalRecord: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordResolution"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRecord"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    resolveExternalRecords: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkResolveInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResolveResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    undoExternalRecordDecision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRecord"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    listAggregators: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AggregatorList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    listIntegrations: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrationList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    createIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    getIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    deleteIntegration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    updateIntegrationCredentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntegrationCredentials"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    listConnections: {
+        parameters: {
+            query?: {
+                limit?: components["parameters"]["Limit"];
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    createConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    getConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Connection"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    deleteConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    syncConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+            502: components["responses"]["Problem"];
+        };
+    };
+    listConnectionSyncs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    mapExternalAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                external_account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountMappingInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalAccount"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatus"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
+    runBackup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupStatus"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            500: components["responses"]["Problem"];
+        };
+    };
+    setCopyPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyPasswordInput"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    getDiagnostic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description equori-diagnostic-<YYYY-MM-DD>.json as an attachment. */
+            200: {
+                headers: {
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Diagnostic"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
+    getVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionStatus"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
+    setUpdateCheck: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCheckInput"];
+            };
+        };
+        responses: {
+            /** @description The state. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionStatus"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+        };
+    };
     getSettings: {
         parameters: {
             query?: never;
@@ -8937,238 +10884,6 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
-    listPositions: {
-        parameters: {
-            query: {
-                date: string;
-                /** @description Currency of market_value; the base currency by default. A missing price to it is price_missing. */
-                value_in?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PositionList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listRealizedResults: {
-        parameters: {
-            query: {
-                /** @description Year in which the tax year of the owner's jurisdiction starts. */
-                year: components["parameters"]["Year"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RealizedResultList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    listIncomeEvents: {
-        parameters: {
-            query: {
-                /** @description Year in which the tax year of the owner's jurisdiction starts. */
-                year: components["parameters"]["Year"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncomeEventList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    listInvestmentIncomeTypes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IncomeTypeList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    getReturn: {
-        parameters: {
-            query: {
-                account_id?: string;
-                from: string;
-                to: string;
-                value_in?: string;
-                index?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReturnReport"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getAllocation: {
-        parameters: {
-            query: {
-                date: string;
-                by: "type" | "currency" | "institution";
-                value_in?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Allocation"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getNetWorth: {
-        parameters: {
-            query: {
-                date: string;
-                value_in?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NetWorth"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getNetWorthDays: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-                value_in?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NetWorthDays"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listInstrumentSubtypes: {
-        parameters: {
-            query: {
-                type: components["schemas"]["InstrumentType"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SubtypeList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
     getTransaction: {
         parameters: {
             query?: never;
@@ -9468,889 +11183,6 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
-        };
-    };
-    requestExport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["ExportRequest"];
-            };
-        };
-        responses: {
-            /** @description Accepted; the export is pending. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Export"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    getExport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Export"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    getExportContent: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The ZIP archive. */
-            200: {
-                headers: {
-                    "Content-Disposition"?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/zip": string;
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    importArchive: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    file: string;
-                    /** @description The credentials_passphrase of the export; needed when the archive carries credentials. */
-                    passphrase?: string;
-                    /**
-                     * @description true imports an archive that carries credentials without them; ignored when passphrase is set.
-                     * @enum {string}
-                     */
-                    skip_credentials?: "true" | "false";
-                    /** @description The name of the active book; present, the import replaces the content of a book that holds facts (export design R1 to R4). */
-                    replace_books_name?: string;
-                };
-            };
-        };
-        responses: {
-            /** @description The rows written per table, in import order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ArchiveImport"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            413: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getStatementAnalytics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StatementAnalytics"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    getCardStatementAnalytics: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CardStatementAnalytics"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    getBalanceSeries: {
-        parameters: {
-            query: {
-                account_id: string;
-                from: string;
-                to: string;
-                basis?: "booked" | "settled";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BalanceSeries"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getAccountFlows: {
-        parameters: {
-            query: {
-                account_id: string;
-                from: string;
-                to: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The days with a posting, in date order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccountFlows"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    getCategoryTotals: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-                class: "income" | "expense";
-                /**
-                 * @description accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
-                 *     in proportion to the payment, and any other amount on its date (docs/plans/2026-10-26-p9-cash-view.md,
-                 *     CV1 to CV10).
-                 */
-                view?: "accrual" | "cash";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryTotals"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    listCategoryCashPayments: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-            };
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoryCashPayments"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    getIndicators: {
-        parameters: {
-            query: {
-                month: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Indicators"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listCalendars: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CalendarList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    listHolidays: {
-        parameters: {
-            query: {
-                year: number;
-            };
-            header?: never;
-            path: {
-                name: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HolidayList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    listIndexes: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IndexList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listIndexRates: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-            };
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IndexRateList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listIndexExpectations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IndexExpectations"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    listMarketDataFeeds: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarketDataFeedList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    setMarketDataFeed: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MarketDataFeedInput"];
-            };
-        };
-        responses: {
-            /** @description Stored. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarketDataFeed"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    refreshMarketData: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Accepted; the tick runs. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    searchInstrumentCatalog: {
-        parameters: {
-            query: {
-                q: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CatalogSearch"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    probeQuote: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProbeInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProbeResult"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listInstruments: {
-        parameters: {
-            query?: {
-                type?: components["schemas"]["InstrumentType"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstrumentList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    defineInstrument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstrumentInput"];
-            };
-        };
-        responses: {
-            /** @description Created. */
-            201: {
-                headers: {
-                    /** @description Path of the created record. */
-                    Location?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Instrument"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getInstrument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Instrument"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    deleteInstrument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    editInstrument: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstrumentEdit"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Instrument"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getInstrumentTerms: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FixedIncomeTerms"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    putInstrumentTerms: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FixedIncomeTermsInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FixedIncomeTerms"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    requestInstrumentHistory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstrumentHistoryInput"];
-            };
-        };
-        responses: {
-            /** @description Accepted; a tick fetches the prices. */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    recordInstrumentPrices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                code: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InstrumentPricesInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstrumentPricesResult"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            413: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listPrices: {
-        parameters: {
-            query: {
-                instrument: string;
-                quote_instrument: string;
-                from: string;
-                to: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PriceList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    recordPrice: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PriceInput"];
-            };
-        };
-        responses: {
-            /** @description Created. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Price"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    importPrices: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    file: string;
-                };
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PriceImport"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            413: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
         };
     };
     listBillingCycleRules: {
@@ -10669,545 +11501,6 @@ export interface operations {
                 };
             };
             401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    previewCapture: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CapturePreviewInput"];
-            };
-        };
-        responses: {
-            /** @description One draft per non-blank line, in text order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CapturePreview"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    suggestCaptureCategories: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CaptureSuggestionInput"];
-            };
-        };
-        responses: {
-            /** @description One suggestion per item, in input order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CaptureSuggestions"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    suggestTransactionCategories: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TransactionSuggestionInput"];
-            };
-        };
-        responses: {
-            /** @description One suggestion per transaction, in input order. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TransactionSuggestions"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listPresets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PresetList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    listProviders: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProviderList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    createProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProviderInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Provider"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    deleteProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    updateProvider: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProviderPatch"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Provider"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    listProviderModels: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProviderModels"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            502: components["responses"]["Problem"];
-        };
-    };
-    listUsage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UsageList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    listUsageDays: {
-        parameters: {
-            query: {
-                from: string;
-                to: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UsageDayList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    setUsageLimit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UsageLimitInput"];
-            };
-        };
-        responses: {
-            /** @description Stored. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getAssistantChat: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantChat"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    sendAssistantMessage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantTurnInput"];
-            };
-        };
-        responses: {
-            /** @description Event stream. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/event-stream": string;
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            429: components["responses"]["Problem"];
-            503: components["responses"]["Problem"];
-        };
-    };
-    listAssistantConversations: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantConversationPage"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    deleteAssistantConversations: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    getAssistantConversation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantConversationDetail"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    deleteAssistantConversation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    confirmAssistantProposal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantProposal"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    rejectAssistantProposal: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantProposal"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    listUses: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UseList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    setUseChain: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                use: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChainInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Use"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
@@ -11891,11 +12184,207 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
-    listRules: {
+    listCalendars: {
         parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CalendarList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    listHolidays: {
+        parameters: {
+            query: {
+                year: number;
+            };
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolidayList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listIndexes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listIndexRates: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexRateList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listIndexExpectations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexExpectations"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listMarketDataFeeds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataFeedList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    setMarketDataFeed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketDataFeedInput"];
+            };
+        };
+        responses: {
+            /** @description Stored. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketDataFeed"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    refreshMarketData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted; the tick runs. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+        };
+    };
+    searchInstrumentCatalog: {
+        parameters: {
+            query: {
+                q: string;
             };
             header?: never;
             path?: never;
@@ -11909,14 +12398,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RulePage"];
+                    "application/json": components["schemas"]["CatalogSearch"];
                 };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
-    createRule: {
+    probeQuote: {
         parameters: {
             query?: never;
             header?: never;
@@ -11925,7 +12415,58 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RuleInput"];
+                "application/json": components["schemas"]["ProbeInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProbeResult"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listInstruments: {
+        parameters: {
+            query?: {
+                type?: components["schemas"]["InstrumentType"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    defineInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentInput"];
             };
         };
         responses: {
@@ -11937,95 +12478,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Rule"];
+                    "application/json": components["schemas"]["Instrument"];
                 };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
-    reorderRules: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RuleOrder"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    previewRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RuleInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RulePreview"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    runRules: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleRun"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    getCategorization: {
+    getInstrument: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: components["parameters"]["ID"];
+                code: string;
             };
             cookie?: never;
         };
@@ -12037,74 +12504,103 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Categorization"];
+                    "application/json": components["schemas"]["Instrument"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    deleteInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    editInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentEdit"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Instrument"];
                 };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
-    listCategorizations: {
-        parameters: {
-            query: {
-                transaction_id: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategorizationList"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    listSourceCategories: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SourceCategoryList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    mapSourceCategory: {
+    getInstrumentTerms: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: components["parameters"]["ID"];
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixedIncomeTerms"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    putInstrumentTerms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SourceCategoryMapping"];
+                "application/json": components["schemas"]["FixedIncomeTermsInput"];
             };
         };
         responses: {
@@ -12114,17 +12610,79 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SourceCategory"];
+                    "application/json": components["schemas"]["FixedIncomeTerms"];
                 };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
-    getCategorizationStatistics: {
+    requestInstrumentHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentHistoryInput"];
+            };
+        };
+        responses: {
+            /** @description Accepted; a tick fetches the prices. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordInstrumentPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstrumentPricesInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentPricesResult"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listPrices: {
         parameters: {
             query: {
+                instrument: string;
+                quote_instrument: string;
                 from: string;
                 to: string;
             };
@@ -12140,200 +12698,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CategorizationStatistics"];
+                    "application/json": components["schemas"]["PriceList"];
                 };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
-        };
-    };
-    listRuleSuggestions: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-                state?: "pending" | "accepted" | "dismissed";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleSuggestionPage"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    acceptRuleSuggestion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AcceptSuggestionInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleSuggestion"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
-    dismissRuleSuggestion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RuleSuggestion"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    getRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rule"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    changeRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RuleInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Rule"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    deleteRule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    listPayeeAliases: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayeeAliasPage"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-        };
-    };
-    createPayeeAlias: {
+    recordPrice: {
         parameters: {
             query?: never;
             header?: never;
@@ -12342,19 +12715,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PayeeAliasInput"];
+                "application/json": components["schemas"]["PriceInput"];
             };
         };
         responses: {
             /** @description Created. */
             201: {
                 headers: {
-                    /** @description Path of the created record. */
-                    Location?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PayeeAlias"];
+                    "application/json": components["schemas"]["Price"];
                 };
             };
             400: components["responses"]["Problem"];
@@ -12362,796 +12733,34 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
-    getPayeeAlias: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayeeAlias"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    changePayeeAlias: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayeeAliasInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PayeeAlias"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    deletePayeeAlias: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    getSyncSchedule: {
+    importPrices: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The interval; 60 minutes while none is stored. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SyncSchedule"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    setSyncSchedule: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SyncSchedule"];
-            };
-        };
-        responses: {
-            /** @description Stored. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SyncSchedule"];
-                };
-            };
-            400: components["responses"]["Problem"];
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
-        };
-    };
-    listImportBatches: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportBatchList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    getCsvProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CsvProfile"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    saveCsvProfile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CsvProfile"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CsvProfile"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    suggestCsvColumns: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CsvColumnSample"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CsvColumnSuggestion"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            503: components["responses"]["Problem"];
-        };
-    };
-    importFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
             cookie?: never;
         };
         requestBody: {
             content: {
                 "multipart/form-data": {
-                    /** @enum {string} */
-                    format: "ofx" | "csv";
                     /** Format: binary */
                     file: string;
                 };
             };
         };
         responses: {
-            /** @description Created. */
-            201: {
+            /** @description OK. */
+            200: {
                 headers: {
-                    /** @description Path of the created record. */
-                    Location?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportBatch"];
+                    "application/json": components["schemas"]["PriceImport"];
                 };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
             413: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    getImportBatch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportBatch"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    listBatchRecords: {
-        parameters: {
-            query?: {
-                state?: "received" | "matched" | "created" | "needs_review" | "discarded" | "withdrawn";
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExternalRecordList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    listUnconfirmed: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UnconfirmedList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    reopenExternalRecord: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExternalRecord"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    resolveExternalRecord: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RecordResolution"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExternalRecord"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    resolveExternalRecords: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BulkResolveInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BulkResolveResult"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-        };
-    };
-    undoExternalRecordDecision: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExternalRecord"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    listAggregators: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AggregatorList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-        };
-    };
-    listIntegrations: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IntegrationList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    createIntegration: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IntegrationInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            201: {
-                headers: {
-                    /** @description Path of the created record. */
-                    Location?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Integration"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            502: components["responses"]["Problem"];
-        };
-    };
-    getIntegration: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Integration"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    deleteIntegration: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    updateIntegrationCredentials: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IntegrationCredentials"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Integration"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            502: components["responses"]["Problem"];
-        };
-    };
-    listConnections: {
-        parameters: {
-            query?: {
-                limit?: components["parameters"]["Limit"];
-                cursor?: components["parameters"]["Cursor"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConnectionList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    createConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConnectionInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            201: {
-                headers: {
-                    /** @description Path of the created record. */
-                    Location?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            502: components["responses"]["Problem"];
-        };
-    };
-    getConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Connection"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    deleteConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Deleted. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-        };
-    };
-    syncConnection: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SyncResult"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            422: components["responses"]["Problem"];
-            502: components["responses"]["Problem"];
-        };
-    };
-    listConnectionSyncs: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SyncRunList"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-        };
-    };
-    mapExternalAccount: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["parameters"]["ID"];
-                external_account_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AccountMappingInput"];
-            };
-        };
-        responses: {
-            /** @description OK. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExternalAccount"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            404: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
@@ -13928,7 +13537,84 @@ export interface operations {
             409: components["responses"]["Problem"];
         };
     };
-    getBackup: {
+    listPositions: {
+        parameters: {
+            query: {
+                date: string;
+                /** @description Currency of market_value; the base currency by default. A missing price to it is price_missing. */
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listRealizedResults: {
+        parameters: {
+            query: {
+                /** @description Year in which the tax year of the owner's jurisdiction starts. */
+                year: components["parameters"]["Year"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RealizedResultList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listIncomeEvents: {
+        parameters: {
+            query: {
+                /** @description Year in which the tax year of the owner's jurisdiction starts. */
+                year: components["parameters"]["Year"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncomeEventList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listInvestmentIncomeTypes: {
         parameters: {
             query?: never;
             header?: never;
@@ -13937,62 +13623,173 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The state. */
+            /** @description OK. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BackupStatus"];
+                    "application/json": components["schemas"]["IncomeTypeList"];
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
         };
     };
-    runBackup: {
+    getReturn: {
         parameters: {
-            query?: never;
+            query: {
+                account_id?: string;
+                from: string;
+                to: string;
+                value_in?: string;
+                index?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description The new state. */
+            /** @description OK. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BackupStatus"];
+                    "application/json": components["schemas"]["ReturnReport"];
                 };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
-            409: components["responses"]["Problem"];
-            500: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
-    setCopyPassword: {
+    getAllocation: {
+        parameters: {
+            query: {
+                date: string;
+                by: "type" | "currency" | "institution";
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Allocation"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getNetWorth: {
+        parameters: {
+            query: {
+                date: string;
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetWorth"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getNetWorthDays: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                value_in?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NetWorthDays"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listInstrumentSubtypes: {
+        parameters: {
+            query: {
+                type: components["schemas"]["InstrumentType"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubtypeList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    requestExport: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["CopyPasswordInput"];
+                "application/json": components["schemas"]["ExportRequest"];
             };
         };
         responses: {
-            /** @description Stored. */
-            204: {
+            /** @description Accepted; the export is pending. */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
@@ -14000,7 +13797,7 @@ export interface operations {
             409: components["responses"]["Problem"];
         };
     };
-    getDiagnostic: {
+    getExport: {
         parameters: {
             query?: never;
             header?: never;
@@ -14009,43 +13806,44 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description equori-diagnostic-<YYYY-MM-DD>.json as an attachment. */
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Export"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getExportContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The ZIP archive. */
             200: {
                 headers: {
                     "Content-Disposition"?: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Diagnostic"];
+                    "application/zip": string;
                 };
             };
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
         };
     };
-    getVersion: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The state. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VersionStatus"];
-                };
-            };
-            401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
-        };
-    };
-    setUpdateCheck: {
+    importArchive: {
         parameters: {
             query?: never;
             header?: never;
@@ -14054,22 +13852,224 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateCheckInput"];
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** @description The credentials_passphrase of the export; needed when the archive carries credentials. */
+                    passphrase?: string;
+                    /**
+                     * @description true imports an archive that carries credentials without them; ignored when passphrase is set.
+                     * @enum {string}
+                     */
+                    skip_credentials?: "true" | "false";
+                    /** @description The name of the active book; present, the import replaces the content of a book that holds facts (export design R1 to R4). */
+                    replace_books_name?: string;
+                };
             };
         };
         responses: {
-            /** @description The state. */
+            /** @description The rows written per table, in import order. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VersionStatus"];
+                    "application/json": components["schemas"]["ArchiveImport"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            413: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getStatementAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementAnalytics"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getCardStatementAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardStatementAnalytics"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getBalanceSeries: {
+        parameters: {
+            query: {
+                account_id: string;
+                from: string;
+                to: string;
+                basis?: "booked" | "settled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceSeries"];
                 };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
-            403: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getAccountFlows: {
+        parameters: {
+            query: {
+                account_id: string;
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The days with a posting, in date order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountFlows"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getCategoryTotals: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                class: "income" | "expense";
+                /**
+                 * @description accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
+                 *     in proportion to the payment, and any other amount on its date (docs/plans/2026-10-26-p9-cash-view.md,
+                 *     CV1 to CV10).
+                 */
+                view?: "accrual" | "cash";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryTotals"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+        };
+    };
+    listCategoryCashPayments: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryCashPayments"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    getIndicators: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Indicators"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
 }

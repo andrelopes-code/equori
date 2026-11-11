@@ -1,0 +1,1158 @@
+paths:
+  /calendars:
+    get:
+      tags: [marketdata]
+      operationId: listCalendars
+      x-book-role: read
+      summary: Business-day calendars of the instance in identifier order.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /calendars/{name}/holidays:
+    get:
+      tags: [marketdata]
+      operationId: listHolidays
+      x-book-role: read
+      summary: Non-business days of a calendar in a year, weekends excluded.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 2200
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HolidayList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /indexes:
+    get:
+      tags: [marketdata]
+      operationId: listIndexes
+      x-book-role: read
+      summary: The enabled indexes with at least one stored rate, those of the caller's region first (ADR 025 F3).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /indexes/{id}/rates:
+    get:
+      tags: [marketdata]
+      operationId: listIndexRates
+      x-book-role: read
+      summary: The stored rates of an enabled index in [from, to], at most 7,320 days, oldest first.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexRateList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /indexes/{id}/expectations:
+    get:
+      tags: [marketdata]
+      operationId: listIndexExpectations
+      x-book-role: read
+      summary: The latest survey of the expected annual rate of an index, oldest point first (ADR 026 E5).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexExpectations"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /market-data/feeds:
+    get:
+      tags: [marketdata]
+      operationId: listMarketDataFeeds
+      x-book-role: read
+      summary: Every price and index feed of the instance with its state (ADR 025 F5).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketDataFeedList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /market-data/feeds/{id}:
+    put:
+      tags: [marketdata]
+      operationId: setMarketDataFeed
+      x-book-role: read
+      summary: Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MarketDataFeedInput"
+      responses:
+        "200":
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketDataFeed"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /market-data/refresh:
+    post:
+      tags: [marketdata]
+      operationId: refreshMarketData
+      x-book-role: read
+      summary: Run the enabled feeds now; admin only (ADR 025 F7, F8).
+      description: |
+        The tick runs after the response. 409 refresh_running while a tick, scheduled or requested, runs.
+      responses:
+        "202":
+          description: Accepted; the tick runs.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /market-data/catalog:
+    get:
+      tags: [marketdata]
+      operationId: searchInstrumentCatalog
+      x-book-role: read
+      summary: The instruments the enabled sources can quote, searched by code or name; at most 20 (A222 MQ29).
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            maxLength: 60
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogSearch"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /market-data/probe:
+    post:
+      tags: [marketdata]
+      operationId: probeQuote
+      x-book-role: write
+      summary: The latest quote each enabled source gives for an instrument not yet defined; nothing is stored (A222 MQ27).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProbeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProbeResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments:
+    get:
+      tags: [marketdata]
+      operationId: listInstruments
+      x-book-role: read
+      summary: Instruments of the instance in code order.
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/InstrumentType"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [marketdata]
+      operationId: defineInstrument
+      x-book-role: write
+      summary: Define a security for the whole instance (P8 amendment A59).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments/{code}:
+    get:
+      tags: [marketdata]
+      operationId: getInstrument
+      x-book-role: read
+      summary: One instrument.
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [marketdata]
+      operationId: editInstrument
+      x-book-role: write
+      summary: Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentEdit"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Instrument"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [marketdata]
+      operationId: deleteInstrument
+      x-book-role: write
+      summary: Delete a security with its prices, terms, history requests and symbols; a security that a record references is refused (A223).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments/{code}/terms:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [marketdata]
+      operationId: getInstrumentTerms
+      x-book-role: read
+      summary: The terms of a fixed income instrument (investments design 4.2).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedIncomeTerms"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [marketdata]
+      operationId: putInstrumentTerms
+      x-book-role: write
+      summary: Set the terms of a fixed income instrument, replacing the earlier ones and the prices accrued from them.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedIncomeTermsInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedIncomeTerms"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments/{code}/history:
+    post:
+      tags: [marketdata]
+      operationId: requestInstrumentHistory
+      x-book-role: write
+      summary: Request the prices of an instrument since a date from each enabled source that quotes it (A222 MQ8).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentHistoryInput"
+      responses:
+        "202":
+          description: Accepted; a tick fetches the prices.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments/{code}/prices:
+    post:
+      tags: [marketdata]
+      operationId: recordInstrumentPrices
+      x-book-role: write
+      summary: Record a series of prices of one instrument as source csv, all or nothing, or count what it would change (A222 MQ32).
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstrumentPricesInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentPricesResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /prices:
+    get:
+      tags: [marketdata]
+      operationId: listPrices
+      x-book-role: read
+      summary: The chosen price of each date with prices in [from, to], at most 18,300 days, one point per period of interval (P8 amendment A60, A222 MQ30).
+      parameters:
+        - name: instrument
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: quote_instrument
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [marketdata]
+      operationId: recordPrice
+      x-book-role: write
+      summary: Record a manual price; a manual price of the same date is replaced.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PriceInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Price"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /prices/import:
+    post:
+      tags: [marketdata]
+      operationId: importPrices
+      x-book-role: write
+      summary: Record the prices of a CSV file as source csv, all or nothing.
+      description: |
+        Header `instrument,quote_instrument,date,value`, at most 10,000 lines. A rejected line returns
+        422 with field `line N`, N counting the header as line 1.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceImport"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+schemas:
+  CalendarList:
+    type: object
+    required: [items, default]
+    properties:
+      default:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: Calendar id the owner's region gives a new record (ADR 016).
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Calendar"
+  Calendar:
+    type: object
+    additionalProperties: false
+    required: [id, weekend]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      weekend:
+        type: array
+        items:
+          type: string
+          enum: [sunday, monday, tuesday, wednesday, thursday, friday, saturday]
+  HolidayList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Holiday"
+  Index:
+    type: object
+    additionalProperties: false
+    required: [id, period, first, last, expected]
+    properties:
+      id:
+        type: string
+      expected:
+        type: boolean
+        description: An enabled expectation source stored points for the index (ADR 026 E5).
+      period:
+        type: string
+        enum: [day, month]
+        description: The span one rate covers.
+      first:
+        type: string
+        format: date
+      last:
+        type: string
+        format: date
+  IndexList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Index"
+  IndexExpectations:
+    type: object
+    additionalProperties: false
+    required: [survey_date, items]
+    properties:
+      survey_date:
+        type: string
+        format: date
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/IndexExpectation"
+  IndexExpectation:
+    type: object
+    additionalProperties: false
+    required: [date, rate]
+    properties:
+      date:
+        type: string
+        format: date
+      rate:
+        type: string
+        description: Expected annual rate of the index on the date, an exact decimal fraction (0.1315 is 13.15%).
+        example: "0.131500000000"
+  MarketDataFeed:
+    type: object
+    additionalProperties: false
+    required: [id, kind, enabled, suggested, last, stale, last_run, error, official, covers, history_pending, symbol_override]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      kind:
+        type: string
+        enum: [price, index, expectation]
+      enabled:
+        type: boolean
+      suggested:
+        type: boolean
+        description: Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing.
+      last:
+        type: string
+        format: date
+        nullable: true
+        description: The latest date the feed stored.
+      stale:
+        type: boolean
+        description: Enabled, and its next publication is overdue (ADR 025 F9).
+      last_run:
+        type: string
+        format: date-time
+        nullable: true
+        description: The last tick that ran the feed since the process started.
+      error:
+        type: string
+        nullable: true
+        description: The failure of that tick, null when it succeeded.
+      official:
+        type: boolean
+        description: False for a source that publishes no terms for this use; its prices rank last (A222 MQ1).
+      covers:
+        type: integer
+        description: The number of defined instruments the source quotes; 0 for an index or expectation feed (A222 MQ25).
+      history_pending:
+        type: integer
+        description: The history requests of the source not yet done (A222 MQ25).
+      symbol_override:
+        type: boolean
+        description: The source reads a symbol set on the instrument (A222 MQ20).
+  MarketDataFeedList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/MarketDataFeed"
+  MarketDataFeedInput:
+    type: object
+    additionalProperties: false
+    required: [enabled]
+    properties:
+      enabled:
+        type: boolean
+      accept_unofficial:
+        type: boolean
+        description: Required as true to enable a source whose official is false (A222 MQ22).
+  IndexRate:
+    type: object
+    additionalProperties: false
+    required: [date, rate]
+    properties:
+      date:
+        type: string
+        format: date
+        description: The date the rate is published for; the first day of the month for a monthly index.
+      rate:
+        type: string
+        description: Exact decimal fraction, negative when the index fell (0.0042 is 0.42%).
+        example: "0.004200000000"
+  IndexRateList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/IndexRate"
+  Instrument:
+    type: object
+    additionalProperties: false
+    required: [code, type, scale, name]
+    properties:
+      code:
+        type: string
+      type:
+        $ref: "#/components/schemas/InstrumentType"
+      scale:
+        type: integer
+      name:
+        type: string
+      quote_currency:
+        type: string
+        description: Absent for currencies.
+      exchange:
+        type: string
+        pattern: "^[A-Z0-9]{4}$"
+      subtype:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      symbols:
+        $ref: "#/components/schemas/InstrumentSymbols"
+      coverage:
+        $ref: "#/components/schemas/InstrumentCoverage"
+  InstrumentCoverage:
+    type: object
+    additionalProperties: false
+    required: [first, last, count, stale, sources]
+    properties:
+      first:
+        type: string
+        format: date
+        nullable: true
+        description: The first date with a price against the quote currency; any quote for a currency.
+      last:
+        type: string
+        format: date
+        nullable: true
+      count:
+        type: integer
+        description: The number of dates with a price.
+      stale:
+        type: boolean
+        description: An enabled source quotes the instrument and its next price is overdue (A222 MQ24).
+      sources:
+        type: array
+        description: Every registered source that quotes the instrument, enabled or not.
+        items:
+          $ref: "#/components/schemas/InstrumentSourceCoverage"
+  InstrumentSourceCoverage:
+    type: object
+    additionalProperties: false
+    required: [id, enabled, official, first, last, history]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      enabled:
+        type: boolean
+      official:
+        type: boolean
+      first:
+        type: string
+        format: date
+        nullable: true
+      last:
+        type: string
+        format: date
+        nullable: true
+      history:
+        allOf:
+          - $ref: "#/components/schemas/InstrumentHistory"
+        nullable: true
+  InstrumentHistory:
+    type: object
+    additionalProperties: false
+    required: [from, done, error]
+    properties:
+      from:
+        type: string
+        format: date
+      done:
+        type: boolean
+      error:
+        type: string
+        nullable: true
+        description: The failure of the last attempt; the next tick tries again.
+  CatalogListing:
+    type: object
+    additionalProperties: false
+    required: [code, name, exchange, quote_currency, symbol, source, defined]
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+        description: Empty when the source states none.
+      type:
+        $ref: "#/components/schemas/InstrumentType"
+      exchange:
+        type: string
+        description: ISO 10383 MIC, or empty.
+      quote_currency:
+        type: string
+        description: Empty when the source states none.
+      symbol:
+        type: string
+        description: The symbol the source requests, or empty.
+      source:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      defined:
+        type: boolean
+        description: An instrument with this code exists.
+  CatalogSearch:
+    type: object
+    required: [items, unavailable]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/CatalogListing"
+      unavailable:
+        type: array
+        description: The enabled sources that failed or passed their bound.
+        items:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+  ProbeInput:
+    type: object
+    additionalProperties: false
+    required: [code, type, quote_currency]
+    properties:
+      code:
+        type: string
+        pattern: "^[A-Z0-9.]{2,20}$"
+      type:
+        $ref: "#/components/schemas/InstrumentType"
+      exchange:
+        type: string
+        pattern: "^[A-Z0-9]{4}$"
+      quote_currency:
+        type: string
+      symbols:
+        $ref: "#/components/schemas/InstrumentSymbols"
+  ProbeQuote:
+    type: object
+    additionalProperties: false
+    required: [source, date, value, error]
+    properties:
+      source:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      date:
+        type: string
+        format: date
+        nullable: true
+      value:
+        type: string
+        nullable: true
+        description: The price in the quote currency of the request; an exact decimal.
+      error:
+        type: string
+        nullable: true
+  ProbeResult:
+    type: object
+    required: [quotes, available]
+    properties:
+      quotes:
+        type: array
+        description: One item per enabled source that would quote the instrument.
+        items:
+          $ref: "#/components/schemas/ProbeQuote"
+      available:
+        type: array
+        description: The disabled sources that would quote the instrument.
+        items:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+  InstrumentPricePoint:
+    type: object
+    additionalProperties: false
+    required: [date, value]
+    properties:
+      date:
+        type: string
+        format: date
+      value:
+        $ref: "#/components/schemas/Rate"
+  InstrumentPricesInput:
+    type: object
+    additionalProperties: false
+    required: [quote_instrument, prices]
+    properties:
+      quote_instrument:
+        type: string
+      prices:
+        type: array
+        minItems: 1
+        maxItems: 20000
+        items:
+          $ref: "#/components/schemas/InstrumentPricePoint"
+      dry_run:
+        type: boolean
+        description: True stores nothing and returns the counts.
+  InstrumentPricesResult:
+    type: object
+    required: [new, replaced, unchanged, below_feed]
+    properties:
+      new:
+        type: integer
+        description: Dates without a csv price.
+      replaced:
+        type: integer
+        description: Dates whose csv price has another value.
+      unchanged:
+        type: integer
+        description: Dates whose csv price has the same value.
+      below_feed:
+        type: integer
+        description: Dates of the request that hold a price of an official source.
+  InstrumentHistoryInput:
+    type: object
+    additionalProperties: false
+    required: [from]
+    properties:
+      from:
+        type: string
+        format: date
+  InstrumentInput:
+    type: object
+    additionalProperties: false
+    required: [code, type, scale, name, quote_currency]
+    properties:
+      code:
+        type: string
+        pattern: "^[A-Z0-9.]{2,20}$"
+      type:
+        $ref: "#/components/schemas/InstrumentType"
+      scale:
+        type: integer
+        minimum: 0
+        maximum: 12
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      quote_currency:
+        type: string
+      exchange:
+        type: string
+        pattern: "^[A-Z0-9]{4}$"
+      subtype:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
+      symbols:
+        $ref: "#/components/schemas/InstrumentSymbols"
+  InstrumentEdit:
+    type: object
+    additionalProperties: false
+    required: [name]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      exchange:
+        type: string
+        pattern: "^[A-Z0-9]{4}$"
+      subtype:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      symbols:
+        $ref: "#/components/schemas/InstrumentSymbols"
+  InstrumentSymbols:
+    type: object
+    description: The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
+    additionalProperties:
+      type: string
+      pattern: "^[A-Za-z0-9.=^_-]{1,40}$"
+  InstrumentList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Instrument"
+  FixedIncomeTermsInput:
+    type: object
+    additionalProperties: false
+    required: [issued_on, matures_on, day_count, face_value]
+    properties:
+      issued_on:
+        type: string
+        format: date
+      matures_on:
+        type: string
+        format: date
+      index_id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: The index the security follows; absent for a pre-fixed security.
+      percent_of_index_bp:
+        type: integer
+        minimum: 1
+        description: 10000 is 100% of the index; 10000 when omitted.
+      spread_bp:
+        type: integer
+        minimum: 0
+        description: Annual spread over the index, or the annual rate of a pre-fixed security; 0 when omitted.
+      day_count:
+        $ref: "#/components/schemas/TermsDayCount"
+      face_value:
+        type: integer
+        format: int64
+        minimum: 1
+        description: Price of one unit on issued_on, in minor units of the quote currency.
+  FixedIncomeTerms:
+    type: object
+    required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value]
+    properties:
+      issued_on:
+        type: string
+        format: date
+      matures_on:
+        type: string
+        format: date
+      index_id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      percent_of_index_bp:
+        type: integer
+      spread_bp:
+        type: integer
+      day_count:
+        $ref: "#/components/schemas/TermsDayCount"
+      face_value:
+        type: integer
+        format: int64
+  TermsDayCount:
+    type: string
+    enum: [bus252, act365]
+  PriceInput:
+    type: object
+    additionalProperties: false
+    required: [instrument, quote_instrument, date, value]
+    properties:
+      instrument:
+        type: string
+      quote_instrument:
+        type: string
+      date:
+        type: string
+        format: date
+      value:
+        $ref: "#/components/schemas/Rate"
+  PriceList:
+    type: object
+    required: [items, interval]
+    properties:
+      interval:
+        type: string
+        enum: [day, week, month]
+        description: One point per date up to 400 days, per ISO week up to 3,660 days, per month beyond; a point is the chosen price of the latest date with a price in its period (A222 MQ30).
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Price"
+  PriceImport:
+    type: object
+    required: [recorded]
+    properties:
+      recorded:
+        type: integer
+  Holiday:
+    type: object
+    required: [date, name, source]
+    properties:
+      date:
+        type: string
+        format: date
+      name:
+        type: string
+        description: English text of a rule holiday, or the text typed for an instance holiday.
+      code:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: Stable key of a rule holiday, which a client translates; absent for an instance holiday.
+      source:
+        type: string
+        enum: [rule, instance]

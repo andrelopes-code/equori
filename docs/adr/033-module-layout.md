@@ -12,7 +12,7 @@ Each business module holds its code, its queries and its contract in one directo
 internal/<module>/
   README.md            purpose, owned table prefix, OpenAPI tag, entry file of each layer
   <module>.go          public API: Module, DTOs; the only package other modules import
-  openapi.yaml         operations and schemas of the module
+  openapi.yaml         operations and schemas of the module; `make gen` bundles every module file with api/base.yaml and api/shared.yaml into api/openapi.yaml
   domain/              entities and invariants; stdlib and platform/money only
   app/                 use cases; declares the ports (Repository, Clock)
   httpapi/             handlers; api.gen.go and oapi-codegen.yaml

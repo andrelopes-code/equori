@@ -1,0 +1,1331 @@
+paths:
+  /ingestion/sync-schedule:
+    get:
+      tags: [ingestion]
+      operationId: getSyncSchedule
+      x-book-role: read
+      summary: How often the scheduler checks the bank connections of the instance (ADR 029 BK23).
+      responses:
+        "200":
+          description: The interval; 60 minutes while none is stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncSchedule"
+        "401":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ingestion]
+      operationId: setSyncSchedule
+      x-book-role: read
+      summary: Change the sync interval of the instance; admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncSchedule"
+      responses:
+        "200":
+          description: Stored.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncSchedule"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+  /import-batches:
+    get:
+      tags: [ingestion]
+      operationId: listImportBatches
+      x-book-role: read
+      summary: Import batches, newest first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBatchList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/csv-profile:
+    get:
+      tags: [ingestion]
+      operationId: getCsvProfile
+      x-book-role: read
+      summary: How the CSV files of the account are read.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvProfile"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ingestion]
+      operationId: saveCsvProfile
+      x-book-role: write
+      summary: Set how the CSV files of the account are read (P4 amendment A13).
+      description: |
+        Columns are header names, or 1-based positions when header_rows is 0. Set amount_column, or
+        debit_column and credit_column. Defaults: delimiter comma, header_rows 1, amount_sign as_is.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvProfile"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvProfile"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/csv-profile/suggestion:
+    post:
+      tags: [ingestion]
+      operationId: suggestCsvColumns
+      x-book-role: write
+      summary: Ask the language model which columns of a CSV file hold what.
+      description: |
+        Stores nothing. Each sample cell is masked before it leaves the instance; a header cell with
+        a digit is masked too. 503 csv_suggestion_unavailable when no target answers, 422
+        csv_suggestion_unusable when the answer fails validation.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CsvColumnSample"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsvColumnSuggestion"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/imports:
+    post:
+      tags: [ingestion]
+      operationId: importFile
+      x-book-role: write
+      summary: Import an OFX or CSV statement into a balance account.
+      description: |
+        Each line is deduplicated (I10), matched to an existing transaction of the account with the
+        same amount within 3 days, or created against an uncategorized account; ambiguous matches
+        wait for review. A file balance becomes a balance assertion (chapter 3, F4). At most 10 MiB
+        (P4 amendment A16); a CSV file needs the account's CSV profile.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [format, file]
+              properties:
+                format:
+                  type: string
+                  enum: [ofx, csv]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBatch"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /import-batches/{id}:
+    get:
+      tags: [ingestion]
+      operationId: getImportBatch
+      x-book-role: read
+      summary: One import batch with its counts.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportBatch"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /import-batches/{id}/records:
+    get:
+      tags: [ingestion]
+      operationId: listBatchRecords
+      x-book-role: read
+      summary: The external records of a batch, in file order.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [received, matched, created, needs_review, discarded, withdrawn]
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecordList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/unconfirmed:
+    get:
+      tags: [ingestion]
+      operationId: listUnconfirmed
+      x-book-role: read
+      summary: Entries of the account that neither an institution line nor balance confirmed (A103, A133).
+      description: |
+        The first posting of each transaction that carries no external record and that no
+        balance assertion or statement reconciled, expected on or after the start of the
+        account's lines from an institution (the mapping's start date, or the first imported
+        file's period) and more than 10 days before the last synced date or the end of the
+        last imported period, oldest first. A card posting is expected at its statement's
+        closing date. An installment and its reversal on one statement offset and are not
+        listed. An account without lines from an institution lists none.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnconfirmedList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /external-records/{id}/reopen:
+    post:
+      tags: [ingestion]
+      operationId: reopenExternalRecord
+      x-book-role: write
+      summary: Return a discarded record to review (A140).
+      description: |
+        The record waits for review again, with the candidates the ledger holds now; a record that
+        is not discarded returns record_not_discarded.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /external-records/{id}/resolve:
+    post:
+      tags: [ingestion]
+      operationId: resolveExternalRecord
+      x-book-role: write
+      summary: Resolve a record that needs review.
+      description: |
+        match links the record to one of its candidates and clears that posting; create records a
+        transaction against an uncategorized account; discard leaves the line out of the ledger.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecordResolution"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /external-records/resolve:
+    post:
+      tags: [ingestion]
+      operationId: resolveExternalRecords
+      x-book-role: write
+      summary: Resolve several records that need review, each item decided on its own (A201).
+      description: |
+        Each item runs as resolveExternalRecord. An item that fails reports its status and leaves the others
+        applied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkResolveInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResolveResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /external-records/{id}/undo:
+    post:
+      tags: [ingestion]
+      operationId: undoExternalRecordDecision
+      x-book-role: write
+      summary: Undo the record's last automatic decision (A148).
+      description: |
+        linked releases the posting and returns the record to review (probable); followed returns
+        the transaction to its amount and date before the change and leaves the record in review
+        (changed); withdrawn links the record to its posting again and keeps it from later
+        withdrawals; re_identified returns the record to its previous external id and records the
+        line as a new record in review (probable). A record without a decision returns no_decision.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalRecord"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /aggregators:
+    get:
+      tags: [ingestion]
+      operationId: listAggregators
+      x-book-role: read
+      summary: Aggregators this instance offers, with the credential fields each requires.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AggregatorList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /integrations:
+    get:
+      tags: [ingestion]
+      operationId: listIntegrations
+      x-book-role: read
+      summary: Aggregator integrations, by name.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntegrationList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ingestion]
+      operationId: createIntegration
+      x-book-role: write
+      summary: Store the credentials of an aggregator application (P6 amendment A34).
+      description: |
+        The aggregator validates the credentials before they are stored, sealed under
+        EQUORI_SECRET_KEY (ADR 008); no response returns them. 409 integration_unavailable
+        without the key; 422 aggregator_unauthorized when the aggregator rejects them; 502
+        aggregator_unavailable when it does not answer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationInput"
+      responses:
+        "201":
+          description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /integrations/{id}:
+    get:
+      tags: [ingestion]
+      operationId: getIntegration
+      x-book-role: read
+      summary: Return an integration, without its credentials.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ingestion]
+      operationId: deleteIntegration
+      x-book-role: write
+      summary: Delete an integration without connections (409 integration_in_use otherwise).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /integrations/{id}/credentials:
+    put:
+      tags: [ingestion]
+      operationId: updateIntegrationCredentials
+      x-book-role: write
+      summary: Replace the credentials of an integration after the aggregator validates them.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IntegrationCredentials"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Integration"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /connections:
+    get:
+      tags: [ingestion]
+      operationId: listConnections
+      x-book-role: read
+      summary: Connections with their external accounts, by name.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ingestion]
+      operationId: createConnection
+      x-book-role: write
+      summary: Connect an aggregator item and list its accounts (P6 amendments A34, A35).
+      description: |
+        external_id is the identifier the aggregator gives the item (one item per institution).
+        The name defaults to the item's connector name. Every external account starts pending.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConnectionInput"
+      responses:
+        "201":
+          description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /connections/{id}:
+    get:
+      tags: [ingestion]
+      operationId: getConnection
+      x-book-role: read
+      summary: Return a connection with its external accounts.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ingestion]
+      operationId: deleteConnection
+      x-book-role: write
+      summary: Delete a connection and its mappings; imported records and batches stay.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /connections/{id}/sync:
+    post:
+      tags: [ingestion]
+      operationId: syncConnection
+      x-book-role: write
+      summary: Sync every mapped account of the connection now (P6 amendment A43).
+      description: |
+        One import batch per mapped account. An item that needs its owner at the aggregator
+        (LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT) is not synced: batches is empty and the
+        connection shows the status. A sync of an account waits for any other sync or import
+        of it. A failure is stored in the connection's last_error.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+        "502":
+          $ref: "#/components/responses/Problem"
+  /connections/{id}/syncs:
+    get:
+      tags: [ingestion]
+      operationId: listConnectionSyncs
+      x-book-role: read
+      summary: The last 10 sync runs of the connection that decided, created or placed a line in review (A149).
+      description: |
+        Newest first. Each run lists its batches, one per mapped account, and the records its
+        summary lists: those the run linked, changed, withdrew, re-identified, created, matched or
+        placed in review. A record a later run decided belongs to that run. A run that changed
+        nothing is not listed.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncRunList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /connections/{id}/accounts/{external_account_id}:
+    put:
+      tags: [ingestion]
+      operationId: mapExternalAccount
+      x-book-role: write
+      summary: Map an external account to a ledger account, or ignore it (P6 amendment A35).
+      description: |
+        account_id is a leaf balance account of the external account's currency and a compatible
+        kind (CHECKING_ACCOUNT to checking, SAVINGS_ACCOUNT to savings or reserve, CREDIT_CARD to
+        credit_card, RESERVED_BALANCE to reserve) that no other external account feeds; sync_from is the first date to import.
+        Only mapped accounts sync.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: external_account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountMappingInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalAccount"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+schemas:
+  IntegrationInput:
+    type: object
+    additionalProperties: false
+    required: [aggregator, name, credentials]
+    properties:
+      aggregator:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      name:
+        type: string
+        minLength: 1
+        maxLength: 60
+      credentials:
+        $ref: "#/components/schemas/IntegrationCredentials"
+  IntegrationCredentials:
+    type: object
+    description: |
+      One value per credential field the aggregator declares in listAggregators; a missing
+      or undeclared member is 422 validation_failed on credentials.<name>.
+    additionalProperties:
+      type: string
+      maxLength: 200
+  Aggregator:
+    type: object
+    required: [id, name, credential_fields, connect_method]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      name:
+        type: string
+      credential_fields:
+        type: array
+        items:
+          type: object
+          required: [name, secret]
+          properties:
+            name:
+              type: string
+            secret:
+              type: boolean
+      connect_method:
+        type: string
+        description: "reference: a connection takes the item reference of an application the owner connected elsewhere."
+  AggregatorList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Aggregator"
+  Integration:
+    type: object
+    required: [id, aggregator, name, updated_at]
+    properties:
+      id:
+        type: string
+        format: uuid
+      aggregator:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      name:
+        type: string
+      updated_at:
+        type: string
+        format: date-time
+  IntegrationList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Integration"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  ConnectionInput:
+    type: object
+    additionalProperties: false
+    required: [integration_id, external_id]
+    properties:
+      integration_id:
+        type: string
+        format: uuid
+      external_id:
+        type: string
+        minLength: 1
+        maxLength: 100
+      name:
+        type: string
+        minLength: 1
+        maxLength: 60
+  Connection:
+    type: object
+    required: [id, integration_id, external_id, state, name, provider_status, created_at, accounts]
+    properties:
+      id:
+        type: string
+        format: uuid
+      integration_id:
+        type: string
+        format: uuid
+      external_id:
+        type: string
+      name:
+        type: string
+      state:
+        type: string
+        enum: [ok, needs_owner, failed, stalled, consent_expiring]
+        description: |
+          The aggregator-neutral reading of provider_status. stalled: the aggregator reports
+          the item ready but the institution's data or the last sync is more than 72 hours
+          old (A150). consent_expiring: the consent expires within 14 days (A151). An expired
+          consent reads needs_owner (A146).
+      provider_status:
+        type: string
+        description: The item status the aggregator reported, verbatim.
+      portal:
+        type: string
+        description: The aggregator's site or app where the owner acts on the item; absent when the aggregator names none.
+      last_item_update_at:
+        type: string
+        format: date-time
+        description: When the aggregator last updated the item from the institution, as of the last sync; the ledger holds the data of this update.
+      next_item_update_at:
+        type: string
+        format: date-time
+        description: When the aggregator will next update the item, as the last check read it (A95). The owner cannot bring it forward.
+      consent_expires_at:
+        type: string
+        format: date-time
+        description: When the consent the owner gave the institution expires; absent when it does not expire (A151).
+      last_synced_at:
+        type: string
+        format: date-time
+      last_error:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      accounts:
+        type: array
+        items:
+          $ref: "#/components/schemas/ExternalAccount"
+  SyncResult:
+    type: object
+    required: [connection, batches]
+    properties:
+      connection:
+        $ref: "#/components/schemas/Connection"
+      batches:
+        type: array
+        items:
+          $ref: "#/components/schemas/ImportBatch"
+  SyncRunList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/SyncRun"
+  SyncRun:
+    type: object
+    description: One sync of a connection, manual or scheduled (A149).
+    required: [sync_id, started_at, batches, records]
+    properties:
+      sync_id:
+        type: string
+        format: uuid
+      started_at:
+        type: string
+        format: date-time
+      batches:
+        type: array
+        items:
+          $ref: "#/components/schemas/ImportBatch"
+      records:
+        type: array
+        description: The records the run's summary lists, by date.
+        items:
+          $ref: "#/components/schemas/ExternalRecord"
+  ConnectionList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Connection"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  ExternalAccount:
+    type: object
+    required: [id, type, subtype, name, currency, state]
+    properties:
+      id:
+        type: string
+        format: uuid
+      type:
+        type: string
+      subtype:
+        type: string
+        description: |
+          CHECKING_ACCOUNT, SAVINGS_ACCOUNT, CREDIT_CARD or RESERVED_BALANCE (a reserved
+          balance of a bank account, outside its balance).
+      name:
+        type: string
+      number_last4:
+        type: string
+        description: |
+          Last four digits of the account number; the full number is never stored. Absent for
+          RESERVED_BALANCE.
+      currency:
+        type: string
+      state:
+        type: string
+        enum: [pending, mapped, ignored]
+      account_id:
+        type: string
+        format: uuid
+      sync_from:
+        type: string
+        format: date
+      last_synced_on:
+        type: string
+        format: date
+      gone_since:
+        type: string
+        format: date
+        description: The date a listing of the item first lacked this account (A214).
+  AccountMappingInput:
+    type: object
+    additionalProperties: false
+    description: account_id with sync_from maps the account; ignored true leaves it out of syncs.
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      sync_from:
+        type: string
+        format: date
+      ignored:
+        type: boolean
+  RecordResolution:
+    type: object
+    additionalProperties: false
+    required: [action]
+    properties:
+      action:
+        type: string
+        enum: [match, create, discard]
+      transaction_id:
+        type: string
+        format: uuid
+        description: Required for match; one of the record's candidates.
+  BulkResolveInput:
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        minItems: 1
+        maxItems: 200
+        items:
+          type: object
+          additionalProperties: false
+          required: [record_id, resolution]
+          properties:
+            record_id:
+              type: string
+              format: uuid
+            resolution:
+              $ref: "#/components/schemas/RecordResolution"
+  BulkResolveResult:
+    type: object
+    required: [results]
+    properties:
+      results:
+        type: array
+        description: One result per item, in request order.
+        items:
+          $ref: "#/components/schemas/BulkResolveItemResult"
+  BulkResolveItemResult:
+    type: object
+    required: [record_id, status]
+    properties:
+      record_id:
+        type: string
+        format: uuid
+      status:
+        type: string
+        enum: [resolved, validation_failed, not_found, record_resolved, group_changed, already_matched, transaction_voided, posting_reconciled]
+  ExternalRecord:
+    type: object
+    required: [id, batch_id, account_id, date, amount, description, state, candidates]
+    properties:
+      id:
+        type: string
+        format: uuid
+      batch_id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+      external_id:
+        type: string
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      description:
+        type: string
+      state:
+        type: string
+        enum: [received, matched, created, needs_review, discarded, withdrawn]
+      transaction_id:
+        type: string
+        format: uuid
+      candidates:
+        type: array
+        description: Transactions the record may confirm, while it needs review.
+        items:
+          type: string
+          format: uuid
+      unapplied_change:
+        type: string
+        description: A change the aggregator reported that the ledger did not take (P6 amendment A36).
+      decision:
+        type: string
+        enum: [linked, followed, withdrawn, re_identified, paired]
+        description: The last automatic decision of a sync, present while POST /external-records/{id}/undo can revert it (A148, A220).
+      review_reason:
+        type: string
+        enum: [ambiguous, probable, changed, repeated, group, reserve, duplicate, transfer]
+        description: Why the record waits for review (A100, A102, A142, A168, A213, A215, A219).
+      group_record_ids:
+        type: array
+        description: The other lines of the group, while review_reason is group (A168).
+        items:
+          type: string
+          format: uuid
+      scored_candidates:
+        type: array
+        description: The candidates as matching scored them, best first (A99, A100).
+        items:
+          $ref: "#/components/schemas/ScoredCandidate"
+  UnconfirmedList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/UnconfirmedEntry"
+  UnconfirmedEntry:
+    type: object
+    required: [transaction_id, date, amount, description]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+        description: The date by which the institution reports the line.
+      statement_id:
+        type: string
+        format: uuid
+        description: The card statement of the posting.
+      amount:
+        $ref: "#/components/schemas/Money"
+      description:
+        type: string
+      payee_id:
+        type: string
+        format: uuid
+  ScoredCandidate:
+    type: object
+    required: [transaction_id, score, amount, date, counterparty]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      score:
+        type: integer
+      amount:
+        type: string
+        enum: [identical, close, bounded]
+      date:
+        type: string
+        enum: [same_day, near, far]
+      counterparty:
+        type: string
+        enum: [same_payee, other_payee, similar_description, unknown]
+  ExternalRecordList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/ExternalRecord"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  SyncSchedule:
+    type: object
+    additionalProperties: false
+    required: [minutes]
+    properties:
+      minutes:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1440
+  CsvProfile:
+    type: object
+    additionalProperties: false
+    required: [date_column, date_layout, decimal_separator, description_column]
+    properties:
+      delimiter:
+        type: string
+        enum: [comma, semicolon, tab, pipe]
+      header_rows:
+        type: integer
+        minimum: 0
+        maximum: 10
+      date_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+      date_layout:
+        type: string
+        pattern: '^(DD|MM|YYYY|YY)[/. -](DD|MM|YYYY|YY)[/. -](DD|MM|YYYY|YY)$'
+        description: Order and separator of the date; day, month and year appear once each.
+      amount_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+      debit_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+      credit_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+      decimal_separator:
+        type: string
+        enum: [",", "."]
+      description_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+      id_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+      amount_sign:
+        type: string
+        enum: [as_is, inverted]
+        description: inverted flips the sign of every amount, for exports that list card charges as positive.
+      encoding:
+        type: string
+        pattern: "^[a-z0-9_-]{2,40}$"
+        default: auto
+        description: Text encoding of the file. auto keeps valid UTF-8 and decodes anything else as windows-1252.
+      group_separator:
+        type: string
+        pattern: "^[,. \u00a0']?$"
+        description: Digit group separator of amounts; empty for none. Defaults to the one that is not decimal_separator.
+      footer_rows:
+        type: integer
+        minimum: 0
+        maximum: 10
+        description: Rows under the data that are not lines of the statement.
+      sign_column:
+        type: string
+        minLength: 1
+        maxLength: 100
+        description: Column that says whether a line is a debit. Needs debit_marker and amount_column.
+      debit_marker:
+        type: string
+        minLength: 1
+        maxLength: 40
+        description: |
+          The text that marks a debit, compared without case, in sign_column or, without one, in the
+          letters after the number of the amount. A matching line is negative; any other keeps its sign.
+  CsvColumnSample:
+    type: object
+    additionalProperties: false
+    required: [rows]
+    properties:
+      header:
+        type: array
+        maxItems: 40
+        items:
+          type: string
+          maxLength: 200
+        description: The header row; absent for a file without one.
+      rows:
+        type: array
+        minItems: 1
+        maxItems: 12
+        items:
+          type: array
+          maxItems: 40
+          items:
+            type: string
+            maxLength: 200
+  CsvColumnSuggestion:
+    type: object
+    required: [date_column, description_column]
+    description: Header names, or 1-based positions as text for a file without a header.
+    properties:
+      date_column:
+        type: string
+      description_column:
+        type: string
+      amount_column:
+        type: string
+      debit_column:
+        type: string
+      credit_column:
+        type: string
+      id_column:
+        type: string
+      sign_column:
+        type: string
+  ImportBatch:
+    type: object
+    description: One file import, or one sync of a mapped account (source aggregator).
+    required: [id, account_id, source, counts, balance, started_at]
+    properties:
+      id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+      source:
+        type: string
+        enum: [ofx, csv, aggregator]
+      file_name:
+        type: string
+        description: Absent for a sync.
+      external_account_id:
+        type: string
+        format: uuid
+        description: The mapped account a sync read; absent for files and after its connection is deleted.
+      sync_id:
+        type: string
+        format: uuid
+        description: The sync run that made the batch; the batches of one run share it (A149). Absent for files.
+      period_from:
+        type: string
+        format: date
+      period_to:
+        type: string
+        format: date
+      counts:
+        $ref: "#/components/schemas/ImportCounts"
+      read_empty:
+        type: boolean
+        description: Present and true when the date read returned no line while the account held records in the window; nothing was withdrawn (A146).
+      balance:
+        $ref: "#/components/schemas/ImportBalance"
+      started_at:
+        type: string
+        format: date-time
+      completed_at:
+        type: string
+        format: date-time
+  ImportCounts:
+    type: object
+    description: |
+      Records of the batch by outcome; received is the number of lines read. updated counts
+      stored lines an aggregator changed (status, bill or amount); withdrawn counts stored
+      lines it stopped returning (P6 amendments A36, A38). re_identified counts stored lines
+      the institution line id joined to a new external id (A143).
+    required: [received, ignored, matched, created, needs_review, discarded, updated, withdrawn, re_identified, paired]
+    properties:
+      received:
+        type: integer
+      ignored:
+        type: integer
+      matched:
+        type: integer
+      created:
+        type: integer
+      needs_review:
+        type: integer
+      discarded:
+        type: integer
+      updated:
+        type: integer
+      withdrawn:
+        type: integer
+      re_identified:
+        type: integer
+        description: Stored lines that took the external id of a line carrying their institution line id (A143).
+      paired:
+        type: integer
+        description: Lines a sync paired with a transaction of another account of the book as a transfer (A220).
+  ImportBalance:
+    type: object
+    description: The balance the file reports and what became of it (chapter 3, F4).
+    required: [status]
+    properties:
+      status:
+        type: string
+        enum: [none, recorded, skipped]
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      reason:
+        type: string
+  ImportBatchList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/ImportBatch"
+      next_cursor:
+        type: string
+        description: Absent on the last page.

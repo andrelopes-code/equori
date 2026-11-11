@@ -44,8 +44,10 @@ lint: $(TOOLS)
 	GOOS=windows $(BIN)/golangci-lint run
 	GOOS=windows CGO_ENABLED=0 go vet ./...
 
-# Each module's httpapi holds an oapi-codegen.yaml selecting its tag from api/openapi.yaml.
+# api/openapi.yaml is the bundle of api/base.yaml, api/shared.yaml and the openapi.yaml of each module.
+# Each module's httpapi holds an oapi-codegen.yaml selecting its tag from the bundle.
 gen: $(TOOLS) $(WEB_DEPS)
+	go run ./internal/platform/apidoc/gen
 	go run ./internal/platform/money/gen
 	go run ./internal/platform/config/gen
 	$(BIN)/sqlc generate

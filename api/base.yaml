@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: equori API
+  version: 0.1.0
+  description: |
+    Each operation declares x-book-role. public needs no session; read, write and owner need a
+    session whose role in the active book ranks at least as high (read < write < owner). A lower
+    role is 403 book_role_required (ADR 029, HA9).
+    Errors use RFC 9457 problem details (docs/adr/004-api-errors.md).
+servers:
+  - url: /api/v1
+tags:
+  - name: identity
+    description: Members and sessions.
+  - name: ledger
+    description: Accounts, transactions and balances.
+  - name: reporting
+    description: Derived views over the ledger.
+  - name: portfolio
+    description: Positions, realized results and income events derived from Ledger (P8 amendment A71).
+  - name: marketdata
+    description: Instruments, prices and business-day calendars.
+  - name: ingestion
+    description: File imports, aggregator integrations and connections, external records and their review.
+  - name: instance
+    description: Backups, the encrypted copy, the diagnostic file and the version notice of the instance.
+  - name: classification
+    description: Categorization rules, payee aliases, suggestions and categorization methods.
+  - name: planning
+    description: Schedules and their occurrences, budgets, goals, projections and committed amounts.
+  - name: capture
+    description: Transaction drafts read from text the owner writes.
+  - name: assistant
+    description: Language model providers of each book and the chain of each use (ADR 019).
+security:
+  - sessionCookie: []

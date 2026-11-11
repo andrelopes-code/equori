@@ -1,0 +1,347 @@
+paths:
+  /instance/backup:
+    get:
+      tags: [instance]
+      operationId: getBackup
+      x-book-role: read
+      summary: Backups and encrypted copy of the instance; admin only (P13 A157).
+      responses:
+        "200":
+          description: The state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [instance]
+      operationId: runBackup
+      x-book-role: read
+      summary: Write a periodic backup and its copy now; admin only. 409 backup_off without EQUORI_BACKUP_DIR; 500 backup_failed.
+      responses:
+        "200":
+          description: The new state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "500":
+          $ref: "#/components/responses/Problem"
+  /instance/backup/copy-password:
+    put:
+      tags: [instance]
+      operationId: setCopyPassword
+      x-book-role: read
+      summary: Set the password of the encrypted copies; admin only. 400 password_too_short below 12 characters; 409 secret_key_missing without EQUORI_SECRET_KEY.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CopyPasswordInput"
+      responses:
+        "204":
+          description: Stored.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /instance/diagnostic:
+    get:
+      tags: [instance]
+      operationId: getDiagnostic
+      x-book-role: read
+      summary: The diagnostic file, without amounts, names or descriptions; admin only (P13 A158).
+      responses:
+        "200":
+          description: equori-diagnostic-<YYYY-MM-DD>.json as an attachment.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Diagnostic"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+  /instance/version:
+    get:
+      tags: [instance]
+      operationId: getVersion
+      x-book-role: read
+      summary: Version of the binary and the newest release found; admin only (P13 A159).
+      responses:
+        "200":
+          description: The state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+  /instance/version/update-check:
+    put:
+      tags: [instance]
+      operationId: setUpdateCheck
+      x-book-role: read
+      summary: Allow or refuse the daily request for the latest release; admin only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCheckInput"
+      responses:
+        "200":
+          description: The state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionStatus"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+schemas:
+  BackupStatus:
+    type: object
+    additionalProperties: false
+    required: [backups, copy]
+    properties:
+      backups:
+        $ref: "#/components/schemas/BackupState"
+      copy:
+        $ref: "#/components/schemas/CopyStatus"
+  BackupState:
+    type: object
+    additionalProperties: false
+    required: [state, periodic_at, pre_migration_at, late]
+    properties:
+      state:
+        type: string
+        enum: ["on", "off"]
+      periodic_at:
+        type: string
+        format: date-time
+        nullable: true
+      pre_migration_at:
+        type: string
+        format: date-time
+        nullable: true
+      late:
+        type: boolean
+  CopyStatus:
+    type: object
+    additionalProperties: false
+    required: [state, copied_at, file, late]
+    properties:
+      state:
+        type: string
+        enum: [folder_unset, password_unset, ok, folder_not_writable, failed]
+      copied_at:
+        type: string
+        format: date-time
+        nullable: true
+      file:
+        type: string
+        nullable: true
+      late:
+        type: boolean
+  CopyPasswordInput:
+    type: object
+    additionalProperties: false
+    required: [password]
+    properties:
+      password:
+        type: string
+        maxLength: 1024
+  UpdateCheckInput:
+    type: object
+    additionalProperties: false
+    required: [update_check]
+    properties:
+      update_check:
+        type: boolean
+  VersionStatus:
+    type: object
+    additionalProperties: false
+    required: [version, update_check, latest, newer, distribution]
+    properties:
+      version:
+        type: string
+      update_check:
+        type: boolean
+        nullable: true
+      latest:
+        $ref: "#/components/schemas/Release"
+      newer:
+        type: boolean
+      distribution:
+        description: >-
+          The form of the instance, whose upgrade differs: compose for compose.yaml,
+          managed for managed mode, other otherwise (A194).
+        type: string
+        enum: [compose, managed, other]
+  Release:
+    type: object
+    nullable: true
+    additionalProperties: false
+    required: [version, url, checked_at]
+    properties:
+      version:
+        type: string
+      url:
+        type: string
+      checked_at:
+        type: string
+        format: date-time
+  Diagnostic:
+    type: object
+    additionalProperties: false
+    required: [generated_at, version, schema, go, os, arch, mode, postgres, environment, tables, backup, connections, outbox, log]
+    properties:
+      generated_at:
+        type: string
+        format: date-time
+      version:
+        type: string
+      schema:
+        type: object
+        additionalProperties: false
+        required: [database, binary]
+        properties:
+          database:
+            type: integer
+            format: int64
+          binary:
+            type: integer
+            format: int64
+      go:
+        type: string
+      os:
+        type: string
+      arch:
+        type: string
+      mode:
+        type: string
+        enum: [managed, external]
+      postgres:
+        type: object
+        additionalProperties: false
+        required: [version, locale_provider, locale]
+        properties:
+          version:
+            type: string
+          locale_provider:
+            type: string
+          locale:
+            type: string
+      environment:
+        type: array
+        items:
+          type: string
+      tables:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [name, rows]
+          properties:
+            name:
+              type: string
+            rows:
+              type: integer
+              format: int64
+      backup:
+        type: object
+        additionalProperties: false
+        required: [backups, copy]
+        properties:
+          backups:
+            $ref: "#/components/schemas/BackupState"
+          copy:
+            type: object
+            additionalProperties: false
+            required: [state, copied_at, late]
+            properties:
+              state:
+                type: string
+              copied_at:
+                type: string
+                format: date-time
+                nullable: true
+              late:
+                type: boolean
+      connections:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [id, aggregator, state, last_update, failed]
+          properties:
+            id:
+              type: string
+              format: uuid
+            aggregator:
+              type: string
+            state:
+              type: string
+            last_update:
+              type: string
+              format: date-time
+              nullable: true
+            failed:
+              type: boolean
+      outbox:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [type, pending, failed]
+          properties:
+            type:
+              type: string
+            pending:
+              type: integer
+              format: int64
+            failed:
+              type: integer
+              format: int64
+      log:
+        type: array
+        items:
+          type: object
+          additionalProperties: false
+          required: [time, level, message, attrs]
+          properties:
+            time:
+              type: string
+              format: date-time
+            level:
+              type: string
+            message:
+              type: string
+            attrs:
+              type: object
+              additionalProperties:
+                type: string

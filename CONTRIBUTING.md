@@ -50,7 +50,7 @@ internal/<module>/     one business module: code, queries and tests (ADR 033)
 internal/server/       composition of every module: HTTP handler and outbox dispatcher
 internal/apitest/      HTTP test harness over internal/server
 db/migrations/         goose SQL migrations, embedded
-api/openapi.yaml       HTTP contract, source of truth for server and frontend types
+api/                   base.yaml and shared.yaml (header, shared schemas); openapi.yaml is the bundle that `make gen` writes
 web/                   single-page application (Vite, React, TypeScript), embedded by web/embed.go
 packaging/, scripts/   release packaging (Homebrew, Windows) and release scripts
 docs/adr/              decision records
@@ -104,7 +104,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - Language model calls go through `internal/platform/llm` (ADR 009); each module declares its chain in code.
 - Tools for language models are declared in `internal/<module>/toolapi` and composed in `internal/server` (ADR 012).
 - Handlers get the book with `auth.MustBooksID(ctx)` and the member with `auth.MustMemberID(ctx)` (`internal/platform/auth`) and pass them to `app` explicitly. `identity.Authorize` authenticates every `/api/` route and checks the book role its operation declares in `x-book-role` (ADR 029).
-- `*.gen.go` and `*.gen.ts` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, a directory `internal/<module>/postgres/queries/`, a tag in `api/openapi.yaml`, `httpapi/oapi-codegen.yaml` and a depguard rule in `.golangci.yml`.
+- `*.gen.go` and `*.gen.ts` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, a directory `internal/<module>/postgres/queries/`, a tag in `api/base.yaml`, `internal/<module>/openapi.yaml`, `httpapi/oapi-codegen.yaml` and a depguard rule in `.golangci.yml`.
 - Every business table has `books_id`; every query on it filters by `books_id` (ADR 003, ADR 029).
 - Web code follows `docs/contributing/web.md`.
 

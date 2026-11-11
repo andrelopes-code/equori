@@ -1,0 +1,3871 @@
+paths:
+  /settings:
+    get:
+      tags: [ledger]
+      operationId: getSettings
+      x-book-role: read
+      summary: Return the ledger settings.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "401":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ledger]
+      operationId: updateSettings
+      x-book-role: owner
+      summary: Change the base currency; allowed only before the first transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Settings"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /institutions:
+    get:
+      tags: [ledger]
+      operationId: listInstitutions
+      x-book-role: read
+      summary: List institutions.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createInstitution
+      x-book-role: write
+      summary: Create an institution.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Institution"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /institutions/{id}:
+    delete:
+      tags: [ledger]
+      operationId: deleteInstitution
+      x-book-role: write
+      summary: Delete an institution that no open account uses; closed accounts lose it.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /institution-identifier-schemes:
+    get:
+      tags: [ledger]
+      operationId: listInstitutionIdentifierSchemes
+      x-book-role: read
+      summary: List the institution identifier schemes and their patterns.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionIdentifierSchemeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /institutions/{id}/identifier:
+    put:
+      tags: [ledger]
+      operationId: setInstitutionIdentifier
+      x-book-role: write
+      summary: Set or clear the identifier of an institution; the br_ispb identifier keys its logo (ADR 013).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstitutionIdentifierInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Institution"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payees:
+    get:
+      tags: [ledger]
+      operationId: listPayees
+      x-book-role: read
+      summary: List payees.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayeeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createPayee
+      x-book-role: write
+      summary: Create a payee.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeInput"
+      responses:
+        "201":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payees/{id}:
+    patch:
+      tags: [ledger]
+      operationId: renamePayee
+      x-book-role: write
+      summary: Rename a payee (A82).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayeeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /payees/{id}/merge:
+    post:
+      tags: [ledger]
+      operationId: mergePayee
+      x-book-role: write
+      summary: Merge a payee into another; returns the destination (A82).
+      description: |
+        Every non-voided transaction of the payee gets a new version naming the destination; voided transactions and
+        counterparty accounts name it in place. The payee is kept as merged and leaves listPayees.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergePayeeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payee"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /tags:
+    get:
+      tags: [ledger]
+      operationId: listTags
+      x-book-role: read
+      summary: List tags in use.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagList"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /tags/{name}:
+    parameters:
+      - $ref: "#/components/parameters/TagName"
+    get:
+      tags: [ledger]
+      operationId: getTag
+      x-book-role: read
+      summary: A tag and the number of non-voided transactions that carry it.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagUsage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [ledger]
+      operationId: renameTag
+      x-book-role: write
+      summary: Rename a tag on every transaction; no transaction gets a new version.
+      description: The name is normalized as a transaction tag. A name in use is 422 on name; merge the tags instead.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagUsage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ledger]
+      operationId: deleteTag
+      x-book-role: write
+      summary: Delete a tag; every non-voided transaction that carries it gets a new version without it.
+      description: Voided transactions lose the tag in place.
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /tags/{name}/merge:
+    post:
+      tags: [ledger]
+      operationId: mergeTag
+      x-book-role: write
+      summary: Merge a tag into another; returns the destination.
+      description: |
+        Every non-voided transaction that carries the tag gets a new version carrying the destination once; voided
+        transactions name the destination in place. The tag is deleted.
+      parameters:
+        - $ref: "#/components/parameters/TagName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeTagInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagUsage"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts:
+    get:
+      tags: [ledger]
+      operationId: listAccounts
+      x-book-role: read
+      summary: List accounts, categories included.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountList"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createAccount
+      x-book-role: write
+      summary: Create an account or category.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountInput"
+      responses:
+        "201":
+          description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}:
+    get:
+      tags: [ledger]
+      operationId: getAccount
+      x-book-role: read
+      summary: Return an account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    patch:
+      tags: [ledger]
+      operationId: updateAccount
+      x-book-role: write
+      summary: Rename or move an account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountPatch"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/close:
+    post:
+      tags: [ledger]
+      operationId: closeAccount
+      x-book-role: write
+      summary: Close an account and its open descendants (A74).
+      description: |
+        Every closed account needs no postings after closed_on; an asset, liability or equity account
+        also needs a zero balance. A subtree holding a system account is rejected with system_account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseAccountInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/reopen:
+    post:
+      tags: [ledger]
+      operationId: reopenAccount
+      x-book-role: write
+      summary: Reopen a closed account and its closed ancestors (A74).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/appearance:
+    put:
+      tags: [ledger]
+      operationId: setAccountAppearance
+      x-book-role: write
+      summary: Set or clear the colour and the icon of an account (A83).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountAppearance"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/parent:
+    put:
+      tags: [ledger]
+      operationId: setAccountParent
+      x-book-role: write
+      summary: Set or clear the parent of an account (A84).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountParent"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/merge:
+    post:
+      tags: [ledger]
+      operationId: mergeAccount
+      x-book-role: write
+      summary: Merge a category into another; returns the destination (A75).
+      description: |
+        Every non-voided transaction with a posting on the category gets a new version with that posting
+        on the destination; the subcategories move under the destination; the category closes today.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MergeAccountInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/balance:
+    get:
+      tags: [ledger]
+      operationId: getAccountBalance
+      x-book-role: read
+      summary: Balance of an account at the end of a date.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: basis
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [booked, settled]
+        - name: value_in
+          in: query
+          required: false
+          description: Currency to value the balance in with stored prices (P8 amendment A65).
+          schema:
+            type: string
+            pattern: "^[A-Z]{3}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Balance"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /balances:
+    get:
+      tags: [ledger]
+      operationId: listBalances
+      x-book-role: read
+      summary: Balance of every balance-sheet account at the end of a date, ordered by account name then id.
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: basis
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [booked, settled]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /transactions:
+    get:
+      tags: [ledger]
+      operationId: listTransactions
+      x-book-role: read
+      summary: List transactions, newest first.
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+        - name: account_id
+          in: query
+          description: Transactions with a posting on the account or on one of its descendants (A76).
+          schema:
+            type: string
+            format: uuid
+        - name: payee_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: amount_min
+          in: query
+          description: Smallest amount moved, in minor units of the book's balancing currency. A transaction moves the sum of its positive weights, so a split and a transfer count once.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: amount_max
+          in: query
+          description: Largest amount moved, on the same basis as amount_min.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+        - name: uncategorized
+          in: query
+          description: When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
+          schema:
+            type: boolean
+        - name: q
+          in: query
+          description: Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createTransaction
+      x-book-role: write
+      summary: Record a transaction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "201":
+          description: OK.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /foreign-purchases:
+    post:
+      tags: [ledger]
+      operationId: recordForeignPurchase
+      x-book-role: write
+      summary: Record a purchase charged in another currency, with the card's foreign charge (P8 amendment A66).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForeignPurchaseInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /exchanges:
+    post:
+      tags: [ledger]
+      operationId: exchangeCurrency
+      x-book-role: write
+      summary: Exchange money between own accounts in two currencies, one of them the base currency (P8 amendment A67).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /trades:
+    post:
+      tags: [ledger]
+      operationId: recordTrade
+      x-book-role: write
+      summary: Buy or sell a security for cash of the same brokerage at average cost (P8 amendment A68).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /investment-income:
+    post:
+      tags: [ledger]
+      operationId: recordInvestmentIncome
+      x-book-role: write
+      summary: Record income paid on a security into cash of the same brokerage (P8 amendment A70).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentIncomeInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}:
+    get:
+      tags: [ledger]
+      operationId: getTransaction
+      x-book-role: read
+      summary: Return a transaction.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [ledger]
+      operationId: correctTransaction
+      x-book-role: write
+      summary: Correct a transaction; creates a new version.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CorrectionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/void:
+    post:
+      tags: [ledger]
+      operationId: voidTransaction
+      x-book-role: write
+      summary: Void a transaction; it stays in history.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoidInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/categorize:
+    post:
+      tags: [ledger]
+      operationId: categorizeTransactions
+      x-book-role: write
+      summary: Give several transactions one category, each item decided on its own (A78).
+      description: |
+        Each item replaces the category postings of its transaction with one posting on category_id holding their
+        total, method manual. An item that fails reports its status and leaves the others applied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCategorizeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkCategorizeResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/void:
+    post:
+      tags: [ledger]
+      operationId: voidTransactions
+      x-book-role: write
+      summary: Void several transactions with one reason, each item decided on its own (A202).
+      description: |
+        Each item runs as voidTransaction. An item that fails reports its status and leaves the others applied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkVoidInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkVoidResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/categorize:
+    post:
+      tags: [ledger]
+      operationId: categorizeTransaction
+      x-book-role: write
+      summary: Replace the category postings of a transaction, keeping their total (P5 amendment A18).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategorizeInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/transfer:
+    post:
+      tags: [ledger]
+      operationId: transferTransaction
+      x-book-role: write
+      summary: Replace the category side with a posting on another of the owner's accounts, pairing with its imported other side (P5b amendments A28, A29).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransferResult"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/reimbursement:
+    post:
+      tags: [ledger]
+      operationId: reimburseTransaction
+      x-book-role: write
+      summary: Make an incoming transaction the reimbursement of a recorded expense (A117).
+      description: |
+        Replaces the reimbursements of the incoming transaction with allocations. For each allocation the
+        category side takes negative postings on the expense categories of the expense, allocated by their
+        amounts, and a reimbursement_of link holds the amount; what is not allocated stays on the
+        uncategorized income account. With category_id, that expense and its reimbursement move to the expense
+        category. The total of the non-voided reimbursements of an expense never exceeds its category total.
+        An empty list takes the reimbursements back and is valid only when there are some.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReimbursementInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/reimbursement-candidates:
+    get:
+      tags: [ledger]
+      operationId: listReimbursementCandidates
+      x-book-role: read
+      summary: Expenses an incoming transaction can reimburse (A117).
+      description: |
+        Non-voided expenses in the currency of the transaction dated from 90 days before it through its date,
+        or already repaid by it, each with an amount left to reimburse once the other transactions are counted.
+        The expenses it repays come first, then the one whose remaining amount equals the inflow, then the
+        newest. At most 15. suggestion lists the only combination of items whose remaining amounts add up to the
+        inflow; it is absent when there is none, when there are several and when the transaction already repays
+        an expense. Empty when the transaction is voided or has no inflow on its category side.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReimbursementCandidateList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/reimbursement-sources:
+    get:
+      tags: [ledger]
+      operationId: listReimbursementSources
+      x-book-role: read
+      summary: Incoming transactions that can repay an expense (A117).
+      description: |
+        Non-voided inflows in the currency of the expense dated from its date through 90 days after, whose
+        category side holds only uncategorized income and reimbursements and that do not repay this expense yet,
+        each with the amount not allocated. Oldest first, at most 10. Empty when the transaction is voided or
+        has no expense category.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReimbursementSourceList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/versions:
+    get:
+      tags: [ledger]
+      operationId: listTransactionVersions
+      x-book-role: read
+      summary: Previous versions of a transaction.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionVersionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/billing-cycle-rules:
+    get:
+      tags: [ledger]
+      operationId: listBillingCycleRules
+      x-book-role: read
+      summary: Billing cycle rule versions of a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingCycleRuleList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createBillingCycleRule
+      x-book-role: write
+      summary: Add a billing cycle rule version, effective from a reference month.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingCycleRule"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingCycleRule"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/statement-placement:
+    get:
+      tags: [ledger]
+      operationId: getStatementPlacement
+      x-book-role: read
+      summary: Statement a card purchase dated date would be billed on, with its dates adjusted by the rule's calendar; nothing is stored.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementPlacement"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/credit-limits:
+    get:
+      tags: [ledger]
+      operationId: listCreditLimits
+      x-book-role: read
+      summary: Credit limit versions of a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditLimitList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createCreditLimit
+      x-book-role: write
+      summary: Add a credit limit version.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditLimit"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditLimit"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/cards:
+    get:
+      tags: [ledger]
+      operationId: listCards
+      x-book-role: read
+      summary: Physical and virtual cards of a card account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createCard
+      x-book-role: write
+      summary: Add a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /cards/{id}:
+    patch:
+      tags: [ledger]
+      operationId: updateCard
+      x-book-role: write
+      summary: Edit the holder or last four digits of a card, or activate or deactivate it.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardUpdate"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Card"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ledger]
+      operationId: deleteCard
+      x-book-role: write
+      summary: Delete a card.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/statements:
+    get:
+      tags: [ledger]
+      operationId: listStatements
+      x-book-role: read
+      summary: Statements of a card with amounts and status derived from its postings.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: from
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+        - name: to
+          in: query
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}:
+    get:
+      tags: [ledger]
+      operationId: getStatement
+      x-book-role: read
+      summary: A statement with its postings.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /installment-purchases:
+    post:
+      tags: [ledger]
+      operationId: createInstallmentPurchase
+      x-book-role: write
+      summary: Record a card purchase in installments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InstallmentPurchaseInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstallmentPurchase"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transaction-batches:
+    post:
+      tags: [ledger]
+      operationId: createTransactionBatch
+      x-book-role: write
+      summary: Record several transactions and installment purchases at once, or none (A114).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionBatchInput"
+      responses:
+        "201":
+          description: Created, in input order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionBatch"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/commitments:
+    get:
+      tags: [ledger]
+      operationId: getCommitment
+      x-book-role: read
+      summary: Installments not yet billed on the statement of a month.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Commitment"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/payments:
+    post:
+      tags: [ledger]
+      operationId: payStatement
+      x-book-role: write
+      summary: Pay a statement from a balance account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementPaymentInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/financing:
+    post:
+      tags: [ledger]
+      operationId: financeStatement
+      x-book-role: write
+      summary: Convert the unpaid amount of a closed statement into installments.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementFinancingInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstallmentPurchase"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/refunds:
+    post:
+      tags: [ledger]
+      operationId: refundTransaction
+      x-book-role: write
+      summary: Refund all or part of a card purchase.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /installment-plans/{id}:
+    get:
+      tags: [ledger]
+      operationId: getInstallmentPlan
+      x-book-role: read
+      summary: Schedule and state of an installment plan.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstallmentPlan"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /installment-plans/{id}/cancellation:
+    post:
+      tags: [ledger]
+      operationId: cancelInstallmentPlan
+      x-book-role: write
+      summary: Cancel an installment purchase.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancellationInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /installment-plans/{id}/anticipation:
+    post:
+      tags: [ledger]
+      operationId: anticipateInstallments
+      x-book-role: write
+      summary: Pay future installments early.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnticipationInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/disputes:
+    get:
+      tags: [ledger]
+      operationId: listDisputes
+      x-book-role: read
+      summary: Disputes of a transaction, ordered by opening date.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisputeList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: openDispute
+      x-book-role: write
+      summary: Open a dispute on a card purchase.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisputeInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispute"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /disputes/{id}/resolve:
+    post:
+      tags: [ledger]
+      operationId: resolveDispute
+      x-book-role: write
+      summary: Resolve a dispute; a won dispute refunds the remaining charged amount.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisputeResolution"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispute"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/balance-assertions:
+    get:
+      tags: [ledger]
+      operationId: listBalanceAssertions
+      x-book-role: read
+      summary: Balances reported by the institution for a leaf balance account.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceAssertionList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createBalanceAssertion
+      x-book-role: write
+      summary: Record the institution's balance and reconcile the account when it matches.
+      description: |
+        The difference is the asserted amount minus the settled balance at the date. Zero reconciles
+        the account; a positive difference on an account with yield mode auto records yield and
+        reconciles; any other difference stays open.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BalanceAssertionInput"
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssertionResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /balance-assertions/{id}/resolve:
+    post:
+      tags: [ledger]
+      operationId: resolveBalanceAssertion
+      x-book-role: write
+      summary: Resolve the open difference of an assertion and reconcile the account.
+      description: |
+        adjustment records the difference against the equity account Adjustments; yield records a
+        positive difference as income against the account Yield and is rejected for a negative one;
+        transactions_added requires the settled balance to match the assertion after the missing
+        transactions were recorded.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssertionResolutionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssertionResult"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/reconciliation:
+    get:
+      tags: [ledger]
+      operationId: getReconciliationStatus
+      x-book-role: read
+      summary: Last reconciliation date and the open difference of the latest assertion.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/unlock:
+    post:
+      tags: [ledger]
+      operationId: unlockAccount
+      x-book-role: write
+      summary: Return reconciled postings settled on or after a date to cleared.
+      description: Deletes the account's reconciliations dated on or after the date (P3 amendment A8).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UnlockInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReconciliationStatus"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/reconcile:
+    post:
+      tags: [ledger]
+      operationId: reconcileStatement
+      x-book-role: write
+      summary: Confirm the institution's amount due for a closed statement.
+      description: |
+        An amount equal to the derived amount due marks the statement's postings reconciled
+        (P3 amendment A7); a different amount returns difference_remains.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementReconciliationInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/defer:
+    post:
+      tags: [ledger]
+      operationId: deferStatementPostings
+      x-book-role: write
+      summary: Move card postings of a statement to the next statement, as the owner's choice (A137).
+      description: |
+        Each transaction's card posting on the statement moves to the next statement through a
+        correction; every transaction is checked before the first one moves. A transaction with no
+        card posting on the statement, or whose posting follows an installment plan, returns
+        posting_not_movable; a reconciled posting returns posting_reconciled.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeferPostingsInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/facts:
+    put:
+      tags: [ledger]
+      operationId: setStatementFacts
+      x-book-role: write
+      summary: Record the institution's facts for a statement, as the owner reads them (A85).
+      description: |
+        The owner's facts win over an aggregator's. The statement takes their dates, and the
+        card postings billed by a date the new dates move are billed again (A86).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatementFactsInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementDetail"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [ledger]
+      operationId: removeStatementFacts
+      x-book-role: write
+      summary: Remove the owner's facts; the statement takes the aggregator's facts or the rule's dates.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Removed.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /transactions/{id}/attachments:
+    get:
+      tags: [ledger]
+      operationId: listAttachments
+      x-book-role: read
+      summary: Files attached to a transaction.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+    post:
+      tags: [ledger]
+      operationId: createAttachment
+      x-book-role: write
+      summary: Attach a file to a transaction.
+      description: |
+        At most 10 MiB of content (N26); the request body limit of this route is 11 MiB. Accepted media
+        types, detected from the content: application/pdf, image/jpeg, image/png, image/webp, text/plain.
+        A file already attached to the transaction returns the existing attachment.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /attachments/{id}:
+    delete:
+      tags: [ledger]
+      operationId: deleteAttachment
+      x-book-role: write
+      summary: Remove an attachment; the stored file is deleted when no attachment references it.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /attachments/{id}/content:
+    get:
+      tags: [ledger]
+      operationId: getAttachmentContent
+      x-book-role: read
+      summary: Download the attached file, or show a PDF or an image in a frame of the application.
+      description: |
+        With disposition=inline the response is shown in place and its Content-Security-Policy
+        allows a frame of the application's own origin (ADR 007, C9a); 422
+        attachment_not_inlineable for any media type but a PDF or an image. The default is a
+        download and no frame may show it.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: disposition
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [attachment, inline]
+            default: attachment
+      responses:
+        "200":
+          description: The file, with its stored media type.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            Content-Security-Policy:
+              schema:
+                type: string
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+parameters:
+  TagName:
+    name: name
+    in: path
+    required: true
+    schema:
+      type: string
+      minLength: 1
+      maxLength: 60
+schemas:
+  Attachment:
+    type: object
+    required: [id, transaction_id, file_name, media_type, size, sha256, created_at]
+    properties:
+      id:
+        type: string
+        format: uuid
+      transaction_id:
+        type: string
+        format: uuid
+      file_name:
+        type: string
+      media_type:
+        type: string
+      size:
+        type: integer
+        format: int64
+      sha256:
+        type: string
+        description: Hexadecimal SHA-256 of the content.
+      created_at:
+        type: string
+        format: date-time
+  AttachmentList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Attachment"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  StatementReconciliationInput:
+    type: object
+    additionalProperties: false
+    required: [amount_due]
+    properties:
+      amount_due:
+        $ref: "#/components/schemas/Money"
+  AssertionResolutionInput:
+    type: object
+    additionalProperties: false
+    required: [resolution]
+    properties:
+      resolution:
+        type: string
+        enum: [adjustment, yield, transactions_added]
+  ReconciliationStatus:
+    type: object
+    properties:
+      last_reconciled_on:
+        type: string
+        format: date
+      open_difference:
+        $ref: "#/components/schemas/OpenDifference"
+  OpenDifference:
+    type: object
+    required: [assertion_id, date, difference]
+    properties:
+      assertion_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      difference:
+        $ref: "#/components/schemas/Money"
+  UnlockInput:
+    type: object
+    additionalProperties: false
+    required: [from]
+    properties:
+      from:
+        type: string
+        format: date
+  BalanceAssertionInput:
+    type: object
+    additionalProperties: false
+    required: [date, amount]
+    properties:
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      source:
+        type: string
+        enum: [manual, import, aggregator]
+  BalanceAssertion:
+    type: object
+    required: [id, account_id, date, amount, source, recorded_at, reconciled]
+    properties:
+      id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      source:
+        type: string
+        enum: [manual, import, aggregator]
+      recorded_at:
+        type: string
+        format: date-time
+      reconciled:
+        type: boolean
+  BalanceAssertionList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/BalanceAssertion"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  AssertionResult:
+    type: object
+    required: [assertion, difference]
+    properties:
+      assertion:
+        $ref: "#/components/schemas/BalanceAssertion"
+      difference:
+        $ref: "#/components/schemas/Money"
+      resolution:
+        type: string
+        enum: [none, yield, adjustment, transactions_added]
+        description: Absent while the difference stays open.
+      resolution_transaction_id:
+        type: string
+        format: uuid
+        description: The yield or adjustment transaction recorded by the resolution.
+  DisputeInput:
+    type: object
+    additionalProperties: false
+    required: [opened_on]
+    properties:
+      opened_on:
+        type: string
+        format: date
+  DisputeResolution:
+    type: object
+    additionalProperties: false
+    required: [resolved_on, outcome]
+    properties:
+      resolved_on:
+        type: string
+        format: date
+      outcome:
+        type: string
+        enum: [won, lost]
+      statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+  Dispute:
+    type: object
+    required: [id, transaction_id, opened_on]
+    properties:
+      id:
+        type: string
+        format: uuid
+      transaction_id:
+        type: string
+        format: uuid
+      opened_on:
+        type: string
+        format: date
+      resolved_on:
+        type: string
+        format: date
+      outcome:
+        type: string
+        enum: [won, lost]
+      refund_transaction_id:
+        type: string
+        format: uuid
+  InstallmentPlan:
+    type: object
+    required: [id, transaction_id, account_id, status, count, installments]
+    properties:
+      id:
+        type: string
+        format: uuid
+      transaction_id:
+        type: string
+        format: uuid
+        description: The purchase or financing transaction that created the plan.
+      account_id:
+        type: string
+        format: uuid
+        description: The card account billed by the plan.
+      status:
+        type: string
+        enum: [active, cancelled, anticipated]
+        description: cancelled when a non-voided cancellation exists, else anticipated when a non-voided anticipation exists, else active.
+      count:
+        type: integer
+      interest:
+        $ref: "#/components/schemas/Money"
+      installments:
+        type: array
+        description: Ordered by number.
+        items:
+          $ref: "#/components/schemas/ScheduledInstallment"
+  ScheduledInstallment:
+    type: object
+    required: [number, statement, amount, reversed]
+    properties:
+      number:
+        type: integer
+      statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+        example: "2026-11"
+      amount:
+        $ref: "#/components/schemas/Money"
+      reversed:
+        type: boolean
+        description: True when a cancellation or an anticipation credited the installment on its statement.
+  DisputeList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Dispute"
+  RefundInput:
+    type: object
+    additionalProperties: false
+    required: [date, amount]
+    properties:
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+  CancellationInput:
+    type: object
+    additionalProperties: false
+    required: [date]
+    properties:
+      date:
+        type: string
+        format: date
+      credit_statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+  AnticipationInput:
+    type: object
+    additionalProperties: false
+    required: [date, from_installment, to_installment, target_statement, amount]
+    properties:
+      date:
+        type: string
+        format: date
+      from_installment:
+        type: integer
+        minimum: 1
+        maximum: 420
+      to_installment:
+        type: integer
+        minimum: 1
+        maximum: 420
+      target_statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+      amount:
+        $ref: "#/components/schemas/Money"
+  StatementPaymentInput:
+    type: object
+    additionalProperties: false
+    required: [date, from_account_id, amount]
+    properties:
+      date:
+        type: string
+        format: date
+      from_account_id:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+  StatementFinancingInput:
+    type: object
+    additionalProperties: false
+    required: [date, installment_count, installment_amount]
+    properties:
+      date:
+        type: string
+        format: date
+      installment_count:
+        type: integer
+        minimum: 2
+        maximum: 420
+      installment_amount:
+        $ref: "#/components/schemas/Money"
+  Split:
+    type: object
+    additionalProperties: false
+    required: [account_id, amount]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+  InstallmentPurchaseInput:
+    type: object
+    additionalProperties: false
+    required: [card_account_id, date, splits, installment_count]
+    properties:
+      card_account_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+        maxLength: 500
+      payee_id:
+        type: string
+        format: uuid
+      tags:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 60
+      splits:
+        type: array
+        items:
+          $ref: "#/components/schemas/Split"
+        minItems: 1
+        maxItems: 500
+      installment_count:
+        type: integer
+        minimum: 2
+        maximum: 420
+      interest:
+        $ref: "#/components/schemas/Money"
+      first_statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+      installment_amounts:
+        type: array
+        items:
+          $ref: "#/components/schemas/Money"
+        maxItems: 420
+  InstallmentPurchase:
+    type: object
+    required: [transaction, plan_id]
+    properties:
+      transaction:
+        $ref: "#/components/schemas/Transaction"
+      plan_id:
+        type: string
+        format: uuid
+  Commitment:
+    type: object
+    required: [month, amount]
+    properties:
+      month:
+        type: string
+      amount:
+        $ref: "#/components/schemas/Money"
+  StatementSummary:
+    type: object
+    required: [id, account_id, reference, closing_date, due_date, opening, charges, credits, amount_due, payments, unpaid, status, reconciled,
+      settled, prior_credits, early_payments, billed_amount, open_amount]
+    description: >-
+      Amounts are positive when owed by the user. Every card posting is billed on the statement of its
+      cycle (A89). opening is the previous amount_due; credits and payments are those billed on the
+      statement; amount_due = opening + charges − credits − payments, the card balance at closing;
+      settled is the credits and payments of the next statement, up to today, that cover amount_due;
+      unpaid = amount_due − settled, zero for a credit balance; prior_credits are the credits that
+      settled the previous statement; early_payments are the payments beyond what settled it;
+      billed_amount = amount_due + early_payments; open_amount = amount_due less the unpaid amount of a
+      previous statement not yet due (closed or partially_paid), the institution's open bill (A138). institution and amount_difference (amount_due −
+      institution.total) are present when the institution reported the statement (A92). confirmed_amount and
+      awaiting_amount split amount_due − opening into the postings an external record confirms and those it
+      does not; both are present when some posting of the account carries a record (A170).
+    properties:
+      id:
+        type: string
+        format: uuid
+      account_id:
+        type: string
+        format: uuid
+      reference:
+        type: string
+      closing_date:
+        type: string
+        format: date
+      due_date:
+        type: string
+        format: date
+      opening:
+        $ref: "#/components/schemas/Money"
+      charges:
+        $ref: "#/components/schemas/Money"
+      credits:
+        $ref: "#/components/schemas/Money"
+      amount_due:
+        $ref: "#/components/schemas/Money"
+      payments:
+        $ref: "#/components/schemas/Money"
+      settled:
+        $ref: "#/components/schemas/Money"
+      unpaid:
+        $ref: "#/components/schemas/Money"
+      prior_credits:
+        $ref: "#/components/schemas/Money"
+      early_payments:
+        $ref: "#/components/schemas/Money"
+      billed_amount:
+        $ref: "#/components/schemas/Money"
+      open_amount:
+        $ref: "#/components/schemas/Money"
+      status:
+        type: string
+        enum: [open, closed, paid, partially_paid, overdue, financed]
+      reconciled:
+        type: boolean
+        description: The institution's amount due was confirmed (POST /statements/{id}/reconcile).
+      institution:
+        $ref: "#/components/schemas/StatementFact"
+      amount_difference:
+        $ref: "#/components/schemas/Money"
+      confirmed_amount:
+        $ref: "#/components/schemas/Money"
+      awaiting_amount:
+        $ref: "#/components/schemas/Money"
+  StatementFact:
+    type: object
+    description: What the institution reported for the statement (A85); the owner's facts first.
+    required: [source, due_date, total]
+    properties:
+      source:
+        type: string
+        enum: [aggregator, owner]
+      closing_date:
+        type: string
+        format: date
+      due_date:
+        type: string
+        format: date
+      total:
+        $ref: "#/components/schemas/Money"
+      minimum:
+        $ref: "#/components/schemas/Money"
+  StatementFactsInput:
+    type: object
+    additionalProperties: false
+    required: [due_date, total]
+    properties:
+      closing_date:
+        type: string
+        format: date
+      due_date:
+        type: string
+        format: date
+      total:
+        $ref: "#/components/schemas/Money"
+      minimum:
+        $ref: "#/components/schemas/Money"
+  StatementList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/StatementSummary"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  StatementPosting:
+    type: object
+    required: [transaction_id, date, description, card_role, amount, provisional]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+      card_role:
+        type: string
+        enum: [charge, credit, payment]
+      amount:
+        $ref: "#/components/schemas/Money"
+      installment:
+        $ref: "#/components/schemas/Installment"
+      provisional:
+        type: boolean
+        description: >-
+          The institution may still bill the posting on another statement: no line stated its bill,
+          the statement is not reconciled and the posting is dated within 10 days before the closing
+          date (A136).
+  StatementDetail:
+    allOf:
+      - $ref: "#/components/schemas/StatementSummary"
+      - type: object
+        required: [postings]
+        properties:
+          postings:
+            type: array
+            items:
+              $ref: "#/components/schemas/StatementPosting"
+          difference_proposal:
+            $ref: "#/components/schemas/DifferenceProposal"
+          rounding_difference:
+            type: boolean
+            description: >-
+              Present and true when no set of provisional postings explains amount_difference and the
+              difference is at most one minor unit per posting: the source likely rounded a line (A137).
+  DifferenceProposal:
+    type: object
+    required: [transaction_ids, amount]
+    description: >-
+      On a closed statement whose amount due differs from the institution's total, the provisional
+      postings whose move to the next statement closes the difference (A137).
+    properties:
+      transaction_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+  DeferPostingsInput:
+    type: object
+    additionalProperties: false
+    required: [transaction_ids]
+    properties:
+      transaction_ids:
+        type: array
+        minItems: 1
+        maxItems: 20
+        items:
+          type: string
+          format: uuid
+  BillingCycleRule:
+    type: object
+    additionalProperties: false
+    required: [effective_from, due_day]
+    description: >-
+      closing_mode day closes on closing_day; before_due closes closing_days_before_due days before
+      the nominal due date. closing_adjustment shifts the closing date, projected or reported by the
+      institution, on the rule's calendar (A87).
+    properties:
+      effective_from:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+        description: Reference month (YYYY-MM) from which the rule applies.
+      closing_mode:
+        type: string
+        enum: [day, before_due]
+      closing_day:
+        type: integer
+        minimum: 1
+        maximum: 31
+      closing_days_before_due:
+        type: integer
+        minimum: 1
+        maximum: 28
+      closing_adjustment:
+        type: string
+        enum: [none, following, preceding, modified_following]
+      due_day:
+        type: integer
+        minimum: 1
+        maximum: 31
+      closing_day_assignment:
+        type: string
+        enum: [next, closing]
+      due_date_adjustment:
+        type: string
+        enum: [none, following, preceding, modified_following]
+      calendar:
+        type: string
+        description: Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.
+  StatementPlacement:
+    type: object
+    additionalProperties: false
+    required: [reference, closing_date, due_date]
+    description: previous_closing_date and previous_due_date are the dates of the statement before, present when a rule or a stored statement gives them.
+    properties:
+      previous_closing_date:
+        type: string
+        format: date
+      previous_due_date:
+        type: string
+        format: date
+      reference:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+      closing_date:
+        type: string
+        format: date
+      due_date:
+        type: string
+        format: date
+  BillingCycleRuleList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/BillingCycleRule"
+  CreditLimit:
+    type: object
+    additionalProperties: false
+    required: [effective_from, amount]
+    properties:
+      effective_from:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+  CreditLimitList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/CreditLimit"
+  CardInput:
+    type: object
+    additionalProperties: false
+    required: [holder, last_four]
+    properties:
+      holder:
+        type: string
+        minLength: 1
+        maxLength: 120
+      last_four:
+        type: string
+        pattern: "^[0-9]{4}$"
+      virtual:
+        type: boolean
+      foreign_charge_bp:
+        type: integer
+        minimum: 0
+        maximum: 10000
+        description: Default from the region of the owner.
+  Card:
+    allOf:
+      - $ref: "#/components/schemas/CardInput"
+      - type: object
+        required: [id, active, foreign_charge_bp]
+        properties:
+          foreign_charge_bp:
+            type: integer
+            minimum: 0
+            maximum: 10000
+          id:
+            type: string
+            format: uuid
+          active:
+            type: boolean
+  CardUpdate:
+    type: object
+    additionalProperties: false
+    minProperties: 1
+    properties:
+      holder:
+        type: string
+        minLength: 1
+        maxLength: 120
+      last_four:
+        type: string
+        pattern: "^[0-9]{4}$"
+      active:
+        type: boolean
+  CardList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Card"
+  CardSummary:
+    type: object
+    properties:
+      credit_limit:
+        $ref: "#/components/schemas/Money"
+      available_limit:
+        $ref: "#/components/schemas/Money"
+  Settings:
+    type: object
+    additionalProperties: false
+    required: [base_currency]
+    properties:
+      base_currency:
+        type: string
+        pattern: "^[A-Z]{3}$"
+  InstitutionInput:
+    type: object
+    additionalProperties: false
+    required: [name]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      code:
+        type: string
+      identifier:
+        $ref: "#/components/schemas/InstitutionIdentifier"
+  InstitutionIdentifier:
+    type: object
+    additionalProperties: false
+    required: [scheme, identifier]
+    description: Identifier of the institution in a scheme, unique per book and scheme (ADR 013).
+    properties:
+      scheme:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      identifier:
+        type: string
+        minLength: 1
+        maxLength: 40
+  InstitutionIdentifierInput:
+    type: object
+    additionalProperties: false
+    required: [scheme, identifier]
+    description: Both null clear the identifier.
+    properties:
+      scheme:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        nullable: true
+      identifier:
+        type: string
+        minLength: 1
+        maxLength: 40
+        nullable: true
+  InstitutionIdentifierScheme:
+    type: object
+    required: [id, pattern]
+    properties:
+      id:
+        type: string
+      pattern:
+        type: string
+  InstitutionIdentifierSchemeList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/InstitutionIdentifierScheme"
+  Institution:
+    allOf:
+      - $ref: "#/components/schemas/InstitutionInput"
+      - type: object
+        required: [id]
+        properties:
+          id:
+            type: string
+            format: uuid
+  InstitutionList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Institution"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  PayeeInput:
+    type: object
+    additionalProperties: false
+    required: [name]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+  Payee:
+    type: object
+    required: [id, name]
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+  PayeeList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Payee"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  TagList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          type: string
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  AccountClass:
+    type: string
+    enum: [asset, liability, equity, income, expense]
+  AccountInput:
+    type: object
+    additionalProperties: false
+    required: [name, class, currency]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      class:
+        $ref: "#/components/schemas/AccountClass"
+      kind:
+        type: string
+        enum: [checking, savings, cash, wallet, benefit, reserve, brokerage, receivable, credit_card, loan, payable]
+      currency:
+        type: string
+        description: Instrument of the account; a security only for a child of a brokerage account (P8 amendment A63).
+        pattern: "^[A-Z0-9.]{2,20}$"
+      parent_id:
+        type: string
+        format: uuid
+      institution_id:
+        type: string
+        format: uuid
+      opened_on:
+        type: string
+        format: date
+      yield_mode:
+        type: string
+        enum: [none, auto]
+      color:
+        type: integer
+        minimum: 1
+        maximum: 8
+        description: Data slot of the theme (--slotted-data-n), A83.
+      icon:
+        $ref: "#/components/schemas/CategoryIcon"
+  Account:
+    allOf:
+      - $ref: "#/components/schemas/AccountInput"
+      - type: object
+        required: [id, opened_on, yield_mode]
+        properties:
+          id:
+            type: string
+            format: uuid
+          closed_on:
+            type: string
+            format: date
+          system_role:
+            type: string
+          card:
+            $ref: "#/components/schemas/CardSummary"
+          excluded_from_liquidity:
+            type: boolean
+            description: Leaves the account out of the liquidity indicator (analytics design 4.3).
+  AccountList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Account"
+      next_cursor:
+        type: string
+        description: Absent on the last page.
+  AccountPatch:
+    type: object
+    additionalProperties: false
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      parent_id:
+        type: string
+        format: uuid
+      institution_id:
+        type: string
+        format: uuid
+      yield_mode:
+        type: string
+        enum: [none, auto]
+      excluded_from_liquidity:
+        type: boolean
+        description: Leaves the account out of the liquidity indicator (analytics design 4.3).
+      opened_on:
+        type: string
+        format: date
+        description: Moves the opening date earlier, so history before it can be recorded; a later date is refused (A210).
+  CategoryIcon:
+    type: string
+    description: Kebab-case name of a lucide-react icon of the curated category set (A83).
+    enum:
+      - house
+      - building-2
+      - key-round
+      - sofa
+      - lamp
+      - wrench
+      - hammer
+      - zap
+      - droplet
+      - flame
+      - wifi
+      - smartphone
+      - tv
+      - shopping-cart
+      - shopping-basket
+      - utensils
+      - coffee
+      - pizza
+      - croissant
+      - apple
+      - wine
+      - beer
+      - car
+      - fuel
+      - bus
+      - train-front
+      - bike
+      - plane
+      - circle-parking
+      - car-taxi-front
+      - heart-pulse
+      - pill
+      - stethoscope
+      - dumbbell
+      - hospital
+      - graduation-cap
+      - book-open
+      - school
+      - film
+      - music
+      - gamepad-2
+      - ticket
+      - palette
+      - party-popper
+      - shirt
+      - gift
+      - shopping-bag
+      - package
+      - scissors
+      - receipt
+      - briefcase
+      - laptop
+      - cloud
+      - globe
+      - landmark
+      - piggy-bank
+      - wallet
+      - credit-card
+      - banknote
+      - coins
+      - percent
+      - trending-up
+      - chart-pie
+      - hand-coins
+      - file-text
+      - shield
+      - baby
+      - users
+      - heart
+      - dog
+      - cat
+      - paw-print
+      - luggage
+      - map
+      - hotel
+      - tent
+      - smile
+      - sparkles
+      - tag
+  AccountAppearance:
+    type: object
+    additionalProperties: false
+    required: [color, icon]
+    description: null clears the colour or the icon.
+    properties:
+      color:
+        type: integer
+        minimum: 1
+        maximum: 8
+        nullable: true
+      icon:
+        allOf:
+          - $ref: "#/components/schemas/CategoryIcon"
+        nullable: true
+  AccountParent:
+    type: object
+    additionalProperties: false
+    required: [parent_id]
+    description: null makes the account top level (A84).
+    properties:
+      parent_id:
+        type: string
+        format: uuid
+        nullable: true
+  TagUsage:
+    type: object
+    required: [name, transactions]
+    properties:
+      name:
+        type: string
+      transactions:
+        type: integer
+        description: Non-voided transactions that carry the tag.
+  TagInput:
+    type: object
+    additionalProperties: false
+    required: [name]
+    properties:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 60
+  MergeTagInput:
+    type: object
+    additionalProperties: false
+    required: [into]
+    properties:
+      into:
+        type: string
+        minLength: 1
+        maxLength: 60
+  MergePayeeInput:
+    type: object
+    additionalProperties: false
+    required: [into]
+    properties:
+      into:
+        type: string
+        format: uuid
+  MergeAccountInput:
+    type: object
+    additionalProperties: false
+    required: [into]
+    properties:
+      into:
+        type: string
+        format: uuid
+  CloseAccountInput:
+    type: object
+    additionalProperties: false
+    required: [closed_on]
+    properties:
+      closed_on:
+        type: string
+        format: date
+  Balance:
+    type: object
+    required: [account_id, date, basis, balance]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      basis:
+        type: string
+        enum: [booked, settled]
+      balance:
+        $ref: "#/components/schemas/Money"
+      value:
+        description: The balance valued in value_in; with several instruments in the sub-accounts, balance equals value.
+        allOf:
+          - $ref: "#/components/schemas/Money"
+      prices:
+        type: array
+        description: Prices used for value (B05).
+        items:
+          $ref: "#/components/schemas/Price"
+  BalanceList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Balance"
+  TradeSide:
+    type: string
+    enum: [buy, sell]
+  TradeInput:
+    type: object
+    additionalProperties: false
+    required: [account_id, cash_account_id, side, date, quantity, unit_price]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+        description: The account holding the security.
+      cash_account_id:
+        type: string
+        format: uuid
+        description: A cash account of the same brokerage, in the base currency.
+      side:
+        $ref: "#/components/schemas/TradeSide"
+      date:
+        type: string
+        format: date
+      quantity:
+        $ref: "#/components/schemas/Money"
+      unit_price:
+        $ref: "#/components/schemas/Rate"
+      fees:
+        $ref: "#/components/schemas/Money"
+      taxes:
+        $ref: "#/components/schemas/Money"
+      taxes_category_id:
+        type: string
+        format: uuid
+        description: Default the system account taxes.
+      description:
+        type: string
+        maxLength: 500
+  Trade:
+    type: object
+    required: [account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      cash_account_id:
+        type: string
+        format: uuid
+      side:
+        $ref: "#/components/schemas/TradeSide"
+      quantity:
+        $ref: "#/components/schemas/Money"
+      unit_price:
+        $ref: "#/components/schemas/Rate"
+      gross:
+        $ref: "#/components/schemas/Money"
+      fees:
+        $ref: "#/components/schemas/Money"
+      taxes:
+        $ref: "#/components/schemas/Money"
+      cost:
+        description: Cost basis removed by a sale at average cost.
+        allOf:
+          - $ref: "#/components/schemas/Money"
+  InvestmentIncomeInput:
+    type: object
+    additionalProperties: false
+    required: [account_id, cash_account_id, income_type, date, gross, category_id]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+        description: The account holding the security that pays.
+      cash_account_id:
+        type: string
+        format: uuid
+        description: A cash account of the same brokerage, in the base currency.
+      income_type:
+        $ref: "#/components/schemas/IncomeType"
+      date:
+        type: string
+        format: date
+      gross:
+        $ref: "#/components/schemas/Money"
+      withheld:
+        description: Default 0, and 15 % of gross for jcp.
+        allOf:
+          - $ref: "#/components/schemas/Money"
+      category_id:
+        type: string
+        format: uuid
+        description: Income category of the gross amount.
+      withheld_category_id:
+        type: string
+        format: uuid
+        description: Default the system account taxes.
+      description:
+        type: string
+        maxLength: 500
+  InvestmentIncome:
+    type: object
+    required: [account_id, cash_account_id, income_type, gross, withheld]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      cash_account_id:
+        type: string
+        format: uuid
+      income_type:
+        $ref: "#/components/schemas/IncomeType"
+      gross:
+        $ref: "#/components/schemas/Money"
+      withheld:
+        $ref: "#/components/schemas/Money"
+  ForeignPurchaseInput:
+    type: object
+    additionalProperties: false
+    required: [account_id, category_id, date, original, rate]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      category_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+        maxLength: 500
+      payee_id:
+        type: string
+        format: uuid
+      original:
+        $ref: "#/components/schemas/Money"
+      rate:
+        $ref: "#/components/schemas/Rate"
+      foreign_charge_rate_bp:
+        type: integer
+        minimum: 0
+        maximum: 10000
+        description: Default the foreign_charge_bp of the card.
+      foreign_charge_category_id:
+        type: string
+        format: uuid
+        description: Default the system account taxes.
+      statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+  ExchangeInput:
+    type: object
+    additionalProperties: false
+    required: [from_account_id, to_account_id, date, from_amount, to_amount]
+    properties:
+      from_account_id:
+        type: string
+        format: uuid
+      to_account_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+        maxLength: 500
+      from_amount:
+        $ref: "#/components/schemas/Money"
+      to_amount:
+        $ref: "#/components/schemas/Money"
+      fee:
+        $ref: "#/components/schemas/Money"
+      fee_category_id:
+        type: string
+        format: uuid
+        description: Default the system account fees.
+  PostingInput:
+    type: object
+    additionalProperties: false
+    required: [account_id, amount]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+      weight:
+        $ref: "#/components/schemas/Money"
+      status:
+        type: string
+        enum: [pending, cleared, reconciled]
+      settled_on:
+        type: string
+        format: date
+      original:
+        $ref: "#/components/schemas/Money"
+      memo:
+        type: string
+        maxLength: 500
+      statement:
+        type: string
+        pattern: "^[0-9]{4}-[0-9]{2}$"
+        description: Card postings only. Reference month of the statement; derived from the date when absent.
+      card_role:
+        type: string
+        enum: [charge, credit, payment]
+        description: Card postings only; derived from the amount and the other postings when absent.
+  Installment:
+    type: object
+    required: [plan_id, number, count]
+    properties:
+      plan_id:
+        type: string
+        format: uuid
+      number:
+        type: integer
+      count:
+        type: integer
+  Posting:
+    allOf:
+      - $ref: "#/components/schemas/PostingInput"
+      - type: object
+        required: [id, weight, status]
+        properties:
+          id:
+            type: string
+            format: uuid
+          installment:
+            $ref: "#/components/schemas/Installment"
+  Link:
+    type: object
+    additionalProperties: false
+    description: A relation to another transaction. amount is the part of the target that a reimbursement_of link repays (A117); other types carry none.
+    required: [type, target]
+    properties:
+      type:
+        type: string
+        enum: [refund_of, reimbursement_of, cancellation_of, anticipation_of, chargeback_of, correction_of]
+      target:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+  LinkReference:
+    type: object
+    additionalProperties: false
+    required: [type, source]
+    description: An inbound link; source is the non-voided transaction that links to this one. amount is the part of this transaction that a reimbursement_of link repays (A117).
+    properties:
+      type:
+        type: string
+        enum: [refund_of, reimbursement_of, cancellation_of, anticipation_of, chargeback_of, correction_of]
+      source:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+  TransactionInput:
+    type: object
+    additionalProperties: false
+    required: [date, postings]
+    properties:
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+        maxLength: 500
+      payee_id:
+        type: string
+        format: uuid
+      tags:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 60
+      links:
+        type: array
+        items:
+          $ref: "#/components/schemas/Link"
+      postings:
+        type: array
+        items:
+          $ref: "#/components/schemas/PostingInput"
+        minItems: 2
+        maxItems: 500
+  TransactionBatchInput:
+    type: object
+    additionalProperties: false
+    required: [entries]
+    properties:
+      entries:
+        type: array
+        minItems: 1
+        maxItems: 100
+        items:
+          $ref: "#/components/schemas/TransactionBatchEntry"
+  TransactionBatchEntry:
+    type: object
+    additionalProperties: false
+    description: Exactly one member is set.
+    properties:
+      transaction:
+        $ref: "#/components/schemas/TransactionInput"
+      installment_purchase:
+        $ref: "#/components/schemas/InstallmentPurchaseInput"
+  TransactionBatch:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Transaction"
+  CorrectionInput:
+    type: object
+    additionalProperties: false
+    required: [date, postings, expected_version, reason]
+    properties:
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+        maxLength: 500
+      payee_id:
+        type: string
+        format: uuid
+      tags:
+        type: array
+        items:
+          type: string
+          minLength: 1
+          maxLength: 60
+      links:
+        type: array
+        items:
+          $ref: "#/components/schemas/Link"
+      postings:
+        type: array
+        items:
+          $ref: "#/components/schemas/PostingInput"
+        minItems: 2
+        maxItems: 500
+      expected_version:
+        type: integer
+        minimum: 1
+      reason:
+        type: string
+        maxLength: 500
+  Transaction:
+    type: object
+    required: [id, date, description, balancing_currency, origin, version, tags, links, postings]
+    properties:
+      id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      description:
+        type: string
+      payee_id:
+        type: string
+        format: uuid
+      balancing_currency:
+        type: string
+      origin:
+        type: string
+        enum: [manual, import, schedule, system]
+      version:
+        type: integer
+      voided_at:
+        type: string
+        format: date-time
+      void_reason:
+        type: string
+      tags:
+        type: array
+        items:
+          type: string
+      links:
+        type: array
+        items:
+          $ref: "#/components/schemas/Link"
+      referenced_by:
+        type: array
+        description: Set only by GET /transactions/{id}; ordered by type, then source.
+        items:
+          $ref: "#/components/schemas/LinkReference"
+      investment_income:
+        $ref: "#/components/schemas/InvestmentIncome"
+      trade:
+        $ref: "#/components/schemas/Trade"
+      postings:
+        type: array
+        items:
+          $ref: "#/components/schemas/Posting"
+  TransactionPage:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Transaction"
+      next_cursor:
+        type: string
+  TransferInput:
+    type: object
+    additionalProperties: false
+    required: [expected_version, account_id]
+    properties:
+      expected_version:
+        type: integer
+        minimum: 1
+      account_id:
+        type: string
+        format: uuid
+      pair_with:
+        type: string
+        format: uuid
+        description: The pairing candidate to use when there are several.
+  ReimbursementInput:
+    type: object
+    additionalProperties: false
+    required: [expected_version, allocations]
+    properties:
+      expected_version:
+        type: integer
+        minimum: 1
+      allocations:
+        type: array
+        maxItems: 20
+        items:
+          $ref: "#/components/schemas/ReimbursementAllocation"
+  ReimbursementAllocation:
+    type: object
+    additionalProperties: false
+    required: [original_id, amount]
+    properties:
+      original_id:
+        type: string
+        format: uuid
+        description: The expense this transaction repays.
+      amount:
+        $ref: "#/components/schemas/Money"
+      category_id:
+        type: string
+        format: uuid
+        description: Expense category that replaces the categories of the expense and takes the reimbursement.
+  ReimbursementCandidate:
+    type: object
+    required: [transaction, remaining, allocated]
+    properties:
+      transaction:
+        $ref: "#/components/schemas/Transaction"
+      remaining:
+        $ref: "#/components/schemas/Money"
+      allocated:
+        $ref: "#/components/schemas/Money"
+  ReimbursementCandidateList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/ReimbursementCandidate"
+      suggestion:
+        type: array
+        items:
+          type: string
+          format: uuid
+  ReimbursementSource:
+    type: object
+    required: [transaction, free]
+    properties:
+      transaction:
+        $ref: "#/components/schemas/Transaction"
+      free:
+        $ref: "#/components/schemas/Money"
+  ReimbursementSourceList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/ReimbursementSource"
+  TransferResult:
+    type: object
+    required: [transaction]
+    properties:
+      transaction:
+        $ref: "#/components/schemas/Transaction"
+      voided_transaction_id:
+        type: string
+        format: uuid
+        description: The paired transaction that was voided.
+  BulkCategorizeInput:
+    type: object
+    additionalProperties: false
+    required: [category_id, items]
+    properties:
+      category_id:
+        type: string
+        format: uuid
+      items:
+        type: array
+        minItems: 1
+        maxItems: 200
+        items:
+          type: object
+          additionalProperties: false
+          required: [id, expected_version]
+          properties:
+            id:
+              type: string
+              format: uuid
+            expected_version:
+              type: integer
+              minimum: 1
+  BulkCategorizeResult:
+    type: object
+    required: [results]
+    properties:
+      results:
+        type: array
+        description: One result per item, in request order.
+        items:
+          $ref: "#/components/schemas/BulkCategorizeItemResult"
+  BulkCategorizeItemResult:
+    type: object
+    required: [id, status]
+    properties:
+      id:
+        type: string
+        format: uuid
+      status:
+        type: string
+        enum: [categorized, version_conflict, transaction_voided, not_categorizable, not_found]
+      version:
+        type: integer
+        description: The new version when status is categorized.
+  BulkVoidInput:
+    type: object
+    additionalProperties: false
+    required: [reason, items]
+    properties:
+      reason:
+        type: string
+        maxLength: 500
+      items:
+        type: array
+        minItems: 1
+        maxItems: 200
+        items:
+          type: object
+          additionalProperties: false
+          required: [id]
+          properties:
+            id:
+              type: string
+              format: uuid
+  BulkVoidResult:
+    type: object
+    required: [results]
+    properties:
+      results:
+        type: array
+        description: One result per item, in request order.
+        items:
+          $ref: "#/components/schemas/BulkVoidItemResult"
+  BulkVoidItemResult:
+    type: object
+    required: [id, status]
+    properties:
+      id:
+        type: string
+        format: uuid
+      status:
+        type: string
+        enum: [voided, not_found, transaction_voided, posting_reconciled, later_sale_exists]
+  CategorizeInput:
+    type: object
+    additionalProperties: false
+    required: [expected_version, parts]
+    properties:
+      expected_version:
+        type: integer
+        minimum: 1
+      parts:
+        type: array
+        minItems: 1
+        maxItems: 50
+        items:
+          $ref: "#/components/schemas/CategoryPart"
+      payee_id:
+        type: string
+        format: uuid
+  CategoryPart:
+    type: object
+    additionalProperties: false
+    required: [account_id, amount]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+  VoidInput:
+    type: object
+    additionalProperties: false
+    required: [reason]
+    properties:
+      reason:
+        type: string
+        maxLength: 500
+  TransactionVersion:
+    type: object
+    required: [version, reason, replaced_at, transaction]
+    properties:
+      version:
+        type: integer
+      reason:
+        type: string
+      replaced_at:
+        type: string
+        format: date-time
+      transaction:
+        $ref: "#/components/schemas/Transaction"
+  TransactionVersionList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/TransactionVersion"

@@ -1,0 +1,636 @@
+paths:
+  /exports:
+    post:
+      tags: [reporting]
+      operationId: requestExport
+      x-book-role: read
+      summary: Request an archive of every fact of the books (SC6, docs/specs/2026-10-26-export-design.md).
+      description: |
+        The archive is built after the response and replaces the previous export. 409 export_pending while one is
+        pending. With credentials_passphrase the archive also carries the credentials of the book's integrations,
+        sealed by that passphrase, which the server never stores (export design C1 to C4); this needs the owner
+        role (403 book_role_required otherwise), 400 invalid_request for a passphrase outside 8 to 256 characters
+        and 409 integration_unavailable without EQUORI_SECRET_KEY.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportRequest"
+      responses:
+        "202":
+          description: Accepted; the export is pending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /exports/current:
+    get:
+      tags: [reporting]
+      operationId: getExport
+      x-book-role: read
+      summary: The book's export and its status; 404 when none was requested.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Export"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /exports/current/content:
+    get:
+      tags: [reporting]
+      operationId: getExportContent
+      x-book-role: read
+      summary: Download the archive of a ready export; 409 export_not_ready otherwise.
+      responses:
+        "200":
+          description: The ZIP archive.
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+  /imports/archive:
+    post:
+      tags: [reporting]
+      operationId: importArchive
+      x-book-role: owner
+      summary: Restore an export archive into books without facts (N13, export design E4).
+      description: |
+        The request body limit of this route is 257 MiB. 422 archive_invalid for an archive that does not read,
+        a checksum that differs, a table the instance does not export or an archive_version below 1; 422
+        archive_too_new, with archive_version and instance_version, for an archive of a later version (ADR 021);
+        an archive of an earlier version is migrated before any write; 409 import_not_empty when the book holds a transaction or an account without a system
+        role and the request has no replace_books_name; 422 confirmation_mismatch when replace_books_name differs from
+        the name of the active book; with the name, the import deletes the content of the book, its assistant
+        conversations and usage, and writes the archive in the same transaction; 409 import_conflict when an identifier belongs to another book of the instance. A refused import
+        writes nothing. With the passphrase of an archive that carries credentials, the credentials are restored
+        under the key of the instance (export design C5 to C7): 422 passphrase_required when the archive carries
+        credentials and the request has neither passphrase nor skip_credentials, 422 passphrase_invalid for a wrong
+        passphrase and 409 integration_unavailable without EQUORI_SECRET_KEY.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                passphrase:
+                  type: string
+                  description: The credentials_passphrase of the export; needed when the archive carries credentials.
+                skip_credentials:
+                  type: string
+                  enum: ["true", "false"]
+                  description: "true imports an archive that carries credentials without them; ignored when passphrase is set."
+                replace_books_name:
+                  type: string
+                  maxLength: 1024
+                  description: >-
+                    The name of the active book; present, the import replaces the content of a book that
+                    holds facts (export design R1 to R4).
+      responses:
+        "200":
+          description: The rows written per table, in import order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArchiveImport"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "413":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /statements/{id}/analytics:
+    get:
+      tags: [reporting]
+      operationId: getStatementAnalytics
+      x-book-role: read
+      summary: A statement split into purchases, installments, charges and credits, per category (P9).
+      description: |
+        Each category amount of the statement falls in one part (docs/plans/2026-10-26-p9-cash-view.md,
+        section Statement analytics); categories are ordered by total, largest first, then by id.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementAnalytics"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /accounts/{id}/statement-analytics:
+    get:
+      tags: [reporting]
+      operationId: getCardStatementAnalytics
+      x-book-role: read
+      summary: The 12 latest statements of a card closed on or before today, oldest first, split as in getStatementAnalytics.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CardStatementAnalytics"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /reports/balances:
+    get:
+      tags: [reporting]
+      operationId: getBalanceSeries
+      x-book-role: read
+      summary: Daily balance of an account and its sub-accounts, one item per day in [from, to].
+      parameters:
+        - name: account_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: basis
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [booked, settled]
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceSeries"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /reports/flows:
+    get:
+      tags: [reporting]
+      operationId: getAccountFlows
+      x-book-role: read
+      summary: Booked inflow and outflow of one account, one item per day in [from, to] that has a posting (A119).
+      description: >-
+        Inflow is the sum of the positive amounts of the account's non-voided postings booked on the date;
+        outflow is the sum of the absolute values of the negative ones. Sub-accounts are not included. The
+        range holds at most 366 days.
+      parameters:
+        - name: account_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: The days with a posting, in date order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountFlows"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /reports/categories:
+    get:
+      tags: [reporting]
+      operationId: getCategoryTotals
+      x-book-role: read
+      summary: Totals of each category of a class in [from, to], at most 366 days, in the accrual or cash view (A77).
+      description: |
+        Spending of an expense category and earnings of an income category are positive. An account is listed
+        when it is open or when its total or the total of its subtree is not zero; items are ordered by name then id.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: class
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [income, expense]
+        - name: view
+          in: query
+          required: false
+          description: |
+            accrual counts each amount on its transaction date. cash counts a card line when its statement is paid,
+            in proportion to the payment, and any other amount on its date (docs/plans/2026-10-26-p9-cash-view.md,
+            CV1 to CV10).
+          schema:
+            type: string
+            enum: [accrual, cash]
+            default: accrual
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryTotals"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /reports/categories/{id}/cash-payments:
+    get:
+      tags: [reporting]
+      operationId: listCategoryCashPayments
+      x-book-role: read
+      summary: Card amounts of one category in the cash view of [from, to], at most 366 days, each naming its statement and payment (N20).
+      description: |
+        Each item is the share a card payment gives the category (docs/plans/2026-10-26-p9-cash-view.md, CV1 to CV10),
+        signed as the category's postings, in the order the payments apply. Amounts of transactions without a card line are not
+        listed; they count on their own date. The items of a category sum to the card part of its cash total.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryCashPayments"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+  /reports/indicators:
+    get:
+      tags: [reporting]
+      operationId: getIndicators
+      x-book-role: read
+      summary: Savings rate, liquidity, committed share, debt service share and liabilities of a month and the 11 months before it, cash view (analytics design 4).
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Indicators"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+schemas:
+  BalanceSeries:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 3660
+        items:
+          $ref: "#/components/schemas/BalancePoint"
+  AccountFlows:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        maxItems: 366
+        items:
+          $ref: "#/components/schemas/FlowDay"
+  FlowDay:
+    type: object
+    required: [date, inflow, outflow]
+    properties:
+      date:
+        type: string
+        format: date
+      inflow:
+        $ref: "#/components/schemas/Money"
+      outflow:
+        $ref: "#/components/schemas/Money"
+  BalancePoint:
+    type: object
+    required: [date, balance]
+    properties:
+      date:
+        type: string
+        format: date
+      balance:
+        $ref: "#/components/schemas/Money"
+  Indicators:
+    type: object
+    required: [currency, months]
+    properties:
+      currency:
+        type: string
+        description: The base currency of every amount.
+      months:
+        type: array
+        minItems: 12
+        maxItems: 12
+        description: Oldest first; the last entry is the month asked.
+        items:
+          $ref: "#/components/schemas/IndicatorMonth"
+  IndicatorMonth:
+    type: object
+    required: [month, income, expense, committed, debt_service, liquid_balance, liabilities, savings_rate, trailing_savings_rate, liquidity, committed_share, debt_service_share]
+    properties:
+      month:
+        type: string
+        pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      income:
+        $ref: "#/components/schemas/Money"
+      expense:
+        $ref: "#/components/schemas/Money"
+      committed:
+        $ref: "#/components/schemas/Money"
+      debt_service:
+        $ref: "#/components/schemas/Money"
+      liquid_balance:
+        $ref: "#/components/schemas/Money"
+      liabilities:
+        $ref: "#/components/schemas/Money"
+      mean_income:
+        $ref: "#/components/schemas/Money"
+      mean_expense:
+        $ref: "#/components/schemas/Money"
+      savings_rate:
+        $ref: "#/components/schemas/IndicatorRatio"
+      trailing_savings_rate:
+        $ref: "#/components/schemas/IndicatorRatio"
+      liquidity:
+        $ref: "#/components/schemas/IndicatorRatio"
+      committed_share:
+        $ref: "#/components/schemas/IndicatorRatio"
+      debt_service_share:
+        $ref: "#/components/schemas/IndicatorRatio"
+  IndicatorRatio:
+    type: object
+    additionalProperties: false
+    description: Either bp, in basis points truncated toward zero, or the reason there is no value.
+    properties:
+      bp:
+        type: integer
+        format: int64
+      reason:
+        type: string
+        enum: [no_income, no_expense, insufficient_history]
+  CategoryTotals:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/CategoryTotal"
+  CategoryTotal:
+    type: object
+    required: [account_id, total, subtree_total]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      total:
+        $ref: "#/components/schemas/Money"
+      subtree_total:
+        $ref: "#/components/schemas/Money"
+  CategoryCashPayments:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/CategoryCashPayment"
+  CategoryCashPayment:
+    type: object
+    required: [date, amount, card_account_id, statement_id, statement_reference, payment_transaction_id]
+    properties:
+      date:
+        type: string
+        format: date
+        description: The payment's date.
+      amount:
+        $ref: "#/components/schemas/Money"
+      card_account_id:
+        type: string
+        format: uuid
+      statement_id:
+        type: string
+        format: uuid
+        description: The statement the payment pays.
+      statement_reference:
+        type: string
+        pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        description: The reference month of that statement, YYYY-MM.
+      payment_transaction_id:
+        type: string
+        format: uuid
+  Export:
+    type: object
+    required: [id, status, requested_at]
+    properties:
+      id:
+        type: string
+        format: uuid
+      status:
+        type: string
+        enum: [pending, ready, failed]
+      requested_at:
+        type: string
+        format: date-time
+      finished_at:
+        type: string
+        format: date-time
+      size:
+        type: integer
+        format: int64
+        description: Bytes of the archive; present when ready.
+      sha256:
+        type: string
+        description: Hexadecimal SHA-256 of the archive; present when ready.
+      problem:
+        type: string
+        description: The code of a failure, such as export_too_large; present when failed.
+      archive_version:
+        type: integer
+        description: The archive_version of the archive (ADR 021); present when ready.
+  ExportRequest:
+    type: object
+    properties:
+      credentials_passphrase:
+        type: string
+        description: Adds the credentials of the book's integrations to the archive, sealed by this passphrase; 8 to 256 characters.
+  ArchiveImport:
+    type: object
+    required: [archive_version, tables, credentials_in_archive, credentials_restored, provider_keys_restored]
+    properties:
+      archive_version:
+        type: integer
+        description: The archive_version the archive was written with (ADR 021).
+      credentials_in_archive:
+        type: boolean
+        description: The archive carries integration credentials.
+      credentials_restored:
+        type: integer
+        description: Integrations whose credential the import wrote; 0 without the passphrase.
+      provider_keys_restored:
+        type: integer
+        description: Language model providers whose key the import wrote; 0 without the passphrase.
+      tables:
+        type: array
+        items:
+          type: object
+          required: [name, rows]
+          properties:
+            name:
+              type: string
+            rows:
+              type: integer
+  StatementParts:
+    type: object
+    required: [purchases, installments, charges, credits, total]
+    properties:
+      purchases:
+        $ref: "#/components/schemas/Money"
+      installments:
+        $ref: "#/components/schemas/Money"
+      charges:
+        $ref: "#/components/schemas/Money"
+      credits:
+        $ref: "#/components/schemas/Money"
+      total:
+        $ref: "#/components/schemas/Money"
+  StatementCategoryParts:
+    allOf:
+      - $ref: "#/components/schemas/StatementParts"
+      - type: object
+        required: [category_id]
+        properties:
+          category_id:
+            type: string
+            format: uuid
+  StatementAnalytics:
+    allOf:
+      - $ref: "#/components/schemas/StatementAnalyticsItem"
+      - type: object
+        required: [categories]
+        properties:
+          categories:
+            type: array
+            items:
+              $ref: "#/components/schemas/StatementCategoryParts"
+  StatementAnalyticsItem:
+    allOf:
+      - $ref: "#/components/schemas/StatementParts"
+      - type: object
+        required: [statement_id, reference]
+        properties:
+          statement_id:
+            type: string
+            format: uuid
+          reference:
+            type: string
+            pattern: "^[0-9]{4}-[0-9]{2}$"
+  CardStatementAnalytics:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/StatementAnalyticsItem"

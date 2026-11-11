@@ -1,0 +1,294 @@
+paths:
+  /capture/preview:
+    post:
+      tags: [capture]
+      operationId: previewCapture
+      x-book-role: write
+      summary: Read each line of a text as a transaction draft; records nothing (A106).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CapturePreviewInput"
+      responses:
+        "200":
+          description: One draft per non-blank line, in text order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapturePreview"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /capture/suggestions:
+    post:
+      tags: [capture]
+      operationId: suggestCaptureCategories
+      x-book-role: write
+      summary: Name a category for descriptions classification left uncategorized (ADR 014).
+      description: Kept answers are served without a model call; the others are asked of a language model in one request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CaptureSuggestionInput"
+      responses:
+        "200":
+          description: One suggestion per item, in input order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CaptureSuggestions"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /transactions/category-suggestions:
+    post:
+      tags: [capture]
+      operationId: suggestTransactionCategories
+      x-book-role: write
+      summary: Name a category for existing uncategorized transactions (ADR 014 L1a).
+      description: |
+        Each transaction is asked as a capture line of its class with its description, under the use capture.suggest.
+        Nothing is recorded; categorizeTransactions records an accepted suggestion. 404 not_found when an id is not
+        one of the book's transactions; 422 transaction_not_uncategorized when one is not an uncategorized expense or
+        income.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionSuggestionInput"
+      responses:
+        "200":
+          description: One suggestion per transaction, in input order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionSuggestions"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+schemas:
+  CapturePreviewInput:
+    type: object
+    additionalProperties: false
+    required: [text]
+    properties:
+      text:
+        type: string
+        maxLength: 10000
+      default_account_id:
+        type: string
+        format: uuid
+        description: Account of a line that names none (A111).
+      reference_date:
+        type: string
+        format: date
+        description: The day the text was written; date phrases resolve against it (A128). Today when absent; at most today plus one day.
+  CapturePreview:
+    type: object
+    required: [lines]
+    properties:
+      lines:
+        type: array
+        items:
+          $ref: "#/components/schemas/CaptureLine"
+  CaptureLine:
+    type: object
+    required: [line, text, segments, kind, date, description, tags, issues]
+    properties:
+      line:
+        type: integer
+        description: 1-based position among the pieces of the text cut at line breaks and semicolons (A107).
+      text:
+        type: string
+      segments:
+        type: array
+        description: The line cut by what each part was read as; the texts joined equal the line.
+        items:
+          $ref: "#/components/schemas/CaptureSegment"
+      kind:
+        type: string
+        enum: [expense, income, transfer]
+      amount:
+        $ref: "#/components/schemas/Money"
+      date:
+        type: string
+        format: date
+      account_id:
+        type: string
+        format: uuid
+      account_source:
+        type: string
+        enum: [text, default]
+      to_account_id:
+        type: string
+        format: uuid
+      installments:
+        type: integer
+        description: Installment count of a card purchase; absent for one payment.
+      description:
+        type: string
+      payee_id:
+        type: string
+        format: uuid
+      category_id:
+        type: string
+        format: uuid
+      category_source:
+        type: string
+        enum: [rule, history]
+      tags:
+        type: array
+        items:
+          type: string
+      issues:
+        type: array
+        description: Why the draft cannot be recorded as read; empty when it can.
+        items:
+          $ref: "#/components/schemas/CaptureIssue"
+  CaptureSegment:
+    type: object
+    required: [text, role]
+    properties:
+      text:
+        type: string
+      role:
+        type: string
+        enum: [amount, date, installments, account, kind, tag, text]
+  CaptureIssue:
+    type: object
+    required: [code, field, choices]
+    properties:
+      code:
+        type: string
+        enum:
+          - missing_amount
+          - ambiguous_amount
+          - invalid_amount
+          - invalid_date
+          - ambiguous_date
+          - invalid_installments
+          - installments_not_allowed
+          - missing_account
+          - ambiguous_account
+          - unknown_account
+          - missing_destination
+          - ambiguous_transfer
+          - too_many_accounts
+          - same_account
+          - currency_mismatch
+          - possible_account
+      field:
+        type: string
+        enum: [amount, date, installments, account, to_account]
+      choices:
+        type: array
+        items:
+          $ref: "#/components/schemas/CaptureChoice"
+  CaptureChoice:
+    type: object
+    description: An account for an account issue; an amount for an amount issue; the description the line has once the choice is made.
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      amount:
+        $ref: "#/components/schemas/Money"
+      description:
+        type: string
+  CaptureSuggestionInput:
+    type: object
+    additionalProperties: false
+    required: [items]
+    properties:
+      items:
+        type: array
+        minItems: 1
+        maxItems: 40
+        items:
+          $ref: "#/components/schemas/CaptureSuggestionItem"
+  CaptureSuggestionItem:
+    type: object
+    additionalProperties: false
+    required: [description, kind]
+    properties:
+      description:
+        type: string
+        minLength: 1
+        maxLength: 500
+      kind:
+        type: string
+        enum: [expense, income]
+  CaptureSuggestions:
+    type: object
+    required: [items, available]
+    properties:
+      available:
+        type: boolean
+        description: False when the language model could not be asked; the items then hold kept answers only.
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/CaptureSuggestion"
+  CaptureSuggestion:
+    type: object
+    properties:
+      category_id:
+        type: string
+        format: uuid
+        description: Absent when no category is named.
+      source:
+        type: string
+        enum: [kept, model]
+        description: Absent when no category is named.
+  TransactionSuggestionInput:
+    type: object
+    additionalProperties: false
+    required: [transaction_ids]
+    properties:
+      transaction_ids:
+        type: array
+        minItems: 1
+        maxItems: 50
+        items:
+          type: string
+          format: uuid
+  TransactionSuggestions:
+    type: object
+    required: [items, available]
+    properties:
+      available:
+        type: boolean
+        description: False when the language model could not be asked; the items then hold kept answers only.
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/TransactionSuggestion"
+  TransactionSuggestion:
+    type: object
+    required: [transaction_id]
+    properties:
+      transaction_id:
+        type: string
+        format: uuid
+      category_id:
+        type: string
+        format: uuid
+        description: Absent when no category is named.
+      source:
+        type: string
+        enum: [kept, model]
+        description: Absent when no category is named.
