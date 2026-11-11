@@ -20,7 +20,7 @@ import {
 import type { BulkSummary } from "@/features/transactions/model/categorize";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { useServed } from "@/ui/use-served";
+import { useServed } from "@/ui/navigation/use-served";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];

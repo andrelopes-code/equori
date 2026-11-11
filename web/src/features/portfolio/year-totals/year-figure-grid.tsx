@@ -1,5 +1,5 @@
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
 
 interface YearFigureGridProps {
   label: string;

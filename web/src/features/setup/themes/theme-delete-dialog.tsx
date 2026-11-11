@@ -1,5 +1,5 @@
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 export interface ThemeDeleteDialogProps {
   name: string;

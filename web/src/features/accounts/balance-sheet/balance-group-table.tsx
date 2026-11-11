@@ -19,7 +19,7 @@ import { BalanceGroupRow } from "@/features/accounts/balance-sheet/balance-group
 import type { SheetRow } from "@/features/accounts/balance-sheet/balance-sheet";
 import { useMeasuredTops } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 type Institution = components["schemas"]["Institution"];
 type Money = components["schemas"]["Money"];

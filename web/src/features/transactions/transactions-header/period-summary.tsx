@@ -5,7 +5,7 @@ import { Text } from "@slotted/react/typography";
 import type { PeriodTotals } from "@/features/transactions/model/period-totals";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // Families read: stat-card, description-list. Three figures under a list's title are one line
 // of the header, not three cards: each is a small label over its amount.

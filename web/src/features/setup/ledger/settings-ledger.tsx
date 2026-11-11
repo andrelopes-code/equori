@@ -17,9 +17,9 @@ import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { routeTo } from "@/ui/route-to";
-import { useServed } from "@/ui/use-served";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { routeTo } from "@/ui/navigation/route-to";
+import { useServed } from "@/ui/navigation/use-served";
 
 const instrumentsPage = { to: "/instruments" } as const;
 

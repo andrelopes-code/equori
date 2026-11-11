@@ -1,4 +1,4 @@
-import type { Choice } from "@/ui/choice-select";
+import type { Choice } from "@/ui/form-fields/choice-select";
 
 // The default choice, then every ISO 4217 currency the runtime lists, named in the language.
 export function currencyChoices(tag: string, defaultLabel: string): Choice[] {

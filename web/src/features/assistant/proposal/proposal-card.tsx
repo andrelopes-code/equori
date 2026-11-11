@@ -28,8 +28,8 @@ import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting"
 import { useExpired } from "@/features/assistant/proposal/use-expired";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
-import { useServed } from "@/ui/use-served";
+import { routeTo } from "@/ui/navigation/route-to";
+import { useServed } from "@/ui/navigation/use-served";
 
 type Proposal = components["schemas"]["AssistantProposal"];
 

@@ -4,7 +4,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useDeleteBudget } from "@/features/planning/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 // Deleting a budget removes it with its amounts and leaves the category and its transactions;
 // the dialog says so before the reader confirms (S144).

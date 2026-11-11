@@ -6,8 +6,8 @@ import {
   numberFormatter,
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
 
 interface RangeFiguresProps {
   stats: PriceStats | null;

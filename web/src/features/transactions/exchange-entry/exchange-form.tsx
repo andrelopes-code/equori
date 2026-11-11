@@ -12,11 +12,11 @@ import type { useExchangeEntry } from "@/features/transactions/exchange-entry/us
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { DateInput } from "@/ui/date-input";
-import { FieldTitle } from "@/ui/field-title";
-import { FormLayout } from "@/ui/form-layout";
-import { FormRow } from "@/ui/form-row";
-import { MoneyInput } from "@/ui/money-input";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FieldTitle } from "@/ui/form-fields/field-title";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormRow } from "@/ui/form-layout/form-row";
+import { MoneyInput } from "@/ui/money/money-input";
 
 // Families read: field, text-field, date-picker, stat-card. The accounts and the amounts are the
 // application's own controls; the destination list holds only what the base-currency rule accepts,

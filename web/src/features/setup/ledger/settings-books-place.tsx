@@ -10,7 +10,7 @@ import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { timeZoneChoices } from "@/features/setup/ledger/time-zone-choices";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { regionChoicesFor } from "@/i18n/regions";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 export function SettingsBooksPlace() {
   const t = useT();

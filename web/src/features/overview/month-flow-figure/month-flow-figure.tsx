@@ -8,7 +8,7 @@ import { useOverview } from "@/features/overview/model/use-overview";
 import { formatDayMonth, formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import type { MoneyAmount } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 export type MonthFlowKind = "income" | "outflow" | "result";
 

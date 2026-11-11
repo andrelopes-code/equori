@@ -18,7 +18,7 @@ import type { EntryRow } from "@/features/reports/net-worth-month/net-worth-days
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { directionOf, useAmountTone } from "@/ui/amount-tone";
+import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
 
 interface EntryTableProps {
   rows: readonly EntryRow[];

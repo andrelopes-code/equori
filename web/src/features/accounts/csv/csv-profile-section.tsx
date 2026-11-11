@@ -5,7 +5,7 @@ import type { ProfileDraft } from "@/features/accounts/csv/csv-guess";
 import { CsvSuggestionAction } from "@/features/accounts/csv/csv-suggestion-action";
 import { CsvReadingFields } from "@/features/accounts/csv/csv-reading-fields";
 import { useT } from "@/i18n/i18n-provider";
-import { FormSection } from "@/ui/form-section";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 interface CsvProfileSectionProps {
   id: string;

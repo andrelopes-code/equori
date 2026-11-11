@@ -10,8 +10,8 @@ import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { meQuery, useLogout } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { UserAvatar } from "@/ui/user-avatar";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { UserAvatar } from "@/ui/display/user-avatar";
 
 export function SettingsAccount() {
   const t = useT();

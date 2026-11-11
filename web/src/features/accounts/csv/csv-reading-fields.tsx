@@ -2,7 +2,7 @@ import { Field, FieldLabel } from "@slotted/react/field";
 
 import type { ProfileDraft } from "@/features/accounts/csv/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 const rowCounts = Array.from({ length: 11 }, (_, n) => ({
   value: String(n),

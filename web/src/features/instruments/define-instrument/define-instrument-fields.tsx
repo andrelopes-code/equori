@@ -12,9 +12,9 @@ import {
   type useInstrumentDefine,
 } from "@/features/instruments/define-instrument/use-instrument-define";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { FormRow } from "@/ui/form-row";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormRow } from "@/ui/form-layout/form-row";
 
 type InstrumentType = components["schemas"]["InstrumentType"];
 

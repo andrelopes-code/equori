@@ -11,7 +11,7 @@ import type {
   AccountTab,
 } from "@/features/accounts/model/account-search";
 import { useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface AccountTabsInput {
   accountId: string;

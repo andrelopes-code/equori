@@ -14,7 +14,7 @@ import { useState } from "react";
 import { errorText } from "@/api/problem";
 import { useCreatePayeeRecord } from "@/features/categories/api";
 import { useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 export function NewPayeeDialog({
   onDone,

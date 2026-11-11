@@ -31,8 +31,8 @@ import {
 } from "@/features/categories/api";
 import { CategoriesHeader } from "@/features/categories/categories-header/categories-header";
 import { Coverage } from "@/features/categories/coverage/coverage";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
-import { HeaderAction } from "@/ui/header-action";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
+import { HeaderAction } from "@/ui/navigation/header-action";
 import { RuleList } from "@/features/categories/rule-list/rule-list";
 import type { RuleAction } from "@/features/categories/rule-list/rule-list";
 import { SourceCategories } from "@/features/categories/source-categories/source-categories";

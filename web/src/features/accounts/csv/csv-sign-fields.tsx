@@ -8,7 +8,7 @@ import {
 } from "@/features/accounts/csv/csv-guess";
 import type { ProfileDraft } from "@/features/accounts/csv/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface CsvSignFieldsProps {
   text: string;

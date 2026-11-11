@@ -7,7 +7,7 @@ import { AnalysisView } from "@/features/cards/analysis-view/analysis-view";
 import { statementAnalyticsQuery } from "@/features/cards/api";
 import { useCategoryEntries } from "@/features/categories";
 import { useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // What a statement bills per category, split by the part each amount belongs to.
 export function StatementAnalysis({

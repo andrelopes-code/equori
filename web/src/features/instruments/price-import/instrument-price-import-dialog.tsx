@@ -23,9 +23,9 @@ import { useState } from "react";
 import { PriceSeriesPreview } from "@/features/instruments/price-import/price-series-preview";
 import { usePriceSeriesImport } from "@/features/instruments/price-import/use-price-series-import";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface InstrumentPriceImportDialogProps {
   code: string;

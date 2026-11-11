@@ -30,8 +30,8 @@ import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { PricedValue } from "@/ui/priced-value";
-import { QueryError } from "@/ui/query-error";
+import { PricedValue } from "@/ui/money/priced-value";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type Position = components["schemas"]["Position"];
 

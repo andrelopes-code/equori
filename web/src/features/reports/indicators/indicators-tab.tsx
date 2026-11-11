@@ -14,8 +14,8 @@ import { ReportControls } from "@/features/reports/report-controls/report-contro
 import { ReserveChart } from "@/features/reports/indicator-charts/reserve-chart";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MonthControl } from "@/ui/month-control";
-import { QueryError } from "@/ui/query-error";
+import { MonthControl } from "@/ui/navigation/month-control";
+import { QueryError } from "@/ui/feedback/query-error";
 
 interface IndicatorsTabProps {
   month: string;

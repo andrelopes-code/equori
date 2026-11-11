@@ -9,7 +9,7 @@ import { CaptureLineItem } from "@/features/transactions/capture-drafts/capture-
 import type { CaptureRow } from "@/features/transactions/capture-model/capture-rows";
 import type { CaptureSetup } from "@/features/transactions/capture-model/capture-setup";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Account = components["schemas"]["Account"];
 

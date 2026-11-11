@@ -4,7 +4,7 @@ import { TextField } from "@slotted/react/text-field";
 
 import type { ImportCredentials } from "@/features/setup/data/use-import-credentials";
 import { useT } from "@/i18n/i18n-provider";
-import { FormLayout } from "@/ui/form-layout";
+import { FormLayout } from "@/ui/form-layout/form-layout";
 
 interface ImportCredentialsFieldsProps {
   credentials: ImportCredentials;

@@ -1,7 +1,7 @@
 import { ProblemError } from "@/api/problem";
 import { PriceMissingNotice } from "@/features/portfolio/notices/price-missing-notice";
 import type { PriceMissingProps } from "@/features/portfolio/notices/price-missing-notice";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 interface PortfolioProblemProps extends PriceMissingProps {
   error: Error;

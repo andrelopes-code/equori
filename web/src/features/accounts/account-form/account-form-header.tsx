@@ -10,8 +10,8 @@ import {
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
-import { PageBack } from "@/ui/page-back";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
 
 // FM-01: the form stands on its own route, and the way back is the header's back part.
 export function AccountFormHeader({

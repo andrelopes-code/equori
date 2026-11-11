@@ -1,5 +1,5 @@
 import { bookKey, bookKeyNames } from "@/features/session";
-import { newId } from "@/ui/new-id";
+import { newId } from "@/ui/runtime/new-id";
 
 // P4 of ADR 022: texts written without the server, kept until recorded or discarded.
 

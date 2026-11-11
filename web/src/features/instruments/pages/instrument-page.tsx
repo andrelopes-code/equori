@@ -33,9 +33,9 @@ import {
 } from "@/features/instruments/model/use-history-refresh";
 import { settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { HeaderAction } from "@/ui/header-action";
-import { QueryError } from "@/ui/query-error";
-import { PageBack } from "@/ui/page-back";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { QueryError } from "@/ui/feedback/query-error";
+import { PageBack } from "@/ui/navigation/page-back";
 
 // PC19: one instrument: what the book holds of it, its price history, its terms and its data, with
 // the manual price form and the edit form of a security.

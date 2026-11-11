@@ -44,7 +44,7 @@ import { UpcomingBlock } from "@/features/overview/upcoming/upcoming-block";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 const desk: [DesktopFigureKind, MessageKey][] = [
   ["net", "overview.figures.net"],

@@ -18,12 +18,12 @@ import { useRecordPrice } from "@/features/instruments/api";
 import { parseRate } from "@/features/instruments/model/rate";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { FormRow } from "@/ui/form-row";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormRow } from "@/ui/form-layout/form-row";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 // Records the price of one date. The server replaces a manual price of the same date, and the
 // form says so before the write.

@@ -22,10 +22,10 @@ import { useCreateProvider, useUpdateProvider } from "@/features/setup/api";
 import type { ModelPreset, ModelProvider } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/model/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 // Creates a provider from a preset, or edits one; an edit sends only the fields the reader
 // changed (FM-09), and an empty key keeps the stored one.

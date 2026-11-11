@@ -32,8 +32,8 @@ import { useMapExternalAccount } from "@/features/accounts/api";
 import { subtypeWords } from "@/features/accounts/model/external-subtype";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];

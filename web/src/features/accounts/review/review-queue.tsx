@@ -16,7 +16,7 @@ import type { ReviewSelection } from "@/features/accounts/review/use-review-sele
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];
 

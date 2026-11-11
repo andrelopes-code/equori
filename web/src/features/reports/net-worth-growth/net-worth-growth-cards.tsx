@@ -4,7 +4,7 @@ import type { ReportPeriod } from "@/features/reports/model/report-period";
 import { useNetWorthGrowth } from "@/features/reports/net-worth-growth/use-net-worth-growth";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/figure-card";
+import { FigureCard } from "@/ui/display/figure-card";
 
 export interface NetWorthGrowthCardsProps {
   period: ReportPeriod;

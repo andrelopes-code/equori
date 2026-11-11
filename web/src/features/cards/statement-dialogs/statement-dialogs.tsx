@@ -7,7 +7,7 @@ import { PayDialog } from "@/features/cards/statement-dialogs/pay-dialog";
 import { ReconcileDialog } from "@/features/cards/statement-dialogs/reconcile-dialog";
 import type { StatementDialog } from "@/features/cards/statement-header/statement-header";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Statement = components["schemas"]["StatementDetail"];
 

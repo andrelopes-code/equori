@@ -21,8 +21,8 @@ import type { DataMessage } from "@/features/setup/data/data-message";
 import { ImportCredentialsFields } from "@/features/setup/data/import-credentials-fields";
 import { useArchiveImport } from "@/features/setup/data/use-archive-import";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface ReplaceBooksDialogProps {
   onMessage: (message: DataMessage | null) => void;

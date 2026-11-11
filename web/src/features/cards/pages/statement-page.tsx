@@ -24,7 +24,7 @@ import { StatementLines } from "@/features/cards/statement-lines/statement-lines
 import { unconfirmedQuery } from "@/features/accounts";
 import { useScale } from "@/features/setup";
 import { useToday } from "@/i18n/today";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // One statement: its terms, its lines by day, and the commands its state allows.
 export function StatementPage() {

@@ -8,7 +8,7 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { YieldGroup } from "@/features/portfolio/model/yield-figures";
-import { useAmountTone } from "@/ui/amount-tone";
+import { useAmountTone } from "@/ui/money/amount-tone";
 
 interface YieldGroupListProps {
   group: YieldGroup;

@@ -25,7 +25,7 @@ import type { AssistantMessage } from "@/features/assistant/model/sse";
 import { TurnActivity } from "@/features/assistant/message/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface MessageItemProps {
   message: AssistantMessage;

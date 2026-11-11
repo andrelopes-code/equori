@@ -4,10 +4,10 @@ import type { components } from "@/api/schema.gen";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import type { MoneyAmount } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];

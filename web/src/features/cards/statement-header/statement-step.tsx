@@ -2,7 +2,7 @@ import { IconButton, IconButtonLink } from "@slotted/react/button";
 import { Icon } from "@slotted/react/icon";
 import { Link as RouterLink } from "@tanstack/react-router";
 
-import { StepGlyph } from "@/ui/step-glyph";
+import { StepGlyph } from "@/ui/navigation/step-glyph";
 
 interface StatementStepProps {
   accountId: string;

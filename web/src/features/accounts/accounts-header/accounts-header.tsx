@@ -17,8 +17,8 @@ import { useApi } from "@/api/api-context";
 import styles from "@/features/accounts/accounts-header/accounts-header.module.css";
 import { connectionsListQuery } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
-import { HeaderProgress } from "@/ui/header-progress";
-import { useServed } from "@/ui/use-served";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
+import { useServed } from "@/ui/navigation/use-served";
 
 export type AccountsTab = "accounts" | "institutions" | "links";
 

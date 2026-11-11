@@ -4,7 +4,7 @@ import { errorText } from "@/api/problem";
 import { useRemoveMember } from "@/features/setup/api";
 import type { BooksMember } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 interface MemberRemoveDialogProps {
   member: BooksMember;

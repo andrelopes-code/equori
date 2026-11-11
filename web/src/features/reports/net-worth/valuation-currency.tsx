@@ -4,7 +4,7 @@ import { useApi } from "@/api/api-context";
 import { ReportSelect } from "@/features/reports/report-controls/report-select";
 import { instrumentsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 // The valuation currency is chosen among the currencies of the instrument catalog, as in the
 // portfolio.

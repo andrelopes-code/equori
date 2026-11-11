@@ -16,8 +16,8 @@ import type { components } from "@/api/schema.gen";
 import { rulePreview } from "@/features/categories/api";
 import { PreviewList } from "@/features/categories/rule-preview/preview-list";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useDebounced } from "@/ui/use-debounced";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useDebounced } from "@/ui/runtime/use-debounced";
 
 type RuleInput = components["schemas"]["RuleInput"];
 

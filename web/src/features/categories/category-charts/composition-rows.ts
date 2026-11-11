@@ -1,6 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories/model/category-paths";
-import { rankedShares } from "@/ui/ranked-shares";
+import { rankedShares } from "@/ui/money/ranked-shares";
 
 type CategoryTotal = components["schemas"]["CategoryTotal"];
 

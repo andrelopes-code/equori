@@ -15,7 +15,7 @@ import { CategoryMark } from "@/features/categories/category-mark/category-mark"
 import type { CategoryIconName } from "@/features/categories/model/category-paths";
 import { IconChoices } from "@/features/categories/appearance-picker/icon-choices";
 import { useT } from "@/i18n/i18n-provider";
-import { ColorSwatches } from "@/ui/color-swatches";
+import { ColorSwatches } from "@/ui/form-fields/color-swatches";
 
 interface AppearancePickerProps {
   // The name the mark draws its initial from while no icon is chosen.

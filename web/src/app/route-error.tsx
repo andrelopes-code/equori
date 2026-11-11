@@ -1,7 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 export function RouteError({ error }: ErrorComponentProps) {
   const router = useRouter();

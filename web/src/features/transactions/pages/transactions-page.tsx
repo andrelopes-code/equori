@@ -19,7 +19,7 @@ import { useCategorizeActions } from "@/features/transactions/selection/use-cate
 import { useSelectionCommands } from "@/features/transactions/selection/use-selection-commands";
 import { useTransactionList } from "@/features/transactions/transactions-grid/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
-import { BulkOutcomeNotice } from "@/ui/bulk-outcome-notice";
+import { BulkOutcomeNotice } from "@/ui/feedback/bulk-outcome-notice";
 
 const listID = "transactions-list";
 

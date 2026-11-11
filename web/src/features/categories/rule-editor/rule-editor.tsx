@@ -35,7 +35,7 @@ import {
   useDeleteRule,
   useReplaceRule,
 } from "@/features/categories/api";
-import type { Choice } from "@/ui/choice-select";
+import type { Choice } from "@/ui/form-fields/choice-select";
 import { ConditionRow } from "@/features/categories/rule-editor/condition-row";
 import {
   draftFromRule,
@@ -51,12 +51,12 @@ import { RuleReading } from "@/features/categories/rule-editor/rule-reading";
 import { useRuleWords } from "@/features/categories/model/use-rule-words";
 import { payeesQuery, settingsQuery, useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
-import { PageBack } from "@/ui/page-back";
-import { FormChecks } from "@/ui/form-checks";
-import { FormLayout } from "@/ui/form-layout";
-import { FormSection } from "@/ui/form-section";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
+import { FormChecks } from "@/ui/form-layout/form-checks";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 type Rule = components["schemas"]["Rule"];
 

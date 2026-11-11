@@ -17,8 +17,8 @@ import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { booksQuery, useDeleteBooks } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface DeleteBooksDialogProps {
   onClose: () => void;

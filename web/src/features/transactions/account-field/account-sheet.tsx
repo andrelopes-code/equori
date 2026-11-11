@@ -19,7 +19,7 @@ import type {
   SuggestionView,
 } from "@/features/transactions/account-field/use-account-choices";
 import { useT } from "@/i18n/i18n-provider";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 // The list of accounts in a drawer: choosing one closes it. A phone takes it as a bottom sheet;
 // a wide screen, where a field opens it in compact mode, takes it as a side panel.

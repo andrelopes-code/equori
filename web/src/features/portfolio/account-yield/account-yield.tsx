@@ -6,7 +6,7 @@ import { useAccountYield } from "@/features/portfolio/account-yield/use-account-
 import { yieldLine } from "@/features/portfolio/model/yield-figures";
 import { shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useAmountTone } from "@/ui/amount-tone";
+import { useAmountTone } from "@/ui/money/amount-tone";
 
 // The days of the window, the 90 that end at the date of the balance sheet.
 const WINDOW_DAYS = 90;

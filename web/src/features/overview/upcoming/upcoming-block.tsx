@@ -19,7 +19,7 @@ import {
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 // The read reaches 180 days back for overdue occurrences; the contract allows 366 days.
 const lookBackDays = 180;

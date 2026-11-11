@@ -1,4 +1,4 @@
-import type { Choice } from "@/ui/choice-select";
+import type { Choice } from "@/ui/form-fields/choice-select";
 
 // The default choice, every zone the runtime lists, then the current zone when the runtime lacks it.
 export function timeZoneChoices(

@@ -24,7 +24,7 @@ import { errorText } from "@/api/problem";
 import { CopyButton } from "@/features/setup/settings-layout/copy-button";
 import { useExportPassphrase } from "@/features/setup/data/use-export-passphrase";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface ExportCredentialsDialogProps {
   onConfirm: (passphrase: string) => Promise<unknown>;

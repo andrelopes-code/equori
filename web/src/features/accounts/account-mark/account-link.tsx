@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { accountRoute } from "@/features/accounts/model/account-route";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 type Account = components["schemas"]["Account"];
 

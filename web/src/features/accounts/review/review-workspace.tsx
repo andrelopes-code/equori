@@ -7,8 +7,8 @@ import { ReviewQueue } from "@/features/accounts/review/review-queue";
 import { ReviewRecord } from "@/features/accounts/review/review-record";
 import type { ReviewSelection } from "@/features/accounts/review/use-review-selection";
 import { useT } from "@/i18n/i18n-provider";
-import { BulkOutcomeNotice } from "@/ui/bulk-outcome-notice";
-import { FormNotice } from "@/ui/form-notice";
+import { BulkOutcomeNotice } from "@/ui/feedback/bulk-outcome-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];
 

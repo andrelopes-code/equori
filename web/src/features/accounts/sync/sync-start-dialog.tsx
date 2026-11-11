@@ -16,9 +16,9 @@ import type { components } from "@/api/schema.gen";
 import type { Linked } from "@/features/accounts/account-record/account-tab-panel";
 import { useMapExternalAccount } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
-import { DateInput } from "@/ui/date-input";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 
 type Account = components["schemas"]["Account"];
 

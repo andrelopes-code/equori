@@ -21,7 +21,7 @@ import { periodTransactionsQuery } from "@/features/transactions";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MonthControl } from "@/ui/month-control";
+import { MonthControl } from "@/ui/navigation/month-control";
 
 interface NetWorthMonthCardProps {
   month: string;

@@ -25,7 +25,7 @@ import styles from "@/features/planning/budgets/budgets.module.css";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 type Money = components["schemas"]["Money"];
 type Budget = components["schemas"]["Budget"];

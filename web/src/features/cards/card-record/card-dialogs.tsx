@@ -4,7 +4,7 @@ import type { components } from "@/api/schema.gen";
 import { CloseAccountDialog, ReopenAccountDialog } from "@/features/accounts";
 import { InstallmentPurchaseDialog } from "@/features/cards/card-record/installment-purchase-dialog";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Account = components["schemas"]["Account"];
 

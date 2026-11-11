@@ -8,7 +8,11 @@ import {
 } from "@/features/reports/net-worth-month/net-worth-days";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { directionOf, useAmountTone, type AmountKind } from "@/ui/amount-tone";
+import {
+  directionOf,
+  useAmountTone,
+  type AmountKind,
+} from "@/ui/money/amount-tone";
 
 interface EntryTotalsProps {
   rows: readonly EntryRow[];

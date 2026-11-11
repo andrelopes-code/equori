@@ -6,7 +6,7 @@ import { useScale } from "@/features/setup";
 import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { directionOf, useAmountTone } from "@/ui/amount-tone";
+import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
 
 interface HoldingGainCellProps {
   holding: Holding;

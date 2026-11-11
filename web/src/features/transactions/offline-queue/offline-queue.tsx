@@ -24,7 +24,7 @@ import { readDefaultAccount } from "@/features/transactions/capture-model/captur
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // The queue of the offline screen: a text queued for the device's last user with the day it was
 // written (P4), the waiting texts and their discard (P7).

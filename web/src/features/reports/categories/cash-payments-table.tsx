@@ -24,8 +24,8 @@ import { cashPaymentsQuery } from "@/features/reports/api";
 import type { ReportPeriod } from "@/features/reports/model/report-period";
 import { formatDate, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
-import { routeTo } from "@/ui/route-to";
+import { QueryError } from "@/ui/feedback/query-error";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // The card payments that make a category's cash total, each opening its payment and the
 // statement it pays (N20).

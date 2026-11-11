@@ -1,6 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import type { StatementLine } from "@/features/cards/model/statement-groups";
-import type { AmountDirection } from "@/ui/amount-tone";
+import type { AmountDirection } from "@/ui/money/amount-tone";
 
 type Money = components["schemas"]["Money"];
 

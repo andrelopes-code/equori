@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface InviteNewMemberFormProps {
   pending: boolean;

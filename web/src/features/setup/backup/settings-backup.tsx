@@ -16,7 +16,7 @@ import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // A154, A155, A157: the daily backups, the encrypted copy and its password. Only an admin sees it.
 export function SettingsBackup() {

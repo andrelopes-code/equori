@@ -4,13 +4,13 @@ import {
 } from "@/features/categories/model/category-figures";
 import type { Summary } from "@/features/categories/model/category-figures";
 import type { CategoryClass } from "@/features/categories/model/category-paths";
-import { FigureCard } from "@/ui/figure-card";
+import { FigureCard } from "@/ui/display/figure-card";
 import styles from "@/features/categories/figures-row/figures-row.module.css";
 import { PendingCard } from "@/features/categories/figures-row/pending-card";
 import { formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import type { MoneyAmount } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 // OV-05: peer tiles in one grid. Each answers a question the tree and the charts leave to
 // arithmetic: how the month compares with the same days before, what drove it, where it is

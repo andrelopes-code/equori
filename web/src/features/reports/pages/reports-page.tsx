@@ -33,8 +33,8 @@ import { settingsQuery } from "@/features/setup";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { HeaderProgress } from "@/ui/header-progress";
-import { PeriodControl } from "@/ui/period-control";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
+import { PeriodControl } from "@/ui/navigation/period-control";
 
 const tabLabels: Record<ReportsTab, MessageKey> = {
   "net-worth": "report.tab.netWorth",

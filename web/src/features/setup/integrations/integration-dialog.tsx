@@ -25,10 +25,10 @@ import {
 import type { Aggregator, Integration } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/model/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 // Creates an integration, or replaces the credentials of one. The fields come from the
 // aggregator's `credential_fields`; a secret field is write-only and starts empty. The

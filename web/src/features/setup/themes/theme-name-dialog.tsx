@@ -14,7 +14,7 @@ import { useState } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 import { themeName } from "@/theme/theme-file";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 export interface ThemeNameDialogProps {
   title: string;

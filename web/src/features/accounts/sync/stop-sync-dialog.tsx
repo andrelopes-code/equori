@@ -4,7 +4,7 @@ import { errorText } from "@/api/problem";
 import type { Linked } from "@/features/accounts/account-record/account-tab-panel";
 import { useMapExternalAccount } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 // Ignoring the external account leaves it out of every sync; what it imported stays (A35).
 export function StopSyncDialog({

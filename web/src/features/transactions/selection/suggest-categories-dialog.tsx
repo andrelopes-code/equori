@@ -23,7 +23,7 @@ import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import { transactionSuggestionsQuery } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Transaction = components["schemas"]["Transaction"];
 

@@ -16,8 +16,8 @@ import { meQuery } from "@/features/session";
 import { readQueue } from "@/features/transactions/capture-model/capture-queue";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { PageBack } from "@/ui/page-back";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 interface CaptureHeaderProps {
   // The day a text of the offline queue was written; undefined for the session's draft.

@@ -9,7 +9,7 @@ import { ShellIcon } from "@/app/shell/shell-icon";
 import { useDestinationPress } from "@/app/shell/use-destination-press";
 import { useUncategorizedCount } from "@/app/shell/use-uncategorized-count";
 import { useT } from "@/i18n/i18n-provider";
-import { SpeedDial } from "@/ui/speed-dial";
+import { SpeedDial } from "@/ui/navigation/speed-dial";
 
 const tabs = destinations.filter((d) => d.phone === "bar");
 

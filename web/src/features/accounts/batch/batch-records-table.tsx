@@ -20,7 +20,7 @@ import { ReopenRecordButton } from "@/features/accounts/batch/reopen-record-butt
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];

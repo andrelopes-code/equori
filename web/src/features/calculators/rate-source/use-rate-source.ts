@@ -14,7 +14,7 @@ import {
   useIndexRate,
 } from "@/features/calculators/rate-source/use-index-rate";
 import type { Index } from "@/features/calculators/rate-source/use-index-rate";
-import type { RatePeriod } from "@/ui/rate-input";
+import type { RatePeriod } from "@/ui/money/rate-input";
 
 export interface RateSource {
   // The address keys: the rate text, its period, the index, and how the rate follows it.

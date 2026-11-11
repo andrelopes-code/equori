@@ -19,7 +19,7 @@ import { SettingsInvitations } from "@/features/setup/invitations/settings-invit
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { meQuery } from "@/features/session";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 import { Inline } from "@slotted/react";
 
 type Open =

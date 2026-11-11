@@ -13,7 +13,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { AppLink } from "@/ui/app-link";
+import { AppLink } from "@/ui/navigation/app-link";
 
 type Schedule = components["schemas"]["Schedule"];
 

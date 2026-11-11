@@ -10,8 +10,8 @@ import {
 } from "@/features/transactions/transaction-form/statement-offer";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FieldTitle } from "@/ui/field-title";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FieldTitle } from "@/ui/form-fields/field-title";
 
 export interface StatementChoiceProps {
   cardId: string;

@@ -5,7 +5,7 @@ import { DisputeDialog } from "@/features/cards/charge-actions/dispute-dialog";
 import { PlanDrawer } from "@/features/cards/plans-tab/plan-drawer";
 import { RefundDialog } from "@/features/cards/charge-actions/refund-dialog";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 interface ChargeActionDialogsProps {
   action: ChargeAction | null;

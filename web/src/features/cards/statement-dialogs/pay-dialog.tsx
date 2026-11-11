@@ -22,12 +22,12 @@ import { AccountField } from "@/features/transactions";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { MoneyInput } from "@/ui/money-input";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { MoneyInput } from "@/ui/money/money-input";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];

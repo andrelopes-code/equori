@@ -48,8 +48,8 @@ import { usePlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { usePrivacy } from "@/privacy/privacy-provider";
-import { useDebounced } from "@/ui/use-debounced";
-import { useMediaQuery } from "@/ui/use-media-query";
+import { useDebounced } from "@/ui/runtime/use-debounced";
+import { useMediaQuery } from "@/ui/runtime/use-media-query";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 

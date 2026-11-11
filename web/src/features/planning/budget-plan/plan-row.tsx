@@ -25,7 +25,7 @@ import {
 } from "@/features/planning/budget-plan/plan-math";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyInput } from "@/ui/money-input";
+import { MoneyInput } from "@/ui/money/money-input";
 
 // An arrow key moves the amount by ten units of the currency, a hundred with Shift (spec 5.2).
 const stepUnits = 10;

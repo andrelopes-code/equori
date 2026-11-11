@@ -23,10 +23,10 @@ import { settingsQuery, useScale } from "@/features/setup";
 import { shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 type OccurrenceState = components["schemas"]["OccurrenceState"];
 type ScheduleKind = components["schemas"]["ScheduleKind"];

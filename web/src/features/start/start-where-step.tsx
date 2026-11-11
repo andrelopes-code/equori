@@ -7,7 +7,7 @@ import { Text } from "@slotted/react/typography";
 import { StartRow } from "@/features/start/start-row";
 import type { StartRow as StartRowValue } from "@/features/start/start-drafts";
 import { useT } from "@/i18n/i18n-provider";
-import { FormLayout } from "@/ui/form-layout";
+import { FormLayout } from "@/ui/form-layout/form-layout";
 
 interface StartWhereStepProps {
   rows: readonly StartRowValue[];

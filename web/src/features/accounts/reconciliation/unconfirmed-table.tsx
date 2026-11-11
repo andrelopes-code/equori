@@ -26,8 +26,8 @@ import { BulkVoidDialog } from "@/features/transactions";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { BulkOutcomeNotice } from "@/ui/bulk-outcome-notice";
-import { routeTo } from "@/ui/route-to";
+import { BulkOutcomeNotice } from "@/ui/feedback/bulk-outcome-notice";
+import { routeTo } from "@/ui/navigation/route-to";
 
 interface UnconfirmedTableProps {
   accountId: string;

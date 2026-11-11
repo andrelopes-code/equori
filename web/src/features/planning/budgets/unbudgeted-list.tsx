@@ -20,7 +20,7 @@ import { CategoryMark, pathSeparator } from "@/features/categories";
 import type { CategoryEntry } from "@/features/categories";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 type Money = components["schemas"]["Money"];
 

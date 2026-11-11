@@ -18,9 +18,9 @@ import { useState } from "react";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useImportPrices } from "@/features/instruments/api";
 import { useT } from "@/i18n/i18n-provider";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { FormNotice } from "@/ui/form-notice";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // The contract allows 10,000 lines of about 50 bytes; the server answers 413 above its own limit.
 const maxBytes = 2 * 1024 * 1024;

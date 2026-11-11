@@ -19,7 +19,7 @@ import { catalogLabel, useScale } from "@/features/setup";
 import { formatMonthName, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type Money = components["schemas"]["Money"];
 

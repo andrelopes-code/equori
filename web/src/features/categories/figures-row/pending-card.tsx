@@ -1,7 +1,7 @@
 import { Link } from "@slotted/react/link";
 import { useNavigate } from "@tanstack/react-router";
 
-import { FigureCard } from "@/ui/figure-card";
+import { FigureCard } from "@/ui/display/figure-card";
 import type { CategoryClass } from "@/features/categories/model/category-paths";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";

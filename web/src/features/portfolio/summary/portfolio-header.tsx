@@ -17,8 +17,8 @@ import { HelpLink } from "@/features/help";
 import type { SearchPatch } from "@/features/portfolio/model/portfolio-search";
 import { instrumentsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { DateInput } from "@/ui/date-input";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { DateInput } from "@/ui/form-fields/date-input";
 
 interface PortfolioHeaderProps {
   date: string;

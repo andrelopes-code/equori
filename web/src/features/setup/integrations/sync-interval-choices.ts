@@ -1,5 +1,5 @@
 import { numberFormatter } from "@/i18n/format";
-import type { Choice } from "@/ui/choice-select";
+import type { Choice } from "@/ui/form-fields/choice-select";
 
 const presets = [15, 30, 60, 120, 360, 720, 1440];
 

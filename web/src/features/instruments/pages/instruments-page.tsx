@@ -26,8 +26,8 @@ import { PriceImportDialog } from "@/features/instruments/price-import/price-imp
 import { InstrumentsGrid } from "@/features/instruments/catalog/instruments-grid";
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { HeaderAction } from "@/ui/header-action";
-import { QueryError } from "@/ui/query-error";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // The currencies and securities of the instance by type, each with its latest price.
 export function InstrumentsPage() {

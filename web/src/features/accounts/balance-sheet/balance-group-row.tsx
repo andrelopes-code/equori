@@ -15,7 +15,7 @@ import type { SheetRow } from "@/features/accounts/balance-sheet/balance-sheet";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { AccountYield } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 type Institution = components["schemas"]["Institution"];
 

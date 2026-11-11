@@ -13,7 +13,7 @@ import { SettingsNavigation } from "@/features/setup/settings-layout/settings-na
 import { SettingsPane } from "@/features/setup/settings-layout/settings-pane";
 import styles from "@/features/setup/pages/settings-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // One pane at a time beside the grouped navigation. On a phone the navigation is the page's index
 // and a pane takes the whole width, with the way back to the index in the top bar.

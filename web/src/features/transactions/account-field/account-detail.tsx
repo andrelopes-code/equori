@@ -1,8 +1,8 @@
 import type { AccountChoice } from "@/features/transactions/account-field/use-account-choices";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
-import { withValue } from "@/ui/with-value";
+import { MoneyFigure } from "@/ui/money/money-figure";
+import { withValue } from "@/ui/display/with-value";
 
 // "Checking · balance R$ 4,312.10", "Credit card · free limit R$ 3,157.23": the kind, then the
 // figure the kind is chosen by, when the application holds it.

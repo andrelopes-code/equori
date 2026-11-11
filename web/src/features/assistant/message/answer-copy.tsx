@@ -3,7 +3,7 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { IconButton } from "@slotted/react/button";
 import { useState, type MouseEvent } from "react";
 
-import { copyText } from "@/ui/copy-text";
+import { copyText } from "@/ui/runtime/copy-text";
 import { maskAmountText } from "@/features/assistant/model/mask-amounts";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";

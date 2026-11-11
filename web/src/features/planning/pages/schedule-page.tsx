@@ -62,10 +62,10 @@ import { formatDate, numberFormatter, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { AppLink } from "@/ui/app-link";
-import { HeaderAction } from "@/ui/header-action";
-import { QueryError } from "@/ui/query-error";
-import { PageBack } from "@/ui/page-back";
+import { AppLink } from "@/ui/navigation/app-link";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { QueryError } from "@/ui/feedback/query-error";
+import { PageBack } from "@/ui/navigation/page-back";
 
 type Dialog = "terms" | Exclude<ScheduleMenuChoice, "move">;
 

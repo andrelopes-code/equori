@@ -22,7 +22,7 @@ import type { ReactNode } from "react";
 import styles from "@/features/calculators/calculator-frame/calculators.module.css";
 import type { CalculatorId } from "@/features/calculators/model/calculators";
 import { useT } from "@/i18n/i18n-provider";
-import { PageBack } from "@/ui/page-back";
+import { PageBack } from "@/ui/navigation/page-back";
 
 // One calculator (design §4, "Layout"): the inputs beside the results, which stay in view while
 // the inputs scroll and carry their own evidence (a chart, a short table); the optional inputs

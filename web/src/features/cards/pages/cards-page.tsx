@@ -20,9 +20,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useDeferredValue, useState } from "react";
 
-import { HeaderProgress } from "@/ui/header-progress";
-import { RefreshButton } from "@/ui/refresh-button";
-import { useRefresh } from "@/ui/use-refresh";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
+import { RefreshButton } from "@/ui/feedback/refresh-button";
+import { useRefresh } from "@/ui/feedback/use-refresh";
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { cardTotals } from "@/features/cards/model/card-totals";
@@ -32,9 +32,9 @@ import styles from "@/features/cards/card-tile/card-tile.module.css";
 import { useCardStatements } from "@/features/cards/cards-figures/use-card-statements";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { HeaderAction } from "@/ui/header-action";
-import { QueryError } from "@/ui/query-error";
-import { useServed } from "@/ui/use-served";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { QueryError } from "@/ui/feedback/query-error";
+import { useServed } from "@/ui/navigation/use-served";
 
 // The credit cards: what each one bills now, what is due and when, and how much limit is free.
 const newCard = {

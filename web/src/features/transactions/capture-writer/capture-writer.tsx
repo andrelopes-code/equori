@@ -4,7 +4,7 @@ import { CaptureComposer } from "@/features/transactions/capture-writer/capture-
 import { CaptureDefaultAccountField } from "@/features/transactions/capture-writer/capture-default-account-field";
 import styles from "@/features/transactions/pages/capture-page.module.css";
 import type { CaptureSetup } from "@/features/transactions/capture-model/capture-setup";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 interface CaptureWriterProps {
   setup: CaptureSetup | null;

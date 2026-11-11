@@ -5,7 +5,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useMergePayees } from "@/features/categories/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 type Payee = components["schemas"]["Payee"];
 

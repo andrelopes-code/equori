@@ -29,10 +29,10 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/categories/payees/aliases-drawer.module.css";
 import { useCreateAlias, useDeleteAlias } from "@/features/categories/api";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Payee = components["schemas"]["Payee"];
 type PayeeAlias = components["schemas"]["PayeeAlias"];

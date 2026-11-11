@@ -15,7 +15,7 @@ import {
 import { LatestPriceCell } from "@/features/instruments/catalog/latest-price-cell";
 import styles from "@/features/instruments/pages/instruments-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { AppLink } from "@/ui/app-link";
+import { AppLink } from "@/ui/navigation/app-link";
 
 const initialQuery: GridQuery = {
   ...emptyQuery(),

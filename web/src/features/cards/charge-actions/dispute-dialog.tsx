@@ -17,11 +17,11 @@ import type { components } from "@/api/schema.gen";
 import { useOpenDispute, useResolveDispute } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 
 type StatementPosting = components["schemas"]["StatementPosting"];
 type Dispute = components["schemas"]["Dispute"];

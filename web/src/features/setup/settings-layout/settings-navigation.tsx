@@ -23,7 +23,7 @@ import {
 } from "@/features/setup/model/settings-topics";
 import type { SettingsTopic } from "@/features/setup/model/settings-topics";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // The panes of the settings page, grouped. Beside a pane it marks the one on show; on a phone it is
 // the index the reader opens a pane from, so each row says what its pane holds and points onward.

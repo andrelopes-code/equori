@@ -14,7 +14,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
-import { HeaderProgress } from "@/ui/header-progress";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
 
 export type CategoriesTab = "categories" | "rules" | "payees" | "tags";
 

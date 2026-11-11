@@ -53,13 +53,13 @@ import {
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
-import { HeaderAction } from "@/ui/header-action";
-import { MonthControl } from "@/ui/month-control";
-import { QueryError } from "@/ui/query-error";
-import { PageBack } from "@/ui/page-back";
-import type { MoneyAmount } from "@/ui/money-value";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { MonthControl } from "@/ui/navigation/month-control";
+import { QueryError } from "@/ui/feedback/query-error";
+import { PageBack } from "@/ui/navigation/page-back";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 // How many months the chart compares, ending at the month the page reads.
 const chartMonths = 6;

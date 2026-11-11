@@ -14,7 +14,7 @@ import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import type { MoneyAmount } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 export type DesktopFigureKind = "net" | "result" | "balance" | "committed";
 

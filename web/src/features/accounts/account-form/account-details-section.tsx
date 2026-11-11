@@ -16,9 +16,9 @@ import {
 import type { Kind } from "@/features/accounts/model/account-kinds";
 import { ParentField } from "@/features/accounts/account-form/parent-field";
 import { useT } from "@/i18n/i18n-provider";
-import { ColorSwatches } from "@/ui/color-swatches";
-import { DateInput } from "@/ui/date-input";
-import { FormSection } from "@/ui/form-section";
+import { ColorSwatches } from "@/ui/form-fields/color-swatches";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 type Account = components["schemas"]["Account"];
 

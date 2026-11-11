@@ -32,7 +32,7 @@ import type {
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { PageBack } from "@/ui/page-back";
+import { PageBack } from "@/ui/navigation/page-back";
 
 // CP-04: a year is stepped one at a time and typed when far away, so the control is a number
 // field with steppers, limited to the range the contract accepts before any request. The year is

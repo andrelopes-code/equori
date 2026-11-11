@@ -30,9 +30,9 @@ import {
 } from "@/features/cards/plans-tab/plan-words";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { PhoneList } from "@/ui/phone-list";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { Presence } from "@/ui/presence";
+import { PhoneList } from "@/ui/form-fields/phone-list";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { Presence } from "@/ui/dialogs/presence";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Statement = components["schemas"]["StatementSummary"];

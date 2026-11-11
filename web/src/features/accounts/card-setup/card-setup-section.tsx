@@ -6,8 +6,8 @@ import type { CardSetupDraft } from "@/features/accounts/model/account-draft";
 import { BillingRuleFields } from "@/features/accounts/card-setup/billing-rule-fields";
 import { PlasticCardFields } from "@/features/accounts/card-setup/plastic-card-fields";
 import { useT } from "@/i18n/i18n-provider";
-import { FormSection } from "@/ui/form-section";
-import { MoneyInput } from "@/ui/money-input";
+import { FormSection } from "@/ui/form-layout/form-section";
+import { MoneyInput } from "@/ui/money/money-input";
 
 interface CardSetupSectionProps {
   value: CardSetupDraft;

@@ -16,7 +16,7 @@ import { useRef, useState } from "react";
 import { useT } from "@/i18n/i18n-provider";
 import { parseTheme } from "@/theme/theme-file";
 import type { ThemeValues } from "@/theme/themes";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 export interface ThemeImportDialogProps {
   onImport: (name: string, values: ThemeValues) => void;

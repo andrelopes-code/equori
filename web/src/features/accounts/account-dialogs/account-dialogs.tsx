@@ -5,7 +5,7 @@ import { CloseAccountDialog } from "@/features/accounts/account-dialogs/close-ac
 import { ReopenAccountDialog } from "@/features/accounts/account-dialogs/reopen-account-dialog";
 import { UnlockDialog } from "@/features/accounts/account-dialogs/unlock-dialog";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Account = components["schemas"]["Account"];
 

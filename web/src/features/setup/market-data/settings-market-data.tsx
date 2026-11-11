@@ -24,7 +24,7 @@ import { MarketDataPlaceholder } from "@/features/setup/market-data/market-data-
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type Feed = components["schemas"]["MarketDataFeed"];
 

@@ -28,7 +28,7 @@ import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // The subscriptions: what each costs a month and a year at the price in force, and how its price
 // moved from one terms version to the next.

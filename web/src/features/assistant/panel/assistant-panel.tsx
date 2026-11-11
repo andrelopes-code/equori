@@ -27,7 +27,7 @@ import { useAssistantTurn } from "@/features/assistant/conversation/use-assistan
 import { usePanelFocus } from "@/features/assistant/panel/use-panel-focus";
 import { usePanelTitle } from "@/features/assistant/panel/use-panel-title";
 import { useRetryAt } from "@/features/assistant/panel/use-retry-at";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface AssistantPanelProps {
   open: boolean;

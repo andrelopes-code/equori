@@ -6,8 +6,8 @@ import type { MouseEvent } from "react";
 import type { components } from "@/api/schema.gen";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
-import { useServed } from "@/ui/use-served";
+import { routeTo } from "@/ui/navigation/route-to";
+import { useServed } from "@/ui/navigation/use-served";
 
 type Categorization = components["schemas"]["Categorization"];
 type Method = NonNullable<Categorization["method"]>;

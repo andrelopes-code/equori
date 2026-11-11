@@ -12,7 +12,7 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 interface StartArriveStepProps {
   names: readonly string[];

@@ -2,7 +2,7 @@ import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 
 import { useT } from "@/i18n/i18n-provider";
-import { FormSection } from "@/ui/form-section";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 export function SetupAccountFields() {
   const t = useT();

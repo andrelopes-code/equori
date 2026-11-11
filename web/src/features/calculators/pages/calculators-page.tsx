@@ -30,7 +30,7 @@ import {
   calculators,
 } from "@/features/calculators/model/calculators";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // The calculators by group, each with the question it answers (design §4, "Routes").
 export function CalculatorsPage() {

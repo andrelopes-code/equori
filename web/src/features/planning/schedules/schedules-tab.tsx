@@ -30,7 +30,7 @@ import { useScale } from "@/features/setup";
 import { shiftDate } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type ScheduleKind = components["schemas"]["ScheduleKind"];
 

@@ -7,7 +7,7 @@ import type { CategoryEntry } from "@/features/categories";
 import type { CategorizeActions } from "@/features/transactions/selection/use-categorize-actions";
 import type { ListRow } from "@/features/transactions/transactions-grid/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
-import type { BulkOutcome } from "@/ui/bulk-outcome";
+import type { BulkOutcome } from "@/ui/feedback/bulk-outcome";
 
 type Transaction = components["schemas"]["Transaction"];
 

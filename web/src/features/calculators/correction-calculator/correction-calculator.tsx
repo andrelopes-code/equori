@@ -27,7 +27,7 @@ import { useIndexes } from "@/features/calculators/rate-source/use-index-rate";
 import { shiftMonth } from "@/features/overview";
 import { formatReferenceMonth, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MonthControl } from "@/ui/month-control";
+import { MonthControl } from "@/ui/navigation/month-control";
 
 const sources: Source[] = [
   {

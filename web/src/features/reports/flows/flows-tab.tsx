@@ -48,9 +48,9 @@ import {
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { QueryError } from "@/ui/query-error";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { QueryError } from "@/ui/feedback/query-error";
 
 const groups = {
   square: "accounts",

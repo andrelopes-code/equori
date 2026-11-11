@@ -30,11 +30,11 @@ import type {
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { HeaderAction } from "@/ui/header-action";
-import { HeaderProgress } from "@/ui/header-progress";
-import { MonthControl } from "@/ui/month-control";
-import { RefreshButton } from "@/ui/refresh-button";
-import { useRefresh } from "@/ui/use-refresh";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
+import { MonthControl } from "@/ui/navigation/month-control";
+import { RefreshButton } from "@/ui/feedback/refresh-button";
+import { useRefresh } from "@/ui/feedback/use-refresh";
 
 const tabs: readonly { tab: PlanningTab; label: MessageKey }[] = [
   { tab: "agenda", label: "planning.tab.agenda" },

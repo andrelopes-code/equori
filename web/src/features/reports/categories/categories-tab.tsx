@@ -54,9 +54,9 @@ import { settingsQuery, useScale } from "@/features/setup";
 import { formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FormNotice } from "@/ui/form-notice";
-import { QueryError } from "@/ui/query-error";
-import { routeTo } from "@/ui/route-to";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { QueryError } from "@/ui/feedback/query-error";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // A ranking draws ten bars (RE-08); the table holds every row.
 const chartRows = 10;

@@ -30,9 +30,13 @@ import {
   statementStatusWords,
 } from "@/features/cards/model/statement-words";
 import { useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
-import { PageBack } from "@/ui/page-back";
-import { useServed } from "@/ui/use-served";
+import {
+  compactQuery,
+  useMediaQuery,
+  wideQuery,
+} from "@/ui/runtime/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
+import { useServed } from "@/ui/navigation/use-served";
 
 type Account = components["schemas"]["Account"];
 type Statement = components["schemas"]["StatementSummary"];

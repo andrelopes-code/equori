@@ -18,7 +18,7 @@ import {
   readRows,
   suggestedRows,
 } from "@/features/transactions/capture-model/capture-rows";
-import { useDebounced } from "@/ui/use-debounced";
+import { useDebounced } from "@/ui/runtime/use-debounced";
 
 type Account = components["schemas"]["Account"];
 type Overrides = Record<string, LineOverride>;

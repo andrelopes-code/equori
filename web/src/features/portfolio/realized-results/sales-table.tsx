@@ -13,14 +13,14 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { AccountLink } from "@/features/accounts";
-import { InstrumentName } from "@/ui/instrument-name";
+import { InstrumentName } from "@/ui/display/instrument-name";
 import { useYearNames } from "@/features/portfolio/model/use-year-names";
 import { catalogLabel, useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { directionOf, useAmountTone } from "@/ui/amount-tone";
-import { AppLink } from "@/ui/app-link";
+import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
+import { AppLink } from "@/ui/navigation/app-link";
 
 type Money = components["schemas"]["Money"];
 type Result = components["schemas"]["RealizedResult"];

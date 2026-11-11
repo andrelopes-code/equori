@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { useT } from "@/i18n/i18n-provider";
-import type { BulkOutcome } from "@/ui/bulk-outcome";
+import type { BulkOutcome } from "@/ui/feedback/bulk-outcome";
 
 type UnconfirmedEntry = components["schemas"]["UnconfirmedEntry"];
 

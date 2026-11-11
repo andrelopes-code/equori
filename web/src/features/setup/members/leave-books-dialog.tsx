@@ -3,7 +3,7 @@ import { useState } from "react";
 import { errorText } from "@/api/problem";
 import { useLeaveBooks } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 interface LeaveBooksDialogProps {
   onClose: () => void;

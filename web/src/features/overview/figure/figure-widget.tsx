@@ -14,8 +14,8 @@ import {
   OverviewBlock,
   type Placement,
 } from "@/features/overview/overview-block/overview-block";
-import { MoneyValue } from "@/ui/money-value";
-import type { MoneyAmount } from "@/ui/money-value";
+import { MoneyValue } from "@/ui/money/money-value";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 // One figure of the overview as a widget of its own: the widget's title is the figure's label
 // and the widget is its only frame, so the card inside is plain and has no header (OV-05).

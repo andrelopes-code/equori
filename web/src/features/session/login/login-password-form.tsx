@@ -11,7 +11,7 @@ import { useLogin } from "@/features/session/api";
 import type { SecondFactorChallenge } from "@/features/session/api";
 import styles from "@/features/session/pages/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface LoginPasswordFormProps {
   initialFailure: string | null;

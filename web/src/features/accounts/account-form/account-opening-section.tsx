@@ -4,9 +4,9 @@ import type { Kind } from "@/features/accounts/model/account-kinds";
 import { classOf } from "@/features/accounts/model/account-kinds";
 import { openingLabel } from "@/features/accounts/account-form/opening-label";
 import { useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/field-title";
-import { FormSection } from "@/ui/form-section";
-import { MoneyInput } from "@/ui/money-input";
+import { FieldTitle } from "@/ui/form-fields/field-title";
+import { FormSection } from "@/ui/form-layout/form-section";
+import { MoneyInput } from "@/ui/money/money-input";
 
 interface AccountOpeningSectionProps {
   kind: Kind;

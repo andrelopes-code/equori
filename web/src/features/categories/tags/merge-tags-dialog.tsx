@@ -4,7 +4,7 @@ import { useState } from "react";
 import { errorText } from "@/api/problem";
 import { useMergeTags } from "@/features/categories/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 // The selected tags become one: the reader chooses which name stays.
 export function MergeTagsDialog({

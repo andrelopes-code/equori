@@ -9,7 +9,7 @@ import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { TotpDialog } from "@/features/setup/security/totp-dialog";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface SecurityTotpGroupProps {
   enabled: boolean;

@@ -10,7 +10,7 @@ import { Stack } from "@slotted/react/stack";
 import { Link } from "@tanstack/react-router";
 
 import { useT } from "@/i18n/i18n-provider";
-import { PageBack } from "@/ui/page-back";
+import { PageBack } from "@/ui/navigation/page-back";
 
 // A223: the page of an instrument while it loads. The way back is chrome and stays real; the
 // heading, the latest price, the chart with its range figures, the position and the data are reserved at the size they take.

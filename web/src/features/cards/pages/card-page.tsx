@@ -28,8 +28,8 @@ import { accountQuery } from "@/features/accounts";
 import { CardRecord } from "@/features/cards/card-record/card-record";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
-import { PageBack } from "@/ui/page-back";
+import { QueryError } from "@/ui/feedback/query-error";
+import { PageBack } from "@/ui/navigation/page-back";
 
 export function CardPage() {
   const t = useT();

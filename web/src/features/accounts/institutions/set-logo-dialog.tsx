@@ -28,8 +28,8 @@ import {
   logoURL,
 } from "@/features/accounts/model/institution-logo";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { InstitutionOption } from "@/features/accounts/institutions/institution-option";
 
 type Institution = components["schemas"]["Institution"];

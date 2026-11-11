@@ -10,7 +10,7 @@ import type { AssertionOutcome } from "@/features/accounts/reconciliation/assert
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 const outcomeLabel: Record<AssertionOutcome["kind"], MessageKey> = {
   reconciled: "reconciliation.result.reconciled",

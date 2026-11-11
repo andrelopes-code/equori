@@ -11,7 +11,7 @@ import {
 import { toast } from "@slotted/react/toast";
 import { useState } from "react";
 
-import { copyText } from "@/ui/copy-text";
+import { copyText } from "@/ui/runtime/copy-text";
 import { ThemeDeleteDialog } from "@/features/setup/themes/theme-delete-dialog";
 import { ThemeImportDialog } from "@/features/setup/themes/theme-import-dialog";
 import { ThemeNameDialog } from "@/features/setup/themes/theme-name-dialog";

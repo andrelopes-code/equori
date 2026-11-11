@@ -6,8 +6,8 @@ import { errorText } from "@/api/problem";
 import { tagUsageQuery, useDeleteTag } from "@/features/categories/api";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
-import { FormNotice } from "@/ui/form-notice";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // The reader confirms a delete knowing how many transactions lose the tag.
 export function DeleteTagDialog({

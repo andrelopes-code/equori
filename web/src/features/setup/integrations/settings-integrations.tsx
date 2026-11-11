@@ -28,7 +28,7 @@ import { SettingsSection } from "@/features/setup/settings-layout/settings-secti
 import { SettingsSyncSchedule } from "@/features/setup/integrations/settings-sync-schedule";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Open =
   | { kind: "create" }

@@ -36,13 +36,13 @@ import { useScale } from "@/features/setup";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
-import { HeaderAction } from "@/ui/header-action";
-import { HeaderProgress } from "@/ui/header-progress";
-import { QueryError } from "@/ui/query-error";
-import { RefreshButton } from "@/ui/refresh-button";
-import { useRefresh } from "@/ui/use-refresh";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
+import { QueryError } from "@/ui/feedback/query-error";
+import { RefreshButton } from "@/ui/feedback/refresh-button";
+import { useRefresh } from "@/ui/feedback/use-refresh";
 
 // The savings goals: how far each one is, what is left and what each month's saving does to
 // the month it completes.

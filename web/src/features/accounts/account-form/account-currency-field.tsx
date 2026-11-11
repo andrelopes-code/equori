@@ -7,7 +7,7 @@ import {
 import { TextField } from "@slotted/react/text-field";
 
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface AccountCurrencyFieldProps {
   mode: "create" | "edit";

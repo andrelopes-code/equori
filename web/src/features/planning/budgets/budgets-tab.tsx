@@ -41,7 +41,7 @@ import { UnbudgetedList } from "@/features/planning/budgets/unbudgeted-list";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type Budget = components["schemas"]["Budget"];
 

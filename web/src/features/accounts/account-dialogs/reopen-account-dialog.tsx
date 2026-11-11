@@ -15,9 +15,9 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useReopenAccount } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 
 type Account = components["schemas"]["Account"];
 

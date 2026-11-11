@@ -5,7 +5,7 @@ import { Tag } from "@slotted/react/tag";
 import type { ModelUse } from "@/features/setup/api";
 import { NoticeTag } from "@/features/setup/settings-layout/notice-tag";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // What a use sends and where: financial data, the capabilities it needs, one tag per notice of its
 // targets, and the capabilities a target lacks. The warning that a target trains on financial data

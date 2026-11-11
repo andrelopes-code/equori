@@ -33,9 +33,9 @@ import type {
 } from "@/features/setup/api";
 import { catalogLabel } from "@/features/setup/model/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Capability = ModelUse["needs"][number];
 const capabilities: readonly Capability[] = [

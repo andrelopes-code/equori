@@ -17,7 +17,7 @@ import { splitState } from "@/features/transactions/category-section/split";
 import type { SplitPart } from "@/features/transactions/category-section/split";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];

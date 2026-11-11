@@ -12,7 +12,7 @@ import styles from "@/features/categories/rule-list/rule-list.module.css";
 import { formatDate } from "@/i18n/format";
 import { RuleActions } from "@/features/categories/rule-list/rule-actions";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Rule = components["schemas"]["Rule"];
 

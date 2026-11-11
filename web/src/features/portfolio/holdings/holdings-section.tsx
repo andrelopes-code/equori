@@ -37,7 +37,7 @@ import { useColumnState } from "@/features/portfolio/holdings/use-column-state";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { AppLink } from "@/ui/app-link";
+import { AppLink } from "@/ui/navigation/app-link";
 
 type Account = components["schemas"]["Account"];
 

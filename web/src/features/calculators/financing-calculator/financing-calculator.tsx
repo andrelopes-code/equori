@@ -42,7 +42,7 @@ import { ResultList } from "@/features/calculators/result/result-list";
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useCalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Solve = "installment" | "amount" | "rate" | "months";
 const solves: readonly Solve[] = ["installment", "amount", "rate", "months"];

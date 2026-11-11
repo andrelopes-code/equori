@@ -34,9 +34,9 @@ import { maxYear, minYear } from "@/features/setup/model/settings-search";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { QueryError } from "@/ui/query-error";
-import { StepGlyph } from "@/ui/step-glyph";
-import { routeTo } from "@/ui/route-to";
+import { QueryError } from "@/ui/feedback/query-error";
+import { StepGlyph } from "@/ui/navigation/step-glyph";
+import { routeTo } from "@/ui/navigation/route-to";
 
 type Holiday = components["schemas"]["Holiday"];
 

@@ -35,8 +35,8 @@ import { writePendingSetup } from "@/features/accounts/model/pending-setup";
 import { useEnsureInstitution } from "@/features/accounts/institutions/use-ensure-institution";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
 
 type Account = components["schemas"]["Account"];
 

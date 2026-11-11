@@ -19,13 +19,13 @@ import { useScale } from "@/features/setup";
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { FormRow } from "@/ui/form-row";
-import { MoneyInput } from "@/ui/money-input";
-import { MonthControl } from "@/ui/month-control";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormRow } from "@/ui/form-layout/form-row";
+import { MoneyInput } from "@/ui/money/money-input";
+import { MonthControl } from "@/ui/navigation/month-control";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Budget = components["schemas"]["Budget"];
 

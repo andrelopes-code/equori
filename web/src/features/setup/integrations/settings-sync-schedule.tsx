@@ -10,7 +10,7 @@ import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { syncIntervalChoices } from "@/features/setup/integrations/sync-interval-choices";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 export function SettingsSyncSchedule() {
   const t = useT();

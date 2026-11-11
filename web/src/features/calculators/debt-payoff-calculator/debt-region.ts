@@ -1,5 +1,5 @@
 import { annualToMonthly } from "@/features/calculators/model/rate-math";
-import type { RatePeriod } from "@/ui/rate-input";
+import type { RatePeriod } from "@/ui/money/rate-input";
 
 // How a region quotes the rate of a card or a loan, for the debt payoff calculator. An
 // extension point of ADR 016: docs/contributing/regions.md. A region without a case quotes a

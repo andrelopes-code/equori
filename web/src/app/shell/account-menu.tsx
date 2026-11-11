@@ -28,7 +28,7 @@ import { densities, useDensity } from "@/theme/density";
 import type { Density } from "@/theme/density";
 import { schemes, useScheme } from "@/theme/scheme";
 import type { Scheme } from "@/theme/scheme";
-import { UserAvatar } from "@/ui/user-avatar";
+import { UserAvatar } from "@/ui/display/user-avatar";
 
 function isScheme(value: string): value is Scheme {
   return (schemes as readonly string[]).includes(value);

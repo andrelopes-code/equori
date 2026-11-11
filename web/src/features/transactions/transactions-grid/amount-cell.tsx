@@ -2,7 +2,7 @@ import { Text } from "@slotted/react/typography";
 
 import styles from "@/features/transactions/transactions-grid/transactions-grid.module.css";
 import type { ListRow } from "@/features/transactions/transactions-grid/use-transaction-list";
-import { directionOf, useAmountTone } from "@/ui/amount-tone";
+import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
 
 // The amount is what the reader scans for: it takes the row's strongest weight. Money in reads
 // in the success ink; money out and transfers keep the text's own.

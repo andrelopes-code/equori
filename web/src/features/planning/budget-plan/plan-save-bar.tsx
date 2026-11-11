@@ -13,7 +13,7 @@ import { useContext, useEffect } from "react";
 
 import { PlanningFooter } from "@/features/planning/model/planning-footer";
 import { useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 // What the pending changes add up to and when they apply, with the two ways out (spec 5.1).
 // It renders nothing in place: the bar is the planning page's footer while a change is

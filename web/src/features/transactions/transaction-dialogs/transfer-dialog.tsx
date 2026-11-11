@@ -23,8 +23,8 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useTransferTransaction } from "@/features/transactions/api";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];

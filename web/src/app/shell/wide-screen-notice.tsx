@@ -8,7 +8,7 @@ import {
 } from "@slotted/react/result-state";
 
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // What a desktop-only route shows on the phone (ADR 027, S4).
 export function WideScreenNotice() {

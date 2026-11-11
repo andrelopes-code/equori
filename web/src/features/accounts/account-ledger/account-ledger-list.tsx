@@ -6,10 +6,10 @@ import type { ReactNode } from "react";
 
 import styles from "@/features/accounts/account-ledger/account-ledger.module.css";
 import type { LedgerRow } from "@/features/accounts/account-ledger/running-balance";
-import { PhoneGroup } from "@/ui/phone-group";
+import { PhoneGroup } from "@/ui/form-fields/phone-group";
 import { useT } from "@/i18n/i18n-provider";
 import type { MessageKey } from "@/i18n/catalog.en";
-import { PhoneList } from "@/ui/phone-list";
+import { PhoneList } from "@/ui/form-fields/phone-list";
 
 const statusLabel: Record<LedgerRow["status"], MessageKey> = {
   pending: "posting.status.pending",

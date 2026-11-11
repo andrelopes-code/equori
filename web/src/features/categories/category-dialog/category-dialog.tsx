@@ -29,9 +29,9 @@ import type {
 } from "@/features/categories/model/category-paths";
 import { useSaveCategory } from "@/features/categories/category-dialog/use-save-category";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface CategoryDialogProps {
   open: boolean;

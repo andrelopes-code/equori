@@ -4,7 +4,7 @@ import { Field, FieldLabel } from "@slotted/react/field";
 import type { components } from "@/api/schema.gen";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MoneyInput } from "@/ui/money-input";
+import { MoneyInput } from "@/ui/money/money-input";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Candidate = components["schemas"]["ReimbursementCandidate"];

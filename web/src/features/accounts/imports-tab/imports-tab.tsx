@@ -25,7 +25,7 @@ import { ImportCountTags } from "@/features/accounts/imports-tab/import-count-ta
 import { formatDate } from "@/i18n/format";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];

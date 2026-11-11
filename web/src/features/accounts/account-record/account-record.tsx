@@ -29,8 +29,8 @@ import { BalanceChart } from "@/features/accounts/balance-chart/balance-chart";
 import { useAccountTabs } from "@/features/accounts/account-record/use-account-tabs";
 import { AccountYieldSection, useMeasuredTops } from "@/features/portfolio";
 import { institutionsQuery } from "@/features/setup";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Account = components["schemas"]["Account"];
 

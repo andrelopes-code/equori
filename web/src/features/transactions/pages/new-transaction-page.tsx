@@ -54,9 +54,13 @@ import { fieldOf } from "@/features/transactions/entry-model/field-of";
 import { TransactionForm } from "@/features/transactions/transaction-form/transaction-form";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FormNotice } from "@/ui/form-notice";
-import { compactQuery, useMediaQuery, wideQuery } from "@/ui/use-media-query";
-import { PageBack } from "@/ui/page-back";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import {
+  compactQuery,
+  useMediaQuery,
+  wideQuery,
+} from "@/ui/runtime/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
 
 const draftKey = "new";
 

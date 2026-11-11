@@ -2,7 +2,7 @@ import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 
 import type { PostingKind } from "@/features/transactions/entry-model/entry-kind";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyInput } from "@/ui/money-input";
+import { MoneyInput } from "@/ui/money/money-input";
 
 export interface EntryAmountFieldProps {
   kind: PostingKind;

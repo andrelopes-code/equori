@@ -1,5 +1,5 @@
 import type { ReportsSearch } from "@/features/reports/model/reports-search";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // The render of a link to the reports with another address.
 export function reportLink(search: ReportsSearch) {

@@ -16,7 +16,7 @@ import { meQuery } from "@/features/session";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // A158, A159: the version, the daily check for a newer one and the diagnostic file. Admin only.
 export function SettingsAbout() {

@@ -4,7 +4,7 @@ import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { phoneCardTabs } from "@/features/cards/model/card-search";
 import type { CardTab } from "@/features/cards/model/card-search";
 import { useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface CardHeaderTabsProps {
   tab: CardTab;

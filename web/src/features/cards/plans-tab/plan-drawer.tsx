@@ -43,13 +43,13 @@ import {
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { MoneyInput } from "@/ui/money-input";
-import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { MoneyInput } from "@/ui/money/money-input";
+import { QueryError } from "@/ui/feedback/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Money = components["schemas"]["Money"];

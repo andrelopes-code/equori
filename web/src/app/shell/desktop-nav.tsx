@@ -19,7 +19,7 @@ import {
 } from "@slotted/react/side-navigation";
 
 import { AccountMenu } from "@/app/shell/account-menu";
-import { BrandMark } from "@/ui/brand-mark";
+import { BrandMark } from "@/ui/display/brand-mark";
 import styles from "@/app/shell/desktop-nav.module.css";
 import { destinations } from "@/app/shell/destinations";
 import { ShellIcon } from "@/app/shell/shell-icon";

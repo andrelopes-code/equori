@@ -12,8 +12,8 @@ import { ProblemError, errorText } from "@/api/problem";
 import { useDeleteIntegration } from "@/features/setup/api";
 import type { Connection, Integration } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
-import { FormNotice } from "@/ui/form-notice";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // Only an integration without connections is deleted; on `integration_in_use` the dialog lists
 // the connections that use it, which the owner removes first.

@@ -25,9 +25,9 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import { useCreateAccessToken } from "@/features/setup/api";
 import { clientSnippets } from "@/features/setup/external-access/client-snippets";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 const expiryDays = [30, 90, 365] as const;
 

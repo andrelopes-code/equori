@@ -6,7 +6,7 @@ import { AnalysisView } from "@/features/cards/analysis-view/analysis-view";
 import { cardAnalyticsQuery } from "@/features/cards/api";
 import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // The card's latest closed statements, each split as one statement is.
 export function CardAnalysis({

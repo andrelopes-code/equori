@@ -6,7 +6,7 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { versionsQuery } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Transaction = components["schemas"]["Transaction"];
 

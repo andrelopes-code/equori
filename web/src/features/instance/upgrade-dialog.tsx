@@ -14,7 +14,7 @@ import { Text } from "@slotted/react/typography";
 import type { components } from "@/api/schema.gen";
 import { UpgradeCompose } from "@/features/instance/upgrade-compose";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 interface UpgradeDialogProps {
   version: string;

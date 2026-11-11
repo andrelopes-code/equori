@@ -4,7 +4,7 @@ import { errorText } from "@/api/problem";
 import { useDeleteAccessToken } from "@/features/setup/api";
 import type { AccessToken } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 // Deleting a token takes effect at the client's next request (X9).
 export function AccessTokenDeleteDialog({

@@ -6,7 +6,7 @@ import { TextSizeSlider } from "@/features/setup/studio/text-size-slider";
 import { TypefacePreview } from "@/features/setup/previews/typeface-preview";
 import { useT } from "@/i18n/i18n-provider";
 import { typefaces, useTypeface } from "@/theme/typeface";
-import { ChoiceCards } from "@/ui/choice-cards";
+import { ChoiceCards } from "@/ui/form-fields/choice-cards";
 
 export function AppearanceText() {
   const t = useT();

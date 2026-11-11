@@ -9,8 +9,8 @@ import {
   suggestionItems,
 } from "@/features/accounts/review/review-selection";
 import { useT } from "@/i18n/i18n-provider";
-import { bulkOutcome } from "@/ui/bulk-outcome";
-import type { BulkOutcome } from "@/ui/bulk-outcome";
+import { bulkOutcome } from "@/ui/feedback/bulk-outcome";
+import type { BulkOutcome } from "@/ui/feedback/bulk-outcome";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];
 type BulkResolveItem =

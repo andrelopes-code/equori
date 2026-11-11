@@ -16,7 +16,7 @@ import {
 import { firstSteps } from "@/features/overview/first-steps/first-steps";
 import { useFirstStepsDismissal } from "@/features/overview/first-steps/use-first-steps-dismissal";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // What a newcomer does before the overview has anything to show, as numbered steps with the next
 // one's action; gone once every step is done, or once the reader dismisses it.

@@ -2,7 +2,7 @@ import type { MarkdownRenderers } from "@slotted/react/markdown";
 import type { NavigateOptions } from "@tanstack/react-router";
 
 import { matchScreen } from "@/navigation/navigation-map";
-import { AppLink } from "@/ui/app-link";
+import { AppLink } from "@/ui/navigation/app-link";
 
 // A link to a screen of the navigation map becomes a router link; any other link is its label.
 export const screenLinks: MarkdownRenderers = {

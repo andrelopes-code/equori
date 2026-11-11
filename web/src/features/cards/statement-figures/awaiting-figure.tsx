@@ -1,7 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FigureCard } from "@/ui/figure-card";
+import { FigureCard } from "@/ui/display/figure-card";
 
 type Statement = components["schemas"]["StatementDetail"];
 

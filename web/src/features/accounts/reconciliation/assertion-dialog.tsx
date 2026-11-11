@@ -21,12 +21,12 @@ import type { components } from "@/api/schema.gen";
 import { useCreateAssertion } from "@/features/accounts/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
-import { FormLayout } from "@/ui/form-layout";
-import { FormRow } from "@/ui/form-row";
-import { MoneyInput } from "@/ui/money-input";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormRow } from "@/ui/form-layout/form-row";
+import { MoneyInput } from "@/ui/money/money-input";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Account = components["schemas"]["Account"];
 type AssertionResult = components["schemas"]["AssertionResult"];

@@ -8,7 +8,7 @@ import { StartAccountGroup } from "@/features/start/start-account-group";
 import { pending } from "@/features/start/use-start-run";
 import type { GroupRun } from "@/features/start/use-start-run";
 import { useT } from "@/i18n/i18n-provider";
-import { FormLayout } from "@/ui/form-layout";
+import { FormLayout } from "@/ui/form-layout/form-layout";
 
 interface StartDetailsStepProps {
   drafts: readonly AccountDraft[];

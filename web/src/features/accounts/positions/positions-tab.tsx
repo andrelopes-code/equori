@@ -22,8 +22,8 @@ import { averageCostText } from "@/features/accounts/positions/position-figures"
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { InstrumentName } from "@/ui/instrument-name";
-import { PricedValue } from "@/ui/priced-value";
+import { InstrumentName } from "@/ui/display/instrument-name";
+import { PricedValue } from "@/ui/money/priced-value";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];

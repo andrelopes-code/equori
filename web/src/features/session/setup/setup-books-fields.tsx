@@ -10,7 +10,7 @@ import { useMemo } from "react";
 import { currencyChoices } from "@/features/session/setup/currency-choices";
 import { timeZoneChoices } from "@/features/setup";
 import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface SetupBooksFieldsProps {
   currency: string;

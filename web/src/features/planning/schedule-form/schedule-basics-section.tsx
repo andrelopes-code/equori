@@ -11,8 +11,8 @@ import {
 import { kindLabel } from "@/features/planning/model/schedule-words";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { MoneyInput } from "@/ui/money-input";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { MoneyInput } from "@/ui/money/money-input";
 
 const kinds = Object.keys(kindLabel) as ScheduleKind[];
 

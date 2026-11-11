@@ -16,7 +16,7 @@ import styles from "@/features/accounts/account-card/account-card.module.css";
 import { monogram } from "@/features/accounts/account-mark/account-mark";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 const hiddenFigure = "••••";
 

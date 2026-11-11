@@ -19,7 +19,7 @@ import { InvitationDialog } from "@/features/setup/invitations/invitation-dialog
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // The pending invitations of the book; the caller renders it for an owner only (HA25).
 export function SettingsInvitations() {

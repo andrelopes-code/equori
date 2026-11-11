@@ -28,10 +28,10 @@ import {
 } from "@/features/accounts/model/institution-logo";
 import { catalogLabel } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormLayout } from "@/ui/form-layout";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Institution = components["schemas"]["Institution"];
 

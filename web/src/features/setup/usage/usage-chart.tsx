@@ -29,7 +29,7 @@ import {
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 const days = 30;
 const xAxis = { field: "label" } as const;

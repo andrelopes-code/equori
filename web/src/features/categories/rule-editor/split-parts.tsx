@@ -6,11 +6,11 @@ import { Stack } from "@slotted/react/stack";
 
 import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories/category-picker/category-picker";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import styles from "@/features/categories/rule-editor/split-parts.module.css";
 import { limits } from "@/features/categories/rule-editor/rule-draft";
 import { useT } from "@/i18n/i18n-provider";
-import { majorFromMinor, minorFromMajor } from "@/ui/money-units";
+import { majorFromMinor, minorFromMajor } from "@/ui/money/money-units";
 
 type Part = components["schemas"]["RuleSplitPart"];
 type Mode = "percent" | "amount" | "remainder";

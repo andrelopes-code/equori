@@ -18,14 +18,14 @@ import type { TradeView } from "@/features/transactions/trade-entry/use-trade-en
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { DateInput } from "@/ui/date-input";
-import { FieldTitle } from "@/ui/field-title";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
-import { FormLayout } from "@/ui/form-layout";
-import { FormRow } from "@/ui/form-row";
-import { MoneyInput } from "@/ui/money-input";
-import type { MoneyAmount } from "@/ui/money-value";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FieldTitle } from "@/ui/form-fields/field-title";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormRow } from "@/ui/form-layout/form-row";
+import { MoneyInput } from "@/ui/money/money-input";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 // Families read: segmented-control, field, text-field, stat-card. The side is two exclusive words
 // (a segmented control); the money fields are the application's own MoneyInput (a till-style

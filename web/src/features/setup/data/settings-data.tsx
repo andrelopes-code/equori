@@ -11,8 +11,8 @@ import { ImportRow } from "@/features/setup/data/import-row";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { QueryError } from "@/ui/query-error";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // Export and import of the books (docs/specs/2026-10-26-export-design.md).
 export function SettingsData() {

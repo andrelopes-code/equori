@@ -23,8 +23,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { use, useDeferredValue, useEffect, useMemo } from "react";
 
-import { RefreshButton } from "@/ui/refresh-button";
-import { useRefresh } from "@/ui/use-refresh";
+import { RefreshButton } from "@/ui/feedback/refresh-button";
+import { useRefresh } from "@/ui/feedback/use-refresh";
 import { useApi } from "@/api/api-context";
 import { AccountsHeaderSlots } from "@/features/accounts/accounts-header/accounts-header-slots";
 import { HeaderSlot } from "@/features/accounts/accounts-header/header-slot";
@@ -49,10 +49,10 @@ import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { HeaderAction } from "@/ui/header-action";
-import { QueryError } from "@/ui/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { useServed } from "@/ui/use-served";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { QueryError } from "@/ui/feedback/query-error";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { useServed } from "@/ui/navigation/use-served";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 const newAccount = { to: "/accounts/new" } as const;

@@ -13,7 +13,7 @@ import styles from "@/features/categories/category-tree/category-tree.module.css
 import { ShareBar } from "@/features/categories/category-tree/share-bar";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 export interface TreeRow {

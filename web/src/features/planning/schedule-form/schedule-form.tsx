@@ -36,9 +36,9 @@ import {
 } from "@/features/planning/schedule-form/use-schedule-flow";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { FormSection } from "@/ui/form-section";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 interface ScheduleFormProps {
   initial: ScheduleDraft;

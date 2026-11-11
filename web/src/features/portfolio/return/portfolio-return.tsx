@@ -33,10 +33,10 @@ import {
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { PeriodControl } from "@/ui/period-control";
-import type { Period } from "@/ui/period-control";
-import { QueryError } from "@/ui/query-error";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { PeriodControl } from "@/ui/navigation/period-control";
+import type { Period } from "@/ui/navigation/period-control";
+import { QueryError } from "@/ui/feedback/query-error";
 
 interface PortfolioReturnProps {
   date: string;

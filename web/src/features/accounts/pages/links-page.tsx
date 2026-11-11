@@ -19,8 +19,8 @@ import { ConnectionLinks } from "@/features/accounts/connections/connection-link
 import { linkCandidates } from "@/features/accounts/links/link-candidates";
 import { LinkDrawer } from "@/features/accounts/links/link-drawer";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
-import { Presence } from "@/ui/presence";
+import { QueryError } from "@/ui/feedback/query-error";
+import { Presence } from "@/ui/dialogs/presence";
 
 // The accounts Open Finance connections bring, and the ledger account each one feeds (A35).
 export function LinksPage() {

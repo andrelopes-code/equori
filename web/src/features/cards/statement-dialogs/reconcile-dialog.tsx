@@ -15,12 +15,12 @@ import { ProblemError, errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useReconcileStatement } from "@/features/cards/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormLayout } from "@/ui/form-layout";
-import { MoneyInput } from "@/ui/money-input";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { MoneyInput } from "@/ui/money/money-input";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Statement = components["schemas"]["StatementSummary"];
 

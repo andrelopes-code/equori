@@ -14,8 +14,8 @@ import type {
 } from "@/features/accounts/model/account-draft";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormRow } from "@/ui/form-row";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormRow } from "@/ui/form-layout/form-row";
 
 export type BillingFields = Pick<
   CardSetupDraft,

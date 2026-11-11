@@ -7,7 +7,7 @@ import { TextField } from "@slotted/react/text-field";
 
 import type { CardSetupDraft } from "@/features/accounts/model/account-draft";
 import { useT } from "@/i18n/i18n-provider";
-import { FormRow } from "@/ui/form-row";
+import { FormRow } from "@/ui/form-layout/form-row";
 
 type PlasticCard = CardSetupDraft["cards"][number];
 

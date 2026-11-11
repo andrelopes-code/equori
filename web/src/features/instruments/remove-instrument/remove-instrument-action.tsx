@@ -5,8 +5,8 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { useDeleteInstrument } from "@/features/instruments/api";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
-import { HeaderAction } from "@/ui/header-action";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
+import { HeaderAction } from "@/ui/navigation/header-action";
 
 interface RemoveInstrumentActionProps {
   instrument: components["schemas"]["Instrument"];

@@ -11,7 +11,7 @@ import styles from "@/features/setup/studio/appearance-preview.module.css";
 import { settingsQuery } from "@/features/setup/api";
 import { useScale } from "@/features/setup/instruments/instruments";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 // Minor units of the sample: a balance, money in, money out and a budget spent to its limit.
 const BALANCE = 1284250;

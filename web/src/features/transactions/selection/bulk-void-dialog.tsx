@@ -19,10 +19,10 @@ import { useScale } from "@/features/setup";
 import { useVoidTransactions } from "@/features/transactions/api";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { bulkOutcome } from "@/ui/bulk-outcome";
-import type { BulkOutcome } from "@/ui/bulk-outcome";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { bulkOutcome } from "@/ui/feedback/bulk-outcome";
+import type { BulkOutcome } from "@/ui/feedback/bulk-outcome";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Money = components["schemas"]["Money"];
 

@@ -13,7 +13,7 @@ import { forgetInviteToken } from "@/features/session/invite/invite-token";
 import styles from "@/features/session/pages/login-page.module.css";
 import { useInviteToken } from "@/features/session/invite/use-invite-token";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // The invitation screen stands before a session, as the setup: it shares the login's measure.
 export function InvitePage() {

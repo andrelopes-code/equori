@@ -30,7 +30,7 @@ import { formatDayHeader } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useAmountTone } from "@/ui/amount-tone";
+import { useAmountTone } from "@/ui/money/amount-tone";
 
 type StatementPosting = components["schemas"]["StatementPosting"];
 

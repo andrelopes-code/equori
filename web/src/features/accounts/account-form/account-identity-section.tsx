@@ -11,7 +11,7 @@ import type { Kind } from "@/features/accounts/model/account-kinds";
 import { InstitutionField } from "@/features/accounts/institutions/institution-field";
 import { KindSummary } from "@/features/accounts/account-form/kind-summary";
 import { useT } from "@/i18n/i18n-provider";
-import { FormSection } from "@/ui/form-section";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 interface AccountIdentitySectionProps {
   mode: "create" | "edit";

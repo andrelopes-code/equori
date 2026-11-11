@@ -14,10 +14,10 @@ import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { languages, matchLanguage } from "@/i18n/languages";
 import type { Language } from "@/i18n/languages";
 import { regionChoicesFor } from "@/i18n/regions";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { FormSection } from "@/ui/form-section";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormSection } from "@/ui/form-layout/form-section";
 
 interface SetupFormProps {
   token: string;

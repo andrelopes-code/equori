@@ -16,11 +16,11 @@ import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
-import { HeaderProgress } from "@/ui/header-progress";
-import { PeriodControl } from "@/ui/period-control";
-import { RefreshButton } from "@/ui/refresh-button";
-import { useRefresh } from "@/ui/use-refresh";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { HeaderProgress } from "@/ui/navigation/header-progress";
+import { PeriodControl } from "@/ui/navigation/period-control";
+import { RefreshButton } from "@/ui/feedback/refresh-button";
+import { useRefresh } from "@/ui/feedback/use-refresh";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 import { useApi } from "@/api/api-context";
 import { useScale } from "@/features/setup";
 import {

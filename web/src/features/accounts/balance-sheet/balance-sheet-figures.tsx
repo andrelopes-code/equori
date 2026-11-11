@@ -1,10 +1,10 @@
 import type { Sides } from "@/features/accounts/balance-sheet/balance-sheet";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import type { MoneyAmount } from "@/ui/money-value";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 function change(now: number, before: number | undefined): number | undefined {
   if (before === undefined || before === 0) return undefined;

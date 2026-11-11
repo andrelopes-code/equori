@@ -29,7 +29,7 @@ import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { DateInput } from "@/ui/date-input";
+import { DateInput } from "@/ui/form-fields/date-input";
 
 const maxInstallments = 1200;
 

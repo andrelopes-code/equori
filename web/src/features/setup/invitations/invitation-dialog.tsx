@@ -24,8 +24,8 @@ import { useCreateInvitation } from "@/features/setup/api";
 import type { BookRole, Invitation } from "@/features/setup/api";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface InvitationDialogProps {
   onClose: () => void;

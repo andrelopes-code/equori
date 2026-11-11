@@ -7,8 +7,8 @@ import { Text } from "@slotted/react/typography";
 import { splitHelpPage } from "@/features/help/model/help-pages";
 import { useHelpPage } from "@/features/help/model/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
-import { StepGlyph } from "@/ui/step-glyph";
+import { routeTo } from "@/ui/navigation/route-to";
+import { StepGlyph } from "@/ui/navigation/step-glyph";
 
 interface HelpPagerLinkProps {
   id: string;

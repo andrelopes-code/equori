@@ -26,10 +26,10 @@ import { budgetsQuery, useCreateBudget } from "@/features/planning/api";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { MoneyInput } from "@/ui/money-input";
-import { MonthControl } from "@/ui/month-control";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { MoneyInput } from "@/ui/money/money-input";
+import { MonthControl } from "@/ui/navigation/month-control";
 
 // A monthly budget of one category. A category holds one budget: when it has one already, the
 // page opens it (409 budget_exists).

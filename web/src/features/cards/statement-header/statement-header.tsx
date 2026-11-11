@@ -27,7 +27,7 @@ import {
 import { HelpLink } from "@/features/help";
 import { formatDate, formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { PageBack } from "@/ui/page-back";
+import { PageBack } from "@/ui/navigation/page-back";
 
 type Statement = components["schemas"]["StatementDetail"];
 

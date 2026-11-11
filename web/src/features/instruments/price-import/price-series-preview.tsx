@@ -11,8 +11,8 @@ import {
 } from "@/features/instruments/price-import/use-price-series-import";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormRow } from "@/ui/form-row";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormRow } from "@/ui/form-layout/form-row";
 
 type Counts = components["schemas"]["InstrumentPricesResult"];
 

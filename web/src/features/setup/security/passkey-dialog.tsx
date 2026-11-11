@@ -16,7 +16,7 @@ import { errorText } from "@/api/problem";
 import { PasskeyCeremonyError } from "@/features/session";
 import { useAddPasskey } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface PasskeyDialogProps {
   onClose: () => void;

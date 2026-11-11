@@ -9,7 +9,7 @@ import { LoginPasswordForm } from "@/features/session/login/login-password-form"
 import { LoginSecondFactor } from "@/features/session/login/login-second-factor";
 import styles from "@/features/session/pages/login-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { BrandMark } from "@/ui/brand-mark";
+import { BrandMark } from "@/ui/display/brand-mark";
 
 export function LoginPage() {
   const t = useT();

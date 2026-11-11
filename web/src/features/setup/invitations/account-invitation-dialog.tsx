@@ -28,9 +28,9 @@ import type { AccountInvitation } from "@/features/setup/api";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { regionChoicesFor } from "@/i18n/regions";
-import { ChoiceSelect } from "@/ui/choice-select";
-import { FormNotice } from "@/ui/form-notice";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface AccountInvitationDialogProps {
   onClose: () => void;

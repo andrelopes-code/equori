@@ -9,7 +9,7 @@ import { budgetPlanQuery } from "@/features/planning/api";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
 import { PlanEditor } from "@/features/planning/budget-plan/plan-editor";
 import { useScale } from "@/features/setup";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 

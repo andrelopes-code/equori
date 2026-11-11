@@ -6,7 +6,7 @@ import { feedDescription } from "@/features/setup/market-data/feed-description";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { catalogEn } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 interface MarketDataFeedRowProps {
   feed: components["schemas"]["MarketDataFeed"];

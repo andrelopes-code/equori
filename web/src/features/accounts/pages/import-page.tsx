@@ -13,7 +13,7 @@ import { ImportFormatField } from "@/features/accounts/import/import-format-fiel
 import { useImportDraft } from "@/features/accounts/import/use-import-draft";
 import { HelpLink } from "@/features/help";
 import { useT } from "@/i18n/i18n-provider";
-import { FormLayout } from "@/ui/form-layout";
+import { FormLayout } from "@/ui/form-layout/form-layout";
 
 // A statement file into a balance account: an OFX file as it is, a CSV file through the
 // account's profile, previewed line by line before anything is sent.

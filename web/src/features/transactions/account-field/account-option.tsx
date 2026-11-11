@@ -7,7 +7,7 @@ import type { AccountChoice } from "@/features/transactions/account-field/use-ac
 import type { SuggestionView } from "@/features/transactions/account-field/use-account-choices";
 import { formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 // One account of the picker, a radio of the radio-group family drawn as a tile: the family
 // keeps the input, the arrow keys, the checked and disabled states and the focus ring; the

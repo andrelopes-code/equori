@@ -24,7 +24,7 @@ import type { Result } from "@/features/calculators/result/result-list";
 import { useCalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { schedulesQuery } from "@/features/planning";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 const maxYears = 100;
 

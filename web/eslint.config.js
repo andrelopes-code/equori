@@ -44,21 +44,21 @@ const bareRouterLink = {
   selector:
     'JSXOpeningElement[name.name="Link"]:has(JSXAttribute[name.name="to"]):not(:has(JSXSpreadAttribute))',
   message:
-    "Draw a link with AppLink (@/ui/app-link) or the Slotted Link with useAppLink (O13).",
+    "Draw a link with AppLink (@/ui/navigation/app-link) or the Slotted Link with useAppLink (O13).",
 };
 
 // Below 1024 px the shell's top app bar carries a page's way back; PageBack draws it only above.
 const pageHeaderBack = {
   selector: 'JSXOpeningElement[name.name="PageHeaderBack"]',
-  message: "Draw a page's way back with PageBack (@/ui/page-back).",
+  message: "Draw a page's way back with PageBack (@/ui/navigation/page-back).",
 };
 
 // O15: InlineMessage is the root of FieldError and FieldDescription. A message about a command, a
-// form or a region is a FormNotice (@/ui/form-notice); one about a control is a FieldError.
+// form or a region is a FormNotice (@/ui/form-layout/form-notice); one about a control is a FieldError.
 const bareInlineMessage = {
   selector: 'JSXOpeningElement[name.name="InlineMessage"]',
   message:
-    "Draw a field's error with FieldError and any other message with FormNotice (@/ui/form-notice) (O15).",
+    "Draw a field's error with FieldError and any other message with FormNotice (@/ui/form-layout/form-notice) (O15).",
 };
 
 // Flat-config rule options replace instead of merging: every block below
@@ -211,7 +211,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["src/ui/page-back.tsx"],
+    files: ["src/ui/navigation/page-back.tsx"],
     rules: {
       "no-restricted-syntax": ["error", bareRouterLink, bareInlineMessage],
     },

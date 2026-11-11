@@ -11,7 +11,7 @@ import { CsvColumnField } from "@/features/accounts/csv/csv-column-field";
 import type { ProfileDraft } from "@/features/accounts/csv/csv-guess";
 import { useT } from "@/i18n/i18n-provider";
 import { CsvSignFields } from "@/features/accounts/csv/csv-sign-fields";
-import { FormRow } from "@/ui/form-row";
+import { FormRow } from "@/ui/form-layout/form-row";
 
 interface CsvAmountFieldsProps {
   text: string;

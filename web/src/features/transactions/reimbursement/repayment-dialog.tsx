@@ -28,9 +28,9 @@ import {
 import { reimbursementErrorText } from "@/features/transactions/reimbursement/reimbursement-error";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { MoneyInput } from "@/ui/money-input";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { MoneyInput } from "@/ui/money/money-input";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];

@@ -12,7 +12,7 @@ import { PlanFigure } from "@/features/planning/budget-plan/plan-figure";
 import { PlanSavingsTarget } from "@/features/planning/budget-plan/plan-savings-target";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyInput } from "@/ui/money-input";
+import { MoneyInput } from "@/ui/money/money-input";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 type Source = components["schemas"]["BudgetPlanSource"];

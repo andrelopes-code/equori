@@ -1,8 +1,8 @@
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
-import { RateInput } from "@/ui/rate-input";
-import type { RatePeriod } from "@/ui/rate-input";
+import { RateInput } from "@/ui/money/rate-input";
+import type { RatePeriod } from "@/ui/money/rate-input";
 
 // A rate in percent under its label, with an optional period, a hint and a note below it.
 export function RateField({

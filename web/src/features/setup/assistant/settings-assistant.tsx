@@ -36,7 +36,7 @@ import { UsageList } from "@/features/setup/usage/usage-list";
 import { UsesGroup } from "@/features/setup/usage/uses-group";
 import { mergeUsageRows } from "@/features/setup/usage/usage-rows";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 type Open =
   | { kind: "create"; preset?: StartPreset }

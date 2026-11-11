@@ -37,7 +37,7 @@ import { useCommitments } from "@/features/cards/card-record/use-commitments";
 import { institutionsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 type Account = components["schemas"]["Account"];
 

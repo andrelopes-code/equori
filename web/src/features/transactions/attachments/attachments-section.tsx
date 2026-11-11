@@ -19,7 +19,7 @@ import { AttachmentCard } from "@/features/transactions/attachments/attachment-c
 import { mediaItem } from "@/features/transactions/attachments/attachment-meta";
 import styles from "@/features/transactions/attachments/attachments-section.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 // The media types the server detects and keeps (N26).
 const accepted = "application/pdf,image/jpeg,image/png,image/webp,text/plain";

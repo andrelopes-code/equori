@@ -8,7 +8,7 @@ import { HelpPager } from "@/features/help/pager/help-pager";
 import styles from "@/features/help/pages/help-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { screenLinks } from "@/navigation/screen-links";
-import { useMediaQuery } from "@/ui/use-media-query";
+import { useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // The 13 rem column of the sections beside a reading line needs this width; below it the list
 // folds above the text.

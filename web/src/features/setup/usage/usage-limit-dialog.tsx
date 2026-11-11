@@ -15,10 +15,10 @@ import { errorText } from "@/api/problem";
 import { useSetUsageLimit } from "@/features/setup/api";
 import type { UsageRow } from "@/features/setup/api";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { FormLayout } from "@/ui/form-layout";
-import { FormRow } from "@/ui/form-row";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { FormRow } from "@/ui/form-layout/form-row";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 // The daily limits the owner copies from the provider's console (ADR 019 U4); an empty field
 // removes its limit.

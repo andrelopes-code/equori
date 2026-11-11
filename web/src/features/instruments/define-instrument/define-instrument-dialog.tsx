@@ -15,9 +15,9 @@ import { probeInput } from "@/features/instruments/define-instrument/probe-input
 import { QuoteProbe } from "@/features/instruments/define-instrument/quote-probe";
 import { useInstrumentDefine } from "@/features/instruments/define-instrument/use-instrument-define";
 import { useT } from "@/i18n/i18n-provider";
-import { FormLayout } from "@/ui/form-layout";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
-import { useStableCallback } from "@/ui/use-stable-callback";
+import { FormLayout } from "@/ui/form-layout/form-layout";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 interface DefineInstrumentDialogProps {
   onDone: () => void;

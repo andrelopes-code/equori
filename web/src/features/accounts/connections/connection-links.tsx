@@ -18,7 +18,7 @@ import { ConnectionStateAlert } from "@/features/accounts/connections/connection
 import { ConnectionTimesList } from "@/features/accounts/connections/connection-times-list";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];

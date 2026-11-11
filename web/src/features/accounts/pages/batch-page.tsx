@@ -29,7 +29,7 @@ import { ReviewWorkspace } from "@/features/accounts/review/review-workspace";
 import { useReviewSelection } from "@/features/accounts/review/use-review-selection";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 // One import: what became of its lines and of its balance, and the review of the lines matching
 // could not settle alone (WS-01, WS-02).

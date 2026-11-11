@@ -1,4 +1,4 @@
-import { rankedShares } from "@/ui/ranked-shares";
+import { rankedShares } from "@/ui/money/ranked-shares";
 
 // The month's spending per slice as ranked bars, the share in each label.
 export function spendingBars(

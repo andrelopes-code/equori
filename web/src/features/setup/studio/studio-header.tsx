@@ -15,7 +15,7 @@ import { AppearanceToolbar } from "@/features/setup/studio/appearance-toolbar";
 import type { ThemeLibrary } from "@/features/setup/themes/use-theme-library";
 import { useT } from "@/i18n/i18n-provider";
 import { resetAppearance } from "@/theme/appearance";
-import { PageBack } from "@/ui/page-back";
+import { PageBack } from "@/ui/navigation/page-back";
 
 export interface StudioHeaderProps {
   library: ThemeLibrary;

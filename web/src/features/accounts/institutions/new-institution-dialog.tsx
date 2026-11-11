@@ -12,8 +12,8 @@ import { Field, FieldLabel } from "@slotted/react/field";
 
 import { InstitutionField } from "@/features/accounts/institutions/institution-field";
 import { useT } from "@/i18n/i18n-provider";
-import { useStableCallback } from "@/ui/use-stable-callback";
-import { useOverlayOpen } from "@/ui/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 
 // Choosing in the field creates the institution: a catalogue entry with its logo, or the typed name.
 export function NewInstitutionDialog({

@@ -4,7 +4,7 @@ import { Field, FieldDescription, FieldError } from "@slotted/react/field";
 import type { components } from "@/api/schema.gen";
 import { AccountField } from "@/features/transactions/account-field/account-field";
 import { useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/field-title";
+import { FieldTitle } from "@/ui/form-fields/field-title";
 
 type Account = components["schemas"]["Account"];
 

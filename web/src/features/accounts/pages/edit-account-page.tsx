@@ -15,7 +15,7 @@ import { accountQuery, accountsQuery } from "@/features/accounts/api";
 import { EditAccountScreen } from "@/features/accounts/account-form/edit-account-screen";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 export function EditAccountPage() {
   const t = useT();

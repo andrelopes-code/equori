@@ -1,4 +1,4 @@
-export { majorFromMinor, minorFromMajor } from "@/ui/money-units";
+export { majorFromMinor, minorFromMajor } from "@/ui/money/money-units";
 
 export interface SplitPart {
   categoryId: string | null;

@@ -28,7 +28,7 @@ import {
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 // Twelve months back hold every closed statement still owing in practice.
 const lookBackMonths = 12;

@@ -2,7 +2,7 @@ import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import type { ReactNode } from "react";
 
 import type { CalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
-import { MoneyInput } from "@/ui/money-input";
+import { MoneyInput } from "@/ui/money/money-input";
 
 // An amount of the base currency, held in the address as minor units; absent reads as zero.
 export function AmountField({

@@ -14,7 +14,7 @@ import { SyncResult } from "@/features/accounts/sync/sync-result";
 import { SyncStartDialog } from "@/features/accounts/sync/sync-start-dialog";
 import { useSyncNow } from "@/features/accounts/sync/use-sync-now";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Account = components["schemas"]["Account"];
 

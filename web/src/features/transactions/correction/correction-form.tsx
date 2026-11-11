@@ -46,9 +46,9 @@ import { fieldOf } from "@/features/transactions/entry-model/field-of";
 import { TransactionForm } from "@/features/transactions/transaction-form/transaction-form";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
-import { PageBack } from "@/ui/page-back";
+import { FormNotice } from "@/ui/form-layout/form-notice";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];

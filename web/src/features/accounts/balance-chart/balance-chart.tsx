@@ -13,7 +13,7 @@ import { balanceChartRows } from "@/features/accounts/balance-chart/balance-char
 import { formatDayMonth, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 import { useMoneyFormat } from "@/privacy/use-money-format";
 

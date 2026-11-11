@@ -17,9 +17,9 @@ import { PostingsEditor } from "@/features/transactions/transaction-form/posting
 import { StatementChoice } from "@/features/transactions/transaction-form/statement-choice";
 import { TagsField } from "@/features/transactions/transaction-form/tags-field";
 import { useT } from "@/i18n/i18n-provider";
-import { DateInput } from "@/ui/date-input";
-import { FieldTitle } from "@/ui/field-title";
-import { FormLayout } from "@/ui/form-layout";
+import { DateInput } from "@/ui/form-fields/date-input";
+import { FieldTitle } from "@/ui/form-fields/field-title";
+import { FormLayout } from "@/ui/form-layout/form-layout";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];

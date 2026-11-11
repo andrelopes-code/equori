@@ -12,8 +12,8 @@ import { meQuery } from "@/features/session";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
 import { formatDate } from "@/i18n/format";
-import { routeTo } from "@/ui/route-to";
-import { useDebounced } from "@/ui/use-debounced";
+import { routeTo } from "@/ui/navigation/route-to";
+import { useDebounced } from "@/ui/runtime/use-debounced";
 
 type ProbeInput = components["schemas"]["ProbeInput"];
 type ProbeQuote = components["schemas"]["ProbeQuote"];

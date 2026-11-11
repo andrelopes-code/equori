@@ -7,7 +7,7 @@ import {
 
 import styles from "@/features/transactions/capture-writer/capture-composer.module.css";
 import { useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // Families read: textarea, prompt-composer. The composer draws the frame, the growing input,
 // the footer and Mod+Enter; what it lacks is the halo that marks the text as read for the

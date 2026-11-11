@@ -7,7 +7,7 @@ import { subtreeOf } from "@/features/categories/model/category-paths";
 import type { CategoryEntry } from "@/features/categories/model/category-paths";
 import { CategoryPicker } from "@/features/categories/category-picker/category-picker";
 import { useT } from "@/i18n/i18n-provider";
-import { ConfirmDialog } from "@/ui/confirm-dialog";
+import { ConfirmDialog } from "@/ui/dialogs/confirm-dialog";
 
 // A75: the source's postings, rules and budgets move to the destination, and the source closes.
 export function MergeDialog({

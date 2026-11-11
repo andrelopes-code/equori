@@ -16,8 +16,8 @@ import { helpPages, splitHelpPage } from "@/features/help/model/help-pages";
 import styles from "@/features/help/pages/help-page.module.css";
 import { useHelpPage } from "@/features/help/model/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
-import { PageBack } from "@/ui/page-back";
-import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
+import { PageBack } from "@/ui/navigation/page-back";
+import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 // One help page: its title and kind in the header; from 1024 px the pages of the help beside
 // it, as the settings page lays its panes.

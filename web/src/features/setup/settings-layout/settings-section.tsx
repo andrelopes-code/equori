@@ -15,7 +15,7 @@ import type { ReactNode } from "react";
 import styles from "@/features/setup/pages/settings-page.module.css";
 import type { SettingsTopic } from "@/features/setup/model/settings-topics";
 import { useT } from "@/i18n/i18n-provider";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // One pane of the settings page: its title, what it holds, and its groups. local marks a pane whose
 // choices stay in this browser rather than in the account.

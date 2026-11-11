@@ -7,7 +7,7 @@ import {
   useThemeValues,
 } from "@/theme/themes";
 import type { SavedTheme, ThemeValues } from "@/theme/themes";
-import { newId } from "@/ui/new-id";
+import { newId } from "@/ui/runtime/new-id";
 
 const MAX_SAVED = 50;
 

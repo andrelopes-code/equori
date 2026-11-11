@@ -2,8 +2,8 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Text } from "@slotted/react/typography";
 
-import { ChoiceSelect } from "@/ui/choice-select";
-import type { Choice } from "@/ui/choice-select";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
+import type { Choice } from "@/ui/form-fields/choice-select";
 import { ConditionValue } from "@/features/categories/rule-editor/condition-value";
 import styles from "@/features/categories/rule-editor/condition-row.module.css";
 import {

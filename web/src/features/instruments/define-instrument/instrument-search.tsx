@@ -14,7 +14,7 @@ import type { components } from "@/api/schema.gen";
 import { catalogQuery } from "@/features/instruments/api";
 import { sourceLabel } from "@/features/instruments/model/instrument-labels";
 import { useT } from "@/i18n/i18n-provider";
-import { useDebounced } from "@/ui/use-debounced";
+import { useDebounced } from "@/ui/runtime/use-debounced";
 
 type CatalogListing = components["schemas"]["CatalogListing"];
 

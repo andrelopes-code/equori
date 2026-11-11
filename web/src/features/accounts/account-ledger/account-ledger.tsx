@@ -43,9 +43,9 @@ import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayHeader, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { PeriodControl } from "@/ui/period-control";
-import { compactQuery, useMediaQuery } from "@/ui/use-media-query";
-import { routeTo } from "@/ui/route-to";
+import { PeriodControl } from "@/ui/navigation/period-control";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { routeTo } from "@/ui/navigation/route-to";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];

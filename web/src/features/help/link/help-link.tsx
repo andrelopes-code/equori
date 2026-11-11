@@ -9,7 +9,7 @@ import {
 import { Link } from "@tanstack/react-router";
 
 import { useT } from "@/i18n/i18n-provider";
-import { useServed } from "@/ui/use-served";
+import { useServed } from "@/ui/navigation/use-served";
 
 interface HelpLinkProps {
   page: string;

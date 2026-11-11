@@ -20,7 +20,7 @@ import type { TotpSetup } from "@/features/setup/api";
 import styles from "@/features/setup/security/totp-dialog.module.css";
 import { TotpKey } from "@/features/setup/security/totp-key";
 import { useT } from "@/i18n/i18n-provider";
-import { QrCode } from "@/ui/qr-code";
+import { QrCode } from "@/ui/display/qr-code";
 
 interface TotpDialogProps {
   setup: TotpSetup;

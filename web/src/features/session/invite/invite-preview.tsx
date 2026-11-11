@@ -6,7 +6,7 @@ import type { InvitationPreview } from "@/features/session/api";
 import { InviteNewMemberForm } from "@/features/session/invite/invite-new-member-form";
 import { useInviteAcceptance } from "@/features/session/invite/use-invite-acceptance";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface InvitePreviewProps {
   token: string;

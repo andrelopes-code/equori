@@ -4,7 +4,7 @@ import type { components } from "@/api/schema.gen";
 import { CategoryPicker } from "@/features/categories";
 import { PayeeField } from "@/features/transactions/transaction-form/payee-field";
 import { useT } from "@/i18n/i18n-provider";
-import { FieldTitle } from "@/ui/field-title";
+import { FieldTitle } from "@/ui/form-fields/field-title";
 
 type Payee = components["schemas"]["Payee"];
 

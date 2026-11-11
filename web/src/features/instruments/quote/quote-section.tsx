@@ -21,7 +21,7 @@ import { RangeFigures } from "@/features/instruments/quote/range-figures";
 import { useInstrumentPositions } from "@/features/instruments/model/use-instrument-positions";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 import styles from "@/features/instruments/quote/quote-section.module.css";
 

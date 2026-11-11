@@ -12,8 +12,8 @@ import {
 import type { NavigateOptions } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { routeTo } from "@/ui/route-to";
-import { useServed } from "@/ui/use-served";
+import { routeTo } from "@/ui/navigation/route-to";
+import { useServed } from "@/ui/navigation/use-served";
 
 export interface OverviewRow {
   key: string;

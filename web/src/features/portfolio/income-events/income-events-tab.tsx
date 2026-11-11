@@ -18,7 +18,7 @@ import { YearTotalsTable } from "@/features/portfolio/year-totals/year-totals-ta
 import { catalogLabel, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { QueryError } from "@/ui/query-error";
+import { QueryError } from "@/ui/feedback/query-error";
 
 type Money = components["schemas"]["Money"];
 

@@ -5,8 +5,8 @@ import type { Consequence } from "@/features/transactions/account-field/account-
 import styles from "@/features/transactions/account-field/consequence-sentence.module.css";
 import { formatDayMonthLong } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
-import { withValue } from "@/ui/with-value";
+import { MoneyFigure } from "@/ui/money/money-figure";
+import { withValue } from "@/ui/display/with-value";
 
 type Account = components["schemas"]["Account"];
 

@@ -4,9 +4,9 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
-import type { MoneyAmount } from "@/ui/money-value";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
+import type { MoneyAmount } from "@/ui/money/money-value";
 
 type Money = CardTotals["open"];
 

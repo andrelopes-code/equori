@@ -28,7 +28,7 @@ import { AddCardDialog } from "@/features/cards/plastic-cards-tab/add-card-dialo
 import { DeleteCardDialog } from "@/features/cards/plastic-cards-tab/delete-card-dialog";
 import { PlasticCardActions } from "@/features/cards/plastic-cards-tab/plastic-card-actions";
 import { useT } from "@/i18n/i18n-provider";
-import { Presence } from "@/ui/presence";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Card = components["schemas"]["Card"];
 

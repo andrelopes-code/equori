@@ -14,8 +14,8 @@ import { calendarsQuery } from "@/features/planning/api";
 import { MatchingFields } from "@/features/planning/schedule-fields/matching-fields";
 import type { ScheduleDraft } from "@/features/planning/schedule-form/schedule-draft";
 import { useT } from "@/i18n/i18n-provider";
-import { AppLink } from "@/ui/app-link";
-import { ChoiceSelect } from "@/ui/choice-select";
+import { AppLink } from "@/ui/navigation/app-link";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface ScheduleAdvancedSectionProps {
   draft: ScheduleDraft;

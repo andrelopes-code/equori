@@ -6,7 +6,7 @@ import { OverviewRows } from "@/features/overview/overview-block/overview-rows";
 import { useSpending } from "@/features/overview/spending/use-spending";
 import { formatMonthName } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 
 // The five categories that took the most of the month.
 export function SpendingBlock({

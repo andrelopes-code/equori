@@ -2,19 +2,19 @@
 
 A form screen is a page, drawer or dialog whose job is to write one record. Every form of `web/` answers this guide. Mandatory reading before writing or changing a form.
 
-Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issues #21 and #78 are carried by the library's `Form` and `FormAside`. `ui/form-layout` stays the application's layout: it draws the aside from 62rem where the library draws it from 75rem, and it serves the forms of dialogs. Issue #22 is carried by `--slotted-form-field-gap` and `--slotted-form-section-gap`, set in the theme and read by `FormLayout`.
+Rules marked with a Slotted ID (FM-06, LA-05) are in `web/node_modules/@slotted/react/dist/docs/guidelines/`. The sources behind the other rules are listed at the end. Rules marked equori are decisions of this application. F1, F2, F3, F5, F6, F7, F8 and F15 restate FM-18 to FM-25 (issues #19 and #54) for this application, in that order. Issues #21 and #78 are carried by the library's `Form` and `FormAside`. `ui/form-layout/form-layout` stays the application's layout: it draws the aside from 62rem where the library draws it from 75rem, and it serves the forms of dialogs. Issue #22 is carried by `--slotted-form-field-gap` and `--slotted-form-section-gap`, set in the theme and read by `FormLayout`.
 
 ## F1 · One column at a bounded measure
 
 - The fields of a form stand in one column, top to bottom, in the order the reader answers them (Baymard, CXL).
-- The column is at most 40rem wide (equori), drawn by `FormLayout` (`ui/form-layout`). A field never spans the page's whole measure.
+- The column is at most 40rem wide (equori), drawn by `FormLayout` (`ui/form-layout/form-layout`). A field never spans the page's whole measure.
 - A form page keeps `width="wide"` for its header and footer (docs/contributing/web.md, "Page width"); the column inside starts at the page's start edge.
 
 ## F2 · Two fields share a row only when they are one answer
 
 - Two fields share a row only when they are parts of one value: a start and an end, a frequency and its interval, an amount and its unit (Baymard).
 - The fields of a row keep their own widths and stand 1rem apart: a field with a width step stops at it and the next starts beside it. A row is never split into equal halves that leave a hole after a short field.
-- Unrelated fields never share a row to fill width. The pair is a `FormRow` (`ui/form-row`) and shares its top (LA-05).
+- Unrelated fields never share a row to fill width. The pair is a `FormRow` (`ui/form-layout/form-row`) and shares its top (LA-05).
 - Below 600 px of the form's width every row is one field per line.
 
 ## F3 · A field's width says what it expects
@@ -30,7 +30,7 @@ The width of a control follows the length of its expected answer (Baymard, Queen
 
 A field with no step is `full`.
 
-- The step is the `width` prop of the `Field`: `short`, `medium` or `full`. The library bounds the control and the label keeps the column's width. In a `FormRow` the `Field` stops at the step too (`ui/form-layout.module.css`, F2).
+- The step is the `width` prop of the `Field`: `short`, `medium` or `full`. The library bounds the control and the label keeps the column's width. In a `FormRow` the `Field` stops at the step too (`ui/form-layout/form-layout.module.css`, F2).
 - A `SegmentedControl` takes the width of its labels: it stands inside an `Inline`, never stretched across the column.
 - A currency is chosen by its name and code, never typed as a code (F14.1); a `Select` of codes is a step on the way.
 
@@ -41,12 +41,12 @@ A field with no step is `full`.
 
 ## F5 · Sections group a topic
 
-- A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-section`) whose legend names the topic ("Value", "When", "Repetition").
+- A form with more than six fields, or with fields about two or more topics, splits them into `FormSection`s (`ui/form-layout/form-section`) whose legend names the topic ("Value", "When", "Repetition").
 - Two fields stand 1.5rem apart (`--slotted-space-8`), inside a section or not; a label stands 0.375rem above its control (`--slotted-field-row-gap`, the family's own). The ratio of 4 to 1 makes each label read with the control under it.
 - A field's description or error stands 0.375rem under its control, the same `--slotted-field-row-gap`: the family sets one gap for the label, the control and the message so a message never reads as part of the field below (Slotted issue #38, closed without a change). A question's description or error stands 0.5rem under its legend (`--slotted-field-group-message-gap`, set in the theme).
 - Two sections stand 2.5rem apart (`--slotted-space-10`) and a section's legend 1.25rem above its first field. A section's legend closes over a rule in `--slotted-border-strong`, 0.5rem under the text, so each section reads as a block with a heading (owner review, 2026-11-02): spacing alone made a legend read as a label set further apart. The theme draws the rule for every `FieldGroup kind="section"` (`sectionRule` in `web/src/theme/equori.theme.ts`).
 - A question's choices stand 1rem below its description or error, so a radio or checkbox never touches the sentence above it (`questionChoicesRule`, same file; owner review, 2026-11-02).
-- Checkboxes in sequence that carry no label or description of their own stand 0.75rem apart in `FormChecks` (`ui/form-checks`), one block between two fields. A checkbox with a description is a field and keeps 1.5rem.
+- Checkboxes in sequence that carry no label or description of their own stand 0.75rem apart in `FormChecks` (`ui/form-layout/form-checks`), one block between two fields. A checkbox with a description is a field and keeps 1.5rem.
 - A question's legend (a `FieldGroup` of segments or radios) stands 0.375rem above its choices, as a label stands above its control (the theme's, Slotted issue #57).
 - `FormLayout` and `FormSection` write these steps; a form writes no gap, margin, `Stack` or `Grid` of its own between fields. A component that renders several fields for reuse in more than one form (`BillingRuleFields`) spaces them with `Stack gap={8}`, the same 1.5rem, and puts pairs in `FormRow`.
 - A repeated group (each card of an account, each line of a plan) is one block per item: its fields, then its actions (remove, a toggle of the item) in an `Inline` on the item's last line, then the button that adds an item after the last block.
@@ -73,7 +73,7 @@ A field with no step is `full`.
 | What the whole record will do: a preview, a summary, a rule in words | the form's aside (`FormLayout aside`) |
 
 - A description is at most one line at the column's width: about 90 characters, measured in the longest translation of the catalog.
-- A label takes `FieldHelp` (through `ui/field-title`) when it is a term of accounting, banking or investing ("payee", "withheld", "basis points", "postings"), or when a reader could take it for another field of the form ("fees" beside "taxes", "security account" beside "cash account"). The help defines the term in at most two sentences and names no regional value. A label every reader knows ("Date", "Category", "Description") takes none.
+- A label takes `FieldHelp` (through `ui/form-fields/field-title`) when it is a term of accounting, banking or investing ("payee", "withheld", "basis points", "postings"), or when a reader could take it for another field of the form ("fees" beside "taxes", "security account" beside "cash account"). The help defines the term in at most two sentences and names no regional value. A label every reader knows ("Date", "Category", "Description") takes none.
 - A `Checkbox` has no `FieldLabel`: the definition of the term it names is its own description, under its label.
 - From 62rem of the form's width the aside stands beside the column, from 20rem up to 36rem wide as the page allows, and sticks under the page's chrome (LA-06). Below, it follows the last field.
 

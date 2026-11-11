@@ -5,7 +5,7 @@ import { readText } from "@/features/accounts";
 import { useRecordInstrumentPrices } from "@/features/instruments/api";
 import { readPriceSeries } from "@/features/instruments/price-import/price-series";
 import { useT } from "@/i18n/i18n-provider";
-import { useDebounced } from "@/ui/use-debounced";
+import { useDebounced } from "@/ui/runtime/use-debounced";
 
 export interface SeriesChoice {
   dateColumn?: string;

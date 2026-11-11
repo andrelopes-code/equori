@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
 import { useScheme } from "@/theme/scheme";
-import { useMediaQuery } from "@/ui/use-media-query";
+import { useMediaQuery } from "@/ui/runtime/use-media-query";
 
 // "glass" is an experimental style: translucent surfaces over a moving gradient (theme/glass). Its
 // theme is a stylesheet of its own, loaded the first time it is turned on, so a reader who never

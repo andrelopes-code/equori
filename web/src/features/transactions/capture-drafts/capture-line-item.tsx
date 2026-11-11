@@ -20,7 +20,7 @@ import { EntryKindGlyph } from "@/features/transactions/capture-drafts/entry-kin
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money-figure";
+import { MoneyFigure } from "@/ui/money/money-figure";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];

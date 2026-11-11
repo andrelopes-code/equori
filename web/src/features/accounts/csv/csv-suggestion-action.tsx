@@ -5,7 +5,7 @@ import { Text } from "@slotted/react/typography";
 import type { ProfileDraft } from "@/features/accounts/csv/csv-guess";
 import { useColumnSuggestion } from "@/features/accounts/csv/use-column-suggestion";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-notice";
+import { FormNotice } from "@/ui/form-layout/form-notice";
 
 interface CsvSuggestionActionProps {
   id: string;

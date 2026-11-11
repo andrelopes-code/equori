@@ -36,9 +36,9 @@ import { InstitutionIdentifierDialog } from "@/features/accounts/institutions/in
 import { SetLogoDialog } from "@/features/accounts/institutions/set-logo-dialog";
 import { institutionsQuery } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { HeaderAction } from "@/ui/header-action";
-import { QueryError } from "@/ui/query-error";
-import { Presence } from "@/ui/presence";
+import { HeaderAction } from "@/ui/navigation/header-action";
+import { QueryError } from "@/ui/feedback/query-error";
+import { Presence } from "@/ui/dialogs/presence";
 
 type Institution = components["schemas"]["Institution"];
 

@@ -6,7 +6,7 @@ import styles from "@/features/setup/pages/settings-page.module.css";
 import { ThemeMiniature } from "@/features/setup/themes/theme-miniature";
 import { useThemeLibrary } from "@/features/setup/themes/use-theme-library";
 import { useT } from "@/i18n/i18n-provider";
-import { routeTo } from "@/ui/route-to";
+import { routeTo } from "@/ui/navigation/route-to";
 
 // Families read: card, button, typography. The theme in use is drawn as the application it
 // styles, so the pane shows the appearance and not only the way to the studio.

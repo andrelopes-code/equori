@@ -6,9 +6,9 @@ import { usePortfolioIncome } from "@/features/portfolio/summary/use-portfolio-i
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FigureCard } from "@/ui/figure-card";
-import { FigureGrid } from "@/ui/figure-grid";
-import { routeTo } from "@/ui/route-to";
+import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
+import { routeTo } from "@/ui/navigation/route-to";
 
 type Money = components["schemas"]["Money"];
 

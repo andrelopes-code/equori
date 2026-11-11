@@ -11,7 +11,7 @@ import type { components } from "@/api/schema.gen";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { useAmountTone } from "@/ui/amount-tone";
+import { useAmountTone } from "@/ui/money/amount-tone";
 
 import { ReturnGrowthBar } from "@/features/portfolio/return-money/return-growth-bar";
 import { returnMoney } from "@/features/portfolio/return-money/return-money";
