@@ -17,6 +17,7 @@ import { PortfolioProblem } from "@/features/portfolio/portfolio-problem";
 import { PortfolioReturn } from "@/features/portfolio/portfolio-return";
 import type { SearchPatch } from "@/features/portfolio/portfolio-search";
 import { PortfolioSummary } from "@/features/portfolio/portfolio-summary";
+import { QuoteWarningsNotice } from "@/features/portfolio/quote-warnings-notice";
 import { useHoldings } from "@/features/portfolio/use-holdings";
 import { WhereMoneySection } from "@/features/portfolio/where-money-section";
 import { institutionsQuery, settingsQuery } from "@/features/setup";
@@ -96,6 +97,10 @@ export function PortfolioPage() {
                 {t("holdings.trade")}
               </ButtonLink>
             </ResultState>
+          )}
+
+          {!empty && !positions.isError && (
+            <QuoteWarningsNotice date={date} valueIn={valueIn} />
           )}
 
           {!empty && !positions.isError && (

@@ -6,7 +6,11 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { json, problem } from "@/testing/fake-api";
 import { accounts, brl, brokerID, cashID } from "@/testing/investment-api";
-import { portfolioApi, xpInstitutionID } from "@/testing/portfolio-api";
+import {
+  portfolioApi,
+  positions,
+  xpInstitutionID,
+} from "@/testing/portfolio-api";
 import { hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 
@@ -541,5 +545,66 @@ describe("Portfolio page", () => {
     expect(
       await screen.findByRole("link", { name: catalogEn["holdings.year"] }),
     ).toHaveAttribute("href", "/portfolio/year");
+  });
+
+  it("names the holdings with a late or missing quote", async () => {
+    const warned = (
+      quoteWarnings: { instrument: string; last: string | null }[],
+    ) =>
+      portfolioApi({
+        "GET /api/v1/positions": () =>
+          json(200, { items: positions, quote_warnings: quoteWarnings }),
+      });
+
+    const { unmount } = await renderApp("/portfolio", {
+      fetch: warned([
+        { instrument: "PETR4", last: "2026-10-20" },
+        { instrument: "MXRF11", last: null },
+      ]),
+    });
+
+    expect(
+      await screen.findByText("2 holdings have a late or missing quote."),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "Open PETR4" })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/\/instruments\/PETR4$/),
+    );
+    unmount();
+
+    await renderApp("/portfolio", {
+      fetch: warned([{ instrument: "PETR4", last: "2026-10-20" }]),
+    });
+
+    expect(
+      await screen.findByText("1 holding has a late or missing quote."),
+    ).toBeVisible();
+  });
+
+  it("asks for the positions only once the valuation currency is known", async () => {
+    const asked: (string | null)[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": (req) => {
+        asked.push(new URL(req.url).searchParams.get("value_in"));
+        return json(200, { items: positions, quote_warnings: [] });
+      },
+    });
+
+    await renderApp("/portfolio", { fetch });
+    await screen.findByRole("grid", { name: catalogEn["holdings.list"] });
+
+    expect(asked).not.toHaveLength(0);
+    expect(asked).not.toContain(null);
+  });
+
+  it("draws no notice when no holding has a late or missing quote", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    await screen.findByRole("grid", { name: catalogEn["holdings.list"] });
+
+    expect(
+      screen.queryByText(
+        /have a late or missing quote|has a late or missing quote/,
+      ),
+    ).toBeNull();
   });
 });

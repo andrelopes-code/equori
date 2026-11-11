@@ -241,20 +241,38 @@ export function positionsQuery(
   valueIn?: string,
 ) {
   return queryOptions({
+    ...positionListQuery(api, date, valueIn),
+    select: (list) => list.items,
+  });
+}
+
+// Shares the key and the request of positionsQuery: one answer serves the rows and the notice.
+export function quoteWarningsQuery(
+  api: Client<paths>,
+  date: string,
+  valueIn?: string,
+) {
+  return queryOptions({
+    ...positionListQuery(api, date, valueIn),
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the schema requires the list; a positions answer written before it, in a fixture, does not carry it
+    select: (list) => list.quote_warnings ?? [],
+  });
+}
+
+function positionListQuery(api: Client<paths>, date: string, valueIn?: string) {
+  return queryOptions({
     queryKey: ["positions", date, valueIn] as const,
     queryFn: async () =>
-      (
-        await unwrap(
-          await api.GET("/positions", {
-            params: {
-              query: {
-                date,
-                ...(valueIn === undefined ? {} : { value_in: valueIn }),
-              },
+      unwrap(
+        await api.GET("/positions", {
+          params: {
+            query: {
+              date,
+              ...(valueIn === undefined ? {} : { value_in: valueIn }),
             },
-          }),
-        )
-      ).items,
+          },
+        }),
+      ),
   });
 }
 

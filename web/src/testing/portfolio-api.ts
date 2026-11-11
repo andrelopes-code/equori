@@ -140,7 +140,8 @@ export function portfolioApi(routes: Record<string, Route> = {}) {
     "GET /api/v1/instruments": () => json(200, { items: instruments }),
     "GET /api/v1/institutions": () =>
       json(200, { items: [{ id: xpInstitutionID, name: "XP" }] }),
-    "GET /api/v1/positions": () => json(200, { items: positions }),
+    "GET /api/v1/positions": () =>
+      json(200, { items: positions, quote_warnings: [] }),
     "GET /api/v1/reports/allocation": (req) =>
       json(
         200,

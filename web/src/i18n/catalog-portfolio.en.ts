@@ -42,6 +42,10 @@ export const portfolioEn = {
   "portfolio.empty": "No positions at this date",
   "portfolio.emptyHint":
     "Record a trade in a brokerage account to see it here.",
+  "portfolio.quoteWarnings.one": "1 holding has a late or missing quote.",
+  "portfolio.quoteWarnings.other":
+    "{count} holdings have a late or missing quote.",
+  "portfolio.quoteWarnings.open": "Open {code}",
   "portfolio.valueIn": "Valuation currency",
   "portfolio.by.type": "Type",
   "portfolio.by.currency": "Currency",

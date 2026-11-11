@@ -8,7 +8,7 @@ export {
   seriesQuery,
   unconfirmedQuery,
 } from "@/features/accounts/api";
-export { positionsQuery } from "@/features/accounts/api";
+export { positionsQuery, quoteWarningsQuery } from "@/features/accounts/api";
 export { averageCostText } from "@/features/accounts/position-figures";
 export { AccountLink } from "@/features/accounts/account-link";
 export { shapeOf } from "@/features/accounts/account-shape";

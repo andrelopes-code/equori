@@ -44,6 +44,11 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.empty": "Nenhuma posição nesta data",
   "portfolio.emptyHint":
     "Registre uma negociação em uma conta de corretora para vê-la aqui.",
+  "portfolio.quoteWarnings.one":
+    "1 posição está com cotação atrasada ou ausente.",
+  "portfolio.quoteWarnings.other":
+    "{count} posições estão com cotação atrasada ou ausente.",
+  "portfolio.quoteWarnings.open": "Abrir {code}",
   "portfolio.valueIn": "Moeda de avaliação",
   "portfolio.by.type": "Tipo",
   "portfolio.by.currency": "Moeda",
