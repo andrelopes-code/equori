@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 // A143: a stored record that the aggregator later reports with an institution line id

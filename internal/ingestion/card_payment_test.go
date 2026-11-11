@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 	"github.com/andrelopes-code/equori/internal/ledger"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )

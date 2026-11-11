@@ -87,11 +87,11 @@ sql:
         out: internal/planning/postgres
   - engine: postgresql
     schema: db/migrations
-    queries: db/queries/ingestion
+    queries: internal/ingestion/postgres/queries
     gen:
       go:
         <<: *go
-        out: internal/ingestion/internal/adapter/postgres
+        out: internal/ingestion/postgres
   - engine: postgresql
     schema: db/migrations
     queries: db/queries/reporting

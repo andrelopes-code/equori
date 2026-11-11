@@ -30,9 +30,9 @@ The `Aggregator` port states:
 - `NormalizedRecord.ReserveMove` is true for a line the source states moves money between a bank account and a reserved balance.
 - `NormalizedRecord.ReserveExternalID` is the reserve's external id when the source relays it. `ReserveName` is the name otherwise.
 
-`internal/ingestion/internal/aggregator/aggregatortest` runs these clauses against any aggregator through a `Backend` that each aggregator implements over its fake server. Step 10 of `docs/contributing/regions.md` requires it.
+`internal/ingestion/aggregator/aggregatortest` runs these clauses against any aggregator through a `Backend` that each aggregator implements over its fake server. Step 10 of `docs/contributing/regions.md` requires it.
 
-Region-dependent values: the wording and the operation type of a reserve line are the institution's and live only in the adapter of the aggregator (extension point `Aggregator`). `internal/ingestion/internal/app` and `domain` hold no wording. The texts of section 5 and 6 live in the message catalog of each language.
+Region-dependent values: the wording and the operation type of a reserve line are the institution's and live only in the adapter of the aggregator (extension point `Aggregator`). `internal/ingestion/app` and `domain` hold no wording. The texts of section 5 and 6 live in the message catalog of each language.
 
 ## 4. A212: resolving a reserve line
 

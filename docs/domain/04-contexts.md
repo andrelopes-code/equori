@@ -98,7 +98,7 @@ Card statements and installment plans stay in Ledger: recording a card purchase 
 | Invariants | I07 (external record side), I10. |
 | Commands | `ImportFile`, `CreateIntegration`, `CreateConnection`, `MapExternalAccount`, `SyncConnection`, `ResolveMatch`, `RotateSecrets`. |
 | Events published | `ImportBatchCompleted`, `ExternalRecordNeedsReview`. |
-| Calls | Ledger `RecordImported`, `ClearMatched`, `AssertBalance`, `AssertSyncedBalance`, `UpdateImportedPosting`, `ReleaseRecord`, `RecordImportedInstallment`, `LinkInstallment`; Classification `DecideImport` before recording created lines, with the line's source category. An aggregator through an anti-corruption layer, at its configured base URL only (`EQUORI_AGGREGATOR_<ID>_URL`, N17); the `Aggregator` interface in `internal/ingestion/internal/app/integration.go` declares its identifier, credential fields, connect method and state mapping. `pluggy` is the only registered aggregator. |
+| Calls | Ledger `RecordImported`, `ClearMatched`, `AssertBalance`, `AssertSyncedBalance`, `UpdateImportedPosting`, `ReleaseRecord`, `RecordImportedInstallment`, `LinkInstallment`; Classification `DecideImport` before recording created lines, with the line's source category. An aggregator through an anti-corruption layer, at its configured base URL only (`EQUORI_AGGREGATOR_<ID>_URL`, N17); the `Aggregator` interface in `internal/ingestion/app/integration.go` declares its identifier, credential fields, connect method and state mapping. `pluggy` is the only registered aggregator. |
 
 ### 4.3.4 Planning
 

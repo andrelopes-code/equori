@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 // S344 (A214): an account the item stops listing does not stop the others, the connection ends

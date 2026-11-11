@@ -1,0 +1,346 @@
+package app
+
+import (
+	"context"
+	"errors"
+	"slices"
+
+	"github.com/google/uuid"
+
+	"github.com/andrelopes-code/equori/internal/ingestion/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/page"
+)
+
+var ErrRecordResolved = errors.New("the record does not need review")
+
+// ErrGroupChanged: the lines of a group no longer confirm their entry (A169).
+var ErrGroupChanged = errors.New("the group of lines changed since the review")
+
+// ErrRecordNotDiscarded: only a discarded record can be reopened (A140).
+var ErrRecordNotDiscarded = errors.New("the record is not discarded")
+
+type RecordKey struct {
+	ID uuid.UUID `json:"ri"`
+}
+
+const (
+	ActionMatch   = "match"
+	ActionCreate  = "create"
+	ActionDiscard = "discard"
+)
+
+// Records lists a batch's records in file order; state filters them when not empty.
+func (s *Service) Records(ctx context.Context, booksID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[RecordKey]) ([]domain.ExternalRecord, *RecordKey, domain.Batch, error) {
+	b, err := s.repo.Batch(ctx, booksID, batchID)
+	if err != nil {
+		return nil, nil, domain.Batch{}, err
+	}
+
+	recs, next, err := s.repo.Records(ctx, booksID, batchID, state, p)
+	if err != nil {
+		return nil, nil, domain.Batch{}, err
+	}
+
+	for i := range recs {
+		if err := s.refreshReview(ctx, &recs[i], currencyOf(b)); err != nil {
+			return nil, nil, domain.Batch{}, err
+		}
+	}
+
+	return recs, next, b, nil
+}
+
+// Resolve settles a record that needs review with the owner's choice (chapter 4, 4.3.3,
+// ResolveMatch) and moves it between the batch counts.
+// Record returns one of the book's external records.
+func (s *Service) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+	rec, err := s.repo.Record(ctx, booksID, id)
+	if err != nil {
+		return domain.ExternalRecord{}, err
+	}
+
+	b, err := s.repo.Batch(ctx, booksID, rec.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, err
+	}
+
+	return rec, s.refreshReview(ctx, &rec, currencyOf(b))
+}
+
+func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+	if action != ActionMatch && action != ActionCreate && action != ActionDiscard {
+		return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: "must be match, create or discard"}
+	}
+
+	found, err := s.repo.Record(ctx, booksID, recordID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	unlock, err := s.repo.LockAccountImports(ctx, found.AccountID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+	defer unlock()
+
+	rec, err := s.repo.Record(ctx, booksID, recordID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	if rec.State != domain.StateNeedsReview {
+		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordResolved
+	}
+
+	b, err := s.repo.Batch(ctx, booksID, rec.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	if rec.ReviewReason == domain.ReviewGroup {
+		return s.resolveGroup(ctx, booksID, rec, b, action, txID)
+	}
+
+	// The candidates stored at import stay accepted, so a choice the ledger now refuses (a voided
+	// or reconciled entry) is refused by its own rule. A review transfer keeps only the
+	// counterparts at read time (A219 rule 2).
+	stored := rec.Candidates
+	if err := s.refreshCandidates(ctx, &rec, currencyOf(b)); err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	if rec.ReviewReason != domain.ReviewTransfer {
+		for _, id := range stored {
+			if !slices.Contains(rec.Candidates, id) {
+				rec.Candidates = append(rec.Candidates, id)
+			}
+		}
+	}
+
+	switch action {
+	case ActionMatch:
+		if !slices.Contains(rec.Candidates, txID) {
+			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
+		}
+
+		if rec.ReviewReason == domain.ReviewTransfer {
+			if _, err := s.ledger.PairLine(ctx, booksID, txID, rec.AccountID, rec.ID); errors.Is(err, ErrNotPairable) {
+				return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "cannot become the transfer of the line"}
+			} else if err != nil {
+				return domain.ExternalRecord{}, domain.Batch{}, err
+			}
+
+			rec.State, rec.TransactionID = domain.StateMatched, txID
+
+			break
+		}
+
+		// A101: the institution's amount and date win; the owner's classification stays.
+		if err := s.ledger.ConfirmLine(ctx, booksID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
+			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
+
+		conflicts, err := s.ledger.ClearMatched(ctx, booksID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
+		if err != nil {
+			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
+
+		if len(conflicts) > 0 {
+			return domain.ExternalRecord{}, domain.Batch{}, ErrAlreadyMatched
+		}
+
+		// A136: the line's bill places the posting, as an automatic match does.
+		if err := s.billMatched(ctx, &rec, false); err != nil {
+			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
+
+		rec.State, rec.TransactionID = domain.StateMatched, txID
+	case ActionCreate:
+		line := Line{AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+
+		ids, err := s.ledger.RecordImported(ctx, booksID, []NewLine{{RecordID: rec.ID, Line: line}})
+		if errors.Is(err, ErrLineRejected) {
+			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: err.Error()}
+		}
+
+		if err != nil {
+			return domain.ExternalRecord{}, domain.Batch{}, err
+		}
+
+		rec.State, rec.TransactionID = domain.StateCreated, ids[0]
+	case ActionDiscard:
+		rec.State = domain.StateDiscarded
+	}
+
+	rec.Candidates = nil
+	if err := s.repo.ResolveRecord(ctx, rec); err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	return rec, b, nil
+}
+
+// Resolution is one item of ResolveMany.
+type Resolution struct {
+	RecordID      uuid.UUID
+	Action        string
+	TransactionID uuid.UUID
+}
+
+// ResolveMany settles each record as Resolve does, in request order (A201). errs[i] is the
+// error of item i; the error return refuses the request before any item runs.
+func (s *Service) ResolveMany(ctx context.Context, booksID int64, items []Resolution) ([]error, error) {
+	seen := make(map[uuid.UUID]bool, len(items))
+	for _, it := range items {
+		if seen[it.RecordID] {
+			return nil, &domain.FieldError{Field: "items", Message: "repeats a record"}
+		}
+
+		seen[it.RecordID] = true
+	}
+
+	errs := make([]error, len(items))
+	for i, it := range items {
+		_, _, errs[i] = s.Resolve(ctx, booksID, it.RecordID, it.Action, it.TransactionID)
+	}
+
+	return errs, nil
+}
+
+// Unconfirmed lists the account's entries that neither an institution line nor an institution
+// balance confirmed, expected within its feed and more than MatchHardLimit days before the
+// feed's end, oldest first (A103, A133).
+func (s *Service) Unconfirmed(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.LedgerPosting, money.Currency, error) {
+	target, err := s.ledger.ImportTarget(ctx, booksID, accountID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	feed, err := s.repo.AccountFeed(ctx, booksID, accountID)
+	if err != nil || feed.From == nil || feed.To == nil {
+		return nil, target.Currency, err
+	}
+
+	to := feed.To.AddDate(0, 0, -domain.MatchHardLimit-1)
+	if to.Before(*feed.From) {
+		return nil, target.Currency, nil
+	}
+
+	ps, err := s.ledger.UnconfirmedPostings(ctx, booksID, accountID, *feed.From, to)
+
+	return ps, target.Currency, err
+}
+
+// Reopen returns a discarded record to review with the candidates the ledger holds now, so a
+// line discarded before the entry it confirms existed can still confirm it (A140).
+func (s *Service) Reopen(ctx context.Context, booksID int64, recordID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+	found, err := s.repo.Record(ctx, booksID, recordID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	unlock, err := s.repo.LockAccountImports(ctx, found.AccountID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+	defer unlock()
+
+	reopened, err := s.repo.ReopenRecord(ctx, booksID, recordID, found.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	if !reopened {
+		return domain.ExternalRecord{}, domain.Batch{}, ErrRecordNotDiscarded
+	}
+
+	b, err := s.repo.Batch(ctx, booksID, found.BatchID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	rec, err := s.repo.Record(ctx, booksID, recordID)
+	if err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	return rec, b, s.refreshCandidates(ctx, &rec, currencyOf(b))
+}
+
+// refreshCandidates scores a record in review against the postings of its account that no
+// record links now, so a transaction recorded after the import is offered and one linked
+// since is not (A140).
+// refreshReview prepares a record in review for reading. A record in review group keeps its
+// entry as the only candidate and lists the other lines of its group; a group that no longer
+// holds lists none. Another record has its candidates scored again.
+func (s *Service) refreshReview(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
+	if rec.State != domain.StateNeedsReview || rec.ReviewReason != domain.ReviewGroup {
+		return s.refreshCandidates(ctx, rec, currency)
+	}
+
+	members, err := s.groupOf(ctx, *rec)
+	if errors.Is(err, ErrGroupChanged) {
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	for _, m := range members {
+		if m.Record.ID != rec.ID {
+			rec.GroupIDs = append(rec.GroupIDs, m.Record.ID)
+		}
+	}
+
+	return nil
+}
+
+func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
+	if rec.State != domain.StateNeedsReview {
+		return nil
+	}
+
+	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+
+	if rec.ReviewReason == domain.ReviewTransfer {
+		return s.refreshTransferCandidates(ctx, rec, line)
+	}
+
+	postings, err := s.ledger.UnlinkedPostings(ctx, rec.BooksID, rec.AccountID,
+		rec.Date.AddDate(0, 0, -domain.MatchHardLimit), rec.Date.AddDate(0, 0, domain.MatchHardLimit))
+	if err != nil {
+		return err
+	}
+
+	assigned, err := s.assign(ctx, rec.BooksID, []scoredLine{{rec: rec, line: line}}, postings)
+	if err != nil {
+		return err
+	}
+
+	rec.Scores = assigned[0].Candidates
+
+	rec.Candidates = make([]uuid.UUID, len(rec.Scores))
+	for i, c := range rec.Scores {
+		rec.Candidates[i] = c.TransactionID
+	}
+
+	return nil
+}
+
+// refreshTransferCandidates lists the transactions the line may pair with (A219); rule 2 does not
+// score them.
+func (s *Service) refreshTransferCandidates(ctx context.Context, rec *domain.ExternalRecord, line Line) error {
+	cps, _, err := s.counterparts(ctx, rec.BooksID, rec, line)
+	if err != nil {
+		return err
+	}
+
+	rec.Scores, rec.Candidates = nil, nil
+	for _, cp := range cps {
+		rec.Candidates = append(rec.Candidates, cp.TransactionID)
+	}
+
+	return nil
+}

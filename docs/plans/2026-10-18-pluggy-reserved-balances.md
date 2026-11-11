@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Every Global Constraint of `docs/plans/2026-10-16-p6-pluggy.md` applies: N16 (logs, errors and problem details name no item id, account number, reserve identification or Pluggy payload) and N17 (outbound HTTP only to the configured base URL).
-- Tests go through the HTTP API (`internal/apitest`) with the fake Pluggy server `internal/ingestion/internal/pluggy/pluggytest`; the fixture of `internal/ingestion/sync_test.go` (`syncFixture`) is the model. Pure functions get table tests next to them. No mock of the repository or of PostgreSQL.
+- Tests go through the HTTP API (`internal/apitest`) with the fake Pluggy server `internal/ingestion/pluggy/pluggytest`; the fixture of `internal/ingestion/sync_test.go` (`syncFixture`) is the model. Pure functions get table tests next to them. No mock of the repository or of PostgreSQL.
 - Each scenario test carries its ID in the name (`TestS68...`). Fixed clock `apitest.Today("2026-11-12")`. Assert status before decoding; assert exact amounts in minor units.
 - A task starts with its failing test; run it and read the failure before implementing.
 - Never edit `*.gen.go`; run `make gen` after editing `api/openapi.yaml` or `db/queries`.
@@ -32,14 +32,14 @@
 
 ```
 api/openapi.yaml                                         ExternalAccount.subtype, number_last4, mapExternalAccount descriptions
-db/queries/ingestion/connection.sql                      InsertMissingExternalAccount
-internal/ingestion/internal/pluggy/{model.go,normalize.go,normalize_test.go}
-internal/ingestion/internal/pluggy/pluggytest/server.go  reserved balances, operationType, item update date
+internal/ingestion/postgres/queries/connection.sql                      InsertMissingExternalAccount
+internal/ingestion/pluggy/{model.go,normalize.go,normalize_test.go}
+internal/ingestion/pluggy/pluggytest/server.go  reserved balances, operationType, item update date
 internal/ingestion/aggregator.go                         reserve listing and reading, AssertSyncedReserve port
 internal/ingestion/ingestion.go                          ledgerPort: TransferTo decision, AssertSyncedReserve
-internal/ingestion/internal/domain/{connection.go,record.go}
-internal/ingestion/internal/app/{sync.go,importer.go,connection.go,ports}
-internal/ingestion/internal/adapter/postgres/connection.go
+internal/ingestion/domain/{connection.go,record.go}
+internal/ingestion/app/{sync.go,importer.go,connection.go,ports}
+internal/ingestion/postgres/connection.go
 internal/ingestion/{sync_test.go,reserve_test.go}
 internal/ledger/ledger.go                                AssertSyncedBalance, AssertSyncedReserve
 internal/ledger/internal/app/reconciliation.go           AssertSynced
@@ -55,7 +55,7 @@ docs/operations/pluggy.md
 **Files:**
 - Modify: `internal/ledger/internal/app/reconciliation.go` (new `AssertSynced`; the decision code shared with `AssertBalance`)
 - Modify: `internal/ledger/ledger.go` (`AssertSyncedBalance` calls `AssertSynced`)
-- Modify: `internal/ingestion/internal/app/sync.go` (`syncAccount`)
+- Modify: `internal/ingestion/app/sync.go` (`syncAccount`)
 - Test: `internal/ingestion/sync_test.go`
 
 **Interfaces:**
@@ -71,12 +71,12 @@ docs/operations/pluggy.md
 ### Task 2: Reserved balances as external accounts (D1, A73, S68 mapping)
 
 **Files:**
-- Modify: `internal/ingestion/internal/pluggy/model.go` (`Account.BankData`, `BankData`, `ReservedBalance`, `ReservedAmount`, `SubtypeReserve = "RESERVED_BALANCE"`)
-- Modify: `internal/ingestion/internal/pluggy/pluggytest/server.go` (`AddReservedBalance`, `SetReservedAmount`)
+- Modify: `internal/ingestion/pluggy/model.go` (`Account.BankData`, `BankData`, `ReservedBalance`, `ReservedAmount`, `SubtypeReserve = "RESERVED_BALANCE"`)
+- Modify: `internal/ingestion/pluggy/pluggytest/server.go` (`AddReservedBalance`, `SetReservedAmount`)
 - Modify: `internal/ingestion/aggregator.go` (the function that lists an item's accounts for `CreateConnection`, near line 68)
-- Modify: `internal/ingestion/internal/domain/connection.go` (`compatibleKinds["RESERVED_BALANCE"] = {"reserve"}`)
-- Modify: `db/queries/ingestion/connection.sql` (`InsertMissingExternalAccount`), `internal/ingestion/internal/adapter/postgres/connection.go`
-- Modify: `internal/ingestion/internal/app/sync.go` (`syncItem` adds missing external accounts), the app port that lists item accounts
+- Modify: `internal/ingestion/domain/connection.go` (`compatibleKinds["RESERVED_BALANCE"] = {"reserve"}`)
+- Modify: `internal/ingestion/postgres/queries/connection.sql` (`InsertMissingExternalAccount`), `internal/ingestion/postgres/connection.go`
+- Modify: `internal/ingestion/app/sync.go` (`syncItem` adds missing external accounts), the app port that lists item accounts
 - Modify: `api/openapi.yaml` (spec "Data contract")
 - Test: `internal/ingestion/reserve_test.go` (new)
 
@@ -109,8 +109,8 @@ docs/operations/pluggy.md
 
 **Files:**
 - Modify: `internal/ingestion/aggregator.go` (`ReadAccount`)
-- Modify: `internal/ingestion/internal/app/sync.go` (`syncItem` order)
-- Modify: `internal/ingestion/internal/pluggy/pluggytest/server.go` (`SetItemUpdatedAt(itemID, at string)` when absent)
+- Modify: `internal/ingestion/app/sync.go` (`syncItem` order)
+- Modify: `internal/ingestion/pluggy/pluggytest/server.go` (`SetItemUpdatedAt(itemID, at string)` when absent)
 - Test: `internal/ingestion/reserve_test.go`
 
 **Interfaces:**
@@ -131,7 +131,7 @@ docs/operations/pluggy.md
 - Modify: `internal/ledger/internal/domain/reconciliation.go` (`YieldBound`, `DecideSyncedReserve`), `reconciliation_test.go`
 - Modify: `internal/ledger/internal/app/reconciliation.go` (`AssertSynced` with `reserve` true)
 - Modify: `internal/ledger/ledger.go` (`AssertSyncedReserve`)
-- Modify: `internal/ingestion/ingestion.go` (`ledgerPort.AssertSyncedReserve`), the app port declaring `AssertSyncedBalance`, `internal/ingestion/internal/app/sync.go`
+- Modify: `internal/ingestion/ingestion.go` (`ledgerPort.AssertSyncedReserve`), the app port declaring `AssertSyncedBalance`, `internal/ingestion/app/sync.go`
 - Test: `internal/ledger/internal/domain/reconciliation_test.go`, `internal/ingestion/reserve_test.go`
 
 **Interfaces:**
@@ -151,12 +151,12 @@ docs/operations/pluggy.md
 ### Task 5: Transfers between checking and a reserved balance (D4, A76, S70)
 
 **Files:**
-- Modify: `internal/ingestion/internal/pluggy/model.go` (`Transaction.OperationType *string`), `normalize.go` (`ReserveName`, raw `operation_type`), `normalize_test.go`
-- Modify: `internal/ingestion/internal/pluggy/pluggytest/server.go` only if `AddTransaction` drops the new field
-- Modify: `internal/ingestion/internal/domain/record.go` (`NormalizedRecord.ReserveName string`)
-- Modify: `internal/ingestion/internal/app/importer.go` (`Line.TransferTo *uuid.UUID`), `sync.go` (resolution of `ReserveName`)
+- Modify: `internal/ingestion/pluggy/model.go` (`Transaction.OperationType *string`), `normalize.go` (`ReserveName`, raw `operation_type`), `normalize_test.go`
+- Modify: `internal/ingestion/pluggy/pluggytest/server.go` only if `AddTransaction` drops the new field
+- Modify: `internal/ingestion/domain/record.go` (`NormalizedRecord.ReserveName string`)
+- Modify: `internal/ingestion/app/importer.go` (`Line.TransferTo *uuid.UUID`), `sync.go` (resolution of `ReserveName`)
 - Modify: `internal/ingestion/ingestion.go` (`ledgerPort`: a line with `TransferTo` gets `&ledger.ImportDecision{TransferTo: *l.TransferTo, Cause: ledger.Cause{Method: "source"}}` instead of the classification decision)
-- Test: `internal/ingestion/internal/pluggy/normalize_test.go`, `internal/ingestion/reserve_test.go`
+- Test: `internal/ingestion/pluggy/normalize_test.go`, `internal/ingestion/reserve_test.go`
 
 **Interfaces:**
 - `Normalize` sets `ReserveName` when `OperationType` is `TRANSFERENCIA_SALDO_RESERVADO` and the description is `"Dinheiro reservado " + name` with a negative record amount or `"Dinheiro retirado " + name` with a positive one; `name` is the remainder, not trimmed further; else empty.
@@ -164,7 +164,7 @@ docs/operations/pluggy.md
 
 - [ ] **Step 1: Write the failing table test `TestNormalizeReserveTransfer`**: (`TRANSFERENCIA_SALDO_RESERVADO`, "Dinheiro reservado Cofrinho Mercado Livre", `-2000`) → "Cofrinho Mercado Livre"; (same, "Dinheiro retirado Algum dinheiro", `2000`) → "Algum dinheiro"; (same, "Dinheiro reservado X", `10`) → ""; (`PIX`, "Dinheiro reservado X", `-10`) → ""; (nil operation type) → "".
 - [ ] **Step 2: Write the failing test `TestS70ReserveTransfers`**: Mercado Pago checking mapped from 2026-11-01 with an opening balance; "Cofrinho Mercado Livre" → "MP Cofrinho" and "Algum dinheiro" → "MP Algum dinheiro", both from 2026-11-11 with opening balances dated 2026-11-10. Checking lines: 2026-11-11 "Dinheiro reservado Cofrinho Mercado Livre" −200.00; 2026-11-11 "Dinheiro retirado Algum dinheiro" +100.00; 2026-11-11 "Dinheiro retirado Aaa" +50.00; 2026-11-10 "Dinheiro reservado Cofrinho Mercado Livre" −30.00; all with `operationType` `TRANSFERENCIA_SALDO_RESERVADO`. Sync → the first line's transaction has postings Mercado Pago −20000, MP Cofrinho +20000; the second Mercado Pago +10000, MP Algum dinheiro −10000; the third and fourth have no posting on a reserve. A second sync creates no transaction (`created` 0).
-- [ ] **Step 3: Run** `go test ./internal/ingestion/internal/pluggy/ -run TestNormalizeReserveTransfer -count=1` and `go test ./internal/ingestion/ -run TestS70 -count=1` → FAIL.
+- [ ] **Step 3: Run** `go test ./internal/ingestion/pluggy/ -run TestNormalizeReserveTransfer -count=1` and `go test ./internal/ingestion/ -run TestS70 -count=1` → FAIL.
 - [ ] **Step 4: Implement** the model field, normalization, resolution in `syncAccount`, `Line.TransferTo` and the decision in `ledgerPort`.
 - [ ] **Step 5: Run** both tests → PASS; `go test ./internal/ingestion/... -count=1` → PASS; `make check` → exit 0.
 - [ ] **Step 6: Commit** `git commit -m "feat(ingestion): book reserved balance movements as transfers"`.

@@ -3,7 +3,7 @@ package ingestion_test
 import (
 	"testing"
 
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 // S185 (A142): a card payment returned under a second id on another bill waits for review

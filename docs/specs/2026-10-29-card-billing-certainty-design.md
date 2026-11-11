@@ -48,7 +48,7 @@ A card charge or credit has a **provisional** statement while all of the followi
 Every other billed posting has a **settled** statement. Provisional is derived from the stored basis, never stored itself.
 
 The assignment rule of T04 and A86 is unchanged: an explicit statement, else the line's bill, else the first statement closing after the date. Two changes follow:
-- **The institution's bill wins on matching.** When a matched line states its bill, the posting moves to that statement, whatever its origin (manual, capture, import). The automatic match of an import already applies it (`billMatched`, `internal/ingestion/internal/app/importer.go`). The owner's match from the review queue (`review.go`, action `match`) does not: it keeps the predicted statement. A136 applies the line's bill there too.
+- **The institution's bill wins on matching.** When a matched line states its bill, the posting moves to that statement, whatever its origin (manual, capture, import). The automatic match of an import already applies it (`billMatched`, `internal/ingestion/app/importer.go`). The owner's match from the review queue (`review.go`, action `match`) does not: it keeps the predicted statement. A136 applies the line's bill there too.
 - **The owner can choose.** The card purchase forms show the predicted statement. When the date makes it provisional (condition 3), the form also offers the next statement. The explicit statement of T04 records the choice. A posting with an explicit statement chosen by the owner stays provisional until a line or a reconciliation settles it.
 
 ### A137: a closed statement explains its difference

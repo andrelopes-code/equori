@@ -50,7 +50,7 @@ Consequences that follow from the rule without special cases:
 
 - New sqlc query `ListUnconfirmedPostings` in `db/queries/ledger/import.sql`, applying conditions 1, 2, 3 and 5 with the expected date. `ListUnlinkedPostings` stays unchanged: matching (A98–A100) chooses candidates among postings without a record, including reconciled ones.
 - `ledger.Module.UnconfirmedPostings(ctx, userID, accountID, from, to)` returns transaction id, expected date, amount, payee, description and statement id.
-- `ingestion` `Service.Unconfirmed` (`internal/ingestion/internal/app/review.go`) calls it instead of `UnlinkedPostings`. The assistant tool view `unconfirmed` (`toolapi/imports.go`) reads the same service and changes with it.
+- `ingestion` `Service.Unconfirmed` (`internal/ingestion/app/review.go`) calls it instead of `UnlinkedPostings`. The assistant tool view `unconfirmed` (`toolapi/imports.go`) reads the same service and changes with it.
 - `api/openapi.yaml`, `UnconfirmedEntry`: `date` becomes the expected date. Add an optional `statement_id` (uuid), present for a card posting. Update the `listUnconfirmed` description to the rule above. No new operation, so `tool_exposure_test.go` needs no new entry.
 
 ## Web

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 // S234 (A167, A168): the entry of 118.40 and the institution's lines 114.40 and 4.00.

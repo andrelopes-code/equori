@@ -118,8 +118,8 @@ Reason: equality of keys is the only use of a document. The counterparty of a li
 
 | Value | Extension point |
 |---|---|
-| CPF and CNPJ keys | Party identifier scheme (A217): interface `PartyScheme` in `internal/ingestion/internal/domain/party.go`; entries `br_cpf` and `br_cnpj` of `PartySchemes` in the same file, as `IdentifierSchemes` of ledger; no region default: the aggregator adapter names the scheme of each document |
-| `taxNumber`, `paymentData`, `documentNumber.type` | Aggregator (`internal/ingestion/internal/aggregator/pluggy/`) |
+| CPF and CNPJ keys | Party identifier scheme (A217): interface `PartyScheme` in `internal/ingestion/domain/party.go`; entries `br_cpf` and `br_cnpj` of `PartySchemes` in the same file, as `IdentifierSchemes` of ledger; no region default: the aggregator adapter names the scheme of each document |
+| `taxNumber`, `paymentData`, `documentNumber.type` | Aggregator (`internal/ingestion/aggregator/pluggy/`) |
 | Window of 3 days | None: `pairingWindowDays`, not regional |
 
 `docs/contributing/regions.md` gains the row of the party identifier scheme and a checklist step: a scheme is an entry of `PartySchemes`, and an aggregator that relays documents names the scheme of each. The core rules read no region and no scheme identifier.

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 // S346 (A215): a file line with another description or another FITID waits instead of creating

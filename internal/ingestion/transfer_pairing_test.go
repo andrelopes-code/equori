@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 const notGrantedLocks = `SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted

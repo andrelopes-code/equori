@@ -104,7 +104,7 @@ func TestRegistry(t *testing.T) {
 - Test: `internal/platform/textfold/textfold_test.go`
 - Modify: `internal/classification/domain/text.go:8-35` (delete `latinFold`, `latinFirst`, `latinLast`, `fold`; `Normalize` maps words with `textfold.Rune`)
 - Modify: `internal/capture/domain/text.go:9-35` (same deletions; same use)
-- Modify: `internal/ingestion/internal/domain/match.go:246-266` (delete `fold` and `unaccented`; `strings.Map(textfold.Rune, s)`)
+- Modify: `internal/ingestion/domain/match.go:246-266` (delete `fold` and `unaccented`; `strings.Map(textfold.Rune, s)`)
 
 **Interfaces:**
 - Produces: `func Rune(r rune) rune`; `func String(s string) string` (`strings.Map(Rune, s)`; whitespace unchanged).
@@ -711,12 +711,12 @@ Fixture (the ECB format):
 ### Task 22: Aggregator port with identity and capabilities
 
 **Files:**
-- Modify: `internal/ingestion/internal/app/integration.go:41-58` (add to `Aggregator`: `ID() string`, `CredentialFields() []CredentialField`, `ConnectMethod() string`, `MinSyncInterval() time.Duration`, `State(providerStatus string) domain.ConnectionState`)
-- Create: `internal/ingestion/internal/domain/connection_state.go`: `type ConnectionState string`; `StateOK = "ok"`, `StateNeedsOwner = "needs_owner"`, `StateFailed = "failed"`
-- Move: `internal/ingestion/aggregator.go` → `internal/ingestion/internal/aggregator/pluggy/port.go` (package `pluggy`, type `Port`, `func NewPort(baseURL string, hc *http.Client, clk clock.Clock) (*Port, error)`); `internal/ingestion/internal/pluggy/` → `internal/ingestion/internal/aggregator/pluggy/client/` (package `client`; `pluggytest` moves with it)
-- Modify: `internal/ingestion/internal/app/sync.go:16-20` (`blockedStatuses` moves to `Port.State`: those statuses → `needs_owner`, `UPDATED` → `ok`, any other → `failed`; sync reads `Aggregator.State`)
+- Modify: `internal/ingestion/app/integration.go:41-58` (add to `Aggregator`: `ID() string`, `CredentialFields() []CredentialField`, `ConnectMethod() string`, `MinSyncInterval() time.Duration`, `State(providerStatus string) domain.ConnectionState`)
+- Create: `internal/ingestion/domain/connection_state.go`: `type ConnectionState string`; `StateOK = "ok"`, `StateNeedsOwner = "needs_owner"`, `StateFailed = "failed"`
+- Move: `internal/ingestion/aggregator.go` → `internal/ingestion/aggregator/pluggy/port.go` (package `pluggy`, type `Port`, `func NewPort(baseURL string, hc *http.Client, clk clock.Clock) (*Port, error)`); `internal/ingestion/pluggy/` → `internal/ingestion/aggregator/pluggy/client/` (package `client`; `pluggytest` moves with it)
+- Modify: `internal/ingestion/app/sync.go:16-20` (`blockedStatuses` moves to `Port.State`: those statuses → `needs_owner`, `UPDATED` → `ok`, any other → `failed`; sync reads `Aggregator.State`)
 - Modify: `internal/ingestion/ingestion.go:23,42-64` (the module holds `map[string]app.Aggregator` built from a registry; Pluggy is its only entry)
-- Test: `internal/ingestion/internal/aggregator/pluggy/port_test.go`, existing `internal/ingestion/sync_test.go`, `connection_test.go`
+- Test: `internal/ingestion/aggregator/pluggy/port_test.go`, existing `internal/ingestion/sync_test.go`, `connection_test.go`
 
 - [ ] **Step 1: Write the failing test** `TestPluggyPortCapabilities`: `ID()` = `pluggy`; `CredentialFields()` = `[{client_id false} {client_secret true}]`; `ConnectMethod()` = `reference`; `MinSyncInterval()` = `time.Minute`; `State("LOGIN_ERROR")` = `needs_owner`; `State("UPDATED")` = `ok`; `State("ERROR")` = `failed`.
 - [ ] **Step 2:** `go test ./internal/ingestion/... -run 'PluggyPort'` → FAIL.
@@ -727,8 +727,8 @@ Fixture (the ECB format):
 ### Task 23: Generic credentials, aggregator listing, configuration
 
 **Files:**
-- Modify: `internal/ingestion/internal/domain/integration.go:14,39-45` (delete `ProviderPluggy`; `type Credentials map[string]string` with `String`/`GoString` returning `credentials`; `func (c Credentials) Validate(fields []CredentialField) error`: each declared field non-empty, field `credentials.<name>`, message `is required`; an undeclared member: field `credentials.<name>`, message `is not a field of this aggregator`)
-- Modify: integration create/update in `internal/ingestion/internal/app/integration.go` and `internal/ingestion/internal/adapter/httpapi/` (credentials sealed as JSON of the map; ADR 008 unchanged)
+- Modify: `internal/ingestion/domain/integration.go:14,39-45` (delete `ProviderPluggy`; `type Credentials map[string]string` with `String`/`GoString` returning `credentials`; `func (c Credentials) Validate(fields []CredentialField) error`: each declared field non-empty, field `credentials.<name>`, message `is required`; an undeclared member: field `credentials.<name>`, message `is not a field of this aggregator`)
+- Modify: integration create/update in `internal/ingestion/app/integration.go` and `internal/ingestion/httpapi/` (credentials sealed as JSON of the map; ADR 008 unchanged)
 - Modify: `internal/platform/config/config.go:30-31,48,70-72` (delete `PluggyURL`)
 - Modify: `cmd/equori/main.go` `serverConfig` (for each id of `ingestion.AggregatorIDs()`: `EQUORI_AGGREGATOR_<ID>_URL` into `AggregatorURLs`), `internal/server/server.go` (`Config.AggregatorURLs map[string]string`; delete `PluggyURL`), `internal/ingestion/ingestion.go` (`Config.URLs map[string]string`; `func AggregatorIDs() []string`)
 - Modify: `internal/apitest/apitest.go:106-109` (`Aggregator(id, url string) Option` sets `AggregatorURLs[id]` and the secret key; delete `Pluggy`; update callers with `grep -rln 'apitest.Pluggy' internal`)
@@ -746,7 +746,7 @@ Fixture (the ECB format):
 
 **Files:**
 - Create: `db/migrations/00048_aggregator_term.sql`: `ALTER TABLE ingestion_integration RENAME COLUMN provider TO aggregator` and replace its check with the identifier check; same for `classification_source_category` (and its unique constraint keeps working on the renamed column); `ingestion_batch.source` and `ledger_reconciliation.source`: replace `open_finance` with `aggregator` in data and in the checks (`ingestion_batch`: `('ofx','csv','aggregator')`; `ledger_reconciliation`: `('manual','import','aggregator')`)
-- Modify: queries in `db/queries/ingestion/`, `internal/classification/postgres/queries/`, `db/queries/ledger/` that name these columns or values; `internal/classification/classification.go` (`LineCategory.Provider` → `Aggregator`), `internal/classification/app/ports.go:90`, `internal/classification/postgres/source_category.go:30-31`, `internal/ingestion/ingestion.go:154-158`
+- Modify: queries in `internal/ingestion/postgres/queries/`, `internal/classification/postgres/queries/`, `db/queries/ledger/` that name these columns or values; `internal/classification/classification.go` (`LineCategory.Provider` → `Aggregator`), `internal/classification/app/ports.go:90`, `internal/classification/postgres/source_category.go:30-31`, `internal/ingestion/ingestion.go:154-158`
 - Modify: `api/openapi.yaml:3157,3226,4333,4371,4406,4455,4463,4716,4879,2891` (`provider` → `aggregator` with the identifier pattern; `item_id` → `external_id`; the connection gains `state` enum `[ok, needs_owner, failed]`; descriptions name no aggregator; `open_finance` → `aggregator` in both enums)
 - Modify: every Go and web caller reported by `make gen` and `make web-check` failures (web types come from `schema.gen.ts`)
 - Test: `internal/ingestion/schema_test.go`, `internal/classification/source_category_test.go`, `internal/ingestion/connection_test.go`
@@ -760,13 +760,13 @@ Fixture (the ECB format):
 ### Task 25: File encodings
 
 **Files:**
-- Create: `internal/ingestion/internal/charset/registry.go`: `func Decoder(name string) (encoding.Encoding, bool)` for `utf-8`, `windows-1252`, `iso-8859-1`, `iso-8859-15`, `windows-1250`, `windows-1251`, `shift_jis`, `gb18030`, `euc-kr`, `big5`; `func Names() []string` including `auto`
-- Modify: `internal/ingestion/internal/charset/charset.go:15-30` (`func Decode(data []byte, name string) (string, error)`: UTF-8 BOM → strip, UTF-8; `auto` → UTF-8 when valid, else `windows-1252`; named → that decoder; unknown → error). `Text` is deleted; callers use `Decode(data, "auto")`.
-- Modify: `internal/ingestion/internal/ofx/ofx.go:26` (read the SGML header `CHARSET:` (`1252` → `windows-1252`, `ISO-8859-1` → `iso-8859-1`, `UTF-8`/`65001` → `utf-8`) or the XML declaration `encoding="…"` lowercased; else `auto`)
-- Modify: `internal/ingestion/internal/csvfile/csvfile.go:21` (profile encoding)
+- Create: `internal/ingestion/charset/registry.go`: `func Decoder(name string) (encoding.Encoding, bool)` for `utf-8`, `windows-1252`, `iso-8859-1`, `iso-8859-15`, `windows-1250`, `windows-1251`, `shift_jis`, `gb18030`, `euc-kr`, `big5`; `func Names() []string` including `auto`
+- Modify: `internal/ingestion/charset/charset.go:15-30` (`func Decode(data []byte, name string) (string, error)`: UTF-8 BOM → strip, UTF-8; `auto` → UTF-8 when valid, else `windows-1252`; named → that decoder; unknown → error). `Text` is deleted; callers use `Decode(data, "auto")`.
+- Modify: `internal/ingestion/ofx/ofx.go:26` (read the SGML header `CHARSET:` (`1252` → `windows-1252`, `ISO-8859-1` → `iso-8859-1`, `UTF-8`/`65001` → `utf-8`) or the XML declaration `encoding="…"` lowercased; else `auto`)
+- Modify: `internal/ingestion/csvfile/csvfile.go:21` (profile encoding)
 - Create: `db/migrations/00049_ingestion_csv_encoding.sql` (`ADD COLUMN encoding text NOT NULL DEFAULT 'auto' CHECK (encoding ~ '^[a-z0-9_-]{2,40}$')`; the default stays: `auto` is universal)
-- Modify: `internal/ingestion/internal/domain/profile.go` (field `Encoding`, validated against `charset.Names()`, field `encoding`, message `must be one of ...`), CSV profile queries, `api/openapi.yaml` (CSV profile `encoding`, `type: string`, `pattern: "^[a-z0-9_-]{2,40}$"`, default `auto`)
-- Test: `internal/ingestion/internal/charset/charset_test.go`, `internal/ingestion/internal/ofx/ofx_test.go`, `internal/ingestion/profile_test.go`
+- Modify: `internal/ingestion/domain/profile.go` (field `Encoding`, validated against `charset.Names()`, field `encoding`, message `must be one of ...`), CSV profile queries, `api/openapi.yaml` (CSV profile `encoding`, `type: string`, `pattern: "^[a-z0-9_-]{2,40}$"`, default `auto`)
+- Test: `internal/ingestion/charset/charset_test.go`, `internal/ingestion/ofx/ofx_test.go`, `internal/ingestion/profile_test.go`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -801,9 +801,9 @@ OFX: a 1.02 file with `CHARSET:1252` and memo bytes `Caf\xe9` reads `Café`; a 2
 
 **Files:**
 - Create: `db/migrations/00050_ingestion_csv_formats.sql`: replace the `date_layout IN` check (`00010_ingestion.sql:9`) with `CHECK (date_layout ~ '^(DD|MM|YYYY|YY)([/. -])(DD|MM|YYYY|YY)\2(DD|MM|YYYY|YY)$')`; add `group_separator text NOT NULL DEFAULT '' CHECK (group_separator IN (',', '.', ' ', U&'\00A0', '''', ''))`; `UPDATE ingestion_csv_profile SET group_separator = CASE decimal_separator WHEN ',' THEN '.' ELSE ',' END`
-- Modify: `internal/ingestion/internal/domain/profile.go` (layout: each of day, month, year exactly once, field `date_layout`; parse by building a Go layout from the tokens), `internal/ingestion/internal/domain/amount.go:9-30` (`func MinorUnits(s string, decimal, group rune, scale int) (int64, error)`)
+- Modify: `internal/ingestion/domain/profile.go` (layout: each of day, month, year exactly once, field `date_layout`; parse by building a Go layout from the tokens), `internal/ingestion/domain/amount.go:9-30` (`func MinorUnits(s string, decimal, group rune, scale int) (int64, error)`)
 - Modify: `api/openapi.yaml:4675` (pattern of `date_layout`), `:4690` (unchanged decimal enum) and `group_separator` (`enum: [",", ".", " ", " ", "'", ""]`)
-- Test: `internal/ingestion/internal/domain/amount_test.go`, `internal/ingestion/internal/domain/profile_test.go`
+- Test: `internal/ingestion/domain/amount_test.go`, `internal/ingestion/domain/profile_test.go`
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -832,7 +832,7 @@ func TestMinorUnitsConventions(t *testing.T) {
 ```
 
 Profile: layout `DD.MM.YYYY` reads `05.11.2026` as `2026-11-05`; `YYYY/MM/DD` reads `2026/11/05`; `DD/DD/YYYY` → error field `date_layout`.
-- [ ] **Step 2:** `go test ./internal/ingestion/internal/domain/ -run 'MinorUnits|Layout'` → FAIL.
+- [ ] **Step 2:** `go test ./internal/ingestion/domain/ -run 'MinorUnits|Layout'` → FAIL.
 - [ ] **Step 3:** Implement; `make gen`; callers pass the profile's group separator.
 - [ ] **Step 4:** Run → PASS; `go test ./internal/ingestion/...` → PASS.
 - [ ] **Step 5:** Commit `feat(ingestion): read CSV dates and amounts by profile conventions`.

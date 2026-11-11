@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	pluggy "github.com/andrelopes-code/equori/internal/ingestion/internal/aggregator/pluggy/client"
+	pluggy "github.com/andrelopes-code/equori/internal/ingestion/aggregator/pluggy/client"
 )
 
 // parcel is installment k of n of a purchase on 2026-08-24 described as store.

@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/andrelopes-code/equori/internal/ingestion/internal/domain"
+	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
