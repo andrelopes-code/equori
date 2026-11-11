@@ -43,21 +43,6 @@ type Point struct {
 	Balance int64
 }
 
-// Repository reads Ledger tables only through SELECT (ADR 002).
-type Repository interface {
-	FlowRepository
-	CashRepository
-	AnalyticsRepository
-	IndicatorRepository
-	AccountCurrency(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
-	AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
-	Rebuild(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error
-	TreeDailyDeltas(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)
-	AllAccounts(ctx context.Context) ([]AccountRef, error)
-	// CategoryTotals returns every account of the class with its own booked total in [from, to].
-	CategoryTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryRow, error)
-}
-
 type Service struct {
 	repo        Repository
 	commitments Commitments

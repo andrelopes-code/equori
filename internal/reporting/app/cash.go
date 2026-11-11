@@ -55,12 +55,6 @@ type CardFacts struct {
 	Origins    map[uuid.UUID]uuid.UUID
 }
 
-type CashRepository interface {
-	CardFacts(ctx context.Context, booksID int64, to time.Time) (CardFacts, error)
-	// OffCardTotals sums, per category, the postings in [from, to] of transactions without a card line.
-	OffCardTotals(ctx context.Context, booksID int64, from, to time.Time) (Shares, error)
-}
-
 // CashPayment is the amount a card payment gives one category in the cash view, with the
 // statement it pays and the payment's transaction (N20, CV10).
 type CashPayment struct {

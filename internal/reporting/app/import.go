@@ -63,24 +63,6 @@ type ImportResult struct {
 	ProviderKeysRestored int
 }
 
-type ImportRepository interface {
-	// ImportableTables are the tables an archive may carry on this instance.
-	ImportableTables(ctx context.Context) ([]string, error)
-	// Import writes the tables in one transaction (export design E4, steps 2 to 4);
-	// attachments are keyed by the hexadecimal SHA-256 of their bytes. sealed holds the secret of
-	// each integration and of each provider by id; the transaction writes those of the imported
-	// rows and returns their counts (export design C6, T5). A non-empty replace is the book name
-	// that lets the import delete the content of a book that holds facts (export design R2).
-	Import(
-		ctx context.Context,
-		booksID int64,
-		tables []ArchiveTable,
-		attachments map[string][]byte,
-		sealed SealedCredentials,
-		replace string,
-	) ([]TableCount, RestoredCredentials, error)
-}
-
 type archiveManifest struct {
 	Format         string `json:"format"`
 	FormatVersion  int    `json:"format_version"`

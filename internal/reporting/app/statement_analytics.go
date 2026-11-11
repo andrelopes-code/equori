@@ -17,13 +17,6 @@ type StatementRef struct {
 	Reference, Closing, PreviousClosing time.Time
 }
 
-type AnalyticsRepository interface {
-	StatementCard(ctx context.Context, booksID int64, id uuid.UUID) (uuid.UUID, error)
-	// CardStatements returns the card's instrument and statements, newest first.
-	CardStatements(ctx context.Context, booksID int64, cardID uuid.UUID) (string, []StatementRef, error)
-	ChargeCategories(ctx context.Context, booksID int64) (map[uuid.UUID]bool, error)
-}
-
 // StatementParts split what a statement bills; amounts are signed as category postings.
 type StatementParts struct {
 	Purchases, Installments, Charges, Credits int64

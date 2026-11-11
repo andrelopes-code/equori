@@ -63,18 +63,6 @@ type Export struct {
 	ArchiveVersion int
 }
 
-type ExportRepository interface {
-	// RequestExport replaces a finished export with a pending one and publishes
-	// EventExportRequested in the same transaction; ok is false while one is pending.
-	// credentials is the sealed bundle of export design C2, nil for none.
-	RequestExport(ctx context.Context, booksID int64, at time.Time, credentials []byte) (e Export, ok bool, err error)
-	Export(ctx context.Context, booksID int64) (Export, error)
-	ExportContent(ctx context.Context, booksID int64) (Export, []byte, error)
-	// BuildArchive reads every fact of the book from one snapshot (export design E1, E2).
-	BuildArchive(ctx context.Context, booksID int64, at time.Time) ([]byte, error)
-	FinishExport(ctx context.Context, booksID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error
-}
-
 type Clock interface{ Now() time.Time }
 
 // SealedCredentials are the secrets of an archive sealed again for this instance and the importing
@@ -86,19 +74,6 @@ type SealedCredentials struct {
 // RestoredCredentials counts the integrations and the providers whose secret an import wrote.
 type RestoredCredentials struct {
 	Integrations, Providers int
-}
-
-// Credentials is lent by internal/server: the integration credentials and the provider keys of a
-// book, sealed by a passphrase for the archive and sealed again for the instance that imports it
-// (export design C2, C6, T3, T5).
-type Credentials interface {
-	// Bundle seals the secrets of the book under passphrase; nil when it stores none.
-	// ErrCredentialsUnavailable without the instance key.
-	Bundle(ctx context.Context, booksID int64, passphrase string) ([]byte, error)
-	// Reseal opens bundle with passphrase and returns each secret sealed for booksID under the
-	// key of this instance. ErrPassphraseInvalid for a wrong passphrase or a tampered bundle;
-	// ErrCredentialsUnavailable without the instance key.
-	Reseal(booksID int64, passphrase string, bundle []byte) (SealedCredentials, error)
 }
 
 type Exports struct {

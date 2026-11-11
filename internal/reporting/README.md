@@ -8,6 +8,7 @@ Maintains read models derived from the ledger (chapter 4, 4.3.7).
 | Tables | prefix `reporting_`, created in `db/migrations/` |
 | Public API | `reporting.go` |
 | Layers (hand-written files) | `app/` (10), `httpapi/` (5), `toolapi/` (4), `postgres/` (5) |
+| Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (4 files) |
 | Tests | black-box tests in this directory (`*_test.go`: 14); package tests beside each layer |
 

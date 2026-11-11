@@ -7,8 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 var (
@@ -16,30 +14,10 @@ var (
 	ErrPriceMissing = errors.New("price missing")
 )
 
-// Commitments is the committed amount of a month (planning, A57).
-type Commitments interface {
-	CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error)
-}
-
-// Valuations values each account's own balance at the end of a date in the base currency.
-type Valuations interface {
-	ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error)
-}
-
 type IndicatorAccount struct {
 	ID                              uuid.UUID
 	Class, Kind, Instrument         string
 	Interest, ExcludedFromLiquidity bool
-}
-
-type IndicatorRepository interface {
-	BaseCurrency(ctx context.Context, booksID int64) (string, error)
-	// FirstPosting is the earliest booked date of the book's postings that are not voided; ok is false without one.
-	FirstPosting(ctx context.Context, booksID int64) (first time.Time, ok bool, err error)
-	IndicatorAccounts(ctx context.Context, booksID int64) ([]IndicatorAccount, error)
-	// OffCardMonthTotals is OffCardTotals per month, keyed by the first day of the month.
-	OffCardMonthTotals(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]Shares, error)
-	LoanPrincipalByMonth(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]int64, error)
 }
 
 type IndicatorReport struct {

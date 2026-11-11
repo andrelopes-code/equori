@@ -19,12 +19,6 @@ type Flow struct {
 	Outflow int64
 }
 
-// FlowRepository reads the flows of one account, without its sub-accounts.
-type FlowRepository interface {
-	AccountInstrument(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
-	AccountFlows(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]Flow, error)
-}
-
 // Flows returns the days in [from, to] with a booked posting on the account, in its instrument.
 func (s *Service) Flows(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]Flow, string, error) {
 	days := int(to.Sub(from).Hours()/24) + 1
