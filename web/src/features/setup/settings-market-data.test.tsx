@@ -220,4 +220,49 @@ describe("Market data section (ADR 025 F10)", () => {
       }),
     ).toBeNull();
   });
+
+  // A223: the waiting states of the section.
+  it("draws the two cards of the section as placeholders while the feeds load", async () => {
+    const a = api(feeds());
+    const never = (input: RequestInfo | URL, init?: RequestInit) =>
+      new URL(new Request(input, init).url).pathname ===
+      "/api/v1/market-data/feeds"
+        ? new Promise<Response>(() => undefined)
+        : a.fetch(input, init);
+    const fetch: typeof a.fetch = Object.assign(never, {
+      calls: a.fetch.calls,
+    });
+    await open(fetch);
+
+    await waitFor(() => {
+      expect(section().querySelectorAll('[data-ui="card"]')).toHaveLength(2);
+    });
+    expect(
+      section().querySelectorAll('[data-ui="skeleton"]').length,
+    ).toBeGreaterThan(4);
+    expect(within(section()).queryByRole("switch")).toBeNull();
+  });
+
+  it("shows a loader beside the refresh action while a history or a run is pending", async () => {
+    const a = api(
+      feeds({ yahoo_chart: { enabled: true, history_pending: 3 } }),
+    );
+    await open(a.fetch);
+
+    expect(
+      await within(section()).findByRole("progressbar", {
+        name: catalogEn["marketData.working"],
+      }),
+    ).toBeVisible();
+  });
+
+  it("shows no loader when nothing is pending", async () => {
+    const a = api(feeds({ yahoo_chart: { enabled: true } }));
+    await open(a.fetch);
+    await within(section()).findByRole("switch", {
+      name: catalogEn["marketData.feed.yahoo_chart"],
+    });
+
+    expect(within(section()).queryByRole("progressbar")).toBeNull();
+  });
 });

@@ -7,6 +7,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.prices": "Preços",
   "marketData.indexes": "Índices",
   "marketData.refresh": "Atualizar agora",
+  "marketData.working": "Atualizando cotações",
   "marketData.refreshing":
     "A atualização roda em segundo plano; as datas abaixo mudam quando ela termina.",
   "marketData.none":

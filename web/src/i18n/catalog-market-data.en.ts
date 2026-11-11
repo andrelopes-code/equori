@@ -6,6 +6,7 @@ export const marketDataEn = {
   "marketData.prices": "Prices",
   "marketData.indexes": "Indexes",
   "marketData.refresh": "Update now",
+  "marketData.working": "Updating prices",
   "marketData.refreshing":
     "The update runs in the background; the dates below change when it ends.",
   "marketData.none":

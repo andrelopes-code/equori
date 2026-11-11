@@ -5,7 +5,8 @@ import {
   AlertContent,
   AlertDescription,
 } from "@slotted/react/alert";
-import { SkeletonText } from "@slotted/react/skeleton";
+import { Inline } from "@slotted/react/inline";
+import { Loader } from "@slotted/react/progress-indicator";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -19,6 +20,7 @@ import {
   useSetMarketDataFeed,
 } from "@/features/setup/api";
 import { MarketDataFeedRow } from "@/features/setup/market-data-feed-row";
+import { MarketDataPlaceholder } from "@/features/setup/market-data-placeholder";
 import { SettingsGroup } from "@/features/setup/settings-group";
 import { SettingsSection } from "@/features/setup/settings-section";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -68,6 +70,7 @@ export function SettingsMarketData() {
     items.some(
       (f) => runsBefore.has(f.id) && runsBefore.get(f.id) === f.last_run,
     );
+  const working = polling || enabled.some((f) => f.history_pending > 0);
   const failure = set.error ?? refresh.error;
   const regionName =
     region === undefined
@@ -83,9 +86,7 @@ export function SettingsMarketData() {
       {feeds.isError ? (
         <QueryError error={feeds.error} onRetry={() => void feeds.refetch()} />
       ) : feeds.isPending ? (
-        <SettingsGroup>
-          <SkeletonText lines={4} />
-        </SettingsGroup>
+        <MarketDataPlaceholder />
       ) : (
         <>
           {enabled.length === 0 && (
@@ -140,25 +141,32 @@ export function SettingsMarketData() {
           <SettingsGroup
             title={t("marketData.prices")}
             actions={
-              admin && (
-                <Button
-                  variant="outline"
-                  tone="secondary"
-                  disabled={enabled.length === 0}
-                  loading={refresh.isPending}
-                  onClick={() => {
-                    const before = new Map(
-                      enabled.map((f) => [f.id, f.last_run] as const),
-                    );
-                    refresh.mutate(undefined, {
-                      onSuccess: () => {
-                        setRunsBefore(before);
-                      },
-                    });
-                  }}
-                >
-                  {t("marketData.refresh")}
-                </Button>
+              (admin || working) && (
+                <Inline gap={3} align="center">
+                  {working && (
+                    <Loader size="sm" aria-label={t("marketData.working")} />
+                  )}
+                  {admin && (
+                    <Button
+                      variant="outline"
+                      tone="secondary"
+                      disabled={enabled.length === 0}
+                      loading={refresh.isPending}
+                      onClick={() => {
+                        const before = new Map(
+                          enabled.map((f) => [f.id, f.last_run] as const),
+                        );
+                        refresh.mutate(undefined, {
+                          onSuccess: () => {
+                            setRunsBefore(before);
+                          },
+                        });
+                      }}
+                    >
+                      {t("marketData.refresh")}
+                    </Button>
+                  )}
+                </Inline>
               )
             }
           >
