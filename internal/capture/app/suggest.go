@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/capture/domain"
-	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
 // MaxSuggestions is the most descriptions one request asks about (ADR 014 L5).
@@ -39,21 +38,11 @@ type CategoryOption struct {
 	Path  string
 }
 
-// Suggester names, per item, the index of one option or −1 for none.
-type Suggester interface {
-	Suggest(ctx context.Context, l locale.Locale, options []CategoryOption, items []SuggestItem) ([]int, error)
-}
-
 // Hint is a kept answer; CategoryID is zero for "none".
 type Hint struct {
 	Class, Description string
 	CategoryID         uuid.UUID
 	AnsweredAt         time.Time
-}
-
-type HintRepository interface {
-	Hints(ctx context.Context, booksID int64, descriptions []string) ([]Hint, error)
-	SaveHint(ctx context.Context, booksID int64, h Hint) error
 }
 
 // Suggestion is the category named for one item; FromModel is true when this request asked

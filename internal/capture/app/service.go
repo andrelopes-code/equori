@@ -41,16 +41,6 @@ type Payee struct {
 	Name string
 }
 
-// Ledger is what the capture reads from the ledger.
-type Ledger interface {
-	Vocabulary(ctx context.Context, booksID int64) ([]Account, []Payee, error)
-	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
-	// Transactions returns the book's transactions among ids in the order of ids; unknown ids
-	// are omitted.
-	Transactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Transaction, error)
-	Today(ctx context.Context) time.Time
-}
-
 // Entry is an expense or income line, signed as the posting on its account. NamedPayee is
 // the payee whose name equals the description (A113).
 type Entry struct {
@@ -70,21 +60,12 @@ type Decision struct {
 	Tags       []string
 }
 
-type Classifier interface {
-	Decide(ctx context.Context, booksID int64, entries []Entry) ([]Decision, error)
-}
-
 // Line is a read line with the payee and category the owner's books decide for it.
 type Line struct {
 	domain.Line
 	PayeeID        uuid.UUID
 	CategoryID     uuid.UUID
 	CategorySource string
-}
-
-// Profiles supplies the language and region a book's lines are read in.
-type Profiles interface {
-	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
 type Clock interface{ Now() time.Time }
