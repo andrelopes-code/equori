@@ -2,9 +2,11 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
@@ -22,15 +24,24 @@ func toItem(a app.StatementAnalytics) StatementAnalyticsItem {
 	}
 }
 
-func (s *Server) GetStatementAnalytics(ctx context.Context, req GetStatementAnalyticsRequestObject) (GetStatementAnalyticsResponseObject, error) {
-	a, err := s.svc.StatementAnalytics(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) getStatementAnalytics(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (StatementAnalytics, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return StatementAnalytics{}, err
+	}
+
+	a, err := s.svc.StatementAnalytics(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return StatementAnalytics{}, err
 	}
 
 	item := toItem(a)
 
-	out := GetStatementAnalytics200JSONResponse{
+	out := StatementAnalytics{
 		StatementId: item.StatementId, Reference: item.Reference, Purchases: item.Purchases, Installments: item.Installments,
 		Charges: item.Charges, Credits: item.Credits, Total: item.Total, Categories: make([]StatementCategoryParts, len(a.Categories)),
 	}
@@ -44,16 +55,25 @@ func (s *Server) GetStatementAnalytics(ctx context.Context, req GetStatementAnal
 	return out, nil
 }
 
-func (s *Server) GetCardStatementAnalytics(ctx context.Context, req GetCardStatementAnalyticsRequestObject) (GetCardStatementAnalyticsResponseObject, error) {
+func (s *Server) getCardStatementAnalytics(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (CardStatementAnalytics, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return CardStatementAnalytics{}, err
+	}
+
 	now := s.clock.Now()
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
-	as, err := s.svc.CardStatementAnalytics(ctx, auth.MustBooksID(ctx), req.Id, today)
+	as, err := s.svc.CardStatementAnalytics(ctx, auth.MustBooksID(ctx), id, today)
 	if err != nil {
-		return nil, err
+		return CardStatementAnalytics{}, err
 	}
 
-	out := GetCardStatementAnalytics200JSONResponse{Items: make([]StatementAnalyticsItem, len(as))}
+	out := CardStatementAnalytics{Items: make([]StatementAnalyticsItem, len(as))}
 	for i, a := range as {
 		out.Items[i] = toItem(a)
 	}

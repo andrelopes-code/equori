@@ -1,20 +1,16 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 
-	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
 const BaseURL = "/api/v1"
-
-var _ StrictServerInterface = (*Server)(nil)
 
 type Server struct {
 	svc     *app.Service
@@ -28,84 +24,25 @@ func NewServer(svc *app.Service, exports *app.Exports, clk app.Clock, log *slog.
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
-}
-
-func (s *Server) GetBalanceSeries(ctx context.Context, req GetBalanceSeriesRequestObject) (GetBalanceSeriesResponseObject, error) {
-	basis := app.BasisBooked
-	if req.Params.Basis != nil {
-		basis = app.Basis(*req.Params.Basis)
-	}
-
-	points, currency, err := s.svc.Series(ctx, auth.MustBooksID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time, basis)
-	if err != nil {
-		return nil, err
-	}
-
-	out := GetBalanceSeries200JSONResponse{Items: make([]BalancePoint, len(points))}
-	for i, p := range points {
-		out.Items[i] = BalancePoint{Date: dateOf(p), Balance: Money{Amount: p.Balance, Currency: currency}}
-	}
-
-	return out, nil
-}
-
-func (s *Server) GetAccountFlows(ctx context.Context, req GetAccountFlowsRequestObject) (GetAccountFlowsResponseObject, error) {
-	flows, instrument, err := s.svc.Flows(ctx, auth.MustBooksID(ctx), req.Params.AccountId, req.Params.From.Time, req.Params.To.Time)
-	if err != nil {
-		return nil, err
-	}
-
-	out := GetAccountFlows200JSONResponse{Items: make([]FlowDay, len(flows))}
-	for i, f := range flows {
-		out.Items[i] = FlowDay{
-			Date: flowDate(f), Inflow: Money{Amount: f.Inflow, Currency: instrument}, Outflow: Money{Amount: f.Outflow, Currency: instrument},
-		}
-	}
-
-	return out, nil
-}
-
-func (s *Server) GetCategoryTotals(ctx context.Context, req GetCategoryTotalsRequestObject) (GetCategoryTotalsResponseObject, error) {
-	view := app.ViewAccrual
-	if req.Params.View != nil {
-		view = app.View(*req.Params.View)
-	}
-
-	totals, err := s.svc.CategoryTotals(ctx, auth.MustBooksID(ctx), string(req.Params.Class), req.Params.From.Time, req.Params.To.Time, view)
-	if err != nil {
-		return nil, err
-	}
-
-	out := GetCategoryTotals200JSONResponse{Items: make([]CategoryTotal, len(totals))}
-	for i, t := range totals {
-		out.Items[i] = CategoryTotal{
-			AccountId: t.AccountID, Total: Money{Amount: t.Total, Currency: t.Instrument}, SubtreeTotal: Money{Amount: t.SubtreeTotal, Currency: t.Instrument},
-		}
-	}
-
-	return out, nil
-}
-
-func (s *Server) ListCategoryCashPayments(ctx context.Context, req ListCategoryCashPaymentsRequestObject) (ListCategoryCashPaymentsResponseObject, error) {
-	payments, instrument, err := s.svc.CategoryCashPayments(ctx, auth.MustBooksID(ctx), req.Id, req.Params.From.Time, req.Params.To.Time)
-	if err != nil {
-		return nil, err
-	}
-
-	out := ListCategoryCashPayments200JSONResponse{Items: make([]CategoryCashPayment, len(payments))}
-	for i, p := range payments {
-		out.Items[i] = CategoryCashPayment{
-			Date: cashDate(p), Amount: Money{Amount: p.Amount, Currency: instrument},
-			CardAccountId: p.CardID, StatementId: p.StatementID, StatementReference: p.StatementReference.Format("2006-01"), PaymentTransactionId: p.PaymentTransactionID,
-		}
-	}
-
-	return out, nil
+	mux.HandleFunc("POST "+BaseURL+"/exports", s.requestExport)
+	mux.HandleFunc("GET "+BaseURL+"/exports/current",
+		httpserver.Handle(s.errs, http.StatusOK, s.getExport))
+	mux.HandleFunc("GET "+BaseURL+"/exports/current/content", s.getExportContent)
+	mux.HandleFunc("POST "+BaseURL+"/imports/archive", s.importArchive)
+	mux.HandleFunc("GET "+BaseURL+"/statements/{id}/analytics",
+		httpserver.Handle(s.errs, http.StatusOK, s.getStatementAnalytics))
+	mux.HandleFunc("GET "+BaseURL+"/accounts/{id}/statement-analytics",
+		httpserver.Handle(s.errs, http.StatusOK, s.getCardStatementAnalytics))
+	mux.HandleFunc("GET "+BaseURL+"/reports/balances",
+		httpserver.Handle(s.errs, http.StatusOK, s.getBalanceSeries))
+	mux.HandleFunc("GET "+BaseURL+"/reports/flows",
+		httpserver.Handle(s.errs, http.StatusOK, s.getAccountFlows))
+	mux.HandleFunc("GET "+BaseURL+"/reports/categories",
+		httpserver.Handle(s.errs, http.StatusOK, s.getCategoryTotals))
+	mux.HandleFunc("GET "+BaseURL+"/reports/categories/{id}/cash-payments",
+		httpserver.Handle(s.errs, http.StatusOK, s.listCategoryCashPayments))
+	mux.HandleFunc("GET "+BaseURL+"/reports/indicators",
+		httpserver.Handle(s.errs, http.StatusOK, s.getIndicators))
 }
 
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).

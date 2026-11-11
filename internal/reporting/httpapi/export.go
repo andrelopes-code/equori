@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
@@ -39,49 +44,110 @@ func toExport(e app.Export) Export {
 	return out
 }
 
-func (s *Server) RequestExport(ctx context.Context, req RequestExportRequestObject) (RequestExportResponseObject, error) {
+// requestExport is a custom handler: the body is optional and the success status is 202.
+func (s *Server) requestExport(w http.ResponseWriter, r *http.Request) {
+	var body ExportRequest
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil && !errors.Is(err, io.EOF) {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+
+		return
+	}
+
+	ctx := r.Context()
+
 	passphrase := ""
-	if req.Body != nil && req.Body.CredentialsPassphrase != nil {
-		passphrase = *req.Body.CredentialsPassphrase
+	if body.CredentialsPassphrase != nil {
+		passphrase = *body.CredentialsPassphrase
 	}
 
 	// Credentials leave the book only through its owner (export design C1).
 	if passphrase != "" && !auth.MustBookRole(ctx).Allows(auth.RoleOwner) {
-		return nil, app.ErrCredentialsRole
+		s.errs.Write(w, r, app.ErrCredentialsRole)
+
+		return
 	}
 
 	e, err := s.exports.Request(ctx, auth.MustBooksID(ctx), passphrase)
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	return RequestExport202JSONResponse(toExport(e)), nil
+	s.writeJSON(w, r, http.StatusAccepted, toExport(e))
 }
 
-func (s *Server) GetExport(ctx context.Context, _ GetExportRequestObject) (GetExportResponseObject, error) {
+func (s *Server) getExport(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (Export, error) {
 	e, err := s.exports.Get(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return Export{}, err
 	}
 
-	return GetExport200JSONResponse(toExport(e)), nil
+	return toExport(e), nil
 }
 
-func (s *Server) GetExportContent(ctx context.Context, _ GetExportContentRequestObject) (GetExportContentResponseObject, error) {
+// getExportContent is a custom handler: the response is a ZIP with Content-Disposition.
+func (s *Server) getExportContent(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	content, requested, err := s.exports.Content(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	disposition := `attachment; filename="equori-export-` + requested.Format(time.DateOnly) + `.zip"`
+	w.Header().Set("Content-Type", "application/zip")
 
-	return GetExportContent200ApplicationzipResponse{
-		Body: bytes.NewReader(content), ContentLength: int64(len(content)),
-		Headers: GetExportContent200ResponseHeaders{ContentDisposition: &disposition},
-	}, nil
+	if len(content) != 0 {
+		w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+	}
+
+	w.Header().Set(
+		"Content-Disposition",
+		`attachment; filename="equori-export-`+requested.Format(time.DateOnly)+`.zip"`,
+	)
+	w.WriteHeader(http.StatusOK)
+	_, _ = bytes.NewReader(content).WriteTo(w)
 }
 
-func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObject) (ImportArchiveResponseObject, error) {
+// importArchive is a custom handler: the request body is multipart.
+func (s *Server) importArchive(w http.ResponseWriter, r *http.Request) {
+	reader, err := r.MultipartReader()
+	if err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+
+		return
+	}
+
+	out, err := s.restoreArchive(r.Context(), reader)
+	if err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	s.writeJSON(w, r, http.StatusOK, out)
+}
+
+func (s *Server) writeJSON(w http.ResponseWriter, r *http.Request, status int, v any) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(v); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = buf.WriteTo(w)
+}
+
+func (s *Server) restoreArchive(ctx context.Context, body *multipart.Reader) (ArchiveImport, error) {
 	var (
 		archive []byte
 		creds   app.ImportCredentials
@@ -90,13 +156,13 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 	)
 
 	for {
-		part, err := req.Body.NextPart()
+		part, err := body.NextPart()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+			return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 		}
 
 		switch part.FormName() {
@@ -106,28 +172,28 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 			}
 
 			if archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
-				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 			}
 
 			found = true
 		case "passphrase":
 			b, err := io.ReadAll(io.LimitReader(part, maxPassphraseBytes))
 			if err != nil {
-				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 			}
 
 			creds.Passphrase = string(b)
 		case "skip_credentials":
 			b, err := io.ReadAll(io.LimitReader(part, maxFlagBytes))
 			if err != nil {
-				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 			}
 
 			creds.Skip = string(b) == "true"
 		case "replace_books_name":
 			b, err := io.ReadAll(io.LimitReader(part, maxNameBytes))
 			if err != nil {
-				return nil, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 			}
 
 			replace = string(b)
@@ -135,17 +201,17 @@ func (s *Server) ImportArchive(ctx context.Context, req ImportArchiveRequestObje
 	}
 
 	if !found {
-		return nil, errFileRequired
+		return ArchiveImport{}, errFileRequired
 	}
 
 	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, creds, replace)
 	if err != nil {
-		return nil, err
+		return ArchiveImport{}, err
 	}
 
 	counts := res.Tables
 
-	out := ImportArchive200JSONResponse{
+	out := ArchiveImport{
 		ArchiveVersion:       res.ArchiveVersion,
 		CredentialsInArchive: res.CredentialsInArchive,
 		CredentialsRestored:  res.CredentialsRestored,

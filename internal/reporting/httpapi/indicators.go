@@ -2,16 +2,27 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
-func (s *Server) GetIndicators(ctx context.Context, req GetIndicatorsRequestObject) (GetIndicatorsResponseObject, error) {
-	month, err := time.Parse("2006-01", req.Params.Month)
+func (s *Server) getIndicators(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Indicators, error) {
+	params, err := httpserver.Query[GetIndicatorsParams](r)
 	if err != nil {
-		return nil, app.ErrInvalidMonth
+		return Indicators{}, err
+	}
+
+	month, err := time.Parse("2006-01", params.Month)
+	if err != nil {
+		return Indicators{}, app.ErrInvalidMonth
 	}
 
 	now := s.clock.Now()
@@ -19,12 +30,12 @@ func (s *Server) GetIndicators(ctx context.Context, req GetIndicatorsRequestObje
 
 	report, err := s.svc.Indicators(ctx, auth.MustBooksID(ctx), month, today)
 	if err != nil {
-		return nil, err
+		return Indicators{}, err
 	}
 
 	money := func(v int64) Money { return Money{Amount: v, Currency: report.Currency} }
 
-	out := GetIndicators200JSONResponse{Currency: report.Currency, Months: make([]IndicatorMonth, len(report.Months))}
+	out := Indicators{Currency: report.Currency, Months: make([]IndicatorMonth, len(report.Months))}
 	for i, m := range report.Months {
 		out.Months[i] = IndicatorMonth{
 			Month: m.Month.Format("2006-01"), Income: money(m.Income), Expense: money(m.Expense),
