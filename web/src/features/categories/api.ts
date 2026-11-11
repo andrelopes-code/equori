@@ -9,7 +9,7 @@ import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
 import type { components, paths } from "@/api/schema.gen";
 import { accountKeys } from "@/features/accounts";
-import type { CategoryClass } from "@/features/categories/category-paths";
+import type { CategoryClass } from "@/features/categories/model/category-paths";
 
 type AccountInput = components["schemas"]["AccountInput"];
 
