@@ -519,6 +519,36 @@ type PriceList struct {
 // PriceListInterval One point per date up to 400 days, per ISO week up to 3,660 days, per month beyond; a point is the chosen price of the latest date with a price in its period (A222 MQ30).
 type PriceListInterval string
 
+// ProbeInput defines model for ProbeInput.
+type ProbeInput struct {
+	Code          string  `json:"code"`
+	Exchange      *string `json:"exchange,omitempty"`
+	QuoteCurrency string  `json:"quote_currency"`
+
+	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
+	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
+	Type    InstrumentType     `json:"type"`
+}
+
+// ProbeQuote defines model for ProbeQuote.
+type ProbeQuote struct {
+	Date   *openapi_types.Date `json:"date"`
+	Error  *string             `json:"error"`
+	Source string              `json:"source"`
+
+	// Value The price in the quote currency of the request; an exact decimal.
+	Value *string `json:"value"`
+}
+
+// ProbeResult defines model for ProbeResult.
+type ProbeResult struct {
+	// Available The disabled sources that would quote the instrument.
+	Available []string `json:"available"`
+
+	// Quotes One item per enabled source that would quote the instrument.
+	Quotes []ProbeQuote `json:"quotes"`
+}
+
 // Problem defines model for Problem.
 type Problem struct {
 	// ArchiveVersion The archive_version of a refused archive (archive_too_new, ADR 021).
@@ -613,6 +643,9 @@ type PutInstrumentTermsJSONRequestBody = FixedIncomeTermsInput
 // SetMarketDataFeedJSONRequestBody defines body for SetMarketDataFeed for application/json ContentType.
 type SetMarketDataFeedJSONRequestBody = MarketDataFeedInput
 
+// ProbeQuoteJSONRequestBody defines body for ProbeQuote for application/json ContentType.
+type ProbeQuoteJSONRequestBody = ProbeInput
+
 // RecordPriceJSONRequestBody defines body for RecordPrice for application/json ContentType.
 type RecordPriceJSONRequestBody = PriceInput
 
@@ -666,6 +699,9 @@ type ServerInterface interface {
 	// SetMarketDataFeed Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
 	// (PUT /market-data/feeds/{id})
 	SetMarketDataFeed(w http.ResponseWriter, r *http.Request, id string)
+	// ProbeQuote The latest quote each enabled source gives for an instrument not yet defined; nothing is stored (A222 MQ27).
+	// (POST /market-data/probe)
+	ProbeQuote(w http.ResponseWriter, r *http.Request)
 	// RefreshMarketData Run the enabled feeds now; admin only (ADR 025 F7, F8).
 	// (POST /market-data/refresh)
 	RefreshMarketData(w http.ResponseWriter, r *http.Request)
@@ -1090,6 +1126,20 @@ func (siw *ServerInterfaceWrapper) SetMarketDataFeed(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// ProbeQuote operation middleware
+func (siw *ServerInterfaceWrapper) ProbeQuote(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ProbeQuote(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RefreshMarketData operation middleware
 func (siw *ServerInterfaceWrapper) RefreshMarketData(w http.ResponseWriter, r *http.Request) {
 
@@ -1333,6 +1383,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/market-data/feeds/{id}", wrapper.SetMarketDataFeed)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/market-data/refresh", wrapper.RefreshMarketData)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/market-data/catalog", wrapper.SearchInstrumentCatalog)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/market-data/probe", wrapper.ProbeQuote)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments", wrapper.ListInstruments)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/instruments", wrapper.DefineInstrument)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instruments/{code}", wrapper.GetInstrument)
@@ -2332,6 +2383,72 @@ func (response SetMarketDataFeed422ApplicationProblemPlusJSONResponse) VisitSetM
 	return err
 }
 
+type ProbeQuoteRequestObject struct {
+	Body *ProbeQuoteJSONRequestBody
+}
+
+type ProbeQuoteResponseObject interface {
+	VisitProbeQuoteResponse(w http.ResponseWriter) error
+}
+
+type ProbeQuote200JSONResponse ProbeResult
+
+func (response ProbeQuote200JSONResponse) VisitProbeQuoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProbeQuote400ApplicationProblemPlusJSONResponse struct {
+	ProblemApplicationProblemPlusJSONResponse
+}
+
+func (response ProbeQuote400ApplicationProblemPlusJSONResponse) VisitProbeQuoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProbeQuote401ApplicationProblemPlusJSONResponse Problem
+
+func (response ProbeQuote401ApplicationProblemPlusJSONResponse) VisitProbeQuoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ProbeQuote422ApplicationProblemPlusJSONResponse Problem
+
+func (response ProbeQuote422ApplicationProblemPlusJSONResponse) VisitProbeQuoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RefreshMarketDataRequestObject struct {
 }
 
@@ -2650,6 +2767,9 @@ type StrictServerInterface interface {
 	// SetMarketDataFeed Enable or disable a feed for the whole instance; admin only (ADR 025 F6, F8).
 	// (PUT /market-data/feeds/{id})
 	SetMarketDataFeed(ctx context.Context, request SetMarketDataFeedRequestObject) (SetMarketDataFeedResponseObject, error)
+	// ProbeQuote The latest quote each enabled source gives for an instrument not yet defined; nothing is stored (A222 MQ27).
+	// (POST /market-data/probe)
+	ProbeQuote(ctx context.Context, request ProbeQuoteRequestObject) (ProbeQuoteResponseObject, error)
 	// RefreshMarketData Run the enabled feeds now; admin only (ADR 025 F7, F8).
 	// (POST /market-data/refresh)
 	RefreshMarketData(ctx context.Context, request RefreshMarketDataRequestObject) (RefreshMarketDataResponseObject, error)
@@ -3115,6 +3235,37 @@ func (sh *strictHandler) SetMarketDataFeed(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetMarketDataFeedResponseObject); ok {
 		if err := validResponse.VisitSetMarketDataFeedResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ProbeQuote operation middleware
+func (sh *strictHandler) ProbeQuote(w http.ResponseWriter, r *http.Request) {
+	var request ProbeQuoteRequestObject
+
+	var body ProbeQuoteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ProbeQuote(ctx, request.(ProbeQuoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ProbeQuote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ProbeQuoteResponseObject); ok {
+		if err := validResponse.VisitProbeQuoteResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

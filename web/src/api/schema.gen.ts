@@ -1773,6 +1773,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market-data/probe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** The latest quote each enabled source gives for an instrument not yet defined; nothing is stored (A222 MQ27). */
+        post: operations["probeQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instruments": {
         parameters: {
             query?: never;
@@ -5525,6 +5542,27 @@ export interface components {
             items: components["schemas"]["CatalogListing"][];
             /** @description The enabled sources that failed or passed their bound. */
             unavailable: string[];
+        };
+        ProbeInput: {
+            code: string;
+            type: components["schemas"]["InstrumentType"];
+            exchange?: string;
+            quote_currency: string;
+            symbols?: components["schemas"]["InstrumentSymbols"];
+        };
+        ProbeQuote: {
+            source: string;
+            /** Format: date */
+            date: string | null;
+            /** @description The price in the quote currency of the request; an exact decimal. */
+            value: string | null;
+            error: string | null;
+        };
+        ProbeResult: {
+            /** @description One item per enabled source that would quote the instrument. */
+            quotes: components["schemas"]["ProbeQuote"][];
+            /** @description The disabled sources that would quote the instrument. */
+            available: string[];
         };
         InstrumentHistoryInput: {
             /** Format: date */
@@ -9901,6 +9939,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogSearch"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    probeQuote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProbeInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProbeResult"];
                 };
             };
             400: components["responses"]["Problem"];

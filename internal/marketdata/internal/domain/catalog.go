@@ -1,6 +1,10 @@
 package domain
 
-import "github.com/andrelopes-code/equori/internal/platform/money"
+import (
+	"time"
+
+	"github.com/andrelopes-code/equori/internal/platform/money"
+)
 
 // Listing is a catalog entry of one source, marked when the instance defines its code (A222 MQ29).
 type Listing struct {
@@ -18,4 +22,18 @@ type Listing struct {
 type CatalogResult struct {
 	Items       []Listing
 	Unavailable []string
+}
+
+// ProbeQuote is what one enabled source answered for an instrument not yet defined (A222 MQ27).
+type ProbeQuote struct {
+	Source string
+	Date   *time.Time // nil when the source returned no quote
+	Value  money.Rate
+	Error  string // empty when the source did not fail
+}
+
+// ProbeResult is the answer of a probe.
+type ProbeResult struct {
+	Quotes    []ProbeQuote
+	Available []string
 }

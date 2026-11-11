@@ -27,6 +27,7 @@ var exclusions = map[string]bool{
 	"-llm":      true, // language model credentials, endpoints and the chat itself are never handed to a language model (ADR 019)
 	"-secret":   true, // credentials and the aggregator's connect flow
 	"-file":     true, // file content or the reading of files
+	"-dialog":   true, // a check the define dialog runs while a person types; the catalog view covers a language model (A222 S1)
 	"-visual":   true, // colour, icon and logo identifiers chosen by looking at them
 	"-setup":    true, // the base currency changes only before the first transaction, during provisioning
 	"-instance": true, // the instance's outbound sources are chosen by an admin, not handed to a language model (ADR 025)
