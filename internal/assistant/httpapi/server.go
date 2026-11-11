@@ -19,8 +19,6 @@ import (
 
 const BaseURL = "/api/v1"
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	svc  *app.Service
 	errs httpserver.ErrorWriter
@@ -31,12 +29,45 @@ func NewServer(svc *app.Service, log *slog.Logger) *Server {
 	return &Server{svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: toProblem}, log: log}
 }
 
+// Register lists every route of the assistant operations; each handler sits in its topic file.
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/assistant/presets",
+		httpserver.Handle(s.errs, http.StatusOK, s.listPresets))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/providers",
+		httpserver.Handle(s.errs, http.StatusOK, s.listProviders))
+	mux.HandleFunc("POST "+BaseURL+"/assistant/providers",
+		httpserver.Handle(s.errs, http.StatusCreated, s.createProvider))
+	mux.HandleFunc("PATCH "+BaseURL+"/assistant/providers/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.updateProvider))
+	mux.HandleFunc("DELETE "+BaseURL+"/assistant/providers/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteProvider))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/providers/{id}/models",
+		httpserver.Handle(s.errs, http.StatusOK, s.listProviderModels))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/usage",
+		httpserver.Handle(s.errs, http.StatusOK, s.listUsage))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/usage/days",
+		httpserver.Handle(s.errs, http.StatusOK, s.listUsageDays))
+	mux.HandleFunc("PUT "+BaseURL+"/assistant/usage/limits",
+		httpserver.Handle(s.errs, http.StatusOK, s.setUsageLimit))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/chat",
+		httpserver.Handle(s.errs, http.StatusOK, s.getAssistantChat))
+	mux.HandleFunc("POST "+BaseURL+"/assistant/turns", s.sendAssistantMessage)
+	mux.HandleFunc("GET "+BaseURL+"/assistant/conversations",
+		httpserver.Handle(s.errs, http.StatusOK, s.listAssistantConversations))
+	mux.HandleFunc("DELETE "+BaseURL+"/assistant/conversations",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteAssistantConversations))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/conversations/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getAssistantConversation))
+	mux.HandleFunc("DELETE "+BaseURL+"/assistant/conversations/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteAssistantConversation))
+	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/confirm",
+		httpserver.Handle(s.errs, http.StatusOK, s.confirmAssistantProposal))
+	mux.HandleFunc("POST "+BaseURL+"/assistant/proposals/{id}/reject",
+		httpserver.Handle(s.errs, http.StatusOK, s.rejectAssistantProposal))
+	mux.HandleFunc("GET "+BaseURL+"/assistant/uses",
+		httpserver.Handle(s.errs, http.StatusOK, s.listUses))
+	mux.HandleFunc("PUT "+BaseURL+"/assistant/uses/{use}/chain",
+		httpserver.Handle(s.errs, http.StatusOK, s.setUseChain))
 }
 
 // toProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
@@ -117,7 +148,7 @@ func toProvider(v app.ProviderView) Provider {
 	return Provider{Id: v.ID, Preset: v.Preset, Name: v.Name, BaseUrl: v.BaseURL, HasKey: v.HasKey, Notice: Notice(v.Notice), Instance: v.Instance}
 }
 
-func (s *Server) ListPresets(context.Context, ListPresetsRequestObject) (ListPresetsResponseObject, error) {
+func (s *Server) listPresets(context.Context, *http.Request, httpserver.None) (PresetList, error) {
 	presets := s.svc.Presets()
 
 	items := make([]Preset, len(presets))
@@ -130,13 +161,13 @@ func (s *Server) ListPresets(context.Context, ListPresetsRequestObject) (ListPre
 		items[i] = Preset{Id: p.ID, Api: string(p.API), BaseUrl: p.BaseURL, KeyRequired: p.KeyRequired, Notice: Notice(p.Notice), Models: models}
 	}
 
-	return ListPresets200JSONResponse{Items: items}, nil
+	return PresetList{Items: items}, nil
 }
 
-func (s *Server) ListProviders(ctx context.Context, _ ListProvidersRequestObject) (ListProvidersResponseObject, error) {
+func (s *Server) listProviders(ctx context.Context, _ *http.Request, _ httpserver.None) (ProviderList, error) {
 	views, err := s.svc.Providers(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return ProviderList{}, err
 	}
 
 	items := make([]Provider, len(views))
@@ -144,7 +175,7 @@ func (s *Server) ListProviders(ctx context.Context, _ ListProvidersRequestObject
 		items[i] = toProvider(v)
 	}
 
-	return ListProviders200JSONResponse{Items: items}, nil
+	return ProviderList{Items: items}, nil
 }
 
 func value(p *string) string {
@@ -155,49 +186,62 @@ func value(p *string) string {
 	return *p
 }
 
-func (s *Server) CreateProvider(ctx context.Context, req CreateProviderRequestObject) (CreateProviderResponseObject, error) {
-	b := req.Body
-
+func (s *Server) createProvider(ctx context.Context, _ *http.Request, in CreateProviderJSONRequestBody) (Provider, error) {
 	v, err := s.svc.CreateProvider(ctx, auth.MustBooksID(ctx), app.ProviderInput{
-		Preset: b.Preset, Name: b.Name, BaseURL: value(b.BaseUrl), Key: value(b.Key),
+		Preset: in.Preset, Name: in.Name, BaseURL: value(in.BaseUrl), Key: value(in.Key),
 	})
 	if err != nil {
-		return nil, err
+		return Provider{}, err
 	}
 
-	return CreateProvider201JSONResponse(toProvider(v)), nil
+	return toProvider(v), nil
 }
 
-func (s *Server) UpdateProvider(ctx context.Context, req UpdateProviderRequestObject) (UpdateProviderResponseObject, error) {
-	v, err := s.svc.UpdateProvider(ctx, auth.MustBooksID(ctx), req.Id, app.ProviderPatch{
-		Name: req.Body.Name, BaseURL: req.Body.BaseUrl, Key: req.Body.Key,
+func (s *Server) updateProvider(ctx context.Context, r *http.Request, in UpdateProviderJSONRequestBody) (Provider, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Provider{}, err
+	}
+
+	v, err := s.svc.UpdateProvider(ctx, auth.MustBooksID(ctx), id, app.ProviderPatch{
+		Name: in.Name, BaseURL: in.BaseUrl, Key: in.Key,
 	})
 	if err != nil {
-		return nil, err
+		return Provider{}, err
 	}
 
-	return UpdateProvider200JSONResponse(toProvider(v)), nil
+	return toProvider(v), nil
 }
 
-func (s *Server) DeleteProvider(ctx context.Context, req DeleteProviderRequestObject) (DeleteProviderResponseObject, error) {
-	if err := s.svc.DeleteProvider(ctx, auth.MustBooksID(ctx), req.Id); err != nil {
-		return nil, err
-	}
-
-	return DeleteProvider204Response{}, nil
-}
-
-func (s *Server) ListProviderModels(ctx context.Context, req ListProviderModelsRequestObject) (ListProviderModelsResponseObject, error) {
-	ids, err := s.svc.ProviderModels(ctx, auth.MustBooksID(ctx), req.Id)
+func (s *Server) deleteProvider(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return httpserver.None{}, err
+	}
+
+	if err := s.svc.DeleteProvider(ctx, auth.MustBooksID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
+}
+
+func (s *Server) listProviderModels(ctx context.Context, r *http.Request, _ httpserver.None) (ProviderModels, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return ProviderModels{}, err
+	}
+
+	ids, err := s.svc.ProviderModels(ctx, auth.MustBooksID(ctx), id)
+	if err != nil {
+		return ProviderModels{}, err
 	}
 
 	if ids == nil {
 		ids = []string{}
 	}
 
-	return ListProviderModels200JSONResponse{Items: ids}, nil
+	return ProviderModels{Items: ids}, nil
 }
 
 func toUse(v app.UseView) Use {
@@ -213,10 +257,10 @@ func toUse(v app.UseView) Use {
 	return Use{Id: v.Use.ID, Needs: caps(v.Use.Needs), SendsFinancialData: v.Use.SendsFinancialData, Default: v.Default, Targets: targets}
 }
 
-func (s *Server) ListUses(ctx context.Context, _ ListUsesRequestObject) (ListUsesResponseObject, error) {
+func (s *Server) listUses(ctx context.Context, _ *http.Request, _ httpserver.None) (UseList, error) {
 	views, err := s.svc.Uses(ctx, auth.MustBooksID(ctx))
 	if err != nil {
-		return nil, err
+		return UseList{}, err
 	}
 
 	items := make([]Use, len(views))
@@ -224,14 +268,15 @@ func (s *Server) ListUses(ctx context.Context, _ ListUsesRequestObject) (ListUse
 		items[i] = toUse(v)
 	}
 
-	return ListUses200JSONResponse{Items: items}, nil
+	return UseList{Items: items}, nil
 }
 
-func (s *Server) SetUseChain(ctx context.Context, req SetUseChainRequestObject) (SetUseChainResponseObject, error) {
+func (s *Server) setUseChain(ctx context.Context, r *http.Request, body SetUseChainJSONRequestBody) (Use, error) {
 	booksID := auth.MustBooksID(ctx)
+	use := r.PathValue("use")
 
-	in := make([]app.ChainInput, len(req.Body.Targets))
-	for i, t := range req.Body.Targets {
+	in := make([]app.ChainInput, len(body.Targets))
+	for i, t := range body.Targets {
 		in[i] = app.ChainInput{ProviderID: uuid.UUID(t.ProviderId), Model: t.Model}
 		if t.Capabilities != nil {
 			for _, c := range *t.Capabilities {
@@ -240,16 +285,16 @@ func (s *Server) SetUseChain(ctx context.Context, req SetUseChainRequestObject) 
 		}
 	}
 
-	if err := s.svc.SetChain(ctx, booksID, req.Use, in); err != nil {
-		return nil, err
+	if err := s.svc.SetChain(ctx, booksID, use, in); err != nil {
+		return Use{}, err
 	}
 
 	views, err := s.svc.Uses(ctx, booksID)
 	if err != nil {
-		return nil, err
+		return Use{}, err
 	}
 
-	i := slices.IndexFunc(views, func(v app.UseView) bool { return v.Use.ID == req.Use })
+	i := slices.IndexFunc(views, func(v app.UseView) bool { return v.Use.ID == use })
 
-	return SetUseChain200JSONResponse(toUse(views[i])), nil
+	return toUse(views[i]), nil
 }

@@ -3,10 +3,12 @@ package httpapi
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/assistant/app"
 	"github.com/andrelopes-code/equori/internal/assistant/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
@@ -39,20 +41,25 @@ func (s *Server) toMessage(m domain.Message, proposals []domain.Proposal) (Assis
 	return out, nil
 }
 
-func (s *Server) ListAssistantConversations(ctx context.Context, req ListAssistantConversationsRequestObject) (ListAssistantConversationsResponseObject, error) {
-	r, err := page.Read[app.ConversationKey](req.Params.Limit, req.Params.Cursor)
-	switch {
-	case errors.Is(err, page.ErrInvalidLimit):
-		return nil, &domain.FieldError{Field: "limit", Message: "must be between 1 and 200"}
-	case errors.Is(err, page.ErrInvalidCursor):
-		return nil, &domain.FieldError{Field: "cursor", Message: "is not a cursor of this list"}
-	case err != nil:
-		return nil, err
+func (s *Server) listAssistantConversations(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantConversationPage, error) {
+	params, err := httpserver.Query[ListAssistantConversationsParams](r)
+	if err != nil {
+		return AssistantConversationPage{}, err
 	}
 
-	rows, next, err := s.svc.ConversationPage(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), r.After, r.Limit)
+	pr, err := page.Read[app.ConversationKey](params.Limit, params.Cursor)
+	switch {
+	case errors.Is(err, page.ErrInvalidLimit):
+		return AssistantConversationPage{}, &domain.FieldError{Field: "limit", Message: "must be between 1 and 200"}
+	case errors.Is(err, page.ErrInvalidCursor):
+		return AssistantConversationPage{}, &domain.FieldError{Field: "cursor", Message: "is not a cursor of this list"}
+	case err != nil:
+		return AssistantConversationPage{}, err
+	}
+
+	rows, next, err := s.svc.ConversationPage(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), pr.After, pr.Limit)
 	if err != nil {
-		return nil, err
+		return AssistantConversationPage{}, err
 	}
 
 	out := AssistantConversationPage{Items: make([]AssistantConversation, len(rows))}
@@ -61,16 +68,21 @@ func (s *Server) ListAssistantConversations(ctx context.Context, req ListAssista
 	}
 
 	if out.NextCursor, err = page.Next(next); err != nil {
-		return nil, err
+		return AssistantConversationPage{}, err
 	}
 
-	return ListAssistantConversations200JSONResponse(out), nil
+	return out, nil
 }
 
-func (s *Server) GetAssistantConversation(ctx context.Context, req GetAssistantConversationRequestObject) (GetAssistantConversationResponseObject, error) {
-	d, err := s.svc.Conversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id)
+func (s *Server) getAssistantConversation(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantConversationDetail, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return AssistantConversationDetail{}, err
+	}
+
+	d, err := s.svc.Conversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), id)
+	if err != nil {
+		return AssistantConversationDetail{}, err
 	}
 
 	c := d.Conversation
@@ -78,25 +90,30 @@ func (s *Server) GetAssistantConversation(ctx context.Context, req GetAssistantC
 	out := AssistantConversationDetail{Id: c.ID, Title: c.Title, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt, Messages: make([]AssistantMessage, len(d.Messages))}
 	for i, m := range d.Messages {
 		if out.Messages[i], err = s.toMessage(m, d.Proposals); err != nil {
-			return nil, err
+			return AssistantConversationDetail{}, err
 		}
 	}
 
-	return GetAssistantConversation200JSONResponse(out), nil
+	return out, nil
 }
 
-func (s *Server) DeleteAssistantConversation(ctx context.Context, req DeleteAssistantConversationRequestObject) (DeleteAssistantConversationResponseObject, error) {
-	if err := s.svc.DeleteConversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id); err != nil {
-		return nil, err
+func (s *Server) deleteAssistantConversation(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return httpserver.None{}, err
 	}
 
-	return DeleteAssistantConversation204Response{}, nil
+	if err := s.svc.DeleteConversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), id); err != nil {
+		return httpserver.None{}, err
+	}
+
+	return httpserver.None{}, nil
 }
 
-func (s *Server) DeleteAssistantConversations(ctx context.Context, _ DeleteAssistantConversationsRequestObject) (DeleteAssistantConversationsResponseObject, error) {
+func (s *Server) deleteAssistantConversations(ctx context.Context, _ *http.Request, _ httpserver.None) (httpserver.None, error) {
 	if err := s.svc.DeleteConversations(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx)); err != nil {
-		return nil, err
+		return httpserver.None{}, err
 	}
 
-	return DeleteAssistantConversations204Response{}, nil
+	return httpserver.None{}, nil
 }

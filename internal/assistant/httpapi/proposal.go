@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/assistant/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
 // toProposal converts a stored proposal; a pending or waiting proposal past its expiry reads as expired.
@@ -50,24 +52,30 @@ func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
 	return out, nil
 }
 
-func (s *Server) ConfirmAssistantProposal(ctx context.Context, req ConfirmAssistantProposalRequestObject) (ConfirmAssistantProposalResponseObject, error) {
-	p, err := s.svc.Confirm(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id)
+func (s *Server) confirmAssistantProposal(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantProposal, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return AssistantProposal{}, err
 	}
 
-	out, err := s.toProposal(p)
+	p, err := s.svc.Confirm(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), id)
+	if err != nil {
+		return AssistantProposal{}, err
+	}
 
-	return ConfirmAssistantProposal200JSONResponse(out), err
+	return s.toProposal(p)
 }
 
-func (s *Server) RejectAssistantProposal(ctx context.Context, req RejectAssistantProposalRequestObject) (RejectAssistantProposalResponseObject, error) {
-	p, err := s.svc.Reject(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), req.Id)
+func (s *Server) rejectAssistantProposal(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantProposal, error) {
+	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
-		return nil, err
+		return AssistantProposal{}, err
 	}
 
-	out, err := s.toProposal(p)
+	p, err := s.svc.Reject(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), id)
+	if err != nil {
+		return AssistantProposal{}, err
+	}
 
-	return RejectAssistantProposal200JSONResponse(out), err
+	return s.toProposal(p)
 }

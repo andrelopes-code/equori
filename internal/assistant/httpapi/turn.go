@@ -15,34 +15,32 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 )
 
-// turnStream is the response of sendAssistantMessage: it runs the turn while it writes the event stream, so
-// the strict handler's visitor gives it the response writer.
-type turnStream struct {
-	run func(w http.ResponseWriter) error
-}
+// sendAssistantMessage runs the turn while it writes the event stream; an error before the first event
+// answers a problem.
+func (s *Server) sendAssistantMessage(w http.ResponseWriter, r *http.Request) {
+	var body SendAssistantMessageJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 
-func (t turnStream) VisitSendAssistantMessageResponse(w http.ResponseWriter) error { return t.run(w) }
+		return
+	}
 
-func (s *Server) SendAssistantMessage(ctx context.Context, req SendAssistantMessageRequestObject) (SendAssistantMessageResponseObject, error) {
+	ctx := r.Context()
 	booksID, memberID := auth.MustBooksID(ctx), auth.MustMemberID(ctx)
 
-	in := app.TurnInput{Text: req.Body.Text}
-	if req.Body.ConversationId != nil {
-		in.ConversationID = *req.Body.ConversationId
+	in := app.TurnInput{Text: body.Text}
+	if body.ConversationId != nil {
+		in.ConversationID = *body.ConversationId
 	}
 
-	if req.Body.Page != nil {
-		in.Page = *req.Body.Page
+	if body.Page != nil {
+		in.Page = *body.Page
 	}
 
-	return turnStream{run: func(w http.ResponseWriter) error {
-		st := &eventStream{s: s, ctx: ctx, w: w, rc: http.NewResponseController(w)}
-		if err := s.svc.Turn(ctx, booksID, memberID, in, st); err != nil {
-			s.writeProblem(ctx, w, err)
-		}
-
-		return nil
-	}}, nil
+	st := &eventStream{s: s, ctx: ctx, w: w, rc: http.NewResponseController(w)}
+	if err := s.svc.Turn(ctx, booksID, memberID, in, st); err != nil {
+		s.writeProblem(ctx, w, err)
+	}
 }
 
 func (s *Server) problemOf(ctx context.Context, err error) problem.Details {
