@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { sendMessage } from "@/features/assistant/api";
-import type { AssistantEvent } from "@/features/assistant/sse";
+import type { AssistantEvent } from "@/features/assistant/model/sse";
 import { problem } from "@/testing/fake-api";
 
 function stream(...frames: string[]): Response {

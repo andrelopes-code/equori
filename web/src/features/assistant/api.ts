@@ -4,8 +4,8 @@ import type { Client } from "openapi-fetch";
 import { useApi } from "@/api/api-context";
 import { parseProblem, unwrap } from "@/api/problem";
 import type { paths } from "@/api/schema.gen";
-import { parseEvents } from "@/features/assistant/sse";
-import type { AssistantEvent } from "@/features/assistant/sse";
+import { parseEvents } from "@/features/assistant/model/sse";
+import type { AssistantEvent } from "@/features/assistant/model/sse";
 
 export const assistantKeys = {
   all: ["assistant"] as const,

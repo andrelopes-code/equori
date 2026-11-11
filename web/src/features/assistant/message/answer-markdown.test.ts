@@ -1,0 +1,89 @@
+import type { MarkdownNode } from "@slotted/core/markdown";
+import { describe, expect, it } from "vitest";
+
+import { parseAnswer } from "@/features/assistant/message/answer-markdown";
+
+function find(node: MarkdownNode, type: string): MarkdownNode[] {
+  return [
+    ...(node.type === type ? [node] : []),
+    ...(node.children ?? []).flatMap((child) => find(child, type)),
+  ];
+}
+
+function text(node: MarkdownNode): string {
+  return (
+    (node.value ?? "") + (node.children ?? []).map((c) => text(c)).join("")
+  );
+}
+
+describe("parseAnswer", () => {
+  it("reads paragraphs, lists, bold and a link to a screen", () => {
+    const tree = parseAnswer("Total:\n\n- **Food** 10\n- [Cards](/cards)");
+    expect((tree.children ?? []).map((n) => n.type)).toEqual([
+      "paragraph",
+      "list",
+    ]);
+    const list = find(tree, "list")[0];
+    expect(list?.ordered).toBe(false);
+    expect(find(tree, "listItem")).toHaveLength(2);
+    expect(find(tree, "strong").map(text)).toEqual(["Food"]);
+    expect(find(tree, "link")[0]?.url).toBe("/cards");
+  });
+
+  it("reads a numbered list", () => {
+    const list = find(parseAnswer("1. one\n2. two"), "list")[0];
+    expect(list?.ordered).toBe(true);
+    expect(list?.children).toHaveLength(2);
+  });
+
+  it("keeps a link with another scheme as literal text", () => {
+    const tree = parseAnswer("[x](javascript:alert(1))");
+    expect(find(tree, "link")).toHaveLength(0);
+    expect(text(tree)).toBe("[x](javascript:alert(1))");
+  });
+
+  it("keeps a protocol-relative link as literal text", () => {
+    expect(find(parseAnswer("[x](//evil.test)"), "link")).toHaveLength(0);
+  });
+
+  it("reads a heading as a bold paragraph", () => {
+    const tree = parseAnswer("### Option 1\n\nBody");
+    expect(find(tree, "heading")).toHaveLength(0);
+    expect((tree.children ?? []).map((n) => n.type)).toEqual([
+      "paragraph",
+      "paragraph",
+    ]);
+    expect(find(tree, "strong").map(text)).toEqual(["Option 1"]);
+    expect(text(tree)).toBe("Option 1Body");
+  });
+
+  it("drops a horizontal rule", () => {
+    const tree = parseAnswer("One\n\n---\n\nTwo");
+    expect(find(tree, "thematicBreak")).toHaveLength(0);
+    expect(text(tree)).toBe("OneTwo");
+  });
+
+  it("reads a GFM table with its alignment", () => {
+    const tree = parseAnswer(
+      "Totals:\n\n| Category | Oct |\n| :--- | ---: |\n| Food | 1 |\n| Rent | 2 |",
+    );
+    const table = find(tree, "table")[0];
+    expect(table?.align).toEqual(["left", "right"]);
+    expect(find(tree, "tableRow")).toHaveLength(3);
+    expect(find(tree, "tableRow")[1]?.children?.map(text)).toEqual([
+      "Food",
+      "1",
+    ]);
+  });
+
+  it("keeps rows without a delimiter line as text", () => {
+    const tree = parseAnswer("| a | b |\n| c | d |");
+    expect(find(tree, "table")).toHaveLength(0);
+    expect(text(tree)).toBe("| a | b |\n| c | d |");
+  });
+
+  it("keeps a delimiter line of another width as text", () => {
+    const tree = parseAnswer("| a | b |\n| --- |\n| c | d |");
+    expect(find(tree, "table")).toHaveLength(0);
+  });
+});
