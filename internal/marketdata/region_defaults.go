@@ -1,6 +1,11 @@
 package marketdata
 
-import "slices"
+import (
+	"slices"
+)
+
+// euroArea lists the members of the euro area on 2026-01-01.
+var euroArea = []string{"AT", "BE", "BG", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"}
 
 // DefaultCalendar returns the calendar a record takes when the owner's region is region.
 func (m *Module) DefaultCalendar(region string) string {
@@ -25,6 +30,3 @@ func SuggestedFeeds(region string) []string {
 
 	return nil
 }
-
-// euroArea lists the members of the euro area on 2026-01-01.
-var euroArea = []string{"AT", "BE", "BG", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"}

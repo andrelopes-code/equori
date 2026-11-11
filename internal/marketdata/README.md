@@ -6,7 +6,7 @@ Owns instruments, prices and business-day calendars (chapter 4, 4.3.6).
 |---|---|
 | OpenAPI tag | `marketdata`: 22 operations in `openapi.yaml` |
 | Tables | prefix `marketdata_`, created in `db/migrations/` |
-| Public API | `marketdata.go` and the other 17 non-test files of this directory |
+| Public API | `marketdata.go` and the other 23 non-test files of this directory |
 | Layers (hand-written files) | `domain/` (8), `httpapi/` (8), `toolapi/` (3), `postgres/` (0) |
 | Queries | `postgres/queries/` (9 files) |
 | Tests | black-box tests in this directory (`*_test.go`: 30); package tests beside each layer |

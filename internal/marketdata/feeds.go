@@ -3,57 +3,13 @@ package marketdata
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"net/http"
 	"slices"
 	"time"
 
-	"github.com/andrelopes-code/equori/internal/marketdata/expectation"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
-	"github.com/andrelopes-code/equori/internal/marketdata/index"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
-	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
-
-// feedWindowDays bounds how far back a feed fetches (P8 amendment A62).
-const feedWindowDays = 30
-
-// FeedConfig lists every price and index source of the registry; the stored settings choose
-// the ones TickFeeds runs (ADR 025).
-type FeedConfig struct {
-	Sources []feed.Source
-	// Indexes are the index sources (investments design 4.2).
-	Indexes []index.Source
-	// Expectations are the expectation sources (ADR 026).
-	Expectations []expectation.Source
-	// Seed names the sources enabled while no setting is stored; tests set it through
-	// server.Config, production passes none (ADR 025 F2, ADR 029 BK25).
-	Seed []string
-	// CatalogBound and ProbeBound bound one source in a catalog search and in a probe; WithFeeds
-	// sets 3 and 5 seconds when zero (A222 MQ27, MQ29).
-	CatalogBound, ProbeBound time.Duration
-
-	Client *http.Client
-	Clock  clock.Clock
-	Log    *slog.Logger
-}
-
-// WithFeeds sets the feeds; the composition root calls it once.
-func (m *Module) WithFeeds(cfg FeedConfig) *Module {
-	if cfg.CatalogBound == 0 {
-		cfg.CatalogBound = 3 * time.Second
-	}
-
-	if cfg.ProbeBound == 0 {
-		cfg.ProbeBound = 5 * time.Second
-	}
-
-	m.feeds = cfg
-	m.life, m.stop = context.WithCancel(context.Background())
-
-	return m
-}
 
 // RunFeeds ticks now, then every interval and at every request for a tick (A222 MQ10), until ctx
 // ends, skipping a tick while a requested one runs; then it stops a requested tick and waits for
@@ -224,4 +180,48 @@ func (m *Module) storeQuotes(ctx context.Context, source string, quotes []feed.Q
 
 func (m *Module) logFeed(ctx context.Context, err error, attrs ...any) {
 	m.feeds.Log.ErrorContext(ctx, "price feed", append(attrs, "error", err)...)
+}
+
+// requestTick asks RunFeeds for a tick: now when none runs, or once more after the running one
+// (A222 MQ10).
+func (m *Module) requestTick() {
+	m.again.Store(true)
+	m.wake()
+}
+
+// wake sends on kick without blocking; one pending wake-up is enough.
+func (m *Module) wake() {
+	select {
+	case m.kick <- struct{}{}:
+	default:
+	}
+}
+
+// enabledSources returns the price sources the stored settings enable.
+func (m *Module) enabledSources(ctx context.Context) ([]feed.Source, error) {
+	on, err := m.enabledFeeds(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []feed.Source
+
+	for _, src := range m.feeds.Sources {
+		if on[src.ID()] {
+			out = append(out, src)
+		}
+	}
+
+	return out, nil
+}
+
+func feedInstruments(list []Instrument) []feed.Instrument {
+	ins := make([]feed.Instrument, len(list))
+	for i, in := range list {
+		ins[i] = feed.Instrument{
+			Code: in.Code, Type: in.Type, Exchange: in.Exchange, QuoteCurrency: in.QuoteCurrency, Symbols: in.Symbols,
+		}
+	}
+
+	return ins
 }
