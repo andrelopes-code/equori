@@ -35,7 +35,7 @@ export const helpPages: readonly HelpPageEntry[] = [
 ];
 
 // Each file is a chunk of its own, fetched when its page opens.
-const files = import.meta.glob<string>("./content/**/*.md", {
+const files = import.meta.glob<string>("../content/**/*.md", {
   query: "?raw",
   import: "default",
 });
@@ -59,8 +59,8 @@ export async function loadHelpPage(
   region: string,
   id: string,
 ): Promise<string | null> {
-  const basePath = `./content/${language}/${id}.md`;
-  const regionalPath = `./content/regions/${region}/${language}/${id}.md`;
+  const basePath = `../content/${language}/${id}.md`;
+  const regionalPath = `../content/regions/${region}/${language}/${id}.md`;
   const base = files[basePath];
   if (base === undefined) return null;
 

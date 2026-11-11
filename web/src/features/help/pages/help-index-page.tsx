@@ -10,8 +10,8 @@ import {
 } from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
 
-import { HelpFeatured } from "@/features/help/help-featured";
-import { HelpKindCard } from "@/features/help/help-kind-card";
+import { HelpFeatured } from "@/features/help/featured/help-featured";
+import { HelpKindCard } from "@/features/help/kind-card/help-kind-card";
 import { useT } from "@/i18n/i18n-provider";
 
 // The walkthrough first, as the way in for a newcomer; then the other pages by kind.

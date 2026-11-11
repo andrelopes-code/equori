@@ -4,8 +4,8 @@ import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 import { Link } from "@tanstack/react-router";
 
-import { helpPages, splitHelpPage } from "@/features/help/help-pages";
-import { useHelpPage } from "@/features/help/use-help-page";
+import { helpPages, splitHelpPage } from "@/features/help/model/help-pages";
+import { useHelpPage } from "@/features/help/model/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpFeaturedProps {

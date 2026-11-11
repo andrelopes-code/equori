@@ -7,8 +7,8 @@ import {
   ResultStateTitle,
 } from "@slotted/react/result-state";
 
-import { HelpArticle } from "@/features/help/help-article";
-import type { HelpText } from "@/features/help/help-pages";
+import { HelpArticle } from "@/features/help/article/help-article";
+import type { HelpText } from "@/features/help/model/help-pages";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpPageBodyProps {

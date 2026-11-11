@@ -2,9 +2,9 @@ import { Card, CardBody, CardHeader } from "@slotted/react/card";
 import { List } from "@slotted/react/list";
 import { Heading, Text } from "@slotted/react/typography";
 
-import { HelpIndexItem } from "@/features/help/help-index-item";
-import { helpPages } from "@/features/help/help-pages";
-import type { HelpKind } from "@/features/help/help-pages";
+import { HelpIndexItem } from "@/features/help/kind-card/help-index-item";
+import { helpPages } from "@/features/help/model/help-pages";
+import type { HelpKind } from "@/features/help/model/help-pages";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpKindCardProps {

@@ -5,8 +5,8 @@ import {
 } from "@slotted/react/side-navigation";
 import { Skeleton } from "@slotted/react/skeleton";
 
-import { splitHelpPage } from "@/features/help/help-pages";
-import { useHelpPage } from "@/features/help/use-help-page";
+import { splitHelpPage } from "@/features/help/model/help-pages";
+import { useHelpPage } from "@/features/help/model/use-help-page";
 import { routeTo } from "@/ui/route-to";
 
 interface HelpNavigationItemProps {

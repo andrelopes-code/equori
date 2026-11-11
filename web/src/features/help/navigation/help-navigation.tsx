@@ -5,8 +5,8 @@ import {
   SideNavigationSectionLabel,
 } from "@slotted/react/side-navigation";
 
-import { HelpNavigationItem } from "@/features/help/help-navigation-item";
-import { helpKinds, helpPages } from "@/features/help/help-pages";
+import { HelpNavigationItem } from "@/features/help/navigation/help-navigation-item";
+import { helpKinds, helpPages } from "@/features/help/model/help-pages";
 import { useT } from "@/i18n/i18n-provider";
 
 interface HelpNavigationProps {

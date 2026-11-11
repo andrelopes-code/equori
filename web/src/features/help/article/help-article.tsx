@@ -4,8 +4,8 @@ import { Stack } from "@slotted/react/stack";
 import { TableOfContents } from "@slotted/react/table-of-contents";
 import { useState } from "react";
 
-import { HelpPager } from "@/features/help/help-pager";
-import styles from "@/features/help/help-page.module.css";
+import { HelpPager } from "@/features/help/pager/help-pager";
+import styles from "@/features/help/pages/help-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { screenLinks } from "@/navigation/screen-links";
 import { useMediaQuery } from "@/ui/use-media-query";

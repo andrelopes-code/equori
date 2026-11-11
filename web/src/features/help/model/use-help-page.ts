@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { helpPageQuery } from "@/features/help/help-pages";
+import { helpPageQuery } from "@/features/help/model/help-pages";
 import { useAppLocaleState } from "@/i18n/i18n-provider";
 
 // The page in the reader's language with the passage of the reader's region.

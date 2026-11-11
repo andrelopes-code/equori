@@ -5,7 +5,7 @@ import {
   helpPages,
   loadHelpPage,
   splitHelpPage,
-} from "@/features/help/help-pages";
+} from "@/features/help/model/help-pages";
 import { languages } from "@/i18n/languages";
 
 describe("help pages", () => {

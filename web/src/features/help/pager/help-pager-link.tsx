@@ -4,8 +4,8 @@ import { Link } from "@slotted/react/link";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
-import { splitHelpPage } from "@/features/help/help-pages";
-import { useHelpPage } from "@/features/help/use-help-page";
+import { splitHelpPage } from "@/features/help/model/help-pages";
+import { useHelpPage } from "@/features/help/model/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/route-to";
 import { StepGlyph } from "@/ui/step-glyph";

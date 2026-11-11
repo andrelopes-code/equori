@@ -1,8 +1,8 @@
 import { Inline } from "@slotted/react/inline";
 
-import { HelpPagerLink } from "@/features/help/help-pager-link";
-import styles from "@/features/help/help-page.module.css";
-import { helpNeighbours } from "@/features/help/help-pages";
+import { HelpPagerLink } from "@/features/help/pager/help-pager-link";
+import styles from "@/features/help/pages/help-page.module.css";
+import { helpNeighbours } from "@/features/help/model/help-pages";
 
 interface HelpPagerProps {
   page: string;

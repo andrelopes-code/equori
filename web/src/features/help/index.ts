@@ -1,4 +1,4 @@
-export { HelpIndexPage } from "@/features/help/help-index-page";
-export { HelpLink } from "@/features/help/help-link";
-export { HelpPage } from "@/features/help/help-page";
-export { isHelpPage } from "@/features/help/help-pages";
+export { HelpIndexPage } from "@/features/help/pages/help-index-page";
+export { HelpLink } from "@/features/help/link/help-link";
+export { HelpPage } from "@/features/help/pages/help-page";
+export { isHelpPage } from "@/features/help/model/help-pages";

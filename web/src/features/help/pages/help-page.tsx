@@ -10,11 +10,11 @@ import {
 import { Tag } from "@slotted/react/tag";
 import { Link, useParams } from "@tanstack/react-router";
 
-import { HelpNavigation } from "@/features/help/help-navigation";
-import { HelpPageBody } from "@/features/help/help-page-body";
-import { helpPages, splitHelpPage } from "@/features/help/help-pages";
-import styles from "@/features/help/help-page.module.css";
-import { useHelpPage } from "@/features/help/use-help-page";
+import { HelpNavigation } from "@/features/help/navigation/help-navigation";
+import { HelpPageBody } from "@/features/help/article/help-page-body";
+import { helpPages, splitHelpPage } from "@/features/help/model/help-pages";
+import styles from "@/features/help/pages/help-page.module.css";
+import { useHelpPage } from "@/features/help/model/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/page-back";
 import { useMediaQuery, wideQuery } from "@/ui/use-media-query";
