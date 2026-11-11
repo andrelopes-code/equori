@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
@@ -9,9 +10,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) ProbeQuote(ctx context.Context, req ProbeQuoteRequestObject) (ProbeQuoteResponseObject, error) {
-	b := req.Body
-
+func (s *Server) probeQuote(
+	ctx context.Context, _ *http.Request, b ProbeQuoteJSONRequestBody,
+) (ProbeResult, error) {
 	in := domain.Instrument{
 		Code: money.Currency(b.Code), Type: string(b.Type), QuoteCurrency: money.Currency(b.QuoteCurrency),
 	}
@@ -25,7 +26,7 @@ func (s *Server) ProbeQuote(ctx context.Context, req ProbeQuoteRequestObject) (P
 
 	res, err := s.svc.ProbeQuote(ctx, in)
 	if err != nil {
-		return nil, err
+		return ProbeResult{}, err
 	}
 
 	out := ProbeResult{Quotes: make([]ProbeQuote, len(res.Quotes)), Available: res.Available}
@@ -37,7 +38,7 @@ func (s *Server) ProbeQuote(ctx context.Context, req ProbeQuoteRequestObject) (P
 		out.Quotes[i] = probeQuoteOf(q)
 	}
 
-	return ProbeQuote200JSONResponse(out), nil
+	return out, nil
 }
 
 func probeQuoteOf(q domain.ProbeQuote) ProbeQuote {

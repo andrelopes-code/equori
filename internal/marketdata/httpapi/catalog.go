@@ -2,14 +2,23 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) SearchInstrumentCatalog(ctx context.Context, req SearchInstrumentCatalogRequestObject) (SearchInstrumentCatalogResponseObject, error) {
-	res, err := s.svc.SearchCatalog(ctx, req.Params.Q)
+func (s *Server) searchInstrumentCatalog(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (CatalogSearch, error) {
+	params, err := httpserver.Query[SearchInstrumentCatalogParams](r)
 	if err != nil {
-		return nil, err
+		return CatalogSearch{}, err
+	}
+
+	res, err := s.svc.SearchCatalog(ctx, params.Q)
+	if err != nil {
+		return CatalogSearch{}, err
 	}
 
 	out := CatalogSearch{Items: make([]CatalogListing, len(res.Items)), Unavailable: res.Unavailable}
@@ -21,7 +30,7 @@ func (s *Server) SearchInstrumentCatalog(ctx context.Context, req SearchInstrume
 		out.Items[i] = listingOf(l)
 	}
 
-	return SearchInstrumentCatalog200JSONResponse(out), nil
+	return out, nil
 }
 
 func listingOf(l domain.Listing) CatalogListing {

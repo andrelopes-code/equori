@@ -1,14 +1,19 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
+	"net/http"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -17,31 +22,59 @@ const maxImportBytes = 1 << 20
 
 const rateMessage = "value must be a positive decimal with at most 12 decimals and 18 integer digits"
 
-func (s *Server) RecordPrice(ctx context.Context, req RecordPriceRequestObject) (RecordPriceResponseObject, error) {
-	b := req.Body
-
+func (s *Server) recordPrice(
+	ctx context.Context, _ *http.Request, b RecordPriceJSONRequestBody,
+) (Price, error) {
 	value, err := money.ParseRate(b.Value)
 	if err != nil {
-		return nil, &domain.FieldError{Field: "value", Message: "must be a positive decimal with at most 12 decimals"}
+		return Price{}, &domain.FieldError{Field: "value", Message: "must be a positive decimal with at most 12 decimals"}
 	}
 
 	p := domain.Price{Instrument: money.Currency(b.Instrument), Quote: money.Currency(b.QuoteInstrument), Date: b.Date.Time, Value: value, Source: domain.SourceManual}
 	if err := s.svc.RecordPrices(ctx, []domain.Price{p}); err != nil {
-		return nil, err
+		return Price{}, err
 	}
 
-	return RecordPrice201JSONResponse(toPriceAPI(p)), nil
+	return toPriceAPI(p), nil
 }
 
-func (s *Server) ImportPrices(ctx context.Context, req ImportPricesRequestObject) (ImportPricesResponseObject, error) {
+// importPrices is a custom handler: the request body is multipart.
+func (s *Server) importPrices(w http.ResponseWriter, r *http.Request) {
+	reader, err := r.MultipartReader()
+	if err != nil {
+		s.errs.WriteRequestError(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+
+		return
+	}
+
+	out, err := s.importPricesFile(r.Context(), reader)
+	if err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(out); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = buf.WriteTo(w)
+}
+
+func (s *Server) importPricesFile(ctx context.Context, body *multipart.Reader) (PriceImport, error) {
 	for {
-		part, err := req.Body.NextPart()
+		part, err := body.NextPart()
 		if errors.Is(err, io.EOF) {
-			return nil, &domain.FieldError{Field: "file", Message: "is required"}
+			return PriceImport{}, &domain.FieldError{Field: "file", Message: "is required"}
 		}
 
 		if err != nil {
-			return nil, err
+			return PriceImport{}, err
 		}
 
 		if part.FormName() != "file" {
@@ -50,51 +83,52 @@ func (s *Server) ImportPrices(ctx context.Context, req ImportPricesRequestObject
 
 		content, err := io.ReadAll(io.LimitReader(part, maxImportBytes))
 		if err != nil {
-			return nil, err
+			return PriceImport{}, err
 		}
 
 		n, err := s.svc.ImportPrices(ctx, content)
 		if err != nil {
-			return nil, err
+			return PriceImport{}, err
 		}
 
-		return ImportPrices200JSONResponse{Recorded: n}, nil
+		return PriceImport{Recorded: n}, nil
 	}
 }
 
-func (s *Server) RecordInstrumentPrices(
-	ctx context.Context, req RecordInstrumentPricesRequestObject,
-) (RecordInstrumentPricesResponseObject, error) {
-	b := req.Body
-
+func (s *Server) recordInstrumentPrices(
+	ctx context.Context, r *http.Request, b RecordInstrumentPricesJSONRequestBody,
+) (InstrumentPricesResult, error) {
 	points := make([]domain.PricePoint, len(b.Prices))
 	for i, p := range b.Prices {
 		value, err := money.ParseRate(p.Value)
 		if err != nil {
-			return nil, &domain.FieldError{Field: fmt.Sprintf("prices[%d]", i), Message: rateMessage}
+			return InstrumentPricesResult{}, &domain.FieldError{Field: fmt.Sprintf("prices[%d]", i), Message: rateMessage}
 		}
 
 		points[i] = domain.PricePoint{Date: p.Date.Time, Value: value}
 	}
 
 	counts, err := s.svc.RecordInstrumentPrices(
-		ctx, req.Code, money.Currency(b.QuoteInstrument), points, b.DryRun != nil && *b.DryRun,
+		ctx, r.PathValue("code"), money.Currency(b.QuoteInstrument), points, b.DryRun != nil && *b.DryRun,
 	)
 	if err != nil {
-		return nil, err
+		return InstrumentPricesResult{}, err
 	}
 
-	return RecordInstrumentPrices200JSONResponse{
+	return InstrumentPricesResult{
 		New: counts.New, Replaced: counts.Replaced, Unchanged: counts.Unchanged, BelowFeed: counts.BelowFeed,
 	}, nil
 }
 
-func (s *Server) ListPrices(ctx context.Context, req ListPricesRequestObject) (ListPricesResponseObject, error) {
-	p := req.Params
+func (s *Server) listPrices(ctx context.Context, r *http.Request, _ httpserver.None) (PriceList, error) {
+	p, err := httpserver.Query[ListPricesParams](r)
+	if err != nil {
+		return PriceList{}, err
+	}
 
 	ps, err := s.svc.ListPrices(ctx, money.Currency(p.Instrument), money.Currency(p.QuoteInstrument), p.From.Time, p.To.Time)
 	if err != nil {
-		return nil, err
+		return PriceList{}, err
 	}
 
 	items := make([]Price, len(ps))
@@ -102,7 +136,7 @@ func (s *Server) ListPrices(ctx context.Context, req ListPricesRequestObject) (L
 		items[i] = toPriceAPI(x)
 	}
 
-	return ListPrices200JSONResponse{Items: items, Interval: PriceListInterval(domain.PriceInterval(p.From.Time, p.To.Time))}, nil
+	return PriceList{Items: items, Interval: PriceListInterval(domain.PriceInterval(p.From.Time, p.To.Time))}, nil
 }
 
 func toPriceAPI(p domain.Price) Price {

@@ -2,10 +2,12 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
 const (
@@ -13,9 +15,9 @@ const (
 	defaultSpreadBP         = 0
 )
 
-func (s *Server) PutInstrumentTerms(ctx context.Context, req PutInstrumentTermsRequestObject) (PutInstrumentTermsResponseObject, error) {
-	b := req.Body
-
+func (s *Server) putInstrumentTerms(
+	ctx context.Context, r *http.Request, b PutInstrumentTermsJSONRequestBody,
+) (FixedIncomeTerms, error) {
 	t := domain.Terms{
 		IssuedOn: b.IssuedOn.Time, MaturesOn: b.MaturesOn.Time, DayCount: string(b.DayCount), FaceValue: b.FaceValue,
 		PercentOfIndexBP: defaultPercentOfIndexBP, SpreadBP: defaultSpreadBP,
@@ -32,21 +34,23 @@ func (s *Server) PutInstrumentTerms(ctx context.Context, req PutInstrumentTermsR
 		t.SpreadBP = *b.SpreadBp
 	}
 
-	out, err := s.svc.PutTerms(ctx, req.Code, t)
+	out, err := s.svc.PutTerms(ctx, r.PathValue("code"), t)
 	if err != nil {
-		return nil, err
+		return FixedIncomeTerms{}, err
 	}
 
-	return PutInstrumentTerms200JSONResponse(toTermsAPI(out)), nil
+	return toTermsAPI(out), nil
 }
 
-func (s *Server) GetInstrumentTerms(ctx context.Context, req GetInstrumentTermsRequestObject) (GetInstrumentTermsResponseObject, error) {
-	t, err := s.svc.Terms(ctx, req.Code)
+func (s *Server) getInstrumentTerms(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (FixedIncomeTerms, error) {
+	t, err := s.svc.Terms(ctx, r.PathValue("code"))
 	if err != nil {
-		return nil, err
+		return FixedIncomeTerms{}, err
 	}
 
-	return GetInstrumentTerms200JSONResponse(toTermsAPI(t)), nil
+	return toTermsAPI(t), nil
 }
 
 func toTermsAPI(t domain.Terms) FixedIncomeTerms {

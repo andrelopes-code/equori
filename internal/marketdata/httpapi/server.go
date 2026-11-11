@@ -56,8 +56,6 @@ type Service interface {
 	Coverage(ctx context.Context, in domain.Instrument) (domain.Coverage, error)
 }
 
-var _ StrictServerInterface = (*Server)(nil)
-
 type Server struct {
 	holidays  HolidayLister
 	calendars CalendarLister
@@ -69,30 +67,71 @@ func NewServer(holidays HolidayLister, calendars CalendarLister, svc Service, lo
 	return &Server{holidays: holidays, calendars: calendars, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
 }
 
+// Register lists every route of the market data operations; each handler sits in its topic file.
 func (s *Server) Register(mux *http.ServeMux) {
-	strict := NewStrictHandlerWithOptions(s, nil, StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  s.errs.WriteRequestError,
-		ResponseErrorHandlerFunc: s.errs.Write,
-	})
-	HandlerWithOptions(strict, StdHTTPServerOptions{BaseURL: BaseURL, BaseRouter: mux, ErrorHandlerFunc: s.errs.WriteRequestError})
+	mux.HandleFunc("GET "+BaseURL+"/calendars",
+		httpserver.Handle(s.errs, http.StatusOK, s.listCalendars))
+	mux.HandleFunc("GET "+BaseURL+"/calendars/{name}/holidays",
+		httpserver.Handle(s.errs, http.StatusOK, s.listHolidays))
+	mux.HandleFunc("GET "+BaseURL+"/indexes",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIndexes))
+	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/rates",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIndexRates))
+	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/expectations",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIndexExpectations))
+	mux.HandleFunc("GET "+BaseURL+"/market-data/feeds",
+		httpserver.Handle(s.errs, http.StatusOK, s.listMarketDataFeeds))
+	mux.HandleFunc("PUT "+BaseURL+"/market-data/feeds/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.setMarketDataFeed))
+	mux.HandleFunc("POST "+BaseURL+"/market-data/refresh", s.refreshMarketData)
+	mux.HandleFunc("GET "+BaseURL+"/market-data/catalog",
+		httpserver.Handle(s.errs, http.StatusOK, s.searchInstrumentCatalog))
+	mux.HandleFunc("POST "+BaseURL+"/market-data/probe",
+		httpserver.Handle(s.errs, http.StatusOK, s.probeQuote))
+	mux.HandleFunc("GET "+BaseURL+"/instruments",
+		httpserver.Handle(s.errs, http.StatusOK, s.listInstruments))
+	mux.HandleFunc("POST "+BaseURL+"/instruments", s.defineInstrument)
+	mux.HandleFunc("GET "+BaseURL+"/instruments/{code}",
+		httpserver.Handle(s.errs, http.StatusOK, s.getInstrument))
+	mux.HandleFunc("PATCH "+BaseURL+"/instruments/{code}",
+		httpserver.Handle(s.errs, http.StatusOK, s.editInstrument))
+	mux.HandleFunc("DELETE "+BaseURL+"/instruments/{code}",
+		httpserver.Handle(s.errs, http.StatusOK, s.deleteInstrument))
+	mux.HandleFunc("GET "+BaseURL+"/instruments/{code}/terms",
+		httpserver.Handle(s.errs, http.StatusOK, s.getInstrumentTerms))
+	mux.HandleFunc("PUT "+BaseURL+"/instruments/{code}/terms",
+		httpserver.Handle(s.errs, http.StatusOK, s.putInstrumentTerms))
+	mux.HandleFunc("POST "+BaseURL+"/instruments/{code}/history", s.requestInstrumentHistory)
+	mux.HandleFunc("POST "+BaseURL+"/instruments/{code}/prices",
+		httpserver.Handle(s.errs, http.StatusOK, s.recordInstrumentPrices))
+	mux.HandleFunc("GET "+BaseURL+"/prices",
+		httpserver.Handle(s.errs, http.StatusOK, s.listPrices))
+	mux.HandleFunc("POST "+BaseURL+"/prices",
+		httpserver.Handle(s.errs, http.StatusCreated, s.recordPrice))
+	mux.HandleFunc("POST "+BaseURL+"/prices/import", s.importPrices)
 }
 
-func (s *Server) ListHolidays(ctx context.Context, req ListHolidaysRequestObject) (ListHolidaysResponseObject, error) {
-	hs, err := s.holidays(ctx, req.Name, req.Params.Year)
+func (s *Server) listHolidays(ctx context.Context, r *http.Request, _ httpserver.None) (HolidayList, error) {
+	params, err := httpserver.Query[ListHolidaysParams](r)
 	if err != nil {
-		return nil, err
+		return HolidayList{}, err
 	}
 
-	return ListHolidays200JSONResponse{Items: hs}, nil
+	hs, err := s.holidays(ctx, r.PathValue("name"), params.Year)
+	if err != nil {
+		return HolidayList{}, err
+	}
+
+	return HolidayList{Items: hs}, nil
 }
 
-func (s *Server) ListCalendars(ctx context.Context, _ ListCalendarsRequestObject) (ListCalendarsResponseObject, error) {
+func (s *Server) listCalendars(ctx context.Context, _ *http.Request, _ httpserver.None) (CalendarList, error) {
 	list, err := s.calendars(ctx)
 	if err != nil {
-		return nil, err
+		return CalendarList{}, err
 	}
 
-	return ListCalendars200JSONResponse(list), nil
+	return list, nil
 }
 
 // NewHoliday builds the API representation; the module root uses it in its HolidayLister.

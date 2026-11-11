@@ -2,16 +2,20 @@ package httpapi
 
 import (
 	"context"
+	"net/http"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) ListMarketDataFeeds(ctx context.Context, _ ListMarketDataFeedsRequestObject) (ListMarketDataFeedsResponseObject, error) {
+func (s *Server) listMarketDataFeeds(
+	ctx context.Context, _ *http.Request, _ httpserver.None,
+) (MarketDataFeedList, error) {
 	fs, err := s.svc.Feeds(ctx)
 	if err != nil {
-		return nil, err
+		return MarketDataFeedList{}, err
 	}
 
 	items := make([]MarketDataFeed, len(fs))
@@ -19,26 +23,31 @@ func (s *Server) ListMarketDataFeeds(ctx context.Context, _ ListMarketDataFeedsR
 		items[i] = feedOf(f)
 	}
 
-	return ListMarketDataFeeds200JSONResponse{Items: items}, nil
+	return MarketDataFeedList{Items: items}, nil
 }
 
-func (s *Server) SetMarketDataFeed(ctx context.Context, req SetMarketDataFeedRequestObject) (SetMarketDataFeedResponseObject, error) {
-	accept := req.Body.AcceptUnofficial != nil && *req.Body.AcceptUnofficial
+func (s *Server) setMarketDataFeed(
+	ctx context.Context, r *http.Request, in SetMarketDataFeedJSONRequestBody,
+) (MarketDataFeed, error) {
+	accept := in.AcceptUnofficial != nil && *in.AcceptUnofficial
 
-	f, err := s.svc.SetFeed(ctx, req.Id, req.Body.Enabled, accept)
+	f, err := s.svc.SetFeed(ctx, r.PathValue("id"), in.Enabled, accept)
 	if err != nil {
-		return nil, err
+		return MarketDataFeed{}, err
 	}
 
-	return SetMarketDataFeed200JSONResponse(feedOf(f)), nil
+	return feedOf(f), nil
 }
 
-func (s *Server) RefreshMarketData(ctx context.Context, _ RefreshMarketDataRequestObject) (RefreshMarketDataResponseObject, error) {
-	if err := s.svc.Refresh(ctx); err != nil {
-		return nil, err
+// refreshMarketData is a custom handler: the success status is 202 with no body.
+func (s *Server) refreshMarketData(w http.ResponseWriter, r *http.Request) {
+	if err := s.svc.Refresh(r.Context()); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
 	}
 
-	return RefreshMarketData202Response{}, nil
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func feedOf(f domain.Feed) MarketDataFeed {
