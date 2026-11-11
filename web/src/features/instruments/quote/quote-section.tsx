@@ -82,6 +82,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
       </div>
       {(series.isPending || prices.length > 0) && (
         <PriceChart
+          key={shown}
           prices={prices}
           quote={quote}
           loading={series.isPending}

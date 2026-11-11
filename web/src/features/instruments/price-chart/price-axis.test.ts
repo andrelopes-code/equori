@@ -3,22 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   axisLabel,
   axisTicks,
-  axisSpanDays,
   showMarkers,
+  zoomedRange,
 } from "@/features/instruments/price-chart/price-axis";
-
-describe("axisSpanDays", () => {
-  it("counts the days between the first and the last price", () => {
-    expect(axisSpanDays([{ date: "2026-10-01" }, { date: "2026-10-31" }])).toBe(
-      30,
-    );
-  });
-
-  it("is zero without two prices", () => {
-    expect(axisSpanDays([])).toBe(0);
-    expect(axisSpanDays([{ date: "2026-10-01" }])).toBe(0);
-  });
-});
 
 // A223 RM6
 describe("axisLabel", () => {
@@ -92,5 +79,21 @@ describe("axisTicks", () => {
 
   it("places no tick on a single day", () => {
     expect(axisTicks(at(2026, 10, 1), at(2026, 10, 1))).toEqual([]);
+  });
+});
+
+describe("zoomedRange", () => {
+  it("is the whole domain without a zoom", () => {
+    expect(zoomedRange(1000, 2000, { start: 0, end: 1 })).toEqual({
+      first: 1000,
+      last: 2000,
+    });
+  });
+
+  it("narrows the domain to the visible fractions", () => {
+    expect(zoomedRange(1000, 2000, { start: 0.25, end: 0.75 })).toEqual({
+      first: 1250,
+      last: 1750,
+    });
   });
 });

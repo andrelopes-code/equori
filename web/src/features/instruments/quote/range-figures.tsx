@@ -1,11 +1,8 @@
 import type { PriceStats } from "@/features/instruments/model/price-stats";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
-import {
-  formatDate,
-  formatSignedBasisPoints,
-  numberFormatter,
-} from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { RangeChange } from "@/features/instruments/quote/range-change";
 import { FigureCard } from "@/ui/display/figure-card";
 import { FigureGrid } from "@/ui/display/figure-grid";
 
@@ -20,27 +17,10 @@ export function RangeFigures({ stats, quote, loading }: RangeFiguresProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const format = usePriceFormat(quote);
-  const change = stats?.changeBp ?? null;
 
   return (
     <FigureGrid label={t("instrument.figures.label")}>
-      <FigureCard
-        label={t("instrument.figures.change")}
-        loading={loading}
-        value={
-          stats === null || change === null
-            ? undefined
-            : formatSignedBasisPoints(change, locale)
-        }
-        note={
-          stats === null
-            ? ""
-            : t("instrument.figures.changeNote", {
-                from: formatDate(stats.first.date, locale),
-                to: formatDate(stats.last.date, locale),
-              })
-        }
-      />
+      <RangeChange stats={stats} quote={quote} loading={loading} />
       <FigureCard
         label={t("instrument.figures.high")}
         loading={loading}

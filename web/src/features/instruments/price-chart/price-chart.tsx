@@ -1,12 +1,12 @@
 import type { ChartAnnotation, ChartSeries } from "@slotted/core/chart";
 import { Chart } from "@slotted/react/chart";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import {
   axisLabel,
-  axisSpanDays,
   axisTicks,
+  zoomedRange,
 } from "@/features/instruments/price-chart/price-axis";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -22,6 +22,13 @@ interface PriceChartProps {
   onActiveDateChange?: ((date: string | null) => void) | undefined;
 }
 
+interface Zoom {
+  start: number;
+  end: number;
+}
+
+const wholeRange: Zoom = { start: 0, end: 1 };
+
 type Field = "date" | "price" | "manual";
 
 // A price is an exact decimal that the chart plots as a number; nothing is computed from it. A
@@ -36,6 +43,7 @@ export function PriceChart({
   const t = useT();
   const [locale] = useAppLocale();
   const format = usePriceFormat(quote);
+  const [zoom, setZoom] = useState<Zoom>(wholeRange);
   const data = useMemo(
     () =>
       [...prices]
@@ -47,16 +55,18 @@ export function PriceChart({
         })),
     [prices],
   );
-  const span = axisSpanDays(data);
-  const ticks = axisTicks(
+  const visible = zoomedRange(
     Date.parse(data[0]?.date ?? ""),
     Date.parse(data.at(-1)?.date ?? ""),
+    zoom,
   );
+  const span = Math.round((visible.last - visible.first) / 86_400_000);
+  const ticks = axisTicks(visible.first, visible.last);
   const hasManual = data.some((d) => d.manual !== null);
   const series: ChartSeries<Field>[] = [
     {
       id: "price",
-      kind: "line",
+      kind: "area",
       field: "price",
       label: t("instrument.chart.title"),
       format: format.number,
@@ -96,6 +106,9 @@ export function PriceChart({
       aria-label={t("instrument.prices.title")}
       legend={hasManual}
       legendInteractive={false}
+      zoomable
+      zoom={zoom}
+      onZoomChange={setZoom}
       data={data}
       series={series}
       annotations={annotations}

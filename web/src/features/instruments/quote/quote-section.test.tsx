@@ -45,9 +45,11 @@ describe("Quote section", () => {
 
     await within(figures).findByText("R$38.10");
 
-    expect(
-      await card(catalogEn["instrument.figures.change"]),
-    ).toHaveTextContent("+0.92%from 10/14/2026 to 10/16/2026");
+    const change = await card(catalogEn["instrument.figures.change"]);
+    expect(change).toHaveTextContent("R$38.45");
+    expect(change).toHaveTextContent("up +0.92%from 10/14/2026 to 10/16/2026");
+    expect(change).toHaveAttribute("data-size", "lg");
+    expect(figures.querySelector("[data-ui='stat-card']")).toBe(change);
     expect(await card(catalogEn["instrument.figures.high"])).toHaveTextContent(
       "R$38.4510/16/2026",
     );
