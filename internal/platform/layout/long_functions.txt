@@ -160,7 +160,7 @@ internal/portfolio/domain/rebuild.go	Rebuild	pending: backend reorganization pla
 internal/portfolio/httpapi/server.go	Server.getReturn	pending: backend reorganization plan
 internal/portfolio/toolapi/portfolio.go	getPortfolio	pending: backend reorganization plan
 internal/portfolio/toolapi/tax_year.go	getTaxYear	pending: backend reorganization plan
-internal/reporting/app/cash.go	allocate	pending: backend reorganization plan
+internal/reporting/app/cash_allocation.go	allocate	pending: backend reorganization plan
 internal/reporting/app/import.go	Exports.Import	pending: backend reorganization plan
 internal/reporting/app/indicators.go	Service.Indicators	pending: backend reorganization plan
 internal/reporting/app/statement_analytics.go	Service.analyse	pending: backend reorganization plan

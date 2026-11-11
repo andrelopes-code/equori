@@ -1,4 +1,3 @@
 internal/marketdata/toolapi/instrument.go	pending: backend reorganization plan
 internal/planning/app/plan.go	pending: backend reorganization plan
 internal/planning/toolapi/manage_schedule.go	pending: backend reorganization plan
-internal/reporting/app/cash.go	pending: backend reorganization plan
