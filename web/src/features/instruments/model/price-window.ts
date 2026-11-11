@@ -1,11 +1,12 @@
 import { shiftDate } from "@/i18n/format";
 
-export type PriceRange = "m1" | "m3" | "y1" | "y5" | "max";
+export type PriceRange = "w1" | "m1" | "m3" | "y1" | "y5" | "max";
 
 // listPrices reads at most 18,300 days.
 export const maxPriceDays = 18_300;
 
 export const priceRanges: readonly PriceRange[] = [
+  "w1",
   "m1",
   "m3",
   "y1",
@@ -13,7 +14,7 @@ export const priceRanges: readonly PriceRange[] = [
   "max",
 ];
 
-const rangeDays = { m1: 30, m3: 90, y1: 366, y5: 1827 } as const;
+const rangeDays = { w1: 7, m1: 30, m3: 90, y1: 366, y5: 1827 } as const;
 
 export function rangeWindow(
   today: string,

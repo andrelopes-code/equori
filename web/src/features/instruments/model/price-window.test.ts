@@ -24,6 +24,13 @@ describe("priceWindow", () => {
 });
 
 describe("rangeWindow", () => {
+  it("spans the last seven days", () => {
+    expect(rangeWindow("2026-10-17", "w1", null)).toEqual({
+      from: "2026-10-11",
+      to: "2026-10-17",
+    });
+  });
+
   it("spans five years", () => {
     expect(rangeWindow("2026-10-17", "y5", null)).toEqual({
       from: "2021-10-17",

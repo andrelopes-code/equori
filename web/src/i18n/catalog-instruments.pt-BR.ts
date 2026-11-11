@@ -92,6 +92,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.col.change": "Variação",
   "instrument.col.source": "Fonte",
   "instrument.range.label": "Intervalo do histórico",
+  "instrument.range.w1": "1S",
   "instrument.range.m1": "1M",
   "instrument.range.m3": "3M",
   "instrument.range.y1": "1A",
