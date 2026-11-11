@@ -1,0 +1,23 @@
+# Pure moves of the module layout (ADR 033). GitHub reads this file; locally: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# refactor(marketdata): move the layers one level under the module
+fc4bc61128ea6f47041219bcb66f02a246fc5042
+# refactor(ledger): move the layers one level under the module
+245ba90e95b6f7488b85302a5778aaec8fb9a0f6
+# refactor(reporting): move the layers one level under the module
+d5b3f27003103e7cbc62746e7b36c876a5380c4b
+# refactor(ingestion): move the layers one level under the module
+7113eb5dcbc7cc9c495610fd8551bc271a617eb7
+# refactor(identity): move the layers one level under the module
+0cc9f1377eee80a293862252e7a1e4cdaba11923
+# refactor(assistant): move the layers one level under the module
+3db3b13599c82009ad1b2ad3ac9bd0f5e365c205
+# refactor(planning): move the layers one level under the module
+9860380661fbe386b2c918ccfd5c2c914f805023
+# refactor(classification): move the layers one level under the module
+7357ed09a75fc75c623cdbf11cc2f02cce923887
+# refactor(portfolio): move the layers one level under the module
+e17571826318d810725751fdb2cb1d3dbebdb612
+# refactor(instance): move the layers one level under the module
+011a99794998da52aa4645b5bb48195900f4145b
+# refactor(capture): move the layers one level under the module
+ccc0a82ff309876fca93dc97192f311f2c5057d4
