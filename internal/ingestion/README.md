@@ -6,7 +6,7 @@ Imports external data into the ledger: files now, aggregators later (chapter 4, 
 |---|---|
 | OpenAPI tag | `ingestion`: 27 operations in `openapi.yaml` |
 | Tables | prefix `ingestion_`, created in `db/migrations/` |
-| Public API | `ingestion.go` |
+| Public API | `ingestion.go` (Module, New), `config.go`, `types.go`, `sync.go`, `credentials.go`, `status.go`; `adapters.go` and `ledger_port.go` hold the adapters |
 | Layers (hand-written files) | `domain/` (21), `app/` (25), `httpapi/` (7), `toolapi/` (3), `postgres/` (7), `llmapi/` (1) |
 | Ports | `app/ports.go` (the interfaces the module needs: its repository and the other modules it calls) |
 | Queries | `postgres/queries/` (7 files) |
