@@ -3,7 +3,8 @@ import type { MessageKey } from "@/i18n/catalog.en";
 
 type Account = components["schemas"]["Account"];
 export type Kind = NonNullable<Account["kind"]>;
-export type KindGroup = "accounts" | "cards" | "reserves" | "debts";
+export type KindGroup =
+  "accounts" | "cards" | "reserves" | "investments" | "debts";
 
 export const kinds: readonly Kind[] = [
   "checking",
@@ -24,7 +25,8 @@ export const kindGroups: readonly { key: KindGroup; kinds: readonly Kind[] }[] =
   [
     { key: "accounts", kinds: ["checking", "cash", "wallet", "benefit"] },
     { key: "cards", kinds: ["credit_card"] },
-    { key: "reserves", kinds: ["savings", "reserve", "brokerage"] },
+    { key: "reserves", kinds: ["savings", "reserve"] },
+    { key: "investments", kinds: ["brokerage"] },
     { key: "debts", kinds: ["loan", "payable", "receivable"] },
   ];
 
@@ -66,6 +68,7 @@ export const kindGroupLabel: Record<KindGroup, MessageKey> = {
   accounts: "kind.group.accounts",
   cards: "kind.group.cards",
   reserves: "kind.group.reserves",
+  investments: "kind.group.investments",
   debts: "kind.group.debts",
 };
 

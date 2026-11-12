@@ -47,6 +47,9 @@ export function AccountDetailsSection({
   const t = useT();
 
   const parentName = parents.find((a) => a.id === draft.parentId)?.name;
+  // BC2: a brokerage is a line of its own; only an edited one that has a parent shows the field.
+  const showParent =
+    kind !== "brokerage" || (mode === "edit" && draft.parentId !== null);
 
   return (
     <FormSection legend={t("accountForm.details")}>
@@ -77,26 +80,28 @@ export function AccountDetailsSection({
         </Field>
       )}
 
-      <Field invalid={errors.parent_id !== undefined}>
-        <FieldLabel>{t("accountForm.parent")}</FieldLabel>
-        <ParentField
-          candidates={parents}
-          accounts={accounts}
-          value={draft.parentId}
-          invalid={errors.parent_id !== undefined}
-          onChange={(parentId) => {
-            onPatch({ parentId });
-          }}
-        />
-        {errors.parent_id !== undefined && (
-          <FieldError>{errors.parent_id}</FieldError>
-        )}
-        <FieldDescription live="polite">
-          {parentName === undefined
-            ? t("accountForm.parentNone")
-            : t("accountForm.parentInside", { name: parentName })}
-        </FieldDescription>
-      </Field>
+      {showParent && (
+        <Field invalid={errors.parent_id !== undefined}>
+          <FieldLabel>{t("accountForm.parent")}</FieldLabel>
+          <ParentField
+            candidates={parents}
+            accounts={accounts}
+            value={draft.parentId}
+            invalid={errors.parent_id !== undefined}
+            onChange={(parentId) => {
+              onPatch({ parentId });
+            }}
+          />
+          {errors.parent_id !== undefined && (
+            <FieldError>{errors.parent_id}</FieldError>
+          )}
+          <FieldDescription live="polite">
+            {parentName === undefined
+              ? t("accountForm.parentNone")
+              : t("accountForm.parentInside", { name: parentName })}
+          </FieldDescription>
+        </Field>
+      )}
 
       {yieldCapable(kind) && (
         <Checkbox

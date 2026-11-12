@@ -4,6 +4,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.group.accounts": "Contas",
   "kind.group.cards": "Cartões",
   "kind.group.reserves": "Reservas e investimentos",
+  "kind.group.investments": "Investimentos",
   "kind.group.debts": "Dívidas e valores a receber",
   "kind.hint.checking": "Conta bancária que paga e recebe no dia a dia.",
   "kind.hint.savings": "Poupança que guarda dinheiro à parte.",
@@ -11,7 +12,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.hint.wallet": "Carteira digital ou saldo pré-pago.",
   "kind.hint.benefit": "Cartão de refeição, alimentação ou transporte.",
   "kind.hint.reserve": "Dinheiro guardado, como uma reserva de emergência.",
-  "kind.hint.brokerage": "Conta em corretora que guarda títulos e ações.",
+  "kind.hint.brokerage":
+    "Onde se compram ações, ETFs e fundos. Tem um saldo em caixa e uma linha por investimento.",
   "kind.hint.receivable": "Dinheiro que alguém deve a você.",
   "kind.hint.credit_card": "Cartão de crédito cobrado por faturas.",
   "kind.hint.loan": "Empréstimo ou financiamento que você paga.",
@@ -77,6 +79,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountSetup.step.rule": "Ciclo da fatura",
   "accountSetup.step.limit": "Limite",
   "accountSetup.step.card": "Cartão",
+  "brokerage.cashName": "Caixa",
+  "accountSetup.step.cash": "Criando o caixa",
   "accountSetup.step.opening": "Saldo inicial",
   "accountSetup.failed": "A conta foi criada, mas “{step}” não foi registrado",
   "accountSetup.remaining":
@@ -138,6 +142,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountForm.colorHint":
     "Pintada atrás das iniciais da conta quando a instituição não tem logo.",
   "accountForm.openingGroup": "Saldo inicial",
+  "accountForm.cashOpening": "Dinheiro que já está na corretora",
   "accountForm.opening": "Saldo no dia de abertura",
   "accountForm.openingOwed": "Devido no dia de abertura",
   "accountForm.openingCard": "Devido na fatura aberta",
@@ -594,6 +599,10 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "links.batch": "Importação de {account}",
   "links.syncs": "Sincronizações recentes",
   "links.syncLast": "Última em {time}",
+  "links.syncs.open": "Ver sincronizações",
+  "links.syncs.runs": "Sincronizações",
+  "links.syncs.layer.description":
+    "O que cada sincronização alterou, as linhas que listou e o desfazer de suas decisões.",
   "links.syncWhen": "Quando",
   "links.syncAllAccounts": "Todas as contas",
   "links.syncNoChange": "Sem alterações",

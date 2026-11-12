@@ -7,10 +7,12 @@ import {
   accountFixtures,
   accountRoutes,
   cardID,
+  brokerageID,
   cardRoutes,
   checkingID,
   itauID,
   parentID,
+  stockID,
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { optionalName } from "@/testing/optional-name";
@@ -96,12 +98,13 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 }
 
 describe("New account", () => {
-  it("offers the kinds under four headings", async () => {
+  it("offers the kinds under five headings", async () => {
     await renderApp("/accounts/new", { fetch: api([]) });
     for (const heading of [
       "kind.group.accounts",
       "kind.group.cards",
       "kind.group.reserves",
+      "kind.group.investments",
       "kind.group.debts",
     ] as const) {
       expect(
@@ -112,6 +115,48 @@ describe("New account", () => {
       screen.getByRole("radio", {
         name: new RegExp(catalogEn["kind.credit_card"], "i"),
       }),
+    ).toBeInTheDocument();
+  });
+
+  // BC1: the brokerage stands alone under Investments, with the tree in its hint.
+  it("offers the brokerage alone under Investments", async () => {
+    await renderApp("/accounts/new", { fetch: api([]) });
+    const group = await screen.findByRole("group", {
+      name: catalogEn["kind.group.investments"],
+    });
+    const tiles = within(group).getAllByRole("radio");
+    expect(tiles).toHaveLength(1);
+    expect(tiles[0]).toHaveAccessibleName(
+      new RegExp(catalogEn["kind.title.brokerage"], "i"),
+    );
+    expect(tiles[0]).toHaveAccessibleDescription(
+      catalogEn["kind.hint.brokerage"],
+    );
+  });
+
+  // BC2: a brokerage is a line of its own, so the create form asks for no parent.
+  it("asks for a parent account for a checking account and not for a brokerage", async () => {
+    const checking = await renderApp("/accounts/new?kind=checking", {
+      fetch: api([]),
+    });
+    expect(
+      await screen.findByRole("combobox", {
+        name: optionalName(catalogEn["accountForm.parent"]),
+      }),
+    ).toBeInTheDocument();
+    checking.unmount();
+
+    await renderApp("/accounts/new?kind=brokerage", { fetch: api([]) });
+    await screen.findByRole("textbox", {
+      name: catalogEn["accountForm.name"],
+    });
+    expect(
+      screen.queryByRole("combobox", {
+        name: optionalName(catalogEn["accountForm.parent"]),
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(catalogEn["accountForm.cashOpening"]),
     ).toBeInTheDocument();
   });
 
@@ -444,6 +489,27 @@ describe("Edit account", () => {
     expect(sent).toEqual([
       { route: "PUT parent", body: { parent_id: parentID } },
     ]);
+  });
+
+  // BC2: the edit form draws the parent field of a brokerage only when it already has one.
+  it("draws the parent field of a brokerage only when it has a parent", async () => {
+    const top = await renderApp(`/accounts/${brokerageID}/edit`, {
+      fetch: api([]),
+    });
+    await screen.findByRole("textbox", { name: catalogEn["accountForm.name"] });
+    expect(
+      screen.queryByRole("combobox", {
+        name: optionalName(catalogEn["accountForm.parent"]),
+      }),
+    ).not.toBeInTheDocument();
+    top.unmount();
+
+    await renderApp(`/accounts/${stockID}/edit`, { fetch: api([]) });
+    expect(
+      await screen.findByRole("combobox", {
+        name: optionalName(catalogEn["accountForm.parent"]),
+      }),
+    ).toBeInTheDocument();
   });
 
   // Owner review item 15: the parent field names each candidate's kind and what it holds, and

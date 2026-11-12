@@ -35,7 +35,10 @@ export function AccountSetupMessage({ accountId }: { accountId: string }) {
   if (pending === null) return null;
   const openingBalances =
     accounts.data?.find((a) => a.system_role === "opening_balances")?.id ?? "";
-  const steps = createAccountSteps(pending.draft, { openingBalances });
+  const steps = createAccountSteps(pending.draft, {
+    openingBalances,
+    cashName: t("brokerage.cashName"),
+  });
   const next = steps[pending.done];
   if (next === undefined) return null;
 

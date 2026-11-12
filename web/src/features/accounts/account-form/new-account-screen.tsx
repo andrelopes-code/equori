@@ -110,7 +110,10 @@ export function NewAccountScreen({
     }
     const openingBalances =
       accounts.find((a) => a.system_role === "opening_balances")?.id ?? "";
-    const steps = createAccountSteps(draft, { openingBalances });
+    const steps = createAccountSteps(draft, {
+      openingBalances,
+      cashName: t("brokerage.cashName"),
+    });
     let done = 0;
     try {
       for (const step of steps) {

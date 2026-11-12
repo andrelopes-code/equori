@@ -10,7 +10,7 @@ import type { MessageKey } from "@/i18n/catalog.en";
 type AccountInput = components["schemas"]["AccountInput"];
 type BillingCycleRule = components["schemas"]["BillingCycleRule"];
 
-export type StepKey = "rule" | "limit" | "card" | "opening";
+export type StepKey = "rule" | "limit" | "card" | "cash" | "opening";
 
 export interface Step {
   key: StepKey;
@@ -21,6 +21,7 @@ export const stepLabel: Record<StepKey, MessageKey> = {
   rule: "accountSetup.step.rule",
   limit: "accountSetup.step.limit",
   card: "accountSetup.step.card",
+  cash: "accountSetup.step.cash",
   opening: "accountSetup.step.opening",
 };
 
@@ -37,7 +38,9 @@ export function accountInput(
     currency: draft.currency,
     opened_on: draft.openedOn,
     ...(institutionId === null ? {} : { institution_id: institutionId }),
-    ...(draft.parentId === null ? {} : { parent_id: draft.parentId }),
+    ...(draft.parentId === null || kind === "brokerage"
+      ? {}
+      : { parent_id: draft.parentId }),
     yield_mode: yieldCapable(kind) && draft.yieldAuto ? "auto" : "none",
     ...(draft.color === null ? {} : { color: draft.color }),
   };
@@ -64,10 +67,13 @@ export function billingRuleBody(
 // need its rule before the opening balance is billed on one (S23).
 export function createAccountSteps(
   draft: AccountDraft,
-  ids: { openingBalances: string },
+  ids: { openingBalances: string; cashName: string },
 ): Step[] {
   const steps: Step[] = [];
+  // Set by the step cash; a retry that starts at the step opening finds the child again.
+  let cashId: string | undefined;
   const isCard = draft.kind === "credit_card";
+  const isBrokerage = draft.kind === "brokerage";
   const liability = draft.kind !== null && classOf(draft.kind) === "liability";
   if (isCard) {
     const card = draft.card;
@@ -116,10 +122,40 @@ export function createAccountSteps(
       });
     }
   }
+  if (draft.kind === "brokerage") {
+    steps.push({
+      key: "cash",
+      run: async (api, id) => {
+        const brokerage = await unwrap(
+          await api.GET("/accounts/{id}", { params: { path: { id } } }),
+        );
+        const cash = await unwrap(
+          await api.POST("/accounts", {
+            body: {
+              name: ids.cashName,
+              class: "asset",
+              kind: "brokerage",
+              currency: draft.currency,
+              opened_on: draft.openedOn,
+              ...(brokerage.institution_id === undefined
+                ? {}
+                : { institution_id: brokerage.institution_id }),
+              parent_id: id,
+              yield_mode: "none",
+            },
+          }),
+        );
+        cashId = cash.id;
+      },
+    });
+  }
   if (draft.opening > 0) {
     steps.push({
       key: "opening",
       run: async (api, id) => {
+        const target = isBrokerage
+          ? (cashId ?? (await cashChild(api, id)))
+          : id;
         const statement = isCard
           ? (
               await unwrap(
@@ -132,7 +168,7 @@ export function createAccountSteps(
         await unwrap(
           await api.POST("/transactions", {
             body: openingBalanceBody(
-              { id, currency: draft.currency },
+              { id: target, currency: draft.currency },
               ids.openingBalances,
               liability ? -draft.opening : draft.opening,
               draft.openedOn,
@@ -144,4 +180,24 @@ export function createAccountSteps(
     });
   }
   return steps;
+}
+
+async function cashChild(
+  api: Client<paths>,
+  parentId: string,
+): Promise<string> {
+  let cursor: string | undefined;
+  do {
+    const page = await unwrap(
+      await api.GET("/accounts", {
+        params: {
+          query: { limit: 200, ...(cursor === undefined ? {} : { cursor }) },
+        },
+      }),
+    );
+    const child = page.items.find((a) => a.parent_id === parentId);
+    if (child !== undefined) return child.id;
+    cursor = page.next_cursor;
+  } while (cursor !== undefined);
+  throw new Error("the brokerage has no cash account");
 }

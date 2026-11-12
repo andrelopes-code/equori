@@ -104,7 +104,11 @@ export function useStartRun(
     let done = 0;
     let complete = true;
     try {
-      for (const step of createAccountSteps(draft, { openingBalances })) {
+      const steps = createAccountSteps(draft, {
+        openingBalances,
+        cashName: t("brokerage.cashName"),
+      });
+      for (const step of steps) {
         await step.run(api, account.id);
         done += 1;
       }

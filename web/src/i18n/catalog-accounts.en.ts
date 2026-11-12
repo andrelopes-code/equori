@@ -3,6 +3,7 @@ export const accountsEn = {
   "kind.group.accounts": "Accounts",
   "kind.group.cards": "Cards",
   "kind.group.reserves": "Reserves and investments",
+  "kind.group.investments": "Investments",
   "kind.group.debts": "Debts and receivables",
   "kind.hint.checking": "A bank account that pays and receives day to day.",
   "kind.hint.savings": "A savings account that holds money apart.",
@@ -10,7 +11,8 @@ export const accountsEn = {
   "kind.hint.wallet": "A digital wallet or prepaid balance.",
   "kind.hint.benefit": "A meal, food or transport benefit card.",
   "kind.hint.reserve": "Money set aside, such as an emergency fund.",
-  "kind.hint.brokerage": "A brokerage account that holds securities.",
+  "kind.hint.brokerage":
+    "Where you buy stocks, ETFs and funds. It has a cash balance and one line per investment.",
   "kind.hint.receivable": "Money someone owes to you.",
   "kind.hint.credit_card": "A credit card billed by statements.",
   "kind.hint.loan": "A loan or financing you pay back.",
@@ -76,6 +78,8 @@ export const accountsEn = {
   "accountSetup.step.rule": "Billing cycle",
   "accountSetup.step.limit": "Credit limit",
   "accountSetup.step.card": "Card",
+  "brokerage.cashName": "Cash",
+  "accountSetup.step.cash": "Creating the cash account",
   "accountSetup.step.opening": "Opening balance",
   "accountSetup.failed":
     "The account was created, but “{step}” was not recorded",
@@ -140,6 +144,7 @@ export const accountsEn = {
     "Drawn behind the account's initials when its institution has no logo.",
   "accountForm.openingGroup": "Opening balance",
   "accountForm.opening": "Balance on the opening day",
+  "accountForm.cashOpening": "Cash already in the brokerage",
   "accountForm.openingOwed": "Owed on the opening day",
   "accountForm.openingCard": "Owed on the open statement",
   "accountForm.openingHint":
@@ -595,6 +600,10 @@ export const accountsEn = {
   "links.batch": "Import of {account}",
   "links.syncs": "Recent syncs",
   "links.syncLast": "Last on {time}",
+  "links.syncs.open": "View syncs",
+  "links.syncs.runs": "Syncs",
+  "links.syncs.layer.description":
+    "What each sync changed and the lines it listed, with the undo of its decisions.",
   "links.syncWhen": "When",
   "links.syncAllAccounts": "All accounts",
   "links.syncNoChange": "No changes",
