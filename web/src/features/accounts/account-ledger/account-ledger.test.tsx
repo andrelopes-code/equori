@@ -10,6 +10,7 @@ import {
   foodID,
   money,
   parentID,
+  reserveID,
 } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
@@ -49,12 +50,12 @@ const items = [
   ]),
 ];
 
-function api(queries: URLSearchParams[] = []) {
+function api(queries: URLSearchParams[] = [], rows: unknown[] = items) {
   return fakeApi(
     accountRoutes({
       "GET /api/v1/transactions": (req) => {
         queries.push(new URL(req.url).searchParams);
-        return json(200, { items });
+        return json(200, { items: rows });
       },
       [`GET /api/v1/accounts/${checkingID}/balance`]: () =>
         json(200, {
@@ -123,6 +124,26 @@ describe("Account movements", () => {
       }),
     ).not.toBeInTheDocument();
     expect(cashID).toBeDefined();
+  });
+
+  it("titles a transfer with an empty description from its two accounts", async () => {
+    const transfer = {
+      ...tx("t4", "2026-10-16", [
+        [checkingID, -5000],
+        [reserveID, 5000],
+      ]),
+      description: "",
+    };
+    await renderApp(`/accounts/${checkingID}`, {
+      fetch: api([], [transfer]),
+    });
+    const table = await ledger();
+
+    expect(
+      await within(table).findByRole("link", {
+        name: "Transfer from Nubank to Reserva de emergência",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("opens the transaction of a row", async () => {

@@ -2,20 +2,48 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import { transactionTitle } from "@/features/transactions/model/transaction-title";
+import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import type { TFunction } from "@/i18n/i18n-provider";
 
+type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
 
-const t: TFunction = (key, vars) =>
-  Object.entries(vars ?? {}).reduce(
-    (text, [name, value]) => text.replace(`{${name}}`, String(value)),
-    catalogPtBR[key],
-  );
+const t = translator(catalogPtBR);
+const tEn = translator(catalogEn);
 
 const holdingID = "holding";
+const checkingID = "checking";
+const savingsID = "savings";
+const cardID = "card";
+const usdID = "usd";
+const openingID = "opening";
+const adjustmentsID = "adjustments";
+const foodID = "food";
+const uncategorizedID = "uncategorized";
 
-const accounts = new Map([[holdingID, { currency: "AUVP11" }]]);
+const accounts = new Map<string, Account>(
+  [
+    account(holdingID, "Corretora", { currency: "AUVP11" }),
+    account(checkingID, "Nubank"),
+    account(savingsID, "Reserva"),
+    account(cardID, "Itaú Visa", { class: "liability", kind: "credit_card" }),
+    account(usdID, "Wise USD", { currency: "USD" }),
+    account(openingID, "Saldo inicial", {
+      class: "equity",
+      system_role: "opening_balances",
+    }),
+    account(adjustmentsID, "Ajustes", {
+      class: "equity",
+      system_role: "adjustments",
+    }),
+    account(foodID, "Mercado", { class: "expense" }),
+    account(uncategorizedID, "Sem categoria", {
+      class: "expense",
+      system_role: "uncategorized_expense",
+    }),
+  ].map((a) => [a.id, a]),
+);
 
 function tx(overrides: Partial<Transaction> = {}): Transaction {
   return {
@@ -61,6 +89,44 @@ function income(): Transaction {
   });
 }
 
+function translator(catalog: Record<string, string>): TFunction {
+  return (key, vars) =>
+    Object.entries(vars ?? {}).reduce(
+      (text, [name, value]) => text.replace(`{${name}}`, String(value)),
+      catalog[key] ?? "",
+    );
+}
+
+function account(
+  id: string,
+  name: string,
+  overrides: Partial<Account> = {},
+): Account {
+  return {
+    id,
+    name,
+    class: "asset",
+    kind: "checking",
+    currency: "BRL",
+    ...overrides,
+  };
+}
+
+function posted(
+  entries: [string, number, string?][],
+  overrides: Partial<Transaction> = {},
+): Transaction {
+  return tx({
+    postings: entries.map(([account_id, amount, currency], i) => ({
+      id: `p${String(i)}`,
+      account_id,
+      amount: { amount, currency: currency ?? "BRL" },
+      status: "cleared",
+    })),
+    ...overrides,
+  });
+}
+
 describe("transactionTitle", () => {
   it("titles a purchase with an empty description", () => {
     expect(transactionTitle(trade("buy"), t)).toBe("Compra de AUVP11");
@@ -94,5 +160,132 @@ describe("transactionTitle", () => {
 
   it("returns empty for an expense with an empty description", () => {
     expect(transactionTitle(tx(), t)).toBe("");
+  });
+
+  it("titles a transfer from the account that loses money to the one that gains it", () => {
+    const transfer = posted([
+      [checkingID, -5000],
+      [savingsID, 5000],
+    ]);
+
+    expect(transactionTitle(transfer, t, { accounts })).toBe(
+      "Transferência de Nubank para Reserva",
+    );
+    expect(transactionTitle(transfer, tEn, { accounts })).toBe(
+      "Transfer from Nubank to Reserva",
+    );
+  });
+
+  it("keeps the description of a transfer", () => {
+    const transfer = posted(
+      [
+        [checkingID, -5000],
+        [savingsID, 5000],
+      ],
+      { description: "Reserva de outubro" },
+    );
+
+    expect(transactionTitle(transfer, t, { accounts })).toBe(
+      "Reserva de outubro",
+    );
+  });
+
+  it("keeps the payee of a transfer", () => {
+    const transfer = posted([
+      [checkingID, -5000],
+      [savingsID, 5000],
+    ]);
+
+    expect(transactionTitle(transfer, t, { accounts, payee: "Ana" })).toBe(
+      "Ana",
+    );
+  });
+
+  it("titles a transfer into a credit card as the payment of its statement", () => {
+    const payment = posted([
+      [checkingID, -5000],
+      [cardID, 5000],
+    ]);
+
+    expect(transactionTitle(payment, t, { accounts })).toBe(
+      "Pagamento da fatura Itaú Visa",
+    );
+    expect(transactionTitle(payment, tEn, { accounts })).toBe(
+      "Payment of the Itaú Visa statement",
+    );
+  });
+
+  it("titles the exchange of two currencies with their codes", () => {
+    const exchange = posted([
+      [checkingID, -5000],
+      [usdID, 1000, "USD"],
+    ]);
+
+    expect(transactionTitle(exchange, t, { accounts })).toBe(
+      "Câmbio de BRL para USD",
+    );
+    expect(transactionTitle(exchange, tEn, { accounts })).toBe(
+      "Exchange of BRL for USD",
+    );
+  });
+
+  it("titles an opening balance with the opened account", () => {
+    const opening = posted([
+      [checkingID, 5000],
+      [openingID, -5000],
+    ]);
+
+    expect(transactionTitle(opening, t, { accounts })).toBe(
+      "Saldo inicial de Nubank",
+    );
+    expect(transactionTitle(opening, tEn, { accounts })).toBe(
+      "Opening balance of Nubank",
+    );
+  });
+
+  it("titles a balance adjustment with the adjusted account", () => {
+    const adjustment = posted([
+      [savingsID, -300],
+      [adjustmentsID, 300],
+    ]);
+
+    expect(transactionTitle(adjustment, t, { accounts })).toBe(
+      "Ajuste de saldo de Reserva",
+    );
+    expect(transactionTitle(adjustment, tEn, { accounts })).toBe(
+      "Balance adjustment of Reserva",
+    );
+  });
+
+  it("titles an expense or an income with the name of its category", () => {
+    const expense = posted([
+      [checkingID, -5000],
+      [foodID, 5000],
+    ]);
+    const income = posted([
+      [checkingID, 5000],
+      [foodID, -5000],
+    ]);
+
+    expect(transactionTitle(expense, t, { accounts })).toBe("Mercado");
+    expect(transactionTitle(income, t, { accounts })).toBe("Mercado");
+  });
+
+  it("returns empty for an expense in an uncategorized system account", () => {
+    const expense = posted([
+      [checkingID, -5000],
+      [uncategorizedID, 5000],
+    ]);
+
+    expect(transactionTitle(expense, t, { accounts })).toBe("");
+  });
+
+  it("returns empty for a transfer when the accounts are unknown", () => {
+    const transfer = posted([
+      [checkingID, -5000],
+      [savingsID, 5000],
+    ]);
+
+    expect(transactionTitle(transfer, t)).toBe("");
   });
 });
