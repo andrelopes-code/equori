@@ -82,6 +82,10 @@ export const reportsEn = {
   "report.netWorth.title": "Net worth by month",
   "report.netWorth.span": "Months shown",
   "report.netWorth.months": "{count} months",
+  "report.netWorth.months.open": "View month by month",
+  "report.netWorth.months.summary": "{count} months, from {from} to {to}.",
+  "report.netWorth.months.layer.description":
+    "The net worth at the end of each month, with the change from the month before.",
   "report.netWorth.change": "Change in net worth",
   "report.netWorth.changeNote": "From {start} to {end}, at the end of each day",
   "report.netWorth.resultOfPeriod": "Income minus expenses",

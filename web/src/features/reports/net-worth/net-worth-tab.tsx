@@ -15,7 +15,7 @@ import {
   periodMonthEnds,
 } from "@/features/reports/model/net-worth-months";
 import { NetWorthMonthCard } from "@/features/reports/net-worth-month/net-worth-month-card";
-import { NetWorthTable } from "@/features/reports/net-worth/net-worth-table";
+import { NetWorthMonthsLayer } from "@/features/reports/net-worth/net-worth-months-layer";
 import { ReportControls } from "@/features/reports/report-controls/report-controls";
 import type { ReportPeriod } from "@/features/reports/model/report-period";
 import { netWorthSpans } from "@/features/reports/model/reports-search";
@@ -179,10 +179,9 @@ export function NetWorthTab({
         onBase={onValueIn}
       />
 
-      <NetWorthTable
+      <NetWorthMonthsLayer
         rows={rows}
         pending={pending}
-        title={title}
         currency={currency}
         digits={digits}
       />

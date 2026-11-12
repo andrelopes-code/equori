@@ -6,7 +6,6 @@ import {
   TableColumnHeader,
   TableContent,
   TableHead,
-  TableLoader,
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
@@ -16,9 +15,10 @@ import { formatReferenceMonth, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
+import styles from "@/features/reports/net-worth/net-worth-table.module.css";
+
 interface NetWorthTableProps {
   rows: ReturnType<typeof netWorthRows>;
-  pending: boolean;
   title: string;
   currency: string;
   digits: number;
@@ -27,7 +27,6 @@ interface NetWorthTableProps {
 // The month ends of the net worth tab, newest first, with the change from the month before.
 export function NetWorthTable({
   rows,
-  pending,
   title,
   currency,
   digits,
@@ -41,8 +40,8 @@ export function NetWorthTable({
   const none = t("report.none");
 
   return (
-    <Table columns={6} variant="framed">
-      <TableContent>
+    <Table columns={6} variant="framed" stickyHeader>
+      <TableContent scrollProps={{ className: styles.scroll }}>
         <TableCaption>{title}</TableCaption>
         <TableHead>
           <TableRow>
@@ -62,39 +61,35 @@ export function NetWorthTable({
             </TableColumnHeader>
           </TableRow>
         </TableHead>
-        {pending ? (
-          <TableLoader skeletonRows={6} />
-        ) : (
-          <TableBody>
-            {rows
-              .slice()
-              .reverse()
-              .map((r) => (
-                <TableRow key={r.month} value={r.month}>
-                  <TableRowHeader>{label(r.month)}</TableRowHeader>
-                  <TableCell numeric>
-                    {r.assets === undefined ? none : money(r.assets)}
-                  </TableCell>
-                  <TableCell numeric>
-                    {r.liabilities === undefined ? none : money(r.liabilities)}
-                  </TableCell>
-                  <TableCell numeric>
-                    {r.net === undefined ? none : money(r.net)}
-                  </TableCell>
-                  <TableCell numeric>
-                    {r.change === undefined
-                      ? none
-                      : fmt.signed({ amount: r.change, currency }, digits)}
-                  </TableCell>
-                  <TableCell numeric>
-                    {r.changeBP === undefined
-                      ? none
-                      : formatSignedBasisPoints(r.changeBP, tag)}
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        )}
+        <TableBody>
+          {rows
+            .slice()
+            .reverse()
+            .map((r) => (
+              <TableRow key={r.month} value={r.month}>
+                <TableRowHeader>{label(r.month)}</TableRowHeader>
+                <TableCell numeric>
+                  {r.assets === undefined ? none : money(r.assets)}
+                </TableCell>
+                <TableCell numeric>
+                  {r.liabilities === undefined ? none : money(r.liabilities)}
+                </TableCell>
+                <TableCell numeric>
+                  {r.net === undefined ? none : money(r.net)}
+                </TableCell>
+                <TableCell numeric>
+                  {r.change === undefined
+                    ? none
+                    : fmt.signed({ amount: r.change, currency }, digits)}
+                </TableCell>
+                <TableCell numeric>
+                  {r.changeBP === undefined
+                    ? none
+                    : formatSignedBasisPoints(r.changeBP, tag)}
+                </TableCell>
+              </TableRow>
+            ))}
+        </TableBody>
       </TableContent>
     </Table>
   );

@@ -23,8 +23,21 @@ const figure = async (label: string) =>
 
 const brl = (amount: number) => ({ amount, currency: "BRL" });
 
-const netWorthTable = () =>
-  screen.findByRole("table", { name: catalogEn["report.netWorth.title"] });
+const openMonths = async () => {
+  await userEvent.setup().click(
+    await screen.findByRole("button", {
+      name: catalogEn["report.netWorth.months.open"],
+    }),
+  );
+};
+
+const netWorthTable = async () => {
+  await openMonths();
+
+  return screen.findByRole("table", {
+    name: catalogEn["report.netWorth.title"],
+  });
+};
 
 // FakeFetch records only unrouted calls, so a route wrapper records the queries.
 function api(overrides: Record<string, (req: Request) => Response> = {}) {
@@ -309,6 +322,40 @@ describe("Reports net worth", () => {
       "Jun 2026|R$2,000.00|R$1,200.00|R$800.00|R$0.00|0.00%",
       `May 2026|R$2,000.00|R$1,200.00|R$800.00|${catalogEn["report.none"]}|${catalogEn["report.none"]}`,
     ]);
+  });
+
+  it("L7: the page holds the summary line and no table until the button is pressed", async () => {
+    const { fetch } = api();
+    await renderApp("/reports?months=6", { fetch });
+
+    expect(
+      await screen.findByText("6 months, from May 2026 to Oct 2026."),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("table", { name: catalogEn["report.netWorth.title"] }),
+    ).not.toBeInTheDocument();
+
+    const table = await netWorthTable();
+
+    expect(rowTexts(table)).toHaveLength(7);
+  });
+
+  it("L7: draws no button when no month can be valued", async () => {
+    const { fetch } = api({
+      "GET /api/v1/reports/net-worth": () => problem(422, "price_missing"),
+    });
+    await renderApp("/reports?months=6", { fetch });
+
+    // The chart is drawn once no month is pending.
+    await screen.findByRole("group", {
+      name: catalogEn["report.netWorth.title"],
+    });
+
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["report.netWorth.months.open"],
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps the other months when one month cannot be valued", async () => {
