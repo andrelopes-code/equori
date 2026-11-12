@@ -149,6 +149,7 @@ func (r *Repository) ListTransactions(
 		AmountMin:     q.AmountMin,
 		AmountMax:     q.AmountMax,
 		Uncategorized: q.Uncategorized,
+		ExcludeVoided: q.ExcludeVoided,
 		RowLimit:      int32(q.Limit),
 	}
 	if q.After != nil {

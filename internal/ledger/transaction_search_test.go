@@ -460,3 +460,39 @@ func TestUncategorizedLeavesOutVoided(t *testing.T) {
 		t.Fatalf("all = %v, want [%s %s]", got, voided, open)
 	}
 }
+
+// The list keeps voided transactions as history; exclude_voided=true leaves them out and a page
+// of the filtered list holds only live transactions.
+func TestListTransactionsExcludeVoided(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	checking := h.Account("Checking", "asset", "checking", nil)
+	food := h.Account("Food", "expense", "", nil)
+	live := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(food, 100))
+	voided := h.Record("2026-10-02", apitest.Posting(checking, -200), apitest.Posting(food, 200))
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "paired"},
+		http.StatusOK,
+		nil,
+	)
+
+	tests := []struct {
+		name  string
+		query string
+		want  []string
+	}{
+		{"default keeps voided", "limit=50", []string{voided, live}},
+		{"false keeps voided", "exclude_voided=false", []string{voided, live}},
+		{"true leaves voided out", "exclude_voided=true", []string{live}},
+		{"true with a one-row page", "exclude_voided=true&limit=1", []string{live}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := transactionIDs(t, h, tc.query); !slices.Equal(got, tc.want) {
+				t.Fatalf("ids = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

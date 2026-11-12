@@ -47,6 +47,7 @@ func (s *Server) listTransactions(
 		AmountMin:     params.AmountMin,
 		AmountMax:     params.AmountMax,
 		Uncategorized: params.Uncategorized != nil && *params.Uncategorized,
+		ExcludeVoided: params.ExcludeVoided != nil && *params.ExcludeVoided,
 	}
 
 	rows, next, err := s.svc.ListTransactions(ctx, q)

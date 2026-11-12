@@ -308,6 +308,10 @@ WHERE
                 p.transaction_id = t.id
         ) BETWEEN coalesce(sqlc.narg (amount_min)::bigint, 0) AND coalesce(sqlc.narg (amount_max)::bigint, 9223372036854775807)
     )
+    AND (
+        NOT @exclude_voided::boolean
+        OR t.voided_at IS NULL
+    )
     -- P5 amendment A17: every category posting is on an uncategorized system account.
     -- A voided transaction cannot be categorized, so the queue leaves it out.
     AND (

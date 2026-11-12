@@ -858,10 +858,14 @@ WHERE
                 p.transaction_id = t.id
         ) BETWEEN coalesce($7::bigint, 0) AND coalesce($8::bigint, 9223372036854775807)
     )
+    AND (
+        NOT $9::boolean
+        OR t.voided_at IS NULL
+    )
     -- P5 amendment A17: every category posting is on an uncategorized system account.
     -- A voided transaction cannot be categorized, so the queue leaves it out.
     AND (
-        NOT $9::boolean
+        NOT $10::boolean
         OR (
             t.voided_at IS NULL
             AND EXISTS (
@@ -891,12 +895,12 @@ WHERE
     -- Every blank-separated word of q must appear, ignoring case and accents, in the description,
     -- the payee name or a posting memo.
     AND (
-        $10::text IS NULL
+        $11::text IS NULL
         OR NOT EXISTS (
             SELECT
                 1
             FROM
-                regexp_split_to_table(btrim($10::text), '\s+') AS word
+                regexp_split_to_table(btrim($11::text), '\s+') AS word
             WHERE
                 NOT (
                     strpos(unaccent (lower(t.description))::text, unaccent (lower(word))::text) > 0
@@ -923,14 +927,14 @@ WHERE
         )
     )
     AND (
-        $11::date IS NULL
-        OR (t.date, t.id) < ($11::date, $12::uuid)
+        $12::date IS NULL
+        OR (t.date, t.id) < ($12::date, $13::uuid)
     )
 ORDER BY
     t.date DESC,
     t.id DESC
 LIMIT
-    $13
+    $14
 `
 
 type ListTransactionsParams struct {
@@ -942,6 +946,7 @@ type ListTransactionsParams struct {
 	ToDate        *time.Time
 	AmountMin     *int64
 	AmountMax     *int64
+	ExcludeVoided bool
 	Uncategorized bool
 	Q             *string
 	AfterDate     *time.Time
@@ -960,6 +965,7 @@ func (q *Queries) ListTransactions(ctx context.Context, arg ListTransactionsPara
 		arg.ToDate,
 		arg.AmountMin,
 		arg.AmountMax,
+		arg.ExcludeVoided,
 		arg.Uncategorized,
 		arg.Q,
 		arg.AfterDate,

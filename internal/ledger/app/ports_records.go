@@ -202,6 +202,8 @@ type TransactionQuery struct {
 	AmountMin, AmountMax *int64
 	// Uncategorized keeps only transactions in category state uncategorized.
 	Uncategorized bool
+	// ExcludeVoided leaves voided transactions out; the default keeps them as history.
+	ExcludeVoided bool
 	After         *TransactionCursor
 	Limit         int
 }

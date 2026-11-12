@@ -10771,6 +10771,8 @@ export interface operations {
                 amount_max?: number;
                 /** @description When true, only transactions whose category postings are all uncategorized (P5 amendment A17). */
                 uncategorized?: boolean;
+                /** @description When true, voided transactions are left out of the pages; the default keeps them as history. */
+                exclude_voided?: boolean;
                 /** @description Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo. */
                 q?: string;
             };

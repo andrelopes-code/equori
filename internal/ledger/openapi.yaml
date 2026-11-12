@@ -691,6 +691,11 @@ paths:
           description: When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
           schema:
             type: boolean
+        - name: exclude_voided
+          in: query
+          description: When true, voided transactions are left out of the pages; the default keeps them as history.
+          schema:
+            type: boolean
         - name: q
           in: query
           description: Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo.

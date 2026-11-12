@@ -2345,6 +2345,9 @@ type ListTransactionsParams struct {
 	// Uncategorized When true, only transactions whose category postings are all uncategorized (P5 amendment A17).
 	Uncategorized *bool `form:"uncategorized,omitempty" json:"uncategorized,omitempty"`
 
+	// ExcludeVoided When true, voided transactions are left out of the pages; the default keeps them as history.
+	ExcludeVoided *bool `form:"exclude_voided,omitempty" json:"exclude_voided,omitempty"`
+
 	// Q Blank-separated words; each must appear, ignoring case and accents, in the description, payee name or a posting memo.
 	Q *string `form:"q,omitempty" json:"q,omitempty"`
 }
