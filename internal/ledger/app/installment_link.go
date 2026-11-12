@@ -82,14 +82,9 @@ func (s *Service) confirmInstallment(
 		return ErrInstallmentUnavailable
 	}
 
-	target := prev.Postings[k].Statement
-	if c.DueDate != nil {
-		ref, err := s.statementDue(ctx, r, booksID, prev.Postings[k].AccountID, *c.DueDate)
-		if err != nil {
-			return err
-		}
-
-		target = &ref
+	target, err := s.confirmedStatement(ctx, r, booksID, prev.Postings[k], c)
+	if err != nil {
+		return err
 	}
 
 	status := prev.Postings[k].Status
@@ -99,15 +94,15 @@ func (s *Service) confirmInstallment(
 
 	if -in.Amount == c.Amount.Amount() && target != nil && prev.Postings[k].Statement != nil &&
 		*target == *prev.Postings[k].Statement {
-		if err := r.LinkExternalRecord(ctx, booksID, in.PostingID, recordID); err != nil {
-			return err
-		}
-
-		if status == prev.Postings[k].Status {
-			return nil
-		}
-
-		return r.SettleImportedPosting(ctx, booksID, in.PostingID, status, uuid.Nil)
+		return linkConfirmed(
+			ctx,
+			r,
+			booksID,
+			in.PostingID,
+			recordID,
+			status,
+			prev.Postings[k].Status,
+		)
 	}
 
 	return s.rewriteInstallment(
@@ -122,6 +117,49 @@ func (s *Service) confirmInstallment(
 		*target,
 		status,
 	)
+}
+
+// confirmedStatement is the statement the confirmed posting sits on: the one due on the due
+// date of the line, or the posting's own when the line carries none.
+func (s *Service) confirmedStatement(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	posting domain.Posting,
+	c InstallmentConfirmation,
+) (*domain.ReferenceMonth, error) {
+	target := posting.Statement
+	if c.DueDate != nil {
+		ref, err := s.statementDue(ctx, r, booksID, posting.AccountID, *c.DueDate)
+		if err != nil {
+			return nil, err
+		}
+
+		target = &ref
+	}
+
+	return target, nil
+}
+
+// linkConfirmed links the record to the posting and settles it when its status differs.
+func linkConfirmed(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	postingID uuid.UUID,
+	recordID uuid.UUID,
+	status domain.PostingStatus,
+	current domain.PostingStatus,
+) error {
+	if err := r.LinkExternalRecord(ctx, booksID, postingID, recordID); err != nil {
+		return err
+	}
+
+	if status == current {
+		return nil
+	}
+
+	return r.SettleImportedPosting(ctx, booksID, postingID, status, uuid.Nil)
 }
 
 const reasonConfirmed = "installment confirmed"

@@ -35,16 +35,6 @@ internal/ingestion/postgres/record.go	toRecord	pending: split after the 100-colu
 internal/ingestion/postgres/sync.go	Repository.UpdateRecordFacts	pending: split after the 100-column reformatting
 internal/ingestion/toolapi/manage.go	parseImportsAction	pending: split after the 100-column reformatting
 internal/ingestion/toolapi/manage_preview.go	previewMapping	pending: split after the 100-column reformatting
-internal/ledger/app/import_links.go	Service.UpdateImportedPosting	pending: split after the 100-column reformatting
-internal/ledger/app/imports.go	importedTransaction	pending: split after the 100-column reformatting
-internal/ledger/app/installment.go	Service.RecordImportedInstallment	pending: split after the 100-column reformatting
-internal/ledger/app/installment_link.go	Service.confirmInstallment	pending: split after the 100-column reformatting
-internal/ledger/app/reimbursement_candidates.go	Service.ReimbursementSources	pending: split after the 100-column reformatting
-internal/ledger/app/statements.go	Service.FinanceStatement	pending: split after the 100-column reformatting
-internal/ledger/app/tag.go	Service.MergeTag	pending: split after the 100-column reformatting
-internal/ledger/app/trades.go	Service.RecordIncome	pending: split after the 100-column reformatting
-internal/ledger/app/trades.go	Service.RecordTrade	pending: split after the 100-column reformatting
-internal/ledger/app/transaction.go	Service.references	pending: split after the 100-column reformatting
 internal/ledger/domain/billing.go	NewBillingCycleRule	pending: split after the 100-column reformatting
 internal/ledger/domain/categorize.go	categoryPostings	pending: split after the 100-column reformatting
 internal/ledger/domain/income.go	BuildIncome	pending: split after the 100-column reformatting

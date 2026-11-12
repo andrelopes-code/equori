@@ -113,15 +113,7 @@ func (s *Service) MergeTag(
 			return invalid("must differ from the tag")
 		}
 
-		replace := func(tags []string) []string {
-			out := append(
-				slices.DeleteFunc(slices.Clone(tags), func(t string) bool { return t == from }),
-				into,
-			)
-			slices.Sort(out)
-
-			return slices.Compact(out)
-		}
+		replace := mergedTags(from, into)
 		if err := retag(ctx, r, booksID, src.ID, replace, reasonMerged); err != nil {
 			return err
 		}
@@ -138,18 +130,42 @@ func (s *Service) MergeTag(
 			return err
 		}
 
-		return r.Publish(
-			ctx,
-			outbox.Event{
-				Type:        EventTagRenamed,
-				BooksID:     booksID,
-				AggregateID: src.ID.String(),
-				Payload:     TagRenamed{From: from, Into: into},
-			},
-		)
+		return publishTagRenamed(ctx, r, booksID, src.ID, from, into)
 	})
 
 	return dest, err
+}
+
+// mergedTags returns the function that replaces from by into in a sorted tag list.
+func mergedTags(from, into string) func([]string) []string {
+	return func(tags []string) []string {
+		out := append(
+			slices.DeleteFunc(slices.Clone(tags), func(t string) bool { return t == from }),
+			into,
+		)
+		slices.Sort(out)
+
+		return slices.Compact(out)
+	}
+}
+
+// publishTagRenamed publishes the rename of the tag srcID from from to into.
+func publishTagRenamed(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	srcID uuid.UUID,
+	from, into string,
+) error {
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTagRenamed,
+			BooksID:     booksID,
+			AggregateID: srcID.String(),
+			Payload:     TagRenamed{From: from, Into: into},
+		},
+	)
 }
 
 // DeleteTag gives every non-voided transaction of the tag a new version without it; the

@@ -27,32 +27,9 @@ func (s *Service) RecordTrade(
 			return err
 		}
 
-		o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
-			AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
-			Instrument: o.Instrument, Create: o.Side == domain.SideBuy,
-		})
+		security, cash, err := s.resolveTrade(ctx, r, booksID, &o, base)
 		if err != nil {
 			return err
-		}
-
-		security, cash, err := s.brokerageAccounts(
-			ctx,
-			r,
-			booksID,
-			o.AccountID,
-			o.CashAccountID,
-			base,
-		)
-		if err != nil {
-			return err
-		}
-
-		if o.Quantity.Currency() != security.Instrument {
-			return fieldErr(
-				"quantity",
-				"must be an amount of "+string(security.Instrument),
-				domain.ErrValidation,
-			)
 		}
 
 		h, err := s.lockHolding(ctx, r, booksID, security, base, o.Date)
@@ -83,6 +60,45 @@ func (s *Service) RecordTrade(
 	})
 
 	return created, err
+}
+
+// resolveTrade resolves the security and cash accounts of o into o and checks its quantity.
+func (s *Service) resolveTrade(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o *domain.TradeOrder,
+	base money.Currency,
+) (security, cash domain.Account, err error) {
+	o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
+		AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
+		Instrument: o.Instrument, Create: o.Side == domain.SideBuy,
+	})
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	security, cash, err = s.brokerageAccounts(
+		ctx,
+		r,
+		booksID,
+		o.AccountID,
+		o.CashAccountID,
+		base,
+	)
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if o.Quantity.Currency() != security.Instrument {
+		return domain.Account{}, domain.Account{}, fieldErr(
+			"quantity",
+			"must be an amount of "+string(security.Instrument),
+			domain.ErrValidation,
+		)
+	}
+
+	return security, cash, nil
 }
 
 // lockHolding locks the security account and returns the holding it has on date.
@@ -130,26 +146,7 @@ func (s *Service) RecordIncome(
 			return err
 		}
 
-		o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
-			AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
-			Instrument: o.Instrument, Create: true,
-		})
-		if err != nil {
-			return err
-		}
-
-		if _, _, err := s.brokerageAccounts(
-			ctx,
-			r,
-			booksID,
-			o.AccountID,
-			o.CashAccountID,
-			base,
-		); err != nil {
-			return err
-		}
-
-		if err := checkIncomeCategory(ctx, r, booksID, o.CategoryID); err != nil {
+		if err := s.resolveIncome(ctx, r, booksID, &o, base); err != nil {
 			return err
 		}
 
@@ -181,6 +178,42 @@ func (s *Service) RecordIncome(
 	})
 
 	return created, err
+}
+
+// resolveIncome resolves the security and cash accounts of o into o and checks its category.
+func (s *Service) resolveIncome(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o *domain.IncomeOrder,
+	base money.Currency,
+) error {
+	var err error
+
+	o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
+		AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
+		Instrument: o.Instrument, Create: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	if _, _, err := s.brokerageAccounts(
+		ctx,
+		r,
+		booksID,
+		o.AccountID,
+		o.CashAccountID,
+		base,
+	); err != nil {
+		return err
+	}
+
+	if err := checkIncomeCategory(ctx, r, booksID, o.CategoryID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // checkIncomeCategory requires id to name an income category.

@@ -61,9 +61,28 @@ func (s *Service) RecordImportedInstallment(
 
 	first := line.Add(1 - in.Number)
 
-	total, err := money.New(in.Amount.Amount()*int64(in.Count), in.Amount.Currency())
+	total, err := importedInstallmentTotal(in)
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
+	}
+
+	expense, err := s.repo.SystemAccount(ctx, booksID, domain.RoleUncategorizedExpense)
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	purchase := importedPurchase(in, first, total, expense.ID)
+	t, planID, err := s.InstallmentPurchase(ctx, booksID, purchase)
+
+	return t.ID, planID, err
+}
+
+// importedInstallmentTotal is the purchase total of the line: Count times its installment, or
+// the reported total when it splits into that installment at the line's number.
+func importedInstallmentTotal(in ImportedInstallment) (money.Money, error) {
+	total, err := money.New(in.Amount.Amount()*int64(in.Count), in.Amount.Currency())
+	if err != nil {
+		return money.Money{}, err
 	}
 
 	if t := in.Total; t != nil && t.Currency() == in.Amount.Currency() && in.Number <= in.Count {
@@ -72,12 +91,17 @@ func (s *Service) RecordImportedInstallment(
 		}
 	}
 
-	expense, err := s.repo.SystemAccount(ctx, booksID, domain.RoleUncategorizedExpense)
-	if err != nil {
-		return uuid.Nil, uuid.Nil, err
-	}
+	return total, nil
+}
 
-	split := domain.Posting{AccountID: expense.ID, Amount: total}
+// importedPurchase is the installment purchase of the line, with its single split.
+func importedPurchase(
+	in ImportedInstallment,
+	first domain.ReferenceMonth,
+	total money.Money,
+	expenseID uuid.UUID,
+) InstallmentPurchaseInput {
+	split := domain.Posting{AccountID: expenseID, Amount: total}
 
 	purchase := InstallmentPurchaseInput{
 		CardAccountID:  in.CardAccountID,
@@ -98,9 +122,8 @@ func (s *Service) RecordImportedInstallment(
 	}
 
 	purchase.Splits = []domain.Posting{split}
-	t, planID, err := s.InstallmentPurchase(ctx, booksID, purchase)
 
-	return t.ID, planID, err
+	return purchase
 }
 
 func (s *Service) lineStatement(

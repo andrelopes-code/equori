@@ -227,12 +227,7 @@ func (s *Service) ReimbursementSources(
 		return nil, err
 	}
 
-	var instrument money.Currency
-	for _, p := range t.Postings {
-		if accounts[p.AccountID].Class == domain.ClassExpense && p.Amount.Amount() > 0 {
-			instrument = p.Amount.Currency()
-		}
-	}
+	instrument := expenseInstrument(t, accounts)
 
 	if t.VoidedAt != nil || instrument == "" {
 		return []ReimbursementSource{}, nil
@@ -259,6 +254,27 @@ func (s *Service) ReimbursementSources(
 		return nil, err
 	}
 
+	return reimbursementSources(rows, byID, instrument)
+}
+
+// expenseInstrument is the currency of the expense posting of t, empty when it has none.
+func expenseInstrument(t domain.Transaction, accounts map[uuid.UUID]domain.Account) money.Currency {
+	var instrument money.Currency
+	for _, p := range t.Postings {
+		if accounts[p.AccountID].Class == domain.ClassExpense && p.Amount.Amount() > 0 {
+			instrument = p.Amount.Currency()
+		}
+	}
+
+	return instrument
+}
+
+// reimbursementSources pairs each row with its transaction and its free amount.
+func reimbursementSources(
+	rows []SourceRow,
+	byID map[uuid.UUID]domain.Transaction,
+	instrument money.Currency,
+) ([]ReimbursementSource, error) {
 	out := make([]ReimbursementSource, 0, len(rows))
 	for _, row := range rows {
 		free, err := money.New(row.Free, instrument)

@@ -142,30 +142,12 @@ func (s *Service) UpdateImportedPosting(
 		retype := u.Kind == LineKindPayment && p.CardRole == domain.RoleCredit
 
 		if p.Status == domain.StatusReconciled {
-			if !u.Pending && !retype &&
-				(!billed || (p.StatementDue != nil && p.StatementDue.Equal(*u.DueDate))) {
-				return nil
-			}
-
-			return domain.ErrReconciled
+			return reconciledImport(p, u, billed, retype)
 		}
 
-		status := p.Status
-		if !u.Pending {
-			status = domain.StatusCleared
-		}
-
-		var statementID uuid.UUID
-		if billed {
-			if statementID, err = s.dueStatementID(
-				ctx,
-				r,
-				booksID,
-				p.AccountID,
-				*u.DueDate,
-			); err != nil {
-				return err
-			}
+		status, statementID, err := s.importedSettlement(ctx, r, booksID, p, u, billed)
+		if err != nil {
+			return err
 		}
 
 		role = p.CardRole
@@ -186,6 +168,47 @@ func (s *Service) UpdateImportedPosting(
 	}
 
 	return true, nil
+}
+
+// reconciledImport is nil when a reconciled posting needs no change, ErrReconciled otherwise.
+func reconciledImport(p ImportedPostingState, u ImportedUpdate, billed, retype bool) error {
+	if !u.Pending && !retype &&
+		(!billed || (p.StatementDue != nil && p.StatementDue.Equal(*u.DueDate))) {
+		return nil
+	}
+
+	return domain.ErrReconciled
+}
+
+// importedSettlement is the status and the statement the posting takes from the line.
+func (s *Service) importedSettlement(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	p ImportedPostingState,
+	u ImportedUpdate,
+	billed bool,
+) (domain.PostingStatus, uuid.UUID, error) {
+	status := p.Status
+	if !u.Pending {
+		status = domain.StatusCleared
+	}
+
+	var statementID uuid.UUID
+	if billed {
+		var err error
+		if statementID, err = s.dueStatementID(
+			ctx,
+			r,
+			booksID,
+			p.AccountID,
+			*u.DueDate,
+		); err != nil {
+			return "", uuid.Nil, err
+		}
+	}
+
+	return status, statementID, nil
 }
 
 // retypeAsPayment rewrites the transaction carrying the record as a card payment against

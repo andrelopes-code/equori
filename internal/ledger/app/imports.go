@@ -179,35 +179,45 @@ func importedTransaction(
 	}
 
 	if d := rec.Decision; d != nil {
-		t.PayeeID, t.Tags = d.PayeeID, d.AddTags
-		for _, p := range d.Parts {
-			t.Postings = append(
-				t.Postings,
-				domain.Posting{AccountID: p.AccountID, Amount: p.Amount},
-			)
-		}
-
-		if d.TransferTo != uuid.Nil {
-			t.Postings = append(
-				t.Postings,
-				domain.Posting{AccountID: d.TransferTo, Amount: rec.Posting.Amount.Neg()},
-			)
-		}
+		addDecision(&t, d, rec.Posting.Amount)
 	}
 
 	if len(t.Postings) == 1 {
-		other := income
-		if rec.Posting.Amount.IsNegative() {
-			other = expense
-		}
-
-		t.Postings = append(
-			t.Postings,
-			domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()},
-		)
+		addUncategorized(&t, rec.Posting.Amount, expense, income)
 	}
 
 	return t
+}
+
+// addDecision appends the category parts and the transfer leg of d to t.
+func addDecision(t *domain.Transaction, d *ImportDecision, amount money.Money) {
+	t.PayeeID, t.Tags = d.PayeeID, d.AddTags
+	for _, p := range d.Parts {
+		t.Postings = append(
+			t.Postings,
+			domain.Posting{AccountID: p.AccountID, Amount: p.Amount},
+		)
+	}
+
+	if d.TransferTo != uuid.Nil {
+		t.Postings = append(
+			t.Postings,
+			domain.Posting{AccountID: d.TransferTo, Amount: amount.Neg()},
+		)
+	}
+}
+
+// addUncategorized appends the leg against the uncategorized account of the sign of amount.
+func addUncategorized(t *domain.Transaction, amount money.Money, expense, income domain.Account) {
+	other := income
+	if amount.IsNegative() {
+		other = expense
+	}
+
+	t.Postings = append(
+		t.Postings,
+		domain.Posting{AccountID: other.ID, Amount: amount.Neg()},
+	)
 }
 
 // cardPayment books a card payment line against the transit account until the paying

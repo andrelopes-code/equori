@@ -271,6 +271,28 @@ func (s *Service) references(
 		return nil, err
 	}
 
+	if err := checkLeafAccounts(ctx, r, t, accounts); err != nil {
+		return nil, err
+	}
+
+	if err := checkTransactionPayee(ctx, r, t); err != nil {
+		return nil, err
+	}
+
+	if err := checkLinkTargets(ctx, r, t); err != nil {
+		return nil, err
+	}
+
+	return accounts, nil
+}
+
+// checkLeafAccounts rejects a posting on a parent account.
+func checkLeafAccounts(
+	ctx context.Context,
+	r Repository,
+	t domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+) error {
 	for i, p := range t.Postings {
 		a, ok := accounts[p.AccountID]
 		if !ok || !a.IsBalance() {
@@ -279,11 +301,11 @@ func (s *Service) references(
 
 		parent, err := r.AccountHasChildren(ctx, t.BooksID, a.ID)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		if parent {
-			return nil, &domain.FieldError{
+			return &domain.FieldError{
 				Field:   "postings[" + strconv.Itoa(i) + "].account_id",
 				Message: "postings go to the sub-accounts of a parent account",
 				Err:     domain.ErrValidation,
@@ -291,31 +313,41 @@ func (s *Service) references(
 		}
 	}
 
+	return nil
+}
+
+// checkTransactionPayee rejects a payee the book does not hold.
+func checkTransactionPayee(ctx context.Context, r Repository, t domain.Transaction) error {
 	if t.PayeeID != uuid.Nil {
 		if _, err := r.Payee(ctx, t.BooksID, t.PayeeID); errors.Is(err, ErrNotFound) {
-			return nil, &domain.FieldError{
+			return &domain.FieldError{
 				Field:   "payee_id",
 				Message: "unknown payee",
 				Err:     domain.ErrValidation,
 			}
 		} else if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
+	return nil
+}
+
+// checkLinkTargets rejects a link to a transaction the book does not hold.
+func checkLinkTargets(ctx context.Context, r Repository, t domain.Transaction) error {
 	for i, l := range t.Links {
 		if _, err := r.Transaction(ctx, t.BooksID, l.Target); errors.Is(err, ErrNotFound) {
-			return nil, &domain.FieldError{
+			return &domain.FieldError{
 				Field:   "links[" + strconv.Itoa(i) + "].target",
 				Message: "unknown transaction",
 				Err:     domain.ErrValidation,
 			}
 		} else if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return accounts, nil
+	return nil
 }
 
 // newTransactionEvent describes t; accounts holds every account of t, and AccountIDs also
