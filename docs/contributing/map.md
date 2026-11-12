@@ -95,6 +95,7 @@ A comment or a commit may cite an identifier such as `S364`, `MQ27` or `HA9`. Th
 | `BK` | `docs/specs/2026-10-30-shared-books-design.md` |
 | `MQ` | `docs/specs/2026-11-09-market-quotes-design.md` |
 | `PC` | `docs/specs/2026-11-07-portfolio-clarity-design.md` |
+| `CN` | `docs/specs/2026-11-12-contribution-plan-design.md` |
 | `T` | `docs/adr/012-tool-registry.md` for tool rows; `T1` and `T2` of `docs/contributing/feature-design.md` are time rows |
 
 ## Web
