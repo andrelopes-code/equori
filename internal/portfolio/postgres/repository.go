@@ -16,10 +16,11 @@ import (
 var _ app.Repository = (*Repository)(nil)
 
 type Repository struct {
-	q *Queries
+	pool *pgxpool.Pool
+	q    *Queries
 }
 
-func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{q: New(pool)} }
+func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{pool: pool, q: New(pool)} }
 
 func NewTxRepository(tx pgx.Tx) *Repository { return &Repository{q: New(tx)} }
 

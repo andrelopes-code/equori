@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 13
+const ArchiveVersion = 14
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -21,6 +21,7 @@ var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
+	addContributionPlan,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -227,6 +228,19 @@ func addAssistantConfiguration(tables []ArchiveTable) ([]ArchiveTable, error) {
 // marketdata_instrument_symbol (migration 00095). Version 12 has no rows for it, so every table
 // carries over unchanged.
 func addInstrumentSymbols(tables []ArchiveTable) ([]ArchiveTable, error) {
+	out := make([]ArchiveTable, len(tables))
+	for i, t := range tables {
+		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
+	}
+
+	return out, nil
+}
+
+// addContributionPlan moves a version 13 archive to version 14, which adds
+// portfolio_contribution_plan, portfolio_contribution_class and portfolio_contribution_member
+// (migration 00096). Version 13 has no contribution plan rows, so every table carries over
+// unchanged.
+func addContributionPlan(tables []ArchiveTable) ([]ArchiveTable, error) {
 	out := make([]ArchiveTable, len(tables))
 	for i, t := range tables {
 		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}

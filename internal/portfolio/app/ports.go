@@ -107,4 +107,6 @@ type Repository interface {
 		from, to time.Time,
 	) ([]domain.IncomeEvent, error)
 	BooksToRebuild(ctx context.Context) ([]int64, error)
+	ContributionPlan(ctx context.Context, booksID int64) (domain.Plan, bool, error)
+	SaveContributionPlan(ctx context.Context, booksID int64, p domain.Plan) error
 }
