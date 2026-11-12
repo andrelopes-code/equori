@@ -240,11 +240,7 @@ const overlayItems: readonly (readonly [string, string, readonly string[]])[] =
     [
       "table",
       '[data-ui="table"]',
-      [
-        "--slotted-table-surface",
-        "--slotted-table-border-color",
-        "--slotted-table-header-surface",
-      ],
+      ["--slotted-table-border-color", "--slotted-table-header-surface"],
     ],
     [
       "framed list",
@@ -254,7 +250,7 @@ const overlayItems: readonly (readonly [string, string, readonly string[]])[] =
     [
       "framed data-grid",
       '[data-ui="data-grid"][data-variant="framed"]',
-      ["--slotted-data-grid-surface", "--slotted-data-grid-border-color"],
+      ["--slotted-data-grid-border-color"],
     ],
   ];
 
@@ -309,7 +305,7 @@ for (const [name, selector, token] of pinned) {
     assert.match(
       block[1] ?? "",
       new RegExp(
-        `${token}: color-mix\\(in oklab, var\\(--slotted-text\\) 9%, var\\(--slotted-surface-raised\\)\\)`,
+        `${token}: color-mix\\(in oklab, var\\(--slotted-text\\) 6%, var\\(--slotted-surface-raised\\)\\)`,
       ),
     );
   });
@@ -345,8 +341,35 @@ for (const [name, selector, property] of pinnedCells) {
     assert.match(
       block[1] ?? "",
       new RegExp(
-        `${property}: color-mix\\(in oklab, var\\(--slotted-text\\) 9%, var\\(--slotted-surface-raised\\)\\)`,
+        `${property}: color-mix\\(in oklab, var\\(--slotted-text\\) 6%, var\\(--slotted-surface-raised\\)\\)`,
       ),
+    );
+  });
+}
+
+// A row paints the table's surface token again over the frame, so a wash in the token stacked: the
+// body read at 6% beside a card at 3%. The frame paints its wash on its own root and the token the
+// rows read is clear.
+const frames: readonly (readonly [string, string, string])[] = [
+  ["table", '[data-ui="table"]', "--slotted-table-surface"],
+  [
+    "framed data-grid",
+    '[data-ui="data-grid"][data-variant="framed"]',
+    "--slotted-data-grid-surface",
+  ],
+];
+
+for (const [name, selector, token] of frames) {
+  test(`a ${name} inside a dialog or a drawer paints its wash once, on its root`, () => {
+    const escaped = selector.replace(/[[\]().*+?^${}|]/g, "\\$&");
+    const block = new RegExp(
+      `:is\\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\\) ${escaped} \\{([^}]*)\\}`,
+    ).exec(css);
+    assert.ok(block, `no overlay rule for ${name}`);
+    assert.match(block[1] ?? "", new RegExp(`${token}: transparent`));
+    assert.match(
+      block[1] ?? "",
+      /background-color: color-mix\(in oklab, var\(--slotted-text\) 3%, transparent\)/,
     );
   });
 }
