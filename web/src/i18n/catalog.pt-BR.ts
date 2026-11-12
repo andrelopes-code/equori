@@ -581,6 +581,7 @@ export const catalogPtBR: Catalog = {
   "suggest.list": "Sugestões",
   "detail.title": "Transação",
   "detail.close": "Fechar",
+  "detail.layer.close": "Fechar",
   "detail.openPage": "Abrir como página",
   "detail.correct": "Corrigir",
   "detail.transfer": "Marcar como transferência",

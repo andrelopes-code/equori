@@ -572,6 +572,7 @@ export const catalogEn = {
   "suggest.list": "Suggestions",
   "detail.title": "Transaction",
   "detail.close": "Close",
+  "detail.layer.close": "Close",
   "detail.openPage": "Open as a page",
   "detail.correct": "Correct",
   "detail.transfer": "Mark as transfer",

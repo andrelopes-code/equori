@@ -1,0 +1,37 @@
+@layer app {
+  /* The layer keeps 48 px of the viewport free in both axes (DL3); no space token holds it. */
+  .layer {
+    box-sizing: border-box;
+    max-inline-size: calc(100dvw - 48px);
+    max-block-size: calc(100dvh - 48px);
+  }
+
+  /* The figure strip: full width, above the main content. */
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--slotted-space-4);
+  }
+
+  /* The main content beside an aside, from 1024 px; stacked below. */
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-6);
+  }
+
+  .main {
+    min-inline-size: 0;
+  }
+
+  .aside {
+    min-inline-size: 0;
+  }
+
+  @container (min-width: 60rem) {
+    .split {
+      /* The aside measure: no token holds it. */
+      grid-template-columns: minmax(0, 1fr) 18rem;
+    }
+  }
+}
