@@ -51,7 +51,9 @@ func Allocate(items []Holding) []Group {
 			break
 		}
 
-		groups[i].ShareBP = int(shareBP(groups[i].Value, total)) //nolint:gosec // the share of a group of a positive total lies within a few multiples of 10000
+		groups[i].ShareBP = int(
+			shareBP(groups[i].Value, total),
+		) //nolint:gosec // the share of a group of a positive total lies within a few multiples of 10000
 		assigned += groups[i].ShareBP
 	}
 

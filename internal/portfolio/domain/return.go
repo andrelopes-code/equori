@@ -24,11 +24,15 @@ const (
 // when there are fewer than two flows or when the rate lies outside [-99.99%, 100000%].
 // The solver runs in floating point; the result leaves as an integer (investments design AG2).
 func AnnualReturnBP(flows []CashFlow) (bp int, ok bool) {
-	if len(flows) < 2 || !slices.ContainsFunc(flows, func(f CashFlow) bool { return f.Amount < 0 }) {
+	if len(flows) < 2 ||
+		!slices.ContainsFunc(flows, func(f CashFlow) bool { return f.Amount < 0 }) {
 		return 0, false
 	}
 
-	sorted := slices.SortedStableFunc(slices.Values(flows), func(a, b CashFlow) int { return a.Date.Compare(b.Date) })
+	sorted := slices.SortedStableFunc(
+		slices.Values(flows),
+		func(a, b CashFlow) int { return a.Date.Compare(b.Date) },
+	)
 	first := sorted[0].Date
 	value := func(rate float64) float64 {
 		var sum float64

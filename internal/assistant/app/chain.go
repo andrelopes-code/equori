@@ -62,7 +62,12 @@ func (s *Service) Uses(ctx context.Context, booksID int64) ([]UseView, error) {
 }
 
 // SetChain stores the book's chain for a use; an empty list restores the default.
-func (s *Service) SetChain(ctx context.Context, booksID int64, useID string, in []ChainInput) error {
+func (s *Service) SetChain(
+	ctx context.Context,
+	booksID int64,
+	useID string,
+	in []ChainInput,
+) error {
 	use, ok := s.use(useID)
 	if !ok {
 		return domain.ErrUseNotFound
@@ -80,7 +85,12 @@ func (s *Service) SetChain(ctx context.Context, booksID int64, useID string, in 
 			return err
 		}
 
-		if missing := domain.Missing(use.Needs, domain.ModelCapabilities(p.Preset, t.Model, t.Capabilities)); len(missing) > 0 {
+		if missing := domain.Missing(
+			use.Needs,
+			domain.ModelCapabilities(p.Preset, t.Model, t.Capabilities),
+		); len(
+			missing,
+		) > 0 {
 			return &CapabilityError{Model: t.Model, Missing: missing}
 		}
 

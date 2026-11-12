@@ -27,7 +27,10 @@ type Membership struct {
 }
 
 // Books lists the books of the member's memberships, by ID; Active marks activeBooksID (HA5).
-func (s *Service) Books(ctx context.Context, memberID, activeBooksID int64) ([]BooksMembership, error) {
+func (s *Service) Books(
+	ctx context.Context,
+	memberID, activeBooksID int64,
+) ([]BooksMembership, error) {
 	books, err := s.repo.MemberBooks(ctx, memberID)
 	if err != nil {
 		return nil, fmt.Errorf("list books of member %d: %w", memberID, err)
@@ -41,13 +44,24 @@ func (s *Service) Books(ctx context.Context, memberID, activeBooksID int64) ([]B
 }
 
 // SwitchBooks moves the session to booksID: ErrBooksNotFound without a membership of the member (HA4).
-func (s *Service) SwitchBooks(ctx context.Context, memberID int64, sessionToken string, booksID int64) error {
+func (s *Service) SwitchBooks(
+	ctx context.Context,
+	memberID int64,
+	sessionToken string,
+	booksID int64,
+) error {
 	return s.repo.SwitchSession(ctx, domain.HashToken(sessionToken), memberID, booksID, s.now())
 }
 
 // CreateBooks creates a book with the member as owner; a nil name takes the member's email and an
 // empty base takes the default of the region (HA6).
-func (s *Service) CreateBooks(ctx context.Context, memberID int64, name *string, region string, base money.Currency) (BooksMembership, error) {
+func (s *Service) CreateBooks(
+	ctx context.Context,
+	memberID int64,
+	name *string,
+	region string,
+	base money.Currency,
+) (BooksMembership, error) {
 	base, err := s.baseCurrency(region, base)
 	if err != nil {
 		return BooksMembership{}, err
@@ -81,7 +95,11 @@ func (s *Service) Members(ctx context.Context, booksID int64) ([]Membership, err
 }
 
 // ChangeRole sets the role of a membership: ErrMemberNotFound, ErrLastOwner (HA20, HA21).
-func (s *Service) ChangeRole(ctx context.Context, booksID, memberID int64, role auth.BookRole) error {
+func (s *Service) ChangeRole(
+	ctx context.Context,
+	booksID, memberID int64,
+	role auth.BookRole,
+) error {
 	return s.repo.ChangeRole(ctx, booksID, memberID, role)
 }
 

@@ -40,24 +40,56 @@ func toRecord(row IngestionExternalRecord) (domain.ExternalRecord, error) {
 	}
 
 	rec := domain.ExternalRecord{
-		ID: row.ID, BooksID: row.BooksID, BatchID: row.BatchID, AccountID: row.AccountID, ExternalID: value(row.ExternalID),
-		DedupKey: row.DedupKey, Raw: raw, Date: row.BookedOn, Amount: row.Amount, Description: row.Description,
-		State: domain.RecordState(row.State), TransactionID: row.TransactionID.UUID, Candidates: row.Candidates,
-		ExternalStatus: value(row.ExternalStatus), DueDate: row.DueDate, CategoryID: value(row.CategoryID),
-		BalanceAfter: row.BalanceAfter, LineKind: value(row.LineKind), UnappliedChange: value(row.UnappliedChange),
-		ReviewReason: value(row.ReviewReason), InstitutionID: value(row.InstitutionID),
-		ReportedAmount: row.ReportedAmount, ReportedOn: row.ReportedOn,
-		Counterparty: value(row.Counterparty),
-		Decision:     domain.DecisionKind(value(row.Decision)), Undo: undo, SummaryBatchID: row.SummaryBatchID.UUID, Kept: row.Kept,
+		ID:          row.ID,
+		BooksID:     row.BooksID,
+		BatchID:     row.BatchID,
+		AccountID:   row.AccountID,
+		ExternalID:  value(row.ExternalID),
+		DedupKey:    row.DedupKey,
+		Raw:         raw,
+		Date:        row.BookedOn,
+		Amount:      row.Amount,
+		Description: row.Description,
+		State: domain.RecordState(
+			row.State,
+		),
+		TransactionID: row.TransactionID.UUID,
+		Candidates:    row.Candidates,
+		ExternalStatus: value(
+			row.ExternalStatus,
+		),
+		DueDate:         row.DueDate,
+		CategoryID:      value(row.CategoryID),
+		BalanceAfter:    row.BalanceAfter,
+		LineKind:        value(row.LineKind),
+		UnappliedChange: value(row.UnappliedChange),
+		ReviewReason:    value(row.ReviewReason),
+		InstitutionID:   value(row.InstitutionID),
+		ReportedAmount:  row.ReportedAmount,
+		ReportedOn:      row.ReportedOn,
+		Counterparty:    value(row.Counterparty),
+		Decision: domain.DecisionKind(
+			value(row.Decision),
+		),
+		Undo:           undo,
+		SummaryBatchID: row.SummaryBatchID.UUID,
+		Kept:           row.Kept,
 	}
 	for _, s := range scores {
 		rec.Scores = append(rec.Scores, domain.Scored{
-			TransactionID: s.TransactionID, Score: s.Score, Amount: s.Amount, Date: s.Date, Counterparty: s.Counterparty,
+			TransactionID: s.TransactionID,
+			Score:         s.Score,
+			Amount:        s.Amount,
+			Date:          s.Date,
+			Counterparty:  s.Counterparty,
 		})
 	}
 
 	if row.InstallmentNumber != nil && row.InstallmentCount != nil {
-		rec.Installment = &domain.Installment{Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
+		rec.Installment = &domain.Installment{
+			Number: int(*row.InstallmentNumber),
+			Count:  int(*row.InstallmentCount),
+		}
 	}
 
 	return rec, nil
@@ -73,10 +105,20 @@ type facts struct {
 }
 
 func factsOf(rec domain.ExternalRecord) facts {
-	f := facts{status: optional(rec.ExternalStatus), category: optional(rec.CategoryID), kind: optional(rec.LineKind), dueDate: rec.DueDate, balanceAfter: rec.BalanceAfter,
-		institution: optional(rec.InstitutionID)}
+	f := facts{
+		status:       optional(rec.ExternalStatus),
+		category:     optional(rec.CategoryID),
+		kind:         optional(rec.LineKind),
+		dueDate:      rec.DueDate,
+		balanceAfter: rec.BalanceAfter,
+		institution:  optional(rec.InstitutionID),
+	}
 	if i := rec.Installment; i != nil {
-		n, c := int32(i.Number), int32(i.Count) //nolint:gosec // at most 420 installments (ledger rule)
+		n, c := int32(
+			i.Number,
+		), int32(
+			i.Count,
+		) //nolint:gosec // at most 420 installments (ledger rule)
 		f.number, f.count = &n, &c
 	}
 
@@ -85,7 +127,10 @@ func factsOf(rec domain.ExternalRecord) facts {
 
 // ClaimRecords inserts the file's records in one pipelined round trip; keys that exist come
 // back from one more query.
-func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRecord) ([]app.Claim, error) {
+func (r *Repository) ClaimRecords(
+	ctx context.Context,
+	recs []domain.ExternalRecord,
+) ([]app.Claim, error) {
 	out := make([]app.Claim, len(recs))
 	if len(recs) == 0 {
 		return out, nil
@@ -141,7 +186,10 @@ func fillExisting(
 	existing [][]byte,
 	out []app.Claim,
 ) error {
-	rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{BooksID: recs[0].BooksID, Keys: existing})
+	rows, err := q.ListRecordsByKeys(
+		ctx,
+		ListRecordsByKeysParams{BooksID: recs[0].BooksID, Keys: existing},
+	)
 	if err != nil {
 		return err
 	}
@@ -171,12 +219,26 @@ func insertParams(rec domain.ExternalRecord) (InsertRecordsParams, error) {
 	f := factsOf(rec)
 
 	return InsertRecordsParams{
-		BooksID: rec.BooksID, BatchID: rec.BatchID, AccountID: rec.AccountID, ExternalID: optional(rec.ExternalID),
-		DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount, Description: rec.Description,
-		ExternalStatus: f.status, DueDate: f.dueDate, InstallmentNumber: f.number, InstallmentCount: f.count,
-		CategoryID: f.category, BalanceAfter: f.balanceAfter, LineKind: f.kind,
-		InstitutionID: f.institution, ReportedAmount: rec.ReportedAmount, ReportedOn: rec.ReportedOn,
-		Counterparty: optional(rec.Counterparty),
+		BooksID:           rec.BooksID,
+		BatchID:           rec.BatchID,
+		AccountID:         rec.AccountID,
+		ExternalID:        optional(rec.ExternalID),
+		DedupKey:          rec.DedupKey,
+		Raw:               raw,
+		BookedOn:          rec.Date,
+		Amount:            rec.Amount,
+		Description:       rec.Description,
+		ExternalStatus:    f.status,
+		DueDate:           f.dueDate,
+		InstallmentNumber: f.number,
+		InstallmentCount:  f.count,
+		CategoryID:        f.category,
+		BalanceAfter:      f.balanceAfter,
+		LineKind:          f.kind,
+		InstitutionID:     f.institution,
+		ReportedAmount:    rec.ReportedAmount,
+		ReportedOn:        rec.ReportedOn,
+		Counterparty:      optional(rec.Counterparty),
 	}, nil
 }
 
@@ -188,7 +250,13 @@ func outcome(rec domain.ExternalRecord) (SaveRecordOutcomesParams, error) {
 
 	scores := make([]scoreRow, len(rec.Scores))
 	for i, s := range rec.Scores {
-		scores[i] = scoreRow{TransactionID: s.TransactionID, Score: s.Score, Amount: s.Amount, Date: s.Date, Counterparty: s.Counterparty}
+		scores[i] = scoreRow{
+			TransactionID: s.TransactionID,
+			Score:         s.Score,
+			Amount:        s.Amount,
+			Date:          s.Date,
+			Counterparty:  s.Counterparty,
+		}
 	}
 
 	stored, err := json.Marshal(scores)
@@ -199,10 +267,22 @@ func outcome(rec domain.ExternalRecord) (SaveRecordOutcomesParams, error) {
 	undo, err := encodeUndo(rec.Undo)
 
 	return SaveRecordOutcomesParams{
-		BooksID: rec.BooksID, ID: rec.ID, BatchID: rec.BatchID, State: string(rec.State),
-		TransactionID: uuid.NullUUID{UUID: rec.TransactionID, Valid: rec.TransactionID != uuid.Nil}, Candidates: candidates,
-		ReviewReason: optional(rec.ReviewReason), CandidateScores: stored,
-		Decision: optional(string(rec.Decision)), DecisionUndo: undo, SummaryBatchID: nullableID(rec.SummaryBatchID),
+		BooksID: rec.BooksID,
+		ID:      rec.ID,
+		BatchID: rec.BatchID,
+		State:   string(rec.State),
+		TransactionID: uuid.NullUUID{
+			UUID:  rec.TransactionID,
+			Valid: rec.TransactionID != uuid.Nil,
+		},
+		Candidates:      candidates,
+		ReviewReason:    optional(rec.ReviewReason),
+		CandidateScores: stored,
+		Decision: optional(
+			string(rec.Decision),
+		),
+		DecisionUndo:   undo,
+		SummaryBatchID: nullableID(rec.SummaryBatchID),
 	}, err
 }
 
@@ -230,12 +310,28 @@ func (r *Repository) SaveOutcomes(ctx context.Context, recs []domain.ExternalRec
 		return nil
 	}
 
-	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error { return saveOutcomes(ctx, r.q.WithTx(tx), recs) })
+	return pgx.BeginFunc(
+		ctx,
+		r.pool,
+		func(tx pgx.Tx) error { return saveOutcomes(ctx, r.q.WithTx(tx), recs) },
+	)
 }
 
-func (r *Repository) TransferReviews(ctx context.Context, booksID int64, accountID uuid.UUID, amount int64, currency string, from, to time.Time) ([]domain.ExternalRecord, error) {
+func (r *Repository) TransferReviews(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	amount int64,
+	currency string,
+	from, to time.Time,
+) ([]domain.ExternalRecord, error) {
 	rows, err := r.q.ListTransferReviews(ctx, ListTransferReviewsParams{
-		BooksID: booksID, AccountID: accountID, Amount: amount, Currency: currency, FromDate: from, ToDate: to,
+		BooksID:   booksID,
+		AccountID: accountID,
+		Amount:    amount,
+		Currency:  currency,
+		FromDate:  from,
+		ToDate:    to,
 	})
 	if err != nil {
 		return nil, err
@@ -251,8 +347,15 @@ func (r *Repository) TransferReviews(ctx context.Context, booksID int64, account
 	return out, nil
 }
 
-func (r *Repository) RecordCounterparties(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
-	rows, err := r.q.ListRecordCounterparties(ctx, ListRecordCounterpartiesParams{BooksID: booksID, Ids: ids})
+func (r *Repository) RecordCounterparties(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) (map[uuid.UUID]string, error) {
+	rows, err := r.q.ListRecordCounterparties(
+		ctx,
+		ListRecordCounterpartiesParams{BooksID: booksID, Ids: ids},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +368,11 @@ func (r *Repository) RecordCounterparties(ctx context.Context, booksID int64, id
 	return out, nil
 }
 
-func (r *Repository) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+func (r *Repository) Record(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.ExternalRecord, error) {
 	row, err := r.q.GetRecord(ctx, GetRecordParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.ExternalRecord{}, notFound(err)
@@ -274,8 +381,19 @@ func (r *Repository) Record(ctx context.Context, booksID int64, id uuid.UUID) (d
 	return toRecord(row)
 }
 
-func (r *Repository) Records(ctx context.Context, booksID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[app.RecordKey]) ([]domain.ExternalRecord, *app.RecordKey, error) {
-	params := ListBatchRecordsParams{BooksID: booksID, BatchID: batchID, State: optional(string(state)), RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) Records(
+	ctx context.Context,
+	booksID int64,
+	batchID uuid.UUID,
+	state domain.RecordState,
+	p page.Request[app.RecordKey],
+) ([]domain.ExternalRecord, *app.RecordKey, error) {
+	params := ListBatchRecordsParams{
+		BooksID:  booksID,
+		BatchID:  batchID,
+		State:    optional(string(state)),
+		RowLimit: int32(p.Limit + 1),
+	} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
@@ -308,13 +426,20 @@ func (r *Repository) ResolveRecord(ctx context.Context, rec domain.ExternalRecor
 			return err
 		}
 
-		return q.MoveReviewCount(ctx, MoveReviewCountParams{BooksID: rec.BooksID, ID: rec.BatchID, State: string(rec.State)})
+		return q.MoveReviewCount(
+			ctx,
+			MoveReviewCountParams{BooksID: rec.BooksID, ID: rec.BatchID, State: string(rec.State)},
+		)
 	})
 }
 
 // ReopenRecord returns a discarded record to review and moves it between the batch counts; it
 // reports false when the record is not discarded (A140).
-func (r *Repository) ReopenRecord(ctx context.Context, booksID int64, id, batchID uuid.UUID) (bool, error) {
+func (r *Repository) ReopenRecord(
+	ctx context.Context,
+	booksID int64,
+	id, batchID uuid.UUID,
+) (bool, error) {
 	reopened := false
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)

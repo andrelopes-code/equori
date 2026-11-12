@@ -30,7 +30,12 @@ func (m *Module) RequestHistory(ctx context.Context, code string, from time.Time
 		return err
 	}
 
-	n, err := m.requestHistory(ctx, sources, feedInstruments([]Instrument{in}), func(string) time.Time { return from })
+	n, err := m.requestHistory(
+		ctx,
+		sources,
+		feedInstruments([]Instrument{in}),
+		func(string) time.Time { return from },
+	)
 	if err != nil {
 		return err
 	}
@@ -45,7 +50,12 @@ func (m *Module) RequestHistory(ctx context.Context, code string, from time.Time
 // requestHistory queues, for each source of sources, the codes it quotes among ins from the
 // start that from gives, and asks for a tick when it queued a row (A222 MQ5, MQ10). It returns
 // the number of rows requested.
-func (m *Module) requestHistory(ctx context.Context, sources []feed.Source, ins []feed.Instrument, from func(source string) time.Time) (int, error) {
+func (m *Module) requestHistory(
+	ctx context.Context,
+	sources []feed.Source,
+	ins []feed.Instrument,
+	from func(source string) time.Time,
+) (int, error) {
 	if len(sources) == 0 {
 		return 0, nil
 	}
@@ -83,7 +93,12 @@ func (m *Module) requestHistory(ctx context.Context, sources []feed.Source, ins 
 func (m *Module) requestDefaultHistory(ctx context.Context, in Instrument) {
 	sources, err := m.enabledSources(ctx)
 	if err == nil {
-		_, err = m.requestHistory(ctx, sources, feedInstruments([]Instrument{in}), m.defaultStart(ctx))
+		_, err = m.requestHistory(
+			ctx,
+			sources,
+			feedInstruments([]Instrument{in}),
+			m.defaultStart(ctx),
+		)
 	}
 
 	if err != nil {
@@ -113,7 +128,12 @@ func (m *Module) requestFeedHistory(ctx context.Context, id string) {
 
 	list, err := m.ListInstruments(ctx, "")
 	if err == nil {
-		_, err = m.requestHistory(ctx, m.feeds.Sources[i:i+1], feedInstruments(list), m.defaultStart(ctx))
+		_, err = m.requestHistory(
+			ctx,
+			m.feeds.Sources[i:i+1],
+			feedInstruments(list),
+			m.defaultStart(ctx),
+		)
 	}
 
 	if err != nil {

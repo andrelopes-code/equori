@@ -27,11 +27,25 @@ func TestDailyLimitS138(t *testing.T) {
 
 	providers := map[string]string{}
 	for key, c := range map[string]*http.Client{"ka": h.Client, "kb": other} {
-		p := createProvider(t, h, c, map[string]any{"preset": "gemini", "name": "Gemini", "key": key})
+		p := createProvider(
+			t,
+			h,
+			c,
+			map[string]any{"preset": "gemini", "name": "Gemini", "key": key},
+		)
 		providers[key] = p.ID
-		h.Call(c, http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{"targets": []any{
-			map[string]any{"provider_id": p.ID, "model": "gemini-3.5-flash", "capabilities": []string{"tools"}},
-		}})
+		h.Call(
+			c,
+			http.MethodPut,
+			"/api/v1/assistant/uses/assistant.chat/chain",
+			map[string]any{"targets": []any{
+				map[string]any{
+					"provider_id":  p.ID,
+					"model":        "gemini-3.5-flash",
+					"capabilities": []string{"tools"},
+				},
+			}},
+		)
 	}
 
 	owner := f.script("ka", answer, answer)
@@ -40,7 +54,9 @@ func TestDailyLimitS138(t *testing.T) {
 		"provider_id": providers["ka"], "model": "gemini-3.5-flash", "requests_per_day": 1,
 	}, http.StatusNoContent, nil)
 
-	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
+	req := llm.Request{
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
+	}
 	client := h.App.LLM.Use(assistant.ChatUse)
 
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
@@ -51,7 +67,8 @@ func TestDailyLimitS138(t *testing.T) {
 	_, err := client.Generate(ctx, req)
 
 	exhausted, ok := errors.AsType[*llm.ExhaustedError](err)
-	if !ok || !errors.Is(err, llm.ErrExhausted) || !exhausted.RetryAt.Equal(time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC)) {
+	if !ok || !errors.Is(err, llm.ErrExhausted) ||
+		!exhausted.RetryAt.Equal(time.Date(2026, 10, 24, 0, 0, 0, 0, time.UTC)) {
 		t.Fatalf("second call error = %v", err)
 	}
 

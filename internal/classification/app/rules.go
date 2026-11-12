@@ -20,7 +20,11 @@ func NewService(repo Repository, ledger Ledger) *Service {
 	return &Service{repo: repo, ledger: ledger}
 }
 
-func (s *Service) ListRules(ctx context.Context, booksID int64, p page.Request[RuleKey]) ([]domain.Rule, *RuleKey, error) {
+func (s *Service) ListRules(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[RuleKey],
+) ([]domain.Rule, *RuleKey, error) {
 	return s.repo.ListRules(ctx, booksID, p)
 }
 
@@ -28,7 +32,11 @@ func (s *Service) Rule(ctx context.Context, booksID int64, id uuid.UUID) (domain
 	return s.repo.Rule(ctx, booksID, id)
 }
 
-func (s *Service) CreateRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
+func (s *Service) CreateRule(
+	ctx context.Context,
+	booksID int64,
+	r domain.Rule,
+) (domain.Rule, error) {
 	r, err := s.checkRule(ctx, booksID, r)
 	if err != nil {
 		return domain.Rule{}, err
@@ -38,7 +46,11 @@ func (s *Service) CreateRule(ctx context.Context, booksID int64, r domain.Rule) 
 }
 
 // ChangeRule replaces everything but the priority.
-func (s *Service) ChangeRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
+func (s *Service) ChangeRule(
+	ctx context.Context,
+	booksID int64,
+	r domain.Rule,
+) (domain.Rule, error) {
 	r, err := s.checkRule(ctx, booksID, r)
 	if err != nil {
 		return domain.Rule{}, err
@@ -52,7 +64,11 @@ func (s *Service) DeleteRule(ctx context.Context, booksID int64, id uuid.UUID) e
 }
 
 // ReorderRules gives the rules of ids the priorities 1..n; ids is every rule exactly once.
-func (s *Service) ReorderRules(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Rule, error) {
+func (s *Service) ReorderRules(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) ([]domain.Rule, error) {
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		current, err := r.LockRuleIDs(ctx, booksID)
 		if err != nil {
@@ -64,7 +80,11 @@ func (s *Service) ReorderRules(ctx context.Context, booksID int64, ids []uuid.UU
 		slices.SortFunc(current, compareIDs)
 
 		if !slices.Equal(sorted, current) {
-			return &domain.FieldError{Field: "rule_ids", Message: "must list every rule exactly once", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "rule_ids",
+				Message: "must list every rule exactly once",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		return r.SetPriorities(ctx, booksID, ids)
@@ -81,7 +101,11 @@ func (s *Service) ReorderRules(ctx context.Context, booksID int64, ids []uuid.UU
 func compareIDs(a, b uuid.UUID) int { return slices.Compare(a[:], b[:]) }
 
 // checkRule validates r and its references to the book's categories, payees and accounts.
-func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (domain.Rule, error) {
+func (s *Service) checkRule(
+	ctx context.Context,
+	booksID int64,
+	r domain.Rule,
+) (domain.Rule, error) {
 	r, err := domain.NewRule(r)
 	if err != nil {
 		return domain.Rule{}, err
@@ -150,13 +174,19 @@ func checkActionRefs(
 		field := fmt.Sprintf("actions[%d]", i)
 		if a.Type == domain.ActionSetCategory {
 			if c, ok := accounts[a.CategoryID]; !ok || !c.isCategory() || c.isUncategorized() {
-				return nil, invalidRef(field+".category_id", "must be an income or expense category")
+				return nil, invalidRef(
+					field+".category_id",
+					"must be an income or expense category",
+				)
 			}
 		}
 
 		for j, p := range a.Parts {
 			if c, ok := accounts[p.CategoryID]; !ok || !c.isCategory() || c.isUncategorized() {
-				return nil, invalidRef(fmt.Sprintf("%s.parts[%d].category_id", field, j), "must be an income or expense category")
+				return nil, invalidRef(
+					fmt.Sprintf("%s.parts[%d].category_id", field, j),
+					"must be an income or expense category",
+				)
 			}
 		}
 

@@ -98,7 +98,16 @@ func ParsePriceCSV(content []byte) ([]Price, error) {
 			return nil, invalid(field, "value must be a positive decimal with at most 12 decimals")
 		}
 
-		out = append(out, Price{Instrument: money.Currency(rec[0]), Quote: money.Currency(rec[1]), Date: date, Value: value, Source: SourceCSV})
+		out = append(
+			out,
+			Price{
+				Instrument: money.Currency(rec[0]),
+				Quote:      money.Currency(rec[1]),
+				Date:       date,
+				Value:      value,
+				Source:     SourceCSV,
+			},
+		)
 	}
 }
 

@@ -101,7 +101,9 @@ func TestS217CopyFolderNotWritable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := os.Stat(filepath.Join(dir, fmt.Sprintf("periodic-2026-11-20-s%d.dump", latest))); err != nil {
+	if _, err := os.Stat(
+		filepath.Join(dir, fmt.Sprintf("periodic-2026-11-20-s%d.dump", latest)),
+	); err != nil {
 		t.Fatalf("the dump is missing: %v", err)
 	}
 }
@@ -109,7 +111,11 @@ func TestS217CopyFolderNotWritable(t *testing.T) {
 func TestA155PasswordLength(t *testing.T) {
 	t.Parallel()
 
-	h := apitest.New(t, apitest.SecretKeys(keyA, ""), apitest.Backups(t.TempDir(), t.TempDir(), apitest.FakeDump))
+	h := apitest.New(
+		t,
+		apitest.SecretKeys(keyA, ""),
+		apitest.Backups(t.TempDir(), t.TempDir(), apitest.FakeDump),
+	)
 
 	r := h.Do(http.MethodPut, copyPasswordPath, map[string]string{"password": "short pass1"})
 	h.ExpectProblem(r, http.StatusBadRequest, "password_too_short", "")
@@ -123,7 +129,11 @@ func TestA155PasswordLength(t *testing.T) {
 		t.Fatalf("detail = %q, want %q", p.Detail, want)
 	}
 
-	if r := h.Do(http.MethodPut, copyPasswordPath, map[string]string{"password": "ççççççççççç1"}); r.Status != http.StatusNoContent {
+	if r := h.Do(
+		http.MethodPut,
+		copyPasswordPath,
+		map[string]string{"password": "ççççççççççç1"},
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("12 runes: status = %d, want 204: %s", r.Status, r.Body)
 	}
 }
@@ -154,7 +164,11 @@ func TestA155PasswordAfterAnotherKey(t *testing.T) {
 	t.Parallel()
 
 	dir, copyDir := t.TempDir(), t.TempDir()
-	h := apitest.New(t, apitest.SecretKeys(keyA, ""), apitest.Backups(dir, copyDir, apitest.FakeDump))
+	h := apitest.New(
+		t,
+		apitest.SecretKeys(keyA, ""),
+		apitest.Backups(dir, copyDir, apitest.FakeDump),
+	)
 
 	setCopyPassword(t, h, copyPassword)
 
@@ -169,7 +183,11 @@ func TestA155RotateSecrets(t *testing.T) {
 	t.Parallel()
 
 	dir, copyDir := t.TempDir(), t.TempDir()
-	h := apitest.New(t, apitest.SecretKeys(keyA, ""), apitest.Backups(dir, copyDir, apitest.FakeDump))
+	h := apitest.New(
+		t,
+		apitest.SecretKeys(keyA, ""),
+		apitest.Backups(dir, copyDir, apitest.FakeDump),
+	)
 
 	setCopyPassword(t, h, copyPassword)
 

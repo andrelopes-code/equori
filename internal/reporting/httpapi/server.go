@@ -20,7 +20,12 @@ type Server struct {
 }
 
 func NewServer(svc *app.Service, exports *app.Exports, clk app.Clock, log *slog.Logger) *Server {
-	return &Server{svc: svc, exports: exports, clock: clk, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
+	return &Server{
+		svc:     svc,
+		exports: exports,
+		clock:   clk,
+		errs:    httpserver.ErrorWriter{Log: log, Map: ToProblem},
+	}
 }
 
 func (s *Server) Register(mux *http.ServeMux) {
@@ -61,25 +66,49 @@ func ToProblem(err error) (problem.Details, bool) {
 func rangeProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidRange):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
-		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 3660 days after it"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"from must not be after to, and the range must not exceed 3660 days",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "to", Message: "must be on or after from and at most 3660 days after it"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrInvalidCategoryRange):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
-		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"from must not be after to, and the period must not exceed 366 days",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "to", Message: "must be on or after from and at most 365 days after it"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrInvalidMonth):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "month must not be after the current month")
-		d.Errors = []problem.FieldError{{Field: "month", Message: "must not be after the current month"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"month must not be after the current month",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "month", Message: "must not be after the current month"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrPriceMissing):
 		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
 	case errors.Is(err, app.ErrInvalidFlowRange):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 366 days")
-		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"from must not be after to, and the range must not exceed 366 days",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "to", Message: "must be on or after from and at most 365 days after it"},
+		}
 
 		return d, true
 	case errors.Is(err, errFileRequired):
@@ -129,7 +158,9 @@ func archiveProblem(err error) (problem.Details, bool) {
 		return problem.New(http.StatusConflict, "import_not_empty", err.Error()), true
 	case errors.Is(err, app.ErrConfirmationMismatch):
 		d := problem.New(http.StatusUnprocessableEntity, "confirmation_mismatch", err.Error())
-		d.Errors = []problem.FieldError{{Field: "replace_books_name", Message: "must equal the name of the book"}}
+		d.Errors = []problem.FieldError{
+			{Field: "replace_books_name", Message: "must equal the name of the book"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrImportConflict):

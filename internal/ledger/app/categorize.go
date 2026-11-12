@@ -46,7 +46,11 @@ type Categorization struct {
 // Categorize applies each item in one database transaction, locking the transactions in id
 // order. errs[i] is the domain error of item i, which leaves the other items applied; err is
 // an infrastructure error and applies none.
-func (s *Service) Categorize(ctx context.Context, booksID int64, cs []Categorization) (errs []error, err error) {
+func (s *Service) Categorize(
+	ctx context.Context,
+	booksID int64,
+	cs []Categorization,
+) (errs []error, err error) {
 	errs = make([]error, len(cs))
 
 	order := make([]int, len(cs))
@@ -54,7 +58,10 @@ func (s *Service) Categorize(ctx context.Context, booksID int64, cs []Categoriza
 		order[i] = i
 	}
 
-	slices.SortFunc(order, func(a, b int) int { return bytes.Compare(cs[a].TransactionID[:], cs[b].TransactionID[:]) })
+	slices.SortFunc(
+		order,
+		func(a, b int) int { return bytes.Compare(cs[a].TransactionID[:], cs[b].TransactionID[:]) },
+	)
 
 	err = s.repo.InTx(ctx, func(r Repository) error {
 		for _, i := range order {
@@ -75,7 +82,12 @@ func (s *Service) Categorize(ctx context.Context, booksID int64, cs []Categoriza
 	return errs, nil
 }
 
-func (s *Service) categorize(ctx context.Context, r Repository, booksID int64, c Categorization) (itemErr, err error) {
+func (s *Service) categorize(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	c Categorization,
+) (itemErr, err error) {
 	prev, err := r.LockTransaction(ctx, booksID, c.TransactionID)
 	if errors.Is(err, ErrNotFound) {
 		return err, nil
@@ -87,7 +99,11 @@ func (s *Service) categorize(ctx context.Context, r Repository, booksID int64, c
 
 	if c.PayeeID != nil && *c.PayeeID != uuid.Nil {
 		if _, err := r.Payee(ctx, booksID, *c.PayeeID); errors.Is(err, ErrNotFound) {
-			return &domain.FieldError{Field: "payee_id", Message: "unknown payee", Err: domain.ErrValidation}, nil
+			return &domain.FieldError{
+				Field:   "payee_id",
+				Message: "unknown payee",
+				Err:     domain.ErrValidation,
+			}, nil
 		} else if err != nil {
 			return nil, err
 		}
@@ -104,7 +120,15 @@ func (s *Service) categorize(ctx context.Context, r Repository, booksID int64, c
 		}
 	}
 
-	next, err := prev.Categorize(domain.Categorization{ExpectedVersion: c.ExpectedVersion, Parts: c.Parts, PayeeID: c.PayeeID, AddTags: c.AddTags}, accounts)
+	next, err := prev.Categorize(
+		domain.Categorization{
+			ExpectedVersion: c.ExpectedVersion,
+			Parts:           c.Parts,
+			PayeeID:         c.PayeeID,
+			AddTags:         c.AddTags,
+		},
+		accounts,
+	)
 	if err != nil {
 		return err, nil
 	}
@@ -118,7 +142,15 @@ func (s *Service) categorize(ctx context.Context, r Repository, booksID int64, c
 		event.Cause = &c.Cause
 	}
 
-	return nil, r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
+	return nil, r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionCategorized,
+			BooksID:     booksID,
+			AggregateID: next.ID.String(),
+			Payload:     event,
+		},
+	)
 }
 
 // categorizationAccounts loads the accounts of the postings of prev and of the categorization.
@@ -160,7 +192,11 @@ type CategoriesMerged struct {
 
 // MergeCategories moves the postings and children of from to into, closes from and
 // publishes EventCategoriesMerged (A75). It returns into.
-func (s *Service) MergeCategories(ctx context.Context, booksID int64, from, into uuid.UUID) (domain.Account, error) {
+func (s *Service) MergeCategories(
+	ctx context.Context,
+	booksID int64,
+	from, into uuid.UUID,
+) (domain.Account, error) {
 	var dest domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		src, all, err := s.loadMerge(ctx, r, booksID, from, into, &dest)
@@ -194,7 +230,15 @@ func (s *Service) MergeCategories(ctx context.Context, booksID int64, from, into
 			return err
 		}
 
-		return r.Publish(ctx, outbox.Event{Type: EventCategoriesMerged, BooksID: booksID, AggregateID: src.ID.String(), Payload: CategoriesMerged{From: src.ID, Into: dest.ID}})
+		return r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventCategoriesMerged,
+				BooksID:     booksID,
+				AggregateID: src.ID.String(),
+				Payload:     CategoriesMerged{From: src.ID, Into: dest.ID},
+			},
+		)
 	})
 
 	return dest, err
@@ -214,7 +258,11 @@ func (s *Service) loadMerge(
 	}
 
 	if *dest, err = r.Account(ctx, booksID, into); errors.Is(err, ErrNotFound) {
-		return domain.Account{}, nil, &domain.FieldError{Field: "into", Message: "unknown account", Err: domain.ErrUnknownAccount}
+		return domain.Account{}, nil, &domain.FieldError{
+			Field:   "into",
+			Message: "unknown account",
+			Err:     domain.ErrUnknownAccount,
+		}
 	} else if err != nil {
 		return domain.Account{}, nil, err
 	}
@@ -232,7 +280,12 @@ func (s *Service) loadMerge(
 }
 
 // reparentChildren moves the direct children of src under dest.
-func reparentChildren(ctx context.Context, r Repository, src, dest domain.Account, all []domain.Account) error {
+func reparentChildren(
+	ctx context.Context,
+	r Repository,
+	src, dest domain.Account,
+	all []domain.Account,
+) error {
 	for _, child := range subtreeOf(src, all)[1:] {
 		if child.ParentID != src.ID {
 			continue
@@ -273,7 +326,13 @@ func checkMerge(src, dest domain.Account, all []domain.Account) error {
 	return nil
 }
 
-func (s *Service) reassign(ctx context.Context, r Repository, booksID int64, id uuid.UUID, src, dest domain.Account) error {
+func (s *Service) reassign(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	src, dest domain.Account,
+) error {
 	prev, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return err
@@ -296,11 +355,23 @@ func (s *Service) reassign(ctx context.Context, r Repository, booksID int64, id 
 	event := newTransactionEvent(next, accounts, prev)
 	event.Cause = &Cause{Method: CauseMerge}
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionCategorized,
+			BooksID:     booksID,
+			AggregateID: next.ID.String(),
+			Payload:     event,
+		},
+	)
 }
 
 // wholeCategory is the single part that moves every category posting of t to category.
-func wholeCategory(t domain.Transaction, accounts map[uuid.UUID]domain.Account, category uuid.UUID) ([]domain.CategoryPart, error) {
+func wholeCategory(
+	t domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	category uuid.UUID,
+) ([]domain.CategoryPart, error) {
 	var total money.Money
 
 	found := false
@@ -337,11 +408,20 @@ type BulkItem struct {
 
 // CategorizeMany gives each transaction one posting on category for its category total
 // (A78). errs[i] is the domain error of item i.
-func (s *Service) CategorizeMany(ctx context.Context, booksID int64, category uuid.UUID, items []BulkItem) ([]error, error) {
+func (s *Service) CategorizeMany(
+	ctx context.Context,
+	booksID int64,
+	category uuid.UUID,
+	items []BulkItem,
+) ([]error, error) {
 	seen := make(map[uuid.UUID]bool, len(items))
 	for _, it := range items {
 		if seen[it.ID] {
-			return nil, &domain.FieldError{Field: "items", Message: "repeats a transaction", Err: domain.ErrValidation}
+			return nil, &domain.FieldError{
+				Field:   "items",
+				Message: "repeats a transaction",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		seen[it.ID] = true
@@ -349,7 +429,11 @@ func (s *Service) CategorizeMany(ctx context.Context, booksID int64, category uu
 
 	a, err := s.repo.Account(ctx, booksID, category)
 	if errors.Is(err, ErrNotFound) {
-		return nil, &domain.FieldError{Field: "category_id", Message: "unknown account", Err: domain.ErrValidation}
+		return nil, &domain.FieldError{
+			Field:   "category_id",
+			Message: "unknown account",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	if err != nil {
@@ -357,12 +441,21 @@ func (s *Service) CategorizeMany(ctx context.Context, booksID int64, category uu
 	}
 
 	if !a.IsCategory() || a.ClosedOn != nil {
-		return nil, &domain.FieldError{Field: "category_id", Message: "must be an open income or expense category", Err: domain.ErrValidation}
+		return nil, &domain.FieldError{
+			Field:   "category_id",
+			Message: "must be an open income or expense category",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	cs := make([]Categorization, len(items))
 	for i, it := range items {
-		cs[i] = Categorization{TransactionID: it.ID, ExpectedVersion: it.ExpectedVersion, WholeTo: category, Cause: Cause{Method: MethodManual}}
+		cs[i] = Categorization{
+			TransactionID:   it.ID,
+			ExpectedVersion: it.ExpectedVersion,
+			WholeTo:         category,
+			Cause:           Cause{Method: MethodManual},
+		}
 	}
 
 	return s.Categorize(ctx, booksID, cs)

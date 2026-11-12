@@ -26,7 +26,12 @@ type Target struct {
 // else the use's defaults matched against the book's providers and then the instance
 // providers. Targets lacking a needed capability and providers whose key does not open are
 // left out. Without a book, only instance providers are matched.
-func (s *Service) Resolve(ctx context.Context, booksID int64, hasBooks bool, use Use) ([]Target, error) {
+func (s *Service) Resolve(
+	ctx context.Context,
+	booksID int64,
+	hasBooks bool,
+	use Use,
+) ([]Target, error) {
 	targets, err := s.candidates(ctx, booksID, hasBooks, use)
 	if err != nil || !hasBooks || len(targets) == 0 {
 		return targets, err
@@ -67,7 +72,12 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, hasBooks bool, use
 	return nil, &LimitError{RetryAt: retry}
 }
 
-func (s *Service) candidates(ctx context.Context, booksID int64, hasBooks bool, use Use) ([]Target, error) {
+func (s *Service) candidates(
+	ctx context.Context,
+	booksID int64,
+	hasBooks bool,
+	use Use,
+) ([]Target, error) {
 	var providers []domain.Provider
 
 	var chain []domain.ChainTarget
@@ -109,7 +119,11 @@ func (l *targetList) add(t Target) {
 	}
 }
 
-func (s *Service) chainTargets(chain []domain.ChainTarget, byID map[string]domain.Provider, use Use) []Target {
+func (s *Service) chainTargets(
+	chain []domain.ChainTarget,
+	byID map[string]domain.Provider,
+	use Use,
+) []Target {
 	list := &targetList{use: use}
 
 	for _, c := range chain {
@@ -165,8 +179,14 @@ func (s *Service) target(p domain.Provider, model string, asserted []string) (Ta
 	preset, _ := domain.FindPreset(p.Preset)
 
 	return Target{
-		ProviderID: p.ID.String(), ProviderName: p.Name, Preset: p.Preset, API: preset.API, BaseURL: p.BaseURL, Key: key,
-		Model: model, Capabilities: domain.ModelCapabilities(p.Preset, model, asserted),
+		ProviderID:   p.ID.String(),
+		ProviderName: p.Name,
+		Preset:       p.Preset,
+		API:          preset.API,
+		BaseURL:      p.BaseURL,
+		Key:          key,
+		Model:        model,
+		Capabilities: domain.ModelCapabilities(p.Preset, model, asserted),
 	}, true
 }
 

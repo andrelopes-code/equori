@@ -41,7 +41,11 @@ const MaxAnalyticsStatements = 12
 
 // StatementAnalytics splits one statement per category (plan 2026-10-26-p9-cash-view,
 // section Statement analytics).
-func (s *Service) StatementAnalytics(ctx context.Context, booksID int64, id uuid.UUID) (StatementAnalytics, error) {
+func (s *Service) StatementAnalytics(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (StatementAnalytics, error) {
 	card, err := s.repo.StatementCard(ctx, booksID, id)
 	if err != nil {
 		return StatementAnalytics{}, err
@@ -67,7 +71,12 @@ func (s *Service) StatementAnalytics(ctx context.Context, booksID int64, id uuid
 
 // CardStatementAnalytics splits the latest statements of a card closed on or before today,
 // oldest first.
-func (s *Service) CardStatementAnalytics(ctx context.Context, booksID int64, cardID uuid.UUID, today time.Time) ([]StatementAnalytics, error) {
+func (s *Service) CardStatementAnalytics(
+	ctx context.Context,
+	booksID int64,
+	cardID uuid.UUID,
+	today time.Time,
+) ([]StatementAnalytics, error) {
 	instrument, refs, err := s.repo.CardStatements(ctx, booksID, cardID)
 	if err != nil {
 		return nil, err
@@ -80,7 +89,12 @@ func (s *Service) CardStatementAnalytics(ctx context.Context, booksID int64, car
 	return s.analyse(ctx, booksID, instrument, refs)
 }
 
-func (s *Service) analyse(ctx context.Context, booksID int64, instrument string, refs []StatementRef) ([]StatementAnalytics, error) {
+func (s *Service) analyse(
+	ctx context.Context,
+	booksID int64,
+	instrument string,
+	refs []StatementRef,
+) ([]StatementAnalytics, error) {
 	facts, err := s.repo.CardFacts(ctx, booksID, time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC))
 	if err != nil {
 		return nil, err
@@ -144,7 +158,10 @@ func analyseStatement(
 	}
 
 	slices.SortFunc(a.Categories, func(x, y CategoryParts) int {
-		return cmp.Or(cmp.Compare(y.Total(), x.Total()), bytes.Compare(x.CategoryID[:], y.CategoryID[:]))
+		return cmp.Or(
+			cmp.Compare(y.Total(), x.Total()),
+			bytes.Compare(x.CategoryID[:], y.CategoryID[:]),
+		)
 	})
 
 	return a

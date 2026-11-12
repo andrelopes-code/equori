@@ -44,19 +44,31 @@ func TestToolsLive(t *testing.T) {
 	}
 	tools, handlers := set.LLM()
 	clk := clock.New(time.Now)
-	p := aistudio.New("https://generativelanguage.googleapis.com", key, &http.Client{Timeout: time.Minute})
-	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).Client(llm.Target{Provider: "aistudio", Model: model})
+	p := aistudio.New(
+		"https://generativelanguage.googleapis.com",
+		key,
+		&http.Client{Timeout: time.Minute},
+	)
+	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).
+		Client(llm.Target{Provider: "aistudio", Model: model})
 	req := llm.Request{
 		Tools: tools,
 		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{
 			Text: "Call list_accounts once, then reply with the names of my asset accounts.",
 		}}}},
 	}
-	resp, _, err := llm.RunTools(auth.WithBooksID(t.Context(), h.OwnerID()), client, req, handlers, 4)
+	resp, _, err := llm.RunTools(
+		auth.WithBooksID(t.Context(), h.OwnerID()),
+		client,
+		req,
+		handlers,
+		4,
+	)
 	if err != nil {
 		t.Fatalf("Gemini rejected the catalog or the loop failed: %v", err)
 	}
-	if !strings.Contains(h.Logs(), "tool=list_accounts") || !strings.Contains(resp.Text(), "Checking") {
+	if !strings.Contains(h.Logs(), "tool=list_accounts") ||
+		!strings.Contains(resp.Text(), "Checking") {
 		t.Fatalf("answer %q; logs:\n%s", resp.Text(), h.Logs())
 	}
 

@@ -80,20 +80,35 @@ func truncateRunes(s string, n int) string {
 
 // Turn runs one book message through the model and reports through ev (spec 6). An error returned before ev.Turn
 // has been called leaves the stream unstarted; after it, failures reach ev.Error.
-func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInput, ev TurnEvents) error {
+func (s *Service) Turn(
+	ctx context.Context,
+	booksID, memberID int64,
+	in TurnInput,
+	ev TurnEvents,
+) error {
 	text := strings.TrimSpace(in.Text)
 	if n := utf8.RuneCountInString(text); n < 1 || n > domain.MaxMessage {
 		return ErrInvalidText
 	}
 
 	now := s.now()
-	conv := domain.Conversation{ID: in.ConversationID, Title: domain.Title(text), CreatedAt: now, UpdatedAt: now}
+	conv := domain.Conversation{
+		ID:        in.ConversationID,
+		Title:     domain.Title(text),
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 	var messages []domain.Message
 
 	var proposals []domain.Proposal
 	if in.ConversationID != uuid.Nil {
 		var err error
-		if messages, proposals, err = s.loadConversation(ctx, booksID, memberID, in.ConversationID); err != nil {
+		if messages, proposals, err = s.loadConversation(
+			ctx,
+			booksID,
+			memberID,
+			in.ConversationID,
+		); err != nil {
 			return err
 		}
 	}
@@ -148,7 +163,11 @@ func (s *Service) storeUserMessage(
 	}
 
 	userMsg, err := s.repo.AppendMessage(ctx, booksID, domain.Message{
-		ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleUser, Content: text, CreatedAt: now,
+		ID:             uuid.New(),
+		ConversationID: conv.ID,
+		Role:           domain.RoleUser,
+		Content:        text,
+		CreatedAt:      now,
 	})
 
 	return conv, userMsg, err
@@ -235,7 +254,10 @@ func (s *Service) requireChat(
 }
 
 // promptInputs reads the book's locale and the account notices the system prompt names.
-func (s *Service) promptInputs(ctx context.Context, booksID int64) (locale.Locale, []AccountNotice, error) {
+func (s *Service) promptInputs(
+	ctx context.Context,
+	booksID int64,
+) (locale.Locale, []AccountNotice, error) {
 	prof, err := s.profile(ctx, booksID)
 	if err != nil {
 		return prof, nil, fmt.Errorf("read profile: %w", err)
@@ -254,7 +276,12 @@ func (s *Service) promptInputs(ctx context.Context, booksID int64) (locale.Local
 func (s *Service) discardProposals(ctx context.Context, booksID int64, state *turnState) {
 	if ids := state.take(); len(ids) > 0 {
 		// The caller's context may be done; the discard must still reach the database.
-		if err := s.repo.DiscardProposals(context.WithoutCancel(ctx), booksID, ids, s.now()); err != nil {
+		if err := s.repo.DiscardProposals(
+			context.WithoutCancel(ctx),
+			booksID,
+			ids,
+			s.now(),
+		); err != nil {
 			s.log.WarnContext(ctx, "assistant proposals not discarded", "error", err)
 		}
 	}
@@ -295,7 +322,11 @@ func (s *Service) failTurn(
 
 	// The message records that the book's text got no answer; the client may already be gone.
 	if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), booksID, domain.Message{
-		ID: uuid.New(), ConversationID: conversationID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
+		ID:             uuid.New(),
+		ConversationID: conversationID,
+		Role:           domain.RoleAssistant,
+		Outcome:        stored,
+		CreatedAt:      s.now(),
 	}); err != nil {
 		s.log.ErrorContext(ctx, "assistant unanswered turn not stored", "error", err)
 	}
@@ -332,8 +363,12 @@ func (s *Service) answerTurn(
 	storeCtx := context.WithoutCancel(ctx)
 
 	answer, err := s.repo.AppendMessage(storeCtx, booksID, domain.Message{
-		ID: uuid.New(), ConversationID: conversationID, Role: domain.RoleAssistant, Outcome: outcome,
-		Content: truncateRunes(strings.TrimSpace(res.Text), domain.MaxAnswer), CreatedAt: s.now(),
+		ID:             uuid.New(),
+		ConversationID: conversationID,
+		Role:           domain.RoleAssistant,
+		Outcome:        outcome,
+		Content:        truncateRunes(strings.TrimSpace(res.Text), domain.MaxAnswer),
+		CreatedAt:      s.now(),
 	})
 	if err != nil {
 		s.discardProposals(ctx, booksID, state)
@@ -371,8 +406,38 @@ func (s *Service) failAfterStream(ctx context.Context, ev TurnEvents, err error)
 	return nil
 }
 
-func (s *Service) logTurn(ctx context.Context, booksID int64, conversationID uuid.UUID, outcome string, r AgentResult, began time.Time) {
-	s.log.InfoContext(ctx, "assistant turn", "books_id", booksID, "conversation_id", conversationID, "steps", r.Steps,
-		"tool_calls", r.ToolCalls, "input_tokens", r.InputTokens, "output_tokens", r.OutputTokens,
-		"provider", r.ProviderName, "model", r.Model, "outcome", outcome, "restarted", r.Restarted, "duration", s.now().Sub(began))
+func (s *Service) logTurn(
+	ctx context.Context,
+	booksID int64,
+	conversationID uuid.UUID,
+	outcome string,
+	r AgentResult,
+	began time.Time,
+) {
+	s.log.InfoContext(
+		ctx,
+		"assistant turn",
+		"books_id",
+		booksID,
+		"conversation_id",
+		conversationID,
+		"steps",
+		r.Steps,
+		"tool_calls",
+		r.ToolCalls,
+		"input_tokens",
+		r.InputTokens,
+		"output_tokens",
+		r.OutputTokens,
+		"provider",
+		r.ProviderName,
+		"model",
+		r.Model,
+		"outcome",
+		outcome,
+		"restarted",
+		r.Restarted,
+		"duration",
+		s.now().Sub(began),
+	)
 }

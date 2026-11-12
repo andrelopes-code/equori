@@ -19,11 +19,17 @@ type fakeIntegrations struct {
 	err   error
 }
 
-func (f fakeIntegrations) ExportCredentials(context.Context, int64) (map[uuid.UUID]map[string]string, error) {
+func (f fakeIntegrations) ExportCredentials(
+	context.Context,
+	int64,
+) (map[uuid.UUID]map[string]string, error) {
 	return f.plain, f.err
 }
 
-func (f fakeIntegrations) SealCredentials(_ int64, plain map[uuid.UUID]map[string]string) (map[uuid.UUID][]byte, error) {
+func (f fakeIntegrations) SealCredentials(
+	_ int64,
+	plain map[uuid.UUID]map[string]string,
+) (map[uuid.UUID][]byte, error) {
 	out := map[uuid.UUID][]byte{}
 	for id := range plain {
 		out[id] = []byte("sealed-integration")
@@ -38,7 +44,10 @@ func (f fakeProviderKeys) ExportProviderKeys(context.Context, int64) (map[uuid.U
 	return f.keys, nil
 }
 
-func (f fakeProviderKeys) SealProviderKeys(_ int64, keys map[uuid.UUID]string) (map[uuid.UUID][]byte, error) {
+func (f fakeProviderKeys) SealProviderKeys(
+	_ int64,
+	keys map[uuid.UUID]string,
+) (map[uuid.UUID][]byte, error) {
 	out := map[uuid.UUID][]byte{}
 	for id := range keys {
 		out[id] = []byte("sealed-provider")
@@ -53,7 +62,11 @@ func TestBundleCarriesBothMembers(t *testing.T) {
 
 	integration, provider := uuid.New(), uuid.New()
 	src := credentialSource{
-		fakeIntegrations{plain: map[uuid.UUID]map[string]string{integration: {"client_id": "c", "client_secret": "s"}}},
+		fakeIntegrations{
+			plain: map[uuid.UUID]map[string]string{
+				integration: {"client_id": "c", "client_secret": "s"},
+			},
+		},
 		fakeProviderKeys{keys: map[uuid.UUID]string{provider: "gsk-one"}},
 	}
 
@@ -67,12 +80,21 @@ func TestBundleCarriesBothMembers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if string(sealed.Integrations[integration]) != "sealed-integration" || len(sealed.Integrations) != 1 ||
-		string(sealed.Providers[provider]) != "sealed-provider" || len(sealed.Providers) != 1 {
+	if string(sealed.Integrations[integration]) != "sealed-integration" ||
+		len(sealed.Integrations) != 1 ||
+		string(sealed.Providers[provider]) != "sealed-provider" ||
+		len(sealed.Providers) != 1 {
 		t.Fatalf("sealed = %+v", sealed)
 	}
 
-	if _, err := src.Reseal(7, "another passphrase", bundle); !errors.Is(err, reporting.ErrPassphraseInvalid) {
+	if _, err := src.Reseal(
+		7,
+		"another passphrase",
+		bundle,
+	); !errors.Is(
+		err,
+		reporting.ErrPassphraseInvalid,
+	) {
 		t.Errorf("wrong passphrase = %v, want ErrPassphraseInvalid", err)
 	}
 }
@@ -83,7 +105,10 @@ func TestBundleWithoutProviderKeysStillOpens(t *testing.T) {
 
 	id := uuid.New()
 
-	old, err := secret.SealWithPassphrase([]byte(`{"credentials":{"`+id.String()+`":{"client_id":"c"}}}`), bundlePassphrase)
+	old, err := secret.SealWithPassphrase(
+		[]byte(`{"credentials":{"`+id.String()+`":{"client_id":"c"}}}`),
+		bundlePassphrase,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,12 +130,26 @@ func TestBundleWithoutProviderKeysStillOpens(t *testing.T) {
 func TestBundleIsNilWhenEmpty(t *testing.T) {
 	t.Parallel()
 
-	bundle, err := credentialSource{fakeIntegrations{}, fakeProviderKeys{}}.Bundle(t.Context(), 7, bundlePassphrase)
+	bundle, err := credentialSource{
+		fakeIntegrations{},
+		fakeProviderKeys{},
+	}.Bundle(
+		t.Context(),
+		7,
+		bundlePassphrase,
+	)
 	if bundle != nil || err != nil {
 		t.Fatalf("bundle = %v, %v, want nil", bundle, err)
 	}
 
-	_, err = credentialSource{fakeIntegrations{err: ingestion.ErrIntegrationUnavailable}, fakeProviderKeys{}}.Bundle(t.Context(), 7, bundlePassphrase)
+	_, err = credentialSource{
+		fakeIntegrations{err: ingestion.ErrIntegrationUnavailable},
+		fakeProviderKeys{},
+	}.Bundle(
+		t.Context(),
+		7,
+		bundlePassphrase,
+	)
 	if !errors.Is(err, reporting.ErrCredentialsUnavailable) {
 		t.Fatalf("err = %v, want ErrCredentialsUnavailable", err)
 	}

@@ -22,7 +22,14 @@ type instrumentAPI struct {
 }
 
 func mxrf11() map[string]any {
-	return map[string]any{"code": "MXRF11", "type": "reit", "scale": 0, "name": "Maxi Renda", "quote_currency": "BRL", "exchange": "BVMF"}
+	return map[string]any{
+		"code":           "MXRF11",
+		"type":           "reit",
+		"scale":          0,
+		"name":           "Maxi Renda",
+		"quote_currency": "BRL",
+		"exchange":       "BVMF",
+	}
 }
 
 func TestDefineInstrument(t *testing.T) {
@@ -65,12 +72,23 @@ func TestDefineInstrument(t *testing.T) {
 	h.MustDo(http.MethodGet, "/api/v1/instruments?type=currency", nil, http.StatusOK, &list)
 
 	brl := slices.IndexFunc(list.Items, func(i instrumentAPI) bool { return i.Code == "BRL" })
-	if len(list.Items) != len(money.Currencies()) || brl < 0 || list.Items[brl].QuoteCurrency != "" {
+	if len(list.Items) != len(money.Currencies()) || brl < 0 ||
+		list.Items[brl].QuoteCurrency != "" {
 		t.Fatalf("currency list = %+v", list.Items)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", mxrf11()), http.StatusConflict, "instrument_exists", "")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/instruments/PETR4", nil), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/instruments", mxrf11()),
+		http.StatusConflict,
+		"instrument_exists",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/instruments/PETR4", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 func TestDefineInstrumentValidation(t *testing.T) {
@@ -89,29 +107,58 @@ func TestDefineInstrumentValidation(t *testing.T) {
 		field string
 	}{
 		{name: "currency type", body: with("type", "currency"), field: "type"},
-		{name: "quote is a security", body: with("quote_currency", "PETR4"), field: "quote_currency"},
+		{
+			name:  "quote is a security",
+			body:  with("quote_currency", "PETR4"),
+			field: "quote_currency",
+		},
 		{name: "unknown quote", body: with("quote_currency", "XYZ"), field: "quote_currency"},
 		{name: "blank name", body: with("name", "  "), field: "name"},
 		{name: "code of a currency", body: with("code", "BRL"), field: "code"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", tt.body), http.StatusUnprocessableEntity, "validation_failed", tt.field)
+			h.ExpectProblem(
+				h.Do(http.MethodPost, "/api/v1/instruments", tt.body),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				tt.field,
+			)
 		})
 	}
 
 	for _, body := range []map[string]any{with("exchange", "B3"), with("exchange", "bvmf"), with("type", "fii"), with("type", "bdr")} {
-		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", body), http.StatusBadRequest, "invalid_request", "")
+		h.ExpectProblem(
+			h.Do(http.MethodPost, "/api/v1/instruments", body),
+			http.StatusBadRequest,
+			"invalid_request",
+			"",
+		)
 	}
 
 	for _, body := range []map[string]any{with("exchange", "XNYS"), with("type", "depositary_receipt")} {
-		if r := h.Do(http.MethodPost, "/api/v1/instruments", body); r.Status != http.StatusCreated && r.Status != http.StatusConflict {
+		if r := h.Do(
+			http.MethodPost,
+			"/api/v1/instruments",
+			body,
+		); r.Status != http.StatusCreated &&
+			r.Status != http.StatusConflict {
 			t.Fatalf("status %d: %s", r.Status, r.Body)
 		}
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("scale", 13)), http.StatusBadRequest, "invalid_request", "")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", with("code", "mxrf11")), http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/instruments", with("scale", 13)),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/instruments", with("code", "mxrf11")),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 }
 
 // S171: editing replaces name, exchange and subtype and keeps the rest of the instrument (amendment A134).
@@ -119,12 +166,36 @@ func TestS171EditInstrument(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
-	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-22", "value": "10.50"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "MXRF11",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-22",
+			"value":            "10.50",
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	var got instrumentAPI
-	h.MustDo(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "Maxi Renda FII", "subtype": "fii_papel"}, http.StatusOK, &got)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/instruments/MXRF11",
+		map[string]any{"name": "Maxi Renda FII", "subtype": "fii_papel"},
+		http.StatusOK,
+		&got,
+	)
 
-	want := instrumentAPI{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda FII", QuoteCurrency: "BRL", Subtype: "fii_papel"}
+	want := instrumentAPI{
+		Code:          "MXRF11",
+		Type:          "reit",
+		Scale:         0,
+		Name:          "Maxi Renda FII",
+		QuoteCurrency: "BRL",
+		Subtype:       "fii_papel",
+	}
 	if got != want {
 		t.Fatalf("edited = %+v, want %+v", got, want)
 	}
@@ -139,16 +210,47 @@ func TestS171EditInstrument(t *testing.T) {
 	var prices struct {
 		Items []priceAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&prices,
+	)
 
-	if len(prices.Items) != 1 || prices.Items[0] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-22", Value: "10.5", Source: "manual"}) {
+	if len(prices.Items) != 1 ||
+		prices.Items[0] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-22", Value: "10.5", Source: "manual"}) {
 		t.Fatalf("prices = %+v", prices.Items)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "  "}), http.StatusUnprocessableEntity, "validation_failed", "name")
-	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/BRL", map[string]any{"name": "Real"}), http.StatusUnprocessableEntity, "validation_failed", "code")
-	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/PETR4", map[string]any{"name": "Petrobras"}), http.StatusNotFound, "not_found", "")
-	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "x", "exchange": "B3"}), http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "  "}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"name",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, "/api/v1/instruments/BRL", map[string]any{"name": "Real"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"code",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, "/api/v1/instruments/PETR4", map[string]any{"name": "Petrobras"}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPatch,
+			"/api/v1/instruments/MXRF11",
+			map[string]any{"name": "x", "exchange": "B3"},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 }
 
 func TestReconcileCurrencies(t *testing.T) {
@@ -158,7 +260,8 @@ func TestReconcileCurrencies(t *testing.T) {
 
 	count := func() int {
 		var n int
-		if err := h.Pool.QueryRow(ctx, `SELECT count(*) FROM marketdata_instrument WHERE instrument_type = 'currency'`).Scan(&n); err != nil {
+		if err := h.Pool.QueryRow(ctx, `SELECT count(*) FROM marketdata_instrument WHERE instrument_type = 'currency'`).
+			Scan(&n); err != nil {
 			t.Fatal(err)
 		}
 
@@ -168,7 +271,10 @@ func TestReconcileCurrencies(t *testing.T) {
 		t.Fatalf("currency instruments = %d, want %d", got, want)
 	}
 
-	if _, err := h.Pool.Exec(ctx, `UPDATE marketdata_instrument SET name = 'Custom' WHERE code = 'EUR'`); err != nil {
+	if _, err := h.Pool.Exec(
+		ctx,
+		`UPDATE marketdata_instrument SET name = 'Custom' WHERE code = 'EUR'`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -177,7 +283,8 @@ func TestReconcileCurrencies(t *testing.T) {
 	}
 
 	var name string
-	if err := h.Pool.QueryRow(ctx, `SELECT name FROM marketdata_instrument WHERE code = 'EUR'`).Scan(&name); err != nil {
+	if err := h.Pool.QueryRow(ctx, `SELECT name FROM marketdata_instrument WHERE code = 'EUR'`).
+		Scan(&name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -189,7 +296,14 @@ func TestReconcileCurrencies(t *testing.T) {
 func TestInstrumentSubtype(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	cri := map[string]any{"code": "CRIXPTO", "type": "fixed_income", "scale": 2, "name": "CRI Xpto", "quote_currency": "BRL", "subtype": "cri"}
+	cri := map[string]any{
+		"code":           "CRIXPTO",
+		"type":           "fixed_income",
+		"scale":          2,
+		"name":           "CRI Xpto",
+		"quote_currency": "BRL",
+		"subtype":        "cri",
+	}
 	var got instrumentAPI
 	h.MustDo(http.MethodPost, "/api/v1/instruments", cri, http.StatusCreated, &got)
 
@@ -219,8 +333,20 @@ func TestInstrumentSubtype(t *testing.T) {
 	}
 
 	for _, bad := range []string{"CRI", "a-b", "x", ""} {
-		body := map[string]any{"code": "BADONE", "type": "fixed_income", "scale": 2, "name": "Bad", "quote_currency": "BRL", "subtype": bad}
-		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments", body), http.StatusBadRequest, "invalid_request", "subtype")
+		body := map[string]any{
+			"code":           "BADONE",
+			"type":           "fixed_income",
+			"scale":          2,
+			"name":           "Bad",
+			"quote_currency": "BRL",
+			"subtype":        bad,
+		}
+		h.ExpectProblem(
+			h.Do(http.MethodPost, "/api/v1/instruments", body),
+			http.StatusBadRequest,
+			"invalid_request",
+			"subtype",
+		)
 	}
 }
 
@@ -243,8 +369,13 @@ func TestInstrumentSymbols(t *testing.T) {
 	want := map[string]string{"yahoo_chart": "BRK-B"}
 
 	r := h.Do(http.MethodPost, "/api/v1/instruments", map[string]any{
-		"code": "BRK.B", "type": "stock", "scale": 0, "name": "Berkshire B", "quote_currency": "USD",
-		"exchange": "XNYS", "symbols": want,
+		"code":           "BRK.B",
+		"type":           "stock",
+		"scale":          0,
+		"name":           "Berkshire B",
+		"quote_currency": "USD",
+		"exchange":       "XNYS",
+		"symbols":        want,
 	})
 	if r.Status != http.StatusCreated {
 		t.Fatalf("define status = %d: %s", r.Status, r.Body)
@@ -262,20 +393,44 @@ func TestInstrumentSymbols(t *testing.T) {
 		t.Fatalf("symbols after an edit without symbols = %v, want %v", got, want)
 	}
 
-	cleared := h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "exchange": "XNYS", "symbols": map[string]string{}})
-	if cleared.Status != http.StatusOK || len(symbolsOf(cleared)) != 0 || strings.Contains(string(cleared.Body), `"symbols"`) {
+	cleared := h.Do(
+		http.MethodPatch,
+		path,
+		map[string]any{"name": "Berkshire B", "exchange": "XNYS", "symbols": map[string]string{}},
+	)
+	if cleared.Status != http.StatusOK || len(symbolsOf(cleared)) != 0 ||
+		strings.Contains(string(cleared.Body), `"symbols"`) {
 		t.Fatalf("clear status = %d: %s", cleared.Status, cleared.Body)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "symbols": map[string]string{"ecb": "X"}}),
-		http.StatusUnprocessableEntity, "validation_failed", "symbols.ecb")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPatch,
+			path,
+			map[string]any{"name": "Berkshire B", "symbols": map[string]string{"ecb": "X"}},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"symbols.ecb",
+	)
 
 	if got := h.Do(http.MethodGet, path, nil); strings.Contains(string(got.Body), `"symbols"`) {
 		t.Fatalf("read after the rejected edit: %s", got.Body)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": "Berkshire B", "symbols": map[string]string{"yahoo_chart": "BRK B"}}),
-		http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPatch,
+			path,
+			map[string]any{
+				"name":    "Berkshire B",
+				"symbols": map[string]string{"yahoo_chart": "BRK B"},
+			},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 }
 
 // A223 RM1, RM2: removing a security deletes it with its prices and leaves the others.
@@ -288,33 +443,75 @@ func TestS385DeleteInstrument(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/instruments", other, http.StatusCreated, nil)
 
 	for _, code := range []string{"MXRF11", "KNRI11"} {
-		h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": code, "quote_instrument": "BRL", "date": "2026-10-22", "value": "10.50"}, http.StatusCreated, nil)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/prices",
+			map[string]any{
+				"instrument":       code,
+				"quote_instrument": "BRL",
+				"date":             "2026-10-22",
+				"value":            "10.50",
+			},
+			http.StatusCreated,
+			nil,
+		)
 	}
 
-	if r := h.Do(http.MethodDelete, "/api/v1/instruments/MXRF11", nil); r.Status != http.StatusNoContent {
+	if r := h.Do(
+		http.MethodDelete,
+		"/api/v1/instruments/MXRF11",
+		nil,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("delete status = %d: %s", r.Status, r.Body)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/instruments/MXRF11", nil), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/instruments/MXRF11", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 
 	var prices struct {
 		Items []priceAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=KNRI11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=KNRI11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&prices,
+	)
 
 	if len(prices.Items) != 1 {
 		t.Fatalf("prices of the other instrument = %+v, want 1", prices.Items)
 	}
 
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&prices,
+	)
 
 	if len(prices.Items) != 0 {
 		t.Fatalf("prices of the redefined instrument = %+v, want none", prices.Items)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/instruments/PETR4", nil), http.StatusNotFound, "not_found", "")
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/instruments/BRL", nil), http.StatusUnprocessableEntity, "validation_failed", "code")
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/instruments/PETR4", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/instruments/BRL", nil),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"code",
+	)
 }
 
 // A223 RM3: a security that an account holds cannot be removed, and nothing of it is deleted.
@@ -322,22 +519,60 @@ func TestS386DeleteInstrumentInUse(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
-	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-22", "value": "10.50"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "MXRF11",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-22",
+			"value":            "10.50",
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	var inst struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "XP"}, http.StatusCreated, &inst)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/institutions",
+		map[string]string{"name": "XP"},
+		http.StatusCreated,
+		&inst,
+	)
 
-	parent := h.Account("XP", "asset", "brokerage", map[string]any{"institution_id": inst.ID, "currency": "BRL"})
-	h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"institution_id": inst.ID, "parent_id": parent, "currency": "MXRF11"})
+	parent := h.Account(
+		"XP",
+		"asset",
+		"brokerage",
+		map[string]any{"institution_id": inst.ID, "currency": "BRL"},
+	)
+	h.Account(
+		"XP MXRF11",
+		"asset",
+		"brokerage",
+		map[string]any{"institution_id": inst.ID, "parent_id": parent, "currency": "MXRF11"},
+	)
 
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/instruments/MXRF11", nil), http.StatusConflict, "instrument_in_use", "")
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/instruments/MXRF11", nil),
+		http.StatusConflict,
+		"instrument_in_use",
+		"",
+	)
 
 	var prices struct {
 		Items []priceAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &prices)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&prices,
+	)
 
 	if len(prices.Items) != 1 {
 		t.Fatalf("prices after the refusal = %+v, want 1", prices.Items)
@@ -351,6 +586,16 @@ func TestDeleteInstrumentRoles(t *testing.T) {
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 
 	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
-	h.ExpectProblem(h.Call(reader, http.MethodDelete, "/api/v1/instruments/MXRF11", nil), http.StatusForbidden, "book_role_required", "")
-	h.ExpectProblem(h.Call(&http.Client{}, http.MethodDelete, "/api/v1/instruments/MXRF11", nil), http.StatusUnauthorized, "unauthenticated", "")
+	h.ExpectProblem(
+		h.Call(reader, http.MethodDelete, "/api/v1/instruments/MXRF11", nil),
+		http.StatusForbidden,
+		"book_role_required",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(&http.Client{}, http.MethodDelete, "/api/v1/instruments/MXRF11", nil),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 }

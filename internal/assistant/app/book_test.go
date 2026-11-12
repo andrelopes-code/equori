@@ -33,7 +33,11 @@ func TestBookReads(t *testing.T) {
 		{
 			name: "too_long",
 			results: map[string]fakeResult{
-				"list_accounts":  {res: tool.Result{Content: json.RawMessage(`"` + strings.Repeat("a", 12*1024) + `"`)}},
+				"list_accounts": {
+					res: tool.Result{
+						Content: json.RawMessage(`"` + strings.Repeat("a", 12*1024) + `"`),
+					},
+				},
 				"list_schedules": {res: tool.Result{Content: json.RawMessage(`[]`)}},
 			},
 			want: []BookRead{
@@ -80,7 +84,11 @@ type fakeResult struct {
 
 type fakeBookTools struct{ results map[string]fakeResult }
 
-func (f fakeBookTools) Call(ctx context.Context, name string, args json.RawMessage) (tool.Result, error) {
+func (f fakeBookTools) Call(
+	ctx context.Context,
+	name string,
+	args json.RawMessage,
+) (tool.Result, error) {
 	if id, ok := auth.BooksID(ctx); !ok || id != 7 || string(args) != "{}" {
 		return tool.Result{}, errors.New("unexpected context or arguments")
 	}
@@ -93,7 +101,11 @@ func (f fakeBookTools) Call(ctx context.Context, name string, args json.RawMessa
 	return r.res, r.err
 }
 
-func (fakeBookTools) Preview(context.Context, string, json.RawMessage) (tool.Preview, tool.Result, error) {
+func (fakeBookTools) Preview(
+	context.Context,
+	string,
+	json.RawMessage,
+) (tool.Preview, tool.Result, error) {
 	return tool.Preview{}, tool.Result{}, nil
 }
 

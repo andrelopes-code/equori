@@ -55,8 +55,15 @@ func TestReferencedBy(t *testing.T) {
 	t.Run("S08 refunds reference the laptop and a voided refund drops out", func(t *testing.T) {
 		c := newCardSetup(t, "2026-11-20")
 		laptop := installmentPurchase(t, c.h, map[string]any{
-			"card_account_id": c.card, "date": "2026-10-20",
-			"splits": []map[string]any{{"account_id": c.h.Account("Electronics", "expense", "", nil), "amount": apitest.BRL(100000)}}, "installment_count": 3,
+			"card_account_id": c.card,
+			"date":            "2026-10-20",
+			"splits": []map[string]any{
+				{
+					"account_id": c.h.Account("Electronics", "expense", "", nil),
+					"amount":     apitest.BRL(100000),
+				},
+			},
+			"installment_count": 3,
 		})
 		var first, second apitest.TransactionView
 		refund(c.h, laptop.Transaction.ID, "2026-11-15", 5000).Decode(t, &first)
@@ -78,7 +85,13 @@ func TestReferencedBy(t *testing.T) {
 			t.Fatalf("referenced_by = %+v, want ordered by source", refs)
 		}
 
-		c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+first.ID+"/void", map[string]string{"reason": "mistake"}, http.StatusOK, nil)
+		c.h.MustDo(
+			http.MethodPost,
+			"/api/v1/transactions/"+first.ID+"/void",
+			map[string]string{"reason": "mistake"},
+			http.StatusOK,
+			nil,
+		)
 
 		refs = getReferencedBy(t, c, laptop.Transaction.ID)
 		if len(refs) != 1 || refs[0].Type != "refund_of" || refs[0].Source != second.ID {
@@ -91,8 +104,17 @@ func TestReferencedBy(t *testing.T) {
 		charge := c.purchase("2026-10-14", 19990)
 		d := openDispute(t, c.h, charge)
 		var resolved disputeView
-		c.h.MustDo(http.MethodPost, "/api/v1/disputes/"+d.ID+"/resolve",
-			map[string]any{"resolved_on": "2026-12-02", "outcome": "won", "statement": "2026-12"}, http.StatusOK, &resolved)
+		c.h.MustDo(
+			http.MethodPost,
+			"/api/v1/disputes/"+d.ID+"/resolve",
+			map[string]any{
+				"resolved_on": "2026-12-02",
+				"outcome":     "won",
+				"statement":   "2026-12",
+			},
+			http.StatusOK,
+			&resolved,
+		)
 
 		refs := getReferencedBy(t, c, charge)
 
@@ -117,7 +139,21 @@ func TestReferencedBy(t *testing.T) {
 		refund(c.h, charge, "2026-10-20", 1000)
 
 		other := c.h.Login("other@example.com")
-		c.h.ExpectProblem(c.h.Call(other, http.MethodGet, "/api/v1/transactions/"+charge, nil), http.StatusNotFound, "not_found", "")
-		c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/transactions/00000000-0000-4000-8000-000000000000", nil), http.StatusNotFound, "not_found", "")
+		c.h.ExpectProblem(
+			c.h.Call(other, http.MethodGet, "/api/v1/transactions/"+charge, nil),
+			http.StatusNotFound,
+			"not_found",
+			"",
+		)
+		c.h.ExpectProblem(
+			c.h.Do(
+				http.MethodGet,
+				"/api/v1/transactions/00000000-0000-4000-8000-000000000000",
+				nil,
+			),
+			http.StatusNotFound,
+			"not_found",
+			"",
+		)
 	})
 }

@@ -23,8 +23,11 @@ func TestNewAccessToken(t *testing.T) {
 		t.Fatalf("token = %q", text)
 	}
 
-	if !bytes.Equal(HashToken(text), tok.TokenHash) || tok.MemberID != 7 || tok.BooksID != 9 || tok.Scope != "read" || tok.Name != "Claude Code" ||
-		!tok.CreatedAt.Equal(now) || !tok.ExpiresAt.Equal(now.AddDate(0, 0, 90)) {
+	if !bytes.Equal(HashToken(text), tok.TokenHash) || tok.MemberID != 7 || tok.BooksID != 9 ||
+		tok.Scope != "read" ||
+		tok.Name != "Claude Code" ||
+		!tok.CreatedAt.Equal(now) ||
+		!tok.ExpiresAt.Equal(now.AddDate(0, 0, 90)) {
 		t.Fatalf("token = %+v", tok)
 	}
 
@@ -35,7 +38,14 @@ func TestNewAccessToken(t *testing.T) {
 	}{{"x", "read", 7, "expires_in_days"}, {"x", "admin", 30, "scope"}, {" ", "write", 365, "name"}} {
 		_, _, err := NewAccessToken(7, 9, tt.name, tt.scope, tt.days, now)
 		if fe, ok := errors.AsType[*FieldError](err); !ok || fe.Field != tt.field {
-			t.Errorf("NewAccessToken(%q, %q, %d) = %v, want field %s", tt.name, tt.scope, tt.days, err, tt.field)
+			t.Errorf(
+				"NewAccessToken(%q, %q, %d) = %v, want field %s",
+				tt.name,
+				tt.scope,
+				tt.days,
+				err,
+				tt.field,
+			)
 		}
 	}
 }

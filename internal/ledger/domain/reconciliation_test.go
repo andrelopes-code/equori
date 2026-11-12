@@ -14,8 +14,20 @@ func TestDecideAssertion(t *testing.T) {
 		mode              YieldMode
 		want              AssertionOutcome
 	}{
-		{"equal", 1000000, 1000000, YieldAuto, AssertionOutcome{Difference: 0, Resolution: ResolutionNone}},
-		{"positive with auto yield", 1008341, 1000000, YieldAuto, AssertionOutcome{Difference: 8341, Resolution: ResolutionYield, Yield: 8341}},
+		{
+			"equal",
+			1000000,
+			1000000,
+			YieldAuto,
+			AssertionOutcome{Difference: 0, Resolution: ResolutionNone},
+		},
+		{
+			"positive with auto yield",
+			1008341,
+			1000000,
+			YieldAuto,
+			AssertionOutcome{Difference: 8341, Resolution: ResolutionYield, Yield: 8341},
+		},
 		{"positive without yield", 1008341, 1000000, YieldNone, AssertionOutcome{Difference: 8341}},
 		{"negative on reserve", 999000, 1000000, YieldAuto, AssertionOutcome{Difference: -1000}},
 	}
@@ -68,7 +80,15 @@ func TestYieldBound(t *testing.T) {
 	}
 	for _, tt := range tests {
 		if got := YieldBound(tt.settled, tt.days, tt.percent); got != tt.want {
-			t.Errorf("%s: YieldBound(%d, %d, %d) = %d, want %d", tt.name, tt.settled, tt.days, tt.percent, got, tt.want)
+			t.Errorf(
+				"%s: YieldBound(%d, %d, %d) = %d, want %d",
+				tt.name,
+				tt.settled,
+				tt.days,
+				tt.percent,
+				got,
+				tt.want,
+			)
 		}
 	}
 }
@@ -83,25 +103,72 @@ func TestDecideSyncedReserve(t *testing.T) {
 		mode              YieldMode
 		want              AssertionOutcome
 	}{
-		{"within the bound", 100352, 100292, 1, YieldAuto, AssertionOutcome{Difference: 60, Resolution: ResolutionYield, Yield: 60}},
-		{"at the bound", 100392, 100292, 1, YieldAuto, AssertionOutcome{Difference: 100, Resolution: ResolutionYield, Yield: 100}},
+		{
+			"within the bound",
+			100352,
+			100292,
+			1,
+			YieldAuto,
+			AssertionOutcome{Difference: 60, Resolution: ResolutionYield, Yield: 60},
+		},
+		{
+			"at the bound",
+			100392,
+			100292,
+			1,
+			YieldAuto,
+			AssertionOutcome{Difference: 100, Resolution: ResolutionYield, Yield: 100},
+		},
 		{"one above the bound", 100393, 100292, 1, YieldAuto, AssertionOutcome{Difference: 101}},
-		{"below the settled balance", 100200, 100292, 1, YieldAuto, AssertionOutcome{Difference: -92}},
+		{
+			"below the settled balance",
+			100200,
+			100292,
+			1,
+			YieldAuto,
+			AssertionOutcome{Difference: -92},
+		},
 		{"no previous assertion", 100352, 100292, 0, YieldAuto, AssertionOutcome{Difference: 60}},
 		{"yield mode none", 100352, 100292, 1, YieldNone, AssertionOutcome{Difference: 60}},
-		{"equal without a previous assertion", 100292, 100292, 0, YieldAuto, AssertionOutcome{Resolution: ResolutionNone}},
-		{"equal with yield mode none", 100292, 100292, 1, YieldNone, AssertionOutcome{Resolution: ResolutionNone}},
+		{
+			"equal without a previous assertion",
+			100292,
+			100292,
+			0,
+			YieldAuto,
+			AssertionOutcome{Resolution: ResolutionNone},
+		},
+		{
+			"equal with yield mode none",
+			100292,
+			100292,
+			1,
+			YieldNone,
+			AssertionOutcome{Resolution: ResolutionNone},
+		},
 	}
 
 	const percent = 3
 	for _, tt := range tests {
-		if got := DecideSyncedReserve(tt.asserted, tt.settled, tt.days, tt.mode, percent); got != tt.want {
+		if got := DecideSyncedReserve(
+			tt.asserted,
+			tt.settled,
+			tt.days,
+			tt.mode,
+			percent,
+		); got != tt.want {
 			t.Errorf("%s: %+v, want %+v", tt.name, got, tt.want)
 		}
 	}
 
 	// A currency without a bound books no yield: the difference stays open for the owner.
-	if got := DecideSyncedReserve(100352, 100292, 1, YieldAuto, 0); got != (AssertionOutcome{Difference: 60}) {
+	if got := DecideSyncedReserve(
+		100352,
+		100292,
+		1,
+		YieldAuto,
+		0,
+	); got != (AssertionOutcome{Difference: 60}) {
 		t.Errorf("without a bound: %+v, want the difference open", got)
 	}
 }

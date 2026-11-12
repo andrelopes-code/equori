@@ -18,7 +18,11 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 	case "create_budget":
 		pv.Target = "Budget " + p.categoryName
 		pv.Changes = []tool.Change{
-			{Field: "budget", After: tool.TextValue(p.categoryName)}, {Field: "amount", After: tool.MoneyValue(*p.amount)},
+			{
+				Field: "budget",
+				After: tool.TextValue(p.categoryName),
+			},
+			{Field: "amount", After: tool.MoneyValue(*p.amount)},
 			{Field: "date", After: tool.DateValue(p.month)},
 		}
 	case "set_budget_amount":
@@ -31,8 +35,16 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 	case "create_goal":
 		pv.Target = "Goal " + in.Name
 		pv.Changes = []tool.Change{
-			{Field: "goal", After: tool.TextValue(in.Name)}, {Field: "target", After: tool.MoneyValue(*p.amount)},
-			{Field: "due_on", After: tool.DateValue(in.DueOn.Time)}, {Field: "accounts", After: accounts},
+			{
+				Field: "goal",
+				After: tool.TextValue(in.Name),
+			},
+			{Field: "target", After: tool.MoneyValue(*p.amount)},
+			{
+				Field: "due_on",
+				After: tool.DateValue(in.DueOn.Time),
+			},
+			{Field: "accounts", After: accounts},
 		}
 	case "update_goal":
 		if err := previewGoalUpdate(&pv, in, p, accounts); err != nil {
@@ -66,10 +78,22 @@ func previewBudgetAmount(pv *tool.Preview, p budgetGoalPlan) error {
 	return nil
 }
 
-func previewGoalUpdate(pv *tool.Preview, in manageBudgetOrGoalIn, p budgetGoalPlan, accounts tool.Value) error {
+func previewGoalUpdate(
+	pv *tool.Preview,
+	in manageBudgetOrGoalIn,
+	p budgetGoalPlan,
+	accounts tool.Value,
+) error {
 	pv.Target = "Goal " + p.goal.Name
 	if in.Name != "" {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "name", Before: tool.TextValue(p.goal.Name), After: tool.TextValue(in.Name)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "name",
+				Before: tool.TextValue(p.goal.Name),
+				After:  tool.TextValue(in.Name),
+			},
+		)
 	}
 
 	if p.amount != nil {
@@ -78,11 +102,25 @@ func previewGoalUpdate(pv *tool.Preview, in manageBudgetOrGoalIn, p budgetGoalPl
 			return err
 		}
 
-		pv.Changes = append(pv.Changes, tool.Change{Field: "target", Before: tool.MoneyValue(before), After: tool.MoneyValue(*p.amount)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "target",
+				Before: tool.MoneyValue(before),
+				After:  tool.MoneyValue(*p.amount),
+			},
+		)
 	}
 
 	if !in.DueOn.IsZero() {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "due_on", Before: tool.DateValue(p.goal.DueOn), After: tool.DateValue(in.DueOn.Time)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "due_on",
+				Before: tool.DateValue(p.goal.DueOn),
+				After:  tool.DateValue(in.DueOn.Time),
+			},
+		)
 	}
 
 	if len(p.accountIDs) > 0 {
@@ -97,15 +135,27 @@ func previewPlanSave(pv *tool.Preview, in manageBudgetOrGoalIn, p budgetGoalPlan
 
 	pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(p.month)}}
 	if in.Source != "" {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "source", After: tool.TextValue(string(in.Source))})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "source", After: tool.TextValue(string(in.Source))},
+		)
 	}
 
 	if p.amount != nil {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "reference", After: tool.MoneyValue(*p.amount)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "reference", After: tool.MoneyValue(*p.amount)},
+		)
 	}
 
 	if in.SavingsTargetBP.Set {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "rate", After: tool.TextValue(fmt.Sprintf("%d bp of the reference", in.SavingsTargetBP.N))})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field: "rate",
+				After: tool.TextValue(fmt.Sprintf("%d bp of the reference", in.SavingsTargetBP.N)),
+			},
+		)
 	}
 
 	planned := make(map[uuid.UUID]int64, len(p.plan.Rows))
@@ -119,8 +169,15 @@ func previewPlanSave(pv *tool.Preview, in manageBudgetOrGoalIn, p budgetGoalPlan
 			return err
 		}
 
-		pv.Changes = append(pv.Changes, tool.Change{Field: "budget", After: tool.TextValue(p.planNames[i])},
-			tool.Change{Field: "amount", Before: tool.MoneyValue(before), After: tool.MoneyValue(a.Amount)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "budget", After: tool.TextValue(p.planNames[i])},
+			tool.Change{
+				Field:  "amount",
+				Before: tool.MoneyValue(before),
+				After:  tool.MoneyValue(a.Amount),
+			},
+		)
 	}
 
 	return nil

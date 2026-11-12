@@ -77,7 +77,15 @@ func (c *Client) Session(ctx context.Context, clientID, clientSecret string) (*S
 	var out struct {
 		APIKey string `json:"apiKey"`
 	}
-	if err := c.do(ctx, http.MethodPost, "POST /auth", c.base.String()+"/auth", "", body, &out); err != nil {
+	if err := c.do(
+		ctx,
+		http.MethodPost,
+		"POST /auth",
+		c.base.String()+"/auth",
+		"",
+		body,
+		&out,
+	); err != nil {
 		return nil, err
 	}
 
@@ -90,7 +98,12 @@ func (c *Client) Session(ctx context.Context, clientID, clientSecret string) (*S
 
 // do sends one request, retrying 429 and 5xx responses. label names the endpoint in
 // errors without identifiers (N16).
-func (c *Client) do(ctx context.Context, method, label, target, apiKey string, body []byte, out any) error {
+func (c *Client) do(
+	ctx context.Context,
+	method, label, target, apiKey string,
+	body []byte,
+	out any,
+) error {
 	var last error
 	for attempt := range maxAttempts {
 		status, retryAfter, payload, err := c.send(ctx, method, target, apiKey, body)
@@ -132,7 +145,11 @@ func (c *Client) do(ctx context.Context, method, label, target, apiKey string, b
 	return last
 }
 
-func (c *Client) send(ctx context.Context, method, target, apiKey string, body []byte) (status int, retryAfter time.Duration, payload []byte, err error) {
+func (c *Client) send(
+	ctx context.Context,
+	method, target, apiKey string,
+	body []byte,
+) (status int, retryAfter time.Duration, payload []byte, err error) {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
@@ -193,7 +210,12 @@ type page[T any] struct {
 	TotalPages int `json:"totalPages"`
 }
 
-func listAll[T any](ctx context.Context, s *Session, label, path string, q url.Values) ([]T, error) {
+func listAll[T any](
+	ctx context.Context,
+	s *Session,
+	label, path string,
+	q url.Values,
+) ([]T, error) {
 	var out []T
 
 	q.Set("pageSize", pageSize)
@@ -223,15 +245,27 @@ func (s *Session) Bills(ctx context.Context, accountID string) ([]Bill, error) {
 
 // Transactions returns the account's transactions dated in [from, to], following the
 // cursor of GET /v2/transactions. A cursor is a query string; one that names a host is refused (N17).
-func (s *Session) Transactions(ctx context.Context, accountID string, from, to time.Time) ([]Transaction, error) {
+func (s *Session) Transactions(
+	ctx context.Context,
+	accountID string,
+	from, to time.Time,
+) ([]Transaction, error) {
 	return s.transactions(ctx, url.Values{
-		"accountId": {accountID}, "dateFrom": {from.Format(dateLayout)}, "dateTo": {to.Format(dateLayout)},
+		"accountId": {
+			accountID,
+		},
+		"dateFrom": {from.Format(dateLayout)},
+		"dateTo":   {to.Format(dateLayout)},
 	})
 }
 
 // TransactionsCreatedSince lists an account's transactions the aggregator created at or
 // after since (A144).
-func (s *Session) TransactionsCreatedSince(ctx context.Context, accountID string, since time.Time) ([]Transaction, error) {
+func (s *Session) TransactionsCreatedSince(
+	ctx context.Context,
+	accountID string,
+	since time.Time,
+) ([]Transaction, error) {
 	return s.transactions(ctx, url.Values{
 		"accountId": {accountID}, "createdAtFrom": {since.UTC().Format(time.RFC3339)},
 	})

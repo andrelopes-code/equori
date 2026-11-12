@@ -26,7 +26,11 @@ type PasskeyInput struct {
 }
 
 // PasskeyOptions stores a registration challenge and returns it with the credentials to exclude.
-func (s *Service) PasskeyOptions(ctx context.Context, memberID int64, origin string) (PasskeyOptions, error) {
+func (s *Service) PasskeyOptions(
+	ctx context.Context,
+	memberID int64,
+	origin string,
+) (PasskeyOptions, error) {
 	rpID, ok := domain.RPID(origin)
 	if !ok {
 		return PasskeyOptions{}, ErrPasskeyInvalid
@@ -44,8 +48,17 @@ func (s *Service) PasskeyOptions(ctx context.Context, memberID int64, origin str
 
 	challenge := domain.NewChallenge(32)
 
-	if err := s.repo.SavePasskeyChallenge(ctx, memberID, challenge, s.now().Add(domain.ChallengeTTL)); err != nil {
-		return PasskeyOptions{}, fmt.Errorf("save passkey challenge of member %d: %w", memberID, err)
+	if err := s.repo.SavePasskeyChallenge(
+		ctx,
+		memberID,
+		challenge,
+		s.now().Add(domain.ChallengeTTL),
+	); err != nil {
+		return PasskeyOptions{}, fmt.Errorf(
+			"save passkey challenge of member %d: %w",
+			memberID,
+			err,
+		)
 	}
 
 	exclude := make([][]byte, 0, len(state.Passkeys))
@@ -66,7 +79,12 @@ func (s *Service) PasskeyOptions(ctx context.Context, memberID int64, origin str
 
 // CreatePasskey verifies a creation ceremony and stores the passkey; it returns the recovery codes
 // when no second factor existed. The challenge is consumed in every outcome.
-func (s *Service) CreatePasskey(ctx context.Context, memberID int64, sessionToken, origin string, in PasskeyInput) (domain.Passkey, []string, error) {
+func (s *Service) CreatePasskey(
+	ctx context.Context,
+	memberID int64,
+	sessionToken, origin string,
+	in PasskeyInput,
+) (domain.Passkey, []string, error) {
 	now := s.now()
 
 	challenge, err := s.repo.TakePasskeyChallenge(ctx, memberID, now)
@@ -74,7 +92,11 @@ func (s *Service) CreatePasskey(ctx context.Context, memberID int64, sessionToke
 	case errors.Is(err, ErrNotFound):
 		return domain.Passkey{}, nil, ErrPasskeyInvalid
 	case err != nil:
-		return domain.Passkey{}, nil, fmt.Errorf("take passkey challenge of member %d: %w", memberID, err)
+		return domain.Passkey{}, nil, fmt.Errorf(
+			"take passkey challenge of member %d: %w",
+			memberID,
+			err,
+		)
 	}
 
 	rpID, ok := domain.RPID(origin)
@@ -82,7 +104,14 @@ func (s *Service) CreatePasskey(ctx context.Context, memberID int64, sessionToke
 		return domain.Passkey{}, nil, ErrPasskeyInvalid
 	}
 
-	reg, err := domain.VerifyRegistration(in.ClientDataJSON, in.AuthenticatorData, in.PublicKey, in.Algorithm, challenge, origin)
+	reg, err := domain.VerifyRegistration(
+		in.ClientDataJSON,
+		in.AuthenticatorData,
+		in.PublicKey,
+		in.Algorithm,
+		challenge,
+		origin,
+	)
 	if err != nil {
 		return domain.Passkey{}, nil, ErrPasskeyInvalid
 	}
@@ -117,7 +146,12 @@ func (s *Service) CreatePasskey(ctx context.Context, memberID int64, sessionToke
 }
 
 // RemovePasskey deletes the passkey after the password check.
-func (s *Service) RemovePasskey(ctx context.Context, memberID int64, id uuid.UUID, password string) error {
+func (s *Service) RemovePasskey(
+	ctx context.Context,
+	memberID int64,
+	id uuid.UUID,
+	password string,
+) error {
 	member, err := s.repo.MemberByID(ctx, memberID)
 	if err != nil {
 		return fmt.Errorf("load member %d: %w", memberID, err)
@@ -130,7 +164,13 @@ func (s *Service) RemovePasskey(ctx context.Context, memberID int64, id uuid.UUI
 	return s.repo.RemovePasskey(ctx, memberID, id)
 }
 
-func (s *Service) usePasskey(ctx context.Context, pending domain.LoginChallenge, origin string, a Assertion, now time.Time) (bool, error) {
+func (s *Service) usePasskey(
+	ctx context.Context,
+	pending domain.LoginChallenge,
+	origin string,
+	a Assertion,
+	now time.Time,
+) (bool, error) {
 	state, err := s.repo.SecondFactor(ctx, pending.MemberID)
 	if err != nil {
 		return false, fmt.Errorf("load second factor of member %d: %w", pending.MemberID, err)
@@ -143,7 +183,15 @@ func (s *Service) usePasskey(ctx context.Context, pending domain.LoginChallenge,
 			continue
 		}
 
-		counter, err := domain.VerifyAssertion(a.ClientDataJSON, a.AuthenticatorData, a.Signature, p.PublicKey, p.Algorithm, pending.Challenge, origin)
+		counter, err := domain.VerifyAssertion(
+			a.ClientDataJSON,
+			a.AuthenticatorData,
+			a.Signature,
+			p.PublicKey,
+			p.Algorithm,
+			pending.Challenge,
+			origin,
+		)
 		if err != nil {
 			return false, nil
 		}

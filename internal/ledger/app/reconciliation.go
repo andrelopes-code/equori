@@ -32,7 +32,11 @@ type OpenDifference struct {
 
 // ReconciliationStatus reports the latest assertion's difference while it is open and
 // not superseded by a later reconciliation; the difference reflects the current postings.
-func (s *Service) ReconciliationStatus(ctx context.Context, booksID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
+func (s *Service) ReconciliationStatus(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (ReconciliationStatus, error) {
 	a, err := s.repo.Account(ctx, booksID, accountID)
 	if err != nil {
 		return ReconciliationStatus{}, err
@@ -49,7 +53,8 @@ func (s *Service) ReconciliationStatus(ctx context.Context, booksID int64, accou
 	}
 
 	latest := assertions[0]
-	if latest.Reconciled || (st.LastReconciledOn != nil && latest.Date.Before(*st.LastReconciledOn)) {
+	if latest.Reconciled ||
+		(st.LastReconciledOn != nil && latest.Date.Before(*st.LastReconciledOn)) {
 		return st, nil
 	}
 
@@ -69,7 +74,12 @@ func (s *Service) ReconciliationStatus(ctx context.Context, booksID int64, accou
 }
 
 // Unlock is the explicit step chapter 2 requires before reconciled postings change (A8).
-func (s *Service) Unlock(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error {
+func (s *Service) Unlock(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from time.Time,
+) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
 		if _, err := r.LockAccount(ctx, booksID, accountID); err != nil {
 			return err
@@ -80,7 +90,12 @@ func (s *Service) Unlock(ctx context.Context, booksID int64, accountID uuid.UUID
 }
 
 // ReconcileStatement confirms the institution's amount due for a closed card statement (A7).
-func (s *Service) ReconcileStatement(ctx context.Context, booksID int64, statementID uuid.UUID, amountDue money.Money) error {
+func (s *Service) ReconcileStatement(
+	ctx context.Context,
+	booksID int64,
+	statementID uuid.UUID,
+	amountDue money.Money,
+) error {
 	accountID, err := s.repo.StatementAccount(ctx, booksID, statementID)
 	if err != nil {
 		return err
@@ -114,7 +129,11 @@ func (s *Service) ReconcileStatement(ctx context.Context, booksID int64, stateme
 		}
 
 		return s.reconcile(ctx, r, Reconciliation{
-			BooksID: booksID, AccountID: accountID, Date: v.Input.Closing, StatementID: statementID, Resolution: domain.ResolutionNone,
+			BooksID:     booksID,
+			AccountID:   accountID,
+			Date:        v.Input.Closing,
+			StatementID: statementID,
+			Resolution:  domain.ResolutionNone,
 		})
 	})
 }
@@ -142,7 +161,9 @@ func (s *Service) AccountChecks(ctx context.Context, booksID int64) ([]AccountCh
 
 	var out []AccountCheck
 	for _, a := range all {
-		if (a.Class != domain.ClassAsset && a.Class != domain.ClassLiability) || a.ClosedOn != nil || parents[a.ID] {
+		if (a.Class != domain.ClassAsset && a.Class != domain.ClassLiability) ||
+			a.ClosedOn != nil ||
+			parents[a.ID] {
 			continue
 		}
 
@@ -177,7 +198,12 @@ func (s *Service) reconcile(ctx context.Context, r Repository, rec Reconciliatio
 	}
 
 	return r.Publish(ctx, outbox.Event{
-		Type: EventAccountReconciled, BooksID: rec.BooksID, AggregateID: rec.AccountID.String(),
-		Payload: AccountReconciledEvent{AccountID: rec.AccountID, Date: rec.Date.Format(time.DateOnly)},
+		Type:        EventAccountReconciled,
+		BooksID:     rec.BooksID,
+		AggregateID: rec.AccountID.String(),
+		Payload: AccountReconciledEvent{
+			AccountID: rec.AccountID,
+			Date:      rec.Date.Format(time.DateOnly),
+		},
 	})
 }

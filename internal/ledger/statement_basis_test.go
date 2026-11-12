@@ -21,8 +21,16 @@ func TestProvisionalStatement(t *testing.T) {
 
 	late := c.purchase("2026-11-01", 713)
 	early := c.purchase("2026-10-20", 1000)
-	chosen := c.h.Record("2026-11-01", ownerStatement(apitest.Posting(c.card, -500), "2026-11"), apitest.Posting(c.food, 500))
-	deferred := c.h.Record("2026-11-02", ownerStatement(apitest.Posting(c.card, -5000), "2026-12"), apitest.Posting(c.food, 5000))
+	chosen := c.h.Record(
+		"2026-11-01",
+		ownerStatement(apitest.Posting(c.card, -500), "2026-11"),
+		apitest.Posting(c.food, 500),
+	)
+	deferred := c.h.Record(
+		"2026-11-02",
+		ownerStatement(apitest.Posting(c.card, -5000), "2026-12"),
+		apitest.Posting(c.food, 5000),
+	)
 	line := imported(t, c.card, "2026-11-01", -1112)
 	due := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
 	line.DueDate = &due
@@ -48,7 +56,11 @@ func TestProvisionalStatement(t *testing.T) {
 		t.Errorf("chosen statement = %s, want 2026-12", s)
 	}
 
-	if r := reconcileStatement(c, "2026-11", int64(statements(t, c.h, c.card)["2026-11"].AmountDue)); r.Status != http.StatusOK {
+	if r := reconcileStatement(
+		c,
+		"2026-11",
+		int64(statements(t, c.h, c.card)["2026-11"].AmountDue),
+	); r.Status != http.StatusOK {
 		t.Fatalf("reconcile status = %d", r.Status)
 	}
 
@@ -121,14 +133,27 @@ func differenceSetup(t *testing.T, shortBy int64) (c cardSetup, statementID, man
 	due := time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC)
 
 	line.DueDate = &due
-	if _, err := c.h.App.Ledger.RecordImported(t.Context(), c.h.OwnerID(), uuid.New(), line); err != nil {
+	if _, err := c.h.App.Ledger.RecordImported(
+		t.Context(),
+		c.h.OwnerID(),
+		uuid.New(),
+		line,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	manual = c.purchase("2026-11-01", 713)
 	s := statements(t, c.h, c.card)["2026-11"]
-	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+s.ID+"/facts",
-		map[string]any{"due_date": "2026-11-10", "total": apitest.BRL(int64(s.AmountDue) - shortBy)}, http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPut,
+		"/api/v1/statements/"+s.ID+"/facts",
+		map[string]any{
+			"due_date": "2026-11-10",
+			"total":    apitest.BRL(int64(s.AmountDue) - shortBy),
+		},
+		http.StatusOK,
+		nil,
+	)
 
 	return c, s.ID, manual
 }
@@ -140,14 +165,23 @@ func TestStatementDifferenceProposal_S177(t *testing.T) {
 	var before differenceView
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &before)
 
-	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 1 || p.TransactionIDs[0] != manual || p.Amount.Amount != 713 {
+	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 1 ||
+		p.TransactionIDs[0] != manual ||
+		p.Amount.Amount != 713 {
 		t.Fatalf("proposal = %+v", before.Proposal)
 	}
 
 	var after differenceView
-	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual}}, http.StatusOK, &after)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/statements/"+id+"/defer",
+		map[string]any{"transaction_ids": []string{manual}},
+		http.StatusOK,
+		&after,
+	)
 
-	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 || after.Proposal != nil {
+	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 ||
+		after.Proposal != nil {
 		t.Fatalf("after the move = %+v", after)
 	}
 
@@ -173,15 +207,35 @@ func TestDeferStatementPostingsProblems(t *testing.T) {
 	t.Parallel()
 	c, id, manual := differenceSetup(t, 713)
 	other := c.purchase("2026-11-20", 500)
-	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{other}}),
-		http.StatusUnprocessableEntity, "posting_not_movable", "")
+	c.h.ExpectProblem(
+		c.h.Do(
+			http.MethodPost,
+			"/api/v1/statements/"+id+"/defer",
+			map[string]any{"transaction_ids": []string{other}},
+		),
+		http.StatusUnprocessableEntity,
+		"posting_not_movable",
+		"",
+	)
 
-	if r := reconcileStatement(c, "2026-11", int64(statements(t, c.h, c.card)["2026-11"].AmountDue)); r.Status != http.StatusOK {
+	if r := reconcileStatement(
+		c,
+		"2026-11",
+		int64(statements(t, c.h, c.card)["2026-11"].AmountDue),
+	); r.Status != http.StatusOK {
 		t.Fatalf("reconcile status = %d", r.Status)
 	}
 
-	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual}}),
-		http.StatusConflict, "posting_reconciled", "")
+	c.h.ExpectProblem(
+		c.h.Do(
+			http.MethodPost,
+			"/api/v1/statements/"+id+"/defer",
+			map[string]any{"transaction_ids": []string{manual}},
+		),
+		http.StatusConflict,
+		"posting_reconciled",
+		"",
+	)
 }
 
 // A136: a correction that sends the statement a posting already has keeps its basis; a
@@ -192,14 +246,26 @@ func TestCorrectionKeepsDateBasis(t *testing.T) {
 	id := c.purchase("2026-11-01", 713)
 	tx := c.h.Transaction(id)
 	c.h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, map[string]any{
-		"date": "2026-11-01", "description": "same statement", "expected_version": tx.Version, "reason": "edit",
-		"postings": []map[string]any{ownerStatement(apitest.Posting(c.card, -713), "2026-11"), apitest.Posting(c.food, 713)},
+		"date":             "2026-11-01",
+		"description":      "same statement",
+		"expected_version": tx.Version,
+		"reason":           "edit",
+		"postings": []map[string]any{
+			ownerStatement(apitest.Posting(c.card, -713), "2026-11"),
+			apitest.Posting(c.food, 713),
+		},
 	}, http.StatusOK, nil)
 
 	tx = c.h.Transaction(id)
 	c.h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, map[string]any{
-		"date": "2026-11-05", "description": "later", "expected_version": tx.Version, "reason": "edit",
-		"postings": []map[string]any{apitest.Posting(c.card, -713), apitest.Posting(c.food, 713)},
+		"date":             "2026-11-05",
+		"description":      "later",
+		"expected_version": tx.Version,
+		"reason":           "edit",
+		"postings": []map[string]any{
+			apitest.Posting(c.card, -713),
+			apitest.Posting(c.food, 713),
+		},
 	}, http.StatusOK, nil)
 
 	if s := c.h.Transaction(id).Postings[0].Statement; s != "2026-12" {
@@ -214,9 +280,17 @@ func TestDeferRepeatedTransaction(t *testing.T) {
 	c, id, manual := differenceSetup(t, 713)
 
 	var after differenceView
-	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual, manual}}, http.StatusOK, &after)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/statements/"+id+"/defer",
+		map[string]any{"transaction_ids": []string{manual, manual}},
+		http.StatusOK,
+		&after,
+	)
 
-	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-12" || after.AmountDifference == nil || after.AmountDifference.Amount != 0 {
+	if s := c.h.Transaction(manual).Postings[0].Statement; s != "2026-12" ||
+		after.AmountDifference == nil ||
+		after.AmountDifference.Amount != 0 {
 		t.Fatalf("statement %s, difference %+v", s, after.AmountDifference)
 	}
 }
@@ -227,11 +301,19 @@ func TestDeferIsAllOrNothing(t *testing.T) {
 	c, id, manual := differenceSetup(t, 713)
 
 	locked := c.purchase("2026-11-02", 100)
-	if r := c.h.Do(http.MethodPost, "/api/v1/transactions/"+locked+"/void", map[string]string{"reason": "test"}); r.Status != http.StatusOK {
+	if r := c.h.Do(
+		http.MethodPost,
+		"/api/v1/transactions/"+locked+"/void",
+		map[string]string{"reason": "test"},
+	); r.Status != http.StatusOK {
 		t.Fatalf("void status = %d", r.Status)
 	}
 
-	r := c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": []string{manual, locked}})
+	r := c.h.Do(
+		http.MethodPost,
+		"/api/v1/statements/"+id+"/defer",
+		map[string]any{"transaction_ids": []string{manual, locked}},
+	)
 
 	if r.Status < 400 {
 		t.Fatalf("status = %d, want a refusal", r.Status)
@@ -247,20 +329,41 @@ func TestDeferIsAllOrNothing(t *testing.T) {
 func TestDeferTransactionWithTwoCardPostings(t *testing.T) {
 	t.Parallel()
 	c, id, manual := differenceSetup(t, 713+500)
-	split := c.h.Record("2026-11-01", apitest.Posting(c.card, -300), apitest.Posting(c.card, -200), apitest.Posting(c.food, 500))
+	split := c.h.Record(
+		"2026-11-01",
+		apitest.Posting(c.card, -300),
+		apitest.Posting(c.card, -200),
+		apitest.Posting(c.food, 500),
+	)
 	s := statements(t, c.h, c.card)["2026-11"]
-	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+id+"/facts",
-		map[string]any{"due_date": "2026-11-10", "total": apitest.BRL(int64(s.AmountDue) - 713 - 500)}, http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPut,
+		"/api/v1/statements/"+id+"/facts",
+		map[string]any{
+			"due_date": "2026-11-10",
+			"total":    apitest.BRL(int64(s.AmountDue) - 713 - 500),
+		},
+		http.StatusOK,
+		nil,
+	)
 
 	var before differenceView
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &before)
 
-	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 2 || !slices.Contains(p.TransactionIDs, split) || !slices.Contains(p.TransactionIDs, manual) {
+	if p := before.Proposal; p == nil || len(p.TransactionIDs) != 2 ||
+		!slices.Contains(p.TransactionIDs, split) ||
+		!slices.Contains(p.TransactionIDs, manual) {
 		t.Fatalf("proposal = %+v", before.Proposal)
 	}
 
 	var after differenceView
-	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/defer", map[string]any{"transaction_ids": before.Proposal.TransactionIDs}, http.StatusOK, &after)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/statements/"+id+"/defer",
+		map[string]any{"transaction_ids": before.Proposal.TransactionIDs},
+		http.StatusOK,
+		&after,
+	)
 
 	if after.AmountDifference == nil || after.AmountDifference.Amount != 0 {
 		t.Fatalf("difference after the move = %+v", after.AmountDifference)

@@ -71,7 +71,8 @@ func installmentPlanFromLine(t *testing.T) (f syncFixture, card, planTx, planID 
 	f.line(pluggy.SubtypeCard, installmentLine(1, "2026-08-14", "100.00", nil))
 	f.sync()
 
-	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text, origin_transaction_id::text FROM ledger_installment_plan WHERE account_id = $1`, card).Scan(&planID, &planTx); err != nil {
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text, origin_transaction_id::text FROM ledger_installment_plan WHERE account_id = $1`, card).
+		Scan(&planID, &planTx); err != nil {
 		t.Fatal(err)
 	}
 
@@ -82,7 +83,8 @@ func (f syncFixture) statementID(card, reference string) string {
 	f.h.T().Helper()
 
 	var id string
-	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT id::text FROM ledger_statement WHERE account_id = $1 AND reference_month = $2::date`, card, reference).Scan(&id); err != nil {
+	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT id::text FROM ledger_statement WHERE account_id = $1 AND reference_month = $2::date`, card, reference).
+		Scan(&id); err != nil {
 		f.h.T().Fatal(err)
 	}
 
@@ -94,7 +96,11 @@ func TestS169InstallmentDueAtItsStatementClosing(t *testing.T) {
 	t.Parallel()
 	f, card, planTx, _ := installmentPlanFromLine(t)
 	got := f.unconfirmed(card)
-	want := unconfirmedView{TransactionID: planTx, Date: "2026-10-03", StatementID: f.statementID(card, "2026-10-01")}
+	want := unconfirmedView{
+		TransactionID: planTx,
+		Date:          "2026-10-03",
+		StatementID:   f.statementID(card, "2026-10-01"),
+	}
 
 	want.Amount.Amount = -10000
 	if len(got) != 1 || got[0] != want {
@@ -110,9 +116,19 @@ func TestS170CancelledInstallmentsOffsetTheirReversals(t *testing.T) {
 	var cancellation struct {
 		ID string `json:"id"`
 	}
-	f.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/cancellation", map[string]any{"date": "2026-09-20"}, http.StatusCreated, &cancellation)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/installment-plans/"+planID+"/cancellation",
+		map[string]any{"date": "2026-09-20"},
+		http.StatusCreated,
+		&cancellation,
+	)
 	got := f.unconfirmed(card)
-	want := unconfirmedView{TransactionID: cancellation.ID, Date: "2026-10-03", StatementID: f.statementID(card, "2026-10-01")}
+	want := unconfirmedView{
+		TransactionID: cancellation.ID,
+		Date:          "2026-10-03",
+		StatementID:   f.statementID(card, "2026-10-01"),
+	}
 
 	want.Amount.Amount = 10000
 	if len(got) != 1 || got[0] != want {
@@ -126,14 +142,28 @@ func TestS175AnticipationChargeOffsetsItsCancellation(t *testing.T) {
 	t.Parallel()
 	f, card, _, planID := installmentPlanFromLine(t)
 	f.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/anticipation", map[string]any{
-		"date": "2026-09-20", "from_installment": 3, "to_installment": 6, "target_statement": "2026-10", "amount": apitest.BRL(38000),
+		"date":             "2026-09-20",
+		"from_installment": 3,
+		"to_installment":   6,
+		"target_statement": "2026-10",
+		"amount":           apitest.BRL(38000),
 	}, http.StatusCreated, nil)
 	var cancellation struct {
 		ID string `json:"id"`
 	}
-	f.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/cancellation", map[string]any{"date": "2026-09-25"}, http.StatusCreated, &cancellation)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/installment-plans/"+planID+"/cancellation",
+		map[string]any{"date": "2026-09-25"},
+		http.StatusCreated,
+		&cancellation,
+	)
 	got := f.unconfirmed(card)
-	want := unconfirmedView{TransactionID: cancellation.ID, Date: "2026-10-03", StatementID: f.statementID(card, "2026-10-01")}
+	want := unconfirmedView{
+		TransactionID: cancellation.ID,
+		Date:          "2026-10-03",
+		StatementID:   f.statementID(card, "2026-10-01"),
+	}
 
 	want.Amount.Amount = 10000
 	if len(got) != 1 || got[0] != want {

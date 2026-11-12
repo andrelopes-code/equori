@@ -39,12 +39,42 @@ func indexEntries() []indexEntry {
 	const sgs = "https://api.bcb.gov.br"
 
 	return []indexEntry{
-		{"br_cdi", sgs, 5, func(hc *http.Client, url string) index.Source { return brsgs.CDI(hc, url) }},
-		{"br_ipca", sgs, 20, func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) }},
-		{"eu_estr", "https://data-api.ecb.europa.eu", 5, func(hc *http.Client, url string) index.Source { return overnight.ESTR(hc, url) }},
-		{"ea_hicp", "https://ec.europa.eu", 25, func(hc *http.Client, url string) index.Source { return cpi.HICP(hc, url) }},
-		{"us_sofr", "https://markets.newyorkfed.org", 5, func(hc *http.Client, url string) index.Source { return overnight.SOFR(hc, url) }},
-		{"us_cpi", "https://api.bls.gov", 20, func(hc *http.Client, url string) index.Source { return cpi.CPIU(hc, url) }},
+		{
+			"br_cdi",
+			sgs,
+			5,
+			func(hc *http.Client, url string) index.Source { return brsgs.CDI(hc, url) },
+		},
+		{
+			"br_ipca",
+			sgs,
+			20,
+			func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) },
+		},
+		{
+			"eu_estr",
+			"https://data-api.ecb.europa.eu",
+			5,
+			func(hc *http.Client, url string) index.Source { return overnight.ESTR(hc, url) },
+		},
+		{
+			"ea_hicp",
+			"https://ec.europa.eu",
+			25,
+			func(hc *http.Client, url string) index.Source { return cpi.HICP(hc, url) },
+		},
+		{
+			"us_sofr",
+			"https://markets.newyorkfed.org",
+			5,
+			func(hc *http.Client, url string) index.Source { return overnight.SOFR(hc, url) },
+		},
+		{
+			"us_cpi",
+			"https://api.bls.gov",
+			20,
+			func(hc *http.Client, url string) index.Source { return cpi.CPIU(hc, url) },
+		},
 	}
 }
 
@@ -78,7 +108,11 @@ func IndexSourceIDs() []string {
 }
 
 // NewIndexSources builds the index sources named by ids; urls overrides a source's base URL.
-func NewIndexSources(ids []string, urls map[string]string, hc *http.Client) ([]index.Source, error) {
+func NewIndexSources(
+	ids []string,
+	urls map[string]string,
+	hc *http.Client,
+) ([]index.Source, error) {
 	byID := make(map[string]indexEntry)
 	for _, e := range indexEntries() {
 		byID[e.id] = e
@@ -182,7 +216,16 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 		}
 
 		if r.N > 0 {
-			out = append(out, IndexSummary{ID: src.Index(), Period: src.Period(), First: r.First, Last: r.Last, Expected: slices.Contains(expected, src.Index())})
+			out = append(
+				out,
+				IndexSummary{
+					ID:       src.Index(),
+					Period:   src.Period(),
+					First:    r.First,
+					Last:     r.Last,
+					Expected: slices.Contains(expected, src.Index()),
+				},
+			)
 		}
 	}
 
@@ -190,13 +233,20 @@ func (m *Module) Indexes(ctx context.Context) ([]IndexSummary, error) {
 }
 
 // IndexRates returns the stored rates of an enabled index in [from, to], oldest first.
-func (m *Module) IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error) {
+func (m *Module) IndexRates(
+	ctx context.Context,
+	id string,
+	from, to time.Time,
+) ([]IndexRate, error) {
 	on, err := m.enabledFeeds(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if !slices.ContainsFunc(m.feeds.Indexes, func(s index.Source) bool { return s.Index() == id && on[s.ID()] }) {
+	if !slices.ContainsFunc(
+		m.feeds.Indexes,
+		func(s index.Source) bool { return s.Index() == id && on[s.ID()] },
+	) {
 		return nil, domain.ErrUnknownIndex
 	}
 
@@ -204,7 +254,10 @@ func (m *Module) IndexRates(ctx context.Context, id string, from, to time.Time) 
 		return nil, err
 	}
 
-	rows, err := m.q.ListIndexRatesBetween(ctx, postgres.ListIndexRatesBetweenParams{IndexID: id, FromDate: from, ToDate: to})
+	rows, err := m.q.ListIndexRatesBetween(
+		ctx,
+		postgres.ListIndexRatesBetweenParams{IndexID: id, FromDate: from, ToDate: to},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list the rates of %s: %w", id, err)
 	}
@@ -229,7 +282,15 @@ func (m *Module) storeRates(ctx context.Context, src index.Source, rates []index
 			return fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
 		}
 
-		if err := m.q.UpsertIndexRate(ctx, postgres.UpsertIndexRateParams{IndexID: src.Index(), Date: r.Date, Rate: value, Source: src.ID()}); err != nil {
+		if err := m.q.UpsertIndexRate(
+			ctx,
+			postgres.UpsertIndexRateParams{
+				IndexID: src.Index(),
+				Date:    r.Date,
+				Rate:    value,
+				Source:  src.ID(),
+			},
+		); err != nil {
 			return fmt.Errorf("store the rate of %s: %w", r.Date.Format(time.DateOnly), err)
 		}
 	}

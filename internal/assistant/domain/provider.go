@@ -23,7 +23,13 @@ type Provider struct {
 const maxNameLength = 60
 
 // NewProvider validates a provider; an empty baseURL takes the preset's.
-func NewProvider(id uuid.UUID, booksID int64, preset, name, baseURL string, hasKey bool, now time.Time) (Provider, error) {
+func NewProvider(
+	id uuid.UUID,
+	booksID int64,
+	preset, name, baseURL string,
+	hasKey bool,
+	now time.Time,
+) (Provider, error) {
 	p, ok := FindPreset(preset)
 	if !ok {
 		return Provider{}, invalid("preset", "is not a known preset")
@@ -84,7 +90,10 @@ func ValidateBaseURL(raw string) (string, error) {
 	u, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" ||
 		u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.ForceQuery {
-		return "", invalid("base_url", "must be an http or https URL with a host and no credentials, query or fragment")
+		return "", invalid(
+			"base_url",
+			"must be an http or https URL with a host and no credentials, query or fragment",
+		)
 	}
 
 	return strings.TrimSuffix(u.String(), "/"), nil

@@ -31,25 +31,48 @@ func TestTermsChangeKeepsClosedOccurrences(t *testing.T) {
 	tx := f.pay("2026-11-05", 210000, f.rent, f.landlord)
 	dec, jan := f.occurrence(id, 2), f.occurrence(id, 3)
 	var skipped, moved occurrenceView
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+dec.ID+"/skip", map[string]string{"reason": "paid in advance"}, http.StatusOK, &skipped)
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+jan.ID+"/move", map[string]string{"date": "2027-01-08"}, http.StatusOK, &moved)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+dec.ID+"/skip",
+		map[string]string{"reason": "paid in advance"},
+		http.StatusOK,
+		&skipped,
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+jan.ID+"/move",
+		map[string]string{"date": "2027-01-08"},
+		http.StatusOK,
+		&moved,
+	)
 
-	if skipped.State != "skipped" || moved.ExpectedOn != "2027-01-08" || moved.MovedFrom != "2027-01-05" || moved.State != "expected" {
+	if skipped.State != "skipped" || moved.ExpectedOn != "2027-01-08" ||
+		moved.MovedFrom != "2027-01-05" ||
+		moved.State != "expected" {
 		t.Fatalf("skipped = %+v, moved = %+v", skipped, moved)
 	}
 
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2026-12-01", "amount": apitest.BRL(230000)}, http.StatusCreated, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/terms",
+		map[string]any{"effective_from": "2026-12-01", "amount": apitest.BRL(230000)},
+		http.StatusCreated,
+		nil,
+	)
 
 	got := f.bySequence(id, "2026-11-01", "2027-10-31")
-	if o := got[1]; o.State != "realized" || o.TransactionID != tx || o.ExpectedAmount.Amount != 210000 {
+	if o := got[1]; o.State != "realized" || o.TransactionID != tx ||
+		o.ExpectedAmount.Amount != 210000 {
 		t.Errorf("sequence 1 = %+v", o)
 	}
 
-	if o := got[2]; o.State != "skipped" || o.ExpectedOn != "2026-12-07" || o.ExpectedAmount.Amount != 210000 {
+	if o := got[2]; o.State != "skipped" || o.ExpectedOn != "2026-12-07" ||
+		o.ExpectedAmount.Amount != 210000 {
 		t.Errorf("sequence 2 = %+v", o)
 	}
 
-	if o := got[3]; o.ExpectedOn != "2027-01-08" || o.MovedFrom != "2027-01-05" || o.ExpectedAmount.Amount != 210000 {
+	if o := got[3]; o.ExpectedOn != "2027-01-08" || o.MovedFrom != "2027-01-05" ||
+		o.ExpectedAmount.Amount != 210000 {
 		t.Errorf("sequence 3 = %+v", o)
 	}
 
@@ -62,7 +85,13 @@ func TestTermsChangeKeepsClosedOccurrences(t *testing.T) {
 	}
 
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{
-		"effective_from": "2027-03-01", "recurrence": map[string]any{"frequency": "monthly", "interval": 1, "day_of_month": 10, "start": "2027-03-01"},
+		"effective_from": "2027-03-01",
+		"recurrence": map[string]any{
+			"frequency":    "monthly",
+			"interval":     1,
+			"day_of_month": 10,
+			"start":        "2027-03-01",
+		},
 	}, http.StatusCreated, nil)
 
 	got = f.bySequence(id, "2026-11-01", "2027-10-31")
@@ -113,30 +142,125 @@ func TestChangesConflicts(t *testing.T) {
 	id := f.rentSchedule()
 	f.pay("2026-11-05", 210000, f.rent, f.landlord)
 	realized := f.occurrence(id, 1)
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+realized.ID+"/skip", map[string]string{}), http.StatusConflict, "occurrence_closed", "")
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+realized.ID+"/move", map[string]string{"date": "2026-11-06"}), http.StatusConflict, "occurrence_closed", "")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/occurrences/"+realized.ID+"/skip", map[string]string{}),
+		http.StatusConflict,
+		"occurrence_closed",
+		"",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/occurrences/"+realized.ID+"/move",
+			map[string]string{"date": "2026-11-06"},
+		),
+		http.StatusConflict,
+		"occurrence_closed",
+		"",
+	)
 	skipped := f.occurrence(id, 2)
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+skipped.ID+"/skip", map[string]string{}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+skipped.ID+"/skip",
+		map[string]string{},
+		http.StatusOK,
+		nil,
+	)
 	tx := f.pay("2026-12-20", 210000, f.rent, "")
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+skipped.ID+"/realize", map[string]string{"transaction_id": tx}), http.StatusConflict, "occurrence_closed", "")
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/occurrences/"+skipped.ID+"/realize",
+			map[string]string{"transaction_id": tx},
+		),
+		http.StatusConflict,
+		"occurrence_closed",
+		"",
+	)
 
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-02-01", "to": "2027-03-31"}, http.StatusCreated, nil)
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-03-01", "to": "2027-04-30"}), http.StatusConflict, "pause_overlap", "")
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-05-02", "to": "2027-05-01"}), http.StatusUnprocessableEntity, "validation_failed", "to")
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2027-01-01"}), http.StatusUnprocessableEntity, "validation_failed", "amount")
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2026-11-01", "amount": apitest.BRL(1)}), http.StatusUnprocessableEntity, "validation_failed", "effective_from")
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/pauses",
+		map[string]string{"from": "2027-02-01", "to": "2027-03-31"},
+		http.StatusCreated,
+		nil,
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/schedules/"+id+"/pauses",
+			map[string]string{"from": "2027-03-01", "to": "2027-04-30"},
+		),
+		http.StatusConflict,
+		"pause_overlap",
+		"",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/schedules/"+id+"/pauses",
+			map[string]string{"from": "2027-05-02", "to": "2027-05-01"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"to",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/schedules/"+id+"/terms",
+			map[string]any{"effective_from": "2027-01-01"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"amount",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/schedules/"+id+"/terms",
+			map[string]any{"effective_from": "2026-11-01", "amount": apitest.BRL(1)},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"effective_from",
+	)
 
 	var ended struct {
 		EndsOn string `json:"ends_on"`
 	}
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2027-06-01"}, http.StatusOK, &ended)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/end",
+		map[string]string{"from": "2027-06-01"},
+		http.StatusOK,
+		&ended,
+	)
 
 	if ended.EndsOn != "2027-06-01" {
 		t.Fatalf("ends_on = %q", ended.EndsOn)
 	}
 
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2027-07-01", "amount": apitest.BRL(1)}), http.StatusConflict, "schedule_ended", "")
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-08-01", "to": "2027-08-31"}), http.StatusConflict, "schedule_ended", "")
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/schedules/"+id+"/terms",
+			map[string]any{"effective_from": "2027-07-01", "amount": apitest.BRL(1)},
+		),
+		http.StatusConflict,
+		"schedule_ended",
+		"",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/schedules/"+id+"/pauses",
+			map[string]string{"from": "2027-08-01", "to": "2027-08-31"},
+		),
+		http.StatusConflict,
+		"schedule_ended",
+		"",
+	)
 
 	got := f.bySequence(id, "2026-11-01", "2027-10-31")
 	if o, ok := got[1]; !ok || o.State != "realized" {
@@ -167,14 +291,35 @@ func TestMoveRespectsPausesAndEnd(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-02-01", "to": "2027-03-31"}, http.StatusCreated, nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2027-06-01"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/pauses",
+		map[string]string{"from": "2027-02-01", "to": "2027-03-31"},
+		http.StatusCreated,
+		nil,
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/end",
+		map[string]string{"from": "2027-06-01"},
+		http.StatusOK,
+		nil,
+	)
 	jan := f.occurrence(id, 3)
 
 	move := func(date string) apitest.Response {
-		return f.h.Do(http.MethodPost, "/api/v1/occurrences/"+jan.ID+"/move", map[string]string{"date": date})
+		return f.h.Do(
+			http.MethodPost,
+			"/api/v1/occurrences/"+jan.ID+"/move",
+			map[string]string{"date": date},
+		)
 	}
-	f.h.ExpectProblem(move("2027-02-15"), http.StatusUnprocessableEntity, "validation_failed", "date")
+	f.h.ExpectProblem(
+		move("2027-02-15"),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"date",
+	)
 	f.h.ExpectProblem(move("2027-06-01"), http.StatusConflict, "schedule_ended", "")
 
 	if r := move("2027-01-31"); r.Status != http.StatusOK {

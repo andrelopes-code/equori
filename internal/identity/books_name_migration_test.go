@@ -32,9 +32,11 @@ func TestBooksNameBackfill(t *testing.T) {
 
 		var id int64
 
-		err := pool.QueryRow(ctx,
+		err := pool.QueryRow(
+			ctx,
 			`INSERT INTO identity_member (email, password_hash, role, language) VALUES ($1, 'x', 'admin', 'en') RETURNING id`,
-			email).Scan(&id)
+			email,
+		).Scan(&id)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,7 +48,8 @@ func TestBooksNameBackfill(t *testing.T) {
 		t.Helper()
 
 		var id int64
-		if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&id); err != nil {
+		if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).
+			Scan(&id); err != nil {
 			t.Fatal(err)
 		}
 
@@ -57,10 +60,17 @@ func TestBooksNameBackfill(t *testing.T) {
 	b := insertMember(strings.Repeat("x", 81) + "@example.com")
 	aBooks, bBooks, empty := insertBooks(), insertBooks(), insertBooks()
 
-	_, err := pool.Exec(ctx, `INSERT INTO identity_membership (member_id, books_id, role, created_at) VALUES
+	_, err := pool.Exec(
+		ctx,
+		`INSERT INTO identity_membership (member_id, books_id, role, created_at) VALUES
 		($1, $2, 'owner', '2026-01-01T00:00:00Z'),
 		($3, $4, 'owner', '2026-01-01T00:00:00Z'),
-		($1, $4, 'write', '2026-01-02T00:00:00Z')`, a, aBooks, b, bBooks)
+		($1, $4, 'write', '2026-01-02T00:00:00Z')`,
+		a,
+		aBooks,
+		b,
+		bBooks,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,13 +89,16 @@ func TestBooksNameBackfill(t *testing.T) {
 		{"book without owner", empty, "#" + strconv.FormatInt(empty, 10)},
 	} {
 		var got string
-		if err := pool.QueryRow(ctx, `SELECT name FROM identity_books WHERE id = $1`, tt.books).Scan(&got); err != nil || got != tt.want {
+		if err := pool.QueryRow(ctx, `SELECT name FROM identity_books WHERE id = $1`, tt.books).
+			Scan(&got); err != nil ||
+			got != tt.want {
 			t.Errorf("%s: name = %q, %v; want %q", tt.name, got, err, tt.want)
 		}
 	}
 
 	var visit time.Time
-	if err := pool.QueryRow(ctx, `SELECT last_active_at FROM identity_membership WHERE member_id = $1 AND books_id = $2`, a, aBooks).Scan(&visit); err != nil {
+	if err := pool.QueryRow(ctx, `SELECT last_active_at FROM identity_membership WHERE member_id = $1 AND books_id = $2`, a, aBooks).
+		Scan(&visit); err != nil {
 		t.Fatal(err)
 	}
 

@@ -33,21 +33,48 @@ type InvitationRepository interface {
 	// DeleteInvitation returns ErrInvitationNotFound when the book has no invitation with id.
 	DeleteInvitation(ctx context.Context, booksID int64, id uuid.UUID) error
 	// InvitationPreview returns ErrInvitationNotFound for an unknown or expired token hash.
-	InvitationPreview(ctx context.Context, tokenHash []byte, now time.Time) (InvitationPreview, error)
+	InvitationPreview(
+		ctx context.Context,
+		tokenHash []byte,
+		now time.Time,
+	) (InvitationPreview, error)
 	// AcceptAsNewMember deletes the invitation and creates m with its membership in one transaction;
 	// ErrInvitationNotFound, ErrEmailTaken.
-	AcceptAsNewMember(ctx context.Context, tokenHash []byte, m domain.Member, now time.Time) (domain.Member, int64, error)
+	AcceptAsNewMember(
+		ctx context.Context,
+		tokenHash []byte,
+		m domain.Member,
+		now time.Time,
+	) (domain.Member, int64, error)
 	// SaveAccountInvitation deletes the expired account invitations, then stores inv; ErrEmailTaken
 	// when a member has the email.
-	SaveAccountInvitation(ctx context.Context, inv domain.AccountInvitation) (domain.AccountInvitation, error)
+	SaveAccountInvitation(
+		ctx context.Context,
+		inv domain.AccountInvitation,
+	) (domain.AccountInvitation, error)
 	// AccountInvitationPreview returns ErrInvitationNotFound for an unknown or expired token hash.
-	AccountInvitationPreview(ctx context.Context, tokenHash []byte, now time.Time) (InvitationPreview, error)
+	AccountInvitationPreview(
+		ctx context.Context,
+		tokenHash []byte,
+		now time.Time,
+	) (InvitationPreview, error)
 	// AcceptAccountInvitation deletes the invitation, creates m and its book in one transaction;
 	// ErrInvitationNotFound, ErrEmailTaken.
-	AcceptAccountInvitation(ctx context.Context, tokenHash []byte, m domain.Member, now time.Time) (domain.Member, int64, error)
+	AcceptAccountInvitation(
+		ctx context.Context,
+		tokenHash []byte,
+		m domain.Member,
+		now time.Time,
+	) (domain.Member, int64, error)
 	// AcceptAsMember deletes the invitation, adds the membership and moves the session in one
 	// transaction; ErrInvitationNotFound, ErrAlreadyMember.
-	AcceptAsMember(ctx context.Context, tokenHash []byte, memberID int64, sessionHash []byte, now time.Time) error
+	AcceptAsMember(
+		ctx context.Context,
+		tokenHash []byte,
+		memberID int64,
+		sessionHash []byte,
+		now time.Time,
+	) error
 }
 
 // Sealer seals values bound to their row (ADR 008).
@@ -76,19 +103,39 @@ type SecondFactorRepository interface {
 	RemovePasskey(ctx context.Context, memberID int64, id uuid.UUID) error
 	// ReplaceRecoveryCodes returns ErrSecondFactorMissing without a factor.
 	ReplaceRecoveryCodes(ctx context.Context, memberID int64, hashes [][]byte, at time.Time) error
-	SavePasskeyChallenge(ctx context.Context, memberID int64, challenge []byte, expiresAt time.Time) error
+	SavePasskeyChallenge(
+		ctx context.Context,
+		memberID int64,
+		challenge []byte,
+		expiresAt time.Time,
+	) error
 	// TakePasskeyChallenge deletes the row; ErrNotFound without one or when it expired at now.
 	TakePasskeyChallenge(ctx context.Context, memberID int64, now time.Time) ([]byte, error)
 	// UseTOTPStep, UseRecoveryCode and UsePasskey return false for a refused factor.
 	UseTOTPStep(ctx context.Context, memberID, step int64) (bool, error)
 	UseRecoveryCode(ctx context.Context, memberID int64, hash []byte) (left int, ok bool, err error)
-	UsePasskey(ctx context.Context, memberID int64, id uuid.UUID, signCount uint32, at time.Time) (bool, error)
+	UsePasskey(
+		ctx context.Context,
+		memberID int64,
+		id uuid.UUID,
+		signCount uint32,
+		at time.Time,
+	) (bool, error)
 	CreateLoginChallenge(ctx context.Context, c domain.LoginChallenge) error
 	// LoginChallenge returns ErrNotFound for an unknown or expired token hash.
-	LoginChallenge(ctx context.Context, tokenHash []byte, now time.Time) (domain.LoginChallenge, error)
+	LoginChallenge(
+		ctx context.Context,
+		tokenHash []byte,
+		now time.Time,
+	) (domain.LoginChallenge, error)
 	// CountLoginAttempt counts one answer before it is checked; ok is false when the pending login is
 	// unknown, expired or has used limit attempts.
-	CountLoginAttempt(ctx context.Context, tokenHash []byte, now time.Time, limit int32) (attempts int32, ok bool, err error)
+	CountLoginAttempt(
+		ctx context.Context,
+		tokenHash []byte,
+		now time.Time,
+		limit int32,
+	) (attempts int32, ok bool, err error)
 	// DeleteLoginChallenge returns false when no row was deleted.
 	DeleteLoginChallenge(ctx context.Context, tokenHash []byte) (bool, error)
 	DeleteExpiredLoginChallenges(ctx context.Context, now time.Time) error
@@ -96,15 +143,27 @@ type SecondFactorRepository interface {
 	// one transaction (HA49).
 	ResetSecondFactor(ctx context.Context, memberID int64) error
 	// ResealTOTP stores each non-nil result of reseal; it returns the count stored.
-	ResealTOTP(ctx context.Context, reseal func(memberID int64, sealed []byte) ([]byte, error)) (int, error)
+	ResealTOTP(
+		ctx context.Context,
+		reseal func(memberID int64, sealed []byte) ([]byte, error),
+	) (int, error)
 }
 
 // Repository stores members and books; postgres/ implements it.
 // Repository returns ErrNotFound for missing rows and ErrEmailTaken on duplicate email.
 type Repository interface {
-	CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error)
+	CreateMember(
+		ctx context.Context,
+		u domain.Member,
+		region string,
+		base money.Currency,
+	) (domain.Member, int64, error)
 	// CreateFirstMember returns ErrSetupComplete when a member exists.
-	CreateFirstMember(ctx context.Context, u domain.Member, b FirstBooks) (domain.Member, int64, error)
+	CreateFirstMember(
+		ctx context.Context,
+		u domain.Member,
+		b FirstBooks,
+	) (domain.Member, int64, error)
 	AnyMember(ctx context.Context) (bool, error)
 	// UpdateProfile stores the language of the member and the region of the books in one transaction.
 	UpdateProfile(ctx context.Context, memberID, booksID int64, l locale.Locale) error
@@ -116,12 +175,22 @@ type Repository interface {
 	BooksZone(ctx context.Context, booksID int64) (region string, timeZone *string, err error)
 	BooksName(ctx context.Context, booksID int64) (string, error)
 	// UpdateBooksSettings returns the stored name; a nil name keeps it.
-	UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (string, error)
+	UpdateBooksSettings(
+		ctx context.Context,
+		booksID int64,
+		region string,
+		timeZone, name *string,
+	) (string, error)
 	// TouchMembership returns ErrNotFound without the membership.
 	TouchMembership(ctx context.Context, memberID, booksID int64, at time.Time) error
 	// SwitchSession touches the membership and moves the session in one transaction; ErrBooksNotFound
 	// without the membership, also on a foreign key violation (spec section 9).
-	SwitchSession(ctx context.Context, tokenHash []byte, memberID, booksID int64, at time.Time) error
+	SwitchSession(
+		ctx context.Context,
+		tokenHash []byte,
+		memberID, booksID int64,
+		at time.Time,
+	) error
 	MemberBooks(ctx context.Context, memberID int64) ([]BooksMembership, error)
 	Members(ctx context.Context, booksID int64) ([]Membership, error)
 	// ChangeRole and RemoveMembership lock the book row first; ErrMemberNotFound, ErrLastOwner.
@@ -131,7 +200,12 @@ type Repository interface {
 	// ErrConfirmationMismatch, ErrBooksHasMembers, ErrLastBooks.
 	DeleteBooks(ctx context.Context, booksID, memberID int64, name string) error
 	// CreateBooks creates the book and its owner membership and publishes identity.books_created.v1.
-	CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error)
+	CreateBooks(
+		ctx context.Context,
+		memberID int64,
+		language, name, region string,
+		base money.Currency,
+	) (int64, error)
 	// Appearance returns the stored JSON object of the member.
 	Appearance(ctx context.Context, memberID int64) ([]byte, error)
 	// SetAppearance replaces the stored JSON object of the member.

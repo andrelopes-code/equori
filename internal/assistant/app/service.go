@@ -31,8 +31,25 @@ type Service struct {
 }
 
 // NewService takes the clock as now (an instant) and today (the UTC date of usage days).
-func NewService(repo Repository, box Sealer, models ModelLister, instance []Instance, uses []Use, now, today func() time.Time, log *slog.Logger) *Service {
-	return &Service{repo: repo, box: box, models: models, instance: instance, uses: uses, now: now, today: today, log: log}
+func NewService(
+	repo Repository,
+	box Sealer,
+	models ModelLister,
+	instance []Instance,
+	uses []Use,
+	now, today func() time.Time,
+	log *slog.Logger,
+) *Service {
+	return &Service{
+		repo:     repo,
+		box:      box,
+		models:   models,
+		instance: instance,
+		uses:     uses,
+		now:      now,
+		today:    today,
+		log:      log,
+	}
 }
 
 // ProviderView is a provider as the owner sees it: never its key.
@@ -65,11 +82,25 @@ func notice(preset string) domain.Notice {
 }
 
 func view(p domain.Provider) ProviderView {
-	return ProviderView{ID: p.ID.String(), Preset: p.Preset, Name: p.Name, BaseURL: p.BaseURL, HasKey: p.SealedKey != nil, Notice: notice(p.Preset)}
+	return ProviderView{
+		ID:      p.ID.String(),
+		Preset:  p.Preset,
+		Name:    p.Name,
+		BaseURL: p.BaseURL,
+		HasKey:  p.SealedKey != nil,
+		Notice:  notice(p.Preset),
+	}
 }
 
 func instanceView(in Instance) ProviderView {
-	return ProviderView{ID: in.ID, Preset: in.Preset, Name: in.ID, HasKey: true, Notice: notice(in.Preset), Instance: true}
+	return ProviderView{
+		ID:       in.ID,
+		Preset:   in.Preset,
+		Name:     in.ID,
+		HasKey:   true,
+		Notice:   notice(in.Preset),
+		Instance: true,
+	}
 }
 
 func (s *Service) Presets() []domain.Preset { return domain.Presets() }
@@ -105,8 +136,20 @@ func (s *Service) seal(booksID int64, id uuid.UUID, key string) ([]byte, error) 
 	return s.box.Seal([]byte(key), keyRow(booksID, id))
 }
 
-func (s *Service) CreateProvider(ctx context.Context, booksID int64, in ProviderInput) (ProviderView, error) {
-	p, err := domain.NewProvider(uuid.New(), booksID, in.Preset, in.Name, in.BaseURL, in.Key != "", s.now())
+func (s *Service) CreateProvider(
+	ctx context.Context,
+	booksID int64,
+	in ProviderInput,
+) (ProviderView, error) {
+	p, err := domain.NewProvider(
+		uuid.New(),
+		booksID,
+		in.Preset,
+		in.Name,
+		in.BaseURL,
+		in.Key != "",
+		s.now(),
+	)
 	if err != nil {
 		return ProviderView{}, err
 	}
@@ -122,7 +165,12 @@ func (s *Service) CreateProvider(ctx context.Context, booksID int64, in Provider
 	return view(p), nil
 }
 
-func (s *Service) UpdateProvider(ctx context.Context, booksID int64, id uuid.UUID, patch ProviderPatch) (ProviderView, error) {
+func (s *Service) UpdateProvider(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	patch ProviderPatch,
+) (ProviderView, error) {
 	p, err := s.repo.Provider(ctx, booksID, id)
 	if err != nil {
 		return ProviderView{}, err
@@ -162,7 +210,11 @@ func (s *Service) DeleteProvider(ctx context.Context, booksID int64, id uuid.UUI
 }
 
 // ProviderModels asks the provider's API for its models, which also checks its key.
-func (s *Service) ProviderModels(ctx context.Context, booksID int64, id uuid.UUID) ([]string, error) {
+func (s *Service) ProviderModels(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) ([]string, error) {
 	p, err := s.repo.Provider(ctx, booksID, id)
 	if err != nil {
 		return nil, err

@@ -5,7 +5,29 @@ import (
 )
 
 // euroArea lists the members of the euro area on 2026-01-01.
-var euroArea = []string{"AT", "BE", "BG", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"}
+var euroArea = []string{
+	"AT",
+	"BE",
+	"BG",
+	"CY",
+	"DE",
+	"EE",
+	"ES",
+	"FI",
+	"FR",
+	"GR",
+	"HR",
+	"IE",
+	"IT",
+	"LT",
+	"LU",
+	"LV",
+	"MT",
+	"NL",
+	"PT",
+	"SI",
+	"SK",
+}
 
 // DefaultCalendar returns the calendar a record takes when the owner's region is region.
 func (m *Module) DefaultCalendar(region string) string {
@@ -21,7 +43,15 @@ func (m *Module) DefaultCalendar(region string) string {
 func SuggestedFeeds(region string) []string {
 	switch {
 	case region == "BR":
-		return []string{"b3_consolidated", "bcb_ptax", "tesouro_direto", "cvm_funds", "br_cdi", "br_ipca", "br_focus"}
+		return []string{
+			"b3_consolidated",
+			"bcb_ptax",
+			"tesouro_direto",
+			"cvm_funds",
+			"br_cdi",
+			"br_ipca",
+			"br_focus",
+		}
 	case region == "US":
 		return []string{"us_sofr", "us_cpi"}
 	case slices.Contains(euroArea, region):

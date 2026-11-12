@@ -18,21 +18,151 @@ type security struct {
 }
 
 var securities = []security{
-	{code: "ITUB4", name: "Itaú Unibanco PN", typ: "stock", exchange: "BVMF", holder: "xp", start: 33.1, drift: .18, vol: .22},
-	{code: "WEGE3", name: "WEG ON", typ: "stock", exchange: "BVMF", holder: "xp", start: 53.2, drift: -.06, vol: .28},
-	{code: "PETR4", name: "Petrobras PN", typ: "stock", exchange: "BVMF", holder: "xp", start: 36.6, drift: .02, vol: .27},
-	{code: "BBAS3", name: "Banco do Brasil ON", typ: "stock", exchange: "BVMF", holder: "xp", start: 27.5, drift: -.12, vol: .30},
-	{code: "HGLG11", name: "CSHG Logística FII", typ: "reit", exchange: "BVMF", holder: "xp", start: 160.4, drift: .02, vol: .09},
-	{code: "KNRI11", name: "Kinea Renda Imobiliária FII", typ: "reit", exchange: "BVMF", holder: "xp", start: 160.9, drift: 0, vol: .09},
-	{code: "MXRF11", name: "Maxi Renda FII", typ: "reit", exchange: "BVMF", holder: "xp", start: 10.1, drift: 0, vol: .08},
-	{code: "IVVB11", name: "iShares S&P 500 Fundo de Índice", typ: "etf", exchange: "BVMF", holder: "xp", start: 331.5, drift: .12, vol: .18},
-	{code: "TSELIC29", name: "Tesouro Selic 2029", typ: "fixed_income", subtype: "tesouro", scale: 2, holder: "xp", start: 14520, accrual: .142,
-		terms: map[string]any{"issued_on": "2023-03-01", "matures_on": "2029-03-01", "index_id": "cdi", "percent_of_index_bp": 10000, "day_count": "bus252", "face_value": 1200000}},
-	{code: "CDBXP27", name: "CDB XP 112% do CDI", typ: "fixed_income", subtype: "cdb", scale: 2, holder: "xp", start: 1019.4, accrual: .152,
-		terms: map[string]any{"issued_on": "2024-08-12", "matures_on": "2027-08-12", "index_id": "cdi", "percent_of_index_bp": 11200, "day_count": "bus252", "face_value": 100000}},
-	{code: "TIPCA35", name: "Tesouro IPCA+ 2035", typ: "fixed_income", subtype: "tesouro", scale: 2, holder: "xp", start: 1480, drift: .12, vol: .05,
-		terms: map[string]any{"issued_on": "2024-05-02", "matures_on": "2035-05-15", "index_id": "ipca", "spread_bp": 650, "day_count": "act365", "face_value": 100000}},
-	{code: "BTCBRL", name: "Bitcoin", typ: "crypto", scale: 8, holder: "mb", start: 360000, drift: .35, vol: .6},
+	{
+		code:     "ITUB4",
+		name:     "Itaú Unibanco PN",
+		typ:      "stock",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    33.1,
+		drift:    .18,
+		vol:      .22,
+	},
+	{
+		code:     "WEGE3",
+		name:     "WEG ON",
+		typ:      "stock",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    53.2,
+		drift:    -.06,
+		vol:      .28,
+	},
+	{
+		code:     "PETR4",
+		name:     "Petrobras PN",
+		typ:      "stock",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    36.6,
+		drift:    .02,
+		vol:      .27,
+	},
+	{
+		code:     "BBAS3",
+		name:     "Banco do Brasil ON",
+		typ:      "stock",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    27.5,
+		drift:    -.12,
+		vol:      .30,
+	},
+	{
+		code:     "HGLG11",
+		name:     "CSHG Logística FII",
+		typ:      "reit",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    160.4,
+		drift:    .02,
+		vol:      .09,
+	},
+	{
+		code:     "KNRI11",
+		name:     "Kinea Renda Imobiliária FII",
+		typ:      "reit",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    160.9,
+		drift:    0,
+		vol:      .09,
+	},
+	{
+		code:     "MXRF11",
+		name:     "Maxi Renda FII",
+		typ:      "reit",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    10.1,
+		drift:    0,
+		vol:      .08,
+	},
+	{
+		code:     "IVVB11",
+		name:     "iShares S&P 500 Fundo de Índice",
+		typ:      "etf",
+		exchange: "BVMF",
+		holder:   "xp",
+		start:    331.5,
+		drift:    .12,
+		vol:      .18,
+	},
+	{
+		code:    "TSELIC29",
+		name:    "Tesouro Selic 2029",
+		typ:     "fixed_income",
+		subtype: "tesouro",
+		scale:   2,
+		holder:  "xp",
+		start:   14520,
+		accrual: .142,
+		terms: map[string]any{
+			"issued_on":           "2023-03-01",
+			"matures_on":          "2029-03-01",
+			"index_id":            "cdi",
+			"percent_of_index_bp": 10000,
+			"day_count":           "bus252",
+			"face_value":          1200000,
+		},
+	},
+	{
+		code:    "CDBXP27",
+		name:    "CDB XP 112% do CDI",
+		typ:     "fixed_income",
+		subtype: "cdb",
+		scale:   2,
+		holder:  "xp",
+		start:   1019.4,
+		accrual: .152,
+		terms: map[string]any{
+			"issued_on":           "2024-08-12",
+			"matures_on":          "2027-08-12",
+			"index_id":            "cdi",
+			"percent_of_index_bp": 11200,
+			"day_count":           "bus252",
+			"face_value":          100000,
+		},
+	},
+	{
+		code:    "TIPCA35",
+		name:    "Tesouro IPCA+ 2035",
+		typ:     "fixed_income",
+		subtype: "tesouro",
+		scale:   2,
+		holder:  "xp",
+		start:   1480,
+		drift:   .12,
+		vol:     .05,
+		terms: map[string]any{
+			"issued_on":  "2024-05-02",
+			"matures_on": "2035-05-15",
+			"index_id":   "ipca",
+			"spread_bp":  650,
+			"day_count":  "act365",
+			"face_value": 100000,
+		},
+	},
+	{
+		code:   "BTCBRL",
+		name:   "Bitcoin",
+		typ:    "crypto",
+		scale:  8,
+		holder: "mb",
+		start:  360000,
+		drift:  .35,
+		vol:    .6,
+	},
 }
 
 func (sec security) key() string { return "sec." + sec.code }
@@ -40,11 +170,40 @@ func (sec security) key() string { return "sec." + sec.code }
 // buildInvestments defines the instruments and the accounts that hold them, then generates their monthly price series.
 func (s *seeder) buildInvestments(start string) {
 	s.ids["inst.mb"] = s.create("/institutions", map[string]any{"name": "Mercado Bitcoin"})
-	s.ids["mb"] = s.create("/accounts", map[string]any{"name": "Mercado Bitcoin", "class": "asset", "kind": "brokerage", "currency": "BRL", "institution_id": s.id("inst.mb"), "opened_on": start, "color": 8})
+	s.ids["mb"] = s.create(
+		"/accounts",
+		map[string]any{
+			"name":           "Mercado Bitcoin",
+			"class":          "asset",
+			"kind":           "brokerage",
+			"currency":       "BRL",
+			"institution_id": s.id("inst.mb"),
+			"opened_on":      start,
+			"color":          8,
+		},
+	)
 
-	s.ids["mb.cash"] = s.create("/accounts", map[string]any{"name": "Saldo Mercado Bitcoin", "class": "asset", "kind": "brokerage", "currency": "BRL", "institution_id": s.id("inst.mb"), "parent_id": s.id("mb"), "opened_on": start, "color": 8})
+	s.ids["mb.cash"] = s.create(
+		"/accounts",
+		map[string]any{
+			"name":           "Saldo Mercado Bitcoin",
+			"class":          "asset",
+			"kind":           "brokerage",
+			"currency":       "BRL",
+			"institution_id": s.id("inst.mb"),
+			"parent_id":      s.id("mb"),
+			"opened_on":      start,
+			"color":          8,
+		},
+	)
 	for _, sec := range securities {
-		body := map[string]any{"code": sec.code, "type": sec.typ, "scale": sec.scale, "name": sec.name, "quote_currency": "BRL"}
+		body := map[string]any{
+			"code":           sec.code,
+			"type":           sec.typ,
+			"scale":          sec.scale,
+			"name":           sec.name,
+			"quote_currency": "BRL",
+		}
 		if sec.exchange != "" {
 			body["exchange"] = sec.exchange
 		}
@@ -54,15 +213,25 @@ func (s *seeder) buildInvestments(start string) {
 		}
 
 		s.do(http.MethodPost, "/instruments", body, nil)
-		s.tolerate("instrument_exists") // instruments are shared by the whole instance, so a second seeding finds them.
+		s.tolerate(
+			"instrument_exists",
+		) // instruments are shared by the whole instance, so a second seeding finds them.
 
 		if sec.terms != nil {
 			s.do(http.MethodPut, "/instruments/"+sec.code+"/terms", sec.terms, nil)
 		}
 
 		s.ids[sec.key()] = s.create("/accounts", map[string]any{
-			"name": sec.holder + " " + sec.code, "class": "asset", "kind": "brokerage", "currency": sec.code,
-			"institution_id": s.id("inst." + sec.holder), "parent_id": s.id(sec.holder), "opened_on": start, "color": 4,
+			"name":     sec.holder + " " + sec.code,
+			"class":    "asset",
+			"kind":     "brokerage",
+			"currency": sec.code,
+			"institution_id": s.id(
+				"inst." + sec.holder,
+			),
+			"parent_id": s.id(sec.holder),
+			"opened_on": start,
+			"color":     4,
 		})
 		s.series(sec)
 	}
@@ -126,7 +295,17 @@ func (s *seeder) postPrices() {
 				d = s.today
 			}
 
-			s.do(http.MethodPost, "/prices", map[string]any{"instrument": sec.code, "quote_instrument": "BRL", "date": iso(d), "value": rate(s.priceOn(sec.code, d))}, nil)
+			s.do(
+				http.MethodPost,
+				"/prices",
+				map[string]any{
+					"instrument":       sec.code,
+					"quote_instrument": "BRL",
+					"date":             iso(d),
+					"value":            rate(s.priceOn(sec.code, d)),
+				},
+				nil,
+			)
 		}
 	}
 }
@@ -136,7 +315,12 @@ func (s *seeder) hasPrices(code string) bool {
 	var list struct {
 		Items []struct{} `json:"items"`
 	}
-	s.do(http.MethodGet, "/prices?instrument="+code+"&quote_instrument=BRL&from="+iso(s.start)+"&to="+iso(s.today), nil, &list)
+	s.do(
+		http.MethodGet,
+		"/prices?instrument="+code+"&quote_instrument=BRL&from="+iso(s.start)+"&to="+iso(s.today),
+		nil,
+		&list,
+	)
 
 	return len(list.Items) > 0
 }
@@ -280,15 +464,81 @@ type payout struct {
 }
 
 var payouts = []payout{
-	{code: "HGLG11", kind: "dividend", category: "income.fii", months: allMonths, day: 14, perShare: 1.10, steps: map[string]float64{"2025-08": 1.15}},
-	{code: "KNRI11", kind: "dividend", category: "income.fii", months: allMonths, day: 14, perShare: .98, steps: map[string]float64{"2025-06": 1.00}},
-	{code: "MXRF11", kind: "dividend", category: "income.fii", months: allMonths, day: 14, perShare: .10, steps: map[string]float64{"2025-04": .09}},
-	{code: "ITUB4", kind: "dividend", category: "income.dividends", months: allMonths, day: 3, perShare: .0155},
-	{code: "ITUB4", kind: "jcp", category: "income.jcp", months: []time.Month{2, 5, 8, 11}, day: 28, perShare: .25},
-	{code: "PETR4", kind: "dividend", category: "income.dividends", months: []time.Month{2, 5, 8, 11}, day: 21, perShare: .74},
-	{code: "BBAS3", kind: "dividend", category: "income.dividends", months: []time.Month{3, 6, 9, 12}, day: 20, perShare: .30},
-	{code: "WEGE3", kind: "jcp", category: "income.jcp", months: []time.Month{3, 9}, day: 15, perShare: .14},
-	{code: "WEGE3", kind: "dividend", category: "income.dividends", months: []time.Month{6, 12}, day: 15, perShare: .12},
+	{
+		code:     "HGLG11",
+		kind:     "dividend",
+		category: "income.fii",
+		months:   allMonths,
+		day:      14,
+		perShare: 1.10,
+		steps:    map[string]float64{"2025-08": 1.15},
+	},
+	{
+		code:     "KNRI11",
+		kind:     "dividend",
+		category: "income.fii",
+		months:   allMonths,
+		day:      14,
+		perShare: .98,
+		steps:    map[string]float64{"2025-06": 1.00},
+	},
+	{
+		code:     "MXRF11",
+		kind:     "dividend",
+		category: "income.fii",
+		months:   allMonths,
+		day:      14,
+		perShare: .10,
+		steps:    map[string]float64{"2025-04": .09},
+	},
+	{
+		code:     "ITUB4",
+		kind:     "dividend",
+		category: "income.dividends",
+		months:   allMonths,
+		day:      3,
+		perShare: .0155,
+	},
+	{
+		code:     "ITUB4",
+		kind:     "jcp",
+		category: "income.jcp",
+		months:   []time.Month{2, 5, 8, 11},
+		day:      28,
+		perShare: .25,
+	},
+	{
+		code:     "PETR4",
+		kind:     "dividend",
+		category: "income.dividends",
+		months:   []time.Month{2, 5, 8, 11},
+		day:      21,
+		perShare: .74,
+	},
+	{
+		code:     "BBAS3",
+		kind:     "dividend",
+		category: "income.dividends",
+		months:   []time.Month{3, 6, 9, 12},
+		day:      20,
+		perShare: .30,
+	},
+	{
+		code:     "WEGE3",
+		kind:     "jcp",
+		category: "income.jcp",
+		months:   []time.Month{3, 9},
+		day:      15,
+		perShare: .14,
+	},
+	{
+		code:     "WEGE3",
+		kind:     "dividend",
+		category: "income.dividends",
+		months:   []time.Month{6, 12},
+		day:      15,
+		perShare: .12,
+	},
 }
 
 var allMonths = []time.Month{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
@@ -319,8 +569,21 @@ func (s *seeder) income() {
 				}
 
 				s.do(http.MethodPost, "/investment-income", map[string]any{
-					"account_id": s.id("sec." + p.code), "cash_account_id": s.id("xp.cash"), "income_type": p.kind, "date": iso(d),
-					"gross": brl(gross), "category_id": s.id(p.category), "description": fmt.Sprintf("%s de %s", map[string]string{"dividend": "Rendimento", "jcp": "JCP"}[p.kind], p.code),
+					"account_id": s.id(
+						"sec." + p.code,
+					),
+					"cash_account_id": s.id("xp.cash"),
+					"income_type":     p.kind,
+					"date":            iso(d),
+					"gross": brl(
+						gross,
+					),
+					"category_id": s.id(p.category),
+					"description": fmt.Sprintf(
+						"%s de %s",
+						map[string]string{"dividend": "Rendimento", "jcp": "JCP"}[p.kind],
+						p.code,
+					),
 				}, nil)
 
 				withheld := int64(0)

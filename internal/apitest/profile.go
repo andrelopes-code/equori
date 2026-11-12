@@ -20,12 +20,20 @@ func Brazil() Profile {
 // Neutral is a region that no region default, registry or web switch names: every regional value
 // is the neutral one.
 func Neutral() Profile {
-	return Profile{Name: "neutral", Locale: locale.Locale{Language: "en", Region: "NZ"}, Base: "NZD"}
+	return Profile{
+		Name:   "neutral",
+		Locale: locale.Locale{Language: "en", Region: "NZ"},
+		Base:   "NZD",
+	}
 }
 
 // ForeignBase is Brazil with a base currency other than BRL.
 func ForeignBase() Profile {
-	return Profile{Name: "foreign_base", Locale: locale.Locale{Language: "pt", Region: "BR"}, Base: "USD"}
+	return Profile{
+		Name:   "foreign_base",
+		Locale: locale.Locale{Language: "pt", Region: "BR"},
+		Base:   "USD",
+	}
 }
 
 // Profiles are the profiles a scenario that holds amounts runs in.

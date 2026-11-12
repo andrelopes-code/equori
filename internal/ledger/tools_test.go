@@ -39,7 +39,12 @@ func toolOutput(t *testing.T, h *apitest.Harness, name string, args any, out any
 }
 
 // listAccountsTool reads every page of list_accounts with pages of limit accounts.
-func listAccountsTool(t *testing.T, h *apitest.Harness, args map[string]any, limit int) []toolAccount {
+func listAccountsTool(
+	t *testing.T,
+	h *apitest.Harness,
+	args map[string]any,
+	limit int,
+) []toolAccount {
 	t.Helper()
 	var all []toolAccount
 
@@ -59,7 +64,12 @@ func listAccountsTool(t *testing.T, h *apitest.Harness, args map[string]any, lim
 		toolOutput(t, h, "list_accounts", a, &out)
 
 		if len(out.Accounts) > limit || (out.NextCursor != "" && len(out.Accounts) != limit) {
-			t.Fatalf("page of %d accounts with limit %d and next_cursor %q", len(out.Accounts), limit, out.NextCursor)
+			t.Fatalf(
+				"page of %d accounts with limit %d and next_cursor %q",
+				len(out.Accounts),
+				limit,
+				out.NextCursor,
+			)
 		}
 
 		all = append(all, out.Accounts...)
@@ -112,10 +122,26 @@ func TestListAccountsTool(t *testing.T) {
 	food := h.Account("Food", "expense", "", nil)
 	groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
 	old := h.Account("Old", "asset", "checking", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+old+"/close", map[string]string{"closed_on": "2026-10-20"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+old+"/close",
+		map[string]string{"closed_on": "2026-10-20"},
+		http.StatusOK,
+		nil,
+	)
 
 	expense := listAccountsTool(t, h, map[string]any{"class": "expense"}, 50)
-	if got, want := accountIDs(expense), openAccountIDs(t, h, "expense", false); !slices.Equal(got, want) {
+	if got, want := accountIDs(
+		expense,
+	), openAccountIDs(
+		t,
+		h,
+		"expense",
+		false,
+	); !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("expense ids = %v, want %v", got, want)
 	}
 
@@ -143,12 +169,33 @@ func TestListAccountsTool(t *testing.T) {
 	}
 
 	assets := listAccountsTool(t, h, map[string]any{"class": "asset"}, 50)
-	if got, want := accountIDs(assets), openAccountIDs(t, h, "asset", false); !slices.Equal(got, want) || slices.Contains(got, old) {
+	if got, want := accountIDs(
+		assets,
+	), openAccountIDs(
+		t,
+		h,
+		"asset",
+		false,
+	); !slices.Equal(got, want) ||
+		slices.Contains(got, old) {
 		t.Errorf("asset ids = %v, want %v without %s", got, want, old)
 	}
 
-	withClosed := listAccountsTool(t, h, map[string]any{"class": "asset", "include_closed": true}, 50)
-	if got, want := accountIDs(withClosed), openAccountIDs(t, h, "asset", true); !slices.Equal(got, want) || !slices.Contains(got, old) {
+	withClosed := listAccountsTool(
+		t,
+		h,
+		map[string]any{"class": "asset", "include_closed": true},
+		50,
+	)
+	if got, want := accountIDs(
+		withClosed,
+	), openAccountIDs(
+		t,
+		h,
+		"asset",
+		true,
+	); !slices.Equal(got, want) ||
+		!slices.Contains(got, old) {
 		t.Errorf("asset ids with closed = %v, want %v", got, want)
 	}
 
@@ -159,13 +206,33 @@ func TestListAccountsTool(t *testing.T) {
 	}
 
 	// Pages of one account cover the same accounts in the same order.
-	if paged := listAccountsTool(t, h, map[string]any{"class": "expense"}, 1); !slices.Equal(paged, expense) {
+	if paged := listAccountsTool(
+		t,
+		h,
+		map[string]any{"class": "expense"},
+		1,
+	); !slices.Equal(
+		paged,
+		expense,
+	) {
 		t.Errorf("pages of one = %+v, want %+v", paged, expense)
 	}
 
-	h.ExpectToolError(h.Tool("list_accounts", map[string]any{"class": "cash"}), "invalid_arguments", "")
-	h.ExpectToolError(h.Tool("list_accounts", map[string]any{"limit": 51}), "invalid_arguments", "limit")
-	h.ExpectToolError(h.Tool("list_accounts", map[string]any{"cursor": "bad"}), "invalid_arguments", "cursor")
+	h.ExpectToolError(
+		h.Tool("list_accounts", map[string]any{"class": "cash"}),
+		"invalid_arguments",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool("list_accounts", map[string]any{"limit": 51}),
+		"invalid_arguments",
+		"limit",
+	)
+	h.ExpectToolError(
+		h.Tool("list_accounts", map[string]any{"cursor": "bad"}),
+		"invalid_arguments",
+		"cursor",
+	)
 }
 
 type toolBalance struct {
@@ -191,9 +258,15 @@ func TestGetBalancesTool(t *testing.T) {
 	toolOutput(t, h, "get_balances", map[string]any{}, &got)
 
 	want := output{Date: "2026-10-20", Basis: "booked", Balances: []toolBalance{
-		{AccountID: checking, AccountName: "Checking", Class: "asset", Balance: tool.Money{Amount: "-10.00", Currency: "BRL"}},
+		{
+			AccountID:   checking,
+			AccountName: "Checking",
+			Class:       "asset",
+			Balance:     tool.Money{Amount: "-10.00", Currency: "BRL"},
+		},
 	}}
-	if !slices.Equal(got.Balances, want.Balances) || got.Date != want.Date || got.Basis != want.Basis {
+	if !slices.Equal(got.Balances, want.Balances) || got.Date != want.Date ||
+		got.Basis != want.Basis {
 		t.Errorf("get_balances = %+v, want %+v", got, want)
 	}
 
@@ -207,17 +280,34 @@ func TestGetBalancesTool(t *testing.T) {
 	toolOutput(t, h, "get_balances", map[string]any{"limit": 1, "cursor": page1.NextCursor}, &page2)
 
 	if len(page1.Balances) != 1 || page1.Balances[0].AccountName != "Checking" || page1.Balances[0].Balance.Amount != "-13.00" ||
-		len(page2.Balances) != 1 || page2.Balances[0].AccountName != "Savings" || page2.NextCursor != "" {
+		len(page2.Balances) != 1 ||
+		page2.Balances[0].AccountName != "Savings" ||
+		page2.NextCursor != "" {
 		t.Errorf("pages = %+v, %+v", page1, page2)
 	}
 
 	var before output
-	toolOutput(t, h, "get_balances", map[string]any{"date": "2026-09-30", "basis": "settled"}, &before)
+	toolOutput(
+		t,
+		h,
+		"get_balances",
+		map[string]any{"date": "2026-09-30", "basis": "settled"},
+		&before,
+	)
 
-	if before.Date != "2026-09-30" || before.Basis != "settled" || before.Balances == nil || len(before.Balances) != 0 {
+	if before.Date != "2026-09-30" || before.Basis != "settled" || before.Balances == nil ||
+		len(before.Balances) != 0 {
 		t.Errorf("get_balances before = %+v", before)
 	}
 
-	h.ExpectToolError(h.Tool("get_balances", map[string]any{"basis": "cleared"}), "invalid_arguments", "")
-	h.ExpectToolError(h.Tool("get_balances", map[string]any{"class": "expense"}), "invalid_arguments", "")
+	h.ExpectToolError(
+		h.Tool("get_balances", map[string]any{"basis": "cleared"}),
+		"invalid_arguments",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool("get_balances", map[string]any{"class": "expense"}),
+		"invalid_arguments",
+		"",
+	)
 }

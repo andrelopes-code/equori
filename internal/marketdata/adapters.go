@@ -55,10 +55,16 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux, log *slog.Logger) {
 // BodyLimits raises the request body limit of a series import: 20,000 prices of 60 bytes
 // pass the default 1 MiB, and the limit is 2 MiB (A222 MQ32).
 func (m *Module) BodyLimits() []httpserver.BodyLimit {
-	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/instruments/{code}/prices", Bytes: 2 << 20}}
+	return []httpserver.BodyLimit{
+		{Pattern: "POST /api/v1/instruments/{code}/prices", Bytes: 2 << 20},
+	}
 }
 
-func (m *Module) listHolidays(ctx context.Context, calendar string, year int) ([]httpapi.Holiday, error) {
+func (m *Module) listHolidays(
+	ctx context.Context,
+	calendar string,
+	year int,
+) ([]httpapi.Holiday, error) {
 	hs, err := m.Holidays(ctx, calendar, year)
 	if errors.Is(err, ErrUnknownCalendar) {
 		return nil, httpapi.ErrNotFound

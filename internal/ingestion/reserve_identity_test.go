@@ -50,20 +50,31 @@ func TestS341UnmappedReserveHoldsFormerName(t *testing.T) {
 		reserve := r.reserves["Viagem"]
 		r.p.RenameReservedBalance(r.checkingID, "res-Viagem", "Casa")
 		r.p.AddReservedBalance(r.checkingID, reserved("Viagem", "res-new", "40.00"))
-		r.p.AddTransaction(r.checkingID, reserveLine("s341-window", "2026-11-12", "Dinheiro reservado Viagem", "-40.00"))
+		r.p.AddTransaction(
+			r.checkingID,
+			reserveLine("s341-window", "2026-11-12", "Dinheiro reservado Viagem", "-40.00"),
+		)
 		r.syncAt("2026-11-12T15:00:00.000Z")
 
 		r.wantReview("s341-window", "reserve")
 
 		if ignored {
 			conn := r.connection(r.h.Client, r.conn.ID)
-			if m := r.mapAccount(r.h.Client, r.conn.ID, reservedByName(conn, "Viagem").ID, map[string]any{"ignored": true}); m.Status != http.StatusOK {
+			if m := r.mapAccount(
+				r.h.Client,
+				r.conn.ID,
+				reservedByName(conn, "Viagem").ID,
+				map[string]any{"ignored": true},
+			); m.Status != http.StatusOK {
 				t.Fatalf("ignore status %d: %s", m.Status, m.Body)
 			}
 		}
 
 		r.setToday("2026-11-13")
-		r.p.AddTransaction(r.checkingID, reserveLine("s341-after", "2026-11-13", "Dinheiro reservado Viagem", "-5.00"))
+		r.p.AddTransaction(
+			r.checkingID,
+			reserveLine("s341-after", "2026-11-13", "Dinheiro reservado Viagem", "-5.00"),
+		)
 		r.syncAt("2026-11-13T15:00:00.000Z")
 
 		if got := r.postings("s341-after"); got[reserve] != 0 || got[r.checking] != -500 {
@@ -88,23 +99,47 @@ func TestS342NameWindow(t *testing.T) {
 	conn := r.connection(r.h.Client, r.conn.ID)
 
 	body := map[string]any{"account_id": trip, "sync_from": "2026-11-11"}
-	if m := r.mapAccount(r.h.Client, r.conn.ID, reservedByName(conn, "Viagem").ID, body); m.Status != http.StatusOK {
+	if m := r.mapAccount(
+		r.h.Client,
+		r.conn.ID,
+		reservedByName(conn, "Viagem").ID,
+		body,
+	); m.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", m.Status, m.Body)
 	}
 
 	r.setToday("2026-11-14")
-	r.p.AddTransaction(r.checkingID, reserveLine("s342-before", "2026-11-11", "Dinheiro reservado Viagem", "-1.00"))
-	r.p.AddTransaction(r.checkingID, reserveLine("s342-inside", "2026-11-13", "Dinheiro reservado Viagem", "-2.00"))
-	r.p.AddTransaction(r.checkingID, reserveLine("s342-after", "2026-11-14", "Dinheiro reservado Viagem", "-3.00"))
+	r.p.AddTransaction(
+		r.checkingID,
+		reserveLine("s342-before", "2026-11-11", "Dinheiro reservado Viagem", "-1.00"),
+	)
+	r.p.AddTransaction(
+		r.checkingID,
+		reserveLine("s342-inside", "2026-11-13", "Dinheiro reservado Viagem", "-2.00"),
+	)
+	r.p.AddTransaction(
+		r.checkingID,
+		reserveLine("s342-after", "2026-11-14", "Dinheiro reservado Viagem", "-3.00"),
+	)
 	r.syncAt("2026-11-14T15:00:00.000Z")
 
-	if got, want := r.postings("s342-before"), (map[string]int64{r.checking: -100, house: 100}); !maps.Equal(got, want) {
+	if got, want := r.postings(
+		"s342-before",
+	), (map[string]int64{r.checking: -100, house: 100}); !maps.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("line before the window = %v, want %v", got, want)
 	}
 
 	r.wantReview("s342-inside", "reserve")
 
-	if got, want := r.postings("s342-after"), (map[string]int64{r.checking: -300, trip: 300}); !maps.Equal(got, want) {
+	if got, want := r.postings(
+		"s342-after",
+	), (map[string]int64{r.checking: -300, trip: 300}); !maps.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("line after the window = %v, want %v", got, want)
 	}
 }
@@ -117,15 +152,27 @@ func TestS343UnresolvedLineBooksNoYield(t *testing.T) {
 
 	f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 	checking := f.h.Account("Mercado Pago", "asset", "checking", nil)
-	f.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+	f.h.Record(
+		"2026-10-31",
+		apitest.Posting(checking, 100000),
+		apitest.Posting(openingBalances(f), -100000),
+	)
 
 	body := map[string]any{"account_id": checking, "sync_from": "2026-11-01"}
-	if m := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, body); m.Status != http.StatusOK {
+	if m := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeChecking).ID,
+		body,
+	); m.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", m.Status, m.Body)
 	}
 
 	// B = floor(100292 * 3 * 1 / 3000) = 100; 60 is within it.
-	f.p.AddTransaction(checkingID, reserveLine("s343", "2026-11-11", "Dinheiro reservado Nome Nunca Visto", "-0.60"))
+	f.p.AddTransaction(
+		checkingID,
+		reserveLine("s343", "2026-11-11", "Dinheiro reservado Nome Nunca Visto", "-0.60"),
+	)
 	f.syncReserve(checkingID, "2026-11-11", "1003.52")
 
 	if state, _ := f.recordOf("s343"); state != "needs_review" {
@@ -141,14 +188,27 @@ func TestS343UnresolvedLineBooksNoYield(t *testing.T) {
 	}
 
 	var record string
-	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = 's343'`).Scan(&record); err != nil {
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = 's343'`).
+		Scan(&record); err != nil {
 		t.Fatal(err)
 	}
 
-	f.h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "create"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/external-records/"+record+"/resolve",
+		map[string]any{"action": "create"},
+		http.StatusOK,
+		nil,
+	)
 
 	_, tx := f.recordOf("s343")
-	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/transfer", map[string]any{"expected_version": 1, "account_id": reserve}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+tx+"/transfer",
+		map[string]any{"expected_version": 1, "account_id": reserve},
+		http.StatusOK,
+		nil,
+	)
 	f.syncReserve(checkingID, "2026-11-11", "1003.52")
 
 	if y := f.yieldTransactions(reserve); len(y) != 0 {
@@ -166,22 +226,41 @@ func TestDiscardedReserveLineReleasesYield(t *testing.T) {
 
 	f, reserve, checkingID := reserveAfterFirstSync(t, "auto")
 	checking := f.h.Account("Mercado Pago", "asset", "checking", nil)
-	f.h.Record("2026-10-31", apitest.Posting(checking, 100000), apitest.Posting(openingBalances(f), -100000))
+	f.h.Record(
+		"2026-10-31",
+		apitest.Posting(checking, 100000),
+		apitest.Posting(openingBalances(f), -100000),
+	)
 
 	body := map[string]any{"account_id": checking, "sync_from": "2026-11-01"}
-	if m := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, body); m.Status != http.StatusOK {
+	if m := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeChecking).ID,
+		body,
+	); m.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", m.Status, m.Body)
 	}
 
-	f.p.AddTransaction(checkingID, reserveLine("released", "2026-11-11", "Dinheiro reservado Nome Nunca Visto", "-0.60"))
+	f.p.AddTransaction(
+		checkingID,
+		reserveLine("released", "2026-11-11", "Dinheiro reservado Nome Nunca Visto", "-0.60"),
+	)
 	f.syncReserve(checkingID, "2026-11-11", "1003.52")
 
 	var record string
-	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = 'released'`).Scan(&record); err != nil {
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = 'released'`).
+		Scan(&record); err != nil {
 		t.Fatal(err)
 	}
 
-	f.h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "discard"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/external-records/"+record+"/resolve",
+		map[string]any{"action": "discard"},
+		http.StatusOK,
+		nil,
+	)
 	f.syncReserve(checkingID, "2026-11-11", "1003.52")
 
 	wantYield(t, f, reserve, "Rendimento de 11/11/2026", 60)
@@ -202,10 +281,18 @@ func newReserveFixture(t *testing.T, names ...string) reserveFixture {
 
 	today := &atomic.Pointer[time.Time]{}
 	a := newAggregator(t, apitest.Clock(func() time.Time { return *today.Load() }))
-	r := reserveFixture{today: today, checkingID: mercadoPagoItem + "-checking", reserves: map[string]string{}}
+	r := reserveFixture{
+		today:      today,
+		checkingID: mercadoPagoItem + "-checking",
+		reserves:   map[string]string{},
+	}
 	r.setToday("2026-11-12")
 
-	it := pluggy.Item{ID: mercadoPagoItem, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-11T15:00:00.000Z")}
+	it := pluggy.Item{
+		ID:            mercadoPagoItem,
+		Status:        pluggy.StatusUpdated,
+		LastUpdatedAt: new("2026-11-11T15:00:00.000Z"),
+	}
 	it.Connector.Name = "Mercado Pago"
 	a.p.AddItemTo(pluggyClient, it)
 	a.p.AddAccount(mercadoPagoItem, pluggy.Account{
@@ -218,12 +305,24 @@ func newReserveFixture(t *testing.T, names ...string) reserveFixture {
 	}
 
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
-	r.syncFixture = syncFixture{aggregator: a, conn: a.mustConnect(a.h.Client, in.ID, mercadoPagoItem)}
+	r.syncFixture = syncFixture{
+		aggregator: a,
+		conn:       a.mustConnect(a.h.Client, in.ID, mercadoPagoItem),
+	}
 	r.checking = a.h.Account("Mercado Pago", "asset", "checking", nil)
-	a.h.Record("2026-10-31", apitest.Posting(r.checking, 100000), apitest.Posting(openingBalances(r.syncFixture), -100000))
+	a.h.Record(
+		"2026-10-31",
+		apitest.Posting(r.checking, 100000),
+		apitest.Posting(openingBalances(r.syncFixture), -100000),
+	)
 
 	external := externalAccount(r.conn, pluggy.SubtypeChecking).ID
-	if m := a.mapAccount(a.h.Client, r.conn.ID, external, map[string]any{"account_id": r.checking, "sync_from": "2026-11-01"}); m.Status != http.StatusOK {
+	if m := a.mapAccount(
+		a.h.Client,
+		r.conn.ID,
+		external,
+		map[string]any{"account_id": r.checking, "sync_from": "2026-11-01"},
+	); m.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", m.Status, m.Body)
 	}
 
@@ -231,7 +330,12 @@ func newReserveFixture(t *testing.T, names ...string) reserveFixture {
 		r.reserves[name] = a.h.Account("MP "+name, "asset", "reserve", nil)
 
 		body := map[string]any{"account_id": r.reserves[name], "sync_from": "2026-11-11"}
-		if m := a.mapAccount(a.h.Client, r.conn.ID, reservedByName(r.conn, name).ID, body); m.Status != http.StatusOK {
+		if m := a.mapAccount(
+			a.h.Client,
+			r.conn.ID,
+			reservedByName(r.conn, name).ID,
+			body,
+		); m.Status != http.StatusOK {
 			t.Fatalf("map status %d: %s", m.Status, m.Body)
 		}
 	}
@@ -278,12 +382,17 @@ func (r reserveFixture) wantReview(externalID, reason string) {
 
 	var state, got string
 
-	row := r.h.Pool.QueryRow(r.h.T().Context(), `SELECT state, coalesce(review_reason, '') FROM ingestion_external_record WHERE external_id = $1`, externalID)
+	row := r.h.Pool.QueryRow(
+		r.h.T().Context(),
+		`SELECT state, coalesce(review_reason, '') FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	)
 	if err := row.Scan(&state, &got); err != nil {
 		r.h.T().Fatal(err)
 	}
 
 	if state != "needs_review" || got != reason {
-		r.h.T().Fatalf("record %s is %s (%s), want needs_review (%s)", externalID, state, got, reason)
+		r.h.T().
+			Fatalf("record %s is %s (%s), want needs_review (%s)", externalID, state, got, reason)
 	}
 }

@@ -14,15 +14,27 @@ type Repository struct{ q *Queries }
 
 func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{q: New(pool)} }
 
-func (r *Repository) Hints(ctx context.Context, booksID int64, descriptions []string) ([]app.Hint, error) {
-	rows, err := r.q.CategoryHints(ctx, CategoryHintsParams{BooksID: booksID, Descriptions: descriptions})
+func (r *Repository) Hints(
+	ctx context.Context,
+	booksID int64,
+	descriptions []string,
+) ([]app.Hint, error) {
+	rows, err := r.q.CategoryHints(
+		ctx,
+		CategoryHintsParams{BooksID: booksID, Descriptions: descriptions},
+	)
 	if err != nil {
 		return nil, err
 	}
 
 	out := make([]app.Hint, len(rows))
 	for i, row := range rows {
-		out[i] = app.Hint{Class: row.Class, Description: row.Description, CategoryID: row.CategoryID.UUID, AnsweredAt: row.AnsweredAt}
+		out[i] = app.Hint{
+			Class:       row.Class,
+			Description: row.Description,
+			CategoryID:  row.CategoryID.UUID,
+			AnsweredAt:  row.AnsweredAt,
+		}
 	}
 
 	return out, nil
@@ -30,7 +42,13 @@ func (r *Repository) Hints(ctx context.Context, booksID int64, descriptions []st
 
 func (r *Repository) SaveHint(ctx context.Context, booksID int64, h app.Hint) error {
 	return r.q.SaveCategoryHint(ctx, SaveCategoryHintParams{
-		BooksID: booksID, Class: h.Class, Description: h.Description,
-		CategoryID: uuid.NullUUID{UUID: h.CategoryID, Valid: h.CategoryID != uuid.Nil}, AnsweredAt: h.AnsweredAt,
+		BooksID:     booksID,
+		Class:       h.Class,
+		Description: h.Description,
+		CategoryID: uuid.NullUUID{
+			UUID:  h.CategoryID,
+			Valid: h.CategoryID != uuid.Nil,
+		},
+		AnsweredAt: h.AnsweredAt,
 	})
 }

@@ -33,13 +33,46 @@ func TestCodes(t *testing.T) {
 		in   feed.Instrument
 		want bool
 	}{
-		{"NTNBP", feed.Instrument{Code: "NTNBP.20350515", Type: "fixed_income", QuoteCurrency: "BRL"}, true},
-		{"LFT", feed.Instrument{Code: "LFT.20270301", Type: "fixed_income", QuoteCurrency: "BRL"}, true},
-		{"exchange", feed.Instrument{Code: "NTNBP.20350515", Type: "fixed_income", Exchange: "BVMF", QuoteCurrency: "BRL"}, false},
-		{"quote", feed.Instrument{Code: "NTNBP.20350515", Type: "fixed_income", QuoteCurrency: "USD"}, false},
-		{"short date", feed.Instrument{Code: "NTNBP.2035", Type: "fixed_income", QuoteCurrency: "BRL"}, false},
-		{"prefix", feed.Instrument{Code: "CDB.20350515", Type: "fixed_income", QuoteCurrency: "BRL"}, false},
-		{"type", feed.Instrument{Code: "NTNBP.20350515", Type: "fund", QuoteCurrency: "BRL"}, false},
+		{
+			"NTNBP",
+			feed.Instrument{Code: "NTNBP.20350515", Type: "fixed_income", QuoteCurrency: "BRL"},
+			true,
+		},
+		{
+			"LFT",
+			feed.Instrument{Code: "LFT.20270301", Type: "fixed_income", QuoteCurrency: "BRL"},
+			true,
+		},
+		{
+			"exchange",
+			feed.Instrument{
+				Code:          "NTNBP.20350515",
+				Type:          "fixed_income",
+				Exchange:      "BVMF",
+				QuoteCurrency: "BRL",
+			},
+			false,
+		},
+		{
+			"quote",
+			feed.Instrument{Code: "NTNBP.20350515", Type: "fixed_income", QuoteCurrency: "USD"},
+			false,
+		},
+		{
+			"short date",
+			feed.Instrument{Code: "NTNBP.2035", Type: "fixed_income", QuoteCurrency: "BRL"},
+			false,
+		},
+		{
+			"prefix",
+			feed.Instrument{Code: "CDB.20350515", Type: "fixed_income", QuoteCurrency: "BRL"},
+			false,
+		},
+		{
+			"type",
+			feed.Instrument{Code: "NTNBP.20350515", Type: "fund", QuoteCurrency: "BRL"},
+			false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -70,14 +103,24 @@ func TestFetch(t *testing.T) {
 	codes := []money.Currency{"NTNBP.20350515", "LFT.20270301"}
 	from, to := day("2026-11-01"), day("2026-11-09")
 
-	got, err := tesourodireto.New(srv.Client(), srv.URL+"/td.csv").Fetch(t.Context(), codes, from, to)
+	got, err := tesourodireto.New(srv.Client(), srv.URL+"/td.csv").
+		Fetch(t.Context(), codes, from, to)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var lines []string
 	for _, q := range got {
-		lines = append(lines, fmt.Sprintf("%s %s %s %s", q.Instrument, q.Quote, q.Date.Format(time.DateOnly), q.Value.String()))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"%s %s %s %s",
+				q.Instrument,
+				q.Quote,
+				q.Date.Format(time.DateOnly),
+				q.Value.String(),
+			),
+		)
 	}
 
 	slices.Sort(lines)
@@ -92,7 +135,8 @@ func TestFetch(t *testing.T) {
 		t.Fatalf("quotes = %v, want %v", lines, want)
 	}
 
-	got, err = tesourodireto.New(srv.Client(), srv.URL+"/missing.csv").Fetch(t.Context(), codes, from, to)
+	got, err = tesourodireto.New(srv.Client(), srv.URL+"/missing.csv").
+		Fetch(t.Context(), codes, from, to)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("404: quotes = %v, err = %v", got, err)
 	}
@@ -128,7 +172,12 @@ func TestSearch(t *testing.T) {
 		}
 
 		want := []feed.Listing{
-			{Code: "NTNBP.20350515", Name: "Tesouro IPCA+ 2035", Type: "fixed_income", QuoteCurrency: "BRL"},
+			{
+				Code:          "NTNBP.20350515",
+				Name:          "Tesouro IPCA+ 2035",
+				Type:          "fixed_income",
+				QuoteCurrency: "BRL",
+			},
 		}
 		if !slices.Equal(got, want) {
 			t.Fatalf("ipca = %v, want %v", got, want)

@@ -26,7 +26,10 @@ func TestS234LinesWaitInReviewAsAGroup(t *testing.T) {
 		t.Fatalf("records in review group = %d, want 2", inReview)
 	}
 
-	if postings := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`, card); postings != 1 {
+	if postings := f.count(
+		`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`,
+		card,
+	); postings != 1 {
 		t.Fatalf("card postings = %d, want 1 (the entry)", postings)
 	}
 }
@@ -42,11 +45,15 @@ func TestS237TwoEntriesProposeNoGroup(t *testing.T) {
 	f.line(pluggy.SubtypeCard, cardLine("b", "2026-10-31", "4.00", "PENDING", nil))
 	f.sync()
 
-	if created := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id IN ('a', 'b') AND state = 'created'`); created != 2 {
+	if created := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id IN ('a', 'b') AND state = 'created'`,
+	); created != 2 {
 		t.Fatalf("created records = %d, want 2", created)
 	}
 
-	if review := f.count(`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`); review != 0 {
+	if review := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`,
+	); review != 0 {
 		t.Fatalf("records in review group = %d, want 0", review)
 	}
 }
@@ -61,12 +68,17 @@ func TestS239ABoundOf40Lines(t *testing.T) {
 	f.line(pluggy.SubtypeCard, cardLine("b", "2026-10-31", "4.00", "PENDING", nil))
 
 	for i := range 39 {
-		f.line(pluggy.SubtypeCard, cardLine(fmt.Sprintf("f-%02d", i), "2026-10-30", "1.00", "PENDING", nil))
+		f.line(
+			pluggy.SubtypeCard,
+			cardLine(fmt.Sprintf("f-%02d", i), "2026-10-30", "1.00", "PENDING", nil),
+		)
 	}
 
 	f.sync()
 
-	if review := f.count(`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`); review != 0 {
+	if review := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`,
+	); review != 0 {
 		t.Fatalf("records in review group = %d, want 0 with 41 eligible lines", review)
 	}
 }
@@ -84,11 +96,17 @@ func TestS234MatchConfirmsTheGroup(t *testing.T) {
 		t.Fatalf("card postings = %v, want %v", rows, want)
 	}
 
-	if matched := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id IN ('a', 'b') AND state = 'matched' AND transaction_id = $1`, entry); matched != 2 {
+	if matched := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id IN ('a', 'b') AND state = 'matched' AND transaction_id = $1`,
+		entry,
+	); matched != 2 {
 		t.Fatalf("matched records = %d, want 2", matched)
 	}
 
-	if cat := f.count(`SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND amount = 11840`, entry); cat != 1 {
+	if cat := f.count(
+		`SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND amount = 11840`,
+		entry,
+	); cat != 1 {
 		t.Fatalf("category postings of 118.40 = %d, want 1", cat)
 	}
 }
@@ -112,11 +130,17 @@ func TestS236TheFirstLineWasCreatedBefore(t *testing.T) {
 
 	f.resolve("b", map[string]any{"action": "match", "transaction_id": entry})
 
-	if postings := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`, card); postings != 2 {
+	if postings := f.count(
+		`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`,
+		card,
+	); postings != 2 {
 		t.Fatalf("card postings = %d, want 2", postings)
 	}
 
-	if voided := f.count(`SELECT count(*) FROM ledger_transaction WHERE id = $1 AND voided_at IS NOT NULL`, created); voided != 1 {
+	if voided := f.count(
+		`SELECT count(*) FROM ledger_transaction WHERE id = $1 AND voided_at IS NOT NULL`,
+		created,
+	); voided != 1 {
 		t.Fatalf("created transaction voided = %d, want 1", voided)
 	}
 
@@ -164,7 +188,12 @@ func TestGroupChangedWhenTheEntryIsCorrected(t *testing.T) {
 		Code string `json:"code"`
 	}
 
-	f.resolveStatus("a", map[string]any{"action": "match", "transaction_id": entry}, http.StatusConflict, &problem)
+	f.resolveStatus(
+		"a",
+		map[string]any{"action": "match", "transaction_id": entry},
+		http.StatusConflict,
+		&problem,
+	)
 
 	if problem.Code != "group_changed" {
 		t.Fatalf("problem code = %q, want group_changed", problem.Code)
@@ -193,7 +222,8 @@ func (f syncFixture) resolveStatus(externalID string, body map[string]any, statu
 	f.h.T().Helper()
 
 	var record string
-	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID).Scan(&record); err != nil {
+	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID).
+		Scan(&record); err != nil {
 		f.h.T().Fatalf("record %s: %v", externalID, err)
 	}
 
@@ -210,7 +240,9 @@ func TestS235SumNotExactLeavesTheEntryAwaiting(t *testing.T) {
 	f.line(pluggy.SubtypeCard, cardLine("b", "2026-10-31", "3.90", "PENDING", nil))
 	f.sync()
 
-	if review := f.count(`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`); review != 0 {
+	if review := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE review_reason = 'group'`,
+	); review != 0 {
 		t.Fatalf("records in review group = %d, want 0", review)
 	}
 
@@ -222,14 +254,22 @@ func TestS235SumNotExactLeavesTheEntryAwaiting(t *testing.T) {
 		} `json:"items"`
 	}
 
-	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-11&to=2026-11", nil, http.StatusOK, &list)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/statements?from=2026-11&to=2026-11",
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
-	if len(list.Items) != 1 || list.Items[0].ConfirmedAmount == nil || list.Items[0].AwaitingAmount == nil {
+	if len(list.Items) != 1 || list.Items[0].ConfirmedAmount == nil ||
+		list.Items[0].AwaitingAmount == nil {
 		t.Fatalf("statements = %+v, want one with both parts", list.Items)
 	}
 
 	got := list.Items[0]
-	if got.AmountDue.Amount != 23670 || got.ConfirmedAmount.Amount != 11830 || got.AwaitingAmount.Amount != 11840 {
+	if got.AmountDue.Amount != 23670 || got.ConfirmedAmount.Amount != 11830 ||
+		got.AwaitingAmount.Amount != 11840 {
 		t.Fatalf("amount due %d, confirmed %d, awaiting %d, want 23670, 11830, 11840",
 			got.AmountDue.Amount, got.ConfirmedAmount.Amount, got.AwaitingAmount.Amount)
 	}
@@ -245,8 +285,10 @@ func TestGroupRecordsListTheirGroup(t *testing.T) {
 	f, _, entry := groupFixture(t)
 
 	var batch string
-	if err := f.h.Pool.QueryRow(t.Context(),
-		`SELECT batch_id::text FROM ingestion_external_record WHERE external_id = 'a'`).Scan(&batch); err != nil {
+	if err := f.h.Pool.QueryRow(
+		t.Context(),
+		`SELECT batch_id::text FROM ingestion_external_record WHERE external_id = 'a'`,
+	).Scan(&batch); err != nil {
 		t.Fatal(err)
 	}
 
@@ -259,7 +301,13 @@ func TestGroupRecordsListTheirGroup(t *testing.T) {
 		} `json:"items"`
 	}
 
-	f.h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch+"/records?state=needs_review", nil, http.StatusOK, &list)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/import-batches/"+batch+"/records?state=needs_review",
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
 	ids := map[string]string{}
 	for _, it := range list.Items {
@@ -276,7 +324,8 @@ func TestGroupRecordsListTheirGroup(t *testing.T) {
 			other = ids["b"]
 		}
 
-		if !slices.Equal(it.GroupRecordIDs, []string{other}) || !slices.Equal(it.Candidates, []string{entry}) {
+		if !slices.Equal(it.GroupRecordIDs, []string{other}) ||
+			!slices.Equal(it.Candidates, []string{entry}) {
 			t.Fatalf("record %s: group %v candidates %v, want [%s] and [%s]",
 				it.ExternalID, it.GroupRecordIDs, it.Candidates, other, entry)
 		}

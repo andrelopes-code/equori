@@ -26,7 +26,13 @@ func TestDisplayName(t *testing.T) {
 		t.Fatalf("initial display_name = %q, want empty", me.DisplayName)
 	}
 
-	h.MustDo(http.MethodPatch, "/api/v1/me", map[string]any{"display_name": "  Ann Lee  "}, http.StatusOK, &me)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/me",
+		map[string]any{"display_name": "  Ann Lee  "},
+		http.StatusOK,
+		&me,
+	)
 
 	if me.DisplayName != "Ann Lee" {
 		t.Fatalf("patched display_name = %q, want %q", me.DisplayName, "Ann Lee")
@@ -118,7 +124,13 @@ func TestDisplayNameAccepts60Characters(t *testing.T) {
 
 	var me nameMember
 
-	h.MustDo(http.MethodPatch, "/api/v1/me", map[string]any{"display_name": name}, http.StatusOK, &me)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/me",
+		map[string]any{"display_name": name},
+		http.StatusOK,
+		&me,
+	)
 
 	if me.DisplayName != name {
 		t.Fatalf("display_name = %q, want %q", me.DisplayName, name)

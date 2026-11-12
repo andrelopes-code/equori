@@ -53,7 +53,8 @@ func poolConfig(url string) (*pgxpool.Config, error) {
 
 // Locale returns the locale provider (b builtin, c libc, i icu) and locale of the database.
 func Locale(ctx context.Context, pool *pgxpool.Pool) (provider, locale string, err error) {
-	err = pool.QueryRow(ctx, "SELECT datlocprovider::text, coalesce(datlocale, '') FROM pg_database WHERE datname = current_database()").Scan(&provider, &locale)
+	err = pool.QueryRow(ctx, "SELECT datlocprovider::text, coalesce(datlocale, '') FROM pg_database WHERE datname = current_database()").
+		Scan(&provider, &locale)
 	if err != nil {
 		return "", "", fmt.Errorf("read database locale: %w", err)
 	}

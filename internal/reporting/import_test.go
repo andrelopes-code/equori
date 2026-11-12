@@ -33,45 +33,101 @@ func populate(t *testing.T, h *apitest.Harness) books {
 		ID string `json:"id"`
 	}
 	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-12", "description": "Mercado central", "tags": []string{"market"},
-		"postings": []map[string]any{apitest.Posting(b.card, -23000), apitest.Posting(b.food, 23000)},
+		"date":        "2026-10-12",
+		"description": "Mercado central",
+		"tags":        []string{"market"},
+		"postings": []map[string]any{
+			apitest.Posting(b.card, -23000),
+			apitest.Posting(b.food, 23000),
+		},
 	}, http.StatusCreated, &tx)
 
-	if r := h.Upload("/api/v1/transactions/"+tx.ID+"/attachments", "receipt.pdf", []byte("%PDF-1.4 receipt")); r.Status != http.StatusCreated {
+	if r := h.Upload(
+		"/api/v1/transactions/"+tx.ID+"/attachments",
+		"receipt.pdf",
+		[]byte("%PDF-1.4 receipt"),
+	); r.Status != http.StatusCreated {
 		t.Fatalf("attachment = %d: %s", r.Status, r.Body)
 	}
 
 	h.MustDo(http.MethodPost, "/api/v1/installment-purchases", map[string]any{
-		"card_account_id": b.card, "date": "2026-10-20",
-		"splits":              []map[string]any{{"account_id": b.food, "amount": apitest.BRL(90000)}},
-		"installment_count":   3,
-		"installment_amounts": []map[string]any{apitest.BRL(30000), apitest.BRL(30000), apitest.BRL(30000)},
+		"card_account_id": b.card,
+		"date":            "2026-10-20",
+		"splits": []map[string]any{
+			{"account_id": b.food, "amount": apitest.BRL(90000)},
+		},
+		"installment_count": 3,
+		"installment_amounts": []map[string]any{
+			apitest.BRL(30000),
+			apitest.BRL(30000),
+			apitest.BRL(30000),
+		},
 	}, http.StatusCreated, nil)
 	h.Record("2026-10-05", apitest.Posting(b.checking, -150000), apitest.Posting(rent, 150000))
 	h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
-		"kind": "bill", "account_id": b.checking, "counterpart_id": rent, "description": "rent", "amount": apitest.BRL(150000),
-		"recurrence": map[string]any{"frequency": "monthly", "interval": 1, "day_of_month": 5, "start": "2026-10-05"},
+		"kind":           "bill",
+		"account_id":     b.checking,
+		"counterpart_id": rent,
+		"description":    "rent",
+		"amount":         apitest.BRL(150000),
+		"recurrence": map[string]any{
+			"frequency":    "monthly",
+			"interval":     1,
+			"day_of_month": 5,
+			"start":        "2026-10-05",
+		},
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/budgets", map[string]any{
-		"category_id": b.food, "amount": apitest.BRL(200000), "effective_from": "2026-10", "rollover": false,
+		"category_id":    b.food,
+		"amount":         apitest.BRL(200000),
+		"effective_from": "2026-10",
+		"rollover":       false,
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/rules", map[string]any{
-		"name":       "Market",
-		"conditions": []any{map[string]any{"field": "description", "operator": "contains", "value": "mercado"}},
-		"actions":    []any{map[string]any{"type": "set_category", "category_id": b.food}},
+		"name": "Market",
+		"conditions": []any{
+			map[string]any{"field": "description", "operator": "contains", "value": "mercado"},
+		},
+		"actions": []any{map[string]any{"type": "set_category", "category_id": b.food}},
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
-		"code": "MXRF11", "type": "reit", "scale": 0, "name": "MXRF11", "quote_currency": "BRL", "exchange": "BVMF",
+		"code":           "MXRF11",
+		"type":           "reit",
+		"scale":          0,
+		"name":           "MXRF11",
+		"quote_currency": "BRL",
+		"exchange":       "BVMF",
 	}, http.StatusCreated, nil)
 	b.xp = h.Account("XP", "asset", "brokerage", nil)
-	cash := h.Account("XP cash", "asset", "brokerage", map[string]any{"parent_id": b.xp, "currency": "BRL"})
-	fund := h.Account("XP MXRF11", "asset", "brokerage", map[string]any{"parent_id": b.xp, "currency": "MXRF11"})
+	cash := h.Account(
+		"XP cash",
+		"asset",
+		"brokerage",
+		map[string]any{"parent_id": b.xp, "currency": "BRL"},
+	)
+	fund := h.Account(
+		"XP MXRF11",
+		"asset",
+		"brokerage",
+		map[string]any{"parent_id": b.xp, "currency": "MXRF11"},
+	)
 	h.Record("2026-10-01", apitest.Posting(b.checking, -50000), apitest.Posting(cash, 50000))
 	h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
 		"account_id": fund, "cash_account_id": cash, "side": "buy", "date": "2026-10-02",
 		"quantity": map[string]any{"amount": 10, "currency": "MXRF11"}, "unit_price": "10.00",
 	}, http.StatusCreated, nil)
-	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-23", "value": "10.40"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "MXRF11",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-23",
+			"value":            "10.40",
+		},
+		http.StatusCreated,
+		nil,
+	)
 	addAssistantConfiguration(t, h)
 	h.Dispatch()
 
@@ -87,10 +143,26 @@ func addAssistantConfiguration(t *testing.T, h *apitest.Harness) {
 		ID string `json:"id"`
 	}
 
-	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "ollama", "name": "Local"}, http.StatusCreated, &provider)
-	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{"targets": []any{
-		map[string]any{"provider_id": provider.ID, "model": "qwen3:32b", "capabilities": []string{"tools"}},
-	}}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/assistant/providers",
+		map[string]any{"preset": "ollama", "name": "Local"},
+		http.StatusCreated,
+		&provider,
+	)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/assistant/uses/assistant.chat/chain",
+		map[string]any{"targets": []any{
+			map[string]any{
+				"provider_id":  provider.ID,
+				"model":        "qwen3:32b",
+				"capabilities": []string{"tools"},
+			},
+		}},
+		http.StatusOK,
+		nil,
+	)
 	h.MustDo(http.MethodPut, "/api/v1/assistant/usage/limits", map[string]any{
 		"provider_id": provider.ID, "model": "qwen3:32b", "requests_per_day": 50,
 	}, http.StatusNoContent, nil)
@@ -160,7 +232,12 @@ func TestExportImportRoundTrip(t *testing.T) {
 		}
 
 		if !bytes.Equal(before[table.File], after[table.File]) {
-			t.Errorf("%s differs:\nexported %s\nreimported %s", table.Name, before[table.File], after[table.File])
+			t.Errorf(
+				"%s differs:\nexported %s\nreimported %s",
+				table.Name,
+				before[table.File],
+				after[table.File],
+			)
 		}
 	}
 
@@ -179,8 +256,16 @@ func TestExportImportRoundTrip(t *testing.T) {
 		"/api/v1/accounts/" + b.card + "/commitments?month=2026-11",
 	} {
 		want, got := source.Do(http.MethodGet, path, nil), target.Do(http.MethodGet, path, nil)
-		if want.Status != http.StatusOK || got.Status != http.StatusOK || !bytes.Equal(want.Body, got.Body) {
-			t.Errorf("GET %s:\nsource %d %s\ntarget %d %s", path, want.Status, want.Body, got.Status, got.Body)
+		if want.Status != http.StatusOK || got.Status != http.StatusOK ||
+			!bytes.Equal(want.Body, got.Body) {
+			t.Errorf(
+				"GET %s:\nsource %d %s\ntarget %d %s",
+				path,
+				want.Status,
+				want.Body,
+				got.Status,
+				got.Body,
+			)
 		}
 	}
 }
@@ -193,20 +278,42 @@ func TestImportRejects(t *testing.T) {
 	good := export(t, h)
 	files := archive(t, good)
 
-	h.ExpectProblem(h.Upload(importPath, "a.zip", good), http.StatusConflict, "import_not_empty", "")
+	h.ExpectProblem(
+		h.Upload(importPath, "a.zip", good),
+		http.StatusConflict,
+		"import_not_empty",
+		"",
+	)
 	other := h.Login("other@example.com")
-	h.ExpectProblem(h.UploadAs(other, importPath, nil, "a.zip", good), http.StatusConflict, "import_conflict", "")
+	h.ExpectProblem(
+		h.UploadAs(other, importPath, nil, "a.zip", good),
+		http.StatusConflict,
+		"import_conflict",
+		"",
+	)
 
 	empty := apitest.New(t, apitest.Today("2026-10-26"))
-	h.ExpectProblem(empty.Upload(importPath, "a.zip", []byte("not a zip")), http.StatusUnprocessableEntity, "archive_invalid", "file")
+	h.ExpectProblem(
+		empty.Upload(importPath, "a.zip", []byte("not a zip")),
+		http.StatusUnprocessableEntity,
+		"archive_invalid",
+		"file",
+	)
 
 	tampered := map[string][]byte{}
 	for name, b := range files {
 		tampered[name] = b
 	}
 
-	tampered["tables/ledger_posting.jsonl"] = append([]byte(nil), files["tables/ledger_posting.jsonl"][1:]...)
-	empty.ExpectProblem(empty.Upload(importPath, "a.zip", zipOf(t, tampered)), http.StatusUnprocessableEntity, "archive_invalid", "file")
+	tampered["tables/ledger_posting.jsonl"] = append(
+		[]byte(nil),
+		files["tables/ledger_posting.jsonl"][1:]...)
+	empty.ExpectProblem(
+		empty.Upload(importPath, "a.zip", zipOf(t, tampered)),
+		http.StatusUnprocessableEntity,
+		"archive_invalid",
+		"file",
+	)
 
 	var m map[string]any
 	if err := json.Unmarshal(files["manifest.json"], &m); err != nil {
@@ -233,12 +340,18 @@ func TestImportRejects(t *testing.T) {
 	}
 	r.Decode(t, &tooNew)
 
-	if tooNew.ArchiveVersion != app.ArchiveVersion+1 || tooNew.InstanceVersion != app.ArchiveVersion {
+	if tooNew.ArchiveVersion != app.ArchiveVersion+1 ||
+		tooNew.InstanceVersion != app.ArchiveVersion {
 		t.Errorf("archive_too_new = %s", r.Body)
 	}
 
 	m["archive_version"] = 0.0
-	empty.ExpectProblem(empty.Upload(importPath, "a.zip", withManifest(m)), http.StatusUnprocessableEntity, "archive_invalid", "file")
+	empty.ExpectProblem(
+		empty.Upload(importPath, "a.zip", withManifest(m)),
+		http.StatusUnprocessableEntity,
+		"archive_invalid",
+		"file",
+	)
 	m["archive_version"] = float64(app.ArchiveVersion)
 
 	tables := m["tables"].([]any)
@@ -250,7 +363,12 @@ func TestImportRejects(t *testing.T) {
 	}
 
 	foreign["manifest.json"], _ = json.Marshal(m)
-	empty.ExpectProblem(empty.Upload(importPath, "a.zip", zipOf(t, foreign)), http.StatusUnprocessableEntity, "archive_invalid", "file")
+	empty.ExpectProblem(
+		empty.Upload(importPath, "a.zip", zipOf(t, foreign)),
+		http.StatusUnprocessableEntity,
+		"archive_invalid",
+		"file",
+	)
 
 	var accounts struct {
 		Items []struct {
@@ -343,7 +461,11 @@ func TestS352S354ImportReplacesBooks(t *testing.T) {
 
 	target := apitest.New(t, apitest.Today("2026-10-26"))
 	old := target.Account("Old", "asset", "checking", nil)
-	target.Record("2026-10-03", apitest.Posting(old, -1000), apitest.Posting(target.Account("Old food", "expense", "", nil), 1000))
+	target.Record(
+		"2026-10-03",
+		apitest.Posting(old, -1000),
+		apitest.Posting(target.Account("Old food", "expense", "", nil), 1000),
+	)
 	seedReplaced(t, target)
 
 	var current struct {
@@ -356,7 +478,12 @@ func TestS352S354ImportReplacesBooks(t *testing.T) {
 
 	// S353: a name that differs from the book's writes nothing.
 	r := target.UploadAs(target.Client, importPath, wrong, "a.zip", good)
-	target.ExpectProblem(r, http.StatusUnprocessableEntity, "confirmation_mismatch", "replace_books_name")
+	target.ExpectProblem(
+		r,
+		http.StatusUnprocessableEntity,
+		"confirmation_mismatch",
+		"replace_books_name",
+	)
 
 	// S354: an archive refused inside the transaction keeps the previous content.
 	broken := edited(t, files, "ledger_posting", func(rows []map[string]any) []map[string]any {
@@ -374,11 +501,22 @@ func TestS352S354ImportReplacesBooks(t *testing.T) {
 	}
 
 	// S352: the archive replaces the content, and the assistant history goes with it.
-	if r := target.UploadAs(target.Client, importPath, replace, "a.zip", good); r.Status != http.StatusOK {
+	if r := target.UploadAs(
+		target.Client,
+		importPath,
+		replace,
+		"a.zip",
+		good,
+	); r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
 
-	target.ExpectProblem(target.Do(http.MethodGet, "/api/v1/accounts/"+old, nil), http.StatusNotFound, "not_found", "")
+	target.ExpectProblem(
+		target.Do(http.MethodGet, "/api/v1/accounts/"+old, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 
 	if n := replacedRows(t, target); n != 0 {
 		t.Errorf("the replacement kept %d assistant rows", n)
@@ -391,8 +529,16 @@ func TestS352S354ImportReplacesBooks(t *testing.T) {
 		"/api/v1/positions?date=2026-10-26",
 	} {
 		want, got := source.Do(http.MethodGet, path, nil), target.Do(http.MethodGet, path, nil)
-		if want.Status != http.StatusOK || got.Status != http.StatusOK || !bytes.Equal(want.Body, got.Body) {
-			t.Errorf("GET %s:\nsource %d %s\ntarget %d %s", path, want.Status, want.Body, got.Status, got.Body)
+		if want.Status != http.StatusOK || got.Status != http.StatusOK ||
+			!bytes.Equal(want.Body, got.Body) {
+			t.Errorf(
+				"GET %s:\nsource %d %s\ntarget %d %s",
+				path,
+				want.Status,
+				want.Body,
+				got.Status,
+				got.Body,
+			)
 		}
 	}
 }
@@ -432,7 +578,12 @@ func TestImportArchiveOfAnotherSchemaVersion(t *testing.T) {
 }
 
 // edited rewrites the rows of one table of an archive and its manifest entry (rows, sha256).
-func edited(t *testing.T, files map[string][]byte, table string, edit func([]map[string]any) []map[string]any) []byte {
+func edited(
+	t *testing.T,
+	files map[string][]byte,
+	table string,
+	edit func([]map[string]any) []map[string]any,
+) []byte {
 	t.Helper()
 
 	var m map[string]any

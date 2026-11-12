@@ -20,12 +20,20 @@ type priced struct {
 	v Valuations
 }
 
-func (p priced) CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error) {
+func (p priced) CommittedTotal(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+) (money.Money, error) {
 	c, err := p.c.CommittedTotal(ctx, booksID, month)
 	return c, priceMissing(err)
 }
 
-func (p priced) ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+func (p priced) ValuedBalances(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+) (map[uuid.UUID]money.Money, error) {
 	v, err := p.v.ValuedBalances(ctx, booksID, date)
 	return v, priceMissing(err)
 }

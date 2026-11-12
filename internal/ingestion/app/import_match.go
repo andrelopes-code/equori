@@ -11,7 +11,11 @@ import (
 )
 
 // unlinked reads, in one query, the postings the new lines of the file may confirm.
-func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []Claim) ([]domain.LedgerPosting, error) {
+func (s *Service) unlinked(
+	ctx context.Context,
+	batch *domain.Batch,
+	claimed []Claim,
+) ([]domain.LedgerPosting, error) {
 	var from, to time.Time
 	for _, c := range claimed {
 		if c.Existed {
@@ -31,7 +35,13 @@ func (s *Service) unlinked(ctx context.Context, batch *domain.Batch, claimed []C
 		return nil, nil
 	}
 
-	return s.ledger.UnlinkedPostings(ctx, batch.BooksID, batch.AccountID, from.AddDate(0, 0, -domain.MatchHardLimit), to.AddDate(0, 0, domain.MatchHardLimit))
+	return s.ledger.UnlinkedPostings(
+		ctx,
+		batch.BooksID,
+		batch.AccountID,
+		from.AddDate(0, 0, -domain.MatchHardLimit),
+		to.AddDate(0, 0, domain.MatchHardLimit),
+	)
 }
 
 // repeats returns the lines matching would create that repeat a payment the account records
@@ -127,7 +137,12 @@ type scoredLine struct {
 
 // assign decides the lines by score (A98–A100); the payees of the lines are asked of
 // classification only when the account has postings to compare.
-func (s *Service) assign(ctx context.Context, booksID int64, lines []scoredLine, postings []domain.LedgerPosting) ([]domain.Assignment, error) {
+func (s *Service) assign(
+	ctx context.Context,
+	booksID int64,
+	lines []scoredLine,
+	postings []domain.LedgerPosting,
+) ([]domain.Assignment, error) {
 	if len(lines) == 0 {
 		return nil, nil
 	}
@@ -153,7 +168,12 @@ func (s *Service) assign(ctx context.Context, booksID int64, lines []scoredLine,
 
 	compared := make([]domain.MatchLine, len(lines))
 	for i, l := range lines {
-		compared[i] = domain.MatchLine{Date: l.rec.Date, Amount: l.rec.Amount, PayeeID: payees[i], Description: l.rec.Description}
+		compared[i] = domain.MatchLine{
+			Date:        l.rec.Date,
+			Amount:      l.rec.Amount,
+			PayeeID:     payees[i],
+			Description: l.rec.Description,
+		}
 	}
 
 	return domain.Assign(compared, postings), nil

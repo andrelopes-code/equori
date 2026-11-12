@@ -14,12 +14,26 @@ func TestDeleteInstitution(t *testing.T) {
 	used := createInstitution(t, h, "Used bank")
 	h.Account("Checking", "asset", "checking", map[string]any{"institution_id": used})
 
-	if r := h.Do(http.MethodDelete, "/api/v1/institutions/"+idle, nil); r.Status != http.StatusNoContent {
+	if r := h.Do(
+		http.MethodDelete,
+		"/api/v1/institutions/"+idle,
+		nil,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("delete idle = %d: %s", r.Status, r.Body)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/institutions/"+idle, nil), http.StatusNotFound, "not_found", "")
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/institutions/"+used, nil), http.StatusConflict, "institution_in_use", "")
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/institutions/"+idle, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/institutions/"+used, nil),
+		http.StatusConflict,
+		"institution_in_use",
+		"",
+	)
 
 	var list struct {
 		Items []struct {
@@ -38,9 +52,19 @@ func TestDeleteInstitutionOfClosedAccount(t *testing.T) {
 	h := apitest.New(t)
 	bank := createInstitution(t, h, "Old bank")
 	closed := h.Account("Old account", "asset", "cash", map[string]any{"institution_id": bank})
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+closed+"/close",
+		map[string]string{"closed_on": "2026-10-31"},
+		http.StatusOK,
+		nil,
+	)
 
-	if r := h.Do(http.MethodDelete, "/api/v1/institutions/"+bank, nil); r.Status != http.StatusNoContent {
+	if r := h.Do(
+		http.MethodDelete,
+		"/api/v1/institutions/"+bank,
+		nil,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("delete = %d: %s", r.Status, r.Body)
 	}
 
@@ -63,9 +87,15 @@ func TestDeleteInstitutionOfOtherBook(t *testing.T) {
 	var foreign struct {
 		ID string `json:"id"`
 	}
-	h.Call(other, http.MethodPost, "/api/v1/institutions", map[string]any{"name": "Foreign bank"}).Decode(t, &foreign)
+	h.Call(other, http.MethodPost, "/api/v1/institutions", map[string]any{"name": "Foreign bank"}).
+		Decode(t, &foreign)
 
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/institutions/"+foreign.ID, nil), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/institutions/"+foreign.ID, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 
 	if r := h.Call(other, http.MethodGet, "/api/v1/institutions", nil); r.Status != http.StatusOK {
 		t.Fatalf("list = %d: %s", r.Status, r.Body)
@@ -78,7 +108,13 @@ func createInstitution(t *testing.T, h *apitest.Harness, name string) string {
 	var created struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]any{"name": name}, http.StatusCreated, &created)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/institutions",
+		map[string]any{"name": name},
+		http.StatusCreated,
+		&created,
+	)
 
 	return created.ID
 }

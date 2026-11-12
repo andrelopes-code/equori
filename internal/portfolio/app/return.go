@@ -63,7 +63,14 @@ type ReturnReport struct {
 // price of its date, and solves the annual rate of the result. in defaults to the base currency.
 // The nil accountID is every brokerage tree of the book. index names the daily index of the
 // comparison; "" takes the default of the book's region.
-func (s *Service) Return(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, in money.Currency, index string) (ReturnReport, error) {
+func (s *Service) Return(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+	in money.Currency,
+	index string,
+) (ReturnReport, error) {
 	ids := []uuid.UUID{accountID}
 	if accountID == uuid.Nil {
 		roots, err := s.brokerageRoots(ctx, booksID)
@@ -109,7 +116,13 @@ func (s *Service) brokerageRoots(ctx context.Context, booksID int64) ([]uuid.UUI
 }
 
 // returnOf is Return over the accounts taken as one tree: a flow between two of them is internal.
-func (s *Service) returnOf(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time, in money.Currency) (ReturnReport, error) {
+func (s *Service) returnOf(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from, to time.Time,
+	in money.Currency,
+) (ReturnReport, error) {
 	if to.Before(from) || to.Sub(from) > (MaxReturnDays-1)*24*time.Hour {
 		return ReturnReport{}, ErrInvalidReturnRange
 	}
@@ -138,7 +151,10 @@ func (s *Service) returnOf(ctx context.Context, booksID int64, accountIDs []uuid
 
 	report := ReturnReport{Opening: opening, Closing: closing}
 
-	cash := []domain.CashFlow{{Date: start, Amount: -opening.Amount()}, {Date: to, Amount: closing.Amount()}}
+	cash := []domain.CashFlow{
+		{Date: start, Amount: -opening.Amount()},
+		{Date: to, Amount: closing.Amount()},
+	}
 
 	cash, err = s.addFlows(ctx, &report, cash, flows, in)
 	if err != nil {
@@ -189,7 +205,13 @@ func (s *Service) addFlows(
 }
 
 // valued sums the value of each account tree in currency in.
-func (s *Service) valued(ctx context.Context, booksID int64, accountIDs []uuid.UUID, date time.Time, in money.Currency) (money.Money, error) {
+func (s *Service) valued(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	date time.Time,
+	in money.Currency,
+) (money.Money, error) {
 	total, err := money.New(0, in)
 	if err != nil {
 		return money.Money{}, err
@@ -220,7 +242,13 @@ const (
 // the whole months the window covers. ok is false, with no error, when the accounts have less
 // than three months of postings, no external flow in the window, no price for a flow, or no
 // solution (investments design 4.4, AG4).
-func (s *Service) TrailingReturn(ctx context.Context, booksID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error) {
+func (s *Service) TrailingReturn(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	today time.Time,
+	in money.Currency,
+) (bp, months int, ok bool, err error) {
 	first, found, err := s.ledger.FirstPosting(ctx, booksID, accountIDs)
 	if err != nil || !found || first.After(today.AddDate(0, -minHistoryMonths, 0)) {
 		return 0, 0, false, err

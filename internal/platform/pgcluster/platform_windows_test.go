@@ -23,7 +23,11 @@ func tokenUser(t *testing.T) string {
 func daclOf(t *testing.T, path string) string {
 	t.Helper()
 
-	sd, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	sd, err := windows.GetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +43,10 @@ func mkdirSDDL(t *testing.T, path, sddl string) {
 		t.Fatal(err)
 	}
 
-	sa := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(windows.SecurityAttributes{})), SecurityDescriptor: sd}
+	sa := &windows.SecurityAttributes{
+		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
+		SecurityDescriptor: sd,
+	}
 
 	p, err := windows.UTF16PtrFromString(path)
 	if err != nil {
@@ -61,7 +68,9 @@ func TestPrepareDataDirCreates(t *testing.T) {
 	}
 
 	// String renders well-known accounts by alias (LA for the built-in Administrator of the runner).
-	sd, err := windows.SecurityDescriptorFromString("D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;" + tokenUser(t) + ")")
+	sd, err := windows.SecurityDescriptorFromString(
+		"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;" + tokenUser(t) + ")",
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +88,10 @@ func TestPrivateDirRefusesUsersGroup(t *testing.T) {
 
 	err := privateDir(path)
 	if err == nil || !strings.Contains(err.Error(), "S-1-5-32-545") {
-		t.Fatalf("privateDir of a directory granting Users = %v, want an error naming S-1-5-32-545", err)
+		t.Fatalf(
+			"privateDir of a directory granting Users = %v, want an error naming S-1-5-32-545",
+			err,
+		)
 	}
 }
 
@@ -151,7 +163,13 @@ func TestPrivateDirInheritsTheDataDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, want := daclOf(t, run), "(A;OICIID;FA;;;"+sid.String()+")"; !strings.Contains(got, want) {
+	if got, want := daclOf(
+		t,
+		run,
+	), "(A;OICIID;FA;;;"+sid.String()+")"; !strings.Contains(
+		got,
+		want,
+	) {
 		t.Fatalf("DACL of run = %s, want the inherited entry %s", got, want)
 	}
 }

@@ -21,7 +21,12 @@ type Inflation struct {
 
 // inflation sets the real return on p.report over the whole months of w on every day of which the
 // tree held money (R16).
-func (s *Service) inflation(ctx context.Context, p period, held func(time.Time) bool, w window) error {
+func (s *Service) inflation(
+	ctx context.Context,
+	p period,
+	held func(time.Time) bool,
+	w window,
+) error {
 	index, err := s.md.InflationIndex(ctx, p.booksID)
 	if err != nil || index == "" || !s.inIndexCurrency(index, p.report) {
 		return err

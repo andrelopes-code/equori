@@ -69,7 +69,12 @@ func NewLimit(providerID, model string, requests, tokens *int64) (Limit, error) 
 		return Limit{}, invalid("tokens_per_day", "must be a positive integer")
 	}
 
-	return Limit{ProviderID: providerID, Model: model, RequestsPerDay: requests, TokensPerDay: tokens}, nil
+	return Limit{
+		ProviderID:     providerID,
+		Model:          model,
+		RequestsPerDay: requests,
+		TokensPerDay:   tokens,
+	}, nil
 }
 
 // Cleared reports a limit with neither quota, which removes the stored one.

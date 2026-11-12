@@ -14,7 +14,11 @@ func TestSystemPrompt(t *testing.T) {
 		want   string
 	}{
 		{"pt-BR", locale.Locale{Language: "pt", Region: "BR"}, "mostly in Portuguese (Brazil)"},
-		{"en-GB", locale.Locale{Language: "en", Region: "GB"}, "mostly in English (United Kingdom)"},
+		{
+			"en-GB",
+			locale.Locale{Language: "en", Region: "GB"},
+			"mostly in English (United Kingdom)",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

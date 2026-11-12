@@ -41,16 +41,32 @@ func (s *Server) Register(mux *http.ServeMux) {
 func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrAdminRequired):
-		return problem.New(http.StatusForbidden, "admin_required", app.ErrAdminRequired.Error()), true
+		return problem.New(
+			http.StatusForbidden,
+			"admin_required",
+			app.ErrAdminRequired.Error(),
+		), true
 	case errors.Is(err, app.ErrBackupOff):
 		return problem.New(http.StatusConflict, "backup_off", app.ErrBackupOff.Error()), true
 	case errors.Is(err, app.ErrBackupFailed):
 		// The cause stays out of the response: pg_dump output can carry row values (A158).
-		return problem.New(http.StatusInternalServerError, "backup_failed", app.ErrBackupFailed.Error()), true
+		return problem.New(
+			http.StatusInternalServerError,
+			"backup_failed",
+			app.ErrBackupFailed.Error(),
+		), true
 	case errors.Is(err, app.ErrPasswordTooShort):
-		return problem.New(http.StatusBadRequest, "password_too_short", app.ErrPasswordTooShort.Error()), true
+		return problem.New(
+			http.StatusBadRequest,
+			"password_too_short",
+			app.ErrPasswordTooShort.Error(),
+		), true
 	case errors.Is(err, app.ErrSecretKeyMissing):
-		return problem.New(http.StatusConflict, "secret_key_missing", app.ErrSecretKeyMissing.Error()), true
+		return problem.New(
+			http.StatusConflict,
+			"secret_key_missing",
+			app.ErrSecretKeyMissing.Error(),
+		), true
 	}
 
 	return problem.Details{}, false

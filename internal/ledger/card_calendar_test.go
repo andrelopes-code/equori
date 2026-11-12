@@ -15,7 +15,12 @@ func TestCardCalendarFromRegion(t *testing.T) {
 	dueDate := func(c *http.Client, card string) string {
 		t.Helper()
 
-		r := h.Call(c, http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-04&to=2026-04", nil)
+		r := h.Call(
+			c,
+			http.MethodGet,
+			"/api/v1/accounts/"+card+"/statements?from=2026-04&to=2026-04",
+			nil,
+		)
 		if r.Status != http.StatusOK {
 			t.Fatalf("statements status = %d: %s", r.Status, r.Body)
 		}
@@ -37,7 +42,12 @@ func TestCardCalendarFromRegion(t *testing.T) {
 	charge := func(c *http.Client, card, currency string) {
 		t.Helper()
 
-		r := h.Call(c, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": currency})
+		r := h.Call(
+			c,
+			http.MethodPost,
+			"/api/v1/accounts",
+			map[string]any{"name": "Food", "class": "expense", "currency": currency},
+		)
 		if r.Status != http.StatusCreated {
 			t.Fatalf("expense status = %d: %s", r.Status, r.Body)
 		}
@@ -50,8 +60,12 @@ func TestCardCalendarFromRegion(t *testing.T) {
 		m := func(amount int64) map[string]any { return map[string]any{"amount": amount, "currency": currency} }
 
 		r = h.Call(c, http.MethodPost, "/api/v1/transactions", map[string]any{
-			"date": "2026-04-05", "description": "lunch",
-			"postings": []map[string]any{{"account_id": food.ID, "amount": m(1000)}, {"account_id": card, "amount": m(-1000)}},
+			"date":        "2026-04-05",
+			"description": "lunch",
+			"postings": []map[string]any{
+				{"account_id": food.ID, "amount": m(1000)},
+				{"account_id": card, "amount": m(-1000)},
+			},
 		})
 		if r.Status != http.StatusCreated {
 			t.Fatalf("transaction status = %d: %s", r.Status, r.Body)
@@ -72,9 +86,17 @@ func TestCardCalendarFromRegion(t *testing.T) {
 		}
 		r.Decode(t, &a)
 
-		r = h.Call(c, http.MethodPost, "/api/v1/accounts/"+a.ID+"/billing-cycle-rules", map[string]any{
-			"effective_from": "2026-01", "closing_day": 10, "due_day": 21, "closing_day_assignment": "next",
-		})
+		r = h.Call(
+			c,
+			http.MethodPost,
+			"/api/v1/accounts/"+a.ID+"/billing-cycle-rules",
+			map[string]any{
+				"effective_from":         "2026-01",
+				"closing_day":            10,
+				"due_day":                21,
+				"closing_day_assignment": "next",
+			},
+		)
 		if r.Status != http.StatusCreated {
 			t.Fatalf("rule status = %d: %s", r.Status, r.Body)
 		}
@@ -96,7 +118,12 @@ func TestCardCalendarFromRegion(t *testing.T) {
 	}
 
 	// Review Focus 1: a region change keeps the calendar of existing cards.
-	if r := h.Call(de, http.MethodPatch, "/api/v1/books/current", map[string]any{"region": "BR", "time_zone": nil}); r.Status != http.StatusOK {
+	if r := h.Call(
+		de,
+		http.MethodPatch,
+		"/api/v1/books/current",
+		map[string]any{"region": "BR", "time_zone": nil},
+	); r.Status != http.StatusOK {
 		t.Fatalf("patch books status = %d: %s", r.Status, r.Body)
 	}
 
@@ -104,8 +131,13 @@ func TestCardCalendarFromRegion(t *testing.T) {
 		t.Fatalf("DE due date after region change = %s, want 2026-04-21", got)
 	}
 
-	r := h.Call(h.Client, http.MethodPost, "/api/v1/accounts/"+brCard+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-06", "closing_day": 10, "due_day": 21, "calendar": "xx_yy",
-	})
+	r := h.Call(
+		h.Client,
+		http.MethodPost,
+		"/api/v1/accounts/"+brCard+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2026-06", "closing_day": 10, "due_day": 21, "calendar": "xx_yy",
+		},
+	)
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "calendar")
 }

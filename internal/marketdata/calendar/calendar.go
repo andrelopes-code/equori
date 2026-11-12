@@ -37,7 +37,10 @@ func (c Calendar) Holidays(year int) []Holiday {
 			continue
 		}
 
-		out = append(out, Holiday{Date: r.Observed.apply(r.Date.dateIn(year)), Code: r.Code, Name: r.Name})
+		out = append(
+			out,
+			Holiday{Date: r.Observed.apply(r.Date.dateIn(year)), Code: r.Code, Name: r.Name},
+		)
 	}
 
 	slices.SortStableFunc(out, func(a, b Holiday) int { return a.Date.Compare(b.Date) })

@@ -63,7 +63,11 @@ func toRule(row ClassificationRule) (domain.Rule, error) {
 	}
 
 	r, err := domain.RuleFromDocs(domain.Rule{
-		ID: row.ID, Name: row.Name, Priority: int(row.Priority), Enabled: row.Enabled, StopProcessing: row.StopProcessing,
+		ID:             row.ID,
+		Name:           row.Name,
+		Priority:       int(row.Priority),
+		Enabled:        row.Enabled,
+		StopProcessing: row.StopProcessing,
 	}, conditions, actions)
 	if err != nil {
 		return domain.Rule{}, fmt.Errorf("stored rule %s: %w", row.ID, err)
@@ -106,8 +110,15 @@ func toRules(rows []ClassificationRule) ([]domain.Rule, error) {
 	return out, nil
 }
 
-func (r *Repository) ListRules(ctx context.Context, booksID int64, p page.Request[app.RuleKey]) ([]domain.Rule, *app.RuleKey, error) {
-	params := ListRulesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListRules(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.RuleKey],
+) ([]domain.Rule, *app.RuleKey, error) {
+	params := ListRulesParams{
+		BooksID:  booksID,
+		RowLimit: int32(p.Limit + 1),
+	} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		priority := int32(p.After.Priority) //nolint:gosec // priorities are small positive integers
 		params.AfterPriority = &priority
@@ -150,14 +161,23 @@ func (r *Repository) Rule(ctx context.Context, booksID int64, id uuid.UUID) (dom
 	return toRule(row)
 }
 
-func (r *Repository) InsertRule(ctx context.Context, booksID int64, rule domain.Rule) (domain.Rule, error) {
+func (r *Repository) InsertRule(
+	ctx context.Context,
+	booksID int64,
+	rule domain.Rule,
+) (domain.Rule, error) {
 	conditions, actions, err := ruleDocs(rule)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
 	row, err := r.q.InsertRule(ctx, InsertRuleParams{
-		BooksID: booksID, Name: rule.Name, Enabled: rule.Enabled, StopProcessing: rule.StopProcessing, Conditions: conditions, Actions: actions,
+		BooksID:        booksID,
+		Name:           rule.Name,
+		Enabled:        rule.Enabled,
+		StopProcessing: rule.StopProcessing,
+		Conditions:     conditions,
+		Actions:        actions,
 	})
 	if err != nil {
 		return domain.Rule{}, err
@@ -166,14 +186,24 @@ func (r *Repository) InsertRule(ctx context.Context, booksID int64, rule domain.
 	return toRule(row)
 }
 
-func (r *Repository) UpdateRule(ctx context.Context, booksID int64, rule domain.Rule) (domain.Rule, error) {
+func (r *Repository) UpdateRule(
+	ctx context.Context,
+	booksID int64,
+	rule domain.Rule,
+) (domain.Rule, error) {
 	conditions, actions, err := ruleDocs(rule)
 	if err != nil {
 		return domain.Rule{}, err
 	}
 
 	row, err := r.q.UpdateRule(ctx, UpdateRuleParams{
-		BooksID: booksID, ID: rule.ID, Name: rule.Name, Enabled: rule.Enabled, StopProcessing: rule.StopProcessing, Conditions: conditions, Actions: actions,
+		BooksID:        booksID,
+		ID:             rule.ID,
+		Name:           rule.Name,
+		Enabled:        rule.Enabled,
+		StopProcessing: rule.StopProcessing,
+		Conditions:     conditions,
+		Actions:        actions,
 	})
 	if err != nil {
 		return domain.Rule{}, notFound(err)
@@ -193,12 +223,18 @@ func (r *Repository) DeleteRule(ctx context.Context, booksID int64, id uuid.UUID
 
 func (r *Repository) SetPriorities(ctx context.Context, booksID int64, ids []uuid.UUID) error {
 	// Swapping priorities passes through duplicates until the last update.
-	if _, err := r.db.Exec(ctx, "SET CONSTRAINTS classification_rule_priority_key DEFERRED"); err != nil {
+	if _, err := r.db.Exec(
+		ctx,
+		"SET CONSTRAINTS classification_rule_priority_key DEFERRED",
+	); err != nil {
 		return err
 	}
 
 	for i, id := range ids {
-		if err := r.q.SetRulePriority(ctx, SetRulePriorityParams{BooksID: booksID, ID: id, Priority: int32(i + 1)}); err != nil { //nolint:gosec // at most 500 rules
+		if err := r.q.SetRulePriority(
+			ctx,
+			SetRulePriorityParams{BooksID: booksID, ID: id, Priority: int32(i + 1)},
+		); err != nil { //nolint:gosec // at most 500 rules
 			return err
 		}
 	}
@@ -207,7 +243,14 @@ func (r *Repository) SetPriorities(ctx context.Context, booksID int64, ids []uui
 }
 
 func toAlias(row ClassificationPayeeAlias) (domain.Alias, error) {
-	return domain.NewAlias(domain.Alias{ID: row.ID, Pattern: row.Pattern, MatchType: domain.MatchType(row.MatchType), PayeeID: row.PayeeID})
+	return domain.NewAlias(
+		domain.Alias{
+			ID:        row.ID,
+			Pattern:   row.Pattern,
+			MatchType: domain.MatchType(row.MatchType),
+			PayeeID:   row.PayeeID,
+		},
+	)
 }
 
 func toAliases(rows []ClassificationPayeeAlias) ([]domain.Alias, error) {
@@ -224,8 +267,15 @@ func toAliases(rows []ClassificationPayeeAlias) ([]domain.Alias, error) {
 	return out, nil
 }
 
-func (r *Repository) ListAliases(ctx context.Context, booksID int64, p page.Request[app.AliasKey]) ([]domain.Alias, *app.AliasKey, error) {
-	params := ListAliasesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListAliases(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.AliasKey],
+) ([]domain.Alias, *app.AliasKey, error) {
+	params := ListAliasesParams{
+		BooksID:  booksID,
+		RowLimit: int32(p.Limit + 1),
+	} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}
@@ -271,8 +321,20 @@ func aliasError(err error) error {
 	return notFound(err)
 }
 
-func (r *Repository) InsertAlias(ctx context.Context, booksID int64, a domain.Alias) (domain.Alias, error) {
-	row, err := r.q.InsertAlias(ctx, InsertAliasParams{BooksID: booksID, Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeID: a.PayeeID})
+func (r *Repository) InsertAlias(
+	ctx context.Context,
+	booksID int64,
+	a domain.Alias,
+) (domain.Alias, error) {
+	row, err := r.q.InsertAlias(
+		ctx,
+		InsertAliasParams{
+			BooksID:   booksID,
+			Pattern:   a.Pattern,
+			MatchType: string(a.MatchType),
+			PayeeID:   a.PayeeID,
+		},
+	)
 	if err != nil {
 		return domain.Alias{}, aliasError(err)
 	}
@@ -280,8 +342,21 @@ func (r *Repository) InsertAlias(ctx context.Context, booksID int64, a domain.Al
 	return toAlias(row)
 }
 
-func (r *Repository) UpdateAlias(ctx context.Context, booksID int64, a domain.Alias) (domain.Alias, error) {
-	row, err := r.q.UpdateAlias(ctx, UpdateAliasParams{BooksID: booksID, ID: a.ID, Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeID: a.PayeeID})
+func (r *Repository) UpdateAlias(
+	ctx context.Context,
+	booksID int64,
+	a domain.Alias,
+) (domain.Alias, error) {
+	row, err := r.q.UpdateAlias(
+		ctx,
+		UpdateAliasParams{
+			BooksID:   booksID,
+			ID:        a.ID,
+			Pattern:   a.Pattern,
+			MatchType: string(a.MatchType),
+			PayeeID:   a.PayeeID,
+		},
+	)
 	if err != nil {
 		return domain.Alias{}, aliasError(err)
 	}

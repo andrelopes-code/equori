@@ -38,7 +38,13 @@ func (v partsView) parts(t *testing.T) parts {
 		}
 	}
 
-	return parts{v.Purchases.Amount, v.Installments.Amount, v.Charges.Amount, v.Credits.Amount, v.Total.Amount}
+	return parts{
+		v.Purchases.Amount,
+		v.Installments.Amount,
+		v.Charges.Amount,
+		v.Credits.Amount,
+		v.Total.Amount,
+	}
 }
 
 func (c card) statementID(t *testing.T, reference string) string {
@@ -49,7 +55,13 @@ func (c card) statementID(t *testing.T, reference string) string {
 			Reference string `json:"reference"`
 		} `json:"items"`
 	}
-	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/statements?from=2026-01&to=2027-12", nil, http.StatusOK, &out)
+	c.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+c.card+"/statements?from=2026-01&to=2027-12",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	for _, s := range out.Items {
 		if s.Reference == reference {
@@ -81,8 +93,18 @@ func TestS148(t *testing.T) {
 		}
 	}
 
-	market := c.h.Record("2026-11-20", apitest.Posting(c.card, -15000), apitest.Posting(c.supermarket, 15000))
-	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+market+"/refunds", map[string]any{"date": "2026-11-25", "amount": apitest.BRL(2000)}, http.StatusCreated, nil)
+	market := c.h.Record(
+		"2026-11-20",
+		apitest.Posting(c.card, -15000),
+		apitest.Posting(c.supermarket, 15000),
+	)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+market+"/refunds",
+		map[string]any{"date": "2026-11-25", "amount": apitest.BRL(2000)},
+		http.StatusCreated,
+		nil,
+	)
 	c.h.Record("2026-12-01", apitest.Posting(c.card, -4000), apitest.Posting(fees, 4000))
 
 	var got struct {
@@ -95,13 +117,21 @@ func TestS148(t *testing.T) {
 		} `json:"categories"`
 	}
 	december := c.statementID(t, "2026-12")
-	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+december+"/analytics", nil, http.StatusOK, &got)
+	c.h.MustDo(
+		http.MethodGet,
+		"/api/v1/statements/"+december+"/analytics",
+		nil,
+		http.StatusOK,
+		&got,
+	)
 
 	if got.StatementID != december || got.Reference != "2026-12" {
 		t.Errorf("statement = %s %s", got.StatementID, got.Reference)
 	}
 
-	if p := got.parts(t); p != (parts{Purchases: 15000, Installments: 33333, Charges: 4000, Credits: -2000, Total: 50333}) {
+	if p := got.parts(
+		t,
+	); p != (parts{Purchases: 15000, Installments: 33333, Charges: 4000, Credits: -2000, Total: 50333}) {
 		t.Errorf("totals = %+v", p)
 	}
 
@@ -119,7 +149,8 @@ func TestS148(t *testing.T) {
 		t.Errorf("categories = %+v, want %+v", categories, want)
 	}
 
-	if len(got.Categories) != 3 || got.Categories[0].CategoryID != c.electronics || got.Categories[1].CategoryID != c.supermarket {
+	if len(got.Categories) != 3 || got.Categories[0].CategoryID != c.electronics ||
+		got.Categories[1].CategoryID != c.supermarket {
 		t.Errorf("order = %+v, want by total, largest first", got.Categories)
 	}
 
@@ -129,7 +160,13 @@ func TestS148(t *testing.T) {
 			partsView
 		} `json:"items"`
 	}
-	c.h.MustDo(http.MethodGet, "/api/v1/accounts/"+c.card+"/statement-analytics", nil, http.StatusOK, &history)
+	c.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+c.card+"/statement-analytics",
+		nil,
+		http.StatusOK,
+		&history,
+	)
 
 	gotHistory := map[string]parts{}
 
@@ -141,13 +178,30 @@ func TestS148(t *testing.T) {
 
 	wantHistory := map[string]parts{
 		"2026-11": {Purchases: 56334, Total: 56334},
-		"2026-12": {Purchases: 15000, Installments: 33333, Charges: 4000, Credits: -2000, Total: 50333},
+		"2026-12": {
+			Purchases:    15000,
+			Installments: 33333,
+			Charges:      4000,
+			Credits:      -2000,
+			Total:        50333,
+		},
 		"2027-01": {Installments: 33333, Total: 33333},
 	}
-	if !reflect.DeepEqual(gotHistory, wantHistory) || !reflect.DeepEqual(order, []string{"2026-11", "2026-12", "2027-01"}) {
+	if !reflect.DeepEqual(gotHistory, wantHistory) ||
+		!reflect.DeepEqual(order, []string{"2026-11", "2026-12", "2027-01"}) {
 		t.Errorf("history = %v %+v, want %+v", order, gotHistory, wantHistory)
 	}
 
-	c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/statements/"+c.laptop.ID+"/analytics", nil), http.StatusNotFound, "not_found", "")
-	c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/accounts/"+c.checking+"/statement-analytics", nil), http.StatusNotFound, "not_found", "")
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodGet, "/api/v1/statements/"+c.laptop.ID+"/analytics", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodGet, "/api/v1/accounts/"+c.checking+"/statement-analytics", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

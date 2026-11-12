@@ -60,11 +60,19 @@ func TestS372CatalogSearch(t *testing.T) {
 		t.Fatalf("defined search = %+v, want %+v", got, want)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodGet, catalogPath+"i", nil), http.StatusUnprocessableEntity, "validation_failed", "q")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, catalogPath+"i", nil),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"q",
+	)
 
 	h.MustDo(http.MethodGet, catalogPath+"zzzz", nil, http.StatusOK, &got)
 
-	if want := (catalogAPI{Items: []catalogItemAPI{}, Unavailable: []string{}}); !reflect.DeepEqual(got, want) {
+	if want := (catalogAPI{Items: []catalogItemAPI{}, Unavailable: []string{}}); !reflect.DeepEqual(
+		got,
+		want,
+	) {
 		t.Fatalf("no match = %+v, want %+v", got, want)
 	}
 }
@@ -174,7 +182,12 @@ func TestCatalogRoles(t *testing.T) {
 		t.Fatalf("reader = %+v, want %+v", got, want)
 	}
 
-	h.ExpectProblem(h.Call(&http.Client{}, http.MethodGet, catalogPath+"ipca", nil), http.StatusUnauthorized, "unauthenticated", "")
+	h.ExpectProblem(
+		h.Call(&http.Client{}, http.MethodGet, catalogPath+"ipca", nil),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 
 	other := h.Login("other@example.com")
 
@@ -208,8 +221,15 @@ func TestCatalogOutsideBrazil(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	h := apitest.New(t, apitest.As(usProfile()), apitest.Today("2026-11-09"),
-		apitest.PriceFeeds([]string{"yahoo_chart"}, map[string]string{"yahoo_chart": srv.URL + "/yahoo"}))
+	h := apitest.New(
+		t,
+		apitest.As(usProfile()),
+		apitest.Today("2026-11-09"),
+		apitest.PriceFeeds(
+			[]string{"yahoo_chart"},
+			map[string]string{"yahoo_chart": srv.URL + "/yahoo"},
+		),
+	)
 
 	var got catalogAPI
 
@@ -279,6 +299,12 @@ func tesouroHarness(t *testing.T, status int) *apitest.Harness {
 	}))
 	t.Cleanup(srv.Close)
 
-	return apitest.New(t, apitest.Today("2026-11-09"),
-		apitest.PriceFeeds([]string{"tesouro_direto"}, map[string]string{"tesouro_direto": srv.URL + "/td.csv"}))
+	return apitest.New(
+		t,
+		apitest.Today("2026-11-09"),
+		apitest.PriceFeeds(
+			[]string{"tesouro_direto"},
+			map[string]string{"tesouro_direto": srv.URL + "/td.csv"},
+		),
+	)
 }

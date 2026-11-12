@@ -33,7 +33,13 @@ type CategoryTotal struct {
 
 // CategoryTotals totals the categories of class in [from, to] (A77) in the view, in the
 // order of the repository rows. A closed account is listed only when one of its totals is not zero.
-func (s *Service) CategoryTotals(ctx context.Context, booksID int64, class string, from, to time.Time, view View) ([]CategoryTotal, error) {
+func (s *Service) CategoryTotals(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+	view View,
+) ([]CategoryTotal, error) {
 	if days := int(to.Sub(from).Hours()/24) + 1; days < 1 || days > MaxCategoryDays {
 		return nil, ErrInvalidCategoryRange
 	}
@@ -74,7 +80,14 @@ func (s *Service) CategoryTotals(ctx context.Context, booksID int64, class strin
 
 	out := make([]CategoryTotal, 0, len(rows))
 	for _, r := range rows {
-		t := CategoryTotal{AccountID: r.ID, Name: r.Name, ParentID: r.ParentID, Instrument: r.Instrument, Total: r.Total * sign, SubtreeTotal: subtree[r.ID]}
+		t := CategoryTotal{
+			AccountID:    r.ID,
+			Name:         r.Name,
+			ParentID:     r.ParentID,
+			Instrument:   r.Instrument,
+			Total:        r.Total * sign,
+			SubtreeTotal: subtree[r.ID],
+		}
 		if r.Closed && t.Total == 0 && t.SubtreeTotal == 0 {
 			continue
 		}

@@ -42,7 +42,8 @@ func TestA157BackupOff(t *testing.T) {
 	var got backupStatus
 	r.Decode(t, &got)
 
-	if got.Backups.State != "off" || got.Backups.PeriodicAt != nil || got.Backups.Late || got.Copy.State != "folder_unset" {
+	if got.Backups.State != "off" || got.Backups.PeriodicAt != nil || got.Backups.Late ||
+		got.Copy.State != "folder_unset" {
 		t.Fatalf("status = %+v, want off, no periodic file, not late, folder_unset", got)
 	}
 
@@ -64,7 +65,9 @@ func TestA157RunBackup(t *testing.T) {
 	r.Decode(t, &got)
 
 	want := time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC)
-	if got.Backups.State != "on" || got.Backups.PeriodicAt == nil || !got.Backups.PeriodicAt.Equal(want) || got.Backups.Late {
+	if got.Backups.State != "on" || got.Backups.PeriodicAt == nil ||
+		!got.Backups.PeriodicAt.Equal(want) ||
+		got.Backups.Late {
 		t.Fatalf("backups = %+v, want on, periodic_at %s, not late", got.Backups, want)
 	}
 
@@ -77,7 +80,9 @@ func TestA157RunBackup(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	content, err := os.ReadFile(filepath.Join(dir, fmt.Sprintf("periodic-2026-11-20-s%d.dump", latest)))
+	content, err := os.ReadFile(
+		filepath.Join(dir, fmt.Sprintf("periodic-2026-11-20-s%d.dump", latest)),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +119,11 @@ func TestA157BackupLate(t *testing.T) {
 	t.Run("no periodic file", func(t *testing.T) {
 		t.Parallel()
 
-		h := apitest.New(t, apitest.Today("2026-11-20"), apitest.Backups(t.TempDir(), "", apitest.FakeDump))
+		h := apitest.New(
+			t,
+			apitest.Today("2026-11-20"),
+			apitest.Backups(t.TempDir(), "", apitest.FakeDump),
+		)
 
 		got := getBackup(t, h)
 		if got.Backups.State != "on" || !got.Backups.Late {
@@ -128,7 +137,11 @@ func TestA157PeriodicRetention(t *testing.T) {
 
 	dir := t.TempDir()
 	for day := 1; day <= 7; day++ {
-		if err := os.WriteFile(filepath.Join(dir, fmt.Sprintf("periodic-2026-11-0%d-s1.dump", day)), []byte("x"), 0o600); err != nil {
+		if err := os.WriteFile(
+			filepath.Join(dir, fmt.Sprintf("periodic-2026-11-0%d-s1.dump", day)),
+			[]byte("x"),
+			0o600,
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -211,14 +224,41 @@ func TestS218MemberGetsAdminRequired(t *testing.T) {
 	h := apitest.New(t, apitest.Backups(t.TempDir(), "", apitest.FakeDump))
 	member := h.LoginMember("bob@example.com")
 
-	h.ExpectProblem(h.Call(member, http.MethodGet, backupPath, nil), http.StatusForbidden, "admin_required", "")
-	h.ExpectProblem(h.Call(member, http.MethodPost, backupPath, nil), http.StatusForbidden, "admin_required", "")
 	h.ExpectProblem(
-		h.Call(member, http.MethodPut, copyPasswordPath, map[string]string{"password": "correct horse battery"}),
-		http.StatusForbidden, "admin_required", "",
+		h.Call(member, http.MethodGet, backupPath, nil),
+		http.StatusForbidden,
+		"admin_required",
+		"",
 	)
-	h.ExpectProblem(h.Call(member, http.MethodGet, diagnosticPath, nil), http.StatusForbidden, "admin_required", "")
-	h.ExpectProblem(h.Call(member, http.MethodGet, versionPath, nil), http.StatusForbidden, "admin_required", "")
+	h.ExpectProblem(
+		h.Call(member, http.MethodPost, backupPath, nil),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(
+			member,
+			http.MethodPut,
+			copyPasswordPath,
+			map[string]string{"password": "correct horse battery"},
+		),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(member, http.MethodGet, diagnosticPath, nil),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(member, http.MethodGet, versionPath, nil),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
 	h.ExpectProblem(
 		h.Call(member, http.MethodPut, updateCheckPath, map[string]bool{"update_check": true}),
 		http.StatusForbidden, "admin_required", "",

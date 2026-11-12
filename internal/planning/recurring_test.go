@@ -39,7 +39,8 @@ func TestRecurringCovered(t *testing.T) {
 		t.Errorf("ScheduleID = %v, want %v", got[0].ScheduleID, id)
 	}
 
-	if got[0].Frequency != domain.CadenceMonthly || got[0].Count != 3 || got[0].LastAmount != 210000 {
+	if got[0].Frequency != domain.CadenceMonthly || got[0].Count != 3 ||
+		got[0].LastAmount != 210000 {
 		t.Errorf("series = %+v", got[0])
 	}
 
@@ -47,7 +48,8 @@ func TestRecurringCovered(t *testing.T) {
 		t.Errorf("NextDate = %v, want 2026-11-20", got[0].NextDate)
 	}
 
-	if got[0].PayeeID.String() != f.landlord || got[0].CategoryID.String() != f.rent || got[0].AccountID.String() != f.checking {
+	if got[0].PayeeID.String() != f.landlord || got[0].CategoryID.String() != f.rent ||
+		got[0].AccountID.String() != f.checking {
 		t.Errorf("series ids = %+v", got[0])
 	}
 }
@@ -62,7 +64,11 @@ func TestRecurringEndedScheduleDoesNotCover(t *testing.T) {
 
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-08-20", 20, ""),
 		map[string]any{"payee_id": f.landlord})
-	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE planning_schedule SET ends_on = '2026-10-19' WHERE id = $1`, id); err != nil {
+	if _, err := f.h.Pool.Exec(
+		t.Context(),
+		`UPDATE planning_schedule SET ends_on = '2026-10-19' WHERE id = $1`,
+		id,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,8 +117,14 @@ func TestRecurringProbe(t *testing.T) {
 	}
 
 	probe := domain.SeriesFact{
-		AccountID: uuid.MustParse(f.checking), CategoryID: uuid.MustParse(f.rent), PayeeID: uuid.MustParse(f.landlord),
-		Key: f.landlord, Date: time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC), Amount: 210000,
+		AccountID: uuid.MustParse(
+			f.checking,
+		),
+		CategoryID: uuid.MustParse(f.rent),
+		PayeeID:    uuid.MustParse(f.landlord),
+		Key:        f.landlord,
+		Date:       time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC),
+		Amount:     210000,
 	}
 
 	got := f.recurring(app.RecurringFilter{Probe: &probe})
@@ -120,7 +132,8 @@ func TestRecurringProbe(t *testing.T) {
 		t.Fatalf("series with probe = %d, want 1", len(got))
 	}
 
-	if got[0].Count != 2 || got[0].Frequency != domain.CadenceMonthly || got[0].LastAmount != 210000 {
+	if got[0].Count != 2 || got[0].Frequency != domain.CadenceMonthly ||
+		got[0].LastAmount != 210000 {
 		t.Errorf("series = %+v", got[0])
 	}
 

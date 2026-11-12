@@ -35,7 +35,11 @@ func validationError(field, message string) error {
 }
 
 // InstallmentPurchase records the full expense now and one card charge per statement (S06, S07, DM2, DM3).
-func (s *Service) InstallmentPurchase(ctx context.Context, booksID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
+func (s *Service) InstallmentPurchase(
+	ctx context.Context,
+	booksID int64,
+	in InstallmentPurchaseInput,
+) (domain.Transaction, uuid.UUID, error) {
 	var (
 		created domain.Transaction
 		planID  uuid.UUID
@@ -51,7 +55,12 @@ func (s *Service) InstallmentPurchase(ctx context.Context, booksID int64, in Ins
 }
 
 // installmentPurchase records the purchase and its plan inside the caller's database transaction.
-func (s *Service) installmentPurchase(ctx context.Context, r Repository, booksID int64, in InstallmentPurchaseInput) (domain.Transaction, uuid.UUID, error) {
+func (s *Service) installmentPurchase(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	in InstallmentPurchaseInput,
+) (domain.Transaction, uuid.UUID, error) {
 	if err := checkInstallmentInput(in); err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
@@ -73,22 +82,44 @@ func (s *Service) installmentPurchase(ctx context.Context, r Repository, booksID
 		return domain.Transaction{}, uuid.Nil, err
 	}
 
-	postings, err := s.installmentPostings(ctx, r, booksID, card, in, planID, first, interest, parts)
+	postings, err := s.installmentPostings(
+		ctx,
+		r,
+		booksID,
+		card,
+		in,
+		planID,
+		first,
+		interest,
+		parts,
+	)
 	if err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
 
 	created, err := s.insert(ctx, r, domain.Transaction{
-		BooksID: booksID, Date: in.Date, Description: in.Description, PayeeID: in.PayeeID, Tags: in.Tags, Postings: postings,
-		Origin: in.Origin,
+		BooksID:     booksID,
+		Date:        in.Date,
+		Description: in.Description,
+		PayeeID:     in.PayeeID,
+		Tags:        in.Tags,
+		Postings:    postings,
+		Origin:      in.Origin,
 	})
 	if err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
 
 	if err := r.InsertPlan(ctx, domain.InstallmentPlan{
-		ID: planID, BooksID: booksID, AccountID: card.ID, OriginTransactionID: created.ID, Kind: domain.PlanPurchase,
-		Count: in.Count, Principal: principal, Interest: interest, FirstStatementID: firstCardStatement(created, card.ID),
+		ID:                  planID,
+		BooksID:             booksID,
+		AccountID:           card.ID,
+		OriginTransactionID: created.ID,
+		Kind:                domain.PlanPurchase,
+		Count:               in.Count,
+		Principal:           principal,
+		Interest:            interest,
+		FirstStatementID:    firstCardStatement(created, card.ID),
 	}); err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
@@ -194,11 +225,17 @@ func (s *Service) installmentPostings(
 	return postings, nil
 }
 
-func purchaseTotals(c money.Currency, in InstallmentPurchaseInput) (principal, interest money.Money, err error) {
+func purchaseTotals(
+	c money.Currency,
+	in InstallmentPurchaseInput,
+) (principal, interest money.Money, err error) {
 	principal, _ = money.New(0, c)
 	for i, sp := range in.Splits {
 		if sp.Amount.Currency() != c || sp.Amount.Amount() <= 0 {
-			return money.Money{}, money.Money{}, validationError(fmt.Sprintf("splits[%d].amount", i), "must be positive and in the card currency")
+			return money.Money{}, money.Money{}, validationError(
+				fmt.Sprintf("splits[%d].amount", i),
+				"must be positive and in the card currency",
+			)
 		}
 
 		if principal, err = principal.Add(sp.Amount); err != nil {
@@ -209,7 +246,10 @@ func purchaseTotals(c money.Currency, in InstallmentPurchaseInput) (principal, i
 	interest, _ = money.New(0, c)
 	if in.Interest != nil {
 		if in.Interest.Currency() != c || in.Interest.IsNegative() {
-			return money.Money{}, money.Money{}, validationError("interest", "must not be negative and in the card currency")
+			return money.Money{}, money.Money{}, validationError(
+				"interest",
+				"must not be negative and in the card currency",
+			)
 		}
 
 		interest = *in.Interest
@@ -230,20 +270,32 @@ func installmentParts(total money.Money, in InstallmentPurchaseInput) ([]money.M
 	var sum int64
 	for _, a := range in.Amounts {
 		if a.Currency() != total.Currency() || a.Amount() <= 0 {
-			return nil, validationError("installment_amounts", "amounts must be positive and in the card currency")
+			return nil, validationError(
+				"installment_amounts",
+				"amounts must be positive and in the card currency",
+			)
 		}
 
 		sum += a.Amount()
 	}
 
 	if sum != total.Amount() {
-		return nil, validationError("installment_amounts", fmt.Sprintf("sum to %d instead of %d", sum, total.Amount()))
+		return nil, validationError(
+			"installment_amounts",
+			fmt.Sprintf("sum to %d instead of %d", sum, total.Amount()),
+		)
 	}
 
 	return in.Amounts, nil
 }
 
-func (s *Service) firstStatement(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, in InstallmentPurchaseInput) (domain.ReferenceMonth, error) {
+func (s *Service) firstStatement(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	cardID uuid.UUID,
+	in InstallmentPurchaseInput,
+) (domain.ReferenceMonth, error) {
 	if in.FirstStatement != nil {
 		return *in.FirstStatement, nil
 	}
@@ -255,7 +307,10 @@ func (s *Service) firstStatement(ctx context.Context, r Repository, booksID int6
 
 	first, err := domain.StatementFor(in.Date, rules)
 	if err != nil {
-		return domain.ReferenceMonth{}, validationError("card_account_id", "card has no billing cycle rule for the date")
+		return domain.ReferenceMonth{}, validationError(
+			"card_account_id",
+			"card has no billing cycle rule for the date",
+		)
 	}
 
 	return first, nil
@@ -272,7 +327,12 @@ func firstCardStatement(t domain.Transaction, cardID uuid.UUID) uuid.UUID {
 }
 
 // Commitment is the sum of installments billed on the statement of month that has not closed yet.
-func (s *Service) Commitment(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
+func (s *Service) Commitment(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	month domain.ReferenceMonth,
+) (money.Money, error) {
 	a, err := s.card(ctx, booksID, accountID)
 	if err != nil {
 		return money.Money{}, err
@@ -288,7 +348,12 @@ func (s *Service) Commitment(ctx context.Context, booksID int64, accountID uuid.
 
 // PriorInstallments sums the installments billed on the statement of month of purchases booked
 // before month: the accrual view counted them in an earlier month (budget plan amendment A129).
-func (s *Service) PriorInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month domain.ReferenceMonth) (money.Money, error) {
+func (s *Service) PriorInstallments(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	month domain.ReferenceMonth,
+) (money.Money, error) {
 	a, err := s.card(ctx, booksID, accountID)
 	if err != nil {
 		return money.Money{}, err

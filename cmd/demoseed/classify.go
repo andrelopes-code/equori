@@ -26,7 +26,11 @@ func anyOf(field string, words ...string) map[string]any {
 		quoted[i] = regexp.QuoteMeta(w)
 	}
 
-	return map[string]any{"field": field, "operator": "regex", "value": "(?i)(" + strings.Join(quoted, "|") + ")"}
+	return map[string]any{
+		"field":    field,
+		"operator": "regex",
+		"value":    "(?i)(" + strings.Join(quoted, "|") + ")",
+	}
 }
 
 func setCategory(key string) func(s *seeder) []map[string]any {
@@ -37,32 +41,61 @@ func setCategory(key string) func(s *seeder) []map[string]any {
 
 // rules run by creation order: the more specific rules come first. Each one matches lines that arrive through a statement file; a bill recorded by hand needs no rule.
 var rules = []rule{
-	{name: "Uber Eats é delivery", conditions: []map[string]any{contains("description", "uber *eats")}, stop: true,
+	{
+		name:       "Uber Eats é delivery",
+		conditions: []map[string]any{contains("description", "uber *eats")},
+		stop:       true,
 		actions: func(s *seeder) []map[string]any {
-			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}, {"type": "set_payee", "payee_id": s.id("payee.Uber")}}
-		}},
+			return []map[string]any{
+				{"type": "set_category", "category_id": s.id("food.delivery")},
+				{"type": "set_payee", "payee_id": s.id("payee.Uber")},
+			}
+		},
+	},
 	{name: "Corridas de Uber", conditions: []map[string]any{contains("description", "uber *trip")},
 		actions: func(s *seeder) []map[string]any {
-			return []map[string]any{{"type": "set_category", "category_id": s.id("transport.rideshare")}, {"type": "set_payee", "payee_id": s.id("payee.Uber")}}
+			return []map[string]any{
+				{"type": "set_category", "category_id": s.id("transport.rideshare")},
+				{"type": "set_payee", "payee_id": s.id("payee.Uber")},
+			}
 		}},
 	{name: "Corridas de 99", conditions: []map[string]any{contains("description", "99 *corrida")},
 		actions: func(s *seeder) []map[string]any {
-			return []map[string]any{{"type": "set_category", "category_id": s.id("transport.rideshare")}, {"type": "set_payee", "payee_id": s.id("payee.99")}}
+			return []map[string]any{
+				{"type": "set_category", "category_id": s.id("transport.rideshare")},
+				{"type": "set_payee", "payee_id": s.id("payee.99")},
+			}
 		}},
-	{name: "Pedidos do Rappi e do 99Food", conditions: []map[string]any{anyOf("description", "rappi", "99food")},
+	{
+		name:       "Pedidos do Rappi e do 99Food",
+		conditions: []map[string]any{anyOf("description", "rappi", "99food")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}}
-		}},
+		},
+	},
 	{name: "Pedidos do iFood", conditions: []map[string]any{contains("description", "ifood")},
 		actions: func(s *seeder) []map[string]any {
-			return []map[string]any{{"type": "set_category", "category_id": s.id("food.delivery")}, {"type": "set_payee", "payee_id": s.id("payee.iFood")}}
+			return []map[string]any{
+				{"type": "set_category", "category_id": s.id("food.delivery")},
+				{"type": "set_payee", "payee_id": s.id("payee.iFood")},
+			}
 		}},
-	{name: "Farmácias", conditions: []map[string]any{anyOf("description", "drogasil", "droga raia", "pague menos")},
+	{
+		name:       "Farmácias",
+		conditions: []map[string]any{anyOf("description", "drogasil", "droga raia", "pague menos")},
 		actions: func(s *seeder) []map[string]any {
-			return []map[string]any{{"type": "set_category", "category_id": s.id("health.pharmacy")}, {"type": "add_tags", "tags": []string{"saude"}}}
-		}},
+			return []map[string]any{
+				{"type": "set_category", "category_id": s.id("health.pharmacy")},
+				{"type": "add_tags", "tags": []string{"saude"}},
+			}
+		},
+	},
 	{name: "Compra grande no hipermercado: mercado e casa", conditions: []map[string]any{
-		contains("description", "carrefour hiper"), {"field": "absolute_amount", "operator": "greater_than", "value": brl(30000)},
+		contains(
+			"description",
+			"carrefour hiper",
+		),
+		{"field": "absolute_amount", "operator": "greater_than", "value": brl(30000)},
 	}, stop: true,
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "split", "parts": []map[string]any{
@@ -70,13 +103,36 @@ var rules = []rule{
 				{"category_id": s.id("housing.decor"), "remainder": true},
 			}}}
 		}},
-	{name: "Supermercados", conditions: []map[string]any{anyOf("description", "pao de acucar", "carrefour", "mercado dia", "emporio santa luzia")}, actions: setCategory("food.groceries")},
-	{name: "Cafeterias", conditions: []map[string]any{anyOf("description", "starbucks", "santo grao")}, actions: setCategory("food.coffee")},
-	{name: "Padarias", conditions: []map[string]any{contains("description", "padaria")}, actions: setCategory("food.bakery")},
-	{name: "Aportes na corretora são transferências", conditions: []map[string]any{contains("description", "xp investimentos")},
+	{
+		name: "Supermercados",
+		conditions: []map[string]any{
+			anyOf(
+				"description",
+				"pao de acucar",
+				"carrefour",
+				"mercado dia",
+				"emporio santa luzia",
+			),
+		},
+		actions: setCategory("food.groceries"),
+	},
+	{
+		name:       "Cafeterias",
+		conditions: []map[string]any{anyOf("description", "starbucks", "santo grao")},
+		actions:    setCategory("food.coffee"),
+	},
+	{
+		name:       "Padarias",
+		conditions: []map[string]any{contains("description", "padaria")},
+		actions:    setCategory("food.bakery"),
+	},
+	{
+		name:       "Aportes na corretora são transferências",
+		conditions: []map[string]any{contains("description", "xp investimentos")},
 		actions: func(s *seeder) []map[string]any {
 			return []map[string]any{{"type": "transfer", "account_id": s.id("xp.cash")}}
-		}},
+		},
+	},
 }
 
 // aliases map the raw text of a statement line to a payee.
@@ -105,11 +161,26 @@ var aliases = []struct{ pattern, match, payee string }{
 
 func (s *seeder) buildRules() {
 	for _, r := range rules {
-		s.create("/rules", map[string]any{"name": r.name, "conditions": r.conditions, "actions": r.actions(s), "stop_processing": r.stop})
+		s.create(
+			"/rules",
+			map[string]any{
+				"name":            r.name,
+				"conditions":      r.conditions,
+				"actions":         r.actions(s),
+				"stop_processing": r.stop,
+			},
+		)
 	}
 
 	for _, a := range aliases {
-		s.create("/payee-aliases", map[string]any{"pattern": a.pattern, "match_type": a.match, "payee_id": s.id("payee." + a.payee)})
+		s.create(
+			"/payee-aliases",
+			map[string]any{
+				"pattern":    a.pattern,
+				"match_type": a.match,
+				"payee_id":   s.id("payee." + a.payee),
+			},
+		)
 	}
 }
 
@@ -119,7 +190,12 @@ func (s *seeder) runRules() error {
 	s.do(http.MethodPost, "/rules/run", nil, &out)
 
 	if s.err == nil {
-		fmt.Fprintf(os.Stderr, "rules examined %d transactions and categorized %d\n", out.Examined, out.Categorized)
+		fmt.Fprintf(
+			os.Stderr,
+			"rules examined %d transactions and categorized %d\n",
+			out.Examined,
+			out.Categorized,
+		)
 	}
 
 	return s.err
@@ -143,8 +219,16 @@ func (s *seeder) teachRules() {
 			d := s.today.AddDate(0, 0, -ago)
 			cents := s.between(l.lo, l.hi, 1)
 			s.at(d, func() {
-				id := s.record(iso(d), l.desc, map[string]any{"payee_id": s.id("payee." + l.payee)},
-					post(s.id("card.nubank"), -cents), post(s.id("system.uncategorized_expense"), cents))
+				id := s.record(
+					iso(d),
+					l.desc,
+					map[string]any{"payee_id": s.id("payee." + l.payee)},
+					post(
+						s.id("card.nubank"),
+						-cents,
+					),
+					post(s.id("system.uncategorized_expense"), cents),
+				)
 				s.do(http.MethodPost, "/transactions/"+id+"/categorize", map[string]any{
 					"expected_version": 1, "parts": []posting{post(s.id(l.category), cents)},
 				}, nil)

@@ -27,7 +27,12 @@ type expectationEntry struct {
 
 func expectationEntries() []expectationEntry {
 	return []expectationEntry{
-		{"br_focus", "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata", 9, func(hc *http.Client, url string) expectation.Source { return brfocus.New(hc, url) }},
+		{
+			"br_focus",
+			"https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata",
+			9,
+			func(hc *http.Client, url string) expectation.Source { return brfocus.New(hc, url) },
+		},
 	}
 }
 
@@ -87,7 +92,11 @@ func (m *Module) tickExpectation(ctx context.Context, src expectation.Source) er
 		}
 
 		if err := q.InsertIndexExpectation(ctx, postgres.InsertIndexExpectationParams{
-			IndexID: src.Index(), Date: p.Date, Rate: rate, SurveyDate: survey.Date, Source: src.ID(),
+			IndexID:    src.Index(),
+			Date:       p.Date,
+			Rate:       rate,
+			SurveyDate: survey.Date,
+			Source:     src.ID(),
 		}); err != nil {
 			return fmt.Errorf("store the expectation of %s: %w", p.Date.Format("2006-01-02"), err)
 		}
@@ -132,7 +141,11 @@ func (m *Module) Expectations(ctx context.Context, id string) (IndexExpectations
 	for i, r := range rows {
 		v, err := r.Rate.Value()
 		if err != nil {
-			return IndexExpectations{}, fmt.Errorf("expectation of %s: %w", r.Date.Format("2006-01-02"), err)
+			return IndexExpectations{}, fmt.Errorf(
+				"expectation of %s: %w",
+				r.Date.Format("2006-01-02"),
+				err,
+			)
 		}
 
 		out.Points[i] = IndexRate{Date: r.Date, Rate: fmt.Sprint(v)}

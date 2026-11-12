@@ -17,7 +17,12 @@ func (f fixture) defineWithSubtype(t *testing.T, code, typ, subtype string) stri
 
 	f.h.MustDo(http.MethodPost, "/api/v1/instruments", body, http.StatusCreated, nil)
 
-	return f.h.Account("XP "+code, "asset", "brokerage", map[string]any{"institution_id": f.institution, "parent_id": f.xp, "currency": code})
+	return f.h.Account(
+		"XP "+code,
+		"asset",
+		"brokerage",
+		map[string]any{"institution_id": f.institution, "parent_id": f.xp, "currency": code},
+	)
 }
 
 func (f fixture) subtypes(t *testing.T, typ string) []string {
@@ -61,7 +66,13 @@ func TestS122SubtypeTaxClass(t *testing.T) {
 		got[e.Instrument] = *e.TaxTreatment
 	}
 
-	want := map[string]string{"CRIXPTO": "exempt", "CDBXPTO": "exclusive", "NTNPLAIN": "exclusive", "XYZSTOCK": "exclusive", "PETR4": "exclusive"}
+	want := map[string]string{
+		"CRIXPTO":  "exempt",
+		"CDBXPTO":  "exclusive",
+		"NTNPLAIN": "exclusive",
+		"XYZSTOCK": "exclusive",
+		"PETR4":    "exclusive",
+	}
 	for code, treatment := range want {
 		if got[code] != treatment {
 			t.Errorf("%s treatment = %q, want %q (all: %v)", code, got[code], treatment, got)
@@ -73,11 +84,36 @@ func TestInstrumentSubtypesList(t *testing.T) {
 	t.Parallel()
 
 	f := newFixture(t)
-	if got, want := f.subtypes(t, "fixed_income"), []string{"cdb", "cra", "cri", "debenture_incentivada", "lca", "lci", "rdb", "tesouro"}; !slices.Equal(got, want) {
+	if got, want := f.subtypes(
+		t,
+		"fixed_income",
+	), []string{
+		"cdb",
+		"cra",
+		"cri",
+		"debenture_incentivada",
+		"lca",
+		"lci",
+		"rdb",
+		"tesouro",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("fixed_income = %v, want %v", got, want)
 	}
 
-	if got, want := f.subtypes(t, "fund"), []string{"equity_fund", "fixed_income_fund", "multimarket"}; !slices.Equal(got, want) {
+	if got, want := f.subtypes(
+		t,
+		"fund",
+	), []string{
+		"equity_fund",
+		"fixed_income_fund",
+		"multimarket",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("fund = %v, want %v", got, want)
 	}
 
@@ -85,7 +121,12 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		t.Errorf("stock = %v, want none", got)
 	}
 
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/instrument-subtypes?type=bond", nil), http.StatusBadRequest, "invalid_request", "type")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/instrument-subtypes?type=bond", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"type",
+	)
 
 	f.moveToRegion(t, "DE")
 

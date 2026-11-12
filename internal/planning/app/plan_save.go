@@ -62,11 +62,19 @@ func (s *Service) SaveBudgetPlan(
 // checkPlanArguments validates the month and the savings target of a plan save.
 func (s *Service) checkPlanArguments(ctx context.Context, month time.Time, targetBP *int) error {
 	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
-		return &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "month",
+			Message: "must be from the current month to today + 12 months",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	if targetBP != nil && (*targetBP < 0 || *targetBP > basisPoints) {
-		return &domain.FieldError{Field: "savings_target_bp", Message: "must be from 0 to 10000", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "savings_target_bp",
+			Message: "must be from 0 to 10000",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return nil
@@ -87,7 +95,11 @@ func buildReference(
 
 	if source == domain.SourceFixed {
 		if fixed == nil {
-			return domain.Reference{}, &domain.FieldError{Field: "fixed", Message: "is required with the fixed source", Err: domain.ErrValidation}
+			return domain.Reference{}, &domain.FieldError{
+				Field:   "fixed",
+				Message: "is required with the fixed source",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		if err := checkBudgetAmount(*fixed, base); err != nil {
@@ -135,12 +147,21 @@ func (s *Service) checkPlanAmounts(
 	for i, a := range amounts {
 		prefix := fmt.Sprintf("amounts[%d].", i)
 		// A closed category keeps its row in the plan while it has a budget.
-		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" || (c.Closed && !budgeted[a.CategoryID]) {
-			return &domain.FieldError{Field: prefix + "category_id", Message: "must be an expense category of the book, open or with a budget", Err: domain.ErrValidation}
+		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" ||
+			(c.Closed && !budgeted[a.CategoryID]) {
+			return &domain.FieldError{
+				Field:   prefix + "category_id",
+				Message: "must be an expense category of the book, open or with a budget",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		if seen[a.CategoryID] {
-			return &domain.FieldError{Field: prefix + "category_id", Message: "is listed twice", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   prefix + "category_id",
+				Message: "is listed twice",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		seen[a.CategoryID] = true
@@ -185,7 +206,11 @@ func (s *Service) persistPlan(
 					continue
 				}
 
-				b := domain.Budget{CategoryID: a.CategoryID, Currency: base, Amounts: []domain.BudgetAmount{version}}
+				b := domain.Budget{
+					CategoryID: a.CategoryID,
+					Currency:   base,
+					Amounts:    []domain.BudgetAmount{version},
+				}
 				if _, err := repo.InsertBudget(ctx, booksID, b); err != nil {
 					return err
 				}

@@ -114,7 +114,12 @@ func TestApplyStartDate(t *testing.T) {
 			kept := got.LastSyncedOn != nil && got.LastReadAt != nil && got.LastDeepReadOn != nil
 
 			if tt.wantReset && !reset || !tt.wantReset && !kept {
-				t.Fatalf("synced %v, read %v, deep %v", got.LastSyncedOn, got.LastReadAt, got.LastDeepReadOn)
+				t.Fatalf(
+					"synced %v, read %v, deep %v",
+					got.LastSyncedOn,
+					got.LastReadAt,
+					got.LastDeepReadOn,
+				)
 			}
 		})
 	}

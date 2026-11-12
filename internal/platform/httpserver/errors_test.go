@@ -27,7 +27,14 @@ func TestErrorWriter(t *testing.T) {
 		logged  bool
 	}{
 		{"module error", false, errKnown, 409, "known_conflict", false},
-		{"wrapped module error", false, errors.Join(errors.New("context"), errKnown), 409, "known_conflict", false},
+		{
+			"wrapped module error",
+			false,
+			errors.Join(errors.New("context"), errKnown),
+			409,
+			"known_conflict",
+			false,
+		},
 		{"transport error", false, &http.MaxBytesError{Limit: 1}, 413, "request_too_large", false},
 		{"unknown error", false, errors.New("database down"), 500, "internal_error", true},
 		{"malformed request", true, errors.New("decode body"), 400, "invalid_request", false},
@@ -54,18 +61,22 @@ func TestErrorWriter(t *testing.T) {
 					ew.Write(w, r, tc.err)
 				}
 			})
-			withRequestID(h).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/x", nil))
+			withRequestID(
+				h,
+			).ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/x", nil))
 
 			var d problem.Details
 			if err := json.Unmarshal(rec.Body.Bytes(), &d); err != nil {
 				t.Fatal(err)
 			}
 
-			if rec.Code != tc.status || d.Code != tc.code || d.RequestID == "" || d.RequestID != rec.Header().Get("X-Request-ID") {
+			if rec.Code != tc.status || d.Code != tc.code || d.RequestID == "" ||
+				d.RequestID != rec.Header().Get("X-Request-ID") {
 				t.Fatalf("status %d: %s", rec.Code, rec.Body)
 			}
 
-			if tc.status >= 500 && (d.Detail != "" || strings.Contains(rec.Body.String(), "database down")) {
+			if tc.status >= 500 &&
+				(d.Detail != "" || strings.Contains(rec.Body.String(), "database down")) {
 				t.Fatalf("internal error leaked: %s", rec.Body)
 			}
 

@@ -61,7 +61,9 @@ func previewConnection(
 	if in.Action == "sync" {
 		p.Changes = []tool.Change{{Field: "connection", After: tool.TextValue(c.Name)}}
 	} else {
-		p.Changes, p.Destructive = []tool.Change{{Field: "connection", Before: tool.TextValue(c.Name)}}, true
+		p.Changes, p.Destructive = []tool.Change{
+			{Field: "connection", Before: tool.TextValue(c.Name)},
+		}, true
 	}
 
 	return p, nil
@@ -86,13 +88,25 @@ func previewResolve(
 
 	p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
 
-	p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(rec.State)), After: tool.TextValue(string(resolvedState[in.Resolution]))}}
+	p.Changes = []tool.Change{
+		{
+			Field:  "status",
+			Before: tool.TextValue(string(rec.State)),
+			After:  tool.TextValue(string(resolvedState[in.Resolution])),
+		},
+	}
 	if in.Resolution == app.ActionMatch {
 		if !slices.Contains(rec.Candidates, a.transaction) {
-			return tool.Preview{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
+			return tool.Preview{}, &domain.FieldError{
+				Field:   "transaction_id",
+				Message: "must be one of the record's candidates",
+			}
 		}
 
-		p.Changes = append(p.Changes, tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
+		p.Changes = append(
+			p.Changes,
+			tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)},
+		)
 	}
 
 	return p, nil
@@ -115,7 +129,13 @@ func previewReopen(
 	}
 
 	p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
-	p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(rec.State)), After: tool.TextValue(string(domain.StateNeedsReview))}}
+	p.Changes = []tool.Change{
+		{
+			Field:  "status",
+			Before: tool.TextValue(string(rec.State)),
+			After:  tool.TextValue(string(domain.StateNeedsReview)),
+		},
+	}
 
 	return p, nil
 }
@@ -166,7 +186,15 @@ func previewDeleteIntegration(
 	return p, nil
 }
 
-func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, booksID int64, a importsAction, in manageImportsIn, p tool.Preview) (tool.Preview, error) {
+func previewMapping(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	a importsAction,
+	in manageImportsIn,
+	p tool.Preview,
+) (tool.Preview, error) {
 	m := a.mapping(in)
 	if err := m.Validate(); err != nil {
 		return tool.Preview{}, err
@@ -177,7 +205,10 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, b
 		return tool.Preview{}, err
 	}
 
-	i := slices.IndexFunc(c.Accounts, func(e domain.ExternalAccount) bool { return e.ID == a.external })
+	i := slices.IndexFunc(
+		c.Accounts,
+		func(e domain.ExternalAccount) bool { return e.ID == a.external },
+	)
 	if i < 0 {
 		return tool.Preview{}, app.ErrNotFound
 	}
@@ -186,7 +217,13 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, b
 
 	p.Target = "Bank account " + ext.Name + " of connection " + c.Name
 	if in.Ignore {
-		p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(ext.State())), After: tool.TextValue(string(domain.MappingIgnored))}}
+		p.Changes = []tool.Change{
+			{
+				Field:  "status",
+				Before: tool.TextValue(string(ext.State())),
+				After:  tool.TextValue(string(domain.MappingIgnored)),
+			},
+		}
 		return p, nil
 	}
 
@@ -197,7 +234,10 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, b
 
 	to, ok := named[a.account]
 	if !ok {
-		return tool.Preview{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book"}
+		return tool.Preview{}, &domain.FieldError{
+			Field:   "account_id",
+			Message: "must be a balance account of the book",
+		}
 	}
 
 	change := tool.Change{Field: "account", After: tool.TextValue(to)}
@@ -218,7 +258,12 @@ func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, b
 	return p, nil
 }
 
-func integrationInUse(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (bool, error) {
+func integrationInUse(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (bool, error) {
 	r := page.Request[app.NameKey]{Limit: page.MaxLimit}
 	for {
 		cs, next, err := svc.ListConnections(ctx, booksID, r)
@@ -226,7 +271,10 @@ func integrationInUse(ctx context.Context, svc *app.Service, booksID int64, id u
 			return false, err
 		}
 
-		if slices.ContainsFunc(cs, func(c domain.Connection) bool { return c.IntegrationID == id }) {
+		if slices.ContainsFunc(
+			cs,
+			func(c domain.Connection) bool { return c.IntegrationID == id },
+		) {
 			return true, nil
 		}
 

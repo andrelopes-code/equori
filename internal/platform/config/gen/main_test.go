@@ -65,8 +65,39 @@ func TestMarkdown(t *testing.T) {
 
 func testVariables() []config.Variable {
 	return []config.Variable{
-		{Name: "A_PASS", Reader: config.Compose, Kind: config.KindPassword, Default: "x", Expected: "letters", Example: "y", Secret: true, Generated: true, Audience: config.Install, Description: "Pass.", DescriptionPT: "Senha."},
-		{Name: "A_IP", Reader: config.Compose, Kind: config.KindIP, Default: "127.0.0.1", Expected: "an IP address", Example: "0.0.0.0", Audience: config.Install, Description: "Address.", DescriptionPT: "Endereço."},
-		{Name: "A_DEV", Reader: config.Tooling, Kind: config.KindPort, Expected: "a port", Example: "5", Audience: config.Development, Description: "Dev.", DescriptionPT: "Des."},
+		{
+			Name:          "A_PASS",
+			Reader:        config.Compose,
+			Kind:          config.KindPassword,
+			Default:       "x",
+			Expected:      "letters",
+			Example:       "y",
+			Secret:        true,
+			Generated:     true,
+			Audience:      config.Install,
+			Description:   "Pass.",
+			DescriptionPT: "Senha.",
+		},
+		{
+			Name:          "A_IP",
+			Reader:        config.Compose,
+			Kind:          config.KindIP,
+			Default:       "127.0.0.1",
+			Expected:      "an IP address",
+			Example:       "0.0.0.0",
+			Audience:      config.Install,
+			Description:   "Address.",
+			DescriptionPT: "Endereço.",
+		},
+		{
+			Name:          "A_DEV",
+			Reader:        config.Tooling,
+			Kind:          config.KindPort,
+			Expected:      "a port",
+			Example:       "5",
+			Audience:      config.Development,
+			Description:   "Dev.",
+			DescriptionPT: "Des.",
+		},
 	}
 }

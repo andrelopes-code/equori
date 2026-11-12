@@ -39,10 +39,20 @@ func Check(t *testing.T, tag, baseURL string, register func(*http.ServeMux)) {
 			found++
 
 			want := method + " " + baseURL + path
-			req := httptest.NewRequestWithContext(context.Background(), method, baseURL+wildcardsToSegments(path), http.NoBody)
+			req := httptest.NewRequestWithContext(
+				context.Background(),
+				method,
+				baseURL+wildcardsToSegments(path),
+				http.NoBody,
+			)
 
 			if _, got := mux.Handler(req); got != want {
-				t.Errorf("operation %s: route %q is not registered (matched %q)", op.OperationID, want, got)
+				t.Errorf(
+					"operation %s: route %q is not registered (matched %q)",
+					op.OperationID,
+					want,
+					got,
+				)
 			}
 		}
 	}

@@ -105,9 +105,18 @@ func TestS371InstrumentPricesRejected(t *testing.T) {
 		field  string
 	}{
 		{
-			"zero value", instrumentPricesPath,
-			instrumentSeriesOf([]any{point("2026-11-02", "9.10"), point("2026-11-03", "9.02"), point("2026-11-04", "0")}),
-			http.StatusUnprocessableEntity, "validation_failed", "prices[2]",
+			"zero value",
+			instrumentPricesPath,
+			instrumentSeriesOf(
+				[]any{
+					point("2026-11-02", "9.10"),
+					point("2026-11-03", "9.02"),
+					point("2026-11-04", "0"),
+				},
+			),
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"prices[2]",
 		},
 		{
 			"repeated date", instrumentPricesPath,
@@ -174,12 +183,24 @@ func TestInstrumentPricesBodyLimit(t *testing.T) {
 	date := time.Date(1960, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	for i := range points {
-		points[i] = map[string]any{"date": date.AddDate(0, 0, i).Format(time.DateOnly), "value": "1234567.123456789012"}
+		points[i] = map[string]any{
+			"date":  date.AddDate(0, 0, i).Format(time.DateOnly),
+			"value": "1234567.123456789012",
+		}
 	}
 
 	var got priceCountsAPI
-	h.MustDo(http.MethodPost, instrumentPricesPath,
-		map[string]any{"quote_instrument": "BRL", "prices": points, "dry_run": true}, http.StatusOK, &got)
+	h.MustDo(
+		http.MethodPost,
+		instrumentPricesPath,
+		map[string]any{
+			"quote_instrument": "BRL",
+			"prices":           points,
+			"dry_run":          true,
+		},
+		http.StatusOK,
+		&got,
+	)
 
 	if got != (priceCountsAPI{New: n}) {
 		t.Fatalf("counts = %+v, want %d new", got, n)
@@ -207,5 +228,11 @@ func instrumentSeriesOf(points []any) map[string]any {
 }
 
 func csvPrice(date, value string) priceAPI {
-	return priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: date, Value: value, Source: "csv"}
+	return priceAPI{
+		Instrument:      "MXRF11",
+		QuoteInstrument: "BRL",
+		Date:            date,
+		Value:           value,
+		Source:          "csv",
+	}
 }

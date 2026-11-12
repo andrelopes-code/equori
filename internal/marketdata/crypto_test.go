@@ -23,7 +23,9 @@ func TestS374CoinbaseUnknownProduct(t *testing.T) {
 			_, _ = w.Write([]byte(coinbaseETH))
 		case "/cb/products/BTC-BRL/candles":
 			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte(`{"error":"INVALID_ARGUMENT","message":"valid product_id is required"}`))
+			_, _ = w.Write(
+				[]byte(`{"error":"INVALID_ARGUMENT","message":"valid product_id is required"}`),
+			)
 		default:
 			http.NotFound(w, r)
 		}
@@ -45,9 +47,27 @@ func TestS374CoinbaseUnknownProduct(t *testing.T) {
 
 	got := cryptoPrices(t, h, "ETH", "USD")
 	want := []priceAPI{
-		{Instrument: "ETH", QuoteInstrument: "USD", Date: "2026-11-07", Value: "3001.5", Source: "coinbase"},
-		{Instrument: "ETH", QuoteInstrument: "USD", Date: "2026-11-08", Value: "3050.12", Source: "coinbase"},
-		{Instrument: "ETH", QuoteInstrument: "USD", Date: "2026-11-09", Value: "3088.45", Source: "coinbase"},
+		{
+			Instrument:      "ETH",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-07",
+			Value:           "3001.5",
+			Source:          "coinbase",
+		},
+		{
+			Instrument:      "ETH",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-08",
+			Value:           "3050.12",
+			Source:          "coinbase",
+		},
+		{
+			Instrument:      "ETH",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-09",
+			Value:           "3088.45",
+			Source:          "coinbase",
+		},
 	}
 
 	if len(got) != len(want) {
@@ -76,9 +96,13 @@ func cryptoPrices(t *testing.T, h *apitest.Harness, instrument, quote string) []
 		Items []priceAPI `json:"items"`
 	}
 
-	h.MustDo(http.MethodGet,
+	h.MustDo(
+		http.MethodGet,
 		"/api/v1/prices?instrument="+instrument+"&quote_instrument="+quote+"&from=2026-11-01&to=2026-11-09",
-		nil, http.StatusOK, &list)
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
 	return list.Items
 }

@@ -15,21 +15,28 @@ import (
 type settleStatementAction string
 
 func (settleStatementAction) Values() []string {
-	return []string{"pay", "finance", "confirm_amount_due", "set_facts", "remove_facts", "defer_postings"}
+	return []string{
+		"pay",
+		"finance",
+		"confirm_amount_due",
+		"set_facts",
+		"remove_facts",
+		"defer_postings",
+	}
 }
 
 type settleStatementIn struct {
-	StatementID       string                `json:"statement_id" jsonschema:"statement from get_account_details"`
-	Action            settleStatementAction `json:"action" jsonschema:"operation to propose"`
-	Date              tool.Date             `json:"date,omitzero" jsonschema:"for pay and finance: date of the operation; today when absent"`
-	Amount            string                `json:"amount,omitzero" jsonschema:"for pay: amount paid; for confirm_amount_due and set_facts: the institution's total; positive, in the card's currency"`
-	FromAccountID     string                `json:"from_account_id,omitzero" jsonschema:"for pay: account the payment leaves"`
-	InstallmentCount  int                   `json:"installment_count,omitzero" jsonschema:"for finance: number of installments"`
+	StatementID       string                `json:"statement_id"                jsonschema:"statement from get_account_details"`
+	Action            settleStatementAction `json:"action"                      jsonschema:"operation to propose"`
+	Date              tool.Date             `json:"date,omitzero"               jsonschema:"for pay and finance: date of the operation; today when absent"`
+	Amount            string                `json:"amount,omitzero"             jsonschema:"for pay: amount paid; for confirm_amount_due and set_facts: the institution's total; positive, in the card's currency"`
+	FromAccountID     string                `json:"from_account_id,omitzero"    jsonschema:"for pay: account the payment leaves"`
+	InstallmentCount  int                   `json:"installment_count,omitzero"  jsonschema:"for finance: number of installments"`
 	InstallmentAmount string                `json:"installment_amount,omitzero" jsonschema:"for finance: positive amount of each installment"`
-	DueDate           tool.Date             `json:"due_date,omitzero" jsonschema:"for set_facts: due date the institution states"`
-	ClosingDate       tool.Date             `json:"closing_date,omitzero" jsonschema:"for set_facts: closing date the institution states"`
-	Minimum           string                `json:"minimum,omitzero" jsonschema:"for set_facts: minimum payment the institution states"`
-	TransactionIDs    []string              `json:"transaction_ids,omitzero" jsonschema:"for defer_postings: transactions whose card posting moves to the next statement"`
+	DueDate           tool.Date             `json:"due_date,omitzero"           jsonschema:"for set_facts: due date the institution states"`
+	ClosingDate       tool.Date             `json:"closing_date,omitzero"       jsonschema:"for set_facts: closing date the institution states"`
+	Minimum           string                `json:"minimum,omitzero"            jsonschema:"for set_facts: minimum payment the institution states"`
+	TransactionIDs    []string              `json:"transaction_ids,omitzero"    jsonschema:"for defer_postings: transactions whose card posting moves to the next statement"`
 }
 
 type settleStatementOut struct {
@@ -58,7 +65,12 @@ func settleStatement(svc *app.Service) tool.Tool {
 	})
 }
 
-func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleStatementIn) (tool.Preview, func() (settleStatementOut, error), error) {
+func planSettle(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in settleStatementIn,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	pv := tool.Preview{Action: "settle_statement"}
 
 	id, err := requiredID(in.StatementID, "statement_id")
@@ -104,7 +116,15 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 	}
 
 	step := settleStep{
-		svc: svc, booksID: booksID, in: in, id: id, fromID: fromID, view: v, due: due, unit: unit, date: date,
+		svc:     svc,
+		booksID: booksID,
+		in:      in,
+		id:      id,
+		fromID:  fromID,
+		view:    v,
+		due:     due,
+		unit:    unit,
+		date:    date,
 	}
 
 	return step.plan(ctx, pv)
@@ -113,9 +133,16 @@ func planSettle(ctx context.Context, svc *app.Service, booksID int64, in settleS
 func checkSettleFields(in settleStatementIn) error {
 	action := string(in.Action)
 	given := map[string]bool{
-		"statement_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "from_account_id": in.FromAccountID != "",
-		"installment_count": in.InstallmentCount != 0, "installment_amount": in.InstallmentAmount != "", "due_date": !in.DueDate.IsZero(), "closing_date": !in.ClosingDate.IsZero(), "minimum": in.Minimum != "",
-		"transaction_ids": len(in.TransactionIDs) > 0,
+		"statement_id":       true,
+		"date":               !in.Date.IsZero(),
+		"amount":             in.Amount != "",
+		"from_account_id":    in.FromAccountID != "",
+		"installment_count":  in.InstallmentCount != 0,
+		"installment_amount": in.InstallmentAmount != "",
+		"due_date":           !in.DueDate.IsZero(),
+		"closing_date":       !in.ClosingDate.IsZero(),
+		"minimum":            in.Minimum != "",
+		"transaction_ids":    len(in.TransactionIDs) > 0,
 	}
 	required := []string{"statement_id"}
 
@@ -124,11 +151,24 @@ func checkSettleFields(in settleStatementIn) error {
 	case "pay":
 		required, optional = append(required, "amount", "from_account_id"), []string{"date"}
 	case "finance":
-		required, optional = append(required, "installment_count", "installment_amount"), []string{"date"}
+		required, optional = append(
+			required,
+			"installment_count",
+			"installment_amount",
+		), []string{
+			"date",
+		}
 	case "confirm_amount_due":
 		required = append(required, "amount")
 	case "set_facts":
-		required, optional = append(required, "amount", "due_date"), []string{"closing_date", "minimum"}
+		required, optional = append(
+			required,
+			"amount",
+			"due_date",
+		), []string{
+			"closing_date",
+			"minimum",
+		}
 	case "defer_postings":
 		required = append(required, "transaction_ids")
 	}
@@ -169,7 +209,10 @@ func (s settleStep) plan(
 	}
 }
 
-func (s settleStep) pay(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+func (s settleStep) pay(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	out := settleStatementOut{StatementID: s.id.String()}
 
 	amount, err := s.parse("amount", s.in.Amount)
@@ -182,7 +225,11 @@ func (s settleStep) pay(ctx context.Context, pv tool.Preview) (tool.Preview, fun
 		return pv, nil, err
 	}
 
-	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "account", After: tool.TextValue(from.Name)}, {Field: "date", After: tool.DateValue(s.date)}}
+	pv.Changes = []tool.Change{
+		{Field: "amount", After: tool.MoneyValue(amount)},
+		{Field: "account", After: tool.TextValue(from.Name)},
+		{Field: "date", After: tool.DateValue(s.date)},
+	}
 
 	return pv, func() (settleStatementOut, error) {
 		t, err := s.svc.PayStatement(ctx, s.booksID, s.id, s.date, from.ID, amount)
@@ -192,7 +239,10 @@ func (s settleStep) pay(ctx context.Context, pv tool.Preview) (tool.Preview, fun
 	}, nil
 }
 
-func (s settleStep) finance(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+func (s settleStep) finance(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	out := settleStatementOut{StatementID: s.id.String()}
 
 	amount, err := s.parse("installment_amount", s.in.InstallmentAmount)
@@ -207,14 +257,24 @@ func (s settleStep) finance(ctx context.Context, pv tool.Preview) (tool.Preview,
 	}
 
 	return pv, func() (settleStatementOut, error) {
-		t, _, err := s.svc.FinanceStatement(ctx, s.booksID, s.id, s.date, s.in.InstallmentCount, amount)
+		t, _, err := s.svc.FinanceStatement(
+			ctx,
+			s.booksID,
+			s.id,
+			s.date,
+			s.in.InstallmentCount,
+			amount,
+		)
 		out.TransactionID = t.ID.String()
 
 		return out, err
 	}, nil
 }
 
-func (s settleStep) confirmAmountDue(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+func (s settleStep) confirmAmountDue(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	out := settleStatementOut{StatementID: s.id.String()}
 
 	amount, err := s.parse("amount", s.in.Amount)
@@ -222,12 +282,21 @@ func (s settleStep) confirmAmountDue(ctx context.Context, pv tool.Preview) (tool
 		return pv, nil, err
 	}
 
-	pv.Changes = []tool.Change{{Field: "amount", Before: tool.Value{Amount: s.due.Amount, Currency: s.due.Currency}, After: tool.MoneyValue(amount)}}
+	pv.Changes = []tool.Change{
+		{
+			Field:  "amount",
+			Before: tool.Value{Amount: s.due.Amount, Currency: s.due.Currency},
+			After:  tool.MoneyValue(amount),
+		},
+	}
 
 	return pv, func() (settleStatementOut, error) { return out, s.svc.ReconcileStatement(ctx, s.booksID, s.id, amount) }, nil
 }
 
-func (s settleStep) setFacts(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+func (s settleStep) setFacts(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	in := s.in
 	out := settleStatementOut{StatementID: s.id.String()}
 
@@ -238,10 +307,16 @@ func (s settleStep) setFacts(ctx context.Context, pv tool.Preview) (tool.Preview
 
 	f := app.StatementFacts{Due: in.DueDate.Time, Total: amount}
 
-	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "due_on", After: tool.DateValue(in.DueDate.Time)}}
+	pv.Changes = []tool.Change{
+		{Field: "amount", After: tool.MoneyValue(amount)},
+		{Field: "due_on", After: tool.DateValue(in.DueDate.Time)},
+	}
 	if !in.ClosingDate.IsZero() {
 		f.Closing = &in.ClosingDate.Time
-		pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "date", After: tool.DateValue(in.ClosingDate.Time)},
+		)
 	}
 
 	if in.Minimum != "" {
@@ -251,13 +326,19 @@ func (s settleStep) setFacts(ctx context.Context, pv tool.Preview) (tool.Preview
 		}
 
 		f.Minimum = &minimum
-		pv.Changes = append(pv.Changes, tool.Change{Field: "limit", After: tool.MoneyValue(minimum)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "limit", After: tool.MoneyValue(minimum)},
+		)
 	}
 
 	return pv, func() (settleStatementOut, error) { return out, s.svc.SetOwnerFacts(ctx, s.booksID, s.id, f) }, nil
 }
 
-func (s settleStep) deferPostings(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+func (s settleStep) deferPostings(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	out := settleStatementOut{StatementID: s.id.String()}
 
 	txIDs := make([]uuid.UUID, len(s.in.TransactionIDs))
@@ -269,12 +350,21 @@ func (s settleStep) deferPostings(ctx context.Context, pv tool.Preview) (tool.Pr
 		}
 	}
 
-	pv.Changes = []tool.Change{{Field: "statement", Before: tool.TextValue(s.view.Input.Reference.String()), After: tool.TextValue(s.view.Input.Reference.Add(1).String())}}
+	pv.Changes = []tool.Change{
+		{
+			Field:  "statement",
+			Before: tool.TextValue(s.view.Input.Reference.String()),
+			After:  tool.TextValue(s.view.Input.Reference.Add(1).String()),
+		},
+	}
 
 	return pv, func() (settleStatementOut, error) { return out, s.svc.DeferPostings(ctx, s.booksID, s.id, txIDs) }, nil
 }
 
-func (s settleStep) removeFacts(ctx context.Context, pv tool.Preview) (tool.Preview, func() (settleStatementOut, error), error) {
+func (s settleStep) removeFacts(
+	ctx context.Context,
+	pv tool.Preview,
+) (tool.Preview, func() (settleStatementOut, error), error) {
 	out := settleStatementOut{StatementID: s.id.String()}
 
 	pv.Changes = []tool.Change{{Field: "due_on", Before: tool.DateValue(s.view.Input.Due)}}

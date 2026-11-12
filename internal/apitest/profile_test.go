@@ -46,7 +46,11 @@ func TestProfiles(t *testing.T) {
 
 			got := [4]string{me.Language, me.Region, settings.BaseCurrency, account.Currency}
 			if got != exp {
-				t.Errorf("language, region, base_currency, account currency = %v, want %v", got, exp)
+				t.Errorf(
+					"language, region, base_currency, account currency = %v, want %v",
+					got,
+					exp,
+				)
 			}
 		})
 	}

@@ -19,7 +19,7 @@ func (getBudgetsAndGoalsKind) Values() []string { return []string{"budgets", "go
 
 type getBudgetsAndGoalsIn struct {
 	Month string                 `json:"month,omitzero" jsonschema:"month of the budget progress; the current month when absent; written YYYY-MM"`
-	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero" jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan"`
+	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero"  jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan"`
 }
 
 type budgetView struct {
@@ -127,7 +127,11 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 func planRowViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planRowView, error) {
 	rows := make([]planRowView, len(p.Rows))
 	for i, r := range p.Rows {
-		v := planRowView{CategoryID: r.CategoryID.String(), CategoryName: accountName(accounts, r.CategoryID), Counted: r.Counted}
+		v := planRowView{
+			CategoryID:   r.CategoryID.String(),
+			CategoryName: accountName(accounts, r.CategoryID),
+			Counted:      r.Counted,
+		}
 		if r.HasNextChange {
 			v.NextChange = r.NextChange.Format(monthLayout)
 		}
@@ -149,7 +153,12 @@ func planRowViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planRowView, er
 }
 
 func toGoalView(g app.GoalView) (goalView, error) {
-	v := goalView{GoalID: g.ID.String(), Name: g.Name, ProgressBP: g.Progress.ProgressBP, DueOn: tool.DateOf(g.DueOn)}
+	v := goalView{
+		GoalID:     g.ID.String(),
+		Name:       g.Name,
+		ProgressBP: g.Progress.ProgressBP,
+		DueOn:      tool.DateOf(g.DueOn),
+	}
 	for _, f := range []struct {
 		amount int64
 		into   *tool.Money
@@ -174,14 +183,19 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			"With kind plan it returns the month's budget plan instead: the reference income, the installments and savings it pays, the budgets and the unassigned rest. " +
 			"Use it for how a budget or goal is going, or how much income still has no budget. " +
 			"Do not use it for spending by category without a budget: get_category_totals does.",
-		Effect: tool.ReadOnly, Idempotent: true,
+		Effect:     tool.ReadOnly,
+		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in getBudgetsAndGoalsIn) (getBudgetsAndGoalsOut, error) {
 		month, err := parseMonth("month", in.Month, firstOfMonth(clk.Today(ctx)))
 		if err != nil {
 			return getBudgetsAndGoalsOut{}, err
 		}
 
-		out := getBudgetsAndGoalsOut{Month: month.Format(monthLayout), Budgets: []budgetView{}, Goals: []goalView{}}
+		out := getBudgetsAndGoalsOut{
+			Month:   month.Format(monthLayout),
+			Budgets: []budgetView{},
+			Goals:   []goalView{},
+		}
 		if in.Kind == "plan" {
 			err := fillPlan(ctx, svc, l, booksID, month, &out)
 
@@ -284,7 +298,11 @@ func toBudgetView(
 		return budgetView{}, err
 	}
 
-	v := budgetView{BudgetID: b.ID.String(), CategoryName: accountName(accounts, b.CategoryID), Rollover: b.Rollover}
+	v := budgetView{
+		BudgetID:     b.ID.String(),
+		CategoryName: accountName(accounts, b.CategoryID),
+		Rollover:     b.Rollover,
+	}
 	for _, f := range []struct {
 		amount int64
 		into   *tool.Money
@@ -297,7 +315,12 @@ func toBudgetView(
 	return v, nil
 }
 
-func fillGoals(ctx context.Context, svc *app.Service, booksID int64, out *getBudgetsAndGoalsOut) error {
+func fillGoals(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	out *getBudgetsAndGoalsOut,
+) error {
 	r := page.Request[app.IDKey]{Limit: page.MaxLimit}
 	for {
 		gs, next, err := svc.ListGoals(ctx, booksID, r)

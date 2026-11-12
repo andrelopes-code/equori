@@ -12,7 +12,14 @@ import (
 type manageCardAction string
 
 func (manageCardAction) Values() []string {
-	return []string{"add_card", "edit_card", "remove_card", "set_card_active", "set_credit_limit", "set_billing_cycle"}
+	return []string{
+		"add_card",
+		"edit_card",
+		"remove_card",
+		"set_card_active",
+		"set_credit_limit",
+		"set_billing_cycle",
+	}
 }
 
 type manageCardClosingMode string
@@ -30,25 +37,25 @@ type manageCardAssignment string
 func (manageCardAssignment) Values() []string { return []string{"next", "closing"} }
 
 type manageCardIn struct {
-	AccountID     string           `json:"account_id" jsonschema:"credit card account, from list_accounts"`
-	Action        manageCardAction `json:"action" jsonschema:"operation to propose"`
-	CardID        string           `json:"card_id,omitzero" jsonschema:"for set_card_active: card from get_account_details"`
-	Holder        string           `json:"holder,omitzero" jsonschema:"for add_card: name printed on the card"`
-	LastFour      string           `json:"last_four,omitzero" jsonschema:"for add_card: last four digits"`
-	Virtual       bool             `json:"virtual,omitzero" jsonschema:"for add_card: the card is virtual"`
-	Active        bool             `json:"active,omitzero" jsonschema:"for set_card_active: true activates, false deactivates"`
-	Amount        string           `json:"amount,omitzero" jsonschema:"for set_credit_limit: positive limit in the card's currency"`
+	AccountID     string           `json:"account_id"              jsonschema:"credit card account, from list_accounts"`
+	Action        manageCardAction `json:"action"                  jsonschema:"operation to propose"`
+	CardID        string           `json:"card_id,omitzero"        jsonschema:"for set_card_active: card from get_account_details"`
+	Holder        string           `json:"holder,omitzero"         jsonschema:"for add_card: name printed on the card"`
+	LastFour      string           `json:"last_four,omitzero"      jsonschema:"for add_card: last four digits"`
+	Virtual       bool             `json:"virtual,omitzero"        jsonschema:"for add_card: the card is virtual"`
+	Active        bool             `json:"active,omitzero"         jsonschema:"for set_card_active: true activates, false deactivates"`
+	Amount        string           `json:"amount,omitzero"         jsonschema:"for set_credit_limit: positive limit in the card's currency"`
 	EffectiveFrom tool.Date        `json:"effective_from,omitzero" jsonschema:"for set_credit_limit: first date of the limit; for set_billing_cycle: any date of the first statement month it applies to"`
-	ClosingDay    int              `json:"closing_day,omitzero" jsonschema:"for set_billing_cycle: day of the month the statement closes"`
-	DueDay        int              `json:"due_day,omitzero" jsonschema:"for set_billing_cycle: day of the month the statement is due"`
+	ClosingDay    int              `json:"closing_day,omitzero"    jsonschema:"for set_billing_cycle: day of the month the statement closes"`
+	DueDay        int              `json:"due_day,omitzero"        jsonschema:"for set_billing_cycle: day of the month the statement is due"`
 
-	ClosingMode          manageCardClosingMode `json:"closing_mode,omitzero" jsonschema:"for set_billing_cycle: day closes on closing_day, before_due closes closing_days_before_due days before the due date; day when absent"`
+	ClosingMode          manageCardClosingMode `json:"closing_mode,omitzero"            jsonschema:"for set_billing_cycle: day closes on closing_day, before_due closes closing_days_before_due days before the due date; day when absent"`
 	ClosingDaysBeforeDue int                   `json:"closing_days_before_due,omitzero" jsonschema:"for set_billing_cycle with closing_mode before_due: 1 to 28"`
-	ClosingAdjustment    manageCardAdjustment  `json:"closing_adjustment,omitzero" jsonschema:"for set_billing_cycle: shift of the closing date on the calendar; none when absent"`
-	ClosingDayAssignment manageCardAssignment  `json:"closing_day_assignment,omitzero" jsonschema:"for set_billing_cycle: whether a purchase on the closing day goes to the next statement or the closing one; next when absent"`
-	DueDateAdjustment    manageCardAdjustment  `json:"due_date_adjustment,omitzero" jsonschema:"for set_billing_cycle: shift of the due date on the calendar; following when absent"`
-	Calendar             string                `json:"calendar,omitzero" jsonschema:"for set_billing_cycle: business-day calendar; the region calendar when absent"`
-	ForeignChargeBP      tool.OptionalInt      `json:"foreign_charge_bp,omitzero" jsonschema:"for add_card: charge on purchases in another currency, in basis points from 0 to 10000"`
+	ClosingAdjustment    manageCardAdjustment  `json:"closing_adjustment,omitzero"      jsonschema:"for set_billing_cycle: shift of the closing date on the calendar; none when absent"`
+	ClosingDayAssignment manageCardAssignment  `json:"closing_day_assignment,omitzero"  jsonschema:"for set_billing_cycle: whether a purchase on the closing day goes to the next statement or the closing one; next when absent"`
+	DueDateAdjustment    manageCardAdjustment  `json:"due_date_adjustment,omitzero"     jsonschema:"for set_billing_cycle: shift of the due date on the calendar; following when absent"`
+	Calendar             string                `json:"calendar,omitzero"                jsonschema:"for set_billing_cycle: business-day calendar; the region calendar when absent"`
+	ForeignChargeBP      tool.OptionalInt      `json:"foreign_charge_bp,omitzero"       jsonschema:"for add_card: charge on purchases in another currency, in basis points from 0 to 10000"`
 }
 
 type manageCardOut struct {
@@ -134,20 +141,35 @@ func planCard(
 
 func checkCardFields(in manageCardIn) error {
 	given := map[string]bool{
-		"account_id": true, "card_id": in.CardID != "", "holder": in.Holder != "",
-		"last_four": in.LastFour != "", "virtual": in.Virtual, "active": in.Active,
-		"amount": in.Amount != "", "effective_from": !in.EffectiveFrom.IsZero(),
-		"closing_day": in.ClosingDay != 0, "due_day": in.DueDay != 0,
-		"closing_mode": in.ClosingMode != "", "closing_days_before_due": in.ClosingDaysBeforeDue != 0,
-		"closing_adjustment": in.ClosingAdjustment != "", "closing_day_assignment": in.ClosingDayAssignment != "",
-		"due_date_adjustment": in.DueDateAdjustment != "", "calendar": in.Calendar != "",
-		"foreign_charge_bp": in.ForeignChargeBP.Set,
+		"account_id":              true,
+		"card_id":                 in.CardID != "",
+		"holder":                  in.Holder != "",
+		"last_four":               in.LastFour != "",
+		"virtual":                 in.Virtual,
+		"active":                  in.Active,
+		"amount":                  in.Amount != "",
+		"effective_from":          !in.EffectiveFrom.IsZero(),
+		"closing_day":             in.ClosingDay != 0,
+		"due_day":                 in.DueDay != 0,
+		"closing_mode":            in.ClosingMode != "",
+		"closing_days_before_due": in.ClosingDaysBeforeDue != 0,
+		"closing_adjustment":      in.ClosingAdjustment != "",
+		"closing_day_assignment":  in.ClosingDayAssignment != "",
+		"due_date_adjustment":     in.DueDateAdjustment != "",
+		"calendar":                in.Calendar != "",
+		"foreign_charge_bp":       in.ForeignChargeBP.Set,
 	}
 
 	var required, optional []string
 	switch in.Action {
 	case "add_card":
-		required, optional = []string{"holder", "last_four"}, []string{"virtual", "foreign_charge_bp"}
+		required, optional = []string{
+			"holder",
+			"last_four",
+		}, []string{
+			"virtual",
+			"foreign_charge_bp",
+		}
 	case "edit_card":
 		required, optional = []string{"card_id"}, []string{"holder", "last_four"}
 	case "remove_card":
@@ -158,7 +180,13 @@ func checkCardFields(in manageCardIn) error {
 		required = []string{"amount", "effective_from"}
 	default:
 		required = []string{"due_day", "effective_from"}
-		optional = []string{"closing_mode", "closing_adjustment", "closing_day_assignment", "due_date_adjustment", "calendar"}
+		optional = []string{
+			"closing_mode",
+			"closing_adjustment",
+			"closing_day_assignment",
+			"due_date_adjustment",
+			"calendar",
+		}
 
 		if in.ClosingMode == "before_due" {
 			required = append(required, "closing_days_before_due")
@@ -167,5 +195,9 @@ func checkCardFields(in manageCardIn) error {
 		}
 	}
 
-	return checkFields(string(in.Action), given, append([]string{"account_id"}, required...), optional...)
+	return checkFields(
+		string(in.Action),
+		given,
+		append([]string{"account_id"}, required...),
+		optional...)
 }

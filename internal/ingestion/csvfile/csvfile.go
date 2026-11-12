@@ -53,7 +53,13 @@ type line struct {
 }
 
 // readRecords reads the data rows; the last p.FooterRows non-blank rows are left out.
-func readRecords(r *csv.Reader, cols columns, header []string, p domain.Profile, scale int) (domain.Statement, error) {
+func readRecords(
+	r *csv.Reader,
+	cols columns,
+	header []string,
+	p domain.Profile,
+	scale int,
+) (domain.Statement, error) {
 	var (
 		out     domain.Statement
 		pending []line
@@ -168,10 +174,18 @@ func cell(row []string, i int) string {
 	return strings.TrimSpace(row[i])
 }
 
-func (c columns) record(row, header []string, p domain.Profile, scale int) (domain.NormalizedRecord, error) {
+func (c columns) record(
+	row, header []string,
+	p domain.Profile,
+	scale int,
+) (domain.NormalizedRecord, error) {
 	d, err := p.DateLayout.Parse(cell(row, c.date))
 	if err != nil {
-		return domain.NormalizedRecord{}, fmt.Errorf("date %q is not %s", cell(row, c.date), p.DateLayout)
+		return domain.NormalizedRecord{}, fmt.Errorf(
+			"date %q is not %s",
+			cell(row, c.date),
+			p.DateLayout,
+		)
 	}
 
 	amount, err := c.signedAmount(row, p, scale)
@@ -194,7 +208,14 @@ func (c columns) record(row, header []string, p domain.Profile, scale int) (doma
 	}
 
 	return domain.NormalizedRecord{
-		ExternalID: cell(row, c.id), Date: d, Amount: amount, Description: cell(row, c.description), Raw: raw,
+		ExternalID: cell(
+			row,
+			c.id,
+		),
+		Date:        d,
+		Amount:      amount,
+		Description: cell(row, c.description),
+		Raw:         raw,
 	}, nil
 }
 

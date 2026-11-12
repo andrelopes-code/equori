@@ -23,7 +23,11 @@ const (
 
 // SyncConnection syncs every mapped account of a connection now, one batch per account (P6
 // amendments A36, A43).
-func (s *Service) SyncConnection(ctx context.Context, booksID int64, connectionID uuid.UUID) (domain.Connection, []domain.Batch, error) {
+func (s *Service) SyncConnection(
+	ctx context.Context,
+	booksID int64,
+	connectionID uuid.UUID,
+) (domain.Connection, []domain.Batch, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, nil, err
 	}
@@ -34,7 +38,12 @@ func (s *Service) SyncConnection(ctx context.Context, booksID int64, connectionI
 // sync reads the item and, unless it is blocked or, without force, has no data newer than
 // the last sync, syncs the mapped accounts. The connection stores the item status and the
 // outcome; its error names no identifier (A44).
-func (s *Service) sync(ctx context.Context, booksID int64, connectionID uuid.UUID, force bool) (domain.Connection, []domain.Batch, error) {
+func (s *Service) sync(
+	ctx context.Context,
+	booksID int64,
+	connectionID uuid.UUID,
+	force bool,
+) (domain.Connection, []domain.Batch, error) {
 	c, err := s.repo.Connection(ctx, booksID, connectionID)
 	if err != nil {
 		return domain.Connection{}, nil, err
@@ -60,7 +69,11 @@ func (s *Service) sync(ctx context.Context, booksID int64, connectionID uuid.UUI
 	return c, batches, err
 }
 
-func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool) ([]domain.Batch, error) {
+func (s *Service) syncItem(
+	ctx context.Context,
+	c *domain.Connection,
+	force bool,
+) ([]domain.Batch, error) {
 	i, err := s.repo.Integration(ctx, c.BooksID, c.IntegrationID)
 	if err != nil {
 		return nil, err
@@ -85,7 +98,8 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 	c.ProviderStatus, c.NextItemUpdateAt, c.ConsentExpiresAt, c.LastError = status, state.NextUpdateAt, state.ConsentExpiresAt, ""
 
 	newer := updatedAt != nil && (c.LastItemUpdateAt == nil || updatedAt.After(*c.LastItemUpdateAt))
-	if c.StateAt(agg.State(status), s.now()) == domain.StateNeedsOwner || (!force && c.LastSyncedAt != nil && !newer) {
+	if c.StateAt(agg.State(status), s.now()) == domain.StateNeedsOwner ||
+		(!force && c.LastSyncedAt != nil && !newer) {
 		return nil, nil
 	}
 
@@ -116,9 +130,12 @@ func (s *Service) syncMapped(
 	var batches []domain.Batch
 	// Reserved balances sync after the other accounts, so that the transfers the lines of a
 	// bank account book come before the reserve assertion (A74).
-	ordered := slices.SortedStableFunc(slices.Values(c.Accounts), func(a, b domain.ExternalAccount) int {
-		return cmp.Compare(reserveRank(a), reserveRank(b))
-	})
+	ordered := slices.SortedStableFunc(
+		slices.Values(c.Accounts),
+		func(a, b domain.ExternalAccount) int {
+			return cmp.Compare(reserveRank(a), reserveRank(b))
+		},
+	)
 	for _, ext := range ordered {
 		if ext.State() != domain.MappingMapped {
 			continue
@@ -132,7 +149,12 @@ func (s *Service) syncMapped(
 
 		b, err := s.syncAccount(ctx, agg, *c, ext, creds, syncID)
 		if errors.Is(err, ErrAccountGone) {
-			if err := s.repo.SetExternalAccountGone(ctx, c.BooksID, ext.ID, new(s.today(ctx))); err != nil {
+			if err := s.repo.SetExternalAccountGone(
+				ctx,
+				c.BooksID,
+				ext.ID,
+				new(s.today(ctx)),
+			); err != nil {
 				return batches, err
 			}
 
@@ -290,8 +312,17 @@ func (s *Service) importAccountRead(
 	accountID, read, from := *ext.AccountID, ar.read, ar.from
 
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
-		BooksID: c.BooksID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID, SyncID: syncID,
-		Currency: string(target.Currency), PeriodFrom: &from, PeriodTo: &to, Balance: domain.FileBalance{Status: domain.BalanceNone},
+		BooksID:           c.BooksID,
+		AccountID:         accountID,
+		Source:            domain.SourceAggregator,
+		ExternalAccountID: &ext.ID,
+		SyncID:            syncID,
+		Currency: string(
+			target.Currency,
+		),
+		PeriodFrom: &from,
+		PeriodTo:   &to,
+		Balance:    domain.FileBalance{Status: domain.BalanceNone},
 	})
 	if err != nil {
 		return domain.Batch{}, err
@@ -311,18 +342,41 @@ func (s *Service) importAccountRead(
 			continue
 		}
 
-		if err := s.ledger.RecordStatementFacts(ctx, c.BooksID, accountID, b, target.Currency); err != nil {
-			return domain.Batch{}, fmt.Errorf("account %s bill due %s: %w", ext.ID, b.Due.Format(time.DateOnly), err)
+		if err := s.ledger.RecordStatementFacts(
+			ctx,
+			c.BooksID,
+			accountID,
+			b,
+			target.Currency,
+		); err != nil {
+			return domain.Batch{}, fmt.Errorf(
+				"account %s bill due %s: %w",
+				ext.ID,
+				b.Due.Format(time.DateOnly),
+				err,
+			)
 		}
 	}
 
 	if ar.opening != nil {
-		if err := s.ledger.RecordCardOpening(ctx, c.BooksID, accountID, *ar.opening, target.Currency); err != nil {
+		if err := s.ledger.RecordCardOpening(
+			ctx,
+			c.BooksID,
+			accountID,
+			*ar.opening,
+			target.Currency,
+		); err != nil {
 			return domain.Batch{}, fmt.Errorf("account %s opening: %w", ext.ID, err)
 		}
 	}
 
-	if err := s.importRecords(ctx, &batch, target.Currency, read.Records, s.reserveTransfers(c, ext)); err != nil {
+	if err := s.importRecords(
+		ctx,
+		&batch,
+		target.Currency,
+		read.Records,
+		s.reserveTransfers(c, ext),
+	); err != nil {
 		return domain.Batch{}, err
 	}
 
@@ -345,7 +399,11 @@ func (s *Service) assertAccountBalance(
 ) error {
 	// The ledger decides an open assertion of this balance again on every sync (A77).
 	if ext.Balance == nil || *ext.Balance != *b {
-		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &b.Date, Amount: b.Amount}
+		batch.Balance = domain.FileBalance{
+			Status: domain.BalanceRecorded,
+			Date:   &b.Date,
+			Amount: b.Amount,
+		}
 	}
 
 	assert := s.ledger.AssertSyncedBalance

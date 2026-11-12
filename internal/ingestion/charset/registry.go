@@ -39,5 +39,17 @@ func Decoder(name string) (encoding.Encoding, bool) {
 
 // Names lists the accepted encoding names, auto first.
 func Names() []string {
-	return []string{"auto", "utf-8", "windows-1252", "iso-8859-1", "iso-8859-15", "windows-1250", "windows-1251", "shift_jis", "gb18030", "euc-kr", "big5"}
+	return []string{
+		"auto",
+		"utf-8",
+		"windows-1252",
+		"iso-8859-1",
+		"iso-8859-15",
+		"windows-1250",
+		"windows-1251",
+		"shift_jis",
+		"gb18030",
+		"euc-kr",
+		"big5",
+	}
 }

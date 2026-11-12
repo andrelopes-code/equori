@@ -10,12 +10,27 @@ import (
 )
 
 func TestRules(t *testing.T) {
-	cal := calendar.Calendar{ID: "test", Weekend: []time.Weekday{time.Saturday, time.Sunday}, Rules: []calendar.Rule{
-		{Name: "Memorial", Date: calendar.NthWeekday{Month: time.May, Weekday: time.Monday, N: -1}},
-		{Name: "Independence", Date: calendar.Fixed{Month: time.July, Day: 4}, Observed: calendar.ObservedNearestWeekday},
-		{Name: "Christmas", Date: calendar.Fixed{Month: time.December, Day: 25}, Observed: calendar.ObservedNextWorkday},
-		{Name: "New", Date: calendar.Fixed{Month: time.March, Day: 1}, From: 2024},
-	}}
+	cal := calendar.Calendar{
+		ID:      "test",
+		Weekend: []time.Weekday{time.Saturday, time.Sunday},
+		Rules: []calendar.Rule{
+			{
+				Name: "Memorial",
+				Date: calendar.NthWeekday{Month: time.May, Weekday: time.Monday, N: -1},
+			},
+			{
+				Name:     "Independence",
+				Date:     calendar.Fixed{Month: time.July, Day: 4},
+				Observed: calendar.ObservedNearestWeekday,
+			},
+			{
+				Name:     "Christmas",
+				Date:     calendar.Fixed{Month: time.December, Day: 25},
+				Observed: calendar.ObservedNextWorkday,
+			},
+			{Name: "New", Date: calendar.Fixed{Month: time.March, Day: 1}, From: 2024},
+		},
+	}
 
 	dates := func(year int) []string {
 		var out []string
@@ -25,7 +40,12 @@ func TestRules(t *testing.T) {
 
 		return out
 	}
-	if got := dates(2026); !slices.Equal(got, []string{"2026-03-01", "2026-05-25", "2026-07-03", "2026-12-25"}) {
+	if got := dates(
+		2026,
+	); !slices.Equal(
+		got,
+		[]string{"2026-03-01", "2026-05-25", "2026-07-03", "2026-12-25"},
+	) {
 		t.Errorf("2026 = %v", got)
 	}
 
@@ -36,7 +56,8 @@ func TestRules(t *testing.T) {
 
 func TestBRBankingMatchesThePreviousRules(t *testing.T) {
 	got := calendar.BRBanking().Holidays(2026)
-	if len(got) != 13 || got[3].Name != "Good Friday" || got[3].Date.Format(time.DateOnly) != "2026-04-03" {
+	if len(got) != 13 || got[3].Name != "Good Friday" ||
+		got[3].Date.Format(time.DateOnly) != "2026-04-03" {
 		t.Fatalf("2026 = %v", got)
 	}
 

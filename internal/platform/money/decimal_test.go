@@ -45,7 +45,14 @@ func TestParseDecimal(t *testing.T) {
 			}
 
 			if got.Amount() != tt.want || got.Currency() != tt.code || got.Scale() != tt.scale {
-				t.Errorf("got %v scale %d, want %d %s scale %d", got, got.Scale(), tt.want, tt.code, tt.scale)
+				t.Errorf(
+					"got %v scale %d, want %d %s scale %d",
+					got,
+					got.Scale(),
+					tt.want,
+					tt.code,
+					tt.scale,
+				)
 			}
 		})
 	}

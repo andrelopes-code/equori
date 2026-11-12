@@ -47,7 +47,11 @@ type IncomeFact struct {
 }
 
 // InvestmentFacts returns the facts of the children of brokerageID that hold a security.
-func (s *Service) InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (InvestmentFacts, error) {
+func (s *Service) InvestmentFacts(
+	ctx context.Context,
+	booksID int64,
+	brokerageID uuid.UUID,
+) (InvestmentFacts, error) {
 	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return InvestmentFacts{}, err
@@ -63,7 +67,10 @@ func (s *Service) InvestmentFacts(ctx context.Context, booksID int64, brokerageI
 	var ids []uuid.UUID
 	for _, a := range accounts {
 		if a.ParentID == brokerageID && a.HoldsSecurity() {
-			out.Securities = append(out.Securities, SecurityFact{AccountID: a.ID, Instrument: a.Instrument})
+			out.Securities = append(
+				out.Securities,
+				SecurityFact{AccountID: a.ID, Instrument: a.Instrument},
+			)
 			ids = append(ids, a.ID)
 		}
 	}
@@ -86,7 +93,12 @@ func (s *Service) InvestmentFacts(ctx context.Context, booksID int64, brokerageI
 }
 
 // AmountOf builds an amount of code; a security takes its scale from Market data.
-func AmountOf(ctx context.Context, ins Instruments, units int64, code money.Currency) (money.Money, error) {
+func AmountOf(
+	ctx context.Context,
+	ins Instruments,
+	units int64,
+	code money.Currency,
+) (money.Money, error) {
 	if _, err := money.ParseCurrency(string(code)); err == nil {
 		return money.New(units, code)
 	}
@@ -104,7 +116,11 @@ func AmountOf(ctx context.Context, ins Instruments, units int64, code money.Curr
 }
 
 // AmountOf is AmountOf with the service's instruments, for the HTTP adapter.
-func (s *Service) AmountOf(ctx context.Context, units int64, code money.Currency) (money.Money, error) {
+func (s *Service) AmountOf(
+	ctx context.Context,
+	units int64,
+	code money.Currency,
+) (money.Money, error) {
 	return AmountOf(ctx, s.ins, units, code)
 }
 
@@ -116,7 +132,11 @@ func (s *Service) describeInstrument(ctx context.Context, a *domain.Account) err
 
 	in, err := s.ins.Instrument(ctx, a.Instrument)
 	if err != nil {
-		return &domain.FieldError{Field: "currency", Message: "is not a known instrument", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "currency",
+			Message: "is not a known instrument",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	a.QuoteCurrency = in.QuoteCurrency

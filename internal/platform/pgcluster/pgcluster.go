@@ -128,7 +128,11 @@ func lockDir(dir string) (*os.File, error) {
 		return nil, err
 	}
 
-	f, err := os.OpenFile(filepath.Join(dir, "equori.lock"), os.O_CREATE|os.O_RDWR, 0o600) //nolint:gosec // G304: the data directory is the owner's configuration.
+	f, err := os.OpenFile(
+		filepath.Join(dir, "equori.lock"),
+		os.O_CREATE|os.O_RDWR,
+		0o600,
+	) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if err != nil {
 		return nil, fmt.Errorf("open lock: %w", err)
 	}
@@ -150,7 +154,12 @@ func initialize(ctx context.Context, bin, pgdata string, major int) error {
 		}
 
 		if have != major {
-			return fmt.Errorf("%w: data directory %d, programs %d; see the upgrade design of the release that changed the major", ErrMajorMismatch, have, major)
+			return fmt.Errorf(
+				"%w: data directory %d, programs %d; see the upgrade design of the release that changed the major",
+				ErrMajorMismatch,
+				have,
+				major,
+			)
 		}
 
 		return nil
@@ -161,18 +170,28 @@ func initialize(ctx context.Context, bin, pgdata string, major int) error {
 	}
 
 	out, err := exec.CommandContext(ctx, filepath.Join(bin, "initdb"), "-D", pgdata, "-U", role, //nolint:gosec // G204: as above.
-		"--encoding=UTF8", "--locale=C", "--locale-provider=builtin", "--builtin-locale=C.UTF-8", "--auth=trust").CombinedOutput()
+		"--encoding=UTF8", "--locale=C", "--locale-provider=builtin", "--builtin-locale=C.UTF-8", "--auth=trust").
+		CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("initdb: %w: %s", err, out)
 	}
 
 	// M5: one local line; access control is the mode of the socket directory.
-	return os.WriteFile(filepath.Join(pgdata, "pg_hba.conf"), []byte("local all all trust\n"), 0o600) //nolint:gosec // G703: the data directory is the owner's configuration.
+	return os.WriteFile(
+		filepath.Join(pgdata, "pg_hba.conf"),
+		[]byte("local all all trust\n"),
+		0o600,
+	) //nolint:gosec // G703: the data directory is the owner's configuration.
 }
 
 func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 	pidFile := filepath.Join(pgdata, "postmaster.pid")
-	if _, err := os.Stat(pidFile); errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
+	if _, err := os.Stat(
+		pidFile,
+	); errors.Is(
+		err,
+		fs.ErrNotExist,
+	) { //nolint:gosec // G703: as above.
 		return nil
 	}
 
@@ -180,7 +199,10 @@ func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 		// Stale: this process holds equori.lock and no server answers on the socket. After a container
 		// restart the file's PID names another process, and postgres would refuse to start beside it.
 		for _, name := range []string{pidFile, filepath.Join(socket, ".s.PGSQL.5432.lock")} {
-			if err := os.Remove(name); err != nil && !errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
+			if err := os.Remove(
+				name,
+			); err != nil &&
+				!errors.Is(err, fs.ErrNotExist) { //nolint:gosec // G703: as above.
 				return fmt.Errorf("remove stale %s: %w", name, err)
 			}
 		}
@@ -188,7 +210,10 @@ func stopLeftover(ctx context.Context, bin, pgdata, socket string) error {
 		return nil
 	}
 
-	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_ctl"), "stop", "-D", pgdata, "-m", "fast", "-w", "-t", "60").CombinedOutput() //nolint:gosec // G204: as above.
+	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_ctl"), "stop", "-D", pgdata, "-m", "fast", "-w", "-t", "60").
+		CombinedOutput()
+
+		//nolint:gosec // G204: as above.
 	if err != nil {
 		return fmt.Errorf("stop the server left running: %w: %s", err, out)
 	}
@@ -248,7 +273,8 @@ func (c *Cluster) ensureDatabase(ctx context.Context) error {
 	defer conn.Close(ctx)
 
 	var exists bool
-	if err := conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", Database).Scan(&exists); err != nil {
+	if err := conn.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1)", Database).
+		Scan(&exists); err != nil {
 		return fmt.Errorf("look up database: %w", err)
 	}
 

@@ -50,7 +50,11 @@ func (s *Service) SecondFactor(ctx context.Context, memberID int64) (SecondFacto
 }
 
 // RegenerateRecoveryCodes replaces every recovery code after the password check.
-func (s *Service) RegenerateRecoveryCodes(ctx context.Context, memberID int64, password string) ([]string, error) {
+func (s *Service) RegenerateRecoveryCodes(
+	ctx context.Context,
+	memberID int64,
+	password string,
+) ([]string, error) {
 	member, err := s.repo.MemberByID(ctx, memberID)
 	if err != nil {
 		return nil, fmt.Errorf("load member %d: %w", memberID, err)
@@ -107,7 +111,11 @@ func (s *Service) ResetSecondFactor(ctx context.Context, email string) (int64, e
 	return m.ID, nil
 }
 
-func (s *Service) useRecoveryCode(ctx context.Context, memberID int64, code string) (int, bool, error) {
+func (s *Service) useRecoveryCode(
+	ctx context.Context,
+	memberID int64,
+	code string,
+) (int, bool, error) {
 	hash, ok := domain.HashRecoveryCode(code)
 	if !ok {
 		return 0, false, nil

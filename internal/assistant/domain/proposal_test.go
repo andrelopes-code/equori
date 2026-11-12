@@ -40,8 +40,14 @@ func TestExpired(t *testing.T) {
 func TestWaitingFor(t *testing.T) {
 	t.Parallel()
 
-	id1, id2 := uuid.MustParse("00000000-0000-0000-0000-000000000001"), uuid.MustParse("00000000-0000-0000-0000-000000000002")
-	p := Proposal{Refs: map[string]string{"/b": id2.String(), "/a": id1.String() + "#/x", "/c": id1.String()}}
+	id1, id2 := uuid.MustParse(
+		"00000000-0000-0000-0000-000000000001",
+	), uuid.MustParse(
+		"00000000-0000-0000-0000-000000000002",
+	)
+	p := Proposal{
+		Refs: map[string]string{"/b": id2.String(), "/a": id1.String() + "#/x", "/c": id1.String()},
+	}
 
 	if got, want := p.WaitingFor(), []uuid.UUID{id1, id2}; !slices.Equal(got, want) {
 		t.Errorf("WaitingFor = %v, want %v", got, want)

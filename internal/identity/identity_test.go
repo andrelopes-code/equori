@@ -53,7 +53,10 @@ func newHarness(t *testing.T, cfg identity.Config) *harness {
 
 	mux := http.NewServeMux()
 	m.RegisterRoutes(mux)
-	mux.HandleFunc("GET /api/v1/probe", func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) })
+	mux.HandleFunc(
+		"GET /api/v1/probe",
+		func(http.ResponseWriter, *http.Request) { h.probeCalls.Add(1) },
+	)
 	mux.Handle("/api/", httpserver.NotFound())
 
 	validator, err := contract.New(api.Contract, "/api/v1")
@@ -86,7 +89,12 @@ type response struct {
 func (h *harness) do(method, path, body string) response {
 	h.t.Helper()
 
-	req, err := http.NewRequestWithContext(h.t.Context(), method, h.server.URL+path, strings.NewReader(body))
+	req, err := http.NewRequestWithContext(
+		h.t.Context(),
+		method,
+		h.server.URL+path,
+		strings.NewReader(body),
+	)
 	if err != nil {
 		h.t.Fatal(err)
 	}
@@ -138,11 +146,23 @@ func TestSessionLifecycle(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleAdmin,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	expectProblem(t, h.do(http.MethodGet, "/api/v1/me", ""), http.StatusUnauthorized, "unauthenticated")
+	expectProblem(
+		t,
+		h.do(http.MethodGet, "/api/v1/me", ""),
+		http.StatusUnauthorized,
+		"unauthenticated",
+	)
 
 	if resp := h.login(password); resp.status != http.StatusNoContent {
 		t.Fatalf("login status = %d, want 204", resp.status)
@@ -170,21 +190,45 @@ func TestSessionLifecycle(t *testing.T) {
 		t.Fatalf("logout status = %d, want 204", resp.status)
 	}
 
-	expectProblem(t, h.do(http.MethodGet, "/api/v1/me", ""), http.StatusUnauthorized, "unauthenticated")
+	expectProblem(
+		t,
+		h.do(http.MethodGet, "/api/v1/me", ""),
+		http.StatusUnauthorized,
+		"unauthenticated",
+	)
 }
 
 func TestLoginFailures(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	expectProblem(t, h.do(http.MethodPost, "/api/v1/session", `{"email":`), http.StatusBadRequest, "invalid_request")
-	expectProblem(t,
-		h.do(http.MethodPost, "/api/v1/session", `{"email":"nobody@example.com","password":"`+password+`"}`),
-		http.StatusUnauthorized, "invalid_credentials")
+	expectProblem(
+		t,
+		h.do(http.MethodPost, "/api/v1/session", `{"email":`),
+		http.StatusBadRequest,
+		"invalid_request",
+	)
+	expectProblem(
+		t,
+		h.do(
+			http.MethodPost,
+			"/api/v1/session",
+			`{"email":"nobody@example.com","password":"`+password+`"}`,
+		),
+		http.StatusUnauthorized,
+		"invalid_credentials",
+	)
 
 	for range 5 {
 		expectProblem(t, h.login("wrong password!"), http.StatusUnauthorized, "invalid_credentials")
@@ -198,8 +242,18 @@ func TestRequireSessionDeniesByDefault(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
 
-	expectProblem(t, h.do(http.MethodGet, "/api/v1/probe", ""), http.StatusUnauthorized, "unauthenticated")
-	expectProblem(t, h.do(http.MethodGet, "/api/v2/anything", ""), http.StatusUnauthorized, "unauthenticated")
+	expectProblem(
+		t,
+		h.do(http.MethodGet, "/api/v1/probe", ""),
+		http.StatusUnauthorized,
+		"unauthenticated",
+	)
+	expectProblem(
+		t,
+		h.do(http.MethodGet, "/api/v2/anything", ""),
+		http.StatusUnauthorized,
+		"unauthenticated",
+	)
 
 	for _, path := range []string{"/x/../api/v1/probe", "//api/v1/probe", "/%61pi/v1/probe", "/api/v1/./probe"} {
 		if resp := h.do(http.MethodGet, path, ""); resp.status == http.StatusOK {
@@ -207,8 +261,16 @@ func TestRequireSessionDeniesByDefault(t *testing.T) {
 		}
 	}
 
-	h.client.Jar.SetCookies(mustURL(t, h.server.URL), []*http.Cookie{{Name: "equori_session", Value: "forged"}})
-	expectProblem(t, h.do(http.MethodGet, "/api/v1/probe", ""), http.StatusUnauthorized, "unauthenticated")
+	h.client.Jar.SetCookies(
+		mustURL(t, h.server.URL),
+		[]*http.Cookie{{Name: "equori_session", Value: "forged"}},
+	)
+	expectProblem(
+		t,
+		h.do(http.MethodGet, "/api/v1/probe", ""),
+		http.StatusUnauthorized,
+		"unauthenticated",
+	)
 
 	if n := h.probeCalls.Load(); n != 0 {
 		t.Fatalf("protected handler ran %d times without a valid session", n)
@@ -219,7 +281,14 @@ func TestUnknownAPIRoute(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -233,14 +302,26 @@ func TestLoginBodyTooLarge(t *testing.T) {
 	h := newHarness(t, identity.Config{})
 	body := `{"email":"` + email + `","password":"` + strings.Repeat("a", 2<<20) + `"}`
 
-	expectProblem(t, h.do(http.MethodPost, "/api/v1/session", body), http.StatusRequestEntityTooLarge, "request_too_large")
+	expectProblem(
+		t,
+		h.do(http.MethodPost, "/api/v1/session", body),
+		http.StatusRequestEntityTooLarge,
+		"request_too_large",
+	)
 }
 
 func TestConcurrentLoginAttemptsRespectLimit(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{})
-	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -270,7 +351,14 @@ func TestSessionCookieAttributes(t *testing.T) {
 	t.Parallel()
 
 	h := newHarness(t, identity.Config{SecureCookies: true})
-	if _, err := h.module.CreateMember(t.Context(), email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -287,23 +375,61 @@ func TestCreateUserValidation(t *testing.T) {
 	h := newHarness(t, identity.Config{})
 	ctx := t.Context()
 
-	if _, err := h.module.CreateMember(ctx, "not an email", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
+	if _, err := h.module.CreateMember(
+		ctx,
+		"not an email",
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err == nil {
 		t.Fatal("invalid email accepted")
 	}
 
-	if _, err := h.module.CreateMember(ctx, email, "short", identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
+	if _, err := h.module.CreateMember(
+		ctx,
+		email,
+		"short",
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err == nil {
 		t.Fatal("short password accepted")
 	}
 
-	if _, err := h.module.CreateMember(ctx, email, password, "owner", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err == nil {
+	if _, err := h.module.CreateMember(
+		ctx,
+		email,
+		password,
+		"owner",
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err == nil {
 		t.Fatal("unknown role accepted")
 	}
 
-	if _, err := h.module.CreateMember(ctx, email, password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+	if _, err := h.module.CreateMember(
+		ctx,
+		email,
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := h.module.CreateMember(ctx, "ANN@example.com", password, identity.RoleMember, locale.Locale{Language: "pt", Region: "BR"}, "BRL"); !errors.Is(err, identity.ErrEmailTaken) {
+	if _, err := h.module.CreateMember(
+		ctx,
+		"ANN@example.com",
+		password,
+		identity.RoleMember,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	); !errors.Is(
+		err,
+		identity.ErrEmailTaken,
+	) {
 		t.Fatalf("duplicate email with different case err = %v, want ErrEmailTaken", err)
 	}
 }
@@ -323,21 +449,31 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 	t.Parallel()
 	h := newHarness(t, identity.Config{})
 
-	u, err := h.module.CreateMember(t.Context(), email, password, identity.RoleAdmin, locale.Locale{Language: "pt", Region: "BR"}, "BRL")
+	u, err := h.module.CreateMember(
+		t.Context(),
+		email,
+		password,
+		identity.RoleAdmin,
+		locale.Locale{Language: "pt", Region: "BR"},
+		"BRL",
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var booksID int64
-	if err := h.pool.QueryRow(t.Context(), `SELECT books_id FROM identity_membership WHERE member_id = $1`, u.ID).Scan(&booksID); err != nil {
+	if err := h.pool.QueryRow(t.Context(), `SELECT books_id FROM identity_membership WHERE member_id = $1`, u.ID).
+		Scan(&booksID); err != nil {
 		t.Fatal(err)
 	}
 
 	var n int
 	var eventBooksID int64
 
-	err = h.pool.QueryRow(t.Context(),
-		`SELECT count(*), max(books_id) FROM outbox_event WHERE type = 'identity.books_created.v1'`).Scan(&n, &eventBooksID)
+	err = h.pool.QueryRow(
+		t.Context(),
+		`SELECT count(*), max(books_id) FROM outbox_event WHERE type = 'identity.books_created.v1'`,
+	).Scan(&n, &eventBooksID)
 	if err != nil || n != 1 || eventBooksID != booksID {
 		t.Fatalf("events = %d for books %d, %v; want 1 for books %d", n, eventBooksID, err, booksID)
 	}
@@ -351,7 +487,8 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 	}
 
 	var raw []byte
-	if err := h.pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'identity.books_created.v1'`).Scan(&raw); err != nil {
+	if err := h.pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'identity.books_created.v1'`).
+		Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -359,7 +496,9 @@ func TestCreateUserPublishesEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if payload.BooksID != booksID || payload.MemberID != u.ID || payload.Language != "pt" || payload.Region != "BR" || payload.BaseCurrency != "BRL" {
+	if payload.BooksID != booksID || payload.MemberID != u.ID || payload.Language != "pt" ||
+		payload.Region != "BR" ||
+		payload.BaseCurrency != "BRL" {
 		t.Fatalf("payload = %+v", payload)
 	}
 }

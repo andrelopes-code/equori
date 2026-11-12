@@ -56,7 +56,13 @@ type writeOut struct {
 func TestRecordTransactionPreviewAndCall(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	args := map[string]any{"date": "2026-10-23", "description": "Lunch", "amount": "45.90", "from_account_id": f.checking, "to_account_id": f.restaurant}
+	args := map[string]any{
+		"date":            "2026-10-23",
+		"description":     "Lunch",
+		"amount":          "45.90",
+		"from_account_id": f.checking,
+		"to_account_id":   f.restaurant,
+	}
 	p := previewTool(t, f.h, "record_transaction", args)
 
 	want := []tool.Change{
@@ -90,16 +96,34 @@ func TestRecordTransactionPreviewAndCall(t *testing.T) {
 func TestRecordTransactionSplits(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	args := map[string]any{"date": "2026-10-23", "description": "Mix", "amount": "100.00", "from_account_id": f.checking,
-		"splits": []map[string]any{{"to_account_id": f.food, "amount": "60.00"}, {"to_account_id": f.transport, "amount": "40.00"}}}
+	args := map[string]any{
+		"date":            "2026-10-23",
+		"description":     "Mix",
+		"amount":          "100.00",
+		"from_account_id": f.checking,
+		"splits": []map[string]any{
+			{"to_account_id": f.food, "amount": "60.00"},
+			{"to_account_id": f.transport, "amount": "40.00"},
+		},
+	}
 	var out writeOut
 	toolOutput(t, f.h, "record_transaction", args, &out)
 
-	if got := postingAmounts(t, f.h, out.TransactionID); !slices.Equal(got, []int64{-10000, 6000, 4000}) {
+	if got := postingAmounts(
+		t,
+		f.h,
+		out.TransactionID,
+	); !slices.Equal(
+		got,
+		[]int64{-10000, 6000, 4000},
+	) {
 		t.Errorf("postings = %v", got)
 	}
 
-	args["splits"] = []map[string]any{{"to_account_id": f.food, "amount": "50.00"}, {"to_account_id": f.transport, "amount": "40.00"}}
+	args["splits"] = []map[string]any{
+		{"to_account_id": f.food, "amount": "50.00"},
+		{"to_account_id": f.transport, "amount": "40.00"},
+	}
 	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "invalid_arguments", "splits")
 	args["to_account_id"] = f.food
 	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "invalid_arguments", "splits")
@@ -111,13 +135,21 @@ func TestRecordTransactionSplits(t *testing.T) {
 func TestRecordTransactionInstallments(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	args := map[string]any{"date": "2026-10-20", "description": "TV", "amount": "300.00", "from_account_id": f.itauVisa, "to_account_id": f.housing, "installments": 3}
+	args := map[string]any{
+		"date":            "2026-10-20",
+		"description":     "TV",
+		"amount":          "300.00",
+		"from_account_id": f.itauVisa,
+		"to_account_id":   f.housing,
+		"installments":    3,
+	}
 	var out writeOut
 	toolOutput(t, f.h, "record_transaction", args, &out)
 	var got getTransactionOut
 	toolOutput(t, f.h, "get_transaction", map[string]any{"transaction_id": out.TransactionID}, &got)
 
-	if got.InstallmentPlan == nil || got.InstallmentPlan.Count != 3 || got.InstallmentPlan.Installments[0].Amount.Amount != "100.00" {
+	if got.InstallmentPlan == nil || got.InstallmentPlan.Count != 3 ||
+		got.InstallmentPlan.Installments[0].Amount.Amount != "100.00" {
 		t.Errorf("plan = %+v", got.InstallmentPlan)
 	}
 
@@ -131,12 +163,27 @@ func TestRecordTransactionForeign(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
 	travel := f.h.Account("Travel", "expense", "", nil)
-	args := map[string]any{"date": "2026-10-22", "description": "Hotel", "amount": "548.30", "from_account_id": f.itauVisa, "to_account_id": travel,
-		"original_amount": "100.00", "original_currency": "USD", "exchange_rate": "5.4830"}
+	args := map[string]any{
+		"date":              "2026-10-22",
+		"description":       "Hotel",
+		"amount":            "548.30",
+		"from_account_id":   f.itauVisa,
+		"to_account_id":     travel,
+		"original_amount":   "100.00",
+		"original_currency": "USD",
+		"exchange_rate":     "5.4830",
+	}
 	var out writeOut
 	toolOutput(t, f.h, "record_transaction", args, &out)
 
-	if got := postingAmounts(t, f.h, out.TransactionID); !slices.Equal(got, []int64{54830, 1919, -54830, -1919}) {
+	if got := postingAmounts(
+		t,
+		f.h,
+		out.TransactionID,
+	); !slices.Equal(
+		got,
+		[]int64{54830, 1919, -54830, -1919},
+	) {
 		t.Errorf("postings = %v", got)
 	}
 
@@ -148,11 +195,25 @@ func TestRecordTransactionExchange(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
 	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
-	args := map[string]any{"date": "2026-10-14", "description": "USD", "amount": "5483.00", "from_account_id": f.checking, "to_account_id": wise, "to_amount": "1000.00"}
+	args := map[string]any{
+		"date":            "2026-10-14",
+		"description":     "USD",
+		"amount":          "5483.00",
+		"from_account_id": f.checking,
+		"to_account_id":   wise,
+		"to_amount":       "1000.00",
+	}
 	var out writeOut
 	toolOutput(t, f.h, "record_transaction", args, &out)
 
-	if got := postingAmounts(t, f.h, out.TransactionID); !slices.Equal(got, []int64{-548300, 100000}) {
+	if got := postingAmounts(
+		t,
+		f.h,
+		out.TransactionID,
+	); !slices.Equal(
+		got,
+		[]int64{-548300, 100000},
+	) {
 		t.Errorf("postings = %v", got)
 	}
 }
@@ -161,7 +222,13 @@ func TestRecordTransactionCurrencyMismatch(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
 	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
-	args := map[string]any{"date": "2026-10-14", "description": "USD", "amount": "5483.00", "from_account_id": f.checking, "to_account_id": wise}
+	args := map[string]any{
+		"date":            "2026-10-14",
+		"description":     "USD",
+		"amount":          "5483.00",
+		"from_account_id": f.checking,
+		"to_account_id":   wise,
+	}
 	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "invalid_arguments", "to_amount")
 	args["amount"] = "0"
 	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "invalid_arguments", "amount")
@@ -173,8 +240,15 @@ func TestRecordTransactionOtherUser(t *testing.T) {
 	var other struct {
 		ID string `json:"id"`
 	}
-	f.h.Call(f.h.Login("other@example.com"), http.MethodPost, "/api/v1/accounts", map[string]any{"name": "A", "class": "asset", "currency": "BRL", "kind": "checking"}).Decode(t, &other)
-	args := map[string]any{"date": "2026-10-23", "description": "x", "amount": "1.00", "from_account_id": other.ID, "to_account_id": f.restaurant}
+	f.h.Call(f.h.Login("other@example.com"), http.MethodPost, "/api/v1/accounts", map[string]any{"name": "A", "class": "asset", "currency": "BRL", "kind": "checking"}).
+		Decode(t, &other)
+	args := map[string]any{
+		"date":            "2026-10-23",
+		"description":     "x",
+		"amount":          "1.00",
+		"from_account_id": other.ID,
+		"to_account_id":   f.restaurant,
+	}
 	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "not_found", "")
 }
 
@@ -184,8 +258,14 @@ func TestRecordTransactionExchangeFee(t *testing.T) {
 	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
 	fees := f.h.Account("Exchange fees", "expense", "", nil)
 	args := map[string]any{
-		"date": "2026-10-14", "description": "USD", "amount": "5483.00", "from_account_id": f.checking, "to_account_id": wise,
-		"to_amount": "1000.00", "fee": "12.00", "fee_category_id": fees,
+		"date":            "2026-10-14",
+		"description":     "USD",
+		"amount":          "5483.00",
+		"from_account_id": f.checking,
+		"to_account_id":   wise,
+		"to_amount":       "1000.00",
+		"fee":             "12.00",
+		"fee_category_id": fees,
 	}
 
 	var out writeOut
@@ -196,9 +276,20 @@ func TestRecordTransactionExchangeFee(t *testing.T) {
 		t.Errorf("postings = %v", got)
 	}
 
-	plain := map[string]any{"date": "2026-10-14", "description": "x", "amount": "10.00", "from_account_id": f.checking, "to_account_id": f.restaurant, "fee": "1.00"}
+	plain := map[string]any{
+		"date":            "2026-10-14",
+		"description":     "x",
+		"amount":          "10.00",
+		"from_account_id": f.checking,
+		"to_account_id":   f.restaurant,
+		"fee":             "1.00",
+	}
 	f.h.ExpectToolError(f.h.Tool("record_transaction", plain), "invalid_arguments", "fee")
 
 	args["fee_category_id"] = "x"
-	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "invalid_arguments", "fee_category_id")
+	f.h.ExpectToolError(
+		f.h.Tool("record_transaction", args),
+		"invalid_arguments",
+		"fee_category_id",
+	)
 }

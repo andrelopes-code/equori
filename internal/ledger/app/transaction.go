@@ -39,7 +39,11 @@ type Reference struct {
 	Currency string
 }
 
-func (s *Service) RecordTransaction(ctx context.Context, booksID int64, t domain.Transaction) (domain.Transaction, error) {
+func (s *Service) RecordTransaction(
+	ctx context.Context,
+	booksID int64,
+	t domain.Transaction,
+) (domain.Transaction, error) {
 	t.BooksID = booksID
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
@@ -52,7 +56,14 @@ func (s *Service) RecordTransaction(ctx context.Context, booksID int64, t domain
 	return created, err
 }
 
-func (s *Service) CorrectTransaction(ctx context.Context, booksID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
+func (s *Service) CorrectTransaction(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	expectedVersion int,
+	next domain.Transaction,
+	reason string,
+) (domain.Transaction, error) {
 	var corrected domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
@@ -64,7 +75,12 @@ func (s *Service) CorrectTransaction(ctx context.Context, booksID int64, id uuid
 	return corrected, err
 }
 
-func (s *Service) VoidTransaction(ctx context.Context, booksID int64, id uuid.UUID, reason string) error {
+func (s *Service) VoidTransaction(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	reason string,
+) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
 		return s.voidIn(ctx, r, booksID, id, reason)
 	})
@@ -73,11 +89,20 @@ func (s *Service) VoidTransaction(ctx context.Context, booksID int64, id uuid.UU
 // VoidMany voids each transaction with reason, each in its own database transaction, in
 // request order (A202). errs[i] is the error of item i; the error return refuses the request
 // before any item runs.
-func (s *Service) VoidMany(ctx context.Context, booksID int64, ids []uuid.UUID, reason string) ([]error, error) {
+func (s *Service) VoidMany(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+	reason string,
+) ([]error, error) {
 	seen := make(map[uuid.UUID]bool, len(ids))
 	for _, id := range ids {
 		if seen[id] {
-			return nil, &domain.FieldError{Field: "items", Message: "repeats a transaction", Err: domain.ErrValidation}
+			return nil, &domain.FieldError{
+				Field:   "items",
+				Message: "repeats a transaction",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		seen[id] = true
@@ -91,7 +116,11 @@ func (s *Service) VoidMany(ctx context.Context, booksID int64, ids []uuid.UUID, 
 	return errs, nil
 }
 
-func (s *Service) Transaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error) {
+func (s *Service) Transaction(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Transaction, error) {
 	return s.repo.Transaction(ctx, booksID, id)
 }
 
@@ -104,7 +133,11 @@ func (s *Service) Versions(ctx context.Context, booksID int64, id uuid.UUID) ([]
 }
 
 // ReferencedBy returns the non-voided transactions that link to the transaction.
-func (s *Service) ReferencedBy(ctx context.Context, booksID int64, id uuid.UUID) ([]Reference, error) {
+func (s *Service) ReferencedBy(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) ([]Reference, error) {
 	if _, err := s.repo.Transaction(ctx, booksID, id); err != nil {
 		return nil, err
 	}
@@ -113,7 +146,10 @@ func (s *Service) ReferencedBy(ctx context.Context, booksID int64, id uuid.UUID)
 }
 
 // ListTransactions returns a page and the cursor of the next page, nil on the last page.
-func (s *Service) ListTransactions(ctx context.Context, q TransactionQuery) ([]domain.Transaction, *TransactionCursor, error) {
+func (s *Service) ListTransactions(
+	ctx context.Context,
+	q TransactionQuery,
+) ([]domain.Transaction, *TransactionCursor, error) {
 	limit := q.Limit
 	q.Limit = limit + 1
 
@@ -133,7 +169,11 @@ func (s *Service) ListTransactions(ctx context.Context, q TransactionQuery) ([]d
 }
 
 // insert validates, bills, stores and publishes t inside the caller's database transaction.
-func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, error) {
+func (s *Service) insert(
+	ctx context.Context,
+	r Repository,
+	t domain.Transaction,
+) (domain.Transaction, error) {
 	t.ID = uuid.Must(uuid.NewV7())
 	t.Version = 0
 
@@ -162,7 +202,15 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 }
 
 // correctIn is CorrectTransaction inside the database transaction of r.
-func (s *Service) correctIn(ctx context.Context, r Repository, booksID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
+func (s *Service) correctIn(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	expectedVersion int,
+	next domain.Transaction,
+	reason string,
+) (domain.Transaction, error) {
 	prev, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return domain.Transaction{}, err
@@ -198,7 +246,14 @@ func (s *Service) correctIn(ctx context.Context, r Repository, booksID int64, id
 }
 
 // applyCorrection stores next as the version after prev.
-func (s *Service) applyCorrection(ctx context.Context, r Repository, prev, next domain.Transaction, expectedVersion int, accounts map[uuid.UUID]domain.Account, reason string) error {
+func (s *Service) applyCorrection(
+	ctx context.Context,
+	r Repository,
+	prev, next domain.Transaction,
+	expectedVersion int,
+	accounts map[uuid.UUID]domain.Account,
+	reason string,
+) error {
 	var err error
 	if prev.HasInstallments() {
 		// The postings keep their rows: the plan and the statements stay as they are.
@@ -214,7 +269,14 @@ func (s *Service) applyCorrection(ctx context.Context, r Repository, prev, next 
 }
 
 // publishCorrected reloads the stored transaction and publishes its correction.
-func (s *Service) publishCorrected(ctx context.Context, r Repository, booksID int64, id uuid.UUID, prev domain.Transaction, accounts map[uuid.UUID]domain.Account) (domain.Transaction, error) {
+func (s *Service) publishCorrected(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	prev domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+) (domain.Transaction, error) {
 	// The stored postings carry the ids the database assigned.
 	corrected, err := r.Transaction(ctx, booksID, id)
 	if err != nil {
@@ -234,13 +296,27 @@ func (s *Service) publishCorrected(ctx context.Context, r Repository, booksID in
 }
 
 // correct validates, bills and stores next as the version after prev.
-func (s *Service) correct(ctx context.Context, r Repository, prev, next domain.Transaction, expectedVersion int, accounts map[uuid.UUID]domain.Account, reason string) (domain.Transaction, error) {
+func (s *Service) correct(
+	ctx context.Context,
+	r Repository,
+	prev, next domain.Transaction,
+	expectedVersion int,
+	accounts map[uuid.UUID]domain.Account,
+	reason string,
+) (domain.Transaction, error) {
 	corrected, err := prev.Correct(next, expectedVersion, accounts)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
 
-	if err := checkLaterSales(ctx, r, prev.BooksID, corrected.Date, corrected.Postings, prev.ID); err != nil {
+	if err := checkLaterSales(
+		ctx,
+		r,
+		prev.BooksID,
+		corrected.Date,
+		corrected.Postings,
+		prev.ID,
+	); err != nil {
 		return domain.Transaction{}, err
 	}
 
@@ -252,7 +328,13 @@ func (s *Service) correct(ctx context.Context, r Repository, prev, next domain.T
 }
 
 // voidIn is VoidTransaction inside the database transaction of r.
-func (s *Service) voidIn(ctx context.Context, r Repository, booksID int64, id uuid.UUID, reason string) error {
+func (s *Service) voidIn(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	reason string,
+) error {
 	prev, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return err
@@ -283,7 +365,11 @@ func (s *Service) voidIn(ctx context.Context, r Repository, booksID int64, id uu
 }
 
 // validate applies settings defaults and checks references before the domain rules.
-func (s *Service) validate(ctx context.Context, r Repository, t domain.Transaction) (domain.Transaction, map[uuid.UUID]domain.Account, error) {
+func (s *Service) validate(
+	ctx context.Context,
+	r Repository,
+	t domain.Transaction,
+) (domain.Transaction, map[uuid.UUID]domain.Account, error) {
 	if t.BalancingCurrency == "" {
 		settings, err := r.Settings(ctx, t.BooksID)
 		if err != nil {
@@ -304,7 +390,13 @@ func (s *Service) validate(ctx context.Context, r Repository, t domain.Transacti
 }
 
 // addAccounts loads into accounts the accounts of ts it does not hold yet.
-func (s *Service) addAccounts(ctx context.Context, r Repository, booksID int64, accounts map[uuid.UUID]domain.Account, ts ...domain.Transaction) error {
+func (s *Service) addAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accounts map[uuid.UUID]domain.Account,
+	ts ...domain.Transaction,
+) error {
 	var missing []uuid.UUID
 	for _, id := range postingAccounts(ts...) {
 		if _, ok := accounts[id]; !ok {
@@ -327,7 +419,11 @@ func (s *Service) addAccounts(ctx context.Context, r Repository, booksID int64, 
 }
 
 // references loads the accounts of t and checks its payee and link targets.
-func (s *Service) references(ctx context.Context, r Repository, t domain.Transaction) (map[uuid.UUID]domain.Account, error) {
+func (s *Service) references(
+	ctx context.Context,
+	r Repository,
+	t domain.Transaction,
+) (map[uuid.UUID]domain.Account, error) {
 	ids := make([]uuid.UUID, 0, len(t.Postings))
 	for _, p := range t.Postings {
 		ids = append(ids, p.AccountID)
@@ -350,13 +446,21 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 		}
 
 		if parent {
-			return nil, &domain.FieldError{Field: "postings[" + strconv.Itoa(i) + "].account_id", Message: "postings go to the sub-accounts of a parent account", Err: domain.ErrValidation}
+			return nil, &domain.FieldError{
+				Field:   "postings[" + strconv.Itoa(i) + "].account_id",
+				Message: "postings go to the sub-accounts of a parent account",
+				Err:     domain.ErrValidation,
+			}
 		}
 	}
 
 	if t.PayeeID != uuid.Nil {
 		if _, err := r.Payee(ctx, t.BooksID, t.PayeeID); errors.Is(err, ErrNotFound) {
-			return nil, &domain.FieldError{Field: "payee_id", Message: "unknown payee", Err: domain.ErrValidation}
+			return nil, &domain.FieldError{
+				Field:   "payee_id",
+				Message: "unknown payee",
+				Err:     domain.ErrValidation,
+			}
 		} else if err != nil {
 			return nil, err
 		}
@@ -364,7 +468,11 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 
 	for i, l := range t.Links {
 		if _, err := r.Transaction(ctx, t.BooksID, l.Target); errors.Is(err, ErrNotFound) {
-			return nil, &domain.FieldError{Field: "links[" + strconv.Itoa(i) + "].target", Message: "unknown transaction", Err: domain.ErrValidation}
+			return nil, &domain.FieldError{
+				Field:   "links[" + strconv.Itoa(i) + "].target",
+				Message: "unknown transaction",
+				Err:     domain.ErrValidation,
+			}
 		} else if err != nil {
 			return nil, err
 		}
@@ -375,10 +483,18 @@ func (s *Service) references(ctx context.Context, r Repository, t domain.Transac
 
 // newTransactionEvent describes t; accounts holds every account of t, and AccountIDs also
 // covers the accounts of the earlier versions given.
-func newTransactionEvent(t domain.Transaction, accounts map[uuid.UUID]domain.Account, earlier ...domain.Transaction) TransactionEvent {
+func newTransactionEvent(
+	t domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	earlier ...domain.Transaction,
+) TransactionEvent {
 	return TransactionEvent{
-		TransactionID: t.ID, Date: t.Date.Format(time.DateOnly), AccountIDs: accountIDs(append(earlier, t)...),
-		Version: t.Version, Origin: string(t.Origin), CategoryState: string(t.CategoryState(accounts)),
+		TransactionID: t.ID,
+		Date:          t.Date.Format(time.DateOnly),
+		AccountIDs:    accountIDs(append(earlier, t)...),
+		Version:       t.Version,
+		Origin:        string(t.Origin),
+		CategoryState: string(t.CategoryState(accounts)),
 	}
 }
 

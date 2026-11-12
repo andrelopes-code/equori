@@ -11,7 +11,13 @@ import (
 type Repository interface {
 	Settings(ctx context.Context) (domain.Settings, error)
 	SetCopyPassword(ctx context.Context, sealed []byte) error
-	SaveCopyAttempt(ctx context.Context, state domain.CopyState, attemptAt time.Time, copyAt *time.Time, copyFile *string) error
+	SaveCopyAttempt(
+		ctx context.Context,
+		state domain.CopyState,
+		attemptAt time.Time,
+		copyAt *time.Time,
+		copyFile *string,
+	) error
 	SetUpdateCheck(ctx context.Context, consent bool) error
 }
 

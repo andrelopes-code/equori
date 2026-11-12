@@ -38,7 +38,9 @@ var (
 	// ErrPriceMissing: no stored price values an amount in the requested currency (P8 A61).
 	ErrPriceMissing = errors.New("price missing")
 	// ErrMixedInstruments: the account's sub-accounts hold several instruments (P8 A63).
-	ErrMixedInstruments = errors.New("the account and its sub-accounts hold more than one instrument")
+	ErrMixedInstruments = errors.New(
+		"the account and its sub-accounts hold more than one instrument",
+	)
 )
 
 type Price struct {
@@ -51,13 +53,24 @@ type Price struct {
 // Prices values amounts with stored prices (Market data); Convert returns an error
 // wrapping ErrPriceMissing when no price path exists.
 type Prices interface {
-	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []Price, error)
+	Convert(
+		ctx context.Context,
+		q money.Money,
+		to money.Currency,
+		date time.Time,
+	) (money.Money, []Price, error)
 }
 
 // Returns gives the money-weighted return of accounts taken as one tree over the last 12 months
 // (Portfolio, investments design 4.4); ok is false when there is too little history or no flow.
 type Returns interface {
-	TrailingReturn(ctx context.Context, booksID int64, accountIDs []uuid.UUID, today time.Time, in money.Currency) (bp, months int, ok bool, err error)
+	TrailingReturn(
+		ctx context.Context,
+		booksID int64,
+		accountIDs []uuid.UUID,
+		today time.Time,
+		in money.Currency,
+	) (bp, months int, ok bool, err error)
 }
 
 // Account is the part of a ledger account Planning checks.
@@ -90,31 +103,75 @@ type Ledger interface {
 	MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error)
 	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
 	// TransactionFacts returns the book's transactions among ids; unknown ids are omitted.
-	TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Transaction, error)
+	TransactionFacts(
+		ctx context.Context,
+		booksID int64,
+		ids []uuid.UUID,
+	) ([]domain.Transaction, error)
 	// AccountTransactionsBetween returns the non-voided transactions with a posting on the
 	// account dated in [from, to], by date.
-	AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error)
+	AccountTransactionsBetween(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		from, to time.Time,
+	) ([]uuid.UUID, error)
 	// CategoryTotal sums the postings of a category subtree booked in [from, to), in minor
 	// units of the base currency.
-	CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (int64, error)
+	CategoryTotal(
+		ctx context.Context,
+		booksID int64,
+		categoryID uuid.UUID,
+		from, to time.Time,
+	) (int64, error)
 	// CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
-	CategoryMonthlyTotals(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]int64, error)
+	CategoryMonthlyTotals(
+		ctx context.Context,
+		booksID int64,
+		categoryID uuid.UUID,
+		from, to time.Time,
+	) (map[time.Time]int64, error)
 	// Balance is the booked balance of an account at the end of date, in its instrument.
-	Balance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time) (money.Money, error)
+	Balance(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		date time.Time,
+	) (money.Money, error)
 	// ValuedBalance values the account and its sub-accounts in currency in; the error wraps
 	// ErrPriceMissing when no stored price values an instrument.
-	ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (Valuation, error)
+	ValuedBalance(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		date time.Time,
+		in money.Currency,
+	) (Valuation, error)
 	// Commitment sums the installments of a card billed on the statement of month while it is open.
 	Commitment(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error)
 	// PriorInstallments sums the installments of a card billed on the statement of month of
 	// purchases booked before month (A129).
-	PriorInstallments(ctx context.Context, booksID int64, cardID uuid.UUID, month time.Time) (int64, error)
+	PriorInstallments(
+		ctx context.Context,
+		booksID int64,
+		cardID uuid.UUID,
+		month time.Time,
+	) (int64, error)
 	// OwnCategoryMonthlyTotals returns the own postings of each category of class by category and
 	// first day of month in [from, to), in minor units of the base currency.
-	OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) (map[uuid.UUID]map[time.Time]int64, error)
+	OwnCategoryMonthlyTotals(
+		ctx context.Context,
+		booksID int64,
+		class string,
+		from, to time.Time,
+	) (map[uuid.UUID]map[time.Time]int64, error)
 	// FirstPosting is the booked date of the earliest posting of the accounts and their
 	// sub-accounts; false when they have none.
-	FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error)
+	FirstPosting(
+		ctx context.Context,
+		booksID int64,
+		accountIDs []uuid.UUID,
+	) (time.Time, bool, error)
 }
 
 // ErrUnknownCalendar is returned by Calendar.Holidays for an id no calendar answers to.
@@ -155,12 +212,26 @@ type Repository interface {
 	InsertSchedule(ctx context.Context, booksID int64, s domain.Schedule) (domain.Schedule, error)
 	Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error)
 	// UpdateScheduleDescription sets the description of a schedule and returns it.
-	UpdateScheduleDescription(ctx context.Context, booksID int64, id uuid.UUID, description string) (domain.Schedule, error)
+	UpdateScheduleDescription(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		description string,
+	) (domain.Schedule, error)
 	// UpdateScheduleMatching sets the matching settings of a schedule and returns it.
-	UpdateScheduleMatching(ctx context.Context, booksID int64, id uuid.UUID, tolerance, grace, window int) (domain.Schedule, error)
+	UpdateScheduleMatching(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		tolerance, grace, window int,
+	) (domain.Schedule, error)
 	// LockSchedule reads the schedule for update.
 	LockSchedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error)
-	ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error)
+	ListSchedules(
+		ctx context.Context,
+		booksID int64,
+		p page.Request[IDKey],
+	) ([]domain.Schedule, *IDKey, error)
 	Schedules(ctx context.Context, booksID int64) ([]domain.Schedule, error)
 	SchedulesBehind(ctx context.Context, horizon time.Time) ([]ScheduleRef, error)
 	// ScheduleRefs returns every schedule across books.
@@ -168,34 +239,93 @@ type Repository interface {
 	SetGeneratedUntil(ctx context.Context, booksID int64, id uuid.UUID, d time.Time) error
 	// MoveScheduleStart moves the first terms version from oldStart to newStart and renumbers the
 	// occurrences and the later terms versions by shift.
-	MoveScheduleStart(ctx context.Context, booksID int64, id uuid.UUID, oldStart, newStart time.Time, shift int) error
-	InsertOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, ps []domain.Planned) error
+	MoveScheduleStart(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		oldStart, newStart time.Time,
+		shift int,
+	) error
+	InsertOccurrences(
+		ctx context.Context,
+		booksID int64,
+		scheduleID uuid.UUID,
+		ps []domain.Planned,
+	) error
 	// Occurrences returns the occurrences with expected date in [from, to]; scheduleID uuid.Nil
 	// means every schedule.
-	Occurrences(ctx context.Context, booksID int64, from, to time.Time, scheduleID uuid.UUID) ([]domain.Occurrence, error)
-	OccurrencesOfTransaction(ctx context.Context, booksID int64, txID uuid.UUID) ([]domain.Occurrence, error)
+	Occurrences(
+		ctx context.Context,
+		booksID int64,
+		from, to time.Time,
+		scheduleID uuid.UUID,
+	) ([]domain.Occurrence, error)
+	OccurrencesOfTransaction(
+		ctx context.Context,
+		booksID int64,
+		txID uuid.UUID,
+	) ([]domain.Occurrence, error)
 	// SchedulesTouching returns the schedules whose account or counterpart is among accounts.
-	SchedulesTouching(ctx context.Context, booksID int64, accounts []uuid.UUID) ([]domain.Schedule, error)
+	SchedulesTouching(
+		ctx context.Context,
+		booksID int64,
+		accounts []uuid.UUID,
+	) ([]domain.Schedule, error)
 	// OccurrenceByTransaction locks the occurrence the transaction realizes; ErrNotFound when none.
-	OccurrenceByTransaction(ctx context.Context, booksID int64, txID uuid.UUID) (domain.Occurrence, error)
+	OccurrenceByTransaction(
+		ctx context.Context,
+		booksID int64,
+		txID uuid.UUID,
+	) (domain.Occurrence, error)
 	// ExpectedOccurrences locks the expected occurrences of schedules with expected date in [from, to].
-	ExpectedOccurrences(ctx context.Context, booksID int64, schedules []uuid.UUID, from, to time.Time) ([]domain.Occurrence, error)
+	ExpectedOccurrences(
+		ctx context.Context,
+		booksID int64,
+		schedules []uuid.UUID,
+		from, to time.Time,
+	) ([]domain.Occurrence, error)
 	LockOccurrence(ctx context.Context, booksID int64, id uuid.UUID) (domain.Occurrence, error)
 	// Realize and Release change an expected or realized occurrence; ErrOccurrenceClosed when its
 	// state changed meanwhile.
-	Realize(ctx context.Context, booksID int64, id, txID uuid.UUID, by string) (domain.Occurrence, error)
+	Realize(
+		ctx context.Context,
+		booksID int64,
+		id, txID uuid.UUID,
+		by string,
+	) (domain.Occurrence, error)
 	// Release with decline also records the transaction as declined by the occurrence.
-	Release(ctx context.Context, booksID int64, id uuid.UUID, decline bool) (domain.Occurrence, error)
+	Release(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		decline bool,
+	) (domain.Occurrence, error)
 	// Skip and Move change an expected occurrence; ErrOccurrenceClosed otherwise.
 	Skip(ctx context.Context, booksID int64, id uuid.UUID, reason string) (domain.Occurrence, error)
 	// Reopen makes a skipped occurrence expected again; ErrOccurrenceClosed otherwise.
 	Reopen(ctx context.Context, booksID int64, id uuid.UUID) (domain.Occurrence, error)
-	Move(ctx context.Context, booksID int64, id uuid.UUID, date time.Time) (domain.Occurrence, error)
+	Move(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		date time.Time,
+	) (domain.Occurrence, error)
 	// DeleteExpected removes expected occurrences with expected date in [from, to]; moved ones
 	// only with includeMoved. It returns the dates removed.
-	DeleteExpected(ctx context.Context, booksID int64, scheduleID uuid.UUID, from, to time.Time, includeMoved bool) ([]time.Time, error)
+	DeleteExpected(
+		ctx context.Context,
+		booksID int64,
+		scheduleID uuid.UUID,
+		from, to time.Time,
+		includeMoved bool,
+	) ([]time.Time, error)
 	// KeptOccurrences returns the realized, skipped and moved occurrences generated on or after from.
-	KeptOccurrences(ctx context.Context, booksID int64, scheduleID uuid.UUID, from time.Time) ([]domain.Occurrence, error)
+	KeptOccurrences(
+		ctx context.Context,
+		booksID int64,
+		scheduleID uuid.UUID,
+		from time.Time,
+	) ([]domain.Occurrence, error)
 	InsertTerms(ctx context.Context, booksID int64, scheduleID uuid.UUID, t domain.Terms) error
 	// InsertPause returns ErrPauseOverlap when the pause overlaps another one.
 	InsertPause(ctx context.Context, booksID int64, scheduleID uuid.UUID, p domain.Pause) error
@@ -203,24 +333,47 @@ type Repository interface {
 
 	// InsertBudget stores b with its amounts; ErrBudgetExists when the category has one.
 	InsertBudget(ctx context.Context, booksID int64, b domain.Budget) (domain.Budget, error)
-	InsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
+	InsertBudgetAmount(
+		ctx context.Context,
+		booksID int64,
+		budgetID uuid.UUID,
+		a domain.BudgetAmount,
+	) error
 	Budget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error)
 	LockBudget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error)
-	ListBudgets(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error)
+	ListBudgets(
+		ctx context.Context,
+		booksID int64,
+		p page.Request[IDKey],
+	) ([]domain.Budget, *IDKey, error)
 	// DeleteBudget removes the budget with its amounts; ErrNotFound when it is not the book's.
 	DeleteBudget(ctx context.Context, booksID int64, id uuid.UUID) error
 	// Budgets returns every budget of the book with its amounts.
 	Budgets(ctx context.Context, booksID int64) ([]domain.Budget, error)
 	// UpsertBudgetAmount replaces the version of a.EffectiveFrom or inserts it (A130).
-	UpsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error
+	UpsertBudgetAmount(
+		ctx context.Context,
+		booksID int64,
+		budgetID uuid.UUID,
+		a domain.BudgetAmount,
+	) error
 	// BudgetReference returns the stored reference choice; ok is false when there is none (A131).
 	BudgetReference(ctx context.Context, booksID int64) (r domain.Reference, ok bool, err error)
-	SaveBudgetReference(ctx context.Context, booksID int64, r domain.Reference, currency money.Currency) error
+	SaveBudgetReference(
+		ctx context.Context,
+		booksID int64,
+		r domain.Reference,
+		currency money.Currency,
+	) error
 
 	// InsertGoal stores g with its accounts; a used name is a field error on name.
 	InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
 	Goal(ctx context.Context, booksID int64, id uuid.UUID) (domain.Goal, error)
-	ListGoals(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Goal, *IDKey, error)
+	ListGoals(
+		ctx context.Context,
+		booksID int64,
+		p page.Request[IDKey],
+	) ([]domain.Goal, *IDKey, error)
 	// UpdateGoal replaces the fields and the accounts of g.ID; ErrNotFound when it is not the book's.
 	UpdateGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
 	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the book's.

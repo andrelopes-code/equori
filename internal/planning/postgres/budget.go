@@ -15,8 +15,20 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
-func (r *Repository) InsertBudget(ctx context.Context, booksID int64, b domain.Budget) (domain.Budget, error) {
-	row, err := r.q.InsertBudget(ctx, InsertBudgetParams{BooksID: booksID, CategoryAccountID: b.CategoryID, Rollover: b.Rollover, Currency: string(b.Currency)})
+func (r *Repository) InsertBudget(
+	ctx context.Context,
+	booksID int64,
+	b domain.Budget,
+) (domain.Budget, error) {
+	row, err := r.q.InsertBudget(
+		ctx,
+		InsertBudgetParams{
+			BooksID:           booksID,
+			CategoryAccountID: b.CategoryID,
+			Rollover:          b.Rollover,
+			Currency:          string(b.Currency),
+		},
+	)
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
 		return domain.Budget{}, app.ErrBudgetExists
 	}
@@ -34,8 +46,21 @@ func (r *Repository) InsertBudget(ctx context.Context, booksID int64, b domain.B
 	return r.oneBudget(ctx, row, nil)
 }
 
-func (r *Repository) InsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
-	err := r.q.InsertBudgetAmount(ctx, InsertBudgetAmountParams{BooksID: booksID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+func (r *Repository) InsertBudgetAmount(
+	ctx context.Context,
+	booksID int64,
+	budgetID uuid.UUID,
+	a domain.BudgetAmount,
+) error {
+	err := r.q.InsertBudgetAmount(
+		ctx,
+		InsertBudgetAmountParams{
+			BooksID:       booksID,
+			BudgetID:      budgetID,
+			EffectiveFrom: a.EffectiveFrom,
+			Amount:        a.Amount,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("insert budget amount: %w", err)
 	}
@@ -43,7 +68,10 @@ func (r *Repository) InsertBudgetAmount(ctx context.Context, booksID int64, budg
 	return nil
 }
 
-func (r *Repository) completeBudgets(ctx context.Context, rows []PlanningBudget) ([]domain.Budget, error) {
+func (r *Repository) completeBudgets(
+	ctx context.Context,
+	rows []PlanningBudget,
+) ([]domain.Budget, error) {
 	if len(rows) == 0 {
 		return nil, nil
 	}
@@ -54,24 +82,39 @@ func (r *Repository) completeBudgets(ctx context.Context, rows []PlanningBudget)
 	byID := make(map[uuid.UUID]*domain.Budget, len(rows))
 	for i, row := range rows {
 		ids[i] = row.ID
-		out[i] = domain.Budget{ID: row.ID, CategoryID: row.CategoryAccountID, Rollover: row.Rollover, Currency: money.Currency(row.Currency)}
+		out[i] = domain.Budget{
+			ID:         row.ID,
+			CategoryID: row.CategoryAccountID,
+			Rollover:   row.Rollover,
+			Currency:   money.Currency(row.Currency),
+		}
 		byID[row.ID] = &out[i]
 	}
 
-	amounts, err := r.q.ListBudgetAmounts(ctx, ListBudgetAmountsParams{BooksID: rows[0].BooksID, BudgetIds: ids})
+	amounts, err := r.q.ListBudgetAmounts(
+		ctx,
+		ListBudgetAmountsParams{BooksID: rows[0].BooksID, BudgetIds: ids},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list budget amounts: %w", err)
 	}
 
 	for _, a := range amounts {
 		b := byID[a.BudgetID]
-		b.Amounts = append(b.Amounts, domain.BudgetAmount{EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+		b.Amounts = append(
+			b.Amounts,
+			domain.BudgetAmount{EffectiveFrom: a.EffectiveFrom, Amount: a.Amount},
+		)
 	}
 
 	return out, nil
 }
 
-func (r *Repository) oneBudget(ctx context.Context, row PlanningBudget, err error) (domain.Budget, error) {
+func (r *Repository) oneBudget(
+	ctx context.Context,
+	row PlanningBudget,
+	err error,
+) (domain.Budget, error) {
 	if err != nil {
 		return domain.Budget{}, notFound(err)
 	}
@@ -84,7 +127,11 @@ func (r *Repository) oneBudget(ctx context.Context, row PlanningBudget, err erro
 	return out[0], nil
 }
 
-func (r *Repository) Budget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error) {
+func (r *Repository) Budget(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Budget, error) {
 	row, err := r.q.GetBudget(ctx, GetBudgetParams{BooksID: booksID, ID: id})
 	return r.oneBudget(ctx, row, err)
 }
@@ -102,15 +149,26 @@ func (r *Repository) DeleteBudget(ctx context.Context, booksID int64, id uuid.UU
 	return nil
 }
 
-func (r *Repository) LockBudget(ctx context.Context, booksID int64, id uuid.UUID) (domain.Budget, error) {
+func (r *Repository) LockBudget(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Budget, error) {
 	row, err := r.q.LockBudget(ctx, LockBudgetParams{BooksID: booksID, ID: id})
 	return r.oneBudget(ctx, row, err)
 }
 
-func (r *Repository) ListBudgets(ctx context.Context, booksID int64, p page.Request[app.IDKey]) ([]domain.Budget, *app.IDKey, error) {
+func (r *Repository) ListBudgets(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.IDKey],
+) ([]domain.Budget, *app.IDKey, error) {
 	after, limit := keyset(p)
 
-	rows, err := r.q.ListBudgets(ctx, ListBudgetsParams{BooksID: booksID, AfterID: after, RowLimit: limit})
+	rows, err := r.q.ListBudgets(
+		ctx,
+		ListBudgetsParams{BooksID: booksID, AfterID: after, RowLimit: limit},
+	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("list budgets: %w", err)
 	}
@@ -130,8 +188,21 @@ func (r *Repository) Budgets(ctx context.Context, booksID int64) ([]domain.Budge
 	return r.completeBudgets(ctx, rows)
 }
 
-func (r *Repository) UpsertBudgetAmount(ctx context.Context, booksID int64, budgetID uuid.UUID, a domain.BudgetAmount) error {
-	err := r.q.UpsertBudgetAmount(ctx, UpsertBudgetAmountParams{BooksID: booksID, BudgetID: budgetID, EffectiveFrom: a.EffectiveFrom, Amount: a.Amount})
+func (r *Repository) UpsertBudgetAmount(
+	ctx context.Context,
+	booksID int64,
+	budgetID uuid.UUID,
+	a domain.BudgetAmount,
+) error {
+	err := r.q.UpsertBudgetAmount(
+		ctx,
+		UpsertBudgetAmountParams{
+			BooksID:       booksID,
+			BudgetID:      budgetID,
+			EffectiveFrom: a.EffectiveFrom,
+			Amount:        a.Amount,
+		},
+	)
 	if err != nil {
 		return fmt.Errorf("upsert budget amount: %w", err)
 	}
@@ -139,7 +210,10 @@ func (r *Repository) UpsertBudgetAmount(ctx context.Context, booksID int64, budg
 	return nil
 }
 
-func (r *Repository) BudgetReference(ctx context.Context, booksID int64) (domain.Reference, bool, error) {
+func (r *Repository) BudgetReference(
+	ctx context.Context,
+	booksID int64,
+) (domain.Reference, bool, error) {
 	row, err := r.q.GetBudgetReference(ctx, booksID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Reference{}, false, nil
@@ -161,7 +235,12 @@ func (r *Repository) BudgetReference(ctx context.Context, booksID int64) (domain
 	return out, true, nil
 }
 
-func (r *Repository) SaveBudgetReference(ctx context.Context, booksID int64, ref domain.Reference, currency money.Currency) error {
+func (r *Repository) SaveBudgetReference(
+	ctx context.Context,
+	booksID int64,
+	ref domain.Reference,
+	currency money.Currency,
+) error {
 	var amount *int64
 	if ref.HasFixed {
 		amount = &ref.Fixed

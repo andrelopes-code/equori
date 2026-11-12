@@ -119,7 +119,12 @@ func Read(text string, v Vocabulary, today time.Time, defaultAccount uuid.UUID) 
 	var lines []Line
 	for n, piece := range SplitLines(text) {
 		if t := strings.TrimSpace(piece); t != "" {
-			r := &lineReader{words: splitWords(t), vocabulary: v, today: today, defaultAccount: defaultAccount}
+			r := &lineReader{
+				words:          splitWords(t),
+				vocabulary:     v,
+				today:          today,
+				defaultAccount: defaultAccount,
+			}
 			lines = append(lines, r.read(n+1, t, idx))
 		}
 	}

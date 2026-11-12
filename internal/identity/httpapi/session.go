@@ -37,8 +37,18 @@ func (s *Server) createSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.log.InfoContext(ctx, "login succeeded", "member_id", session.MemberID, "books_id", session.BooksID,
-		"method", app.MethodPassword, "request_id", httpserver.RequestID(ctx))
+	s.log.InfoContext(
+		ctx,
+		"login succeeded",
+		"member_id",
+		session.MemberID,
+		"books_id",
+		session.BooksID,
+		"method",
+		app.MethodPassword,
+		"request_id",
+		httpserver.RequestID(ctx),
+	)
 
 	w.Header().Set("Set-Cookie", s.cookie(session.Token, session.ExpiresAt))
 	w.WriteHeader(http.StatusNoContent)

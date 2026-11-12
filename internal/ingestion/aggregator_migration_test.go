@@ -33,7 +33,8 @@ func TestAggregatorTermMigration(t *testing.T) {
 		}
 	}
 
-	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, uid).Scan(&account); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, uid).
+		Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 

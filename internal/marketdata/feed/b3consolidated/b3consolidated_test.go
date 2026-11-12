@@ -55,7 +55,11 @@ func (s *b3Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, _ = w.Write([]byte(`{"redirectUrl":"~/download?token=t` + date + `","token":"t` + date + `","file":{}}`))
+		_, _ = w.Write(
+			[]byte(
+				`{"redirectUrl":"~/download?token=t` + date + `","token":"t` + date + `","file":{}}`,
+			),
+		)
 	case "/api/download/":
 		file, ok := s.files[strings.TrimPrefix(q.Get("token"), "t")]
 		if !ok {
@@ -96,7 +100,12 @@ func TestFetch(t *testing.T) {
 	t.Parallel()
 	_, src := serve(t, map[string][]byte{"2026-10-27": fixture(t)})
 
-	got, err := src.Fetch(t.Context(), []money.Currency{"AUPO11", "IVVB11", "PETR4", "A1MDA315", "WEGE3"}, day("2026-10-27"), day("2026-10-27"))
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"AUPO11", "IVVB11", "PETR4", "A1MDA315", "WEGE3"},
+		day("2026-10-27"),
+		day("2026-10-27"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +116,8 @@ func TestFetch(t *testing.T) {
 	}
 
 	for _, q := range got {
-		if want[q.Instrument] != q.Value.String() || q.Quote != "BRL" || !q.Date.Equal(day("2026-10-27")) {
+		if want[q.Instrument] != q.Value.String() || q.Quote != "BRL" ||
+			!q.Date.Equal(day("2026-10-27")) {
 			t.Fatalf("quote %+v", q)
 		}
 	}
@@ -118,16 +128,30 @@ func TestFetchSkipsWeekendsAndDaysWithoutFile(t *testing.T) {
 	friday := strings.ReplaceAll(string(fixture(t)), "2026-10-27;", "2026-10-23;")
 	s, src := serve(t, map[string][]byte{"2026-10-23": []byte(friday), "2026-10-27": fixture(t)})
 
-	got, err := src.Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-23"), day("2026-10-28"))
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"AUPO11"},
+		day("2026-10-23"),
+		day("2026-10-28"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(got) != 2 || !got[0].Date.Equal(day("2026-10-23")) || !got[1].Date.Equal(day("2026-10-27")) {
+	if len(got) != 2 || !got[0].Date.Equal(day("2026-10-23")) ||
+		!got[1].Date.Equal(day("2026-10-27")) {
 		t.Fatalf("quotes %+v", got)
 	}
 
-	if want := []string{"2026-10-23", "2026-10-26", "2026-10-27", "2026-10-28"}; !slices.Equal(s.dates, want) {
+	if want := []string{
+		"2026-10-23",
+		"2026-10-26",
+		"2026-10-27",
+		"2026-10-28",
+	}; !slices.Equal(
+		s.dates,
+		want,
+	) {
 		t.Fatalf("dates %v, want %v", s.dates, want)
 	}
 }
@@ -135,15 +159,33 @@ func TestFetchSkipsWeekendsAndDaysWithoutFile(t *testing.T) {
 // A file not yet final ends the run without a failure: the next tick fetches its day again.
 func TestFetchStopsAtAFileNotFinal(t *testing.T) {
 	t.Parallel()
-	partial := strings.Replace(strings.ReplaceAll(string(fixture(t)), "2026-10-27;", "2026-10-28;"), "Final", "Parcial", 1)
-	s, src := serve(t, map[string][]byte{"2026-10-27": fixture(t), "2026-10-28": []byte(partial), "2026-10-29": fixture(t)})
+	partial := strings.Replace(
+		strings.ReplaceAll(string(fixture(t)), "2026-10-27;", "2026-10-28;"),
+		"Final",
+		"Parcial",
+		1,
+	)
+	s, src := serve(
+		t,
+		map[string][]byte{
+			"2026-10-27": fixture(t),
+			"2026-10-28": []byte(partial),
+			"2026-10-29": fixture(t),
+		},
+	)
 
-	got, err := src.Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-29"))
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"AUPO11"},
+		day("2026-10-27"),
+		day("2026-10-29"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(got) != 1 || !got[0].Date.Equal(day("2026-10-27")) || !slices.Equal(s.dates, []string{"2026-10-27", "2026-10-28"}) {
+	if len(got) != 1 || !got[0].Date.Equal(day("2026-10-27")) ||
+		!slices.Equal(s.dates, []string{"2026-10-27", "2026-10-28"}) {
 		t.Fatalf("quotes %+v, dates %v", got, s.dates)
 	}
 }
@@ -154,12 +196,27 @@ func TestFetchRejectsMalformedFiles(t *testing.T) {
 	aupo := "2026-10-27;AUPO11;BRAUPOCTF005;FORWARD;111,02;111,77;111,21;111,31;0,02;;;;4312;244390;26950806,21"
 
 	tests := map[string]string{
-		"no status":      strings.Replace(good, "Status do Arquivo: Final\n", "", 1),
-		"no last price":  strings.Replace(good, "LastPric", "Last", 1),
-		"short line":     strings.Replace(good, aupo, aupo[:60], 1),
-		"other date":     strings.Replace(good, aupo, strings.Replace(aupo, "2026-10-27", "2026-10-26", 1), 1),
-		"bad price":      strings.Replace(good, aupo, strings.Replace(aupo, ";111,31;", ";111,3X;", 1), 1),
-		"zero price":     strings.Replace(good, aupo, strings.Replace(aupo, ";111,31;", ";0;", 1), 1),
+		"no status":     strings.Replace(good, "Status do Arquivo: Final\n", "", 1),
+		"no last price": strings.Replace(good, "LastPric", "Last", 1),
+		"short line":    strings.Replace(good, aupo, aupo[:60], 1),
+		"other date": strings.Replace(
+			good,
+			aupo,
+			strings.Replace(aupo, "2026-10-27", "2026-10-26", 1),
+			1,
+		),
+		"bad price": strings.Replace(
+			good,
+			aupo,
+			strings.Replace(aupo, ";111,31;", ";111,3X;", 1),
+			1,
+		),
+		"zero price": strings.Replace(
+			good,
+			aupo,
+			strings.Replace(aupo, ";111,31;", ";0;", 1),
+			1,
+		),
 		"repeated code":  good + aupo + "\n",
 		"empty response": "",
 	}
@@ -167,10 +224,16 @@ func TestFetchRejectsMalformedFiles(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			_, src := serve(t, map[string][]byte{"2026-10-27": []byte(file)})
-			got, err := src.Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-27"))
+			got, err := src.Fetch(
+				t.Context(),
+				[]money.Currency{"AUPO11"},
+				day("2026-10-27"),
+				day("2026-10-27"),
+			)
 
 			var scope *feed.ScopeError
-			if !errors.As(err, &scope) || scope.Key != "day" || scope.Value != "2026-10-27" || got != nil {
+			if !errors.As(err, &scope) || scope.Key != "day" || scope.Value != "2026-10-27" ||
+				got != nil {
 				t.Fatalf("got %+v, %v", got, err)
 			}
 		})
@@ -199,14 +262,16 @@ func TestFetchKeepsEarlierDays(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	got, err := b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL)).Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-29"))
+	got, err := b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL)).
+		Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-29"))
 
 	var scope *feed.ScopeError
 	if !errors.As(err, &scope) || scope.Value != "2026-10-28" || errors.Is(err, feed.ErrNoData) {
 		t.Fatalf("err = %v", err)
 	}
 
-	if len(got) != 1 || got[0].Instrument != "AUPO11" || !slices.Equal(dates, []string{"2026-10-27", "2026-10-28"}) {
+	if len(got) != 1 || got[0].Instrument != "AUPO11" ||
+		!slices.Equal(dates, []string{"2026-10-27", "2026-10-28"}) {
 		t.Fatalf("quotes %+v, dates %v", got, dates)
 	}
 }
@@ -219,7 +284,8 @@ func TestFetchFailsOnAServerError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	_, err := b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL)).Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-27"))
+	_, err := b3consolidated.New(srv.Client(), srv.URL, b3cotahist.New(srv.Client(), srv.URL)).
+		Fetch(t.Context(), []money.Currency{"AUPO11"}, day("2026-10-27"), day("2026-10-27"))
 	if err == nil || errors.Is(err, feed.ErrNoData) {
 		t.Fatalf("err = %v", err)
 	}
@@ -275,7 +341,8 @@ func TestSearch(t *testing.T) {
 		for _, l := range got {
 			codes = append(codes, l.Code)
 
-			if l.Name != "" || l.Type != "" || l.Exchange != "BVMF" || l.QuoteCurrency != "BRL" || l.Symbol != "" {
+			if l.Name != "" || l.Type != "" || l.Exchange != "BVMF" || l.QuoteCurrency != "BRL" ||
+				l.Symbol != "" {
 				t.Fatalf("%s: listing %+v", tc.query, l)
 			}
 		}

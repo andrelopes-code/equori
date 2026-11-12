@@ -17,7 +17,11 @@ type ChainTarget struct {
 
 const maxModelLength = 200
 
-func NewChainTarget(providerID uuid.UUID, model string, capabilities []string) (ChainTarget, error) {
+func NewChainTarget(
+	providerID uuid.UUID,
+	model string,
+	capabilities []string,
+) (ChainTarget, error) {
 	model = strings.TrimSpace(model)
 	if model == "" || utf8.RuneCountInString(model) > maxModelLength {
 		return ChainTarget{}, invalid("model", "must have 1 to 200 characters")

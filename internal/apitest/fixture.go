@@ -33,7 +33,13 @@ func (h *Harness) Record(date string, postings ...map[string]any) string {
 	var out struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": date, "description": "test", "postings": postings}, http.StatusCreated, &out)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions",
+		map[string]any{"date": date, "description": "test", "postings": postings},
+		http.StatusCreated,
+		&out,
+	)
 
 	return out.ID
 }
@@ -59,7 +65,10 @@ func (h *Harness) Card(name string, closingDay, dueDay int, assignment string) s
 	h.t.Helper()
 	id := h.Account(name, "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+id+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-01", "closing_day": closingDay, "due_day": dueDay, "closing_day_assignment": assignment,
+		"effective_from":         "2026-01",
+		"closing_day":            closingDay,
+		"due_day":                dueDay,
+		"closing_day_assignment": assignment,
 	}, http.StatusCreated, nil)
 
 	return id

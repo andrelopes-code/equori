@@ -52,9 +52,17 @@ func (s *Server) refreshMarketData(w http.ResponseWriter, r *http.Request) {
 
 func feedOf(f domain.Feed) MarketDataFeed {
 	out := MarketDataFeed{
-		Id: f.ID, Kind: MarketDataFeedKind(f.Kind), Enabled: f.Enabled, Suggested: f.Suggested, Stale: f.Stale,
-		LastRun: f.LastRun, Error: f.Error,
-		Official: f.Official, Covers: f.Covers, HistoryPending: f.HistoryPending, SymbolOverride: f.SymbolOverride,
+		Id:             f.ID,
+		Kind:           MarketDataFeedKind(f.Kind),
+		Enabled:        f.Enabled,
+		Suggested:      f.Suggested,
+		Stale:          f.Stale,
+		LastRun:        f.LastRun,
+		Error:          f.Error,
+		Official:       f.Official,
+		Covers:         f.Covers,
+		HistoryPending: f.HistoryPending,
+		SymbolOverride: f.SymbolOverride,
 	}
 	if f.Last != nil {
 		out.Last = &openapi_types.Date{Time: *f.Last}

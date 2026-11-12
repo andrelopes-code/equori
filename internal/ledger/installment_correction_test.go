@@ -14,10 +14,17 @@ func TestCorrectInstallmentPurchaseDetails(t *testing.T) {
 	id := toolInstallmentPurchase(t, c, "2026-10-20", "1000.00", 3)
 	before := c.h.Transaction(id)
 
-	c.h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, correctionOf(before, "Volante (6x)", "2026-10-20", 0), http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPut,
+		"/api/v1/transactions/"+id,
+		correctionOf(before, "Volante (6x)", "2026-10-20", 0),
+		http.StatusOK,
+		nil,
+	)
 
 	after := c.h.Transaction(id)
-	if after.Version != 2 || after.Description != "Volante (6x)" || !reflect.DeepEqual(after.Postings, before.Postings) {
+	if after.Version != 2 || after.Description != "Volante (6x)" ||
+		!reflect.DeepEqual(after.Postings, before.Postings) {
 		t.Fatalf("after = %+v, before = %+v", after, before)
 	}
 
@@ -46,9 +53,18 @@ func TestCorrectInstallmentPurchaseRefusesPostingsAndDate(t *testing.T) {
 			id := toolInstallmentPurchase(t, c, "2026-10-20", "1000.00", 3)
 			before := c.h.Transaction(id)
 
-			r := c.h.Do(http.MethodPut, "/api/v1/transactions/"+id, correctionOf(before, tt.description, tt.date, tt.delta))
+			r := c.h.Do(
+				http.MethodPut,
+				"/api/v1/transactions/"+id,
+				correctionOf(before, tt.description, tt.date, tt.delta),
+			)
 
-			c.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+			c.h.ExpectProblem(
+				r,
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"transaction_id",
+			)
 
 			if after := c.h.Transaction(id); !reflect.DeepEqual(after, before) {
 				t.Errorf("after = %+v, want %+v", after, before)
@@ -61,12 +77,18 @@ func TestChangeTransactionCorrectInstallmentDescription(t *testing.T) {
 	t.Parallel()
 	c := newCardSetup(t, "2026-10-25")
 	id := toolInstallmentPurchase(t, c, "2026-10-20", "1000.00", 3)
-	args := map[string]any{"transaction_id": id, "action": "correct", "description": "Volante (6x)", "reason": "item"}
+	args := map[string]any{
+		"transaction_id": id,
+		"action":         "correct",
+		"description":    "Volante (6x)",
+		"reason":         "item",
+	}
 
 	var out writeOut
 	toolOutput(t, c.h, "change_transaction", args, &out)
 
-	if out.TransactionID != id || out.Version != 2 || c.h.Transaction(id).Description != "Volante (6x)" {
+	if out.TransactionID != id || out.Version != 2 ||
+		c.h.Transaction(id).Description != "Volante (6x)" {
 		t.Errorf("out = %+v", out)
 	}
 }
@@ -75,7 +97,13 @@ func TestChangeTransactionCorrectInstallmentRefusesAmount(t *testing.T) {
 	t.Parallel()
 	c := newCardSetup(t, "2026-10-25")
 	id := toolInstallmentPurchase(t, c, "2026-10-20", "1000.00", 3)
-	args := map[string]any{"transaction_id": id, "action": "correct", "description": "Volante", "amount": "900.00", "reason": "item"}
+	args := map[string]any{
+		"transaction_id": id,
+		"action":         "correct",
+		"description":    "Volante",
+		"amount":         "900.00",
+		"reason":         "item",
+	}
 
 	c.h.ExpectToolError(c.h.Tool("change_transaction", args), "invalid_arguments", "amount")
 
@@ -114,7 +142,13 @@ func statementDescriptions(t *testing.T, c cardSetup, month string) []string {
 			Description string `json:"description"`
 		} `json:"postings"`
 	}
-	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+statements(t, c.h, c.card)[month].ID, nil, http.StatusOK, &detail)
+	c.h.MustDo(
+		http.MethodGet,
+		"/api/v1/statements/"+statements(t, c.h, c.card)[month].ID,
+		nil,
+		http.StatusOK,
+		&detail,
+	)
 
 	out := make([]string, len(detail.Postings))
 	for i, p := range detail.Postings {

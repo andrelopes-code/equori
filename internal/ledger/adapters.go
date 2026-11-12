@@ -28,7 +28,12 @@ func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {
 
 type pricesAdapter struct{ md MarketData }
 
-func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (app.Conversion, error) {
+func (p pricesAdapter) Convert(
+	ctx context.Context,
+	q money.Money,
+	to money.Currency,
+	date time.Time,
+) (app.Conversion, error) {
 	c, err := p.md.Convert(ctx, q, to, date)
 	if errors.Is(err, marketdata.ErrPriceMissing) {
 		return app.Conversion{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
@@ -40,7 +45,13 @@ func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Curr
 
 	out := app.Conversion{Value: c.Value, Prices: make([]app.Price, len(c.Prices))}
 	for i, x := range c.Prices {
-		out.Prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
+		out.Prices[i] = app.Price{
+			Instrument: x.Instrument,
+			Quote:      x.Quote,
+			Date:       x.Date,
+			Value:      x.Value,
+			Source:     x.Source,
+		}
 	}
 
 	return out, nil
@@ -48,11 +59,20 @@ func (p pricesAdapter) Convert(ctx context.Context, q money.Money, to money.Curr
 
 type calendarAdapter struct{ cal MarketData }
 
-func (c calendarAdapter) Adjust(ctx context.Context, name string, d time.Time, adjustment string) (time.Time, error) {
+func (c calendarAdapter) Adjust(
+	ctx context.Context,
+	name string,
+	d time.Time,
+	adjustment string,
+) (time.Time, error) {
 	return c.cal.Adjust(ctx, name, d, marketdata.Adjustment(adjustment))
 }
 
-func (c calendarAdapter) DefaultCalendar(region string) string { return c.cal.DefaultCalendar(region) }
+func (c calendarAdapter) DefaultCalendar(
+	region string,
+) string {
+	return c.cal.DefaultCalendar(region)
+}
 
 // instruments caches Market data instruments for the module's lifetime: code, type,
 // scale and quote currency are immutable (P8 amendment A59).

@@ -16,7 +16,7 @@ func (listPayeesAndTagsKind) Values() []string {
 }
 
 type listPayeesAndTagsIn struct {
-	Kind  listPayeesAndTagsKind `json:"kind" jsonschema:"what to list"`
+	Kind  listPayeesAndTagsKind `json:"kind"           jsonschema:"what to list"`
 	Query string                `json:"query,omitzero" jsonschema:"case-insensitive text the name must contain"`
 	tool.PageArgs
 }
@@ -35,7 +35,7 @@ type listPayeesAndTagsOut struct {
 	Payees       []payeeView       `json:"payees,omitzero"`
 	Tags         []string          `json:"tags,omitzero"`
 	Institutions []institutionView `json:"institutions,omitzero"`
-	NextCursor   string            `json:"next_cursor,omitzero" jsonschema:"present when more items follow; pass it as cursor"`
+	NextCursor   string            `json:"next_cursor,omitzero"  jsonschema:"present when more items follow; pass it as cursor"`
 }
 
 func listPayeesAndTags(svc *app.Service) tool.Tool {
@@ -120,7 +120,11 @@ func listTags(
 		}
 	}
 
-	out.Tags, out.NextCursor, err = tool.PageOf(tags, func(s string) string { return s }, in.PageArgs)
+	out.Tags, out.NextCursor, err = tool.PageOf(
+		tags,
+		func(s string) string { return s },
+		in.PageArgs,
+	)
 
 	return err
 }
@@ -133,9 +137,11 @@ func listInstitutions(
 	match func(string) bool,
 	out *listPayeesAndTagsOut,
 ) error {
-	rows, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-		return svc.ListInstitutions(ctx, booksID, p)
-	})
+	rows, err := allPages(
+		func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+			return svc.ListInstitutions(ctx, booksID, p)
+		},
+	)
 	if err != nil {
 		return err
 	}

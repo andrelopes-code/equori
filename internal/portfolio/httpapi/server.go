@@ -50,13 +50,22 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listInstrumentSubtypes))
 }
 
-func (s *Server) listPositions(ctx context.Context, r *http.Request, _ httpserver.None) (PositionList, error) {
+func (s *Server) listPositions(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (PositionList, error) {
 	params, err := httpserver.Query[ListPositionsParams](r)
 	if err != nil {
 		return PositionList{}, err
 	}
 
-	ps, err := s.svc.Positions(ctx, auth.MustBooksID(ctx), params.Date.Time, valueIn(params.ValueIn))
+	ps, err := s.svc.Positions(
+		ctx,
+		auth.MustBooksID(ctx),
+		params.Date.Time,
+		valueIn(params.ValueIn),
+	)
 	if err != nil {
 		return PositionList{}, err
 	}
@@ -64,7 +73,10 @@ func (s *Server) listPositions(ctx context.Context, r *http.Request, _ httpserve
 	items := make([]Position, len(ps))
 	for i, p := range ps {
 		items[i] = Position{
-			AccountId: p.AccountID, Instrument: string(p.Instrument), Quantity: toMoney(p.Quantity), CostBasis: toMoney(p.CostBasis),
+			AccountId:  p.AccountID,
+			Instrument: string(p.Instrument),
+			Quantity:   toMoney(p.Quantity),
+			CostBasis:  toMoney(p.CostBasis),
 		}
 		if p.AverageCost != nil {
 			avg := p.AverageCost.String()
@@ -76,7 +88,13 @@ func (s *Server) listPositions(ctx context.Context, r *http.Request, _ httpserve
 
 			prices := make([]Price, len(p.Prices))
 			for j, x := range p.Prices {
-				prices[j] = Price{Instrument: string(x.Instrument), QuoteInstrument: string(x.Quote), Date: date(x.Date), Value: x.Value.Reduced().String(), Source: x.Source}
+				prices[j] = Price{
+					Instrument:      string(x.Instrument),
+					QuoteInstrument: string(x.Quote),
+					Date:            date(x.Date),
+					Value:           x.Value.Reduced().String(),
+					Source:          x.Source,
+				}
 			}
 
 			items[i].MarketValue, items[i].Prices = &v, &prices
@@ -91,7 +109,11 @@ func (s *Server) listPositions(ctx context.Context, r *http.Request, _ httpserve
 	return PositionList{Items: items, QuoteWarnings: quoteWarnings(warnings)}, nil
 }
 
-func (s *Server) listRealizedResults(ctx context.Context, r *http.Request, _ httpserver.None) (RealizedResultList, error) {
+func (s *Server) listRealizedResults(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (RealizedResultList, error) {
 	params, err := httpserver.Query[ListRealizedResultsParams](r)
 	if err != nil {
 		return RealizedResultList{}, err
@@ -112,16 +134,31 @@ func (s *Server) listRealizedResults(ctx context.Context, r *http.Request, _ htt
 	items := make([]RealizedResult, len(rs))
 	for i, r := range rs {
 		items[i] = RealizedResult{
-			TransactionId: r.TransactionID, AccountId: r.AccountID, Instrument: string(r.Instrument), Date: date(r.Date),
-			Month: r.Month.Format("2006-01"), Quantity: toMoney(r.QuantityAmount), Cost: toMoney(r.CostAmount),
-			Proceeds: toMoney(r.Proceeds), Result: toMoney(r.ResultAmount), TaxClass: optional(r.TaxClass),
+			TransactionId: r.TransactionID,
+			AccountId:     r.AccountID,
+			Instrument:    string(r.Instrument),
+			Date:          date(r.Date),
+			Month: r.Month.Format(
+				"2006-01",
+			),
+			Quantity: toMoney(r.QuantityAmount),
+			Cost:     toMoney(r.CostAmount),
+			Proceeds: toMoney(
+				r.Proceeds,
+			),
+			Result:   toMoney(r.ResultAmount),
+			TaxClass: optional(r.TaxClass),
 		}
 	}
 
 	return RealizedResultList{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
-func (s *Server) listIncomeEvents(ctx context.Context, r *http.Request, _ httpserver.None) (IncomeEventList, error) {
+func (s *Server) listIncomeEvents(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (IncomeEventList, error) {
 	params, err := httpserver.Query[ListIncomeEventsParams](r)
 	if err != nil {
 		return IncomeEventList{}, err
@@ -142,16 +179,25 @@ func (s *Server) listIncomeEvents(ctx context.Context, r *http.Request, _ httpse
 	items := make([]IncomeEvent, len(es))
 	for i, e := range es {
 		items[i] = IncomeEvent{
-			TransactionId: e.TransactionID, AccountId: e.AccountID, Instrument: string(e.Instrument), Date: date(e.Date),
-			IncomeType: IncomeType(e.Type), TaxTreatment: optional(e.TaxTreatment),
-			Gross: toMoney(e.GrossAmount), Withheld: toMoney(e.WithheldAmount),
+			TransactionId: e.TransactionID,
+			AccountId:     e.AccountID,
+			Instrument:    string(e.Instrument),
+			Date:          date(e.Date),
+			IncomeType:    IncomeType(e.Type),
+			TaxTreatment:  optional(e.TaxTreatment),
+			Gross:         toMoney(e.GrossAmount),
+			Withheld:      toMoney(e.WithheldAmount),
 		}
 	}
 
 	return IncomeEventList{From: date(from), To: date(to.AddDate(0, 0, -1)), Items: items}, nil
 }
 
-func (s *Server) listInvestmentIncomeTypes(ctx context.Context, _ *http.Request, _ httpserver.None) (IncomeTypeList, error) {
+func (s *Server) listInvestmentIncomeTypes(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (IncomeTypeList, error) {
 	types, err := s.svc.IncomeTypes(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return IncomeTypeList{}, err
@@ -165,7 +211,11 @@ func (s *Server) listInvestmentIncomeTypes(ctx context.Context, _ *http.Request,
 	return IncomeTypeList{Items: items}, nil
 }
 
-func (s *Server) listInstrumentSubtypes(ctx context.Context, r *http.Request, _ httpserver.None) (SubtypeList, error) {
+func (s *Server) listInstrumentSubtypes(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (SubtypeList, error) {
 	params, err := httpserver.Query[ListInstrumentSubtypesParams](r)
 	if err != nil {
 		return SubtypeList{}, err
@@ -179,13 +229,23 @@ func (s *Server) listInstrumentSubtypes(ctx context.Context, r *http.Request, _ 
 	return SubtypeList{Items: subtypes}, nil
 }
 
-func (s *Server) getAllocation(ctx context.Context, r *http.Request, _ httpserver.None) (Allocation, error) {
+func (s *Server) getAllocation(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Allocation, error) {
 	params, err := httpserver.Query[GetAllocationParams](r)
 	if err != nil {
 		return Allocation{}, err
 	}
 
-	res, err := s.svc.Allocation(ctx, auth.MustBooksID(ctx), params.Date.Time, string(params.By), valueIn(params.ValueIn))
+	res, err := s.svc.Allocation(
+		ctx,
+		auth.MustBooksID(ctx),
+		params.Date.Time,
+		string(params.By),
+		valueIn(params.ValueIn),
+	)
 	if err != nil {
 		return Allocation{}, err
 	}
@@ -198,27 +258,50 @@ func (s *Server) getAllocation(ctx context.Context, r *http.Request, _ httpserve
 	return out, nil
 }
 
-func (s *Server) getNetWorth(ctx context.Context, r *http.Request, _ httpserver.None) (NetWorth, error) {
+func (s *Server) getNetWorth(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (NetWorth, error) {
 	params, err := httpserver.Query[GetNetWorthParams](r)
 	if err != nil {
 		return NetWorth{}, err
 	}
 
-	res, err := s.svc.NetWorth(ctx, auth.MustBooksID(ctx), params.Date.Time, valueIn(params.ValueIn))
+	res, err := s.svc.NetWorth(
+		ctx,
+		auth.MustBooksID(ctx),
+		params.Date.Time,
+		valueIn(params.ValueIn),
+	)
 	if err != nil {
 		return NetWorth{}, err
 	}
 
-	return NetWorth{Assets: toMoney(res.Assets), Liabilities: toMoney(res.Liabilities), Net: toMoney(res.Net)}, nil
+	return NetWorth{
+		Assets:      toMoney(res.Assets),
+		Liabilities: toMoney(res.Liabilities),
+		Net:         toMoney(res.Net),
+	}, nil
 }
 
-func (s *Server) getNetWorthDays(ctx context.Context, r *http.Request, _ httpserver.None) (NetWorthDays, error) {
+func (s *Server) getNetWorthDays(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (NetWorthDays, error) {
 	params, err := httpserver.Query[GetNetWorthDaysParams](r)
 	if err != nil {
 		return NetWorthDays{}, err
 	}
 
-	days, err := s.svc.NetWorthDays(ctx, auth.MustBooksID(ctx), params.From.Time, params.To.Time, valueIn(params.ValueIn))
+	days, err := s.svc.NetWorthDays(
+		ctx,
+		auth.MustBooksID(ctx),
+		params.From.Time,
+		params.To.Time,
+		valueIn(params.ValueIn),
+	)
 	if err != nil {
 		return NetWorthDays{}, err
 	}
@@ -254,7 +337,11 @@ func optional(s string) *string {
 	return &s
 }
 
-func toMoney(m money.Money) Money { return Money{Amount: m.Amount(), Currency: string(m.Currency())} }
+func toMoney(
+	m money.Money,
+) Money {
+	return Money{Amount: m.Amount(), Currency: string(m.Currency())}
+}
 
 func quoteWarnings(ws []app.QuoteWarning) []PositionQuoteWarning {
 	out := make([]PositionQuoteWarning, len(ws))
@@ -276,13 +363,25 @@ func date(t time.Time) openapi_types.Date { return openapi_types.Date{Time: t} }
 func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidReturnRange):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the period must not exceed 366 days")
-		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 365 days after it"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"from must not be after to, and the period must not exceed 366 days",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "to", Message: "must be on or after from and at most 365 days after it"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrInvalidDayRange):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 62 days")
-		d.Errors = []problem.FieldError{{Field: "to", Message: "must be on or after from and at most 61 days after it"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"from must not be after to, and the range must not exceed 62 days",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "to", Message: "must be on or after from and at most 61 days after it"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrNotFound):
@@ -290,12 +389,22 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrPriceMissing):
 		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
 	case errors.Is(err, app.ErrUnknownIndex), errors.Is(err, app.ErrIndexNotDaily):
-		d := problem.New(http.StatusBadRequest, "invalid_request", "the index must be an enabled daily index with stored rates")
-		d.Errors = []problem.FieldError{{Field: "index", Message: "must be an enabled daily index with stored rates"}}
+		d := problem.New(
+			http.StatusBadRequest,
+			"invalid_request",
+			"the index must be an enabled daily index with stored rates",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "index", Message: "must be an enabled daily index with stored rates"},
+		}
 
 		return d, true
 	case errors.Is(err, app.ErrReturnUndefined):
-		return problem.New(http.StatusUnprocessableEntity, "return_undefined", "no money was invested in the period, or the return has no solution"), true
+		return problem.New(
+			http.StatusUnprocessableEntity,
+			"return_undefined",
+			"no money was invested in the period, or the return has no solution",
+		), true
 	}
 
 	return problem.Details{}, false

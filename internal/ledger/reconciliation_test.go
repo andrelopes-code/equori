@@ -20,7 +20,11 @@ type assertionResult struct {
 }
 
 func assertBalance(h *apitest.Harness, account, date string, amount int64) apitest.Response {
-	return h.Do(http.MethodPost, "/api/v1/accounts/"+account+"/balance-assertions", map[string]any{"date": date, "amount": apitest.BRL(amount)})
+	return h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+account+"/balance-assertions",
+		map[string]any{"date": date, "amount": apitest.BRL(amount)},
+	)
 }
 
 type reserveSetup struct {
@@ -34,12 +38,32 @@ func newReserveSetup(t *testing.T) reserveSetup {
 	inst := struct {
 		ID string `json:"id"`
 	}{}
-	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "Nubank"}, http.StatusCreated, &inst)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/institutions",
+		map[string]string{"name": "Nubank"},
+		http.StatusCreated,
+		&inst,
+	)
 	parent := h.Account("Nubank", "asset", "checking", map[string]any{"institution_id": inst.ID})
 	r := reserveSetup{h: h}
-	r.checking = h.Account("Nubank checking", "asset", "checking", map[string]any{"institution_id": inst.ID, "parent_id": parent})
-	r.reserve = h.Account("Emergency fund", "asset", "reserve", map[string]any{"institution_id": inst.ID, "parent_id": parent})
-	r.transfer = h.Record("2026-10-01", apitest.Posting(r.checking, -1000000), apitest.Posting(r.reserve, 1000000))
+	r.checking = h.Account(
+		"Nubank checking",
+		"asset",
+		"checking",
+		map[string]any{"institution_id": inst.ID, "parent_id": parent},
+	)
+	r.reserve = h.Account(
+		"Emergency fund",
+		"asset",
+		"reserve",
+		map[string]any{"institution_id": inst.ID, "parent_id": parent},
+	)
+	r.transfer = h.Record(
+		"2026-10-01",
+		apitest.Posting(r.checking, -1000000),
+		apitest.Posting(r.reserve, 1000000),
+	)
 
 	return r
 }
@@ -56,12 +80,14 @@ func TestAssertionRecordsYield(t *testing.T) {
 
 	resp.Decode(t, &res)
 
-	if res.Resolution != "yield" || res.Difference.Amount != 8341 || res.ResolutionTransactionID == "" {
+	if res.Resolution != "yield" || res.Difference.Amount != 8341 ||
+		res.ResolutionTransactionID == "" {
 		t.Fatalf("result = %+v", res)
 	}
 
 	yield := r.h.Transaction(res.ResolutionTransactionID)
-	if amountsByAccount(yield)[r.reserve] != 8341 || yield.Date != "2026-10-31" || yield.Origin != "system" ||
+	if amountsByAccount(yield)[r.reserve] != 8341 || yield.Date != "2026-10-31" ||
+		yield.Origin != "system" ||
 		yield.Description != "Rendimento de 01/10/2026 a 31/10/2026" {
 		t.Fatalf("yield = %+v", yield)
 	}
@@ -69,7 +95,9 @@ func TestAssertionRecordsYield(t *testing.T) {
 	var next assertionResult
 	assertBalance(r.h, r.reserve, "2026-11-04", 1009000).Decode(t, &next)
 
-	if got := r.h.Transaction(next.ResolutionTransactionID).Description; got != "Rendimento de 01/11/2026 a 04/11/2026" {
+	if got := r.h.Transaction(
+		next.ResolutionTransactionID,
+	).Description; got != "Rendimento de 01/11/2026 a 04/11/2026" {
 		t.Fatalf("second yield description = %q", got)
 	}
 
@@ -109,11 +137,43 @@ func TestYieldDescriptionInOwnerLanguage(t *testing.T) {
 		var checking, reserve struct {
 			ID string `json:"id"`
 		}
-		call(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Checking", "class": "asset", "kind": "checking", "currency": "BRL"}, http.StatusCreated, &checking)
-		call(http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Reserve", "class": "asset", "kind": "reserve", "currency": "BRL"}, http.StatusCreated, &reserve)
-		call(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-01", "description": "test", "postings": []map[string]any{
-			apitest.Posting(checking.ID, -1000000), apitest.Posting(reserve.ID, 1000000),
-		}}, http.StatusCreated, nil)
+		call(
+			http.MethodPost,
+			"/api/v1/accounts",
+			map[string]any{
+				"name":     "Checking",
+				"class":    "asset",
+				"kind":     "checking",
+				"currency": "BRL",
+			},
+			http.StatusCreated,
+			&checking,
+		)
+		call(
+			http.MethodPost,
+			"/api/v1/accounts",
+			map[string]any{
+				"name":     "Reserve",
+				"class":    "asset",
+				"kind":     "reserve",
+				"currency": "BRL",
+			},
+			http.StatusCreated,
+			&reserve,
+		)
+		call(
+			http.MethodPost,
+			"/api/v1/transactions",
+			map[string]any{
+				"date":        "2026-10-01",
+				"description": "test",
+				"postings": []map[string]any{
+					apitest.Posting(checking.ID, -1000000), apitest.Posting(reserve.ID, 1000000),
+				},
+			},
+			http.StatusCreated,
+			nil,
+		)
 
 		for _, a := range []struct {
 			date        string
@@ -121,12 +181,30 @@ func TestYieldDescriptionInOwnerLanguage(t *testing.T) {
 			description string
 		}{{"2026-10-31", 1008341, c.range_}, {"2026-11-01", 1008600, c.day}} {
 			var res assertionResult
-			call(http.MethodPost, "/api/v1/accounts/"+reserve.ID+"/balance-assertions", map[string]any{"date": a.date, "amount": apitest.BRL(a.amount)}, http.StatusCreated, &res)
+			call(
+				http.MethodPost,
+				"/api/v1/accounts/"+reserve.ID+"/balance-assertions",
+				map[string]any{"date": a.date, "amount": apitest.BRL(a.amount)},
+				http.StatusCreated,
+				&res,
+			)
 			var yield apitest.TransactionView
-			call(http.MethodGet, "/api/v1/transactions/"+res.ResolutionTransactionID, nil, http.StatusOK, &yield)
+			call(
+				http.MethodGet,
+				"/api/v1/transactions/"+res.ResolutionTransactionID,
+				nil,
+				http.StatusOK,
+				&yield,
+			)
 
 			if yield.Description != a.description {
-				t.Errorf("%v: yield of %s = %q, want %q", c.locale, a.date, yield.Description, a.description)
+				t.Errorf(
+					"%v: yield of %s = %q, want %q",
+					c.locale,
+					a.date,
+					yield.Description,
+					a.description,
+				)
 			}
 		}
 	}
@@ -173,7 +251,12 @@ func TestAssertionOnParentIs422(t *testing.T) {
 
 	for _, a := range accounts.Items {
 		if a.Name == "Nubank" {
-			r.h.ExpectProblem(assertBalance(r.h, a.ID, "2026-10-31", 0), http.StatusUnprocessableEntity, "validation_failed", "account_id")
+			r.h.ExpectProblem(
+				assertBalance(r.h, a.ID, "2026-10-31", 0),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"account_id",
+			)
 			return
 		}
 	}
@@ -185,11 +268,21 @@ func TestAssertionBeforeReconciliationIs409(t *testing.T) {
 	t.Parallel()
 
 	r := newReserveSetup(t)
-	if resp := assertBalance(r.h, r.reserve, "2026-10-31", 1000000); resp.Status != http.StatusCreated {
+	if resp := assertBalance(
+		r.h,
+		r.reserve,
+		"2026-10-31",
+		1000000,
+	); resp.Status != http.StatusCreated {
 		t.Fatalf("status %d", resp.Status)
 	}
 
-	r.h.ExpectProblem(assertBalance(r.h, r.reserve, "2026-10-15", 1000000), http.StatusConflict, "already_reconciled", "")
+	r.h.ExpectProblem(
+		assertBalance(r.h, r.reserve, "2026-10-15", 1000000),
+		http.StatusConflict,
+		"already_reconciled",
+		"",
+	)
 }
 
 func TestAssertionWithoutHistoryStaysOpen(t *testing.T) {
@@ -207,13 +300,24 @@ func TestAssertionWithoutHistoryStaysOpen(t *testing.T) {
 func TestFutureAssertionIs422(t *testing.T) {
 	t.Parallel()
 	r := newReserveSetup(t)
-	r.h.ExpectProblem(assertBalance(r.h, r.reserve, "2026-11-06", 1000000), http.StatusUnprocessableEntity, "validation_failed", "date")
+	r.h.ExpectProblem(
+		assertBalance(r.h, r.reserve, "2026-11-06", 1000000),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"date",
+	)
 }
 
 func TestYieldModeCanChange(t *testing.T) {
 	t.Parallel()
 	r := newReserveSetup(t)
-	r.h.MustDo(http.MethodPatch, "/api/v1/accounts/"+r.reserve, map[string]any{"yield_mode": "none"}, http.StatusOK, nil)
+	r.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/accounts/"+r.reserve,
+		map[string]any{"yield_mode": "none"},
+		http.StatusOK,
+		nil,
+	)
 	var res assertionResult
 
 	resp := assertBalance(r.h, r.reserve, "2026-10-31", 1008341)
@@ -247,7 +351,11 @@ func reconciliationOf(h *apitest.Harness, account string) reconciliationStatus {
 }
 
 func resolve(h *apitest.Harness, assertion, resolution string) apitest.Response {
-	return h.Do(http.MethodPost, "/api/v1/balance-assertions/"+assertion+"/resolve", map[string]string{"resolution": resolution})
+	return h.Do(
+		http.MethodPost,
+		"/api/v1/balance-assertions/"+assertion+"/resolve",
+		map[string]string{"resolution": resolution},
+	)
 }
 
 // newDifference leaves the S26 difference open: derived 3,203.27, asserted 3,201.17.
@@ -267,7 +375,9 @@ func TestAdjustmentResolvesDifference(t *testing.T) {
 	h, checking, assertion := newDifference(t)
 
 	s := reconciliationOf(h, checking)
-	if s.LastReconciledOn != "" || s.OpenDifference == nil || s.OpenDifference.AssertionID != assertion || s.OpenDifference.Difference.Amount != -210 {
+	if s.LastReconciledOn != "" || s.OpenDifference == nil ||
+		s.OpenDifference.AssertionID != assertion ||
+		s.OpenDifference.Difference.Amount != -210 {
 		t.Fatalf("status before = %+v", s)
 	}
 
@@ -285,11 +395,20 @@ func TestAdjustmentResolvesDifference(t *testing.T) {
 		t.Fatalf("result = %+v, postings = %v", res, r)
 	}
 
-	if s := reconciliationOf(h, checking); s.LastReconciledOn != "2026-10-31" || s.OpenDifference != nil {
+	if s := reconciliationOf(
+		h,
+		checking,
+	); s.LastReconciledOn != "2026-10-31" ||
+		s.OpenDifference != nil {
 		t.Fatalf("status after = %+v", s)
 	}
 
-	h.ExpectProblem(resolve(h, assertion, "adjustment"), http.StatusConflict, "already_reconciled", "")
+	h.ExpectProblem(
+		resolve(h, assertion, "adjustment"),
+		http.StatusConflict,
+		"already_reconciled",
+		"",
+	)
 }
 
 func TestYieldResolvesPositiveDifference(t *testing.T) {
@@ -312,7 +431,8 @@ func TestYieldResolvesPositiveDifference(t *testing.T) {
 	tx := h.Transaction(res.ResolutionTransactionID)
 
 	r := amountsByAccount(tx)
-	if res.Resolution != "yield" || res.Difference.Amount != 10 || r[checking] != 10 || len(r) != 2 {
+	if res.Resolution != "yield" || res.Difference.Amount != 10 || r[checking] != 10 ||
+		len(r) != 2 {
 		t.Fatalf("result = %+v, postings = %v", res, r)
 	}
 
@@ -320,7 +440,11 @@ func TestYieldResolvesPositiveDifference(t *testing.T) {
 		t.Fatalf("description = %q", tx.Description)
 	}
 
-	if s := reconciliationOf(h, checking); s.LastReconciledOn != "2026-10-31" || s.OpenDifference != nil {
+	if s := reconciliationOf(
+		h,
+		checking,
+	); s.LastReconciledOn != "2026-10-31" ||
+		s.OpenDifference != nil {
 		t.Fatalf("status after = %+v", s)
 	}
 }
@@ -328,7 +452,12 @@ func TestYieldResolvesPositiveDifference(t *testing.T) {
 func TestYieldRejectsNegativeDifference(t *testing.T) {
 	t.Parallel()
 	h, checking, assertion := newDifference(t)
-	h.ExpectProblem(resolve(h, assertion, "yield"), http.StatusUnprocessableEntity, "validation_failed", "")
+	h.ExpectProblem(
+		resolve(h, assertion, "yield"),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"",
+	)
 
 	if s := reconciliationOf(h, checking); s.LastReconciledOn != "" || s.OpenDifference == nil {
 		t.Fatalf("status after = %+v", s)
@@ -338,14 +467,26 @@ func TestYieldRejectsNegativeDifference(t *testing.T) {
 func TestTransactionsAddedNeedsMatchingBalance(t *testing.T) {
 	t.Parallel()
 	h, checking, assertion := newDifference(t)
-	h.ExpectProblem(resolve(h, assertion, "transactions_added"), http.StatusConflict, "difference_remains", "")
+	h.ExpectProblem(
+		resolve(h, assertion, "transactions_added"),
+		http.StatusConflict,
+		"difference_remains",
+		"",
+	)
 
 	fees := h.Account("Bank fees", "expense", "", nil)
 	h.Record("2026-10-20", apitest.Posting(checking, -210), apitest.Posting(fees, 210))
 	var res assertionResult
-	h.MustDo(http.MethodPost, "/api/v1/balance-assertions/"+assertion+"/resolve", map[string]string{"resolution": "transactions_added"}, http.StatusOK, &res)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/balance-assertions/"+assertion+"/resolve",
+		map[string]string{"resolution": "transactions_added"},
+		http.StatusOK,
+		&res,
+	)
 
-	if res.Resolution != "transactions_added" || res.Difference.Amount != 0 || res.ResolutionTransactionID != "" {
+	if res.Resolution != "transactions_added" || res.Difference.Amount != 0 ||
+		res.ResolutionTransactionID != "" {
 		t.Fatalf("result = %+v", res)
 	}
 }
@@ -354,18 +495,48 @@ func TestUnlockAllowsCorrection(t *testing.T) {
 	t.Parallel()
 
 	r := newReserveSetup(t)
-	if resp := assertBalance(r.h, r.reserve, "2026-10-31", 1000000); resp.Status != http.StatusCreated {
+	if resp := assertBalance(
+		r.h,
+		r.reserve,
+		"2026-10-31",
+		1000000,
+	); resp.Status != http.StatusCreated {
 		t.Fatalf("status %d", resp.Status)
 	}
 
 	correction := map[string]any{
-		"date": "2026-10-02", "expected_version": 1, "reason": "wrong date",
-		"postings": []map[string]any{apitest.Posting(r.checking, -1000000), apitest.Posting(r.reserve, 1000000)},
+		"date":             "2026-10-02",
+		"expected_version": 1,
+		"reason":           "wrong date",
+		"postings": []map[string]any{
+			apitest.Posting(r.checking, -1000000),
+			apitest.Posting(r.reserve, 1000000),
+		},
 	}
-	r.h.ExpectProblem(r.h.Do(http.MethodPut, "/api/v1/transactions/"+r.transfer, correction), http.StatusConflict, "posting_reconciled", "")
-	r.h.ExpectProblem(r.h.Do(http.MethodPost, "/api/v1/transactions/"+r.transfer+"/void", map[string]string{"reason": "duplicate"}), http.StatusConflict, "posting_reconciled", "")
+	r.h.ExpectProblem(
+		r.h.Do(http.MethodPut, "/api/v1/transactions/"+r.transfer, correction),
+		http.StatusConflict,
+		"posting_reconciled",
+		"",
+	)
+	r.h.ExpectProblem(
+		r.h.Do(
+			http.MethodPost,
+			"/api/v1/transactions/"+r.transfer+"/void",
+			map[string]string{"reason": "duplicate"},
+		),
+		http.StatusConflict,
+		"posting_reconciled",
+		"",
+	)
 
-	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-01"}, http.StatusOK, nil)
+	r.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+r.reserve+"/unlock",
+		map[string]string{"from": "2026-10-01"},
+		http.StatusOK,
+		nil,
+	)
 
 	if s := reconciliationOf(r.h, r.reserve); s.LastReconciledOn != "" || s.OpenDifference == nil {
 		t.Fatalf("status after unlock = %+v", s)
@@ -379,20 +550,33 @@ func TestUnlockKeepsEarlierReconciliations(t *testing.T) {
 	r := newReserveSetup(t)
 	assertBalance(r.h, r.reserve, "2026-10-15", 1000000)
 	assertBalance(r.h, r.reserve, "2026-10-31", 1000000)
-	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusOK, nil)
+	r.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+r.reserve+"/unlock",
+		map[string]string{"from": "2026-10-20"},
+		http.StatusOK,
+		nil,
+	)
 
 	if s := reconciliationOf(r.h, r.reserve); s.LastReconciledOn != "2026-10-15" {
 		t.Fatalf("status after unlock = %+v", s)
 	}
 
-	if p := r.h.Transaction(r.transfer).Postings; p[0].Status != "reconciled" && p[1].Status != "reconciled" {
+	if p := r.h.Transaction(
+		r.transfer,
+	).Postings; p[0].Status != "reconciled" &&
+		p[1].Status != "reconciled" {
 		t.Fatal("posting settled before the unlock date lost its reconciled status")
 	}
 }
 
 func reconcileStatement(c cardSetup, reference string, amountDue int64) apitest.Response {
 	id := statements(c.h.T(), c.h, c.card)[reference].ID
-	return c.h.Do(http.MethodPost, "/api/v1/statements/"+id+"/reconcile", map[string]any{"amount_due": apitest.BRL(amountDue)})
+	return c.h.Do(
+		http.MethodPost,
+		"/api/v1/statements/"+id+"/reconcile",
+		map[string]any{"amount_due": apitest.BRL(amountDue)},
+	)
 }
 
 func TestStatementReconciliationLocksPurchases(t *testing.T) {
@@ -424,10 +608,20 @@ func TestStatementReconciliationLocksPurchases(t *testing.T) {
 	}
 
 	c.h.ExpectProblem(c.h.Do(http.MethodPut, "/api/v1/transactions/"+purchase, map[string]any{
-		"date": "2026-10-14", "expected_version": 1, "reason": "wrong amount",
-		"postings": []map[string]any{apitest.Posting(c.card, -90000), apitest.Posting(c.food, 90000)},
+		"date":             "2026-10-14",
+		"expected_version": 1,
+		"reason":           "wrong amount",
+		"postings": []map[string]any{
+			apitest.Posting(c.card, -90000),
+			apitest.Posting(c.food, 90000),
+		},
 	}), http.StatusConflict, "posting_reconciled", "")
-	c.h.ExpectProblem(reconcileStatement(c, "2026-11", 150000), http.StatusConflict, "already_reconciled", "")
+	c.h.ExpectProblem(
+		reconcileStatement(c, "2026-11", 150000),
+		http.StatusConflict,
+		"already_reconciled",
+		"",
+	)
 }
 
 func TestStatementReconciliationRejects(t *testing.T) {
@@ -435,8 +629,18 @@ func TestStatementReconciliationRejects(t *testing.T) {
 	c := newCardSetup(t, "2026-11-05")
 	purchase := c.purchase("2026-10-14", 100000)
 	c.purchase("2026-11-04", 30000)
-	c.h.ExpectProblem(reconcileStatement(c, "2026-11", 99000), http.StatusConflict, "difference_remains", "")
-	c.h.ExpectProblem(reconcileStatement(c, "2026-12", 30000), http.StatusConflict, "statement_not_closed", "")
+	c.h.ExpectProblem(
+		reconcileStatement(c, "2026-11", 99000),
+		http.StatusConflict,
+		"difference_remains",
+		"",
+	)
+	c.h.ExpectProblem(
+		reconcileStatement(c, "2026-12", 30000),
+		http.StatusConflict,
+		"statement_not_closed",
+		"",
+	)
 
 	for _, p := range c.h.Transaction(purchase).Postings {
 		if p.Status == "reconciled" {
@@ -454,7 +658,13 @@ func TestUnlockReleasesWholeStatement(t *testing.T) {
 		t.Fatalf("status %d: %s", resp.Status, resp.Body)
 	}
 
-	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.card+"/unlock", map[string]string{"from": "2026-10-20"}, http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+c.card+"/unlock",
+		map[string]string{"from": "2026-10-20"},
+		http.StatusOK,
+		nil,
+	)
 
 	for _, p := range c.h.Transaction(purchase).Postings {
 		if p.Status == "reconciled" {
@@ -490,7 +700,12 @@ func TestCreatedAssertionReportsReconciled(t *testing.T) {
 			resp.Decode(t, &res)
 
 			if res.Assertion.Reconciled != c.want {
-				t.Fatalf("assertion.reconciled = %v, want %v: %s", res.Assertion.Reconciled, c.want, resp.Body)
+				t.Fatalf(
+					"assertion.reconciled = %v, want %v: %s",
+					res.Assertion.Reconciled,
+					c.want,
+					resp.Body,
+				)
 			}
 		})
 	}

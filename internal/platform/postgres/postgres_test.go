@@ -53,7 +53,11 @@ func TestMigrateRefusesNewerSchema(t *testing.T) {
 	}
 
 	ahead := latest + 1
-	if _, err := pool.Exec(t.Context(), "INSERT INTO goose_db_version (version_id, is_applied) VALUES ($1, true)", ahead); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		"INSERT INTO goose_db_version (version_id, is_applied) VALUES ($1, true)",
+		ahead,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -73,7 +77,11 @@ func TestMigrateAcceptsEmptyDatabase(t *testing.T) {
 	t.Parallel()
 
 	pool := pgtest.Empty(t)
-	if err := postgres.Migrate(t.Context(), pool, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
+	if err := postgres.Migrate(
+		t.Context(),
+		pool,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	); err != nil {
 		t.Fatalf("Migrate() on an empty database: %v", err)
 	}
 }
@@ -92,7 +100,11 @@ func TestPending(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if current, pending, err := postgres.Pending(ctx, empty); err != nil || !pending || current != 5 {
+	if current, pending, err := postgres.Pending(
+		ctx,
+		empty,
+	); err != nil || !pending ||
+		current != 5 {
 		t.Fatalf("at version 5: %d, %v, %v; want 5, true", current, pending, err)
 	}
 
@@ -108,7 +120,8 @@ func TestTestServerOrdersByCodePoint(t *testing.T) {
 	pool := pgtest.New(t)
 
 	var got string
-	if err := pool.QueryRow(t.Context(), "SELECT string_agg(x, ',' ORDER BY x) FROM (VALUES ('banco'), ('Água'), ('Zebra'), ('Banco')) v(x)").Scan(&got); err != nil {
+	if err := pool.QueryRow(t.Context(), "SELECT string_agg(x, ',' ORDER BY x) FROM (VALUES ('banco'), ('Água'), ('Zebra'), ('Banco')) v(x)").
+		Scan(&got); err != nil {
 		t.Fatal(err)
 	}
 

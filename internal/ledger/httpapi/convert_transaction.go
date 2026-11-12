@@ -58,11 +58,18 @@ func fromPostingInput(
 
 	amount, err := amounts(ctx, p.Amount.Amount, money.Currency(p.Amount.Currency))
 	if err != nil {
-		return domain.Posting{}, &domain.FieldError{Field: field("amount"), Message: err.Error(), Err: domain.ErrValidation}
+		return domain.Posting{}, &domain.FieldError{
+			Field:   field("amount"),
+			Message: err.Error(),
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	posting := domain.Posting{
-		AccountID: p.AccountId, Amount: amount, SettledOn: optDate(p.SettledOn), Memo: optString(p.Memo),
+		AccountID: p.AccountId,
+		Amount:    amount,
+		SettledOn: optDate(p.SettledOn),
+		Memo:      optString(p.Memo),
 	}
 	if p.Weight != nil {
 		if posting.Weight, err = fromMoneyAPI(field("weight"), *p.Weight); err != nil {
@@ -86,7 +93,11 @@ func fromPostingInput(
 	if p.Statement != nil {
 		m, err := domain.ParseReferenceMonth(*p.Statement)
 		if err != nil {
-			return domain.Posting{}, &domain.FieldError{Field: field("statement"), Message: "must be YYYY-MM", Err: domain.ErrValidation}
+			return domain.Posting{}, &domain.FieldError{
+				Field:   field("statement"),
+				Message: "must be YYYY-MM",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		posting.Statement, posting.StatementBasis = &m, domain.BasisOwner
@@ -101,26 +112,54 @@ func fromPostingInput(
 
 func toTransactionAPI(t domain.Transaction) Transaction {
 	out := Transaction{
-		Id: t.ID, Date: apiDate(t.Date), Description: t.Description, PayeeId: apiOptUUID(t.PayeeID),
-		BalancingCurrency: string(t.BalancingCurrency), Origin: TransactionOrigin(t.Origin), Version: t.Version,
-		VoidedAt: t.VoidedAt, VoidReason: apiOptString(t.VoidReason),
-		Tags: append([]string{}, t.Tags...), Links: []Link{}, Postings: make([]Posting, 0, len(t.Postings)),
+		Id:          t.ID,
+		Date:        apiDate(t.Date),
+		Description: t.Description,
+		PayeeId:     apiOptUUID(t.PayeeID),
+		BalancingCurrency: string(
+			t.BalancingCurrency,
+		),
+		Origin:     TransactionOrigin(t.Origin),
+		Version:    t.Version,
+		VoidedAt:   t.VoidedAt,
+		VoidReason: apiOptString(t.VoidReason),
+		Tags: append(
+			[]string{},
+			t.Tags...),
+		Links:    []Link{},
+		Postings: make([]Posting, 0, len(t.Postings)),
 	}
 	for _, l := range t.Links {
-		out.Links = append(out.Links, Link{Type: LinkType(l.Type), Target: l.Target, Amount: linkAmountAPI(l.Amount, string(t.BalancingCurrency))})
+		out.Links = append(
+			out.Links,
+			Link{
+				Type:   LinkType(l.Type),
+				Target: l.Target,
+				Amount: linkAmountAPI(l.Amount, string(t.BalancingCurrency)),
+			},
+		)
 	}
 
 	if in := t.Income; in != nil {
 		out.InvestmentIncome = &InvestmentIncome{
-			AccountId: in.AccountID, CashAccountId: in.CashAccountID, IncomeType: IncomeType(in.Type),
-			Gross: toMoneyAPI(in.Gross), Withheld: toMoneyAPI(in.Withheld),
+			AccountId:     in.AccountID,
+			CashAccountId: in.CashAccountID,
+			IncomeType:    IncomeType(in.Type),
+			Gross:         toMoneyAPI(in.Gross),
+			Withheld:      toMoneyAPI(in.Withheld),
 		}
 	}
 
 	if tr := t.Trade; tr != nil {
 		out.Trade = &Trade{
-			AccountId: tr.AccountID, CashAccountId: tr.CashAccountID, Side: TradeSide(tr.Side), Quantity: toMoneyAPI(tr.Quantity),
-			UnitPrice: tr.UnitPrice.String(), Gross: toMoneyAPI(tr.Gross), Fees: toMoneyAPI(tr.Fees), Taxes: toMoneyAPI(tr.Taxes),
+			AccountId:     tr.AccountID,
+			CashAccountId: tr.CashAccountID,
+			Side:          TradeSide(tr.Side),
+			Quantity:      toMoneyAPI(tr.Quantity),
+			UnitPrice:     tr.UnitPrice.String(),
+			Gross:         toMoneyAPI(tr.Gross),
+			Fees:          toMoneyAPI(tr.Fees),
+			Taxes:         toMoneyAPI(tr.Taxes),
 		}
 		if tr.Cost != nil {
 			cost := toMoneyAPI(*tr.Cost)
@@ -137,8 +176,15 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 
 func toPostingAPI(p domain.Posting) Posting {
 	ap := Posting{
-		Id: p.ID, AccountId: p.AccountID, Amount: toMoneyAPI(p.Amount), Weight: toMoneyAPI(p.Weight),
-		Status: PostingStatus(p.Status), SettledOn: apiOptDate(p.SettledOn), Memo: apiOptString(p.Memo),
+		Id:        p.ID,
+		AccountId: p.AccountID,
+		Amount:    toMoneyAPI(p.Amount),
+		Weight:    toMoneyAPI(p.Weight),
+		Status: PostingStatus(
+			p.Status,
+		),
+		SettledOn: apiOptDate(p.SettledOn),
+		Memo:      apiOptString(p.Memo),
 	}
 	if p.Original != nil {
 		o := toMoneyAPI(*p.Original)
@@ -156,7 +202,11 @@ func toPostingAPI(p domain.Posting) Posting {
 	}
 
 	if p.Installment != nil {
-		ap.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}
+		ap.Installment = &Installment{
+			PlanId: p.Installment.PlanID,
+			Number: p.Installment.Number,
+			Count:  p.Installment.Count,
+		}
 	}
 
 	return ap

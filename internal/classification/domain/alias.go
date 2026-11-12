@@ -35,8 +35,14 @@ type Alias struct {
 }
 
 func NewAlias(a Alias) (Alias, error) {
-	if n := utf8.RuneCountInString(a.Pattern); n == 0 || n > maxTextValue || strings.TrimSpace(a.Pattern) == "" {
-		return Alias{}, invalid("pattern", fmt.Sprintf("must have 1 to %d characters", maxTextValue))
+	if n := utf8.RuneCountInString(
+		a.Pattern,
+	); n == 0 || n > maxTextValue ||
+		strings.TrimSpace(a.Pattern) == "" {
+		return Alias{}, invalid(
+			"pattern",
+			fmt.Sprintf("must have 1 to %d characters", maxTextValue),
+		)
 	}
 
 	if !slices.Contains(matchOrder, a.MatchType) {
@@ -80,7 +86,10 @@ func (a Alias) matches(original, normalized string) bool {
 func SortAliases(as []Alias) {
 	slices.SortStableFunc(as, func(a, b Alias) int {
 		return cmp.Or(
-			cmp.Compare(slices.Index(matchOrder, a.MatchType), slices.Index(matchOrder, b.MatchType)),
+			cmp.Compare(
+				slices.Index(matchOrder, a.MatchType),
+				slices.Index(matchOrder, b.MatchType),
+			),
 			cmp.Compare(utf8.RuneCountInString(b.normalized), utf8.RuneCountInString(a.normalized)),
 			strings.Compare(a.ID.String(), b.ID.String()),
 		)

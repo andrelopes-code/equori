@@ -12,7 +12,9 @@ import (
 func TestAuthenticateStatus(t *testing.T) {
 	t.Parallel()
 
-	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+	next := http.HandlerFunc(
+		func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) },
+	)
 	for _, tt := range []struct {
 		name string
 		err  error
@@ -22,7 +24,10 @@ func TestAuthenticateStatus(t *testing.T) {
 		{"refused", ErrInvalidToken, http.StatusUnauthorized},
 		{"database down", errors.New("connection refused"), http.StatusInternalServerError},
 	} {
-		h := authenticate(func(context.Context, string) (Grant, error) { return Grant{MemberID: 1, BooksID: 1}, tt.err }, next)
+		h := authenticate(
+			func(context.Context, string) (Grant, error) { return Grant{MemberID: 1, BooksID: 1}, tt.err },
+			next,
+		)
 		r := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/mcp", nil)
 		r.Header.Set("Authorization", "Bearer eqt_x")
 

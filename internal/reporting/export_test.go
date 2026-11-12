@@ -81,7 +81,8 @@ func export(t *testing.T, h *apitest.Harness) []byte {
 	var done exportView
 	h.MustDo(http.MethodGet, "/api/v1/exports/current", nil, http.StatusOK, &done)
 
-	if done.Status != "ready" || done.ID != requested.ID || done.ArchiveVersion != app.ArchiveVersion {
+	if done.Status != "ready" || done.ID != requested.ID ||
+		done.ArchiveVersion != app.ArchiveVersion {
 		t.Fatalf("export = %+v, requested %+v", done, requested)
 	}
 
@@ -94,13 +95,21 @@ func export(t *testing.T, h *apitest.Harness) []byte {
 		t.Errorf("Content-Type = %q", got)
 	}
 
-	if got := r.Header.Get("Content-Disposition"); got != `attachment; filename="equori-export-2026-10-26.zip"` {
+	if got := r.Header.Get(
+		"Content-Disposition",
+	); got != `attachment; filename="equori-export-2026-10-26.zip"` {
 		t.Errorf("Content-Disposition = %q", got)
 	}
 
 	sum := sha256.Sum256(r.Body)
 	if int64(len(r.Body)) != done.Size || hex.EncodeToString(sum[:]) != done.SHA256 {
-		t.Errorf("size %d sha256 %s, export says %d %s", len(r.Body), hex.EncodeToString(sum[:]), done.Size, done.SHA256)
+		t.Errorf(
+			"size %d sha256 %s, export says %d %s",
+			len(r.Body),
+			hex.EncodeToString(sum[:]),
+			done.Size,
+			done.SHA256,
+		)
 	}
 
 	return r.Body
@@ -110,7 +119,12 @@ func export(t *testing.T, h *apitest.Harness) []byte {
 func TestExport(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-26"))
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/exports/current", nil), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/exports/current", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	tx := h.Record("2026-10-20", apitest.Posting(checking, -4590), apitest.Posting(food, 4590))
@@ -121,13 +135,27 @@ func TestExport(t *testing.T) {
 	}, http.StatusOK, nil)
 
 	receipt := []byte("%PDF-1.4 receipt")
-	if r := h.Upload("/api/v1/transactions/"+tx+"/attachments", "receipt.pdf", receipt); r.Status != http.StatusCreated {
+	if r := h.Upload(
+		"/api/v1/transactions/"+tx+"/attachments",
+		"receipt.pdf",
+		receipt,
+	); r.Status != http.StatusCreated {
 		t.Fatalf("attachment = %d: %s", r.Status, r.Body)
 	}
 
 	h.MustDo(http.MethodPost, "/api/v1/exports", nil, http.StatusAccepted, nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/exports", nil), http.StatusConflict, "export_pending", "")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/exports/current/content", nil), http.StatusConflict, "export_not_ready", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/exports", nil),
+		http.StatusConflict,
+		"export_pending",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/exports/current/content", nil),
+		http.StatusConflict,
+		"export_not_ready",
+		"",
+	)
 	h.Dispatch()
 
 	files := archive(t, export(t, h))
@@ -138,7 +166,10 @@ func TestExport(t *testing.T) {
 	}
 
 	// ADR 021, V1.
-	if m.Format != "equori-export" || m.FormatVersion != 1 || m.ArchiveVersion != app.ArchiveVersion || m.AppVersion != "dev" || m.SchemaVersion == 0 {
+	if m.Format != "equori-export" || m.FormatVersion != 1 ||
+		m.ArchiveVersion != app.ArchiveVersion ||
+		m.AppVersion != "dev" ||
+		m.SchemaVersion == 0 {
 		t.Fatalf("manifest = %+v", m)
 	}
 
@@ -147,7 +178,8 @@ func TestExport(t *testing.T) {
 		rows[table.Name] = table.Rows
 
 		sum := sha256.Sum256(files[table.File])
-		if table.File != "tables/"+table.Name+".jsonl" || hex.EncodeToString(sum[:]) != table.SHA256 {
+		if table.File != "tables/"+table.Name+".jsonl" ||
+			hex.EncodeToString(sum[:]) != table.SHA256 {
 			t.Errorf("table %+v: file sha256 %x", table, sum)
 		}
 
@@ -162,7 +194,9 @@ func TestExport(t *testing.T) {
 		}
 	}
 
-	if rows["ledger_transaction"] != 1 || rows["ledger_posting"] != 2 || rows["ledger_transaction_version"] != 1 || rows["ledger_attachment_blob"] != 1 {
+	if rows["ledger_transaction"] != 1 || rows["ledger_posting"] != 2 ||
+		rows["ledger_transaction_version"] != 1 ||
+		rows["ledger_attachment_blob"] != 1 {
 		t.Errorf("rows = %v", rows)
 	}
 
@@ -180,7 +214,8 @@ func TestExport(t *testing.T) {
 	}
 
 	sum := sha256.Sum256(receipt)
-	if len(m.Attachments) != 1 || m.Attachments[0].File != "attachments/"+hex.EncodeToString(sum[:]) ||
+	if len(m.Attachments) != 1 ||
+		m.Attachments[0].File != "attachments/"+hex.EncodeToString(sum[:]) ||
 		!bytes.Equal(files[m.Attachments[0].File], receipt) {
 		t.Errorf("attachments = %+v", m.Attachments)
 	}
@@ -191,7 +226,13 @@ func TestExportCarriesTheAssistantConfiguration(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-26"), apitest.SecretKeys(apitest.SecretKey, ""))
 	addAssistantConfiguration(t, h)
-	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/assistant/providers",
+		map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"},
+		http.StatusCreated,
+		nil,
+	)
 
 	files := archive(t, export(t, h))
 
@@ -205,12 +246,15 @@ func TestExportCarriesTheAssistantConfiguration(t *testing.T) {
 		rows[table.Name] = table.Rows
 	}
 
-	if rows["assistant_provider"] != 2 || rows["assistant_chain_target"] != 1 || rows["assistant_usage_limit"] != 1 {
+	if rows["assistant_provider"] != 2 || rows["assistant_chain_target"] != 1 ||
+		rows["assistant_usage_limit"] != 1 {
 		t.Errorf("rows = %v", rows)
 	}
 
 	provider := string(files["tables/assistant_provider.jsonl"])
-	if strings.Count(provider, `"sealed_key": null`) != 2 || strings.Contains(provider, "gsk-secret") || strings.Contains(provider, "books_id") {
+	if strings.Count(provider, `"sealed_key": null`) != 2 ||
+		strings.Contains(provider, "gsk-secret") ||
+		strings.Contains(provider, "books_id") {
 		t.Errorf("assistant_provider.jsonl = %s", provider)
 	}
 }
@@ -222,7 +266,10 @@ func TestExportBuiltBeforeArchiveVersion(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-10-26"))
 	export(t, h)
 
-	if _, err := h.Pool.Exec(t.Context(), `UPDATE reporting_export SET archive_version = NULL`); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE reporting_export SET archive_version = NULL`,
+	); err != nil {
 		t.Fatal(err)
 	}
 

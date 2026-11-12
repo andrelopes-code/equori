@@ -14,7 +14,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksID int64, in manageBudgetOrGoalIn) (budgetGoalPlan, error) {
+func prepareBudgetOrGoal(
+	ctx context.Context,
+	svc *app.Service,
+	l Ledger,
+	booksID int64,
+	in manageBudgetOrGoalIn,
+) (budgetGoalPlan, error) {
 	if err := checkBudgetGoalFields(in); err != nil {
 		return budgetGoalPlan{}, err
 	}
@@ -49,10 +55,27 @@ func prepareBudgetOrGoal(ctx context.Context, svc *app.Service, l Ledger, booksI
 
 func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 	fields := []field{
-		{"budget_id", in.BudgetID != ""}, {"goal_id", in.GoalID != ""}, {"category_id", in.CategoryID != ""},
-		{"amount", in.Amount != ""}, {"month", in.Month != ""}, {"rollover", in.Rollover}, {"name", in.Name != ""},
-		{"due_on", !in.DueOn.IsZero()}, {"account_ids", len(in.AccountIDs) > 0},
-		{"source", in.Source != ""}, {"amounts", len(in.Amounts) > 0}, {"savings_target_bp", in.SavingsTargetBP.Set},
+		{
+			"budget_id",
+			in.BudgetID != "",
+		},
+		{"goal_id", in.GoalID != ""},
+		{"category_id", in.CategoryID != ""},
+		{
+			"amount",
+			in.Amount != "",
+		},
+		{"month", in.Month != ""},
+		{"rollover", in.Rollover},
+		{"name", in.Name != ""},
+		{"due_on", !in.DueOn.IsZero()},
+		{"account_ids", len(in.AccountIDs) > 0},
+		{
+			"source",
+			in.Source != "",
+		},
+		{"amounts", len(in.Amounts) > 0},
+		{"savings_target_bp", in.SavingsTargetBP.Set},
 	}
 	name := string(in.Action)
 
@@ -71,7 +94,14 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 	case "delete_goal":
 		err = required(name, fields, []string{"goal_id"})
 	case "save_plan":
-		err = required(name, fields, []string{"month", "amounts"}, "source", "amount", "savings_target_bp")
+		err = required(
+			name,
+			fields,
+			[]string{"month", "amounts"},
+			"source",
+			"amount",
+			"savings_target_bp",
+		)
 	}
 
 	return err
@@ -140,7 +170,10 @@ func resolveBudgetGoalCurrency(
 	case "create_budget":
 		a, ok := accounts[p.categoryID]
 		if !ok {
-			return currency, validationError("category_id", "must be an income or expense category of the book")
+			return currency, validationError(
+				"category_id",
+				"must be an income or expense category of the book",
+			)
 		}
 
 		p.categoryName = a.Name
@@ -268,7 +301,14 @@ func runBudgetOrGoal(
 		_, err := svc.AddBudgetAmount(ctx, booksID, p.budgetID, p.month, *p.amount)
 		return manageBudgetOrGoalOut{BudgetID: p.budgetID.String()}, err
 	case "delete_budget":
-		return manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}, svc.DeleteBudget(ctx, booksID, p.budgetID)
+		return manageBudgetOrGoalOut{
+			BudgetID: p.budgetID.String(),
+			Deleted:  true,
+		}, svc.DeleteBudget(
+			ctx,
+			booksID,
+			p.budgetID,
+		)
 	case "create_goal":
 		g, err := svc.CreateGoal(ctx, booksID, in.Name, *p.amount, in.DueOn.Time, p.accountIDs)
 		return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err
@@ -278,7 +318,14 @@ func runBudgetOrGoal(
 		return updateGoal(ctx, svc, booksID, in, p)
 	}
 
-	return manageBudgetOrGoalOut{GoalID: p.goalID.String(), Deleted: true}, svc.DeleteGoal(ctx, booksID, p.goalID)
+	return manageBudgetOrGoalOut{
+		GoalID:  p.goalID.String(),
+		Deleted: true,
+	}, svc.DeleteGoal(
+		ctx,
+		booksID,
+		p.goalID,
+	)
 }
 
 func savePlan(

@@ -79,7 +79,16 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 	}
 
 	if e.Type == EventVoided {
-		return s.repo.MarkVoided(ctx, Record{TransactionID: e.TransactionID, BooksID: e.BooksID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt})
+		return s.repo.MarkVoided(
+			ctx,
+			Record{
+				TransactionID: e.TransactionID,
+				BooksID:       e.BooksID,
+				Version:       e.Version,
+				Date:          e.Date,
+				DecidedAt:     e.OccurredAt,
+			},
+		)
 	}
 
 	if e.CategoryState == stateNone {
@@ -91,13 +100,15 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 		return err
 	}
 
-	if rec.Corrected && e.Cause.Method != causeMerge && (e.Cause.Method != "" || e.CategoriesChanged) {
+	if rec.Corrected && e.Cause.Method != causeMerge &&
+		(e.Cause.Method != "" || e.CategoriesChanged) {
 		if err := s.describeCorrection(ctx, &rec); err != nil {
 			return err
 		}
 	}
 
-	if e.Type == EventRecorded && e.CategoryState == stateUncategorized && e.Origin != originImport {
+	if e.Type == EventRecorded && e.CategoryState == stateUncategorized &&
+		e.Origin != originImport {
 		if _, err := s.classify(ctx, e.BooksID, []uuid.UUID{e.TransactionID}); err != nil {
 			return fmt.Errorf("classify %s: %w", e.TransactionID, err)
 		}
@@ -113,7 +124,13 @@ func (s *Service) HandleEvent(ctx context.Context, e Event) error {
 
 // recordOf builds the categorization record that e implies.
 func (s *Service) recordOf(ctx context.Context, e Event) (Record, error) {
-	rec := Record{TransactionID: e.TransactionID, BooksID: e.BooksID, Version: e.Version, Date: e.Date, DecidedAt: e.OccurredAt}
+	rec := Record{
+		TransactionID: e.TransactionID,
+		BooksID:       e.BooksID,
+		Version:       e.Version,
+		Date:          e.Date,
+		DecidedAt:     e.OccurredAt,
+	}
 	switch {
 	case e.CategoryState == stateUncategorized:
 	case e.Cause.Method == causeMerge:

@@ -25,7 +25,11 @@ type Transaction struct {
 
 // SuggestForTransactions names a category for each uncategorized transaction as Suggest does
 // for a capture line of its class (ADR 014 L1a). It records nothing.
-func (s *Service) SuggestForTransactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]Suggestion, bool, error) {
+func (s *Service) SuggestForTransactions(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) ([]Suggestion, bool, error) {
 	txs, err := s.ledger.Transactions(ctx, booksID, ids)
 	if err != nil {
 		return nil, false, err

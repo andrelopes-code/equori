@@ -28,12 +28,28 @@ func TestS78RulePreview(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	trip := b.record(t, "2026-10-14", "UBER *TRIP", "", b.travel, 2390)
-	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
+	createRule(
+		t,
+		b.h,
+		"Uber",
+		[]map[string]any{contains("uber")},
+		[]map[string]any{setCategory(b.transport)},
+	)
 	b.record(t, "2026-10-15", "UBER *EATS", "", b.uncategorized, 3100)
 	dispatch(t, b.h)
 
-	got := preview(t, b, map[string]any{"name": "Uber", "conditions": []any{contains("uber")}, "actions": []any{setCategory(b.transport)}})
-	if got.WouldCategorize.Count != 0 || got.Conflicts.Count != 1 || len(got.Conflicts.TransactionIDs) != 1 || got.Conflicts.TransactionIDs[0] != trip {
+	got := preview(
+		t,
+		b,
+		map[string]any{
+			"name":       "Uber",
+			"conditions": []any{contains("uber")},
+			"actions":    []any{setCategory(b.transport)},
+		},
+	)
+	if got.WouldCategorize.Count != 0 || got.Conflicts.Count != 1 ||
+		len(got.Conflicts.TransactionIDs) != 1 ||
+		got.Conflicts.TransactionIDs[0] != trip {
 		t.Fatalf("preview = %+v", got)
 	}
 }
@@ -46,8 +62,17 @@ func TestRulePreviewWouldCategorize(t *testing.T) {
 	b.record(t, "2025-11-04", "PADARIA OLD", "", b.uncategorized, 900)
 	dispatch(t, b.h)
 
-	got := preview(t, b, map[string]any{"name": "Bakery", "conditions": []any{contains("padaria")}, "actions": []any{setCategory(b.food)}})
-	if got.WouldCategorize.Count != 1 || got.WouldCategorize.TransactionIDs[0] != recent || got.Conflicts.Count != 0 {
+	got := preview(
+		t,
+		b,
+		map[string]any{
+			"name":       "Bakery",
+			"conditions": []any{contains("padaria")},
+			"actions":    []any{setCategory(b.food)},
+		},
+	)
+	if got.WouldCategorize.Count != 1 || got.WouldCategorize.TransactionIDs[0] != recent ||
+		got.Conflicts.Count != 0 {
 		t.Fatalf("preview = %+v", got)
 	}
 }
@@ -57,6 +82,10 @@ func TestRulePreviewValidation(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/rules/preview", map[string]any{
-		"name": "Bad", "conditions": []any{map[string]any{"field": "description", "operator": "regex", "value": "("}}, "actions": []any{setCategory(b.food)},
+		"name": "Bad",
+		"conditions": []any{
+			map[string]any{"field": "description", "operator": "regex", "value": "("},
+		},
+		"actions": []any{setCategory(b.food)},
 	}), http.StatusUnprocessableEntity, "validation_failed", "conditions[0].value")
 }

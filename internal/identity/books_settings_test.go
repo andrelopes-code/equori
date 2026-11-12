@@ -16,11 +16,27 @@ func TestBooksSettings(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 
-	initial := map[string]any{"region": "BR", "time_zone": nil, "default_time_zone": "America/Sao_Paulo", "name": "owner@example.com"}
+	initial := map[string]any{
+		"region":            "BR",
+		"time_zone":         nil,
+		"default_time_zone": "America/Sao_Paulo",
+		"name":              "owner@example.com",
+	}
 	assertBooksSettings(t, h, http.MethodGet, nil, initial)
 
-	us := map[string]any{"region": "US", "time_zone": nil, "default_time_zone": "UTC", "name": "owner@example.com"}
-	assertBooksSettings(t, h, http.MethodPatch, map[string]any{"region": "US", "time_zone": nil}, us)
+	us := map[string]any{
+		"region":            "US",
+		"time_zone":         nil,
+		"default_time_zone": "UTC",
+		"name":              "owner@example.com",
+	}
+	assertBooksSettings(
+		t,
+		h,
+		http.MethodPatch,
+		map[string]any{"region": "US", "time_zone": nil},
+		us,
+	)
 
 	var me struct {
 		Region string `json:"region"`
@@ -31,8 +47,19 @@ func TestBooksSettings(t *testing.T) {
 		t.Fatalf("me.region = %q, want US", me.Region)
 	}
 
-	tokyo := map[string]any{"region": "BR", "time_zone": "Asia/Tokyo", "default_time_zone": "America/Sao_Paulo", "name": "owner@example.com"}
-	assertBooksSettings(t, h, http.MethodPatch, map[string]any{"region": "BR", "time_zone": "Asia/Tokyo"}, tokyo)
+	tokyo := map[string]any{
+		"region":            "BR",
+		"time_zone":         "Asia/Tokyo",
+		"default_time_zone": "America/Sao_Paulo",
+		"name":              "owner@example.com",
+	}
+	assertBooksSettings(
+		t,
+		h,
+		http.MethodPatch,
+		map[string]any{"region": "BR", "time_zone": "Asia/Tokyo"},
+		tokyo,
+	)
 	assertBooksSettings(t, h, http.MethodGet, nil, tokyo)
 }
 
@@ -48,12 +75,60 @@ func TestBooksSettingsProblems(t *testing.T) {
 		code   string
 		field  string
 	}{
-		{"unknown zone", http.MethodPatch, booksSettingsPath, map[string]any{"region": "BR", "time_zone": "Mars/Olympus"}, http.StatusUnprocessableEntity, "time_zone_invalid", ""},
-		{"Local", http.MethodPatch, booksSettingsPath, map[string]any{"region": "BR", "time_zone": "Local"}, http.StatusUnprocessableEntity, "time_zone_invalid", ""},
-		{"empty", http.MethodPatch, booksSettingsPath, map[string]any{"region": "BR", "time_zone": ""}, http.StatusUnprocessableEntity, "time_zone_invalid", ""},
-		{"unknown region", http.MethodPatch, booksSettingsPath, map[string]any{"region": "ZZ", "time_zone": nil}, http.StatusUnprocessableEntity, "validation_failed", "region"},
-		{"region pattern", http.MethodPatch, booksSettingsPath, map[string]any{"region": "bra", "time_zone": nil}, http.StatusBadRequest, "invalid_request", "region"},
-		{"region on me", http.MethodPatch, "/api/v1/me", map[string]any{"region": "US"}, http.StatusBadRequest, "invalid_request", ""},
+		{
+			"unknown zone",
+			http.MethodPatch,
+			booksSettingsPath,
+			map[string]any{"region": "BR", "time_zone": "Mars/Olympus"},
+			http.StatusUnprocessableEntity,
+			"time_zone_invalid",
+			"",
+		},
+		{
+			"Local",
+			http.MethodPatch,
+			booksSettingsPath,
+			map[string]any{"region": "BR", "time_zone": "Local"},
+			http.StatusUnprocessableEntity,
+			"time_zone_invalid",
+			"",
+		},
+		{
+			"empty",
+			http.MethodPatch,
+			booksSettingsPath,
+			map[string]any{"region": "BR", "time_zone": ""},
+			http.StatusUnprocessableEntity,
+			"time_zone_invalid",
+			"",
+		},
+		{
+			"unknown region",
+			http.MethodPatch,
+			booksSettingsPath,
+			map[string]any{"region": "ZZ", "time_zone": nil},
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"region",
+		},
+		{
+			"region pattern",
+			http.MethodPatch,
+			booksSettingsPath,
+			map[string]any{"region": "bra", "time_zone": nil},
+			http.StatusBadRequest,
+			"invalid_request",
+			"region",
+		},
+		{
+			"region on me",
+			http.MethodPatch,
+			"/api/v1/me",
+			map[string]any{"region": "US"},
+			http.StatusBadRequest,
+			"invalid_request",
+			"",
+		},
 	}
 
 	for _, tt := range tests {
@@ -63,7 +138,12 @@ func TestBooksSettingsProblems(t *testing.T) {
 
 			h.ExpectProblem(h.Do(tt.method, tt.path, tt.body), tt.status, tt.code, tt.field)
 
-			initial := map[string]any{"region": "BR", "time_zone": nil, "default_time_zone": "America/Sao_Paulo", "name": "owner@example.com"}
+			initial := map[string]any{
+				"region":            "BR",
+				"time_zone":         nil,
+				"default_time_zone": "America/Sao_Paulo",
+				"name":              "owner@example.com",
+			}
 			assertBooksSettings(t, h, http.MethodGet, nil, initial)
 		})
 	}
@@ -83,10 +163,38 @@ func TestBooksName(t *testing.T) {
 		field  string
 	}{
 		{"default", http.MethodGet, nil, http.StatusOK, "owner@example.com", ""},
-		{"rename", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil, "name": "Casa"}, http.StatusOK, "Casa", ""},
-		{"absent keeps", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil}, http.StatusOK, "Casa", ""},
-		{"empty", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil, "name": ""}, http.StatusBadRequest, "", "name"},
-		{"81 characters", http.MethodPatch, map[string]any{"region": "BR", "time_zone": nil, "name": strings.Repeat("a", 81)}, http.StatusBadRequest, "", "name"},
+		{
+			"rename",
+			http.MethodPatch,
+			map[string]any{"region": "BR", "time_zone": nil, "name": "Casa"},
+			http.StatusOK,
+			"Casa",
+			"",
+		},
+		{
+			"absent keeps",
+			http.MethodPatch,
+			map[string]any{"region": "BR", "time_zone": nil},
+			http.StatusOK,
+			"Casa",
+			"",
+		},
+		{
+			"empty",
+			http.MethodPatch,
+			map[string]any{"region": "BR", "time_zone": nil, "name": ""},
+			http.StatusBadRequest,
+			"",
+			"name",
+		},
+		{
+			"81 characters",
+			http.MethodPatch,
+			map[string]any{"region": "BR", "time_zone": nil, "name": strings.Repeat("a", 81)},
+			http.StatusBadRequest,
+			"",
+			"name",
+		},
 	}
 
 	for _, tt := range tests {
@@ -113,7 +221,13 @@ func TestBooksName(t *testing.T) {
 }
 
 // assertBooksSettings sends the request to /books/current and compares the 200 body with want.
-func assertBooksSettings(t *testing.T, h *apitest.Harness, method string, body any, want map[string]any) {
+func assertBooksSettings(
+	t *testing.T,
+	h *apitest.Harness,
+	method string,
+	body any,
+	want map[string]any,
+) {
 	t.Helper()
 
 	var got map[string]any

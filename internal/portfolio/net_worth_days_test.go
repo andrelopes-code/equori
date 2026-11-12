@@ -18,7 +18,11 @@ func TestS283NetWorthDays(t *testing.T) {
 			checking := f.h.Account("Nubank", "asset", "checking", nil)
 			loan := f.h.Account("Loan", "liability", "loan", nil)
 			food := f.h.Account("Food", "expense", "", nil)
-			f.h.Record("2026-10-01", f.h.Posting(checking, 100000), f.h.Posting(f.dividends, -100000))
+			f.h.Record(
+				"2026-10-01",
+				f.h.Posting(checking, 100000),
+				f.h.Posting(f.dividends, -100000),
+			)
 			f.h.Record("2026-10-20", f.h.Posting(food, 30000), f.h.Posting(loan, -30000))
 			f.h.Dispatch()
 
@@ -30,7 +34,13 @@ func TestS283NetWorthDays(t *testing.T) {
 					Net         map[string]any `json:"net"`
 				} `json:"items"`
 			}
-			f.h.MustDo(http.MethodGet, "/api/v1/reports/net-worth/days?from=2026-10-19&to=2026-10-21", nil, http.StatusOK, &out)
+			f.h.MustDo(
+				http.MethodGet,
+				"/api/v1/reports/net-worth/days?from=2026-10-19&to=2026-10-21",
+				nil,
+				http.StatusOK,
+				&out,
+			)
 
 			want := []struct {
 				date             string
@@ -42,8 +52,10 @@ func TestS283NetWorthDays(t *testing.T) {
 
 			for i, w := range want {
 				got := out.Items[i]
-				if got.Date != w.date || got.Assets["amount"] != float64(100000) || got.Liabilities["amount"] != w.liabilities ||
-					got.Net["amount"] != w.net || got.Net["currency"] != string(pr.Base) {
+				if got.Date != w.date || got.Assets["amount"] != float64(100000) ||
+					got.Liabilities["amount"] != w.liabilities ||
+					got.Net["amount"] != w.net ||
+					got.Net["currency"] != string(pr.Base) {
 					t.Fatalf("day %d = %+v, want %+v", i, got, w)
 				}
 			}
@@ -57,6 +69,11 @@ func TestS284NetWorthDaysRange(t *testing.T) {
 	f := newFixture(t)
 
 	for _, query := range []string{"from=2026-10-21&to=2026-10-19", "from=2026-08-01&to=2026-10-19"} {
-		f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/reports/net-worth/days?"+query, nil), http.StatusBadRequest, "invalid_request", "to")
+		f.h.ExpectProblem(
+			f.h.Do(http.MethodGet, "/api/v1/reports/net-worth/days?"+query, nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"to",
+		)
 	}
 }

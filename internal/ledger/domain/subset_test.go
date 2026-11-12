@@ -31,7 +31,15 @@ func TestExactSubset(t *testing.T) {
 
 			got, found := ExactSubset(tt.values, tt.target)
 			if found != tt.found || !slices.Equal(got, tt.want) {
-				t.Fatalf("ExactSubset(%v, %d) = %v, %v; want %v, %v", tt.values, tt.target, got, found, tt.want, tt.found)
+				t.Fatalf(
+					"ExactSubset(%v, %d) = %v, %v; want %v, %v",
+					tt.values,
+					tt.target,
+					got,
+					found,
+					tt.want,
+					tt.found,
+				)
 			}
 		})
 	}

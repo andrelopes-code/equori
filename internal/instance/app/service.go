@@ -12,9 +12,11 @@ import (
 )
 
 var (
-	ErrAdminRequired = errors.New("only an admin reads or changes the instance's backups, diagnostic and version settings")
-	ErrBackupOff     = errors.New("automatic backups are off; set EQUORI_BACKUP_DIR")
-	ErrBackupFailed  = errors.New("the backup failed; the server log holds the cause")
+	ErrAdminRequired = errors.New(
+		"only an admin reads or changes the instance's backups, diagnostic and version settings",
+	)
+	ErrBackupOff    = errors.New("automatic backups are off; set EQUORI_BACKUP_DIR")
+	ErrBackupFailed = errors.New("the backup failed; the server log holds the cause")
 
 	ErrPasswordTooShort = errors.New("the copy password needs at least 12 characters")
 	ErrSecretKeyMissing = errors.New("the copy password needs EQUORI_SECRET_KEY")
@@ -36,8 +38,26 @@ type Service struct {
 	latest   *domain.Release
 }
 
-func NewService(repo Repository, catalog Catalog, releases Releases, admins Admins, box Sealer, clk clock.Clock, cfg Config, log *slog.Logger) *Service {
-	return &Service{repo: repo, catalog: catalog, releases: releases, admins: admins, box: box, clock: clk, cfg: cfg, log: log}
+func NewService(
+	repo Repository,
+	catalog Catalog,
+	releases Releases,
+	admins Admins,
+	box Sealer,
+	clk clock.Clock,
+	cfg Config,
+	log *slog.Logger,
+) *Service {
+	return &Service{
+		repo:     repo,
+		catalog:  catalog,
+		releases: releases,
+		admins:   admins,
+		box:      box,
+		clock:    clk,
+		cfg:      cfg,
+		log:      log,
+	}
 }
 
 func (s *Service) requireAdmin(ctx context.Context, memberID int64) error {

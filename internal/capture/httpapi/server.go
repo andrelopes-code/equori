@@ -47,7 +47,11 @@ func toProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrTransactionNotFound):
 		return problem.New(http.StatusNotFound, "not_found", err.Error()), true
 	case errors.Is(err, app.ErrNotUncategorized):
-		d := problem.New(http.StatusUnprocessableEntity, "transaction_not_uncategorized", err.Error())
+		d := problem.New(
+			http.StatusUnprocessableEntity,
+			"transaction_not_uncategorized",
+			err.Error(),
+		)
 		d.Errors = []problem.FieldError{{Field: "transaction_ids", Message: err.Error()}}
 
 		return d, true
@@ -68,7 +72,11 @@ func toProblem(err error) (problem.Details, bool) {
 	return problem.Details{}, false
 }
 
-func (s *Server) previewCapture(ctx context.Context, _ *http.Request, body CapturePreviewInput) (CapturePreview, error) {
+func (s *Server) previewCapture(
+	ctx context.Context,
+	_ *http.Request,
+	body CapturePreviewInput,
+) (CapturePreview, error) {
 	var def uuid.UUID
 	if body.DefaultAccountId != nil {
 		def = *body.DefaultAccountId
@@ -95,10 +103,20 @@ func (s *Server) previewCapture(ctx context.Context, _ *http.Request, body Captu
 
 func toLine(l app.Line) CaptureLine {
 	out := CaptureLine{
-		Line: l.Number, Text: l.Text, Kind: CaptureLineKind(l.Kind), Date: openapi_types.Date{Time: l.Date},
-		Description: l.Description, Tags: l.Tags, Segments: make([]CaptureSegment, len(l.Segments)),
-		Issues:    make([]CaptureIssue, len(l.Issues)),
-		AccountId: optUUID(l.AccountID), ToAccountId: optUUID(l.ToAccountID), PayeeId: optUUID(l.PayeeID), CategoryId: optUUID(l.CategoryID),
+		Line:        l.Number,
+		Text:        l.Text,
+		Kind:        CaptureLineKind(l.Kind),
+		Date:        openapi_types.Date{Time: l.Date},
+		Description: l.Description,
+		Tags:        l.Tags,
+		Segments:    make([]CaptureSegment, len(l.Segments)),
+		Issues:      make([]CaptureIssue, len(l.Issues)),
+		AccountId: optUUID(
+			l.AccountID,
+		),
+		ToAccountId: optUUID(l.ToAccountID),
+		PayeeId:     optUUID(l.PayeeID),
+		CategoryId:  optUUID(l.CategoryID),
 	}
 	if out.Tags == nil {
 		out.Tags = []string{}
@@ -127,7 +145,11 @@ func toLine(l app.Line) CaptureLine {
 	}
 
 	for i, is := range l.Issues {
-		out.Issues[i] = CaptureIssue{Code: CaptureIssueCode(is.Code), Field: CaptureIssueField(is.Field), Choices: toChoices(is.Choices, l.Line)}
+		out.Issues[i] = CaptureIssue{
+			Code:    CaptureIssueCode(is.Code),
+			Field:   CaptureIssueField(is.Field),
+			Choices: toChoices(is.Choices, l.Line),
+		}
 	}
 
 	return out
@@ -158,7 +180,11 @@ func optUUID(id uuid.UUID) *openapi_types.UUID {
 	return &id
 }
 
-func (s *Server) suggestCaptureCategories(ctx context.Context, _ *http.Request, body CaptureSuggestionInput) (CaptureSuggestions, error) {
+func (s *Server) suggestCaptureCategories(
+	ctx context.Context,
+	_ *http.Request,
+	body CaptureSuggestionInput,
+) (CaptureSuggestions, error) {
 	items := make([]app.SuggestItem, len(body.Items))
 	for i, it := range body.Items {
 		items[i] = app.SuggestItem{Description: it.Description, Class: string(it.Kind)}
@@ -169,7 +195,10 @@ func (s *Server) suggestCaptureCategories(ctx context.Context, _ *http.Request, 
 		return CaptureSuggestions{}, err
 	}
 
-	out := CaptureSuggestions{Available: available, Items: make([]CaptureSuggestion, len(suggestions))}
+	out := CaptureSuggestions{
+		Available: available,
+		Items:     make([]CaptureSuggestion, len(suggestions)),
+	}
 	for i, sg := range suggestions {
 		if sg.CategoryID == uuid.Nil {
 			continue
@@ -186,13 +215,24 @@ func (s *Server) suggestCaptureCategories(ctx context.Context, _ *http.Request, 
 	return out, nil
 }
 
-func (s *Server) suggestTransactionCategories(ctx context.Context, _ *http.Request, body TransactionSuggestionInput) (TransactionSuggestions, error) {
-	suggestions, available, err := s.svc.SuggestForTransactions(ctx, auth.MustBooksID(ctx), body.TransactionIds)
+func (s *Server) suggestTransactionCategories(
+	ctx context.Context,
+	_ *http.Request,
+	body TransactionSuggestionInput,
+) (TransactionSuggestions, error) {
+	suggestions, available, err := s.svc.SuggestForTransactions(
+		ctx,
+		auth.MustBooksID(ctx),
+		body.TransactionIds,
+	)
 	if err != nil {
 		return TransactionSuggestions{}, err
 	}
 
-	out := TransactionSuggestions{Available: available, Items: make([]TransactionSuggestion, len(suggestions))}
+	out := TransactionSuggestions{
+		Available: available,
+		Items:     make([]TransactionSuggestion, len(suggestions)),
+	}
 	for i, sg := range suggestions {
 		out.Items[i].TransactionId = body.TransactionIds[i]
 

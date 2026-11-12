@@ -52,7 +52,11 @@ func privateDir(path string) error {
 
 	st, ok := info.Sys().(*syscall.Stat_t)
 	if !info.IsDir() || info.Mode().Perm() != 0o700 || !ok || int(st.Uid) != os.Getuid() {
-		return fmt.Errorf("%s must be a directory of this user with mode 0700, found %v", path, info.Mode())
+		return fmt.Errorf(
+			"%s must be a directory of this user with mode 0700, found %v",
+			path,
+			info.Mode(),
+		)
 	}
 
 	return nil

@@ -1,9 +1,115 @@
+cmd/demoseed/cashflow.go	seeder.extrasEmployer	pending: split after the 100-column reformatting
+cmd/demoseed/invest.go	seeder.buildInvestments	pending: split after the 100-column reformatting
+cmd/demoseed/planning.go	schedules	pending: split after the 100-column reformatting
+cmd/demoseed/purchases.go	seeder.lisbon	pending: split after the 100-column reformatting
 cmd/demoseed/purchases.go	seeder.purchases	table of data
+cmd/demoseed/reconcile.go	seeder.importCSV	pending: split after the 100-column reformatting
+cmd/demoseed/seeder.go	seeder.do	pending: split after the 100-column reformatting
+cmd/demoseed/transfers.go	seeder.transfers	pending: split after the 100-column reformatting
+internal/assistant/app/history.go	History	pending: split after the 100-column reformatting
+internal/assistant/app/turn.go	Service.Turn	pending: split after the 100-column reformatting
 internal/assistant/httpapi/server.go	toProblem	table of data
+internal/capture/httpapi/server.go	toLine	pending: split after the 100-column reformatting
+internal/capture/llmapi/suggester.go	Suggester.Suggest	pending: split after the 100-column reformatting
+internal/classification/domain/rule.go	NewRule	pending: split after the 100-column reformatting
+internal/classification/httpapi/rules.go	fromRuleInput	pending: split after the 100-column reformatting
+internal/classification/toolapi/manage_rule_preview.go	previewAlias	pending: split after the 100-column reformatting
+internal/identity/app/second_factor_login.go	Service.CompleteSecondFactor	pending: split after the 100-column reformatting
+internal/identity/app/second_factor_passkey.go	Service.CreatePasskey	pending: split after the 100-column reformatting
+internal/identity/httpapi/second_factor.go	Server.completeSecondFactor	pending: split after the 100-column reformatting
+internal/identity/httpapi/server.go	Server.Register	table of data
 internal/identity/httpapi/server.go	ToProblem	table of data
+internal/ingestion/aggregator/aggregatortest/aggregatortest.go	Run	pending: split after the 100-column reformatting
+internal/ingestion/app/import_plan.go	importPlan.route	pending: split after the 100-column reformatting
+internal/ingestion/app/import_write.go	Service.followLine	pending: split after the 100-column reformatting
+internal/ingestion/app/importer.go	Service.Import	pending: split after the 100-column reformatting
+internal/ingestion/app/installments.go	Service.installments	pending: split after the 100-column reformatting
+internal/ingestion/app/review.go	Service.resolveMatch	pending: split after the 100-column reformatting
+internal/ingestion/app/sync.go	Service.importAccountRead	pending: split after the 100-column reformatting
+internal/ingestion/domain/reserve_name.go	reserveCandidates	pending: split after the 100-column reformatting
+internal/ingestion/httpapi/profile.go	Server.saveCsvProfile	pending: split after the 100-column reformatting
+internal/ingestion/httpapi/review.go	toRecordAPI	pending: split after the 100-column reformatting
 internal/ingestion/httpapi/server.go	Server.Register	table of data
 internal/ingestion/httpapi/server.go	ToProblem	table of data
+internal/ingestion/postgres/record.go	toRecord	pending: split after the 100-column reformatting
+internal/ingestion/postgres/sync.go	Repository.UpdateRecordFacts	pending: split after the 100-column reformatting
+internal/ingestion/toolapi/manage.go	parseImportsAction	pending: split after the 100-column reformatting
+internal/ingestion/toolapi/manage_preview.go	previewMapping	pending: split after the 100-column reformatting
+internal/ledger/app/account.go	Service.ReopenAccount	pending: split after the 100-column reformatting
+internal/ledger/app/account.go	Service.checkParent	pending: split after the 100-column reformatting
+internal/ledger/app/billing.go	Service.bill	pending: split after the 100-column reformatting
+internal/ledger/app/capture.go	Service.CaptureVocabulary	pending: split after the 100-column reformatting
+internal/ledger/app/card_operations.go	Service.installmentPurchase	pending: split after the 100-column reformatting
+internal/ledger/app/categorize.go	Service.categorize	pending: split after the 100-column reformatting
+internal/ledger/app/classification.go	Service.TransactionFacts	pending: split after the 100-column reformatting
+internal/ledger/app/disputes.go	Service.refundWonDispute	pending: split after the 100-column reformatting
+internal/ledger/app/import_links.go	Service.ClearMatchedBatch	pending: split after the 100-column reformatting
+internal/ledger/app/import_links.go	Service.UpdateImportedPosting	pending: split after the 100-column reformatting
+internal/ledger/app/imports.go	Service.insertImported	pending: split after the 100-column reformatting
+internal/ledger/app/imports.go	Service.loadImportBatch	pending: split after the 100-column reformatting
+internal/ledger/app/imports.go	importedTransaction	pending: split after the 100-column reformatting
+internal/ledger/app/installment.go	Service.RecordImportedInstallment	pending: split after the 100-column reformatting
+internal/ledger/app/installment.go	Service.confirmInstallment	pending: split after the 100-column reformatting
+internal/ledger/app/reimbursement_candidates.go	Service.ReimbursementSources	pending: split after the 100-column reformatting
+internal/ledger/app/statements.go	Service.FinanceStatement	pending: split after the 100-column reformatting
+internal/ledger/app/tag.go	Service.MergeTag	pending: split after the 100-column reformatting
+internal/ledger/app/trades.go	Service.RecordIncome	pending: split after the 100-column reformatting
+internal/ledger/app/trades.go	Service.RecordTrade	pending: split after the 100-column reformatting
+internal/ledger/app/transaction.go	Service.references	pending: split after the 100-column reformatting
+internal/ledger/domain/billing.go	NewBillingCycleRule	pending: split after the 100-column reformatting
+internal/ledger/domain/categorize.go	categoryPostings	pending: split after the 100-column reformatting
+internal/ledger/domain/income.go	BuildIncome	pending: split after the 100-column reformatting
+internal/ledger/domain/trade.go	sellTrade	pending: split after the 100-column reformatting
+internal/ledger/domain/transaction.go	normalizePostings	pending: split after the 100-column reformatting
+internal/ledger/httpapi/balances.go	Server.getAccountBalance	pending: split after the 100-column reformatting
+internal/ledger/httpapi/cards.go	Server.createBillingCycleRule	pending: split after the 100-column reformatting
+internal/ledger/httpapi/convert_transaction.go	fromPostingInput	pending: split after the 100-column reformatting
+internal/ledger/httpapi/convert_transaction.go	toTransactionAPI	pending: split after the 100-column reformatting
+internal/ledger/httpapi/currency.go	Server.recordTrade	pending: split after the 100-column reformatting
+internal/ledger/httpapi/errors.go	sentinelProblem	pending: split after the 100-column reformatting
 internal/ledger/httpapi/server.go	Server.Register	table of data
+internal/ledger/httpapi/statements.go	Server.statementDetail	pending: split after the 100-column reformatting
+internal/ledger/postgres/statement.go	Repository.Statements	pending: split after the 100-column reformatting
+internal/ledger/postgres/transaction.go	Repository.InsertTransactionRows	pending: split after the 100-column reformatting
+internal/ledger/postgres/transaction_replace.go	Repository.ReplaceCategoryPostings	pending: split after the 100-column reformatting
+internal/ledger/toolapi/card.go	checkCardFields	pending: split after the 100-column reformatting
+internal/ledger/toolapi/change_corrected.go	correctionChanges	pending: split after the 100-column reformatting
+internal/ledger/toolapi/details.go	cardDetailsOf	pending: split after the 100-column reformatting
+internal/ledger/toolapi/investment.go	investmentStep.trade	pending: split after the 100-column reformatting
+internal/ledger/toolapi/organize_account.go	organizeCall.planCloseOrReopenAccount	pending: split after the 100-column reformatting
+internal/ledger/toolapi/organize_account.go	organizeCall.planCreateAccount	pending: split after the 100-column reformatting
+internal/ledger/toolapi/organize_account.go	organizeCall.planUpdateAccount	pending: split after the 100-column reformatting
+internal/ledger/toolapi/settle.go	planSettle	pending: split after the 100-column reformatting
+internal/ledger/toolapi/transaction.go	transactionOutOf	pending: split after the 100-column reformatting
+internal/marketdata/index/brsgs/brsgs.go	Source.Fetch	pending: split after the 100-column reformatting
+internal/marketdata/index/cpi/cpi.go	readEurostat	pending: split after the 100-column reformatting
+internal/marketdata/price.go	Module.RecordInstrumentPrices	pending: split after the 100-column reformatting
+internal/marketdata/probe.go	Module.ProbeQuote	pending: split after the 100-column reformatting
 internal/marketdata/sources.go	sourceEntries	table of data
+internal/marketdata/toolapi/instrument_args.go	checkInstrumentArgs	pending: split after the 100-column reformatting
+internal/planning/app/changes.go	Service.Reopen	pending: split after the 100-column reformatting
+internal/planning/app/generate.go	Service.fill	pending: split after the 100-column reformatting
+internal/planning/app/plan.go	Service.planOccurrences	pending: split after the 100-column reformatting
+internal/planning/app/plan_save.go	Service.checkPlanAmounts	pending: split after the 100-column reformatting
+internal/planning/app/realize.go	Service.Realize	pending: split after the 100-column reformatting
+internal/planning/app/start.go	Service.moveStart	pending: split after the 100-column reformatting
+internal/planning/app/views.go	Service.Project	pending: split after the 100-column reformatting
+internal/planning/httpapi/plan.go	toBudgetPlanAPI	pending: split after the 100-column reformatting
 internal/planning/httpapi/server.go	Server.Register	table of data
+internal/planning/toolapi/budget_goal.go	checkBudgetGoalFields	pending: split after the 100-column reformatting
+internal/planning/toolapi/manage_schedule_prepare.go	checkScheduleFields	pending: split after the 100-column reformatting
+internal/platform/backup/backup.go	Dump	pending: split after the 100-column reformatting
+internal/platform/backup/backup.go	Restore	pending: split after the 100-column reformatting
 internal/platform/config/variables.go	Variables	table of data
+internal/platform/llm/aistudio/wire.go	toWire	pending: split after the 100-column reformatting
+internal/platform/outbox/dispatcher.go	Dispatcher.deliver	pending: split after the 100-column reformatting
+internal/platform/tool/mcp/mcp.go	newServer	pending: split after the 100-column reformatting
+internal/portfolio/adapters.go	ledgerPort.InvestmentFacts	pending: split after the 100-column reformatting
+internal/portfolio/app/benchmark.go	Service.compare	pending: split after the 100-column reformatting
+internal/portfolio/httpapi/server.go	Server.listPositions	pending: split after the 100-column reformatting
+internal/portfolio/postgres/repository.go	Repository.Replace	pending: split after the 100-column reformatting
+internal/reporting/app/categories.go	Service.CategoryTotals	pending: split after the 100-column reformatting
+internal/reporting/httpapi/server.go	rangeProblem	pending: split after the 100-column reformatting
+internal/reporting/postgres/archive_build.go	buildArchive	pending: split after the 100-column reformatting
+internal/reporting/postgres/archive_build.go	writeTables	pending: split after the 100-column reformatting
+internal/reporting/toolapi/categories.go	getCategoryTotals	pending: split after the 100-column reformatting

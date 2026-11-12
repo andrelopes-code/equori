@@ -27,12 +27,20 @@ func TestLive(t *testing.T) {
 		t.Fatal("EQUORI_OPENAI_LIVE_URL and EQUORI_OPENAI_LIVE_MODEL must be set")
 	}
 	clk := clock.New(time.Now)
-	p := openai.New(baseURL, os.Getenv("EQUORI_OPENAI_LIVE_KEY"), &http.Client{Timeout: 2 * time.Minute})
-	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).Client(llm.Target{Provider: "openai", Model: model})
+	p := openai.New(
+		baseURL,
+		os.Getenv("EQUORI_OPENAI_LIVE_KEY"),
+		&http.Client{Timeout: 2 * time.Minute},
+	)
+	client := llm.NewRouter(&clk, slog.New(slog.NewTextHandler(os.Stderr, nil)), nil, p).
+		Client(llm.Target{Provider: "openai", Model: model})
 	ctx := context.Background()
 
 	t.Run("text", func(t *testing.T) {
-		resp, err := client.Generate(ctx, llm.Request{Messages: []llm.Message{user("Reply with the word pong.")}})
+		resp, err := client.Generate(
+			ctx,
+			llm.Request{Messages: []llm.Message{user("Reply with the word pong.")}},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,7 +52,9 @@ func TestLive(t *testing.T) {
 	t.Run("json schema", func(t *testing.T) {
 		resp, err := client.Generate(ctx, llm.Request{
 			Messages: []llm.Message{user("Give the capital of Brazil.")},
-			Schema:   json.RawMessage(`{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}`),
+			Schema: json.RawMessage(
+				`{"type":"object","properties":{"city":{"type":"string"}},"required":["city"]}`,
+			),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -57,13 +67,21 @@ func TestLive(t *testing.T) {
 
 	t.Run("tool round trip", func(t *testing.T) {
 		calls := 0
-		handlers := map[string]llm.ToolHandler{"today": func(context.Context, json.RawMessage) (json.RawMessage, error) {
-			calls++
-			return json.RawMessage(`{"date":"2026-10-16"}`), nil
-		}}
+		handlers := map[string]llm.ToolHandler{
+			"today": func(context.Context, json.RawMessage) (json.RawMessage, error) {
+				calls++
+				return json.RawMessage(`{"date":"2026-10-16"}`), nil
+			},
+		}
 		req := llm.Request{
 			Messages: []llm.Message{user("What is today's date? Use the today tool.")},
-			Tools:    []llm.Tool{{Name: "today", Description: "Returns today's date.", Parameters: json.RawMessage(`{"type":"object","properties":{}}`)}},
+			Tools: []llm.Tool{
+				{
+					Name:        "today",
+					Description: "Returns today's date.",
+					Parameters:  json.RawMessage(`{"type":"object","properties":{}}`),
+				},
+			},
 		}
 		resp, _, err := llm.RunTools(ctx, client, req, handlers, 4)
 		if err != nil {

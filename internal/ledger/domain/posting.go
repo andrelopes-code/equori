@@ -46,15 +46,26 @@ func checkPosting(
 
 	a, ok := accounts[p.AccountID]
 	if !ok || a.BooksID != t.BooksID {
-		return Posting{}, &FieldError{Field: field("account_id"), Message: "unknown account", Err: ErrUnknownAccount}
+		return Posting{}, &FieldError{
+			Field:   field("account_id"),
+			Message: "unknown account",
+			Err:     ErrUnknownAccount,
+		}
 	}
 
 	if !a.IsOpenOn(t.Date) {
-		return Posting{}, &FieldError{Field: field("account_id"), Message: "account is not open on the transaction date", Err: ErrAccountClosed}
+		return Posting{}, &FieldError{
+			Field:   field("account_id"),
+			Message: "account is not open on the transaction date",
+			Err:     ErrAccountClosed,
+		}
 	}
 
 	if p.Amount.Currency() != a.Instrument {
-		return Posting{}, invalid(field("amount"), "must be in the account currency "+string(a.Instrument))
+		return Posting{}, invalid(
+			field("amount"),
+			"must be in the account currency "+string(a.Instrument),
+		)
 	}
 
 	if p.Amount.IsZero() {
@@ -79,14 +90,24 @@ func checkPostingWeight(
 		if p.Weight == (money.Money{}) {
 			p.Weight = p.Amount
 		} else if p.Weight != p.Amount {
-			return Posting{}, &FieldError{Field: field("weight"), Message: "must equal the amount when the account uses the balancing currency", Err: ErrCurrencyMismatch}
+			return Posting{}, &FieldError{
+				Field:   field("weight"),
+				Message: "must equal the amount when the account uses the balancing currency",
+				Err:     ErrCurrencyMismatch,
+			}
 		}
 	} else {
 		switch {
 		case p.Weight.Currency() != t.BalancingCurrency:
-			return Posting{}, invalid(field("weight"), "is required in the balancing currency "+string(t.BalancingCurrency))
+			return Posting{}, invalid(
+				field("weight"),
+				"is required in the balancing currency "+string(t.BalancingCurrency),
+			)
 		case p.Weight.IsZero() || p.Weight.IsNegative() != p.Amount.IsNegative():
-			return Posting{}, invalid(field("weight"), "must be non-zero and have the sign of the amount")
+			return Posting{}, invalid(
+				field("weight"),
+				"must be non-zero and have the sign of the amount",
+			)
 		}
 	}
 
@@ -108,8 +129,14 @@ func checkPostingDetails(
 	}
 
 	if o := p.Original; o != nil {
-		if _, err := money.ParseCurrency(string(o.Currency())); err != nil || o.Currency() == a.Instrument || o.IsZero() || o.IsNegative() != p.Amount.IsNegative() {
-			return Posting{}, invalid(field("original"), "must be a non-zero amount of another currency with the sign of the amount")
+		if _, err := money.ParseCurrency(
+			string(o.Currency()),
+		); err != nil || o.Currency() == a.Instrument || o.IsZero() ||
+			o.IsNegative() != p.Amount.IsNegative() {
+			return Posting{}, invalid(
+				field("original"),
+				"must be a non-zero amount of another currency with the sign of the amount",
+			)
 		}
 	}
 
@@ -160,7 +187,10 @@ func checkCardPosting(i int, p Posting, a Account, hasCategory bool) (Posting, e
 	field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
 	if a.Kind != KindCreditCard {
 		if p.Statement != nil || p.CardRole != "" || p.Installment != nil {
-			return Posting{}, invalid(field("statement"), "statements, card roles and installments apply to credit card postings only")
+			return Posting{}, invalid(
+				field("statement"),
+				"statements, card roles and installments apply to credit card postings only",
+			)
 		}
 
 		return p, nil

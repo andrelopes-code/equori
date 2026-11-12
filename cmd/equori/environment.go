@@ -34,7 +34,12 @@ func envNames(environ []string, file map[string]string) []string {
 
 // startWarnings logs the removed and the unknown EQUORI_ variables of names and, in external mode,
 // a missing secret key (A161.4, A161.7).
-func startWarnings(log *slog.Logger, cfg config.Config, getenv func(string) string, names []string) {
+func startWarnings(
+	log *slog.Logger,
+	cfg config.Config,
+	getenv func(string) string,
+	names []string,
+) {
 	for _, r := range config.RemovedVariables(getenv) {
 		log.Warn("environment variable removed", "variable", r.Name, "replaced_by", r.Screen)
 	}
@@ -46,7 +51,9 @@ func startWarnings(log *slog.Logger, cfg config.Config, getenv func(string) stri
 	}
 
 	if !cfg.Managed() && cfg.SecretKey == "" {
-		log.Warn("EQUORI_SECRET_KEY is not set: bank connections, the second factor and the copy password are unavailable")
+		log.Warn(
+			"EQUORI_SECRET_KEY is not set: bank connections, the second factor and the copy password are unavailable",
+		)
 	}
 }
 

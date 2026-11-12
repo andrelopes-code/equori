@@ -25,7 +25,10 @@ func TestS225DatabaseConnectError(t *testing.T) {
 	}
 
 	cfg := config.Config{
-		DatabaseURL: fmt.Sprintf("postgres://equori:s3cret@127.0.0.1:%d/equori_s225?sslmode=disable", port),
+		DatabaseURL: fmt.Sprintf(
+			"postgres://equori:s3cret@127.0.0.1:%d/equori_s225?sslmode=disable",
+			port,
+		),
 	}
 
 	_, err = openDatabase(t.Context(), cfg, slog.New(slog.DiscardHandler), true)

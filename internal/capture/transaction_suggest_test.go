@@ -44,8 +44,12 @@ func (b books) uncategorized(t *testing.T, description, class string, amount int
 		ID string `json:"id"`
 	}
 	b.h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-10", "description": description,
-		"postings": []map[string]any{apitest.Posting(b.checking, -amount), apitest.Posting(category, amount)},
+		"date":        "2026-10-10",
+		"description": description,
+		"postings": []map[string]any{
+			apitest.Posting(b.checking, -amount),
+			apitest.Posting(category, amount),
+		},
 	}, http.StatusCreated, &out)
 
 	return out.ID
@@ -64,7 +68,13 @@ func TestSuggestTransactionCategories(t *testing.T) {
 	freelance := b.uncategorized(t, "Freela", "income", 50000)
 
 	var got transactionSuggestionsView
-	b.h.MustDo(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": []string{bakery, freelance}}, http.StatusOK, &got)
+	b.h.MustDo(
+		http.MethodPost,
+		suggestTransactionsPath,
+		map[string]any{"transaction_ids": []string{bakery, freelance}},
+		http.StatusOK,
+		&got,
+	)
 
 	if !got.Available || len(got.Items) != 2 ||
 		got.Items[0].TransactionID != bakery || got.Items[0].CategoryID != b.supermarket || got.Items[0].Source != "model" ||
@@ -84,19 +94,43 @@ func TestSuggestTransactionCategories(t *testing.T) {
 func TestSuggestTransactionCategoriesRejects(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	categorized := b.h.Record("2026-10-10", apitest.Posting(b.checking, -900), apitest.Posting(b.transport, 900))
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": []string{categorized}}),
-		http.StatusUnprocessableEntity, "transaction_not_uncategorized", "transaction_ids")
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": []string{"0198f0a1-0000-7000-8000-000000000001"}}),
-		http.StatusNotFound, "not_found", "")
+	categorized := b.h.Record(
+		"2026-10-10",
+		apitest.Posting(b.checking, -900),
+		apitest.Posting(b.transport, 900),
+	)
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			suggestTransactionsPath,
+			map[string]any{"transaction_ids": []string{categorized}},
+		),
+		http.StatusUnprocessableEntity,
+		"transaction_not_uncategorized",
+		"transaction_ids",
+	)
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			suggestTransactionsPath,
+			map[string]any{"transaction_ids": []string{"0198f0a1-0000-7000-8000-000000000001"}},
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 
 	ids := make([]string, 51)
 	for i := range ids {
 		ids[i] = categorized
 	}
 
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": ids}),
-		http.StatusBadRequest, "invalid_request", "transaction_ids")
+	b.h.ExpectProblem(
+		b.h.Do(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": ids}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"transaction_ids",
+	)
 }
 
 // Without a language model the answer is that of the capture: 200 and available false.
@@ -105,9 +139,16 @@ func TestSuggestTransactionCategoriesWithoutModel(t *testing.T) {
 	b := newBooks(t)
 	id := b.uncategorized(t, "Padaria", "expense", 1200)
 	var got transactionSuggestionsView
-	b.h.MustDo(http.MethodPost, suggestTransactionsPath, map[string]any{"transaction_ids": []string{id}}, http.StatusOK, &got)
+	b.h.MustDo(
+		http.MethodPost,
+		suggestTransactionsPath,
+		map[string]any{"transaction_ids": []string{id}},
+		http.StatusOK,
+		&got,
+	)
 
-	if got.Available || len(got.Items) != 1 || got.Items[0].TransactionID != id || got.Items[0].CategoryID != "" {
+	if got.Available || len(got.Items) != 1 || got.Items[0].TransactionID != id ||
+		got.Items[0].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
 }

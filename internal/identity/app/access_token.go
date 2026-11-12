@@ -17,7 +17,13 @@ var (
 )
 
 // CreateAccessToken returns the token text, shown to the user once, and its record (design 2026-10-26 X5-X7).
-func (s *Service) CreateAccessToken(ctx context.Context, memberID, booksID int64, role auth.BookRole, name, scope string, days int) (string, domain.AccessToken, error) {
+func (s *Service) CreateAccessToken(
+	ctx context.Context,
+	memberID, booksID int64,
+	role auth.BookRole,
+	name, scope string,
+	days int,
+) (string, domain.AccessToken, error) {
 	text, t, err := domain.NewAccessToken(memberID, booksID, name, scope, days, s.now())
 	if err != nil {
 		return "", domain.AccessToken{}, err
@@ -34,7 +40,10 @@ func (s *Service) CreateAccessToken(ctx context.Context, memberID, booksID int64
 	return text, t, nil
 }
 
-func (s *Service) AccessTokens(ctx context.Context, memberID, booksID int64) ([]domain.AccessToken, error) {
+func (s *Service) AccessTokens(
+	ctx context.Context,
+	memberID, booksID int64,
+) ([]domain.AccessToken, error) {
 	return s.repo.AccessTokens(ctx, memberID, booksID)
 }
 

@@ -21,7 +21,13 @@ func TestProfile(t *testing.T) {
 	}
 
 	h.MustDo(http.MethodPatch, "/api/v1/me", map[string]any{"language": "en"}, http.StatusOK, &me)
-	h.MustDo(http.MethodPatch, "/api/v1/books/current", map[string]any{"region": "GB", "time_zone": nil}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/books/current",
+		map[string]any{"region": "GB", "time_zone": nil},
+		http.StatusOK,
+		nil,
+	)
 	h.MustDo(http.MethodGet, "/api/v1/me", nil, http.StatusOK, &me)
 
 	if me.Language != "en" || me.Region != "GB" {

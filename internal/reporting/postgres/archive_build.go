@@ -21,7 +21,12 @@ import (
 
 // sharedTables hold rows of every book; the archive carries all of them.
 var sharedTables = []string{
-	"marketdata_holiday", "marketdata_index_rate", "marketdata_instrument", "marketdata_instrument_symbol", "marketdata_fixed_income_terms", "marketdata_price",
+	"marketdata_holiday",
+	"marketdata_index_rate",
+	"marketdata_instrument",
+	"marketdata_instrument_symbol",
+	"marketdata_fixed_income_terms",
+	"marketdata_price",
 }
 
 // rowExpressions write a row of t without books_id; a table listed here drops more.
@@ -78,12 +83,23 @@ func primaryKey(ctx context.Context, q DBTX, table string) ([]string, error) {
 	return cols, err
 }
 
-func buildArchive(ctx context.Context, tx pgx.Tx, booksID int64, at time.Time, appVersion string) ([]byte, error) {
+func buildArchive(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	at time.Time,
+	appVersion string,
+) ([]byte, error) {
 	m := archiveManifest{
-		Format: "equori-export", FormatVersion: 1, ArchiveVersion: app.ArchiveVersion, AppVersion: appVersion,
-		ExportedAt: at, Attachments: []archiveFile{},
+		Format:         "equori-export",
+		FormatVersion:  1,
+		ArchiveVersion: app.ArchiveVersion,
+		AppVersion:     appVersion,
+		ExportedAt:     at,
+		Attachments:    []archiveFile{},
 	}
-	if err := tx.QueryRow(ctx, `SELECT max(version_id) FROM goose_db_version WHERE is_applied`).Scan(&m.SchemaVersion); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT max(version_id) FROM goose_db_version WHERE is_applied`).
+		Scan(&m.SchemaVersion); err != nil {
 		return nil, fmt.Errorf("read schema version: %w", err)
 	}
 
@@ -160,7 +176,10 @@ func tableSources(facts []string) []tableSource {
 
 	sources = append(sources, tableSource{"ledger_transaction_version", "to_jsonb(t)",
 		"t.transaction_id IN (SELECT id FROM ledger_transaction WHERE books_id = $1)"})
-	slices.SortFunc(sources, func(a, b tableSource) int { return strings.Compare(a.table, b.table) })
+	slices.SortFunc(
+		sources,
+		func(a, b tableSource) int { return strings.Compare(a.table, b.table) },
+	)
 
 	return sources
 }
@@ -184,7 +203,13 @@ func writeTables(
 			order = strings.Join(key, ", ")
 		}
 
-		sql := fmt.Sprintf(`SELECT (%s)::text FROM %s t WHERE %s ORDER BY %s`, s.from, pgx.Identifier{s.table}.Sanitize(), s.where, order)
+		sql := fmt.Sprintf(
+			`SELECT (%s)::text FROM %s t WHERE %s ORDER BY %s`,
+			s.from,
+			pgx.Identifier{s.table}.Sanitize(),
+			s.where,
+			order,
+		)
 
 		args := []any{}
 		if strings.Contains(s.where, "$1") {
@@ -213,7 +238,15 @@ func writeTables(
 		}
 
 		sum := sha256.Sum256(b.Bytes())
-		m.Tables = append(m.Tables, archiveTable{Name: s.table, File: file, Rows: len(lines), SHA256: hex.EncodeToString(sum[:])})
+		m.Tables = append(
+			m.Tables,
+			archiveTable{
+				Name:   s.table,
+				File:   file,
+				Rows:   len(lines),
+				SHA256: hex.EncodeToString(sum[:]),
+			},
+		)
 	}
 
 	return nil
@@ -226,7 +259,11 @@ func writeAttachments(
 	m *archiveManifest,
 	write func(string, []byte) error,
 ) error {
-	rows, err := tx.Query(ctx, `SELECT sha256, content FROM ledger_attachment_blob WHERE books_id = $1 ORDER BY sha256`, booksID)
+	rows, err := tx.Query(
+		ctx,
+		`SELECT sha256, content FROM ledger_attachment_blob WHERE books_id = $1 ORDER BY sha256`,
+		booksID,
+	)
 	if err != nil {
 		return fmt.Errorf("read attachments: %w", err)
 	}
@@ -243,16 +280,27 @@ func writeAttachments(
 			return err
 		}
 
-		m.Attachments = append(m.Attachments, archiveFile{File: file, SHA256: hex.EncodeToString(sum)})
+		m.Attachments = append(
+			m.Attachments,
+			archiveFile{File: file, SHA256: hex.EncodeToString(sum)},
+		)
 	}
 
 	return rows.Err()
 }
 
 // writeCredentials adds the bundle that the request stored (export design C2) as an archive entry.
-func writeCredentials(ctx context.Context, tx pgx.Tx, booksID int64, m *archiveManifest, write func(string, []byte) error) error {
+func writeCredentials(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	m *archiveManifest,
+	write func(string, []byte) error,
+) error {
 	var bundle []byte
-	if err := tx.QueryRow(ctx, `SELECT credentials FROM reporting_export WHERE books_id = $1`, booksID).Scan(&bundle); err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	if err := tx.QueryRow(ctx, `SELECT credentials FROM reporting_export WHERE books_id = $1`, booksID).
+		Scan(&bundle); err != nil &&
+		!errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("read credentials: %w", err)
 	}
 

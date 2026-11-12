@@ -53,7 +53,12 @@ func OpenWithPassphrase(sealed []byte, passphrase string) ([]byte, error) {
 		return nil, ErrUnreadable
 	}
 
-	plaintext, err := aead.Open(nil, sealed[5+saltSize:passphraseHeader], sealed[passphraseHeader:], passphraseContext)
+	plaintext, err := aead.Open(
+		nil,
+		sealed[5+saltSize:passphraseHeader],
+		sealed[passphraseHeader:],
+		passphraseContext,
+	)
 	if err != nil {
 		return nil, ErrUnreadable
 	}

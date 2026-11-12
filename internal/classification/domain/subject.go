@@ -35,7 +35,11 @@ type subject struct {
 }
 
 func newSubject(s Subject) subject {
-	return subject{Subject: s, description: Normalize(s.Description), rawDescription: Normalize(s.RawDescription)}
+	return subject{
+		Subject:        s,
+		description:    Normalize(s.Description),
+		rawDescription: Normalize(s.RawDescription),
+	}
 }
 
 func (r Rule) matches(s subject) bool {
@@ -57,15 +61,25 @@ func (c Condition) holds(s subject) bool {
 	case FieldPayee:
 		return s.PayeeID != uuid.Nil && slices.Contains(c.IDs, s.PayeeID)
 	case FieldAccount:
-		return slices.ContainsFunc(s.Accounts, func(id uuid.UUID) bool { return slices.Contains(c.IDs, id) })
+		return slices.ContainsFunc(
+			s.Accounts,
+			func(id uuid.UUID) bool { return slices.Contains(c.IDs, id) },
+		)
 	case FieldAccountKind:
-		return slices.ContainsFunc(s.AccountKinds, func(k string) bool { return slices.Contains(c.Text, k) })
+		return slices.ContainsFunc(
+			s.AccountKinds,
+			func(k string) bool { return slices.Contains(c.Text, k) },
+		)
 	case FieldSource:
 		return slices.Contains(c.Text, s.Source)
 	case FieldWeekday:
 		return slices.Contains(c.Text, weekdays[s.Date.Weekday()])
 	case FieldDayOfMonth:
-		return c.holdsInt(int64(s.Date.Day()), func(i int) int64 { return int64(c.Ints[i]) }, len(c.Ints))
+		return c.holdsInt(
+			int64(s.Date.Day()),
+			func(i int) int64 { return int64(c.Ints[i]) },
+			len(c.Ints),
+		)
 	case FieldInstallment:
 		return s.Installment == c.Bool
 	case FieldAmount, FieldAbsoluteAmount:

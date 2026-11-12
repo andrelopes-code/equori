@@ -13,12 +13,24 @@ import (
 )
 
 func toConversation(c domain.Conversation) AssistantConversation {
-	return AssistantConversation{Id: c.ID, Title: c.Title, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt}
+	return AssistantConversation{
+		Id:        c.ID,
+		Title:     c.Title,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
 }
 
-func (s *Server) toMessage(m domain.Message, proposals []domain.Proposal) (AssistantMessage, error) {
+func (s *Server) toMessage(
+	m domain.Message,
+	proposals []domain.Proposal,
+) (AssistantMessage, error) {
 	out := AssistantMessage{
-		Id: m.ID, Role: AssistantMessageRole(m.Role), Content: m.Content, CreatedAt: m.CreatedAt, Proposals: []AssistantProposal{},
+		Id:        m.ID,
+		Role:      AssistantMessageRole(m.Role),
+		Content:   m.Content,
+		CreatedAt: m.CreatedAt,
+		Proposals: []AssistantProposal{},
 	}
 	if m.Outcome != domain.OutcomeNone {
 		o := AssistantMessageOutcome(m.Outcome)
@@ -41,7 +53,11 @@ func (s *Server) toMessage(m domain.Message, proposals []domain.Proposal) (Assis
 	return out, nil
 }
 
-func (s *Server) listAssistantConversations(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantConversationPage, error) {
+func (s *Server) listAssistantConversations(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (AssistantConversationPage, error) {
 	params, err := httpserver.Query[ListAssistantConversationsParams](r)
 	if err != nil {
 		return AssistantConversationPage{}, err
@@ -50,14 +66,26 @@ func (s *Server) listAssistantConversations(ctx context.Context, r *http.Request
 	pr, err := page.Read[app.ConversationKey](params.Limit, params.Cursor)
 	switch {
 	case errors.Is(err, page.ErrInvalidLimit):
-		return AssistantConversationPage{}, &domain.FieldError{Field: "limit", Message: "must be between 1 and 200"}
+		return AssistantConversationPage{}, &domain.FieldError{
+			Field:   "limit",
+			Message: "must be between 1 and 200",
+		}
 	case errors.Is(err, page.ErrInvalidCursor):
-		return AssistantConversationPage{}, &domain.FieldError{Field: "cursor", Message: "is not a cursor of this list"}
+		return AssistantConversationPage{}, &domain.FieldError{
+			Field:   "cursor",
+			Message: "is not a cursor of this list",
+		}
 	case err != nil:
 		return AssistantConversationPage{}, err
 	}
 
-	rows, next, err := s.svc.ConversationPage(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), pr.After, pr.Limit)
+	rows, next, err := s.svc.ConversationPage(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+		pr.After,
+		pr.Limit,
+	)
 	if err != nil {
 		return AssistantConversationPage{}, err
 	}
@@ -74,7 +102,11 @@ func (s *Server) listAssistantConversations(ctx context.Context, r *http.Request
 	return out, nil
 }
 
-func (s *Server) getAssistantConversation(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantConversationDetail, error) {
+func (s *Server) getAssistantConversation(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (AssistantConversationDetail, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return AssistantConversationDetail{}, err
@@ -87,7 +119,13 @@ func (s *Server) getAssistantConversation(ctx context.Context, r *http.Request, 
 
 	c := d.Conversation
 
-	out := AssistantConversationDetail{Id: c.ID, Title: c.Title, CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt, Messages: make([]AssistantMessage, len(d.Messages))}
+	out := AssistantConversationDetail{
+		Id:        c.ID,
+		Title:     c.Title,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+		Messages:  make([]AssistantMessage, len(d.Messages)),
+	}
 	for i, m := range d.Messages {
 		if out.Messages[i], err = s.toMessage(m, d.Proposals); err != nil {
 			return AssistantConversationDetail{}, err
@@ -97,21 +135,38 @@ func (s *Server) getAssistantConversation(ctx context.Context, r *http.Request, 
 	return out, nil
 }
 
-func (s *Server) deleteAssistantConversation(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+func (s *Server) deleteAssistantConversation(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return httpserver.None{}, err
 	}
 
-	if err := s.svc.DeleteConversation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), id); err != nil {
+	if err := s.svc.DeleteConversation(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+		id,
+	); err != nil {
 		return httpserver.None{}, err
 	}
 
 	return httpserver.None{}, nil
 }
 
-func (s *Server) deleteAssistantConversations(ctx context.Context, _ *http.Request, _ httpserver.None) (httpserver.None, error) {
-	if err := s.svc.DeleteConversations(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx)); err != nil {
+func (s *Server) deleteAssistantConversations(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
+	if err := s.svc.DeleteConversations(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+	); err != nil {
 		return httpserver.None{}, err
 	}
 

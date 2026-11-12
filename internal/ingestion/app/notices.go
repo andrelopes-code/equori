@@ -20,7 +20,11 @@ type FeedState struct {
 }
 
 // FeedStates reads the feed of each given ledger account (A152).
-func (s *Service) FeedStates(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (map[uuid.UUID]FeedState, error) {
+func (s *Service) FeedStates(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+) (map[uuid.UUID]FeedState, error) {
 	states := make(map[uuid.UUID]FeedState, len(accountIDs))
 	for _, id := range accountIDs {
 		n, err := s.unconfirmedCount(ctx, booksID, id)
@@ -37,7 +41,11 @@ func (s *Service) FeedStates(ctx context.Context, booksID int64, accountIDs []uu
 
 	var after *NameKey
 	for {
-		list, next, err := s.ListConnections(ctx, booksID, page.Request[NameKey]{After: after, Limit: page.MaxLimit})
+		list, next, err := s.ListConnections(
+			ctx,
+			booksID,
+			page.Request[NameKey]{After: after, Limit: page.MaxLimit},
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +75,11 @@ func (s *Service) FeedStates(ctx context.Context, booksID int64, accountIDs []uu
 	}
 }
 
-func (s *Service) unconfirmedCount(ctx context.Context, booksID int64, accountID uuid.UUID) (int, error) {
+func (s *Service) unconfirmedCount(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (int, error) {
 	ps, _, err := s.Unconfirmed(ctx, booksID, accountID)
 
 	var fe *domain.FieldError

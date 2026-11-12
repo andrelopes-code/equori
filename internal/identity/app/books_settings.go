@@ -32,14 +32,27 @@ func (s *Service) BooksSettings(ctx context.Context, booksID int64) (BooksSettin
 		return BooksSettings{}, fmt.Errorf("load name of books %d: %w", booksID, err)
 	}
 
-	return BooksSettings{Name: name, Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+	return BooksSettings{
+		Name:            name,
+		Region:          region,
+		TimeZone:        timeZone,
+		DefaultTimeZone: s.defaultTimeZone(region),
+	}, nil
 }
 
 // UpdateBooksSettings validates and stores the name, the region and the time zone; a nil name keeps
 // the stored one and a nil timeZone restores the default of the region.
-func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (BooksSettings, error) {
+func (s *Service) UpdateBooksSettings(
+	ctx context.Context,
+	booksID int64,
+	region string,
+	timeZone, name *string,
+) (BooksSettings, error) {
 	if !locale.ValidRegion(region) {
-		return BooksSettings{}, &domain.FieldError{Field: "region", Message: "must be an ISO 3166-1 alpha-2 code"}
+		return BooksSettings{}, &domain.FieldError{
+			Field:   "region",
+			Message: "must be an ISO 3166-1 alpha-2 code",
+		}
 	}
 
 	if timeZone != nil && !validTimeZone(*timeZone) {
@@ -51,7 +64,12 @@ func (s *Service) UpdateBooksSettings(ctx context.Context, booksID int64, region
 		return BooksSettings{}, fmt.Errorf("update settings of books %d: %w", booksID, err)
 	}
 
-	return BooksSettings{Name: stored, Region: region, TimeZone: timeZone, DefaultTimeZone: s.defaultTimeZone(region)}, nil
+	return BooksSettings{
+		Name:            stored,
+		Region:          region,
+		TimeZone:        timeZone,
+		DefaultTimeZone: s.defaultTimeZone(region),
+	}, nil
 }
 
 // Location returns the book's time_zone, or the default of its region while null.
@@ -81,7 +99,10 @@ func validateBooks(region string, base money.Currency) error {
 	}
 
 	if _, err := money.ParseCurrency(string(base)); err != nil {
-		return &domain.FieldError{Field: "base_currency", Message: "must be an ISO 4217 currency code"}
+		return &domain.FieldError{
+			Field:   "base_currency",
+			Message: "must be an ISO 4217 currency code",
+		}
 	}
 
 	return nil

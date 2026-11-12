@@ -10,7 +10,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) getMemberAppearance(ctx context.Context, _ *http.Request, _ httpserver.None) (Appearance, error) {
+func (s *Server) getMemberAppearance(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (Appearance, error) {
 	doc, err := s.svc.Appearance(ctx, auth.MustMemberID(ctx))
 	if err != nil {
 		return Appearance{}, err

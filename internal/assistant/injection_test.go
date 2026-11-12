@@ -18,7 +18,11 @@ type lateProvider struct{ p *llmtest.Provider }
 
 func (*lateProvider) Name() string { return "aistudio" }
 
-func (l *lateProvider) Generate(ctx context.Context, model string, req llm.Request) (llm.Response, error) {
+func (l *lateProvider) Generate(
+	ctx context.Context,
+	model string,
+	req llm.Request,
+) (llm.Response, error) {
 	return l.p.Generate(ctx, model, req)
 }
 
@@ -34,7 +38,13 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": injected}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": injected},
+		http.StatusCreated,
+		&payee,
+	)
 	var tx struct {
 		ID string `json:"id"`
 	}
@@ -65,7 +75,8 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 		t.Fatalf("events = %s", r.Body)
 	}
 
-	if len(answer.Proposals) != 1 || answer.Proposals[0].Tool != "void_transaction" || answer.Proposals[0].Status != "pending" {
+	if len(answer.Proposals) != 1 || answer.Proposals[0].Tool != "void_transaction" ||
+		answer.Proposals[0].Status != "pending" {
 		t.Fatalf("proposals = %+v", answer.Proposals)
 	}
 
@@ -78,7 +89,10 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 	for _, m := range reqs[1].Request.Messages {
 		for _, p := range m.Parts {
 			if p.Text != "" && strings.Contains(p.Text, injected) {
-				t.Errorf("the payee text reached the model outside a tool result, in a %s message", m.Role)
+				t.Errorf(
+					"the payee text reached the model outside a tool result, in a %s message",
+					m.Role,
+				)
 			}
 
 			if p.ToolResult != nil && strings.Contains(string(p.ToolResult.Content), injected) {
@@ -106,7 +120,13 @@ func TestInjectedPayeeNeedsConfirmation(t *testing.T) {
 	var rejected struct {
 		Status string `json:"status"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/assistant/proposals/"+answer.Proposals[0].ID+"/reject", nil, http.StatusOK, &rejected)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/assistant/proposals/"+answer.Proposals[0].ID+"/reject",
+		nil,
+		http.StatusOK,
+		&rejected,
+	)
 
 	if rejected.Status != "rejected" || voided() {
 		t.Errorf("after reject: status %q, voided %v", rejected.Status, voided())

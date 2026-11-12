@@ -11,7 +11,10 @@ import (
 
 // reserveTransfers resolves the reserve a bank line moves money into or out of against every
 // reserved balance of the connection (A212).
-func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccount) func(domain.NormalizedRecord) domain.ReserveOutcome {
+func (s *Service) reserveTransfers(
+	c domain.Connection,
+	ext domain.ExternalAccount,
+) func(domain.NormalizedRecord) domain.ReserveOutcome {
 	if ext.Subtype == domain.SubtypeReservedBalance {
 		return nil
 	}
@@ -31,7 +34,11 @@ func (s *Service) reserveTransfers(c domain.Connection, ext domain.ExternalAccou
 // reidentify gives the stored record of a line the line's new external id when the aggregator
 // returns the line under another id and the same institution line id (A143); the claim of
 // the line then finds that record.
-func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read domain.AccountRead) error {
+func (s *Service) reidentify(
+	ctx context.Context,
+	batch *domain.Batch,
+	read domain.AccountRead,
+) error {
 	var externalIDs, institutionIDs []string
 
 	for _, r := range read.Records {
@@ -45,7 +52,13 @@ func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read doma
 		return nil
 	}
 
-	stored, err := s.repo.RecordsByLineIDs(ctx, batch.BooksID, batch.AccountID, externalIDs, institutionIDs)
+	stored, err := s.repo.RecordsByLineIDs(
+		ctx,
+		batch.BooksID,
+		batch.AccountID,
+		externalIDs,
+		institutionIDs,
+	)
 	if err != nil {
 		return err
 	}
@@ -54,7 +67,15 @@ func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read doma
 		line := read.Records[i]
 		key := domain.DedupKey(batch.AccountID, domain.SourceAggregator, line, 0)
 
-		if err := s.repo.Reidentify(ctx, batch.BooksID, batch.ID, rec.ID, line.ExternalID, key, line.Raw); err != nil {
+		if err := s.repo.Reidentify(
+			ctx,
+			batch.BooksID,
+			batch.ID,
+			rec.ID,
+			line.ExternalID,
+			key,
+			line.Raw,
+		); err != nil {
 			return err
 		}
 
@@ -69,7 +90,12 @@ func (s *Service) reidentify(ctx context.Context, batch *domain.Batch, read doma
 // read asks one day more on each side, so the aggregator's own calendar day cannot hide a
 // line of the window (A145). A read that returns no line while the window holds records
 // withdraws nothing and marks the batch (A146).
-func (s *Service) withdraw(ctx context.Context, batch *domain.Batch, seen []string, from, to time.Time) error {
+func (s *Service) withdraw(
+	ctx context.Context,
+	batch *domain.Batch,
+	seen []string,
+	from, to time.Time,
+) error {
 	returned := make(map[string]bool, len(seen))
 	for _, id := range seen {
 		returned[id] = true

@@ -11,7 +11,7 @@ import (
 // Money is an amount for a language model: a decimal string in the instrument's scale,
 // so the model never applies a scale itself (ADR 012 T5).
 type Money struct {
-	Amount   string `json:"amount" jsonschema:"decimal amount in the instrument's scale, such as -1234.56"`
+	Amount   string `json:"amount"   jsonschema:"decimal amount in the instrument's scale, such as -1234.56"`
 	Currency string `json:"currency" jsonschema:"currency or instrument code"`
 }
 
@@ -85,7 +85,10 @@ func (o *OptionalBool) UnmarshalJSON(b []byte) error {
 func ParseAmount(field, s string, unit money.Money) (money.Money, error) {
 	m, err := money.ParseDecimal(s, unit.Currency(), unit.Scale())
 	if err != nil {
-		return money.Money{}, InvalidArgument(field, fmt.Sprintf("must be a decimal such as 125.90 with at most %d decimals", unit.Scale()))
+		return money.Money{}, InvalidArgument(
+			field,
+			fmt.Sprintf("must be a decimal such as 125.90 with at most %d decimals", unit.Scale()),
+		)
 	}
 
 	return m, nil

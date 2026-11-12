@@ -56,7 +56,11 @@ type hintKey struct{ class, description string }
 
 // Suggest names a category for each item from the kept answers, asking the model once for
 // the others (ADR 014). available is false when the model could not be asked.
-func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestItem) (out []Suggestion, available bool, err error) {
+func (s *Service) Suggest(
+	ctx context.Context,
+	booksID int64,
+	items []SuggestItem,
+) (out []Suggestion, available bool, err error) {
 	if len(items) > MaxSuggestions {
 		return nil, false, ErrTooManySuggestions
 	}
@@ -206,7 +210,10 @@ func unanswered(
 			continue
 		}
 
-		ask = append(ask, SuggestItem{Description: strings.TrimSpace(items[i].Description), Class: k.class})
+		ask = append(
+			ask,
+			SuggestItem{Description: strings.TrimSpace(items[i].Description), Class: k.class},
+		)
 		askKeys = append(askKeys, k)
 	}
 
@@ -229,7 +236,11 @@ func (s *Service) keepAnswers(
 		}
 
 		answers[k] = id
-		if err := s.hints.SaveHint(ctx, booksID, Hint{Class: k.class, Description: k.description, CategoryID: id, AnsweredAt: now}); err != nil {
+		if err := s.hints.SaveHint(
+			ctx,
+			booksID,
+			Hint{Class: k.class, Description: k.description, CategoryID: id, AnsweredAt: now},
+		); err != nil {
 			return nil, err
 		}
 	}
@@ -256,7 +267,10 @@ func categoryOptions(accounts []Account) []CategoryOption {
 			names = append([]string{p.Name}, names...)
 		}
 
-		out = append(out, CategoryOption{ID: a.ID, Class: a.Class, Path: strings.Join(names, " › ")})
+		out = append(
+			out,
+			CategoryOption{ID: a.ID, Class: a.Class, Path: strings.Join(names, " › ")},
+		)
 	}
 
 	slices.SortFunc(out, func(a, b CategoryOption) int {

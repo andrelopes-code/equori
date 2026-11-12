@@ -52,18 +52,35 @@ func TestPlanRows(t *testing.T) {
 	t.Parallel()
 
 	food, market, restaurant := uuid.MustParse("10000000-0000-4000-8000-000000000001"),
-		uuid.MustParse("10000000-0000-4000-8000-000000000002"), uuid.MustParse("10000000-0000-4000-8000-000000000003")
+		uuid.MustParse(
+			"10000000-0000-4000-8000-000000000002",
+		), uuid.MustParse("10000000-0000-4000-8000-000000000003")
 	pets, closed, quiet := uuid.MustParse("10000000-0000-4000-8000-000000000004"),
-		uuid.MustParse("10000000-0000-4000-8000-000000000005"), uuid.MustParse("10000000-0000-4000-8000-000000000006")
+		uuid.MustParse(
+			"10000000-0000-4000-8000-000000000005",
+		), uuid.MustParse("10000000-0000-4000-8000-000000000006")
 	in := PlanInput{
 		Month: month("2026-11"),
 		Categories: []PlanCategory{
-			{ID: food, Open: true}, {ID: market, ParentID: food, Open: true}, {ID: restaurant, ParentID: food, Open: true},
-			{ID: pets, Open: true}, {ID: closed}, {ID: quiet, Open: true},
+			{
+				ID:   food,
+				Open: true,
+			},
+			{ID: market, ParentID: food, Open: true},
+			{ID: restaurant, ParentID: food, Open: true},
+			{ID: pets, Open: true},
+			{ID: closed},
+			{ID: quiet, Open: true},
 		},
 		Budgets: []Budget{
-			{ID: uuid.MustParse("20000000-0000-4000-8000-000000000001"), CategoryID: food,
-				Amounts: []BudgetAmount{{EffectiveFrom: month("2026-10"), Amount: 180000}, {EffectiveFrom: month("2027-01"), Amount: 200000}}},
+			{
+				ID:         uuid.MustParse("20000000-0000-4000-8000-000000000001"),
+				CategoryID: food,
+				Amounts: []BudgetAmount{
+					{EffectiveFrom: month("2026-10"), Amount: 180000},
+					{EffectiveFrom: month("2027-01"), Amount: 200000},
+				},
+			},
 			{ID: uuid.MustParse("20000000-0000-4000-8000-000000000002"), CategoryID: market,
 				Amounts: []BudgetAmount{{EffectiveFrom: month("2026-10"), Amount: 100000}}},
 		},
@@ -85,9 +102,23 @@ func TestPlanRows(t *testing.T) {
 	}
 
 	want := []PlanRow{
-		{CategoryID: food, BudgetID: in.Budgets[0].ID, Planned: 180000, LastMonth: 150000, Average: Divide(240000, 3), Counted: true,
-			NextChange: month("2027-01"), HasNextChange: true},
-		{CategoryID: market, BudgetID: in.Budgets[1].ID, Planned: 100000, LastMonth: 120000, Average: Divide(210000, 3)},
+		{
+			CategoryID:    food,
+			BudgetID:      in.Budgets[0].ID,
+			Planned:       180000,
+			LastMonth:     150000,
+			Average:       Divide(240000, 3),
+			Counted:       true,
+			NextChange:    month("2027-01"),
+			HasNextChange: true,
+		},
+		{
+			CategoryID: market,
+			BudgetID:   in.Budgets[1].ID,
+			Planned:    100000,
+			LastMonth:  120000,
+			Average:    Divide(210000, 3),
+		},
 		{CategoryID: pets, LastMonth: 9000, Average: Divide(30000, 3), Counted: true},
 	}
 	if len(rows) != len(want) {
@@ -106,7 +137,9 @@ func TestPlanRowsWithoutHistory(t *testing.T) {
 
 	food := uuid.MustParse("10000000-0000-4000-8000-000000000001")
 
-	rows, n := PlanRows(PlanInput{Month: month("2026-11"), Categories: []PlanCategory{{ID: food, Open: true}}})
+	rows, n := PlanRows(
+		PlanInput{Month: month("2026-11"), Categories: []PlanCategory{{ID: food, Open: true}}},
+	)
 	if n != 0 || len(rows) != 0 {
 		t.Fatalf("rows = %+v, months = %d, want none", rows, n)
 	}

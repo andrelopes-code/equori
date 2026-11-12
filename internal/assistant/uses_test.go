@@ -73,12 +73,22 @@ func TestListUsesA5(t *testing.T) {
 	got := uses(t, h)
 
 	suggest, chat := got["capture.suggest"], got["assistant.chat"]
-	if !suggest.Default || !suggest.SendsFinancialData || !equal(suggest.Needs, []string{"structured_output"}) ||
+	if !suggest.Default || !suggest.SendsFinancialData ||
+		!equal(suggest.Needs, []string{"structured_output"}) ||
 		!equal(suggest.chain(), []string{"aistudio/gemini-3.5-flash-lite/trains"}) {
 		t.Fatalf("capture.suggest = %+v", suggest)
 	}
 
-	if !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash/trains", "aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.1-flash-lite/trains", "Groq/openai/gpt-oss-120b/provider_terms"}) {
+	if !chat.Default ||
+		!equal(
+			chat.chain(),
+			[]string{
+				"aistudio/gemini-3.5-flash/trains",
+				"aistudio/gemini-3.5-flash-lite/trains",
+				"aistudio/gemini-3.1-flash-lite/trains",
+				"Groq/openai/gpt-oss-120b/provider_terms",
+			},
+		) {
 		t.Fatalf("assistant.chat = %+v", chat)
 	}
 }
@@ -88,42 +98,97 @@ func TestListUsesA5(t *testing.T) {
 func TestSetUseChainA6A11(t *testing.T) {
 	t.Parallel()
 	h := harness(t, newFakes())
-	p := createProvider(t, h, h.Client, map[string]any{"preset": "custom", "name": "Box", "base_url": "http://10.0.0.2:8000/v1"})
+	p := createProvider(
+		t,
+		h,
+		h.Client,
+		map[string]any{"preset": "custom", "name": "Box", "base_url": "http://10.0.0.2:8000/v1"},
+	)
 	path := "/api/v1/assistant/uses/assistant.chat/chain"
 	target := func(model string, caps ...string) map[string]any {
 		return map[string]any{"provider_id": p.ID, "model": model, "capabilities": caps}
 	}
 	h.ExpectProblem(h.Do(http.MethodPut, path, map[string]any{"targets": []any{target("plain")}}),
 		http.StatusUnprocessableEntity, "capability_missing", "targets")
-	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/assistant/uses/nope.use/chain", map[string]any{"targets": []any{}}),
-		http.StatusNotFound, "use_not_found", "")
-	h.ExpectProblem(h.Do(http.MethodPut, path, map[string]any{"targets": []any{target("x", "speech")}}),
-		http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPut,
+			"/api/v1/assistant/uses/nope.use/chain",
+			map[string]any{"targets": []any{}},
+		),
+		http.StatusNotFound,
+		"use_not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, map[string]any{"targets": []any{target("x", "speech")}}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 
 	var set useView
-	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{target("llama", "tools"), target("qwen", "tools", "structured_output")}}, http.StatusOK, &set)
+	h.MustDo(
+		http.MethodPut,
+		path,
+		map[string]any{
+			"targets": []any{
+				target("llama", "tools"),
+				target("qwen", "tools", "structured_output"),
+			},
+		},
+		http.StatusOK,
+		&set,
+	)
 
-	if set.Default || !equal(set.chain(), []string{"Box/llama/provider_terms", "Box/qwen/provider_terms"}) {
+	if set.Default ||
+		!equal(set.chain(), []string{"Box/llama/provider_terms", "Box/qwen/provider_terms"}) {
 		t.Fatalf("set chain = %+v", set)
 	}
 
 	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{}}, http.StatusOK, &set)
 
-	if !set.Default || !equal(set.chain(), []string{"aistudio/gemini-3.5-flash/trains", "aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.1-flash-lite/trains"}) {
+	if !set.Default ||
+		!equal(
+			set.chain(),
+			[]string{
+				"aistudio/gemini-3.5-flash/trains",
+				"aistudio/gemini-3.5-flash-lite/trains",
+				"aistudio/gemini-3.1-flash-lite/trains",
+			},
+		) {
 		t.Fatalf("restored chain = %+v", set)
 	}
 
-	h.MustDo(http.MethodPut, path, map[string]any{"targets": []any{target("llama", "tools")}}, http.StatusOK, &set)
+	h.MustDo(
+		http.MethodPut,
+		path,
+		map[string]any{"targets": []any{target("llama", "tools")}},
+		http.StatusOK,
+		&set,
+	)
 	h.MustDo(http.MethodDelete, "/api/v1/assistant/providers/"+p.ID, nil, http.StatusNoContent, nil)
 
-	if chat := uses(t, h)["assistant.chat"]; !chat.Default || !equal(chat.chain(), []string{"aistudio/gemini-3.5-flash/trains", "aistudio/gemini-3.5-flash-lite/trains", "aistudio/gemini-3.1-flash-lite/trains"}) {
+	if chat := uses(t, h)["assistant.chat"]; !chat.Default ||
+		!equal(
+			chat.chain(),
+			[]string{
+				"aistudio/gemini-3.5-flash/trains",
+				"aistudio/gemini-3.5-flash-lite/trains",
+				"aistudio/gemini-3.1-flash-lite/trains",
+			},
+		) {
 		t.Fatalf("chain after delete = %+v", chat)
 	}
 }
 
 func structured(text string) llmtest.Step {
 	return llmtest.Step{Response: llm.Response{
-		Message: llm.Message{Role: llm.RoleModel, Parts: []llm.Part{{Text: text}}}, FinishReason: llm.FinishStop,
+		Message: llm.Message{
+			Role:  llm.RoleModel,
+			Parts: []llm.Part{{Text: text}},
+		},
+		FinishReason: llm.FinishStop,
 	}}
 }
 
@@ -133,21 +198,43 @@ func TestUserChainCallA7(t *testing.T) {
 
 	f := newFakes()
 	h := harness(t, f)
-	p := createProvider(t, h, h.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "ka"})
+	p := createProvider(
+		t,
+		h,
+		h.Client,
+		map[string]any{"preset": "groq", "name": "Groq", "key": "ka"},
+	)
 	first := llmtest.Step{Model: "m1", Err: &llm.QuotaError{}}
 	second := structured(`{"items":[]}`)
 	second.Model = "m2"
 	provider := f.script("ka", first, second)
 
-	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/capture.suggest/chain", map[string]any{"targets": []any{
-		map[string]any{"provider_id": p.ID, "model": "m1", "capabilities": []string{"structured_output"}},
-		map[string]any{"provider_id": p.ID, "model": "m2", "capabilities": []string{"structured_output"}},
-	}}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/assistant/uses/capture.suggest/chain",
+		map[string]any{"targets": []any{
+			map[string]any{
+				"provider_id":  p.ID,
+				"model":        "m1",
+				"capabilities": []string{"structured_output"},
+			},
+			map[string]any{
+				"provider_id":  p.ID,
+				"model":        "m2",
+				"capabilities": []string{"structured_output"},
+			},
+		}},
+		http.StatusOK,
+		nil,
+	)
 
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 
 	resp, err := h.App.LLM.Use(capture.SuggestUse).Generate(ctx, llm.Request{
-		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}, Schema: []byte(`{"type":"object"}`),
+		Messages: []llm.Message{
+			{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}},
+		},
+		Schema: []byte(`{"type":"object"}`),
 	})
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
@@ -176,14 +263,26 @@ func TestCooldownPerUserA8(t *testing.T) {
 
 	otherID := h.BooksIDOf("other@example.com")
 
-	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
+	req := llm.Request{
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
+	}
 
 	client := h.App.LLM.Use(assistant.ChatUse)
-	if _, err := client.Generate(auth.WithBooksID(t.Context(), h.OwnerID()), req); !errors.Is(err, llm.ErrExhausted) {
+	if _, err := client.Generate(
+		auth.WithBooksID(t.Context(), h.OwnerID()),
+		req,
+	); !errors.Is(
+		err,
+		llm.ErrExhausted,
+	) {
 		t.Fatalf("owner err = %v, want ErrExhausted", err)
 	}
 
-	if resp, err := client.Generate(auth.WithBooksID(t.Context(), otherID), req); err != nil || resp.Text() != "ok" {
+	if resp, err := client.Generate(
+		auth.WithBooksID(t.Context(), otherID),
+		req,
+	); err != nil ||
+		resp.Text() != "ok" {
 		t.Fatalf("other book = %+v, %v", resp, err)
 	}
 }

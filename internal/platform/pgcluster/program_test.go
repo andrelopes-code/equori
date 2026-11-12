@@ -22,7 +22,14 @@ func TestParseMajor(t *testing.T) {
 	for _, tt := range tests {
 		got, err := parseMajor(tt.out)
 		if (err != nil) != tt.err || got != tt.want {
-			t.Errorf("parseMajor(%q) = %d, %v; want %d, error %v", tt.out, got, err, tt.want, tt.err)
+			t.Errorf(
+				"parseMajor(%q) = %d, %v; want %d, error %v",
+				tt.out,
+				got,
+				err,
+				tt.want,
+				tt.err,
+			)
 		}
 	}
 }
@@ -31,7 +38,11 @@ func TestBinExplicit(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "postgres"+exeSuffix),
+		[]byte("#!/bin/sh\n"),
+		0o755,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -46,7 +57,11 @@ func TestBinExplicit(t *testing.T) {
 
 func TestBinFromPath(t *testing.T) {
 	dir := t.TempDir()
-	if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "postgres"+exeSuffix),
+		[]byte("#!/bin/sh\n"),
+		0o755,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,7 +80,11 @@ func TestBinBesideExecutable(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "postgres"+exeSuffix),
+		[]byte("#!/bin/sh\n"),
+		0o755,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,7 +105,11 @@ func TestBinExplicitWins(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := os.WriteFile(filepath.Join(dir, "postgres"+exeSuffix), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		if err := os.WriteFile(
+			filepath.Join(dir, "postgres"+exeSuffix),
+			[]byte("#!/bin/sh\n"),
+			0o755,
+		); err != nil {
 			t.Fatal(err)
 		}
 	}

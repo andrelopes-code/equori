@@ -9,7 +9,10 @@ import (
 // ExportProviderKeys returns, by provider id, the keys of the book that open under the instance
 // key. A provider without a key and a key that does not open are left out: the second is unusable
 // where it is (export design T3).
-func (s *Service) ExportProviderKeys(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
+func (s *Service) ExportProviderKeys(
+	ctx context.Context,
+	booksID int64,
+) (map[uuid.UUID]string, error) {
 	if s.box == nil {
 		return nil, ErrSecretKeyMissing
 	}
@@ -32,7 +35,10 @@ func (s *Service) ExportProviderKeys(ctx context.Context, booksID int64) (map[uu
 
 // SealProviderKeys seals each key for booksID and its provider id under the key of this instance
 // (export design T5).
-func (s *Service) SealProviderKeys(booksID int64, keys map[uuid.UUID]string) (map[uuid.UUID][]byte, error) {
+func (s *Service) SealProviderKeys(
+	booksID int64,
+	keys map[uuid.UUID]string,
+) (map[uuid.UUID][]byte, error) {
 	sealed := make(map[uuid.UUID][]byte, len(keys))
 
 	for id, key := range keys {

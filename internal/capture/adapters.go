@@ -16,7 +16,10 @@ import (
 
 type ledgerPort struct{ l *ledger.Module }
 
-func (p ledgerPort) Vocabulary(ctx context.Context, booksID int64) ([]app.Account, []app.Payee, error) {
+func (p ledgerPort) Vocabulary(
+	ctx context.Context,
+	booksID int64,
+) ([]app.Account, []app.Payee, error) {
 	accounts, payees, err := p.l.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
@@ -25,8 +28,16 @@ func (p ledgerPort) Vocabulary(ctx context.Context, booksID int64) ([]app.Accoun
 	outAccounts := make([]app.Account, len(accounts))
 	for i, a := range accounts {
 		outAccounts[i] = app.Account{
-			ID: a.ID, ParentID: a.ParentID, Name: a.Name, Class: a.Class, Kind: a.Kind, SystemRole: a.SystemRole,
-			Instrument: a.Instrument, Closed: a.ClosedOn != nil, Institution: a.Institution, CardsLastFour: a.CardsLastFour,
+			ID:            a.ID,
+			ParentID:      a.ParentID,
+			Name:          a.Name,
+			Class:         a.Class,
+			Kind:          a.Kind,
+			SystemRole:    a.SystemRole,
+			Instrument:    a.Instrument,
+			Closed:        a.ClosedOn != nil,
+			Institution:   a.Institution,
+			CardsLastFour: a.CardsLastFour,
 		}
 	}
 
@@ -46,7 +57,11 @@ func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx)
 
 // Transactions classes a transaction by its uncategorized posting; a voided one, or one with a
 // category, has no class.
-func (p ledgerPort) Transactions(ctx context.Context, booksID int64, ids []uuid.UUID) ([]app.Transaction, error) {
+func (p ledgerPort) Transactions(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) ([]app.Transaction, error) {
 	facts, err := p.l.TransactionFacts(ctx, booksID, ids)
 	if err != nil {
 		return nil, err
@@ -74,10 +89,20 @@ type classifierPort struct{ c *classification.Module }
 
 // Decide keeps a category only when the decision is one category; a split or a transfer is
 // left to the classification of the recorded transaction (P5 A20).
-func (p classifierPort) Decide(ctx context.Context, booksID int64, entries []app.Entry) ([]app.Decision, error) {
+func (p classifierPort) Decide(
+	ctx context.Context,
+	booksID int64,
+	entries []app.Entry,
+) ([]app.Decision, error) {
 	lines := make([]classification.ManualLine, len(entries))
 	for i, e := range entries {
-		lines[i] = classification.ManualLine{AccountID: e.AccountID, Date: e.Date, Amount: e.Amount, Description: e.Description, NamedPayee: e.NamedPayee}
+		lines[i] = classification.ManualLine{
+			AccountID:   e.AccountID,
+			Date:        e.Date,
+			Amount:      e.Amount,
+			Description: e.Description,
+			NamedPayee:  e.NamedPayee,
+		}
 	}
 
 	decisions, err := p.c.DecideManual(ctx, booksID, lines)

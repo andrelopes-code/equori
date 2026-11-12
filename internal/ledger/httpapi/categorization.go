@@ -26,8 +26,14 @@ func (s *Server) categorizeTransaction(
 	booksID := auth.MustBooksID(ctx)
 
 	c := app.Categorization{
-		TransactionID: id, ExpectedVersion: in.ExpectedVersion, PayeeID: in.PayeeId,
-		Parts: make([]domain.CategoryPart, len(in.Parts)), Cause: app.Cause{Method: app.MethodManual},
+		TransactionID:   id,
+		ExpectedVersion: in.ExpectedVersion,
+		PayeeID:         in.PayeeId,
+		Parts: make(
+			[]domain.CategoryPart,
+			len(in.Parts),
+		),
+		Cause: app.Cause{Method: app.MethodManual},
 	}
 	for i, p := range in.Parts {
 		amount, err := fromMoneyAPI(fmt.Sprintf("parts[%d].amount", i), p.Amount)

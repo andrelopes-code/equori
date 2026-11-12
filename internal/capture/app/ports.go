@@ -32,7 +32,12 @@ type Profiles interface {
 
 // Suggester names, per item, the index of one option or −1 for none.
 type Suggester interface {
-	Suggest(ctx context.Context, l locale.Locale, options []CategoryOption, items []SuggestItem) ([]int, error)
+	Suggest(
+		ctx context.Context,
+		l locale.Locale,
+		options []CategoryOption,
+		items []SuggestItem,
+	) ([]int, error)
 }
 
 // HintRepository stores the hints of past descriptions; postgres/ implements it.

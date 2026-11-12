@@ -112,7 +112,16 @@ func (m *Module) priceFeeds(
 			last = &latest
 		}
 
-		f := m.feed(ctx, src.ID(), domain.FeedPrice, index.PeriodDay, last, fs.on, fs.suggested, fs.lags)
+		f := m.feed(
+			ctx,
+			src.ID(),
+			domain.FeedPrice,
+			index.PeriodDay,
+			last,
+			fs.on,
+			fs.suggested,
+			fs.lags,
+		)
 		f.Covers = len(src.Codes(feedIns))
 		f.HistoryPending = pending[src.ID()]
 		_, f.SymbolOverride = src.(feed.SymbolOverride)
@@ -136,7 +145,19 @@ func (m *Module) indexFeeds(ctx context.Context, out []Feed, fs feedState) ([]Fe
 			last = &latest.Latest
 		}
 
-		out = append(out, m.feed(ctx, src.ID(), domain.FeedIndex, src.Period(), last, fs.on, fs.suggested, fs.lags))
+		out = append(
+			out,
+			m.feed(
+				ctx,
+				src.ID(),
+				domain.FeedIndex,
+				src.Period(),
+				last,
+				fs.on,
+				fs.suggested,
+				fs.lags,
+			),
+		)
 	}
 
 	return out, nil
@@ -155,13 +176,32 @@ func (m *Module) expectationFeeds(ctx context.Context, out []Feed, fs feedState)
 			last = &latest.Latest
 		}
 
-		out = append(out, m.feed(ctx, src.ID(), domain.FeedExpectation, index.PeriodDay, last, fs.on, fs.suggested, fs.lags))
+		out = append(
+			out,
+			m.feed(
+				ctx,
+				src.ID(),
+				domain.FeedExpectation,
+				index.PeriodDay,
+				last,
+				fs.on,
+				fs.suggested,
+				fs.lags,
+			),
+		)
 	}
 
 	return out, nil
 }
 
-func (m *Module) feed(ctx context.Context, id, kind, period string, last *time.Time, on map[string]bool, suggested []string, lags map[string]int) Feed {
+func (m *Module) feed(
+	ctx context.Context,
+	id, kind, period string,
+	last *time.Time,
+	on map[string]bool,
+	suggested []string,
+	lags map[string]int,
+) Feed {
 	f := Feed{
 		ID: id, Kind: kind, Enabled: on[id], Suggested: slices.Contains(suggested, id), Last: last,
 		Official: !slices.Contains(unofficialSources(), id),
@@ -230,7 +270,11 @@ func feedLags() map[string]int {
 // SetFeed enables or disables a feed for the instance (ADR 025 F6). The first stored setting
 // stores the seed with it, so a write never changes the state of another feed. Enabling a source
 // whose prices rank last needs acceptUnofficial (A222 MQ22).
-func (m *Module) SetFeed(ctx context.Context, id string, enabled, acceptUnofficial bool) (Feed, error) {
+func (m *Module) SetFeed(
+	ctx context.Context,
+	id string,
+	enabled, acceptUnofficial bool,
+) (Feed, error) {
 	if err := m.requireAdmin(ctx); err != nil {
 		return Feed{}, err
 	}

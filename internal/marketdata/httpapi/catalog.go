@@ -21,7 +21,10 @@ func (s *Server) searchInstrumentCatalog(
 		return CatalogSearch{}, err
 	}
 
-	out := CatalogSearch{Items: make([]CatalogListing, len(res.Items)), Unavailable: res.Unavailable}
+	out := CatalogSearch{
+		Items:       make([]CatalogListing, len(res.Items)),
+		Unavailable: res.Unavailable,
+	}
 	if out.Unavailable == nil {
 		out.Unavailable = []string{}
 	}
@@ -35,8 +38,15 @@ func (s *Server) searchInstrumentCatalog(
 
 func listingOf(l domain.Listing) CatalogListing {
 	out := CatalogListing{
-		Code: string(l.Code), Name: l.Name, Exchange: l.Exchange, QuoteCurrency: string(l.QuoteCurrency),
-		Symbol: l.Symbol, Source: l.Source, Defined: l.Defined,
+		Code: string(
+			l.Code,
+		),
+		Name:          l.Name,
+		Exchange:      l.Exchange,
+		QuoteCurrency: string(l.QuoteCurrency),
+		Symbol:        l.Symbol,
+		Source:        l.Source,
+		Defined:       l.Defined,
 	}
 	if l.Type != "" {
 		typ := InstrumentType(l.Type)

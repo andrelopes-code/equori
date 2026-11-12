@@ -35,9 +35,16 @@ func optInt(v int) *int {
 
 func fromRecurrenceAPI(r Recurrence) domain.Rule {
 	rule := domain.Rule{
-		Frequency: domain.Frequency(r.Frequency), Interval: r.Interval, DayOfMonth: intOf(r.DayOfMonth),
-		Ordinal: intOf(r.Ordinal), BusinessDayOrdinal: intOf(r.BusinessDayOrdinal),
-		Start: r.Start.Time, Until: optDate(r.Until), Count: intOf(r.Count),
+		Frequency: domain.Frequency(
+			r.Frequency,
+		),
+		Interval:           r.Interval,
+		DayOfMonth:         intOf(r.DayOfMonth),
+		Ordinal:            intOf(r.Ordinal),
+		BusinessDayOrdinal: intOf(r.BusinessDayOrdinal),
+		Start:              r.Start.Time,
+		Until:              optDate(r.Until),
+		Count:              intOf(r.Count),
 	}
 	if r.Adjustment != nil {
 		rule.Adjustment = string(*r.Adjustment)
@@ -55,9 +62,19 @@ func toRecurrenceAPI(rule domain.Rule) Recurrence {
 	adjustment := RecurrenceAdjustment(rule.Adjustment)
 
 	out := Recurrence{
-		Frequency: RecurrenceFrequency(rule.Frequency), Interval: rule.Interval, DayOfMonth: optInt(rule.DayOfMonth),
-		Ordinal: optInt(rule.Ordinal), BusinessDayOrdinal: optInt(rule.BusinessDayOrdinal), Adjustment: &adjustment,
-		Start: apiDate(rule.Start), Until: apiOptDate(rule.Until), Count: optInt(rule.Count),
+		Frequency: RecurrenceFrequency(
+			rule.Frequency,
+		),
+		Interval:   rule.Interval,
+		DayOfMonth: optInt(rule.DayOfMonth),
+		Ordinal: optInt(
+			rule.Ordinal,
+		),
+		BusinessDayOrdinal: optInt(rule.BusinessDayOrdinal),
+		Adjustment:         &adjustment,
+		Start:              apiDate(rule.Start),
+		Until:              apiOptDate(rule.Until),
+		Count:              optInt(rule.Count),
 	}
 	if rule.Weekday != nil {
 		for name, w := range weekdays {
@@ -72,13 +89,26 @@ func toRecurrenceAPI(rule domain.Rule) Recurrence {
 
 func toScheduleAPI(s domain.Schedule) Schedule {
 	out := Schedule{
-		Id: s.ID, Kind: ScheduleKind(s.Kind), AccountId: s.AccountID, CounterpartId: s.CounterpartID,
-		PayeeId: apiOptUUID(s.PayeeID), Description: s.Description, MatchToleranceBp: s.ToleranceBP,
-		GraceDays: s.GraceDays, MatchWindowDays: s.WindowDays, Calendar: s.Calendar, EndsOn: apiOptDate(s.EndsOn),
-		Terms: make([]ScheduleTerms, len(s.Terms)), Pauses: make([]SchedulePause, len(s.Pauses)),
+		Id:               s.ID,
+		Kind:             ScheduleKind(s.Kind),
+		AccountId:        s.AccountID,
+		CounterpartId:    s.CounterpartID,
+		PayeeId:          apiOptUUID(s.PayeeID),
+		Description:      s.Description,
+		MatchToleranceBp: s.ToleranceBP,
+		GraceDays:        s.GraceDays,
+		MatchWindowDays:  s.WindowDays,
+		Calendar:         s.Calendar,
+		EndsOn:           apiOptDate(s.EndsOn),
+		Terms:            make([]ScheduleTerms, len(s.Terms)),
+		Pauses:           make([]SchedulePause, len(s.Pauses)),
 	}
 	for i, t := range s.Terms {
-		out.Terms[i] = ScheduleTerms{EffectiveFrom: apiDate(t.EffectiveFrom), Amount: toMoneyAPI(t.Amount, s.Currency), Recurrence: toRecurrenceAPI(t.Rule)}
+		out.Terms[i] = ScheduleTerms{
+			EffectiveFrom: apiDate(t.EffectiveFrom),
+			Amount:        toMoneyAPI(t.Amount, s.Currency),
+			Recurrence:    toRecurrenceAPI(t.Rule),
+		}
 	}
 
 	for i, p := range s.Pauses {
@@ -99,7 +129,11 @@ func (s *Server) createSchedule(
 	return toScheduleAPI(created), BaseURL + "/schedules/" + created.ID.String(), nil
 }
 
-func (s *Server) getSchedule(ctx context.Context, r *http.Request, _ httpserver.None) (Schedule, error) {
+func (s *Server) getSchedule(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Schedule, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Schedule{}, err
@@ -113,7 +147,11 @@ func (s *Server) getSchedule(ctx context.Context, r *http.Request, _ httpserver.
 	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) listSchedules(ctx context.Context, r *http.Request, _ httpserver.None) (SchedulePage, error) {
+func (s *Server) listSchedules(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (SchedulePage, error) {
 	params, err := httpserver.Query[ListSchedulesParams](r)
 	if err != nil {
 		return SchedulePage{}, err
@@ -153,7 +191,11 @@ func toOccurrenceAPI(o app.OccurrenceView) Occurrence {
 	return out
 }
 
-func (s *Server) listOccurrences(ctx context.Context, r *http.Request, _ httpserver.None) (OccurrenceList, error) {
+func (s *Server) listOccurrences(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (OccurrenceList, error) {
 	params, err := httpserver.Query[ListOccurrencesParams](r)
 	if err != nil {
 		return OccurrenceList{}, err
@@ -174,7 +216,14 @@ func (s *Server) listOccurrences(ctx context.Context, r *http.Request, _ httpser
 	case params.To == nil:
 		err = &paramError{field: "to", message: "value is required but missing"}
 	default:
-		os, err = s.svc.Occurrences(ctx, auth.MustBooksID(ctx), params.From.Time, params.To.Time, optUUID(params.ScheduleId), state)
+		os, err = s.svc.Occurrences(
+			ctx,
+			auth.MustBooksID(ctx),
+			params.From.Time,
+			params.To.Time,
+			optUUID(params.ScheduleId),
+			state,
+		)
 	}
 
 	if err != nil {
@@ -189,16 +238,29 @@ func (s *Server) listOccurrences(ctx context.Context, r *http.Request, _ httpser
 	return out, nil
 }
 
-func (s *Server) addSchedule(ctx context.Context, b CreateScheduleJSONRequestBody) (domain.Schedule, error) {
+func (s *Server) addSchedule(
+	ctx context.Context,
+	b CreateScheduleJSONRequestBody,
+) (domain.Schedule, error) {
 	amount, err := fromMoneyAPI("amount", b.Amount)
 	if err != nil {
 		return domain.Schedule{}, err
 	}
 
 	return s.svc.CreateSchedule(ctx, auth.MustBooksID(ctx), app.ScheduleInput{
-		Kind: domain.Kind(b.Kind), AccountID: b.AccountId, CounterpartID: b.CounterpartId, PayeeID: optUUID(b.PayeeId),
-		Description: b.Description, Amount: amount, Rule: fromRecurrenceAPI(b.Recurrence), Calendar: stringOf(b.Calendar),
-		ToleranceBP: b.MatchToleranceBp, GraceDays: b.GraceDays, WindowDays: b.MatchWindowDays,
+		Kind: domain.Kind(
+			b.Kind,
+		),
+		AccountID:     b.AccountId,
+		CounterpartID: b.CounterpartId,
+		PayeeID:       optUUID(b.PayeeId),
+		Description:   b.Description,
+		Amount:        amount,
+		Rule:          fromRecurrenceAPI(b.Recurrence),
+		Calendar:      stringOf(b.Calendar),
+		ToleranceBP:   b.MatchToleranceBp,
+		GraceDays:     b.GraceDays,
+		WindowDays:    b.MatchWindowDays,
 	})
 }
 func stringOf(p *string) string {

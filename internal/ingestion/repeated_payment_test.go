@@ -11,8 +11,14 @@ import (
 func TestS185RepeatedPaymentWaitsForReview(t *testing.T) {
 	t.Parallel()
 	f, card := newCardSync(t)
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
-	f.line(pluggy.SubtypeCard, typedCardLine("pay-bill", "2026-11-05", "-784.65", "PAGAMENTO_FATURA"))
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		typedCardLine("pay-bill", "2026-11-05", "-784.65", "PAGAMENTO_FATURA"),
+	)
 	f.sync()
 
 	copied := typedCardLine("pay-copy", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")
@@ -35,7 +41,10 @@ func TestS185RepeatedPaymentWaitsForReview(t *testing.T) {
 func TestS185RepeatedPaymentInOneRead(t *testing.T) {
 	t.Parallel()
 	f, card := newCardSync(t)
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"},
+	)
 	f.line(pluggy.SubtypeCard, typedCardLine("pay-b", "2026-11-05", "-784.65", "PAGAMENTO_FATURA"))
 	copied := typedCardLine("pay-a", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")
 	copied.CreditCardMetadata.BillID = new("bill-dec")
@@ -56,10 +65,16 @@ func TestS185RepeatedPaymentInOneRead(t *testing.T) {
 func TestS185UntypedCreditRepeatsAPayment(t *testing.T) {
 	t.Parallel()
 	f, card := newCardSync(t)
-	f.line(pluggy.SubtypeCard, typedCardLine("pay-bill", "2026-11-02", "-784.65", "PAGAMENTO_FATURA"))
+	f.line(
+		pluggy.SubtypeCard,
+		typedCardLine("pay-bill", "2026-11-02", "-784.65", "PAGAMENTO_FATURA"),
+	)
 	f.sync()
 
-	f.line(pluggy.SubtypeCard, cardLine("pay-copy", "2026-11-05", "-784.65", "POSTED", new("bill-nov")))
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("pay-copy", "2026-11-05", "-784.65", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 
 	f.assertRepeated(card, "pay-copy")
@@ -72,10 +87,22 @@ func TestS185DistinctLinesAreRecorded(t *testing.T) {
 	f, card := newCardSync(t)
 	f.line(pluggy.SubtypeCard, typedCardLine("pay-1", "2026-11-01", "-500.00", "PAGAMENTO_FATURA"))
 	f.line(pluggy.SubtypeCard, typedCardLine("pay-2", "2026-11-05", "-500.00", "PAGAMENTO_FATURA"))
-	f.line(pluggy.SubtypeCard, cardLine("credit-1", "2026-11-03", "-30.00", "POSTED", new("bill-nov")))
-	f.line(pluggy.SubtypeCard, cardLine("credit-2", "2026-11-03", "-30.00", "POSTED", new("bill-nov")))
-	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-11-03", "784.65", "POSTED", new("bill-nov")))
-	f.line(pluggy.SubtypeCard, cardLine("charge-2", "2026-11-03", "784.65", "POSTED", new("bill-nov")))
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("credit-1", "2026-11-03", "-30.00", "POSTED", new("bill-nov")),
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("credit-2", "2026-11-03", "-30.00", "POSTED", new("bill-nov")),
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-1", "2026-11-03", "784.65", "POSTED", new("bill-nov")),
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-2", "2026-11-03", "784.65", "POSTED", new("bill-nov")),
+	)
 
 	f.sync()
 
@@ -85,7 +112,10 @@ func TestS185DistinctLinesAreRecorded(t *testing.T) {
 		}
 	}
 
-	if n := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`, card); n != 6 {
+	if n := f.count(
+		`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`,
+		card,
+	); n != 6 {
 		t.Fatalf("card postings = %d, want 6", n)
 	}
 }
@@ -97,7 +127,8 @@ func (f syncFixture) assertRepeated(card, externalID string) {
 	var state string
 	var reason, tx *string
 
-	err := f.h.Pool.QueryRow(f.h.T().Context(),
+	err := f.h.Pool.QueryRow(
+		f.h.T().Context(),
 		`SELECT state, review_reason, transaction_id::text FROM ingestion_external_record WHERE external_id = $1`,
 		externalID,
 	).Scan(&state, &reason, &tx)
@@ -109,8 +140,11 @@ func (f syncFixture) assertRepeated(card, externalID string) {
 		f.h.T().Fatalf("%s record = %s, reason %v, transaction %v", externalID, state, reason, tx)
 	}
 
-	payments := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
-		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`, card)
+	payments := f.count(
+		`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
+		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`,
+		card,
+	)
 	if payments != 1 {
 		f.h.T().Fatalf("payments of 784.65 = %d, want 1", payments)
 	}

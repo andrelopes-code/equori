@@ -37,11 +37,14 @@ func TestReidentifications(t *testing.T) {
 			want:   map[int]string{},
 		},
 		{
-			name:   "a record holds the line's external id",
-			lines:  []NormalizedRecord{line("b", "p-1")},
-			seen:   []string{"b"},
-			stored: []ExternalRecord{stored("a", "p-1", StateCreated), stored("b", "", StateCreated)},
-			want:   map[int]string{},
+			name:  "a record holds the line's external id",
+			lines: []NormalizedRecord{line("b", "p-1")},
+			seen:  []string{"b"},
+			stored: []ExternalRecord{
+				stored("a", "p-1", StateCreated),
+				stored("b", "", StateCreated),
+			},
+			want: map[int]string{},
 		},
 		{
 			name:   "two lines carry the institution id",
@@ -51,11 +54,14 @@ func TestReidentifications(t *testing.T) {
 			want:   map[int]string{},
 		},
 		{
-			name:   "two records carry the institution id",
-			lines:  []NormalizedRecord{line("b", "p-1")},
-			seen:   []string{"b"},
-			stored: []ExternalRecord{stored("a", "p-1", StateCreated), stored("c", "p-1", StateMatched)},
-			want:   map[int]string{},
+			name:  "two records carry the institution id",
+			lines: []NormalizedRecord{line("b", "p-1")},
+			seen:  []string{"b"},
+			stored: []ExternalRecord{
+				stored("a", "p-1", StateCreated),
+				stored("c", "p-1", StateMatched),
+			},
+			want: map[int]string{},
 		},
 		{
 			name:   "a record in review",

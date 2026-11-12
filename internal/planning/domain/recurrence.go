@@ -60,7 +60,10 @@ func (r Rule) Validate() error {
 	}
 
 	if r.Frequency == Monthly && selectors != 1 {
-		return invalid("recurrence", "a monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal")
+		return invalid(
+			"recurrence",
+			"a monthly rule takes exactly one of day_of_month, weekday with ordinal, business_day_ordinal",
+		)
 	}
 
 	if r.Frequency != Monthly && selectors != 0 {
@@ -84,7 +87,10 @@ func (r Rule) validateSelectors() (int, error) {
 		selectors++
 
 		if r.Ordinal != -1 && (r.Ordinal < 1 || r.Ordinal > 5) {
-			return 0, invalid("recurrence.ordinal", "must be between 1 and 5, or -1, with a weekday")
+			return 0, invalid(
+				"recurrence.ordinal",
+				"must be between 1 and 5, or -1, with a weekday",
+			)
 		}
 
 		if r.Weekday == nil {
@@ -107,7 +113,10 @@ func (r Rule) validateBounds() error {
 	switch r.Adjustment {
 	case "", "none", "following", "preceding", "modified_following":
 	default:
-		return invalid("recurrence.adjustment", "must be none, following, preceding or modified_following")
+		return invalid(
+			"recurrence.adjustment",
+			"must be none, following, preceding or modified_following",
+		)
 	}
 
 	if r.Until != nil && r.Until.Before(r.Start) {

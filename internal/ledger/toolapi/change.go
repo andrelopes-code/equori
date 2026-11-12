@@ -20,21 +20,21 @@ func (changeTransactionAction) Values() []string {
 
 type changeTransactionAllocationsItem struct {
 	ExpenseID string `json:"expense_id" jsonschema:"transaction_id of the expense repaid"`
-	Amount    string `json:"amount" jsonschema:"positive decimal amount allocated to it"`
+	Amount    string `json:"amount"     jsonschema:"positive decimal amount allocated to it"`
 }
 
 type changeTransactionIn struct {
-	TransactionID string                             `json:"transaction_id" jsonschema:"ID of the transaction, from search_transactions"`
-	Action        changeTransactionAction            `json:"action" jsonschema:"correct changes the fields given, and on an installment purchase only description, payee_id and tags; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays"`
-	Reason        string                             `json:"reason,omitzero" jsonschema:"for correct: why the transaction changes, kept in its history"`
-	Date          tool.Date                          `json:"date,omitzero" jsonschema:"for correct: new date"`
-	Description   string                             `json:"description,omitzero" jsonschema:"for correct: new description"`
-	PayeeID       string                             `json:"payee_id,omitzero" jsonschema:"for correct: new payee from list_payees_and_tags"`
-	Tags          []string                           `json:"tags,omitzero" jsonschema:"for correct: the complete new list of tags"`
-	Amount        string                             `json:"amount,omitzero" jsonschema:"for correct: new positive amount of a transaction with one source and one destination"`
+	TransactionID string                             `json:"transaction_id"           jsonschema:"ID of the transaction, from search_transactions"`
+	Action        changeTransactionAction            `json:"action"                   jsonschema:"correct changes the fields given, and on an installment purchase only description, payee_id and tags; make_transfer replaces the category side with another own account; reimburse links this incoming transaction to the expenses it repays"`
+	Reason        string                             `json:"reason,omitzero"          jsonschema:"for correct: why the transaction changes, kept in its history"`
+	Date          tool.Date                          `json:"date,omitzero"            jsonschema:"for correct: new date"`
+	Description   string                             `json:"description,omitzero"     jsonschema:"for correct: new description"`
+	PayeeID       string                             `json:"payee_id,omitzero"        jsonschema:"for correct: new payee from list_payees_and_tags"`
+	Tags          []string                           `json:"tags,omitzero"            jsonschema:"for correct: the complete new list of tags"`
+	Amount        string                             `json:"amount,omitzero"          jsonschema:"for correct: new positive amount of a transaction with one source and one destination"`
 	FromAccountID string                             `json:"from_account_id,omitzero" jsonschema:"for correct: new source account or category"`
-	ToAccountID   string                             `json:"to_account_id,omitzero" jsonschema:"for correct: new destination account or category; for make_transfer: the own account that receives the money"`
-	Allocations   []changeTransactionAllocationsItem `json:"allocations,omitzero" jsonschema:"for reimburse: the expenses repaid and the part of this transaction each takes"`
+	ToAccountID   string                             `json:"to_account_id,omitzero"   jsonschema:"for correct: new destination account or category; for make_transfer: the own account that receives the money"`
+	Allocations   []changeTransactionAllocationsItem `json:"allocations,omitzero"     jsonschema:"for reimburse: the expenses repaid and the part of this transaction each takes"`
 }
 
 type changeTransactionOut struct {
@@ -78,7 +78,11 @@ func previewChange(
 		return tool.Preview{}, err
 	}
 
-	pv := tool.Preview{Action: "change_transaction", Target: targetOf(p.current), Basis: basisOf(p.current)}
+	pv := tool.Preview{
+		Action: "change_transaction",
+		Target: targetOf(p.current),
+		Basis:  basisOf(p.current),
+	}
 
 	accounts, _, err := allAccounts(ctx, svc, booksID)
 	if err != nil {
@@ -105,7 +109,9 @@ func transferChanges(p changePlan, accounts map[uuid.UUID]domain.Account) []tool
 		}
 	}
 
-	return []tool.Change{{Field: "account", Before: tool.TextValue(before), After: tool.TextValue(p.transfer.Name)}}
+	return []tool.Change{
+		{Field: "account", Before: tool.TextValue(before), After: tool.TextValue(p.transfer.Name)},
+	}
 }
 
 func reimbursementChanges(p changePlan) ([]tool.Change, error) {
@@ -113,7 +119,10 @@ func reimbursementChanges(p changePlan) ([]tool.Change, error) {
 
 	var total money.Money
 	for i, a := range p.allocs {
-		changes = append(changes, tool.Change{Field: "transaction", After: tool.TextValue(targetText(p.expenses[i]))})
+		changes = append(
+			changes,
+			tool.Change{Field: "transaction", After: tool.TextValue(targetText(p.expenses[i]))},
+		)
 		if i == 0 {
 			total = a.Amount
 		} else if sum, err := total.Add(a.Amount); err != nil {
@@ -160,14 +169,23 @@ func applyChange(
 	switch in.Action {
 	case "correct":
 		var t domain.Transaction
-		if t, err = svc.CorrectTransaction(ctx, booksID, p.current.ID, p.current.Version, p.next, in.Reason); err == nil {
+		if t, err = svc.CorrectTransaction(
+			ctx,
+			booksID,
+			p.current.ID,
+			p.current.Version,
+			p.next,
+			in.Reason,
+		); err == nil {
 			id = t.ID
 		}
 	case "make_transfer":
 		var res app.TransferResult
 		res, err = svc.Transfer(ctx, booksID, app.TransferRequest{
-			TransactionID: p.current.ID, ExpectedVersion: p.current.Version, AccountID: p.transfer.ID,
-			Cause: app.Cause{Method: app.MethodManual},
+			TransactionID:   p.current.ID,
+			ExpectedVersion: p.current.Version,
+			AccountID:       p.transfer.ID,
+			Cause:           app.Cause{Method: app.MethodManual},
 		})
 		id = res.Kept
 	default:

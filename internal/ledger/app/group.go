@@ -114,10 +114,15 @@ func (s *Service) GroupableTransactions(
 }
 
 func groupable(tx domain.Transaction) bool {
-	reconciled := slices.ContainsFunc(tx.Postings, func(p domain.Posting) bool { return p.Status == domain.StatusReconciled })
+	reconciled := slices.ContainsFunc(
+		tx.Postings,
+		func(p domain.Posting) bool { return p.Status == domain.StatusReconciled },
+	)
 
 	return tx.VoidedAt == nil && tx.Version == 1 && tx.Origin == domain.OriginImport && !reconciled &&
-		!tx.HasInstallments() && tx.Trade == nil && tx.Income == nil
+		!tx.HasInstallments() &&
+		tx.Trade == nil &&
+		tx.Income == nil
 }
 
 // holdsParts reports whether the transaction's postings on the account already carry the record

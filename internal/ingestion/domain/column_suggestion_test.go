@@ -34,7 +34,12 @@ func TestMaskCell(t *testing.T) {
 func TestMaskSample(t *testing.T) {
 	t.Parallel()
 
-	got := MaskSample(ColumnSample{Header: []string{"Data", "Valor 2026"}, Rows: [][]string{{"03/11/2026", "PIX JOÃO"}}})
+	got := MaskSample(
+		ColumnSample{
+			Header: []string{"Data", "Valor 2026"},
+			Rows:   [][]string{{"03/11/2026", "PIX JOÃO"}},
+		},
+	)
 
 	if !slices.Equal(got.Header, []string{"Data", "AAAAA 9999"}) {
 		t.Errorf("header = %q", got.Header)
@@ -60,23 +65,118 @@ func TestNewColumnSuggestion(t *testing.T) {
 	}{
 		{"amount", header, 5, ColumnPositions{Date: 1, Description: 2, Amount: 3},
 			ColumnSuggestion{Date: "Data", Description: "Hist", Amount: "Valor"}, true},
-		{"debit and credit", header, 5, ColumnPositions{Date: 1, Description: 2, Debit: 3, Credit: 4},
-			ColumnSuggestion{Date: "Data", Description: "Hist", Debit: "Valor", Credit: "Saldo"}, true},
-		{"sign", header, 5, ColumnPositions{Date: 1, Description: 2, Amount: 3, Sign: 5},
-			ColumnSuggestion{Date: "Data", Description: "Hist", Amount: "Valor", Sign: "Tipo"}, true},
+		{
+			"debit and credit",
+			header,
+			5,
+			ColumnPositions{Date: 1, Description: 2, Debit: 3, Credit: 4},
+			ColumnSuggestion{
+				Date:        "Data",
+				Description: "Hist",
+				Debit:       "Valor",
+				Credit:      "Saldo",
+			},
+			true,
+		},
+		{
+			"sign",
+			header,
+			5,
+			ColumnPositions{Date: 1, Description: 2, Amount: 3, Sign: 5},
+			ColumnSuggestion{
+				Date:        "Data",
+				Description: "Hist",
+				Amount:      "Valor",
+				Sign:        "Tipo",
+			},
+			true,
+		},
 		{"no header", nil, 3, ColumnPositions{Date: 1, Description: 2, Amount: 3},
 			ColumnSuggestion{Date: "1", Description: "2", Amount: "3"}, true},
-		{"no date", header, 5, ColumnPositions{Description: 2, Amount: 3}, ColumnSuggestion{}, false},
-		{"no description", header, 5, ColumnPositions{Date: 1, Amount: 3}, ColumnSuggestion{}, false},
-		{"no amount", header, 5, ColumnPositions{Date: 1, Description: 2}, ColumnSuggestion{}, false},
-		{"debit without credit", header, 5, ColumnPositions{Date: 1, Description: 2, Debit: 3}, ColumnSuggestion{}, false},
-		{"amount with debit and credit", header, 5,
-			ColumnPositions{Date: 1, Description: 2, Amount: 3, Debit: 4, Credit: 5}, ColumnSuggestion{}, false},
-		{"sign without amount", header, 5,
-			ColumnPositions{Date: 1, Description: 2, Debit: 3, Credit: 4, Sign: 5}, ColumnSuggestion{}, false},
-		{"repeated position", header, 5, ColumnPositions{Date: 1, Description: 1, Amount: 3}, ColumnSuggestion{}, false},
-		{"above the width", header, 5, ColumnPositions{Date: 9, Description: 2, Amount: 3}, ColumnSuggestion{}, false},
-		{"negative", header, 5, ColumnPositions{Date: -1, Description: 2, Amount: 3}, ColumnSuggestion{}, false},
+		{
+			"no date",
+			header,
+			5,
+			ColumnPositions{Description: 2, Amount: 3},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"no description",
+			header,
+			5,
+			ColumnPositions{Date: 1, Amount: 3},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"no amount",
+			header,
+			5,
+			ColumnPositions{Date: 1, Description: 2},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"debit without credit",
+			header,
+			5,
+			ColumnPositions{Date: 1, Description: 2, Debit: 3},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"amount with debit and credit",
+			header,
+			5,
+			ColumnPositions{
+				Date:        1,
+				Description: 2,
+				Amount:      3,
+				Debit:       4,
+				Credit:      5,
+			},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"sign without amount",
+			header,
+			5,
+			ColumnPositions{
+				Date:        1,
+				Description: 2,
+				Debit:       3,
+				Credit:      4,
+				Sign:        5,
+			},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"repeated position",
+			header,
+			5,
+			ColumnPositions{Date: 1, Description: 1, Amount: 3},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"above the width",
+			header,
+			5,
+			ColumnPositions{Date: 9, Description: 2, Amount: 3},
+			ColumnSuggestion{},
+			false,
+		},
+		{
+			"negative",
+			header,
+			5,
+			ColumnPositions{Date: -1, Description: 2, Amount: 3},
+			ColumnSuggestion{},
+			false,
+		},
 		{"repeated name", []string{"Data", "Valor", "valor "}, 3,
 			ColumnPositions{Date: 1, Description: 3, Amount: 2}, ColumnSuggestion{}, false},
 	}

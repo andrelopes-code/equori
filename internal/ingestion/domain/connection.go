@@ -237,11 +237,15 @@ func (a ExternalAccount) Apply(m Mapping, target ImportTarget) (ExternalAccount,
 	}
 
 	if !slices.Contains(compatibleKinds[a.Subtype], target.Kind) {
-		return a, invalid("account_id", "kind "+target.Kind+" cannot receive a "+a.Subtype+" account")
+		return a, invalid(
+			"account_id",
+			"kind "+target.Kind+" cannot receive a "+a.Subtype+" account",
+		)
 	}
 
 	// A209: an earlier start on the same account makes the next sync a first sync from it.
-	if a.AccountID != nil && *a.AccountID == *m.AccountID && a.SyncFrom != nil && m.SyncFrom.Before(*a.SyncFrom) {
+	if a.AccountID != nil && *a.AccountID == *m.AccountID && a.SyncFrom != nil &&
+		m.SyncFrom.Before(*a.SyncFrom) {
 		a.LastSyncedOn, a.LastReadAt, a.LastDeepReadOn = nil, nil, nil
 	}
 

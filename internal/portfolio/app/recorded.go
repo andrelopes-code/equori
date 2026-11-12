@@ -87,7 +87,12 @@ func (s *Service) recordFlows(ctx context.Context, p *period, rates []IndexRate)
 
 	moveToRateDays(p.flows, rates)
 
-	if p.credits, err = s.valuedCredits(ctx, rec.Credits, in, p.from.AddDate(0, 0, -1)); err != nil {
+	if p.credits, err = s.valuedCredits(
+		ctx,
+		rec.Credits,
+		in,
+		p.from.AddDate(0, 0, -1),
+	); err != nil {
 		return err
 	}
 
@@ -109,7 +114,12 @@ func (s *Service) recordFlows(ctx context.Context, p *period, rates []IndexRate)
 }
 
 // valuedFlows values the flows dated on or after from in currency in.
-func (s *Service) valuedFlows(ctx context.Context, flows []Flow, in money.Currency, from time.Time) ([]ReturnFlow, error) {
+func (s *Service) valuedFlows(
+	ctx context.Context,
+	flows []Flow,
+	in money.Currency,
+	from time.Time,
+) ([]ReturnFlow, error) {
 	var out []ReturnFlow
 
 	for _, f := range flows {
@@ -129,7 +139,12 @@ func (s *Service) valuedFlows(ctx context.Context, flows []Flow, in money.Curren
 }
 
 // valuedCredits values the credits dated on or after from in currency in.
-func (s *Service) valuedCredits(ctx context.Context, credits []Credit, in money.Currency, from time.Time) ([]valuedCredit, error) {
+func (s *Service) valuedCredits(
+	ctx context.Context,
+	credits []Credit,
+	in money.Currency,
+	from time.Time,
+) ([]valuedCredit, error) {
 	var out []valuedCredit
 
 	for _, c := range credits {
@@ -150,7 +165,13 @@ func (s *Service) valuedCredits(ctx context.Context, credits []Credit, in money.
 
 // excludedTotal sums items dated on or after from in currency in, times sign, and names the
 // largest categories.
-func (s *Service) excludedTotal(ctx context.Context, items []Categorized, in money.Currency, from time.Time, sign int64) (*ExcludedTotal, error) {
+func (s *Service) excludedTotal(
+	ctx context.Context,
+	items []Categorized,
+	in money.Currency,
+	from time.Time,
+	sign int64,
+) (*ExcludedTotal, error) {
 	byCategory := map[string]int64{}
 
 	var sum int64
@@ -187,18 +208,30 @@ func (s *Service) excludedTotal(ctx context.Context, items []Categorized, in mon
 		return nil, fmt.Errorf("total of the excluded: %w", err)
 	}
 
-	return &ExcludedTotal{Amount: total, Categories: names[:min(maxExcludedCategories, len(names))]}, nil
+	return &ExcludedTotal{
+		Amount:     total,
+		Categories: names[:min(maxExcludedCategories, len(names))],
+	}, nil
 }
 
 // valueIn converts value to currency in at the price of date.
-func (s *Service) valueIn(ctx context.Context, value money.Money, in money.Currency, date time.Time) (money.Money, error) {
+func (s *Service) valueIn(
+	ctx context.Context,
+	value money.Money,
+	in money.Currency,
+	date time.Time,
+) (money.Money, error) {
 	if value.Currency() == in {
 		return value, nil
 	}
 
 	v, _, err := s.md.Convert(ctx, value, in, date)
 	if err != nil {
-		return money.Money{}, fmt.Errorf("value the flow of %s: %w", date.Format(time.DateOnly), err)
+		return money.Money{}, fmt.Errorf(
+			"value the flow of %s: %w",
+			date.Format(time.DateOnly),
+			err,
+		)
 	}
 
 	return v, nil
@@ -233,7 +266,10 @@ func withinRates(credits []time.Time, rates []IndexRate) []time.Time {
 
 	limit := last.AddDate(0, 0, 1)
 
-	return slices.DeleteFunc(slices.Clone(credits), func(c time.Time) bool { return c.After(limit) })
+	return slices.DeleteFunc(
+		slices.Clone(credits),
+		func(c time.Time) bool { return c.After(limit) },
+	)
 }
 
 // creditsIn counts the positive credits dated in (after, until], the tree postings they hold and

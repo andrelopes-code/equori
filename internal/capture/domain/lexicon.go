@@ -46,7 +46,10 @@ func Merge(primary, fallback Lexicon) Lexicon {
 		Methods:          mergeMap(primary.Methods, fallback.Methods),
 	}
 	for _, phrase := range append(slices.Clone(primary.LumpSum), fallback.LumpSum...) {
-		if !slices.ContainsFunc(out.LumpSum, func(p []string) bool { return slices.Equal(p, phrase) }) {
+		if !slices.ContainsFunc(
+			out.LumpSum,
+			func(p []string) bool { return slices.Equal(p, phrase) },
+		) {
 			out.LumpSum = append(out.LumpSum, slices.Clone(phrase))
 		}
 	}

@@ -16,7 +16,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
-var update = flag.Bool("update", false, "write the fingerprint of a new archive_version to testdata")
+var update = flag.Bool(
+	"update",
+	false,
+	"write the fingerprint of a new archive_version to testdata",
+)
 
 // ADR 021, V6: the columns and types of every exported table are pinned per archive_version.
 func TestArchiveFingerprint(t *testing.T) {
@@ -31,10 +35,14 @@ func TestArchiveFingerprint(t *testing.T) {
 	slices.Sort(tables)
 	var b strings.Builder
 
-	rows, err := pool.Query(t.Context(), `SELECT table_name || '.' || column_name || ' ' || udt_name || CASE WHEN is_nullable = 'YES' THEN ' null' ELSE '' END
+	rows, err := pool.Query(
+		t.Context(),
+		`SELECT table_name || '.' || column_name || ' ' || udt_name || CASE WHEN is_nullable = 'YES' THEN ' null' ELSE '' END
 		FROM information_schema.columns
 		WHERE table_schema = current_schema() AND table_name = ANY ($1) AND column_name <> 'books_id'
-		ORDER BY table_name, column_name`, tables)
+		ORDER BY table_name, column_name`,
+		tables,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,14 +68,23 @@ func TestArchiveFingerprint(t *testing.T) {
 
 		return
 	case err != nil:
-		t.Fatalf("read %s: %v; run this test with -update once for a new archive_version", path, err)
+		t.Fatalf(
+			"read %s: %v; run this test with -update once for a new archive_version",
+			path,
+			err,
+		)
 	}
 
 	if got != string(want) {
-		t.Fatalf("an exported table changed under archive_version %d, whose fingerprint %s is published.\n"+
-			"Increment app.ArchiveVersion, append the migration step of the archive to archiveSteps in "+
-			"internal/reporting/app/archive_steps.go, then run this test with -update to write the new "+
-			"fingerprint and TestImportArchiveFixtures with -update to write the new fixture (ADR 021, V2, V6, V7).\n"+
-			"got:\n%s", app.ArchiveVersion, path, got)
+		t.Fatalf(
+			"an exported table changed under archive_version %d, whose fingerprint %s is published.\n"+
+				"Increment app.ArchiveVersion, append the migration step of the archive to archiveSteps in "+
+				"internal/reporting/app/archive_steps.go, then run this test with -update to write the new "+
+				"fingerprint and TestImportArchiveFixtures with -update to write the new fixture (ADR 021, V2, V6, V7).\n"+
+				"got:\n%s",
+			app.ArchiveVersion,
+			path,
+			got,
+		)
 	}
 }

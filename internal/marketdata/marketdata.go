@@ -54,7 +54,9 @@ func New(pool *pgxpool.Pool) *Module {
 		registry.Entry[calendar.Calendar]{ID: "weekend", Value: calendar.Weekend()},
 	)
 	if err != nil {
-		panic(fmt.Sprintf("marketdata: %v", err)) // the entries are literals; a failure is a programming error
+		panic(
+			fmt.Sprintf("marketdata: %v", err),
+		) // the entries are literals; a failure is a programming error
 	}
 
 	return &Module{

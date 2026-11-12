@@ -18,12 +18,23 @@ const socketLimit = 107
 
 // socketFallback refuses: a socket directory outside the data directory would need its own DACL.
 func socketFallback(abs string) (string, error) {
-	return "", fmt.Errorf("socket path %s is over %d bytes; set EQUORI_DATA_DIR to a shorter directory", filepath.Join(abs, "run", ".s.PGSQL.5432"), socketLimit)
+	return "", fmt.Errorf(
+		"socket path %s is over %d bytes; set EQUORI_DATA_DIR to a shorter directory",
+		filepath.Join(abs, "run", ".s.PGSQL.5432"),
+		socketLimit,
+	)
 }
 
 // lockFile locks byte 0 of the lock file; the system releases it when the process ends (W-M6).
 func lockFile(f *os.File) error {
-	err := windows.LockFileEx(windows.Handle(f.Fd()), windows.LOCKFILE_EXCLUSIVE_LOCK|windows.LOCKFILE_FAIL_IMMEDIATELY, 0, 1, 0, &windows.Overlapped{})
+	err := windows.LockFileEx(
+		windows.Handle(f.Fd()),
+		windows.LOCKFILE_EXCLUSIVE_LOCK|windows.LOCKFILE_FAIL_IMMEDIATELY,
+		0,
+		1,
+		0,
+		&windows.Overlapped{},
+	)
 	if errors.Is(err, windows.ERROR_LOCK_VIOLATION) {
 		return ErrBusy
 	}
@@ -65,7 +76,10 @@ func prepareDataDir(dir string, accounts []string) error {
 // privateDir creates the socket directory inside the data directory, whose entries it inherits,
 // so every account the data directory grants reaches the socket; then it checks it (W-M4).
 func privateDir(path string) error {
-	if err := os.MkdirAll(path, 0o700); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
+	if err := os.MkdirAll(
+		path,
+		0o700,
+	); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
 		return fmt.Errorf("create %s: %w", path, err)
 	}
 
@@ -73,7 +87,10 @@ func privateDir(path string) error {
 }
 
 func createPrivate(path string, extra []*windows.SID) (bool, error) {
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
+	if err := os.MkdirAll(
+		filepath.Dir(path),
+		0o700,
+	); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
 		return false, fmt.Errorf("create %s: %w", filepath.Dir(path), err)
 	}
 
@@ -97,7 +114,10 @@ func createPrivate(path string, extra []*windows.SID) (bool, error) {
 		return false, err
 	}
 
-	sa := &windows.SecurityAttributes{Length: uint32(unsafe.Sizeof(windows.SecurityAttributes{})), SecurityDescriptor: sd}
+	sa := &windows.SecurityAttributes{
+		Length:             uint32(unsafe.Sizeof(windows.SecurityAttributes{})),
+		SecurityDescriptor: sd,
+	}
 
 	err = windows.CreateDirectory(p, sa)
 	if errors.Is(err, windows.ERROR_ALREADY_EXISTS) {
@@ -112,7 +132,11 @@ func createPrivate(path string, extra []*windows.SID) (bool, error) {
 }
 
 func grant(path string, sids []*windows.SID) error {
-	sd, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	sd, err := windows.GetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION,
+	)
 	if err != nil {
 		return fmt.Errorf("read the DACL of %s: %w", path, err)
 	}
@@ -128,7 +152,10 @@ func grant(path string, sids []*windows.SID) error {
 			AccessPermissions: windows.STANDARD_RIGHTS_ALL | 0x1ff, // FILE_ALL_ACCESS
 			AccessMode:        windows.GRANT_ACCESS,
 			Inheritance:       windows.SUB_CONTAINERS_AND_OBJECTS_INHERIT,
-			Trustee:           windows.TRUSTEE{TrusteeForm: windows.TRUSTEE_IS_SID, TrusteeValue: windows.TrusteeValueFromSID(sid)},
+			Trustee: windows.TRUSTEE{
+				TrusteeForm:  windows.TRUSTEE_IS_SID,
+				TrusteeValue: windows.TrusteeValueFromSID(sid),
+			},
 		})
 	}
 
@@ -137,7 +164,15 @@ func grant(path string, sids []*windows.SID) error {
 		return fmt.Errorf("extend the DACL of %s: %w", path, err)
 	}
 
-	if err := windows.SetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION, nil, nil, acl, nil); err != nil {
+	if err := windows.SetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION,
+		nil,
+		nil,
+		acl,
+		nil,
+	); err != nil {
 		return fmt.Errorf("write the DACL of %s: %w", path, err)
 	}
 
@@ -147,14 +182,21 @@ func grant(path string, sids []*windows.SID) error {
 // checkDACL accepts allow entries for SYSTEM, Administrators, CREATOR OWNER, service SIDs and
 // accounts only; a group such as Users would reach the socket and the cluster (W-M4).
 func checkDACL(path string) error {
-	sd, err := windows.GetNamedSecurityInfo(path, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	sd, err := windows.GetNamedSecurityInfo(
+		path,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION,
+	)
 	if err != nil {
 		return fmt.Errorf("read the DACL of %s: %w", path, err)
 	}
 
 	acl, _, err := sd.DACL()
 	if err != nil || acl == nil {
-		return fmt.Errorf("%s has no DACL; managed mode needs one that grants only SYSTEM and accounts", path)
+		return fmt.Errorf(
+			"%s has no DACL; managed mode needs one that grants only SYSTEM and accounts",
+			path,
+		)
 	}
 
 	for i := range uint32(acl.AceCount) {
@@ -168,12 +210,23 @@ func checkDACL(path string) error {
 			continue
 		case windows.ACCESS_ALLOWED_ACE_TYPE:
 		default:
-			return fmt.Errorf("%s holds an access entry of type %d; managed mode accepts allow and deny entries only", path, ace.Header.AceType)
+			return fmt.Errorf(
+				"%s holds an access entry of type %d; managed mode accepts allow and deny entries only",
+				path,
+				ace.Header.AceType,
+			)
 		}
 
-		sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart)).String() //nolint:gosec // G103: an ACE holds its SID from SidStart (ACCESS_ALLOWED_ACE layout).
+		sid := (*windows.SID)(
+			unsafe.Pointer(&ace.SidStart),
+		).String()
+		//nolint:gosec // G103: an ACE holds its SID from SidStart (ACCESS_ALLOWED_ACE layout).
 		if !allowedSID(sid) {
-			return fmt.Errorf("%s grants access to %s; managed mode accepts SYSTEM, Administrators, service SIDs and accounts only", path, sid)
+			return fmt.Errorf(
+				"%s grants access to %s; managed mode accepts SYSTEM, Administrators, service SIDs and accounts only",
+				path,
+				sid,
+			)
 		}
 	}
 
@@ -198,7 +251,8 @@ type proc struct {
 	job   windows.Handle
 }
 
-var procCreateRestrictedToken = windows.NewLazySystemDLL("advapi32.dll").NewProc("CreateRestrictedToken")
+var procCreateRestrictedToken = windows.NewLazySystemDLL("advapi32.dll").
+	NewProc("CreateRestrictedToken")
 
 // newProc starts postgres as pg_ctl does: without the Administrators and Power Users groups, which
 // postgres refuses (W-M7), in its own process group, so a terminal's Ctrl-C reaches equori only.
@@ -215,24 +269,39 @@ func newProc(cmd *exec.Cmd) (*proc, error) {
 	}
 
 	info := windows.JOBOBJECT_EXTENDED_LIMIT_INFORMATION{
-		BasicLimitInformation: windows.JOBOBJECT_BASIC_LIMIT_INFORMATION{LimitFlags: windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE},
+		BasicLimitInformation: windows.JOBOBJECT_BASIC_LIMIT_INFORMATION{
+			LimitFlags: windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+		},
 	}
-	if _, err := windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation,
-		uintptr(unsafe.Pointer(&info)), uint32(unsafe.Sizeof(info))); err != nil { //nolint:gosec // G103: the API takes the structure by address.
+	if _, err := windows.SetInformationJobObject(
+		job,
+		windows.JobObjectExtendedLimitInformation,
+		uintptr(
+			unsafe.Pointer(&info),
+		),
+		uint32(unsafe.Sizeof(info)),
+	); err != nil { //nolint:gosec // G103: the API takes the structure by address.
 		_ = tok.Close()
 		_ = windows.CloseHandle(job)
 
 		return nil, fmt.Errorf("configure job object: %w", err)
 	}
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{Token: syscall.Token(tok), CreationFlags: windows.CREATE_NEW_PROCESS_GROUP}
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Token:         syscall.Token(tok),
+		CreationFlags: windows.CREATE_NEW_PROCESS_GROUP,
+	}
 
 	return &proc{token: tok, job: job}, nil
 }
 
 func restrictedToken() (windows.Token, error) {
 	var tok windows.Token
-	if err := windows.OpenProcessToken(windows.CurrentProcess(), windows.TOKEN_ALL_ACCESS, &tok); err != nil {
+	if err := windows.OpenProcessToken(
+		windows.CurrentProcess(),
+		windows.TOKEN_ALL_ACCESS,
+		&tok,
+	); err != nil {
 		return 0, fmt.Errorf("open the process token: %w", err)
 	}
 
@@ -252,8 +321,19 @@ func restrictedToken() (windows.Token, error) {
 	const disableMaxPrivilege = 0x1
 	var restricted windows.Token
 
-	r, _, err := procCreateRestrictedToken.Call(uintptr(tok), disableMaxPrivilege, uintptr(len(disable)),
-		uintptr(unsafe.Pointer(&disable[0])), 0, 0, 0, 0, uintptr(unsafe.Pointer(&restricted))) //nolint:gosec // G103: the API takes the arrays by address.
+	r, _, err := procCreateRestrictedToken.Call(
+		uintptr(tok),
+		disableMaxPrivilege,
+		uintptr(len(disable)),
+		uintptr(
+			unsafe.Pointer(&disable[0]),
+		),
+		0,
+		0,
+		0,
+		0,
+		uintptr(unsafe.Pointer(&restricted)),
+	) //nolint:gosec // G103: the API takes the arrays by address.
 	if r == 0 {
 		return 0, fmt.Errorf("create a restricted token: %w", err)
 	}
@@ -274,29 +354,48 @@ func addUserToDefaultDACL(tok windows.Token) error {
 	_ = windows.GetTokenInformation(tok, windows.TokenDefaultDacl, nil, 0, &n)
 
 	buf := make([]byte, n)
-	if err := windows.GetTokenInformation(tok, windows.TokenDefaultDacl, &buf[0], n, &n); err != nil {
+	if err := windows.GetTokenInformation(
+		tok,
+		windows.TokenDefaultDacl,
+		&buf[0],
+		n,
+		&n,
+	); err != nil {
 		return fmt.Errorf("read the default DACL of the token: %w", err)
 	}
 
-	old := (*struct{ DefaultDacl *windows.ACL })(unsafe.Pointer(&buf[0])).DefaultDacl //nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
+	old := (*struct{ DefaultDacl *windows.ACL })(
+		unsafe.Pointer(&buf[0]),
+	).DefaultDacl //nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
 
 	user, err := tok.GetTokenUser()
 	if err != nil {
 		return fmt.Errorf("read the token account: %w", err)
 	}
 
-	acl, err := windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{{
-		AccessPermissions: windows.GENERIC_ALL,
-		AccessMode:        windows.GRANT_ACCESS,
-		Inheritance:       windows.NO_INHERITANCE,
-		Trustee:           windows.TRUSTEE{TrusteeForm: windows.TRUSTEE_IS_SID, TrusteeType: windows.TRUSTEE_IS_USER, TrusteeValue: windows.TrusteeValueFromSID(user.User.Sid)},
-	}}, old)
+	acl, err := windows.ACLFromEntries([]windows.EXPLICIT_ACCESS{
+		{
+			AccessPermissions: windows.GENERIC_ALL,
+			AccessMode:        windows.GRANT_ACCESS,
+			Inheritance:       windows.NO_INHERITANCE,
+			Trustee: windows.TRUSTEE{
+				TrusteeForm:  windows.TRUSTEE_IS_SID,
+				TrusteeType:  windows.TRUSTEE_IS_USER,
+				TrusteeValue: windows.TrusteeValueFromSID(user.User.Sid),
+			},
+		},
+	}, old)
 	if err != nil {
 		return fmt.Errorf("extend the default DACL of the token: %w", err)
 	}
 
 	dacl := struct{ DefaultDacl *windows.ACL }{acl}
-	if err := windows.SetTokenInformation(tok, windows.TokenDefaultDacl, (*byte)(unsafe.Pointer(&dacl)), uint32(unsafe.Sizeof(dacl))); err != nil { //nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
+	if err := windows.SetTokenInformation(
+		tok,
+		windows.TokenDefaultDacl,
+		(*byte)(unsafe.Pointer(&dacl)),
+		uint32(unsafe.Sizeof(dacl)),
+	); err != nil { //nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
 		return fmt.Errorf("write the default DACL of the token: %w", err)
 	}
 
@@ -306,7 +405,11 @@ func addUserToDefaultDACL(tok windows.Token) error {
 // started puts postgres in the Job Object, so it ends when equori ends (W-M6); its backends,
 // started later, inherit the job.
 func (p *proc) started(cmd *exec.Cmd) error {
-	h, err := windows.OpenProcess(windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE, false, uint32(cmd.Process.Pid)) //nolint:gosec // G115: Windows PIDs fit in uint32.
+	h, err := windows.OpenProcess(
+		windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE,
+		false,
+		uint32(cmd.Process.Pid),
+	) //nolint:gosec // G115: Windows PIDs fit in uint32.
 	if err != nil {
 		return fmt.Errorf("open postgres: %w", err)
 	}
@@ -328,7 +431,10 @@ func (p *proc) stop(c *Cluster, immediate bool) error {
 		mode = "immediate"
 	}
 
-	out, err := exec.Command(filepath.Join(c.bin, "pg_ctl"), "stop", "-D", filepath.Join(c.dir, "pg"), "-m", mode, "-w", "-t", "60").CombinedOutput() //nolint:gosec,noctx // G204: the programs directory is the owner's configuration; the stop outlives any request context.
+	out, err := exec.Command(filepath.Join(c.bin, "pg_ctl"), "stop", "-D", filepath.Join(c.dir, "pg"), "-m", mode, "-w", "-t", "60").
+		CombinedOutput()
+
+		//nolint:gosec,noctx // G204: the programs directory is the owner's configuration; the stop outlives any request context.
 	if err == nil {
 		return nil
 	}

@@ -52,7 +52,11 @@ func TestGoFileSize(t *testing.T) {
 
 	for key := range allowed {
 		if !offenders[key] {
-			t.Errorf("long_files.txt: %s no longer exceeds %d lines; remove the entry", key, maxFileLines)
+			t.Errorf(
+				"long_files.txt: %s no longer exceeds %d lines; remove the entry",
+				key,
+				maxFileLines,
+			)
 		}
 	}
 }
@@ -97,7 +101,11 @@ func TestMainSize(t *testing.T) {
 
 	lines := bytes.Count(data, []byte("\n"))
 	if lines > maxMainLines {
-		t.Errorf("cmd/equori/main.go has %d lines; move code by concept (limit %d)", lines, maxMainLines)
+		t.Errorf(
+			"cmd/equori/main.go has %d lines; move code by concept (limit %d)",
+			lines,
+			maxMainLines,
+		)
 	}
 }
 

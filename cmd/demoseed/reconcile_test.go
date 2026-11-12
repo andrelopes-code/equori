@@ -48,8 +48,12 @@ func TestReconcileStatementsStillFailsOnOtherRefusals(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
-			_, _ = w.Write([]byte(`{"items":[{"id":"s1","reference":"2026-09","due_date":"2026-10-10","status":"closed",` +
-				`"amount_due":{"amount":12000,"currency":"BRL"},"closing_date":"2026-10-03"}]}`))
+			_, _ = w.Write(
+				[]byte(
+					`{"items":[{"id":"s1","reference":"2026-09","due_date":"2026-10-10","status":"closed",` +
+						`"amount_due":{"amount":12000,"currency":"BRL"},"closing_date":"2026-10-03"}]}`,
+				),
+			)
 
 			return
 		}

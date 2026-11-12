@@ -25,14 +25,21 @@ func externalAccounts(accounts []client.Account) []domain.ExternalAccount {
 		}
 
 		for _, r := range a.BankData.ReservedBalances {
-			held := slices.ContainsFunc(r.AvailableAmounts, func(x client.ReservedAmount) bool { return x.CurrencyCode == a.CurrencyCode })
+			held := slices.ContainsFunc(
+				r.AvailableAmounts,
+				func(x client.ReservedAmount) bool { return x.CurrencyCode == a.CurrencyCode },
+			)
 			if !held || r.Identification == "" || seen[r.Identification] {
 				continue
 			}
 
 			seen[r.Identification] = true
 			out = append(out, domain.ExternalAccount{
-				ExternalID: r.Identification, Type: a.Type, Subtype: client.SubtypeReserve, Name: r.Name, Currency: a.CurrencyCode,
+				ExternalID: r.Identification,
+				Type:       a.Type,
+				Subtype:    client.SubtypeReserve,
+				Name:       r.Name,
+				Currency:   a.CurrencyCode,
 			})
 		}
 	}

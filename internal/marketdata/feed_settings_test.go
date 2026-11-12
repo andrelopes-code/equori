@@ -40,7 +40,23 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		ids[i] = f.ID
 	}
 
-	want := []string{"b3_cotahist", "b3_consolidated", "bcb_ptax", "ecb", "tesouro_direto", "cvm_funds", "coinbase", "yahoo_chart", "br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi", "br_focus"}
+	want := []string{
+		"b3_cotahist",
+		"b3_consolidated",
+		"bcb_ptax",
+		"ecb",
+		"tesouro_direto",
+		"cvm_funds",
+		"coinbase",
+		"yahoo_chart",
+		"br_cdi",
+		"br_ipca",
+		"eu_estr",
+		"ea_hicp",
+		"us_sofr",
+		"us_cpi",
+		"br_focus",
+	}
 	if !slices.Equal(ids, want) {
 		t.Fatalf("feeds = %v, want %v", ids, want)
 	}
@@ -54,7 +70,10 @@ func TestFeedSettingsList(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax"}, nil))
 
 	fs := feedsOf(t, h)
-	if f := fs["bcb_ptax"]; f.Kind != "price" || !f.Enabled || !f.Suggested || f.Last != nil || f.Stale || f.LastRun != nil || f.Error != nil {
+	if f := fs["bcb_ptax"]; f.Kind != "price" || !f.Enabled || !f.Suggested || f.Last != nil ||
+		f.Stale ||
+		f.LastRun != nil ||
+		f.Error != nil {
 		t.Fatalf("bcb_ptax = %+v", f)
 	}
 
@@ -91,11 +110,21 @@ func TestFeedSettingsEnable(t *testing.T) {
 	f := &feedServer{failPTAX: "USD"}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-01"),
+		apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)),
+	)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 
 	var got feedAPI
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/b3_cotahist", map[string]bool{"enabled": true}, http.StatusOK, &got)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/b3_cotahist",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		&got,
+	)
 
 	if got.ID != "b3_cotahist" || !got.Enabled {
 		t.Fatalf("PUT = %+v", got)
@@ -114,7 +143,9 @@ func TestFeedSettingsEnable(t *testing.T) {
 	}
 
 	fs := feedsOf(t, h)
-	if b := fs["b3_cotahist"]; !b.Enabled || b.Last == nil || *b.Last != "2026-10-30" || b.Stale || b.LastRun == nil || b.Error != nil {
+	if b := fs["b3_cotahist"]; !b.Enabled || b.Last == nil || *b.Last != "2026-10-30" || b.Stale ||
+		b.LastRun == nil ||
+		b.Error != nil {
 		t.Fatalf("b3_cotahist = %+v", b)
 	}
 
@@ -122,7 +153,13 @@ func TestFeedSettingsEnable(t *testing.T) {
 		t.Fatalf("bcb_ptax = %+v", p)
 	}
 
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": false}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": false},
+		http.StatusOK,
+		nil,
+	)
 	h.App.Marketdata.TickFeeds(t.Context())
 
 	for _, r := range f.take() {
@@ -136,7 +173,12 @@ func TestFeedSettingsEnable(t *testing.T) {
 func TestFeedSettingsUnknown(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/market-data/feeds/nyse", map[string]bool{"enabled": true}), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, "/api/v1/market-data/feeds/nyse", map[string]bool{"enabled": true}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 // ADR 025 F8: only an admin changes the instance's feeds.
@@ -144,10 +186,30 @@ func TestFeedSettingsAdminRequired(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	member := h.LoginMember("member@example.com")
-	h.ExpectProblem(h.Call(member, http.MethodPut, "/api/v1/market-data/feeds/br_cdi", map[string]bool{"enabled": true}), http.StatusForbidden, "admin_required", "")
-	h.ExpectProblem(h.Call(member, http.MethodPost, "/api/v1/market-data/refresh", nil), http.StatusForbidden, "admin_required", "")
+	h.ExpectProblem(
+		h.Call(
+			member,
+			http.MethodPut,
+			"/api/v1/market-data/feeds/br_cdi",
+			map[string]bool{"enabled": true},
+		),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(member, http.MethodPost, "/api/v1/market-data/refresh", nil),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
 
-	if r := h.Call(member, http.MethodGet, "/api/v1/market-data/feeds", nil); r.Status != http.StatusOK {
+	if r := h.Call(
+		member,
+		http.MethodGet,
+		"/api/v1/market-data/feeds",
+		nil,
+	); r.Status != http.StatusOK {
 		t.Fatalf("member GET status %d", r.Status)
 	}
 }
@@ -166,11 +228,23 @@ func TestFeedSettingsRefresh(t *testing.T) {
 		f.ServeHTTP(w, r)
 	}))
 	t.Cleanup(block.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"b3_cotahist"}, map[string]string{"b3_cotahist": block.URL + "/b3"}))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-01"),
+		apitest.PriceFeeds(
+			[]string{"b3_cotahist"},
+			map[string]string{"b3_cotahist": block.URL + "/b3"},
+		),
+	)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 
 	h.MustDo(http.MethodPost, "/api/v1/market-data/refresh", nil, http.StatusAccepted, nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/market-data/refresh", nil), http.StatusConflict, "refresh_running", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/market-data/refresh", nil),
+		http.StatusConflict,
+		"refresh_running",
+		"",
+	)
 	close(release)
 	h.App.Marketdata.WaitRefresh()
 
@@ -194,11 +268,16 @@ func TestFeedSettingsStale(t *testing.T) {
 			f := &feedServer{}
 			srv := httptest.NewServer(f)
 			t.Cleanup(srv.Close)
-			h := apitest.New(t, apitest.Today(today), apitest.PriceFeeds([]string{"b3_cotahist"}, feedURLs(srv)))
+			h := apitest.New(
+				t,
+				apitest.Today(today),
+				apitest.PriceFeeds([]string{"b3_cotahist"}, feedURLs(srv)),
+			)
 			h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 			h.App.Marketdata.TickFeeds(t.Context())
 
-			if b := feedsOf(t, h)["b3_cotahist"]; b.Stale != stale || b.Last == nil || *b.Last != "2026-10-30" {
+			if b := feedsOf(t, h)["b3_cotahist"]; b.Stale != stale || b.Last == nil ||
+				*b.Last != "2026-10-30" {
 				t.Fatalf("b3_cotahist = %+v", b)
 			}
 		})
@@ -215,11 +294,15 @@ func TestFeedSettingsStaleMonthly(t *testing.T) {
 			t.Parallel()
 
 			h := apitest.New(t, apitest.Today(today), apitest.IndexFeeds([]string{"br_ipca"}, nil))
-			if _, err := h.Pool.Exec(t.Context(), `INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ('ipca', '2026-09-01', 0.0082, 'br_ipca')`); err != nil {
+			if _, err := h.Pool.Exec(
+				t.Context(),
+				`INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ('ipca', '2026-09-01', 0.0082, 'br_ipca')`,
+			); err != nil {
 				t.Fatal(err)
 			}
 
-			if f := feedsOf(t, h)["br_ipca"]; f.Stale != stale || f.Last == nil || *f.Last != "2026-09-01" {
+			if f := feedsOf(t, h)["br_ipca"]; f.Stale != stale || f.Last == nil ||
+				*f.Last != "2026-09-01" {
 				t.Fatalf("br_ipca = %+v", f)
 			}
 		})
@@ -235,9 +318,19 @@ func TestFeedFields(t *testing.T) {
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
 
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-01"),
+		apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)),
+	)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/b3_cotahist", map[string]any{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/b3_cotahist",
+		map[string]any{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 
 	type fields struct {
 		official       bool

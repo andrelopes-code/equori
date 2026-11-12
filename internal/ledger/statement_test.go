@@ -54,7 +54,13 @@ func statements(t testing.TB, h *apitest.Harness, card string) map[string]statem
 	var out struct {
 		Items []statementView `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-01&to=2027-12", nil, http.StatusOK, &out)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/statements?from=2026-01&to=2027-12",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	m := map[string]statementView{}
 	for _, s := range out.Items {
@@ -71,7 +77,12 @@ type cardSetup struct {
 
 func newCardSetup(t *testing.T, today string) cardSetup {
 	h := apitest.New(t, apitest.Today(today))
-	return cardSetup{h: h, card: h.Card("Itaú Visa", 3, 10, "next"), food: h.Account("Food", "expense", "", nil), checking: h.Account("Nubank", "asset", "checking", nil)}
+	return cardSetup{
+		h:        h,
+		card:     h.Card("Itaú Visa", 3, 10, "next"),
+		food:     h.Account("Food", "expense", "", nil),
+		checking: h.Account("Nubank", "asset", "checking", nil),
+	}
 }
 
 func (c cardSetup) purchase(date string, amount int64) string {
@@ -91,7 +102,10 @@ func TestStatementFullPayment(t *testing.T) {
 
 	// A89: the payment of 2026-11-10 is made in the cycle of 2026-12 and settles 2026-11.
 	ss := statements(t, c.h, c.card)
-	if s := ss["2026-11"]; s.AmountDue != 150000 || s.Payments != 0 || s.Settled != 150000 || s.Unpaid != 0 || s.Status != "paid" || s.DueDate != "2026-11-10" {
+	if s := ss["2026-11"]; s.AmountDue != 150000 || s.Payments != 0 || s.Settled != 150000 ||
+		s.Unpaid != 0 ||
+		s.Status != "paid" ||
+		s.DueDate != "2026-11-10" {
 		t.Fatalf("2026-11 = %+v", s)
 	}
 
@@ -133,7 +147,13 @@ func TestStatementOpenAmount_S180(t *testing.T) {
 		got := statements(t, c.h, c.card)["2026-12"]
 
 		if got.Open != tt.want || got.AmountDue != 159237 {
-			t.Errorf("on %s: open_amount = %d, amount_due = %d, want %d and 159237", tt.today, got.Open, got.AmountDue, tt.want)
+			t.Errorf(
+				"on %s: open_amount = %d, amount_due = %d, want %d and 159237",
+				tt.today,
+				got.Open,
+				got.AmountDue,
+				tt.want,
+			)
 		}
 	}
 }
@@ -159,9 +179,16 @@ func TestEmptyStatementAfterVoid(t *testing.T) {
 	t.Parallel()
 	c := newCardSetup(t, "2026-11-12")
 	id := c.purchase("2026-10-14", 1000)
-	c.h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+id+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 
-	if s := statements(t, c.h, c.card)["2026-11"]; s.AmountDue != 0 || s.Charges != 0 || s.Status != "paid" {
+	if s := statements(t, c.h, c.card)["2026-11"]; s.AmountDue != 0 || s.Charges != 0 ||
+		s.Status != "paid" {
 		t.Fatalf("statement = %+v", s)
 	}
 }
@@ -186,9 +213,16 @@ func TestStatementDetail(t *testing.T) {
 	}
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+id, nil, http.StatusOK, &detail)
 
-	if detail.AmountDue != 24000 || len(detail.Postings) != 2 || detail.Postings[0].Date != "2026-10-14" || detail.Postings[0].Amount.Amount != -23000 {
+	if detail.AmountDue != 24000 || len(detail.Postings) != 2 ||
+		detail.Postings[0].Date != "2026-10-14" ||
+		detail.Postings[0].Amount.Amount != -23000 {
 		t.Fatalf("detail = %+v", detail)
 	}
 
-	c.h.ExpectProblem(c.h.Do(http.MethodGet, "/api/v1/statements/00000000-0000-7000-8000-000000000000", nil), http.StatusNotFound, "not_found", "")
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodGet, "/api/v1/statements/00000000-0000-7000-8000-000000000000", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

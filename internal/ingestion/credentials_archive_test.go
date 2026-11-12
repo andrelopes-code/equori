@@ -42,7 +42,9 @@ func TestCredentialsTravelInTheArchive(t *testing.T) {
 	}
 
 	var kept int
-	if err := source.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM reporting_export WHERE credentials IS NOT NULL`).Scan(&kept); err != nil || kept != 0 {
+	if err := source.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM reporting_export WHERE credentials IS NOT NULL`).
+		Scan(&kept); err != nil ||
+		kept != 0 {
 		t.Fatalf("bundles kept after the build = %d, %v; want 0", kept, err)
 	}
 
@@ -51,7 +53,12 @@ func TestCredentialsTravelInTheArchive(t *testing.T) {
 
 	var res importResult
 
-	r := target.h.UploadWith("/api/v1/imports/archive", map[string]string{"passphrase": archivePassphrase}, "export.zip", archive)
+	r := target.h.UploadWith(
+		"/api/v1/imports/archive",
+		map[string]string{"passphrase": archivePassphrase},
+		"export.zip",
+		archive,
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
@@ -80,11 +87,18 @@ func TestImportOfCredentialsAsksForThePassphrase(t *testing.T) {
 		http.StatusUnprocessableEntity, "passphrase_required", "passphrase")
 
 	var integrations int
-	if err := target.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).Scan(&integrations); err != nil || integrations != 0 {
+	if err := target.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).
+		Scan(&integrations); err != nil ||
+		integrations != 0 {
 		t.Fatalf("integrations after a refused import = %d, %v; want 0", integrations, err)
 	}
 
-	r := target.h.UploadWith("/api/v1/imports/archive", map[string]string{"skip_credentials": "true"}, "export.zip", archive)
+	r := target.h.UploadWith(
+		"/api/v1/imports/archive",
+		map[string]string{"skip_credentials": "true"},
+		"export.zip",
+		archive,
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
@@ -96,7 +110,12 @@ func TestImportOfCredentialsAsksForThePassphrase(t *testing.T) {
 		t.Fatalf("result = %+v, want the credentials in the archive and none restored", res)
 	}
 
-	target.h.ExpectProblem(target.connect(target.h.Client, in.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
+	target.h.ExpectProblem(
+		target.connect(target.h.Client, in.ID, nubankItem),
+		http.StatusConflict,
+		"integration_unavailable",
+		"",
+	)
 }
 
 func TestImportRejectsAWrongPassphraseWithoutWriting(t *testing.T) {
@@ -107,11 +126,21 @@ func TestImportRejectsAWrongPassphraseWithoutWriting(t *testing.T) {
 
 	target := newAggregator(t)
 	target.h.ExpectProblem(
-		target.h.UploadWith("/api/v1/imports/archive", map[string]string{"passphrase": "wrong horse battery"}, "export.zip", archive),
-		http.StatusUnprocessableEntity, "passphrase_invalid", "passphrase")
+		target.h.UploadWith(
+			"/api/v1/imports/archive",
+			map[string]string{"passphrase": "wrong horse battery"},
+			"export.zip",
+			archive,
+		),
+		http.StatusUnprocessableEntity,
+		"passphrase_invalid",
+		"passphrase",
+	)
 
 	var integrations int
-	if err := target.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).Scan(&integrations); err != nil || integrations != 0 {
+	if err := target.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).
+		Scan(&integrations); err != nil ||
+		integrations != 0 {
 		t.Fatalf("integrations after a refused import = %d, %v; want 0", integrations, err)
 	}
 }
@@ -124,11 +153,21 @@ func TestImportWithAPassphraseNeedsTheInstanceKey(t *testing.T) {
 
 	keyless := apitest.New(t)
 	keyless.ExpectProblem(
-		keyless.UploadWith("/api/v1/imports/archive", map[string]string{"passphrase": archivePassphrase}, "export.zip", archive),
-		http.StatusConflict, "integration_unavailable", "")
+		keyless.UploadWith(
+			"/api/v1/imports/archive",
+			map[string]string{"passphrase": archivePassphrase},
+			"export.zip",
+			archive,
+		),
+		http.StatusConflict,
+		"integration_unavailable",
+		"",
+	)
 
 	var accounts int
-	if err := keyless.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_account`).Scan(&accounts); err != nil || accounts == 0 {
+	if err := keyless.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_account`).
+		Scan(&accounts); err != nil ||
+		accounts == 0 {
 		t.Fatalf("accounts = %d, %v; the sign-up accounts must stay", accounts, err)
 	}
 }
@@ -137,16 +176,37 @@ func TestExportWithAPassphraseValidates(t *testing.T) {
 	t.Parallel()
 	keyless := apitest.New(t)
 	keyless.ExpectProblem(
-		keyless.Do(http.MethodPost, "/api/v1/exports", map[string]any{"credentials_passphrase": archivePassphrase}),
-		http.StatusConflict, "integration_unavailable", "")
+		keyless.Do(
+			http.MethodPost,
+			"/api/v1/exports",
+			map[string]any{"credentials_passphrase": archivePassphrase},
+		),
+		http.StatusConflict,
+		"integration_unavailable",
+		"",
+	)
 
 	a := newAggregator(t)
 	a.h.ExpectProblem(
-		a.h.Do(http.MethodPost, "/api/v1/exports", map[string]any{"credentials_passphrase": "short"}),
-		http.StatusBadRequest, "invalid_request", "credentials_passphrase")
+		a.h.Do(
+			http.MethodPost,
+			"/api/v1/exports",
+			map[string]any{"credentials_passphrase": "short"},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"credentials_passphrase",
+	)
 	a.h.ExpectProblem(
-		a.h.Do(http.MethodPost, "/api/v1/exports", map[string]any{"credentials_passphrase": strings.Repeat("x", 257)}),
-		http.StatusBadRequest, "invalid_request", "credentials_passphrase")
+		a.h.Do(
+			http.MethodPost,
+			"/api/v1/exports",
+			map[string]any{"credentials_passphrase": strings.Repeat("x", 257)},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"credentials_passphrase",
+	)
 
 	// A book with no stored credential builds an archive without the entry.
 	archive := exportWith(t, a.h, map[string]any{"credentials_passphrase": archivePassphrase})
@@ -210,10 +270,23 @@ func TestOnlyAnOwnerExportsCredentials(t *testing.T) {
 
 	reader := a.h.JoinAs("reader@example.com", a.h.OwnerID(), "read")
 	a.h.ExpectProblem(
-		a.h.Call(reader, http.MethodPost, "/api/v1/exports", map[string]any{"credentials_passphrase": archivePassphrase}),
-		http.StatusForbidden, "book_role_required", "")
+		a.h.Call(
+			reader,
+			http.MethodPost,
+			"/api/v1/exports",
+			map[string]any{"credentials_passphrase": archivePassphrase},
+		),
+		http.StatusForbidden,
+		"book_role_required",
+		"",
+	)
 
-	if r := a.h.Call(reader, http.MethodPost, "/api/v1/exports", nil); r.Status != http.StatusAccepted {
+	if r := a.h.Call(
+		reader,
+		http.MethodPost,
+		"/api/v1/exports",
+		nil,
+	); r.Status != http.StatusAccepted {
 		t.Fatalf("a read member's export without credentials = %d: %s", r.Status, r.Body)
 	}
 }

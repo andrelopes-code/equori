@@ -34,7 +34,14 @@ func TestPresets(t *testing.T) {
 	}
 
 	for _, model := range []string{"gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"} {
-		if got := ModelCapabilities("gemini", model, nil); !slices.Equal(got, []string{"tools", "structured_output"}) {
+		if got := ModelCapabilities(
+			"gemini",
+			model,
+			nil,
+		); !slices.Equal(
+			got,
+			[]string{"tools", "structured_output"},
+		) {
 			t.Fatalf("%s capabilities = %v", model, got)
 		}
 	}
@@ -51,15 +58,34 @@ func TestModelCapabilities(t *testing.T) {
 		name, preset, model string
 		asserted, want      []string
 	}{
-		{name: "preset model ignores assertion", preset: "groq", model: "openai/gpt-oss-120b", asserted: []string{"image_input"}, want: []string{"tools", "structured_output"}},
-		{name: "other model takes assertion", preset: "groq", model: "x", asserted: []string{"tools"}, want: []string{"tools"}},
+		{
+			name:     "preset model ignores assertion",
+			preset:   "groq",
+			model:    "openai/gpt-oss-120b",
+			asserted: []string{"image_input"},
+			want:     []string{"tools", "structured_output"},
+		},
+		{
+			name:     "other model takes assertion",
+			preset:   "groq",
+			model:    "x",
+			asserted: []string{"tools"},
+			want:     []string{"tools"},
+		},
 		{name: "custom", preset: "custom", model: "x", want: nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := ModelCapabilities(tt.preset, tt.model, tt.asserted); !slices.Equal(got, tt.want) {
+			if got := ModelCapabilities(
+				tt.preset,
+				tt.model,
+				tt.asserted,
+			); !slices.Equal(
+				got,
+				tt.want,
+			) {
 				t.Fatalf("capabilities = %v, want %v", got, tt.want)
 			}
 		})
@@ -82,7 +108,10 @@ func TestValidateCapabilities(t *testing.T) {
 		t.Fatalf("valid set: %v", err)
 	}
 
-	if fe, ok := errors.AsType[*FieldError](ValidateCapabilities([]string{"speech"})); !ok || fe.Field != "capabilities" {
+	if fe, ok := errors.AsType[*FieldError](
+		ValidateCapabilities([]string{"speech"}),
+	); !ok ||
+		fe.Field != "capabilities" {
 		t.Fatal("unknown capability accepted")
 	}
 }
@@ -94,7 +123,10 @@ func TestNewChainTarget(t *testing.T) {
 		t.Fatalf("valid target: %v", err)
 	}
 
-	if fe, ok := errors.AsType[*FieldError](func() error { _, err := NewChainTarget(uuid.New(), " ", nil); return err }()); !ok || fe.Field != "model" {
+	if fe, ok := errors.AsType[*FieldError](
+		func() error { _, err := NewChainTarget(uuid.New(), " ", nil); return err }(),
+	); !ok ||
+		fe.Field != "model" {
 		t.Fatal("blank model accepted")
 	}
 }

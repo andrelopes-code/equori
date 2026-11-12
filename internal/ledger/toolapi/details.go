@@ -13,9 +13,9 @@ import (
 )
 
 type getAccountDetailsIn struct {
-	AccountID      string    `json:"account_id" jsonschema:"ID of the account, from list_accounts"`
-	PurchaseDate   tool.Date `json:"purchase_date,omitzero" jsonschema:"for a card: return the statement a purchase on this date is billed on"`
-	Month          string    `json:"month,omitzero" jsonschema:"for a card: return the installments committed to the statement of this month; written YYYY-MM"`
+	AccountID      string    `json:"account_id"               jsonschema:"ID of the account, from list_accounts"`
+	PurchaseDate   tool.Date `json:"purchase_date,omitzero"   jsonschema:"for a card: return the statement a purchase on this date is billed on"`
+	Month          string    `json:"month,omitzero"           jsonschema:"for a card: return the installments committed to the statement of this month; written YYYY-MM"`
 	StatementsFrom string    `json:"statements_from,omitzero" jsonschema:"for a card: first statement month to list; the last 6 months when absent; written YYYY-MM"`
 }
 
@@ -62,7 +62,7 @@ type billingCycleView struct {
 
 type statementRowView struct {
 	StatementID string     `json:"statement_id"`
-	Reference   string     `json:"reference" jsonschema:"YYYY-MM"`
+	Reference   string     `json:"reference"    jsonschema:"YYYY-MM"`
 	ClosingDate tool.Date  `json:"closing_date"`
 	DueDate     tool.Date  `json:"due_date"`
 	Status      string     `json:"status"`
@@ -71,13 +71,13 @@ type statementRowView struct {
 }
 
 type placementView struct {
-	Reference   string    `json:"reference" jsonschema:"YYYY-MM"`
+	Reference   string    `json:"reference"    jsonschema:"YYYY-MM"`
 	ClosingDate tool.Date `json:"closing_date"`
 	DueDate     tool.Date `json:"due_date"`
 }
 
 type commitmentView struct {
-	Month  string     `json:"month" jsonschema:"YYYY-MM"`
+	Month  string     `json:"month"  jsonschema:"YYYY-MM"`
 	Amount tool.Money `json:"amount"`
 }
 
@@ -194,7 +194,12 @@ func addAssertions(
 	unit money.Money,
 	out *getAccountDetailsOut,
 ) error {
-	assertions, _, err := svc.BalanceAssertions(ctx, booksID, id, page.Request[app.AssertionKey]{Limit: 5})
+	assertions, _, err := svc.BalanceAssertions(
+		ctx,
+		booksID,
+		id,
+		page.Request[app.AssertionKey]{Limit: 5},
+	)
 	if err != nil {
 		return err
 	}
@@ -205,7 +210,15 @@ func addAssertions(
 			return err
 		}
 
-		out.BalanceAssertions = append(out.BalanceAssertions, assertionView{Date: tool.DateOf(b.Date), Amount: amount, Reconciled: b.Reconciled, Source: b.Source})
+		out.BalanceAssertions = append(
+			out.BalanceAssertions,
+			assertionView{
+				Date:       tool.DateOf(b.Date),
+				Amount:     amount,
+				Reconciled: b.Reconciled,
+				Source:     b.Source,
+			},
+		)
 	}
 
 	return nil
@@ -224,7 +237,12 @@ func parseMonth(s, field string) (*domain.ReferenceMonth, error) {
 	return &m, nil
 }
 
-func reconciliationOf(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (reconciliationView, error) {
+func reconciliationOf(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (reconciliationView, error) {
 	st, err := svc.ReconciliationStatus(ctx, booksID, id)
 	if err != nil {
 		return reconciliationView{}, err
@@ -236,14 +254,25 @@ func reconciliationOf(ctx context.Context, svc *app.Service, booksID int64, id u
 	}
 
 	if o := st.Open; o != nil {
-		out.OpenDifference = openDifferenceView{AssertionID: o.AssertionID.String(), Date: tool.DateOf(o.Date), Difference: tool.MoneyOf(o.Difference)}
+		out.OpenDifference = openDifferenceView{
+			AssertionID: o.AssertionID.String(),
+			Date:        tool.DateOf(o.Date),
+			Difference:  tool.MoneyOf(o.Difference),
+		}
 	}
 
 	return out, nil
 }
 
-func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domain.Account, unit money.Money,
-	in getAccountDetailsIn, month, from *domain.ReferenceMonth) (cardDetailsView, error) {
+func cardDetailsOf(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	unit money.Money,
+	in getAccountDetailsIn,
+	month, from *domain.ReferenceMonth,
+) (cardDetailsView, error) {
 	today := svc.Today(ctx)
 	out := cardDetailsView{Cards: []cardView{}, Statements: []statementRowView{}}
 
@@ -263,7 +292,11 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 	}
 
 	if r, err := rules.For(domain.MonthOf(today)); err == nil {
-		out.BillingCycle = billingCycleView{ClosingDay: r.ClosingDay, DueDay: r.DueDay, EffectiveFrom: r.EffectiveFrom.String()}
+		out.BillingCycle = billingCycleView{
+			ClosingDay:    r.ClosingDay,
+			DueDay:        r.DueDay,
+			EffectiveFrom: r.EffectiveFrom.String(),
+		}
 	}
 
 	if from == nil {
@@ -271,7 +304,15 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 		from = &m
 	}
 
-	if out.Statements, err = loadStatementRows(ctx, svc, booksID, a, unit, from, out.Statements); err != nil {
+	if out.Statements, err = loadStatementRows(
+		ctx,
+		svc,
+		booksID,
+		a,
+		unit,
+		from,
+		out.Statements,
+	); err != nil {
 		return cardDetailsView{}, err
 	}
 
@@ -281,7 +322,11 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 			return cardDetailsView{}, err
 		}
 
-		out.Placement = placementView{Reference: pl.Reference.String(), ClosingDate: tool.DateOf(pl.Closing), DueDate: tool.DateOf(pl.Due)}
+		out.Placement = placementView{
+			Reference:   pl.Reference.String(),
+			ClosingDate: tool.DateOf(pl.Closing),
+			DueDate:     tool.DateOf(pl.Due),
+		}
 	}
 
 	if month != nil {
@@ -296,7 +341,12 @@ func cardDetailsOf(ctx context.Context, svc *app.Service, booksID int64, a domai
 	return out, nil
 }
 
-func loadCardViews(ctx context.Context, svc *app.Service, booksID int64, a domain.Account) ([]cardView, error) {
+func loadCardViews(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+) ([]cardView, error) {
 	views := []cardView{}
 
 	cards, err := svc.Cards(ctx, booksID, a.ID)
@@ -339,7 +389,11 @@ func loadCreditLimit(
 	}
 
 	if sum != nil {
-		out.CreditLimit, out.AvailableLimit = tool.MoneyOf(sum.CreditLimit), tool.MoneyOf(sum.AvailableLimit)
+		out.CreditLimit, out.AvailableLimit = tool.MoneyOf(
+			sum.CreditLimit,
+		), tool.MoneyOf(
+			sum.AvailableLimit,
+		)
 	}
 
 	return nil
@@ -354,10 +408,12 @@ func loadStatementRows(
 	from *domain.ReferenceMonth,
 	rows []statementRowView,
 ) ([]statementRowView, error) {
-	views, err := allPages(func(p page.Request[app.StatementKey]) ([]app.StatementView, *app.StatementKey, error) {
-		rows, next, _, err := svc.Statements(ctx, booksID, a.ID, from, nil, p)
-		return rows, next, err
-	})
+	views, err := allPages(
+		func(p page.Request[app.StatementKey]) ([]app.StatementView, *app.StatementKey, error) {
+			rows, next, _, err := svc.Statements(ctx, booksID, a.ID, from, nil, p)
+			return rows, next, err
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -374,8 +430,15 @@ func loadStatementRows(
 		}
 
 		rows = append(rows, statementRowView{
-			StatementID: v.ID.String(), Reference: v.Input.Reference.String(), ClosingDate: tool.DateOf(v.Input.Closing),
-			DueDate: tool.DateOf(v.Input.Due), Status: v.Summary.Status, AmountDue: due, Unpaid: unpaid,
+			StatementID: v.ID.String(),
+			Reference:   v.Input.Reference.String(),
+			ClosingDate: tool.DateOf(v.Input.Closing),
+			DueDate: tool.DateOf(
+				v.Input.Due,
+			),
+			Status:    v.Summary.Status,
+			AmountDue: due,
+			Unpaid:    unpaid,
 		})
 	}
 

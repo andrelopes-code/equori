@@ -35,7 +35,8 @@ func TestParseRate(t *testing.T) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
 
-			if err == nil && (r.Mantissa() != tt.mantissa || r.Scale() != tt.scale || r.String() != tt.in) {
+			if err == nil &&
+				(r.Mantissa() != tt.mantissa || r.Scale() != tt.scale || r.String() != tt.in) {
 				t.Fatalf("got %d e-%d %q", r.Mantissa(), r.Scale(), r.String())
 			}
 		})

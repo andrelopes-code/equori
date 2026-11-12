@@ -12,7 +12,14 @@ func rule(from string, closing, due int, assignment string) BillingCycleRule {
 		panic(err)
 	}
 
-	return BillingCycleRule{EffectiveFrom: m, ClosingDay: closing, DueDay: due, Assignment: assignment, Adjustment: "following", Calendar: "br_banking"}
+	return BillingCycleRule{
+		EffectiveFrom: m,
+		ClosingDay:    closing,
+		DueDay:        due,
+		Assignment:    assignment,
+		Adjustment:    "following",
+		Calendar:      "br_banking",
+	}
 }
 
 func month(s string) ReferenceMonth {
@@ -28,7 +35,8 @@ func TestReferenceMonth(t *testing.T) {
 	t.Parallel()
 
 	m := month("2026-11")
-	if m.Add(2).String() != "2027-01" || m.Add(-11).String() != "2025-12" || !m.FirstDay().Equal(day("2026-11-01")) {
+	if m.Add(2).String() != "2027-01" || m.Add(-11).String() != "2025-12" ||
+		!m.FirstDay().Equal(day("2026-11-01")) {
 		t.Fatalf("arithmetic on %s failed", m)
 	}
 
@@ -53,9 +61,20 @@ func TestDatesFor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		got := DatesFor(month(tt.month), tt.rule)
-		if got.Closing.Format(time.DateOnly) != tt.closing || got.DueUnadjusted.Format(time.DateOnly) != tt.due {
-			t.Errorf("DatesFor(%s, %d/%d) = %s / %s, want %s / %s", tt.month, tt.rule.ClosingDay, tt.rule.DueDay,
-				got.Closing.Format(time.DateOnly), got.DueUnadjusted.Format(time.DateOnly), tt.closing, tt.due)
+		if got.Closing.Format(time.DateOnly) != tt.closing ||
+			got.DueUnadjusted.Format(time.DateOnly) != tt.due {
+			t.Errorf(
+				"DatesFor(%s, %d/%d) = %s / %s, want %s / %s",
+				tt.month,
+				tt.rule.ClosingDay,
+				tt.rule.DueDay,
+				got.Closing.Format(
+					time.DateOnly,
+				),
+				got.DueUnadjusted.Format(time.DateOnly),
+				tt.closing,
+				tt.due,
+			)
 		}
 	}
 }
@@ -99,7 +118,12 @@ func TestStatementForRuleChange(t *testing.T) {
 		t.Fatalf("StatementFor = %s, %v; want 2026-12", got, err)
 	}
 
-	if d := DatesFor(got, mustRule(t, rules, got)); d.Closing.Format(time.DateOnly) != "2026-12-15" {
+	if d := DatesFor(
+		got,
+		mustRule(t, rules, got),
+	); d.Closing.Format(
+		time.DateOnly,
+	) != "2026-12-15" {
 		t.Fatalf("closing = %s, want 2026-12-15", d.Closing.Format(time.DateOnly))
 	}
 }
@@ -118,7 +142,13 @@ func mustRule(t *testing.T, rules Rules, m ReferenceMonth) BillingCycleRule {
 func TestNoBillingRule(t *testing.T) {
 	t.Parallel()
 
-	if _, err := StatementFor(day("2025-06-01"), Rules{rule("2026-01", 3, 10, "next")}); !errors.Is(err, ErrNoBillingRule) {
+	if _, err := StatementFor(
+		day("2025-06-01"),
+		Rules{rule("2026-01", 3, 10, "next")},
+	); !errors.Is(
+		err,
+		ErrNoBillingRule,
+	) {
 		t.Fatalf("err = %v, want ErrNoBillingRule", err)
 	}
 
@@ -158,7 +188,14 @@ func TestSplitInstallments(t *testing.T) {
 		for i, p := range parts {
 			sum += p.Amount()
 			if p.Amount() != tt.want[i] {
-				t.Errorf("split %d/%d part %d = %d, want %d", tt.total, tt.n, i, p.Amount(), tt.want[i])
+				t.Errorf(
+					"split %d/%d part %d = %d, want %d",
+					tt.total,
+					tt.n,
+					i,
+					p.Amount(),
+					tt.want[i],
+				)
 			}
 		}
 
@@ -171,8 +208,16 @@ func TestSplitInstallments(t *testing.T) {
 func TestNewBillingCycleRule(t *testing.T) {
 	t.Parallel()
 
-	r, err := NewBillingCycleRule(BillingCycleRule{EffectiveFrom: month("2026-11"), ClosingDay: 3, DueDay: 10, Calendar: "weekend"})
-	if err != nil || r.Assignment != AssignNext || r.Adjustment != "following" || r.Calendar != "weekend" {
+	r, err := NewBillingCycleRule(
+		BillingCycleRule{
+			EffectiveFrom: month("2026-11"),
+			ClosingDay:    3,
+			DueDay:        10,
+			Calendar:      "weekend",
+		},
+	)
+	if err != nil || r.Assignment != AssignNext || r.Adjustment != "following" ||
+		r.Calendar != "weekend" {
 		t.Fatalf("defaults = %+v, %v", r, err)
 	}
 
@@ -232,8 +277,15 @@ func TestDatesForBeforeDue(t *testing.T) {
 		"2026-11": {"2026-10-29", "2026-11-05"},
 	} {
 		d := DatesFor(month(ref), r)
-		if d.Closing.Format(time.DateOnly) != want[0] || d.DueUnadjusted.Format(time.DateOnly) != want[1] {
-			t.Errorf("%s: closing %s due %s, want %v", ref, d.Closing.Format(time.DateOnly), d.DueUnadjusted.Format(time.DateOnly), want)
+		if d.Closing.Format(time.DateOnly) != want[0] ||
+			d.DueUnadjusted.Format(time.DateOnly) != want[1] {
+			t.Errorf(
+				"%s: closing %s due %s, want %v",
+				ref,
+				d.Closing.Format(time.DateOnly),
+				d.DueUnadjusted.Format(time.DateOnly),
+				want,
+			)
 		}
 	}
 }

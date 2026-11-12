@@ -42,7 +42,11 @@ func (r BookRole) rank() int {
 }
 
 func WithIdentity(ctx context.Context, memberID, booksID int64, role BookRole) context.Context {
-	return context.WithValue(ctx, identityKey{}, identity{memberID: memberID, booksID: booksID, role: role, hasMember: true})
+	return context.WithValue(
+		ctx,
+		identityKey{},
+		identity{memberID: memberID, booksID: booksID, role: role, hasMember: true},
+	)
 }
 
 func MemberID(ctx context.Context) (int64, bool) {

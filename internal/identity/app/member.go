@@ -11,7 +11,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Service) CreateMember(ctx context.Context, email, plain string, role domain.Role, l locale.Locale, base money.Currency) (domain.Member, error) {
+func (s *Service) CreateMember(
+	ctx context.Context,
+	email, plain string,
+	role domain.Role,
+	l locale.Locale,
+	base money.Currency,
+) (domain.Member, error) {
 	u, err := s.newMember(ctx, email, plain, role, l.Language)
 	if err != nil {
 		return domain.Member{}, err
@@ -52,7 +58,12 @@ func (s *Service) SetDisplayName(ctx context.Context, memberID int64, name strin
 }
 
 // newMember validates a new member and hashes its password.
-func (s *Service) newMember(ctx context.Context, email, plain string, role domain.Role, language string) (domain.Member, error) {
+func (s *Service) newMember(
+	ctx context.Context,
+	email, plain string,
+	role domain.Role,
+	language string,
+) (domain.Member, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
 		return domain.Member{}, err

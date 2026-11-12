@@ -63,8 +63,19 @@ func bucketLines(f CardFacts, financing map[uuid.UUID]bool) *allocation {
 			a.categories[l.ID] = Shares{}
 		}
 
-		if n := len(a.buckets); n == 0 || a.buckets[n-1].card != l.CardID || !a.buckets[n-1].statement.Equal(l.Statement) {
-			a.buckets = append(a.buckets, &bucket{card: l.CardID, id: l.StatementID, statement: l.Statement, shares: Shares{}})
+		if n := len(
+			a.buckets,
+		); n == 0 || a.buckets[n-1].card != l.CardID ||
+			!a.buckets[n-1].statement.Equal(l.Statement) {
+			a.buckets = append(
+				a.buckets,
+				&bucket{
+					card:      l.CardID,
+					id:        l.StatementID,
+					statement: l.Statement,
+					shares:    Shares{},
+				},
+			)
 		}
 
 		a.bucketOf[l.ID] = a.buckets[len(a.buckets)-1]
@@ -132,7 +143,17 @@ func (a *allocation) drain(p CardPayment) ([]payment, Shares) {
 			continue
 		}
 
-		out = append(out, payment{date: p.Date, card: p.CardID, statement: b.id, reference: b.statement, transaction: p.TransactionID, shares: share})
+		out = append(
+			out,
+			payment{
+				date:        p.Date,
+				card:        p.CardID,
+				statement:   b.id,
+				reference:   b.statement,
+				transaction: p.TransactionID,
+				shares:      share,
+			},
+		)
 	}
 
 	return out, moved

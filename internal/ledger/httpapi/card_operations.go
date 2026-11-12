@@ -31,7 +31,9 @@ func (s *Server) createInstallmentPurchase(
 	return InstallmentPurchase{Transaction: toTransactionAPI(t), PlanId: planID}, nil
 }
 
-func fromInstallmentPurchaseInput(b InstallmentPurchaseInput) (app.InstallmentPurchaseInput, error) {
+func fromInstallmentPurchaseInput(
+	b InstallmentPurchaseInput,
+) (app.InstallmentPurchaseInput, error) {
 	in := app.InstallmentPurchaseInput{
 		CardAccountID: b.CardAccountId, Date: dateOf(b.Date), Description: optString(b.Description),
 		PayeeID: optUUID(b.PayeeId), Count: b.InstallmentCount,
@@ -96,7 +98,11 @@ func (s *Server) getCommitment(
 
 	m, err := domain.ParseReferenceMonth(params.Month)
 	if err != nil {
-		return Commitment{}, &domain.FieldError{Field: "month", Message: "must be YYYY-MM", Err: domain.ErrValidation}
+		return Commitment{}, &domain.FieldError{
+			Field:   "month",
+			Message: "must be YYYY-MM",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	amount, err := s.svc.Commitment(ctx, auth.MustBooksID(ctx), id, m)
@@ -122,7 +128,14 @@ func (s *Server) payStatement(
 		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.PayStatement(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), in.FromAccountId, amount)
+	t, err := s.svc.PayStatement(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		dateOf(in.Date),
+		in.FromAccountId,
+		amount,
+	)
 	if err != nil {
 		return Transaction{}, "", err
 	}
@@ -145,7 +158,14 @@ func (s *Server) financeStatement(
 		return InstallmentPurchase{}, err
 	}
 
-	t, planID, err := s.svc.FinanceStatement(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), in.InstallmentCount, installment)
+	t, planID, err := s.svc.FinanceStatement(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		dateOf(in.Date),
+		in.InstallmentCount,
+		installment,
+	)
 	if err != nil {
 		return InstallmentPurchase{}, err
 	}
@@ -173,7 +193,14 @@ func (s *Server) refundTransaction(
 		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.RefundPurchase(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), amount, statement)
+	t, err := s.svc.RefundPurchase(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		dateOf(in.Date),
+		amount,
+		statement,
+	)
 	if err != nil {
 		return Transaction{}, "", err
 	}
@@ -226,7 +253,16 @@ func (s *Server) anticipateInstallments(
 		return Transaction{}, "", err
 	}
 
-	t, err := s.svc.AnticipatePlan(ctx, auth.MustBooksID(ctx), id, dateOf(b.Date), b.FromInstallment, b.ToInstallment, *target, amount)
+	t, err := s.svc.AnticipatePlan(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		dateOf(b.Date),
+		b.FromInstallment,
+		b.ToInstallment,
+		*target,
+		amount,
+	)
 	if err != nil {
 		return Transaction{}, "", err
 	}
@@ -250,8 +286,14 @@ func (s *Server) getInstallmentPlan(
 	}
 
 	out := InstallmentPlan{
-		Id: v.Plan.ID, TransactionId: v.Plan.OriginTransactionID, AccountId: v.Plan.AccountID,
-		Status: InstallmentPlanStatus(v.Status), Count: v.Plan.Count, Installments: make([]ScheduledInstallment, len(v.Installments)),
+		Id:            v.Plan.ID,
+		TransactionId: v.Plan.OriginTransactionID,
+		AccountId:     v.Plan.AccountID,
+		Status: InstallmentPlanStatus(
+			v.Status,
+		),
+		Count:        v.Plan.Count,
+		Installments: make([]ScheduledInstallment, len(v.Installments)),
 	}
 	if !v.Plan.Interest.IsZero() {
 		interest := toMoneyAPI(v.Plan.Interest)
@@ -264,7 +306,12 @@ func (s *Server) getInstallmentPlan(
 			return InstallmentPlan{}, err
 		}
 
-		out.Installments[i] = ScheduledInstallment{Number: input.Number, Statement: input.Reference.String(), Amount: toMoneyAPI(amount), Reversed: input.Reversed}
+		out.Installments[i] = ScheduledInstallment{
+			Number:    input.Number,
+			Statement: input.Reference.String(),
+			Amount:    toMoneyAPI(amount),
+			Reversed:  input.Reversed,
+		}
 	}
 
 	return out, nil
@@ -290,7 +337,11 @@ func (s *Server) getStatementPlacement(
 		return StatementPlacement{}, err
 	}
 
-	out := StatementPlacement{Reference: p.Reference.String(), ClosingDate: apiDate(p.Closing), DueDate: apiDate(p.Due)}
+	out := StatementPlacement{
+		Reference:   p.Reference.String(),
+		ClosingDate: apiDate(p.Closing),
+		DueDate:     apiDate(p.Due),
+	}
 	if p.Previous != nil {
 		closing, due := apiDate(p.Previous.Closing), apiDate(p.Previous.Due)
 		out.PreviousClosingDate, out.PreviousDueDate = &closing, &due

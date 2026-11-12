@@ -42,11 +42,15 @@ func TestAnnounceSetup(t *testing.T) {
 	}
 
 	path := filepath.Join(cfg.DataDir, "setup.url")
-	if b, err := os.ReadFile(path); err != nil || string(b) != "http://127.0.0.1:8080/setup#token=T\n" {
+	if b, err := os.ReadFile(
+		path,
+	); err != nil ||
+		string(b) != "http://127.0.0.1:8080/setup#token=T\n" {
 		t.Fatalf("setup.url = %q, %v", b, err)
 	}
 
-	if !strings.Contains(logs.String(), `"msg":"first user setup"`) || !strings.Contains(logs.String(), "#token=T") {
+	if !strings.Contains(logs.String(), `"msg":"first user setup"`) ||
+		!strings.Contains(logs.String(), "#token=T") {
 		t.Fatalf("log = %s; want the setup URL", logs.String())
 	}
 

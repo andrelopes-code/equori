@@ -52,7 +52,8 @@ func Handler(fsys fs.FS) http.Handler {
 			return
 		}
 
-		if name == assetsDir || strings.HasPrefix(name, assetsDir+"/") || !serveFile(w, r, fsys, indexName) {
+		if name == assetsDir || strings.HasPrefix(name, assetsDir+"/") ||
+			!serveFile(w, r, fsys, indexName) {
 			http.NotFound(w, r)
 		}
 	})
@@ -112,7 +113,12 @@ func DevRedirect(port int) http.Handler {
 			host = h
 		}
 
-		target := url.URL{Scheme: "http", Host: net.JoinHostPort(host, strconv.Itoa(port)), Path: r.URL.Path, RawQuery: r.URL.RawQuery}
+		target := url.URL{
+			Scheme:   "http",
+			Host:     net.JoinHostPort(host, strconv.Itoa(port)),
+			Path:     r.URL.Path,
+			RawQuery: r.URL.RawQuery,
+		}
 		http.Redirect(w, r, target.String(), http.StatusTemporaryRedirect)
 	})
 }

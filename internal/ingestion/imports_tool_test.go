@@ -26,7 +26,12 @@ func toolOutput(t *testing.T, h *apitest.Harness, name string, args map[string]a
 	}
 }
 
-func preview(t *testing.T, h *apitest.Harness, name string, args map[string]any) (tool.Preview, tool.Result) {
+func preview(
+	t *testing.T,
+	h *apitest.Harness,
+	name string,
+	args map[string]any,
+) (tool.Preview, tool.Result) {
 	t.Helper()
 
 	b, err := json.Marshal(args)
@@ -62,7 +67,15 @@ func TestGetImportsToolBatches(t *testing.T) {
 	}
 	toolOutput(t, h, "get_imports", map[string]any{"view": "batches"}, &got)
 
-	want := []batch{{BatchID: b.ID, AccountName: "Checking", Source: "ofx", FileName: "a.ofx", Counts: map[string]int{"received": 2, "created": 2}}}
+	want := []batch{
+		{
+			BatchID:     b.ID,
+			AccountName: "Checking",
+			Source:      "ofx",
+			FileName:    "a.ofx",
+			Counts:      map[string]int{"received": 2, "created": 2},
+		},
+	}
 	if !reflect.DeepEqual(got.Batches, want) {
 		t.Errorf("batches = %+v, want %+v", got.Batches, want)
 	}
@@ -84,20 +97,36 @@ func TestGetImportsToolRecords(t *testing.T) {
 			Candidates   []string   `json:"candidates"`
 		} `json:"records"`
 	}
-	toolOutput(t, h, "get_imports", map[string]any{"view": "records", "batch_id": batch, "state": "needs_review"}, &got)
+	toolOutput(
+		t,
+		h,
+		"get_imports",
+		map[string]any{"view": "records", "batch_id": batch, "state": "needs_review"},
+		&got,
+	)
 
 	if got.BatchID != batch || got.AccountName != "Nubank checking" || len(got.Records) != 1 {
 		t.Fatalf("records = %+v", got)
 	}
 
 	r := got.Records[0]
-	if r.RecordID != record.ID || r.Date != "2026-10-10" || r.Description != "PIX" || r.Amount != (tool.Money{Amount: "-50.00", Currency: "BRL"}) ||
-		r.State != "needs_review" || !reflect.DeepEqual(r.Candidates, []string{second, first}) {
+	if r.RecordID != record.ID || r.Date != "2026-10-10" || r.Description != "PIX" ||
+		r.Amount != (tool.Money{Amount: "-50.00", Currency: "BRL"}) ||
+		r.State != "needs_review" ||
+		!reflect.DeepEqual(r.Candidates, []string{second, first}) {
 		t.Errorf("record = %+v", r)
 	}
 
-	h.ExpectToolError(h.Tool("get_imports", map[string]any{"view": "records"}), "invalid_arguments", "batch_id")
-	h.ExpectToolError(h.Tool("get_imports", map[string]any{"view": "batches", "batch_id": batch}), "invalid_arguments", "batch_id")
+	h.ExpectToolError(
+		h.Tool("get_imports", map[string]any{"view": "records"}),
+		"invalid_arguments",
+		"batch_id",
+	)
+	h.ExpectToolError(
+		h.Tool("get_imports", map[string]any{"view": "batches", "batch_id": batch}),
+		"invalid_arguments",
+		"batch_id",
+	)
 }
 
 func TestGetImportsToolOtherUser(t *testing.T) {
@@ -107,36 +136,96 @@ func TestGetImportsToolOtherUser(t *testing.T) {
 	var account struct {
 		ID string `json:"id"`
 	}
-	r := h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "asset", "kind": "checking", "currency": "BRL"})
+	r := h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/accounts",
+		map[string]any{"name": "Theirs", "class": "asset", "kind": "checking", "currency": "BRL"},
+	)
 	r.Decode(t, &account)
-	up := h.UploadAs(other, "/api/v1/accounts/"+account.ID+"/imports", map[string]string{"format": "ofx"}, "b.ofx",
-		apitest.OFX("", apitest.OFXLine{Date: "20261010", Amount: "-50.00", FITID: "p1", Name: "PIX"}))
+	up := h.UploadAs(
+		other,
+		"/api/v1/accounts/"+account.ID+"/imports",
+		map[string]string{"format": "ofx"},
+		"b.ofx",
+		apitest.OFX(
+			"",
+			apitest.OFXLine{Date: "20261010", Amount: "-50.00", FITID: "p1", Name: "PIX"},
+		),
+	)
 	var b batchView
 	up.Decode(t, &b)
-	h.ExpectToolError(h.Tool("get_imports", map[string]any{"view": "records", "batch_id": b.ID}), "not_found", "")
-	h.ExpectToolError(h.Tool("get_imports", map[string]any{"view": "unconfirmed", "account_id": account.ID}), "not_found", "")
+	h.ExpectToolError(
+		h.Tool("get_imports", map[string]any{"view": "records", "batch_id": b.ID}),
+		"not_found",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool("get_imports", map[string]any{"view": "unconfirmed", "account_id": account.ID}),
+		"not_found",
+		"",
+	)
 }
 
 // S35 through the assistant: the preview changes nothing; the call resolves once.
 func TestManageImportsResolveRecord(t *testing.T) {
 	t.Parallel()
 	h, batch, record, first, second := ambiguous(t)
-	stranger := h.Record("2026-10-10", apitest.Posting(h.Transaction(first).Postings[0].AccountID, -1), apitest.Posting(h.Transaction(first).Postings[1].AccountID, 1))
-	_, r := preview(t, h, "manage_imports", map[string]any{"action": "resolve_record", "record_id": record.ID, "resolution": "match", "transaction_id": stranger})
+	stranger := h.Record(
+		"2026-10-10",
+		apitest.Posting(h.Transaction(first).Postings[0].AccountID, -1),
+		apitest.Posting(h.Transaction(first).Postings[1].AccountID, 1),
+	)
+	_, r := preview(
+		t,
+		h,
+		"manage_imports",
+		map[string]any{
+			"action":         "resolve_record",
+			"record_id":      record.ID,
+			"resolution":     "match",
+			"transaction_id": stranger,
+		},
+	)
 	h.ExpectToolError(r, "validation_failed", "transaction_id")
-	h.ExpectToolError(h.Tool("manage_imports", map[string]any{"action": "resolve_record", "record_id": record.ID, "resolution": "discard", "transaction_id": second}), "invalid_arguments", "transaction_id")
+	h.ExpectToolError(
+		h.Tool(
+			"manage_imports",
+			map[string]any{
+				"action":         "resolve_record",
+				"record_id":      record.ID,
+				"resolution":     "discard",
+				"transaction_id": second,
+			},
+		),
+		"invalid_arguments",
+		"transaction_id",
+	)
 
-	args := map[string]any{"action": "resolve_record", "record_id": record.ID, "resolution": "match", "transaction_id": second}
+	args := map[string]any{
+		"action":         "resolve_record",
+		"record_id":      record.ID,
+		"resolution":     "match",
+		"transaction_id": second,
+	}
 
 	p, r := preview(t, h, "manage_imports", args)
 	if r.IsError {
 		t.Fatalf("preview = error %s", r.Content)
 	}
 
-	want := tool.Preview{Action: "manage_imports.resolve_record", Target: "Bank line PIX of 2026-10-10", Changes: []tool.Change{
-		{Field: "status", Before: tool.TextValue("needs_review"), After: tool.TextValue("matched")},
-		{Field: "transaction", After: tool.TextValue(second)},
-	}}
+	want := tool.Preview{
+		Action: "manage_imports.resolve_record",
+		Target: "Bank line PIX of 2026-10-10",
+		Changes: []tool.Change{
+			{
+				Field:  "status",
+				Before: tool.TextValue("needs_review"),
+				After:  tool.TextValue("matched"),
+			},
+			{Field: "transaction", After: tool.TextValue(second)},
+		},
+	}
 	if !reflect.DeepEqual(p, want) {
 		t.Errorf("preview = %+v, want %+v", p, want)
 	}
@@ -189,18 +278,33 @@ func TestManageImportsConnections(t *testing.T) {
 	}
 	toolOutput(t, a.h, "get_imports", map[string]any{"view": "connections"}, &got)
 
-	if len(got.Connections) != 1 || got.Connections[0].ConnectionID != conn.ID || got.Connections[0].Name != conn.Name ||
+	if len(got.Connections) != 1 || got.Connections[0].ConnectionID != conn.ID ||
+		got.Connections[0].Name != conn.Name ||
 		len(got.Connections[0].Accounts) != len(conn.Accounts) {
 		t.Errorf("connections = %+v", got.Connections)
 	}
 
-	if len(got.Integrations) != 1 || got.Integrations[0].IntegrationID != in.ID || got.Integrations[0].Name != "Meu Pluggy" || got.Integrations[0].Aggregator != "Pluggy" {
+	if len(got.Integrations) != 1 || got.Integrations[0].IntegrationID != in.ID ||
+		got.Integrations[0].Name != "Meu Pluggy" ||
+		got.Integrations[0].Aggregator != "Pluggy" {
 		t.Errorf("integrations = %+v", got.Integrations)
 	}
 
-	_, r := preview(t, a.h, "manage_imports", map[string]any{"action": "delete_integration", "integration_id": in.ID})
+	_, r := preview(
+		t,
+		a.h,
+		"manage_imports",
+		map[string]any{"action": "delete_integration", "integration_id": in.ID},
+	)
 	a.h.ExpectToolError(r, "integration_in_use", "")
-	a.h.ExpectToolError(a.h.Tool("manage_imports", map[string]any{"action": "delete_integration", "integration_id": in.ID}), "integration_in_use", "")
+	a.h.ExpectToolError(
+		a.h.Tool(
+			"manage_imports",
+			map[string]any{"action": "delete_integration", "integration_id": in.ID},
+		),
+		"integration_in_use",
+		"",
+	)
 
 	del := map[string]any{"action": "delete_connection", "connection_id": conn.ID}
 
@@ -215,8 +319,17 @@ func TestManageImportsConnections(t *testing.T) {
 		t.Fatalf("delete_connection = error %s", r.Content)
 	}
 
-	a.h.ExpectProblem(a.h.Do(http.MethodGet, "/api/v1/connections/"+conn.ID, nil), http.StatusNotFound, "not_found", "")
-	a.h.ExpectToolError(a.h.Tool("manage_imports", map[string]any{"action": "sync"}), "invalid_arguments", "connection_id")
+	a.h.ExpectProblem(
+		a.h.Do(http.MethodGet, "/api/v1/connections/"+conn.ID, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	a.h.ExpectToolError(
+		a.h.Tool("manage_imports", map[string]any{"action": "sync"}),
+		"invalid_arguments",
+		"connection_id",
+	)
 }
 
 func TestManageImportsUndoDecision(t *testing.T) {
@@ -239,9 +352,13 @@ func TestManageImportsUndoDecision(t *testing.T) {
 		t.Fatalf("preview = error %s", r.Content)
 	}
 
-	want := tool.Preview{Action: "manage_imports.undo_decision", Target: "Bank line line tx-1 of 2026-11-05", Changes: []tool.Change{
-		{Field: "decision", Before: tool.TextValue("withdrawn")},
-	}}
+	want := tool.Preview{
+		Action: "manage_imports.undo_decision",
+		Target: "Bank line line tx-1 of 2026-11-05",
+		Changes: []tool.Change{
+			{Field: "decision", Before: tool.TextValue("withdrawn")},
+		},
+	}
 	if !reflect.DeepEqual(p, want) {
 		t.Errorf("preview = %+v, want %+v", p, want)
 	}
@@ -258,7 +375,11 @@ func TestManageImportsUndoDecision(t *testing.T) {
 	}
 
 	f.h.ExpectToolError(f.h.Tool("manage_imports", args), "no_decision", "")
-	f.h.ExpectToolError(f.h.Tool("manage_imports", map[string]any{"action": "undo_decision"}), "invalid_arguments", "record_id")
+	f.h.ExpectToolError(
+		f.h.Tool("manage_imports", map[string]any{"action": "undo_decision"}),
+		"invalid_arguments",
+		"record_id",
+	)
 }
 
 func TestGetImportsToolSyncs(t *testing.T) {
@@ -279,13 +400,20 @@ func TestGetImportsToolSyncs(t *testing.T) {
 			} `json:"records"`
 		} `json:"syncs"`
 	}
-	toolOutput(t, f.h, "get_imports", map[string]any{"view": "syncs", "connection_id": f.conn.ID}, &got)
+	toolOutput(
+		t,
+		f.h,
+		"get_imports",
+		map[string]any{"view": "syncs", "connection_id": f.conn.ID},
+		&got,
+	)
 
 	if len(got.Syncs) != 2 {
 		t.Fatalf("syncs = %d, want 2", len(got.Syncs))
 	}
 
-	if r := got.Syncs[0].Records; len(r) != 1 || r[0].RecordID != f.recordID("tx-1") || r[0].Decision != "withdrawn" {
+	if r := got.Syncs[0].Records; len(r) != 1 || r[0].RecordID != f.recordID("tx-1") ||
+		r[0].Decision != "withdrawn" {
 		t.Errorf("syncs[0].records = %+v, want tx-1 withdrawn", r)
 	}
 
@@ -293,6 +421,14 @@ func TestGetImportsToolSyncs(t *testing.T) {
 		t.Errorf("syncs[1].records = %+v, want none", r)
 	}
 
-	f.h.ExpectToolError(f.h.Tool("get_imports", map[string]any{"view": "syncs"}), "invalid_arguments", "connection_id")
-	f.h.ExpectToolError(f.h.Tool("get_imports", map[string]any{"view": "batches", "connection_id": f.conn.ID}), "invalid_arguments", "connection_id")
+	f.h.ExpectToolError(
+		f.h.Tool("get_imports", map[string]any{"view": "syncs"}),
+		"invalid_arguments",
+		"connection_id",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool("get_imports", map[string]any{"view": "batches", "connection_id": f.conn.ID}),
+		"invalid_arguments",
+		"connection_id",
+	)
 }

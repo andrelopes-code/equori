@@ -29,12 +29,18 @@ func (s *seeder) payStatements(date time.Time, card, payer string) {
 		}
 
 		due, err := time.Parse(time.DateOnly, st.DueDate)
-		if err != nil || st.Status == "open" || st.Unpaid.Amount <= 0 || due.After(date.AddDate(0, 0, 5)) {
+		if err != nil || st.Status == "open" || st.Unpaid.Amount <= 0 ||
+			due.After(date.AddDate(0, 0, 5)) {
 			continue
 		}
 
 		s.ensure(date, payer, st.Unpaid.Amount)
-		s.do(http.MethodPost, "/statements/"+st.ID+"/payments", map[string]any{"date": iso(date), "from_account_id": s.id(payer), "amount": st.Unpaid}, nil)
+		s.do(
+			http.MethodPost,
+			"/statements/"+st.ID+"/payments",
+			map[string]any{"date": iso(date), "from_account_id": s.id(payer), "amount": st.Unpaid},
+			nil,
+		)
 		s.bal[s.id(payer)] -= st.Unpaid.Amount
 		s.bal[s.id(card)] += st.Unpaid.Amount
 	}
@@ -44,6 +50,12 @@ func (s *seeder) payStatements(date time.Time, card, payer string) {
 func (s *seeder) statementPayments(month time.Time) {
 	itauDay := 9
 	nubankDay := step(month, 11, map[string]int64{"2026-04": 16})
-	s.at(onDay(month, itauDay), func() { s.payStatements(onDay(month, itauDay), "card.itau", "itau.checking") })
-	s.at(onDay(month, int(nubankDay)), func() { s.payStatements(onDay(month, int(nubankDay)), "card.nubank", "nubank.checking") })
+	s.at(
+		onDay(month, itauDay),
+		func() { s.payStatements(onDay(month, itauDay), "card.itau", "itau.checking") },
+	)
+	s.at(
+		onDay(month, int(nubankDay)),
+		func() { s.payStatements(onDay(month, int(nubankDay)), "card.nubank", "nubank.checking") },
+	)
 }

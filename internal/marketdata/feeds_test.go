@@ -86,7 +86,13 @@ func pricesOf(t *testing.T, h *apitest.Harness, instrument string) []priceAPI {
 	var list struct {
 		Items []priceAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument="+instrument+"&quote_instrument=BRL&from=2026-09-01&to=2026-11-30", nil, http.StatusOK, &list)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument="+instrument+"&quote_instrument=BRL&from=2026-09-01&to=2026-11-30",
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
 	return list.Items
 }
@@ -115,9 +121,24 @@ func TestFeedsFetchPrices(t *testing.T) {
 	f := &feedServer{failDay: "30102026", failPTAX: "EUR"}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax", "b3_cotahist"}, feedURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-01"),
+		apitest.PriceFeeds([]string{"bcb_ptax", "b3_cotahist"}, feedURLs(srv)),
+	)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
-	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-30", "value": "5.6"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "USD",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-30",
+			"value":            "5.6",
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
@@ -126,31 +147,48 @@ func TestFeedsFetchPrices(t *testing.T) {
 	b3 := filter(first, "/b3/")
 	// MQ7, MQ9: the 21 days of the incremental fetch, then the history of MXRF11: six year files
 	// (404) and the 23 days from 2026-09-28 to the day before its stored price.
-	if len(b3) != 50 || b3[0] != "/b3/COTAHIST_D02102026.ZIP" || b3[20] != "/b3/COTAHIST_D30102026.ZIP" ||
-		b3[21] != "/b3/COTAHIST_A2021.ZIP" || b3[26] != "/b3/COTAHIST_A2026.ZIP" ||
-		b3[27] != "/b3/COTAHIST_D28092026.ZIP" || b3[49] != "/b3/COTAHIST_D28102026.ZIP" {
+	if len(b3) != 50 || b3[0] != "/b3/COTAHIST_D02102026.ZIP" ||
+		b3[20] != "/b3/COTAHIST_D30102026.ZIP" ||
+		b3[21] != "/b3/COTAHIST_A2021.ZIP" ||
+		b3[26] != "/b3/COTAHIST_A2026.ZIP" ||
+		b3[27] != "/b3/COTAHIST_D28092026.ZIP" ||
+		b3[49] != "/b3/COTAHIST_D28102026.ZIP" {
 		t.Fatalf("first tick B3 requests = %v", b3)
 	}
 
 	// A 404 (ARS) and a 503 (EUR) end only their currency's run; USD is still fetched.
 	ptax := filter(first, "/ptax/")
-	if len(ptax) != 14 || !strings.Contains(ptax[0], "@moeda='ARS'&@dataInicial='10-02-2026'&@dataFinalCotacao='11-01-2026'") || !strings.Contains(ptax[7], "'EUR'") {
+	if len(ptax) != 14 ||
+		!strings.Contains(
+			ptax[0],
+			"@moeda='ARS'&@dataInicial='10-02-2026'&@dataFinalCotacao='11-01-2026'",
+		) ||
+		!strings.Contains(ptax[7], "'EUR'") {
 		t.Fatalf("first tick PTAX requests = %v", ptax)
 	}
 
-	if got := pricesOf(t, h, "MXRF11"); len(got) != 1 || got[0] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "9.36", Source: "b3_cotahist"}) {
+	if got := pricesOf(
+		t,
+		h,
+		"MXRF11",
+	); len(got) != 1 ||
+		got[0] != (priceAPI{Instrument: "MXRF11", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "9.36", Source: "b3_cotahist"}) {
 		t.Fatalf("MXRF11 after the first tick = %+v", got)
 	}
 
 	usd := pricesOf(t, h, "USD")
-	if len(usd) != 2 || usd[0] != (priceAPI{Instrument: "USD", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "5.495", Source: "bcb_ptax"}) ||
-		usd[1].Value != "5.6" || usd[1].Source != "manual" {
+	if len(usd) != 2 ||
+		usd[0] != (priceAPI{Instrument: "USD", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "5.495", Source: "bcb_ptax"}) ||
+		usd[1].Value != "5.6" ||
+		usd[1].Source != "manual" {
 		t.Fatalf("USD after the first tick = %+v", usd)
 	}
 
 	logs := h.Logs()
-	if !strings.Contains(logs, "source=b3_cotahist") || !strings.Contains(logs, "day=2026-10-30") || !strings.Contains(logs, "source=bcb_ptax") ||
-		!strings.Contains(logs, "instrument=EUR") || strings.Contains(logs, "instrument=ARS") {
+	if !strings.Contains(logs, "source=b3_cotahist") || !strings.Contains(logs, "day=2026-10-30") ||
+		!strings.Contains(logs, "source=bcb_ptax") ||
+		!strings.Contains(logs, "instrument=EUR") ||
+		strings.Contains(logs, "instrument=ARS") {
 		t.Fatalf("logs = %s", logs)
 	}
 
@@ -166,7 +204,10 @@ func TestFeedsFetchPrices(t *testing.T) {
 
 	ptax = filter(second, "/ptax/")
 	if len(ptax) != 14 || !strings.Contains(ptax[12], "@moeda='USD'&@dataInicial='10-31-2026'") ||
-		!strings.Contains(ptax[0], "@moeda='ARS'&@dataInicial='10-02-2026'") || !strings.Contains(ptax[7], "@moeda='EUR'&@dataInicial='10-02-2026'") {
+		!strings.Contains(
+			ptax[0],
+			"@moeda='ARS'&@dataInicial='10-02-2026'",
+		) || !strings.Contains(ptax[7], "@moeda='EUR'&@dataInicial='10-02-2026'") {
 		t.Fatalf("second tick PTAX requests = %v", ptax)
 	}
 
@@ -192,16 +233,26 @@ func TestFeedFailureKeepsOtherCurrencies(t *testing.T) {
 	f := &feedServer{failPTAX: "EUR"}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-10-31"), apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-10-31"),
+		apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)),
+	)
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	if got := pricesOf(t, h, "USD"); len(got) != 2 || got[0].Date != "2026-10-29" || got[1].Date != "2026-10-30" {
+	if got := pricesOf(
+		t,
+		h,
+		"USD",
+	); len(got) != 2 || got[0].Date != "2026-10-29" ||
+		got[1].Date != "2026-10-30" {
 		t.Fatalf("USD prices = %+v", got)
 	}
 
 	logs := h.Logs()
-	if !strings.Contains(logs, "price feed") || !strings.Contains(logs, "bcb_ptax") || !strings.Contains(logs, "instrument=EUR") {
+	if !strings.Contains(logs, "price feed") || !strings.Contains(logs, "bcb_ptax") ||
+		!strings.Contains(logs, "instrument=EUR") {
 		t.Fatalf("logs = %s", logs)
 	}
 }

@@ -18,7 +18,13 @@ import (
 func (s *Server) defineInstrument(
 	ctx context.Context, _ *http.Request, b DefineInstrumentJSONRequestBody,
 ) (Instrument, string, error) {
-	in := domain.Instrument{Code: money.Currency(b.Code), Type: string(b.Type), Scale: b.Scale, Name: b.Name, QuoteCurrency: money.Currency(b.QuoteCurrency)}
+	in := domain.Instrument{
+		Code:          money.Currency(b.Code),
+		Type:          string(b.Type),
+		Scale:         b.Scale,
+		Name:          b.Name,
+		QuoteCurrency: money.Currency(b.QuoteCurrency),
+	}
 	if b.Exchange != nil {
 		in.Exchange = string(*b.Exchange)
 	}
@@ -39,7 +45,11 @@ func (s *Server) defineInstrument(
 	return toInstrumentAPI(out), BaseURL + "/instruments/" + string(out.Code), nil
 }
 
-func (s *Server) listInstruments(ctx context.Context, r *http.Request, _ httpserver.None) (InstrumentList, error) {
+func (s *Server) listInstruments(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (InstrumentList, error) {
 	params, err := httpserver.Query[ListInstrumentsParams](r)
 	if err != nil {
 		return InstrumentList{}, err
@@ -63,7 +73,11 @@ func (s *Server) listInstruments(ctx context.Context, r *http.Request, _ httpser
 	return InstrumentList{Items: items}, nil
 }
 
-func (s *Server) getInstrument(ctx context.Context, r *http.Request, _ httpserver.None) (Instrument, error) {
+func (s *Server) getInstrument(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Instrument, error) {
 	in, err := s.svc.Instrument(ctx, r.PathValue("code"))
 	if err != nil {
 		return Instrument{}, err
@@ -135,7 +149,12 @@ func (s *Server) deleteInstrument(
 }
 
 func toInstrumentAPI(in domain.Instrument) Instrument {
-	out := Instrument{Code: string(in.Code), Type: InstrumentType(in.Type), Scale: in.Scale, Name: in.Name}
+	out := Instrument{
+		Code:  string(in.Code),
+		Type:  InstrumentType(in.Type),
+		Scale: in.Scale,
+		Name:  in.Name,
+	}
 	if in.QuoteCurrency != "" {
 		q := string(in.QuoteCurrency)
 		out.QuoteCurrency = &q
@@ -167,11 +186,18 @@ func coverageOf(c domain.Coverage) *InstrumentCoverage {
 
 	for i, sc := range c.Sources {
 		out.Sources[i] = InstrumentSourceCoverage{
-			Id: sc.ID, Enabled: sc.Enabled, Official: sc.Official, First: optionalDate(sc.First), Last: optionalDate(sc.Last),
+			Id:       sc.ID,
+			Enabled:  sc.Enabled,
+			Official: sc.Official,
+			First:    optionalDate(sc.First),
+			Last:     optionalDate(sc.Last),
 		}
 
 		if h := sc.History; h != nil {
-			out.Sources[i].History = &InstrumentHistory{From: openapi_types.Date{Time: h.From}, Done: h.Done}
+			out.Sources[i].History = &InstrumentHistory{
+				From: openapi_types.Date{Time: h.From},
+				Done: h.Done,
+			}
 			if h.Error != "" {
 				out.Sources[i].History.Error = &h.Error
 			}

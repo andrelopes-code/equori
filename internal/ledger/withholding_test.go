@@ -23,7 +23,13 @@ func TestDefaultWithholdingBP(t *testing.T) {
 	}
 	for _, tc := range tests {
 		if got := ledger.DefaultWithholdingBP(tc.region, tc.incomeType); got != tc.want {
-			t.Errorf("DefaultWithholdingBP(%q, %q) = %d, want %d", tc.region, tc.incomeType, got, tc.want)
+			t.Errorf(
+				"DefaultWithholdingBP(%q, %q) = %d, want %d",
+				tc.region,
+				tc.incomeType,
+				got,
+				tc.want,
+			)
 		}
 	}
 }
@@ -71,7 +77,11 @@ func TestJCPIncomeOutsideBRHasNoDefaultWithholding(t *testing.T) {
 	cash := account("Broker cash", "brokerage", "EUR", child)
 	alpha := account("Broker ALPHA", "brokerage", "ALPHA", child)
 	var income idOut
-	create("/api/v1/accounts", map[string]any{"name": "Income", "class": "income", "currency": "EUR"}, &income)
+	create(
+		"/api/v1/accounts",
+		map[string]any{"name": "Income", "class": "income", "currency": "EUR"},
+		&income,
+	)
 
 	var tx incomeTx
 	create("/api/v1/investment-income", map[string]any{

@@ -152,7 +152,12 @@ func GetSince(ctx context.Context, c *http.Client, url, since string) ([]byte, s
 
 // Download streams the body of url to a file under os.TempDir, passes it to read and removes it.
 // A 404 answer returns ErrNoData; an answer over 256 MiB is an error.
-func Download(ctx context.Context, c *http.Client, url string, read func(f *os.File, size int64) error) error {
+func Download(
+	ctx context.Context,
+	c *http.Client,
+	url string,
+	read func(f *os.File, size int64) error,
+) error {
 	_, err := DownloadSince(ctx, c, url, "", read)
 
 	return err
@@ -160,11 +165,22 @@ func Download(ctx context.Context, c *http.Client, url string, read func(f *os.F
 
 // DownloadSince is Download with If-Modified-Since: since when since is not empty. A 304 answer
 // returns ErrNoData. It returns the Last-Modified of the answer.
-func DownloadSince(ctx context.Context, c *http.Client, url, since string, read func(f *os.File, size int64) error) (string, error) {
+func DownloadSince(
+	ctx context.Context,
+	c *http.Client,
+	url, since string,
+	read func(f *os.File, size int64) error,
+) (string, error) {
 	return download(ctx, c, url, since, maxDownloadBytes, read)
 }
 
-func download(ctx context.Context, c *http.Client, url, since string, limit int64, read func(f *os.File, size int64) error) (string, error) {
+func download(
+	ctx context.Context,
+	c *http.Client,
+	url, since string,
+	limit int64,
+	read func(f *os.File, size int64) error,
+) (string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return "", err

@@ -155,7 +155,11 @@ func findBest(
 
 // Realize links a chosen transaction to an expected occurrence; re-evaluation never
 // releases it (A51).
-func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID) (OccurrenceView, error) {
+func (s *Service) Realize(
+	ctx context.Context,
+	booksID int64,
+	id, txID uuid.UUID,
+) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		o, err := repo.LockOccurrence(ctx, booksID, id)
@@ -178,11 +182,19 @@ func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID
 		}
 
 		if len(facts) == 0 || facts[0].Voided {
-			return &domain.FieldError{Field: "transaction_id", Message: "is not a transaction of the book in force", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "transaction_id",
+				Message: "is not a transaction of the book in force",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		if _, ok := facts[0].On(sch.AccountID); !ok {
-			return &domain.FieldError{Field: "transaction_id", Message: "has no posting on the schedule's account", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "transaction_id",
+				Message: "has no posting on the schedule's account",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		if _, err := repo.OccurrenceByTransaction(ctx, booksID, txID); err == nil {
@@ -206,7 +218,11 @@ func (s *Service) Realize(ctx context.Context, booksID int64, id, txID uuid.UUID
 
 // Unrealize releases a realized occurrence; its transaction no longer realizes it automatically
 // (final review of P7).
-func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (OccurrenceView, error) {
+func (s *Service) Unrealize(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (OccurrenceView, error) {
 	var out OccurrenceView
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		o, err := repo.LockOccurrence(ctx, booksID, id)
@@ -236,9 +252,21 @@ func (s *Service) Unrealize(ctx context.Context, booksID int64, id uuid.UUID) (O
 	return out, err
 }
 
-func (s *Service) view(ctx context.Context, booksID int64, o domain.Occurrence, sch domain.Schedule) (OccurrenceView, error) {
-	views := []OccurrenceView{{Occurrence: o, Shown: o.Shown(s.clk.Today(ctx), sch.GraceDays), Currency: sch.Currency}}
-	if err := s.fillActuals(ctx, booksID, views, map[uuid.UUID]domain.Schedule{sch.ID: sch}); err != nil {
+func (s *Service) view(
+	ctx context.Context,
+	booksID int64,
+	o domain.Occurrence,
+	sch domain.Schedule,
+) (OccurrenceView, error) {
+	views := []OccurrenceView{
+		{Occurrence: o, Shown: o.Shown(s.clk.Today(ctx), sch.GraceDays), Currency: sch.Currency},
+	}
+	if err := s.fillActuals(
+		ctx,
+		booksID,
+		views,
+		map[uuid.UUID]domain.Schedule{sch.ID: sch},
+	); err != nil {
 		return OccurrenceView{}, err
 	}
 
@@ -246,7 +274,11 @@ func (s *Service) view(ctx context.Context, booksID int64, o domain.Occurrence, 
 }
 
 // Occurrence reads one occurrence of the book.
-func (s *Service) Occurrence(ctx context.Context, booksID int64, id uuid.UUID) (OccurrenceView, error) {
+func (s *Service) Occurrence(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (OccurrenceView, error) {
 	o, err := s.repo.LockOccurrence(ctx, booksID, id)
 	if err != nil {
 		return OccurrenceView{}, err

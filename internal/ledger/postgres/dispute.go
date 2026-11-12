@@ -11,7 +11,14 @@ import (
 )
 
 func (r *Repository) InsertDispute(ctx context.Context, d app.Dispute) (app.Dispute, error) {
-	row, err := r.q.InsertDispute(ctx, InsertDisputeParams{BooksID: d.BooksID, TransactionID: d.TransactionID, OpenedOn: d.OpenedOn})
+	row, err := r.q.InsertDispute(
+		ctx,
+		InsertDisputeParams{
+			BooksID:       d.BooksID,
+			TransactionID: d.TransactionID,
+			OpenedOn:      d.OpenedOn,
+		},
+	)
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 		return app.Dispute{}, app.ErrDisputeOpen
 	}
@@ -23,8 +30,15 @@ func (r *Repository) InsertDispute(ctx context.Context, d app.Dispute) (app.Disp
 	return toDispute(row), nil
 }
 
-func (r *Repository) Disputes(ctx context.Context, booksID int64, transactionID uuid.UUID) ([]app.Dispute, error) {
-	rows, err := r.q.ListDisputes(ctx, ListDisputesParams{BooksID: booksID, TransactionID: transactionID})
+func (r *Repository) Disputes(
+	ctx context.Context,
+	booksID int64,
+	transactionID uuid.UUID,
+) ([]app.Dispute, error) {
+	rows, err := r.q.ListDisputes(
+		ctx,
+		ListDisputesParams{BooksID: booksID, TransactionID: transactionID},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +51,11 @@ func (r *Repository) Disputes(ctx context.Context, booksID int64, transactionID 
 	return out, nil
 }
 
-func (r *Repository) LockDispute(ctx context.Context, booksID int64, id uuid.UUID) (app.Dispute, error) {
+func (r *Repository) LockDispute(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (app.Dispute, error) {
 	row, err := r.q.GetDisputeForUpdate(ctx, GetDisputeForUpdateParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return app.Dispute{}, notFound(err)
@@ -48,7 +66,10 @@ func (r *Repository) LockDispute(ctx context.Context, booksID int64, id uuid.UUI
 
 func (r *Repository) ResolveDispute(ctx context.Context, d app.Dispute) (app.Dispute, error) {
 	row, err := r.q.ResolveDispute(ctx, ResolveDisputeParams{
-		ID: d.ID, ResolvedOn: d.ResolvedOn, Outcome: nullString(d.Outcome), RefundTransactionID: nullUUID(d.RefundTransactionID),
+		ID:                  d.ID,
+		ResolvedOn:          d.ResolvedOn,
+		Outcome:             nullString(d.Outcome),
+		RefundTransactionID: nullUUID(d.RefundTransactionID),
 	})
 	if err != nil {
 		return app.Dispute{}, err
@@ -59,7 +80,12 @@ func (r *Repository) ResolveDispute(ctx context.Context, d app.Dispute) (app.Dis
 
 func toDispute(row LedgerDispute) app.Dispute {
 	return app.Dispute{
-		ID: row.ID, BooksID: row.BooksID, TransactionID: row.TransactionID, OpenedOn: row.OpenedOn,
-		ResolvedOn: row.ResolvedOn, Outcome: deref(row.Outcome), RefundTransactionID: row.RefundTransactionID.UUID,
+		ID:                  row.ID,
+		BooksID:             row.BooksID,
+		TransactionID:       row.TransactionID,
+		OpenedOn:            row.OpenedOn,
+		ResolvedOn:          row.ResolvedOn,
+		Outcome:             deref(row.Outcome),
+		RefundTransactionID: row.RefundTransactionID.UUID,
 	}
 }

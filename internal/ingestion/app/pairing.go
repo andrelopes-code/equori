@@ -66,7 +66,12 @@ func (s *Service) pairLines(ctx context.Context, p *importPlan) error {
 // pairLine applies the outcomes of A218 to one line; it reports whether the line left the
 // lines to create. The counterparts are the transactions of rule 2 and the records in review
 // of rule 3.
-func (s *Service) pairLine(ctx context.Context, b *domain.Batch, rec *domain.ExternalRecord, line Line) (bool, error) {
+func (s *Service) pairLine(
+	ctx context.Context,
+	b *domain.Batch,
+	rec *domain.ExternalRecord,
+	line Line,
+) (bool, error) {
 	cps, parties, err := s.counterparts(ctx, b.BooksID, rec, line)
 	if err != nil {
 		return false, err
@@ -96,7 +101,9 @@ func (s *Service) pairLine(ctx context.Context, b *domain.Batch, rec *domain.Ext
 
 			version, err := s.ledger.PairLine(ctx, b.BooksID, txID, rec.AccountID, rec.ID)
 			if err == nil {
-				rec.State, rec.TransactionID, rec.Decision, rec.Undo = domain.StateMatched, txID, domain.DecisionPaired, domain.Undo{Version: version}
+				rec.State, rec.TransactionID, rec.Decision, rec.Undo = domain.StateMatched, txID, domain.DecisionPaired, domain.Undo{
+					Version: version,
+				}
 
 				return true, nil
 			}
@@ -118,7 +125,12 @@ func (s *Service) pairLine(ctx context.Context, b *domain.Batch, rec *domain.Ext
 
 // pairingTransaction returns the transaction the line pairs with. The record in review of rule 3
 // first gets its transaction (A218 rule 2); false when it changed or the ledger refused its line.
-func (s *Service) pairingTransaction(ctx context.Context, b *domain.Batch, cps []Counterpart, reviews []domain.ExternalRecord) (uuid.UUID, bool, error) {
+func (s *Service) pairingTransaction(
+	ctx context.Context,
+	b *domain.Batch,
+	cps []Counterpart,
+	reviews []domain.ExternalRecord,
+) (uuid.UUID, bool, error) {
 	if len(reviews) == 0 {
 		return cps[0].TransactionID, true, nil
 	}
@@ -141,8 +153,12 @@ func (s *Service) pairingTransaction(ctx context.Context, b *domain.Batch, cps [
 	}
 
 	line := Line{
-		AccountID: o.AccountID, Currency: money.Currency(b.Currency), Date: o.Date, Amount: o.Amount,
-		Description: truncate(o.Description), Unclassified: true,
+		AccountID:    o.AccountID,
+		Currency:     money.Currency(b.Currency),
+		Date:         o.Date,
+		Amount:       o.Amount,
+		Description:  truncate(o.Description),
+		Unclassified: true,
 	}
 
 	ids, err := s.ledger.RecordImported(ctx, b.BooksID, []NewLine{{RecordID: o.ID, Line: line}})
@@ -161,14 +177,27 @@ func (s *Service) pairingTransaction(ctx context.Context, b *domain.Batch, cps [
 
 // transferReviews lists the records in review transfer of other accounts that A216 rule 3 keeps:
 // both they and the line carry the counterparty holder.
-func (s *Service) transferReviews(ctx context.Context, booksID int64, rec *domain.ExternalRecord, line Line) ([]domain.ExternalRecord, error) {
+func (s *Service) transferReviews(
+	ctx context.Context,
+	booksID int64,
+	rec *domain.ExternalRecord,
+	line Line,
+) ([]domain.ExternalRecord, error) {
 	if rec.Counterparty != domain.CounterpartyHolder {
 		return nil, nil
 	}
 
 	window := time.Duration(domain.PairingWindowDays) * 24 * time.Hour
 
-	reviews, err := s.repo.TransferReviews(ctx, booksID, rec.AccountID, -rec.Amount, string(line.Currency), rec.Date.Add(-window), rec.Date.Add(window))
+	reviews, err := s.repo.TransferReviews(
+		ctx,
+		booksID,
+		rec.AccountID,
+		-rec.Amount,
+		string(line.Currency),
+		rec.Date.Add(-window),
+		rec.Date.Add(window),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +209,12 @@ func (s *Service) transferReviews(ctx context.Context, booksID int64, rec *domai
 
 // counterparts lists the counterparts of the line that A216 rule 4 keeps, with the counterparty
 // of each one's record.
-func (s *Service) counterparts(ctx context.Context, booksID int64, rec *domain.ExternalRecord, line Line) ([]Counterpart, map[uuid.UUID]string, error) {
+func (s *Service) counterparts(
+	ctx context.Context,
+	booksID int64,
+	rec *domain.ExternalRecord,
+	line Line,
+) ([]Counterpart, map[uuid.UUID]string, error) {
 	cps, err := s.ledger.Counterparts(ctx, booksID, line)
 	if err != nil || len(cps) == 0 {
 		return nil, nil, err

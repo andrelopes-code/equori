@@ -23,7 +23,12 @@ type window struct {
 // of the index (R20); its rates are those dated in [A, B). ok is false, with the reason on the
 // report, when the tree held no money, recorded no yield, one credit only, or no credit after A
 // within the rates.
-func (p period) comparedWindow(start int64, ends []domain.Subperiod, dates []time.Time, rates []IndexRate) (window, bool) {
+func (p period) comparedWindow(
+	start int64,
+	ends []domain.Subperiod,
+	dates []time.Time,
+	rates []IndexRate,
+) (window, bool) {
 	since, ok := firstHeldDay(p.from, start, ends, dates)
 	if !ok {
 		p.unavailable(ReasonNothingHeld)
@@ -87,7 +92,13 @@ func (p period) recordedWindow(w window, since time.Time, rates []IndexRate) (wi
 // on or after it, and that subperiod held money when its start value was not 0 (R14). With
 // endOfDay, the day counts when the tree holds money at the end of it, the rate of a day being
 // earned by the balance of its end (R20); the day before from is then the day of the opening value.
-func heldDays(from time.Time, start int64, ends []domain.Subperiod, dates []time.Time, endOfDay bool) func(time.Time) bool {
+func heldDays(
+	from time.Time,
+	start int64,
+	ends []domain.Subperiod,
+	dates []time.Time,
+	endOfDay bool,
+) func(time.Time) bool {
 	return func(day time.Time) bool {
 		if endOfDay && day.Equal(from.AddDate(0, 0, -1)) {
 			return start != 0
@@ -130,7 +141,12 @@ func heldMonth(first time.Time, held func(time.Time) bool) bool {
 // firstHeldDay is the first day of the period the tree held money: from when it held money at the
 // end of from − 1, else the day after the first subperiod that ends with money. ok is false when
 // no subperiod before the last one ends with money.
-func firstHeldDay(from time.Time, start int64, ends []domain.Subperiod, dates []time.Time) (time.Time, bool) {
+func firstHeldDay(
+	from time.Time,
+	start int64,
+	ends []domain.Subperiod,
+	dates []time.Time,
+) (time.Time, bool) {
 	if start != 0 {
 		return from, true
 	}

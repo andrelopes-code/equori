@@ -203,7 +203,14 @@ func (s *Service) copyStep(ctx context.Context, now time.Time, src string) error
 	state, name, cause := s.writeCopy(settings, src)
 	if state != domain.CopyOK {
 		if cause != nil {
-			s.log.WarnContext(ctx, "encrypted copy not written", "code", string(state), "error", cause)
+			s.log.WarnContext(
+				ctx,
+				"encrypted copy not written",
+				"code",
+				string(state),
+				"error",
+				cause,
+			)
 		}
 
 		return s.repo.SaveCopyAttempt(ctx, state, now, nil, nil)
@@ -218,7 +225,10 @@ func (s *Service) copyStep(ctx context.Context, now time.Time, src string) error
 
 // writeCopy returns the state of the attempt and the file name of the copy; cause is set for
 // the states that point at a fault.
-func (s *Service) writeCopy(settings domain.Settings, src string) (state domain.CopyState, name string, cause error) {
+func (s *Service) writeCopy(
+	settings domain.Settings,
+	src string,
+) (state domain.CopyState, name string, cause error) {
 	if s.cfg.CopyDir == "" {
 		return domain.CopyFolderUnset, "", nil
 	}

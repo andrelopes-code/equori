@@ -17,9 +17,19 @@ func (r *Repository) Settings(ctx context.Context, booksID int64) (app.Settings,
 }
 
 func (r *Repository) SaveSettings(ctx context.Context, s app.Settings) error {
-	return r.q.UpsertSettings(ctx, UpsertSettingsParams{BooksID: s.BooksID, BaseCurrency: string(s.BaseCurrency)})
+	return r.q.UpsertSettings(
+		ctx,
+		UpsertSettingsParams{BooksID: s.BooksID, BaseCurrency: string(s.BaseCurrency)},
+	)
 }
 
-func (r *Repository) SetSystemAccountsInstrument(ctx context.Context, booksID int64, c money.Currency) error {
-	return r.q.SetSystemAccountsInstrument(ctx, SetSystemAccountsInstrumentParams{BooksID: booksID, Instrument: string(c)})
+func (r *Repository) SetSystemAccountsInstrument(
+	ctx context.Context,
+	booksID int64,
+	c money.Currency,
+) error {
+	return r.q.SetSystemAccountsInstrument(
+		ctx,
+		SetSystemAccountsInstrumentParams{BooksID: booksID, Instrument: string(c)},
+	)
 }

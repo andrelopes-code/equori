@@ -24,14 +24,35 @@ func newFixture(t *testing.T, opts ...apitest.Option) fixture {
 	f := fixture{h: h}
 	inst := func(name string) string {
 		var out idOnly
-		h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": name}, http.StatusCreated, &out)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/institutions",
+			map[string]string{"name": name},
+			http.StatusCreated,
+			&out,
+		)
 
 		return out.ID
 	}
 	nubankInst := inst("Nubank")
-	f.nubank = h.Account("Nubank", "asset", "checking", map[string]any{"institution_id": nubankInst})
-	f.checking = h.Account("Nubank checking", "asset", "checking", map[string]any{"institution_id": nubankInst, "parent_id": f.nubank})
-	f.emergency = h.Account("Emergency fund", "asset", "reserve", map[string]any{"institution_id": nubankInst, "parent_id": f.nubank})
+	f.nubank = h.Account(
+		"Nubank",
+		"asset",
+		"checking",
+		map[string]any{"institution_id": nubankInst},
+	)
+	f.checking = h.Account(
+		"Nubank checking",
+		"asset",
+		"checking",
+		map[string]any{"institution_id": nubankInst, "parent_id": f.nubank},
+	)
+	f.emergency = h.Account(
+		"Emergency fund",
+		"asset",
+		"reserve",
+		map[string]any{"institution_id": nubankInst, "parent_id": f.nubank},
+	)
 	f.wallet = h.Account("Wallet", "asset", "cash", nil)
 	f.vr = h.Account("VR", "asset", "benefit", nil)
 	f.itauVisa = h.Card("Itaú Visa", 3, 10, "next")
@@ -83,7 +104,13 @@ func (f fixture) balance(t *testing.T, account, date, basis string) int64 {
 			Amount int64 `json:"amount"`
 		} `json:"balance"`
 	}
-	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/balance?date="+date+"&basis="+basis, nil, http.StatusOK, &out)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+account+"/balance?date="+date+"&basis="+basis,
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	return out.Balance.Amount
 }
@@ -107,16 +134,33 @@ func TestScenarios(t *testing.T) {
 		for _, pr := range apitest.Profiles() {
 			t.Run(pr.Name, func(t *testing.T) {
 				f := newFixture(t, apitest.As(pr))
-				f.h.Record("2026-10-05", f.h.Posting(f.checking, 500000), f.h.Posting(f.salary, -500000))
-				f.expectBalances(t, "2026-10-05", map[string]int64{f.checking: 500000, f.salary: -500000})
+				f.h.Record(
+					"2026-10-05",
+					f.h.Posting(f.checking, 500000),
+					f.h.Posting(f.salary, -500000),
+				)
+				f.expectBalances(
+					t,
+					"2026-10-05",
+					map[string]int64{f.checking: 500000, f.salary: -500000},
+				)
 			})
 		}
 	})
 
 	t.Run("S02", func(t *testing.T) {
 		f := newFixture(t)
-		f.h.Record("2026-10-05",
-			p(f.salary, -700000), p(f.inss, 70000), p(f.incomeTax, 90000), p(f.health, 20000), p(f.checking, 520000))
+		f.h.Record(
+			"2026-10-05",
+			p(
+				f.salary,
+				-700000,
+			),
+			p(f.inss, 70000),
+			p(f.incomeTax, 90000),
+			p(f.health, 20000),
+			p(f.checking, 520000),
+		)
 		f.expectBalances(t, "2026-10-05", map[string]int64{
 			f.salary: -700000, f.taxes: 160000, f.health: 20000, f.checking: 520000,
 		})
@@ -128,13 +172,28 @@ func TestScenarios(t *testing.T) {
 		f.h.Record("2026-10-10", p(f.checking, -38900), p(f.housing, 38900))
 		f.h.Record("2026-10-10", p(f.vr, -4590), p(f.restaurant, 4590))
 		f.h.Record("2026-10-10", p(f.wallet, -1800), p(f.transport, 1800))
-		f.h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-17", "postings": []map[string]any{
-			{"account_id": f.checking, "amount": apitest.BRL(-8000), "settled_on": "2026-10-19"},
-			p(f.food, 8000),
-		}}, http.StatusCreated, nil)
+		f.h.MustDo(
+			http.MethodPost,
+			"/api/v1/transactions",
+			map[string]any{"date": "2026-10-17", "postings": []map[string]any{
+				{
+					"account_id": f.checking,
+					"amount":     apitest.BRL(-8000),
+					"settled_on": "2026-10-19",
+				},
+				p(f.food, 8000),
+			}},
+			http.StatusCreated,
+			nil,
+		)
 
 		f.expectBalances(t, "2026-10-17", map[string]int64{
-			f.checking: -58900, f.vr: -4590, f.wallet: -1800, f.food: 24590, f.housing: 38900, f.transport: 1800,
+			f.checking:  -58900,
+			f.vr:        -4590,
+			f.wallet:    -1800,
+			f.food:      24590,
+			f.housing:   38900,
+			f.transport: 1800,
 		})
 
 		if got := f.balance(t, f.checking, "2026-10-18", "settled"); got != -50900 {
@@ -150,41 +209,79 @@ func TestScenarios(t *testing.T) {
 		f := newFixture(t)
 		f.h.Record("2026-10-01", p(f.checking, 500000), p(f.salary, -500000))
 		f.h.Record("2026-10-02", p(f.checking, -100000), p(f.emergency, 100000))
-		f.expectBalances(t, "2026-10-02", map[string]int64{f.nubank: 500000, f.checking: 400000, f.emergency: 100000})
+		f.expectBalances(
+			t,
+			"2026-10-02",
+			map[string]int64{f.nubank: 500000, f.checking: 400000, f.emergency: 100000},
+		)
 		f.h.Record("2026-10-03", p(f.checking, -30000), p(f.wallet, 30000))
-		f.expectBalances(t, "2026-10-03", map[string]int64{f.nubank: 470000, f.wallet: 30000, f.salary: -500000})
+		f.expectBalances(
+			t,
+			"2026-10-03",
+			map[string]int64{f.nubank: 470000, f.wallet: 30000, f.salary: -500000},
+		)
 	})
 
 	t.Run("S19", func(t *testing.T) {
 		f := newFixture(t)
 
-		dinner := f.h.Record("2026-10-12",
-			p(f.itauVisa, -30000), p(f.restaurant, 10000), p(f.receivableAna, 10000), p(f.receivableBruno, 10000))
-		if card := f.h.Transaction(dinner).Postings[0]; card.Statement != "2026-11" || card.CardRole != "charge" {
-			t.Errorf("dinner card posting billed on %q as %q, want 2026-11 charge", card.Statement, card.CardRole)
+		dinner := f.h.Record(
+			"2026-10-12",
+			p(
+				f.itauVisa,
+				-30000,
+			),
+			p(f.restaurant, 10000),
+			p(f.receivableAna, 10000),
+			p(f.receivableBruno, 10000),
+		)
+		if card := f.h.Transaction(dinner).Postings[0]; card.Statement != "2026-11" ||
+			card.CardRole != "charge" {
+			t.Errorf(
+				"dinner card posting billed on %q as %q, want 2026-11 charge",
+				card.Statement,
+				card.CardRole,
+			)
 		}
 
 		f.h.Record("2026-10-13", p(f.checking, 10000), p(f.receivableAna, -10000))
 		f.expectBalances(t, "2026-10-13", map[string]int64{
-			f.itauVisa: -30000, f.restaurant: 10000, f.receivableAna: 0, f.receivableBruno: 10000, f.checking: 10000,
+			f.itauVisa:        -30000,
+			f.restaurant:      10000,
+			f.receivableAna:   0,
+			f.receivableBruno: 10000,
+			f.checking:        10000,
 		})
 	})
 
 	t.Run("S20", func(t *testing.T) {
 		f := newFixture(t)
 		f.h.Record("2026-10-01", p(f.checking, -100000), p(f.loanToAna, 100000))
-		f.h.Record("2026-11-01", p(f.checking, 105000), p(f.loanToAna, -100000), p(f.interestIncome, -5000))
+		f.h.Record(
+			"2026-11-01",
+			p(f.checking, 105000),
+			p(f.loanToAna, -100000),
+			p(f.interestIncome, -5000),
+		)
 		f.h.Record("2026-10-01", p(f.checking, 1000000), p(f.personal, -1000000))
 		f.h.Record("2026-11-05", p(f.checking, -125000), p(f.personal, 90000), p(f.interest, 35000))
 		f.expectBalances(t, "2026-11-30", map[string]int64{
-			f.loanToAna: 0, f.interestIncome: -5000, f.personal: -910000, f.interest: 35000, f.checking: 880000,
+			f.loanToAna:      0,
+			f.interestIncome: -5000,
+			f.personal:       -910000,
+			f.interest:       35000,
+			f.checking:       880000,
 		})
 	})
 
 	t.Run("S23", func(t *testing.T) {
 		f := newFixture(t)
 		f.h.Record("2026-01-01", p(f.checking, 124055), p(f.openingBalances, -124055))
-		f.expectBalances(t, "2026-01-01", map[string]int64{f.checking: 124055, f.openingBalances: -124055})
+		f.expectBalances(
+			t,
+			"2026-01-01",
+			map[string]int64{f.checking: 124055, f.openingBalances: -124055},
+		)
 		f.expectBalances(t, "2025-12-31", map[string]int64{f.checking: 0})
 	})
 }

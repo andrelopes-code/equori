@@ -28,7 +28,13 @@ func answer(text string) llmtest.Step {
 func (b books) suggest(t *testing.T, items ...map[string]string) suggestionsView {
 	t.Helper()
 	var out suggestionsView
-	b.h.MustDo(http.MethodPost, "/api/v1/capture/suggestions", map[string]any{"items": items}, http.StatusOK, &out)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/capture/suggestions",
+		map[string]any{"items": items},
+		http.StatusOK,
+		&out,
+	)
 
 	return out
 }
@@ -42,15 +48,25 @@ func item(description, kind string) map[string]string {
 func TestSuggestCategories(t *testing.T) {
 	t.Parallel()
 
-	provider := llmtest.New("aistudio",
+	provider := llmtest.New(
+		"aistudio",
 		// Options in class and path order: 1 Supermarket, 2 Transport (expense).
-		answer(`{"items":[{"description":1,"category":1},{"description":2,"category":2},{"description":3,"category":9}]}`),
+		answer(
+			`{"items":[{"description":1,"category":1},{"description":2,"category":2},{"description":3,"category":9}]}`,
+		),
 	)
 	b := newBooks(t, apitest.LLM(provider))
 
-	got := b.suggest(t, item("Padaria São João", "expense"), item("Freela", "income"), item("Cinema", "expense"))
-	if !got.Available || len(got.Items) != 3 || got.Items[0].CategoryID != b.supermarket || got.Items[0].Source != "model" ||
-		got.Items[1].CategoryID != "" || got.Items[2].CategoryID != "" {
+	got := b.suggest(
+		t,
+		item("Padaria São João", "expense"),
+		item("Freela", "income"),
+		item("Cinema", "expense"),
+	)
+	if !got.Available || len(got.Items) != 3 || got.Items[0].CategoryID != b.supermarket ||
+		got.Items[0].Source != "model" ||
+		got.Items[1].CategoryID != "" ||
+		got.Items[2].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
 
@@ -72,9 +88,16 @@ func TestSuggestCategories(t *testing.T) {
 
 	// Kept answers, a category and two "none", are served without a call; the provider has no
 	// step left, so a call would fail the request.
-	again := b.suggest(t, item("padaria sao joao", "expense"), item("FREELA", "income"), item("cinema", "expense"))
-	if !again.Available || again.Items[0].CategoryID != b.supermarket || again.Items[0].Source != "kept" ||
-		again.Items[1].CategoryID != "" || again.Items[2].CategoryID != "" {
+	again := b.suggest(
+		t,
+		item("padaria sao joao", "expense"),
+		item("FREELA", "income"),
+		item("cinema", "expense"),
+	)
+	if !again.Available || again.Items[0].CategoryID != b.supermarket ||
+		again.Items[0].Source != "kept" ||
+		again.Items[1].CategoryID != "" ||
+		again.Items[2].CategoryID != "" {
 		t.Fatalf("kept = %+v", again)
 	}
 
@@ -92,8 +115,12 @@ func TestSuggestCategoriesWithoutModel(t *testing.T) {
 		t.Fatalf("suggestions = %+v", got)
 	}
 
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/suggestions", map[string]any{"items": []any{}}),
-		http.StatusBadRequest, "invalid_request", "items")
+	b.h.ExpectProblem(
+		b.h.Do(http.MethodPost, "/api/v1/capture/suggestions", map[string]any{"items": []any{}}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"items",
+	)
 }
 
 // A quota refusal keeps nothing; while the target cools down the answer stays unavailable.
@@ -105,7 +132,11 @@ func TestSuggestCategoriesAfterQuota(t *testing.T) {
 	)
 
 	b := newBooks(t, apitest.LLM(provider))
-	if got := b.suggest(t, item("Padaria", "expense")); got.Available || got.Items[0].CategoryID != "" {
+	if got := b.suggest(
+		t,
+		item("Padaria", "expense"),
+	); got.Available ||
+		got.Items[0].CategoryID != "" {
 		t.Fatalf("suggestions = %+v", got)
 	}
 

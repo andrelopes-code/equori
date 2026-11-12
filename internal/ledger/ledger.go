@@ -26,9 +26,24 @@ type Module struct {
 	svc  *app.Service
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, md MarketData, profiles Profiles, clk clock.Clock, log *slog.Logger) *Module {
+func New(
+	pool *pgxpool.Pool,
+	dispatcher *outbox.Dispatcher,
+	md MarketData,
+	profiles Profiles,
+	clk clock.Clock,
+	log *slog.Logger,
+) *Module {
 	ins := &instruments{md: md, cache: map[money.Currency]app.Instrument{}}
-	svc := app.NewService(postgres.NewRepository(pool, ins), clk, calendarAdapter{md}, ins, pricesAdapter{md}, profiles, regionDefaults{})
+	svc := app.NewService(
+		postgres.NewRepository(pool, ins),
+		clk,
+		calendarAdapter{md},
+		ins,
+		pricesAdapter{md},
+		profiles,
+		regionDefaults{},
+	)
 
 	dispatcher.Subscribe("ledger-provisioning", "identity.books_created.v1", provision)
 	// A139: a change on a card may close a reported statement's difference; the bank sends the
@@ -53,5 +68,7 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 // BodyLimits raises the request body limit of attachment uploads: 10 MiB of content
 // plus the multipart framing (N26).
 func (m *Module) BodyLimits() []httpserver.BodyLimit {
-	return []httpserver.BodyLimit{{Pattern: "POST /api/v1/transactions/{id}/attachments", Bytes: 11 << 20}}
+	return []httpserver.BodyLimit{
+		{Pattern: "POST /api/v1/transactions/{id}/attachments", Bytes: 11 << 20},
+	}
 }

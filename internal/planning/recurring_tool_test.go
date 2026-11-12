@@ -55,7 +55,8 @@ func TestFindRecurringMonthlySeries(t *testing.T) {
 		t.Errorf("names = %+v", s)
 	}
 
-	if s.Frequency != "monthly" || s.Count != 3 || s.LastDate != "2026-10-20" || s.NextDate != "2026-11-20" {
+	if s.Frequency != "monthly" || s.Count != 3 || s.LastDate != "2026-10-20" ||
+		s.NextDate != "2026-11-20" {
 		t.Errorf("series = %+v", s)
 	}
 
@@ -102,8 +103,12 @@ func TestFindRecurringAtMostTwenty(t *testing.T) {
 	for i := range 21 {
 		for _, date := range []string{"2026-08-20", "2026-09-20", "2026-10-20"} {
 			f.h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
-				"date": date, "description": fmt.Sprintf("service %02d", i),
-				"postings": []any{apitest.Posting(f.checking, -1000), apitest.Posting(f.rent, 1000)},
+				"date":        date,
+				"description": fmt.Sprintf("service %02d", i),
+				"postings": []any{
+					apitest.Posting(f.checking, -1000),
+					apitest.Posting(f.rent, 1000),
+				},
 			}, http.StatusCreated, nil)
 		}
 	}

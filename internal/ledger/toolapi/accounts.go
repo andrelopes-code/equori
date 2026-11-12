@@ -13,7 +13,7 @@ import (
 )
 
 type listAccountsIn struct {
-	Class         accountClass `json:"class,omitzero" jsonschema:"keep only accounts of this class; income and expense accounts are the categories of transactions"`
+	Class         accountClass `json:"class,omitzero"          jsonschema:"keep only accounts of this class; income and expense accounts are the categories of transactions"`
 	IncludeClosed bool         `json:"include_closed,omitzero" jsonschema:"also list closed accounts"`
 	tool.PageArgs
 }
@@ -22,17 +22,17 @@ type accountView struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
 	Class           string `json:"class"`
-	Kind            string `json:"kind,omitzero" jsonschema:"kind of an asset or liability account, such as checking or credit_card"`
-	Currency        string `json:"currency" jsonschema:"currency or instrument code of the account"`
+	Kind            string `json:"kind,omitzero"             jsonschema:"kind of an asset or liability account, such as checking or credit_card"`
+	Currency        string `json:"currency"                  jsonschema:"currency or instrument code of the account"`
 	ParentID        string `json:"parent_id,omitzero"`
 	ParentName      string `json:"parent_name,omitzero"`
 	InstitutionName string `json:"institution_name,omitzero"`
-	SystemRole      string `json:"system_role,omitzero" jsonschema:"set on accounts the ledger creates, such as uncategorized_expense"`
+	SystemRole      string `json:"system_role,omitzero"      jsonschema:"set on accounts the ledger creates, such as uncategorized_expense"`
 	Closed          bool   `json:"closed,omitzero"`
 }
 
 type listAccountsOut struct {
-	BaseCurrency string        `json:"base_currency" jsonschema:"currency of the book's totals"`
+	BaseCurrency string        `json:"base_currency"        jsonschema:"currency of the book's totals"`
 	Accounts     []accountView `json:"accounts"`
 	NextCursor   string        `json:"next_cursor,omitzero" jsonschema:"present when more accounts follow; pass it as cursor"`
 }
@@ -75,7 +75,11 @@ func runListAccounts(
 	views := buildAccountViews(all, byID, names, in)
 
 	out := listAccountsOut{BaseCurrency: string(settings.BaseCurrency)}
-	out.Accounts, out.NextCursor, err = tool.PageOf(views, func(v accountView) string { return v.ID }, in.PageArgs)
+	out.Accounts, out.NextCursor, err = tool.PageOf(
+		views,
+		func(v accountView) string { return v.ID },
+		in.PageArgs,
+	)
 
 	return out, err
 }
@@ -110,7 +114,8 @@ func buildAccountViews(
 ) []accountView {
 	views := []accountView{}
 	for _, a := range all {
-		if (in.Class != "" && string(a.Class) != string(in.Class)) || (a.ClosedOn != nil && !in.IncludeClosed) {
+		if (in.Class != "" && string(a.Class) != string(in.Class)) ||
+			(a.ClosedOn != nil && !in.IncludeClosed) {
 			continue
 		}
 
@@ -140,7 +145,7 @@ type balanceClass string
 func (balanceClass) Values() []string { return []string{"asset", "liability", "equity"} }
 
 type getBalancesIn struct {
-	Date  tool.Date    `json:"date,omitzero" jsonschema:"balances at the end of this date; today when absent"`
+	Date  tool.Date    `json:"date,omitzero"  jsonschema:"balances at the end of this date; today when absent"`
 	Basis basis        `json:"basis,omitzero" jsonschema:"booked places a posting at the transaction date, settled at the institution's settlement date; booked when absent"`
 	Class balanceClass `json:"class,omitzero" jsonschema:"keep only accounts of this class"`
 	tool.PageArgs
@@ -203,7 +208,11 @@ func runGetBalances(
 	views := buildBalanceViews(all, amounts, in)
 
 	out := getBalancesOut{Date: tool.DateOf(date), Basis: string(b)}
-	out.Balances, out.NextCursor, err = tool.PageOf(views, func(v balanceView) string { return v.AccountID }, in.PageArgs)
+	out.Balances, out.NextCursor, err = tool.PageOf(
+		views,
+		func(v balanceView) string { return v.AccountID },
+		in.PageArgs,
+	)
 
 	return out, err
 }

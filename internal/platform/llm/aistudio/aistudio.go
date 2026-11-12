@@ -31,7 +31,11 @@ func New(baseURL, apiKey string, client *http.Client) *Provider {
 
 func (p *Provider) Name() string { return name }
 
-func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) (llm.Response, error) {
+func (p *Provider) Generate(
+	ctx context.Context,
+	model string,
+	req llm.Request,
+) (llm.Response, error) {
 	resp, err := p.post(ctx, model, ":generateContent", req)
 	if err != nil {
 		return llm.Response{}, err
@@ -187,7 +191,11 @@ func mergePart(parts []part, np part) []part {
 }
 
 // post sends req to the model's method and returns a 200 response, whose body the caller closes.
-func (p *Provider) post(ctx context.Context, model, method string, req llm.Request) (*http.Response, error) {
+func (p *Provider) post(
+	ctx context.Context,
+	model, method string,
+	req llm.Request,
+) (*http.Response, error) {
 	body, err := json.Marshal(toWire(req))
 	if err != nil {
 		return nil, fmt.Errorf("encode request: %w", err)
@@ -195,7 +203,12 @@ func (p *Provider) post(ctx context.Context, model, method string, req llm.Reque
 
 	endpoint := p.baseURL + "/v1beta/models/" + url.PathEscape(model) + method
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
+	httpReq, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		endpoint,
+		bytes.NewReader(body),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}
@@ -227,7 +240,12 @@ func (p *Provider) post(ctx context.Context, model, method string, req llm.Reque
 // Models returns the IDs of the models that serve generateContent, sorted.
 func (p *Provider) Models(ctx context.Context) ([]string, error) {
 	// pageSize 1000 is the API maximum, above the number of listed models.
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, p.baseURL+"/v1beta/models?pageSize=1000", nil)
+	httpReq, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		p.baseURL+"/v1beta/models?pageSize=1000",
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("build request: %w", err)
 	}

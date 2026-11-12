@@ -28,8 +28,17 @@ func manageInstrument(svc Service) tool.Tool {
 }
 
 func termsText(t domain.Terms) string {
-	return fmt.Sprintf("issued %s, matures %s, index %q at %d bp plus %d bp, %s",
-		t.IssuedOn.Format(time.DateOnly), t.MaturesOn.Format(time.DateOnly), t.IndexID, t.PercentOfIndexBP, t.SpreadBP, t.DayCount)
+	return fmt.Sprintf(
+		"issued %s, matures %s, index %q at %d bp plus %d bp, %s",
+		t.IssuedOn.Format(
+			time.DateOnly,
+		),
+		t.MaturesOn.Format(time.DateOnly),
+		t.IndexID,
+		t.PercentOfIndexBP,
+		t.SpreadBP,
+		t.DayCount,
+	)
 }
 
 // symbolsForEdit returns the symbols to send to EditInstrument: nil keeps the stored set.
@@ -51,19 +60,39 @@ func instrumentFactChanges(before, after domain.Instrument) []tool.Change {
 
 	text := tool.TextValue
 	if before.Name != after.Name && before.Name != "" {
-		changes = append(changes, tool.Change{Field: "name", Before: text(before.Name), After: text(after.Name)})
+		changes = append(
+			changes,
+			tool.Change{Field: "name", Before: text(before.Name), After: text(after.Name)},
+		)
 	}
 
 	if before.Exchange != after.Exchange {
-		changes = append(changes, tool.Change{Field: "exchange", Before: text(before.Exchange), After: text(after.Exchange)})
+		changes = append(
+			changes,
+			tool.Change{
+				Field:  "exchange",
+				Before: text(before.Exchange),
+				After:  text(after.Exchange),
+			},
+		)
 	}
 
 	if before.Subtype != after.Subtype {
-		changes = append(changes, tool.Change{Field: "subtype", Before: text(before.Subtype), After: text(after.Subtype)})
+		changes = append(
+			changes,
+			tool.Change{Field: "subtype", Before: text(before.Subtype), After: text(after.Subtype)},
+		)
 	}
 
 	if !maps.Equal(before.Symbols, after.Symbols) {
-		changes = append(changes, tool.Change{Field: "symbols", Before: text(symbolsText(before.Symbols)), After: text(symbolsText(after.Symbols))})
+		changes = append(
+			changes,
+			tool.Change{
+				Field:  "symbols",
+				Before: text(symbolsText(before.Symbols)),
+				After:  text(symbolsText(after.Symbols)),
+			},
+		)
 	}
 
 	return changes

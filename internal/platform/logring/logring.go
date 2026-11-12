@@ -100,7 +100,10 @@ func (r *Ring) keep(rec slog.Record) {
 	r.buf.mu.Lock()
 	defer r.buf.mu.Unlock()
 
-	r.buf.records = append(r.buf.records, Record{Time: rec.Time, Level: rec.Level, Message: rec.Message, Attrs: attrs})
+	r.buf.records = append(
+		r.buf.records,
+		Record{Time: rec.Time, Level: rec.Level, Message: rec.Message, Attrs: attrs},
+	)
 	if extra := len(r.buf.records) - r.buf.size; extra > 0 {
 		r.buf.records = slices.Delete(r.buf.records, 0, extra)
 	}

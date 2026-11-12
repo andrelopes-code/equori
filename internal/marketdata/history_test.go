@@ -23,7 +23,13 @@ func TestS357EnableLoadsTwentyYears(t *testing.T) {
 
 	h, _ := ptaxHarness(t)
 
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 
 	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2006-11-09 false ")
 
@@ -38,11 +44,23 @@ func TestS359SameHistoryTwice(t *testing.T) {
 	t.Parallel()
 
 	h, p := ptaxHarness(t)
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 	h.App.Marketdata.TickFeeds(t.Context())
 	p.take()
 
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 	h.App.Marketdata.TickFeeds(t.Context())
 
 	assertRows(t, usdCount(h, ""), "1468")
@@ -59,7 +77,13 @@ func TestS360HistoryFailureStaysPending(t *testing.T) {
 
 	h, p := ptaxHarness(t)
 	p.setFail("11-09-2006")
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
@@ -78,10 +102,22 @@ func TestS358B3YearFiles(t *testing.T) {
 	t.Parallel()
 
 	b := &b3Fake{years: map[string][]byte{
-		"2021": yearFile("2021", cotahistRecord("20211108", "PETR4", "010", 2850), cotahistRecord("20211110", "PETR4", "010", 2900)),
-		"2022": yearFile("2022", cotahistRecord("20220615", "PETR4", "010", 3010), cotahistRecord("20220615", "PETR4", "070", 3999)),
+		"2021": yearFile(
+			"2021",
+			cotahistRecord("20211108", "PETR4", "010", 2850),
+			cotahistRecord("20211110", "PETR4", "010", 2900),
+		),
+		"2022": yearFile(
+			"2022",
+			cotahistRecord("20220615", "PETR4", "010", 3010),
+			cotahistRecord("20220615", "PETR4", "070", 3999),
+		),
 		"2023": yearFile("2023", cotahistRecord("20230301", "PETR4", "010", 2512)),
-		"2024": yearFile("2024", cotahistRecord("20241230", "PETR4", "010", 3699), cotahistRecord("20241230", "VALE3", "010", 6100)),
+		"2024": yearFile(
+			"2024",
+			cotahistRecord("20241230", "PETR4", "010", 3699),
+			cotahistRecord("20241230", "VALE3", "010", 6100),
+		),
 		"2025": yearFile("2025", cotahistRecord("20250701", "PETR4", "010", 3150)),
 		"2026": yearFile("2026", cotahistRecord("20261106", "PETR4", "010", 3245)),
 	}}
@@ -91,7 +127,12 @@ func TestS358B3YearFiles(t *testing.T) {
 		map[string]string{"b3_consolidated": srv.URL + "/b3c", "b3_cotahist": srv.URL + "/b3"}))
 
 	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
-		"code": "PETR4", "type": "stock", "scale": 0, "name": "Petrobras PN", "quote_currency": "BRL", "exchange": "BVMF",
+		"code":           "PETR4",
+		"type":           "stock",
+		"scale":          0,
+		"name":           "Petrobras PN",
+		"quote_currency": "BRL",
+		"exchange":       "BVMF",
 	}, http.StatusCreated, nil)
 
 	assertRows(t, historyRow(h, "b3_consolidated", "PETR4"), "2021-11-09 false ")
@@ -113,8 +154,11 @@ func TestS358B3YearFiles(t *testing.T) {
 		t.Fatalf("requests of b3_consolidated = %d", n)
 	}
 
-	assertRows(t,
-		h.Rows("SELECT date::text, trim_scale(value)::text, source FROM marketdata_price WHERE instrument = 'PETR4' ORDER BY date"),
+	assertRows(
+		t,
+		h.Rows(
+			"SELECT date::text, trim_scale(value)::text, source FROM marketdata_price WHERE instrument = 'PETR4' ORDER BY date",
+		),
 		"2021-11-10 29 b3_cotahist",
 		"2022-06-15 30.1 b3_cotahist",
 		"2023-03-01 25.12 b3_cotahist",
@@ -132,14 +176,24 @@ func TestDefineRequestsHistory(t *testing.T) {
 	f := &feedServer{}
 	srv := httptest.NewServer(f)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"b3_cotahist"}, feedURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-01"),
+		apitest.PriceFeeds([]string{"b3_cotahist"}, feedURLs(srv)),
+	)
 
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 
 	assertRows(t, historyRow(h, "b3_cotahist", "MXRF11"), "2021-11-01 false ")
 	assertRows(t, historyRow(h, "bcb_ptax", "MXRF11"))
 
-	h.MustDo(http.MethodPatch, "/api/v1/instruments/MXRF11", map[string]any{"name": "Maxi Renda", "exchange": "BVMF"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/instruments/MXRF11",
+		map[string]any{"name": "Maxi Renda", "exchange": "BVMF"},
+		http.StatusOK,
+		nil,
+	)
 
 	assertRows(t, historyRow(h, "b3_cotahist", "MXRF11"), "2021-11-01 false ")
 }
@@ -160,7 +214,13 @@ func TestHistoryRequestStartsTick(t *testing.T) {
 		close(done)
 	}()
 
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 
 	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2006-11-09 false ")
 
@@ -180,14 +240,32 @@ func TestS361LowerFromOnly(t *testing.T) {
 	t.Parallel()
 
 	h, _ := ptaxHarness(t)
-	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/bcb_ptax", map[string]bool{"enabled": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/bcb_ptax",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	h.MustDo(http.MethodPost, "/api/v1/instruments/USD/history", map[string]string{"from": "2010-01-01"}, http.StatusAccepted, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments/USD/history",
+		map[string]string{"from": "2010-01-01"},
+		http.StatusAccepted,
+		nil,
+	)
 
 	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2006-11-09 true ")
 
-	h.MustDo(http.MethodPost, "/api/v1/instruments/USD/history", map[string]string{"from": "2000-01-01"}, http.StatusAccepted, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments/USD/history",
+		map[string]string{"from": "2000-01-01"},
+		http.StatusAccepted,
+		nil,
+	)
 
 	assertRows(t, historyRow(h, "bcb_ptax", "USD"), "2000-01-01 false ")
 }
@@ -199,15 +277,38 @@ func TestS362NoSource(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-09"))
 	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
 
-	r := h.Do(http.MethodPost, "/api/v1/instruments/MXRF11/history", map[string]string{"from": "2020-01-01"})
+	r := h.Do(
+		http.MethodPost,
+		"/api/v1/instruments/MXRF11/history",
+		map[string]string{"from": "2020-01-01"},
+	)
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "no_source", "")
 
 	h, _ = seededPTAXHarness(t, "2026-11-09")
 	path := "/api/v1/instruments/USD/history"
 
-	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"from": "1899-12-31"}), http.StatusUnprocessableEntity, "validation_failed", "from")
-	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"from": "2026-11-10"}), http.StatusUnprocessableEntity, "validation_failed", "from")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/instruments/NOPE/history", map[string]string{"from": "2020-01-01"}), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, path, map[string]string{"from": "1899-12-31"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"from",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPost, path, map[string]string{"from": "2026-11-10"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"from",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/instruments/NOPE/history",
+			map[string]string{"from": "2020-01-01"},
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 // A222 MQ8: requesting history writes to the instance's market data, a writer role.
@@ -219,14 +320,24 @@ func TestRequestHistoryRoles(t *testing.T) {
 	body := map[string]string{"from": "2020-01-01"}
 
 	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
-	h.ExpectProblem(h.Call(reader, http.MethodPost, path, body), http.StatusForbidden, "book_role_required", "")
+	h.ExpectProblem(
+		h.Call(reader, http.MethodPost, path, body),
+		http.StatusForbidden,
+		"book_role_required",
+		"",
+	)
 
 	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
 	if r := h.Call(writer, http.MethodPost, path, body); r.Status != http.StatusAccepted {
 		t.Fatalf("writer status = %d: %s", r.Status, r.Body)
 	}
 
-	h.ExpectProblem(h.Call(&http.Client{}, http.MethodPost, path, body), http.StatusUnauthorized, "unauthenticated", "")
+	h.ExpectProblem(
+		h.Call(&http.Client{}, http.MethodPost, path, body),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 }
 
 // ptaxHarness runs an instance whose PTAX source answers the fixture of S357.
@@ -237,7 +348,11 @@ func ptaxHarness(t *testing.T) (*apitest.Harness, *ptaxFixture) {
 	srv := httptest.NewServer(p)
 	t.Cleanup(srv.Close)
 
-	h := apitest.New(t, apitest.Today("2026-11-09"), apitest.PriceFeeds(nil, map[string]string{"bcb_ptax": srv.URL + "/ptax"}))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-09"),
+		apitest.PriceFeeds(nil, map[string]string{"bcb_ptax": srv.URL + "/ptax"}),
+	)
 
 	return h, p
 }
@@ -250,17 +365,27 @@ func seededPTAXHarness(t *testing.T, today string) (*apitest.Harness, *ptaxFixtu
 	srv := httptest.NewServer(p)
 	t.Cleanup(srv.Close)
 
-	h := apitest.New(t, apitest.Today(today), apitest.PriceFeeds([]string{"bcb_ptax"}, map[string]string{"bcb_ptax": srv.URL + "/ptax"}))
+	h := apitest.New(
+		t,
+		apitest.Today(today),
+		apitest.PriceFeeds([]string{"bcb_ptax"}, map[string]string{"bcb_ptax": srv.URL + "/ptax"}),
+	)
 
 	return h, p
 }
 
 func usdCount(h *apitest.Harness, extra string) []string {
-	return h.Rows("SELECT count(*) FROM marketdata_price WHERE source = 'bcb_ptax' AND instrument = 'USD'" + extra)
+	return h.Rows(
+		"SELECT count(*) FROM marketdata_price WHERE source = 'bcb_ptax' AND instrument = 'USD'" + extra,
+	)
 }
 
 func historyRow(h *apitest.Harness, source, instrument string) []string {
-	return h.Rows("SELECT from_date::text, done_at IS NOT NULL, coalesce(error, '') FROM marketdata_history WHERE source = $1 AND instrument = $2", source, instrument)
+	return h.Rows(
+		"SELECT from_date::text, done_at IS NOT NULL, coalesce(error, '') FROM marketdata_history WHERE source = $1 AND instrument = $2",
+		source,
+		instrument,
+	)
 }
 
 func assertRows(t *testing.T, got []string, want ...string) {
@@ -438,7 +563,16 @@ func (b *b3Fake) take() []string {
 
 // cotahistRecord builds a 245-byte type 01 record of the B3 layout (SeriesHistoricas_Layout).
 func cotahistRecord(date, ticker, market string, close int64) string {
-	r := fmt.Sprintf("01%s02%-12s%s%-12s%-10s%-3s%-4s", date, ticker, market, "NAME", "CI", "", "R$")
+	r := fmt.Sprintf(
+		"01%s02%-12s%s%-12s%-10s%-3s%-4s",
+		date,
+		ticker,
+		market,
+		"NAME",
+		"CI",
+		"",
+		"R$",
+	)
 	r += fmt.Sprintf("%013d%013d%013d%013d%013d", close, close, close, close, close)
 
 	return r + strings.Repeat("0", 245-len(r))
@@ -448,7 +582,10 @@ func cotahistRecord(date, ticker, market string, close int64) string {
 func yearFile(year string, records ...string) []byte {
 	header := "00COTAHIST." + year + "BOVESPA " + year + "1231"
 	trailer := "99COTAHIST." + year + "BOVESPA " + year + "1231"
-	lines := append(append([]string{header + strings.Repeat(" ", 245-len(header))}, records...), trailer+strings.Repeat(" ", 245-len(trailer)))
+	lines := append(
+		append([]string{header + strings.Repeat(" ", 245-len(header))}, records...),
+		trailer+strings.Repeat(" ", 245-len(trailer)),
+	)
 
 	var buf bytes.Buffer
 

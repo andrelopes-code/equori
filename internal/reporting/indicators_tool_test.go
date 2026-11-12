@@ -48,5 +48,9 @@ func TestFinancialIndicatorsTool(t *testing.T) {
 		t.Fatalf("last month = %+v", last)
 	}
 
-	h.ExpectToolError(h.Tool("get_financial_indicators", map[string]any{"month": "2026-11"}), "invalid_request", "month")
+	h.ExpectToolError(
+		h.Tool("get_financial_indicators", map[string]any{"month": "2026-11"}),
+		"invalid_request",
+		"month",
+	)
 }

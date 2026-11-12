@@ -21,7 +21,9 @@ import (
 var (
 	ErrDumpAhead  = errors.New("the dump holds a migration this binary does not know")
 	ErrOldProgram = errors.New("pg_dump is older than the server")
-	ErrNoCreateDB = errors.New("restore recreates the database and needs a role that may create one")
+	ErrNoCreateDB = errors.New(
+		"restore recreates the database and needs a role that may create one",
+	)
 )
 
 // Dump writes pg_dump's custom format of the database to path, created with mode 0600 (B1).
@@ -52,13 +54,23 @@ func Dump(ctx context.Context, bin, dsn, path string) error {
 		return fmt.Errorf("remove %s: %w", partial, err)
 	}
 
-	f, err := os.OpenFile(partial, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600) //nolint:gosec // G304: the backup path is the owner's configuration.
+	f, err := os.OpenFile(
+		partial,
+		os.O_CREATE|os.O_EXCL|os.O_WRONLY,
+		0o600,
+	) //nolint:gosec // G304: the backup path is the owner's configuration.
 	if err != nil {
 		return fmt.Errorf("create %s: %w", partial, err)
 	}
 
 	var stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, program, "-Fc", "-d", dsn) //nolint:gosec // G204: the programs directory is the owner's configuration.
+	cmd := exec.CommandContext(
+		ctx,
+		program,
+		"-Fc",
+		"-d",
+		dsn,
+	) //nolint:gosec // G204: the programs directory is the owner's configuration.
 	cmd.Stdout, cmd.Stderr = f, &stderr
 
 	err = cmd.Run()
@@ -87,7 +99,8 @@ func serverMajor(ctx context.Context, dsn string) (int, error) {
 	defer func() { _ = conn.Close(ctx) }()
 
 	var num int
-	if err := conn.QueryRow(ctx, "SELECT current_setting('server_version_num')::int").Scan(&num); err != nil {
+	if err := conn.QueryRow(ctx, "SELECT current_setting('server_version_num')::int").
+		Scan(&num); err != nil {
 		return 0, fmt.Errorf("read server version: %w", err)
 	}
 
@@ -96,7 +109,10 @@ func serverMajor(ctx context.Context, dsn string) (int, error) {
 
 // DumpVersion reads the highest goose version from the dump's copy of goose_db_version.
 func DumpVersion(ctx context.Context, bin, path string) (int64, error) {
-	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--data-only", "--table=goose_db_version", "-f", "-", path).Output() //nolint:gosec // G204: as above.
+	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--data-only", "--table=goose_db_version", "-f", "-", path).
+		Output()
+
+		//nolint:gosec // G204: as above.
 	if err != nil {
 		return 0, fmt.Errorf("read goose_db_version of %s: %w", path, err)
 	}
@@ -146,7 +162,12 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 	}
 
 	if v > latest {
-		return fmt.Errorf("%w: dump at version %d, this binary knows up to %d", ErrDumpAhead, v, latest)
+		return fmt.Errorf(
+			"%w: dump at version %d, this binary knows up to %d",
+			ErrDumpAhead,
+			v,
+			latest,
+		)
 	}
 
 	cfg, err := pgx.ParseConfig(dsn)
@@ -166,7 +187,8 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 	// The drop comes before the create: a role that may drop its database but not create one would
 	// lose it, so the privilege is checked first.
 	var create bool
-	if err := conn.QueryRow(ctx, "SELECT rolcreatedb OR rolsuper FROM pg_roles WHERE rolname = current_user").Scan(&create); err != nil {
+	if err := conn.QueryRow(ctx, "SELECT rolcreatedb OR rolsuper FROM pg_roles WHERE rolname = current_user").
+		Scan(&create); err != nil {
 		return fmt.Errorf("read role privileges: %w", err)
 	}
 
@@ -178,11 +200,17 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 		return fmt.Errorf("drop database: %w", err)
 	}
 
-	if _, err := conn.Exec(ctx, "CREATE DATABASE "+name+" TEMPLATE template0 ENCODING 'UTF8' LOCALE_PROVIDER builtin BUILTIN_LOCALE 'C.UTF-8'"); err != nil {
+	if _, err := conn.Exec(
+		ctx,
+		"CREATE DATABASE "+name+" TEMPLATE template0 ENCODING 'UTF8' LOCALE_PROVIDER builtin BUILTIN_LOCALE 'C.UTF-8'",
+	); err != nil {
 		return fmt.Errorf("create database: %w", err)
 	}
 
-	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--no-owner", "--exit-on-error", "-d", dsn, path).CombinedOutput() //nolint:gosec // G204: as above.
+	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--no-owner", "--exit-on-error", "-d", dsn, path).
+		CombinedOutput()
+
+		//nolint:gosec // G204: as above.
 	if err != nil {
 		return fmt.Errorf("pg_restore: %w: %s", err, out)
 	}

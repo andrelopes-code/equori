@@ -32,7 +32,12 @@ func TestClusterBackupDoesNotMigrate(t *testing.T) {
 	}
 
 	pool := pgtest.Empty(t)
-	if err := postgres.MigrateTo(t.Context(), pool, 5, slog.New(slog.NewTextHandler(io.Discard, nil))); err != nil {
+	if err := postgres.MigrateTo(
+		t.Context(),
+		pool,
+		5,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,15 +93,24 @@ func TestClusterS214FailedBackupStopsMigration(t *testing.T) {
 	pool, cfg := externalAt(t, 5)
 
 	bin := t.TempDir()
-	if err := os.WriteFile(filepath.Join(bin, "postgres"), []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil { //nolint:gosec // G306: the script must be executable.
+	if err := os.WriteFile(
+		filepath.Join(bin, "postgres"),
+		[]byte("#!/bin/sh\nexit 0\n"),
+		0o755,
+	); err != nil { //nolint:gosec // G306: the script must be executable.
 		t.Fatal(err)
 	}
 
 	cfg.PostgresBin = bin
 
 	_, err := openDatabase(t.Context(), cfg, discardLogger(), true)
-	if err == nil || !strings.Contains(err.Error(), "back up before migrating into "+cfg.BackupDir) {
-		t.Fatalf("openDatabase error = %v; want it to contain %q", err, "back up before migrating into "+cfg.BackupDir)
+	if err == nil ||
+		!strings.Contains(err.Error(), "back up before migrating into "+cfg.BackupDir) {
+		t.Fatalf(
+			"openDatabase error = %v; want it to contain %q",
+			err,
+			"back up before migrating into "+cfg.BackupDir,
+		)
 	}
 
 	if current, _, err := postgres.Pending(t.Context(), pool); err != nil || current != 5 {
@@ -151,7 +165,11 @@ func TestClusterRestoreWrongCopyPassword(t *testing.T) {
 
 	err := restoreCommand([]string{copyFile})
 	if err == nil || err.Error() != "the copy password does not open this file" {
-		t.Fatalf("restoreCommand error = %v; want %q", err, "the copy password does not open this file")
+		t.Fatalf(
+			"restoreCommand error = %v; want %q",
+			err,
+			"the copy password does not open this file",
+		)
 	}
 
 	if n := keptRows(t, source); n != 1 {
@@ -264,7 +282,10 @@ func latestVersion(t *testing.T) int64 {
 func insertKept(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 
-	if _, err := pool.Exec(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'kept')`); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		`INSERT INTO identity_books (region, name) VALUES ('US', 'kept')`,
+	); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -273,7 +294,8 @@ func keptRows(t *testing.T, pool *pgxpool.Pool) int {
 	t.Helper()
 
 	var n int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_books WHERE name = 'kept'`).Scan(&n); err != nil {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_books WHERE name = 'kept'`).
+		Scan(&n); err != nil {
 		t.Fatal(err)
 	}
 

@@ -37,5 +37,6 @@ func rebuildSeries(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		}
 	}
 
-	return app.NewService(postgres.NewRepository(tx)).RebuildAccounts(ctx, e.BooksID, p.AccountIDs, from)
+	return app.NewService(postgres.NewRepository(tx)).
+		RebuildAccounts(ctx, e.BooksID, p.AccountIDs, from)
 }

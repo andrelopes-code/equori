@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) listInvitations(ctx context.Context, _ *http.Request, _ httpserver.None) (InvitationList, error) {
+func (s *Server) listInvitations(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (InvitationList, error) {
 	invitations, err := s.svc.Invitations(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return InvitationList{}, err
@@ -30,7 +34,13 @@ func (s *Server) createInvitation(
 	_ *http.Request,
 	in CreateInvitationJSONRequestBody,
 ) (Invitation, error) {
-	token, inv, err := s.svc.CreateInvitation(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), in.Email, auth.BookRole(in.Role))
+	token, inv, err := s.svc.CreateInvitation(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+		in.Email,
+		auth.BookRole(in.Role),
+	)
 	if err != nil {
 		return Invitation{}, err
 	}
@@ -46,7 +56,13 @@ func (s *Server) createAccountInvitation(
 	_ *http.Request,
 	in CreateAccountInvitationJSONRequestBody,
 ) (AccountInvitation, error) {
-	token, inv, err := s.svc.CreateAccountInvitation(ctx, auth.MustMemberID(ctx), in.Email, in.Region, money.Currency(deref(in.BaseCurrency)))
+	token, inv, err := s.svc.CreateAccountInvitation(
+		ctx,
+		auth.MustMemberID(ctx),
+		in.Email,
+		in.Region,
+		money.Currency(deref(in.BaseCurrency)),
+	)
 	if err != nil {
 		return AccountInvitation{}, err
 	}
@@ -60,7 +76,11 @@ func (s *Server) createAccountInvitation(
 	}, nil
 }
 
-func (s *Server) deleteInvitation(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+func (s *Server) deleteInvitation(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return httpserver.None{}, err
@@ -119,5 +139,11 @@ func (s *Server) acceptInvitation(w http.ResponseWriter, r *http.Request) {
 }
 
 func toAPIInvitation(inv domain.Invitation) Invitation {
-	return Invitation{Id: inv.ID, Email: inv.Email, Role: BookRole(inv.Role), CreatedAt: inv.CreatedAt, ExpiresAt: inv.ExpiresAt}
+	return Invitation{
+		Id:        inv.ID,
+		Email:     inv.Email,
+		Role:      BookRole(inv.Role),
+		CreatedAt: inv.CreatedAt,
+		ExpiresAt: inv.ExpiresAt,
+	}
 }

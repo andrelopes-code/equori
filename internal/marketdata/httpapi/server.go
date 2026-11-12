@@ -40,7 +40,11 @@ type Service interface {
 	Terms(ctx context.Context, code string) (domain.Terms, error)
 	RecordPrices(ctx context.Context, ps []domain.Price) error
 	ImportPrices(ctx context.Context, content []byte) (int, error)
-	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
+	ListPrices(
+		ctx context.Context,
+		instrument, quote money.Currency,
+		from, to time.Time,
+	) ([]domain.Price, error)
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
@@ -63,8 +67,18 @@ type Server struct {
 	errs      httpserver.ErrorWriter
 }
 
-func NewServer(holidays HolidayLister, calendars CalendarLister, svc Service, log *slog.Logger) *Server {
-	return &Server{holidays: holidays, calendars: calendars, svc: svc, errs: httpserver.ErrorWriter{Log: log, Map: ToProblem}}
+func NewServer(
+	holidays HolidayLister,
+	calendars CalendarLister,
+	svc Service,
+	log *slog.Logger,
+) *Server {
+	return &Server{
+		holidays:  holidays,
+		calendars: calendars,
+		svc:       svc,
+		errs:      httpserver.ErrorWriter{Log: log, Map: ToProblem},
+	}
 }
 
 // Register lists every route of the market data operations; each handler sits in its topic file.
@@ -112,7 +126,11 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/prices/import", s.importPrices)
 }
 
-func (s *Server) listHolidays(ctx context.Context, r *http.Request, _ httpserver.None) (HolidayList, error) {
+func (s *Server) listHolidays(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (HolidayList, error) {
 	params, err := httpserver.Query[ListHolidaysParams](r)
 	if err != nil {
 		return HolidayList{}, err
@@ -126,7 +144,11 @@ func (s *Server) listHolidays(ctx context.Context, r *http.Request, _ httpserver
 	return HolidayList{Items: hs}, nil
 }
 
-func (s *Server) listCalendars(ctx context.Context, _ *http.Request, _ httpserver.None) (CalendarList, error) {
+func (s *Server) listCalendars(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (CalendarList, error) {
 	list, err := s.calendars(ctx)
 	if err != nil {
 		return CalendarList{}, err
@@ -166,14 +188,26 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, domain.ErrUnknownFeed):
 		return problem.New(http.StatusNotFound, "not_found", "unknown feed"), true
 	case errors.Is(err, domain.ErrAdminRequired):
-		return problem.New(http.StatusForbidden, "admin_required", "only an admin changes the instance's market data feeds"), true
+		return problem.New(
+			http.StatusForbidden,
+			"admin_required",
+			"only an admin changes the instance's market data feeds",
+		), true
 	case errors.Is(err, domain.ErrRefreshRunning):
-		return problem.New(http.StatusConflict, "refresh_running", "a tick of the market data feeds is running"), true
+		return problem.New(
+			http.StatusConflict,
+			"refresh_running",
+			"a tick of the market data feeds is running",
+		), true
 	case errors.Is(err, domain.ErrUnofficialSource):
 		return problem.New(http.StatusUnprocessableEntity, "unofficial_source",
 			"the source is not official; enabling it needs accept_unofficial"), true
 	case errors.Is(err, domain.ErrNoSource):
-		return problem.New(http.StatusUnprocessableEntity, "no_source", "no enabled source quotes the instrument"), true
+		return problem.New(
+			http.StatusUnprocessableEntity,
+			"no_source",
+			"no enabled source quotes the instrument",
+		), true
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
 	case errors.Is(err, domain.ErrInstrumentInUse):

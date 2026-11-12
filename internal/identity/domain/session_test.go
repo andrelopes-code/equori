@@ -22,7 +22,8 @@ func TestNewSession(t *testing.T) {
 		t.Fatal("TokenHash does not match HashToken(token)")
 	}
 
-	if s.MemberID != 7 || s.BooksID != 9 || !s.CreatedAt.Equal(now) || !s.ExpiresAt.Equal(now.Add(SessionTTL)) {
+	if s.MemberID != 7 || s.BooksID != 9 || !s.CreatedAt.Equal(now) ||
+		!s.ExpiresAt.Equal(now.Add(SessionTTL)) {
 		t.Fatalf("unexpected session %+v", s)
 	}
 }

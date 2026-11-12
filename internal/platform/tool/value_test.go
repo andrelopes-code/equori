@@ -42,7 +42,11 @@ func TestDateJSON(t *testing.T) {
 	}
 
 	var w wrapper
-	if err := json.Unmarshal([]byte(`{"d":"2026-10-20"}`), &w); err != nil || !w.D.Equal(time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)) {
+	if err := json.Unmarshal(
+		[]byte(`{"d":"2026-10-20"}`),
+		&w,
+	); err != nil ||
+		!w.D.Equal(time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)) {
 		t.Errorf("unmarshal = %v, %v", w.D, err)
 	}
 
@@ -139,7 +143,8 @@ func TestOptionalBoolJSON(t *testing.T) {
 		t.Error("unmarshal of a string succeeded")
 	}
 
-	if s := schemaFor[wrapper](); s.err != nil || !strings.Contains(string(s.json), `"b":{"type":"boolean"}`) {
+	if s := schemaFor[wrapper](); s.err != nil ||
+		!strings.Contains(string(s.json), `"b":{"type":"boolean"}`) {
 		t.Errorf("schema = %s, %v", s.json, s.err)
 	}
 }

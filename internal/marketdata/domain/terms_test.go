@@ -14,7 +14,14 @@ func TestValidateWithoutBusinessDayIndex(t *testing.T) {
 		wantErr  bool
 		wantText string
 	}{
-		{"bus252 on an index of the set", "cdi", DayCountBus252, BusinessDayIndexes{"cdi"}, false, ""},
+		{
+			"bus252 on an index of the set",
+			"cdi",
+			DayCountBus252,
+			BusinessDayIndexes{"cdi"},
+			false,
+			"",
+		},
 		{
 			"bus252 on another index", "ipca", DayCountBus252, BusinessDayIndexes{"cdi"}, true,
 			"bus252 counts the business days of the cdi index; use act365",

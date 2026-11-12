@@ -64,7 +64,11 @@ func (s Source) Codes(ins []feed.Instrument) []money.Currency {
 // Fetch returns the close of each day in [from, to] for each code. A product the API refuses
 // (400 or 404) has no data; any other failure is a ScopeError joined into the returned error
 // while the next code still runs.
-func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (s Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var (
 		out  []feed.Quote
 		errs []error
@@ -157,7 +161,8 @@ func (s Source) fetchCode(
 		body, err := feed.Get(ctx, s.client, url)
 
 		var status *feed.StatusError
-		if errors.Is(err, feed.ErrNoData) || (errors.As(err, &status) && status.Code == http.StatusBadRequest) {
+		if errors.Is(err, feed.ErrNoData) ||
+			(errors.As(err, &status) && status.Code == http.StatusBadRequest) {
 			return out, nil
 		}
 

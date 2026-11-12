@@ -22,16 +22,25 @@ func (getPortfolioBy) Values() []string { return []string{"type", "currency", "i
 type getPortfolioInstrumentType string
 
 func (getPortfolioInstrumentType) Values() []string {
-	return []string{"currency", "stock", "etf", "reit", "depositary_receipt", "fixed_income", "fund", "crypto"}
+	return []string{
+		"currency",
+		"stock",
+		"etf",
+		"reit",
+		"depositary_receipt",
+		"fixed_income",
+		"fund",
+		"crypto",
+	}
 }
 
 type getPortfolioIn struct {
-	View           getPortfolioView           `json:"view" jsonschema:"what to return"`
-	Date           tool.Date                  `json:"date,omitzero" jsonschema:"for positions, allocation and net_worth: valuation date; today when absent"`
-	By             getPortfolioBy             `json:"by,omitzero" jsonschema:"for allocation: grouping"`
-	AccountID      string                     `json:"account_id,omitzero" jsonschema:"for return: account or brokerage from list_accounts"`
-	From           tool.Date                  `json:"from,omitzero" jsonschema:"for return: first date"`
-	To             tool.Date                  `json:"to,omitzero" jsonschema:"for return: last date"`
+	View           getPortfolioView           `json:"view"                     jsonschema:"what to return"`
+	Date           tool.Date                  `json:"date,omitzero"            jsonschema:"for positions, allocation and net_worth: valuation date; today when absent"`
+	By             getPortfolioBy             `json:"by,omitzero"              jsonschema:"for allocation: grouping"`
+	AccountID      string                     `json:"account_id,omitzero"      jsonschema:"for return: account or brokerage from list_accounts"`
+	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return: first date"`
+	To             tool.Date                  `json:"to,omitzero"              jsonschema:"for return: last date"`
 	InstrumentType getPortfolioInstrumentType `json:"instrument_type,omitzero" jsonschema:"for subtypes: instrument type"`
 }
 
@@ -57,19 +66,19 @@ type benchmarkView struct {
 	Index     string `json:"index"`
 	From      string `json:"from"`
 	Until     string `json:"until"`
-	ReturnBP  int    `json:"return_bp,omitzero" jsonschema:"time-weighted return up to until in basis points; absent when undefined or zero"`
+	ReturnBP  int    `json:"return_bp,omitzero"  jsonschema:"time-weighted return up to until in basis points; absent when undefined or zero"`
 	IndexBP   int    `json:"index_bp"`
 	PercentBP int    `json:"percent_bp,omitzero" jsonschema:"percent of the index that grows as much, 10000 is 100%; absent when undefined or zero"`
 
-	AnnualBP      int `json:"annual_bp,omitzero" jsonschema:"return_bp as a rate a year on the index's year basis; absent when undefined or zero"`
+	AnnualBP      int `json:"annual_bp,omitzero"       jsonschema:"return_bp as a rate a year on the index's year basis; absent when undefined or zero"`
 	IndexAnnualBP int `json:"index_annual_bp,omitzero" jsonschema:"index_bp as a rate a year on the same basis; absent when undefined or zero"`
-	ExcessBP      int `json:"excess_bp,omitzero" jsonschema:"return_bp minus index_bp; absent when undefined or zero"`
+	ExcessBP      int `json:"excess_bp,omitzero"       jsonschema:"return_bp minus index_bp; absent when undefined or zero"`
 	Days          int `json:"days"`
-	Skipped       int `json:"skipped,omitzero" jsonschema:"rates of the period left out: days without money, or before a savings account recorded its first yield"`
+	Skipped       int `json:"skipped,omitzero"         jsonschema:"rates of the period left out: days without money, or before a savings account recorded its first yield"`
 
-	Credits        int  `json:"credits,omitzero" jsonschema:"yield credits the return covers; absent when none"`
-	Restarted      bool `json:"restarted,omitzero" jsonschema:"a deposit or withdrawal between two credits more than 7 days apart moved the start of the comparison to the credit after it"`
-	StartedLate    bool `json:"started_late,omitzero" jsonschema:"a rate of the period dated before from was left out: the comparison starts after the first rate day of the window"`
+	Credits        int  `json:"credits,omitzero"          jsonschema:"yield credits the return covers; absent when none"`
+	Restarted      bool `json:"restarted,omitzero"        jsonschema:"a deposit or withdrawal between two credits more than 7 days apart moved the start of the comparison to the credit after it"`
+	StartedLate    bool `json:"started_late,omitzero"     jsonschema:"a rate of the period dated before from was left out: the comparison starts after the first rate day of the window"`
 	PercentErrorBP int  `json:"percent_error_bp,omitzero" jsonschema:"relative error bound of percent_bp and annual_bp in basis points of themselves, from rounding each credit to the cent"`
 }
 
@@ -105,18 +114,22 @@ type getPortfolioOut struct {
 	AnnualBP    int            `json:"annual_bp,omitzero"`
 	Opening     tool.Money     `json:"opening,omitzero"`
 	Closing     tool.Money     `json:"closing,omitzero"`
-	PeriodBP    int            `json:"period_bp,omitzero" jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
-	Profile     string         `json:"profile,omitzero" jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
-	Index       string         `json:"index,omitzero" jsonschema:"for return: the daily index the report compares with, the named one or the region's default; absent when the region has none"`
+	PeriodBP    int            `json:"period_bp,omitzero"          jsonschema:"for return: time-weighted return of the period in basis points; absent when undefined or zero"`
+	Profile     string         `json:"profile,omitzero"            jsonschema:"for return: rate when every holding is cash or fixed income in the report's currency, market otherwise"`
+	Index       string         `json:"index,omitzero"              jsonschema:"for return: the daily index the report compares with, the named one or the region's default; absent when the region has none"`
 	Benchmark   benchmarkView  `json:"benchmark,omitzero"`
 	Reason      string         `json:"unavailable_reason,omitzero" jsonschema:"for return: why benchmark or its percent is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined"`
-	Excluded    excludedView   `json:"excluded,omitzero" jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
+	Excluded    excludedView   `json:"excluded,omitzero"           jsonschema:"for return: income and expense of the period treated as money in or out, not as yield"`
 	Inflation   inflationView  `json:"inflation,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`
 	Subtypes    []string       `json:"subtypes,omitzero"`
 }
 
-func getPortfolio(svc *app.Service, names AccountNames, today func(context.Context) time.Time) tool.Tool {
+func getPortfolio(
+	svc *app.Service,
+	names AccountNames,
+	today func(context.Context) time.Time,
+) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
@@ -342,7 +355,13 @@ func optionalFields(name string, fields []field, optional ...string) error {
 	return nil
 }
 
-func positions(ctx context.Context, svc *app.Service, names AccountNames, booksID int64, date time.Time) (getPortfolioOut, error) {
+func positions(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	date time.Time,
+) (getPortfolioOut, error) {
 	ps, err := svc.Positions(ctx, booksID, date, "")
 	if err != nil {
 		return getPortfolioOut{}, err
@@ -356,8 +375,11 @@ func positions(ctx context.Context, svc *app.Service, names AccountNames, booksI
 	out := getPortfolioOut{Positions: []positionView{}}
 	for _, p := range ps {
 		v := positionView{
-			AccountID: p.AccountID.String(), AccountName: named[p.AccountID], Instrument: string(p.Instrument),
-			Quantity: tool.MoneyOf(p.Quantity), CostBasis: tool.MoneyOf(p.CostBasis),
+			AccountID:   p.AccountID.String(),
+			AccountName: named[p.AccountID],
+			Instrument:  string(p.Instrument),
+			Quantity:    tool.MoneyOf(p.Quantity),
+			CostBasis:   tool.MoneyOf(p.CostBasis),
 		}
 		if p.AverageCost != nil {
 			v.AverageCost = p.AverageCost.String()

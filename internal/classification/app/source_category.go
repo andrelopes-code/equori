@@ -29,13 +29,21 @@ type NameKey struct {
 	ID   uuid.UUID `json:"i"`
 }
 
-func (s *Service) ListSourceCategories(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]SourceCategory, *NameKey, error) {
+func (s *Service) ListSourceCategories(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[NameKey],
+) ([]SourceCategory, *NameKey, error) {
 	return s.repo.ListSourceCategories(ctx, booksID, p)
 }
 
 // MapSourceCategory sets the category that lines carrying the source category get when no
 // rule decides them; uuid.Nil clears it.
-func (s *Service) MapSourceCategory(ctx context.Context, booksID int64, id, categoryID uuid.UUID) (SourceCategory, error) {
+func (s *Service) MapSourceCategory(
+	ctx context.Context,
+	booksID int64,
+	id, categoryID uuid.UUID,
+) (SourceCategory, error) {
 	if categoryID != uuid.Nil {
 		accounts, err := s.accounts(ctx, booksID)
 		if err != nil {
@@ -43,7 +51,11 @@ func (s *Service) MapSourceCategory(ctx context.Context, booksID int64, id, cate
 		}
 
 		if a, ok := accounts[categoryID]; !ok || !a.isCategory() || a.isUncategorized() {
-			return SourceCategory{}, &domain.FieldError{Field: "category_id", Message: "must be an income or expense category", Err: domain.ErrValidation}
+			return SourceCategory{}, &domain.FieldError{
+				Field:   "category_id",
+				Message: "must be an income or expense category",
+				Err:     domain.ErrValidation,
+			}
 		}
 	}
 
@@ -52,7 +64,11 @@ func (s *Service) MapSourceCategory(ctx context.Context, booksID int64, id, cate
 
 // sourceCategories counts the categories the lines carry and returns, per line, the
 // owner's category for it.
-func (s *Service) sourceCategories(ctx context.Context, booksID int64, lines []ImportLine) ([]uuid.UUID, error) {
+func (s *Service) sourceCategories(
+	ctx context.Context,
+	booksID int64,
+	lines []ImportLine,
+) ([]uuid.UUID, error) {
 	out := make([]uuid.UUID, len(lines))
 
 	order, seen, byAggregator := distinctSourceCategories(lines)
@@ -123,7 +139,12 @@ func sourceCategoryCounts(
 
 	counts := make([]SourceCategory, len(order))
 	for i, k := range order {
-		counts[i] = SourceCategory{Aggregator: k.Aggregator, ExternalID: k.ExternalID, Name: names[k], Count: seen[k]}
+		counts[i] = SourceCategory{
+			Aggregator: k.Aggregator,
+			ExternalID: k.ExternalID,
+			Name:       names[k],
+			Count:      seen[k],
+		}
 	}
 
 	return counts

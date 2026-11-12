@@ -9,10 +9,17 @@ import (
 )
 
 // UpdateProfile stores the language of the member and the region of the books in one transaction.
-func (r *Repository) UpdateProfile(ctx context.Context, memberID, booksID int64, l locale.Locale) error {
+func (r *Repository) UpdateProfile(
+	ctx context.Context,
+	memberID, booksID int64,
+	l locale.Locale,
+) error {
 	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
-		if err := q.UpdateLanguage(ctx, UpdateLanguageParams{ID: memberID, Language: l.Language}); err != nil {
+		if err := q.UpdateLanguage(
+			ctx,
+			UpdateLanguageParams{ID: memberID, Language: l.Language},
+		); err != nil {
 			return err
 		}
 

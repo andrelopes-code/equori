@@ -29,7 +29,14 @@ func Query[P any](r *http.Request) (P, error) {
 
 		required := field.Type.Kind() != reflect.Pointer
 
-		err := runtime.BindRawQueryParameter("form", true, required, name, r.URL.RawQuery, value.Field(i).Addr().Interface())
+		err := runtime.BindRawQueryParameter(
+			"form",
+			true,
+			required,
+			name,
+			r.URL.RawQuery,
+			value.Field(i).Addr().Interface(),
+		)
 		if err != nil {
 			return params, &BadRequestError{Err: fmt.Errorf("query parameter %q: %w", name, err)}
 		}

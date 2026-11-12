@@ -55,7 +55,12 @@ const (
 )
 
 // categoryActions decide the category; a rule has at most one of them.
-var categoryActions = []ActionType{ActionSetCategory, ActionSplit, ActionTransfer, ActionMarkReimbursable}
+var categoryActions = []ActionType{
+	ActionSetCategory,
+	ActionSplit,
+	ActionTransfer,
+	ActionMarkReimbursable,
+}
 
 const (
 	maxNameLength  = 120
@@ -70,10 +75,30 @@ const (
 )
 
 var (
-	accountKinds = []string{"checking", "savings", "cash", "wallet", "benefit", "reserve", "brokerage", "receivable", "credit_card", "loan", "payable"}
-	sources      = []string{"manual", "import", "schedule"}
-	weekdays     = []string{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}
-	tagPattern   = regexp.MustCompile(`^[\p{Ll}\p{Lm}\p{Lo}\p{N}][\p{Ll}\p{Lm}\p{Lo}\p{N}-]{0,59}$`)
+	accountKinds = []string{
+		"checking",
+		"savings",
+		"cash",
+		"wallet",
+		"benefit",
+		"reserve",
+		"brokerage",
+		"receivable",
+		"credit_card",
+		"loan",
+		"payable",
+	}
+	sources  = []string{"manual", "import", "schedule"}
+	weekdays = []string{
+		"sunday",
+		"monday",
+		"tuesday",
+		"wednesday",
+		"thursday",
+		"friday",
+		"saturday",
+	}
+	tagPattern = regexp.MustCompile(`^[\p{Ll}\p{Lm}\p{Lo}\p{N}][\p{Ll}\p{Lm}\p{Lo}\p{N}-]{0,59}$`)
 )
 
 // Condition is one test on a subject (P5 amendment A21). The value lives in the member
@@ -128,7 +153,10 @@ func NewRule(r Rule) (Rule, error) {
 	}
 
 	if len(r.Conditions) == 0 || len(r.Conditions) > maxConditions {
-		return Rule{}, invalid("conditions", fmt.Sprintf("must have 1 to %d conditions", maxConditions))
+		return Rule{}, invalid(
+			"conditions",
+			fmt.Sprintf("must have 1 to %d conditions", maxConditions),
+		)
 	}
 
 	conditions := make([]Condition, len(r.Conditions))
@@ -157,7 +185,10 @@ func NewRule(r Rule) (Rule, error) {
 		}
 
 		if seen[a.Type] || deciders > 1 {
-			return Rule{}, invalid(field+".type", "repeats an action or combines two of set_category, split, transfer and mark_reimbursable")
+			return Rule{}, invalid(
+				field+".type",
+				"repeats an action or combines two of set_category, split, transfer and mark_reimbursable",
+			)
 		}
 
 		seen[a.Type] = true

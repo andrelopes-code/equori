@@ -147,14 +147,22 @@ func (m *Module) logFetchError(ctx context.Context, source string, err error) {
 }
 
 // feedStart is the first day to fetch for source, by instrument when one is given.
-func (m *Module) feedStart(ctx context.Context, source string, instrument money.Currency, today time.Time) (time.Time, error) {
+func (m *Module) feedStart(
+	ctx context.Context,
+	source string,
+	instrument money.Currency,
+	today time.Time,
+) (time.Time, error) {
 	var code *string
 	if instrument != "" {
 		s := string(instrument)
 		code = &s
 	}
 
-	latest, err := m.q.LatestSourceDate(ctx, postgres.LatestSourceDateParams{Source: source, Instrument: code})
+	latest, err := m.q.LatestSourceDate(
+		ctx,
+		postgres.LatestSourceDateParams{Source: source, Instrument: code},
+	)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -172,7 +180,13 @@ func (m *Module) storeQuotes(ctx context.Context, source string, quotes []feed.Q
 			src = q.Source
 		}
 
-		ps[i] = Price{Instrument: q.Instrument, Quote: q.Quote, Date: q.Date, Value: q.Value, Source: src}
+		ps[i] = Price{
+			Instrument: q.Instrument,
+			Quote:      q.Quote,
+			Date:       q.Date,
+			Value:      q.Value,
+			Source:     src,
+		}
 	}
 
 	return m.upsert(ctx, ps)
@@ -219,7 +233,11 @@ func feedInstruments(list []Instrument) []feed.Instrument {
 	ins := make([]feed.Instrument, len(list))
 	for i, in := range list {
 		ins[i] = feed.Instrument{
-			Code: in.Code, Type: in.Type, Exchange: in.Exchange, QuoteCurrency: in.QuoteCurrency, Symbols: in.Symbols,
+			Code:          in.Code,
+			Type:          in.Type,
+			Exchange:      in.Exchange,
+			QuoteCurrency: in.QuoteCurrency,
+			Symbols:       in.Symbols,
 		}
 	}
 

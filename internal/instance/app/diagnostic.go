@@ -46,7 +46,10 @@ func (s *Service) Diagnostic(ctx context.Context, memberID int64) (domain.Diagno
 	}
 
 	for _, c := range counts {
-		d.Outbox = append(d.Outbox, domain.OutboxCount{Type: c.Type, Pending: c.Pending, Failed: c.Failed})
+		d.Outbox = append(
+			d.Outbox,
+			domain.OutboxCount{Type: c.Type, Pending: c.Pending, Failed: c.Failed},
+		)
 	}
 
 	for _, r := range s.cfg.Log() {

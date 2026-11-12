@@ -41,10 +41,17 @@ type Server struct {
 
 func New(t testing.TB, clientID, secret string) *Server {
 	s := &Server{
-		first: clientID, secrets: map[string]string{clientID: secret}, keys: map[string]string{},
-		items: map[string]client.Item{}, owners: map[string]string{},
-		accounts: map[string][]client.Account{}, transactions: map[string][]client.Transaction{},
-		bills: map[string][]client.Bill{}, requests: map[string]int{}, failing: map[string]int{}, pageSize: 500,
+		first:        clientID,
+		secrets:      map[string]string{clientID: secret},
+		keys:         map[string]string{},
+		items:        map[string]client.Item{},
+		owners:       map[string]string{},
+		accounts:     map[string][]client.Account{},
+		transactions: map[string][]client.Transaction{},
+		bills:        map[string][]client.Bill{},
+		requests:     map[string]int{},
+		failing:      map[string]int{},
+		pageSize:     500,
 	}
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(s.srv.Close)
@@ -104,7 +111,11 @@ func (s *Server) authenticate(w http.ResponseWriter, r *http.Request) (app strin
 			ClientID     string `json:"clientId"`
 			ClientSecret string `json:"clientSecret"`
 		}
-		if err := json.UnmarshalRead(r.Body, &in); err != nil || in.ClientSecret == "" || s.secrets[in.ClientID] != in.ClientSecret {
+		if err := json.UnmarshalRead(
+			r.Body,
+			&in,
+		); err != nil || in.ClientSecret == "" ||
+			s.secrets[in.ClientID] != in.ClientSecret {
 			w.WriteHeader(http.StatusUnauthorized)
 			return "", false
 		}
@@ -140,9 +151,23 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, app string) {
 
 		write(w, it)
 	case r.URL.Path == "/accounts":
-		write(w, map[string]any{"page": 1, "totalPages": 1, "results": nonNil(s.accounts[q.Get("itemId")])})
+		write(
+			w,
+			map[string]any{
+				"page":       1,
+				"totalPages": 1,
+				"results":    nonNil(s.accounts[q.Get("itemId")]),
+			},
+		)
 	case r.URL.Path == "/bills":
-		write(w, map[string]any{"page": 1, "totalPages": 1, "results": nonNil(s.bills[q.Get("accountId")])})
+		write(
+			w,
+			map[string]any{
+				"page":       1,
+				"totalPages": 1,
+				"results":    nonNil(s.bills[q.Get("accountId")]),
+			},
+		)
 	case r.URL.Path == "/v2/transactions":
 		s.transactionPage(w, q)
 	default:

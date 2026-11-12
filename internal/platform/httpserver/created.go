@@ -37,7 +37,13 @@ func HandleCreated[In, Out any](
 
 // WriteCreated answers 201 with the JSON body and the Location header of the created record. A
 // custom handler that reads its own request (a multipart body) calls it on success.
-func WriteCreated(e ErrorWriter, w http.ResponseWriter, r *http.Request, location string, body any) {
+func WriteCreated(
+	e ErrorWriter,
+	w http.ResponseWriter,
+	r *http.Request,
+	location string,
+	body any,
+) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
 		e.Write(w, r, err)

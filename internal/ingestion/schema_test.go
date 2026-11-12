@@ -25,13 +25,22 @@ func TestSchemaInvariants(t *testing.T) {
 	}
 
 	var batch string
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'a.ofx', 'BRL') RETURNING id`, uid, checking).Scan(&batch); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'a.ofx', 'BRL') RETURNING id`, uid, checking).
+		Scan(&batch); err != nil {
 		t.Fatal(err)
 	}
 
 	record := func(key byte, state string, transaction any) error {
-		return exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, state, transaction_id)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', $5, $6)`, uid, batch, checking, append(make([]byte, 31), key), state, transaction)
+		return exec(
+			`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, state, transaction_id)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', $5, $6)`,
+			uid,
+			batch,
+			checking,
+			append(make([]byte, 31), key),
+			state,
+			transaction,
+		)
 	}
 	if err := record(1, "created", tx); err != nil {
 		t.Fatal(err)
@@ -44,19 +53,65 @@ func TestSchemaInvariants(t *testing.T) {
 		{"I10: a deduplication key once per book", record(1, "received", nil)},
 		{"a created record names its transaction", record(3, "created", nil)},
 		{"a received record names no transaction", record(4, "received", tx)},
-		{"an institution line id is never empty", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, institution_id)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', '')`, uid, batch, checking, append(make([]byte, 31), 10))},
-		{"a record holds the reported amount", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, NULL, '2026-10-01', 'x')`, uid, batch, checking, append(make([]byte, 31), 11))},
-		{"a record decision outside the closed set", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, state, decision)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', 'received', 'other')`, uid, batch, checking, append(make([]byte, 31), 20))},
-		{"a file batch carries no sync run", exec(`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, sync_id)
-			VALUES ($1, $2, 'ofx', 'b.ofx', 'BRL', gen_random_uuid())`, uid, checking)},
-		{"profile with an amount column and debit and credit columns", exec(`INSERT INTO ingestion_csv_profile
+		{
+			"an institution line id is never empty",
+			exec(
+				`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, institution_id)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', '')`,
+				uid,
+				batch,
+				checking,
+				append(make([]byte, 31), 10),
+			),
+		},
+		{
+			"a record holds the reported amount",
+			exec(
+				`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, NULL, '2026-10-01', 'x')`,
+				uid,
+				batch,
+				checking,
+				append(make([]byte, 31), 11),
+			),
+		},
+		{
+			"a record decision outside the closed set",
+			exec(
+				`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, state, decision)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', 'received', 'other')`,
+				uid,
+				batch,
+				checking,
+				append(make([]byte, 31), 20),
+			),
+		},
+		{
+			"a file batch carries no sync run",
+			exec(
+				`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, sync_id)
+			VALUES ($1, $2, 'ofx', 'b.ofx', 'BRL', gen_random_uuid())`,
+				uid,
+				checking,
+			),
+		},
+		{
+			"profile with an amount column and debit and credit columns",
+			exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, debit_column, credit_column, decimal_separator, description_column)
-			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', 'Débito', 'Crédito', ',', 'Descrição')`, uid, checking)},
-		{"an installment within its count", exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, installment_number, installment_count)
-			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', 7, 6)`, uid, batch, checking, append(make([]byte, 31), 9))},
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', 'Débito', 'Crédito', ',', 'Descrição')`, uid, checking),
+		},
+		{
+			"an installment within its count",
+			exec(
+				`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description, installment_number, installment_count)
+			VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x', 7, 6)`,
+				uid,
+				batch,
+				checking,
+				append(make([]byte, 31), 9),
+			),
+		},
 		{"profile encoding outside the identifier pattern", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, encoding)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', 'Windows 1252')`, uid, checking)},
@@ -78,9 +133,12 @@ func TestSchemaInvariants(t *testing.T) {
 		{"profile sign column without a debit marker", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, sign_column)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', 'Tipo')`, uid, checking)},
-		{"profile debit marker with debit and credit columns", exec(`INSERT INTO ingestion_csv_profile
+		{
+			"profile debit marker with debit and credit columns",
+			exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, debit_column, credit_column, decimal_separator, description_column, debit_marker)
-			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Débito', 'Crédito', ',', 'Descrição', 'D')`, uid, checking)},
+			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Débito', 'Crédito', ',', 'Descrição', 'D')`, uid, checking),
+		},
 		{"profile debit marker empty", exec(`INSERT INTO ingestion_csv_profile
 			(books_id, account_id, date_column, date_layout, amount_column, decimal_separator, description_column, debit_marker)
 			VALUES ($1, $2, 'Data', 'DD/MM/YYYY', 'Valor', ',', 'Descrição', '')`, uid, checking)},
@@ -121,21 +179,32 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 
 	otherID := h.BooksIDOf("other@example.com")
 
-	if err := h.Pool.QueryRow(ctx, `SELECT id FROM ledger_account WHERE books_id = $1 LIMIT 1`, otherID).Scan(&otherAccount); err != nil {
+	if err := h.Pool.QueryRow(ctx, `SELECT id FROM ledger_account WHERE books_id = $1 LIMIT 1`, otherID).
+		Scan(&otherAccount); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).Scan(&integration); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).
+		Scan(&integration); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).Scan(&connection); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).
+		Scan(&connection); err != nil {
 		t.Fatal(err)
 	}
 
 	external := func(id string, account any, syncFrom any, ignored bool) error {
-		return exec(`INSERT INTO ingestion_external_account (books_id, connection_id, external_account_id, type, subtype, name, currency, account_id, sync_from, ignored)
-			VALUES ($1, $2, $3, 'BANK', 'CHECKING_ACCOUNT', 'Conta', 'BRL', $4, $5, $6)`, uid, connection, id, account, syncFrom, ignored)
+		return exec(
+			`INSERT INTO ingestion_external_account (books_id, connection_id, external_account_id, type, subtype, name, currency, account_id, sync_from, ignored)
+			VALUES ($1, $2, $3, 'BANK', 'CHECKING_ACCOUNT', 'Conta', 'BRL', $4, $5, $6)`,
+			uid,
+			connection,
+			id,
+			account,
+			syncFrom,
+			ignored,
+		)
 	}
 	if err := external("acc-1", checking, "2026-10-01", false); err != nil {
 		t.Fatal(err)
@@ -147,29 +216,71 @@ func TestConnectionSchemaInvariants(t *testing.T) {
 			name = fileName
 		}
 
-		return exec(`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, external_account_id)
-			VALUES ($1, $2, $3, $4, 'BRL', $5)`, uid, checking, source, name, externalAccount)
+		return exec(
+			`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, external_account_id)
+			VALUES ($1, $2, $3, $4, 'BRL', $5)`,
+			uid,
+			checking,
+			source,
+			name,
+			externalAccount,
+		)
 	}
 
 	tests := []struct {
 		name string
 		err  error
 	}{
-		{"A34: an integration name once per book", exec(`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`, uid)},
-		{"A34: an integration with connections is not deleted", exec(`DELETE FROM ingestion_integration WHERE id = $1`, integration)},
-		{"an item once per integration", exec(`INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Again', 'UPDATED')`, uid, integration)},
+		{
+			"A34: an integration name once per book",
+			exec(
+				`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01')`,
+				uid,
+			),
+		},
+		{
+			"A34: an integration with connections is not deleted",
+			exec(`DELETE FROM ingestion_integration WHERE id = $1`, integration),
+		},
+		{
+			"an item once per integration",
+			exec(
+				`INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Again', 'UPDATED')`,
+				uid,
+				integration,
+			),
+		},
 		{"A35: one feed per ledger account", external("acc-2", checking, "2026-10-01", false)},
 		{"A35: a mapped account has a start date", external("acc-3", savings, nil, false)},
 		{"A35: an ignored account is not mapped", external("acc-4", savings, "2026-10-01", true)},
-		{"ADR 003: a mapping stays within its book", external("acc-5", otherAccount, "2026-10-01", false)},
-		{"an aggregator is an identifier", exec(`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'Bad Id', 'Other', '\x01')`, uid)},
+		{
+			"ADR 003: a mapping stays within its book",
+			external("acc-5", otherAccount, "2026-10-01", false),
+		},
+		{
+			"an aggregator is an identifier",
+			exec(
+				`INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'Bad Id', 'Other', '\x01')`,
+				uid,
+			),
+		},
 		{"open_finance is no batch source", batch("open_finance", "", nil)},
 		{"a file batch has a file name", batch("ofx", "", nil)},
 		{"an aggregator batch has no file name", batch("aggregator", "sync.json", nil)},
-		{"A40: an installment key names a ledger plan", exec(`INSERT INTO ingestion_installment_plan (books_id, account_id, plan_key, plan_id)
-			VALUES ($1, $2, $3, uuidv7())`, uid, checking, make([]byte, 32))},
-		{"a file batch has no external account", exec(`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, external_account_id)
-			SELECT $1, $2, 'ofx', 'a.ofx', 'BRL', id FROM ingestion_external_account WHERE external_account_id = 'acc-1'`, uid, checking)},
+		{
+			"A40: an installment key names a ledger plan",
+			exec(`INSERT INTO ingestion_installment_plan (books_id, account_id, plan_key, plan_id)
+			VALUES ($1, $2, $3, uuidv7())`, uid, checking, make([]byte, 32)),
+		},
+		{
+			"a file batch has no external account",
+			exec(
+				`INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency, external_account_id)
+			SELECT $1, $2, 'ofx', 'a.ofx', 'BRL', id FROM ingestion_external_account WHERE external_account_id = 'acc-1'`,
+				uid,
+				checking,
+			),
+		},
 	}
 	for _, tc := range tests {
 		if tc.err == nil {
@@ -191,25 +302,38 @@ func TestTransferPairingSchema(t *testing.T) {
 
 	var integration, connection, batch string
 
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).Scan(&integration); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).
+		Scan(&integration); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).Scan(&connection); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).
+		Scan(&connection); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := exec(`INSERT INTO ingestion_external_account (books_id, connection_id, external_account_id, type, subtype, name, currency)
-		VALUES ($1, $2, 'acc-1', 'BANK', 'CHECKING_ACCOUNT', 'Conta', 'BRL')`, uid, connection); err != nil {
+	if err := exec(
+		`INSERT INTO ingestion_external_account (books_id, connection_id, external_account_id, type, subtype, name, currency)
+		VALUES ($1, $2, 'acc-1', 'BANK', 'CHECKING_ACCOUNT', 'Conta', 'BRL')`,
+		uid,
+		connection,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'a.ofx', 'BRL') RETURNING id`, uid, checking).Scan(&batch); err != nil {
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_batch (books_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'a.ofx', 'BRL') RETURNING id`, uid, checking).
+		Scan(&batch); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := exec(`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
-		VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x')`, uid, batch, checking, make([]byte, 32)); err != nil {
+	if err := exec(
+		`INSERT INTO ingestion_external_record (books_id, batch_id, account_id, dedup_key, raw, booked_on, amount, reported_amount, reported_on, description)
+		VALUES ($1, $2, $3, $4, '{}', '2026-10-01', -100, -100, '2026-10-01', 'x')`,
+		uid,
+		batch,
+		checking,
+		make([]byte, 32),
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -218,11 +342,31 @@ func TestTransferPairingSchema(t *testing.T) {
 		sql     string
 		wantErr bool
 	}{
-		{"A217: a counterparty outside holder and third_party", `UPDATE ingestion_external_record SET counterparty = 'someone'`, true},
-		{"A221: a holder digest of 32 bytes", `UPDATE ingestion_external_account SET holder_digest = '\x00'::bytea`, true},
-		{"A219: a record in review transfer", `UPDATE ingestion_external_record SET review_reason = 'transfer', state = 'needs_review'`, false},
-		{"A220: a record decided paired", `UPDATE ingestion_external_record SET decision = 'paired'`, false},
-		{"a record decision outside the closed set", `UPDATE ingestion_external_record SET decision = 'unpaired'`, true},
+		{
+			"A217: a counterparty outside holder and third_party",
+			`UPDATE ingestion_external_record SET counterparty = 'someone'`,
+			true,
+		},
+		{
+			"A221: a holder digest of 32 bytes",
+			`UPDATE ingestion_external_account SET holder_digest = '\x00'::bytea`,
+			true,
+		},
+		{
+			"A219: a record in review transfer",
+			`UPDATE ingestion_external_record SET review_reason = 'transfer', state = 'needs_review'`,
+			false,
+		},
+		{
+			"A220: a record decided paired",
+			`UPDATE ingestion_external_record SET decision = 'paired'`,
+			false,
+		},
+		{
+			"a record decision outside the closed set",
+			`UPDATE ingestion_external_record SET decision = 'unpaired'`,
+			true,
+		},
 	}
 	for _, tc := range tests {
 		err := exec(tc.sql)

@@ -18,14 +18,26 @@ func TestEditCard(t *testing.T) {
 	card := addCard(t, c, "Ana", "1234")
 
 	var edited cardView
-	c.h.MustDo(http.MethodPatch, "/api/v1/cards/"+card.ID, map[string]any{"holder": "Ana Souza", "last_four": "4321"}, http.StatusOK, &edited)
+	c.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/cards/"+card.ID,
+		map[string]any{"holder": "Ana Souza", "last_four": "4321"},
+		http.StatusOK,
+		&edited,
+	)
 
 	if edited.Holder != "Ana Souza" || edited.LastFour != "4321" || !edited.Active {
 		t.Fatalf("edited = %+v", edited)
 	}
 
 	var off cardView
-	c.h.MustDo(http.MethodPatch, "/api/v1/cards/"+card.ID, map[string]any{"active": false}, http.StatusOK, &off)
+	c.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/cards/"+card.ID,
+		map[string]any{"active": false},
+		http.StatusOK,
+		&off,
+	)
 
 	if off.Holder != "Ana Souza" || off.LastFour != "4321" || off.Active {
 		t.Fatalf("off = %+v", off)
@@ -37,10 +49,18 @@ func TestEditCardInvalid(t *testing.T) {
 	c := newCardSetup(t, "2026-10-23")
 	card := addCard(t, c, "Ana", "1234")
 
-	c.h.ExpectProblem(c.h.Do(http.MethodPatch, "/api/v1/cards/"+card.ID, map[string]any{"last_four": "12a4"}),
-		http.StatusBadRequest, "invalid_request", "")
-	c.h.ExpectProblem(c.h.Do(http.MethodPatch, "/api/v1/cards/"+card.ID, map[string]any{"holder": "  "}),
-		http.StatusUnprocessableEntity, "validation_failed", "holder")
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodPatch, "/api/v1/cards/"+card.ID, map[string]any{"last_four": "12a4"}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodPatch, "/api/v1/cards/"+card.ID, map[string]any{"holder": "  "}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"holder",
+	)
 
 	var list struct {
 		Items []cardView `json:"items"`
@@ -58,7 +78,11 @@ func TestDeleteCard(t *testing.T) {
 	keep := addCard(t, c, "Bia", "9999")
 	gone := addCard(t, c, "Ana", "1234")
 
-	if r := c.h.Do(http.MethodDelete, "/api/v1/cards/"+gone.ID, nil); r.Status != http.StatusNoContent {
+	if r := c.h.Do(
+		http.MethodDelete,
+		"/api/v1/cards/"+gone.ID,
+		nil,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("delete = %d: %s", r.Status, r.Body)
 	}
 
@@ -71,7 +95,12 @@ func TestDeleteCard(t *testing.T) {
 		t.Fatalf("cards = %+v", list.Items)
 	}
 
-	c.h.ExpectProblem(c.h.Do(http.MethodDelete, "/api/v1/cards/"+gone.ID, nil), http.StatusNotFound, "not_found", "")
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodDelete, "/api/v1/cards/"+gone.ID, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 func TestCardOfOtherBook(t *testing.T) {
@@ -82,19 +111,32 @@ func TestCardOfOtherBook(t *testing.T) {
 	var account struct {
 		ID string `json:"id"`
 	}
-	c.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Foreign card", "class": "liability", "kind": "credit_card", "currency": "BRL"}).Decode(t, &account)
+	c.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Foreign card", "class": "liability", "kind": "credit_card", "currency": "BRL"}).
+		Decode(t, &account)
 	foreignAccount := account.ID
 
 	var foreign cardView
-	c.h.Call(other, http.MethodPost, "/api/v1/accounts/"+foreignAccount+"/cards", map[string]any{"holder": "Zed", "last_four": "0001"}).Decode(t, &foreign)
+	c.h.Call(other, http.MethodPost, "/api/v1/accounts/"+foreignAccount+"/cards", map[string]any{"holder": "Zed", "last_four": "0001"}).
+		Decode(t, &foreign)
 
-	c.h.ExpectProblem(c.h.Do(http.MethodDelete, "/api/v1/cards/"+foreign.ID, nil), http.StatusNotFound, "not_found", "")
-	c.h.ExpectProblem(c.h.Do(http.MethodPatch, "/api/v1/cards/"+foreign.ID, map[string]any{"holder": "Mine"}), http.StatusNotFound, "not_found", "")
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodDelete, "/api/v1/cards/"+foreign.ID, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodPatch, "/api/v1/cards/"+foreign.ID, map[string]any{"holder": "Mine"}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 
 	var list struct {
 		Items []cardView `json:"items"`
 	}
-	c.h.Call(other, http.MethodGet, "/api/v1/accounts/"+foreignAccount+"/cards", nil).Decode(t, &list)
+	c.h.Call(other, http.MethodGet, "/api/v1/accounts/"+foreignAccount+"/cards", nil).
+		Decode(t, &list)
 
 	if len(list.Items) != 1 || list.Items[0].Holder != "Zed" {
 		t.Errorf("foreign cards = %+v", list.Items)
@@ -105,7 +147,13 @@ func addCard(t *testing.T, c cardSetup, holder, lastFour string) cardView {
 	t.Helper()
 
 	var card cardView
-	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+c.card+"/cards", map[string]any{"holder": holder, "last_four": lastFour}, http.StatusCreated, &card)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+c.card+"/cards",
+		map[string]any{"holder": holder, "last_four": lastFour},
+		http.StatusCreated,
+		&card,
+	)
 
 	return card
 }

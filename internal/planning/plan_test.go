@@ -67,14 +67,33 @@ func TestS158PlanFigures(t *testing.T) {
 	electronics := f.h.Account("Electronics", "expense", "", nil)
 	purchase := func(date string, amount int64, count int) {
 		f.h.MustDo(http.MethodPost, "/api/v1/installment-purchases", map[string]any{
-			"card_account_id": card, "date": date, "description": "Purchase",
-			"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(amount)}}, "installment_count": count,
+			"card_account_id": card,
+			"date":            date,
+			"description":     "Purchase",
+			"splits": []map[string]any{
+				{"account_id": electronics, "amount": apitest.BRL(amount)},
+			},
+			"installment_count": count,
 		}, http.StatusCreated, nil)
 	}
 	purchase("2026-10-20", 90000, 3)
 	purchase("2026-12-02", 40000, 2)
-	f.schedule("income", f.checking, f.salary, 720000, monthly("2026-12-01", 5, ""), map[string]any{"description": "Salary"})
-	f.schedule("income", f.checking, f.salary, 130000, monthly("2026-12-01", 20, ""), map[string]any{"description": "Freelance"})
+	f.schedule(
+		"income",
+		f.checking,
+		f.salary,
+		720000,
+		monthly("2026-12-01", 5, ""),
+		map[string]any{"description": "Salary"},
+	)
+	f.schedule(
+		"income",
+		f.checking,
+		f.salary,
+		130000,
+		monthly("2026-12-01", 20, ""),
+		map[string]any{"description": "Freelance"},
+	)
 	f.schedule("savings", f.checking, f.savings, 50000, monthly("2026-12-01", 10, ""), nil)
 	f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-12-01", 15, ""), nil)
 	f.budget(f.rent, 210000, "2026-12", false)
@@ -85,7 +104,10 @@ func TestS158PlanFigures(t *testing.T) {
 	f.h.MustDo(http.MethodGet, "/api/v1/commitments?month=2026-12", nil, http.StatusOK, &committed)
 
 	if committed.Installments.Amount != 50000 {
-		t.Fatalf("committed installments = %d, want both purchases' 50000", committed.Installments.Amount)
+		t.Fatalf(
+			"committed installments = %d, want both purchases' 50000",
+			committed.Installments.Amount,
+		)
 	}
 
 	got := f.plan("2026-12")
@@ -93,12 +115,24 @@ func TestS158PlanFigures(t *testing.T) {
 		t.Fatalf("plan = %+v", got)
 	}
 
-	if amountOf(got.ExpectedIncome) != 850000 || len(got.ExpectedItems) != 2 || amountOf(got.Reference) != 850000 {
-		t.Errorf("expected income = %d items %+v reference %d", amountOf(got.ExpectedIncome), got.ExpectedItems, amountOf(got.Reference))
+	if amountOf(got.ExpectedIncome) != 850000 || len(got.ExpectedItems) != 2 ||
+		amountOf(got.Reference) != 850000 {
+		t.Errorf(
+			"expected income = %d items %+v reference %d",
+			amountOf(got.ExpectedIncome),
+			got.ExpectedItems,
+			amountOf(got.Reference),
+		)
 	}
 
-	if got.Installments.Amount != 30000 || got.Savings.Amount != 50000 || got.Planned.Amount != 210000 {
-		t.Errorf("installments %d savings %d planned %d, want 30000 50000 210000", got.Installments.Amount, got.Savings.Amount, got.Planned.Amount)
+	if got.Installments.Amount != 30000 || got.Savings.Amount != 50000 ||
+		got.Planned.Amount != 210000 {
+		t.Errorf(
+			"installments %d savings %d planned %d, want 30000 50000 210000",
+			got.Installments.Amount,
+			got.Savings.Amount,
+			got.Planned.Amount,
+		)
 	}
 
 	if amountOf(got.Unassigned) != 850000-30000-50000-210000 {
@@ -126,12 +160,22 @@ func TestS159AverageIncome(t *testing.T) {
 
 			f := newFixture(t, "2026-12-01")
 			for _, d := range tt.dates {
-				f.h.Record(d, apitest.Posting(f.checking, 600000), apitest.Posting(f.salary, -600000))
+				f.h.Record(
+					d,
+					apitest.Posting(f.checking, 600000),
+					apitest.Posting(f.salary, -600000),
+				)
 			}
 
 			got := f.plan("2026-12")
 			if amountOf(got.AverageIncome) != tt.average || got.AverageMonths != tt.months {
-				t.Fatalf("average = %d over %d months, want %d over %d", amountOf(got.AverageIncome), got.AverageMonths, tt.average, tt.months)
+				t.Fatalf(
+					"average = %d over %d months, want %d over %d",
+					amountOf(got.AverageIncome),
+					got.AverageMonths,
+					tt.average,
+					tt.months,
+				)
 			}
 		})
 	}
@@ -164,13 +208,21 @@ func TestS164ReferenceDefault(t *testing.T) {
 	f := newFixture(t, "2026-12-01")
 
 	empty := f.plan("2026-12")
-	if empty.Source != "fixed" || empty.Reference != nil || empty.Unassigned != nil || empty.Fixed != nil {
+	if empty.Source != "fixed" || empty.Reference != nil || empty.Unassigned != nil ||
+		empty.Fixed != nil {
 		t.Fatalf("plan without history = %+v", empty)
 	}
 
-	f.h.Record("2026-11-05", apitest.Posting(f.checking, 600000), apitest.Posting(f.salary, -600000))
+	f.h.Record(
+		"2026-11-05",
+		apitest.Posting(f.checking, 600000),
+		apitest.Posting(f.salary, -600000),
+	)
 
-	if got := f.plan("2026-12"); got.Source != "average_income" || amountOf(got.Reference) != 600000 || amountOf(got.Unassigned) != 600000 {
+	if got := f.plan(
+		"2026-12",
+	); got.Source != "average_income" || amountOf(got.Reference) != 600000 ||
+		amountOf(got.Unassigned) != 600000 {
 		t.Fatalf("plan with history = %+v", got)
 	}
 }
@@ -180,7 +232,12 @@ func TestBudgetPlanMonthBounds(t *testing.T) {
 
 	f := newFixture(t, "2026-11-01")
 	for _, m := range []string{"2027-12", "2026-13"} {
-		f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/budget-plan?month="+m, nil), http.StatusUnprocessableEntity, "validation_failed", "month")
+		f.h.ExpectProblem(
+			f.h.Do(http.MethodGet, "/api/v1/budget-plan?month="+m, nil),
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"month",
+		)
 	}
 }
 
@@ -222,26 +279,45 @@ func TestS161SaveReplacesVersion(t *testing.T) {
 	f := newFixture(t, "2026-11-10")
 	food := f.h.Account("Food", "expense", "", nil)
 	id := f.budget(food, 180000, "2026-11", false)
-	f.h.MustDo(http.MethodPost, "/api/v1/budgets/"+id+"/amounts", map[string]any{"effective_from": "2027-01", "amount": apitest.BRL(200000)}, http.StatusCreated, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/budgets/"+id+"/amounts",
+		map[string]any{"effective_from": "2027-01", "amount": apitest.BRL(200000)},
+		http.StatusCreated,
+		nil,
+	)
 
-	body := map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(150000))}
+	body := map[string]any{
+		"source":  "average_income",
+		"amounts": amounts(food, apitest.BRL(150000)),
+	}
 	for range 2 {
 		got := f.savePlan("2026-11", body)
-		if len(got.Rows) != 1 || got.Rows[0].Planned.Amount != 150000 || got.Rows[0].NextChange != "2027-01" || got.Planned.Amount != 150000 {
+		if len(got.Rows) != 1 || got.Rows[0].Planned.Amount != 150000 ||
+			got.Rows[0].NextChange != "2027-01" ||
+			got.Planned.Amount != 150000 {
 			t.Fatalf("plan = %+v", got)
 		}
 
 		b := f.budgetAmounts(id)
-		if len(b.Amounts) != 2 || b.Amounts[0].EffectiveFrom != "2026-11" || b.Amounts[0].Amount.Amount != 150000 ||
-			b.Amounts[1].EffectiveFrom != "2027-01" || b.Amounts[1].Amount.Amount != 200000 {
+		if len(b.Amounts) != 2 || b.Amounts[0].EffectiveFrom != "2026-11" ||
+			b.Amounts[0].Amount.Amount != 150000 ||
+			b.Amounts[1].EffectiveFrom != "2027-01" ||
+			b.Amounts[1].Amount.Amount != 200000 {
 			t.Fatalf("amounts = %+v", b.Amounts)
 		}
 	}
 
 	// A month between two versions gets its own.
-	f.savePlan("2026-12", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(160000))})
+	f.savePlan(
+		"2026-12",
+		map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(160000))},
+	)
 
-	if b := f.budgetAmounts(id); len(b.Amounts) != 3 || b.Amounts[1].EffectiveFrom != "2026-12" || b.Amounts[1].Amount.Amount != 160000 {
+	if b := f.budgetAmounts(
+		id,
+	); len(b.Amounts) != 3 || b.Amounts[1].EffectiveFrom != "2026-12" ||
+		b.Amounts[1].Amount.Amount != 160000 {
 		t.Fatalf("amounts = %+v", b.Amounts)
 	}
 }
@@ -252,9 +328,18 @@ func TestSaveChangesTheBudgetOfAClosedCategory(t *testing.T) {
 	f := newFixture(t, "2026-11-10")
 	life := f.h.Account("Lifestyle", "expense", "", nil)
 	id := f.budget(life, 40000, "2026-11", false)
-	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+life+"/close", map[string]string{"closed_on": "2026-11-01"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+life+"/close",
+		map[string]string{"closed_on": "2026-11-01"},
+		http.StatusOK,
+		nil,
+	)
 
-	got := f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(life, apitest.BRL(20000))})
+	got := f.savePlan(
+		"2026-11",
+		map[string]any{"source": "average_income", "amounts": amounts(life, apitest.BRL(20000))},
+	)
 
 	if len(got.Rows) != 1 || got.Rows[0].Planned.Amount != 20000 {
 		t.Fatalf("plan = %+v", got)
@@ -296,7 +381,13 @@ func TestS162SaveCreatesBudget(t *testing.T) {
 			f := newFixture(t, "2026-11-10", apitest.As(pr))
 			pets := f.h.Account("Pets", "expense", "", nil)
 			gifts := f.h.Account("Gifts", "expense", "", nil)
-			f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(pets, f.h.Money(21000), gifts, f.h.Money(0))})
+			f.savePlan(
+				"2026-11",
+				map[string]any{
+					"source":  "average_income",
+					"amounts": amounts(pets, f.h.Money(21000), gifts, f.h.Money(0)),
+				},
+			)
 
 			got := f.budgetList()
 			if len(got.Items) != 1 {
@@ -304,7 +395,9 @@ func TestS162SaveCreatesBudget(t *testing.T) {
 			}
 
 			b := got.Items[0]
-			if b.CategoryID != pets || b.Rollover || len(b.Amounts) != 1 || b.Amounts[0].EffectiveFrom != "2026-11" || b.Amounts[0].Amount.Amount != 21000 {
+			if b.CategoryID != pets || b.Rollover || len(b.Amounts) != 1 ||
+				b.Amounts[0].EffectiveFrom != "2026-11" ||
+				b.Amounts[0].Amount.Amount != 21000 {
 				t.Fatalf("budget = %+v", b)
 			}
 		})
@@ -317,14 +410,25 @@ func TestS163SaveErrors(t *testing.T) {
 	f := newFixture(t, "2026-11-10")
 	food := f.h.Account("Food", "expense", "", nil)
 	old := f.h.Account("Old", "expense", "", nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+old+"/close", map[string]string{"closed_on": "2026-11-01"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+old+"/close",
+		map[string]string{"closed_on": "2026-11-01"},
+		http.StatusOK,
+		nil,
+	)
 	id := f.budget(food, 180000, "2026-11", false)
 	other := f.h.Login("other@example.com")
 	var foreign struct {
 		ID string `json:"id"`
 	}
 
-	r := f.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "expense", "currency": "BRL"})
+	r := f.h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/accounts",
+		map[string]any{"name": "Theirs", "class": "expense", "currency": "BRL"},
+	)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("other category: %d %s", r.Status, r.Body)
 	}
@@ -337,20 +441,92 @@ func TestS163SaveErrors(t *testing.T) {
 		name, month, field string
 		body               map[string]any
 	}{
-		{"past month", "2026-10", "month", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1))}},
-		{"category twice", "2026-11", "amounts[1].category_id", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1), food, apitest.BRL(2))}},
-		{"another book's category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(foreign.ID, apitest.BRL(1))}},
-		{"income category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(f.salary, apitest.BRL(1))}},
-		{"closed category", "2026-11", "amounts[0].category_id", map[string]any{"source": "average_income", "amounts": amounts(old, apitest.BRL(1))}},
-		{"negative amount", "2026-11", "amounts[0].amount", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(-1))}},
-		{"other currency", "2026-11", "amounts[0].amount.currency", map[string]any{"source": "average_income", "amounts": amounts(food, usd)}},
-		{"fixed without an amount", "2026-11", "fixed", map[string]any{"source": "fixed", "amounts": amounts(food, apitest.BRL(1))}},
-		{"fixed in another currency", "2026-11", "fixed.currency", map[string]any{"source": "fixed", "fixed": usd, "amounts": amounts(food, apitest.BRL(1))}},
-		{"negative fixed", "2026-11", "fixed", map[string]any{"source": "fixed", "fixed": apitest.BRL(-1), "amounts": amounts(food, apitest.BRL(1))}},
+		{
+			"past month",
+			"2026-10",
+			"month",
+			map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(1))},
+		},
+		{
+			"category twice",
+			"2026-11",
+			"amounts[1].category_id",
+			map[string]any{
+				"source":  "average_income",
+				"amounts": amounts(food, apitest.BRL(1), food, apitest.BRL(2)),
+			},
+		},
+		{
+			"another book's category",
+			"2026-11",
+			"amounts[0].category_id",
+			map[string]any{
+				"source":  "average_income",
+				"amounts": amounts(foreign.ID, apitest.BRL(1)),
+			},
+		},
+		{
+			"income category",
+			"2026-11",
+			"amounts[0].category_id",
+			map[string]any{
+				"source":  "average_income",
+				"amounts": amounts(f.salary, apitest.BRL(1)),
+			},
+		},
+		{
+			"closed category",
+			"2026-11",
+			"amounts[0].category_id",
+			map[string]any{"source": "average_income", "amounts": amounts(old, apitest.BRL(1))},
+		},
+		{
+			"negative amount",
+			"2026-11",
+			"amounts[0].amount",
+			map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(-1))},
+		},
+		{
+			"other currency",
+			"2026-11",
+			"amounts[0].amount.currency",
+			map[string]any{"source": "average_income", "amounts": amounts(food, usd)},
+		},
+		{
+			"fixed without an amount",
+			"2026-11",
+			"fixed",
+			map[string]any{"source": "fixed", "amounts": amounts(food, apitest.BRL(1))},
+		},
+		{
+			"fixed in another currency",
+			"2026-11",
+			"fixed.currency",
+			map[string]any{
+				"source":  "fixed",
+				"fixed":   usd,
+				"amounts": amounts(food, apitest.BRL(1)),
+			},
+		},
+		{
+			"negative fixed",
+			"2026-11",
+			"fixed",
+			map[string]any{
+				"source":  "fixed",
+				"fixed":   apitest.BRL(-1),
+				"amounts": amounts(food, apitest.BRL(1)),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Log(tt.name)
-		f.h.ExpectProblem(f.h.Do(http.MethodPut, "/api/v1/budget-plan?month="+tt.month, tt.body), http.StatusUnprocessableEntity, "validation_failed", tt.field)
+		f.h.ExpectProblem(
+			f.h.Do(http.MethodPut, "/api/v1/budget-plan?month="+tt.month, tt.body),
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			tt.field,
+		)
 	}
 
 	if b := f.budgetAmounts(id); len(b.Amounts) != 1 || b.Amounts[0].Amount.Amount != 180000 {
@@ -371,8 +547,17 @@ func TestS164ReferenceRoundTrip(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-10")
 
-	got := f.savePlan("2026-11", map[string]any{"source": "fixed", "fixed": apitest.BRL(600000), "amounts": []map[string]any{}})
-	if got.Source != "fixed" || amountOf(got.Fixed) != 600000 || amountOf(got.Reference) != 600000 || amountOf(got.Unassigned) != 600000 {
+	got := f.savePlan(
+		"2026-11",
+		map[string]any{
+			"source":  "fixed",
+			"fixed":   apitest.BRL(600000),
+			"amounts": []map[string]any{},
+		},
+	)
+	if got.Source != "fixed" || amountOf(got.Fixed) != 600000 ||
+		amountOf(got.Reference) != 600000 ||
+		amountOf(got.Unassigned) != 600000 {
 		t.Fatalf("plan = %+v", got)
 	}
 
@@ -387,19 +572,34 @@ func TestS262SavingsRateTargetGap(t *testing.T) {
 	f := newFixture(t, "2026-12-02")
 	f.schedule("savings", f.checking, f.savings, 120000, monthly("2026-12-01", 10, ""), nil)
 
-	fixed := map[string]any{"source": "fixed", "fixed": apitest.BRL(800000), "amounts": []map[string]any{}}
-	if got := f.savePlan("2026-12", fixed); got.SavingsRateBP == nil || *got.SavingsRateBP != 1500 || got.SavingsTarget != nil || got.SavingsGap != nil {
+	fixed := map[string]any{
+		"source":  "fixed",
+		"fixed":   apitest.BRL(800000),
+		"amounts": []map[string]any{},
+	}
+	if got := f.savePlan(
+		"2026-12",
+		fixed,
+	); got.SavingsRateBP == nil || *got.SavingsRateBP != 1500 || got.SavingsTarget != nil ||
+		got.SavingsGap != nil {
 		t.Fatalf("plan without a target = %+v", got)
 	}
 
 	fixed["savings_target_bp"] = 2500
-	if got := f.savePlan("2026-12", fixed); amountOf(got.SavingsTarget) != 200000 || amountOf(got.SavingsGap) != 80000 {
+	if got := f.savePlan(
+		"2026-12",
+		fixed,
+	); amountOf(got.SavingsTarget) != 200000 ||
+		amountOf(got.SavingsGap) != 80000 {
 		t.Fatalf("plan with a target = target %v gap %v", got.SavingsTarget, got.SavingsGap)
 	}
 
 	f.schedule("savings", f.checking, f.savings, 80000, monthly("2026-12-01", 20, ""), nil)
 
-	if got := f.plan("2026-12"); amountOf(got.SavingsTarget) != 200000 || amountOf(got.SavingsGap) != 0 {
+	if got := f.plan(
+		"2026-12",
+	); amountOf(got.SavingsTarget) != 200000 ||
+		amountOf(got.SavingsGap) != 0 {
 		t.Fatalf("plan at the target = target %v gap %v", got.SavingsTarget, got.SavingsGap)
 	}
 }
@@ -414,7 +614,12 @@ func TestS263SavingsTargetStoredAndCleared(t *testing.T) {
 		t.Fatalf("plan before any save = %+v", got)
 	}
 
-	body := map[string]any{"source": "fixed", "fixed": apitest.BRL(600000), "savings_target_bp": 2500, "amounts": []map[string]any{}}
+	body := map[string]any{
+		"source":            "fixed",
+		"fixed":             apitest.BRL(600000),
+		"savings_target_bp": 2500,
+		"amounts":           []map[string]any{},
+	}
 	f.savePlan("2026-11", body)
 
 	if got := f.plan("2026-12"); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 {
@@ -422,8 +627,12 @@ func TestS263SavingsTargetStoredAndCleared(t *testing.T) {
 	}
 
 	body["fixed"] = apitest.BRL(0)
-	if got := f.savePlan("2026-11", body); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 ||
-		got.SavingsRateBP != nil || got.SavingsTarget != nil || got.SavingsGap != nil {
+	if got := f.savePlan(
+		"2026-11",
+		body,
+	); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 ||
+		got.SavingsRateBP != nil || got.SavingsTarget != nil ||
+		got.SavingsGap != nil {
 		t.Fatalf("zero reference = %+v", got)
 	}
 
@@ -440,11 +649,24 @@ func TestS264SavingsTargetInvalid(t *testing.T) {
 	f := newFixture(t, "2026-11-10")
 
 	for _, bp := range []int{10001, -1} {
-		body := map[string]any{"source": "fixed", "fixed": apitest.BRL(600000), "savings_target_bp": bp, "amounts": []map[string]any{}}
-		f.h.ExpectProblem(f.h.Do(http.MethodPut, "/api/v1/budget-plan?month=2026-11", body), http.StatusUnprocessableEntity, "validation_failed", "savings_target_bp")
+		body := map[string]any{
+			"source":            "fixed",
+			"fixed":             apitest.BRL(600000),
+			"savings_target_bp": bp,
+			"amounts":           []map[string]any{},
+		}
+		f.h.ExpectProblem(
+			f.h.Do(http.MethodPut, "/api/v1/budget-plan?month=2026-11", body),
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"savings_target_bp",
+		)
 	}
 
-	if got := f.plan("2026-11"); got.SavingsTargetBP != nil || got.Source == "fixed" && got.Fixed != nil {
+	if got := f.plan(
+		"2026-11",
+	); got.SavingsTargetBP != nil ||
+		got.Source == "fixed" && got.Fixed != nil {
 		t.Fatalf("plan after errors = %+v", got)
 	}
 }
@@ -456,7 +678,10 @@ func TestSavePlanListsOnlyItsCategories(t *testing.T) {
 	health := f.h.Account("Health", "expense", "", nil)
 	f.budget(food, 180000, "2026-11", false)
 	hid := f.budget(health, 48000, "2026-11", false)
-	f.savePlan("2026-11", map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(150000))})
+	f.savePlan(
+		"2026-11",
+		map[string]any{"source": "average_income", "amounts": amounts(food, apitest.BRL(150000))},
+	)
 
 	if b := f.budgetAmounts(hid); len(b.Amounts) != 1 || b.Amounts[0].Amount.Amount != 48000 {
 		t.Fatalf("health amounts = %+v", b.Amounts)
@@ -468,11 +693,29 @@ func TestSavePlanListsOnlyItsCategories(t *testing.T) {
 func TestPlanCountsTheReceivedIncome(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
-	salary := f.schedule("income", f.checking, f.salary, 275200, monthly("2026-11-01", 5, ""), map[string]any{"description": "Salary"})
-	f.schedule("income", f.checking, f.salary, 130000, monthly("2026-11-01", 20, ""), map[string]any{"description": "Freelance"})
+	salary := f.schedule(
+		"income",
+		f.checking,
+		f.salary,
+		275200,
+		monthly("2026-11-01", 5, ""),
+		map[string]any{"description": "Salary"},
+	)
+	f.schedule(
+		"income",
+		f.checking,
+		f.salary,
+		130000,
+		monthly("2026-11-01", 20, ""),
+		map[string]any{"description": "Freelance"},
+	)
 	f.schedule("savings", f.checking, f.savings, 50000, monthly("2026-11-01", 10, ""), nil)
 
-	f.h.Record("2026-11-05", apitest.Posting(f.checking, 275142), apitest.Posting(f.salary, -275142))
+	f.h.Record(
+		"2026-11-05",
+		apitest.Posting(f.checking, 275142),
+		apitest.Posting(f.salary, -275142),
+	)
 	f.pay("2026-11-10", 49900, f.savings, "")
 
 	if o := f.occurrence(salary, 1); o.State != "realized" {
@@ -481,10 +724,15 @@ func TestPlanCountsTheReceivedIncome(t *testing.T) {
 
 	got := f.plan("2026-11")
 	if amountOf(got.ExpectedIncome) != 275142+130000 || got.Savings.Amount != 50000 {
-		t.Fatalf("expected income = %d savings = %d, want 405142 50000", amountOf(got.ExpectedIncome), got.Savings.Amount)
+		t.Fatalf(
+			"expected income = %d savings = %d, want 405142 50000",
+			amountOf(got.ExpectedIncome),
+			got.Savings.Amount,
+		)
 	}
 
-	if len(got.ExpectedItems) != 2 || got.ExpectedItems[0].Amount.Amount+got.ExpectedItems[1].Amount.Amount != 405142 {
+	if len(got.ExpectedItems) != 2 ||
+		got.ExpectedItems[0].Amount.Amount+got.ExpectedItems[1].Amount.Amount != 405142 {
 		t.Errorf("expected items = %+v, want 275142 and 130000", got.ExpectedItems)
 	}
 }
@@ -495,8 +743,12 @@ func TestPlanConvertsTheReceivedForeignIncome(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
-		"kind": "income", "account_id": wise, "counterpart_id": f.salary, "description": "Contract", "amount": usd(50000),
-		"recurrence": monthly("2026-11-05", 5, ""),
+		"kind":           "income",
+		"account_id":     wise,
+		"counterpart_id": f.salary,
+		"description":    "Contract",
+		"amount":         usd(50000),
+		"recurrence":     monthly("2026-11-05", 5, ""),
 	}, http.StatusCreated, nil)
 	f.price(t, "2026-10-30", "5.5")
 
@@ -507,6 +759,9 @@ func TestPlanConvertsTheReceivedForeignIncome(t *testing.T) {
 	f.h.Dispatch()
 
 	if got := f.plan("2026-11"); amountOf(got.ExpectedIncome) != 274450 {
-		t.Fatalf("expected income = %d, want 49900 USD at 5.5 = 274450", amountOf(got.ExpectedIncome))
+		t.Fatalf(
+			"expected income = %d, want 49900 USD at 5.5 = 274450",
+			amountOf(got.ExpectedIncome),
+		)
 	}
 }

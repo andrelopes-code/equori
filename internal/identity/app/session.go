@@ -29,7 +29,10 @@ type Access struct {
 // Login counts every attempt against the email. A right password without a second factor clears
 // the count and returns a session. With a second factor it returns a pending login and keeps the
 // count until the second factor is right (HA46, HA47).
-func (s *Service) Login(ctx context.Context, email, plain, origin string) (Session, *PendingLogin, error) {
+func (s *Service) Login(
+	ctx context.Context,
+	email, plain, origin string,
+) (Session, *PendingLogin, error) {
 	now := s.now()
 	email, emailErr := domain.NormalizeEmail(email)
 	// Byte bound equivalent to MaxPasswordLength runes (at most 4 bytes each); rejects before hashing.
@@ -114,21 +117,39 @@ func (s *Service) openLogin(
 }
 
 // finishLogin books the login in the membership and starts the session.
-func (s *Service) finishLogin(ctx context.Context, memberID, booksID int64, now time.Time) (Session, error) {
+func (s *Service) finishLogin(
+	ctx context.Context,
+	memberID, booksID int64,
+	now time.Time,
+) (Session, error) {
 	if err := s.repo.TouchMembership(ctx, memberID, booksID, now); err != nil {
-		return Session{}, fmt.Errorf("touch membership of member %d in books %d: %w", memberID, booksID, err)
+		return Session{}, fmt.Errorf(
+			"touch membership of member %d in books %d: %w",
+			memberID,
+			booksID,
+			err,
+		)
 	}
 
 	return s.startSession(ctx, memberID, booksID, now)
 }
 
-func (s *Service) startSession(ctx context.Context, memberID, booksID int64, now time.Time) (Session, error) {
+func (s *Service) startSession(
+	ctx context.Context,
+	memberID, booksID int64,
+	now time.Time,
+) (Session, error) {
 	token, session := domain.NewSession(memberID, booksID, now)
 	if err := s.repo.CreateSession(ctx, session); err != nil {
 		return Session{}, fmt.Errorf("create session: %w", err)
 	}
 
-	return Session{MemberID: memberID, BooksID: booksID, Token: token, ExpiresAt: session.ExpiresAt}, nil
+	return Session{
+		MemberID:  memberID,
+		BooksID:   booksID,
+		Token:     token,
+		ExpiresAt: session.ExpiresAt,
+	}, nil
 }
 
 func (s *Service) Logout(ctx context.Context, token string) error {

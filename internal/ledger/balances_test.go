@@ -53,9 +53,27 @@ func TestListBalances(t *testing.T) {
 		want  []int64
 	}{
 		{"booked", "?date=2026-10-15", "booked", "2026-10-15", []int64{-62000, 50000, 0}},
-		{"settled", "?date=2026-10-15&basis=settled", "settled", "2026-10-15", []int64{-62000, 0, 0}},
-		{"explicit booked", "?date=2026-10-15&basis=booked", "booked", "2026-10-15", []int64{-62000, 50000, 0}},
-		{"settled after settlement date", "?date=2026-10-20&basis=settled", "settled", "2026-10-20", []int64{-62000, 50000, 0}},
+		{
+			"settled",
+			"?date=2026-10-15&basis=settled",
+			"settled",
+			"2026-10-15",
+			[]int64{-62000, 0, 0},
+		},
+		{
+			"explicit booked",
+			"?date=2026-10-15&basis=booked",
+			"booked",
+			"2026-10-15",
+			[]int64{-62000, 50000, 0},
+		},
+		{
+			"settled after settlement date",
+			"?date=2026-10-20&basis=settled",
+			"settled",
+			"2026-10-20",
+			[]int64{-62000, 50000, 0},
+		},
 		{"before any posting", "?date=2026-10-01", "booked", "2026-10-01", []int64{0, 0, 0}},
 	}
 	for _, tt := range tests {
@@ -69,7 +87,15 @@ func TestListBalances(t *testing.T) {
 			for i, it := range items {
 				ids[i], got[i] = it.AccountID, it.Balance.Amount
 				if it.Basis != tt.basis || it.Date != tt.date || it.Balance.Currency != "BRL" {
-					t.Errorf("item %d = basis %q date %q currency %q, want %q %q BRL", i, it.Basis, it.Date, it.Balance.Currency, tt.basis, tt.date)
+					t.Errorf(
+						"item %d = basis %q date %q currency %q, want %q %q BRL",
+						i,
+						it.Basis,
+						it.Date,
+						it.Balance.Currency,
+						tt.basis,
+						tt.date,
+					)
 				}
 			}
 
@@ -102,11 +128,21 @@ func TestListBalances(t *testing.T) {
 	})
 
 	t.Run("missing date", func(t *testing.T) {
-		h.ExpectProblem(h.Call(h.Client, http.MethodGet, "/api/v1/balances", nil), http.StatusBadRequest, "invalid_request", "date")
+		h.ExpectProblem(
+			h.Call(h.Client, http.MethodGet, "/api/v1/balances", nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"date",
+		)
 	})
 
 	t.Run("unknown basis", func(t *testing.T) {
-		h.ExpectProblem(h.Call(h.Client, http.MethodGet, "/api/v1/balances?date=2026-10-15&basis=x", nil), http.StatusBadRequest, "invalid_request", "basis")
+		h.ExpectProblem(
+			h.Call(h.Client, http.MethodGet, "/api/v1/balances?date=2026-10-15&basis=x", nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"basis",
+		)
 	})
 }
 
@@ -118,7 +154,13 @@ func TestListBalancesExcludesVoidedAndSumsLiability(t *testing.T) {
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-10", apitest.Posting(checking, -1000), apitest.Posting(food, 1000))
 	voided := h.Record("2026-10-11", apitest.Posting(checking, -9000), apitest.Posting(food, 9000))
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 
 	purchase := apitest.Posting(card, -5000)
 	purchase["settled_on"] = "2026-11-12"

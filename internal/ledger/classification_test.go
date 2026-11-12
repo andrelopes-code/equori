@@ -21,13 +21,28 @@ func TestTransactionFacts(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	electronics := h.Account("Electronics", "expense", "", nil)
 	purchase := installmentPurchase(t, h, map[string]any{
-		"card_account_id": card, "date": "2026-10-20", "description": "Laptop",
-		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 3,
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"description":     "Laptop",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(100000)},
+		},
+		"installment_count": 3,
 	})
-	edited := h.Record("2026-10-21", apitest.Posting(checking, -1000), apitest.Posting(sys["uncategorized_expense"], 1000))
+	edited := h.Record(
+		"2026-10-21",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(sys["uncategorized_expense"], 1000),
+	)
 	h.MustDo(http.MethodPut, "/api/v1/transactions/"+edited, map[string]any{
-		"date": "2026-10-21", "description": "Bakery", "expected_version": 1, "reason": "rename",
-		"postings": []any{apitest.Posting(checking, -1000), apitest.Posting(sys["uncategorized_expense"], 1000)},
+		"date":             "2026-10-21",
+		"description":      "Bakery",
+		"expected_version": 1,
+		"reason":           "rename",
+		"postings": []any{
+			apitest.Posting(checking, -1000),
+			apitest.Posting(sys["uncategorized_expense"], 1000),
+		},
 	}, http.StatusOK, nil)
 
 	ids := []uuid.UUID{uuid.MustParse(edited), uuid.New(), uuid.MustParse(purchase.Transaction.ID)}
@@ -42,8 +57,12 @@ func TestTransactionFacts(t *testing.T) {
 	}
 
 	e := facts[0]
-	if e.Version != 2 || e.Description != "Bakery" || e.RawDescription != "test" || e.Origin != "manual" || e.Voided ||
-		e.CategoryState != "uncategorized" || e.Date.Format("2006-01-02") != "2026-10-21" || len(e.Postings) != 2 {
+	if e.Version != 2 || e.Description != "Bakery" || e.RawDescription != "test" ||
+		e.Origin != "manual" ||
+		e.Voided ||
+		e.CategoryState != "uncategorized" ||
+		e.Date.Format("2006-01-02") != "2026-10-21" ||
+		len(e.Postings) != 2 {
 		t.Fatalf("edited = %+v", e)
 	}
 
@@ -62,17 +81,32 @@ func TestTransactionFacts(t *testing.T) {
 		}
 	}
 
-	if cardPosting == nil || cardPosting.Class != "liability" || cardPosting.Kind != "credit_card" || !cardPosting.Installment {
+	if cardPosting == nil || cardPosting.Class != "liability" ||
+		cardPosting.Kind != "credit_card" ||
+		!cardPosting.Installment {
 		t.Fatalf("card posting = %+v", cardPosting)
 	}
 
-	if category == nil || category.Class != "expense" || category.Kind != "" || category.Installment || category.Amount.Amount() <= 0 {
+	if category == nil || category.Class != "expense" || category.Kind != "" ||
+		category.Installment ||
+		category.Amount.Amount() <= 0 {
 		t.Fatalf("category posting = %+v", category)
 	}
 
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+edited+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+edited+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 
-	if facts, err = h.App.Ledger.TransactionFacts(ctx, uid, ids[:1]); err != nil || !facts[0].Voided {
+	if facts, err = h.App.Ledger.TransactionFacts(
+		ctx,
+		uid,
+		ids[:1],
+	); err != nil ||
+		!facts[0].Voided {
 		t.Fatalf("voided facts = %+v, %v", facts, err)
 	}
 }
@@ -101,18 +135,30 @@ func TestAccountFactsAndPayees(t *testing.T) {
 		}
 	}
 
-	if roles != 12 || found == nil || found.Class != "asset" || found.Kind != "checking" || found.Instrument != "BRL" || found.ClosedOn != nil {
+	if roles != 12 || found == nil || found.Class != "asset" || found.Kind != "checking" ||
+		found.Instrument != "BRL" ||
+		found.ClosedOn != nil {
 		t.Fatalf("facts = %+v (system roles %d)", found, roles)
 	}
 
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "iFood"},
+		http.StatusCreated,
+		&payee,
+	)
 
 	unknown := uuid.New()
 
-	missing, err := h.App.Ledger.MissingPayees(ctx, uid, []uuid.UUID{uuid.MustParse(payee.ID), unknown})
+	missing, err := h.App.Ledger.MissingPayees(
+		ctx,
+		uid,
+		[]uuid.UUID{uuid.MustParse(payee.ID), unknown},
+	)
 	if err != nil || !slices.Equal(missing, []uuid.UUID{unknown}) {
 		t.Fatalf("missing = %v, %v", missing, err)
 	}
@@ -131,22 +177,58 @@ func TestLatestPayeeCategories(t *testing.T) {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "iFood"},
+		http.StatusCreated,
+		&payee,
+	)
 
 	record := func(date string, postings ...map[string]any) string {
 		var out struct {
 			ID string `json:"id"`
 		}
-		h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": date, "description": "iFood", "payee_id": payee.ID, "postings": postings}, http.StatusCreated, &out)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/transactions",
+			map[string]any{
+				"date":        date,
+				"description": "iFood",
+				"payee_id":    payee.ID,
+				"postings":    postings,
+			},
+			http.StatusCreated,
+			&out,
+		)
 
 		return out.ID
 	}
 	record("2026-10-01", apitest.Posting(checking, -1000), apitest.Posting(delivery, 1000))
 	record("2026-10-02", apitest.Posting(checking, 500), apitest.Posting(refunds, -500))
-	record("2026-10-03", apitest.Posting(checking, -1000), apitest.Posting(restaurant, 600), apitest.Posting(delivery, 400))
-	record("2026-10-04", apitest.Posting(checking, -1000), apitest.Posting(sys["uncategorized_expense"], 1000))
-	voided := record("2026-10-05", apitest.Posting(checking, -1000), apitest.Posting(restaurant, 1000))
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	record(
+		"2026-10-03",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(restaurant, 600),
+		apitest.Posting(delivery, 400),
+	)
+	record(
+		"2026-10-04",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(sys["uncategorized_expense"], 1000),
+	)
+	voided := record(
+		"2026-10-05",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(restaurant, 1000),
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 
 	pid := uuid.MustParse(payee.ID)
 
@@ -159,7 +241,8 @@ func TestLatestPayeeCategories(t *testing.T) {
 		{PayeeID: pid, Class: "expense"}: uuid.MustParse(delivery),
 		{PayeeID: pid, Class: "income"}:  uuid.MustParse(refunds),
 	}
-	if len(got) != len(want) || got[ledger.PayeeClass{PayeeID: pid, Class: "expense"}] != want[ledger.PayeeClass{PayeeID: pid, Class: "expense"}] ||
+	if len(got) != len(want) ||
+		got[ledger.PayeeClass{PayeeID: pid, Class: "expense"}] != want[ledger.PayeeClass{PayeeID: pid, Class: "expense"}] ||
 		got[ledger.PayeeClass{PayeeID: pid, Class: "income"}] != want[ledger.PayeeClass{PayeeID: pid, Class: "income"}] {
 		t.Fatalf("latest = %v, want %v", got, want)
 	}
@@ -175,7 +258,13 @@ func TestRecordImportedWithDecision(t *testing.T) {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Uber"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Uber"},
+		http.StatusCreated,
+		&payee,
+	)
 
 	rule := uuid.New()
 	pid := uuid.MustParse(payee.ID)
@@ -188,8 +277,10 @@ func TestRecordImportedWithDecision(t *testing.T) {
 	ids, err := h.App.Ledger.RecordImportedBatch(ctx, uid, []ledger.ImportedRecord{{
 		RecordID: uuid.New(), Posting: imported(t, checking, "2026-10-05", -2390),
 		Decision: &ledger.ImportDecision{
-			PayeeID: pid, AddTags: []string{"ride"}, Parts: []ledger.CategoryPart{{AccountID: uuid.MustParse(transport), Amount: amount}},
-			Cause: ledger.Cause{Method: "rule", RuleID: rule},
+			PayeeID: pid,
+			AddTags: []string{"ride"},
+			Parts:   []ledger.CategoryPart{{AccountID: uuid.MustParse(transport), Amount: amount}},
+			Cause:   ledger.Cause{Method: "rule", RuleID: rule},
 		},
 	}})
 	if err != nil {
@@ -197,7 +288,10 @@ func TestRecordImportedWithDecision(t *testing.T) {
 	}
 
 	tx := h.Transaction(ids[0].String())
-	if got := amountsByAccount(tx); tx.Version != 1 || len(tx.Postings) != 2 || got[transport] != 2390 || got[checking] != -2390 {
+	if got := amountsByAccount(
+		tx,
+	); tx.Version != 1 || len(tx.Postings) != 2 || got[transport] != 2390 ||
+		got[checking] != -2390 {
 		t.Fatalf("transaction = %+v", tx)
 	}
 
@@ -212,8 +306,11 @@ func TestRecordImportedWithDecision(t *testing.T) {
 	}
 
 	recorded := events(t, h, ids[0].String())["ledger.transaction_recorded.v1"]
-	if len(recorded) != 1 || recorded[0].Origin != "import" || recorded[0].CategoryState != "categorized" ||
-		recorded[0].Cause == nil || recorded[0].Cause.Method != "rule" || recorded[0].Cause.RuleID != rule.String() {
+	if len(recorded) != 1 || recorded[0].Origin != "import" ||
+		recorded[0].CategoryState != "categorized" ||
+		recorded[0].Cause == nil ||
+		recorded[0].Cause.Method != "rule" ||
+		recorded[0].Cause.RuleID != rule.String() {
 		t.Fatalf("recorded = %+v", recorded)
 	}
 }
@@ -225,10 +322,19 @@ func TestListUncategorizedTransactions(t *testing.T) {
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 	savings := h.Account("Savings", "asset", "savings", nil)
 	food := h.Account("Food", "expense", "", nil)
-	want := h.Record("2026-10-01", apitest.Posting(checking, -1000), apitest.Posting(sys["uncategorized_expense"], 1000))
+	want := h.Record(
+		"2026-10-01",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(sys["uncategorized_expense"], 1000),
+	)
 	h.Record("2026-10-02", apitest.Posting(checking, -1000), apitest.Posting(savings, 1000))
 	h.Record("2026-10-03", apitest.Posting(checking, -1000), apitest.Posting(food, 1000))
-	h.Record("2026-10-04", apitest.Posting(checking, -1000), apitest.Posting(food, 600), apitest.Posting(sys["uncategorized_expense"], 400))
+	h.Record(
+		"2026-10-04",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(food, 600),
+		apitest.Posting(sys["uncategorized_expense"], 400),
+	)
 
 	var out struct {
 		Items []struct {

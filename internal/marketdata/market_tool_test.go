@@ -25,7 +25,12 @@ func toolOutput(t *testing.T, h *apitest.Harness, name string, args map[string]a
 	}
 }
 
-func preview(t *testing.T, h *apitest.Harness, name string, args map[string]any) (tool.Preview, tool.Result) {
+func preview(
+	t *testing.T,
+	h *apitest.Harness,
+	name string,
+	args map[string]any,
+) (tool.Preview, tool.Result) {
 	t.Helper()
 
 	b, err := json.Marshal(args)
@@ -59,14 +64,26 @@ type toolInstrument struct {
 func TestManageInstrumentToolDefine(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	args := map[string]any{"action": "define", "code": "MXRF11", "name": "Maxi Renda", "type": "reit", "quote_currency": "BRL"}
+	args := map[string]any{
+		"action":         "define",
+		"code":           "MXRF11",
+		"name":           "Maxi Renda",
+		"type":           "reit",
+		"quote_currency": "BRL",
+	}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || p.Target != "Instrument MXRF11" || p.Destructive || len(p.Changes) != 4 || p.Changes[0].Field != "instrument" || p.Changes[0].After.Text != "MXRF11" {
+	if r.IsError || p.Target != "Instrument MXRF11" || p.Destructive || len(p.Changes) != 4 ||
+		p.Changes[0].Field != "instrument" ||
+		p.Changes[0].After.Text != "MXRF11" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
-	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "instrument", "code": "MXRF11"}), "not_found", "")
+	h.ExpectToolError(
+		h.Tool("get_market_data", map[string]any{"view": "instrument", "code": "MXRF11"}),
+		"not_found",
+		"",
+	)
 
 	var out struct {
 		Instrument toolInstrument `json:"instrument"`
@@ -75,7 +92,13 @@ func TestManageInstrumentToolDefine(t *testing.T) {
 	var got struct {
 		Instrument toolInstrument `json:"instrument"`
 	}
-	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "MXRF11"}, &got)
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "instrument", "code": "MXRF11"},
+		&got,
+	)
 
 	want := toolInstrument{Code: "MXRF11", Name: "Maxi Renda", Type: "reit", QuoteCurrency: "BRL"}
 	if !reflect.DeepEqual(got.Instrument, want) || !reflect.DeepEqual(out.Instrument, want) {
@@ -109,7 +132,9 @@ func TestManageInstrumentToolRename(t *testing.T) {
 	args := map[string]any{"action": "rename", "code": "MXRF11", "name": "Maxi Renda FII"}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "name" || p.Changes[0].Before.Text != "Maxi Renda" || p.Changes[0].After.Text != "Maxi Renda FII" {
+	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "name" ||
+		p.Changes[0].Before.Text != "Maxi Renda" ||
+		p.Changes[0].After.Text != "Maxi Renda FII" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -120,13 +145,30 @@ func TestManageInstrumentToolRename(t *testing.T) {
 	var read instrumentAPI
 	h.MustDo("GET", "/api/v1/instruments/MXRF11", nil, 200, &read)
 
-	want := instrumentAPI{Code: "MXRF11", Type: "reit", Name: "Maxi Renda FII", QuoteCurrency: "BRL", Exchange: "BVMF"}
+	want := instrumentAPI{
+		Code:          "MXRF11",
+		Type:          "reit",
+		Name:          "Maxi Renda FII",
+		QuoteCurrency: "BRL",
+		Exchange:      "BVMF",
+	}
 	if out.Instrument.Name != "Maxi Renda FII" || read != want {
 		t.Fatalf("renamed %+v, read %+v", out.Instrument, read)
 	}
 
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11"}), "invalid_arguments", "name")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "BRL", "name": "Real"}), "validation_failed", "code")
+	h.ExpectToolError(
+		h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11"}),
+		"invalid_arguments",
+		"name",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "rename", "code": "BRL", "name": "Real"},
+		),
+		"validation_failed",
+		"code",
+	)
 }
 
 func contains(s []string, v string) bool {
@@ -170,17 +212,31 @@ func TestManageInstrumentToolRecordPrice(t *testing.T) {
 	h := apitest.New(t)
 	h.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
 
-	args := map[string]any{"action": "record_price", "code": "MXRF11", "date": "2026-10-22", "price": "10.50"}
+	args := map[string]any{
+		"action": "record_price",
+		"code":   "MXRF11",
+		"date":   "2026-10-22",
+		"price":  "10.50",
+	}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || len(p.Changes) != 2 || p.Changes[0].Field != "price" || p.Changes[0].After.Text != "10.50 BRL" || p.Changes[1].Field != "date" || p.Changes[1].After.Date != "2026-10-22" {
+	if r.IsError || len(p.Changes) != 2 || p.Changes[0].Field != "price" ||
+		p.Changes[0].After.Text != "10.50 BRL" ||
+		p.Changes[1].Field != "date" ||
+		p.Changes[1].After.Date != "2026-10-22" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
 	var prices struct {
 		Prices []struct{ Date, Value string } `json:"prices"`
 	}
-	view := map[string]any{"view": "prices", "code": "MXRF11", "quote": "BRL", "from": "2026-10-01", "to": "2026-10-31"}
+	view := map[string]any{
+		"view":  "prices",
+		"code":  "MXRF11",
+		"quote": "BRL",
+		"from":  "2026-10-01",
+		"to":    "2026-10-31",
+	}
 	toolOutput(t, h, "get_market_data", view, &prices)
 
 	if len(prices.Prices) != 0 {
@@ -190,12 +246,37 @@ func TestManageInstrumentToolRecordPrice(t *testing.T) {
 	toolOutput(t, h, "manage_instrument", args, &struct{}{})
 	toolOutput(t, h, "get_market_data", view, &prices)
 
-	if len(prices.Prices) != 1 || prices.Prices[0].Date != "2026-10-22" || prices.Prices[0].Value != "10.5" {
+	if len(prices.Prices) != 1 || prices.Prices[0].Date != "2026-10-22" ||
+		prices.Prices[0].Value != "10.5" {
 		t.Errorf("prices = %+v", prices.Prices)
 	}
 
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "record_price", "code": "NOPE11", "date": "2026-10-22", "price": "1"}), "not_found", "")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "record_price", "code": "MXRF11", "date": "2026-10-22", "price": "-1"}), "invalid_arguments", "price")
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{
+				"action": "record_price",
+				"code":   "NOPE11",
+				"date":   "2026-10-22",
+				"price":  "1",
+			},
+		),
+		"not_found",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{
+				"action": "record_price",
+				"code":   "MXRF11",
+				"date":   "2026-10-22",
+				"price":  "-1",
+			},
+		),
+		"invalid_arguments",
+		"price",
+	)
 }
 
 // S125 through the tool.
@@ -205,10 +286,19 @@ func TestManageInstrumentToolSetTerms(t *testing.T) {
 	defineFixedIncome(t, h, "CDBXPTO")
 	h.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
 
-	args := map[string]any{"action": "set_terms", "code": "CDBXPTO", "issued_on": "2026-01-02", "matures_on": "2028-01-02", "face_value": "1000.00", "index_id": "cdi", "percent_of_index_bp": 11000}
+	args := map[string]any{
+		"action":              "set_terms",
+		"code":                "CDBXPTO",
+		"issued_on":           "2026-01-02",
+		"matures_on":          "2028-01-02",
+		"face_value":          "1000.00",
+		"index_id":            "cdi",
+		"percent_of_index_bp": 11000,
+	}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "terms" || p.Changes[0].Before.Text != "" {
+	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "terms" ||
+		p.Changes[0].Before.Text != "" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -216,16 +306,64 @@ func TestManageInstrumentToolSetTerms(t *testing.T) {
 	var got struct {
 		Instrument toolInstrument `json:"instrument"`
 	}
-	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "CDBXPTO"}, &got)
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "instrument", "code": "CDBXPTO"},
+		&got,
+	)
 
 	terms := got.Instrument.Terms
-	if terms.MaturesOn != "2028-01-02" || terms.IndexID != "cdi" || terms.PercentOfIndexBP != 11000 || terms.DayCount != "bus252" || terms.FaceValue.Amount != "1000.00" {
+	if terms.MaturesOn != "2028-01-02" || terms.IndexID != "cdi" ||
+		terms.PercentOfIndexBP != 11000 ||
+		terms.DayCount != "bus252" ||
+		terms.FaceValue.Amount != "1000.00" {
 		t.Errorf("terms = %+v", terms)
 	}
 
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "set_terms", "code": "MXRF11", "issued_on": "2026-01-02", "matures_on": "2028-01-02", "face_value": "1000.00"}), "validation_failed", "code")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "set_terms", "code": "NOPE11", "issued_on": "2026-01-02", "matures_on": "2028-01-02", "face_value": "1000.00"}), "not_found", "")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "set_terms", "code": "CDBXPTO", "issued_on": "2026-01-02", "matures_on": "2026-01-02", "face_value": "1000.00"}), "validation_failed", "matures_on")
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{
+				"action":     "set_terms",
+				"code":       "MXRF11",
+				"issued_on":  "2026-01-02",
+				"matures_on": "2028-01-02",
+				"face_value": "1000.00",
+			},
+		),
+		"validation_failed",
+		"code",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{
+				"action":     "set_terms",
+				"code":       "NOPE11",
+				"issued_on":  "2026-01-02",
+				"matures_on": "2028-01-02",
+				"face_value": "1000.00",
+			},
+		),
+		"not_found",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{
+				"action":     "set_terms",
+				"code":       "CDBXPTO",
+				"issued_on":  "2026-01-02",
+				"matures_on": "2026-01-02",
+				"face_value": "1000.00",
+			},
+		),
+		"validation_failed",
+		"matures_on",
+	)
 }
 
 func TestGetMarketDataToolCalendars(t *testing.T) {
@@ -239,34 +377,56 @@ func TestGetMarketDataToolCalendars(t *testing.T) {
 	}
 	toolOutput(t, h, "get_market_data", map[string]any{"view": "calendars"}, &cals)
 
-	if len(cals.Calendars) != 2 || cals.Calendars[0].ID != "br_banking" || !reflect.DeepEqual(cals.Calendars[0].Weekend, []string{"saturday", "sunday"}) {
+	if len(cals.Calendars) != 2 || cals.Calendars[0].ID != "br_banking" ||
+		!reflect.DeepEqual(cals.Calendars[0].Weekend, []string{"saturday", "sunday"}) {
 		t.Fatalf("calendars = %+v", cals.Calendars)
 	}
 
 	var hols struct {
 		Holidays []struct{ Date, Name, Source string } `json:"holidays"`
 	}
-	toolOutput(t, h, "get_market_data", map[string]any{"view": "holidays", "calendar": "br_banking", "year": 2026}, &hols)
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "holidays", "calendar": "br_banking", "year": 2026},
+		&hols,
+	)
 
 	found := false
 	for _, x := range hols.Holidays {
-		found = found || (x.Date == "2026-09-07" && x.Name == "Independence Day" && x.Source == "rule")
+		found = found ||
+			(x.Date == "2026-09-07" && x.Name == "Independence Day" && x.Source == "rule")
 	}
 
 	if !found {
 		t.Errorf("holidays = %+v", hols.Holidays)
 	}
 
-	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "holidays", "calendar": "nope", "year": 2026}), "not_found", "")
+	h.ExpectToolError(
+		h.Tool(
+			"get_market_data",
+			map[string]any{"view": "holidays", "calendar": "nope", "year": 2026},
+		),
+		"not_found",
+		"",
+	)
 }
 
 func TestGetMarketDataToolIndexes(t *testing.T) {
 	t.Parallel()
 
-	s := &sgsServer{cdi: cdiWeek, ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}}}
+	s := &sgsServer{
+		cdi:  cdiWeek,
+		ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}},
+	}
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-03-15"), apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, indexURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-03-15"),
+		apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, indexURLs(srv)),
+	)
 	h.App.Marketdata.TickFeeds(t.Context())
 
 	var list struct {
@@ -274,7 +434,10 @@ func TestGetMarketDataToolIndexes(t *testing.T) {
 	}
 	toolOutput(t, h, "get_market_data", map[string]any{"view": "indexes"}, &list)
 
-	want := []apiIndex{{"cdi", "day", "2026-01-02", "2026-01-09"}, {"ipca", "month", "2026-01-01", "2026-02-01"}}
+	want := []apiIndex{
+		{"cdi", "day", "2026-01-02", "2026-01-09"},
+		{"ipca", "month", "2026-01-01", "2026-02-01"},
+	}
 	if !reflect.DeepEqual(list.Indexes, want) {
 		t.Fatalf("indexes = %+v, want %+v", list.Indexes, want)
 	}
@@ -282,15 +445,45 @@ func TestGetMarketDataToolIndexes(t *testing.T) {
 	var rates struct {
 		IndexRates []apiIndexRate `json:"index_rates"`
 	}
-	toolOutput(t, h, "get_market_data", map[string]any{"view": "index_rates", "index": "ipca", "from": "2026-01-01", "to": "2026-02-28"}, &rates)
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{
+			"view":  "index_rates",
+			"index": "ipca",
+			"from":  "2026-01-01",
+			"to":    "2026-02-28",
+		},
+		&rates,
+	)
 
 	wantRates := []apiIndexRate{{"2026-01-01", "0.004200000000"}, {"2026-02-01", "-0.003000000000"}}
 	if !reflect.DeepEqual(rates.IndexRates, wantRates) {
 		t.Fatalf("index rates = %+v, want %+v", rates.IndexRates, wantRates)
 	}
 
-	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "index_rates", "index": "selic", "from": "2026-01-01", "to": "2026-02-28"}), "not_found", "")
-	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "index_rates", "from": "2026-01-01", "to": "2026-02-28"}), "invalid_arguments", "index")
+	h.ExpectToolError(
+		h.Tool(
+			"get_market_data",
+			map[string]any{
+				"view":  "index_rates",
+				"index": "selic",
+				"from":  "2026-01-01",
+				"to":    "2026-02-28",
+			},
+		),
+		"not_found",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"get_market_data",
+			map[string]any{"view": "index_rates", "from": "2026-01-01", "to": "2026-02-28"},
+		),
+		"invalid_arguments",
+		"index",
+	)
 }
 
 func TestGetMarketDataToolInvalidArguments(t *testing.T) {
@@ -319,7 +512,9 @@ func TestManageInstrumentToolRequestHistory(t *testing.T) {
 	args := map[string]any{"action": "request_history", "code": "USD", "from": "2010-01-01"}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || p.Action != "manage_instrument.request_history" || len(p.Changes) != 1 || p.Changes[0].Field != "from" || p.Changes[0].After.Date != "2010-01-01" {
+	if r.IsError || p.Action != "manage_instrument.request_history" || len(p.Changes) != 1 ||
+		p.Changes[0].Field != "from" ||
+		p.Changes[0].After.Date != "2010-01-01" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -329,8 +524,22 @@ func TestManageInstrumentToolRequestHistory(t *testing.T) {
 
 	bare := apitest.New(t, apitest.Today("2026-11-09"))
 	bare.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
-	bare.ExpectToolError(bare.Tool("manage_instrument", map[string]any{"action": "request_history", "code": "MXRF11", "from": "2010-01-01"}), "no_source", "")
-	bare.ExpectToolError(bare.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11", "name": "X", "from": "2010-01-01"}), "invalid_arguments", "from")
+	bare.ExpectToolError(
+		bare.Tool(
+			"manage_instrument",
+			map[string]any{"action": "request_history", "code": "MXRF11", "from": "2010-01-01"},
+		),
+		"no_source",
+		"",
+	)
+	bare.ExpectToolError(
+		bare.Tool(
+			"manage_instrument",
+			map[string]any{"action": "rename", "code": "MXRF11", "name": "X", "from": "2010-01-01"},
+		),
+		"invalid_arguments",
+		"from",
+	)
 }
 
 // A222 MQ23, MQ24 through the tool: the instrument view reports the coverage.
@@ -361,7 +570,8 @@ func TestGetMarketDataInstrumentCoverage(t *testing.T) {
 		t.Fatalf("coverage = %+v", c)
 	}
 
-	if s := c.Sources[0]; s.ID != "bcb_ptax" || !s.Enabled || !s.Official || s.Last != "2026-11-06" {
+	if s := c.Sources[0]; s.ID != "bcb_ptax" || !s.Enabled || !s.Official ||
+		s.Last != "2026-11-06" {
 		t.Errorf("source 0 = %+v", s)
 	}
 
@@ -382,15 +592,26 @@ func TestManageInstrumentToolExchangeSubtypeSymbols(t *testing.T) {
 	h := apitest.New(t)
 
 	define := map[string]any{
-		"action": "define", "code": "MXRF11", "name": "Maxi Renda", "type": "reit", "quote_currency": "BRL",
-		"exchange": "BVMF", "subtype": "fii_papel", "symbols": []string{"yahoo_chart=MXRF11.SA"},
+		"action":         "define",
+		"code":           "MXRF11",
+		"name":           "Maxi Renda",
+		"type":           "reit",
+		"quote_currency": "BRL",
+		"exchange":       "BVMF",
+		"subtype":        "fii_papel",
+		"symbols":        []string{"yahoo_chart=MXRF11.SA"},
 	}
 	toolOutput(t, h, "manage_instrument", define, &struct{}{})
 
 	var got instrumentFacts
 	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &got)
 
-	want := instrumentFacts{Name: "Maxi Renda", Exchange: "BVMF", Subtype: "fii_papel", Symbols: map[string]string{"yahoo_chart": "MXRF11.SA"}}
+	want := instrumentFacts{
+		Name:     "Maxi Renda",
+		Exchange: "BVMF",
+		Subtype:  "fii_papel",
+		Symbols:  map[string]string{"yahoo_chart": "MXRF11.SA"},
+	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("defined = %+v", got)
 	}
@@ -401,16 +622,24 @@ func TestManageInstrumentToolExchangeSubtypeSymbols(t *testing.T) {
 			Symbols  []string `json:"symbols"`
 		} `json:"instrument"`
 	}
-	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "MXRF11"}, &view)
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "instrument", "code": "MXRF11"},
+		&view,
+	)
 
-	if view.Instrument.Exchange != "BVMF" || !reflect.DeepEqual(view.Instrument.Symbols, []string{"yahoo_chart=MXRF11.SA"}) {
+	if view.Instrument.Exchange != "BVMF" ||
+		!reflect.DeepEqual(view.Instrument.Symbols, []string{"yahoo_chart=MXRF11.SA"}) {
 		t.Errorf("view = %+v", view)
 	}
 
 	edit := map[string]any{"action": "edit", "code": "MXRF11", "subtype": "fii_tijolo"}
 
 	p, r := preview(t, h, "manage_instrument", edit)
-	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Before.Text != "fii_papel" || p.Changes[0].After.Text != "fii_tijolo" {
+	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Before.Text != "fii_papel" ||
+		p.Changes[0].After.Text != "fii_tijolo" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -422,7 +651,13 @@ func TestManageInstrumentToolExchangeSubtypeSymbols(t *testing.T) {
 		t.Fatalf("after a subtype edit = %+v", got)
 	}
 
-	toolOutput(t, h, "manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{}}, &struct{}{})
+	toolOutput(
+		t,
+		h,
+		"manage_instrument",
+		map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{}},
+		&struct{}{},
+	)
 
 	got = instrumentFacts{}
 	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &got)
@@ -431,12 +666,48 @@ func TestManageInstrumentToolExchangeSubtypeSymbols(t *testing.T) {
 		t.Fatalf("after clearing the symbols = %+v", got)
 	}
 
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11"}), "invalid_arguments", "name")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "exchange": "B3"}), "validation_failed", "exchange")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{"yahoo"}}), "invalid_arguments", "symbols")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{"nowhere=X"}}), "validation_failed", "symbols.nowhere")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "NOPE", "name": "x"}), "not_found", "")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "rename", "code": "MXRF11", "name": "x", "subtype": "fii"}), "invalid_arguments", "subtype")
+	h.ExpectToolError(
+		h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "MXRF11"}),
+		"invalid_arguments",
+		"name",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "edit", "code": "MXRF11", "exchange": "B3"},
+		),
+		"validation_failed",
+		"exchange",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{"yahoo"}},
+		),
+		"invalid_arguments",
+		"symbols",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "edit", "code": "MXRF11", "symbols": []string{"nowhere=X"}},
+		),
+		"validation_failed",
+		"symbols.nowhere",
+	)
+	h.ExpectToolError(
+		h.Tool("manage_instrument", map[string]any{"action": "edit", "code": "NOPE", "name": "x"}),
+		"not_found",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "rename", "code": "MXRF11", "name": "x", "subtype": "fii"},
+		),
+		"invalid_arguments",
+		"subtype",
+	)
 }
 
 func TestManageInstrumentToolDayCount(t *testing.T) {
@@ -445,15 +716,26 @@ func TestManageInstrumentToolDayCount(t *testing.T) {
 	defineFixedIncome(t, h, "CDBXPTO")
 
 	args := map[string]any{
-		"action": "set_terms", "code": "CDBXPTO", "issued_on": "2026-01-02", "matures_on": "2028-01-02",
-		"face_value": "1000.00", "index_id": "cdi", "day_count": "act365",
+		"action":     "set_terms",
+		"code":       "CDBXPTO",
+		"issued_on":  "2026-01-02",
+		"matures_on": "2028-01-02",
+		"face_value": "1000.00",
+		"index_id":   "cdi",
+		"day_count":  "act365",
 	}
 	toolOutput(t, h, "manage_instrument", args, &struct{}{})
 
 	var got struct {
 		Instrument toolInstrument `json:"instrument"`
 	}
-	toolOutput(t, h, "get_market_data", map[string]any{"view": "instrument", "code": "CDBXPTO"}, &got)
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "instrument", "code": "CDBXPTO"},
+		&got,
+	)
 
 	if got.Instrument.Terms.DayCount != "act365" {
 		t.Errorf("day count = %q", got.Instrument.Terms.DayCount)
@@ -483,7 +765,11 @@ func TestMarketToolCatalog(t *testing.T) {
 		t.Fatalf("catalog = %v, want %v", out.Catalog, want)
 	}
 
-	h.ExpectToolError(h.Tool("get_market_data", map[string]any{"view": "catalog"}), "invalid_arguments", "query")
+	h.ExpectToolError(
+		h.Tool("get_market_data", map[string]any{"view": "catalog"}),
+		"invalid_arguments",
+		"query",
+	)
 }
 
 // A223 RM4: the action delete previews the removal and then deletes the security.
@@ -496,7 +782,8 @@ func TestManageInstrumentToolDelete(t *testing.T) {
 	args := map[string]any{"action": "delete", "code": "MXRF11"}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || p.Action != "manage_instrument.delete" || len(p.Changes) != 1 || p.Changes[0].Field != "instrument" {
+	if r.IsError || p.Action != "manage_instrument.delete" || len(p.Changes) != 1 ||
+		p.Changes[0].Field != "instrument" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -504,6 +791,17 @@ func TestManageInstrumentToolDelete(t *testing.T) {
 	h.ExpectProblem(h.Do("GET", "/api/v1/instruments/MXRF11", nil), 404, "not_found", "")
 
 	h.ExpectToolError(h.Tool("manage_instrument", args), "not_found", "")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "delete", "code": "BRL"}), "validation_failed", "code")
-	h.ExpectToolError(h.Tool("manage_instrument", map[string]any{"action": "delete", "code": "MXRF11", "name": "X"}), "invalid_arguments", "name")
+	h.ExpectToolError(
+		h.Tool("manage_instrument", map[string]any{"action": "delete", "code": "BRL"}),
+		"validation_failed",
+		"code",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "delete", "code": "MXRF11", "name": "X"},
+		),
+		"invalid_arguments",
+		"name",
+	)
 }

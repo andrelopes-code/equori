@@ -7,7 +7,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-func (c organizeCall) planCreatePayeeOrInstitution(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+func (c organizeCall) planCreatePayeeOrInstitution(
+	ctx context.Context,
+	pv *tool.Preview,
+) (organizeRun, error) {
 	text := tool.TextValue
 
 	if err := c.check([]string{"name"}); err != nil {
@@ -20,7 +23,11 @@ func (c organizeCall) planCreatePayeeOrInstitution(ctx context.Context, pv *tool
 	return func() (manageAccountsAndPayeesOut, error) {
 		if c.in.Action == "create_payee" {
 			p, err := c.svc.CreatePayee(ctx, c.booksID, c.in.Name)
-			return manageAccountsAndPayeesOut{Action: c.action, ID: p.ID.String(), Name: p.Name}, err
+			return manageAccountsAndPayeesOut{
+				Action: c.action,
+				ID:     p.ID.String(),
+				Name:   p.Name,
+			}, err
 		}
 
 		i, err := c.svc.CreateInstitution(ctx, c.booksID, app.Institution{Name: c.in.Name})
@@ -46,11 +53,18 @@ func (c organizeCall) planRenamePayee(ctx context.Context, pv *tool.Preview) (or
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		renamed, err := c.svc.RenamePayee(ctx, c.booksID, p.ID, c.in.Name)
-		return manageAccountsAndPayeesOut{Action: c.action, ID: p.ID.String(), Name: renamed.Name}, err
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			ID:     p.ID.String(),
+			Name:   renamed.Name,
+		}, err
 	}, nil
 }
 
-func (c organizeCall) planDeleteInstitution(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+func (c organizeCall) planDeleteInstitution(
+	ctx context.Context,
+	pv *tool.Preview,
+) (organizeRun, error) {
 	if err := c.check([]string{"institution_id"}); err != nil {
 		return nil, err
 	}
@@ -63,7 +77,14 @@ func (c organizeCall) planDeleteInstitution(ctx context.Context, pv *tool.Previe
 	pv.Target, pv.Destructive = name, true
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		return manageAccountsAndPayeesOut{Action: c.action, Name: name}, c.svc.DeleteInstitution(ctx, c.booksID, c.institutionID)
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			Name:   name,
+		}, c.svc.DeleteInstitution(
+			ctx,
+			c.booksID,
+			c.institutionID,
+		)
 	}, nil
 }
 
@@ -89,6 +110,10 @@ func (c organizeCall) planMergePayee(ctx context.Context, pv *tool.Preview) (org
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		merged, err := c.svc.MergePayees(ctx, c.booksID, from.ID, into.ID)
-		return manageAccountsAndPayeesOut{Action: c.action, ID: merged.ID.String(), Name: merged.Name}, err
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			ID:     merged.ID.String(),
+			Name:   merged.Name,
+		}, err
 	}, nil
 }

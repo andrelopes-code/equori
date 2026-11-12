@@ -93,7 +93,10 @@ func detectGroup(g []SeriesFact) (Series, bool) {
 		return Series{}, false
 	}
 
-	g = slices.SortedStableFunc(slices.Values(g), func(a, b SeriesFact) int { return a.Date.Compare(b.Date) })
+	g = slices.SortedStableFunc(
+		slices.Values(g),
+		func(a, b SeriesFact) int { return a.Date.Compare(b.Date) },
+	)
 
 	intervals := make([]int, len(g)-1)
 	for i := range intervals {
@@ -101,7 +104,8 @@ func detectGroup(g []SeriesFact) (Series, bool) {
 	}
 
 	c, ok := cadenceOf(intervals)
-	if !ok || len(g) < 3 && c.name != CadenceMonthly && c.name != CadenceYearly || !amountsClose(g) {
+	if !ok || len(g) < 3 && c.name != CadenceMonthly && c.name != CadenceYearly ||
+		!amountsClose(g) {
 		return Series{}, false
 	}
 
@@ -120,10 +124,16 @@ func detectGroup(g []SeriesFact) (Series, bool) {
 	last := g[len(g)-1]
 
 	return Series{
-		Key: last.Key, AccountID: last.AccountID, CategoryID: commonCategory(g), PayeeID: last.PayeeID,
-		Frequency: c.name, Count: len(g), LastDate: last.Date,
-		NextDate:   last.Date.AddDate(c.years, c.months, c.extra),
-		LastAmount: last.Amount, TransactionIDs: recentIDs(g),
+		Key:            last.Key,
+		AccountID:      last.AccountID,
+		CategoryID:     commonCategory(g),
+		PayeeID:        last.PayeeID,
+		Frequency:      c.name,
+		Count:          len(g),
+		LastDate:       last.Date,
+		NextDate:       last.Date.AddDate(c.years, c.months, c.extra),
+		LastAmount:     last.Amount,
+		TransactionIDs: recentIDs(g),
 	}, true
 }
 

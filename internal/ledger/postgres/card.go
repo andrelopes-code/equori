@@ -10,7 +10,17 @@ import (
 )
 
 func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card, error) {
-	row, err := r.q.InsertCard(ctx, InsertCardParams{BooksID: c.BooksID, AccountID: c.AccountID, Holder: c.Holder, LastFour: c.LastFour, Virtual: c.Virtual, ForeignChargeBp: int32(c.ForeignChargeBP)}) //nolint:gosec // G115: NewCard bounds the rate to 0–10000
+	row, err := r.q.InsertCard(
+		ctx,
+		InsertCardParams{
+			BooksID:         c.BooksID,
+			AccountID:       c.AccountID,
+			Holder:          c.Holder,
+			LastFour:        c.LastFour,
+			Virtual:         c.Virtual,
+			ForeignChargeBp: int32(c.ForeignChargeBP),
+		},
+	) //nolint:gosec // G115: NewCard bounds the rate to 0–10000
 	if err != nil {
 		return domain.Card{}, referenceError(err)
 	}
@@ -18,8 +28,22 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 	return toCard(row), nil
 }
 
-func (r *Repository) UpdateCard(ctx context.Context, booksID int64, id uuid.UUID, e domain.CardEdit) (domain.Card, error) {
-	row, err := r.q.UpdateCard(ctx, UpdateCardParams{BooksID: booksID, ID: id, Holder: e.Holder, LastFour: e.LastFour, Active: e.Active})
+func (r *Repository) UpdateCard(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	e domain.CardEdit,
+) (domain.Card, error) {
+	row, err := r.q.UpdateCard(
+		ctx,
+		UpdateCardParams{
+			BooksID:  booksID,
+			ID:       id,
+			Holder:   e.Holder,
+			LastFour: e.LastFour,
+			Active:   e.Active,
+		},
+	)
 	if err != nil {
 		return domain.Card{}, notFound(err)
 	}
@@ -40,7 +64,11 @@ func (r *Repository) DeleteCard(ctx context.Context, booksID int64, id uuid.UUID
 	return nil
 }
 
-func (r *Repository) Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error) {
+func (r *Repository) Cards(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) ([]domain.Card, error) {
 	rows, err := r.q.ListCards(ctx, ListCardsParams{BooksID: booksID, AccountID: accountID})
 	return mapAll(rows, toCard), err
 }

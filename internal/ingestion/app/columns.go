@@ -13,7 +13,12 @@ import (
 var ErrColumnSuggesterUnavailable = errors.New("no language model can answer now")
 
 // SuggestColumns masks the sample, asks the model and validates its answer; it stores nothing.
-func (s *Service) SuggestColumns(ctx context.Context, booksID int64, accountID uuid.UUID, sample domain.ColumnSample) (domain.ColumnSuggestion, error) {
+func (s *Service) SuggestColumns(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	sample domain.ColumnSample,
+) (domain.ColumnSuggestion, error) {
 	if _, err := s.ledger.ImportTarget(ctx, booksID, accountID); err != nil {
 		return domain.ColumnSuggestion{}, err
 	}

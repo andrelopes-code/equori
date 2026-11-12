@@ -22,9 +22,13 @@ import (
 func TestProposeAttachesSignals(t *testing.T) {
 	t.Parallel()
 	e := newProposalEnv(t)
-	e.h.App.Assistant.UseSignals(func(_ context.Context, _ int64, p tool.Preview) ([]assistant.Signal, error) {
-		return []assistant.Signal{{Kind: "recurring", Data: json.RawMessage(`{"frequency":"monthly"}`)}}, nil
-	})
+	e.h.App.Assistant.UseSignals(
+		func(_ context.Context, _ int64, p tool.Preview) ([]assistant.Signal, error) {
+			return []assistant.Signal{
+				{Kind: "recurring", Data: json.RawMessage(`{"frequency":"monthly"}`)},
+			}, nil
+		},
+	)
 
 	got := e.proposeResult(t)
 	if len(got.Signals) != 1 || got.Signals[0].Kind != "recurring" {
@@ -35,9 +39,11 @@ func TestProposeAttachesSignals(t *testing.T) {
 func TestProposeSignalsLookupFails(t *testing.T) {
 	t.Parallel()
 	e := newProposalEnv(t)
-	e.h.App.Assistant.UseSignals(func(_ context.Context, _ int64, _ tool.Preview) ([]assistant.Signal, error) {
-		return nil, errors.New("lookup failed")
-	})
+	e.h.App.Assistant.UseSignals(
+		func(_ context.Context, _ int64, _ tool.Preview) ([]assistant.Signal, error) {
+			return nil, errors.New("lookup failed")
+		},
+	)
 
 	got := e.proposeResult(t)
 	if got.Status != "awaiting_confirmation" || got.Signals != nil {
@@ -58,11 +64,20 @@ func (e proposalEnv) proposeResult(t *testing.T) proposeResult {
 	now := *e.now.Load()
 
 	conv := domain.Conversation{ID: uuid.New(), Title: "t", CreatedAt: now, UpdatedAt: now}
-	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), e.h.OwnerID(), e.h.MemberIDOf("owner@example.com"), conv); err != nil {
+	if err := postgres.NewRepository(e.h.Pool).
+		CreateConversation(t.Context(), e.h.OwnerID(), e.h.MemberIDOf("owner@example.com"), conv); err != nil {
 		t.Fatal(err)
 	}
 
-	content, err := assistant.ProposeForTest(e.h.App.Assistant, t.Context(), e.h.OwnerID(), conv.ID, "note_for_test", json.RawMessage(`{"text":"x"}`), app.ProposalMeta{})
+	content, err := assistant.ProposeForTest(
+		e.h.App.Assistant,
+		t.Context(),
+		e.h.OwnerID(),
+		conv.ID,
+		"note_for_test",
+		json.RawMessage(`{"text":"x"}`),
+		app.ProposalMeta{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +108,8 @@ func TestRecordAfterMonthlyPurchasesCarriesSignal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(out.Signals) != 1 || out.Signals[0].Kind != "recurring" || out.Signals[0].Data.Frequency != "monthly" {
+	if len(out.Signals) != 1 || out.Signals[0].Kind != "recurring" ||
+		out.Signals[0].Data.Frequency != "monthly" {
 		t.Fatalf("result = %s", result)
 	}
 }
@@ -126,7 +142,13 @@ func signalTurn(t *testing.T, description, date string) json.RawMessage {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Netflix"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Netflix"},
+		http.StatusCreated,
+		&payee,
+	)
 
 	for _, d := range []string{"2026-08-20", "2026-09-20"} {
 		h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
@@ -138,7 +160,11 @@ func signalTurn(t *testing.T, description, date string) json.RawMessage {
 	h.Dispatch()
 
 	in := map[string]any{
-		"date": date, "description": description, "amount": "55.90", "from_account_id": wallet, "to_account_id": subs,
+		"date":            date,
+		"description":     description,
+		"amount":          "55.90",
+		"from_account_id": wallet,
+		"to_account_id":   subs,
 	}
 	if description == "Netflix" {
 		in["payee_id"] = payee.ID
@@ -151,7 +177,11 @@ func signalTurn(t *testing.T, description, date string) json.RawMessage {
 
 	late.p = llmtest.New("aistudio", callStep("record_transaction", string(args)), textStep("ok"))
 
-	if r := sendTurn(h, h.Client, map[string]any{"text": "Registra a compra."}); r.Status != http.StatusOK {
+	if r := sendTurn(
+		h,
+		h.Client,
+		map[string]any{"text": "Registra a compra."},
+	); r.Status != http.StatusOK {
 		t.Fatalf("turn status = %d: %s", r.Status, r.Body)
 	}
 

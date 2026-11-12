@@ -27,7 +27,11 @@ func (s *Service) VersionStatus(ctx context.Context, memberID int64) (VersionSta
 }
 
 // SetUpdateCheck stores the admin's answer and returns the new state.
-func (s *Service) SetUpdateCheck(ctx context.Context, memberID int64, consent bool) (VersionStatus, error) {
+func (s *Service) SetUpdateCheck(
+	ctx context.Context,
+	memberID int64,
+	consent bool,
+) (VersionStatus, error) {
 	if err := s.requireAdmin(ctx, memberID); err != nil {
 		return VersionStatus{}, err
 	}
@@ -61,7 +65,14 @@ func (s *Service) CheckVersion(ctx context.Context) error {
 
 	tag, url, err := s.releases.Latest(ctx, domain.Prerelease(s.cfg.Version))
 	if err != nil {
-		s.log.WarnContext(ctx, "check for a newer release", "code", "version_check_failed", "error", err)
+		s.log.WarnContext(
+			ctx,
+			"check for a newer release",
+			"code",
+			"version_check_failed",
+			"error",
+			err,
+		)
 		return err
 	}
 

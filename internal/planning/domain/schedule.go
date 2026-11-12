@@ -141,7 +141,8 @@ func (s Schedule) Planned(from, to time.Time, days BusinessDays) []Planned {
 
 			last = seq
 
-			if d.Date.Before(from) || s.Paused(d.Date) || (s.EndsOn != nil && !d.Date.Before(*s.EndsOn)) {
+			if d.Date.Before(from) || s.Paused(d.Date) ||
+				(s.EndsOn != nil && !d.Date.Before(*s.EndsOn)) {
 				continue
 			}
 

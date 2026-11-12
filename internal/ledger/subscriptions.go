@@ -41,7 +41,15 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	svc := app.NewService(postgres.NewRepository(tx, nil), clock.New(time.Now), nil, nil, nil, nil, nil)
+	svc := app.NewService(
+		postgres.NewRepository(tx, nil),
+		clock.New(time.Now),
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+	)
 
 	return svc.Provision(ctx, p.BooksID, p.BaseCurrency)
 }

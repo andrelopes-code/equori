@@ -32,7 +32,16 @@ func (s *seeder) bookYield() {
 			cents := s.balanceOn(a.key, iso(end))
 			interest := int64(math.Round(float64(cents) * a.rate(m) * share))
 
-			s.do(http.MethodPost, "/accounts/"+s.id(a.key)+"/balance-assertions", map[string]any{"date": iso(end), "amount": brl(cents + interest), "source": "manual"}, nil)
+			s.do(
+				http.MethodPost,
+				"/accounts/"+s.id(a.key)+"/balance-assertions",
+				map[string]any{
+					"date":   iso(end),
+					"amount": brl(cents + interest),
+					"source": "manual",
+				},
+				nil,
+			)
 		}
 	}
 }
@@ -44,7 +53,18 @@ func savingsRate(month time.Time) float64 {
 
 // cdiRate is the monthly CDI, from an annual rate that follows the Selic path of the history.
 func cdiRate(month time.Time) float64 {
-	annual := step(month, 1115, map[string]int64{"2025-01": 1215, "2025-03": 1315, "2025-06": 1490, "2026-04": 1440, "2026-07": 1390, "2026-10": 1340})
+	annual := step(
+		month,
+		1115,
+		map[string]int64{
+			"2025-01": 1215,
+			"2025-03": 1315,
+			"2025-06": 1490,
+			"2026-04": 1440,
+			"2026-07": 1390,
+			"2026-10": 1340,
+		},
+	)
 
 	return math.Pow(1+float64(annual)/10000, 1.0/12) - 1
 }

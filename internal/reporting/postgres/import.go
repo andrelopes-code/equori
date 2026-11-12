@@ -66,7 +66,10 @@ func loadOrder(ctx context.Context, q DBTX, tables []string) ([]string, error) {
 	var out []string
 	for len(pending) > 0 {
 		i := slices.IndexFunc(pending, func(t string) bool {
-			return !slices.ContainsFunc(edges, func(e edge) bool { return e.from == t && slices.Contains(pending, e.to) })
+			return !slices.ContainsFunc(
+				edges,
+				func(e edge) bool { return e.from == t && slices.Contains(pending, e.to) },
+			)
 		})
 		if i < 0 {
 			return nil, fmt.Errorf("foreign keys form a cycle among %v", pending)
@@ -171,7 +174,11 @@ func clearFacts(ctx context.Context, tx pgx.Tx, booksID int64, order, facts []st
 			continue
 		}
 
-		if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{t}.Sanitize(), where), booksID); err != nil {
+		if _, err := tx.Exec(
+			ctx,
+			fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{t}.Sanitize(), where),
+			booksID,
+		); err != nil {
 			return fmt.Errorf("clear %s: %w", t, err)
 		}
 	}
@@ -222,7 +229,12 @@ func insertTables(
 	return counts, nil
 }
 
-func setLaterReferences(ctx context.Context, tx pgx.Tx, booksID int64, byName map[string]app.ArchiveTable) error {
+func setLaterReferences(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	byName map[string]app.ArchiveTable,
+) error {
 	for t, c := range laterReferences {
 		rows := byName[t].Rows
 		if len(rows) == 0 {
@@ -230,8 +242,20 @@ func setLaterReferences(ctx context.Context, tx pgx.Tx, booksID int64, byName ma
 		}
 
 		name, col := pgx.Identifier{t}.Sanitize(), pgx.Identifier{c}.Sanitize()
-		if _, err := tx.Exec(ctx, fmt.Sprintf(`UPDATE %s t SET %s = r.%s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
-			WHERE t.books_id = $2 AND t.id = r.id AND r.%s IS NOT NULL`, name, col, col, name, col), jsonArray(rows), booksID); err != nil {
+		if _, err := tx.Exec(
+			ctx,
+			fmt.Sprintf(
+				`UPDATE %s t SET %s = r.%s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
+			WHERE t.books_id = $2 AND t.id = r.id AND r.%s IS NOT NULL`,
+				name,
+				col,
+				col,
+				name,
+				col,
+			),
+			jsonArray(rows),
+			booksID,
+		); err != nil {
 			return fmt.Errorf("import %s.%s: %w", t, c, err)
 		}
 	}
@@ -249,7 +273,13 @@ func restoreSecrets(
 
 	// Export design C6: a credential of an id with no imported integration matches no row.
 	for id, b := range sealed.Integrations {
-		tag, err := tx.Exec(ctx, `UPDATE ingestion_integration SET credential_ciphertext = $1 WHERE books_id = $2 AND id = $3`, b, booksID, id)
+		tag, err := tx.Exec(
+			ctx,
+			`UPDATE ingestion_integration SET credential_ciphertext = $1 WHERE books_id = $2 AND id = $3`,
+			b,
+			booksID,
+			id,
+		)
 		if err != nil {
 			return restored, fmt.Errorf("restore credential: %w", err)
 		}
@@ -259,7 +289,13 @@ func restoreSecrets(
 
 	// Export design T5: a key of an id with no imported provider matches no row.
 	for id, b := range sealed.Providers {
-		tag, err := tx.Exec(ctx, `UPDATE assistant_provider SET sealed_key = $1 WHERE books_id = $2 AND id = $3`, b, booksID, id)
+		tag, err := tx.Exec(
+			ctx,
+			`UPDATE assistant_provider SET sealed_key = $1 WHERE books_id = $2 AND id = $3`,
+			b,
+			booksID,
+			id,
+		)
 		if err != nil {
 			return restored, fmt.Errorf("restore provider key: %w", err)
 		}
@@ -272,7 +308,12 @@ func restoreSecrets(
 
 // replacedTables hold rows that no archive carries and that a replacement deletes, child
 // tables first (export design R3).
-var replacedTables = []string{"assistant_proposal", "assistant_message", "assistant_conversation", "assistant_usage"}
+var replacedTables = []string{
+	"assistant_proposal",
+	"assistant_message",
+	"assistant_conversation",
+	"assistant_usage",
+}
 
 // clearable refuses an import into a book that holds facts, unless replace repeats the book
 // name; then it deletes the rows of replacedTables and unlocks the reconciled postings for the
@@ -281,7 +322,8 @@ func clearable(ctx context.Context, tx pgx.Tx, booksID int64, replace string) er
 	if replace == "" {
 		var holds bool
 		if err := tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM ledger_transaction WHERE books_id = $1)
-			OR EXISTS (SELECT 1 FROM ledger_account WHERE books_id = $1 AND system_role IS NULL)`, booksID).Scan(&holds); err != nil {
+			OR EXISTS (SELECT 1 FROM ledger_account WHERE books_id = $1 AND system_role IS NULL)`, booksID).
+			Scan(&holds); err != nil {
 			return err
 		}
 
@@ -293,7 +335,8 @@ func clearable(ctx context.Context, tx pgx.Tx, booksID int64, replace string) er
 	}
 
 	var name string
-	if err := tx.QueryRow(ctx, `SELECT coalesce(name, '') FROM identity_books WHERE id = $1`, booksID).Scan(&name); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT coalesce(name, '') FROM identity_books WHERE id = $1`, booksID).
+		Scan(&name); err != nil {
 		return err
 	}
 
@@ -302,7 +345,11 @@ func clearable(ctx context.Context, tx pgx.Tx, booksID int64, replace string) er
 	}
 
 	for _, t := range replacedTables {
-		if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE books_id = $1`, pgx.Identifier{t}.Sanitize()), booksID); err != nil {
+		if _, err := tx.Exec(
+			ctx,
+			fmt.Sprintf(`DELETE FROM %s WHERE books_id = $1`, pgx.Identifier{t}.Sanitize()),
+			booksID,
+		); err != nil {
 			return fmt.Errorf("clear %s: %w", t, err)
 		}
 	}

@@ -33,5 +33,9 @@ type Commitments interface {
 
 // Valuations values each account's own balance at the end of a date in the base currency, lent by portfolio.
 type Valuations interface {
-	ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error)
+	ValuedBalances(
+		ctx context.Context,
+		booksID int64,
+		date time.Time,
+	) (map[uuid.UUID]money.Money, error)
 }

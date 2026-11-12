@@ -15,7 +15,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
-func (r *Repository) LockAccount(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error) {
+func (r *Repository) LockAccount(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Account, error) {
 	row, err := r.q.GetAccountForUpdate(ctx, GetAccountForUpdateParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Account{}, notFound(err)
@@ -31,9 +35,16 @@ func toAssertion(row LedgerBalanceAssertion, reconciled bool) app.BalanceAsserti
 	}
 }
 
-func (r *Repository) InsertBalanceAssertion(ctx context.Context, a app.BalanceAssertion) (app.BalanceAssertion, error) {
+func (r *Repository) InsertBalanceAssertion(
+	ctx context.Context,
+	a app.BalanceAssertion,
+) (app.BalanceAssertion, error) {
 	row, err := r.q.InsertBalanceAssertion(ctx, InsertBalanceAssertionParams{
-		BooksID: a.BooksID, AccountID: a.AccountID, Date: a.Date, Amount: a.Amount, Source: a.Source,
+		BooksID:   a.BooksID,
+		AccountID: a.AccountID,
+		Date:      a.Date,
+		Amount:    a.Amount,
+		Source:    a.Source,
 	})
 	if err != nil {
 		return app.BalanceAssertion{}, err
@@ -42,7 +53,11 @@ func (r *Repository) InsertBalanceAssertion(ctx context.Context, a app.BalanceAs
 	return toAssertion(row, false), nil
 }
 
-func (r *Repository) BalanceAssertion(ctx context.Context, booksID int64, id uuid.UUID) (app.BalanceAssertion, error) {
+func (r *Repository) BalanceAssertion(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (app.BalanceAssertion, error) {
 	row, err := r.q.GetBalanceAssertion(ctx, GetBalanceAssertionParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return app.BalanceAssertion{}, notFound(err)
@@ -54,8 +69,17 @@ func (r *Repository) BalanceAssertion(ctx context.Context, booksID int64, id uui
 	}, row.Reconciled), nil
 }
 
-func (r *Repository) BalanceAssertionPage(ctx context.Context, booksID int64, accountID uuid.UUID, p page.Request[app.AssertionKey]) ([]app.BalanceAssertion, *app.AssertionKey, error) {
-	params := ListBalanceAssertionPageParams{BooksID: booksID, AccountID: accountID, RowLimit: rowLimit(p.Limit)}
+func (r *Repository) BalanceAssertionPage(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	p page.Request[app.AssertionKey],
+) ([]app.BalanceAssertion, *app.AssertionKey, error) {
+	params := ListBalanceAssertionPageParams{
+		BooksID:   booksID,
+		AccountID: accountID,
+		RowLimit:  rowLimit(p.Limit),
+	}
 	if p.After != nil {
 		params.AfterDate, params.AfterID = &p.After.Date, nullUUID(p.After.ID)
 	}
@@ -79,8 +103,15 @@ func (r *Repository) BalanceAssertionPage(ctx context.Context, booksID int64, ac
 	return items, next, nil
 }
 
-func (r *Repository) BalanceAssertions(ctx context.Context, booksID int64, accountID uuid.UUID) ([]app.BalanceAssertion, error) {
-	rows, err := r.q.ListBalanceAssertions(ctx, ListBalanceAssertionsParams{BooksID: booksID, AccountID: accountID})
+func (r *Repository) BalanceAssertions(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) ([]app.BalanceAssertion, error) {
+	rows, err := r.q.ListBalanceAssertions(
+		ctx,
+		ListBalanceAssertionsParams{BooksID: booksID, AccountID: accountID},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -109,12 +140,24 @@ func optionalDate(d time.Time, err error) (*time.Time, error) {
 	return &d, nil
 }
 
-func (r *Repository) LastReconciledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error) {
-	return optionalDate(r.q.LastReconciledOn(ctx, LastReconciledOnParams{BooksID: booksID, AccountID: accountID}))
+func (r *Repository) LastReconciledOn(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (*time.Time, error) {
+	return optionalDate(
+		r.q.LastReconciledOn(ctx, LastReconciledOnParams{BooksID: booksID, AccountID: accountID}),
+	)
 }
 
-func (r *Repository) FirstSettledOn(ctx context.Context, booksID int64, accountID uuid.UUID) (*time.Time, error) {
-	return optionalDate(r.q.FirstSettledOn(ctx, FirstSettledOnParams{BooksID: booksID, AccountID: accountID}))
+func (r *Repository) FirstSettledOn(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (*time.Time, error) {
+	return optionalDate(
+		r.q.FirstSettledOn(ctx, FirstSettledOnParams{BooksID: booksID, AccountID: accountID}),
+	)
 }
 
 func (r *Repository) InsertReconciliation(ctx context.Context, rec app.Reconciliation) error {
@@ -131,16 +174,36 @@ func (r *Repository) InsertReconciliation(ctx context.Context, rec app.Reconcili
 	return err
 }
 
-func (r *Repository) ReconcileStatementPostings(ctx context.Context, booksID int64, statementID uuid.UUID) error {
-	return r.q.ReconcileStatementPostings(ctx, ReconcileStatementPostingsParams{BooksID: booksID, StatementID: nullUUID(statementID)})
+func (r *Repository) ReconcileStatementPostings(
+	ctx context.Context,
+	booksID int64,
+	statementID uuid.UUID,
+) error {
+	return r.q.ReconcileStatementPostings(
+		ctx,
+		ReconcileStatementPostingsParams{BooksID: booksID, StatementID: nullUUID(statementID)},
+	)
 }
 
-func (r *Repository) ReconcilePostings(ctx context.Context, booksID int64, accountID uuid.UUID, through time.Time) error {
-	return r.q.ReconcileAccountPostings(ctx, ReconcileAccountPostingsParams{BooksID: booksID, AccountID: accountID, OnDate: through})
+func (r *Repository) ReconcilePostings(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	through time.Time,
+) error {
+	return r.q.ReconcileAccountPostings(
+		ctx,
+		ReconcileAccountPostingsParams{BooksID: booksID, AccountID: accountID, OnDate: through},
+	)
 }
 
 // UnlockAccount bypasses the I05 trigger for the current database transaction only (A8).
-func (r *Repository) UnlockAccount(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error {
+func (r *Repository) UnlockAccount(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from time.Time,
+) error {
 	if r.tx == nil {
 		return errors.New("unlock outside a transaction")
 	}
@@ -149,9 +212,15 @@ func (r *Repository) UnlockAccount(ctx context.Context, booksID int64, accountID
 		return err
 	}
 
-	if err := r.q.UnreconcileAccountPostings(ctx, UnreconcileAccountPostingsParams{BooksID: booksID, AccountID: accountID, FromDate: from}); err != nil {
+	if err := r.q.UnreconcileAccountPostings(
+		ctx,
+		UnreconcileAccountPostingsParams{BooksID: booksID, AccountID: accountID, FromDate: from},
+	); err != nil {
 		return err
 	}
 
-	return r.q.DeleteReconciliationsFrom(ctx, DeleteReconciliationsFromParams{BooksID: booksID, AccountID: accountID, FromDate: from})
+	return r.q.DeleteReconciliationsFrom(
+		ctx,
+		DeleteReconciliationsFromParams{BooksID: booksID, AccountID: accountID, FromDate: from},
+	)
 }

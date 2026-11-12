@@ -41,7 +41,9 @@ func TestParseLargeFileIsLinear(t *testing.T) {
 func TestParseUnmatchedClosingTagsAreLinear(t *testing.T) {
 	t.Parallel()
 
-	data := []byte("<OFX><STMTRS>" + strings.Repeat("<A>", 300_000) + strings.Repeat("</B>", 300_000))
+	data := []byte(
+		"<OFX><STMTRS>" + strings.Repeat("<A>", 300_000) + strings.Repeat("</B>", 300_000),
+	)
 	done := make(chan error, 1)
 
 	go func() {
@@ -65,7 +67,11 @@ func largeStatement(n int) string {
 	b.WriteString("<OFX>\n<BANKMSGSRSV1>\n<STMTTRNRS>\n<STMTRS>\n<CURDEF>BRL\n<BANKTRANLIST>\n")
 
 	for i := range n {
-		fmt.Fprintf(&b, "<STMTTRN>\n<TRNTYPE>DEBIT\n<DTPOSTED>20261005\n<TRNAMT>-1.00\n<FITID>id%d\n<NAME>x\n</STMTTRN>\n", i)
+		fmt.Fprintf(
+			&b,
+			"<STMTTRN>\n<TRNTYPE>DEBIT\n<DTPOSTED>20261005\n<TRNAMT>-1.00\n<FITID>id%d\n<NAME>x\n</STMTTRN>\n",
+			i,
+		)
 	}
 
 	b.WriteString("</BANKTRANLIST>\n</STMTRS>\n</STMTTRNRS>\n</BANKMSGSRSV1>\n</OFX>\n")

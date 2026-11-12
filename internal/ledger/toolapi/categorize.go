@@ -15,14 +15,14 @@ import (
 )
 
 type categorizeTransactionsIn struct {
-	TransactionIDs []string `json:"transaction_ids" jsonschema:"IDs of the transactions, from search_transactions; at most 50"`
-	CategoryID     string   `json:"category_id" jsonschema:"income or expense category from list_accounts"`
+	TransactionIDs []string `json:"transaction_ids"   jsonschema:"IDs of the transactions, from search_transactions; at most 50"`
+	CategoryID     string   `json:"category_id"       jsonschema:"income or expense category from list_accounts"`
 	PayeeID        string   `json:"payee_id,omitzero" jsonschema:"payee to set on each transaction, from list_payees_and_tags"`
 }
 
 type categorizeResult struct {
 	TransactionID string `json:"transaction_id"`
-	Status        string `json:"status" jsonschema:"categorized, not_found, version_conflict, transaction_voided or not_categorizable"`
+	Status        string `json:"status"         jsonschema:"categorized, not_found, version_conflict, transaction_voided or not_categorizable"`
 }
 
 type categorizeTransactionsOut struct {
@@ -69,7 +69,9 @@ func previewCategorize(
 	slices.Sort(keys)
 
 	pv := tool.Preview{
-		Action: "categorize_transactions", Target: strconv.Itoa(len(p.items)) + " transactions", Basis: strings.Join(keys, ","),
+		Action:  "categorize_transactions",
+		Target:  strconv.Itoa(len(p.items)) + " transactions",
+		Basis:   strings.Join(keys, ","),
 		Changes: []tool.Change{{Field: "category", After: tool.TextValue(p.category.Name)}},
 	}
 	if p.payeeID != uuid.Nil {
@@ -78,7 +80,10 @@ func previewCategorize(
 			return tool.Preview{}, err
 		}
 
-		pv.Changes = append(pv.Changes, tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])},
+		)
 	}
 
 	return pv, nil
@@ -102,7 +107,10 @@ func runCategorize(
 
 	out := categorizeTransactionsOut{Results: make([]categorizeResult, len(p.items))}
 	for i, it := range p.items {
-		out.Results[i] = categorizeResult{TransactionID: it.ID.String(), Status: bulkStatus(errs[i])}
+		out.Results[i] = categorizeResult{
+			TransactionID: it.ID.String(),
+			Status:        bulkStatus(errs[i]),
+		}
 		if errs[i] != nil || p.payeeID == uuid.Nil {
 			continue
 		}
@@ -130,9 +138,14 @@ func setCategorizedPayee(
 		return "", err
 	}
 
-	cerrs, err := svc.Categorize(ctx, booksID, []app.Categorization{{
-		TransactionID: id, ExpectedVersion: t.Version, PayeeID: &payeeID, Cause: app.Cause{Method: app.MethodManual},
-	}})
+	cerrs, err := svc.Categorize(ctx, booksID, []app.Categorization{
+		{
+			TransactionID:   id,
+			ExpectedVersion: t.Version,
+			PayeeID:         &payeeID,
+			Cause:           app.Cause{Method: app.MethodManual},
+		},
+	})
 	if err != nil {
 		return "", err
 	}
@@ -156,7 +169,12 @@ func bulkStatus(err error) string {
 	return "not_categorizable"
 }
 
-func planCategorize(ctx context.Context, svc *app.Service, booksID int64, in categorizeTransactionsIn) (categorizePlan, error) {
+func planCategorize(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in categorizeTransactionsIn,
+) (categorizePlan, error) {
 	var p categorizePlan
 	if n := len(in.TransactionIDs); n < 1 || n > 50 {
 		return p, tool.InvalidArgument("transaction_ids", "must have between 1 and 50 items")

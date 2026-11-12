@@ -18,7 +18,11 @@ type fakeClock struct{ now time.Time }
 
 func (c *fakeClock) Now() time.Time { return c.now }
 
-func newClient(t *testing.T, srv *pluggytest.Server, clk *fakeClock) (*client.Client, *[]time.Duration) {
+func newClient(
+	t *testing.T,
+	srv *pluggytest.Server,
+	clk *fakeClock,
+) (*client.Client, *[]time.Duration) {
 	t.Helper()
 	var waits []time.Duration
 
@@ -36,14 +40,46 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
 	srv.AddItem(client.Item{ID: "item-1", Status: client.StatusUpdated})
-	srv.AddAccount("item-1", client.Account{ID: "acc-1", Type: "BANK", Subtype: client.SubtypeChecking, Name: "Conta", Number: "0001/12345-0", Balance: "2834.1", CurrencyCode: "BRL"})
-	srv.AddBill("acc-1", client.Bill{ID: "bill-1", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "1500"})
+	srv.AddAccount(
+		"item-1",
+		client.Account{
+			ID:           "acc-1",
+			Type:         "BANK",
+			Subtype:      client.SubtypeChecking,
+			Name:         "Conta",
+			Number:       "0001/12345-0",
+			Balance:      "2834.1",
+			CurrencyCode: "BRL",
+		},
+	)
+	srv.AddBill(
+		"acc-1",
+		client.Bill{ID: "bill-1", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "1500"},
+	)
 
 	for i := range 1201 {
-		srv.AddTransaction("acc-1", client.Transaction{ID: fmt.Sprintf("t%04d", i), Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
+		srv.AddTransaction(
+			"acc-1",
+			client.Transaction{
+				ID:           fmt.Sprintf("t%04d", i),
+				Amount:       "-1",
+				CurrencyCode: "BRL",
+				Date:         "2026-10-15T00:00:00.000Z",
+				Status:       "POSTED",
+			},
+		)
 	}
 
-	srv.AddTransaction("acc-1", client.Transaction{ID: "late", Amount: "-1", CurrencyCode: "BRL", Date: "2026-11-20T00:00:00.000Z", Status: "POSTED"})
+	srv.AddTransaction(
+		"acc-1",
+		client.Transaction{
+			ID:           "late",
+			Amount:       "-1",
+			CurrencyCode: "BRL",
+			Date:         "2026-11-20T00:00:00.000Z",
+			Status:       "POSTED",
+		},
+	)
 	clk := &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)}
 	c, _ := newClient(t, srv, clk)
 	ctx := t.Context()
@@ -72,7 +108,12 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 		t.Fatalf("bills = %+v, %v", bills, err)
 	}
 
-	txs, err := s.Transactions(ctx, "acc-1", time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC))
+	txs, err := s.Transactions(
+		ctx,
+		"acc-1",
+		time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC),
+	)
 	if err != nil || len(txs) != 1201 || txs[1200].ID != "t1200" {
 		t.Fatalf("transactions = %d, %v", len(txs), err)
 	}
@@ -85,9 +126,38 @@ func TestClientReadsItemAccountsBillsAndTransactions(t *testing.T) {
 func TestClientReadsTransactionsCreatedSince(t *testing.T) {
 	t.Parallel()
 	srv := pluggytest.New(t, "client-id", "client-secret")
-	srv.AddTransaction("acc-1", client.Transaction{ID: "t-old", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED", CreatedAt: "2026-11-12T10:59:59.000Z"})
-	srv.AddTransaction("acc-1", client.Transaction{ID: "t-new", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED", CreatedAt: "2026-11-12T11:00:00.000Z"})
-	srv.AddTransaction("acc-1", client.Transaction{ID: "t-none", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
+	srv.AddTransaction(
+		"acc-1",
+		client.Transaction{
+			ID:           "t-old",
+			Amount:       "-1",
+			CurrencyCode: "BRL",
+			Date:         "2026-10-15T00:00:00.000Z",
+			Status:       "POSTED",
+			CreatedAt:    "2026-11-12T10:59:59.000Z",
+		},
+	)
+	srv.AddTransaction(
+		"acc-1",
+		client.Transaction{
+			ID:           "t-new",
+			Amount:       "-1",
+			CurrencyCode: "BRL",
+			Date:         "2026-10-15T00:00:00.000Z",
+			Status:       "POSTED",
+			CreatedAt:    "2026-11-12T11:00:00.000Z",
+		},
+	)
+	srv.AddTransaction(
+		"acc-1",
+		client.Transaction{
+			ID:           "t-none",
+			Amount:       "-1",
+			CurrencyCode: "BRL",
+			Date:         "2026-10-15T00:00:00.000Z",
+			Status:       "POSTED",
+		},
+	)
 	c, _ := newClient(t, srv, &fakeClock{now: time.Date(2026, 11, 12, 12, 0, 0, 0, time.UTC)})
 
 	s, err := c.Session(t.Context(), "client-id", "client-secret")
@@ -95,7 +165,11 @@ func TestClientReadsTransactionsCreatedSince(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	txs, err := s.TransactionsCreatedSince(t.Context(), "acc-1", time.Date(2026, 11, 12, 11, 0, 0, 0, time.UTC))
+	txs, err := s.TransactionsCreatedSince(
+		t.Context(),
+		"acc-1",
+		time.Date(2026, 11, 12, 11, 0, 0, 0, time.UTC),
+	)
 	if err != nil || len(txs) != 1 || txs[0].ID != "t-new" {
 		t.Fatalf("transactions = %+v, %v", txs, err)
 	}
@@ -123,21 +197,41 @@ func TestClientRetriesAndRenewsKeys(t *testing.T) {
 
 	clk.now = clk.now.Add(100 * time.Minute)
 
-	if s2, err := sessions.Get(ctx, "integration-1", "client-id", "client-secret"); err != nil || s2 != s1 || srv.Requests("/auth") != 2 {
+	if s2, err := sessions.Get(
+		ctx,
+		"integration-1",
+		"client-id",
+		"client-secret",
+	); err != nil || s2 != s1 ||
+		srv.Requests("/auth") != 2 {
 		t.Fatalf("key renewed early: %v, auth calls %d", err, srv.Requests("/auth"))
 	}
 
 	clk.now = clk.now.Add(11 * time.Minute)
 
-	if s3, err := sessions.Get(ctx, "integration-1", "client-id", "client-secret"); err != nil || s3 == s1 || srv.Requests("/auth") != 3 {
-		t.Fatalf("key not renewed 10 minutes before expiry: %v, auth calls %d", err, srv.Requests("/auth"))
+	if s3, err := sessions.Get(
+		ctx,
+		"integration-1",
+		"client-id",
+		"client-secret",
+	); err != nil || s3 == s1 ||
+		srv.Requests("/auth") != 3 {
+		t.Fatalf(
+			"key not renewed 10 minutes before expiry: %v, auth calls %d",
+			err,
+			srv.Requests("/auth"),
+		)
 	}
 
 	s, _ := sessions.Get(ctx, "integration-1", "client-id", "client-secret")
 
 	srv.FailNext(http.StatusTooManyRequests, 2)
 
-	if _, err := s.Item(ctx, "item-1"); err != nil || len(*waits) != 2 || (*waits)[0] != 7*time.Second {
+	if _, err := s.Item(
+		ctx,
+		"item-1",
+	); err != nil || len(*waits) != 2 ||
+		(*waits)[0] != 7*time.Second {
 		t.Fatalf("after 429: %v, waits %v", err, *waits)
 	}
 
@@ -158,11 +252,24 @@ func TestClientRetriesAndRenewsKeys(t *testing.T) {
 func TestClientRefusesForeignCursor(t *testing.T) {
 	t.Parallel()
 
-	other := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Error("request reached another host") }))
+	other := httptest.NewServer(
+		http.HandlerFunc(
+			func(http.ResponseWriter, *http.Request) { t.Error("request reached another host") },
+		),
+	)
 	defer other.Close()
 
 	srv := pluggytest.New(t, "client-id", "client-secret")
-	srv.AddTransaction("acc-1", client.Transaction{ID: "t1", Amount: "-1", CurrencyCode: "BRL", Date: "2026-10-15T00:00:00.000Z", Status: "POSTED"})
+	srv.AddTransaction(
+		"acc-1",
+		client.Transaction{
+			ID:           "t1",
+			Amount:       "-1",
+			CurrencyCode: "BRL",
+			Date:         "2026-10-15T00:00:00.000Z",
+			Status:       "POSTED",
+		},
+	)
 	srv.SetNext(other.URL + "/v2/transactions?after=x")
 	c, _ := newClient(t, srv, &fakeClock{now: time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC)})
 
@@ -171,7 +278,12 @@ func TestClientRefusesForeignCursor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := s.Transactions(t.Context(), "acc-1", time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC)); err == nil {
+	if _, err := s.Transactions(
+		t.Context(),
+		"acc-1",
+		time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 11, 12, 0, 0, 0, 0, time.UTC),
+	); err == nil {
 		t.Fatal("foreign cursor followed")
 	}
 }
@@ -194,11 +306,16 @@ func TestClientErrorsCarryNoIdentifiers(t *testing.T) {
 	cancel()
 
 	_, err = s.Item(ctx, "item-7c1e")
-	if err == nil || strings.Contains(err.Error(), "item-7c1e") || !errors.Is(err, context.Canceled) {
+	if err == nil || strings.Contains(err.Error(), "item-7c1e") ||
+		!errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v", err)
 	}
 
-	if _, err := s.Accounts(ctx, "item-7c1e"); err == nil || strings.Contains(err.Error(), "item-7c1e") {
+	if _, err := s.Accounts(
+		ctx,
+		"item-7c1e",
+	); err == nil ||
+		strings.Contains(err.Error(), "item-7c1e") {
 		t.Fatalf("accounts err = %v", err)
 	}
 }

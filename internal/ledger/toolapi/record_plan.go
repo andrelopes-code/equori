@@ -32,7 +32,12 @@ type recordPlan struct {
 	foreign  bool
 }
 
-func planRecord(ctx context.Context, svc *app.Service, booksID int64, in recordTransactionIn) (recordPlan, error) {
+func planRecord(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in recordTransactionIn,
+) (recordPlan, error) {
 	var p recordPlan
 
 	fromID, err := requiredID(in.FromAccountID, "from_account_id")
@@ -88,7 +93,14 @@ func recordTargetsOf(in recordTransactionIn) ([]recordTarget, error) {
 		return nil, tool.InvalidArgument("splits", "cannot be combined with to_account_id")
 	case len(in.Splits) > 0:
 		for i, s := range in.Splits {
-			targets = append(targets, recordTarget{"splits[" + strconv.Itoa(i) + "].to_account_id", s.ToAccountID, s.Amount})
+			targets = append(
+				targets,
+				recordTarget{
+					"splits[" + strconv.Itoa(i) + "].to_account_id",
+					s.ToAccountID,
+					s.Amount,
+				},
+			)
 		}
 	case in.ToAccountID == "":
 		return nil, tool.InvalidArgument("to_account_id", "is required without splits")
@@ -122,7 +134,11 @@ func planRecordDestinations(
 
 		amount := p.amount
 		if len(in.Splits) > 0 {
-			if amount, err = tool.ParsePositive("splits["+strconv.Itoa(i)+"].amount", tg.amount, unit); err != nil {
+			if amount, err = tool.ParsePositive(
+				"splits["+strconv.Itoa(i)+"].amount",
+				tg.amount,
+				unit,
+			); err != nil {
 				return err
 			}
 		}
@@ -143,7 +159,12 @@ func planRecordDestinations(
 	return nil
 }
 
-func planRecordKind(ctx context.Context, svc *app.Service, in recordTransactionIn, p *recordPlan) error {
+func planRecordKind(
+	ctx context.Context,
+	svc *app.Service,
+	in recordTransactionIn,
+	p *recordPlan,
+) error {
 	to := p.dests[0].account
 	switch {
 	case in.Installments != 0:
@@ -152,7 +173,10 @@ func planRecordKind(ctx context.Context, svc *app.Service, in recordTransactionI
 		}
 
 		if p.from.Kind != domain.KindCreditCard {
-			return tool.InvalidArgument("installments", "needs a credit card account in from_account_id")
+			return tool.InvalidArgument(
+				"installments",
+				"needs a credit card account in from_account_id",
+			)
 		}
 	case in.OriginalAmount != "":
 		return planForeignPurchase(ctx, svc, in, p)
@@ -163,7 +187,12 @@ func planRecordKind(ctx context.Context, svc *app.Service, in recordTransactionI
 	return nil
 }
 
-func planForeignPurchase(ctx context.Context, svc *app.Service, in recordTransactionIn, p *recordPlan) error {
+func planForeignPurchase(
+	ctx context.Context,
+	svc *app.Service,
+	in recordTransactionIn,
+	p *recordPlan,
+) error {
 	for field, v := range map[string]string{"original_currency": in.OriginalCurrency, "exchange_rate": in.ExchangeRate} {
 		if v == "" {
 			return tool.InvalidArgument(field, "is required with original_amount")
@@ -175,12 +204,19 @@ func planForeignPurchase(ctx context.Context, svc *app.Service, in recordTransac
 		return tool.InvalidArgument("original_currency", "is not a known currency")
 	}
 
-	if p.original, err = tool.ParsePositive("original_amount", in.OriginalAmount, ounit); err != nil {
+	if p.original, err = tool.ParsePositive(
+		"original_amount",
+		in.OriginalAmount,
+		ounit,
+	); err != nil {
 		return err
 	}
 
 	if p.rate, err = money.ParseRate(in.ExchangeRate); err != nil {
-		return tool.InvalidArgument("exchange_rate", "must be a positive decimal with at most 12 decimals")
+		return tool.InvalidArgument(
+			"exchange_rate",
+			"must be a positive decimal with at most 12 decimals",
+		)
 	}
 
 	p.foreign = true
@@ -196,7 +232,10 @@ func planExchangeAmount(
 	p *recordPlan,
 ) error {
 	if in.ToAmount == "" {
-		return tool.InvalidArgument("to_amount", "is required when the accounts have different currencies")
+		return tool.InvalidArgument(
+			"to_amount",
+			"is required when the accounts have different currencies",
+		)
 	}
 
 	tunit, err := svc.AmountOf(ctx, 0, to.Instrument)
@@ -214,7 +253,13 @@ func planExchangeAmount(
 }
 
 // planExchangeFee reads fee and fee_category_id, which only an exchange takes.
-func planExchangeFee(ctx context.Context, svc *app.Service, booksID int64, in recordTransactionIn, p *recordPlan) error {
+func planExchangeFee(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in recordTransactionIn,
+	p *recordPlan,
+) error {
 	feeID, err := optionalID(in.FeeCategoryID, "fee_category_id")
 	if err != nil {
 		return err
@@ -226,7 +271,10 @@ func planExchangeFee(ctx context.Context, svc *app.Service, booksID int64, in re
 
 	switch {
 	case !p.exchange:
-		return tool.InvalidArgument("fee", "is used only by an exchange between accounts in two currencies")
+		return tool.InvalidArgument(
+			"fee",
+			"is used only by an exchange between accounts in two currencies",
+		)
 	case in.Fee == "":
 		return tool.InvalidArgument("fee", "is required with fee_category_id")
 	}

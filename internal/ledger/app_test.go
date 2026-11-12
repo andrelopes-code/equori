@@ -39,9 +39,28 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 	cal := calendarAdapter{marketdata.New(pool)}
 	New(pool, d, cal.cal, nil, clock.New(time.Now), slog.New(slog.NewTextHandler(io.Discard, nil)))
 	ins := &instruments{md: cal.cal, cache: map[money.Currency]app.Instrument{}}
-	f := ledgerFixture{pool: pool, dispatcher: d, svc: app.NewService(postgres.NewRepository(pool, ins), clock.New(time.Now), cal, ins, pricesAdapter{cal.cal}, nil, nil)}
+	f := ledgerFixture{
+		pool:       pool,
+		dispatcher: d,
+		svc: app.NewService(
+			postgres.NewRepository(pool, ins),
+			clock.New(time.Now),
+			cal,
+			ins,
+			pricesAdapter{cal.cal},
+			nil,
+			nil,
+		),
+	}
 	f.booksID = provisionedUser(t, pool, d)
-	f.checking = f.createAccount(t, domain.Account{Name: "Nubank checking", Class: domain.ClassAsset, Kind: domain.KindChecking})
+	f.checking = f.createAccount(
+		t,
+		domain.Account{
+			Name:  "Nubank checking",
+			Class: domain.ClassAsset,
+			Kind:  domain.KindChecking,
+		},
+	)
 	f.food = f.createAccount(t, domain.Account{Name: "Food", Class: domain.ClassExpense})
 
 	return f
@@ -54,8 +73,16 @@ func provisionedUser(t testing.TB, pool *pgxpool.Pool, d *outbox.Dispatcher) int
 
 	err := pgx.BeginFunc(t.Context(), pool, func(tx pgx.Tx) error {
 		return outbox.Insert(t.Context(), tx, outbox.Event{
-			Type: "identity.books_created.v1", BooksID: booksID, AggregateID: "u",
-			Payload: map[string]any{"books_id": booksID, "member_id": memberID, "language": "en", "region": "US", "base_currency": "BRL"},
+			Type:        "identity.books_created.v1",
+			BooksID:     booksID,
+			AggregateID: "u",
+			Payload: map[string]any{
+				"books_id":      booksID,
+				"member_id":     memberID,
+				"language":      "en",
+				"region":        "US",
+				"base_currency": "BRL",
+			},
 		})
 	})
 	if err != nil {
@@ -127,7 +154,8 @@ func (f ledgerFixture) eventCount(t *testing.T, eventType string) int {
 	t.Helper()
 
 	var n int
-	if err := f.pool.QueryRow(t.Context(), `SELECT count(*) FROM outbox_event WHERE type = $1`, eventType).Scan(&n); err != nil {
+	if err := f.pool.QueryRow(t.Context(), `SELECT count(*) FROM outbox_event WHERE type = $1`, eventType).
+		Scan(&n); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,7 +171,11 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 		t.Fatalf("settings = %+v, %v", settings, err)
 	}
 
-	accounts, _, err := f.svc.ListAccounts(t.Context(), f.booksID, page.Request[app.AccountKey]{Limit: page.MaxLimit})
+	accounts, _, err := f.svc.ListAccounts(
+		t.Context(),
+		f.booksID,
+		page.Request[app.AccountKey]{Limit: page.MaxLimit},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +197,11 @@ func TestProvisionCreatesSystemAccounts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	again, _, _ := f.svc.ListAccounts(t.Context(), f.booksID, page.Request[app.AccountKey]{Limit: page.MaxLimit})
+	again, _, _ := f.svc.ListAccounts(
+		t.Context(),
+		f.booksID,
+		page.Request[app.AccountKey]{Limit: page.MaxLimit},
+	)
 	if len(again) != len(accounts) {
 		t.Fatalf("second provisioning created %d accounts", len(again)-len(accounts))
 	}
@@ -182,7 +218,8 @@ func TestRecordTransactionPublishesEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(got.Postings) != 2 || got.Postings[0].AccountID != f.checking.ID || got.Postings[1].Amount != brl(t, 23000) {
+	if len(got.Postings) != 2 || got.Postings[0].AccountID != f.checking.ID ||
+		got.Postings[1].Amount != brl(t, 23000) {
 		t.Fatalf("stored postings = %+v", got.Postings)
 	}
 
@@ -238,7 +275,8 @@ func TestCorrectWritesVersion(t *testing.T) {
 	}
 
 	versions, err := f.svc.Versions(t.Context(), f.booksID, tx.ID)
-	if err != nil || len(versions) != 1 || versions[0].Version != 1 || versions[0].Reason != "typo" {
+	if err != nil || len(versions) != 1 || versions[0].Version != 1 ||
+		versions[0].Reason != "typo" {
 		t.Fatalf("versions = %+v, %v", versions, err)
 	}
 
@@ -261,13 +299,20 @@ func TestConcurrentCorrectionsConflict(t *testing.T) {
 	errs := make([]error, 2)
 	for i := range 2 {
 		wg.Go(func() {
-			_, errs[i] = f.svc.CorrectTransaction(t.Context(), f.booksID, tx.ID, 1, domain.Transaction{
-				Date: date("2026-10-14"),
-				Postings: []domain.Posting{
-					{AccountID: f.checking.ID, Amount: brl(t, -int64(1000+i))},
-					{AccountID: f.food.ID, Amount: brl(t, int64(1000+i))},
+			_, errs[i] = f.svc.CorrectTransaction(
+				t.Context(),
+				f.booksID,
+				tx.ID,
+				1,
+				domain.Transaction{
+					Date: date("2026-10-14"),
+					Postings: []domain.Posting{
+						{AccountID: f.checking.ID, Amount: brl(t, -int64(1000+i))},
+						{AccountID: f.food.ID, Amount: brl(t, int64(1000+i))},
+					},
 				},
-			}, "race")
+				"race",
+			)
 		})
 	}
 
@@ -302,7 +347,15 @@ func TestVoidKeepsHistory(t *testing.T) {
 		t.Fatalf("voided = %+v, %v", got, err)
 	}
 
-	if err := f.svc.VoidTransaction(t.Context(), f.booksID, tx.ID, "again"); !errors.Is(err, domain.ErrVoided) {
+	if err := f.svc.VoidTransaction(
+		t.Context(),
+		f.booksID,
+		tx.ID,
+		"again",
+	); !errors.Is(
+		err,
+		domain.ErrVoided,
+	) {
 		t.Fatalf("second void err = %v", err)
 	}
 }
@@ -312,11 +365,22 @@ func TestCloseAccountRequiresZeroBalance(t *testing.T) {
 	f := newLedgerFixture(t)
 	f.expense(t, "2026-10-14", 2300)
 
-	if err := f.svc.CloseAccount(t.Context(), f.booksID, f.checking.ID, date("2026-10-31")); !errors.Is(err, app.ErrNonZeroBalance) {
+	if err := f.svc.CloseAccount(
+		t.Context(),
+		f.booksID,
+		f.checking.ID,
+		date("2026-10-31"),
+	); !errors.Is(
+		err,
+		app.ErrNonZeroBalance,
+	) {
 		t.Fatalf("close err = %v, want ErrNonZeroBalance", err)
 	}
 
-	empty := f.createAccount(t, domain.Account{Name: "Old wallet", Class: domain.ClassAsset, Kind: domain.KindCash})
+	empty := f.createAccount(
+		t,
+		domain.Account{Name: "Old wallet", Class: domain.ClassAsset, Kind: domain.KindCash},
+	)
 	if err := f.svc.CloseAccount(t.Context(), f.booksID, empty.ID, date("2026-10-31")); err != nil {
 		t.Fatal(err)
 	}
@@ -340,7 +404,10 @@ func TestListTransactionsCursor(t *testing.T) {
 
 	var prev *domain.Transaction
 	for range 10 {
-		page, next, err := f.svc.ListTransactions(t.Context(), app.TransactionQuery{BooksID: f.booksID, After: cursor, Limit: 2})
+		page, next, err := f.svc.ListTransactions(
+			t.Context(),
+			app.TransactionQuery{BooksID: f.booksID, After: cursor, Limit: 2},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -351,7 +418,8 @@ func TestListTransactionsCursor(t *testing.T) {
 			}
 
 			seen[tx.ID] = true
-			if prev != nil && (tx.Date.After(prev.Date) || (tx.Date.Equal(prev.Date) && tx.ID.String() > prev.ID.String())) {
+			if prev != nil &&
+				(tx.Date.After(prev.Date) || (tx.Date.Equal(prev.Date) && tx.ID.String() > prev.ID.String())) {
 				t.Fatalf("order broken: %s %s after %s %s", tx.Date, tx.ID, prev.Date, prev.ID)
 			}
 

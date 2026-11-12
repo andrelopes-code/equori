@@ -176,7 +176,13 @@ func moneyValue(v any) (money.Money, bool) {
 
 // Doc returns the transported form of a.
 func (a Action) Doc() ActionDoc {
-	d := ActionDoc{Type: string(a.Type), CategoryID: a.CategoryID, PayeeID: a.PayeeID, AccountID: a.AccountID, Tags: a.Tags}
+	d := ActionDoc{
+		Type:       string(a.Type),
+		CategoryID: a.CategoryID,
+		PayeeID:    a.PayeeID,
+		AccountID:  a.AccountID,
+		Tags:       a.Tags,
+	}
 	for _, p := range a.Parts {
 		pd := PartDoc{CategoryID: p.CategoryID, Percent: p.Percent, Remainder: p.Remainder}
 		if p.Amount != nil {
@@ -191,13 +197,22 @@ func (a Action) Doc() ActionDoc {
 
 // ActionFromDoc reads d; field prefixes the paths of the errors.
 func ActionFromDoc(field string, d ActionDoc) (Action, error) {
-	a := Action{Type: ActionType(d.Type), CategoryID: d.CategoryID, PayeeID: d.PayeeID, AccountID: d.AccountID, Tags: d.Tags}
+	a := Action{
+		Type:       ActionType(d.Type),
+		CategoryID: d.CategoryID,
+		PayeeID:    d.PayeeID,
+		AccountID:  d.AccountID,
+		Tags:       d.Tags,
+	}
 	for i, pd := range d.Parts {
 		p := Part{CategoryID: pd.CategoryID, Percent: pd.Percent, Remainder: pd.Remainder}
 		if pd.Amount != nil {
 			m, err := money.New(pd.Amount.Amount, money.Currency(pd.Amount.Currency))
 			if err != nil {
-				return Action{}, invalid(fmt.Sprintf("%s.parts[%d].amount", field, i), "must be money in a supported currency")
+				return Action{}, invalid(
+					fmt.Sprintf("%s.parts[%d].amount", field, i),
+					"must be money in a supported currency",
+				)
 			}
 
 			p.Amount = &m

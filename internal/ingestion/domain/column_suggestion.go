@@ -56,7 +56,8 @@ func MaskCell(s string) string {
 	var run []rune
 
 	flush := func() {
-		if len(run) <= 2 && !slices.ContainsFunc(run, func(r rune) bool { return r > unicode.MaxASCII }) {
+		if len(run) <= 2 &&
+			!slices.ContainsFunc(run, func(r rune) bool { return r > unicode.MaxASCII }) {
 			b.WriteString(string(run))
 		} else {
 			b.WriteString(strings.Repeat("A", len(run)))
@@ -126,8 +127,15 @@ func nameColumns(p ColumnPositions, header []string) (ColumnSuggestion, error) {
 	}
 
 	out := ColumnSuggestion{
-		Date: name(p.Date), Description: name(p.Description), Amount: name(p.Amount), Debit: name(p.Debit),
-		Credit: name(p.Credit), ID: name(p.ID), Sign: name(p.Sign),
+		Date: name(
+			p.Date,
+		),
+		Description: name(p.Description),
+		Amount:      name(p.Amount),
+		Debit:       name(p.Debit),
+		Credit:      name(p.Credit),
+		ID:          name(p.ID),
+		Sign:        name(p.Sign),
 	}
 
 	if failed {

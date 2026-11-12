@@ -30,15 +30,18 @@ func TestDedupKeyMigration(t *testing.T) {
 	uid := pgtest.CreateUserBeforeBooks(t, pool)
 
 	var account, syncBatch, fileBatch uuid.UUID
-	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, uid).Scan(&account); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (user_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Nubank', 'asset', 'checking', 'BRL', '2026-01-01') RETURNING id`, uid).
+		Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := pool.QueryRow(ctx, `INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency) VALUES ($1, $2, 'aggregator', NULL, 'BRL') RETURNING id`, uid, account).Scan(&syncBatch); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency) VALUES ($1, $2, 'aggregator', NULL, 'BRL') RETURNING id`, uid, account).
+		Scan(&syncBatch); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := pool.QueryRow(ctx, `INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'extrato.ofx', 'BRL') RETURNING id`, uid, account).Scan(&fileBatch); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO ingestion_batch (user_id, account_id, source, file_name, currency) VALUES ($1, $2, 'ofx', 'extrato.ofx', 'BRL') RETURNING id`, uid, account).
+		Scan(&fileBatch); err != nil {
 		t.Fatal(err)
 	}
 
@@ -58,8 +61,17 @@ func TestDedupKeyMigration(t *testing.T) {
 		{fileBatch, "fitid-1", legacy("ofx", "fitid-1"), domain.SourceOFX},
 	}
 	for _, l := range lines {
-		if _, err := pool.Exec(ctx, `INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description)
-			VALUES ($1, $2, $3, $4, $5, '{}', $6, -100, 'Padaria')`, uid, l.batch, account, l.externalID, l.key, day); err != nil {
+		if _, err := pool.Exec(
+			ctx,
+			`INSERT INTO ingestion_external_record (user_id, batch_id, account_id, external_id, dedup_key, raw, booked_on, amount, description)
+			VALUES ($1, $2, $3, $4, $5, '{}', $6, -100, 'Padaria')`,
+			uid,
+			l.batch,
+			account,
+			l.externalID,
+			l.key,
+			day,
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -70,11 +82,17 @@ func TestDedupKeyMigration(t *testing.T) {
 
 	for _, l := range lines {
 		var got []byte
-		if err := pool.QueryRow(ctx, `SELECT dedup_key FROM ingestion_external_record WHERE external_id = $1`, l.externalID).Scan(&got); err != nil {
+		if err := pool.QueryRow(ctx, `SELECT dedup_key FROM ingestion_external_record WHERE external_id = $1`, l.externalID).
+			Scan(&got); err != nil {
 			t.Fatal(err)
 		}
 
-		want := domain.DedupKey(account, l.source, domain.NormalizedRecord{ExternalID: l.externalID}, 0)
+		want := domain.DedupKey(
+			account,
+			l.source,
+			domain.NormalizedRecord{ExternalID: l.externalID},
+			0,
+		)
 		if !bytes.Equal(got, want) {
 			t.Errorf("%s: dedup_key = %x; want %x", l.externalID, got, want)
 		}

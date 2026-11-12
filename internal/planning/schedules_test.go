@@ -43,7 +43,13 @@ func newFixture(t *testing.T, today string, opts ...apitest.Option) fixture {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Landlord"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Landlord"},
+		http.StatusCreated,
+		&payee,
+	)
 	f.landlord = payee.ID
 
 	return f
@@ -59,7 +65,12 @@ func monthly(start string, day int, adjustment string) map[string]any {
 }
 
 // schedule creates a schedule and returns its id.
-func (f fixture) schedule(kind, account, counterpart string, amount int64, recurrence map[string]any, extra map[string]any) string {
+func (f fixture) schedule(
+	kind, account, counterpart string,
+	amount int64,
+	recurrence map[string]any,
+	extra map[string]any,
+) string {
 	f.h.T().Helper()
 
 	body := map[string]any{
@@ -101,7 +112,14 @@ func dates(os []occurrenceView) []string {
 func TestS27RentDates(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
-	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
+	id := f.schedule(
+		"bill",
+		f.checking,
+		f.rent,
+		210000,
+		monthly("2026-11-01", 5, "following"),
+		map[string]any{"payee_id": f.landlord},
+	)
 
 	got := f.occurrences("from=2026-11-01&to=2027-01-31&schedule_id=" + id)
 	if want := []string{"2026-11-05", "2026-12-07", "2027-01-05"}; !slices.Equal(dates(got), want) {
@@ -109,7 +127,8 @@ func TestS27RentDates(t *testing.T) {
 	}
 
 	for i, o := range got {
-		if o.Sequence != i+1 || o.State != "expected" || o.ExpectedAmount.Amount != 210000 || o.ScheduleID != id {
+		if o.Sequence != i+1 || o.State != "expected" || o.ExpectedAmount.Amount != 210000 ||
+			o.ScheduleID != id {
 			t.Errorf("occurrence %d = %+v", i, o)
 		}
 	}
@@ -122,7 +141,15 @@ func TestS28Day31Dates(t *testing.T) {
 	id := f.schedule("bill", f.checking, f.rent, 10000, monthly("2027-01-31", 31, ""), nil)
 
 	got := f.occurrences("from=2027-01-01&to=2027-04-30&schedule_id=" + id)
-	if want := []string{"2027-01-31", "2027-02-28", "2027-03-31", "2027-04-30"}; !slices.Equal(dates(got), want) {
+	if want := []string{
+		"2027-01-31",
+		"2027-02-28",
+		"2027-03-31",
+		"2027-04-30",
+	}; !slices.Equal(
+		dates(got),
+		want,
+	) {
 		t.Fatalf("dates = %v, want %v", dates(got), want)
 	}
 }
@@ -130,7 +157,14 @@ func TestS28Day31Dates(t *testing.T) {
 func TestScheduleIsReadBack(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
-	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
+	id := f.schedule(
+		"bill",
+		f.checking,
+		f.rent,
+		210000,
+		monthly("2026-11-01", 5, "following"),
+		map[string]any{"payee_id": f.landlord},
+	)
 	var s struct {
 		ID               string `json:"id"`
 		Kind             string `json:"kind"`
@@ -152,13 +186,18 @@ func TestScheduleIsReadBack(t *testing.T) {
 	}
 	f.h.MustDo(http.MethodGet, "/api/v1/schedules/"+id, nil, http.StatusOK, &s)
 
-	if s.Kind != "bill" || s.PayeeID != f.landlord || s.MatchToleranceBP != 1000 || s.GraceDays != 3 || len(s.Terms) != 1 {
+	if s.Kind != "bill" || s.PayeeID != f.landlord || s.MatchToleranceBP != 1000 ||
+		s.GraceDays != 3 ||
+		len(s.Terms) != 1 {
 		t.Fatalf("schedule = %+v", s)
 	}
 
 	term := s.Terms[0]
-	if term.EffectiveFrom != "2026-11-01" || term.Amount.Amount != 210000 || term.Recurrence.Frequency != "monthly" ||
-		term.Recurrence.DayOfMonth != 5 || term.Recurrence.Adjustment != "following" || term.Recurrence.Start != "2026-11-01" {
+	if term.EffectiveFrom != "2026-11-01" || term.Amount.Amount != 210000 ||
+		term.Recurrence.Frequency != "monthly" ||
+		term.Recurrence.DayOfMonth != 5 ||
+		term.Recurrence.Adjustment != "following" ||
+		term.Recurrence.Start != "2026-11-01" {
 		t.Errorf("terms = %+v", term)
 	}
 
@@ -203,8 +242,12 @@ func TestScheduleValidation(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	body := func(kind, counterpart string) map[string]any {
 		return map[string]any{
-			"kind": kind, "account_id": f.checking, "counterpart_id": counterpart, "description": "x",
-			"amount": apitest.BRL(100), "recurrence": monthly("2026-11-01", 5, ""),
+			"kind":           kind,
+			"account_id":     f.checking,
+			"counterpart_id": counterpart,
+			"description":    "x",
+			"amount":         apitest.BRL(100),
+			"recurrence":     monthly("2026-11-01", 5, ""),
 		}
 	}
 
@@ -220,13 +263,23 @@ func TestScheduleValidation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules", body(tt.kind, tt.counterpart)), http.StatusUnprocessableEntity, "validation_failed", "counterpart_id")
+			f.h.ExpectProblem(
+				f.h.Do(http.MethodPost, "/api/v1/schedules", body(tt.kind, tt.counterpart)),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"counterpart_id",
+			)
 		})
 	}
 
 	bad := body("bill", f.rent)
 	bad["recurrence"] = map[string]any{"frequency": "monthly", "interval": 1, "start": "2026-11-01"}
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/schedules", bad), http.StatusUnprocessableEntity, "validation_failed", "recurrence")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/schedules", bad),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"recurrence",
+	)
 	transfer := body("savings", f.savings)
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules", transfer, http.StatusCreated, nil)
 }
@@ -249,7 +302,12 @@ func TestScheduleOfAnotherUser(t *testing.T) {
 	id := f.schedule("bill", f.checking, f.rent, 100, monthly("2026-11-01", 5, ""), nil)
 
 	other := f.h.Login("other@example.com")
-	if r := f.h.Call(other, http.MethodGet, "/api/v1/schedules/"+id, nil); r.Status != http.StatusNotFound {
+	if r := f.h.Call(
+		other,
+		http.MethodGet,
+		"/api/v1/schedules/"+id,
+		nil,
+	); r.Status != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", r.Status)
 	}
 
@@ -273,8 +331,18 @@ func TestScheduleOfAnotherUser(t *testing.T) {
 func TestOccurrenceRangeLimit(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01&to=2027-12-06", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-02&to=2026-11-01", nil), http.StatusUnprocessableEntity, "validation_failed", "to")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01&to=2027-12-06", nil),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"to",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-02&to=2026-11-01", nil),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"to",
+	)
 }
 
 // TestTickInBooksTimeZone: BK20. The scheduler generates up to the horizon of the book's today.
@@ -285,8 +353,11 @@ func TestTickInBooksTimeZone(t *testing.T) {
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, ""), nil)
 	generatedUntil := func() string {
 		var got string
-		if err := f.h.Pool.QueryRow(t.Context(),
-			`SELECT generated_until::text FROM planning_schedule WHERE id = $1`, id).Scan(&got); err != nil {
+		if err := f.h.Pool.QueryRow(
+			t.Context(),
+			`SELECT generated_until::text FROM planning_schedule WHERE id = $1`,
+			id,
+		).Scan(&got); err != nil {
 			t.Fatal(err)
 		}
 
@@ -297,12 +368,17 @@ func TestTickInBooksTimeZone(t *testing.T) {
 		t.Fatalf("generated_until after create = %s, want 2027-11-01", got)
 	}
 
-	if _, err := f.h.Pool.Exec(t.Context(),
-		`UPDATE identity_books SET time_zone = 'Asia/Tokyo' WHERE id = $1`, f.h.OwnerID()); err != nil {
+	if _, err := f.h.Pool.Exec(
+		t.Context(),
+		`UPDATE identity_books SET time_zone = 'Asia/Tokyo' WHERE id = $1`,
+		f.h.OwnerID(),
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	f.h.Restart(apitest.Clock(func() time.Time { return time.Date(2026, 11, 1, 20, 0, 0, 0, time.UTC) }))
+	f.h.Restart(
+		apitest.Clock(func() time.Time { return time.Date(2026, 11, 1, 20, 0, 0, 0, time.UTC) }),
+	)
 	f.h.App.Planning.Tick(t.Context())
 
 	if got := generatedUntil(); got != "2027-11-02" {
@@ -321,7 +397,13 @@ func TestUpdateMatchingChangesOnlyTheGivenFields(t *testing.T) {
 		GraceDays        int `json:"grace_days"`
 		MatchWindowDays  int `json:"match_window_days"`
 	}
-	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"match_tolerance_bp": 50}, http.StatusOK, &got)
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/schedules/"+id,
+		map[string]any{"match_tolerance_bp": 50},
+		http.StatusOK,
+		&got,
+	)
 
 	if got.MatchToleranceBP != 50 || got.GraceDays != 3 || got.MatchWindowDays != 7 {
 		t.Fatalf("patched = %+v, want tolerance 50, grace 3, window 7", got)
@@ -347,7 +429,13 @@ func TestUpdateMatchingNarrowsTheAmountTolerance(t *testing.T) {
 
 	narrow := newFixture(t, "2026-11-01")
 	narrowID := narrow.rentSchedule()
-	narrow.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+narrowID, map[string]any{"match_tolerance_bp": 50}, http.StatusOK, nil)
+	narrow.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/schedules/"+narrowID,
+		map[string]any{"match_tolerance_bp": 50},
+		http.StatusOK,
+		nil,
+	)
 	narrow.pay("2026-11-05", 214200, narrow.rent, narrow.landlord)
 
 	if o := narrow.occurrence(narrowID, 1); o.State != "expected" || o.TransactionID != "" {
@@ -374,7 +462,12 @@ func TestUpdateMatchingOfAnotherBookIs404(t *testing.T) {
 	id := f.rentSchedule()
 	other := f.h.Login("other@example.com")
 
-	r := f.h.Call(other, http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"match_tolerance_bp": 50})
+	r := f.h.Call(
+		other,
+		http.MethodPatch,
+		"/api/v1/schedules/"+id,
+		map[string]any{"match_tolerance_bp": 50},
+	)
 	if r.Status != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", r.Status)
 	}
@@ -405,14 +498,26 @@ func TestRenameScheduleKeepsItsOccurrencesAndTerms(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	f.pay("2026-11-05", 210000, f.rent, f.landlord)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2027-06-01"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/end",
+		map[string]string{"from": "2027-06-01"},
+		http.StatusOK,
+		nil,
+	)
 
 	var got struct {
 		Description string `json:"description"`
 		EndsOn      string `json:"ends_on"`
 		GraceDays   int    `json:"grace_days"`
 	}
-	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"description": "Flat rent"}, http.StatusOK, &got)
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/schedules/"+id,
+		map[string]any{"description": "Flat rent"},
+		http.StatusOK,
+		&got,
+	)
 
 	if got.Description != "Flat rent" || got.EndsOn != "2027-06-01" || got.GraceDays != 3 {
 		t.Fatalf("patched = %+v, want description Flat rent, ends 2027-06-01, grace 3", got)
@@ -442,8 +547,14 @@ func TestRenameScheduleRejectsAnInvalidDescription(t *testing.T) {
 	for name, description := range tests {
 		t.Run(name, func(t *testing.T) {
 			f.h.ExpectProblem(
-				f.h.Do(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"description": description}),
-				http.StatusUnprocessableEntity, "validation_failed", "description",
+				f.h.Do(
+					http.MethodPatch,
+					"/api/v1/schedules/"+id,
+					map[string]any{"description": description},
+				),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"description",
 			)
 		})
 	}
@@ -465,9 +576,16 @@ func TestStartsOnMovesTheFirstDateEarlier(t *testing.T) {
 			} `json:"recurrence"`
 		} `json:"terms"`
 	}
-	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"starts_on": "2026-11-03"}, http.StatusOK, &got)
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/schedules/"+id,
+		map[string]any{"starts_on": "2026-11-03"},
+		http.StatusOK,
+		&got,
+	)
 
-	if len(got.Terms) != 1 || got.Terms[0].EffectiveFrom != "2026-11-03" || got.Terms[0].Recurrence.Start != "2026-11-03" {
+	if len(got.Terms) != 1 || got.Terms[0].EffectiveFrom != "2026-11-03" ||
+		got.Terms[0].Recurrence.Start != "2026-11-03" {
 		t.Fatalf("terms = %+v, want one version starting 2026-11-03", got.Terms)
 	}
 
@@ -483,13 +601,20 @@ func TestStartsOnMovesTheFirstDateEarlier(t *testing.T) {
 	}
 
 	if os[1].ID != before.ID {
-		t.Fatalf("the occurrence of 2026-12-03 is %s, want the one that existed, %s", os[1].ID, before.ID)
+		t.Fatalf(
+			"the occurrence of 2026-12-03 is %s, want the one that existed, %s",
+			os[1].ID,
+			before.ID,
+		)
 	}
 
 	f.pay("2026-11-03", 600, f.rent, "")
 
 	if o := f.occurrence(id, 1); o.State != "realized" {
-		t.Fatalf("occurrence of 2026-11-03 = %+v, want realized by the charge recorded afterwards", o)
+		t.Fatalf(
+			"occurrence of 2026-11-03 = %+v, want realized by the charge recorded afterwards",
+			o,
+		)
 	}
 }
 
@@ -500,10 +625,25 @@ func TestStartsOnSkipsTheDatesPastTheGraceDays(t *testing.T) {
 	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
 	f.pay("2026-10-03", 600, f.rent, "")
 
-	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"starts_on": "2026-09-03"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/schedules/"+id,
+		map[string]any{"starts_on": "2026-09-03"},
+		http.StatusOK,
+		nil,
+	)
 
 	os := f.occurrences("from=2026-09-01&to=2027-01-31&schedule_id=" + id)
-	if want := []string{"2026-09-03", "2026-10-03", "2026-11-03", "2026-12-03", "2027-01-03"}; !slices.Equal(dates(os), want) {
+	if want := []string{
+		"2026-09-03",
+		"2026-10-03",
+		"2026-11-03",
+		"2026-12-03",
+		"2027-01-03",
+	}; !slices.Equal(
+		dates(os),
+		want,
+	) {
 		t.Fatalf("dates = %v, want %v", dates(os), want)
 	}
 
@@ -518,7 +658,12 @@ func TestStartsOnRejectsADateThatDoesNotMoveTheStartEarlier(t *testing.T) {
 	t.Parallel()
 
 	f := newFixture(t, "2026-11-04")
-	every2 := map[string]any{"frequency": "monthly", "interval": 2, "day_of_month": 3, "start": "2026-12-03"}
+	every2 := map[string]any{
+		"frequency":    "monthly",
+		"interval":     2,
+		"day_of_month": 3,
+		"start":        "2026-12-03",
+	}
 	tests := map[string]struct {
 		recurrence map[string]any
 		startsOn   string
@@ -533,8 +678,14 @@ func TestStartsOnRejectsADateThatDoesNotMoveTheStartEarlier(t *testing.T) {
 			id := f.schedule("subscription", f.checking, f.rent, 600, tt.recurrence, nil)
 
 			f.h.ExpectProblem(
-				f.h.Do(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"starts_on": tt.startsOn}),
-				http.StatusUnprocessableEntity, "validation_failed", "starts_on",
+				f.h.Do(
+					http.MethodPatch,
+					"/api/v1/schedules/"+id,
+					map[string]any{"starts_on": tt.startsOn},
+				),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"starts_on",
 			)
 		})
 	}
@@ -549,10 +700,25 @@ func TestStartsOnKeepsTheSequencesAcrossATermsChange(t *testing.T) {
 		"effective_from": "2027-02-01", "amount": apitest.BRL(700),
 	}, http.StatusCreated, nil)
 
-	f.h.MustDo(http.MethodPatch, "/api/v1/schedules/"+id, map[string]any{"starts_on": "2026-11-03"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/schedules/"+id,
+		map[string]any{"starts_on": "2026-11-03"},
+		http.StatusOK,
+		nil,
+	)
 
 	os := f.occurrences("from=2026-11-01&to=2027-03-31&schedule_id=" + id)
-	if want := []string{"2026-11-03", "2026-12-03", "2027-01-03", "2027-02-03", "2027-03-03"}; !slices.Equal(dates(os), want) {
+	if want := []string{
+		"2026-11-03",
+		"2026-12-03",
+		"2027-01-03",
+		"2027-02-03",
+		"2027-03-03",
+	}; !slices.Equal(
+		dates(os),
+		want,
+	) {
 		t.Fatalf("dates = %v, want %v", dates(os), want)
 	}
 
@@ -570,7 +736,13 @@ func TestReopenASkippedOccurrence(t *testing.T) {
 	f := newFixture(t, "2026-11-04")
 	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
 	occ := f.occurrence(id, 1)
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/skip", map[string]any{"reason": "mistake"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/skip",
+		map[string]any{"reason": "mistake"},
+		http.StatusOK,
+		nil,
+	)
 
 	var got occurrenceView
 	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/reopen", nil, http.StatusOK, &got)
@@ -596,7 +768,13 @@ func TestReopenRealizesWithAChargeAlreadyRecorded(t *testing.T) {
 	f := newFixture(t, "2026-11-04")
 	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
 	occ := f.occurrence(id, 1)
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/skip", map[string]any{}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/skip",
+		map[string]any{},
+		http.StatusOK,
+		nil,
+	)
 	tx := f.pay("2026-12-03", 600, f.rent, "")
 
 	var got occurrenceView
@@ -626,8 +804,20 @@ func TestReopenRejectsAnOccurrenceOnOrAfterTheEnd(t *testing.T) {
 	f := newFixture(t, "2026-11-04")
 	id := f.schedule("subscription", f.checking, f.rent, 600, monthly("2026-12-03", 3, ""), nil)
 	occ := f.occurrence(id, 1)
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/skip", map[string]any{}, http.StatusOK, nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2026-12-03"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/skip",
+		map[string]any{},
+		http.StatusOK,
+		nil,
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/end",
+		map[string]string{"from": "2026-12-03"},
+		http.StatusOK,
+		nil,
+	)
 
 	f.h.ExpectProblem(
 		f.h.Do(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/reopen", nil),

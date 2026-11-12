@@ -39,7 +39,12 @@ func EffectiveFact(facts []StatementFact) *StatementFact {
 // month, from the one before the rule's answer, whose closing date — the stored one when
 // closing is set for the month, else projected by the rule in force — is after d, or on it
 // when that rule assigns closing-day purchases to the closing statement.
-func StatementOn(d time.Time, closing map[ReferenceMonth]time.Time, rules Rules, ruleClosing func(ReferenceMonth, BillingCycleRule) time.Time) (ReferenceMonth, error) {
+func StatementOn(
+	d time.Time,
+	closing map[ReferenceMonth]time.Time,
+	rules Rules,
+	ruleClosing func(ReferenceMonth, BillingCycleRule) time.Time,
+) (ReferenceMonth, error) {
 	projected, err := StatementFor(d, rules)
 	if err != nil {
 		return ReferenceMonth{}, err

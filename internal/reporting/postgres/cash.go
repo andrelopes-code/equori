@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
-func (r *Repository) CardFacts(ctx context.Context, booksID int64, to time.Time) (app.CardFacts, error) {
+func (r *Repository) CardFacts(
+	ctx context.Context,
+	booksID int64,
+	to time.Time,
+) (app.CardFacts, error) {
 	lines, err := r.q.CashCardLines(ctx, booksID)
 	if err != nil {
 		return app.CardFacts{}, err
@@ -38,7 +42,10 @@ func (r *Repository) CardFacts(ctx context.Context, booksID int64, to time.Time)
 		txs = append(txs, o.ToTransactionID)
 	}
 
-	postings, err := r.q.CashCategoryPostings(ctx, CashCategoryPostingsParams{BooksID: booksID, TransactionIds: txs})
+	postings, err := r.q.CashCategoryPostings(
+		ctx,
+		CashCategoryPostingsParams{BooksID: booksID, TransactionIds: txs},
+	)
 	if err != nil {
 		return app.CardFacts{}, err
 	}
@@ -60,9 +67,16 @@ func cardLines(lines []CashCardLinesRow) ([]app.CardLine, []uuid.UUID) {
 	var txs []uuid.UUID
 	for _, l := range lines {
 		out = append(out, app.CardLine{
-			ID: l.ID, TransactionID: l.TransactionID, CardID: l.CardID, StatementID: l.StatementID, Amount: l.Amount,
-			Credit: l.CardRole != nil && *l.CardRole == "credit", Statement: l.ReferenceMonth,
-			Base: l.Base, PlanPurchase: l.PlanPurchaseDate, Anticipation: l.Anticipation,
+			ID:            l.ID,
+			TransactionID: l.TransactionID,
+			CardID:        l.CardID,
+			StatementID:   l.StatementID,
+			Amount:        l.Amount,
+			Credit:        l.CardRole != nil && *l.CardRole == "credit",
+			Statement:     l.ReferenceMonth,
+			Base:          l.Base,
+			PlanPurchase:  l.PlanPurchaseDate,
+			Anticipation:  l.Anticipation,
 		})
 		txs = append(txs, l.TransactionID)
 	}
@@ -74,15 +88,27 @@ func cardPayments(payments []CashPaymentsRow) []app.CardPayment {
 	var out []app.CardPayment
 	for _, p := range payments {
 		out = append(out, app.CardPayment{
-			ID: p.ID, TransactionID: p.TransactionID, CardID: p.CardID, Date: p.BookedOn, Amount: p.Amount, Financing: p.Financing,
+			ID:            p.ID,
+			TransactionID: p.TransactionID,
+			CardID:        p.CardID,
+			Date:          p.BookedOn,
+			Amount:        p.Amount,
+			Financing:     p.Financing,
 		})
 	}
 
 	return out
 }
 
-func (r *Repository) OffCardTotals(ctx context.Context, booksID int64, from, to time.Time) (app.Shares, error) {
-	rows, err := r.q.CashOffCardTotals(ctx, CashOffCardTotalsParams{BooksID: booksID, FromDate: from, ToDate: to})
+func (r *Repository) OffCardTotals(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+) (app.Shares, error) {
+	rows, err := r.q.CashOffCardTotals(
+		ctx,
+		CashOffCardTotalsParams{BooksID: booksID, FromDate: from, ToDate: to},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -95,8 +121,15 @@ func (r *Repository) OffCardTotals(ctx context.Context, booksID int64, from, to 
 	return out, nil
 }
 
-func (r *Repository) OffCardMonthTotals(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]app.Shares, error) {
-	rows, err := r.q.CashOffCardMonthTotals(ctx, CashOffCardMonthTotalsParams{BooksID: booksID, FromDate: from, ToDate: to})
+func (r *Repository) OffCardMonthTotals(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+) (map[time.Time]app.Shares, error) {
+	rows, err := r.q.CashOffCardMonthTotals(
+		ctx,
+		CashOffCardMonthTotalsParams{BooksID: booksID, FromDate: from, ToDate: to},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +146,11 @@ func (r *Repository) OffCardMonthTotals(ctx context.Context, booksID int64, from
 	return out, nil
 }
 
-func (r *Repository) StatementCard(ctx context.Context, booksID int64, id uuid.UUID) (uuid.UUID, error) {
+func (r *Repository) StatementCard(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (uuid.UUID, error) {
 	card, err := r.q.StatementCard(ctx, StatementCardParams{BooksID: booksID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return uuid.Nil, app.ErrNotFound
@@ -122,7 +159,11 @@ func (r *Repository) StatementCard(ctx context.Context, booksID int64, id uuid.U
 	return card, err
 }
 
-func (r *Repository) CardStatements(ctx context.Context, booksID int64, cardID uuid.UUID) (string, []app.StatementRef, error) {
+func (r *Repository) CardStatements(
+	ctx context.Context,
+	booksID int64,
+	cardID uuid.UUID,
+) (string, []app.StatementRef, error) {
 	instrument, err := r.q.CardInstrument(ctx, CardInstrumentParams{BooksID: booksID, ID: cardID})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil, app.ErrNotFound
@@ -132,20 +173,32 @@ func (r *Repository) CardStatements(ctx context.Context, booksID int64, cardID u
 		return "", nil, err
 	}
 
-	rows, err := r.q.AnalyticsStatements(ctx, AnalyticsStatementsParams{BooksID: booksID, CardID: cardID})
+	rows, err := r.q.AnalyticsStatements(
+		ctx,
+		AnalyticsStatementsParams{BooksID: booksID, CardID: cardID},
+	)
 	if err != nil {
 		return "", nil, err
 	}
 
 	out := make([]app.StatementRef, len(rows))
 	for i, s := range rows {
-		out[i] = app.StatementRef{ID: s.ID, CardID: s.AccountID, Reference: s.ReferenceMonth, Closing: s.ClosingDate, PreviousClosing: s.PreviousClosing}
+		out[i] = app.StatementRef{
+			ID:              s.ID,
+			CardID:          s.AccountID,
+			Reference:       s.ReferenceMonth,
+			Closing:         s.ClosingDate,
+			PreviousClosing: s.PreviousClosing,
+		}
 	}
 
 	return instrument, out, nil
 }
 
-func (r *Repository) ChargeCategories(ctx context.Context, booksID int64) (map[uuid.UUID]bool, error) {
+func (r *Repository) ChargeCategories(
+	ctx context.Context,
+	booksID int64,
+) (map[uuid.UUID]bool, error) {
 	ids, err := r.q.ChargeCategories(ctx, booksID)
 	if err != nil {
 		return nil, err

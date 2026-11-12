@@ -6,11 +6,19 @@ import (
 )
 
 func listOne(entries ...string) []byte {
-	return []byte(`<?xml version="1.0" encoding="UTF-8"?><ISO_4217><CcyTbl>` + strings.Join(entries, "") + `</CcyTbl></ISO_4217>`)
+	return []byte(
+		`<?xml version="1.0" encoding="UTF-8"?><ISO_4217><CcyTbl>` + strings.Join(
+			entries,
+			"",
+		) + `</CcyTbl></ISO_4217>`,
+	)
 }
 
 func entry(code, name, units string, attrs ...string) string {
-	return `<CcyNtry><CtryNm>X</CtryNm><CcyNm ` + strings.Join(attrs, " ") + `>` + name + `</CcyNm><Ccy>` + code + `</Ccy><CcyNbr>1</CcyNbr><CcyMnrUnts>` + units + `</CcyMnrUnts></CcyNtry>`
+	return `<CcyNtry><CtryNm>X</CtryNm><CcyNm ` + strings.Join(
+		attrs,
+		" ",
+	) + `>` + name + `</CcyNm><Ccy>` + code + `</Ccy><CcyNbr>1</CcyNbr><CcyMnrUnts>` + units + `</CcyMnrUnts></CcyNtry>`
 }
 
 func TestGenerateRejectsExponentChange(t *testing.T) {

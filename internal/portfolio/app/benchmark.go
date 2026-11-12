@@ -84,8 +84,23 @@ type period struct {
 // compare sets on report its profile, its time-weighted return, its comparison with the index
 // and its real return; the flows of report are in the currency of its opening value. A named index
 // is validated before any figure is left out (R2).
-func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, from, to time.Time, index string, report *ReturnReport) error {
-	p := period{booksID: booksID, ids: ids, from: from, to: to, report: report, values: map[time.Time]int64{}, flows: report.Flows}
+func (s *Service) compare(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+	from, to time.Time,
+	index string,
+	report *ReturnReport,
+) error {
+	p := period{
+		booksID: booksID,
+		ids:     ids,
+		from:    from,
+		to:      to,
+		report:  report,
+		values:  map[time.Time]int64{},
+		flows:   report.Flows,
+	}
 
 	profile, recorded, err := s.profileOf(ctx, booksID, ids, report.Opening.Currency())
 	if err != nil {
@@ -120,7 +135,14 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 		return nil
 	}
 
-	if err := s.benchmark(ctx, p, index, rates, heldDays(from, start, ends, dates, p.recorded), w); err != nil {
+	if err := s.benchmark(
+		ctx,
+		p,
+		index,
+		rates,
+		heldDays(from, start, ends, dates, p.recorded),
+		w,
+	); err != nil {
 		return err
 	}
 
@@ -129,7 +151,14 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 
 // benchmark sets the comparison with the index on p.report, over the rates of the index dated in
 // the window on days the tree held money (R14, R18, R20).
-func (s *Service) benchmark(ctx context.Context, p period, index string, rates []IndexRate, held func(time.Time) bool, w window) error {
+func (s *Service) benchmark(
+	ctx context.Context,
+	p period,
+	index string,
+	rates []IndexRate,
+	held func(time.Time) bool,
+	w window,
+) error {
 	all := countFunc(rates, p.contains)
 
 	firstDay := p.firstRateDay(rates)
@@ -267,7 +296,11 @@ func (p period) countCredits(b *Benchmark, w window) bool {
 // benchmarkRates returns the index of the comparison and its rates in [from − 1, to]. Without a
 // named index, the region's default applies, and a default with no rate gives none. An index of
 // another currency than the report's gives none (R15).
-func (s *Service) benchmarkRates(ctx context.Context, p period, index string) (string, []IndexRate, error) {
+func (s *Service) benchmarkRates(
+	ctx context.Context,
+	p period,
+	index string,
+) (string, []IndexRate, error) {
 	named := index != ""
 	if !named {
 		id, err := s.md.BenchmarkIndex(ctx, p.booksID)

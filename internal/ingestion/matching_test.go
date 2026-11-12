@@ -21,13 +21,29 @@ func newMatching(t *testing.T, aliases map[string]string) matching {
 	f := newSyncFixture(t)
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
 
-	m := matching{syncFixture: f, transport: f.h.Account("Transport", "expense", "", nil), payees: map[string]string{}}
+	m := matching{
+		syncFixture: f,
+		transport:   f.h.Account("Transport", "expense", "", nil),
+		payees:      map[string]string{},
+	}
 	for name, pattern := range aliases {
 		var payee struct {
 			ID string `json:"id"`
 		}
-		f.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]any{"name": name}, http.StatusCreated, &payee)
-		f.h.MustDo(http.MethodPost, "/api/v1/payee-aliases", map[string]any{"pattern": pattern, "match_type": "contains", "payee_id": payee.ID}, http.StatusCreated, nil)
+		f.h.MustDo(
+			http.MethodPost,
+			"/api/v1/payees",
+			map[string]any{"name": name},
+			http.StatusCreated,
+			&payee,
+		)
+		f.h.MustDo(
+			http.MethodPost,
+			"/api/v1/payee-aliases",
+			map[string]any{"pattern": pattern, "match_type": "contains", "payee_id": payee.ID},
+			http.StatusCreated,
+			nil,
+		)
 		m.payees[name] = payee.ID
 	}
 
@@ -78,7 +94,13 @@ func (m matching) inReview() []scoredView {
 	var out struct {
 		Items []scoredView `json:"items"`
 	}
-	m.h.MustDo(http.MethodGet, "/api/v1/import-batches/"+m.batches(m.checking)[0].ID+"/records?state=needs_review", nil, http.StatusOK, &out)
+	m.h.MustDo(
+		http.MethodGet,
+		"/api/v1/import-batches/"+m.batches(m.checking)[0].ID+"/records?state=needs_review",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	return out.Items
 }
@@ -113,12 +135,14 @@ func TestS93TwoRidesAreAmbiguous(t *testing.T) {
 	m.sync()
 
 	queued := m.inReview()
-	if len(queued) != 1 || queued[0].ReviewReason != "ambiguous" || !slices.Equal(queued[0].Candidates, []string{same, older}) {
+	if len(queued) != 1 || queued[0].ReviewReason != "ambiguous" ||
+		!slices.Equal(queued[0].Candidates, []string{same, older}) {
 		t.Fatalf("review = %+v", queued)
 	}
 
 	s := queued[0].ScoredCandidates
-	if len(s) != 2 || s[0].Score != 13 || s[1].Score != 12 || s[1].Date != "near" || s[0].Counterparty != "same_payee" {
+	if len(s) != 2 || s[0].Score != 13 || s[1].Score != 12 || s[1].Date != "near" ||
+		s[0].Counterparty != "same_payee" {
 		t.Fatalf("scored candidates = %+v", s)
 	}
 }
@@ -159,8 +183,10 @@ func TestS92ProbableMatchTakesTheLineAmount(t *testing.T) {
 	m.sync()
 
 	queued := m.inReview()
-	if len(queued) != 1 || queued[0].ReviewReason != "probable" || len(queued[0].ScoredCandidates) != 1 ||
-		queued[0].ScoredCandidates[0].Score != 5 || queued[0].ScoredCandidates[0].Amount != "bounded" {
+	if len(queued) != 1 || queued[0].ReviewReason != "probable" ||
+		len(queued[0].ScoredCandidates) != 1 ||
+		queued[0].ScoredCandidates[0].Score != 5 ||
+		queued[0].ScoredCandidates[0].Amount != "bounded" {
 		t.Fatalf("review = %+v", queued)
 	}
 
@@ -174,7 +200,8 @@ func TestS92ProbableMatchTakesTheLineAmount(t *testing.T) {
 		amounts[p.AccountID] = p.Amount.Amount
 	}
 
-	if got.Version != 2 || amounts[m.checking] != -712 || amounts[m.transport] != 712 || got.Description != "Uber" {
+	if got.Version != 2 || amounts[m.checking] != -712 || amounts[m.transport] != 712 ||
+		got.Description != "Uber" {
 		t.Fatalf("entry after the match = %+v", got)
 	}
 
@@ -191,9 +218,19 @@ func TestResolveRefusesAVoidedCandidate(t *testing.T) {
 	m.lineOn("uber-1", "2026-10-20", "Dl *Uberrides", "-7.12")
 	m.sync()
 	queued := m.inReview()
-	m.h.MustDo(http.MethodPost, "/api/v1/transactions/"+entry+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+	m.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+entry+"/void",
+		map[string]string{"reason": "typo"},
+		http.StatusOK,
+		nil,
+	)
 
-	r := m.h.Do(http.MethodPost, "/api/v1/external-records/"+queued[0].ID+"/resolve", map[string]any{"action": "match", "transaction_id": entry})
+	r := m.h.Do(
+		http.MethodPost,
+		"/api/v1/external-records/"+queued[0].ID+"/resolve",
+		map[string]any{"action": "match", "transaction_id": entry},
+	)
 	m.h.ExpectProblem(r, http.StatusConflict, "transaction_voided", "")
 }
 
@@ -213,7 +250,11 @@ func TestResolveRefusesAReconciledCandidate(t *testing.T) {
 		t.Fatalf("entry posting = %+v, want reconciled", p)
 	}
 
-	r := m.h.Do(http.MethodPost, "/api/v1/external-records/"+queued[0].ID+"/resolve", map[string]any{"action": "match", "transaction_id": entry})
+	r := m.h.Do(
+		http.MethodPost,
+		"/api/v1/external-records/"+queued[0].ID+"/resolve",
+		map[string]any{"action": "match", "transaction_id": entry},
+	)
 	m.h.ExpectProblem(r, http.StatusConflict, "posting_reconciled", "")
 }
 
@@ -231,7 +272,8 @@ func TestS96LineChangesAfterTheMatch(t *testing.T) {
 	m.sync()
 
 	got := m.h.Transaction(entry)
-	if got.Version != 2 || got.Date != "2026-10-21" || got.Postings[0].Amount.Amount != -715 || got.Postings[1].Amount.Amount != 715 {
+	if got.Version != 2 || got.Date != "2026-10-21" || got.Postings[0].Amount.Amount != -715 ||
+		got.Postings[1].Amount.Amount != 715 {
 		t.Fatalf("entry after the change = %+v", got)
 	}
 
@@ -245,7 +287,10 @@ func TestS96LineChangesAfterTheMatch(t *testing.T) {
 		t.Fatalf("reconciled entry = %+v", got)
 	}
 
-	if rec := m.record("uber-1"); rec.State != "matched" || rec.ReviewReason != "changed" || rec.UnappliedChange == "" {
+	if rec := m.record(
+		"uber-1",
+	); rec.State != "matched" || rec.ReviewReason != "changed" ||
+		rec.UnappliedChange == "" {
 		t.Fatalf("record = %+v", rec)
 	}
 }
@@ -265,7 +310,13 @@ func (m matching) record(externalID string) changedView {
 		var out struct {
 			Items []changedView `json:"items"`
 		}
-		m.h.MustDo(http.MethodGet, "/api/v1/import-batches/"+b.ID+"/records", nil, http.StatusOK, &out)
+		m.h.MustDo(
+			http.MethodGet,
+			"/api/v1/import-batches/"+b.ID+"/records",
+			nil,
+			http.StatusOK,
+			&out,
+		)
 
 		for _, r := range out.Items {
 			if r.ExternalID == externalID {
@@ -301,10 +352,18 @@ func TestS97UnconfirmedEntries(t *testing.T) {
 			} `json:"amount"`
 		} `json:"items"`
 	}
-	m.h.MustDo(http.MethodGet, "/api/v1/accounts/"+m.checking+"/unconfirmed", nil, http.StatusOK, &out)
+	m.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+m.checking+"/unconfirmed",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
-	if len(out.Items) != 1 || out.Items[0].TransactionID != forgotten || out.Items[0].Date != "2026-10-05" ||
-		out.Items[0].Amount.Amount != -3000 || out.Items[0].Description != "Cinema" {
+	if len(out.Items) != 1 || out.Items[0].TransactionID != forgotten ||
+		out.Items[0].Date != "2026-10-05" ||
+		out.Items[0].Amount.Amount != -3000 ||
+		out.Items[0].Description != "Cinema" {
 		t.Fatalf("unconfirmed = %+v", out.Items)
 	}
 

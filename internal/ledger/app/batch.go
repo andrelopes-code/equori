@@ -16,7 +16,11 @@ type BatchEntry struct {
 
 // RecordBatch records every entry in one database transaction, or none (A114). A rejected
 // entry's field is prefixed with entries[i] and the member that holds it.
-func (s *Service) RecordBatch(ctx context.Context, booksID int64, entries []BatchEntry) ([]domain.Transaction, error) {
+func (s *Service) RecordBatch(
+	ctx context.Context,
+	booksID int64,
+	entries []BatchEntry,
+) ([]domain.Transaction, error) {
 	out := make([]domain.Transaction, len(entries))
 
 	err := s.repo.InTx(ctx, func(r Repository) error {
@@ -31,12 +35,22 @@ func (s *Service) RecordBatch(ctx context.Context, booksID int64, entries []Batc
 			case e.Purchase != nil && e.Transaction == nil:
 				out[i], _, err = s.installmentPurchase(ctx, r, booksID, *e.Purchase)
 				if errors.Is(err, ErrNotFound) {
-					err = &domain.FieldError{Field: "card_account_id", Message: "unknown account", Err: domain.ErrUnknownAccount}
+					err = &domain.FieldError{
+						Field:   "card_account_id",
+						Message: "unknown account",
+						Err:     domain.ErrUnknownAccount,
+					}
 				}
 
-				err = domain.WithFieldPrefix(fmt.Sprintf("entries[%d].installment_purchase.", i), err)
+				err = domain.WithFieldPrefix(
+					fmt.Sprintf("entries[%d].installment_purchase.", i),
+					err,
+				)
 			default:
-				err = validationError(fmt.Sprintf("entries[%d]", i), "must hold exactly one of transaction and installment_purchase")
+				err = validationError(
+					fmt.Sprintf("entries[%d]", i),
+					"must hold exactly one of transaction and installment_purchase",
+				)
 			}
 
 			if err != nil {

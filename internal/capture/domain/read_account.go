@@ -6,7 +6,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (r *lineReader) readAccounts(mentions []mention, transfer, income bool, m method, methodConflict bool) {
+func (r *lineReader) readAccounts(
+	mentions []mention,
+	transfer, income bool,
+	m method,
+	methodConflict bool,
+) {
 	if income {
 		r.line.Kind = KindIncome
 	}
@@ -152,7 +157,8 @@ func (r *lineReader) resolve(accounts []int, m method, field string) uuid.UUID {
 }
 
 func (r *lineReader) checkTransfer() {
-	if r.line.Kind != KindTransfer || r.line.AccountID == uuid.Nil || r.line.ToAccountID == uuid.Nil {
+	if r.line.Kind != KindTransfer || r.line.AccountID == uuid.Nil ||
+		r.line.ToAccountID == uuid.Nil {
 		return
 	}
 

@@ -21,7 +21,11 @@ import (
 type Names func(ctx context.Context, booksID int64) (categories, payees map[uuid.UUID]string, err error)
 
 func Tools(svc *app.Service, names Names, today func(context.Context) time.Time) []tool.Tool {
-	return []tool.Tool{listRules(svc, names), explainCategorization(svc), manageRule(svc, names, today)}
+	return []tool.Tool{
+		listRules(svc, names),
+		explainCategorization(svc),
+		manageRule(svc, names, today),
+	}
 }
 
 func optionalID(s, field string) (uuid.UUID, error) {
@@ -67,7 +71,10 @@ func pageRequest[K any](args tool.PageArgs) (page.Request[K], error) {
 	if args.Cursor != "" {
 		var k K
 		if page.DecodeCursor(args.Cursor, &k) != nil {
-			return page.Request[K]{}, tool.InvalidArgument("cursor", "is not a next_cursor of this list; start again without cursor")
+			return page.Request[K]{}, tool.InvalidArgument(
+				"cursor",
+				"is not a next_cursor of this list; start again without cursor",
+			)
 		}
 
 		r.After = &k
@@ -98,7 +105,15 @@ func conditionsText(cs []domain.Condition) string {
 			v = string(b)
 		}
 
-		parts[i] = strings.ReplaceAll(d.Field, "_", " ") + " " + strings.ReplaceAll(d.Operator, "_", " ") + " " + v
+		parts[i] = strings.ReplaceAll(
+			d.Field,
+			"_",
+			" ",
+		) + " " + strings.ReplaceAll(
+			d.Operator,
+			"_",
+			" ",
+		) + " " + v
 	}
 
 	return strings.Join(parts, " and ")

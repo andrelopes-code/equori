@@ -23,11 +23,19 @@ func (r *Repository) CreateSession(ctx context.Context, s domain.Session) error 
 	})
 }
 
-func (r *Repository) SwitchSession(ctx context.Context, tokenHash []byte, memberID, booksID int64, at time.Time) error {
+func (r *Repository) SwitchSession(
+	ctx context.Context,
+	tokenHash []byte,
+	memberID, booksID int64,
+	at time.Time,
+) error {
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
-		n, err := q.TouchMembership(ctx, TouchMembershipParams{MemberID: memberID, BooksID: booksID, LastActiveAt: at})
+		n, err := q.TouchMembership(
+			ctx,
+			TouchMembershipParams{MemberID: memberID, BooksID: booksID, LastActiveAt: at},
+		)
 		if err != nil {
 			return err
 		}
@@ -36,7 +44,10 @@ func (r *Repository) SwitchSession(ctx context.Context, tokenHash []byte, member
 			return app.ErrBooksNotFound
 		}
 
-		n, err = q.SwitchSession(ctx, SwitchSessionParams{TokenHash: tokenHash, MemberID: memberID, BooksID: booksID})
+		n, err = q.SwitchSession(
+			ctx,
+			SwitchSessionParams{TokenHash: tokenHash, MemberID: memberID, BooksID: booksID},
+		)
 		if err != nil {
 			return err
 		}
@@ -54,15 +65,28 @@ func (r *Repository) SwitchSession(ctx context.Context, tokenHash []byte, member
 	return err
 }
 
-func (r *Repository) MemberBySession(ctx context.Context, tokenHash []byte, now time.Time) (app.Access, error) {
-	row, err := r.q.GetMemberBySession(ctx, GetMemberBySessionParams{TokenHash: tokenHash, ExpiresAt: now})
+func (r *Repository) MemberBySession(
+	ctx context.Context,
+	tokenHash []byte,
+	now time.Time,
+) (app.Access, error) {
+	row, err := r.q.GetMemberBySession(
+		ctx,
+		GetMemberBySessionParams{TokenHash: tokenHash, ExpiresAt: now},
+	)
 	if err != nil {
 		return app.Access{}, notFound(err)
 	}
 
 	user := toMember(IdentityMember{
-		ID: row.ID, Email: row.Email, PasswordHash: row.PasswordHash, Role: row.Role,
-		DisabledAt: row.DisabledAt, CreatedAt: row.CreatedAt, Language: row.Language, DisplayName: row.DisplayName,
+		ID:           row.ID,
+		Email:        row.Email,
+		PasswordHash: row.PasswordHash,
+		Role:         row.Role,
+		DisabledAt:   row.DisabledAt,
+		CreatedAt:    row.CreatedAt,
+		Language:     row.Language,
+		DisplayName:  row.DisplayName,
 	})
 
 	return app.Access{Member: user, BooksID: row.BooksID, Role: auth.BookRole(row.BookRole)}, nil

@@ -97,9 +97,19 @@ func evalHarness(t *testing.T, preset, model string) *apitest.Harness {
 
 	var created evalProvider
 	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", body, http.StatusCreated, &created)
-	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/ingestion.csv_columns/chain", map[string]any{"targets": []any{
-		map[string]any{"provider_id": created.ID, "model": model, "capabilities": []string{"structured_output"}},
-	}}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/assistant/uses/ingestion.csv_columns/chain",
+		map[string]any{"targets": []any{
+			map[string]any{
+				"provider_id":  created.ID,
+				"model":        model,
+				"capabilities": []string{"structured_output"},
+			},
+		}},
+		http.StatusOK,
+		nil,
+	)
 
 	return h
 }
@@ -121,7 +131,14 @@ func positionsOf(header []string, s evalSuggestion) columnPositions {
 	}
 
 	return columnPositions{
-		Date: at(s.DateColumn), Description: at(s.DescriptionColumn), Amount: at(s.AmountColumn),
-		Debit: at(s.DebitColumn), Credit: at(s.CreditColumn), ID: at(s.IDColumn), Sign: at(s.SignColumn),
+		Date:        at(s.DateColumn),
+		Description: at(s.DescriptionColumn),
+		Amount:      at(s.AmountColumn),
+		Debit: at(
+			s.DebitColumn,
+		),
+		Credit: at(s.CreditColumn),
+		ID:     at(s.IDColumn),
+		Sign:   at(s.SignColumn),
 	}
 }

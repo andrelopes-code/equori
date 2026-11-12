@@ -55,8 +55,11 @@ func PreviewDigest(p Preview) string {
 }
 
 // NewWrite builds a Write or Destructive tool with a preview of its effect.
-func NewWrite[In, Out any](s Spec, preview func(ctx context.Context, booksID int64, in In) (Preview, error),
-	h func(ctx context.Context, booksID int64, in In) (Out, error)) Tool {
+func NewWrite[In, Out any](
+	s Spec,
+	preview func(ctx context.Context, booksID int64, in In) (Preview, error),
+	h func(ctx context.Context, booksID int64, in In) (Out, error),
+) Tool {
 	if s.Effect == ReadOnly {
 		panic(fmt.Sprintf("tool %s: a read-only tool has no preview", s.Name))
 	}

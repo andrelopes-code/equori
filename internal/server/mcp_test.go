@@ -30,7 +30,12 @@ func (b bearer) RoundTrip(r *http.Request) (*http.Response, error) {
 func mcpToken(t *testing.T, h *apitest.Harness, c *http.Client, scope string) string {
 	t.Helper()
 
-	r := h.Call(c, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "test", "scope": scope, "expires_in_days": 30})
+	r := h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/access-tokens",
+		map[string]any{"name": "test", "scope": scope, "expires_in_days": 30},
+	)
 	var out struct {
 		ID    string `json:"id"`
 		Token string `json:"token"`
@@ -51,7 +56,9 @@ func mcpSession(t *testing.T, h *apitest.Harness, token string) *mcp.ClientSessi
 	client := mcp.NewClient(&mcp.Implementation{Name: "test", Version: "1"}, nil)
 
 	s, err := client.Connect(t.Context(), &mcp.StreamableClientTransport{
-		Endpoint: h.URL() + "/mcp", HTTPClient: &http.Client{Transport: bearer(token)}, DisableStandaloneSSE: true,
+		Endpoint:             h.URL() + "/mcp",
+		HTTPClient:           &http.Client{Transport: bearer(token)},
+		DisableStandaloneSSE: true,
 	}, nil)
 	if err != nil {
 		t.Fatalf("connect: %v", err)
@@ -93,7 +100,13 @@ func resultText(t *testing.T, r *mcp.CallToolResult) string {
 }
 
 // rawMCP posts an initialize request to /mcp with the header set and returns the response.
-func rawMCP(t *testing.T, h *apitest.Harness, method, path string, header map[string]string, body []byte) apitest.Response {
+func rawMCP(
+	t *testing.T,
+	h *apitest.Harness,
+	method, path string,
+	header map[string]string,
+	body []byte,
+) apitest.Response {
 	t.Helper()
 
 	req, err := http.NewRequestWithContext(t.Context(), method, h.URL()+path, bytes.NewReader(body))
@@ -116,7 +129,9 @@ func rawMCP(t *testing.T, h *apitest.Harness, method, path string, header map[st
 	return h.Send(&http.Client{}, req)
 }
 
-var initialize = []byte(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"raw","version":"1"}}}`)
+var initialize = []byte(
+	`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"raw","version":"1"}}}`,
+)
 
 // Design 2026-10-26 3.9, X14, X15: a read token lists the ReadOnly tools, a write token every tool.
 func TestMCPListsToolsByScope(t *testing.T) {
@@ -144,7 +159,11 @@ func TestMCPListsToolsByScope(t *testing.T) {
 
 	write := listNames(t, mcpSession(t, h, mcpToken(t, h, h.Client, "write")))
 	if len(write) != len(h.App.Tools.Tools()) {
-		t.Fatalf("write token lists %d tools, registry has %d", len(write), len(h.App.Tools.Tools()))
+		t.Fatalf(
+			"write token lists %d tools, registry has %d",
+			len(write),
+			len(h.App.Tools.Tools()),
+		)
 	}
 
 	for _, tl := range h.App.Tools.Tools() {
@@ -197,7 +216,12 @@ func TestMCPDemotedToken(t *testing.T) {
 		t.Fatalf("demoted token lists %v, want the ReadOnly tools %v", got, reads)
 	}
 
-	r := h.Call(writer, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "w", "scope": "write", "expires_in_days": 30})
+	r := h.Call(
+		writer,
+		http.MethodPost,
+		"/api/v1/access-tokens",
+		map[string]any{"name": "w", "scope": "write", "expires_in_days": 30},
+	)
 	if r.Status != http.StatusForbidden {
 		t.Fatalf("write token of a read member: %d %s", r.Status, r.Body)
 	}
@@ -206,7 +230,12 @@ func TestMCPDemotedToken(t *testing.T) {
 		t.Errorf("write token of a read member: body = %s, want book_role_required", r.Body)
 	}
 
-	r = h.Call(writer, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "w", "scope": "read", "expires_in_days": 30})
+	r = h.Call(
+		writer,
+		http.MethodPost,
+		"/api/v1/access-tokens",
+		map[string]any{"name": "w", "scope": "read", "expires_in_days": 30},
+	)
 	if r.Status != http.StatusCreated {
 		t.Errorf("read token of a read member: %d %s", r.Status, r.Body)
 	}
@@ -218,15 +247,32 @@ func TestMCPCallTool(t *testing.T) {
 	h := apitest.New(t)
 	h.Account("Mine", "asset", "checking", nil)
 	other := h.Login("bob@example.com")
-	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Bobs secret", "class": "asset", "kind": "checking", "currency": "BRL"})
+	h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/accounts",
+		map[string]any{
+			"name":     "Bobs secret",
+			"class":    "asset",
+			"kind":     "checking",
+			"currency": "BRL",
+		},
+	)
 	s := mcpSession(t, h, mcpToken(t, h, h.Client, "read"))
 
-	res, err := s.CallTool(t.Context(), &mcp.CallToolParams{Name: "list_accounts", Arguments: map[string]any{}})
+	res, err := s.CallTool(
+		t.Context(),
+		&mcp.CallToolParams{Name: "list_accounts", Arguments: map[string]any{}},
+	)
 	if err != nil || res.IsError {
 		t.Fatalf("call: %v %+v", err, res)
 	}
 
-	want, err := h.App.Tools.Call(auth.WithBooksID(t.Context(), h.OwnerID()), "list_accounts", json.RawMessage(`{}`))
+	want, err := h.App.Tools.Call(
+		auth.WithBooksID(t.Context(), h.OwnerID()),
+		"list_accounts",
+		json.RawMessage(`{}`),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -279,7 +325,13 @@ func TestMCPWriteTool(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-10-23"))
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
-	args := map[string]any{"date": "2026-10-23", "description": "Lunch", "amount": "45.90", "from_account_id": checking, "to_account_id": food}
+	args := map[string]any{
+		"date":            "2026-10-23",
+		"description":     "Lunch",
+		"amount":          "45.90",
+		"from_account_id": checking,
+		"to_account_id":   food,
+	}
 	count := func() int {
 		var page struct {
 			Items []json.RawMessage `json:"items"`
@@ -289,12 +341,22 @@ func TestMCPWriteTool(t *testing.T) {
 		return len(page.Items)
 	}
 
-	res, err := mcpSession(t, h, mcpToken(t, h, h.Client, "read")).CallTool(t.Context(), &mcp.CallToolParams{Name: "record_transaction", Arguments: args})
-	if err != nil || !res.IsError || !strings.Contains(resultText(t, res), `"code":"tool_not_allowed"`) || count() != 0 {
+	res, err := mcpSession(
+		t,
+		h,
+		mcpToken(t, h, h.Client, "read"),
+	).CallTool(t.Context(), &mcp.CallToolParams{Name: "record_transaction", Arguments: args})
+	if err != nil || !res.IsError ||
+		!strings.Contains(resultText(t, res), `"code":"tool_not_allowed"`) ||
+		count() != 0 {
 		t.Fatalf("read token: %v %+v, transactions %d", err, res, count())
 	}
 
-	res, err = mcpSession(t, h, mcpToken(t, h, h.Client, "write")).CallTool(t.Context(), &mcp.CallToolParams{Name: "record_transaction", Arguments: args})
+	res, err = mcpSession(
+		t,
+		h,
+		mcpToken(t, h, h.Client, "write"),
+	).CallTool(t.Context(), &mcp.CallToolParams{Name: "record_transaction", Arguments: args})
 	if err != nil || res.IsError || count() != 1 {
 		t.Fatalf("write token: %v %+v, transactions %d", err, res, count())
 	}
@@ -307,8 +369,12 @@ func TestMCPAuthentication(t *testing.T) {
 	token := mcpToken(t, h, h.Client, "read")
 
 	expired := mcpToken(t, h, h.Client, "read")
-	if _, err := h.Pool.Exec(t.Context(), `UPDATE identity_access_token SET created_at = now() - interval '2 days',
-		expires_at = now() - interval '1 day' WHERE token_hash = sha256($1::bytea)`, []byte(expired)); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE identity_access_token SET created_at = now() - interval '2 days',
+		expires_at = now() - interval '1 day' WHERE token_hash = sha256($1::bytea)`,
+		[]byte(expired),
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -316,11 +382,17 @@ func TestMCPAuthentication(t *testing.T) {
 	mcpSession(t, h, deleted) // the token works before its deletion
 
 	var id string
-	if err := h.Pool.QueryRow(t.Context(), `SELECT id FROM identity_access_token WHERE token_hash = sha256($1::bytea)`, []byte(deleted)).Scan(&id); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT id FROM identity_access_token WHERE token_hash = sha256($1::bytea)`, []byte(deleted)).
+		Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 
-	if r := h.Call(h.Client, http.MethodDelete, "/api/v1/access-tokens/"+id, nil); r.Status != http.StatusNoContent {
+	if r := h.Call(
+		h.Client,
+		http.MethodDelete,
+		"/api/v1/access-tokens/"+id,
+		nil,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("delete: %d", r.Status)
 	}
 
@@ -329,33 +401,81 @@ func TestMCPAuthentication(t *testing.T) {
 		"no header": nil, "unknown token": auth("eqt_unknown"), "expired token": auth(expired), "deleted token": auth(deleted),
 	} {
 		r := rawMCP(t, h, http.MethodPost, "/mcp", hdr, initialize)
-		if r.Status != http.StatusUnauthorized || !strings.HasPrefix(r.Header.Get("WWW-Authenticate"), "Bearer") {
-			t.Errorf("%s: status %d, WWW-Authenticate %q", name, r.Status, r.Header.Get("WWW-Authenticate"))
+		if r.Status != http.StatusUnauthorized ||
+			!strings.HasPrefix(r.Header.Get("WWW-Authenticate"), "Bearer") {
+			t.Errorf(
+				"%s: status %d, WWW-Authenticate %q",
+				name,
+				r.Status,
+				r.Header.Get("WWW-Authenticate"),
+			)
 		}
 	}
 
-	if r := rawMCP(t, h, http.MethodPost, "/mcp?token="+token, nil, initialize); r.Status != http.StatusUnauthorized {
+	if r := rawMCP(
+		t,
+		h,
+		http.MethodPost,
+		"/mcp?token="+token,
+		nil,
+		initialize,
+	); r.Status != http.StatusUnauthorized {
 		t.Errorf("query token: status %d", r.Status)
 	}
 
-	if r := h.Call(h.Client, http.MethodPost, "/mcp", json.RawMessage(initialize)); r.Status != http.StatusUnauthorized {
+	if r := h.Call(
+		h.Client,
+		http.MethodPost,
+		"/mcp",
+		json.RawMessage(initialize),
+	); r.Status != http.StatusUnauthorized {
 		t.Errorf("session cookie: status %d", r.Status)
 	}
 
-	if r := rawMCP(t, h, http.MethodPost, "/mcp", map[string]string{"Authorization": "Bearer " + token, "Origin": "https://evil.example"}, initialize); r.Status != http.StatusForbidden {
+	if r := rawMCP(
+		t,
+		h,
+		http.MethodPost,
+		"/mcp",
+		map[string]string{"Authorization": "Bearer " + token, "Origin": "https://evil.example"},
+		initialize,
+	); r.Status != http.StatusForbidden {
 		t.Errorf("foreign origin: status %d", r.Status)
 	}
 
-	if r := rawMCP(t, h, http.MethodPost, "/mcp", map[string]string{"Authorization": "Bearer " + token, "Origin": h.URL()}, initialize); r.Status != http.StatusOK {
+	if r := rawMCP(
+		t,
+		h,
+		http.MethodPost,
+		"/mcp",
+		map[string]string{"Authorization": "Bearer " + token, "Origin": h.URL()},
+		initialize,
+	); r.Status != http.StatusOK {
 		t.Errorf("own origin: status %d: %s", r.Status, r.Body)
 	}
 
-	if r := rawMCP(t, h, http.MethodPost, "/mcp", map[string]string{"Authorization": "Bearer " + token, "Host": "finance.example.com"}, initialize); r.Status != http.StatusOK {
+	if r := rawMCP(
+		t,
+		h,
+		http.MethodPost,
+		"/mcp",
+		map[string]string{"Authorization": "Bearer " + token, "Host": "finance.example.com"},
+		initialize,
+	); r.Status != http.StatusOK {
 		t.Errorf("proxied host: status %d: %s", r.Status, r.Body)
 	}
 
-	big := append([]byte(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"pad":"`), bytes.Repeat([]byte("x"), 1<<20)...)
-	if r := rawMCP(t, h, http.MethodPost, "/mcp", auth(token), append(big, `"}}`...)); r.Status != http.StatusRequestEntityTooLarge {
+	big := append(
+		[]byte(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"pad":"`),
+		bytes.Repeat([]byte("x"), 1<<20)...)
+	if r := rawMCP(
+		t,
+		h,
+		http.MethodPost,
+		"/mcp",
+		auth(token),
+		append(big, `"}}`...),
+	); r.Status != http.StatusRequestEntityTooLarge {
 		t.Errorf("body over 1 MiB: status %d", r.Status)
 	}
 
@@ -364,7 +484,13 @@ func TestMCPAuthentication(t *testing.T) {
 		t.Errorf("GET with token: status %d", r.Status)
 	}
 
-	if r := h.Call(h.Client, http.MethodGet, "/mcp", nil); r.Status != http.StatusUnauthorized || strings.Contains(string(r.Body), "<html") {
+	if r := h.Call(
+		h.Client,
+		http.MethodGet,
+		"/mcp",
+		nil,
+	); r.Status != http.StatusUnauthorized ||
+		strings.Contains(string(r.Body), "<html") {
 		t.Errorf("GET with cookie: status %d", r.Status)
 	}
 }
@@ -376,12 +502,19 @@ func TestMCPResultTooLarge(t *testing.T) {
 	type out struct {
 		Text string `json:"text"`
 	}
-	big := tool.New(tool.Spec{Name: "big_result", Description: "Returns 40 KiB.", Effect: tool.ReadOnly},
-		func(context.Context, int64, in) (out, error) { return out{Text: strings.Repeat("x", 40<<10)}, nil })
+	big := tool.New(
+		tool.Spec{Name: "big_result", Description: "Returns 40 KiB.", Effect: tool.ReadOnly},
+		func(context.Context, int64, in) (out, error) { return out{Text: strings.Repeat("x", 40<<10)}, nil },
+	)
 	h := apitest.New(t, apitest.ExtraTools(tool.Group{Tools: []tool.Tool{big}}))
 
-	res, err := mcpSession(t, h, mcpToken(t, h, h.Client, "read")).CallTool(t.Context(), &mcp.CallToolParams{Name: "big_result", Arguments: map[string]any{}})
-	if err != nil || !res.IsError || !strings.Contains(resultText(t, res), `"code":"result_too_large"`) {
+	res, err := mcpSession(
+		t,
+		h,
+		mcpToken(t, h, h.Client, "read"),
+	).CallTool(t.Context(), &mcp.CallToolParams{Name: "big_result", Arguments: map[string]any{}})
+	if err != nil || !res.IsError ||
+		!strings.Contains(resultText(t, res), `"code":"result_too_large"`) {
 		t.Fatalf("big result: %v %+v", err, res)
 	}
 }
@@ -396,7 +529,10 @@ func TestMCPInstructions(t *testing.T) {
 		t.Fatalf("instructions = %q", got)
 	}
 
-	if !slices.Contains([]string{"2026-07-28", "2025-11-25"}, s.InitializeResult().ProtocolVersion) {
+	if !slices.Contains(
+		[]string{"2026-07-28", "2025-11-25"},
+		s.InitializeResult().ProtocolVersion,
+	) {
 		t.Fatalf("protocol = %s", s.InitializeResult().ProtocolVersion)
 	}
 }
@@ -422,7 +558,13 @@ func TestMCPPrompts(t *testing.T) {
 		t.Fatalf("prompts = %v", names)
 	}
 
-	got, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "monthly_review", Arguments: map[string]string{"month": "2026-09"}})
+	got, err := s.GetPrompt(
+		t.Context(),
+		&mcp.GetPromptParams{
+			Name:      "monthly_review",
+			Arguments: map[string]string{"month": "2026-09"},
+		},
+	)
 	if err != nil || len(got.Messages) != 1 || got.Messages[0].Role != "user" {
 		t.Fatalf("monthly_review = %+v, %v", got, err)
 	}
@@ -452,11 +594,20 @@ func TestMCPPrompts(t *testing.T) {
 		}
 	}
 
-	if _, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "monthly_review", Arguments: map[string]string{"month": "2026-13"}}); err == nil {
+	if _, err := s.GetPrompt(
+		t.Context(),
+		&mcp.GetPromptParams{
+			Name:      "monthly_review",
+			Arguments: map[string]string{"month": "2026-13"},
+		},
+	); err == nil {
 		t.Error("monthly_review accepts month 2026-13")
 	}
 
-	if _, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "reconcile_account", Arguments: map[string]string{}}); err == nil {
+	if _, err := s.GetPrompt(
+		t.Context(),
+		&mcp.GetPromptParams{Name: "reconcile_account", Arguments: map[string]string{}},
+	); err == nil {
 		t.Error("reconcile_account accepts no account")
 	}
 }

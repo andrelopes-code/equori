@@ -38,10 +38,17 @@ func TestScheduleCalendarFromRegion(t *testing.T) {
 		t.Helper()
 
 		body := map[string]any{
-			"kind": "bill", "account_id": account(c, "asset", "checking", currency),
-			"counterpart_id": account(c, "expense", "", currency), "description": "rent",
-			"amount":     map[string]any{"amount": 1000, "currency": currency},
-			"recurrence": map[string]any{"frequency": "monthly", "interval": 1, "business_day_ordinal": 1, "start": "2026-01-01"},
+			"kind":           "bill",
+			"account_id":     account(c, "asset", "checking", currency),
+			"counterpart_id": account(c, "expense", "", currency),
+			"description":    "rent",
+			"amount":         map[string]any{"amount": 1000, "currency": currency},
+			"recurrence": map[string]any{
+				"frequency":            "monthly",
+				"interval":             1,
+				"business_day_ordinal": 1,
+				"start":                "2026-01-01",
+			},
 		}
 		for k, v := range extra {
 			body[k] = v
@@ -68,7 +75,12 @@ func TestScheduleCalendarFromRegion(t *testing.T) {
 	firstOccurrence := func(c *http.Client, id string) string {
 		t.Helper()
 
-		r := h.Call(c, http.MethodGet, "/api/v1/occurrences?from=2026-01-01&to=2026-01-31&schedule_id="+id, nil)
+		r := h.Call(
+			c,
+			http.MethodGet,
+			"/api/v1/occurrences?from=2026-01-01&to=2026-01-31&schedule_id="+id,
+			nil,
+		)
 		if r.Status != http.StatusOK {
 			t.Fatalf("occurrences status = %d: %s", r.Status, r.Body)
 		}
@@ -103,7 +115,12 @@ func TestScheduleCalendarFromRegion(t *testing.T) {
 	}
 
 	// Review Focus 1: a region change keeps the calendar of existing schedules.
-	if r := h.Call(de, http.MethodPatch, "/api/v1/books/current", map[string]any{"region": "BR", "time_zone": nil}); r.Status != http.StatusOK {
+	if r := h.Call(
+		de,
+		http.MethodPatch,
+		"/api/v1/books/current",
+		map[string]any{"region": "BR", "time_zone": nil},
+	); r.Status != http.StatusOK {
 		t.Fatalf("patch books status = %d: %s", r.Status, r.Body)
 	}
 

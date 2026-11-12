@@ -20,7 +20,12 @@ type Flow struct {
 }
 
 // Flows returns the days in [from, to] with a booked posting on the account, in its instrument.
-func (s *Service) Flows(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]Flow, string, error) {
+func (s *Service) Flows(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]Flow, string, error) {
 	days := int(to.Sub(from).Hours()/24) + 1
 	if days < 1 || days > MaxFlowDays {
 		return nil, "", ErrInvalidFlowRange

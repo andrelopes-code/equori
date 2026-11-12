@@ -96,7 +96,10 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 	}
 
 	if !slices.Contains(adjustments, r.ClosingAdjustment) {
-		return BillingCycleRule{}, invalid("closing_adjustment", "must be none, following, preceding or modified_following")
+		return BillingCycleRule{}, invalid(
+			"closing_adjustment",
+			"must be none, following, preceding or modified_following",
+		)
 	}
 
 	if r.Assignment == "" {
@@ -112,7 +115,10 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 	}
 
 	if !slices.Contains(adjustments, r.Adjustment) {
-		return BillingCycleRule{}, invalid("due_date_adjustment", "must be none, following, preceding or modified_following")
+		return BillingCycleRule{}, invalid(
+			"due_date_adjustment",
+			"must be none, following, preceding or modified_following",
+		)
 	}
 
 	if r.Calendar == "" {
@@ -129,7 +135,8 @@ type Rules []BillingCycleRule
 func (rs Rules) For(m ReferenceMonth) (BillingCycleRule, error) {
 	var found *BillingCycleRule
 	for i := range rs {
-		if rs[i].EffectiveFrom.Compare(m) <= 0 && (found == nil || rs[i].EffectiveFrom.Compare(found.EffectiveFrom) > 0) {
+		if rs[i].EffectiveFrom.Compare(m) <= 0 &&
+			(found == nil || rs[i].EffectiveFrom.Compare(found.EffectiveFrom) > 0) {
 			found = &rs[i]
 		}
 	}
@@ -153,7 +160,11 @@ type StatementDates struct {
 func DatesFor(m ReferenceMonth, r BillingCycleRule) StatementDates {
 	if r.ClosingMode == ClosingBeforeDue {
 		due := m.dayIn(r.DueDay)
-		return StatementDates{Reference: m, Closing: due.AddDate(0, 0, -r.ClosingDaysBeforeDue), DueUnadjusted: due}
+		return StatementDates{
+			Reference:     m,
+			Closing:       due.AddDate(0, 0, -r.ClosingDaysBeforeDue),
+			DueUnadjusted: due,
+		}
 	}
 
 	closingMonth := m
@@ -161,7 +172,11 @@ func DatesFor(m ReferenceMonth, r BillingCycleRule) StatementDates {
 		closingMonth = m.Add(-1)
 	}
 
-	return StatementDates{Reference: m, Closing: closingMonth.dayIn(r.ClosingDay), DueUnadjusted: m.dayIn(r.DueDay)}
+	return StatementDates{
+		Reference:     m,
+		Closing:       closingMonth.dayIn(r.ClosingDay),
+		DueUnadjusted: m.dayIn(r.DueDay),
+	}
 }
 
 // StatementFor returns the first statement that closes after the purchase date, or on it

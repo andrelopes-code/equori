@@ -14,7 +14,12 @@ const typeFixedIncome = "fixed_income"
 // fixed income instrument quoted in it, and ProfileMarket otherwise (amendment A208 R11).
 // recorded is true for a rate tree that holds no fixed income instrument: its yield is the income
 // the ledger records (R18), while the yield of a fixed income instrument is in its price.
-func (s *Service) profileOf(ctx context.Context, booksID int64, ids []uuid.UUID, in money.Currency) (profile string, recorded bool, err error) {
+func (s *Service) profileOf(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+	in money.Currency,
+) (profile string, recorded bool, err error) {
 	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return "", false, err

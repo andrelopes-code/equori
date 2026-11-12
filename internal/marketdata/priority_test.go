@@ -17,7 +17,11 @@ func TestS355OfficialBeatsAccrual(t *testing.T) {
 
 	srv := httptest.NewServer(&feedServer{})
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-11-01"), apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-01"),
+		apitest.PriceFeeds([]string{"bcb_ptax"}, feedURLs(srv)),
+	)
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
@@ -30,9 +34,21 @@ func TestS355OfficialBeatsAccrual(t *testing.T) {
 	var list struct {
 		Items []priceAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2026-10-29&to=2026-10-29", nil, http.StatusOK, &list)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=USD&quote_instrument=BRL&from=2026-10-29&to=2026-10-29",
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
-	want := priceAPI{Instrument: "USD", QuoteInstrument: "BRL", Date: "2026-10-29", Value: "5.495", Source: "bcb_ptax"}
+	want := priceAPI{
+		Instrument:      "USD",
+		QuoteInstrument: "BRL",
+		Date:            "2026-10-29",
+		Value:           "5.495",
+		Source:          "bcb_ptax",
+	}
 	if len(list.Items) != 1 || list.Items[0] != want {
 		t.Fatalf("prices = %+v, want [%+v]", list.Items, want)
 	}
@@ -70,11 +86,29 @@ func TestS356UnofficialFillsGaps(t *testing.T) {
 	var list struct {
 		Items []priceAPI `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument=PETR4&quote_instrument=BRL&from=2026-11-05&to=2026-11-06", nil, http.StatusOK, &list)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=PETR4&quote_instrument=BRL&from=2026-11-05&to=2026-11-06",
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
 	want := []priceAPI{
-		{Instrument: "PETR4", QuoteInstrument: "BRL", Date: "2026-11-05", Value: "32.45", Source: "b3_consolidated"},
-		{Instrument: "PETR4", QuoteInstrument: "BRL", Date: "2026-11-06", Value: "32.5", Source: "yahoo_chart"},
+		{
+			Instrument:      "PETR4",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-05",
+			Value:           "32.45",
+			Source:          "b3_consolidated",
+		},
+		{
+			Instrument:      "PETR4",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-06",
+			Value:           "32.5",
+			Source:          "yahoo_chart",
+		},
 	}
 	if !slices.Equal(list.Items, want) {
 		t.Fatalf("prices = %+v, want %+v", list.Items, want)
@@ -94,5 +128,11 @@ func securityPrice(t *testing.T, source, date, value string) marketdata.Price {
 		t.Fatal(err)
 	}
 
-	return marketdata.Price{Instrument: "PETR4", Quote: "BRL", Date: day(date), Value: v, Source: source}
+	return marketdata.Price{
+		Instrument: "PETR4",
+		Quote:      "BRL",
+		Date:       day(date),
+		Value:      v,
+		Source:     source,
+	}
 }

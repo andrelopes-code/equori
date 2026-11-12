@@ -55,27 +55,41 @@ func FactTables(ctx context.Context, q DBTX) ([]string, error) {
 		return nil, err
 	}
 
-	return slices.DeleteFunc(names, func(n string) bool { return slices.Contains(notExported, n) }), nil
+	return slices.DeleteFunc(
+		names,
+		func(n string) bool { return slices.Contains(notExported, n) },
+	), nil
 }
 
 func (r *Exports) BuildArchive(ctx context.Context, booksID int64, at time.Time) ([]byte, error) {
 	var out []byte
-	err := pgx.BeginTxFunc(ctx, r.pool, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, func(tx pgx.Tx) error {
-		var err error
-		out, err = buildArchive(ctx, tx, booksID, at, r.appVersion)
+	err := pgx.BeginTxFunc(
+		ctx,
+		r.pool,
+		pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly},
+		func(tx pgx.Tx) error {
+			var err error
+			out, err = buildArchive(ctx, tx, booksID, at, r.appVersion)
 
-		return err
-	})
+			return err
+		},
+	)
 
 	return out, err
 }
 
 // RequestExport writes the pending export and its event in one transaction (ADR 006).
-func (r *Exports) RequestExport(ctx context.Context, booksID int64, at time.Time, credentials []byte) (app.Export, bool, error) {
+func (r *Exports) RequestExport(
+	ctx context.Context,
+	booksID int64,
+	at time.Time,
+	credentials []byte,
+) (app.Export, bool, error) {
 	var e app.Export
 	ok := true
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		row, err := r.q.WithTx(tx).RequestExport(ctx, RequestExportParams{BooksID: booksID, RequestedAt: at, Credentials: credentials})
+		row, err := r.q.WithTx(tx).
+			RequestExport(ctx, RequestExportParams{BooksID: booksID, RequestedAt: at, Credentials: credentials})
 		if errors.Is(err, pgx.ErrNoRows) {
 			ok = false
 			return nil
@@ -85,9 +99,22 @@ func (r *Exports) RequestExport(ctx context.Context, booksID int64, at time.Time
 			return err
 		}
 
-		e = app.Export{ID: row.ID, Status: app.ExportStatus(row.Status), RequestedAt: row.RequestedAt}
+		e = app.Export{
+			ID:          row.ID,
+			Status:      app.ExportStatus(row.Status),
+			RequestedAt: row.RequestedAt,
+		}
 
-		return outbox.Insert(ctx, tx, outbox.Event{Type: EventExportRequested, BooksID: booksID, AggregateID: row.ID.String(), Payload: map[string]string{"export_id": row.ID.String()}})
+		return outbox.Insert(
+			ctx,
+			tx,
+			outbox.Event{
+				Type:        EventExportRequested,
+				BooksID:     booksID,
+				AggregateID: row.ID.String(),
+				Payload:     map[string]string{"export_id": row.ID.String()},
+			},
+		)
 	})
 
 	return e, ok, err
@@ -103,7 +130,14 @@ func (r *Exports) Export(ctx context.Context, booksID int64) (app.Export, error)
 		return app.Export{}, err
 	}
 
-	e := app.Export{ID: row.ID, Status: app.ExportStatus(row.Status), RequestedAt: row.RequestedAt, FinishedAt: row.FinishedAt, Size: row.Size, SHA256: row.Sha256}
+	e := app.Export{
+		ID:          row.ID,
+		Status:      app.ExportStatus(row.Status),
+		RequestedAt: row.RequestedAt,
+		FinishedAt:  row.FinishedAt,
+		Size:        row.Size,
+		SHA256:      row.Sha256,
+	}
 	if row.Problem != nil {
 		e.Problem = *row.Problem
 	}
@@ -129,11 +163,27 @@ func (r *Exports) ExportContent(ctx context.Context, booksID int64) (app.Export,
 		return app.Export{}, nil, err
 	}
 
-	return app.Export{Status: app.ExportStatus(row.Status), RequestedAt: row.RequestedAt}, row.Content, nil
+	return app.Export{
+		Status:      app.ExportStatus(row.Status),
+		RequestedAt: row.RequestedAt,
+	}, row.Content, nil
 }
 
-func (r *Exports) FinishExport(ctx context.Context, booksID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error {
-	p := FinishExportParams{BooksID: booksID, ID: id, FinishedAt: &at, Status: string(app.ExportReady), Content: archive}
+func (r *Exports) FinishExport(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	at time.Time,
+	archive []byte,
+	problem string,
+) error {
+	p := FinishExportParams{
+		BooksID:    booksID,
+		ID:         id,
+		FinishedAt: &at,
+		Status:     string(app.ExportReady),
+		Content:    archive,
+	}
 	if problem != "" {
 		p.Status, p.Problem = string(app.ExportFailed), &problem
 	} else {

@@ -15,12 +15,24 @@ import (
 
 func toRuleAPI(r domain.Rule) Rule {
 	out := Rule{
-		Id: r.ID, Name: r.Name, Priority: r.Priority, Enabled: r.Enabled, StopProcessing: r.StopProcessing,
-		Conditions: make([]RuleCondition, len(r.Conditions)), Actions: make([]RuleAction, len(r.Actions)),
+		Id:             r.ID,
+		Name:           r.Name,
+		Priority:       r.Priority,
+		Enabled:        r.Enabled,
+		StopProcessing: r.StopProcessing,
+		Conditions: make(
+			[]RuleCondition,
+			len(r.Conditions),
+		),
+		Actions: make([]RuleAction, len(r.Actions)),
 	}
 	for i, c := range r.Conditions {
 		d := c.Doc()
-		out.Conditions[i] = RuleCondition{Field: RuleConditionField(d.Field), Operator: RuleConditionOperator(d.Operator), Value: d.Value}
+		out.Conditions[i] = RuleCondition{
+			Field:    RuleConditionField(d.Field),
+			Operator: RuleConditionOperator(d.Operator),
+			Value:    d.Value,
+		}
 	}
 
 	for i, a := range r.Actions {
@@ -72,11 +84,19 @@ func toActionAPI(d domain.ActionDoc) RuleAction {
 }
 
 func fromRuleInput(in RuleInput) (domain.Rule, error) {
-	r := domain.Rule{Name: in.Name, Enabled: in.Enabled == nil || *in.Enabled, StopProcessing: in.StopProcessing != nil && *in.StopProcessing}
+	r := domain.Rule{
+		Name:           in.Name,
+		Enabled:        in.Enabled == nil || *in.Enabled,
+		StopProcessing: in.StopProcessing != nil && *in.StopProcessing,
+	}
 
 	conditions := make([]domain.ConditionDoc, len(in.Conditions))
 	for i, c := range in.Conditions {
-		conditions[i] = domain.ConditionDoc{Field: string(c.Field), Operator: string(c.Operator), Value: c.Value}
+		conditions[i] = domain.ConditionDoc{
+			Field:    string(c.Field),
+			Operator: string(c.Operator),
+			Value:    c.Value,
+		}
 	}
 
 	actions := make([]domain.ActionDoc, len(in.Actions))
@@ -100,13 +120,19 @@ func fromRuleInput(in RuleInput) (domain.Rule, error) {
 
 		if a.Parts != nil {
 			for _, p := range *a.Parts {
-				pd := domain.PartDoc{CategoryID: p.CategoryId, Remainder: p.Remainder != nil && *p.Remainder}
+				pd := domain.PartDoc{
+					CategoryID: p.CategoryId,
+					Remainder:  p.Remainder != nil && *p.Remainder,
+				}
 				if p.Percent != nil {
 					pd.Percent = *p.Percent
 				}
 
 				if p.Amount != nil {
-					pd.Amount = &domain.MoneyDoc{Amount: p.Amount.Amount, Currency: p.Amount.Currency}
+					pd.Amount = &domain.MoneyDoc{
+						Amount:   p.Amount.Amount,
+						Currency: p.Amount.Currency,
+					}
 				}
 
 				d.Parts = append(d.Parts, pd)
@@ -119,7 +145,11 @@ func fromRuleInput(in RuleInput) (domain.Rule, error) {
 	return domain.RuleFromDocs(r, conditions, actions)
 }
 
-func (s *Server) listRules(ctx context.Context, r *http.Request, _ httpserver.None) (RulePage, error) {
+func (s *Server) listRules(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (RulePage, error) {
 	params, err := httpserver.Query[ListRulesParams](r)
 	if err != nil {
 		return RulePage{}, err
@@ -295,11 +325,20 @@ func (s *Server) withUsage(ctx context.Context, rules []Rule) error {
 }
 
 func toAliasAPI(a domain.Alias) PayeeAlias {
-	return PayeeAlias{Id: a.ID, Pattern: a.Pattern, MatchType: PayeeAliasMatchType(a.MatchType), PayeeId: a.PayeeID}
+	return PayeeAlias{
+		Id:        a.ID,
+		Pattern:   a.Pattern,
+		MatchType: PayeeAliasMatchType(a.MatchType),
+		PayeeId:   a.PayeeID,
+	}
 }
 
 func fromAliasInput(in PayeeAliasInput) domain.Alias {
-	return domain.Alias{Pattern: in.Pattern, MatchType: domain.MatchType(in.MatchType), PayeeID: in.PayeeId}
+	return domain.Alias{
+		Pattern:   in.Pattern,
+		MatchType: domain.MatchType(in.MatchType),
+		PayeeID:   in.PayeeId,
+	}
 }
 
 func (s *Server) listPayeeAliases(
@@ -341,7 +380,11 @@ func (s *Server) createPayeeAlias(
 	return toAliasAPI(a), BaseURL + "/payee-aliases/" + a.ID.String(), nil
 }
 
-func (s *Server) getPayeeAlias(ctx context.Context, r *http.Request, _ httpserver.None) (PayeeAlias, error) {
+func (s *Server) getPayeeAlias(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (PayeeAlias, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return PayeeAlias{}, err

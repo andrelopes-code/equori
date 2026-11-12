@@ -31,7 +31,13 @@ func validateMeta(meta ProposalMeta) error {
 
 // refParents returns the proposals that refs names. Each must be pending, waiting or executed in the
 // conversation, and each key must be a field of args.
-func (s *Service) refParents(ctx context.Context, booksID int64, conversationID uuid.UUID, args []byte, refs map[string]string) (map[uuid.UUID]domain.Proposal, error) {
+func (s *Service) refParents(
+	ctx context.Context,
+	booksID int64,
+	conversationID uuid.UUID,
+	args []byte,
+	refs map[string]string,
+) (map[uuid.UUID]domain.Proposal, error) {
 	stored, err := s.repo.Proposals(ctx, booksID, conversationID)
 	if err != nil {
 		return nil, err
@@ -47,8 +53,12 @@ func (s *Service) refParents(ctx context.Context, booksID int64, conversationID 
 		id, err := uuid.Parse(strings.SplitN(value, "#", 2)[0])
 		index := slices.IndexFunc(stored, func(p domain.Proposal) bool { return p.ID == id })
 
-		if !refPattern.MatchString(value) || err != nil || index < 0 || !refusable(stored[index].Status) {
-			return nil, argumentFailure("proposal.refs", key+" must reference a pending, waiting or executed proposal of this conversation")
+		if !refPattern.MatchString(value) || err != nil || index < 0 ||
+			!refusable(stored[index].Status) {
+			return nil, argumentFailure(
+				"proposal.refs",
+				key+" must reference a pending, waiting or executed proposal of this conversation",
+			)
 		}
 
 		parents[id] = stored[index]
@@ -58,7 +68,8 @@ func (s *Service) refParents(ctx context.Context, booksID int64, conversationID 
 }
 
 func refusable(status domain.ProposalStatus) bool {
-	return status == domain.ProposalPending || status == domain.ProposalWaiting || status == domain.ProposalExecuted
+	return status == domain.ProposalPending || status == domain.ProposalWaiting ||
+		status == domain.ProposalExecuted
 }
 
 func resultPointer(ref string) string {
@@ -104,14 +115,21 @@ func (s *Service) promote(ctx context.Context, booksID int64, conversationID uui
 	return nil
 }
 
-func (s *Service) promoteOne(ctx context.Context, booksID int64, p domain.Proposal, results map[uuid.UUID][]byte) error {
+func (s *Service) promoteOne(
+	ctx context.Context,
+	booksID int64,
+	p domain.Proposal,
+	results map[uuid.UUID][]byte,
+) error {
 	args, missing, err := resolveRefs(p.Arguments, p.Refs, results)
 	if err != nil {
 		return err
 	}
 
 	if missing != "" {
-		content, err := json.Marshal(map[string]string{"error": "reference_unresolved", "field": missing})
+		content, err := json.Marshal(
+			map[string]string{"error": "reference_unresolved", "field": missing},
+		)
 		if err != nil {
 			return err
 		}
@@ -134,7 +152,11 @@ func (s *Service) promoteOne(ctx context.Context, booksID int64, p domain.Propos
 	}
 
 	promoted := domain.Proposal{
-		ID: p.ID, Arguments: args, Preview: preview, Basis: tool.PreviewDigest(pv), ExpiresAt: s.now().Add(domain.ProposalTTL),
+		ID:        p.ID,
+		Arguments: args,
+		Preview:   preview,
+		Basis:     tool.PreviewDigest(pv),
+		ExpiresAt: s.now().Add(domain.ProposalTTL),
 	}
 	if _, err := s.repo.PromoteProposal(ctx, booksID, promoted); err != nil {
 		return err
@@ -146,8 +168,20 @@ func (s *Service) promoteOne(ctx context.Context, booksID int64, p domain.Propos
 }
 
 // fail stores a waiting proposal as failed and blocks its dependents.
-func (s *Service) fail(ctx context.Context, booksID int64, p domain.Proposal, content []byte) error {
-	if err := s.repo.DecideProposal(ctx, booksID, p.ID, domain.ProposalFailed, content, s.now()); err != nil {
+func (s *Service) fail(
+	ctx context.Context,
+	booksID int64,
+	p domain.Proposal,
+	content []byte,
+) error {
+	if err := s.repo.DecideProposal(
+		ctx,
+		booksID,
+		p.ID,
+		domain.ProposalFailed,
+		content,
+		s.now(),
+	); err != nil {
 		return err
 	}
 
@@ -174,7 +208,14 @@ func (s *Service) block(ctx context.Context, booksID int64, conversationID, id u
 				continue
 			}
 
-			if err := s.repo.DecideProposal(ctx, booksID, p.ID, domain.ProposalBlocked, nil, s.now()); err != nil {
+			if err := s.repo.DecideProposal(
+				ctx,
+				booksID,
+				p.ID,
+				domain.ProposalBlocked,
+				nil,
+				s.now(),
+			); err != nil {
 				return err
 			}
 

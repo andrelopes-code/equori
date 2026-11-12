@@ -27,7 +27,9 @@ func MCPPrompts() []MCPPrompt {
 		{
 			Name:        "monthly_review",
 			Description: "Review the income, expenses and balances of one month.",
-			Arguments:   []MCPPromptArgument{{Name: "month", Description: "The month, as YYYY-MM.", Required: true}},
+			Arguments: []MCPPromptArgument{
+				{Name: "month", Description: "The month, as YYYY-MM.", Required: true},
+			},
 			Render: func(args map[string]string) (string, error) {
 				month := args["month"]
 				if !monthPattern.MatchString(month) {
@@ -53,7 +55,9 @@ func MCPPrompts() []MCPPrompt {
 		{
 			Name:        "reconcile_account",
 			Description: "Reconcile one account against its statement.",
-			Arguments:   []MCPPromptArgument{{Name: "account", Description: "The account's name.", Required: true}},
+			Arguments: []MCPPromptArgument{
+				{Name: "account", Description: "The account's name.", Required: true},
+			},
 			Render: func(args map[string]string) (string, error) {
 				account := strings.TrimSpace(args["account"])
 				if account == "" {

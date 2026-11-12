@@ -30,7 +30,8 @@ const ProvisionalWindow = 10
 // line stated its bill, its statement is not reconciled and d falls within ProvisionalWindow
 // days before closing (A136). An installment follows its plan, not the posting date.
 func Provisional(basis string, d, closing time.Time, reconciled, installment bool) bool {
-	return basis != BasisInstitution && !reconciled && !installment && !d.Before(closing.AddDate(0, 0, -ProvisionalWindow))
+	return basis != BasisInstitution && !reconciled && !installment &&
+		!d.Before(closing.AddDate(0, 0, -ProvisionalWindow))
 }
 
 // StatementLine is one card posting; Amount uses the ledger sign (a charge is negative).
@@ -162,7 +163,10 @@ func settle(
 	next []StatementLine,
 	today time.Time,
 ) (credits, payments int64) {
-	inflows := slices.SortedStableFunc(slices.Values(next), func(a, b StatementLine) int { return a.Date.Compare(b.Date) })
+	inflows := slices.SortedStableFunc(
+		slices.Values(next),
+		func(a, b StatementLine) int { return a.Date.Compare(b.Date) },
+	)
 
 	left := max(sum.AmountDue, 0)
 	for _, l := range inflows {

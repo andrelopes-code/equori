@@ -41,7 +41,12 @@ func NewChatSet(set tool.Set) (app.Tools, error) {
 
 // ChatHandlers returns the declarations and handlers of the chat: read tools run, write tools
 // store a proposal in the conversation that conversationID reads from the context.
-func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationID func(context.Context) uuid.UUID) ([]llm.Tool, map[string]llm.ToolHandler) {
+func ChatHandlers(
+	svc *app.Service,
+	tools app.Tools,
+	set tool.Set,
+	conversationID func(context.Context) uuid.UUID,
+) ([]llm.Tool, map[string]llm.ToolHandler) {
 	decls, handlers := set.LLM()
 	for i, d := range decls {
 		name := d.Name
@@ -57,7 +62,14 @@ func ChatHandlers(svc *app.Service, tools app.Tools, set tool.Set, conversationI
 				return nil, err
 			}
 
-			out, err := svc.Propose(ctx, auth.MustBooksID(ctx), conversationID(ctx), name, args, meta)
+			out, err := svc.Propose(
+				ctx,
+				auth.MustBooksID(ctx),
+				conversationID(ctx),
+				name,
+				args,
+				meta,
+			)
 			if tf, ok := errors.AsType[*app.ToolFailure](err); ok {
 				return nil, &llm.ToolError{Content: tf.Content}
 			}
@@ -109,7 +121,12 @@ func splitProposal(args json.RawMessage) (json.RawMessage, app.ProposalMeta, err
 
 	var meta app.ProposalMeta
 	if err := json.Unmarshal(fields["proposal"], &meta); err != nil {
-		content, _ := json.Marshal(tool.InvalidArgument("proposal", "must be an object with suggested, reason, refs and summary"))
+		content, _ := json.Marshal(
+			tool.InvalidArgument(
+				"proposal",
+				"must be an object with suggested, reason, refs and summary",
+			),
+		)
 		return nil, app.ProposalMeta{}, &llm.ToolError{Content: content}
 	}
 

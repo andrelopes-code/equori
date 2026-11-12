@@ -55,10 +55,19 @@ func runSchedule(
 	switch in.Action {
 	case "create":
 		return svc.CreateSchedule(ctx, booksID, app.ScheduleInput{
-			Kind: domain.Kind(in.Kind), AccountID: p.accountID, CounterpartID: p.counterID, PayeeID: p.payeeID,
-			Description: in.Description, Amount: *p.amount, Rule: *p.rule,
-			PaidBy: p.paidBy, ToleranceBP: optionalInt(in.MatchToleranceBP),
-			GraceDays: optionalInt(in.GraceDays), WindowDays: optionalInt(in.MatchWindowDays),
+			Kind: domain.Kind(
+				in.Kind,
+			),
+			AccountID:     p.accountID,
+			CounterpartID: p.counterID,
+			PayeeID:       p.payeeID,
+			Description:   in.Description,
+			Amount:        *p.amount,
+			Rule:          *p.rule,
+			PaidBy:        p.paidBy,
+			ToleranceBP:   optionalInt(in.MatchToleranceBP),
+			GraceDays:     optionalInt(in.GraceDays),
+			WindowDays:    optionalInt(in.MatchWindowDays),
 		})
 	case "update":
 		return svc.Update(ctx, booksID, p.schedule.ID, scheduleChange(in))

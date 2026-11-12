@@ -33,10 +33,31 @@ func TestCodes(t *testing.T) {
 		want bool
 	}{
 		{"fund", feed.Instrument{Code: "00017024000153", Type: "fund", QuoteCurrency: "BRL"}, true},
-		{"13 characters", feed.Instrument{Code: "0001702400015", Type: "fund", QuoteCurrency: "BRL"}, false},
-		{"exchange", feed.Instrument{Code: "00017024000153", Type: "fund", Exchange: "BVMF", QuoteCurrency: "BRL"}, false},
-		{"quote", feed.Instrument{Code: "00017024000153", Type: "fund", QuoteCurrency: "USD"}, false},
-		{"type", feed.Instrument{Code: "00017024000153", Type: "stock", QuoteCurrency: "BRL"}, false},
+		{
+			"13 characters",
+			feed.Instrument{Code: "0001702400015", Type: "fund", QuoteCurrency: "BRL"},
+			false,
+		},
+		{
+			"exchange",
+			feed.Instrument{
+				Code:          "00017024000153",
+				Type:          "fund",
+				Exchange:      "BVMF",
+				QuoteCurrency: "BRL",
+			},
+			false,
+		},
+		{
+			"quote",
+			feed.Instrument{Code: "00017024000153", Type: "fund", QuoteCurrency: "USD"},
+			false,
+		},
+		{
+			"type",
+			feed.Instrument{Code: "00017024000153", Type: "stock", QuoteCurrency: "BRL"},
+			false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -81,9 +102,30 @@ func TestFetch(t *testing.T) {
 			[]string{"/HIST/inf_diario_fi_2020.zip", "/inf_diario_fi_202101.zip"},
 			[]string{"2020-12-30 40.200000000000", "2021-01-04 40.300000000000"}, "",
 		},
-		{"missing month", "2021-02-01", "2021-02-05", []string{"/inf_diario_fi_202102.zip"}, nil, ""},
-		{"failing month", "2021-03-01", "2021-03-05", []string{"/inf_diario_fi_202103.zip"}, nil, "month 2021-03"},
-		{"before 2000", "1999-12-01", "2000-01-03", []string{"/HIST/inf_diario_fi_2000.zip"}, nil, ""},
+		{
+			"missing month",
+			"2021-02-01",
+			"2021-02-05",
+			[]string{"/inf_diario_fi_202102.zip"},
+			nil,
+			"",
+		},
+		{
+			"failing month",
+			"2021-03-01",
+			"2021-03-05",
+			[]string{"/inf_diario_fi_202103.zip"},
+			nil,
+			"month 2021-03",
+		},
+		{
+			"before 2000",
+			"1999-12-01",
+			"2000-01-03",
+			[]string{"/HIST/inf_diario_fi_2000.zip"},
+			nil,
+			"",
+		},
 	}
 
 	for _, tc := range tests {
@@ -95,27 +137,29 @@ func TestFetch(t *testing.T) {
 				requests []string
 			)
 
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				mu.Lock()
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					mu.Lock()
 
-				requests = append(requests, r.URL.Path)
-				mu.Unlock()
+					requests = append(requests, r.URL.Path)
+					mu.Unlock()
 
-				if r.URL.Path == "/inf_diario_fi_202103.zip" {
-					w.WriteHeader(http.StatusInternalServerError)
+					if r.URL.Path == "/inf_diario_fi_202103.zip" {
+						w.WriteHeader(http.StatusInternalServerError)
 
-					return
-				}
+						return
+					}
 
-				body, ok := files[r.URL.Path]
-				if !ok {
-					http.NotFound(w, r)
+					body, ok := files[r.URL.Path]
+					if !ok {
+						http.NotFound(w, r)
 
-					return
-				}
+						return
+					}
 
-				_, _ = w.Write(body)
-			}))
+					_, _ = w.Write(body)
+				}),
+			)
 			t.Cleanup(srv.Close)
 
 			got, err := cvmfunds.New(srv.Client(), srv.URL).
@@ -126,7 +170,8 @@ func TestFetch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if tc.scope != "" && (!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
+			if tc.scope != "" &&
+				(!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
 				t.Fatalf("err = %v, want scope %s", err, tc.scope)
 			}
 
@@ -137,7 +182,10 @@ func TestFetch(t *testing.T) {
 					t.Fatalf("quote = %+v", q)
 				}
 
-				lines = append(lines, fmt.Sprintf("%s %s", q.Date.Format(time.DateOnly), q.Value.String()))
+				lines = append(
+					lines,
+					fmt.Sprintf("%s %s", q.Date.Format(time.DateOnly), q.Value.String()),
+				)
 			}
 
 			if !slices.Equal(lines, tc.quotes) {

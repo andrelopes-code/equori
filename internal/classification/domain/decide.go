@@ -70,12 +70,15 @@ func Decide(s Subject, c Catalog) Decision {
 	d.AddTags = slices.Compact(d.AddTags)
 	if id := s.SourceCategory; !categoryDecided && id != uuid.Nil {
 		if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
-			d.Parts, d.Method, categoryDecided = []Allocation{{CategoryID: id, Amount: total}}, MethodSource, true
+			d.Parts, d.Method, categoryDecided = []Allocation{
+				{CategoryID: id, Amount: total},
+			}, MethodSource, true
 		}
 	}
 
 	if !categoryDecided {
-		if id, ok := c.History[HistoryKey{PayeeID: d.Payee(s), Class: s.Class}]; ok && d.Payee(s) != uuid.Nil {
+		if id, ok := c.History[HistoryKey{PayeeID: d.Payee(s), Class: s.Class}]; ok &&
+			d.Payee(s) != uuid.Nil {
 			if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
 				d.Parts, d.Method = []Allocation{{CategoryID: id, Amount: total}}, MethodHistory
 			}
@@ -130,14 +133,20 @@ func (r Rule) allocation(total money.Money, c Catalog, s Subject) ([]Allocation,
 	for _, a := range r.Actions {
 		switch a.Type {
 		case ActionSetCategory:
-			parts, ok := Allocate(total, []Part{{CategoryID: a.CategoryID, Remainder: true}}, c.Categories, s.Date)
+			parts, ok := Allocate(
+				total,
+				[]Part{{CategoryID: a.CategoryID, Remainder: true}},
+				c.Categories,
+				s.Date,
+			)
 			return parts, uuid.Nil, ok
 		case ActionSplit:
 			parts, ok := Allocate(total, a.Parts, c.Categories, s.Date)
 			return parts, uuid.Nil, ok
 		case ActionTransfer, ActionMarkReimbursable:
 			target, ok := c.Accounts[a.AccountID]
-			if !ok || !target.usable(total.Currency(), s.Date) || slices.Contains(s.Accounts, a.AccountID) {
+			if !ok || !target.usable(total.Currency(), s.Date) ||
+				slices.Contains(s.Accounts, a.AccountID) {
 				return nil, uuid.Nil, false
 			}
 

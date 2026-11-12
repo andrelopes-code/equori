@@ -37,7 +37,11 @@ type TagDeleted struct {
 	Name string `json:"name"`
 }
 
-func (s *Service) ListTags(ctx context.Context, booksID int64, p page.Request[TagKey]) ([]string, *TagKey, error) {
+func (s *Service) ListTags(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[TagKey],
+) ([]string, *TagKey, error) {
 	return s.repo.ListTags(ctx, booksID, p)
 }
 
@@ -46,7 +50,11 @@ func (s *Service) Tag(ctx context.Context, booksID int64, name string) (TagUsage
 }
 
 // RenameTag changes the name of a tag in place: no transaction gets a new version.
-func (s *Service) RenameTag(ctx context.Context, booksID int64, name, newName string) (TagUsage, error) {
+func (s *Service) RenameTag(
+	ctx context.Context,
+	booksID int64,
+	name, newName string,
+) (TagUsage, error) {
 	newName, err := domain.NormalizeTag(newName, "name")
 	if err != nil {
 		return TagUsage{}, err
@@ -64,7 +72,15 @@ func (s *Service) RenameTag(ctx context.Context, booksID int64, name, newName st
 
 		tag.Name = newName
 
-		return r.Publish(ctx, outbox.Event{Type: EventTagRenamed, BooksID: booksID, AggregateID: tag.ID.String(), Payload: TagRenamed{From: name, Into: newName}})
+		return r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventTagRenamed,
+				BooksID:     booksID,
+				AggregateID: tag.ID.String(),
+				Payload:     TagRenamed{From: name, Into: newName},
+			},
+		)
 	})
 
 	return tag, err
@@ -72,7 +88,11 @@ func (s *Service) RenameTag(ctx context.Context, booksID int64, name, newName st
 
 // MergeTag gives every non-voided transaction of from a new version carrying into, moves
 // the voided ones in place and deletes from. It returns into.
-func (s *Service) MergeTag(ctx context.Context, booksID int64, from, into string) (TagUsage, error) {
+func (s *Service) MergeTag(
+	ctx context.Context,
+	booksID int64,
+	from, into string,
+) (TagUsage, error) {
 	var dest TagUsage
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		src, err := r.TagUsage(ctx, booksID, from)
@@ -94,7 +114,10 @@ func (s *Service) MergeTag(ctx context.Context, booksID int64, from, into string
 		}
 
 		replace := func(tags []string) []string {
-			out := append(slices.DeleteFunc(slices.Clone(tags), func(t string) bool { return t == from }), into)
+			out := append(
+				slices.DeleteFunc(slices.Clone(tags), func(t string) bool { return t == from }),
+				into,
+			)
 			slices.Sort(out)
 
 			return slices.Compact(out)
@@ -115,7 +138,15 @@ func (s *Service) MergeTag(ctx context.Context, booksID int64, from, into string
 			return err
 		}
 
-		return r.Publish(ctx, outbox.Event{Type: EventTagRenamed, BooksID: booksID, AggregateID: src.ID.String(), Payload: TagRenamed{From: from, Into: into}})
+		return r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventTagRenamed,
+				BooksID:     booksID,
+				AggregateID: src.ID.String(),
+				Payload:     TagRenamed{From: from, Into: into},
+			},
+		)
 	})
 
 	return dest, err
@@ -141,13 +172,28 @@ func (s *Service) DeleteTag(ctx context.Context, booksID int64, name string) err
 			return err
 		}
 
-		return r.Publish(ctx, outbox.Event{Type: EventTagDeleted, BooksID: booksID, AggregateID: tag.ID.String(), Payload: TagDeleted{Name: name}})
+		return r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventTagDeleted,
+				BooksID:     booksID,
+				AggregateID: tag.ID.String(),
+				Payload:     TagDeleted{Name: name},
+			},
+		)
 	})
 }
 
 // retag writes a new version of each non-voided transaction that carries the tag, with
 // its tags passed through change. The version keeps its categorization method (CauseMerge).
-func retag(ctx context.Context, r Repository, booksID int64, tagID uuid.UUID, change func([]string) []string, reason string) error {
+func retag(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	tagID uuid.UUID,
+	change func([]string) []string,
+	reason string,
+) error {
 	ids, err := r.TransactionsWithTag(ctx, booksID, tagID)
 	if err != nil {
 		return err
@@ -175,7 +221,15 @@ func retag(ctx context.Context, r Repository, booksID int64, tagID uuid.UUID, ch
 		event := newTransactionEvent(next, accounts, prev)
 
 		event.Cause = &Cause{Method: CauseMerge}
-		if err := r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: booksID, AggregateID: next.ID.String(), Payload: event}); err != nil {
+		if err := r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventTransactionCategorized,
+				BooksID:     booksID,
+				AggregateID: next.ID.String(),
+				Payload:     event,
+			},
+		); err != nil {
 			return err
 		}
 	}

@@ -46,7 +46,10 @@ func bin(explicit, exe string) (string, error) {
 
 	path, err := exec.LookPath("postgres")
 	if err != nil {
-		return "", fmt.Errorf("find postgres on PATH; set EQUORI_POSTGRES_BIN to the directory of the PostgreSQL programs: %w", err)
+		return "", fmt.Errorf(
+			"find postgres on PATH; set EQUORI_POSTGRES_BIN to the directory of the PostgreSQL programs: %w",
+			err,
+		)
 	}
 
 	return filepath.Dir(path), nil
@@ -54,7 +57,9 @@ func bin(explicit, exe string) (string, error) {
 
 // Major returns the major version that program reports with --version.
 func Major(ctx context.Context, program string) (int, error) {
-	out, err := exec.CommandContext(ctx, program, "--version").Output() //nolint:gosec // G204: the programs directory is the owner's configuration.
+	out, err := exec.CommandContext(ctx, program, "--version").
+		Output()
+		//nolint:gosec // G204: the programs directory is the owner's configuration.
 	if err != nil {
 		return 0, fmt.Errorf("run %s --version: %w", program, err)
 	}

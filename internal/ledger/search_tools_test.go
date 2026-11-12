@@ -40,7 +40,13 @@ func TestSearchTransactionsTool(t *testing.T) {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Padaria Real"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Padaria Real"},
+		http.StatusCreated,
+		&payee,
+	)
 	var market, bakery struct {
 		ID string `json:"id"`
 	}
@@ -56,13 +62,27 @@ func TestSearchTransactionsTool(t *testing.T) {
 	var got searchOutput
 	toolOutput(t, h, "search_transactions", map[string]any{"query": "padaria"}, &got)
 
-	want := searchOutput{Transactions: []toolTransaction{{
-		ID: bakery.ID, Date: "2026-10-02", Description: "x", PayeeName: "Padaria Real", Tags: []string{"trip"},
-		Postings: []toolPosting{
-			{AccountName: "Checking", AccountClass: "asset", Amount: tool.Money{Amount: "-2.50", Currency: "BRL"}},
-			{AccountName: "Food", AccountClass: "expense", Amount: tool.Money{Amount: "2.50", Currency: "BRL"}},
+	want := searchOutput{Transactions: []toolTransaction{
+		{
+			ID:          bakery.ID,
+			Date:        "2026-10-02",
+			Description: "x",
+			PayeeName:   "Padaria Real",
+			Tags:        []string{"trip"},
+			Postings: []toolPosting{
+				{
+					AccountName:  "Checking",
+					AccountClass: "asset",
+					Amount:       tool.Money{Amount: "-2.50", Currency: "BRL"},
+				},
+				{
+					AccountName:  "Food",
+					AccountClass: "expense",
+					Amount:       tool.Money{Amount: "2.50", Currency: "BRL"},
+				},
+			},
 		},
-	}}}
+	}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("search padaria = %+v\nwant %+v", got, want)
 	}
@@ -74,7 +94,13 @@ func TestSearchTransactionsTool(t *testing.T) {
 		t.Fatalf("first page = %+v", first)
 	}
 
-	toolOutput(t, h, "search_transactions", map[string]any{"limit": 1, "cursor": first.NextCursor}, &second)
+	toolOutput(
+		t,
+		h,
+		"search_transactions",
+		map[string]any{"limit": 1, "cursor": first.NextCursor},
+		&second,
+	)
 
 	if len(second.Transactions) != 1 || second.NextCursor != "" {
 		t.Fatalf("second page = %+v", second)
@@ -114,7 +140,14 @@ func TestSearchTransactionsToolArguments(t *testing.T) {
 		t.Error("search_transactions still takes payee_id")
 	}
 
-	h.ExpectToolError(h.Tool("search_transactions", map[string]any{"payee_id": "01a15a13-9fbe-78ca-88a0-21527276b813"}), "invalid_arguments", "")
+	h.ExpectToolError(
+		h.Tool(
+			"search_transactions",
+			map[string]any{"payee_id": "01a15a13-9fbe-78ca-88a0-21527276b813"},
+		),
+		"invalid_arguments",
+		"",
+	)
 }
 
 func TestSearchTransactionsToolIsolation(t *testing.T) {
@@ -145,8 +178,12 @@ func TestSearchTransactionsToolIsolation(t *testing.T) {
 	}
 
 	r := h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-01", "description": "Secret",
-		"postings": []map[string]any{apitest.Posting(wallet.ID, -100), apitest.Posting(misc.ID, 100)},
+		"date":        "2026-10-01",
+		"description": "Secret",
+		"postings": []map[string]any{
+			apitest.Posting(wallet.ID, -100),
+			apitest.Posting(misc.ID, 100),
+		},
 	})
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create transaction = %d: %s", r.Status, r.Body)

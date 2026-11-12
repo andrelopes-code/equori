@@ -65,7 +65,11 @@ func (w *world) module(t *testing.T, current, previous string) *assistant.Module
 }
 
 // provider inserts a provider sealed under sealKey ("" for none) and returns its ID.
-func (w *world) provider(t *testing.T, preset, name, baseURL, key, sealKey string, created time.Time) uuid.UUID {
+func (w *world) provider(
+	t *testing.T,
+	preset, name, baseURL, key, sealKey string,
+	created time.Time,
+) uuid.UUID {
 	t.Helper()
 
 	id := uuid.New()
@@ -77,13 +81,25 @@ func (w *world) provider(t *testing.T, preset, name, baseURL, key, sealKey strin
 			t.Fatal(err)
 		}
 
-		if sealed, err = box.Seal([]byte(key), fmt.Appendf(nil, "assistant_provider|%d|%s", w.user, id)); err != nil {
+		if sealed, err = box.Seal(
+			[]byte(key),
+			fmt.Appendf(nil, "assistant_provider|%d|%s", w.user, id),
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	if _, err := w.pool.Exec(t.Context(), `INSERT INTO assistant_provider VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		id, w.user, preset, name, baseURL, sealed, created); err != nil {
+	if _, err := w.pool.Exec(
+		t.Context(),
+		`INSERT INTO assistant_provider VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		id,
+		w.user,
+		preset,
+		name,
+		baseURL,
+		sealed,
+		created,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -94,8 +110,15 @@ func (w *world) chain(t *testing.T, use string, provider uuid.UUID, models ...st
 	t.Helper()
 
 	for i, m := range models {
-		if _, err := w.pool.Exec(t.Context(), `INSERT INTO assistant_chain_target VALUES ($1, $2, $3, $4, $5, '{tools}')`,
-			w.user, use, i, provider, m); err != nil {
+		if _, err := w.pool.Exec(
+			t.Context(),
+			`INSERT INTO assistant_chain_target VALUES ($1, $2, $3, $4, $5, '{tools}')`,
+			w.user,
+			use,
+			i,
+			provider,
+			m,
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -123,16 +146,37 @@ func TestResolveDefault(t *testing.T) {
 	t.Parallel()
 	w := newWorld(t)
 	groq := w.provider(t, "groq", "Groq", "https://api.groq.com/openai/v1", "gk", keyA, day)
-	gemini := w.provider(t, "gemini", "Gemini", "https://generativelanguage.googleapis.com", "ek", keyA, day.Add(time.Hour))
+	gemini := w.provider(
+		t,
+		"gemini",
+		"Gemini",
+		"https://generativelanguage.googleapis.com",
+		"ek",
+		keyA,
+		day.Add(time.Hour),
+	)
 	m := w.module(t, keyA, "")
 	got := targets(t, m, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse)
 
-	want := []string{gemini.String() + "/gemini-3.5-flash", "aistudio/gemini-3.5-flash", gemini.String() + "/gemini-3.5-flash-lite", "aistudio/gemini-3.5-flash-lite", gemini.String() + "/gemini-3.1-flash-lite", "aistudio/gemini-3.1-flash-lite", groq.String() + "/openai/gpt-oss-120b"}
+	want := []string{
+		gemini.String() + "/gemini-3.5-flash",
+		"aistudio/gemini-3.5-flash",
+		gemini.String() + "/gemini-3.5-flash-lite",
+		"aistudio/gemini-3.5-flash-lite",
+		gemini.String() + "/gemini-3.1-flash-lite",
+		"aistudio/gemini-3.1-flash-lite",
+		groq.String() + "/openai/gpt-oss-120b",
+	}
 	if !slices.Equal(got, want) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
 
-	wantMade := []string{"gemini https://generativelanguage.googleapis.com ek", "gemini https://generativelanguage.googleapis.com ek", "gemini https://generativelanguage.googleapis.com ek", "openai https://api.groq.com/openai/v1 gk"}
+	wantMade := []string{
+		"gemini https://generativelanguage.googleapis.com ek",
+		"gemini https://generativelanguage.googleapis.com ek",
+		"gemini https://generativelanguage.googleapis.com ek",
+		"openai https://api.groq.com/openai/v1 gk",
+	}
 	if !reflect.DeepEqual(w.made.calls, wantMade) {
 		t.Fatalf("built providers = %v, want %v", w.made.calls, wantMade)
 	}
@@ -144,7 +188,10 @@ func TestResolveUserChain(t *testing.T) {
 	local := w.provider(t, "ollama", "Local", "http://127.0.0.1:11434/v1", "", "", day)
 	w.chain(t, "assistant.chat", local, "b", "a")
 
-	if _, err := w.pool.Exec(t.Context(), `UPDATE assistant_chain_target SET capabilities = '{}' WHERE model = 'a'`); err != nil {
+	if _, err := w.pool.Exec(
+		t.Context(),
+		`UPDATE assistant_chain_target SET capabilities = '{}' WHERE model = 'a'`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -162,7 +209,19 @@ func TestResolveWithoutUser(t *testing.T) {
 	w.provider(t, "gemini", "Gemini", "https://generativelanguage.googleapis.com", "ek", keyA, day)
 
 	m := w.module(t, keyA, "")
-	if got, want := targets(t, m, t.Context(), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash", "aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite"}; !slices.Equal(got, want) {
+	if got, want := targets(
+		t,
+		m,
+		t.Context(),
+		assistant.ChatUse,
+	), []string{
+		"aistudio/gemini-3.5-flash",
+		"aistudio/gemini-3.5-flash-lite",
+		"aistudio/gemini-3.1-flash-lite",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
 }
@@ -173,7 +232,19 @@ func TestResolveUnreadableKey(t *testing.T) {
 	w.provider(t, "groq", "Groq", "https://api.groq.com/openai/v1", "gk", keyB, day)
 
 	m := w.module(t, keyA, "")
-	if got, want := targets(t, m, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse), []string{"aistudio/gemini-3.5-flash", "aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite"}; !slices.Equal(got, want) {
+	if got, want := targets(
+		t,
+		m,
+		auth.WithBooksID(t.Context(), w.user),
+		assistant.ChatUse,
+	), []string{
+		"aistudio/gemini-3.5-flash",
+		"aistudio/gemini-3.5-flash-lite",
+		"aistudio/gemini-3.1-flash-lite",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("targets = %v, want %v", got, want)
 	}
 }
@@ -192,7 +263,15 @@ func TestRotateSecrets(t *testing.T) {
 	after := w.module(t, keyB, "")
 
 	got := targets(t, after, auth.WithBooksID(t.Context(), w.user), assistant.ChatUse)
-	if want := []string{"aistudio/gemini-3.5-flash", "aistudio/gemini-3.5-flash-lite", "aistudio/gemini-3.1-flash-lite", groq.String() + "/openai/gpt-oss-120b"}; !slices.Equal(got, want) {
+	if want := []string{
+		"aistudio/gemini-3.5-flash",
+		"aistudio/gemini-3.5-flash-lite",
+		"aistudio/gemini-3.1-flash-lite",
+		groq.String() + "/openai/gpt-oss-120b",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("targets after rotation = %v, want %v", got, want)
 	}
 }

@@ -46,7 +46,14 @@ func CDI(hc *http.Client, base string) Source {
 
 // IPCA is the monthly IPCA variation (identifier br_ipca, index ipca).
 func IPCA(hc *http.Client, base string) Source {
-	return Source{hc: hc, base: base, id: "br_ipca", index: "ipca", series: seriesIPCA, period: index.PeriodMonth}
+	return Source{
+		hc:     hc,
+		base:   base,
+		id:     "br_ipca",
+		index:  "ipca",
+		series: seriesIPCA,
+		period: index.PeriodMonth,
+	}
 }
 
 func (s Source) ID() string     { return s.id }
@@ -61,7 +68,11 @@ type item struct {
 }
 
 func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, error) {
-	q := url.Values{"formato": {"json"}, "dataInicial": {from.Format(dateLayout)}, "dataFinal": {to.Format(dateLayout)}}
+	q := url.Values{
+		"formato":     {"json"},
+		"dataInicial": {from.Format(dateLayout)},
+		"dataFinal":   {to.Format(dateLayout)},
+	}
 	u := fmt.Sprintf("%s/dados/serie/bcdata.sgs.%d/dados?%s", s.base, s.series, q.Encode())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)

@@ -50,9 +50,13 @@ func TestRepeats(t *testing.T) {
 			recorded: []RepeatLine{credit("a", 5, 3000)},
 		},
 		{
-			name:     "charges",
-			lines:    []RepeatLine{{ExternalID: "b", Date: day(5), Amount: -78465, Kind: KindPayment}},
-			recorded: []RepeatLine{{ExternalID: "a", Date: day(5), Amount: -78465, Kind: KindPayment}},
+			name: "charges",
+			lines: []RepeatLine{
+				{ExternalID: "b", Date: day(5), Amount: -78465, Kind: KindPayment},
+			},
+			recorded: []RepeatLine{
+				{ExternalID: "a", Date: day(5), Amount: -78465, Kind: KindPayment},
+			},
 		},
 		{
 			name:     "a recorded payment is repeated once",

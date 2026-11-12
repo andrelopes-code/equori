@@ -22,7 +22,11 @@ type ImportLine struct {
 
 // DecideImport decides each line before it is recorded (P5 amendment A19); the decision of
 // a line without payee, tags or category is nil.
-func (s *Service) DecideImport(ctx context.Context, booksID int64, lines []ImportLine) ([]*domain.Decision, error) {
+func (s *Service) DecideImport(
+	ctx context.Context,
+	booksID int64,
+	lines []ImportLine,
+) ([]*domain.Decision, error) {
 	if len(lines) == 0 {
 		return nil, nil
 	}
@@ -67,7 +71,11 @@ type ManualLine struct {
 
 // DecideManual decides lines the owner writes, before the ledger records them (capture
 // A113). It writes nothing.
-func (s *Service) DecideManual(ctx context.Context, booksID int64, lines []ManualLine) ([]domain.Decision, error) {
+func (s *Service) DecideManual(
+	ctx context.Context,
+	booksID int64,
+	lines []ManualLine,
+) ([]domain.Decision, error) {
 	if len(lines) == 0 {
 		return nil, nil
 	}
@@ -95,7 +103,15 @@ func lineSubject(l ImportLine, accounts map[uuid.UUID]Account, origin string) do
 	}
 
 	return domain.Subject{
-		Date: l.Date, Description: l.Description, RawDescription: l.Description, Amount: l.Amount,
-		Accounts: []uuid.UUID{l.AccountID}, AccountKinds: []string{accounts[l.AccountID].Kind}, Source: origin, Class: class,
+		Date:           l.Date,
+		Description:    l.Description,
+		RawDescription: l.Description,
+		Amount:         l.Amount,
+		Accounts: []uuid.UUID{
+			l.AccountID,
+		},
+		AccountKinds: []string{accounts[l.AccountID].Kind},
+		Source:       origin,
+		Class:        class,
 	}
 }

@@ -95,7 +95,10 @@ func (s *Service) classifyLine(ctx context.Context, p *importPlan, i int) error 
 
 	if p.sync && r.Installment != nil && r.Amount < 0 {
 		// A40: the line goes to its installment purchase; a resumed one finds its own link.
-		p.parts = append(p.parts, InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment})
+		p.parts = append(
+			p.parts,
+			InstallmentLine{RecordID: rec.ID, Line: line, Installment: *r.Installment},
+		)
 
 		return nil
 	}
@@ -179,7 +182,14 @@ func (s *Service) heldBackLines(
 
 	from, to := span(p.scoring)
 
-	stored, err := s.repo.RepeatableRecords(ctx, p.batch.BooksID, p.batch.AccountID, from, to, p.sync)
+	stored, err := s.repo.RepeatableRecords(
+		ctx,
+		p.batch.BooksID,
+		p.batch.AccountID,
+		from,
+		to,
+		p.sync,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +216,9 @@ func (s *Service) linkMatches(ctx context.Context, p *importPlan) error {
 	for i, rec := range p.matched {
 		rec.State, rec.TransactionID = domain.StateMatched, p.matches[i].TransactionID
 		if slices.Contains(conflicts, i) {
-			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{p.matches[i].TransactionID}
+			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{
+				p.matches[i].TransactionID,
+			}
 			continue
 		}
 

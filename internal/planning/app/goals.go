@@ -30,7 +30,13 @@ type TrailingReturn struct {
 
 // withReturn attaches the trailing return; a goal without one reads as before.
 func (s *Service) withReturn(ctx context.Context, booksID int64, v GoalView) (GoalView, error) {
-	bp, months, ok, err := s.returns.TrailingReturn(ctx, booksID, v.AccountIDs, s.clk.Today(ctx), v.Currency)
+	bp, months, ok, err := s.returns.TrailingReturn(
+		ctx,
+		booksID,
+		v.AccountIDs,
+		s.clk.Today(ctx),
+		v.Currency,
+	)
 	if err != nil || !ok {
 		return v, err
 	}
@@ -55,7 +61,11 @@ func (s *Service) vetGoal(ctx context.Context, booksID int64, g domain.Goal) (Go
 	}
 
 	if _, err := money.ParseCurrency(string(g.Currency)); err != nil {
-		return GoalView{}, &domain.FieldError{Field: "target.currency", Message: "must be a currency", Err: domain.ErrValidation}
+		return GoalView{}, &domain.FieldError{
+			Field:   "target.currency",
+			Message: "must be a currency",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	facts, err := s.ledger.AccountFacts(ctx, booksID)
@@ -71,14 +81,22 @@ func (s *Service) vetGoal(ctx context.Context, booksID int64, g domain.Goal) (Go
 	for _, id := range g.AccountIDs {
 		a, ok := byID[id]
 		if !ok || (a.Class != "asset" && a.Class != "liability") {
-			return GoalView{}, &domain.FieldError{Field: "account_ids", Message: "must be balance accounts of the book", Err: domain.ErrValidation}
+			return GoalView{}, &domain.FieldError{
+				Field:   "account_ids",
+				Message: "must be balance accounts of the book",
+				Err:     domain.ErrValidation,
+			}
 		}
 	}
 
 	for _, id := range g.AccountIDs {
 		for parent := byID[id].ParentID; parent != uuid.Nil; parent = byID[parent].ParentID {
 			if slices.Contains(g.AccountIDs, parent) {
-				return GoalView{}, &domain.FieldError{Field: "account_ids", Message: "must not hold an account and one of its sub-accounts", Err: domain.ErrValidation}
+				return GoalView{}, &domain.FieldError{
+					Field:   "account_ids",
+					Message: "must not hold an account and one of its sub-accounts",
+					Err:     domain.ErrValidation,
+				}
 			}
 		}
 	}
@@ -86,8 +104,21 @@ func (s *Service) vetGoal(ctx context.Context, booksID int64, g domain.Goal) (Go
 	return s.measure(ctx, booksID, g)
 }
 
-func (s *Service) CreateGoal(ctx context.Context, booksID int64, name string, target money.Money, dueOn time.Time, accounts []uuid.UUID) (GoalView, error) {
-	g := domain.Goal{Name: name, Target: target.Amount(), Currency: target.Currency(), DueOn: dueOn, AccountIDs: accounts}
+func (s *Service) CreateGoal(
+	ctx context.Context,
+	booksID int64,
+	name string,
+	target money.Money,
+	dueOn time.Time,
+	accounts []uuid.UUID,
+) (GoalView, error) {
+	g := domain.Goal{
+		Name:       name,
+		Target:     target.Amount(),
+		Currency:   target.Currency(),
+		DueOn:      dueOn,
+		AccountIDs: accounts,
+	}
 
 	view, err := s.vetGoal(ctx, booksID, g)
 	if err != nil {
@@ -107,7 +138,12 @@ func (s *Service) CreateGoal(ctx context.Context, booksID int64, name string, ta
 	return s.withReturn(ctx, booksID, view)
 }
 
-func (s *Service) UpdateGoal(ctx context.Context, booksID int64, id uuid.UUID, patch GoalPatch) (GoalView, error) {
+func (s *Service) UpdateGoal(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	patch GoalPatch,
+) (GoalView, error) {
 	g, err := s.repo.Goal(ctx, booksID, id)
 	if err != nil {
 		return GoalView{}, err
@@ -148,7 +184,10 @@ func (s *Service) UpdateGoal(ctx context.Context, booksID int64, id uuid.UUID, p
 }
 
 func (s *Service) DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error {
-	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteGoal(ctx, booksID, id) })
+	return s.repo.InTx(
+		ctx,
+		func(repo Repository) error { return repo.DeleteGoal(ctx, booksID, id) },
+	)
 }
 
 // measure sums the booked balances of the goal's accounts and their sub-accounts today, each
@@ -187,7 +226,11 @@ func (s *Service) Goal(ctx context.Context, booksID int64, id uuid.UUID) (GoalVi
 	return s.withReturn(ctx, booksID, view)
 }
 
-func (s *Service) ListGoals(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]GoalView, *IDKey, error) {
+func (s *Service) ListGoals(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[IDKey],
+) ([]GoalView, *IDKey, error) {
 	gs, next, err := s.repo.ListGoals(ctx, booksID, p)
 	if err != nil {
 		return nil, nil, err

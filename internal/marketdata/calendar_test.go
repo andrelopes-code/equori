@@ -39,8 +39,21 @@ func TestBRBanking2026(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []string{"2026-01-01", "2026-02-16", "2026-02-17", "2026-04-03", "2026-04-21", "2026-05-01", "2026-06-04",
-		"2026-09-07", "2026-10-12", "2026-11-02", "2026-11-15", "2026-11-20", "2026-12-25"}
+	want := []string{
+		"2026-01-01",
+		"2026-02-16",
+		"2026-02-17",
+		"2026-04-03",
+		"2026-04-21",
+		"2026-05-01",
+		"2026-06-04",
+		"2026-09-07",
+		"2026-10-12",
+		"2026-11-02",
+		"2026-11-15",
+		"2026-11-20",
+		"2026-12-25",
+	}
 	if len(got) != len(want) {
 		t.Fatalf("holidays = %d, want %d: %v", len(got), len(want), got)
 	}
@@ -83,7 +96,14 @@ func TestAdjust(t *testing.T) {
 	for _, tt := range tests {
 		got, err := m.Adjust(t.Context(), marketdata.CalendarBRBanking, day(tt.in), tt.adj)
 		if err != nil || got.Format(time.DateOnly) != tt.want {
-			t.Errorf("Adjust(%s, %s) = %s, %v; want %s", tt.in, tt.adj, got.Format(time.DateOnly), err, tt.want)
+			t.Errorf(
+				"Adjust(%s, %s) = %s, %v; want %s",
+				tt.in,
+				tt.adj,
+				got.Format(time.DateOnly),
+				err,
+				tt.want,
+			)
 		}
 	}
 }
@@ -93,11 +113,19 @@ func TestInstanceHoliday(t *testing.T) {
 	pool := pgtest.New(t)
 
 	m := marketdata.New(pool)
-	if _, err := pool.Exec(t.Context(), `INSERT INTO marketdata_holiday (calendar, date, name) VALUES ('br_banking', '2026-03-19', 'Local holiday')`); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_holiday (calendar, date, name) VALUES ('br_banking', '2026-03-19', 'Local holiday')`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if ok, err := m.IsBusinessDay(t.Context(), marketdata.CalendarBRBanking, day("2026-03-19")); err != nil || ok {
+	if ok, err := m.IsBusinessDay(
+		t.Context(),
+		marketdata.CalendarBRBanking,
+		day("2026-03-19"),
+	); err != nil ||
+		ok {
 		t.Fatalf("IsBusinessDay(2026-03-19) = %v, %v; want false", ok, err)
 	}
 
@@ -122,7 +150,14 @@ func TestUnknownCalendar(t *testing.T) {
 	t.Parallel()
 
 	m := marketdata.New(pgtest.New(t))
-	if _, err := m.IsBusinessDay(t.Context(), "mars", day("2026-01-02")); !errors.Is(err, marketdata.ErrUnknownCalendar) {
+	if _, err := m.IsBusinessDay(
+		t.Context(),
+		"mars",
+		day("2026-01-02"),
+	); !errors.Is(
+		err,
+		marketdata.ErrUnknownCalendar,
+	) {
 		t.Fatalf("err = %v, want ErrUnknownCalendar", err)
 	}
 }

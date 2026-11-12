@@ -58,7 +58,11 @@ func execSQL(t *testing.T, dsn, sql string) {
 func TestDumpAndRestore(t *testing.T) {
 	c := testCluster(t)
 	dsn := c.DSN(pgcluster.Database)
-	execSQL(t, dsn, "CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (0, true), (60, true); CREATE TABLE fact (v text); INSERT INTO fact VALUES ('kept')")
+	execSQL(
+		t,
+		dsn,
+		"CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (0, true), (60, true); CREATE TABLE fact (v text); INSERT INTO fact VALUES ('kept')",
+	)
 
 	path := filepath.Join(t.TempDir(), "x.dump")
 	if err := Dump(t.Context(), c.Bin(), dsn, path); err != nil {
@@ -85,11 +89,15 @@ func TestDumpAndRestore(t *testing.T) {
 	defer func() { _ = conn.Close(t.Context()) }()
 
 	var facts, provider string
-	if err := conn.QueryRow(t.Context(), "SELECT string_agg(v, ',') FROM fact").Scan(&facts); err != nil || facts != "kept" {
+	if err := conn.QueryRow(t.Context(), "SELECT string_agg(v, ',') FROM fact").
+		Scan(&facts); err != nil ||
+		facts != "kept" {
 		t.Fatalf("facts = %q, %v", facts, err)
 	}
 
-	if err := conn.QueryRow(t.Context(), "SELECT datlocprovider::text || ' ' || datlocale FROM pg_database WHERE datname = current_database()").Scan(&provider); err != nil || provider != "b C.UTF-8" {
+	if err := conn.QueryRow(t.Context(), "SELECT datlocprovider::text || ' ' || datlocale FROM pg_database WHERE datname = current_database()").
+		Scan(&provider); err != nil ||
+		provider != "b C.UTF-8" {
 		t.Fatalf("restored locale = %q, %v", provider, err)
 	}
 }
@@ -97,7 +105,11 @@ func TestDumpAndRestore(t *testing.T) {
 func TestRestoreRefusesNewerDump(t *testing.T) {
 	c := testCluster(t)
 	dsn := c.DSN(pgcluster.Database)
-	execSQL(t, dsn, "CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (61, true); CREATE TABLE fact (v text)")
+	execSQL(
+		t,
+		dsn,
+		"CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (61, true); CREATE TABLE fact (v text)",
+	)
 
 	path := filepath.Join(t.TempDir(), "x.dump")
 	if err := Dump(t.Context(), c.Bin(), dsn, path); err != nil {
@@ -137,7 +149,11 @@ func TestDumpReplacesALeftoverPartialFile(t *testing.T) {
 func TestRestoreKeepsTheDatabaseOfARoleWithoutCreateDB(t *testing.T) {
 	c := testCluster(t)
 	dsn := c.DSN(pgcluster.Database)
-	execSQL(t, dsn, "CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (1, true)")
+	execSQL(
+		t,
+		dsn,
+		"CREATE TABLE goose_db_version (id serial, version_id bigint, is_applied boolean, tstamp timestamp DEFAULT now()); INSERT INTO goose_db_version (version_id, is_applied) VALUES (1, true)",
+	)
 
 	path := filepath.Join(t.TempDir(), "x.dump")
 	if err := Dump(t.Context(), c.Bin(), dsn, path); err != nil {
@@ -161,7 +177,9 @@ func TestRestoreKeepsTheDatabaseOfARoleWithoutCreateDB(t *testing.T) {
 	defer func() { _ = conn.Close(t.Context()) }()
 
 	var n int
-	if err := conn.QueryRow(t.Context(), "SELECT count(*) FROM pg_database WHERE datname = 'owned'").Scan(&n); err != nil || n != 1 {
+	if err := conn.QueryRow(t.Context(), "SELECT count(*) FROM pg_database WHERE datname = 'owned'").
+		Scan(&n); err != nil ||
+		n != 1 {
 		t.Fatalf("database owned after the refused restore: %d, %v", n, err)
 	}
 }

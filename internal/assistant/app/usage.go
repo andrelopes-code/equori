@@ -39,11 +39,17 @@ func (s *Service) Record(ctx context.Context, booksID int64, a Attempt) error {
 // MaxUsageRangeDays is the longest range UsageByDay answers, both ends included.
 const MaxUsageRangeDays = 90
 
-var ErrInvalidUsageRange = errors.New("from must not be after to, and the range must not exceed 90 days")
+var ErrInvalidUsageRange = errors.New(
+	"from must not be after to, and the range must not exceed 90 days",
+)
 
 // UsageByDay returns the book's usage per day, provider and model from from to to, both
 // inclusive; a day without use has no row.
-func (s *Service) UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error) {
+func (s *Service) UsageByDay(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+) ([]domain.UsageDay, error) {
 	if to.Before(from) || to.Sub(from) > (MaxUsageRangeDays-1)*24*time.Hour {
 		return nil, ErrInvalidUsageRange
 	}
@@ -108,7 +114,11 @@ type usageTable struct {
 	order []usageKey
 }
 
-func newUsageTable(summaries []domain.UsageSummary, limits []domain.Limit, now time.Time) *usageTable {
+func newUsageTable(
+	summaries []domain.UsageSummary,
+	limits []domain.Limit,
+	now time.Time,
+) *usageTable {
 	t := &usageTable{rows: map[usageKey]*UsageRow{}}
 
 	for _, u := range summaries {
@@ -168,7 +178,12 @@ func providerRank(providers []ProviderView, id string) int {
 
 // SetLimit declares the daily limits of one of the book's providers, or an instance
 // provider, for a model; nil for both removes them.
-func (s *Service) SetLimit(ctx context.Context, booksID int64, providerID, model string, requests, tokens *int64) error {
+func (s *Service) SetLimit(
+	ctx context.Context,
+	booksID int64,
+	providerID, model string,
+	requests, tokens *int64,
+) error {
 	l, err := domain.NewLimit(providerID, model, requests, tokens)
 	if err != nil {
 		return err

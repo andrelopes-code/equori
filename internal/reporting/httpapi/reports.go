@@ -24,14 +24,24 @@ func (s *Server) getBalanceSeries(
 		basis = app.Basis(*params.Basis)
 	}
 
-	points, currency, err := s.svc.Series(ctx, auth.MustBooksID(ctx), params.AccountId, params.From.Time, params.To.Time, basis)
+	points, currency, err := s.svc.Series(
+		ctx,
+		auth.MustBooksID(ctx),
+		params.AccountId,
+		params.From.Time,
+		params.To.Time,
+		basis,
+	)
 	if err != nil {
 		return BalanceSeries{}, err
 	}
 
 	out := BalanceSeries{Items: make([]BalancePoint, len(points))}
 	for i, p := range points {
-		out.Items[i] = BalancePoint{Date: dateOf(p), Balance: Money{Amount: p.Balance, Currency: currency}}
+		out.Items[i] = BalancePoint{
+			Date:    dateOf(p),
+			Balance: Money{Amount: p.Balance, Currency: currency},
+		}
 	}
 
 	return out, nil
@@ -47,7 +57,13 @@ func (s *Server) getAccountFlows(
 		return AccountFlows{}, err
 	}
 
-	flows, instrument, err := s.svc.Flows(ctx, auth.MustBooksID(ctx), params.AccountId, params.From.Time, params.To.Time)
+	flows, instrument, err := s.svc.Flows(
+		ctx,
+		auth.MustBooksID(ctx),
+		params.AccountId,
+		params.From.Time,
+		params.To.Time,
+	)
 	if err != nil {
 		return AccountFlows{}, err
 	}
@@ -55,7 +71,11 @@ func (s *Server) getAccountFlows(
 	out := AccountFlows{Items: make([]FlowDay, len(flows))}
 	for i, f := range flows {
 		out.Items[i] = FlowDay{
-			Date: flowDate(f), Inflow: Money{Amount: f.Inflow, Currency: instrument}, Outflow: Money{Amount: f.Outflow, Currency: instrument},
+			Date: flowDate(
+				f,
+			),
+			Inflow:  Money{Amount: f.Inflow, Currency: instrument},
+			Outflow: Money{Amount: f.Outflow, Currency: instrument},
 		}
 	}
 
@@ -77,7 +97,14 @@ func (s *Server) getCategoryTotals(
 		view = app.View(*params.View)
 	}
 
-	totals, err := s.svc.CategoryTotals(ctx, auth.MustBooksID(ctx), string(params.Class), params.From.Time, params.To.Time, view)
+	totals, err := s.svc.CategoryTotals(
+		ctx,
+		auth.MustBooksID(ctx),
+		string(params.Class),
+		params.From.Time,
+		params.To.Time,
+		view,
+	)
 	if err != nil {
 		return CategoryTotals{}, err
 	}
@@ -85,7 +112,9 @@ func (s *Server) getCategoryTotals(
 	out := CategoryTotals{Items: make([]CategoryTotal, len(totals))}
 	for i, t := range totals {
 		out.Items[i] = CategoryTotal{
-			AccountId: t.AccountID, Total: Money{Amount: t.Total, Currency: t.Instrument}, SubtreeTotal: Money{Amount: t.SubtreeTotal, Currency: t.Instrument},
+			AccountId:    t.AccountID,
+			Total:        Money{Amount: t.Total, Currency: t.Instrument},
+			SubtreeTotal: Money{Amount: t.SubtreeTotal, Currency: t.Instrument},
 		}
 	}
 
@@ -107,7 +136,13 @@ func (s *Server) listCategoryCashPayments(
 		return CategoryCashPayments{}, err
 	}
 
-	payments, instrument, err := s.svc.CategoryCashPayments(ctx, auth.MustBooksID(ctx), id, params.From.Time, params.To.Time)
+	payments, instrument, err := s.svc.CategoryCashPayments(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		params.From.Time,
+		params.To.Time,
+	)
 	if err != nil {
 		return CategoryCashPayments{}, err
 	}
@@ -115,8 +150,12 @@ func (s *Server) listCategoryCashPayments(
 	out := CategoryCashPayments{Items: make([]CategoryCashPayment, len(payments))}
 	for i, p := range payments {
 		out.Items[i] = CategoryCashPayment{
-			Date: cashDate(p), Amount: Money{Amount: p.Amount, Currency: instrument},
-			CardAccountId: p.CardID, StatementId: p.StatementID, StatementReference: p.StatementReference.Format("2006-01"), PaymentTransactionId: p.PaymentTransactionID,
+			Date:                 cashDate(p),
+			Amount:               Money{Amount: p.Amount, Currency: instrument},
+			CardAccountId:        p.CardID,
+			StatementId:          p.StatementID,
+			StatementReference:   p.StatementReference.Format("2006-01"),
+			PaymentTransactionId: p.PaymentTransactionID,
 		}
 	}
 

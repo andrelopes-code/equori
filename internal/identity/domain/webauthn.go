@@ -63,7 +63,12 @@ func RPID(origin string) (string, bool) {
 }
 
 // VerifyRegistration checks a creation ceremony (HA41).
-func VerifyRegistration(clientDataJSON, authData, publicKey []byte, algorithm int, challenge []byte, origin string) (Registration, error) {
+func VerifyRegistration(
+	clientDataJSON, authData, publicKey []byte,
+	algorithm int,
+	challenge []byte,
+	origin string,
+) (Registration, error) {
 	counter, err := checkCeremony("webauthn.create", clientDataJSON, authData, challenge, origin)
 	if err != nil {
 		return Registration{}, err
@@ -82,11 +87,21 @@ func VerifyRegistration(clientDataJSON, authData, publicKey []byte, algorithm in
 		return Registration{}, err
 	}
 
-	return Registration{CredentialID: id, PublicKey: publicKey, Algorithm: algorithm, SignCount: counter}, nil
+	return Registration{
+		CredentialID: id,
+		PublicKey:    publicKey,
+		Algorithm:    algorithm,
+		SignCount:    counter,
+	}, nil
 }
 
 // VerifyAssertion checks an assertion against a stored key and returns the counter of authData.
-func VerifyAssertion(clientDataJSON, authData, signature, publicKey []byte, algorithm int, challenge []byte, origin string) (uint32, error) {
+func VerifyAssertion(
+	clientDataJSON, authData, signature, publicKey []byte,
+	algorithm int,
+	challenge []byte,
+	origin string,
+) (uint32, error) {
 	counter, err := checkCeremony("webauthn.get", clientDataJSON, authData, challenge, origin)
 	if err != nil {
 		return 0, err
@@ -109,7 +124,11 @@ func VerifyAssertion(clientDataJSON, authData, signature, publicKey []byte, algo
 
 // checkCeremony validates the client data and the fixed part of the authenticator data, and
 // returns the counter.
-func checkCeremony(typ string, clientDataJSON, authData, challenge []byte, origin string) (uint32, error) {
+func checkCeremony(
+	typ string,
+	clientDataJSON, authData, challenge []byte,
+	origin string,
+) (uint32, error) {
 	rpID, ok := RPID(origin)
 	if !ok {
 		return 0, fmt.Errorf("%w: origin %q", ErrWebAuthn, origin)
@@ -194,7 +213,8 @@ func verifySignature(key crypto.PublicKey, algorithm int, message, signature []b
 	case ed25519.PublicKey:
 		return algorithm == AlgEdDSA && ed25519.Verify(k, message, signature)
 	case *rsa.PublicKey:
-		return algorithm == AlgRS256 && rsa.VerifyPKCS1v15(k, crypto.SHA256, digest[:], signature) == nil
+		return algorithm == AlgRS256 &&
+			rsa.VerifyPKCS1v15(k, crypto.SHA256, digest[:], signature) == nil
 	}
 
 	return false

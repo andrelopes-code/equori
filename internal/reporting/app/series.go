@@ -17,7 +17,9 @@ var (
 	// ErrInvalidCategoryRange: the period of CategoryTotals is empty or longer than MaxCategoryDays (A77).
 	ErrInvalidCategoryRange = errors.New("invalid category period")
 	// ErrMixedInstruments: the account's sub-accounts hold more than one instrument (P8 A63).
-	ErrMixedInstruments = errors.New("the account and its sub-accounts hold more than one instrument")
+	ErrMixedInstruments = errors.New(
+		"the account and its sub-accounts hold more than one instrument",
+	)
 )
 
 type Basis string
@@ -52,7 +54,13 @@ type Service struct {
 func NewService(repo Repository) *Service { return &Service{repo: repo} }
 
 // Series returns one point per day in [from, to], in the account currency.
-func (s *Service) Series(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time, basis Basis) ([]Point, string, error) {
+func (s *Service) Series(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+	basis Basis,
+) ([]Point, string, error) {
 	days := int(to.Sub(from).Hours()/24) + 1
 	if days < 1 || days > MaxSeriesDays {
 		return nil, "", ErrInvalidRange
@@ -96,12 +104,21 @@ func (d DayDelta) pick(b Basis) int64 {
 }
 
 // AccountName returns the name of one of the book's accounts, or ErrNotFound.
-func (s *Service) AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error) {
+func (s *Service) AccountName(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (string, error) {
 	return s.repo.AccountName(ctx, booksID, accountID)
 }
 
 // RebuildAccounts recomputes the series of each account from the given date on.
-func (s *Service) RebuildAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from time.Time) error {
+func (s *Service) RebuildAccounts(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from time.Time,
+) error {
 	for _, id := range accountIDs {
 		if err := s.repo.Rebuild(ctx, booksID, id, from); err != nil {
 			return err

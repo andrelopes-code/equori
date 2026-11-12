@@ -69,7 +69,13 @@ func TestSourceCategory(t *testing.T) {
 
 	got := f.sourceCategories(f.h.Client)
 
-	want := sourceCategoryView{ID: got[0].ID, Aggregator: "pluggy", ExternalID: "05010000", Name: "Food Delivery", Count: 1}
+	want := sourceCategoryView{
+		ID:         got[0].ID,
+		Aggregator: "pluggy",
+		ExternalID: "05010000",
+		Name:       "Food Delivery",
+		Count:      1,
+	}
 	if len(got) != 1 || got[0] != want {
 		t.Fatalf("source categories = %+v, want [%+v]", got, want)
 	}
@@ -92,10 +98,26 @@ func TestSourceCategory(t *testing.T) {
 	}
 
 	path := "/api/v1/source-categories/" + want.ID
-	f.h.ExpectProblem(f.h.Do(http.MethodPut, path, map[string]any{"category_id": f.checking}), http.StatusUnprocessableEntity, "validation_failed", "category_id")
-	f.h.ExpectProblem(f.h.Do(http.MethodPut, path, map[string]any{"category_id": uuid.NewString()}), http.StatusUnprocessableEntity, "validation_failed", "category_id")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPut, path, map[string]any{"category_id": f.checking}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"category_id",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPut, path, map[string]any{"category_id": uuid.NewString()}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"category_id",
+	)
 	var mapped sourceCategoryView
-	f.h.MustDo(http.MethodPut, path, map[string]any{"category_id": delivery}, http.StatusOK, &mapped)
+	f.h.MustDo(
+		http.MethodPut,
+		path,
+		map[string]any{"category_id": delivery},
+		http.StatusOK,
+		&mapped,
+	)
 
 	if want.CategoryID = delivery; mapped != want {
 		t.Fatalf("mapped = %+v, want %+v", mapped, want)
@@ -114,9 +136,11 @@ func TestSourceCategory(t *testing.T) {
 
 	// A rule still wins over a mapped source category (F5 precedence).
 	f.h.MustDo(http.MethodPost, "/api/v1/rules", map[string]any{
-		"name":       "iFood",
-		"conditions": []map[string]any{{"field": "description", "operator": "contains", "value": "ifood"}},
-		"actions":    []map[string]any{{"type": "set_category", "category_id": food}},
+		"name": "iFood",
+		"conditions": []map[string]any{
+			{"field": "description", "operator": "contains", "value": "ifood"},
+		},
+		"actions": []map[string]any{{"type": "set_category", "category_id": food}},
 	}, http.StatusCreated, nil)
 	f.line(pluggy.SubtypeChecking, categorizedLine("tx-3", "2026-10-22", "IFOOD *PEDIDO"))
 	f.mustSyncNow(f.conn.ID)
@@ -130,7 +154,13 @@ func TestSourceCategory(t *testing.T) {
 		Rule   int `json:"rule"`
 		Source int `json:"source"`
 	}
-	f.h.MustDo(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &stats)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/categorization-statistics?from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&stats,
+	)
 
 	if stats.Source != 1 || stats.Rule != 1 {
 		t.Fatalf("statistics = %+v", stats)
@@ -141,7 +171,12 @@ func TestSourceCategory(t *testing.T) {
 		t.Fatalf("other book sees %+v", got)
 	}
 
-	f.h.ExpectProblem(f.h.Call(other, http.MethodPut, path, map[string]any{"category_id": nil}), http.StatusNotFound, "not_found", "")
+	f.h.ExpectProblem(
+		f.h.Call(other, http.MethodPut, path, map[string]any{"category_id": nil}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 	var cleared sourceCategoryView
 	f.h.MustDo(http.MethodPut, path, map[string]any{"category_id": nil}, http.StatusOK, &cleared)
 

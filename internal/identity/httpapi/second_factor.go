@@ -12,7 +12,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) getSecondFactor(ctx context.Context, _ *http.Request, _ httpserver.None) (SecondFactor, error) {
+func (s *Server) getSecondFactor(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (SecondFactor, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
 		return SecondFactor{}, err
@@ -28,10 +32,18 @@ func (s *Server) getSecondFactor(ctx context.Context, _ *http.Request, _ httpser
 		passkeys = append(passkeys, toAPIPasskey(p))
 	}
 
-	return SecondFactor{Totp: state.TOTP, Passkeys: passkeys, RecoveryCodesLeft: state.RecoveryCodesLeft}, nil
+	return SecondFactor{
+		Totp:              state.TOTP,
+		Passkeys:          passkeys,
+		RecoveryCodesLeft: state.RecoveryCodesLeft,
+	}, nil
 }
 
-func (s *Server) startTotp(ctx context.Context, _ *http.Request, _ httpserver.None) (TotpSetup, error) {
+func (s *Server) startTotp(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (TotpSetup, error) {
 	member, err := currentMember(ctx)
 	if err != nil {
 		return TotpSetup{}, err
@@ -188,10 +200,23 @@ func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	result, err := s.svc.CompleteSecondFactor(ctx, cookieValue(r, loginCookieName), r.Header.Get("Origin"), answer)
+	result, err := s.svc.CompleteSecondFactor(
+		ctx,
+		cookieValue(r, loginCookieName),
+		r.Header.Get("Origin"),
+		answer,
+	)
 	if errors.Is(err, app.ErrSecondFactorInvalid) {
-		s.log.WarnContext(ctx, "login failed", "member_id", result.Session.MemberID, "reason", err.Error(),
-			"request_id", httpserver.RequestID(ctx))
+		s.log.WarnContext(
+			ctx,
+			"login failed",
+			"member_id",
+			result.Session.MemberID,
+			"reason",
+			err.Error(),
+			"request_id",
+			httpserver.RequestID(ctx),
+		)
 	}
 
 	if err != nil {
@@ -199,12 +224,22 @@ func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	attrs := []any{"member_id", result.Session.MemberID, "books_id", result.Session.BooksID, "method", result.Method}
+	attrs := []any{
+		"member_id",
+		result.Session.MemberID,
+		"books_id",
+		result.Session.BooksID,
+		"method",
+		result.Method,
+	}
 	if result.Method == app.MethodRecoveryCode {
 		attrs = append(attrs, "recovery_codes_left", result.RecoveryCodesLeft)
 	}
 
-	s.log.InfoContext(ctx, "login succeeded", append(attrs, "request_id", httpserver.RequestID(ctx))...)
+	s.log.InfoContext(
+		ctx,
+		"login succeeded",
+		append(attrs, "request_id", httpserver.RequestID(ctx))...)
 
 	w.Header().Add("Set-Cookie", s.cookie(result.Session.Token, result.Session.ExpiresAt))
 	w.Header().Add("Set-Cookie", s.loginCookie("", time.Unix(0, 0)))
@@ -213,7 +248,9 @@ func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
 
 // writePendingLogin answers 202 with the second factor challenge and the pending login cookie.
 func (s *Server) writePendingLogin(w http.ResponseWriter, r *http.Request, p *app.PendingLogin) {
-	challenge := SecondFactorChallenge{Methods: make([]SecondFactorChallengeMethods, 0, len(p.Methods))}
+	challenge := SecondFactorChallenge{
+		Methods: make([]SecondFactorChallengeMethods, 0, len(p.Methods)),
+	}
 	for _, m := range p.Methods {
 		challenge.Methods = append(challenge.Methods, SecondFactorChallengeMethods(m))
 	}
@@ -307,7 +344,10 @@ func toSecondFactorAnswer(b *CompleteSecondFactorJSONRequestBody) (app.SecondFac
 		return app.SecondFactorAnswer{}, errInvalidRequest
 	}
 
-	answer := app.SecondFactorAnswer{TOTPCode: deref(b.TotpCode), RecoveryCode: deref(b.RecoveryCode)}
+	answer := app.SecondFactorAnswer{
+		TOTPCode:     deref(b.TotpCode),
+		RecoveryCode: deref(b.RecoveryCode),
+	}
 
 	if b.Passkey != nil {
 		answer.Passkey = &app.Assertion{

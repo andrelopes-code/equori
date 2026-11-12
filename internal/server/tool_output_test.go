@@ -19,7 +19,10 @@ func TestToolOutputBudget(t *testing.T) {
 
 	var categories []string
 	for i := range 24 {
-		categories = append(categories, h.Account(fmt.Sprintf("Supermarket %02d", i), "expense", "", nil))
+		categories = append(
+			categories,
+			h.Account(fmt.Sprintf("Supermarket %02d", i), "expense", "", nil),
+		)
 	}
 
 	var payees []string
@@ -27,7 +30,13 @@ func TestToolOutputBudget(t *testing.T) {
 		var p struct {
 			ID string `json:"id"`
 		}
-		h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": fmt.Sprintf("Pão de Açúcar %02d", i)}, http.StatusCreated, &p)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/payees",
+			map[string]string{"name": fmt.Sprintf("Pão de Açúcar %02d", i)},
+			http.StatusCreated,
+			&p,
+		)
 		payees = append(payees, p.ID)
 	}
 
@@ -38,9 +47,17 @@ func TestToolOutputBudget(t *testing.T) {
 			ID string `json:"id"`
 		}
 		h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
-			"date": fmt.Sprintf("2026-%02d-%02d", month, 1+i%28), "description": fmt.Sprintf("Mercado semana %02d", i),
-			"payee_id": payees[i%len(payees)],
-			"postings": []any{apitest.Posting(checking, -int64(10000+i)), apitest.Posting(categories[i%len(categories)], int64(10000+i))},
+			"date": fmt.Sprintf(
+				"2026-%02d-%02d",
+				month,
+				1+i%28,
+			),
+			"description": fmt.Sprintf("Mercado semana %02d", i),
+			"payee_id":    payees[i%len(payees)],
+			"postings": []any{
+				apitest.Posting(checking, -int64(10000+i)),
+				apitest.Posting(categories[i%len(categories)], int64(10000+i)),
+			},
 		}, http.StatusCreated, &tx)
 
 		id := tx.ID
@@ -50,16 +67,33 @@ func TestToolOutputBudget(t *testing.T) {
 	}
 
 	h.MustDo(http.MethodPost, "/api/v1/budgets", map[string]any{
-		"category_id": categories[0], "amount": apitest.BRL(180000), "effective_from": "2026-10", "rollover": true,
+		"category_id":    categories[0],
+		"amount":         apitest.BRL(180000),
+		"effective_from": "2026-10",
+		"rollover":       true,
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{
-		"name": "Emergency fund", "target": apitest.BRL(3000000), "due_on": "2027-06-30", "account_ids": []string{checking},
+		"name":        "Emergency fund",
+		"target":      apitest.BRL(3000000),
+		"due_on":      "2027-06-30",
+		"account_ids": []string{checking},
 	}, http.StatusCreated, nil)
 
 	for i := range 6 {
 		h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
-			"kind": "bill", "account_id": checking, "counterpart_id": categories[i], "description": fmt.Sprintf("Assinatura mensal %02d", i),
-			"amount": apitest.BRL(3990), "recurrence": map[string]any{"frequency": "monthly", "interval": 1, "day_of_month": 5 + i, "start": "2026-10-23"},
+			"kind":           "bill",
+			"account_id":     checking,
+			"counterpart_id": categories[i],
+			"description":    fmt.Sprintf("Assinatura mensal %02d", i),
+			"amount": apitest.BRL(
+				3990,
+			),
+			"recurrence": map[string]any{
+				"frequency":    "monthly",
+				"interval":     1,
+				"day_of_month": 5 + i,
+				"start":        "2026-10-23",
+			},
 		}, http.StatusCreated, nil)
 	}
 
@@ -72,11 +106,22 @@ func TestToolOutputBudget(t *testing.T) {
 		{"list_accounts", map[string]any{}},
 		{"get_balances", map[string]any{}},
 		{"search_transactions", map[string]any{}},
-		{"get_category_totals", map[string]any{"class": "expense", "from": "2026-09-01", "to": "2026-10-31"}},
+		{
+			"get_category_totals",
+			map[string]any{"class": "expense", "from": "2026-09-01", "to": "2026-10-31"},
+		},
 		{"list_payees_and_tags", map[string]any{"kind": "payees"}},
 		{"get_transaction", map[string]any{"transaction_id": first}},
 		{"get_account_details", map[string]any{"account_id": checking}},
-		{"get_account_history", map[string]any{"account_id": checking, "view": "balances", "from": "2026-09-01", "to": "2026-10-30"}},
+		{
+			"get_account_history",
+			map[string]any{
+				"account_id": checking,
+				"view":       "balances",
+				"from":       "2026-09-01",
+				"to":         "2026-10-30",
+			},
+		},
 		{"list_schedules", map[string]any{}},
 		{"get_budgets_and_goals", map[string]any{}},
 	}

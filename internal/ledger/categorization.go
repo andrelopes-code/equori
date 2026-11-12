@@ -10,11 +10,19 @@ import (
 
 // Categorize applies each item in one database transaction; errs[i] is the domain error of
 // item i (ErrNotFound, ErrVersionConflict, ErrNotCategorizable, ErrVoided, ErrValidation).
-func (m *Module) Categorize(ctx context.Context, booksID int64, cs []Categorization) (errs []error, err error) {
+func (m *Module) Categorize(
+	ctx context.Context,
+	booksID int64,
+	cs []Categorization,
+) (errs []error, err error) {
 	return m.svc.Categorize(ctx, booksID, cs)
 }
 
 // LatestPayeeCategories implements the payee history of P5 amendment A23.
-func (m *Module) LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error) {
+func (m *Module) LatestPayeeCategories(
+	ctx context.Context,
+	booksID int64,
+	payees []uuid.UUID,
+) (map[PayeeClass]uuid.UUID, error) {
 	return m.svc.LatestPayeeCategories(ctx, booksID, payees)
 }

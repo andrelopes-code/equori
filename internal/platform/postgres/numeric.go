@@ -11,7 +11,11 @@ import (
 
 // NumericOf maps a rate to numeric(30,12) (ADR 005).
 func NumericOf(r money.Rate) pgtype.Numeric {
-	return pgtype.Numeric{Int: big.NewInt(r.Mantissa()), Exp: -int32(r.Scale()), Valid: true} //nolint:gosec // G115: a rate scale is 0–12
+	return pgtype.Numeric{
+		Int:   big.NewInt(r.Mantissa()),
+		Exp:   -int32(r.Scale()),
+		Valid: true,
+	} //nolint:gosec // G115: a rate scale is 0–12
 }
 
 // RateOf reads a numeric without its trailing zeros: numeric(30,12) stores 5.5 as 5.500000000000.

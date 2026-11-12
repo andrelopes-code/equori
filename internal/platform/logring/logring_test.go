@@ -58,7 +58,14 @@ func TestRing(t *testing.T) {
 
 			for i, w := range tt.want {
 				if got[i].Message != w.message || !maps.Equal(got[i].Attrs, w.attrs) {
-					t.Errorf("record %d = %q %v, want %q %v", i, got[i].Message, got[i].Attrs, w.message, w.attrs)
+					t.Errorf(
+						"record %d = %q %v, want %q %v",
+						i,
+						got[i].Message,
+						got[i].Attrs,
+						w.message,
+						w.attrs,
+					)
 				}
 			}
 

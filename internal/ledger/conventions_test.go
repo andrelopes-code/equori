@@ -19,7 +19,13 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 		ID       string `json:"id"`
 		VoidedAt string `json:"voided_at"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, &voided)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+tx+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		&voided,
+	)
 
 	if voided.ID != tx || voided.VoidedAt == "" {
 		t.Fatalf("void = %+v", voided)
@@ -29,7 +35,13 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 		ID       string `json:"id"`
 		ClosedOn string `json:"closed_on"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+checking+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, &closed)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+checking+"/close",
+		map[string]string{"closed_on": "2026-10-31"},
+		http.StatusOK,
+		&closed,
+	)
 
 	if closed.ID != checking || closed.ClosedOn != "2026-10-31" {
 		t.Fatalf("close = %+v", closed)
@@ -38,7 +50,13 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 	r := newReserveSetup(t)
 	assertBalance(r.h, r.reserve, "2026-10-31", 1000000)
 	var status reconciliationStatus
-	r.h.MustDo(http.MethodPost, "/api/v1/accounts/"+r.reserve+"/unlock", map[string]string{"from": "2026-10-01"}, http.StatusOK, &status)
+	r.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+r.reserve+"/unlock",
+		map[string]string{"from": "2026-10-01"},
+		http.StatusOK,
+		&status,
+	)
 
 	if status.LastReconciledOn != "" || status.OpenDifference == nil {
 		t.Fatalf("unlock = %+v", status)
@@ -51,7 +69,13 @@ func TestTransitionsReturnTheResource(t *testing.T) {
 		Reconciled bool   `json:"reconciled"`
 	}
 	id := statements(t, c.h, c.card)["2026-11"].ID
-	c.h.MustDo(http.MethodPost, "/api/v1/statements/"+id+"/reconcile", map[string]any{"amount_due": apitest.BRL(100000)}, http.StatusOK, &detail)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/statements/"+id+"/reconcile",
+		map[string]any{"amount_due": apitest.BRL(100000)},
+		http.StatusOK,
+		&detail,
+	)
 
 	if detail.ID != id || !detail.Reconciled {
 		t.Fatalf("reconcile = %+v", detail)

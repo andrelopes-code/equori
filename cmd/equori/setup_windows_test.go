@@ -19,7 +19,11 @@ func TestSetupCreatesAPrivateDataDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sd, err := windows.GetNamedSecurityInfo(dir, windows.SE_FILE_OBJECT, windows.DACL_SECURITY_INFORMATION)
+	sd, err := windows.GetNamedSecurityInfo(
+		dir,
+		windows.SE_FILE_OBJECT,
+		windows.DACL_SECURITY_INFORMATION,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

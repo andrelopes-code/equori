@@ -12,11 +12,20 @@ const noBalance = int64(math.MinInt64)
 // bankOFX writes an OFX 1.x checking statement. The balance is the closing balance reported by the institution.
 func bankOFX(from, to string, balance int64, lines []ofxLine) []byte {
 	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n")
+	b.WriteString(
+		"OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>BRL\n",
+	)
 	fmt.Fprintf(&b, "<BANKTRANLIST><DTSTART>%s<DTEND>%s\n", from, to)
 
 	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<NAME>%s</STMTTRN>\n", l.date, l.amount, l.fitid, l.name)
+		fmt.Fprintf(
+			&b,
+			"<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<NAME>%s</STMTTRN>\n",
+			l.date,
+			l.amount,
+			l.fitid,
+			l.name,
+		)
 	}
 
 	b.WriteString("</BANKTRANLIST>")
@@ -32,11 +41,20 @@ func bankOFX(from, to string, balance int64, lines []ofxLine) []byte {
 
 func cardOFX(from, to string, lines []ofxLine) []byte {
 	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n")
+	b.WriteString(
+		"OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n",
+	)
 	fmt.Fprintf(&b, "<BANKTRANLIST><DTSTART>%s<DTEND>%s\n", from, to)
 
 	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<MEMO>%s</STMTTRN>\n", l.date, l.amount, l.fitid, l.name)
+		fmt.Fprintf(
+			&b,
+			"<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<MEMO>%s</STMTTRN>\n",
+			l.date,
+			l.amount,
+			l.fitid,
+			l.name,
+		)
 	}
 
 	b.WriteString("</BANKTRANLIST></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>\n")

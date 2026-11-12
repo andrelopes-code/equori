@@ -15,18 +15,34 @@ type Signal struct {
 }
 
 // UseSignals sets the lookup of the signals of a preview; nil attaches none.
-func (s *Service) UseSignals(f func(ctx context.Context, booksID int64, p tool.Preview) ([]Signal, error)) {
+func (s *Service) UseSignals(
+	f func(ctx context.Context, booksID int64, p tool.Preview) ([]Signal, error),
+) {
 	s.signals = f
 }
 
 // proposalResult is what the model receives for a stored proposal. A pending proposal carries the
 // signals of its preview; a failed lookup logs and leaves them out.
-func (s *Service) proposalResult(ctx context.Context, booksID int64, p domain.Proposal) (json.RawMessage, error) {
+func (s *Service) proposalResult(
+	ctx context.Context,
+	booksID int64,
+	p domain.Proposal,
+) (json.RawMessage, error) {
 	if p.Status == domain.ProposalWaiting {
-		return json.Marshal(map[string]any{"proposal_id": p.ID, "status": "waiting_for_confirmation_of", "waiting_for": p.WaitingFor()})
+		return json.Marshal(
+			map[string]any{
+				"proposal_id": p.ID,
+				"status":      "waiting_for_confirmation_of",
+				"waiting_for": p.WaitingFor(),
+			},
+		)
 	}
 
-	out := map[string]any{"proposal_id": p.ID, "status": "awaiting_confirmation", "preview": json.RawMessage(p.Preview)}
+	out := map[string]any{
+		"proposal_id": p.ID,
+		"status":      "awaiting_confirmation",
+		"preview":     json.RawMessage(p.Preview),
+	}
 	if signals := s.signalsOf(ctx, booksID, p); len(signals) > 0 {
 		out["signals"] = signals
 	}

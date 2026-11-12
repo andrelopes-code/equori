@@ -46,7 +46,12 @@ func TestResetSecondFactor(t *testing.T) {
 		}
 	}
 
-	if r := h.Call(h.Client, http.MethodGet, "/api/v1/me", nil); r.Status != http.StatusUnauthorized {
+	if r := h.Call(
+		h.Client,
+		http.MethodGet,
+		"/api/v1/me",
+		nil,
+	); r.Status != http.StatusUnauthorized {
 		t.Fatalf("GET /me = %d: %s", r.Status, r.Body)
 	}
 

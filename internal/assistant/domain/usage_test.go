@@ -19,11 +19,35 @@ func TestNewLimit(t *testing.T) {
 	}{
 		{name: "both", provider: "aistudio", model: "m", requests: &one, tokens: &one},
 		{name: "neither clears", provider: "aistudio", model: "m", cleared: true},
-		{name: "zero requests", provider: "aistudio", model: "m", requests: &zero, wantField: "requests_per_day"},
-		{name: "requests past int32", provider: "aistudio", model: "m", requests: &huge, wantField: "requests_per_day"},
-		{name: "zero tokens", provider: "aistudio", model: "m", tokens: &zero, wantField: "tokens_per_day"},
+		{
+			name:      "zero requests",
+			provider:  "aistudio",
+			model:     "m",
+			requests:  &zero,
+			wantField: "requests_per_day",
+		},
+		{
+			name:      "requests past int32",
+			provider:  "aistudio",
+			model:     "m",
+			requests:  &huge,
+			wantField: "requests_per_day",
+		},
+		{
+			name:      "zero tokens",
+			provider:  "aistudio",
+			model:     "m",
+			tokens:    &zero,
+			wantField: "tokens_per_day",
+		},
 		{name: "blank model", provider: "aistudio", model: " ", requests: &one, wantField: "model"},
-		{name: "long provider", provider: strings.Repeat("p", 61), model: "m", requests: &one, wantField: "provider_id"},
+		{
+			name:      "long provider",
+			provider:  strings.Repeat("p", 61),
+			model:     "m",
+			requests:  &one,
+			wantField: "provider_id",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

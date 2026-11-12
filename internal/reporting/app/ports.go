@@ -21,12 +21,24 @@ type ExportRepository interface {
 	// RequestExport replaces a finished export with a pending one and publishes
 	// EventExportRequested in the same transaction; ok is false while one is pending.
 	// credentials is the sealed bundle of export design C2, nil for none.
-	RequestExport(ctx context.Context, booksID int64, at time.Time, credentials []byte) (e Export, ok bool, err error)
+	RequestExport(
+		ctx context.Context,
+		booksID int64,
+		at time.Time,
+		credentials []byte,
+	) (e Export, ok bool, err error)
 	Export(ctx context.Context, booksID int64) (Export, error)
 	ExportContent(ctx context.Context, booksID int64) (Export, []byte, error)
 	// BuildArchive reads every fact of the book from one snapshot (export design E1, E2).
 	BuildArchive(ctx context.Context, booksID int64, at time.Time) ([]byte, error)
-	FinishExport(ctx context.Context, booksID int64, id uuid.UUID, at time.Time, archive []byte, problem string) error
+	FinishExport(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		at time.Time,
+		archive []byte,
+		problem string,
+	) error
 }
 
 // Credentials is lent by internal/server: the integration credentials and the provider keys of a
@@ -45,7 +57,12 @@ type Credentials interface {
 // FlowRepository reads the flows of one account, without its sub-accounts.
 type FlowRepository interface {
 	AccountInstrument(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
-	AccountFlows(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]Flow, error)
+	AccountFlows(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		from, to time.Time,
+	) ([]Flow, error)
 }
 
 // ImportRepository writes the tables of an archive; postgres/ implements it.
@@ -74,7 +91,11 @@ type Commitments interface {
 
 // Valuations values each account's own balance at the end of a date in the base currency.
 type Valuations interface {
-	ValuedBalances(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error)
+	ValuedBalances(
+		ctx context.Context,
+		booksID int64,
+		date time.Time,
+	) (map[uuid.UUID]money.Money, error)
 }
 
 // IndicatorRepository reads the facts behind the indicators; postgres/ implements it.
@@ -84,8 +105,16 @@ type IndicatorRepository interface {
 	FirstPosting(ctx context.Context, booksID int64) (first time.Time, ok bool, err error)
 	IndicatorAccounts(ctx context.Context, booksID int64) ([]IndicatorAccount, error)
 	// OffCardMonthTotals is OffCardTotals per month, keyed by the first day of the month.
-	OffCardMonthTotals(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]Shares, error)
-	LoanPrincipalByMonth(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]int64, error)
+	OffCardMonthTotals(
+		ctx context.Context,
+		booksID int64,
+		from, to time.Time,
+	) (map[time.Time]Shares, error)
+	LoanPrincipalByMonth(
+		ctx context.Context,
+		booksID int64,
+		from, to time.Time,
+	) (map[time.Time]int64, error)
 }
 
 // Repository reads Ledger tables only through SELECT (ADR 002).
@@ -97,16 +126,30 @@ type Repository interface {
 	AccountCurrency(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
 	AccountName(ctx context.Context, booksID int64, accountID uuid.UUID) (string, error)
 	Rebuild(ctx context.Context, booksID int64, accountID uuid.UUID, from time.Time) error
-	TreeDailyDeltas(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) ([]DayDelta, error)
+	TreeDailyDeltas(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		to time.Time,
+	) ([]DayDelta, error)
 	AllAccounts(ctx context.Context) ([]AccountRef, error)
 	// CategoryTotals returns every account of the class with its own booked total in [from, to].
-	CategoryTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryRow, error)
+	CategoryTotals(
+		ctx context.Context,
+		booksID int64,
+		class string,
+		from, to time.Time,
+	) ([]CategoryRow, error)
 }
 
 // AnalyticsRepository reads the statements and facts of cards; postgres/ implements it.
 type AnalyticsRepository interface {
 	StatementCard(ctx context.Context, booksID int64, id uuid.UUID) (uuid.UUID, error)
 	// CardStatements returns the card's instrument and statements, newest first.
-	CardStatements(ctx context.Context, booksID int64, cardID uuid.UUID) (string, []StatementRef, error)
+	CardStatements(
+		ctx context.Context,
+		booksID int64,
+		cardID uuid.UUID,
+	) (string, []StatementRef, error)
 	ChargeCategories(ctx context.Context, booksID int64) (map[uuid.UUID]bool, error)
 }

@@ -26,7 +26,11 @@ func newMergeBooks(t *testing.T) mergeBooks {
 }
 
 func (m mergeBooks) merge(from, into string) apitest.Response {
-	return m.h.Do(http.MethodPost, "/api/v1/accounts/"+from+"/merge", map[string]string{"into": into})
+	return m.h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+from+"/merge",
+		map[string]string{"into": into},
+	)
 }
 
 // A75, Review Focus 1 and 3: postings keep their amount and memo, children and the source
@@ -36,9 +40,24 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 	m := newMergeBooks(t)
 	lunch := apitest.Posting(m.food, 600)
 	lunch["memo"] = "lunch"
-	split := m.h.Record("2026-10-10", apitest.Posting(m.checking, -1000), lunch, apitest.Posting(m.travel, 400))
-	voided := m.h.Record("2026-10-11", apitest.Posting(m.checking, -300), apitest.Posting(m.food, 300))
-	m.h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	split := m.h.Record(
+		"2026-10-10",
+		apitest.Posting(m.checking, -1000),
+		lunch,
+		apitest.Posting(m.travel, 400),
+	)
+	voided := m.h.Record(
+		"2026-10-11",
+		apitest.Posting(m.checking, -300),
+		apitest.Posting(m.food, 300),
+	)
+	m.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 
 	r := m.merge(m.food, m.travel)
 	if r.Status != http.StatusOK {
@@ -53,12 +72,22 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 	}
 
 	v := m.h.Transaction(split)
-	if got := amountsByAccount(v); v.Version != 2 || len(v.Postings) != 3 || got[m.travel] != 1000 || got[m.food] != 0 {
-		t.Fatalf("split after merge: version %d, %d postings, amounts %v", v.Version, len(v.Postings), got)
+	if got := amountsByAccount(
+		v,
+	); v.Version != 2 || len(v.Postings) != 3 || got[m.travel] != 1000 ||
+		got[m.food] != 0 {
+		t.Fatalf(
+			"split after merge: version %d, %d postings, amounts %v",
+			v.Version,
+			len(v.Postings),
+			got,
+		)
 	}
 
 	var memo string
-	if err := m.h.Pool.QueryRow(t.Context(), `SELECT memo FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2 AND amount = 600`, split, m.travel).Scan(&memo); err != nil || memo != "lunch" {
+	if err := m.h.Pool.QueryRow(t.Context(), `SELECT memo FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2 AND amount = 600`, split, m.travel).
+		Scan(&memo); err != nil ||
+		memo != "lunch" {
 		t.Fatalf("moved posting memo = %q, %v", memo, err)
 	}
 
@@ -78,7 +107,11 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 		Into string `json:"into"`
 	}
 
-	rows, err := m.h.Pool.Query(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'ledger.categories_merged.v1' AND aggregate_id = $1`, m.food)
+	rows, err := m.h.Pool.Query(
+		t.Context(),
+		`SELECT payload FROM outbox_event WHERE type = 'ledger.categories_merged.v1' AND aggregate_id = $1`,
+		m.food,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,10 +144,24 @@ func TestMergeMovesPostingsAndChildren(t *testing.T) {
 func TestMergeKeepsOtherSplitParts(t *testing.T) {
 	t.Parallel()
 	m := newMergeBooks(t)
-	tx := m.h.Record("2026-10-10", apitest.Posting(m.checking, -1000), apitest.Posting(m.food, 700), apitest.Posting(m.transport, 300))
-	m.h.MustDo(http.MethodPost, "/api/v1/accounts/"+m.food+"/merge", map[string]string{"into": m.travel}, http.StatusOK, nil)
+	tx := m.h.Record(
+		"2026-10-10",
+		apitest.Posting(m.checking, -1000),
+		apitest.Posting(m.food, 700),
+		apitest.Posting(m.transport, 300),
+	)
+	m.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+m.food+"/merge",
+		map[string]string{"into": m.travel},
+		http.StatusOK,
+		nil,
+	)
 
-	if got := amountsByAccount(m.h.Transaction(tx)); got[m.travel] != 700 || got[m.transport] != 300 || got[m.checking] != -1000 {
+	if got := amountsByAccount(
+		m.h.Transaction(tx),
+	); got[m.travel] != 700 || got[m.transport] != 300 ||
+		got[m.checking] != -1000 {
 		t.Fatalf("postings = %v", got)
 	}
 }
@@ -123,7 +170,13 @@ func TestMergeRejections(t *testing.T) {
 	t.Parallel()
 	m := newMergeBooks(t)
 	closed := m.h.Account("Closed", "expense", "", nil)
-	m.h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+	m.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+closed+"/close",
+		map[string]string{"closed_on": "2026-10-31"},
+		http.StatusOK,
+		nil,
+	)
 
 	for _, c := range []struct {
 		name, from, into, code string
@@ -141,7 +194,12 @@ func TestMergeRejections(t *testing.T) {
 				field = ""
 			}
 
-			m.h.ExpectProblem(m.merge(c.from, c.into), http.StatusUnprocessableEntity, c.code, field)
+			m.h.ExpectProblem(
+				m.merge(c.from, c.into),
+				http.StatusUnprocessableEntity,
+				c.code,
+				field,
+			)
 			m.requireClosedOn(t, "", c.from)
 		})
 	}

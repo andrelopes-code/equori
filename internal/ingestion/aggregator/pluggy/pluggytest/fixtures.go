@@ -105,7 +105,8 @@ func (s *Server) SetReservedAmount(accountID, identification string, amount clie
 		}
 
 		for i := range a.BankData.ReservedBalances {
-			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification && len(r.AvailableAmounts) > 0 {
+			if r := &a.BankData.ReservedBalances[i]; r.Identification == identification &&
+				len(r.AvailableAmounts) > 0 {
 				r.AvailableAmounts[0].Amount = amount
 			}
 		}
@@ -137,7 +138,10 @@ func (s *Server) RemoveReservedBalance(accountID, identification string) {
 
 	s.eachAccount(accountID, func(a *client.Account) {
 		if a.BankData != nil {
-			a.BankData.ReservedBalances = slices.DeleteFunc(a.BankData.ReservedBalances, func(r client.ReservedBalance) bool { return r.Identification == identification })
+			a.BankData.ReservedBalances = slices.DeleteFunc(
+				a.BankData.ReservedBalances,
+				func(r client.ReservedBalance) bool { return r.Identification == identification },
+			)
 		}
 	})
 }
@@ -209,7 +213,10 @@ func (s *Server) RemoveTransaction(accountID, id string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.transactions[accountID] = slices.DeleteFunc(s.transactions[accountID], func(x client.Transaction) bool { return x.ID == id })
+	s.transactions[accountID] = slices.DeleteFunc(
+		s.transactions[accountID],
+		func(x client.Transaction) bool { return x.ID == id },
+	)
 }
 
 // FailNext answers the next n requests with status; 429 carries Retry-After: 7.

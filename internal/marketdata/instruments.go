@@ -86,7 +86,10 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 
 	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
 	if errors.Is(err, ErrUnknownInstrument) || (err == nil && quote.Type != domain.TypeCurrency) {
-		return Instrument{}, &domain.FieldError{Field: "quote_currency", Message: "must be a currency"}
+		return Instrument{}, &domain.FieldError{
+			Field:   "quote_currency",
+			Message: "must be a currency",
+		}
 	}
 
 	if err != nil {
@@ -217,8 +220,15 @@ func (m *Module) insertInstrument(ctx context.Context, in Instrument) error {
 	quoteCode := string(in.QuoteCurrency)
 
 	n, err := q.InsertInstrument(ctx, postgres.InsertInstrumentParams{
-		Code: string(in.Code), InstrumentType: in.Type, Scale: int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
-		Name: in.Name, QuoteCurrency: &quoteCode, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
+		Code: string(
+			in.Code,
+		),
+		InstrumentType: in.Type,
+		Scale:          int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
+		Name:           in.Name,
+		QuoteCurrency:  &quoteCode,
+		Exchange:       optional(in.Exchange),
+		Subtype:        optional(in.Subtype),
 	})
 	if err != nil {
 		return fmt.Errorf("insert instrument: %w", err)
@@ -248,7 +258,12 @@ func (m *Module) updateInstrument(ctx context.Context, in Instrument, replaceSym
 	q := m.q.WithTx(tx)
 
 	n, err := q.UpdateInstrument(ctx, postgres.UpdateInstrumentParams{
-		Code: string(in.Code), Name: in.Name, Exchange: optional(in.Exchange), Subtype: optional(in.Subtype),
+		Code: string(
+			in.Code,
+		),
+		Name:     in.Name,
+		Exchange: optional(in.Exchange),
+		Subtype:  optional(in.Subtype),
 	})
 	if err != nil {
 		return fmt.Errorf("update instrument: %w", err)
@@ -268,7 +283,12 @@ func (m *Module) updateInstrument(ctx context.Context, in Instrument, replaceSym
 }
 
 // storeSymbols replaces the symbols of code with symbols, inserted in key order.
-func storeSymbols(ctx context.Context, q *postgres.Queries, code money.Currency, symbols map[string]string) error {
+func storeSymbols(
+	ctx context.Context,
+	q *postgres.Queries,
+	code money.Currency,
+	symbols map[string]string,
+) error {
 	if err := q.DeleteInstrumentSymbols(ctx, string(code)); err != nil {
 		return fmt.Errorf("delete instrument symbols: %w", err)
 	}
@@ -293,7 +313,10 @@ func (m *Module) checkSymbolSources(symbols map[string]string) error {
 			return ok && src.ID() == key
 		})
 		if !reads {
-			return &domain.FieldError{Field: "symbols." + key, Message: "is not a source that reads a symbol"}
+			return &domain.FieldError{
+				Field:   "symbols." + key,
+				Message: "is not a source that reads a symbol",
+			}
 		}
 	}
 
@@ -329,7 +352,12 @@ func optional(s string) *string {
 }
 
 func toInstrument(r postgres.MarketdataInstrument) Instrument {
-	in := Instrument{Code: money.Currency(r.Code), Type: r.InstrumentType, Scale: int(r.Scale), Name: r.Name}
+	in := Instrument{
+		Code:  money.Currency(r.Code),
+		Type:  r.InstrumentType,
+		Scale: int(r.Scale),
+		Name:  r.Name,
+	}
 	if r.QuoteCurrency != nil {
 		in.QuoteCurrency = money.Currency(*r.QuoteCurrency)
 	}

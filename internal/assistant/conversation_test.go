@@ -20,7 +20,13 @@ type conversationList struct {
 	NextCursor string `json:"next_cursor"`
 }
 
-func newTurn(t *testing.T, h *apitest.Harness, c *http.Client, now *atomic.Int64, text string) string {
+func newTurn(
+	t *testing.T,
+	h *apitest.Harness,
+	c *http.Client,
+	now *atomic.Int64,
+	text string,
+) string {
 	t.Helper()
 	now.Add(1)
 
@@ -29,7 +35,11 @@ func newTurn(t *testing.T, h *apitest.Harness, c *http.Client, now *atomic.Int64
 	var turn struct {
 		ConversationID string `json:"conversation_id"`
 	}
-	if err := json.Unmarshal([]byte(parseSSE(r.Body)[0].Data), &turn); err != nil || turn.ConversationID == "" {
+	if err := json.Unmarshal(
+		[]byte(parseSSE(r.Body)[0].Data),
+		&turn,
+	); err != nil ||
+		turn.ConversationID == "" {
 		t.Fatalf("turn = %s, %v", r.Body, err)
 	}
 
@@ -46,8 +56,13 @@ func conversationHarness(t *testing.T, replies int) (*apitest.Harness, *atomic.I
 
 	var tick atomic.Int64
 	start := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
-	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", steps...)),
-		apitest.Clock(func() time.Time { return start.Add(time.Duration(tick.Load()) * time.Minute) }))
+	h := apitest.New(
+		t,
+		apitest.LLM(llmtest.New("aistudio", steps...)),
+		apitest.Clock(
+			func() time.Time { return start.Add(time.Duration(tick.Load()) * time.Minute) },
+		),
+	)
 
 	return h, &tick
 }
@@ -60,20 +75,44 @@ func TestConversationListAndDelete(t *testing.T) {
 	var page conversationList
 	h.MustDo(http.MethodGet, "/api/v1/assistant/conversations?limit=1", nil, http.StatusOK, &page)
 
-	if len(page.Items) != 1 || page.Items[0].ID != second || page.Items[0].Title != domain.Title("segunda conversa") || page.NextCursor == "" {
+	if len(page.Items) != 1 || page.Items[0].ID != second ||
+		page.Items[0].Title != domain.Title("segunda conversa") ||
+		page.NextCursor == "" {
 		t.Fatalf("page 1 = %+v", page)
 	}
 
 	var next conversationList
-	h.MustDo(http.MethodGet, "/api/v1/assistant/conversations?limit=1&cursor="+page.NextCursor, nil, http.StatusOK, &next)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/assistant/conversations?limit=1&cursor="+page.NextCursor,
+		nil,
+		http.StatusOK,
+		&next,
+	)
 
 	if len(next.Items) != 1 || next.Items[0].ID != first || next.NextCursor != "" {
 		t.Fatalf("page 2 = %+v", next)
 	}
 
-	h.MustDo(http.MethodDelete, "/api/v1/assistant/conversations/"+first, nil, http.StatusNoContent, nil)
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/assistant/conversations/"+first, nil), http.StatusNotFound, "conversation_not_found", "")
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/assistant/conversations/"+first, nil), http.StatusNotFound, "conversation_not_found", "")
+	h.MustDo(
+		http.MethodDelete,
+		"/api/v1/assistant/conversations/"+first,
+		nil,
+		http.StatusNoContent,
+		nil,
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/assistant/conversations/"+first, nil),
+		http.StatusNotFound,
+		"conversation_not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/assistant/conversations/"+first, nil),
+		http.StatusNotFound,
+		"conversation_not_found",
+		"",
+	)
 }
 
 // S141: deleting all conversations leaves another book's untouched.
@@ -87,7 +126,12 @@ func TestConversationDeleteAll(t *testing.T) {
 	var mine, hers conversationList
 	h.MustDo(http.MethodGet, "/api/v1/assistant/conversations", nil, http.StatusOK, &mine)
 
-	if r := h.Call(other, http.MethodGet, "/api/v1/assistant/conversations", nil); r.Status != http.StatusOK {
+	if r := h.Call(
+		other,
+		http.MethodGet,
+		"/api/v1/assistant/conversations",
+		nil,
+	); r.Status != http.StatusOK {
 		t.Fatalf("status = %d", r.Status)
 	} else {
 		r.Decode(t, &hers)

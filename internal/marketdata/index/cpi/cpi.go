@@ -74,7 +74,8 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 	var out []index.Rate
 	for i := 1; i < len(levels); i++ {
 		prev, cur := levels[i-1], levels[i]
-		if !cur.month.Equal(prev.month.AddDate(0, 1, 0)) || cur.month.Before(from) || cur.month.After(to) {
+		if !cur.month.Equal(prev.month.AddDate(0, 1, 0)) || cur.month.Before(from) ||
+			cur.month.After(to) {
 			continue
 		}
 
@@ -131,7 +132,12 @@ func readEurostat(ctx context.Context, s Source, from, to time.Time) ([]level, e
 		"sinceTimePeriod": {from.Format(monthLayout)}, "untilTimePeriod": {to.Format(monthLayout)},
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.base+"/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?"+q.Encode(), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		s.base+"/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?"+q.Encode(),
+		nil,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}

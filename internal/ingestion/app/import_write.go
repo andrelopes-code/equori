@@ -15,7 +15,13 @@ import (
 
 // create records the transactions of new lines. A line the ledger refuses fails a file
 // import; in a sync it waits for review and the other lines are created.
-func (s *Service) create(ctx context.Context, booksID int64, sync bool, creates []NewLine, created []*domain.ExternalRecord) error {
+func (s *Service) create(
+	ctx context.Context,
+	booksID int64,
+	sync bool,
+	creates []NewLine,
+	created []*domain.ExternalRecord,
+) error {
 	for {
 		ids, err := s.ledger.RecordImported(ctx, booksID, creates)
 
@@ -23,12 +29,27 @@ func (s *Service) create(ctx context.Context, booksID int64, sync bool, creates 
 		switch {
 		case ok && sync:
 			created[rejected.Index].State = domain.StateNeedsReview
-			creates, created = slices.Delete(creates, rejected.Index, rejected.Index+1), slices.Delete(created, rejected.Index, rejected.Index+1)
+			creates, created = slices.Delete(
+				creates,
+				rejected.Index,
+				rejected.Index+1,
+			), slices.Delete(
+				created,
+				rejected.Index,
+				rejected.Index+1,
+			)
 
 			continue
 		case ok:
 			rec := created[rejected.Index]
-			return fileError(fmt.Sprintf("line dated %s for %d: %v", rec.Date.Format(time.DateOnly), rec.Amount, rejected.Reason))
+			return fileError(
+				fmt.Sprintf(
+					"line dated %s for %d: %v",
+					rec.Date.Format(time.DateOnly),
+					rec.Amount,
+					rejected.Reason,
+				),
+			)
 		case err != nil:
 			return err
 		}
@@ -43,7 +64,9 @@ func (s *Service) create(ctx context.Context, booksID int64, sync bool, creates 
 
 // withFacts copies what an aggregator reports about a line onto its record.
 func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
-	rec.ExternalStatus, rec.DueDate, rec.Installment, rec.BalanceAfter, rec.Raw = domain.ExternalStatusOf(r), r.DueDate, r.Installment, r.BalanceAfter, r.Raw
+	rec.ExternalStatus, rec.DueDate, rec.Installment, rec.BalanceAfter, rec.Raw = domain.ExternalStatusOf(
+		r,
+	), r.DueDate, r.Installment, r.BalanceAfter, r.Raw
 	rec.LineKind = r.Kind
 	rec.ReportedAmount, rec.ReportedOn = r.Amount, r.Date
 
@@ -62,7 +85,13 @@ func withFacts(rec *domain.ExternalRecord, r domain.NormalizedRecord) {
 // A reconciled posting and an amount change stay out of the ledger and are described on
 // the record. reported is true when the line differs from the stored facts, changed when the
 // ledger took the difference or the record's unapplied change text is new (P12 A147).
-func (s *Service) update(ctx context.Context, sync bool, batchID uuid.UUID, rec *domain.ExternalRecord, r domain.NormalizedRecord) (reported, changed bool, err error) {
+func (s *Service) update(
+	ctx context.Context,
+	sync bool,
+	batchID uuid.UUID,
+	rec *domain.ExternalRecord,
+	r domain.NormalizedRecord,
+) (reported, changed bool, err error) {
 	if !sync || (rec.State != domain.StateMatched && rec.State != domain.StateCreated) {
 		return false, false, nil
 	}
@@ -117,11 +146,22 @@ func (s *Service) updatePosting(
 	r domain.NormalizedRecord,
 	retype bool,
 ) (note string, posted, kept bool, err error) {
-	posted, err = s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, r.Pending, r.DueDate, r.Kind)
+	posted, err = s.ledger.UpdateImportedPosting(
+		ctx,
+		rec.BooksID,
+		rec.ID,
+		r.Pending,
+		r.DueDate,
+		r.Kind,
+	)
 
 	switch {
 	case errors.Is(err, ErrReconciled):
-		note = "the aggregator reports the line " + strings.ToLower(domain.ExternalStatusOf(r)) + billNote(r.DueDate) + "; the posting is reconciled and keeps its status and statement"
+		note = "the aggregator reports the line " + strings.ToLower(
+			domain.ExternalStatusOf(r),
+		) + billNote(
+			r.DueDate,
+		) + "; the posting is reconciled and keeps its status and statement"
 		rec.ReviewReason = domain.ReviewChanged
 		retype = false
 	case errors.Is(err, ErrNotRetypable):
@@ -172,7 +212,12 @@ func recordUpdated(
 // (A102) and reports whether the ledger took them. A line equal to the ledger's values needs
 // nothing. A reconciled posting keeps them: the record describes the change and is flagged
 // with review reason changed. An installment keeps the amount its plan fixes.
-func (s *Service) followLine(ctx context.Context, batchID uuid.UUID, rec *domain.ExternalRecord, r domain.NormalizedRecord) (string, bool, error) {
+func (s *Service) followLine(
+	ctx context.Context,
+	batchID uuid.UUID,
+	rec *domain.ExternalRecord,
+	r domain.NormalizedRecord,
+) (string, bool, error) {
 	if rec.Amount == r.Amount && rec.Date.Equal(r.Date) {
 		return "", false, nil
 	}
@@ -182,11 +227,27 @@ func (s *Service) followLine(ctx context.Context, batchID uuid.UUID, rec *domain
 		return kept, false, nil
 	}
 
-	err := s.ledger.ConfirmLine(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Amount, r.Date)
+	err := s.ledger.ConfirmLine(
+		ctx,
+		rec.BooksID,
+		rec.TransactionID,
+		rec.AccountID,
+		r.Amount,
+		r.Date,
+	)
 	if errors.Is(err, ErrReconciled) && r.Amount == rec.Amount {
 		// Only the date changed: a card posting keeps its statement (A147 rule 3).
-		if err = s.ledger.MoveReconciledDate(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, r.Date); err == nil {
-			rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{Amount: rec.Amount, On: rec.Date}, batchID
+		if err = s.ledger.MoveReconciledDate(
+			ctx,
+			rec.BooksID,
+			rec.TransactionID,
+			rec.AccountID,
+			r.Date,
+		); err == nil {
+			rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{
+				Amount: rec.Amount,
+				On:     rec.Date,
+			}, batchID
 			rec.Date, rec.ReviewReason = r.Date, ""
 
 			return "", true, nil
@@ -203,7 +264,10 @@ func (s *Service) followLine(ctx context.Context, batchID uuid.UUID, rec *domain
 		return "", false, err
 	}
 
-	rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{Amount: rec.Amount, On: rec.Date}, batchID
+	rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{
+		Amount: rec.Amount,
+		On:     rec.Date,
+	}, batchID
 	rec.Amount, rec.Date, rec.ReviewReason = r.Amount, r.Date, ""
 
 	return "", true, nil
@@ -227,7 +291,9 @@ func (s *Service) billMatched(ctx context.Context, rec *domain.ExternalRecord, p
 	switch {
 	case errors.Is(err, ErrReconciled):
 		rec.ReviewReason = domain.ReviewChanged
-		rec.UnappliedChange = "the aggregator reports the line" + billNote(rec.DueDate) + "; the posting is reconciled and keeps its status and statement"
+		rec.UnappliedChange = "the aggregator reports the line" + billNote(
+			rec.DueDate,
+		) + "; the posting is reconciled and keeps its status and statement"
 	case err != nil && !errors.Is(err, ErrNotFound):
 		return err
 	}

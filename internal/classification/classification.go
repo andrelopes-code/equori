@@ -25,7 +25,12 @@ type Module struct {
 	ledger *ledger.Module
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, log *slog.Logger) *Module {
+func New(
+	pool *pgxpool.Pool,
+	dispatcher *outbox.Dispatcher,
+	l *ledger.Module,
+	log *slog.Logger,
+) *Module {
 	port := ledgerPort{l}
 
 	svc := app.NewService(postgres.NewRepository(pool), port)
@@ -44,16 +49,28 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // Tools returns the classification module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
-	return tool.Group{Tools: toolapi.Tools(m.svc, m.names, m.ledger.Today), Errors: tool.FromProblem(httpapi.ToProblem)}
+	return tool.Group{
+		Tools:  toolapi.Tools(m.svc, m.names, m.ledger.Today),
+		Errors: tool.FromProblem(httpapi.ToProblem),
+	}
 }
 
-func (m *Module) names(ctx context.Context, booksID int64) (categories, payees map[uuid.UUID]string, err error) {
+func (m *Module) names(
+	ctx context.Context,
+	booksID int64,
+) (categories, payees map[uuid.UUID]string, err error) {
 	accounts, ps, err := m.ledger.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	categories, payees = make(map[uuid.UUID]string, len(accounts)), make(map[uuid.UUID]string, len(ps))
+	categories, payees = make(
+		map[uuid.UUID]string,
+		len(accounts),
+	), make(
+		map[uuid.UUID]string,
+		len(ps),
+	)
 	for _, a := range accounts {
 		categories[a.ID] = a.Name
 	}

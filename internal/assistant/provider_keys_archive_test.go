@@ -35,7 +35,12 @@ func TestProviderKeysTravelInTheArchive(t *testing.T) {
 	t.Parallel()
 
 	source := harness(t, newFakes(), apitest.Today("2026-10-26"))
-	p := createProvider(t, source, source.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"})
+	p := createProvider(
+		t,
+		source,
+		source.Client,
+		map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"},
+	)
 	setChain(t, source, p.ID)
 
 	archive := exportWith(t, source, map[string]any{"credentials_passphrase": archivePassphrase})
@@ -59,7 +64,12 @@ func TestProviderKeysTravelInTheArchive(t *testing.T) {
 
 	target := harness(t, f, apitest.Today("2026-10-26"), apitest.SecretKeys(otherKey, ""))
 
-	r := target.UploadWith(importURL, map[string]string{"passphrase": archivePassphrase}, "export.zip", archive)
+	r := target.UploadWith(
+		importURL,
+		map[string]string{"passphrase": archivePassphrase},
+		"export.zip",
+		archive,
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
@@ -76,7 +86,9 @@ func TestProviderKeysTravelInTheArchive(t *testing.T) {
 	}
 
 	ctx := auth.WithBooksID(t.Context(), target.OwnerID())
-	req := llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}}
+	req := llm.Request{
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
+	}
 
 	resp, err := target.App.LLM.Use(assistant.ChatUse).Generate(ctx, req)
 	if err != nil || resp.Message.Parts[0].Text != "restored" {
@@ -90,7 +102,12 @@ func TestProviderKeysSkippedOrRefused(t *testing.T) {
 	t.Parallel()
 
 	source := harness(t, newFakes(), apitest.Today("2026-10-26"))
-	p := createProvider(t, source, source.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"})
+	p := createProvider(
+		t,
+		source,
+		source.Client,
+		map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-secret"},
+	)
 	setChain(t, source, p.ID)
 	source.MustDo(http.MethodPut, "/api/v1/assistant/usage/limits", map[string]any{
 		"provider_id": p.ID, "model": groqModel, "requests_per_day": 50,
@@ -99,16 +116,34 @@ func TestProviderKeysSkippedOrRefused(t *testing.T) {
 	archive := exportWith(t, source, map[string]any{"credentials_passphrase": archivePassphrase})
 
 	target := harness(t, newFakes(), apitest.Today("2026-10-26"), apitest.SecretKeys(otherKey, ""))
-	target.ExpectProblem(target.Upload(importURL, "export.zip", archive), http.StatusUnprocessableEntity, "passphrase_required", "passphrase")
 	target.ExpectProblem(
-		target.UploadWith(importURL, map[string]string{"passphrase": "wrong horse battery"}, "export.zip", archive),
-		http.StatusUnprocessableEntity, "passphrase_invalid", "passphrase")
+		target.Upload(importURL, "export.zip", archive),
+		http.StatusUnprocessableEntity,
+		"passphrase_required",
+		"passphrase",
+	)
+	target.ExpectProblem(
+		target.UploadWith(
+			importURL,
+			map[string]string{"passphrase": "wrong horse battery"},
+			"export.zip",
+			archive,
+		),
+		http.StatusUnprocessableEntity,
+		"passphrase_invalid",
+		"passphrase",
+	)
 
 	if n := countRows(t, target, "assistant_provider"); n != 0 {
 		t.Fatalf("providers after the refusals = %d, want 0", n)
 	}
 
-	r := target.UploadWith(importURL, map[string]string{"skip_credentials": "true"}, "export.zip", archive)
+	r := target.UploadWith(
+		importURL,
+		map[string]string{"skip_credentials": "true"},
+		"export.zip",
+		archive,
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
@@ -124,7 +159,8 @@ func TestProviderKeysSkippedOrRefused(t *testing.T) {
 		t.Fatalf("providers = %+v, want Groq without its key", got)
 	}
 
-	if countRows(t, target, "assistant_chain_target") != 1 || countRows(t, target, "assistant_usage_limit") != 1 {
+	if countRows(t, target, "assistant_chain_target") != 1 ||
+		countRows(t, target, "assistant_usage_limit") != 1 {
 		t.Fatal("the chain target or the limit is missing after the skipped import")
 	}
 }
@@ -158,10 +194,24 @@ func TestUnreadableProviderKeyIsLeftOut(t *testing.T) {
 	t.Parallel()
 
 	source := harness(t, newFakes(), apitest.Today("2026-10-26"))
-	createProvider(t, source, source.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-good"})
-	bad := createProvider(t, source, source.Client, map[string]any{"preset": "mistral", "name": "Mistral", "key": "ms-bad"})
+	createProvider(
+		t,
+		source,
+		source.Client,
+		map[string]any{"preset": "groq", "name": "Groq", "key": "gsk-good"},
+	)
+	bad := createProvider(
+		t,
+		source,
+		source.Client,
+		map[string]any{"preset": "mistral", "name": "Mistral", "key": "ms-bad"},
+	)
 
-	if _, err := source.Pool.Exec(t.Context(), `UPDATE assistant_provider SET sealed_key = decode(repeat('ab', 64), 'hex') WHERE id = $1`, bad.ID); err != nil {
+	if _, err := source.Pool.Exec(
+		t.Context(),
+		`UPDATE assistant_provider SET sealed_key = decode(repeat('ab', 64), 'hex') WHERE id = $1`,
+		bad.ID,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,7 +219,12 @@ func TestUnreadableProviderKeyIsLeftOut(t *testing.T) {
 
 	target := harness(t, newFakes(), apitest.Today("2026-10-26"), apitest.SecretKeys(otherKey, ""))
 
-	r := target.UploadWith(importURL, map[string]string{"passphrase": archivePassphrase}, "export.zip", archive)
+	r := target.UploadWith(
+		importURL,
+		map[string]string{"passphrase": archivePassphrase},
+		"export.zip",
+		archive,
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("import = %d: %s", r.Status, r.Body)
 	}
@@ -184,9 +239,19 @@ func TestUnreadableProviderKeyIsLeftOut(t *testing.T) {
 
 func setChain(t *testing.T, h *apitest.Harness, providerID string) {
 	t.Helper()
-	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{"targets": []any{
-		map[string]any{"provider_id": providerID, "model": groqModel, "capabilities": []string{"tools"}},
-	}}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/assistant/uses/assistant.chat/chain",
+		map[string]any{"targets": []any{
+			map[string]any{
+				"provider_id":  providerID,
+				"model":        groqModel,
+				"capabilities": []string{"tools"},
+			},
+		}},
+		http.StatusOK,
+		nil,
+	)
 }
 
 func ownProviders(t *testing.T, h *apitest.Harness) []providerView {

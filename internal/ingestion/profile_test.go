@@ -30,11 +30,20 @@ func TestCSVProfile(t *testing.T) {
 	path := "/api/v1/accounts/" + checking + "/csv-profile"
 	h.ExpectProblem(h.Do(http.MethodGet, path, nil), http.StatusNotFound, "not_found", "")
 
-	body := map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "Descrição"}
+	body := map[string]any{
+		"date_column":        "Data",
+		"date_layout":        "DD/MM/YYYY",
+		"amount_column":      "Valor",
+		"decimal_separator":  ".",
+		"description_column": "Descrição",
+	}
 	var saved csvProfile
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
 
-	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" || saved.AmountColumn != "Valor" || saved.Encoding != "auto" || saved.GroupSeparator != "," {
+	if saved.Delimiter != "comma" || saved.HeaderRows != 1 || saved.AmountSign != "as_is" ||
+		saved.AmountColumn != "Valor" ||
+		saved.Encoding != "auto" ||
+		saved.GroupSeparator != "," {
 		t.Fatalf("saved = %+v", saved)
 	}
 
@@ -46,14 +55,29 @@ func TestCSVProfile(t *testing.T) {
 	}
 
 	body["delimiter"], body["header_rows"] = "semicolon", 0
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "date_column")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"date_column",
+	)
 	body["header_rows"], body["debit_column"], body["credit_column"] = 1, "Débito", "Crédito"
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "amount_column")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"amount_column",
+	)
 
 	delete(body, "debit_column")
 	delete(body, "credit_column")
 	body["encoding"] = "ebcdic"
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "encoding")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"encoding",
+	)
 	body["encoding"] = "windows-1251"
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
 
@@ -62,11 +86,26 @@ func TestCSVProfile(t *testing.T) {
 	}
 
 	body["group_separator"] = ";"
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusBadRequest, "invalid_request", "group_separator")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusBadRequest,
+		"invalid_request",
+		"group_separator",
+	)
 	body["group_separator"], body["decimal_separator"] = ".", "."
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "group_separator")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"group_separator",
+	)
 	body["group_separator"], body["decimal_separator"], body["date_layout"] = "'", ".", "DD/DD/YYYY"
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "date_layout")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"date_layout",
+	)
 	body["date_layout"] = "DD.MM.YYYY"
 	h.MustDo(http.MethodPut, path, body, http.StatusOK, &saved)
 
@@ -88,9 +127,29 @@ func TestCSVProfile(t *testing.T) {
 	}
 
 	delete(body, "debit_marker")
-	h.ExpectProblem(h.Do(http.MethodPut, path, body), http.StatusUnprocessableEntity, "validation_failed", "debit_marker")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"debit_marker",
+	)
 
 	other := h.Login("other@example.com")
-	h.ExpectProblem(h.Call(other, http.MethodPut, path, map[string]any{"date_column": "Data", "date_layout": "DD/MM/YYYY", "amount_column": "Valor", "decimal_separator": ".", "description_column": "D"}),
-		http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Call(
+			other,
+			http.MethodPut,
+			path,
+			map[string]any{
+				"date_column":        "Data",
+				"date_layout":        "DD/MM/YYYY",
+				"amount_column":      "Valor",
+				"decimal_separator":  ".",
+				"description_column": "D",
+			},
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

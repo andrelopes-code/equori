@@ -68,7 +68,12 @@ func TestVerifyRegistration(t *testing.T) {
 		{name: "valid eddsa", alg: AlgEdDSA},
 		{name: "valid rs256", alg: AlgRS256},
 		{name: "type get", alg: AlgES256, typ: "webauthn.get", wantErr: true},
-		{name: "another challenge", alg: AlgES256, chal: bytes.Repeat([]byte{8}, 32), wantErr: true},
+		{
+			name:    "another challenge",
+			alg:     AlgES256,
+			chal:    bytes.Repeat([]byte{8}, 32),
+			wantErr: true,
+		},
 		{name: "another origin", alg: AlgES256, origin: "https://other.example", wantErr: true},
 		{name: "another rp id", alg: AlgES256, rpID: "other.example", wantErr: true},
 		{name: "no user presence", alg: AlgES256, flags: 0x40, wantErr: true},
@@ -173,7 +178,11 @@ func TestVerifyAssertion(t *testing.T) {
 					flags = *tt.flags
 				}
 
-				client := key.clientData(orDefault(tt.typ, "webauthn.get"), chal, orDefault(tt.origin, testOrigin))
+				client := key.clientData(
+					orDefault(tt.typ, "webauthn.get"),
+					chal,
+					orDefault(tt.origin, testOrigin),
+				)
 				data := key.assertionData(orDefault(tt.rpID, testRPID), flags, 5)
 
 				sig := key.sign(data, client)
@@ -181,7 +190,15 @@ func TestVerifyAssertion(t *testing.T) {
 					sig[len(sig)-1] ^= 0xff
 				}
 
-				got, err := VerifyAssertion(client, data, sig, key.spki(t), alg, challenge, testOrigin)
+				got, err := VerifyAssertion(
+					client,
+					data,
+					sig,
+					key.spki(t),
+					alg,
+					challenge,
+					testOrigin,
+				)
 
 				if tt.wantErr {
 					if !errors.Is(err, ErrWebAuthn) {
@@ -285,7 +302,12 @@ func (k softKey) sign(authData, clientData []byte) []byte {
 		return ed25519.Sign(k.private.(ed25519.PrivateKey), msg)
 	case AlgRS256:
 		digest := sha256.Sum256(msg)
-		sig, _ := rsa.SignPKCS1v15(rand.Reader, k.private.(*rsa.PrivateKey), crypto.SHA256, digest[:])
+		sig, _ := rsa.SignPKCS1v15(
+			rand.Reader,
+			k.private.(*rsa.PrivateKey),
+			crypto.SHA256,
+			digest[:],
+		)
 
 		return sig
 	default:

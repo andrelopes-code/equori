@@ -19,12 +19,12 @@ func (explainCategorizationView) Values() []string {
 }
 
 type explainCategorizationIn struct {
-	View                explainCategorizationView `json:"view" jsonschema:"what to return"`
-	TransactionIDs      []string                  `json:"transaction_ids,omitzero" jsonschema:"for transactions: IDs from search_transactions; at most 50"`
-	From                tool.Date                 `json:"from,omitzero" jsonschema:"for statistics: first date"`
-	To                  tool.Date                 `json:"to,omitzero" jsonschema:"for statistics: last date"`
+	View                explainCategorizationView `json:"view"                          jsonschema:"what to return"`
+	TransactionIDs      []string                  `json:"transaction_ids,omitzero"      jsonschema:"for transactions: IDs from search_transactions; at most 50"`
+	From                tool.Date                 `json:"from,omitzero"                 jsonschema:"for statistics: first date"`
+	To                  tool.Date                 `json:"to,omitzero"                   jsonschema:"for statistics: last date"`
 	DescriptionContains string                    `json:"description_contains,omitzero" jsonschema:"for rule_preview: text the description must contain"`
-	CategoryID          string                    `json:"category_id,omitzero" jsonschema:"for rule_preview: category the rule would set"`
+	CategoryID          string                    `json:"category_id,omitzero"          jsonschema:"for rule_preview: category the rule would set"`
 }
 
 type categorizationView struct {
@@ -61,11 +61,23 @@ type explainCategorizationOut struct {
 func descriptionRule(name, text string, categoryID, payeeID uuid.UUID) (domain.Rule, error) {
 	actions := []domain.ActionDoc{{Type: string(domain.ActionSetCategory), CategoryID: categoryID}}
 	if payeeID != uuid.Nil {
-		actions = append(actions, domain.ActionDoc{Type: string(domain.ActionSetPayee), PayeeID: payeeID})
+		actions = append(
+			actions,
+			domain.ActionDoc{Type: string(domain.ActionSetPayee), PayeeID: payeeID},
+		)
 	}
 
-	return domain.RuleFromDocs(domain.Rule{Name: name, Enabled: true},
-		[]domain.ConditionDoc{{Field: string(domain.FieldDescription), Operator: string(domain.OpContains), Value: text}}, actions)
+	return domain.RuleFromDocs(
+		domain.Rule{Name: name, Enabled: true},
+		[]domain.ConditionDoc{
+			{
+				Field:    string(domain.FieldDescription),
+				Operator: string(domain.OpContains),
+				Value:    text,
+			},
+		},
+		actions,
+	)
 }
 
 func explainCategorization(svc *app.Service) tool.Tool {
@@ -95,8 +107,17 @@ func explainCategorization(svc *app.Service) tool.Tool {
 // checkExplainFields requires the arguments that the view uses.
 func checkExplainFields(in explainCategorizationIn) error {
 	fields := []field{
-		{"transaction_ids", len(in.TransactionIDs) > 0}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
-		{"description_contains", in.DescriptionContains != ""}, {"category_id", in.CategoryID != ""},
+		{
+			"transaction_ids",
+			len(in.TransactionIDs) > 0,
+		},
+		{"from", !in.From.IsZero()},
+		{"to", !in.To.IsZero()},
+		{
+			"description_contains",
+			in.DescriptionContains != "",
+		},
+		{"category_id", in.CategoryID != ""},
 	}
 	name := "view " + string(in.View)
 
@@ -121,7 +142,10 @@ func explainTransactions(
 	in explainCategorizationIn,
 ) (explainCategorizationOut, error) {
 	if len(in.TransactionIDs) > 50 {
-		return explainCategorizationOut{}, tool.InvalidArgument("transaction_ids", "must have 1 to 50 ids")
+		return explainCategorizationOut{}, tool.InvalidArgument(
+			"transaction_ids",
+			"must have 1 to 50 ids",
+		)
 	}
 
 	var err error
@@ -142,7 +166,11 @@ func explainTransactions(
 
 	ruleNames := map[uuid.UUID]string{}
 	for _, r := range recs {
-		v := categorizationView{TransactionID: r.TransactionID.String(), Method: r.Method, DecidedAt: r.DecidedAt.Format(time.RFC3339)}
+		v := categorizationView{
+			TransactionID: r.TransactionID.String(),
+			Method:        r.Method,
+			DecidedAt:     r.DecidedAt.Format(time.RFC3339),
+		}
 		if r.RuleID != uuid.Nil {
 			n, ok := ruleNames[r.RuleID]
 			if !ok {
@@ -178,7 +206,14 @@ func explainStatistics(
 	st, err := svc.Statistics(ctx, booksID, in.From.Time, in.To.Time)
 
 	return explainCategorizationOut{Statistics: statisticsView{
-		From: in.From, To: in.To, Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
+		From:          in.From,
+		To:            in.To,
+		Total:         st.Total,
+		Rule:          st.Rule,
+		Source:        st.Source,
+		History:       st.History,
+		Manual:        st.Manual,
+		Uncategorized: st.Uncategorized,
 	}}, err
 }
 
@@ -202,6 +237,8 @@ func explainRulePreview(
 	p, err := svc.PreviewRule(ctx, booksID, rule)
 
 	return explainCategorizationOut{RulePreview: rulePreviewView{
-		DescriptionContains: in.DescriptionContains, WouldCategorize: p.WouldCategorize.Count, Conflicts: p.Conflicts.Count,
+		DescriptionContains: in.DescriptionContains,
+		WouldCategorize:     p.WouldCategorize.Count,
+		Conflicts:           p.Conflicts.Count,
 	}}, err
 }

@@ -119,7 +119,13 @@ func positionDays(all []Posting, securities map[uuid.UUID]Security) []PositionDa
 			continue
 		}
 
-		day := PositionDay{AccountID: p.AccountID, Instrument: securities[p.AccountID].Instrument, Date: p.Date, Quantity: p.Quantity, CostBasis: p.Weight}
+		day := PositionDay{
+			AccountID:  p.AccountID,
+			Instrument: securities[p.AccountID].Instrument,
+			Date:       p.Date,
+			Quantity:   p.Quantity,
+			CostBasis:  p.Weight,
+		}
 		if n > 0 && days[n-1].AccountID == p.AccountID {
 			day.Quantity += days[n-1].Quantity
 			day.CostBasis += days[n-1].CostBasis
@@ -148,9 +154,17 @@ func realizedResults(f Facts, securities map[uuid.UUID]Security, j Jurisdiction)
 		}
 
 		results = append(results, RealizedResult{
-			TransactionID: t.TransactionID, AccountID: t.AccountID, Instrument: s.Instrument,
-			Date: t.Date, Month: time.Date(t.Date.Year(), t.Date.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Quantity: t.Quantity, Cost: t.Cost, Proceeds: proceeds, Result: proceeds - t.Cost, TaxClass: taxClass, Currency: f.Currency,
+			TransactionID: t.TransactionID,
+			AccountID:     t.AccountID,
+			Instrument:    s.Instrument,
+			Date:          t.Date,
+			Month:         time.Date(t.Date.Year(), t.Date.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Quantity:      t.Quantity,
+			Cost:          t.Cost,
+			Proceeds:      proceeds,
+			Result:        proceeds - t.Cost,
+			TaxClass:      taxClass,
+			Currency:      f.Currency,
 		})
 	}
 
@@ -168,8 +182,15 @@ func incomeEvents(f Facts, securities map[uuid.UUID]Security, j Jurisdiction) []
 		}
 
 		events = append(events, IncomeEvent{
-			TransactionID: in.TransactionID, AccountID: in.AccountID, Instrument: securities[in.AccountID].Instrument, Date: in.Date,
-			Type: in.Type, TaxTreatment: treatment, Gross: in.Gross, Withheld: in.Withheld, Currency: f.Currency,
+			TransactionID: in.TransactionID,
+			AccountID:     in.AccountID,
+			Instrument:    securities[in.AccountID].Instrument,
+			Date:          in.Date,
+			Type:          in.Type,
+			TaxTreatment:  treatment,
+			Gross:         in.Gross,
+			Withheld:      in.Withheld,
+			Currency:      f.Currency,
 		})
 	}
 

@@ -84,7 +84,10 @@ func (r *Router) setCooldown(t Target, until time.Time, quota bool) {
 
 	old := r.cooldown[t]
 	if until.After(old.until) {
-		r.cooldown[t] = cooldown{until: until, quota: quota || old.quota && old.until.After(r.clk.Now())}
+		r.cooldown[t] = cooldown{
+			until: until,
+			quota: quota || old.quota && old.until.After(r.clk.Now()),
+		}
 	}
 }
 

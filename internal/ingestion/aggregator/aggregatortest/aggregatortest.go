@@ -86,7 +86,12 @@ func Run(t *testing.T, backend func(t *testing.T) Backend) {
 		b := backend(t)
 		b.AddLine("ordinary")
 
-		if got := line(t, b, "ordinary"); got.ReserveMove || got.ReserveName != "" || got.ReserveExternalID != "" {
+		if got := line(
+			t,
+			b,
+			"ordinary",
+		); got.ReserveMove || got.ReserveName != "" ||
+			got.ReserveExternalID != "" {
 			t.Fatalf("line = %+v, want no reserve", got)
 		}
 	})
@@ -124,7 +129,10 @@ func runParties(t *testing.T, backend func(t *testing.T) Backend) {
 	})
 	t.Run("a line names its counterparty", func(t *testing.T) {
 		b := backend(t)
-		b.AddCounterpartyLine("party-line", domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"})
+		b.AddCounterpartyLine(
+			"party-line",
+			domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"},
+		)
 
 		got := line(t, b, "party-line")
 		if got.Counterparty == nil {
@@ -172,7 +180,12 @@ func runReserves(t *testing.T, backend func(t *testing.T) Backend) {
 		b := backend(t)
 		b.AddUnreadableReserveLine("unreadable")
 
-		if got := line(t, b, "unreadable"); !got.ReserveMove || got.ReserveName != "" || got.ReserveExternalID != "" {
+		if got := line(
+			t,
+			b,
+			"unreadable",
+		); !got.ReserveMove || got.ReserveName != "" ||
+			got.ReserveExternalID != "" {
 			t.Fatalf("line = %+v, want a reserve move without a name", got)
 		}
 	})
@@ -181,7 +194,8 @@ func runReserves(t *testing.T, backend func(t *testing.T) Backend) {
 func accounts(t *testing.T, b Backend) []domain.ExternalAccount {
 	t.Helper()
 
-	listed, err := b.Aggregator().Accounts(context.Background(), integration, b.Credentials(), b.ItemID())
+	listed, err := b.Aggregator().
+		Accounts(context.Background(), integration, b.Credentials(), b.ItemID())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -209,7 +223,8 @@ func read(t *testing.T, b Backend, id string) (domain.AccountRead, error) {
 	from := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
 	to := time.Date(2026, 11, 30, 0, 0, 0, 0, time.UTC)
 
-	return b.Aggregator().ReadAccount(context.Background(), integration, b.Credentials(), b.ItemID(), id, from, to, nil, scale)
+	return b.Aggregator().
+		ReadAccount(context.Background(), integration, b.Credentials(), b.ItemID(), id, from, to, nil, scale)
 }
 
 func line(t *testing.T, b Backend, id string) domain.NormalizedRecord {

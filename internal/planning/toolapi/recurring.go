@@ -20,9 +20,9 @@ const (
 )
 
 type findRecurringIn struct {
-	PayeeID   string `json:"payee_id,omitzero" jsonschema:"keep the series of this payee"`
+	PayeeID   string `json:"payee_id,omitzero"   jsonschema:"keep the series of this payee"`
 	AccountID string `json:"account_id,omitzero" jsonschema:"keep the series of this account"`
-	Text      string `json:"text,omitzero" jsonschema:"keep series whose payee name or description contains this text; at most 100 characters"`
+	Text      string `json:"text,omitzero"       jsonschema:"keep series whose payee name or description contains this text; at most 100 characters"`
 }
 
 type seriesView struct {
@@ -53,7 +53,8 @@ func findRecurring(svc *app.Service, l Ledger) tool.Tool {
 			"Use it to answer which subscriptions or recurring bills the user has, and before proposing a subscription schedule. " +
 			"Do not use it to list schedules the user created; use list_schedules. " +
 			"schedule_id names the schedule that already covers a series.",
-		Effect: tool.ReadOnly, Idempotent: true,
+		Effect:     tool.ReadOnly,
+		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in findRecurringIn) (findRecurringOut, error) {
 		filter, err := decodeRecurringFilter(in)
 		if err != nil {
@@ -116,7 +117,8 @@ func seriesViews(
 		}
 
 		name := payees[s.PayeeID]
-		if !strings.Contains(textfold.String(name), text) && !strings.Contains(textfold.String(s.Key), text) {
+		if !strings.Contains(textfold.String(name), text) &&
+			!strings.Contains(textfold.String(s.Key), text) {
 			continue
 		}
 
@@ -131,16 +133,27 @@ func seriesViews(
 	return views, nil
 }
 
-func toSeriesView(s domain.Series, payee string, accounts map[uuid.UUID]Account) (seriesView, error) {
+func toSeriesView(
+	s domain.Series,
+	payee string,
+	accounts map[uuid.UUID]Account,
+) (seriesView, error) {
 	amount, err := moneyOf(s.LastAmount, accounts[s.AccountID].Instrument)
 	if err != nil {
 		return seriesView{}, err
 	}
 
 	v := seriesView{
-		Key: s.Key, Payee: payee, AccountID: s.AccountID.String(), Account: accountName(accounts, s.AccountID),
-		Category: accountName(accounts, s.CategoryID), Frequency: s.Frequency, Count: s.Count,
-		LastDate: tool.DateOf(s.LastDate), LastAmount: amount, NextDate: tool.DateOf(s.NextDate),
+		Key:            s.Key,
+		Payee:          payee,
+		AccountID:      s.AccountID.String(),
+		Account:        accountName(accounts, s.AccountID),
+		Category:       accountName(accounts, s.CategoryID),
+		Frequency:      s.Frequency,
+		Count:          s.Count,
+		LastDate:       tool.DateOf(s.LastDate),
+		LastAmount:     amount,
+		NextDate:       tool.DateOf(s.NextDate),
 		TransactionIDs: []string{},
 	}
 	if s.PayeeID != uuid.Nil {
@@ -163,7 +176,11 @@ func toSeriesView(s domain.Series, payee string, accounts map[uuid.UUID]Account)
 }
 
 // EncodeSeries encodes s as find_recurring encodes one element of its series.
-func EncodeSeries(s domain.Series, payee string, accounts map[uuid.UUID]Account) (json.RawMessage, error) {
+func EncodeSeries(
+	s domain.Series,
+	payee string,
+	accounts map[uuid.UUID]Account,
+) (json.RawMessage, error) {
 	v, err := toSeriesView(s, payee, accounts)
 	if err != nil {
 		return nil, err

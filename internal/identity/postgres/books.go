@@ -21,7 +21,12 @@ type booksCreated struct {
 }
 
 // CreateBooks publishes identity.books_created.v1 in the same transaction.
-func (r *Repository) CreateBooks(ctx context.Context, memberID int64, language, name, region string, base money.Currency) (int64, error) {
+func (r *Repository) CreateBooks(
+	ctx context.Context,
+	memberID int64,
+	language, name, region string,
+	base money.Currency,
+) (int64, error) {
 	var booksID int64
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
@@ -55,8 +60,16 @@ func (r *Repository) BooksName(ctx context.Context, booksID int64) (string, erro
 	return name, nil
 }
 
-func (r *Repository) UpdateBooksSettings(ctx context.Context, booksID int64, region string, timeZone, name *string) (string, error) {
-	stored, err := r.q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: region, TimeZone: timeZone, Name: name})
+func (r *Repository) UpdateBooksSettings(
+	ctx context.Context,
+	booksID int64,
+	region string,
+	timeZone, name *string,
+) (string, error) {
+	stored, err := r.q.UpdateBooksSettings(
+		ctx,
+		UpdateBooksSettingsParams{ID: booksID, Region: region, TimeZone: timeZone, Name: name},
+	)
 	if err != nil {
 		return "", notFound(err)
 	}
@@ -107,7 +120,10 @@ func (r *Repository) DeleteBooks(ctx context.Context, booksID, memberID int64, n
 
 		// The cascade deletes reconciled postings, which ledger_protect_reconciled refuses
 		// unless the transaction unlocks them.
-		if _, err := tx.Exec(ctx, `SELECT set_config('equori.unlock_reconciled', 'on', TRUE)`); err != nil {
+		if _, err := tx.Exec(
+			ctx,
+			`SELECT set_config('equori.unlock_reconciled', 'on', TRUE)`,
+		); err != nil {
 			return err
 		}
 
@@ -115,7 +131,10 @@ func (r *Repository) DeleteBooks(ctx context.Context, booksID, memberID int64, n
 	})
 }
 
-func (r *Repository) MemberBooks(ctx context.Context, memberID int64) ([]app.BooksMembership, error) {
+func (r *Repository) MemberBooks(
+	ctx context.Context,
+	memberID int64,
+) ([]app.BooksMembership, error) {
 	rows, err := r.q.ListMemberBooks(ctx, memberID)
 	if err != nil {
 		return nil, err
@@ -123,7 +142,10 @@ func (r *Repository) MemberBooks(ctx context.Context, memberID int64) ([]app.Boo
 
 	out := make([]app.BooksMembership, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, app.BooksMembership{ID: row.ID, Name: row.Name, Role: auth.BookRole(row.Role)})
+		out = append(
+			out,
+			app.BooksMembership{ID: row.ID, Name: row.Name, Role: auth.BookRole(row.Role)},
+		)
 	}
 
 	return out, nil

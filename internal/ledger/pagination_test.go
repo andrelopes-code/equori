@@ -68,13 +68,37 @@ func growingLists(t *testing.T) (*apitest.Harness, cardSetup, map[string]string)
 
 	h := c.h
 	for _, name := range []string{"Caixa", "Banco do Brasil", "Inter"} {
-		h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": name}, http.StatusCreated, nil)
-		h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": name}, http.StatusCreated, nil)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/institutions",
+			map[string]string{"name": name},
+			http.StatusCreated,
+			nil,
+		)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/payees",
+			map[string]string{"name": name},
+			http.StatusCreated,
+			nil,
+		)
 	}
 
 	tx := h.Record("2026-10-01", apitest.Posting(c.checking, -100), apitest.Posting(c.food, 100))
-	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-02", "tags": []string{"b", "a", "c"},
-		"postings": []map[string]any{apitest.Posting(c.checking, -1), apitest.Posting(c.food, 1)}}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions",
+		map[string]any{
+			"date": "2026-10-02",
+			"tags": []string{"b", "a", "c"},
+			"postings": []map[string]any{
+				apitest.Posting(c.checking, -1),
+				apitest.Posting(c.food, 1),
+			},
+		},
+		http.StatusCreated,
+		nil,
+	)
 	c.purchase("2026-10-14", 100)
 	c.purchase("2026-11-14", 100)
 	c.purchase("2026-12-14", 100)
@@ -130,7 +154,12 @@ func TestGrowingListsPaginate(t *testing.T) {
 				continue
 			}
 
-			h.ExpectProblem(h.Do(http.MethodGet, path+"?cursor="+cursor, nil), http.StatusBadRequest, "invalid_request", "cursor")
+			h.ExpectProblem(
+				h.Do(http.MethodGet, path+"?cursor="+cursor, nil),
+				http.StatusBadRequest,
+				"invalid_request",
+				"cursor",
+			)
 		}
 	}
 }
@@ -160,7 +189,13 @@ func TestN23EveryGrowingListPaginates(t *testing.T) {
 				t.Fatalf("limit=2: %d items, next_cursor %q", len(first.Items), first.NextCursor)
 			}
 
-			h.MustDo(http.MethodGet, path+"?limit=2&cursor="+first.NextCursor, nil, http.StatusOK, &second)
+			h.MustDo(
+				http.MethodGet,
+				path+"?limit=2&cursor="+first.NextCursor,
+				nil,
+				http.StatusOK,
+				&second,
+			)
 
 			if len(second.Items) == 0 {
 				t.Fatal("page 2 is empty")
@@ -178,10 +213,20 @@ func TestN23EveryGrowingListPaginates(t *testing.T) {
 			walk(t, h, path)
 
 			for _, limit := range []string{"0", "201"} {
-				h.ExpectProblem(h.Do(http.MethodGet, path+"?limit="+limit, nil), http.StatusBadRequest, "invalid_request", "limit")
+				h.ExpectProblem(
+					h.Do(http.MethodGet, path+"?limit="+limit, nil),
+					http.StatusBadRequest,
+					"invalid_request",
+					"limit",
+				)
 			}
 
-			h.ExpectProblem(h.Do(http.MethodGet, path+"?cursor=not-a-cursor", nil), http.StatusBadRequest, "invalid_request", "cursor")
+			h.ExpectProblem(
+				h.Do(http.MethodGet, path+"?cursor=not-a-cursor", nil),
+				http.StatusBadRequest,
+				"invalid_request",
+				"cursor",
+			)
 
 			f, ok := filters[name]
 			if !ok {
@@ -192,7 +237,13 @@ func TestN23EveryGrowingListPaginates(t *testing.T) {
 			h.MustDo(http.MethodGet, path+"?limit=200&"+f.query, nil, http.StatusOK, &filtered)
 
 			if len(filtered.Items) != f.want || filtered.NextCursor != "" {
-				t.Fatalf("%s: %d items, next_cursor %q; want %d items", f.query, len(filtered.Items), filtered.NextCursor, f.want)
+				t.Fatalf(
+					"%s: %d items, next_cursor %q; want %d items",
+					f.query,
+					len(filtered.Items),
+					filtered.NextCursor,
+					f.want,
+				)
 			}
 
 			for _, it := range filtered.Items {

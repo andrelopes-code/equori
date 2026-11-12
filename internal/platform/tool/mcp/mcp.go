@@ -53,10 +53,13 @@ func New(cfg Config) http.Handler {
 		DisableLocalhostProtection: true,
 	})
 	// The SDK hands a request's TokenInfo to its handlers; the grant rides in it.
-	carry := sdkauth.RequireBearerToken(func(ctx context.Context, _ string, _ *http.Request) (*sdkauth.TokenInfo, error) {
-		g, _ := grantFrom(ctx)
-		return &sdkauth.TokenInfo{Extra: map[string]any{grantExtra: g}}, nil
-	}, &sdkauth.RequireBearerTokenOptions{AllowMissingExpiration: true})
+	carry := sdkauth.RequireBearerToken(
+		func(ctx context.Context, _ string, _ *http.Request) (*sdkauth.TokenInfo, error) {
+			g, _ := grantFrom(ctx)
+			return &sdkauth.TokenInfo{Extra: map[string]any{grantExtra: g}}, nil
+		},
+		&sdkauth.RequireBearerTokenOptions{AllowMissingExpiration: true},
+	)
 
 	return authenticate(cfg.Verify, carry(h))
 }
@@ -64,7 +67,10 @@ func New(cfg Config) http.Handler {
 const grantExtra = "equori_grant"
 
 func newServer(cfg Config, write bool) *sdk.Server {
-	s := sdk.NewServer(&sdk.Implementation{Name: "equori", Version: cfg.Version}, &sdk.ServerOptions{Instructions: cfg.Instructions})
+	s := sdk.NewServer(
+		&sdk.Implementation{Name: "equori", Version: cfg.Version},
+		&sdk.ServerOptions{Instructions: cfg.Instructions},
+	)
 
 	var listed []string
 	for _, name := range cfg.Names {
@@ -81,8 +87,15 @@ func newServer(cfg Config, write bool) *sdk.Server {
 		listed = append(listed, name)
 		destructive := spec.Effect == tool.Destructive
 		s.AddTool(&sdk.Tool{
-			Name: spec.Name, Description: spec.Description, InputSchema: t.InputJSON(), OutputSchema: t.OutputJSON(),
-			Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.Effect == tool.ReadOnly, DestructiveHint: &destructive, IdempotentHint: spec.Idempotent},
+			Name:         spec.Name,
+			Description:  spec.Description,
+			InputSchema:  t.InputJSON(),
+			OutputSchema: t.OutputJSON(),
+			Annotations: &sdk.ToolAnnotations{
+				ReadOnlyHint:    spec.Effect == tool.ReadOnly,
+				DestructiveHint: &destructive,
+				IdempotentHint:  spec.Idempotent,
+			},
 		}, callTool(cfg, spec))
 	}
 
@@ -94,7 +107,8 @@ func newServer(cfg Config, write bool) *sdk.Server {
 		// X14: a read token reaches no write tool, also by calling it without listing it.
 		s.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
 			return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
-				if call, ok := req.(*sdk.CallToolRequest); ok && method == "tools/call" && !slices.Contains(listed, call.Params.Name) {
+				if call, ok := req.(*sdk.CallToolRequest); ok && method == "tools/call" &&
+					!slices.Contains(listed, call.Params.Name) {
 					return toolResult(tool.Result{Content: notAllowed, IsError: true}), nil
 				}
 
@@ -106,7 +120,9 @@ func newServer(cfg Config, write bool) *sdk.Server {
 	return s
 }
 
-var notAllowed = json.RawMessage(`{"code":"tool_not_allowed","detail":"the token's scope does not include this tool"}`)
+var notAllowed = json.RawMessage(
+	`{"code":"tool_not_allowed","detail":"the token's scope does not include this tool"}`,
+)
 
 // callTool runs a call through the registry, which writes without a proposal (X17), and logs it (X19).
 func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
@@ -117,7 +133,11 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 		}
 
 		start := time.Now()
-		res, err := cfg.Registry.Call(clock.WithLocation(auth.WithIdentity(ctx, g.MemberID, g.BooksID, g.Role), g.Location), spec.Name, req.Params.Arguments)
+		res, err := cfg.Registry.Call(
+			clock.WithLocation(auth.WithIdentity(ctx, g.MemberID, g.BooksID, g.Role), g.Location),
+			spec.Name,
+			req.Params.Arguments,
+		)
 
 		outcome := "ok"
 		switch {
@@ -131,9 +151,22 @@ func callTool(cfg Config, spec tool.Spec) sdk.ToolHandler {
 			outcome = e.Code
 		}
 
-		cfg.Log.LogAttrs(ctx, slog.LevelInfo, "mcp call", slog.String("token_id", g.TokenID), slog.Int64("member_id", g.MemberID), slog.Int64("books_id", g.BooksID),
-			slog.String("tool", spec.Name), slog.String("effect", spec.Effect.String()), slog.String("outcome", outcome),
-			slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
+		cfg.Log.LogAttrs(
+			ctx,
+			slog.LevelInfo,
+			"mcp call",
+			slog.String("token_id", g.TokenID),
+			slog.Int64("member_id", g.MemberID),
+			slog.Int64("books_id", g.BooksID),
+			slog.String(
+				"tool",
+				spec.Name,
+			),
+			slog.String("effect", spec.Effect.String()),
+			slog.String("outcome", outcome),
+			slog.Duration("duration", time.Since(start)),
+			slog.Int("bytes", len(res.Content)),
+		)
 
 		if err != nil {
 			return nil, err

@@ -9,8 +9,20 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (r *Repository) InsertCreditLimit(ctx context.Context, booksID int64, l app.CreditLimit) (app.CreditLimit, error) {
-	_, err := r.q.InsertCreditLimit(ctx, InsertCreditLimitParams{BooksID: booksID, AccountID: l.AccountID, EffectiveFrom: l.EffectiveFrom, Amount: l.Amount.Amount()})
+func (r *Repository) InsertCreditLimit(
+	ctx context.Context,
+	booksID int64,
+	l app.CreditLimit,
+) (app.CreditLimit, error) {
+	_, err := r.q.InsertCreditLimit(
+		ctx,
+		InsertCreditLimitParams{
+			BooksID:       booksID,
+			AccountID:     l.AccountID,
+			EffectiveFrom: l.EffectiveFrom,
+			Amount:        l.Amount.Amount(),
+		},
+	)
 	if err != nil {
 		return app.CreditLimit{}, err
 	}
@@ -18,8 +30,15 @@ func (r *Repository) InsertCreditLimit(ctx context.Context, booksID int64, l app
 	return l, nil
 }
 
-func (r *Repository) CreditLimits(ctx context.Context, booksID int64, accountID uuid.UUID) ([]app.CreditLimit, error) {
-	rows, err := r.q.ListCreditLimits(ctx, ListCreditLimitsParams{BooksID: booksID, AccountID: accountID})
+func (r *Repository) CreditLimits(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) ([]app.CreditLimit, error) {
+	rows, err := r.q.ListCreditLimits(
+		ctx,
+		ListCreditLimitsParams{BooksID: booksID, AccountID: accountID},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +55,11 @@ func (r *Repository) CreditLimits(ctx context.Context, booksID int64, accountID 
 			return nil, err
 		}
 
-		out[i] = app.CreditLimit{AccountID: row.AccountID, EffectiveFrom: row.EffectiveFrom, Amount: amount}
+		out[i] = app.CreditLimit{
+			AccountID:     row.AccountID,
+			EffectiveFrom: row.EffectiveFrom,
+			Amount:        amount,
+		}
 	}
 
 	return out, nil

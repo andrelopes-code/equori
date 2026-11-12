@@ -9,7 +9,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) listIndexes(ctx context.Context, _ *http.Request, _ httpserver.None) (IndexList, error) {
+func (s *Server) listIndexes(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (IndexList, error) {
 	xs, err := s.svc.Indexes(ctx)
 	if err != nil {
 		return IndexList{}, err
@@ -17,13 +21,23 @@ func (s *Server) listIndexes(ctx context.Context, _ *http.Request, _ httpserver.
 
 	items := make([]Index, len(xs))
 	for i, x := range xs {
-		items[i] = Index{Id: x.ID, Period: IndexPeriod(x.Period), First: openapi_types.Date{Time: x.First}, Last: openapi_types.Date{Time: x.Last}, Expected: x.Expected}
+		items[i] = Index{
+			Id:       x.ID,
+			Period:   IndexPeriod(x.Period),
+			First:    openapi_types.Date{Time: x.First},
+			Last:     openapi_types.Date{Time: x.Last},
+			Expected: x.Expected,
+		}
 	}
 
 	return IndexList{Items: items}, nil
 }
 
-func (s *Server) listIndexRates(ctx context.Context, r *http.Request, _ httpserver.None) (IndexRateList, error) {
+func (s *Server) listIndexRates(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (IndexRateList, error) {
 	params, err := httpserver.Query[ListIndexRatesParams](r)
 	if err != nil {
 		return IndexRateList{}, err

@@ -9,7 +9,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) listAccessTokens(ctx context.Context, _ *http.Request, _ httpserver.None) (AccessTokenList, error) {
+func (s *Server) listAccessTokens(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (AccessTokenList, error) {
 	tokens, err := s.svc.AccessTokens(ctx, auth.MustMemberID(ctx), auth.MustBooksID(ctx))
 	if err != nil {
 		return AccessTokenList{}, err
@@ -47,7 +51,11 @@ func (s *Server) createAccessToken(
 	return out, nil
 }
 
-func (s *Server) deleteAccessToken(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+func (s *Server) deleteAccessToken(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return httpserver.None{}, err
@@ -61,5 +69,12 @@ func (s *Server) deleteAccessToken(ctx context.Context, r *http.Request, _ https
 }
 
 func toAPIAccessToken(t domain.AccessToken) AccessToken {
-	return AccessToken{Id: t.ID, Name: t.Name, Scope: t.Scope, CreatedAt: t.CreatedAt, ExpiresAt: t.ExpiresAt, LastUsedAt: t.LastUsedAt}
+	return AccessToken{
+		Id:         t.ID,
+		Name:       t.Name,
+		Scope:      t.Scope,
+		CreatedAt:  t.CreatedAt,
+		ExpiresAt:  t.ExpiresAt,
+		LastUsedAt: t.LastUsedAt,
+	}
 }

@@ -23,7 +23,11 @@ func OpenLog(path string, limit int64) (*os.File, error) {
 		return nil, fmt.Errorf("inspect %s: %w", path, err)
 	}
 
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600) //nolint:gosec // G304: the data directory is the owner's configuration.
+	f, err := os.OpenFile(
+		path,
+		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+		0o600,
+	) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
 	}

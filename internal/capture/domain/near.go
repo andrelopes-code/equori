@@ -23,13 +23,15 @@ type nearWord struct {
 func (r *lineReader) findNear(idx handleIndex) []nearWord {
 	var out []nearWord
 	for i, w := range r.words {
-		if !w.free() || utf8.RuneCountInString(w.norm) < minNearRunes || strings.IndexFunc(w.norm, notLetter) >= 0 {
+		if !w.free() || utf8.RuneCountInString(w.norm) < minNearRunes ||
+			strings.IndexFunc(w.norm, notLetter) >= 0 {
 			continue
 		}
 
 		var accounts []int
 		for key, ids := range idx.accounts {
-			if strings.Contains(key, " ") || utf8.RuneCountInString(key) < minNearRunes || editDistance(w.norm, key) != 1 {
+			if strings.Contains(key, " ") || utf8.RuneCountInString(key) < minNearRunes ||
+				editDistance(w.norm, key) != 1 {
 				continue
 			}
 
@@ -47,7 +49,8 @@ func (r *lineReader) findNear(idx handleIndex) []nearWord {
 		// Map order is random; the choices follow the vocabulary.
 		slices.Sort(accounts)
 
-		destination := i > 0 && r.words[i-1].free() && slices.Contains(r.vocabulary.Lexicon.Destination, r.words[i-1].norm)
+		destination := i > 0 && r.words[i-1].free() &&
+			slices.Contains(r.vocabulary.Lexicon.Destination, r.words[i-1].norm)
 		out = append(out, nearWord{at: i, accounts: accounts, destination: destination})
 	}
 
@@ -109,17 +112,33 @@ func (r *lineReader) settleNear(near []nearWord) {
 		return
 	}
 
-	r.line.Issues = slices.DeleteFunc(r.line.Issues, func(i Issue) bool { return i.Code == missing })
+	r.line.Issues = slices.DeleteFunc(
+		r.line.Issues,
+		func(i Issue) bool { return i.Code == missing },
+	)
 	skip := func(i int) bool { return i != n.at }
 
 	var choices []Choice
 	for _, k := range n.accounts {
-		choices = append(choices, Choice{AccountID: r.vocabulary.Accounts[k].ID, Description: r.descriptionOf(skip), Describes: true})
+		choices = append(
+			choices,
+			Choice{
+				AccountID:   r.vocabulary.Accounts[k].ID,
+				Description: r.descriptionOf(skip),
+				Describes:   true,
+			},
+		)
 	}
 
 	if field == FieldAccount && r.line.AccountSource == SourceDefault &&
-		!slices.ContainsFunc(choices, func(c Choice) bool { return c.AccountID == r.line.AccountID }) {
-		choices = append(choices, Choice{AccountID: r.line.AccountID, Description: r.descriptionOf(nil), Describes: true})
+		!slices.ContainsFunc(
+			choices,
+			func(c Choice) bool { return c.AccountID == r.line.AccountID },
+		) {
+		choices = append(
+			choices,
+			Choice{AccountID: r.line.AccountID, Description: r.descriptionOf(nil), Describes: true},
+		)
 	}
 
 	r.issue(IssuePossibleAccount, field, choices...)

@@ -79,7 +79,10 @@ func (s *Service) groupLines(
 ) ([]domain.GroupLine, error) {
 	lines := make([]domain.GroupLine, 0, len(fresh)+len(created))
 	for _, r := range fresh {
-		lines = append(lines, domain.GroupLine{RecordID: r.ID, Date: r.Date, Amount: r.Amount, New: true})
+		lines = append(
+			lines,
+			domain.GroupLine{RecordID: r.ID, Date: r.Date, Amount: r.Amount, New: true},
+		)
 	}
 
 	if len(created) == 0 {
@@ -111,7 +114,10 @@ func (s *Service) groupLines(
 }
 
 // freeEntries drops the postings that a zone Link of the same batch takes.
-func freeEntries(postings []domain.LedgerPosting, assigned []domain.Assignment) []domain.LedgerPosting {
+func freeEntries(
+	postings []domain.LedgerPosting,
+	assigned []domain.Assignment,
+) []domain.LedgerPosting {
 	taken := map[uuid.UUID]bool{}
 
 	for _, a := range assigned {
@@ -161,14 +167,25 @@ func (s *Service) groupOf(ctx context.Context, rec domain.ExternalRecord) ([]gro
 	}
 
 	entry := rec.Candidates[0]
-	from, to := rec.Date.AddDate(0, 0, -domain.MatchHardLimit), rec.Date.AddDate(0, 0, domain.MatchHardLimit)
+	from, to := rec.Date.AddDate(
+		0,
+		0,
+		-domain.MatchHardLimit,
+	), rec.Date.AddDate(
+		0,
+		0,
+		domain.MatchHardLimit,
+	)
 
 	postings, err := s.ledger.UnlinkedPostings(ctx, rec.BooksID, rec.AccountID, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	entries := slices.DeleteFunc(postings, func(p domain.LedgerPosting) bool { return p.TransactionID != entry })
+	entries := slices.DeleteFunc(
+		postings,
+		func(p domain.LedgerPosting) bool { return p.TransactionID != entry },
+	)
 	if len(entries) == 0 {
 		return nil, ErrGroupChanged
 	}
@@ -213,7 +230,10 @@ func membersOf(ids []uuid.UUID, review, created []domain.ExternalRecord) []group
 		out[i] = byID[id]
 	}
 
-	slices.SortStableFunc(out, func(a, b groupMember) int { return a.Record.Date.Compare(b.Record.Date) })
+	slices.SortStableFunc(
+		out,
+		func(a, b groupMember) int { return a.Record.Date.Compare(b.Record.Date) },
+	)
 
 	return out
 }
@@ -347,8 +367,14 @@ func (s *Service) createMembers(
 		}
 
 		line := Line{
-			AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount,
-			Description: truncate(rec.Description), Pending: rec.ExternalStatus == domain.ExternalPending,
+			AccountID: rec.AccountID,
+			Currency:  currencyOf(b),
+			Date:      rec.Date,
+			Amount:    rec.Amount,
+			Description: truncate(
+				rec.Description,
+			),
+			Pending: rec.ExternalStatus == domain.ExternalPending,
 		}
 		lines, recs = append(lines, NewLine{RecordID: rec.ID, Line: line}), append(recs, rec)
 	}

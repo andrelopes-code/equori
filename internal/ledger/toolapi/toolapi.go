@@ -15,9 +15,27 @@ import (
 
 func Tools(svc *app.Service) []tool.Tool {
 	return []tool.Tool{
-		listAccounts(svc), getBalances(svc), searchTransactions(svc), getTransaction(svc), listPayeesAndTags(svc),
-		getAccountDetails(svc), getStatement(svc), recordTransaction(svc), changeTransaction(svc),
-		categorizeTransactions(svc), voidTransaction(svc), manageCard(svc), handleCardPurchase(svc), settleStatement(svc), manageAccountsAndPayees(svc), reconcileAccount(svc), recordInvestment(svc),
+		listAccounts(
+			svc,
+		),
+		getBalances(svc),
+		searchTransactions(svc),
+		getTransaction(svc),
+		listPayeesAndTags(svc),
+		getAccountDetails(svc),
+		getStatement(svc),
+		recordTransaction(svc),
+		changeTransaction(svc),
+		categorizeTransactions(
+			svc,
+		),
+		voidTransaction(svc),
+		manageCard(svc),
+		handleCardPurchase(svc),
+		settleStatement(svc),
+		manageAccountsAndPayees(svc),
+		reconcileAccount(svc),
+		recordInvestment(svc),
 	}
 }
 
@@ -28,7 +46,11 @@ func (accountClass) Values() []string {
 }
 
 // allAccounts reads every account of the book in the order of ListAccounts, by class and then name.
-func allAccounts(ctx context.Context, svc *app.Service, booksID int64) (map[uuid.UUID]domain.Account, []domain.Account, error) {
+func allAccounts(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+) (map[uuid.UUID]domain.Account, []domain.Account, error) {
 	var all []domain.Account
 
 	p := page.Request[app.AccountKey]{Limit: page.MaxLimit}

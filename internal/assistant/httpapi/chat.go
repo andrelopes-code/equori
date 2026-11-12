@@ -11,7 +11,11 @@ import (
 
 const chatUseID = "assistant.chat"
 
-func (s *Server) getAssistantChat(ctx context.Context, _ *http.Request, _ httpserver.None) (AssistantChat, error) {
+func (s *Server) getAssistantChat(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (AssistantChat, error) {
 	use, ok := s.svc.UseByID(chatUseID)
 	if !ok {
 		return AssistantChat{}, errors.New("use assistant.chat is not declared")

@@ -65,7 +65,9 @@ type aggregator struct {
 
 func newAggregator(t *testing.T, opts ...apitest.Option) aggregator {
 	p := pluggytest.New(t, pluggyClient, pluggySecret)
-	opts = append([]apitest.Option{apitest.Today("2026-11-12"), apitest.Aggregator("pluggy", p.URL())}, opts...)
+	opts = append(
+		[]apitest.Option{apitest.Today("2026-11-12"), apitest.Aggregator("pluggy", p.URL())},
+		opts...)
 
 	return aggregator{h: apitest.New(t, opts...), p: p}
 }
@@ -77,22 +79,68 @@ func (a aggregator) serveItem(clientID, itemID, connector string) {
 
 // serveItemIn is serveItem with accounts in currency.
 func (a aggregator) serveItemIn(clientID, itemID, connector, currency string) {
-	it := pluggy.Item{ID: itemID, Status: pluggy.StatusUpdated, LastUpdatedAt: new("2026-11-12T06:00:00.000Z")}
+	it := pluggy.Item{
+		ID:            itemID,
+		Status:        pluggy.StatusUpdated,
+		LastUpdatedAt: new("2026-11-12T06:00:00.000Z"),
+	}
 	it.Connector.Name = connector
 	a.p.AddItemTo(clientID, it)
-	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-checking", Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta Corrente", Number: checkingNumber, Balance: "2834.10", CurrencyCode: currency})
-	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-card", Type: pluggy.TypeCredit, Subtype: pluggy.SubtypeCard, Name: "Ultravioleta", Number: "5162********4321", Balance: "0", CurrencyCode: currency})
-	a.p.AddAccount(itemID, pluggy.Account{ID: itemID + "-savings", Type: "BANK", Subtype: pluggy.SubtypeSavings, Name: "Caixinha", Number: "98765432", Balance: "100", CurrencyCode: currency})
+	a.p.AddAccount(
+		itemID,
+		pluggy.Account{
+			ID:           itemID + "-checking",
+			Type:         "BANK",
+			Subtype:      pluggy.SubtypeChecking,
+			Name:         "Conta Corrente",
+			Number:       checkingNumber,
+			Balance:      "2834.10",
+			CurrencyCode: currency,
+		},
+	)
+	a.p.AddAccount(
+		itemID,
+		pluggy.Account{
+			ID:           itemID + "-card",
+			Type:         pluggy.TypeCredit,
+			Subtype:      pluggy.SubtypeCard,
+			Name:         "Ultravioleta",
+			Number:       "5162********4321",
+			Balance:      "0",
+			CurrencyCode: currency,
+		},
+	)
+	a.p.AddAccount(
+		itemID,
+		pluggy.Account{
+			ID:           itemID + "-savings",
+			Type:         "BANK",
+			Subtype:      pluggy.SubtypeSavings,
+			Name:         "Caixinha",
+			Number:       "98765432",
+			Balance:      "100",
+			CurrencyCode: currency,
+		},
+	)
 }
 
 func integrationBody(name, clientID, secret string) map[string]any {
-	return map[string]any{"aggregator": "pluggy", "name": name, "credentials": map[string]any{"client_id": clientID, "client_secret": secret}}
+	return map[string]any{
+		"aggregator":  "pluggy",
+		"name":        name,
+		"credentials": map[string]any{"client_id": clientID, "client_secret": secret},
+	}
 }
 
 func (a aggregator) integrate(c *http.Client, name, clientID, secret string) integrationView {
 	a.h.T().Helper()
 
-	r := a.h.Call(c, http.MethodPost, "/api/v1/integrations", integrationBody(name, clientID, secret))
+	r := a.h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/integrations",
+		integrationBody(name, clientID, secret),
+	)
 	if r.Status != http.StatusCreated {
 		a.h.T().Fatalf("create integration status %d: %s", r.Status, r.Body)
 	}
@@ -105,7 +153,12 @@ func (a aggregator) integrate(c *http.Client, name, clientID, secret string) int
 
 func (a aggregator) connect(c *http.Client, integrationID, itemID string) apitest.Response {
 	a.h.T().Helper()
-	return a.h.Call(c, http.MethodPost, "/api/v1/connections", map[string]any{"integration_id": integrationID, "external_id": itemID})
+	return a.h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/connections",
+		map[string]any{"integration_id": integrationID, "external_id": itemID},
+	)
 }
 
 func (a aggregator) mustConnect(c *http.Client, integrationID, itemID string) connectionView {
@@ -136,9 +189,18 @@ func (a aggregator) connection(c *http.Client, id string) connectionView {
 	return out
 }
 
-func (a aggregator) mapAccount(c *http.Client, connectionID, externalID string, body map[string]any) apitest.Response {
+func (a aggregator) mapAccount(
+	c *http.Client,
+	connectionID, externalID string,
+	body map[string]any,
+) apitest.Response {
 	a.h.T().Helper()
-	return a.h.Call(c, http.MethodPut, "/api/v1/connections/"+connectionID+"/accounts/"+externalID, body)
+	return a.h.Call(
+		c,
+		http.MethodPut,
+		"/api/v1/connections/"+connectionID+"/accounts/"+externalID,
+		body,
+	)
 }
 
 func externalAccount(c connectionView, subtype string) externalAccountView {
@@ -175,7 +237,11 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	checking := a.h.Account("Nubank checking", "asset", "checking", nil)
 	visa := a.h.Card("Itaú Visa", 3, 10, "next")
 
-	r := a.h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret))
+	r := a.h.Do(
+		http.MethodPost,
+		"/api/v1/integrations",
+		integrationBody("Meu Pluggy", pluggyClient, pluggySecret),
+	)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create integration status %d: %s", r.Status, r.Body)
 	}
@@ -183,21 +249,26 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	var in integrationView
 	r.Decode(t, &in)
 
-	if r.Header.Get("Location") != "/api/v1/integrations/"+in.ID || in.Aggregator != "pluggy" || in.Name != "Meu Pluggy" || in.UpdatedAt == "" {
+	if r.Header.Get("Location") != "/api/v1/integrations/"+in.ID || in.Aggregator != "pluggy" ||
+		in.Name != "Meu Pluggy" ||
+		in.UpdatedAt == "" {
 		t.Fatalf("integration = %+v, location %q", in, r.Header.Get("Location"))
 	}
 
-	if bytes.Contains(r.Body, []byte(pluggySecret)) || bytes.Contains(r.Body, []byte(pluggyClient)) {
+	if bytes.Contains(r.Body, []byte(pluggySecret)) ||
+		bytes.Contains(r.Body, []byte(pluggyClient)) {
 		t.Fatalf("response carries the credentials: %s", r.Body)
 	}
 
 	// N15: the stored value holds neither credential in clear.
 	var sealed []byte
-	if err := a.h.Pool.QueryRow(t.Context(), `SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1`, in.ID).Scan(&sealed); err != nil {
+	if err := a.h.Pool.QueryRow(t.Context(), `SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1`, in.ID).
+		Scan(&sealed); err != nil {
 		t.Fatal(err)
 	}
 
-	if bytes.Contains(sealed, []byte(pluggySecret)) || bytes.Contains(sealed, []byte(pluggyClient)) {
+	if bytes.Contains(sealed, []byte(pluggySecret)) ||
+		bytes.Contains(sealed, []byte(pluggyClient)) {
 		t.Fatal("credentials stored in clear")
 	}
 
@@ -210,8 +281,11 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	r.Decode(t, &conn)
 
 	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID || conn.ExternalID != nubankItem ||
-		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" || conn.State != "ok" || conn.Portal != "Meu Pluggy" ||
-		conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" || len(conn.Accounts) != 3 {
+		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" ||
+		conn.State != "ok" ||
+		conn.Portal != "Meu Pluggy" ||
+		conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" ||
+		len(conn.Accounts) != 3 {
 		t.Fatalf("connection = %+v", conn)
 	}
 
@@ -231,16 +305,33 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 
 	ext := externalAccount(conn, pluggy.SubtypeChecking)
 
-	want := externalAccountView{ID: ext.ID, Type: "BANK", Subtype: pluggy.SubtypeChecking, Name: "Conta Corrente", NumberLast4: "6789", Currency: "BRL", State: "pending"}
+	want := externalAccountView{
+		ID:          ext.ID,
+		Type:        "BANK",
+		Subtype:     pluggy.SubtypeChecking,
+		Name:        "Conta Corrente",
+		NumberLast4: "6789",
+		Currency:    "BRL",
+		State:       "pending",
+	}
 	if ext != want {
 		t.Fatalf("checking = %+v, want %+v", ext, want)
 	}
 
-	if card := externalAccount(conn, pluggy.SubtypeCard); card.NumberLast4 != "4321" || card.Type != pluggy.TypeCredit || card.State != "pending" {
+	if card := externalAccount(
+		conn,
+		pluggy.SubtypeCard,
+	); card.NumberLast4 != "4321" || card.Type != pluggy.TypeCredit ||
+		card.State != "pending" {
 		t.Fatalf("card = %+v", card)
 	}
 
-	r = a.mapAccount(a.h.Client, conn.ID, ext.ID, map[string]any{"account_id": checking, "sync_from": "2026-10-01"})
+	r = a.mapAccount(
+		a.h.Client,
+		conn.ID,
+		ext.ID,
+		map[string]any{"account_id": checking, "sync_from": "2026-10-01"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("map checking status %d: %s", r.Status, r.Body)
 	}
@@ -253,11 +344,21 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 		t.Fatalf("mapped = %+v, want %+v", mapped, want)
 	}
 
-	if r := a.mapAccount(a.h.Client, conn.ID, externalAccount(conn, pluggy.SubtypeCard).ID, map[string]any{"account_id": visa, "sync_from": "2026-10-01"}); r.Status != http.StatusOK {
+	if r := a.mapAccount(
+		a.h.Client,
+		conn.ID,
+		externalAccount(conn, pluggy.SubtypeCard).ID,
+		map[string]any{"account_id": visa, "sync_from": "2026-10-01"},
+	); r.Status != http.StatusOK {
 		t.Fatalf("map card status %d: %s", r.Status, r.Body)
 	}
 
-	if r := a.mapAccount(a.h.Client, conn.ID, externalAccount(conn, pluggy.SubtypeSavings).ID, map[string]any{"ignored": true}); r.Status != http.StatusOK {
+	if r := a.mapAccount(
+		a.h.Client,
+		conn.ID,
+		externalAccount(conn, pluggy.SubtypeSavings).ID,
+		map[string]any{"ignored": true},
+	); r.Status != http.StatusOK {
 		t.Fatalf("ignore savings status %d: %s", r.Status, r.Body)
 	}
 
@@ -268,7 +369,9 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 		states[x.Subtype] = x.State + " " + x.AccountID
 	}
 
-	if states[pluggy.SubtypeChecking] != "mapped "+checking || states[pluggy.SubtypeCard] != "mapped "+visa || states[pluggy.SubtypeSavings] != "ignored " {
+	if states[pluggy.SubtypeChecking] != "mapped "+checking ||
+		states[pluggy.SubtypeCard] != "mapped "+visa ||
+		states[pluggy.SubtypeSavings] != "ignored " {
 		t.Fatalf("states = %v", states)
 	}
 
@@ -317,9 +420,25 @@ func TestMapAccountRejections(t *testing.T) {
 	var institution struct {
 		ID string `json:"id"`
 	}
-	a.h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "Nubank"}, http.StatusCreated, &institution)
-	parent := a.h.Account("Nubank", "asset", "checking", map[string]any{"institution_id": institution.ID})
-	a.h.Account("Nubank reserve", "asset", "reserve", map[string]any{"institution_id": institution.ID, "parent_id": parent})
+	a.h.MustDo(
+		http.MethodPost,
+		"/api/v1/institutions",
+		map[string]string{"name": "Nubank"},
+		http.StatusCreated,
+		&institution,
+	)
+	parent := a.h.Account(
+		"Nubank",
+		"asset",
+		"checking",
+		map[string]any{"institution_id": institution.ID},
+	)
+	a.h.Account(
+		"Nubank reserve",
+		"asset",
+		"reserve",
+		map[string]any{"institution_id": institution.ID, "parent_id": parent},
+	)
 	reserve := a.h.Account("Emergency fund", "asset", "reserve", nil)
 
 	ext := externalAccount(conn, pluggy.SubtypeChecking).ID
@@ -338,29 +457,76 @@ func TestMapAccountRejections(t *testing.T) {
 		{"neither", map[string]any{}, "account_id"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			a.h.ExpectProblem(a.mapAccount(a.h.Client, conn.ID, ext, tc.body), http.StatusUnprocessableEntity, "validation_failed", tc.field)
+			a.h.ExpectProblem(
+				a.mapAccount(a.h.Client, conn.ID, ext, tc.body),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				tc.field,
+			)
 		})
 	}
 
-	if got := externalAccount(a.connection(a.h.Client, conn.ID), pluggy.SubtypeChecking); got.State != "pending" {
+	if got := externalAccount(
+		a.connection(a.h.Client, conn.ID),
+		pluggy.SubtypeChecking,
+	); got.State != "pending" {
 		t.Fatalf("rejected mappings changed the account: %+v", got)
 	}
 
-	if r := a.mapAccount(a.h.Client, conn.ID, externalAccount(conn, pluggy.SubtypeSavings).ID, map[string]any{"account_id": reserve, "sync_from": "2026-10-01"}); r.Status != http.StatusOK {
+	if r := a.mapAccount(
+		a.h.Client,
+		conn.ID,
+		externalAccount(conn, pluggy.SubtypeSavings).ID,
+		map[string]any{"account_id": reserve, "sync_from": "2026-10-01"},
+	); r.Status != http.StatusOK {
 		t.Fatalf("savings to reserve status %d: %s", r.Status, r.Body)
 	}
 
-	if r := a.mapAccount(a.h.Client, conn.ID, ext, map[string]any{"account_id": checking, "sync_from": "2026-10-01"}); r.Status != http.StatusOK {
+	if r := a.mapAccount(
+		a.h.Client,
+		conn.ID,
+		ext,
+		map[string]any{"account_id": checking, "sync_from": "2026-10-01"},
+	); r.Status != http.StatusOK {
 		t.Fatalf("map checking status %d: %s", r.Status, r.Body)
 	}
 
 	// Two feeds into one account would assert two balances on it.
-	a.h.ExpectProblem(a.mapAccount(a.h.Client, inter.ID, externalAccount(inter, pluggy.SubtypeChecking).ID, map[string]any{"account_id": checking, "sync_from": "2026-10-01"}),
-		http.StatusUnprocessableEntity, "validation_failed", "account_id")
+	a.h.ExpectProblem(
+		a.mapAccount(
+			a.h.Client,
+			inter.ID,
+			externalAccount(inter, pluggy.SubtypeChecking).ID,
+			map[string]any{"account_id": checking, "sync_from": "2026-10-01"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"account_id",
+	)
 
-	a.h.ExpectProblem(a.mapAccount(a.h.Client, conn.ID, uuid.NewString(), map[string]any{"ignored": true}), http.StatusNotFound, "not_found", "")
-	a.h.ExpectProblem(a.mapAccount(a.h.Client, conn.ID, externalAccount(inter, pluggy.SubtypeSavings).ID, map[string]any{"ignored": true}), http.StatusNotFound, "not_found", "")
-	a.h.ExpectProblem(a.mapAccount(a.h.Client, uuid.NewString(), ext, map[string]any{"ignored": true}), http.StatusNotFound, "not_found", "")
+	a.h.ExpectProblem(
+		a.mapAccount(a.h.Client, conn.ID, uuid.NewString(), map[string]any{"ignored": true}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	a.h.ExpectProblem(
+		a.mapAccount(
+			a.h.Client,
+			conn.ID,
+			externalAccount(inter, pluggy.SubtypeSavings).ID,
+			map[string]any{"ignored": true},
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+	a.h.ExpectProblem(
+		a.mapAccount(a.h.Client, uuid.NewString(), ext, map[string]any{"ignored": true}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 // S57 (credential part) and integration_in_use.
@@ -369,26 +535,58 @@ func TestIntegrationCredentials(t *testing.T) {
 	a := newAggregator(t)
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 
-	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, "wrong-secret-77")),
-		http.StatusUnprocessableEntity, "aggregator_unauthorized", "client_secret")
+	a.h.ExpectProblem(
+		a.h.Do(
+			http.MethodPost,
+			"/api/v1/integrations",
+			integrationBody("Meu Pluggy", pluggyClient, "wrong-secret-77"),
+		),
+		http.StatusUnprocessableEntity,
+		"aggregator_unauthorized",
+		"client_secret",
+	)
 
 	var stored int
-	if err := a.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).Scan(&stored); err != nil || stored != 0 {
+	if err := a.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ingestion_integration`).
+		Scan(&stored); err != nil ||
+		stored != 0 {
 		t.Fatalf("stored = %d, %v", stored, err)
 	}
 
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
-	a.h.ExpectProblem(a.h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
-		http.StatusUnprocessableEntity, "validation_failed", "name")
+	a.h.ExpectProblem(
+		a.h.Do(
+			http.MethodPost,
+			"/api/v1/integrations",
+			integrationBody("Meu Pluggy", pluggyClient, pluggySecret),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"name",
+	)
 
 	credentials := "/api/v1/integrations/" + in.ID + "/credentials"
-	a.h.ExpectProblem(a.h.Do(http.MethodPut, credentials, map[string]any{"client_id": pluggyClient, "client_secret": "wrong-secret-77"}),
-		http.StatusUnprocessableEntity, "aggregator_unauthorized", "client_secret")
+	a.h.ExpectProblem(
+		a.h.Do(
+			http.MethodPut,
+			credentials,
+			map[string]any{"client_id": pluggyClient, "client_secret": "wrong-secret-77"},
+		),
+		http.StatusUnprocessableEntity,
+		"aggregator_unauthorized",
+		"client_secret",
+	)
 	conn := a.mustConnect(a.h.Client, in.ID, nubankItem)
 
 	a.p.SetCredentials(pluggyClient, "secret-rotated-19")
 	var updated integrationView
-	a.h.MustDo(http.MethodPut, credentials, map[string]any{"client_id": pluggyClient, "client_secret": "secret-rotated-19"}, http.StatusOK, &updated)
+	a.h.MustDo(
+		http.MethodPut,
+		credentials,
+		map[string]any{"client_id": pluggyClient, "client_secret": "secret-rotated-19"},
+		http.StatusOK,
+		&updated,
+	)
 
 	if updated.ID != in.ID || updated.Name != in.Name {
 		t.Fatalf("updated = %+v", updated)
@@ -397,16 +595,41 @@ func TestIntegrationCredentials(t *testing.T) {
 	a.p.RevokeKeys()
 	a.serveItem(pluggyClient, "item-inter-52c8", "Inter")
 	inter := a.mustConnect(a.h.Client, in.ID, "item-inter-52c8")
-	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, nubankItem), http.StatusUnprocessableEntity, "validation_failed", "external_id")
-	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, "item-unknown-0d"), http.StatusUnprocessableEntity, "validation_failed", "external_id")
-	a.h.ExpectProblem(a.connect(a.h.Client, uuid.NewString(), nubankItem), http.StatusUnprocessableEntity, "validation_failed", "integration_id")
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, in.ID, nubankItem),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"external_id",
+	)
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, in.ID, "item-unknown-0d"),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"external_id",
+	)
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, uuid.NewString(), nubankItem),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"integration_id",
+	)
 
 	path := "/api/v1/integrations/" + in.ID
-	a.h.ExpectProblem(a.h.Do(http.MethodDelete, path, nil), http.StatusConflict, "integration_in_use", "")
+	a.h.ExpectProblem(
+		a.h.Do(http.MethodDelete, path, nil),
+		http.StatusConflict,
+		"integration_in_use",
+		"",
+	)
 
 	for _, c := range []string{conn.ID, inter.ID} {
 		a.h.MustDo(http.MethodDelete, "/api/v1/connections/"+c, nil, http.StatusNoContent, nil)
-		a.h.ExpectProblem(a.h.Do(http.MethodGet, "/api/v1/connections/"+c, nil), http.StatusNotFound, "not_found", "")
+		a.h.ExpectProblem(
+			a.h.Do(http.MethodGet, "/api/v1/connections/"+c, nil),
+			http.StatusNotFound,
+			"not_found",
+			"",
+		)
 	}
 
 	a.h.MustDo(http.MethodDelete, path, nil, http.StatusNoContent, nil)
@@ -474,22 +697,43 @@ func TestTwoIntegrations(t *testing.T) {
 		Items      []connectionView `json:"items"`
 		NextCursor string           `json:"next_cursor"`
 	}
-	a.h.MustDo(http.MethodGet, "/api/v1/connections?limit=5&cursor="+page.NextCursor, nil, http.StatusOK, &last)
+	a.h.MustDo(
+		http.MethodGet,
+		"/api/v1/connections?limit=5&cursor="+page.NextCursor,
+		nil,
+		http.StatusOK,
+		&last,
+	)
 
 	for _, c := range last.Items {
 		seen[c.ID] = true
 	}
 
 	if len(last.Items) != 3 || last.NextCursor != "" || len(seen) != 8 {
-		t.Fatalf("second page = %d items, cursor %q, %d distinct", len(last.Items), last.NextCursor, len(seen))
+		t.Fatalf(
+			"second page = %d items, cursor %q, %d distinct",
+			len(last.Items),
+			last.NextCursor,
+			len(seen),
+		)
 	}
 
 	a.serveItem("client-2b7d", "item-second-3", "Bank 8")
-	a.h.ExpectProblem(a.connect(a.h.Client, first.ID, "item-second-3"), http.StatusUnprocessableEntity, "validation_failed", "external_id")
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, first.ID, "item-second-3"),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"external_id",
+	)
 
 	a.p.SetCredentials("client-2b7d", "secret-2c91")
 	a.p.RevokeKeys()
-	a.h.ExpectProblem(a.connect(a.h.Client, second.ID, "item-second-3"), http.StatusUnprocessableEntity, "aggregator_unauthorized", "integration_id")
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, second.ID, "item-second-3"),
+		http.StatusUnprocessableEntity,
+		"aggregator_unauthorized",
+		"integration_id",
+	)
 	a.serveItem(pluggyClient, "item-first-5", "Bank 9")
 	a.mustConnect(a.h.Client, first.ID, "item-first-5")
 	assertNoSecrets(t, a.h, "secret-2c90", "secret-2c91")
@@ -527,14 +771,31 @@ func TestIntegrationIsolation(t *testing.T) {
 		a.h.ExpectProblem(r, http.StatusNotFound, "not_found", "")
 	}
 
-	a.h.ExpectProblem(a.connect(other, in.ID, nubankItem), http.StatusUnprocessableEntity, "validation_failed", "integration_id")
+	a.h.ExpectProblem(
+		a.connect(other, in.ID, nubankItem),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"integration_id",
+	)
 
 	own := a.integrate(other, "Meu Pluggy", pluggyClient, pluggySecret)
 	otherConn := a.mustConnect(other, own.ID, nubankItem)
-	a.h.ExpectProblem(a.mapAccount(other, otherConn.ID, externalAccount(otherConn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": checking, "sync_from": "2026-10-01"}),
-		http.StatusUnprocessableEntity, "validation_failed", "account_id")
+	a.h.ExpectProblem(
+		a.mapAccount(
+			other,
+			otherConn.ID,
+			externalAccount(otherConn, pluggy.SubtypeChecking).ID,
+			map[string]any{"account_id": checking, "sync_from": "2026-10-01"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"account_id",
+	)
 
-	if got := externalAccount(a.connection(a.h.Client, conn.ID), pluggy.SubtypeChecking); got.State != "pending" {
+	if got := externalAccount(
+		a.connection(a.h.Client, conn.ID),
+		pluggy.SubtypeChecking,
+	); got.State != "pending" {
 		t.Fatalf("owner's account = %+v", got)
 	}
 }
@@ -562,12 +823,22 @@ func TestCredentialsBoundToTheirRow(t *testing.T) {
 	first := a.integrate(a.h.Client, "Meu Pluggy 1", pluggyClient, pluggySecret)
 
 	second := a.integrate(a.h.Client, "Meu Pluggy 2", pluggyClient, pluggySecret)
-	if _, err := a.h.Pool.Exec(t.Context(), `UPDATE ingestion_integration SET credential_ciphertext = (SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1) WHERE id = $2`, first.ID, second.ID); err != nil {
+	if _, err := a.h.Pool.Exec(
+		t.Context(),
+		`UPDATE ingestion_integration SET credential_ciphertext = (SELECT credential_ciphertext FROM ingestion_integration WHERE id = $1) WHERE id = $2`,
+		first.ID,
+		second.ID,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()))
-	a.h.ExpectProblem(a.connect(a.h.Client, second.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, second.ID, nubankItem),
+		http.StatusConflict,
+		"integration_unavailable",
+		"",
+	)
 	a.mustConnect(a.h.Client, first.ID, nubankItem)
 }
 
@@ -582,7 +853,10 @@ func TestSecretRotation(t *testing.T) {
 	a.integrate(other, "Meu Pluggy", pluggyClient, pluggySecret)
 
 	next := strings.Repeat("n", 32)
-	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(next, apitest.SecretKey))
+	a.h.Restart(
+		apitest.Aggregator("pluggy", a.p.URL()),
+		apitest.SecretKeys(next, apitest.SecretKey),
+	)
 
 	for i, want := range []int{2, 0} {
 		n, err := a.h.App.Ingestion.RotateSecrets(t.Context())
@@ -594,7 +868,12 @@ func TestSecretRotation(t *testing.T) {
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(next, ""))
 	a.mustConnect(a.h.Client, in.ID, nubankItem)
 	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()))
-	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, "item-inter-52c8"), http.StatusConflict, "integration_unavailable", "")
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, in.ID, "item-inter-52c8"),
+		http.StatusConflict,
+		"integration_unavailable",
+		"",
+	)
 }
 
 // A Pluggy that does not answer is a 502, not an internal error.
@@ -604,8 +883,16 @@ func TestAggregatorUnavailable(t *testing.T) {
 	closed := httptest.NewServer(http.NotFoundHandler())
 	closed.Close()
 	h := apitest.New(t, apitest.Aggregator("pluggy", closed.URL))
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/integrations", integrationBody("Meu Pluggy", pluggyClient, pluggySecret)),
-		http.StatusBadGateway, "aggregator_unavailable", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/integrations",
+			integrationBody("Meu Pluggy", pluggyClient, pluggySecret),
+		),
+		http.StatusBadGateway,
+		"aggregator_unavailable",
+		"",
+	)
 }
 
 // Export design E2: an imported integration holds no credential; rotation passes over it and
@@ -616,15 +903,26 @@ func TestSecretRotationSkipsImportedIntegration(t *testing.T) {
 	a.serveItem(pluggyClient, nubankItem, "Nubank")
 
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
-	if _, err := a.h.Pool.Exec(t.Context(), `UPDATE ingestion_integration SET credential_ciphertext = ''`); err != nil {
+	if _, err := a.h.Pool.Exec(
+		t.Context(),
+		`UPDATE ingestion_integration SET credential_ciphertext = ''`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	a.h.Restart(apitest.Aggregator("pluggy", a.p.URL()), apitest.SecretKeys(strings.Repeat("n", 32), apitest.SecretKey))
+	a.h.Restart(
+		apitest.Aggregator("pluggy", a.p.URL()),
+		apitest.SecretKeys(strings.Repeat("n", 32), apitest.SecretKey),
+	)
 
 	if n, err := a.h.App.Ingestion.RotateSecrets(t.Context()); err != nil || n != 0 {
 		t.Fatalf("rotation = %d, %v; want 0", n, err)
 	}
 
-	a.h.ExpectProblem(a.connect(a.h.Client, in.ID, nubankItem), http.StatusConflict, "integration_unavailable", "")
+	a.h.ExpectProblem(
+		a.connect(a.h.Client, in.ID, nubankItem),
+		http.StatusConflict,
+		"integration_unavailable",
+		"",
+	)
 }

@@ -19,26 +19,61 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 	}
 
 	fields := []field{
-		{"name", in.Name != ""}, {"type", in.Type != ""}, {"quote_currency", in.QuoteCurrency != ""}, {"scale", in.Scale != 0},
-		{"date", !in.Date.IsZero()}, {"price", in.Price != ""},
-		{"issued_on", !in.IssuedOn.IsZero()}, {"matures_on", !in.MaturesOn.IsZero()}, {"face_value", in.FaceValue != ""},
-		{"index_id", in.IndexID != ""}, {"percent_of_index_bp", in.PercentOfIndexBP != 0}, {"spread_bp", in.SpreadBP != 0},
+		{
+			"name",
+			in.Name != "",
+		},
+		{"type", in.Type != ""},
+		{"quote_currency", in.QuoteCurrency != ""},
+		{"scale", in.Scale != 0},
+		{"date", !in.Date.IsZero()},
+		{"price", in.Price != ""},
+		{
+			"issued_on",
+			!in.IssuedOn.IsZero(),
+		},
+		{"matures_on", !in.MaturesOn.IsZero()},
+		{"face_value", in.FaceValue != ""},
+		{
+			"index_id",
+			in.IndexID != "",
+		},
+		{"percent_of_index_bp", in.PercentOfIndexBP != 0},
+		{"spread_bp", in.SpreadBP != 0},
 		{"from", !in.From.IsZero()},
-		{"exchange", in.Exchange != ""}, {"subtype", in.Subtype != ""}, {"symbols", in.Symbols != nil}, {"day_count", in.DayCount != ""},
+		{
+			"exchange",
+			in.Exchange != "",
+		},
+		{"subtype", in.Subtype != ""},
+		{"symbols", in.Symbols != nil},
+		{"day_count", in.DayCount != ""},
 	}
 
 	name := string(in.Action)
 	switch in.Action {
 	case "define":
 		// A zero scale is valid and cannot be told from an absent one.
-		return required(name, without(fields, "scale", "exchange", "subtype", "symbols"), "name", "type", "quote_currency")
+		return required(
+			name,
+			without(fields, "scale", "exchange", "subtype", "symbols"),
+			"name",
+			"type",
+			"quote_currency",
+		)
 	case "edit":
-		if err := required(name, without(fields, "name", "exchange", "subtype", "symbols")); err != nil {
+		if err := required(
+			name,
+			without(fields, "name", "exchange", "subtype", "symbols"),
+		); err != nil {
 			return err
 		}
 
 		if in.Name == "" && in.Exchange == "" && in.Subtype == "" && in.Symbols == nil {
-			return tool.InvalidArgument("name", "or exchange, subtype or symbols is required for edit")
+			return tool.InvalidArgument(
+				"name",
+				"or exchange, subtype or symbols is required for edit",
+			)
 		}
 
 		return nil
@@ -52,12 +87,21 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		return required(name, fields)
 	}
 
-	return required(name, without(fields, append([]string{"day_count"}, optionalTermFields...)...), "issued_on", "matures_on", "face_value")
+	return required(
+		name,
+		without(fields, append([]string{"day_count"}, optionalTermFields...)...),
+		"issued_on",
+		"matures_on",
+		"face_value",
+	)
 }
 
 // without returns fields minus the named ones, which an action takes as optional.
 func without(fields []field, names ...string) []field {
-	return slices.DeleteFunc(slices.Clone(fields), func(f field) bool { return slices.Contains(names, f.name) })
+	return slices.DeleteFunc(
+		slices.Clone(fields),
+		func(f field) bool { return slices.Contains(names, f.name) },
+	)
 }
 
 // symbolMap reads source=symbol entries; a nil list reads as nil and an empty one as an empty map.
@@ -71,7 +115,10 @@ func symbolMap(entries []string) (map[string]string, error) {
 	for _, e := range entries {
 		source, symbol, ok := strings.Cut(e, "=")
 		if !ok || source == "" || symbol == "" {
-			return nil, tool.InvalidArgument("symbols", fmt.Sprintf("entry %q must read source=symbol", e))
+			return nil, tool.InvalidArgument(
+				"symbols",
+				fmt.Sprintf("entry %q must read source=symbol", e),
+			)
 		}
 
 		m[source] = symbol
@@ -87,8 +134,16 @@ func (in manageInstrumentIn) instrument() (domain.Instrument, error) {
 	}
 
 	return domain.Instrument{
-		Code: money.Currency(in.Code), Type: string(in.Type), Scale: in.Scale, Name: in.Name, QuoteCurrency: money.Currency(in.QuoteCurrency),
-		Exchange: in.Exchange, Subtype: in.Subtype, Symbols: symbols,
+		Code: money.Currency(
+			in.Code,
+		),
+		Type:          string(in.Type),
+		Scale:         in.Scale,
+		Name:          in.Name,
+		QuoteCurrency: money.Currency(in.QuoteCurrency),
+		Exchange:      in.Exchange,
+		Subtype:       in.Subtype,
+		Symbols:       symbols,
 	}, nil
 }
 
@@ -121,7 +176,10 @@ func (in manageInstrumentIn) edited(inst domain.Instrument) (domain.Instrument, 
 func parsePrice(s string) (money.Rate, error) {
 	v, err := money.ParseRate(s)
 	if err != nil {
-		return money.Rate{}, tool.InvalidArgument("price", "must be a positive decimal with at most 12 decimals")
+		return money.Rate{}, tool.InvalidArgument(
+			"price",
+			"must be a positive decimal with at most 12 decimals",
+		)
 	}
 
 	return v, nil
@@ -134,7 +192,10 @@ func (in manageInstrumentIn) terms(
 ) (domain.Terms, error) {
 	unit, err := money.New(0, quote)
 	if err != nil {
-		return domain.Terms{}, &domain.FieldError{Field: "code", Message: "terms belong to a fixed_income instrument"}
+		return domain.Terms{}, &domain.FieldError{
+			Field:   "code",
+			Message: "terms belong to a fixed_income instrument",
+		}
 	}
 
 	face, err := tool.ParsePositive("face_value", in.FaceValue, unit)
@@ -143,8 +204,13 @@ func (in manageInstrumentIn) terms(
 	}
 
 	t := domain.Terms{
-		IssuedOn: in.IssuedOn.Time, MaturesOn: in.MaturesOn.Time, IndexID: in.IndexID, PercentOfIndexBP: in.PercentOfIndexBP,
-		SpreadBP: in.SpreadBP, DayCount: domain.DayCountAct365, FaceValue: face.Amount(),
+		IssuedOn:         in.IssuedOn.Time,
+		MaturesOn:        in.MaturesOn.Time,
+		IndexID:          in.IndexID,
+		PercentOfIndexBP: in.PercentOfIndexBP,
+		SpreadBP:         in.SpreadBP,
+		DayCount:         domain.DayCountAct365,
+		FaceValue:        face.Amount(),
 	}
 	if in.DayCount != "" {
 		t.DayCount = string(in.DayCount)

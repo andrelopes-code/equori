@@ -94,10 +94,19 @@ func seed(s *seeder, cfg config) error {
 func parseFlags(args []string) (config, error) {
 	fs := flag.NewFlagSet("demoseed", flag.ContinueOnError)
 	cfg := config{}
-	today := fs.String("today", "", "last day of the history, YYYY-MM-DD; default the current date in São Paulo")
+	today := fs.String(
+		"today",
+		"",
+		"last day of the history, YYYY-MM-DD; default the current date in São Paulo",
+	)
 	fs.StringVar(&cfg.url, "url", "http://127.0.0.1:8080", "address of the running application")
 	fs.StringVar(&cfg.email, "email", "demo@equori.local", "email of the demo user")
-	fs.StringVar(&cfg.password, "password", os.Getenv("EQUORI_DEMO_PASSWORD"), "password of the demo user; default $EQUORI_DEMO_PASSWORD")
+	fs.StringVar(
+		&cfg.password,
+		"password",
+		os.Getenv("EQUORI_DEMO_PASSWORD"),
+		"password of the demo user; default $EQUORI_DEMO_PASSWORD",
+	)
 
 	if err := fs.Parse(args); err != nil {
 		return cfg, err

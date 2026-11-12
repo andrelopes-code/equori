@@ -23,7 +23,8 @@ func TestGuideActionsExist(t *testing.T) {
 		tools[tl.Spec().Name] = enum
 	}
 
-	refs := regexp.MustCompile(`\b([a-z_]+) action ([a-z_]+)`).FindAllStringSubmatch(assistant.Instructions(), -1)
+	refs := regexp.MustCompile(`\b([a-z_]+) action ([a-z_]+)`).
+		FindAllStringSubmatch(assistant.Instructions(), -1)
 	if len(refs) == 0 {
 		t.Fatal("the guide names no tool action")
 	}
@@ -36,7 +37,12 @@ func TestGuideActionsExist(t *testing.T) {
 		}
 
 		if !slices.Contains(enum, any(ref[2])) {
-			t.Errorf("the guide names %s action %s, which is not in its action enum %v", ref[1], ref[2], enum)
+			t.Errorf(
+				"the guide names %s action %s, which is not in its action enum %v",
+				ref[1],
+				ref[2],
+				enum,
+			)
 		}
 	}
 }

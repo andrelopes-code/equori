@@ -74,8 +74,14 @@ func TestPerformanceOnDemoDataset(t *testing.T) {
 		{"transactions", "/transactions?limit=50"},
 		{"accounts", "/accounts?limit=50"},
 		{"statements", "/accounts/" + card + "/statements?limit=50"},
-		{"category totals, accrual", "/reports/categories?class=expense&view=accrual&from=" + year + "&to=" + today},
-		{"category totals, cash", "/reports/categories?class=expense&view=cash&from=" + year + "&to=" + today},
+		{
+			"category totals, accrual",
+			"/reports/categories?class=expense&view=accrual&from=" + year + "&to=" + today,
+		},
+		{
+			"category totals, cash",
+			"/reports/categories?class=expense&view=cash&from=" + year + "&to=" + today,
+		},
 		{"net worth", "/reports/net-worth?date=" + today},
 	}
 	for _, l := range lists {

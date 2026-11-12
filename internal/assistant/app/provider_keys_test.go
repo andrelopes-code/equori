@@ -101,11 +101,23 @@ func TestProviderKeysNeedTheInstanceKey(t *testing.T) {
 
 	svc := app.NewService(providerList{}, nil, nil, nil, nil, nil, nil, nil)
 
-	if _, err := svc.ExportProviderKeys(t.Context(), providerKeysBook); !errors.Is(err, app.ErrSecretKeyMissing) {
+	if _, err := svc.ExportProviderKeys(
+		t.Context(),
+		providerKeysBook,
+	); !errors.Is(
+		err,
+		app.ErrSecretKeyMissing,
+	) {
 		t.Errorf("export = %v, want ErrSecretKeyMissing", err)
 	}
 
-	if _, err := svc.SealProviderKeys(providerKeysBook, map[uuid.UUID]string{uuid.New(): "k"}); !errors.Is(err, app.ErrSecretKeyMissing) {
+	if _, err := svc.SealProviderKeys(
+		providerKeysBook,
+		map[uuid.UUID]string{uuid.New(): "k"},
+	); !errors.Is(
+		err,
+		app.ErrSecretKeyMissing,
+	) {
 		t.Errorf("seal = %v, want ErrSecretKeyMissing", err)
 	}
 }

@@ -35,10 +35,18 @@ func otherUserAccount(t *testing.T, h *apitest.Harness, name, class, kind string
 func TestManageAccountsCreateCategory(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	args := map[string]any{"action": "create_account", "name": "Pets", "class": "expense", "parent_id": f.food}
+	args := map[string]any{
+		"action":    "create_account",
+		"name":      "Pets",
+		"class":     "expense",
+		"parent_id": f.food,
+	}
 
 	p := previewTool(t, f.h, "manage_accounts_and_payees", args)
-	if p.Destructive || p.Target != "Pets" || len(p.Changes) != 4 || p.Changes[0].After.Text != "Pets" || p.Changes[3].Field != "parent" || p.Changes[3].After.Text != "Food" {
+	if p.Destructive || p.Target != "Pets" || len(p.Changes) != 4 ||
+		p.Changes[0].After.Text != "Pets" ||
+		p.Changes[3].Field != "parent" ||
+		p.Changes[3].After.Text != "Food" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -59,10 +67,20 @@ func TestManageAccountsCreateCategory(t *testing.T) {
 func TestManageAccountsCreatedCategoryAcceptsEarlierTransactions(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -4590), apitest.Posting(f.restaurant, 4590))
+	id := f.h.Record(
+		"2026-10-20",
+		apitest.Posting(f.checking, -4590),
+		apitest.Posting(f.restaurant, 4590),
+	)
 
 	var out manageOut
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "create_account", "name": "Pets", "class": "expense"}, &out)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "create_account", "name": "Pets", "class": "expense"},
+		&out,
+	)
 
 	res := categorize(f.h, id, 1, part(out.ID, 4590))
 	if res.Status != http.StatusOK {
@@ -73,28 +91,74 @@ func TestManageAccountsCreatedCategoryAcceptsEarlierTransactions(t *testing.T) {
 func TestManageAccountsInvalidArguments(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	f.h.ExpectToolError(f.h.Tool("manage_accounts_and_payees", map[string]any{"action": "create_account", "name": "X"}), "invalid_arguments", "class")
-	f.h.ExpectToolError(f.h.Tool("manage_accounts_and_payees", map[string]any{"action": "create_account", "name": "X", "class": "asset"}), "invalid_arguments", "kind")
-	f.h.ExpectToolError(f.h.Tool("manage_accounts_and_payees", map[string]any{"action": "create_payee", "name": "X", "into_id": f.food}), "invalid_arguments", "into_id")
-	f.h.ExpectToolError(f.h.Tool("manage_accounts_and_payees", map[string]any{"action": "close_account", "account_id": "nope"}), "invalid_arguments", "account_id")
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"manage_accounts_and_payees",
+			map[string]any{"action": "create_account", "name": "X"},
+		),
+		"invalid_arguments",
+		"class",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"manage_accounts_and_payees",
+			map[string]any{"action": "create_account", "name": "X", "class": "asset"},
+		),
+		"invalid_arguments",
+		"kind",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"manage_accounts_and_payees",
+			map[string]any{"action": "create_payee", "name": "X", "into_id": f.food},
+		),
+		"invalid_arguments",
+		"into_id",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"manage_accounts_and_payees",
+			map[string]any{"action": "close_account", "account_id": "nope"},
+		),
+		"invalid_arguments",
+		"account_id",
+	)
 }
 
 func TestManageAccountsUpdateCloseReopen(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
 	var out manageOut
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "update_account", "account_id": f.wallet, "name": "Pocket"}, &out)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "update_account", "account_id": f.wallet, "name": "Pocket"},
+		&out,
+	)
 
 	if out.Name != "Pocket" {
 		t.Fatalf("out = %+v", out)
 	}
 
-	p := previewTool(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "close_account", "account_id": f.wallet})
-	if p.Changes[0].Before.Text != "active" || p.Changes[0].After.Text != "closed" || p.Changes[1].After.Date != "2026-10-23" {
+	p := previewTool(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "close_account", "account_id": f.wallet},
+	)
+	if p.Changes[0].Before.Text != "active" || p.Changes[0].After.Text != "closed" ||
+		p.Changes[1].After.Date != "2026-10-23" {
 		t.Fatalf("preview = %+v", p)
 	}
 
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "close_account", "account_id": f.wallet}, &out)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "close_account", "account_id": f.wallet},
+		&out,
+	)
 	var a struct {
 		ClosedOn string `json:"closed_on"`
 	}
@@ -104,7 +168,13 @@ func TestManageAccountsUpdateCloseReopen(t *testing.T) {
 		t.Errorf("closed_on = %q", a.ClosedOn)
 	}
 
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "reopen_account", "account_id": f.wallet}, &out)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "reopen_account", "account_id": f.wallet},
+		&out,
+	)
 
 	a.ClosedOn = ""
 	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+f.wallet, nil, http.StatusOK, &a)
@@ -117,18 +187,38 @@ func TestManageAccountsUpdateCloseReopen(t *testing.T) {
 func TestManageAccountsCloseWithBalance(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	f.h.Record("2026-10-20", apitest.Posting(f.wallet, 1000), apitest.Posting(f.openingBalances, -1000))
-	f.h.ExpectToolError(f.h.Tool("manage_accounts_and_payees", map[string]any{"action": "close_account", "account_id": f.wallet}), "account_not_empty", "")
+	f.h.Record(
+		"2026-10-20",
+		apitest.Posting(f.wallet, 1000),
+		apitest.Posting(f.openingBalances, -1000),
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"manage_accounts_and_payees",
+			map[string]any{"action": "close_account", "account_id": f.wallet},
+		),
+		"account_not_empty",
+		"",
+	)
 }
 
 func TestManageAccountsMergeCategory(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
-	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -4590), apitest.Posting(f.restaurant, 4590))
-	args := map[string]any{"action": "merge_category", "account_id": f.restaurant, "into_id": f.food}
+	id := f.h.Record(
+		"2026-10-20",
+		apitest.Posting(f.checking, -4590),
+		apitest.Posting(f.restaurant, 4590),
+	)
+	args := map[string]any{
+		"action":     "merge_category",
+		"account_id": f.restaurant,
+		"into_id":    f.food,
+	}
 
 	p := previewTool(t, f.h, "manage_accounts_and_payees", args)
-	if !p.Destructive || p.Changes[0].Before.Text != "Restaurant" || p.Changes[0].After.Text != "Food" {
+	if !p.Destructive || p.Changes[0].Before.Text != "Restaurant" ||
+		p.Changes[0].After.Text != "Food" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -148,11 +238,29 @@ func TestManageAccountsPayees(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, apitest.Today("2026-10-23"))
 	var a, b, merged manageOut
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "create_payee", "name": "Padaria"}, &a)
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "create_payee", "name": "Mercado"}, &b)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "create_payee", "name": "Padaria"},
+		&a,
+	)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "create_payee", "name": "Mercado"},
+		&b,
+	)
 
 	rename := map[string]any{"action": "rename_payee", "payee_id": a.ID, "name": "Padaria Central"}
-	if p := previewTool(t, f.h, "manage_accounts_and_payees", rename); p.Changes[0].Before.Text != "Padaria" || p.Changes[0].After.Text != "Padaria Central" {
+	if p := previewTool(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		rename,
+	); p.Changes[0].Before.Text != "Padaria" ||
+		p.Changes[0].After.Text != "Padaria Central" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -163,7 +271,13 @@ func TestManageAccountsPayees(t *testing.T) {
 	}
 
 	merge := map[string]any{"action": "merge_payee", "payee_id": a.ID, "into_id": b.ID}
-	if p := previewTool(t, f.h, "manage_accounts_and_payees", merge); !p.Destructive || p.Changes[0].Before.Text != "Padaria Central" || p.Changes[0].After.Text != "Mercado" {
+	if p := previewTool(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		merge,
+	); !p.Destructive || p.Changes[0].Before.Text != "Padaria Central" ||
+		p.Changes[0].After.Text != "Mercado" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -174,7 +288,13 @@ func TestManageAccountsPayees(t *testing.T) {
 	}
 
 	var inst manageOut
-	toolOutput(t, f.h, "manage_accounts_and_payees", map[string]any{"action": "create_institution", "name": "Inter"}, &inst)
+	toolOutput(
+		t,
+		f.h,
+		"manage_accounts_and_payees",
+		map[string]any{"action": "create_institution", "name": "Inter"},
+		&inst,
+	)
 
 	if inst.Name != "Inter" || inst.ID == "" {
 		t.Errorf("institution = %+v", inst)
@@ -187,7 +307,13 @@ func TestManageAccountsTags(t *testing.T) {
 	h := s.c.h
 
 	rename := map[string]any{"action": "rename_tag", "tag": "trip", "name": "Lisbon"}
-	if p := previewTool(t, h, "manage_accounts_and_payees", rename); p.Changes[0].Before.Text != "trip" || p.Changes[0].After.Text != "lisbon" {
+	if p := previewTool(
+		t,
+		h,
+		"manage_accounts_and_payees",
+		rename,
+	); p.Changes[0].Before.Text != "trip" ||
+		p.Changes[0].After.Text != "lisbon" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -199,7 +325,13 @@ func TestManageAccountsTags(t *testing.T) {
 	}
 
 	merge := map[string]any{"action": "merge_tag", "tag": "lisbon", "into_tag": "travel"}
-	if p := previewTool(t, h, "manage_accounts_and_payees", merge); !p.Destructive || p.Changes[0].Before.Text != "lisbon" || p.Changes[0].After.Text != "travel" {
+	if p := previewTool(
+		t,
+		h,
+		"manage_accounts_and_payees",
+		merge,
+	); !p.Destructive || p.Changes[0].Before.Text != "lisbon" ||
+		p.Changes[0].After.Text != "travel" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -210,7 +342,13 @@ func TestManageAccountsTags(t *testing.T) {
 	}
 
 	del := map[string]any{"action": "delete_tag", "tag": "travel"}
-	if p := previewTool(t, h, "manage_accounts_and_payees", del); !p.Destructive || p.Target != "travel" {
+	if p := previewTool(
+		t,
+		h,
+		"manage_accounts_and_payees",
+		del,
+	); !p.Destructive ||
+		p.Target != "travel" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -220,8 +358,19 @@ func TestManageAccountsTags(t *testing.T) {
 		t.Fatalf("tags = %v", names)
 	}
 
-	h.ExpectToolError(h.Tool("manage_accounts_and_payees", map[string]any{"action": "delete_tag", "tag": "absent"}), "not_found", "")
-	h.ExpectToolError(h.Tool("manage_accounts_and_payees", map[string]any{"action": "delete_tag"}), "invalid_arguments", "tag")
+	h.ExpectToolError(
+		h.Tool(
+			"manage_accounts_and_payees",
+			map[string]any{"action": "delete_tag", "tag": "absent"},
+		),
+		"not_found",
+		"",
+	)
+	h.ExpectToolError(
+		h.Tool("manage_accounts_and_payees", map[string]any{"action": "delete_tag"}),
+		"invalid_arguments",
+		"tag",
+	)
 }
 
 func TestManageAccountsOtherUser(t *testing.T) {
@@ -271,8 +420,11 @@ func TestManageAccountsOpeningYieldAndLiquidity(t *testing.T) {
 	}
 
 	p := previewTool(t, f.h, tl, update)
-	if len(p.Changes) != 3 || p.Changes[0].Field != "date" || p.Changes[0].Before.Date != "2026-01-15" || p.Changes[0].After.Date != "2025-12-01" ||
-		p.Changes[1].After.Text != "yield none" || p.Changes[2].After.Text != "excluded from liquidity" {
+	if len(p.Changes) != 3 || p.Changes[0].Field != "date" ||
+		p.Changes[0].Before.Date != "2026-01-15" ||
+		p.Changes[0].After.Date != "2025-12-01" ||
+		p.Changes[1].After.Text != "yield none" ||
+		p.Changes[2].After.Text != "excluded from liquidity" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -283,14 +435,54 @@ func TestManageAccountsOpeningYieldAndLiquidity(t *testing.T) {
 		t.Fatalf("updated = %+v", got)
 	}
 
-	toolOutput(t, f.h, tl, map[string]any{"action": "update_account", "account_id": out.ID, "excluded_from_liquidity": false}, &manageOut{})
+	toolOutput(
+		t,
+		f.h,
+		tl,
+		map[string]any{
+			"action":                  "update_account",
+			"account_id":              out.ID,
+			"excluded_from_liquidity": false,
+		},
+		&manageOut{},
+	)
 	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+out.ID, nil, http.StatusOK, &got)
 
 	if got.ExcludedFromLiquidity {
 		t.Errorf("excluded_from_liquidity = true after false")
 	}
 
-	f.h.ExpectToolError(f.h.Tool(tl, map[string]any{"action": "update_account", "account_id": out.ID, "opened_on": "2026-06-01"}), "validation_failed", "opened_on")
-	f.h.ExpectToolError(f.h.Tool(tl, map[string]any{"action": "close_account", "account_id": out.ID, "yield_mode": "auto"}), "invalid_arguments", "yield_mode")
-	f.h.ExpectToolError(f.h.Tool(tl, map[string]any{"action": "create_account", "name": "X", "class": "expense", "excluded_from_liquidity": true}), "invalid_arguments", "excluded_from_liquidity")
+	f.h.ExpectToolError(
+		f.h.Tool(
+			tl,
+			map[string]any{
+				"action":     "update_account",
+				"account_id": out.ID,
+				"opened_on":  "2026-06-01",
+			},
+		),
+		"validation_failed",
+		"opened_on",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			tl,
+			map[string]any{"action": "close_account", "account_id": out.ID, "yield_mode": "auto"},
+		),
+		"invalid_arguments",
+		"yield_mode",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			tl,
+			map[string]any{
+				"action":                  "create_account",
+				"name":                    "X",
+				"class":                   "expense",
+				"excluded_from_liquidity": true,
+			},
+		),
+		"invalid_arguments",
+		"excluded_from_liquidity",
+	)
 }

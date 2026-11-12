@@ -260,7 +260,15 @@ formatters:
   enable:
     - gofmt
     - goimports
+    - golines
   settings:
+    # A line holds at most 100 columns, a tab counts as 4; golines breaks a call, a signature or
+    # a literal one element per line (CONTRIBUTING, Code layout).
+    golines:
+      max-len: 100
+      tab-len: 4
+      shorten-comments: false
+      chain-split-dots: true
     goimports:
       local-prefixes:
         - github.com/andrelopes-code/equori

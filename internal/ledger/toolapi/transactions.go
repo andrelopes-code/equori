@@ -12,11 +12,11 @@ import (
 )
 
 type searchTransactionsIn struct {
-	Query         string    `json:"query,omitzero" jsonschema:"case-insensitive text found in the description, the payee name or a posting memo"`
-	AccountID     string    `json:"account_id,omitzero" jsonschema:"keep transactions with a posting on this account or category; IDs come from list_accounts"`
-	Tag           string    `json:"tag,omitzero" jsonschema:"keep transactions with this tag"`
-	From          tool.Date `json:"from,omitzero" jsonschema:"first date, inclusive"`
-	To            tool.Date `json:"to,omitzero" jsonschema:"last date, inclusive"`
+	Query         string    `json:"query,omitzero"         jsonschema:"case-insensitive text found in the description, the payee name or a posting memo"`
+	AccountID     string    `json:"account_id,omitzero"    jsonschema:"keep transactions with a posting on this account or category; IDs come from list_accounts"`
+	Tag           string    `json:"tag,omitzero"           jsonschema:"keep transactions with this tag"`
+	From          tool.Date `json:"from,omitzero"          jsonschema:"first date, inclusive"`
+	To            tool.Date `json:"to,omitzero"            jsonschema:"last date, inclusive"`
 	Uncategorized bool      `json:"uncategorized,omitzero" jsonschema:"keep only transactions still waiting for a category"`
 	tool.PageArgs
 }
@@ -98,10 +98,18 @@ func searchTransactions(svc *app.Service) tool.Tool {
 	})
 }
 
-func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees map[uuid.UUID]string) transactionView {
+func viewOf(
+	t domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	payees map[uuid.UUID]string,
+) transactionView {
 	v := transactionView{
-		ID: t.ID.String(), Date: tool.DateOf(t.Date), Description: t.Description, PayeeName: payees[t.PayeeID],
-		Voided: t.VoidedAt != nil, Postings: make([]postingView, len(t.Postings)),
+		ID:          t.ID.String(),
+		Date:        tool.DateOf(t.Date),
+		Description: t.Description,
+		PayeeName:   payees[t.PayeeID],
+		Voided:      t.VoidedAt != nil,
+		Postings:    make([]postingView, len(t.Postings)),
 	}
 	if len(t.Tags) > 0 {
 		v.Tags = t.Tags
@@ -120,7 +128,12 @@ func viewOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account, payees 
 
 // transactionQuery checks the argument values the schema cannot: identifiers, limit and cursor.
 func transactionQuery(booksID int64, in searchTransactionsIn) (app.TransactionQuery, error) {
-	q := app.TransactionQuery{BooksID: booksID, Tag: in.Tag, Q: in.Query, Uncategorized: in.Uncategorized}
+	q := app.TransactionQuery{
+		BooksID:       booksID,
+		Tag:           in.Tag,
+		Q:             in.Query,
+		Uncategorized: in.Uncategorized,
+	}
 
 	var err error
 	if q.AccountID, err = optionalID(in.AccountID, "account_id"); err != nil {

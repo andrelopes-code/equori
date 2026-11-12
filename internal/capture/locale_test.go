@@ -14,7 +14,12 @@ func TestPreviewReadsByTheProfileConventions(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-10-21"))
 	c := h.LoginAs("de@example.com", locale.Locale{Language: "en", Region: "DE"}, "EUR")
 
-	r := h.Call(c, http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": "lunch 12,50"})
+	r := h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/capture/preview",
+		map[string]any{"text": "lunch 12,50"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
@@ -34,7 +39,12 @@ func TestPreviewReadsDatesByTheProfileOrder(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-10-21"))
 	c := h.LoginAs("us@example.com", locale.Locale{Language: "en", Region: "US"}, "USD")
 
-	r := h.Call(c, http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": "lunch 25.90 05/11"})
+	r := h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/capture/preview",
+		map[string]any{"text": "lunch 25.90 05/11"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}

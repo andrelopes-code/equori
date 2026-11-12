@@ -23,7 +23,11 @@ func TestCurrenciesMatchMoneyPackage(t *testing.T) {
 	}
 
 	if len(rows) != len(money.Currencies()) {
-		t.Fatalf("instrument currencies = %d, money currencies = %d", len(rows), len(money.Currencies()))
+		t.Fatalf(
+			"instrument currencies = %d, money currencies = %d",
+			len(rows),
+			len(money.Currencies()),
+		)
 	}
 
 	for _, r := range rows {
@@ -47,7 +51,13 @@ func TestInstrument(t *testing.T) {
 		t.Fatalf("Instrument(BRL) = %+v, %v", brl, err)
 	}
 
-	if _, err := m.Instrument(t.Context(), "XYZ"); !errors.Is(err, marketdata.ErrUnknownInstrument) {
+	if _, err := m.Instrument(
+		t.Context(),
+		"XYZ",
+	); !errors.Is(
+		err,
+		marketdata.ErrUnknownInstrument,
+	) {
 		t.Fatalf("Instrument(XYZ) err = %v, want ErrUnknownInstrument", err)
 	}
 }

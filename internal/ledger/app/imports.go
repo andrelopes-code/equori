@@ -67,8 +67,17 @@ func (e *LineError) Error() string { return fmt.Sprintf("line %d: %v", e.Index+1
 func (e *LineError) Unwrap() error { return e.Err }
 
 // RecordImported creates the transaction of one external record; see RecordImportedBatch.
-func (s *Service) RecordImported(ctx context.Context, booksID int64, recordID uuid.UUID, p ImportedPosting) (uuid.UUID, error) {
-	ids, err := s.RecordImportedBatch(ctx, booksID, []ImportedRecord{{RecordID: recordID, Posting: p}})
+func (s *Service) RecordImported(
+	ctx context.Context,
+	booksID int64,
+	recordID uuid.UUID,
+	p ImportedPosting,
+) (uuid.UUID, error) {
+	ids, err := s.RecordImportedBatch(
+		ctx,
+		booksID,
+		[]ImportedRecord{{RecordID: recordID, Posting: p}},
+	)
 	if le, ok := errors.AsType[*LineError](err); ok {
 		return uuid.Nil, le.Err
 	}
@@ -86,7 +95,11 @@ func (s *Service) RecordImported(ctx context.Context, booksID int64, recordID uu
 // duplicates. Ids follow the input order; a rejected line is a *LineError and creates none.
 // The accounts, settings and system accounts are read once for the batch, which keeps a
 // 1,000-line file within N07.
-func (s *Service) RecordImportedBatch(ctx context.Context, booksID int64, recs []ImportedRecord) ([]uuid.UUID, error) {
+func (s *Service) RecordImportedBatch(
+	ctx context.Context,
+	booksID int64,
+	recs []ImportedRecord,
+) ([]uuid.UUID, error) {
 	ids := make([]uuid.UUID, len(recs))
 	if len(recs) == 0 {
 		return ids, nil
@@ -140,11 +153,28 @@ func (s *Service) RecordImportedBatch(ctx context.Context, booksID int64, recs [
 
 // importedTransaction books rec against the decided category parts, or against the
 // uncategorized account of its sign (P4 amendment A14).
-func importedTransaction(booksID int64, base money.Currency, rec ImportedRecord, expense, income domain.Account) domain.Transaction {
+func importedTransaction(
+	booksID int64,
+	base money.Currency,
+	rec ImportedRecord,
+	expense, income domain.Account,
+) domain.Transaction {
 	t := domain.Transaction{
-		ID: uuid.Must(uuid.NewV7()), BooksID: booksID, Date: rec.Posting.Date, Description: rec.Posting.Description,
-		BalancingCurrency: base, Origin: domain.OriginImport,
-		Postings: []domain.Posting{{AccountID: rec.Posting.AccountID, Amount: rec.Posting.Amount, ExternalRecordID: rec.RecordID}},
+		ID: uuid.Must(
+			uuid.NewV7(),
+		),
+		BooksID:           booksID,
+		Date:              rec.Posting.Date,
+		Description:       rec.Posting.Description,
+		BalancingCurrency: base,
+		Origin:            domain.OriginImport,
+		Postings: []domain.Posting{
+			{
+				AccountID:        rec.Posting.AccountID,
+				Amount:           rec.Posting.Amount,
+				ExternalRecordID: rec.RecordID,
+			},
+		},
 	}
 	if rec.Posting.Pending {
 		t.Postings[0].Status = domain.StatusPending
@@ -153,11 +183,17 @@ func importedTransaction(booksID int64, base money.Currency, rec ImportedRecord,
 	if d := rec.Decision; d != nil {
 		t.PayeeID, t.Tags = d.PayeeID, d.AddTags
 		for _, p := range d.Parts {
-			t.Postings = append(t.Postings, domain.Posting{AccountID: p.AccountID, Amount: p.Amount})
+			t.Postings = append(
+				t.Postings,
+				domain.Posting{AccountID: p.AccountID, Amount: p.Amount},
+			)
 		}
 
 		if d.TransferTo != uuid.Nil {
-			t.Postings = append(t.Postings, domain.Posting{AccountID: d.TransferTo, Amount: rec.Posting.Amount.Neg()})
+			t.Postings = append(
+				t.Postings,
+				domain.Posting{AccountID: d.TransferTo, Amount: rec.Posting.Amount.Neg()},
+			)
 		}
 	}
 
@@ -167,7 +203,10 @@ func importedTransaction(booksID int64, base money.Currency, rec ImportedRecord,
 			other = expense
 		}
 
-		t.Postings = append(t.Postings, domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()})
+		t.Postings = append(
+			t.Postings,
+			domain.Posting{AccountID: other.ID, Amount: rec.Posting.Amount.Neg()},
+		)
 	}
 
 	return t
@@ -191,12 +230,24 @@ func cardPayment(rec ImportedRecord, transit domain.Account) ImportedRecord {
 // transfer, with the line's posting confirming its record (P5b amendment A30), and returns
 // its id. Otherwise the line is created: as the transfer when no candidate exists
 // (transfer true), uncategorized when several exist or the one cannot change.
-func (s *Service) completePairing(ctx context.Context, r Repository, booksID int64, rec ImportedRecord) (id uuid.UUID, transfer bool, err error) {
+func (s *Service) completePairing(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	rec ImportedRecord,
+) (id uuid.UUID, transfer bool, err error) {
 	line := rec.Posting
 
 	ids, err := r.PairingCandidates(ctx, PairingQuery{
-		BooksID: booksID, AccountID: rec.Decision.TransferTo, Amount: line.Amount.Neg().Amount(),
-		From: line.Date.AddDate(0, 0, -pairingWindowDays), To: line.Date.AddDate(0, 0, pairingWindowDays),
+		BooksID:   booksID,
+		AccountID: rec.Decision.TransferTo,
+		Amount:    line.Amount.Neg().Amount(),
+		From: line.Date.AddDate(
+			0,
+			0,
+			-pairingWindowDays,
+		),
+		To:               line.Date.AddDate(0, 0, pairingWindowDays),
 		ExcludedAccounts: []uuid.UUID{line.AccountID},
 	})
 	if err != nil || len(ids) != 1 {
@@ -227,7 +278,13 @@ func (s *Service) completePairing(ctx context.Context, r Repository, booksID int
 
 // statementDue is the statement of a card bill: the one due on the bill's due date, else
 // the reference month of that date (P6 amendment A39).
-func (s *Service) statementDue(ctx context.Context, r Repository, booksID int64, card uuid.UUID, due time.Time) (domain.ReferenceMonth, error) {
+func (s *Service) statementDue(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	card uuid.UUID,
+	due time.Time,
+) (domain.ReferenceMonth, error) {
 	ref, err := r.StatementByDueDate(ctx, booksID, card, due)
 	if errors.Is(err, ErrNotFound) {
 		return domain.MonthOf(due), nil
@@ -281,7 +338,11 @@ func (s *Service) loadImportBatch(
 		return importBatch{}, err
 	}
 
-	accounts, err := r.Accounts(ctx, booksID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}))
+	accounts, err := r.Accounts(
+		ctx,
+		booksID,
+		slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}),
+	)
 	if err != nil {
 		return importBatch{}, err
 	}
@@ -339,7 +400,8 @@ func (s *Service) insertImported(
 	i int,
 	rec ImportedRecord,
 ) (uuid.UUID, error) {
-	payment := rec.Posting.Kind == LineKindPayment && b.accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard
+	payment := rec.Posting.Kind == LineKindPayment &&
+		b.accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard
 	if payment && (rec.Decision == nil || rec.Decision.TransferTo == uuid.Nil) {
 		rec = cardPayment(rec, b.transit)
 	}
@@ -350,7 +412,9 @@ func (s *Service) insertImported(
 	}
 
 	// A payment is billed by its date: a source may list it on the bill it pays (A89).
-	if rec.Posting.DueDate != nil && b.accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard && !payment {
+	if rec.Posting.DueDate != nil &&
+		b.accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard &&
+		!payment {
 		ref, err := s.statementDue(ctx, r, booksID, rec.Posting.AccountID, *rec.Posting.DueDate)
 		if err != nil {
 			return uuid.Nil, err
@@ -381,7 +445,15 @@ func (s *Service) insertImported(
 		event.Cause = &rec.Decision.Cause
 	}
 
-	if err := r.Publish(ctx, outbox.Event{Type: EventTransactionRecorded, BooksID: booksID, AggregateID: t.ID.String(), Payload: event}); err != nil {
+	if err := r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionRecorded,
+			BooksID:     booksID,
+			AggregateID: t.ID.String(),
+			Payload:     event,
+		},
+	); err != nil {
 		return uuid.Nil, err
 	}
 

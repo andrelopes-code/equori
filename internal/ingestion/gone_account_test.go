@@ -108,7 +108,10 @@ func TestS345ReplaceGoneReserve(t *testing.T) {
 		t.Fatalf("map status %d: %s", m.Status, m.Body)
 	}
 
-	r.p.AddTransaction(r.checkingID, reserveLine("s345-reserve", "2026-11-12", "Dinheiro reservado Aaa", "-1.00"))
+	r.p.AddTransaction(
+		r.checkingID,
+		reserveLine("s345-reserve", "2026-11-12", "Dinheiro reservado Aaa", "-1.00"),
+	)
 	r.syncAt("2026-11-12T16:00:00.000Z")
 
 	if got := r.postings("s345-reserve"); got[r.reserves["Aaa"]] != 100 {
@@ -125,7 +128,12 @@ func TestMappingOverAListedAccountIsRefused(t *testing.T) {
 
 	body := map[string]any{"account_id": f.checking, "sync_from": "2026-10-01"}
 	external := externalAccount(f.conn, pluggy.SubtypeSavings).ID
-	f.h.ExpectProblem(f.mapAccount(f.h.Client, f.conn.ID, external, body), http.StatusUnprocessableEntity, "validation_failed", "account_id")
+	f.h.ExpectProblem(
+		f.mapAccount(f.h.Client, f.conn.ID, external, body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"account_id",
+	)
 }
 
 // Rename of an ordinary account: the mapping stays and the next line is recorded (A94).
@@ -142,7 +150,11 @@ func TestRenamedAccountKeepsItsMapping(t *testing.T) {
 	f.sync()
 
 	conn := f.connection(f.h.Client, f.conn.ID)
-	if x := externalAccount(conn, pluggy.SubtypeChecking); x.Name != "Conta Nova" || x.AccountID != f.checking || x.State != "mapped" {
+	if x := externalAccount(
+		conn,
+		pluggy.SubtypeChecking,
+	); x.Name != "Conta Nova" || x.AccountID != f.checking ||
+		x.State != "mapped" {
 		t.Fatalf("account = %+v", x)
 	}
 

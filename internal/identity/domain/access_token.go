@@ -38,15 +38,26 @@ type AccessToken struct {
 }
 
 // NewAccessToken returns the token text, eqt_ and 32 random bytes in unpadded base32, and its record.
-func NewAccessToken(memberID, booksID int64, name, scope string, days int, now time.Time) (string, AccessToken, error) {
+func NewAccessToken(
+	memberID, booksID int64,
+	name, scope string,
+	days int,
+	now time.Time,
+) (string, AccessToken, error) {
 	name = strings.TrimSpace(name)
 	switch {
 	case name == "" || utf8.RuneCountInString(name) > maxTokenName:
-		return "", AccessToken{}, &FieldError{Field: "name", Message: "must have between 1 and 80 characters"}
+		return "", AccessToken{}, &FieldError{
+			Field:   "name",
+			Message: "must have between 1 and 80 characters",
+		}
 	case scope != ScopeRead && scope != ScopeWrite:
 		return "", AccessToken{}, &FieldError{Field: "scope", Message: "must be read or write"}
 	case !slices.Contains(AccessTokenDays, days):
-		return "", AccessToken{}, &FieldError{Field: "expires_in_days", Message: "must be 30, 90 or 365"}
+		return "", AccessToken{}, &FieldError{
+			Field:   "expires_in_days",
+			Message: "must be 30, 90 or 365",
+		}
 	}
 
 	b := make([]byte, 32)
@@ -54,7 +65,13 @@ func NewAccessToken(memberID, booksID int64, name, scope string, days int, now t
 	text := AccessTokenPrefix + base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(b)
 
 	return text, AccessToken{
-		ID: uuid.New(), MemberID: memberID, BooksID: booksID, Name: name, Scope: scope, TokenHash: HashToken(text),
-		CreatedAt: now, ExpiresAt: now.AddDate(0, 0, days),
+		ID:        uuid.New(),
+		MemberID:  memberID,
+		BooksID:   booksID,
+		Name:      name,
+		Scope:     scope,
+		TokenHash: HashToken(text),
+		CreatedAt: now,
+		ExpiresAt: now.AddDate(0, 0, days),
 	}, nil
 }

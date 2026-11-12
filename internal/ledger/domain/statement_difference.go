@@ -29,13 +29,20 @@ type DifferenceExplanation struct {
 // lowers the amount due by difference (amount due − institution total). Among sets of one
 // size, the latest dates win, then the lowest transaction ids. Only the 20 latest candidates
 // enter the search.
-func ExplainDifference(difference int64, lineCount int, candidates []DifferenceCandidate) DifferenceExplanation {
+func ExplainDifference(
+	difference int64,
+	lineCount int,
+	candidates []DifferenceCandidate,
+) DifferenceExplanation {
 	if difference == 0 {
 		return DifferenceExplanation{}
 	}
 
 	sorted := slices.SortedFunc(slices.Values(candidates), func(a, b DifferenceCandidate) int {
-		return cmp.Or(b.Date.Compare(a.Date), slices.Compare(a.TransactionID[:], b.TransactionID[:]))
+		return cmp.Or(
+			b.Date.Compare(a.Date),
+			slices.Compare(a.TransactionID[:], b.TransactionID[:]),
+		)
 	})
 	sorted = sorted[:min(len(sorted), maxDifferenceCandidates)]
 

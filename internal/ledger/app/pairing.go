@@ -35,7 +35,11 @@ type CounterpartQuery struct {
 
 // Counterparts lists the counterparts of the line by date then id, each a transaction that
 // Transaction.Transfer accepts to the line's account (A216 rules 2.1 to 2.6).
-func (s *Service) Counterparts(ctx context.Context, booksID int64, q CounterpartQuery) ([]Counterpart, error) {
+func (s *Service) Counterparts(
+	ctx context.Context,
+	booksID int64,
+	q CounterpartQuery,
+) ([]Counterpart, error) {
 	rows, err := s.repo.ImportCounterparts(
 		ctx, booksID, q.AccountID, q.Amount.Currency(), q.Amount.Neg().Amount(),
 		q.Date.AddDate(0, 0, -pairingWindowDays), q.Date.AddDate(0, 0, pairingWindowDays),
@@ -67,7 +71,11 @@ func (s *Service) Counterparts(ctx context.Context, booksID int64, q Counterpart
 // PairImported makes txID the transfer of the line of recordID on accountID: its category or
 // transit postings become one posting on accountID that recordID confirms (A218 rule 1). It
 // returns the new version; ErrNotPairable when Transaction.Transfer refuses.
-func (s *Service) PairImported(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error) {
+func (s *Service) PairImported(
+	ctx context.Context,
+	booksID int64,
+	txID, accountID, recordID uuid.UUID,
+) (int, error) {
 	var version int
 
 	err := s.repo.InTx(ctx, func(r Repository) error {
@@ -84,7 +92,12 @@ func (s *Service) PairImported(ctx context.Context, booksID int64, txID, account
 		next, err := c.Transfer(c.Version, target, recordID, accounts)
 		if err != nil {
 			if slices.ContainsFunc(
-				[]error{domain.ErrReconciled, domain.ErrValidation, domain.ErrVoided, domain.ErrNotCategorizable},
+				[]error{
+					domain.ErrReconciled,
+					domain.ErrValidation,
+					domain.ErrVoided,
+					domain.ErrNotCategorizable,
+				},
 				func(refusal error) bool { return errors.Is(err, refusal) },
 			) {
 				return ErrNotPairable
@@ -104,7 +117,12 @@ func (s *Service) PairImported(ctx context.Context, booksID int64, txID, account
 // UnpairImported returns txID, which a pairing left at version, to the postings of version-1
 // as version+1 (A220 rule 2); ErrNotUnpairable when txID is not at version, the posting of
 // recordID is reconciled, or the previous postings are refused.
-func (s *Service) UnpairImported(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error {
+func (s *Service) UnpairImported(
+	ctx context.Context,
+	booksID int64,
+	txID, recordID uuid.UUID,
+	version int,
+) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
 		t, err := r.LockTransaction(ctx, booksID, txID)
 		if err != nil {
@@ -123,7 +141,11 @@ func (s *Service) UnpairImported(ctx context.Context, booksID int64, txID, recor
 
 		before := versions[at].Transaction
 
-		accounts, err := r.Accounts(ctx, booksID, append(postingAccounts(t), postingAccounts(before)...))
+		accounts, err := r.Accounts(
+			ctx,
+			booksID,
+			append(postingAccounts(t), postingAccounts(before)...),
+		)
 		if err != nil {
 			return err
 		}
@@ -131,7 +153,12 @@ func (s *Service) UnpairImported(ctx context.Context, booksID int64, txID, recor
 		next, err := t.Unpair(version, recordID, before, accounts)
 		if err != nil {
 			if slices.ContainsFunc(
-				[]error{domain.ErrReconciled, domain.ErrValidation, domain.ErrVoided, domain.ErrVersionConflict},
+				[]error{
+					domain.ErrReconciled,
+					domain.ErrValidation,
+					domain.ErrVoided,
+					domain.ErrVersionConflict,
+				},
 				func(refusal error) bool { return errors.Is(err, refusal) },
 			) {
 				return ErrNotUnpairable
@@ -164,6 +191,9 @@ func (s *Service) replaceUnpaired(
 	event.CategoriesChanged = true
 
 	return r.Publish(ctx, outbox.Event{
-		Type: EventTransactionCorrected, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event,
+		Type:        EventTransactionCorrected,
+		BooksID:     next.BooksID,
+		AggregateID: next.ID.String(),
+		Payload:     event,
 	})
 }

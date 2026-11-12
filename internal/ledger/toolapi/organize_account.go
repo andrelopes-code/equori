@@ -11,7 +11,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+func (c organizeCall) planCreateAccount(
+	ctx context.Context,
+	pv *tool.Preview,
+) (organizeRun, error) {
 	required := []string{"name", "class"}
 	if c.in.Class == "asset" || c.in.Class == "liability" {
 		required = append(required, "kind")
@@ -40,9 +43,14 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 	}
 
 	a := domain.Account{
-		Name: c.in.Name, Class: domain.Class(c.in.Class), Kind: domain.Kind(c.in.Kind), Instrument: currency,
-		ParentID: c.parentID, InstitutionID: c.institutionID,
-		OpenedOn: c.in.OpenedOn.Time, YieldMode: domain.YieldMode(c.in.YieldMode),
+		Name:          c.in.Name,
+		Class:         domain.Class(c.in.Class),
+		Kind:          domain.Kind(c.in.Kind),
+		Instrument:    currency,
+		ParentID:      c.parentID,
+		InstitutionID: c.institutionID,
+		OpenedOn:      c.in.OpenedOn.Time,
+		YieldMode:     domain.YieldMode(c.in.YieldMode),
 	}
 	pv.Target = c.in.Name
 
@@ -52,7 +60,11 @@ func (c organizeCall) planCreateAccount(ctx context.Context, pv *tool.Preview) (
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		created, err := c.svc.CreateAccount(ctx, c.booksID, a)
-		return manageAccountsAndPayeesOut{Action: c.action, ID: created.ID.String(), Name: created.Name}, err
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			ID:     created.ID.String(),
+			Name:   created.Name,
+		}, err
 	}, nil
 }
 
@@ -63,7 +75,10 @@ func (c organizeCall) describeNewAccount(
 ) error {
 	text := tool.TextValue
 
-	pv.Changes = []tool.Change{{Field: "name", After: text(c.in.Name)}, {Field: "class", After: text(string(c.in.Class))}}
+	pv.Changes = []tool.Change{
+		{Field: "name", After: text(c.in.Name)},
+		{Field: "class", After: text(string(c.in.Class))},
+	}
 	if c.in.Kind != "" {
 		pv.Changes = append(pv.Changes, tool.Change{Field: "kind", After: text(string(c.in.Kind))})
 	}
@@ -88,25 +103,46 @@ func (c organizeCall) describeNewAccount(
 	}
 
 	if !c.in.OpenedOn.IsZero() {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(c.in.OpenedOn.Time)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "date", After: tool.DateValue(c.in.OpenedOn.Time)},
+		)
 	}
 
 	if c.in.YieldMode != "" {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "status", After: text("yield " + string(c.in.YieldMode))})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "status", After: text("yield " + string(c.in.YieldMode))},
+		)
 	}
 
 	return nil
 }
 
-func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+func (c organizeCall) planUpdateAccount(
+	ctx context.Context,
+	pv *tool.Preview,
+) (organizeRun, error) {
 	text := tool.TextValue
 
-	if err := c.check([]string{"account_id"}, "name", "parent_id", "institution_id", "opened_on", "yield_mode", "excluded_from_liquidity"); err != nil {
+	if err := c.check(
+		[]string{"account_id"},
+		"name",
+		"parent_id",
+		"institution_id",
+		"opened_on",
+		"yield_mode",
+		"excluded_from_liquidity",
+	); err != nil {
 		return nil, err
 	}
 
-	if c.in.Name == "" && c.parentID == uuid.Nil && c.institutionID == uuid.Nil && !c.settingsGiven() {
-		return nil, tool.InvalidArgument("name", "one of name, parent_id, institution_id, opened_on, yield_mode or excluded_from_liquidity is required for update_account")
+	if c.in.Name == "" && c.parentID == uuid.Nil && c.institutionID == uuid.Nil &&
+		!c.settingsGiven() {
+		return nil, tool.InvalidArgument(
+			"name",
+			"one of name, parent_id, institution_id, opened_on, yield_mode or excluded_from_liquidity is required for update_account",
+		)
 	}
 
 	a, err := c.svc.Account(ctx, c.booksID, c.accountID)
@@ -119,7 +155,10 @@ func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (
 	var patch app.AccountPatch
 	if c.in.Name != "" {
 		patch.Name = &c.in.Name
-		pv.Changes = append(pv.Changes, tool.Change{Field: "name", Before: text(a.Name), After: text(c.in.Name)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "name", Before: text(a.Name), After: text(c.in.Name)},
+		)
 	}
 
 	if err := c.patchParent(ctx, pv, &patch, a.ParentID); err != nil {
@@ -134,7 +173,11 @@ func (c organizeCall) planUpdateAccount(ctx context.Context, pv *tool.Preview) (
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		updated, err := c.svc.UpdateAccount(ctx, c.booksID, a.ID, patch)
-		return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: updated.Name}, err
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			ID:     a.ID.String(),
+			Name:   updated.Name,
+		}, err
 	}, nil
 }
 
@@ -148,18 +191,39 @@ func (c organizeCall) patchSettings(pv *tool.Preview, patch *app.AccountPatch, a
 
 	if !c.in.OpenedOn.IsZero() {
 		patch.OpenedOn = &c.in.OpenedOn.Time
-		pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(a.OpenedOn), After: tool.DateValue(c.in.OpenedOn.Time)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "date",
+				Before: tool.DateValue(a.OpenedOn),
+				After:  tool.DateValue(c.in.OpenedOn.Time),
+			},
+		)
 	}
 
 	if c.in.YieldMode != "" {
 		mode := domain.YieldMode(c.in.YieldMode)
 		patch.YieldMode = &mode
-		pv.Changes = append(pv.Changes, tool.Change{Field: "status", Before: text("yield " + string(a.YieldMode)), After: text("yield " + string(mode))})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "status",
+				Before: text("yield " + string(a.YieldMode)),
+				After:  text("yield " + string(mode)),
+			},
+		)
 	}
 
 	if c.in.ExcludedFromLiquidity.Set {
 		patch.ExcludedFromLiquidity = &c.in.ExcludedFromLiquidity.B
-		pv.Changes = append(pv.Changes, tool.Change{Field: "status", Before: text(liquidityText(a.ExcludedFromLiquidity)), After: text(liquidityText(c.in.ExcludedFromLiquidity.B))})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "status",
+				Before: text(liquidityText(a.ExcludedFromLiquidity)),
+				After:  text(liquidityText(c.in.ExcludedFromLiquidity.B)),
+			},
+		)
 	}
 }
 
@@ -195,7 +259,10 @@ func (c organizeCall) patchParent(
 
 	patch.ParentID = &c.parentID
 
-	pv.Changes = append(pv.Changes, tool.Change{Field: "parent", Before: text(before), After: text(after)})
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "parent", Before: text(before), After: text(after)},
+	)
 
 	return nil
 }
@@ -227,12 +294,18 @@ func (c organizeCall) patchInstitution(
 
 	patch.InstitutionID = &c.institutionID
 
-	pv.Changes = append(pv.Changes, tool.Change{Field: "institution", Before: text(before), After: text(after)})
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "institution", Before: text(before), After: text(after)},
+	)
 
 	return nil
 }
 
-func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+func (c organizeCall) planCloseOrReopenAccount(
+	ctx context.Context,
+	pv *tool.Preview,
+) (organizeRun, error) {
 	text := tool.TextValue
 	closing := c.in.Action == "close_account"
 
@@ -258,14 +331,26 @@ func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Pre
 	}
 
 	if closing {
-		pv.Changes = []tool.Change{{Field: "status", Before: text("active"), After: text("closed")}, {Field: "date", After: tool.DateValue(date)}}
+		pv.Changes = []tool.Change{
+			{Field: "status", Before: text("active"), After: text("closed")},
+			{Field: "date", After: tool.DateValue(date)},
+		}
 	} else {
 		pv.Changes = []tool.Change{{Field: "status", Before: text("closed"), After: text("active")}}
 	}
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		if closing {
-			return manageAccountsAndPayeesOut{Action: c.action, ID: a.ID.String(), Name: a.Name}, c.svc.CloseAccount(ctx, c.booksID, a.ID, date)
+			return manageAccountsAndPayeesOut{
+				Action: c.action,
+				ID:     a.ID.String(),
+				Name:   a.Name,
+			}, c.svc.CloseAccount(
+				ctx,
+				c.booksID,
+				a.ID,
+				date,
+			)
 		}
 
 		_, err := c.svc.ReopenAccount(ctx, c.booksID, a.ID)
@@ -274,7 +359,10 @@ func (c organizeCall) planCloseOrReopenAccount(ctx context.Context, pv *tool.Pre
 	}, nil
 }
 
-func (c organizeCall) planMergeCategory(ctx context.Context, pv *tool.Preview) (organizeRun, error) {
+func (c organizeCall) planMergeCategory(
+	ctx context.Context,
+	pv *tool.Preview,
+) (organizeRun, error) {
 	text := tool.TextValue
 
 	if err := c.check([]string{"account_id", "into_id"}); err != nil {
@@ -296,6 +384,10 @@ func (c organizeCall) planMergeCategory(ctx context.Context, pv *tool.Preview) (
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		merged, err := c.svc.MergeCategories(ctx, c.booksID, from.ID, into.ID)
-		return manageAccountsAndPayeesOut{Action: c.action, ID: merged.ID.String(), Name: merged.Name}, err
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			ID:     merged.ID.String(),
+			Name:   merged.Name,
+		}, err
 	}, nil
 }

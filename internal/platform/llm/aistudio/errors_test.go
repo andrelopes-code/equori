@@ -56,11 +56,26 @@ func TestGenerateErrors(t *testing.T) {
 		check   func(*testing.T, error)
 	}{
 		{"quota with retry delay", 429, "error_quota.json", quota(37 * time.Second)},
-		{"quota with fractional delay", 429, "error_quota_fraction.json", quota(500 * time.Millisecond)},
+		{
+			"quota with fractional delay",
+			429,
+			"error_quota_fraction.json",
+			quota(500 * time.Millisecond),
+		},
 		{"quota without retry info", 429, "error_quota_no_retry.json", quota(0)},
 		{"quota with a body that is not json", 429, "error_not_json.txt", quota(0)},
-		{"bad request", 400, "error_invalid.json", is(llm.ErrInvalidRequest, "Invalid JSON payload received.")},
-		{"unknown model", 404, "error_invalid.json", is(llm.ErrInvalidRequest, "Invalid JSON payload received.")},
+		{
+			"bad request",
+			400,
+			"error_invalid.json",
+			is(llm.ErrInvalidRequest, "Invalid JSON payload received."),
+		},
+		{
+			"unknown model",
+			404,
+			"error_invalid.json",
+			is(llm.ErrInvalidRequest, "Invalid JSON payload received."),
+		},
 		{"bad key", 401, "error_unauthorized.json", is(llm.ErrUnauthorized, "status 401")},
 		{"forbidden", 403, "error_unauthorized.json", is(llm.ErrUnauthorized, "status 403")},
 		{"internal error", 500, "error_server.json", is(llm.ErrTransient, "status 500")},
@@ -79,7 +94,13 @@ func TestGenerateErrors(t *testing.T) {
 		srv := httptest.NewServer(http.NotFoundHandler())
 		srv.Close()
 
-		if err := generate(context.Background(), aistudio.New(srv.URL, "k", http.DefaultClient)); !errors.Is(err, llm.ErrTransient) {
+		if err := generate(
+			context.Background(),
+			aistudio.New(srv.URL, "k", http.DefaultClient),
+		); !errors.Is(
+			err,
+			llm.ErrTransient,
+		) {
 			t.Fatalf("err = %v, want ErrTransient", err)
 		}
 	})
@@ -120,17 +141,28 @@ func TestKeyNeverExposed(t *testing.T) {
 		name string
 		url  func(t *testing.T) string
 	}{
-		{"unauthorized", func(t *testing.T) string { return serve(t, 401, "error_unauthorized.json", nil).URL }},
+		{
+			"unauthorized",
+			func(t *testing.T) string { return serve(t, 401, "error_unauthorized.json", nil).URL },
+		},
 		{"quota", func(t *testing.T) string { return serve(t, 429, "error_quota.json", nil).URL }},
 		{"server unreachable", func(*testing.T) string { return closed.URL }},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var logs bytes.Buffer
-			clk := clock.New(func() time.Time { return time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC) })
-			router := llm.NewRouter(&clk, slog.New(slog.NewJSONHandler(&logs, nil)), nil, aistudio.New(tt.url(t), key, http.DefaultClient))
+			clk := clock.New(
+				func() time.Time { return time.Date(2026, 10, 16, 12, 0, 0, 0, time.UTC) },
+			)
+			router := llm.NewRouter(
+				&clk,
+				slog.New(slog.NewJSONHandler(&logs, nil)),
+				nil,
+				aistudio.New(tt.url(t), key, http.DefaultClient),
+			)
 
-			_, err := router.Client(llm.Target{Provider: "aistudio", Model: "gemini-x"}).Generate(context.Background(), llm.Request{Messages: []llm.Message{user("hi")}})
+			_, err := router.Client(llm.Target{Provider: "aistudio", Model: "gemini-x"}).
+				Generate(context.Background(), llm.Request{Messages: []llm.Message{user("hi")}})
 			if err == nil {
 				t.Fatal("Generate succeeded, want an error")
 			}

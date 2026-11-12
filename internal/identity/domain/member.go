@@ -75,7 +75,10 @@ func NormalizeDisplayName(s string) (string, error) {
 	}
 
 	if strings.ContainsFunc(s, unicode.IsControl) {
-		return "", &FieldError{Field: "display_name", Message: "must not contain control characters"}
+		return "", &FieldError{
+			Field:   "display_name",
+			Message: "must not contain control characters",
+		}
 	}
 
 	return s, nil

@@ -13,7 +13,13 @@ func TestListPayeesAndTagsTool(t *testing.T) {
 
 	h := apitest.New(t, apitest.Today("2026-10-23"))
 	for _, n := range []string{"Uber", "Padaria"} {
-		h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": n}, http.StatusCreated, nil)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/payees",
+			map[string]string{"name": n},
+			http.StatusCreated,
+			nil,
+		)
 	}
 
 	checking := h.Account("Checking", "asset", "checking", nil)
@@ -28,7 +34,13 @@ func TestListPayeesAndTagsTool(t *testing.T) {
 			Name string `json:"name"`
 		} `json:"payees"`
 	}
-	toolOutput(t, h, "list_payees_and_tags", map[string]any{"kind": "payees", "query": "ub"}, &payees)
+	toolOutput(
+		t,
+		h,
+		"list_payees_and_tags",
+		map[string]any{"kind": "payees", "query": "ub"},
+		&payees,
+	)
 
 	if len(payees.Payees) != 1 || payees.Payees[0].Name != "Uber" {
 		t.Errorf("payees = %+v", payees)
@@ -43,7 +55,11 @@ func TestListPayeesAndTagsTool(t *testing.T) {
 		t.Errorf("tags = %v", tags.Tags)
 	}
 
-	h.ExpectToolError(h.Tool("list_payees_and_tags", map[string]any{"kind": "other"}), "invalid_arguments", "")
+	h.ExpectToolError(
+		h.Tool("list_payees_and_tags", map[string]any{"kind": "other"}),
+		"invalid_arguments",
+		"",
+	)
 }
 
 func TestListAccountsInstitution(t *testing.T) {
@@ -52,7 +68,13 @@ func TestListAccountsInstitution(t *testing.T) {
 	var inst struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]string{"name": "Itaú"}, http.StatusCreated, &inst)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/institutions",
+		map[string]string{"name": "Itaú"},
+		http.StatusCreated,
+		&inst,
+	)
 	h.Account("Checking", "asset", "checking", map[string]any{"institution_id": inst.ID})
 	var out struct {
 		BaseCurrency string `json:"base_currency"`
@@ -63,7 +85,8 @@ func TestListAccountsInstitution(t *testing.T) {
 	}
 	toolOutput(t, h, "list_accounts", map[string]any{"class": "asset"}, &out)
 
-	if out.BaseCurrency != "BRL" || len(out.Accounts) != 1 || out.Accounts[0].InstitutionName != "Itaú" {
+	if out.BaseCurrency != "BRL" || len(out.Accounts) != 1 ||
+		out.Accounts[0].InstitutionName != "Itaú" {
 		t.Errorf("list_accounts = %+v", out)
 	}
 }

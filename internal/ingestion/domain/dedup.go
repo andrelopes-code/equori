@@ -32,7 +32,14 @@ func (o Ordinals) Next(r NormalizedRecord) int {
 }
 
 func lineIdentity(r NormalizedRecord) string {
-	return r.Date.Format(time.DateOnly) + "\x00" + strconv.FormatInt(r.Amount, 10) + "\x00" + NormalizeDescription(r.Description)
+	return r.Date.Format(
+		time.DateOnly,
+	) + "\x00" + strconv.FormatInt(
+		r.Amount,
+		10,
+	) + "\x00" + NormalizeDescription(
+		r.Description,
+	)
 }
 
 // DedupKey identifies a statement line across imports (I10): the source's external id when

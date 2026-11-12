@@ -47,7 +47,8 @@ func TestToolCatalogQuality(t *testing.T) {
 			t.Errorf("tool %s: the description has no sentence starting \"Use \"", s.Name)
 		}
 
-		if !strings.HasPrefix(s.Description, "Do not use ") && !strings.Contains(s.Description, ". Do not use ") {
+		if !strings.HasPrefix(s.Description, "Do not use ") &&
+			!strings.Contains(s.Description, ". Do not use ") {
 			t.Errorf("tool %s: the description has no sentence starting \"Do not use \"", s.Name)
 		}
 
@@ -67,7 +68,12 @@ func TestToolCatalogQuality(t *testing.T) {
 		}
 
 		if len(decl) > maxDeclaration {
-			t.Errorf("tool %s: declaration of %d bytes exceeds %d", s.Name, len(decl), maxDeclaration)
+			t.Errorf(
+				"tool %s: declaration of %d bytes exceeds %d",
+				s.Name,
+				len(decl),
+				maxDeclaration,
+			)
 		}
 
 		total += len(decl)

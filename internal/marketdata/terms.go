@@ -28,20 +28,34 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 	}
 
 	if in.Type != typeFixedIncome {
-		return Terms{}, &domain.FieldError{Field: "code", Message: "terms belong to a fixed_income instrument"}
+		return Terms{}, &domain.FieldError{
+			Field:   "code",
+			Message: "terms belong to a fixed_income instrument",
+		}
 	}
 
 	err = pgx.BeginFunc(ctx, m.pool, func(tx pgx.Tx) error {
 		q := m.q.WithTx(tx)
 		if err := q.PutTerms(ctx, postgres.PutTermsParams{
-			InstrumentCode: code, IssuedOn: t.IssuedOn, MaturesOn: t.MaturesOn, IndexID: optional(t.IndexID),
-			PercentOfIndexBp: int32(t.PercentOfIndexBP), SpreadBp: int32(t.SpreadBP), DayCount: t.DayCount, FaceValue: t.FaceValue, //nolint:gosec // G115: the contract bounds both to int32
+			InstrumentCode: code,
+			IssuedOn:       t.IssuedOn,
+			MaturesOn:      t.MaturesOn,
+			IndexID:        optional(t.IndexID),
+			PercentOfIndexBp: int32(
+				t.PercentOfIndexBP,
+			),
+			SpreadBp:  int32(t.SpreadBP),
+			DayCount:  t.DayCount,
+			FaceValue: t.FaceValue, //nolint:gosec // G115: the contract bounds both to int32
 		}); err != nil {
 			return fmt.Errorf("put terms: %w", err)
 		}
 
 		// The accrued prices follow the terms: the next tick computes them again.
-		return q.DeletePricesBySource(ctx, postgres.DeletePricesBySourceParams{Source: sourceAccrual, Instrument: code})
+		return q.DeletePricesBySource(
+			ctx,
+			postgres.DeletePricesBySourceParams{Source: sourceAccrual, Instrument: code},
+		)
 	})
 
 	return t, err
@@ -66,8 +80,12 @@ func (m *Module) BusinessDayIndexes() domain.BusinessDayIndexes { return m.busin
 
 func toTerms(r postgres.MarketdataFixedIncomeTerm) Terms {
 	t := Terms{
-		IssuedOn: r.IssuedOn, MaturesOn: r.MaturesOn, PercentOfIndexBP: int(r.PercentOfIndexBp), SpreadBP: int(r.SpreadBp),
-		DayCount: r.DayCount, FaceValue: r.FaceValue,
+		IssuedOn:         r.IssuedOn,
+		MaturesOn:        r.MaturesOn,
+		PercentOfIndexBP: int(r.PercentOfIndexBp),
+		SpreadBP:         int(r.SpreadBp),
+		DayCount:         r.DayCount,
+		FaceValue:        r.FaceValue,
 	}
 	if r.IndexID != nil {
 		t.IndexID = *r.IndexID

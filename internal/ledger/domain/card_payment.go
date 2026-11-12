@@ -13,7 +13,10 @@ var ErrNotRetypable = errors.New("the transaction was changed after its import")
 // AsCardPayment returns the next version of t, a card credit booked against an
 // uncategorized account, as a card payment against the transit account (A88). The card
 // posting keeps its status and external record and is billed again by its date (A89).
-func (t Transaction) AsCardPayment(transit Account, accounts map[uuid.UUID]Account) (Transaction, error) {
+func (t Transaction) AsCardPayment(
+	transit Account,
+	accounts map[uuid.UUID]Account,
+) (Transaction, error) {
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}

@@ -15,7 +15,10 @@ type memberKey struct{}
 // Authorize is the single authorization point for /api/ (HA9). required returns the x-book-role of
 // the operation r matches, and whether r matches one. Deny by default: a path without an operation
 // needs a session, and an operation without x-book-role is 403.
-func (s *Server) Authorize(next http.Handler, required func(*http.Request) (role string, matched bool)) http.Handler {
+func (s *Server) Authorize(
+	next http.Handler,
+	required func(*http.Request) (role string, matched bool),
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		role, matched := required(r)
 		if !isAPI(r) || (matched && role == rolePublic) {
@@ -46,7 +49,10 @@ func (s *Server) Authorize(next http.Handler, required func(*http.Request) (role
 			return
 		}
 
-		ctx := clock.WithLocation(auth.WithIdentity(r.Context(), access.Member.ID, access.BooksID, access.Role), loc)
+		ctx := clock.WithLocation(
+			auth.WithIdentity(r.Context(), access.Member.ID, access.BooksID, access.Role),
+			loc,
+		)
 		ctx = context.WithValue(ctx, memberKey{}, access.Member)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

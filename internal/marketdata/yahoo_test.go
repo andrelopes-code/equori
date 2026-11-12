@@ -19,8 +19,15 @@ func TestS365YahooSymbols(t *testing.T) {
 	t.Parallel()
 
 	fake := newYahooFake(t)
-	h := apitest.New(t, apitest.As(usProfile()), apitest.Today("2026-11-09"),
-		apitest.PriceFeeds([]string{"yahoo_chart"}, map[string]string{"yahoo_chart": fake.srv.URL + "/yahoo"}))
+	h := apitest.New(
+		t,
+		apitest.As(usProfile()),
+		apitest.Today("2026-11-09"),
+		apitest.PriceFeeds(
+			[]string{"yahoo_chart"},
+			map[string]string{"yahoo_chart": fake.srv.URL + "/yahoo"},
+		),
+	)
 
 	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
 		"code": "BRK.B", "type": "stock", "scale": 0, "name": "Berkshire B",
@@ -36,7 +43,9 @@ func TestS365YahooSymbols(t *testing.T) {
 	}
 
 	h.MustDo(http.MethodPatch, "/api/v1/instruments/BRKZ", map[string]any{
-		"name": "Berkshire on NZX", "exchange": "XNZE", "symbols": map[string]string{"yahoo_chart": "BRK-B"},
+		"name":     "Berkshire on NZX",
+		"exchange": "XNZE",
+		"symbols":  map[string]string{"yahoo_chart": "BRK-B"},
 	}, http.StatusOK, nil)
 
 	if ids := coverageSources(t, h, "BRKZ"); !slices.Equal(ids, []string{"yahoo_chart"}) {
@@ -46,7 +55,15 @@ func TestS365YahooSymbols(t *testing.T) {
 	h.App.Marketdata.TickFeeds(t.Context())
 
 	paths := fake.recorded()
-	if want := []string{"/yahoo/BRK-B", "/yahoo/BRK-B", "/yahoo/BRK-B", "/yahoo/BRK-B"}; !slices.Equal(paths, want) {
+	if want := []string{
+		"/yahoo/BRK-B",
+		"/yahoo/BRK-B",
+		"/yahoo/BRK-B",
+		"/yahoo/BRK-B",
+	}; !slices.Equal(
+		paths,
+		want,
+	) {
 		t.Fatalf("requests = %v, want %v", paths, want)
 	}
 
@@ -59,9 +76,27 @@ func TestS365YahooSymbols(t *testing.T) {
 		nil, http.StatusOK, &list)
 
 	want := []priceAPI{
-		{Instrument: "BRKZ", QuoteInstrument: "USD", Date: "2026-11-04", Value: "349.51", Source: "yahoo_chart"},
-		{Instrument: "BRKZ", QuoteInstrument: "USD", Date: "2026-11-05", Value: "344.17", Source: "yahoo_chart"},
-		{Instrument: "BRKZ", QuoteInstrument: "USD", Date: "2026-11-06", Value: "342.37", Source: "yahoo_chart"},
+		{
+			Instrument:      "BRKZ",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-04",
+			Value:           "349.51",
+			Source:          "yahoo_chart",
+		},
+		{
+			Instrument:      "BRKZ",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-05",
+			Value:           "344.17",
+			Source:          "yahoo_chart",
+		},
+		{
+			Instrument:      "BRKZ",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-06",
+			Value:           "342.37",
+			Source:          "yahoo_chart",
+		},
 	}
 	if !slices.Equal(list.Items, want) {
 		t.Fatalf("prices = %+v, want %+v", list.Items, want)
@@ -81,8 +116,13 @@ func TestS364UnofficialConfirmation(t *testing.T) {
 		"quote_currency": "USD", "exchange": "XNAS",
 	}, http.StatusCreated, nil)
 
-	r := h.Do(http.MethodPut, "/api/v1/market-data/feeds/yahoo_chart", map[string]any{"enabled": true})
-	if r.Status != http.StatusUnprocessableEntity || !strings.Contains(string(r.Body), `"code":"unofficial_source"`) {
+	r := h.Do(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/yahoo_chart",
+		map[string]any{"enabled": true},
+	)
+	if r.Status != http.StatusUnprocessableEntity ||
+		!strings.Contains(string(r.Body), `"code":"unofficial_source"`) {
 		t.Fatalf("enable without acceptance = %d %s, want 422 unofficial_source", r.Status, r.Body)
 	}
 
@@ -110,9 +150,27 @@ func TestS364UnofficialConfirmation(t *testing.T) {
 		nil, http.StatusOK, &list)
 
 	want := []priceAPI{
-		{Instrument: "AAPL", QuoteInstrument: "USD", Date: "2026-11-04", Value: "349.51", Source: "yahoo_chart"},
-		{Instrument: "AAPL", QuoteInstrument: "USD", Date: "2026-11-05", Value: "344.17", Source: "yahoo_chart"},
-		{Instrument: "AAPL", QuoteInstrument: "USD", Date: "2026-11-06", Value: "342.37", Source: "yahoo_chart"},
+		{
+			Instrument:      "AAPL",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-04",
+			Value:           "349.51",
+			Source:          "yahoo_chart",
+		},
+		{
+			Instrument:      "AAPL",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-05",
+			Value:           "344.17",
+			Source:          "yahoo_chart",
+		},
+		{
+			Instrument:      "AAPL",
+			QuoteInstrument: "USD",
+			Date:            "2026-11-06",
+			Value:           "342.37",
+			Source:          "yahoo_chart",
+		},
 	}
 	if !slices.Equal(list.Items, want) {
 		t.Fatalf("prices = %+v, want %+v", list.Items, want)
@@ -166,7 +224,11 @@ func (f *yahooFake) recorded() []string {
 }
 
 func usProfile() apitest.Profile {
-	return apitest.Profile{Name: "united_states", Locale: locale.Locale{Language: "en", Region: "US"}, Base: "USD"}
+	return apitest.Profile{
+		Name:   "united_states",
+		Locale: locale.Locale{Language: "en", Region: "US"},
+		Base:   "USD",
+	}
 }
 
 func coverageSources(t *testing.T, h *apitest.Harness, code string) []string {

@@ -22,7 +22,10 @@ func TestTitle(t *testing.T) {
 			}
 		}},
 		{"cuts at a word boundary", words, func(t *testing.T, got string) {
-			if n := utf8.RuneCountInString(got); n > MaxTitle || strings.HasSuffix(got, " ") || !strings.HasPrefix(words, got+" ") {
+			if n := utf8.RuneCountInString(
+				got,
+			); n > MaxTitle || strings.HasSuffix(got, " ") ||
+				!strings.HasPrefix(words, got+" ") {
 				t.Errorf("got %q (%d runes)", got, n)
 			}
 		}},

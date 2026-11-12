@@ -13,10 +13,25 @@ import (
 var articles embed.FS
 
 var topics = []string{
-	"getting_started", "accounts_and_categories", "transactions_and_postings", "capture", "credit_cards_and_statements",
-	"installments", "foreign_purchases_and_exchange", "refunds_reimbursements_and_disputes", "transfers",
-	"imports_and_bank_connections", "categorization_rules_and_payees", "reconciliation", "schedules_and_occurrences",
-	"budgets", "goals", "investments", "reports", "privacy_and_the_assistant", "settings_language_and_region",
+	"getting_started",
+	"accounts_and_categories",
+	"transactions_and_postings",
+	"capture",
+	"credit_cards_and_statements",
+	"installments",
+	"foreign_purchases_and_exchange",
+	"refunds_reimbursements_and_disputes",
+	"transfers",
+	"imports_and_bank_connections",
+	"categorization_rules_and_payees",
+	"reconciliation",
+	"schedules_and_occurrences",
+	"budgets",
+	"goals",
+	"investments",
+	"reports",
+	"privacy_and_the_assistant",
+	"settings_language_and_region",
 }
 
 // Topics returns the article topics in the order of the get_help declaration.
@@ -57,7 +72,11 @@ func ParseMap(b []byte) ([]Screen, error) {
 
 		for _, topic := range s.Topics {
 			if !slices.Contains(topics, topic) {
-				return nil, fmt.Errorf("navigation map: path %s has unknown topic %q", s.Path, topic)
+				return nil, fmt.Errorf(
+					"navigation map: path %s has unknown topic %q",
+					s.Path,
+					topic,
+				)
 			}
 		}
 	}

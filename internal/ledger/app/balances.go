@@ -15,7 +15,13 @@ import (
 )
 
 // BalanceAt returns the balance in the account currency; a parent account sums its descendants.
-func (s *Service) BalanceAt(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis) (Balance, error) {
+func (s *Service) BalanceAt(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	basis Basis,
+) (Balance, error) {
 	basis, err := normalizeBasis(basis)
 	if err != nil {
 		return Balance{}, err
@@ -55,13 +61,22 @@ func normalizeBasis(basis Basis) (Basis, error) {
 	case BasisBooked, BasisSettled:
 		return basis, nil
 	default:
-		return "", &domain.FieldError{Field: "basis", Message: "must be booked or settled", Err: domain.ErrValidation}
+		return "", &domain.FieldError{
+			Field:   "basis",
+			Message: "must be booked or settled",
+			Err:     domain.ErrValidation,
+		}
 	}
 }
 
 // BalancesAt returns the balance of every asset and liability account, in the account
 // currency, ordered by account name then id.
-func (s *Service) BalancesAt(ctx context.Context, booksID int64, date time.Time, basis Basis) ([]Balance, error) {
+func (s *Service) BalancesAt(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+	basis Basis,
+) ([]Balance, error) {
 	basis, err := normalizeBasis(basis)
 	if err != nil {
 		return nil, err
@@ -87,7 +102,12 @@ func (s *Service) BalancesAt(ctx context.Context, booksID int64, date time.Time,
 
 // CategoryTotal returns the weights of the postings of a category subtree booked in
 // [from, to), in the book's base currency (P7 amendment A54).
-func (s *Service) CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
+func (s *Service) CategoryTotal(
+	ctx context.Context,
+	booksID int64,
+	categoryID uuid.UUID,
+	from, to time.Time,
+) (money.Money, error) {
 	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return money.Money{}, err
@@ -115,7 +135,12 @@ type CategoryMonth struct {
 
 // OwnCategoryMonthlyTotals returns the own postings of every category of class by month in
 // [from, to), in the base currency (budget plan amendment A129).
-func (s *Service) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryMonth, money.Currency, error) {
+func (s *Service) OwnCategoryMonthlyTotals(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+) ([]CategoryMonth, money.Currency, error) {
 	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return nil, "", err
@@ -127,7 +152,12 @@ func (s *Service) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, c
 }
 
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
-func (s *Service) CategoryMonthlyTotals(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
+func (s *Service) CategoryMonthlyTotals(
+	ctx context.Context,
+	booksID int64,
+	categoryID uuid.UUID,
+	from, to time.Time,
+) (map[time.Time]money.Money, error) {
 	settings, err := s.repo.Settings(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -154,13 +184,24 @@ func (s *Service) CategoryMonthlyTotals(ctx context.Context, booksID int64, cate
 
 // ValuedBalance is BalanceAt valued in currency in with stored prices (P8 amendment
 // A65); a parent whose sub-accounts hold several instruments sums their values.
-func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis, in money.Currency) (Balance, Conversion, error) {
+func (s *Service) ValuedBalance(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	basis Basis,
+	in money.Currency,
+) (Balance, Conversion, error) {
 	if basis == "" {
 		basis = BasisBooked
 	}
 
 	if _, err := money.ParseCurrency(string(in)); err != nil {
-		return Balance{}, Conversion{}, fieldErr("value_in", "must be a supported currency", domain.ErrValidation)
+		return Balance{}, Conversion{}, fieldErr(
+			"value_in",
+			"must be a supported currency",
+			domain.ErrValidation,
+		)
 	}
 
 	if _, err := s.repo.Account(ctx, booksID, accountID); err != nil {
@@ -213,7 +254,11 @@ func (s *Service) valueTotals(
 
 			c, err = s.prices.Convert(ctx, amount, in, date)
 			if errors.Is(err, ErrPriceMissing) {
-				return Conversion{}, money.Money{}, fieldErr("value_in", err.Error(), ErrPriceMissing)
+				return Conversion{}, money.Money{}, fieldErr(
+					"value_in",
+					err.Error(),
+					ErrPriceMissing,
+				)
 			}
 
 			if err != nil {
@@ -227,7 +272,10 @@ func (s *Service) valueTotals(
 
 		out.Prices = append(out.Prices, c.Prices...)
 		if !amount.IsZero() {
-			out.Parts = append(out.Parts, ValuedPart{Instrument: code, Quantity: amount, Value: c.Value})
+			out.Parts = append(
+				out.Parts,
+				ValuedPart{Instrument: code, Quantity: amount, Value: c.Value},
+			)
 		}
 	}
 
@@ -237,7 +285,12 @@ func (s *Service) valueTotals(
 // ExternalFlows is the money that entered (positive) or left (negative) the accounts and their
 // sub-accounts, taken as one tree, between from and to, one item per transaction (investments
 // design 4.3).
-func (s *Service) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
+func (s *Service) ExternalFlows(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from, to time.Time,
+) ([]ExternalFlow, error) {
 	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
 		return nil, err
 	}
@@ -247,7 +300,11 @@ func (s *Service) ExternalFlows(ctx context.Context, booksID int64, accountIDs [
 
 // FirstPosting is the booked date of the earliest posting of the accounts and their
 // sub-accounts; false when they have none.
-func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+func (s *Service) FirstPosting(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+) (time.Time, bool, error) {
 	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
 		return time.Time{}, false, err
 	}
@@ -274,7 +331,12 @@ type RecordedYield struct {
 }
 
 // RecordedYield reads the recorded yield of the accounts and their sub-accounts in [from, to].
-func (s *Service) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (RecordedYield, error) {
+func (s *Service) RecordedYield(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from, to time.Time,
+) (RecordedYield, error) {
 	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
 		return RecordedYield{}, err
 	}

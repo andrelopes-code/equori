@@ -30,7 +30,10 @@ type CapturePayee struct {
 }
 
 // CaptureVocabulary returns the balance accounts, the categories and the live payees of the book.
-func (s *Service) CaptureVocabulary(ctx context.Context, booksID int64) ([]CaptureAccount, []CapturePayee, error) {
+func (s *Service) CaptureVocabulary(
+	ctx context.Context,
+	booksID int64,
+) ([]CaptureAccount, []CapturePayee, error) {
 	accounts, err := s.repo.AllAccounts(ctx, booksID)
 	if err != nil {
 		return nil, nil, err
@@ -48,8 +51,17 @@ func (s *Service) CaptureVocabulary(ctx context.Context, booksID int64) ([]Captu
 		}
 
 		c := CaptureAccount{
-			ID: a.ID, ParentID: a.ParentID, Name: a.Name, Class: string(a.Class), Kind: string(a.Kind),
-			SystemRole: string(a.SystemRole), Instrument: a.Instrument, ClosedOn: a.ClosedOn, Institution: institutions[a.InstitutionID],
+			ID:       a.ID,
+			ParentID: a.ParentID,
+			Name:     a.Name,
+			Class:    string(a.Class),
+			Kind:     string(a.Kind),
+			SystemRole: string(
+				a.SystemRole,
+			),
+			Instrument:  a.Instrument,
+			ClosedOn:    a.ClosedOn,
+			Institution: institutions[a.InstitutionID],
 		}
 		if a.Kind == domain.KindCreditCard {
 			cards, err := s.repo.Cards(ctx, booksID, a.ID)
@@ -75,7 +87,10 @@ func (s *Service) CaptureVocabulary(ctx context.Context, booksID int64) ([]Captu
 	return out, payees, nil
 }
 
-func (s *Service) institutionNames(ctx context.Context, booksID int64) (map[uuid.UUID]string, error) {
+func (s *Service) institutionNames(
+	ctx context.Context,
+	booksID int64,
+) (map[uuid.UUID]string, error) {
 	names := map[uuid.UUID]string{}
 
 	req := page.Request[InstitutionKey]{Limit: page.MaxLimit}

@@ -38,10 +38,18 @@ type Acceptance struct {
 }
 
 // CreateInvitation returns the token, shown once, and the stored invitation (HA24): ErrAlreadyMember.
-func (s *Service) CreateInvitation(ctx context.Context, booksID, invitedBy int64, email string, role auth.BookRole) (string, domain.Invitation, error) {
+func (s *Service) CreateInvitation(
+	ctx context.Context,
+	booksID, invitedBy int64,
+	email string,
+	role auth.BookRole,
+) (string, domain.Invitation, error) {
 	email, err := domain.NormalizeEmail(email)
 	if err != nil {
-		return "", domain.Invitation{}, &domain.FieldError{Field: "email", Message: "must be an email address"}
+		return "", domain.Invitation{}, &domain.FieldError{
+			Field:   "email",
+			Message: "must be an email address",
+		}
 	}
 
 	token, inv := domain.NewInvitation(booksID, invitedBy, email, string(role), s.now())
@@ -56,7 +64,12 @@ func (s *Service) CreateInvitation(ctx context.Context, booksID, invitedBy int64
 
 // CreateAccountInvitation lets an admin invite an email to an account of its own. It returns the
 // token, shown once: ErrAdminRequired, ErrEmailTaken. Without base the region's default applies.
-func (s *Service) CreateAccountInvitation(ctx context.Context, invitedBy int64, email, region string, base money.Currency) (string, domain.AccountInvitation, error) {
+func (s *Service) CreateAccountInvitation(
+	ctx context.Context,
+	invitedBy int64,
+	email, region string,
+	base money.Currency,
+) (string, domain.AccountInvitation, error) {
 	admin, err := s.IsAdmin(ctx, invitedBy)
 	if err != nil {
 		return "", domain.AccountInvitation{}, err
@@ -68,7 +81,10 @@ func (s *Service) CreateAccountInvitation(ctx context.Context, invitedBy int64, 
 
 	email, err = domain.NormalizeEmail(email)
 	if err != nil {
-		return "", domain.AccountInvitation{}, &domain.FieldError{Field: "email", Message: "must be an email address"}
+		return "", domain.AccountInvitation{}, &domain.FieldError{
+			Field:   "email",
+			Message: "must be an email address",
+		}
 	}
 
 	base, err = s.baseCurrency(region, base)
@@ -133,7 +149,13 @@ func (s *Service) AcceptInvitation(ctx context.Context, a Acceptance) (Session, 
 	return s.acceptAsNewMember(ctx, tokenHash, preview, a, now)
 }
 
-func (s *Service) acceptAsMember(ctx context.Context, tokenHash []byte, preview InvitationPreview, sessionToken string, now time.Time) error {
+func (s *Service) acceptAsMember(
+	ctx context.Context,
+	tokenHash []byte,
+	preview InvitationPreview,
+	sessionToken string,
+	now time.Time,
+) error {
 	if sessionToken == "" {
 		return ErrUnauthenticated
 	}
@@ -147,10 +169,22 @@ func (s *Service) acceptAsMember(ctx context.Context, tokenHash []byte, preview 
 		return ErrInvitationEmailMismatch
 	}
 
-	return s.repo.AcceptAsMember(ctx, tokenHash, access.Member.ID, domain.HashToken(sessionToken), now)
+	return s.repo.AcceptAsMember(
+		ctx,
+		tokenHash,
+		access.Member.ID,
+		domain.HashToken(sessionToken),
+		now,
+	)
 }
 
-func (s *Service) acceptAsNewMember(ctx context.Context, tokenHash []byte, preview InvitationPreview, a Acceptance, now time.Time) (Session, error) {
+func (s *Service) acceptAsNewMember(
+	ctx context.Context,
+	tokenHash []byte,
+	preview InvitationPreview,
+	a Acceptance,
+	now time.Time,
+) (Session, error) {
 	if err := validateAcceptance(a); err != nil {
 		return Session{}, err
 	}
@@ -172,7 +206,13 @@ func (s *Service) acceptAsNewMember(ctx context.Context, tokenHash []byte, previ
 	return s.startSession(ctx, member.ID, booksID, now)
 }
 
-func (s *Service) acceptAsAccount(ctx context.Context, tokenHash []byte, preview InvitationPreview, a Acceptance, now time.Time) (Session, error) {
+func (s *Service) acceptAsAccount(
+	ctx context.Context,
+	tokenHash []byte,
+	preview InvitationPreview,
+	a Acceptance,
+	now time.Time,
+) (Session, error) {
 	if err := validateAcceptance(a); err != nil {
 		return Session{}, err
 	}

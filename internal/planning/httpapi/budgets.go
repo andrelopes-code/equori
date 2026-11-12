@@ -18,16 +18,28 @@ const monthLayout = "2006-01"
 func parseMonth(field, s string) (time.Time, error) {
 	m, err := time.Parse(monthLayout, s)
 	if err != nil {
-		return time.Time{}, &domain.FieldError{Field: field, Message: "must be a month YYYY-MM", Err: domain.ErrValidation}
+		return time.Time{}, &domain.FieldError{
+			Field:   field,
+			Message: "must be a month YYYY-MM",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return m, nil
 }
 
 func toBudgetAPI(b domain.Budget) Budget {
-	out := Budget{Id: b.ID, CategoryId: b.CategoryID, Rollover: b.Rollover, Amounts: make([]BudgetAmount, len(b.Amounts))}
+	out := Budget{
+		Id:         b.ID,
+		CategoryId: b.CategoryID,
+		Rollover:   b.Rollover,
+		Amounts:    make([]BudgetAmount, len(b.Amounts)),
+	}
 	for i, a := range b.Amounts {
-		out.Amounts[i] = BudgetAmount{EffectiveFrom: a.EffectiveFrom.Format(monthLayout), Amount: toMoneyAPI(a.Amount, b.Currency)}
+		out.Amounts[i] = BudgetAmount{
+			EffectiveFrom: a.EffectiveFrom.Format(monthLayout),
+			Amount:        toMoneyAPI(a.Amount, b.Currency),
+		}
 	}
 
 	return out
@@ -44,7 +56,11 @@ func (s *Server) createBudget(
 	return toBudgetAPI(b), BaseURL + "/budgets/" + b.ID.String(), nil
 }
 
-func (s *Server) getBudget(ctx context.Context, r *http.Request, _ httpserver.None) (Budget, error) {
+func (s *Server) getBudget(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Budget, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Budget{}, err
@@ -58,7 +74,11 @@ func (s *Server) getBudget(ctx context.Context, r *http.Request, _ httpserver.No
 	return toBudgetAPI(b), nil
 }
 
-func (s *Server) deleteBudget(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+func (s *Server) deleteBudget(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return httpserver.None{}, err
@@ -71,7 +91,11 @@ func (s *Server) deleteBudget(ctx context.Context, r *http.Request, _ httpserver
 	return httpserver.None{}, nil
 }
 
-func (s *Server) listBudgets(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetPage, error) {
+func (s *Server) listBudgets(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (BudgetPage, error) {
 	params, err := httpserver.Query[ListBudgetsParams](r)
 	if err != nil {
 		return BudgetPage{}, err
@@ -97,7 +121,11 @@ func (s *Server) listBudgets(ctx context.Context, r *http.Request, _ httpserver.
 	return out, err
 }
 
-func (s *Server) addBudgetAmount(ctx context.Context, r *http.Request, in AddBudgetAmountJSONRequestBody) (Budget, error) {
+func (s *Server) addBudgetAmount(
+	ctx context.Context,
+	r *http.Request,
+	in AddBudgetAmountJSONRequestBody,
+) (Budget, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Budget{}, err
@@ -121,7 +149,11 @@ func (s *Server) addBudgetAmount(ctx context.Context, r *http.Request, in AddBud
 	return toBudgetAPI(b), nil
 }
 
-func (s *Server) getBudgetProgress(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetProgress, error) {
+func (s *Server) getBudgetProgress(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (BudgetProgress, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return BudgetProgress{}, err
@@ -143,12 +175,20 @@ func (s *Server) getBudgetProgress(ctx context.Context, r *http.Request, _ https
 	}
 
 	return BudgetProgress{
-		Month: p.Month.Format(monthLayout), Planned: toMoneyAPI(p.Planned, currency), Carried: toMoneyAPI(p.Carried, currency),
-		Spent: toMoneyAPI(p.Spent, currency), Available: toMoneyAPI(p.Available, currency),
+		Month: p.Month.Format(
+			monthLayout,
+		),
+		Planned:   toMoneyAPI(p.Planned, currency),
+		Carried:   toMoneyAPI(p.Carried, currency),
+		Spent:     toMoneyAPI(p.Spent, currency),
+		Available: toMoneyAPI(p.Available, currency),
 	}, nil
 }
 
-func (s *Server) addBudget(ctx context.Context, in CreateBudgetJSONRequestBody) (domain.Budget, error) {
+func (s *Server) addBudget(
+	ctx context.Context,
+	in CreateBudgetJSONRequestBody,
+) (domain.Budget, error) {
 	amount, err := fromMoneyAPI("amount", in.Amount)
 	if err != nil {
 		return domain.Budget{}, err

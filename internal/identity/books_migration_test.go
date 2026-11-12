@@ -83,29 +83,44 @@ func TestBooksBackfill(t *testing.T) {
 		}
 	}
 
-	assertRows(`SELECT id, id, region FROM identity_books ORDER BY id`, [3]any{first, first, "BR"}, [3]any{second, second, "US"})
+	assertRows(
+		`SELECT id, id, region FROM identity_books ORDER BY id`,
+		[3]any{first, first, "BR"},
+		[3]any{second, second, "US"},
+	)
 	assertRows(`SELECT member_id, books_id, role FROM identity_membership ORDER BY member_id`,
 		[3]any{first, first, "owner"}, [3]any{second, second, "owner"})
 	assertRows(`SELECT member_id, books_id, '' FROM identity_session`, [3]any{first, first, ""})
-	assertRows(`SELECT member_id, books_id, '' FROM identity_access_token`, [3]any{second, second, ""})
+	assertRows(
+		`SELECT member_id, books_id, '' FROM identity_access_token`,
+		[3]any{second, second, ""},
+	)
 
 	var n int
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM information_schema.columns WHERE table_name = 'identity_member' AND column_name = 'region'`).Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM information_schema.columns WHERE table_name = 'identity_member' AND column_name = 'region'`).
+		Scan(&n); err != nil ||
+		n != 0 {
 		t.Errorf("identity_member.region columns = %d, %v; want 0", n, err)
 	}
 
 	var next int64
-	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region, name) VALUES ('PT', 'test') RETURNING id`).Scan(&next); err != nil || next <= second {
+	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region, name) VALUES ('PT', 'test') RETURNING id`).
+		Scan(&next); err != nil ||
+		next <= second {
 		t.Errorf("next books ID = %d, %v; want greater than %d", next, err, second)
 	}
 
 	var ref string
-	if err := pool.QueryRow(ctx, `SELECT confrelid::regclass::text FROM pg_constraint WHERE conname = 'ledger_settings_user_id_fkey'`).Scan(&ref); err != nil || ref != "identity_books" {
+	if err := pool.QueryRow(ctx, `SELECT confrelid::regclass::text FROM pg_constraint WHERE conname = 'ledger_settings_user_id_fkey'`).
+		Scan(&ref); err != nil ||
+		ref != "identity_books" {
 		t.Errorf("ledger_settings_user_id_fkey references %q, %v; want identity_books", ref, err)
 	}
 
 	// The tables of ADR 030 hold a member's second factor, as identity_session holds its sessions.
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE contype = 'f' AND confrelid = 'identity_member'::regclass AND conrelid NOT IN ('identity_session'::regclass, 'identity_access_token'::regclass, 'identity_membership'::regclass, 'identity_invitation'::regclass, 'identity_account_invitation'::regclass, 'identity_totp'::regclass, 'identity_recovery_code'::regclass, 'identity_passkey'::regclass, 'identity_passkey_challenge'::regclass, 'identity_login_challenge'::regclass)`).Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_constraint WHERE contype = 'f' AND confrelid = 'identity_member'::regclass AND conrelid NOT IN ('identity_session'::regclass, 'identity_access_token'::regclass, 'identity_membership'::regclass, 'identity_invitation'::regclass, 'identity_account_invitation'::regclass, 'identity_totp'::regclass, 'identity_recovery_code'::regclass, 'identity_passkey'::regclass, 'identity_passkey_challenge'::regclass, 'identity_login_challenge'::regclass)`).
+		Scan(&n); err != nil ||
+		n != 0 {
 		t.Errorf("business foreign keys to identity_member = %d, %v; want 0", n, err)
 	}
 }
@@ -123,16 +138,23 @@ func TestBooksColumnRename(t *testing.T) {
 
 	// pgtest.CreateMember lists the name column, which version 69 lacks.
 	var books int64
-	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).Scan(&books); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region) VALUES ('US') RETURNING id`).
+		Scan(&books); err != nil {
 		t.Fatal(err)
 	}
 
 	var transaction string
-	if err := pool.QueryRow(ctx, `INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin) VALUES ($1, '2026-10-30', 'Coffee', 'BRL', 'manual') RETURNING id`, books).Scan(&transaction); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO ledger_transaction (user_id, date, description, balancing_currency, origin) VALUES ($1, '2026-10-30', 'Coffee', 'BRL', 'manual') RETURNING id`, books).
+		Scan(&transaction); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(ctx, `INSERT INTO ledger_transaction_version (transaction_id, version, snapshot, reason) VALUES ($1, 1, jsonb_build_object('id', $1::uuid::text, 'user_id', $2::bigint, 'version', 1), 'edit')`, transaction, books); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO ledger_transaction_version (transaction_id, version, snapshot, reason) VALUES ($1, 1, jsonb_build_object('id', $1::uuid::text, 'user_id', $2::bigint, 'version', 1), 'edit')`,
+		transaction,
+		books,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -141,14 +163,25 @@ func TestBooksColumnRename(t *testing.T) {
 	}
 
 	var got int64
-	if err := pool.QueryRow(ctx, `SELECT books_id FROM ledger_transaction`).Scan(&got); err != nil || got != books {
+	if err := pool.QueryRow(ctx, `SELECT books_id FROM ledger_transaction`).
+		Scan(&got); err != nil ||
+		got != books {
 		t.Errorf("ledger_transaction.books_id = %d, %v; want %d", got, err, books)
 	}
 
 	var hasOld bool
 
 	var snapshotBooks int64
-	if err := pool.QueryRow(ctx, `SELECT snapshot ? 'user_id', (snapshot ->> 'books_id')::bigint FROM ledger_transaction_version`).Scan(&hasOld, &snapshotBooks); err != nil || hasOld || snapshotBooks != books {
-		t.Errorf("snapshot keeps the old key = %t, books_id = %d, %v; want false, %d", hasOld, snapshotBooks, err, books)
+	if err := pool.QueryRow(ctx, `SELECT snapshot ? 'user_id', (snapshot ->> 'books_id')::bigint FROM ledger_transaction_version`).
+		Scan(&hasOld, &snapshotBooks); err != nil ||
+		hasOld ||
+		snapshotBooks != books {
+		t.Errorf(
+			"snapshot keeps the old key = %t, books_id = %d, %v; want false, %d",
+			hasOld,
+			snapshotBooks,
+			err,
+			books,
+		)
 	}
 }

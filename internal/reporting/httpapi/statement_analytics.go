@@ -12,15 +12,26 @@ import (
 
 func toParts(p app.StatementParts, instrument string) StatementParts {
 	m := func(v int64) Money { return Money{Amount: v, Currency: instrument} }
-	return StatementParts{Purchases: m(p.Purchases), Installments: m(p.Installments), Charges: m(p.Charges), Credits: m(p.Credits), Total: m(p.Total())}
+	return StatementParts{
+		Purchases:    m(p.Purchases),
+		Installments: m(p.Installments),
+		Charges:      m(p.Charges),
+		Credits:      m(p.Credits),
+		Total:        m(p.Total()),
+	}
 }
 
 func toItem(a app.StatementAnalytics) StatementAnalyticsItem {
 	p := toParts(a.StatementParts, a.Instrument)
 
 	return StatementAnalyticsItem{
-		StatementId: a.Statement.ID, Reference: a.Statement.Reference.Format("2006-01"),
-		Purchases: p.Purchases, Installments: p.Installments, Charges: p.Charges, Credits: p.Credits, Total: p.Total,
+		StatementId:  a.Statement.ID,
+		Reference:    a.Statement.Reference.Format("2006-01"),
+		Purchases:    p.Purchases,
+		Installments: p.Installments,
+		Charges:      p.Charges,
+		Credits:      p.Credits,
+		Total:        p.Total,
 	}
 }
 
@@ -42,13 +53,24 @@ func (s *Server) getStatementAnalytics(
 	item := toItem(a)
 
 	out := StatementAnalytics{
-		StatementId: item.StatementId, Reference: item.Reference, Purchases: item.Purchases, Installments: item.Installments,
-		Charges: item.Charges, Credits: item.Credits, Total: item.Total, Categories: make([]StatementCategoryParts, len(a.Categories)),
+		StatementId:  item.StatementId,
+		Reference:    item.Reference,
+		Purchases:    item.Purchases,
+		Installments: item.Installments,
+		Charges:      item.Charges,
+		Credits:      item.Credits,
+		Total:        item.Total,
+		Categories:   make([]StatementCategoryParts, len(a.Categories)),
 	}
 	for i, c := range a.Categories {
 		p := toParts(c.StatementParts, a.Instrument)
 		out.Categories[i] = StatementCategoryParts{
-			CategoryId: c.CategoryID, Purchases: p.Purchases, Installments: p.Installments, Charges: p.Charges, Credits: p.Credits, Total: p.Total,
+			CategoryId:   c.CategoryID,
+			Purchases:    p.Purchases,
+			Installments: p.Installments,
+			Charges:      p.Charges,
+			Credits:      p.Credits,
+			Total:        p.Total,
 		}
 	}
 

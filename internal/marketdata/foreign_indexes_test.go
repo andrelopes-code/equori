@@ -42,18 +42,36 @@ func (s *foreignIndexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var lines []string
 		for _, row := range s.estr {
 			if row[0] >= q.Get("startPeriod") && row[0] <= q.Get("endPeriod") {
-				lines = append(lines, fmt.Sprintf("EST.B.EU000A2X2A25.WT,B,%s,%s,\"Euro short-term rate, Volume-weighted\"", row[0], row[1]))
+				lines = append(
+					lines,
+					fmt.Sprintf(
+						"EST.B.EU000A2X2A25.WT,B,%s,%s,\"Euro short-term rate, Volume-weighted\"",
+						row[0],
+						row[1],
+					),
+				)
 			}
 		}
 
 		if len(lines) > 0 {
-			_, _ = fmt.Fprintf(w, "KEY,FREQ,TIME_PERIOD,OBS_VALUE,TITLE_COMPL\n%s\n", strings.Join(lines, "\n"))
+			_, _ = fmt.Fprintf(
+				w,
+				"KEY,FREQ,TIME_PERIOD,OBS_VALUE,TITLE_COMPL\n%s\n",
+				strings.Join(lines, "\n"),
+			)
 		}
 	case "/api/rates/secured/sofr/search.json":
 		var items []string
 		for _, row := range s.sofr {
 			if row[0] >= q.Get("startDate") && row[0] <= q.Get("endDate") {
-				items = append(items, fmt.Sprintf(`{"effectiveDate":%q,"type":"SOFR","percentRate":%s}`, row[0], row[1]))
+				items = append(
+					items,
+					fmt.Sprintf(
+						`{"effectiveDate":%q,"type":"SOFR","percentRate":%s}`,
+						row[0],
+						row[1],
+					),
+				)
 			}
 		}
 
@@ -67,7 +85,12 @@ func (s *foreignIndexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		doc := map[string]any{"value": value, "dimension": map[string]any{"time": map[string]any{"category": map[string]any{"index": index}}}}
+		doc := map[string]any{
+			"value": value,
+			"dimension": map[string]any{
+				"time": map[string]any{"category": map[string]any{"index": index}},
+			},
+		}
 		_ = json.NewEncoder(w).Encode(doc)
 	case "/publicAPI/v1/timeseries/data/":
 		var req struct{ StartYear, EndYear string }
@@ -76,11 +99,15 @@ func (s *foreignIndexServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var data []map[string]string
 		for _, row := range slices.Backward(s.cpiu) {
 			if row[0] >= req.StartYear && row[0] <= req.EndYear {
-				data = append(data, map[string]string{"year": row[0], "period": row[1], "value": row[2]})
+				data = append(
+					data,
+					map[string]string{"year": row[0], "period": row[1], "value": row[2]},
+				)
 			}
 		}
 
-		_ = json.NewEncoder(w).Encode(map[string]any{"status": "REQUEST_SUCCEEDED", "Results": map[string]any{"series": []any{map[string]any{"seriesID": "CUUR0000SA0", "data": data}}}})
+		_ = json.NewEncoder(w).
+			Encode(map[string]any{"status": "REQUEST_SUCCEEDED", "Results": map[string]any{"series": []any{map[string]any{"seriesID": "CUUR0000SA0", "data": data}}}})
 	default:
 		http.NotFound(w, r)
 	}
@@ -114,7 +141,10 @@ func TestOvernightIndexFeeds(t *testing.T) {
 	h := foreignIndexHarness(t, s, "2026-01-13")
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	want := []indexRateRow{{"2026-01-08", "0.000050000000", "eu_estr"}, {"2026-01-09", "0.000100000000", "eu_estr"}}
+	want := []indexRateRow{
+		{"2026-01-08", "0.000050000000", "eu_estr"},
+		{"2026-01-09", "0.000100000000", "eu_estr"},
+	}
 	if got := indexRates(t, h, "estr"); !slices.Equal(got, want) {
 		t.Fatalf("€STR before Monday = %+v", got)
 	}
@@ -150,7 +180,12 @@ func TestPriceIndexFeeds(t *testing.T) {
 
 	s := &foreignIndexServer{
 		hicp: [][2]string{{"2025-11", "100"}, {"2025-12", "100.5"}, {"2026-01", "101"}},
-		cpiu: [][3]string{{"2025", "M11", "299.000"}, {"2025", "M12", "300.000"}, {"2025", "M13", "299.500"}, {"2026", "M01", "303.000"}},
+		cpiu: [][3]string{
+			{"2025", "M11", "299.000"},
+			{"2025", "M12", "300.000"},
+			{"2025", "M13", "299.500"},
+			{"2026", "M01", "303.000"},
+		},
 	}
 	h := foreignIndexHarness(t, s, "2026-02-20")
 	h.App.Marketdata.TickFeeds(t.Context())

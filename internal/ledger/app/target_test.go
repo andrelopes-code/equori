@@ -57,7 +57,11 @@ func TestResolveTarget(t *testing.T) {
 		{
 			name: "pair creates holding",
 			prepare: func(t *testing.T, f targetFixture) app.Target {
-				return app.Target{BrokerageID: f.brokerage.ID, Instrument: holdingCode, Create: true}
+				return app.Target{
+					BrokerageID: f.brokerage.ID,
+					Instrument:  holdingCode,
+					Create:      true,
+				}
 			},
 			wantHoldings: 1,
 		},
@@ -66,7 +70,12 @@ func TestResolveTarget(t *testing.T) {
 			prepare: func(t *testing.T, f targetFixture) app.Target {
 				h := f.createHolding(t, "XP AUVP11")
 
-				return app.Target{AccountID: h.ID, BrokerageID: f.brokerage.ID, Instrument: holdingCode, Create: true}
+				return app.Target{
+					AccountID:   h.ID,
+					BrokerageID: f.brokerage.ID,
+					Instrument:  holdingCode,
+					Create:      true,
+				}
 			},
 			wantErr:      app.ErrTradeTargetRequired,
 			wantHoldings: 1,
@@ -81,16 +90,27 @@ func TestResolveTarget(t *testing.T) {
 		{
 			name: "two cash accounts, no cash_account_id",
 			prepare: func(t *testing.T, f targetFixture) app.Target {
-				f.createAccount(t, domain.Account{Name: "Cash 2", Instrument: "BRL", ParentID: f.brokerage.ID})
+				f.createAccount(
+					t,
+					domain.Account{Name: "Cash 2", Instrument: "BRL", ParentID: f.brokerage.ID},
+				)
 
-				return app.Target{BrokerageID: f.brokerage.ID, Instrument: holdingCode, Create: true}
+				return app.Target{
+					BrokerageID: f.brokerage.ID,
+					Instrument:  holdingCode,
+					Create:      true,
+				}
 			},
 			wantErr: app.ErrBrokerageCashAmbiguous,
 		},
 		{
 			name: "no cash account",
 			prepare: func(t *testing.T, f targetFixture) app.Target {
-				return app.Target{BrokerageID: f.brokerage.ID, Instrument: holdingCode, Create: true}
+				return app.Target{
+					BrokerageID: f.brokerage.ID,
+					Instrument:  holdingCode,
+					Create:      true,
+				}
 			},
 			noCash:  true,
 			wantErr: app.ErrBrokerageCashMissing,
@@ -116,7 +136,11 @@ func TestResolveTarget(t *testing.T) {
 				h := f.createHolding(t, "XP AUVP11")
 				f.closeAccount(t, h.ID)
 
-				return app.Target{BrokerageID: f.brokerage.ID, Instrument: holdingCode, Create: true}
+				return app.Target{
+					BrokerageID: f.brokerage.ID,
+					Instrument:  holdingCode,
+					Create:      true,
+				}
 			},
 			wantErr:      domain.ErrValidation,
 			wantField:    "instrument",
@@ -249,9 +273,12 @@ func newTargetFixture(t *testing.T, pool *pgxpool.Pool, withCash bool) targetFix
 
 	_, booksID := pgtest.CreateMember(t, pool)
 
-	_, err := pool.Exec(t.Context(), `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
+	_, err := pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
 		VALUES ('AUVP11', 'reit', 0, 'AUVP11', 'BRL', 'BVMF'), ('USDQ11', 'reit', 0, 'USDQ11', 'USD', 'BVMF')
-		ON CONFLICT DO NOTHING`)
+		ON CONFLICT DO NOTHING`,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +292,10 @@ func newTargetFixture(t *testing.T, pool *pgxpool.Pool, withCash bool) targetFix
 	f.brokerage = f.createAccount(t, domain.Account{Name: "XP", Instrument: "BRL"})
 
 	if withCash {
-		f.cash = f.createAccount(t, domain.Account{Name: "Cash", Instrument: "BRL", ParentID: f.brokerage.ID})
+		f.cash = f.createAccount(
+			t,
+			domain.Account{Name: "Cash", Instrument: "BRL", ParentID: f.brokerage.ID},
+		)
 	}
 
 	return f
@@ -274,7 +304,10 @@ func newTargetFixture(t *testing.T, pool *pgxpool.Pool, withCash bool) targetFix
 func (f targetFixture) createHolding(t *testing.T, name string) domain.Account {
 	t.Helper()
 
-	return f.createAccount(t, domain.Account{Name: name, Instrument: holdingCode, ParentID: f.brokerage.ID})
+	return f.createAccount(
+		t,
+		domain.Account{Name: name, Instrument: holdingCode, ParentID: f.brokerage.ID},
+	)
 }
 
 func (f targetFixture) createAccount(t *testing.T, a domain.Account) domain.Account {
@@ -293,7 +326,11 @@ func (f targetFixture) createAccount(t *testing.T, a domain.Account) domain.Acco
 func (f targetFixture) closeAccount(t *testing.T, id uuid.UUID) {
 	t.Helper()
 
-	_, err := f.pool.Exec(t.Context(), `UPDATE ledger_account SET closed_on = opened_on WHERE id = $1`, id)
+	_, err := f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_account SET closed_on = opened_on WHERE id = $1`,
+		id,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,7 +30,10 @@ type catalogAnswer struct {
 func (m *Module) SearchCatalog(ctx context.Context, query string) (domain.CatalogResult, error) {
 	query = strings.TrimSpace(query)
 	if utf8.RuneCountInString(query) < catalogMinQuery {
-		return domain.CatalogResult{}, &domain.FieldError{Field: "q", Message: "must have at least 2 characters"}
+		return domain.CatalogResult{}, &domain.FieldError{
+			Field:   "q",
+			Message: "must have at least 2 characters",
+		}
 	}
 
 	on, err := m.enabledFeeds(ctx)
@@ -66,7 +69,11 @@ func (m *Module) SearchCatalog(ctx context.Context, query string) (domain.Catalo
 }
 
 // searchSources runs Search of every enabled catalog source at once, answers in registry order.
-func (m *Module) searchSources(ctx context.Context, on map[string]bool, query string) []catalogAnswer {
+func (m *Module) searchSources(
+	ctx context.Context,
+	on map[string]bool,
+	query string,
+) []catalogAnswer {
 	var (
 		answers []catalogAnswer
 		sources []feed.Catalog
@@ -105,7 +112,11 @@ func (m *Module) searchSources(ctx context.Context, on map[string]bool, query st
 
 // mergeListings drops the listings the instance cannot define, joins the ones that name the same
 // instrument, puts the exact code first and keeps at most catalogLimit (A222 MQ29).
-func mergeListings(listings []domain.Listing, query string, instruments []Instrument) []domain.Listing {
+func mergeListings(
+	listings []domain.Listing,
+	query string,
+	instruments []Instrument,
+) []domain.Listing {
 	defined := make(map[money.Currency]bool, len(instruments))
 	currencies := make(map[money.Currency]bool)
 
@@ -117,11 +128,15 @@ func mergeListings(listings []domain.Listing, query string, instruments []Instru
 	var out []domain.Listing
 
 	for _, l := range listings {
-		if !domain.ValidSecurityCode(l.Code) || (l.QuoteCurrency != "" && !currencies[l.QuoteCurrency]) {
+		if !domain.ValidSecurityCode(l.Code) ||
+			(l.QuoteCurrency != "" && !currencies[l.QuoteCurrency]) {
 			continue
 		}
 
-		if i := slices.IndexFunc(out, func(o domain.Listing) bool { return sameListing(o, l) }); i >= 0 {
+		if i := slices.IndexFunc(
+			out,
+			func(o domain.Listing) bool { return sameListing(o, l) },
+		); i >= 0 {
 			out[i] = fillListing(out[i], l)
 			continue
 		}

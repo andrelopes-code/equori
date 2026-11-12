@@ -11,8 +11,16 @@ func TestDetectSeries(t *testing.T) {
 	t.Parallel()
 
 	var (
-		acc1, acc2 = uuid.MustParse("00000000-0000-0000-0000-0000000000a1"), uuid.MustParse("00000000-0000-0000-0000-0000000000a2")
-		cat1, cat2 = uuid.MustParse("00000000-0000-0000-0000-0000000000c1"), uuid.MustParse("00000000-0000-0000-0000-0000000000c2")
+		acc1, acc2 = uuid.MustParse(
+			"00000000-0000-0000-0000-0000000000a1",
+		), uuid.MustParse(
+			"00000000-0000-0000-0000-0000000000a2",
+		)
+		cat1, cat2 = uuid.MustParse(
+			"00000000-0000-0000-0000-0000000000c1",
+		), uuid.MustParse(
+			"00000000-0000-0000-0000-0000000000c2",
+		)
 	)
 
 	tests := []struct {
@@ -23,18 +31,34 @@ func TestDetectSeries(t *testing.T) {
 		{
 			"three_monthly",
 			facts(acc1, cat1, "netflix", 5000, "2026-08-10", "2026-09-10", "2026-10-10"),
-			[]Series{{
-				Key: "netflix", AccountID: acc1, CategoryID: cat1, Frequency: CadenceMonthly, Count: 3,
-				LastDate: day("2026-10-10"), NextDate: day("2026-11-10"), LastAmount: 5000,
-			}},
+			[]Series{
+				{
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceMonthly,
+					Count:      3,
+					LastDate:   day("2026-10-10"),
+					NextDate:   day("2026-11-10"),
+					LastAmount: 5000,
+				},
+			},
 		},
 		{
 			"two_monthly",
 			facts(acc1, cat1, "netflix", 5000, "2026-09-10", "2026-10-10"),
-			[]Series{{
-				Key: "netflix", AccountID: acc1, CategoryID: cat1, Frequency: CadenceMonthly, Count: 2,
-				LastDate: day("2026-10-10"), NextDate: day("2026-11-10"), LastAmount: 5000,
-			}},
+			[]Series{
+				{
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceMonthly,
+					Count:      2,
+					LastDate:   day("2026-10-10"),
+					NextDate:   day("2026-11-10"),
+					LastAmount: 5000,
+				},
+			},
 		},
 		{"two_weekly", facts(acc1, cat1, "gym", 5000, "2026-10-03", "2026-10-10"), nil},
 		{
@@ -48,19 +72,35 @@ func TestDetectSeries(t *testing.T) {
 		{
 			"two_yearly",
 			facts(acc1, cat1, "domain", 9000, "2025-10-10", "2026-10-10"),
-			[]Series{{
-				Key: "domain", AccountID: acc1, CategoryID: cat1, Frequency: CadenceYearly, Count: 2,
-				LastDate: day("2026-10-10"), NextDate: day("2027-10-10"), LastAmount: 9000,
-			}},
+			[]Series{
+				{
+					Key:        "domain",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceYearly,
+					Count:      2,
+					LastDate:   day("2026-10-10"),
+					NextDate:   day("2027-10-10"),
+					LastAmount: 9000,
+				},
+			},
 		},
 		{"two_quarterly", facts(acc1, cat1, "insurance", 9000, "2026-04-10", "2026-07-10"), nil},
 		{
 			"three_quarterly",
 			facts(acc1, cat1, "insurance", 9000, "2026-01-10", "2026-04-10", "2026-07-10"),
-			[]Series{{
-				Key: "insurance", AccountID: acc1, CategoryID: cat1, Frequency: CadenceQuarterly, Count: 3,
-				LastDate: day("2026-07-10"), NextDate: day("2026-10-10"), LastAmount: 9000,
-			}},
+			[]Series{
+				{
+					Key:        "insurance",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceQuarterly,
+					Count:      3,
+					LastDate:   day("2026-07-10"),
+					NextDate:   day("2026-10-10"),
+					LastAmount: 9000,
+				},
+			},
 		},
 		{
 			"monthly_raise_20",
@@ -68,10 +108,18 @@ func TestDetectSeries(t *testing.T) {
 				facts(acc1, cat1, "netflix", 5000, "2026-08-10", "2026-09-10"),
 				facts(acc1, cat1, "netflix", 6000, "2026-10-10"),
 			),
-			[]Series{{
-				Key: "netflix", AccountID: acc1, CategoryID: cat1, Frequency: CadenceMonthly, Count: 3,
-				LastDate: day("2026-10-10"), NextDate: day("2026-11-10"), LastAmount: 6000,
-			}},
+			[]Series{
+				{
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceMonthly,
+					Count:      3,
+					LastDate:   day("2026-10-10"),
+					NextDate:   day("2026-11-10"),
+					LastAmount: 6000,
+				},
+			},
 		},
 		{
 			"monthly_raise_30",
@@ -83,18 +131,49 @@ func TestDetectSeries(t *testing.T) {
 		},
 		{
 			"one_gap_of_four_intervals",
-			facts(acc1, cat1, "netflix", 5000, "2026-06-10", "2026-07-10", "2026-09-08", "2026-10-08", "2026-11-07"),
-			[]Series{{
-				Key: "netflix", AccountID: acc1, CategoryID: cat1, Frequency: CadenceMonthly, Count: 5,
-				LastDate: day("2026-11-07"), NextDate: day("2026-12-07"), LastAmount: 5000,
-			}},
+			facts(
+				acc1,
+				cat1,
+				"netflix",
+				5000,
+				"2026-06-10",
+				"2026-07-10",
+				"2026-09-08",
+				"2026-10-08",
+				"2026-11-07",
+			),
+			[]Series{
+				{
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceMonthly,
+					Count:      5,
+					LastDate:   day("2026-11-07"),
+					NextDate:   day("2026-12-07"),
+					LastAmount: 5000,
+				},
+			},
 		},
 		{
 			"one_gap_of_three_intervals",
-			facts(acc1, cat1, "netflix", 5000, "2026-07-10", "2026-09-08", "2026-10-08", "2026-11-07"),
+			facts(
+				acc1,
+				cat1,
+				"netflix",
+				5000,
+				"2026-07-10",
+				"2026-09-08",
+				"2026-10-08",
+				"2026-11-07",
+			),
 			nil,
 		},
-		{"median_outside_bands", facts(acc1, cat1, "tax", 5000, "2026-01-10", "2026-02-24", "2026-04-10"), nil},
+		{
+			"median_outside_bands",
+			facts(acc1, cat1, "tax", 5000, "2026-01-10", "2026-02-24", "2026-04-10"),
+			nil,
+		},
 		{
 			"different_accounts_same_key",
 			slices.Concat(
@@ -103,12 +182,24 @@ func TestDetectSeries(t *testing.T) {
 			),
 			[]Series{
 				{
-					Key: "netflix", AccountID: acc2, CategoryID: cat1, Frequency: CadenceMonthly, Count: 2,
-					LastDate: day("2026-10-12"), NextDate: day("2026-11-12"), LastAmount: 5000,
+					Key:        "netflix",
+					AccountID:  acc2,
+					CategoryID: cat1,
+					Frequency:  CadenceMonthly,
+					Count:      2,
+					LastDate:   day("2026-10-12"),
+					NextDate:   day("2026-11-12"),
+					LastAmount: 5000,
 				},
 				{
-					Key: "netflix", AccountID: acc1, CategoryID: cat1, Frequency: CadenceMonthly, Count: 2,
-					LastDate: day("2026-10-10"), NextDate: day("2026-11-10"), LastAmount: 5000,
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat1,
+					Frequency:  CadenceMonthly,
+					Count:      2,
+					LastDate:   day("2026-10-10"),
+					NextDate:   day("2026-11-10"),
+					LastAmount: 5000,
 				},
 			},
 		},
@@ -120,10 +211,18 @@ func TestDetectSeries(t *testing.T) {
 				facts(acc1, cat1, "netflix", 5000, "2026-10-10"),
 				facts(acc1, cat2, "netflix", 5000, "2026-11-10"),
 			),
-			[]Series{{
-				Key: "netflix", AccountID: acc1, CategoryID: cat2, Frequency: CadenceMonthly, Count: 5,
-				LastDate: day("2026-11-10"), NextDate: day("2026-12-10"), LastAmount: 5000,
-			}},
+			[]Series{
+				{
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat2,
+					Frequency:  CadenceMonthly,
+					Count:      5,
+					LastDate:   day("2026-11-10"),
+					NextDate:   day("2026-12-10"),
+					LastAmount: 5000,
+				},
+			},
 		},
 		{
 			"category_tie_goes_to_most_recent",
@@ -131,10 +230,18 @@ func TestDetectSeries(t *testing.T) {
 				facts(acc1, cat1, "netflix", 5000, "2026-08-10", "2026-09-10"),
 				facts(acc1, cat2, "netflix", 5000, "2026-10-10", "2026-11-10"),
 			),
-			[]Series{{
-				Key: "netflix", AccountID: acc1, CategoryID: cat2, Frequency: CadenceMonthly, Count: 4,
-				LastDate: day("2026-11-10"), NextDate: day("2026-12-10"), LastAmount: 5000,
-			}},
+			[]Series{
+				{
+					Key:        "netflix",
+					AccountID:  acc1,
+					CategoryID: cat2,
+					Frequency:  CadenceMonthly,
+					Count:      4,
+					LastDate:   day("2026-11-10"),
+					NextDate:   day("2026-12-10"),
+					LastAmount: 5000,
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -156,8 +263,19 @@ func TestDetectSeries(t *testing.T) {
 func TestDetectSeriesKeepsSixMostRecentTransactions(t *testing.T) {
 	t.Parallel()
 
-	fs := facts(uuid.New(), uuid.New(), "netflix", 5000,
-		"2026-01-10", "2026-02-10", "2026-03-10", "2026-04-10", "2026-05-10", "2026-06-10", "2026-07-10")
+	fs := facts(
+		uuid.New(),
+		uuid.New(),
+		"netflix",
+		5000,
+		"2026-01-10",
+		"2026-02-10",
+		"2026-03-10",
+		"2026-04-10",
+		"2026-05-10",
+		"2026-06-10",
+		"2026-07-10",
+	)
 
 	got := DetectSeries(fs)
 	if len(got) != 1 {
@@ -190,6 +308,8 @@ func facts(account, category uuid.UUID, key string, amount int64, dates ...strin
 func sameSeries(a, b Series) bool {
 	return a.Key == b.Key && a.AccountID == b.AccountID && a.CategoryID == b.CategoryID &&
 		a.PayeeID == b.PayeeID && a.Frequency == b.Frequency && a.Count == b.Count &&
-		a.LastDate.Equal(b.LastDate) && a.NextDate.Equal(b.NextDate) && a.LastAmount == b.LastAmount &&
+		a.LastDate.Equal(
+			b.LastDate,
+		) && a.NextDate.Equal(b.NextDate) && a.LastAmount == b.LastAmount &&
 		a.ScheduleID == b.ScheduleID
 }

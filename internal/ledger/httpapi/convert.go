@@ -19,7 +19,11 @@ func toMoneyAPI(m money.Money) Money {
 func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	v, err := money.New(m.Amount, money.Currency(m.Currency))
 	if err != nil {
-		return money.Money{}, &domain.FieldError{Field: field, Message: err.Error(), Err: domain.ErrValidation}
+		return money.Money{}, &domain.FieldError{
+			Field:   field,
+			Message: err.Error(),
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return v, nil
@@ -98,10 +102,16 @@ func toAccountAPI(a domain.Account) Account {
 
 	out := Account{
 		ExcludedFromLiquidity: &excluded,
-		Id:                    a.ID, Name: a.Name, Class: AccountClass(a.Class), Currency: string(a.Instrument),
-		ParentId: apiOptUUID(a.ParentID), InstitutionId: apiOptUUID(a.InstitutionID),
-		OpenedOn: apiDate(a.OpenedOn), ClosedOn: apiOptDate(a.ClosedOn),
-		YieldMode: AccountYieldMode(a.YieldMode), SystemRole: apiOptString(string(a.SystemRole)),
+		Id:                    a.ID,
+		Name:                  a.Name,
+		Class:                 AccountClass(a.Class),
+		Currency:              string(a.Instrument),
+		ParentId:              apiOptUUID(a.ParentID),
+		InstitutionId:         apiOptUUID(a.InstitutionID),
+		OpenedOn:              apiDate(a.OpenedOn),
+		ClosedOn:              apiOptDate(a.ClosedOn),
+		YieldMode:             AccountYieldMode(a.YieldMode),
+		SystemRole:            apiOptString(string(a.SystemRole)),
 	}
 	if a.Kind != "" {
 		k := AccountKind(a.Kind)
@@ -152,7 +162,10 @@ func fromAccountInput(in AccountInput) domain.Account {
 func toInstitutionAPI(i app.Institution) Institution {
 	out := Institution{Id: i.ID, Name: i.Name, Code: apiOptString(i.Code)}
 	if i.Identifier != (app.InstitutionIdentifier{}) {
-		out.Identifier = &InstitutionIdentifier{Scheme: i.Identifier.Scheme, Identifier: i.Identifier.Value}
+		out.Identifier = &InstitutionIdentifier{
+			Scheme:     i.Identifier.Scheme,
+			Identifier: i.Identifier.Value,
+		}
 	}
 
 	return out

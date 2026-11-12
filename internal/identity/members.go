@@ -16,7 +16,12 @@ func (m *Module) IsAdmin(ctx context.Context, memberID int64) (bool, error) {
 	return m.svc.IsAdmin(ctx, memberID)
 }
 
-func (m *Module) CreateMember(ctx context.Context, email, password, role string, l locale.Locale, baseCurrency money.Currency) (Member, error) {
+func (m *Module) CreateMember(
+	ctx context.Context,
+	email, password, role string,
+	l locale.Locale,
+	baseCurrency money.Currency,
+) (Member, error) {
 	u, err := m.svc.CreateMember(ctx, email, password, domain.Role(role), l, baseCurrency)
 	if err != nil {
 		return Member{}, err

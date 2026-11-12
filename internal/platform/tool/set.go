@@ -48,7 +48,11 @@ func (s Set) Validate(name string, args json.RawMessage) (Result, error) {
 }
 
 // Preview checks membership like Call.
-func (s Set) Preview(ctx context.Context, name string, args json.RawMessage) (Preview, Result, error) {
+func (s Set) Preview(
+	ctx context.Context,
+	name string,
+	args json.RawMessage,
+) (Preview, Result, error) {
 	if !slices.Contains(s.names, name) {
 		return Preview{}, Result{}, fmt.Errorf("preview tool %s: %w", name, ErrUnknownTool)
 	}

@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) skipOccurrence(ctx context.Context, r *http.Request, in SkipOccurrenceJSONRequestBody) (Occurrence, error) {
+func (s *Server) skipOccurrence(
+	ctx context.Context,
+	r *http.Request,
+	in SkipOccurrenceJSONRequestBody,
+) (Occurrence, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Occurrence{}, err
@@ -30,7 +34,11 @@ func (s *Server) skipOccurrence(ctx context.Context, r *http.Request, in SkipOcc
 	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) moveOccurrence(ctx context.Context, r *http.Request, in MoveOccurrenceJSONRequestBody) (Occurrence, error) {
+func (s *Server) moveOccurrence(
+	ctx context.Context,
+	r *http.Request,
+	in MoveOccurrenceJSONRequestBody,
+) (Occurrence, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Occurrence{}, err
@@ -44,7 +52,11 @@ func (s *Server) moveOccurrence(ctx context.Context, r *http.Request, in MoveOcc
 	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) changeScheduleTerms(ctx context.Context, r *http.Request, in ChangeScheduleTermsJSONRequestBody) (Schedule, error) {
+func (s *Server) changeScheduleTerms(
+	ctx context.Context,
+	r *http.Request,
+	in ChangeScheduleTermsJSONRequestBody,
+) (Schedule, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Schedule{}, err
@@ -66,7 +78,14 @@ func (s *Server) changeScheduleTerms(ctx context.Context, r *http.Request, in Ch
 		rule = &rr
 	}
 
-	sch, err := s.svc.ChangeTerms(ctx, auth.MustBooksID(ctx), id, in.EffectiveFrom.Time, amount, rule)
+	sch, err := s.svc.ChangeTerms(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		in.EffectiveFrom.Time,
+		amount,
+		rule,
+	)
 	if err != nil {
 		return Schedule{}, err
 	}
@@ -74,7 +93,11 @@ func (s *Server) changeScheduleTerms(ctx context.Context, r *http.Request, in Ch
 	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) updateScheduleMatching(ctx context.Context, r *http.Request, in UpdateScheduleMatchingJSONRequestBody) (Schedule, error) {
+func (s *Server) updateScheduleMatching(
+	ctx context.Context,
+	r *http.Request,
+	in UpdateScheduleMatchingJSONRequestBody,
+) (Schedule, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Schedule{}, err
@@ -99,7 +122,11 @@ func (s *Server) updateScheduleMatching(ctx context.Context, r *http.Request, in
 	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) pauseSchedule(ctx context.Context, r *http.Request, in PauseScheduleJSONRequestBody) (Schedule, error) {
+func (s *Server) pauseSchedule(
+	ctx context.Context,
+	r *http.Request,
+	in PauseScheduleJSONRequestBody,
+) (Schedule, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Schedule{}, err
@@ -113,7 +140,11 @@ func (s *Server) pauseSchedule(ctx context.Context, r *http.Request, in PauseSch
 	return toScheduleAPI(sch), nil
 }
 
-func (s *Server) endSchedule(ctx context.Context, r *http.Request, in EndScheduleJSONRequestBody) (Schedule, error) {
+func (s *Server) endSchedule(
+	ctx context.Context,
+	r *http.Request,
+	in EndScheduleJSONRequestBody,
+) (Schedule, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Schedule{}, err

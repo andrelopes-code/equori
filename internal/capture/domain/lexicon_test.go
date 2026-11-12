@@ -22,7 +22,11 @@ func TestMergeLists(t *testing.T) {
 
 	got := Merge(
 		Lexicon{Language: "pt", Source: []string{"de", "do"}, LumpSum: [][]string{{"a", "vista"}}},
-		Lexicon{Language: "en", Source: []string{"from", "de"}, LumpSum: [][]string{{"a", "vista"}, {"in", "full"}}},
+		Lexicon{
+			Language: "en",
+			Source:   []string{"from", "de"},
+			LumpSum:  [][]string{{"a", "vista"}, {"in", "full"}},
+		},
 	)
 	if got.Language != "pt" {
 		t.Errorf("Language = %q, want pt", got.Language)

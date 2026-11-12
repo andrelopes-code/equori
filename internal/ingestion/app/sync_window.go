@@ -11,7 +11,10 @@ import (
 // bill closed before syncFrom and the unbilled lines from that bill's closing on, and
 // returns that bill, which opens the card (A93). Without such a bill the read keeps the
 // lines from syncFrom.
-func fromCycleStart(read domain.AccountRead, syncFrom, from time.Time) (domain.AccountRead, *domain.Bill, time.Time) {
+func fromCycleStart(
+	read domain.AccountRead,
+	syncFrom, from time.Time,
+) (domain.AccountRead, *domain.Bill, time.Time) {
 	var prev *domain.Bill
 	for i, b := range read.Bills {
 		closed := b.Due
@@ -88,7 +91,10 @@ func withoutSuperseded(read domain.AccountRead) domain.AccountRead {
 	}
 
 	read.Records = kept
-	read.Seen = slices.DeleteFunc(slices.Clone(read.Seen), func(id string) bool { return dropped[id] })
+	read.Seen = slices.DeleteFunc(
+		slices.Clone(read.Seen),
+		func(id string) bool { return dropped[id] },
+	)
 
 	return read
 }
@@ -96,9 +102,12 @@ func withoutSuperseded(read domain.AccountRead) domain.AccountRead {
 // fromSyncStart drops the lines dated before syncFrom, which bounds the import (A35, A145);
 // Seen keeps them, so that a stored record is not withdrawn for a line the read returned.
 func fromSyncStart(read domain.AccountRead, syncFrom time.Time) domain.AccountRead {
-	read.Records = slices.DeleteFunc(slices.Clone(read.Records), func(r domain.NormalizedRecord) bool {
-		return r.Date.Before(syncFrom)
-	})
+	read.Records = slices.DeleteFunc(
+		slices.Clone(read.Records),
+		func(r domain.NormalizedRecord) bool {
+			return r.Date.Before(syncFrom)
+		},
+	)
 
 	return read
 }

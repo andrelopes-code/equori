@@ -12,7 +12,10 @@ import (
 const runPage = 500
 
 // catalog loads what decisions read, except payee history.
-func (s *Service) catalog(ctx context.Context, booksID int64) (domain.Catalog, map[uuid.UUID]Account, error) {
+func (s *Service) catalog(
+	ctx context.Context,
+	booksID int64,
+) (domain.Catalog, map[uuid.UUID]Account, error) {
 	rules, err := s.repo.EnabledRules(ctx, booksID)
 	if err != nil {
 		return domain.Catalog{}, nil, err
@@ -32,7 +35,12 @@ func (s *Service) catalog(ctx context.Context, booksID int64) (domain.Catalog, m
 
 	categories, balances := map[uuid.UUID]domain.Category{}, map[uuid.UUID]domain.Category{}
 	for id, a := range accounts {
-		c := domain.Category{Class: a.Class, Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn}
+		c := domain.Category{
+			Class:      a.Class,
+			Instrument: a.Instrument,
+			OpenedOn:   a.OpenedOn,
+			ClosedOn:   a.ClosedOn,
+		}
 		switch {
 		case a.isCategory() && !a.isUncategorized():
 			categories[id] = c
@@ -41,12 +49,22 @@ func (s *Service) catalog(ctx context.Context, booksID int64) (domain.Catalog, m
 		}
 	}
 
-	return domain.Catalog{Rules: rules, Aliases: aliases, Categories: categories, Accounts: balances}, accounts, nil
+	return domain.Catalog{
+		Rules:      rules,
+		Aliases:    aliases,
+		Categories: categories,
+		Accounts:   balances,
+	}, accounts, nil
 }
 
 // decideAll decides every subject; payee history is loaded once for the payees that rules
 // leave without a category (P5 amendment A23).
-func (s *Service) decideAll(ctx context.Context, booksID int64, c domain.Catalog, subjects []domain.Subject) ([]domain.Decision, error) {
+func (s *Service) decideAll(
+	ctx context.Context,
+	booksID int64,
+	c domain.Catalog,
+	subjects []domain.Subject,
+) ([]domain.Decision, error) {
 	decisions := make([]domain.Decision, len(subjects))
 
 	var payees []uuid.UUID
@@ -154,7 +172,10 @@ func (s *Service) applyTransfers(
 		switch {
 		case d.TransferTo != uuid.Nil:
 			applied, err := s.ledger.Transfer(ctx, booksID, TransferRequest{
-				TransactionID: targets[i].ID, ExpectedVersion: targets[i].Version, AccountID: d.TransferTo, RuleID: d.RuleID,
+				TransactionID:   targets[i].ID,
+				ExpectedVersion: targets[i].Version,
+				AccountID:       d.TransferTo,
+				RuleID:          d.RuleID,
 			})
 			if err != nil {
 				return cs, n, err
@@ -172,7 +193,14 @@ func (s *Service) applyTransfers(
 }
 
 func categorization(id uuid.UUID, version int, d domain.Decision) Categorization {
-	c := Categorization{TransactionID: id, ExpectedVersion: version, AddTags: d.AddTags, Method: d.Method, RuleID: d.RuleID, Parts: d.Parts}
+	c := Categorization{
+		TransactionID:   id,
+		ExpectedVersion: version,
+		AddTags:         d.AddTags,
+		Method:          d.Method,
+		RuleID:          d.RuleID,
+		Parts:           d.Parts,
+	}
 	if d.PayeeID != uuid.Nil {
 		c.PayeeID = &d.PayeeID
 	}
@@ -182,7 +210,13 @@ func categorization(id uuid.UUID, version int, d domain.Decision) Categorization
 
 // subjectOf describes an uncategorized transaction for rules (P5 amendment A21).
 func subjectOf(f TransactionFacts, accounts map[uuid.UUID]Account) domain.Subject {
-	s := domain.Subject{Date: f.Date, Description: f.Description, RawDescription: f.RawDescription, PayeeID: f.PayeeID, Source: f.Origin}
+	s := domain.Subject{
+		Date:           f.Date,
+		Description:    f.Description,
+		RawDescription: f.RawDescription,
+		PayeeID:        f.PayeeID,
+		Source:         f.Origin,
+	}
 
 	var total money.Money
 	for _, p := range f.Postings {
@@ -206,7 +240,10 @@ func subjectOf(f TransactionFacts, accounts map[uuid.UUID]Account) domain.Subjec
 }
 
 // RunRules runs F5 on every uncategorized transaction, in pages (POST /rules/run).
-func (s *Service) RunRules(ctx context.Context, booksID int64) (examined, categorized int, err error) {
+func (s *Service) RunRules(
+	ctx context.Context,
+	booksID int64,
+) (examined, categorized int, err error) {
 	var after *PendingKey
 	for {
 		ids, next, err := s.repo.PendingCategorizations(ctx, booksID, after, runPage)

@@ -72,7 +72,11 @@ func TestKeyRotation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, err := rotated.Open(sealed, []byte("ad")); err != nil || string(got) != "s" || !rotated.NeedsReseal(sealed) {
+	if got, err := rotated.Open(
+		sealed,
+		[]byte("ad"),
+	); err != nil || string(got) != "s" ||
+		!rotated.NeedsReseal(sealed) {
 		t.Fatalf("Open = %q, %v; needs reseal %v", got, err, rotated.NeedsReseal(sealed))
 	}
 

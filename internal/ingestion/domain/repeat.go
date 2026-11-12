@@ -41,7 +41,10 @@ func Repeats(lines, recorded []RepeatLine) map[int]bool {
 		)
 	})
 
-	pool := slices.DeleteFunc(slices.Clone(recorded), func(r RepeatLine) bool { return r.Amount <= 0 })
+	pool := slices.DeleteFunc(
+		slices.Clone(recorded),
+		func(r RepeatLine) bool { return r.Amount <= 0 },
+	)
 	taken := make([]bool, len(pool))
 
 	out := map[int]bool{}

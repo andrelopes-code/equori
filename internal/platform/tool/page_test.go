@@ -67,7 +67,13 @@ func TestPaginate(t *testing.T) {
 		t.Errorf("one full page = %v, %q, %v", page, next, err)
 	}
 
-	if page, next, err := Paginate([]string{}, key, 2, ""); err != nil || page == nil || len(page) != 0 || next != "" {
+	if page, next, err := Paginate(
+		[]string{},
+		key,
+		2,
+		"",
+	); err != nil || page == nil || len(page) != 0 ||
+		next != "" {
 		t.Errorf("empty list = %v, %q, %v", page, next, err)
 	}
 
@@ -85,7 +91,10 @@ func TestPageArgsSchema(t *testing.T) {
 		Class string `json:"class,omitzero"`
 		PageArgs
 	}
-	tl := New(searchSpec, func(context.Context, int64, listIn) (totalOut, error) { return totalOut{}, nil })
+	tl := New(
+		searchSpec,
+		func(context.Context, int64, listIn) (totalOut, error) { return totalOut{}, nil },
+	)
 	assertJSON(t, tl.InputSchema(), `{"type":"object","additionalProperties":false,"properties":{
 		"class":{"type":"string"},
 		"limit":{"type":"integer","description":"items per page, 1 to 50; 20 when absent"},
@@ -96,7 +105,12 @@ func TestPageOf(t *testing.T) {
 	t.Parallel()
 
 	key := func(s string) string { return s }
-	if page, next, err := PageOf([]string{"a", "b"}, key, PageArgs{}); err != nil || len(page) != 2 || next != "" {
+	if page, next, err := PageOf(
+		[]string{"a", "b"},
+		key,
+		PageArgs{},
+	); err != nil || len(page) != 2 ||
+		next != "" {
 		t.Errorf("default page = %v, %q, %v", page, next, err)
 	}
 

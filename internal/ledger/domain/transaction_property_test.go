@@ -30,7 +30,10 @@ func TestNewTransactionAcceptsOnlyBalanced(t *testing.T) {
 			}
 
 			sum += amount
-			postings = append(postings, Posting{AccountID: open[r.IntN(len(open))], Amount: brl(t, amount)})
+			postings = append(
+				postings,
+				Posting{AccountID: open[r.IntN(len(open))], Amount: brl(t, amount)},
+			)
 		}
 
 		got, err := NewTransaction(f.tx(postings...), f.accounts)
@@ -41,7 +44,8 @@ func TestNewTransactionAcceptsOnlyBalanced(t *testing.T) {
 
 		if err == nil {
 			for i := range postings {
-				if got.Postings[i].Amount != postings[i].Amount || got.Postings[i].AccountID != postings[i].AccountID {
+				if got.Postings[i].Amount != postings[i].Amount ||
+					got.Postings[i].AccountID != postings[i].AccountID {
 					t.Fatalf("seed %d: posting %d changed", seed, i)
 				}
 			}

@@ -82,7 +82,10 @@ func runBackup(ctx context.Context, cfg config.Config, out string) error {
 	}
 
 	fmt.Println(path)
-	fmt.Fprintln(os.Stderr, "the dump holds no secret key; equori secrets key prints the key in use")
+	fmt.Fprintln(
+		os.Stderr,
+		"the dump holds no secret key; equori secrets key prints the key in use",
+	)
 
 	return nil
 }

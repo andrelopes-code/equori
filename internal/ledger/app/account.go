@@ -26,7 +26,11 @@ type AccountPatch struct {
 	OpenedOn              *time.Time
 }
 
-func (s *Service) CreateAccount(ctx context.Context, booksID int64, a domain.Account) (domain.Account, error) {
+func (s *Service) CreateAccount(
+	ctx context.Context,
+	booksID int64,
+	a domain.Account,
+) (domain.Account, error) {
 	a.BooksID = booksID
 	if a.OpenedOn.IsZero() {
 		a.OpenedOn = earliestDate
@@ -53,13 +57,26 @@ func (s *Service) CreateAccount(ctx context.Context, booksID int64, a domain.Acc
 			return err
 		}
 
-		return r.Publish(ctx, outbox.Event{Type: EventAccountOpened, BooksID: booksID, AggregateID: created.ID.String(), Payload: accountEvent{created.ID}})
+		return r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventAccountOpened,
+				BooksID:     booksID,
+				AggregateID: created.ID.String(),
+				Payload:     accountEvent{created.ID},
+			},
+		)
 	})
 
 	return created, err
 }
 
-func (s *Service) UpdateAccount(ctx context.Context, booksID int64, id uuid.UUID, p AccountPatch) (domain.Account, error) {
+func (s *Service) UpdateAccount(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	p AccountPatch,
+) (domain.Account, error) {
 	var updated domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		a, err := r.Account(ctx, booksID, id)
@@ -126,7 +143,13 @@ func applyAccountPatch(a *domain.Account, p AccountPatch) error {
 }
 
 // SetAppearance sets or, with zero values, clears the colour and the icon of an account (A83).
-func (s *Service) SetAppearance(ctx context.Context, booksID int64, id uuid.UUID, color int, icon string) (domain.Account, error) {
+func (s *Service) SetAppearance(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	color int,
+	icon string,
+) (domain.Account, error) {
 	var updated domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		a, err := r.Account(ctx, booksID, id)
@@ -147,17 +170,30 @@ func (s *Service) SetAppearance(ctx context.Context, booksID int64, id uuid.UUID
 	return updated, err
 }
 
-func (s *Service) Account(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error) {
+func (s *Service) Account(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Account, error) {
 	return s.repo.Account(ctx, booksID, id)
 }
 
-func (s *Service) ListAccounts(ctx context.Context, booksID int64, p page.Request[AccountKey]) ([]domain.Account, *AccountKey, error) {
+func (s *Service) ListAccounts(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[AccountKey],
+) ([]domain.Account, *AccountKey, error) {
 	return s.repo.ListAccounts(ctx, booksID, p)
 }
 
 // CloseAccount closes the account and its open descendants (A74). Every member needs no
 // postings after the closing date; a balance-sheet or equity member also needs a zero balance.
-func (s *Service) CloseAccount(ctx context.Context, booksID int64, id uuid.UUID, closedOn time.Time) error {
+func (s *Service) CloseAccount(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	closedOn time.Time,
+) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
 		root, err := r.Account(ctx, booksID, id)
 		if err != nil {
@@ -228,7 +264,12 @@ func closeableAccounts(
 }
 
 // saveClosedAccounts persists each closed account and publishes its event.
-func saveClosedAccounts(ctx context.Context, r Repository, booksID int64, closing []domain.Account) error {
+func saveClosedAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	closing []domain.Account,
+) error {
 	for _, a := range closing {
 		if _, err := r.UpdateAccount(ctx, a); err != nil {
 			return err
@@ -251,7 +292,11 @@ func saveClosedAccounts(ctx context.Context, r Repository, booksID int64, closin
 
 // ReopenAccount reopens the account and its closed ancestors, so an open account never has a
 // closed parent (A74).
-func (s *Service) ReopenAccount(ctx context.Context, booksID int64, id uuid.UUID) (domain.Account, error) {
+func (s *Service) ReopenAccount(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Account, error) {
 	var reopened domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		a, err := r.Account(ctx, booksID, id)
@@ -264,7 +309,11 @@ func (s *Service) ReopenAccount(ctx context.Context, booksID int64, id uuid.UUID
 		}
 
 		if a.ClosedOn == nil {
-			return &domain.FieldError{Field: "id", Message: "account is open", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "id",
+				Message: "account is open",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		for {
@@ -279,7 +328,15 @@ func (s *Service) ReopenAccount(ctx context.Context, booksID int64, id uuid.UUID
 				reopened = updated
 			}
 
-			if err := r.Publish(ctx, outbox.Event{Type: EventAccountReopened, BooksID: booksID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
+			if err := r.Publish(
+				ctx,
+				outbox.Event{
+					Type:        EventAccountReopened,
+					BooksID:     booksID,
+					AggregateID: a.ID.String(),
+					Payload:     accountEvent{a.ID},
+				},
+			); err != nil {
 				return err
 			}
 
@@ -307,7 +364,11 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 
 	parent, err := r.Account(ctx, a.BooksID, a.ParentID)
 	if errors.Is(err, ErrNotFound) {
-		return &domain.FieldError{Field: "parent_id", Message: "unknown account", Err: domain.ErrUnknownAccount}
+		return &domain.FieldError{
+			Field:   "parent_id",
+			Message: "unknown account",
+			Err:     domain.ErrUnknownAccount,
+		}
 	}
 
 	if err != nil {
@@ -321,18 +382,30 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 		}
 
 		if totals.Total != 0 || totals.LastBookedOn.After(earliestDate) {
-			return &domain.FieldError{Field: "parent_id", Message: "a balance account with postings cannot become a parent", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "parent_id",
+				Message: "a balance account with postings cannot become a parent",
+				Err:     domain.ErrValidation,
+			}
 		}
 	}
 
 	if a.ClosedOn == nil && parent.ClosedOn != nil {
-		return &domain.FieldError{Field: "parent_id", Message: "must be open", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "parent_id",
+			Message: "must be open",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	if a.ID != uuid.Nil {
 		for ancestor := parent; ancestor.ParentID != uuid.Nil; {
 			if ancestor.ParentID == a.ID {
-				return &domain.FieldError{Field: "parent_id", Message: "must not be a descendant of the account", Err: domain.ErrValidation}
+				return &domain.FieldError{
+					Field:   "parent_id",
+					Message: "must not be a descendant of the account",
+					Err:     domain.ErrValidation,
+				}
 			}
 
 			if ancestor, err = r.Account(ctx, a.BooksID, ancestor.ParentID); err != nil {

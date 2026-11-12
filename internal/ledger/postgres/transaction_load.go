@@ -67,7 +67,10 @@ func (r *Repository) attachPostings(
 	ids []uuid.UUID,
 	byID map[uuid.UUID]*domain.Transaction,
 ) error {
-	postings, err := r.q.ListPostings(ctx, ListPostingsParams{BooksID: booksID, TransactionIds: ids})
+	postings, err := r.q.ListPostings(
+		ctx,
+		ListPostingsParams{BooksID: booksID, TransactionIds: ids},
+	)
 	if err != nil {
 		return err
 	}
@@ -91,7 +94,10 @@ func (r *Repository) attachTags(
 	ids []uuid.UUID,
 	byID map[uuid.UUID]*domain.Transaction,
 ) error {
-	tags, err := r.q.ListTransactionTags(ctx, ListTransactionTagsParams{BooksID: booksID, TransactionIds: ids})
+	tags, err := r.q.ListTransactionTags(
+		ctx,
+		ListTransactionTagsParams{BooksID: booksID, TransactionIds: ids},
+	)
 	if err != nil {
 		return err
 	}
@@ -117,7 +123,14 @@ func (r *Repository) attachLinks(
 
 	for _, l := range links {
 		t := byID[l.FromTransactionID]
-		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID, Amount: storedAmount(l.Amount)})
+		t.Links = append(
+			t.Links,
+			domain.Link{
+				Type:   domain.LinkType(l.LinkType),
+				Target: l.ToTransactionID,
+				Amount: storedAmount(l.Amount),
+			},
+		)
 	}
 
 	return nil
@@ -152,7 +165,10 @@ func (r *Repository) attachIncomes(
 	ids []uuid.UUID,
 	byID map[uuid.UUID]*domain.Transaction,
 ) error {
-	incomes, err := r.q.ListInvestmentIncome(ctx, ListInvestmentIncomeParams{BooksID: booksID, TransactionIds: ids})
+	incomes, err := r.q.ListInvestmentIncome(
+		ctx,
+		ListInvestmentIncomeParams{BooksID: booksID, TransactionIds: ids},
+	)
 	if err != nil {
 		return err
 	}
@@ -171,7 +187,11 @@ func (r *Repository) attachIncomes(
 		}
 
 		byID[row.TransactionID].Income = &domain.Income{
-			AccountID: row.AccountID, CashAccountID: row.CashAccountID, Type: domain.IncomeType(row.IncomeType), Gross: gross, Withheld: withheld,
+			AccountID:     row.AccountID,
+			CashAccountID: row.CashAccountID,
+			Type:          domain.IncomeType(row.IncomeType),
+			Gross:         gross,
+			Withheld:      withheld,
 		}
 	}
 

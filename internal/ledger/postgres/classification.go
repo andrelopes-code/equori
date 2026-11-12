@@ -9,8 +9,15 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
-func (r *Repository) TransactionsByIDs(ctx context.Context, booksID int64, ids []uuid.UUID) ([]domain.Transaction, error) {
-	rows, err := r.q.GetTransactionsByIDs(ctx, GetTransactionsByIDsParams{BooksID: booksID, Ids: ids})
+func (r *Repository) TransactionsByIDs(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) ([]domain.Transaction, error) {
+	rows, err := r.q.GetTransactionsByIDs(
+		ctx,
+		GetTransactionsByIDsParams{BooksID: booksID, Ids: ids},
+	)
 	if err != nil || len(rows) == 0 {
 		return nil, err
 	}
@@ -18,7 +25,11 @@ func (r *Repository) TransactionsByIDs(ctx context.Context, booksID int64, ids [
 	return r.completeAll(ctx, booksID, rows)
 }
 
-func (r *Repository) RawDescriptions(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+func (r *Repository) RawDescriptions(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) (map[uuid.UUID]string, error) {
 	rows, err := r.q.RawDescriptions(ctx, RawDescriptionsParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
@@ -46,7 +57,11 @@ func (r *Repository) AllAccounts(ctx context.Context, booksID int64) ([]domain.A
 	return out, nil
 }
 
-func (r *Repository) ExistingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]struct{}, error) {
+func (r *Repository) ExistingPayees(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) (map[uuid.UUID]struct{}, error) {
 	found, err := r.q.ExistingPayees(ctx, ExistingPayeesParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
@@ -60,8 +75,15 @@ func (r *Repository) ExistingPayees(ctx context.Context, booksID int64, ids []uu
 	return out, nil
 }
 
-func (r *Repository) LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[app.PayeeClass]uuid.UUID, error) {
-	rows, err := r.q.LatestPayeeCategories(ctx, LatestPayeeCategoriesParams{BooksID: booksID, PayeeIds: payees})
+func (r *Repository) LatestPayeeCategories(
+	ctx context.Context,
+	booksID int64,
+	payees []uuid.UUID,
+) (map[app.PayeeClass]uuid.UUID, error) {
+	rows, err := r.q.LatestPayeeCategories(
+		ctx,
+		LatestPayeeCategoriesParams{BooksID: booksID, PayeeIds: payees},
+	)
 	if err != nil {
 		return nil, err
 	}

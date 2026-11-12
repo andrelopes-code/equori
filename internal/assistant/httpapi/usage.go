@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) listUsage(ctx context.Context, _ *http.Request, _ httpserver.None) (UsageList, error) {
+func (s *Server) listUsage(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (UsageList, error) {
 	rows, err := s.svc.Usage(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return UsageList{}, err
@@ -22,10 +26,19 @@ func (s *Server) listUsage(ctx context.Context, _ *http.Request, _ httpserver.No
 		u := r.Usage
 
 		items[i] = UsageRow{
-			ProviderId: r.Provider.ID, ProviderName: r.Provider.Name, Preset: r.Provider.Preset, Instance: r.Provider.Instance,
-			Model: u.Model, TodayRequests: u.TodayRequests, TodayErrors: u.TodayErrors, TodayTokens: u.TodayTokens,
-			PeriodRequests: u.PeriodRequests, PeriodTokens: u.PeriodTokens, PeriodDays: app.UsageDays,
-			RequestsPerDay: r.Limit.RequestsPerDay, TokensPerDay: r.Limit.TokensPerDay,
+			ProviderId:     r.Provider.ID,
+			ProviderName:   r.Provider.Name,
+			Preset:         r.Provider.Preset,
+			Instance:       r.Provider.Instance,
+			Model:          u.Model,
+			TodayRequests:  u.TodayRequests,
+			TodayErrors:    u.TodayErrors,
+			TodayTokens:    u.TodayTokens,
+			PeriodRequests: u.PeriodRequests,
+			PeriodTokens:   u.PeriodTokens,
+			PeriodDays:     app.UsageDays,
+			RequestsPerDay: r.Limit.RequestsPerDay,
+			TokensPerDay:   r.Limit.TokensPerDay,
 		}
 		if !u.CoolingUntil.IsZero() {
 			items[i].CoolingUntil = &u.CoolingUntil
@@ -35,7 +48,11 @@ func (s *Server) listUsage(ctx context.Context, _ *http.Request, _ httpserver.No
 	return UsageList{Items: items}, nil
 }
 
-func (s *Server) listUsageDays(ctx context.Context, r *http.Request, _ httpserver.None) (UsageDayList, error) {
+func (s *Server) listUsageDays(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (UsageDayList, error) {
 	params, err := httpserver.Query[ListUsageDaysParams](r)
 	if err != nil {
 		return UsageDayList{}, err
@@ -57,8 +74,19 @@ func (s *Server) listUsageDays(ctx context.Context, r *http.Request, _ httpserve
 	return UsageDayList{Items: items}, nil
 }
 
-func (s *Server) setUsageLimit(ctx context.Context, _ *http.Request, in SetUsageLimitJSONRequestBody) (httpserver.None, error) {
-	if err := s.svc.SetLimit(ctx, auth.MustBooksID(ctx), in.ProviderId, in.Model, in.RequestsPerDay, in.TokensPerDay); err != nil {
+func (s *Server) setUsageLimit(
+	ctx context.Context,
+	_ *http.Request,
+	in SetUsageLimitJSONRequestBody,
+) (httpserver.None, error) {
+	if err := s.svc.SetLimit(
+		ctx,
+		auth.MustBooksID(ctx),
+		in.ProviderId,
+		in.Model,
+		in.RequestsPerDay,
+		in.TokensPerDay,
+	); err != nil {
 		return httpserver.None{}, err
 	}
 

@@ -50,7 +50,12 @@ func TestS366Probe(t *testing.T) {
 	h.ExpectProblem(h.Call(h.Client, http.MethodGet, "/api/v1/instruments/VWCE", nil),
 		http.StatusNotFound, "not_found", "")
 
-	if rows := h.Rows("SELECT count(*) FROM marketdata_price WHERE instrument = 'VWCE'"); !reflect.DeepEqual(rows, []string{"0"}) {
+	if rows := h.Rows(
+		"SELECT count(*) FROM marketdata_price WHERE instrument = 'VWCE'",
+	); !reflect.DeepEqual(
+		rows,
+		[]string{"0"},
+	) {
 		t.Fatalf("stored prices = %v, want [0]", rows)
 	}
 
@@ -58,11 +63,20 @@ func TestS366Probe(t *testing.T) {
 
 	off.MustDo(http.MethodPost, probePath, probeBody(nil), http.StatusOK, &got)
 
-	if want := (probeAPI{Quotes: []probeQuoteAPI{}, Available: []string{"yahoo_chart"}}); !reflect.DeepEqual(got, want) {
+	if want := (probeAPI{Quotes: []probeQuoteAPI{}, Available: []string{"yahoo_chart"}}); !reflect.DeepEqual(
+		got,
+		want,
+	) {
 		t.Fatalf("disabled probe = %+v, want %+v", got, want)
 	}
 
-	h.MustDo(http.MethodPost, probePath, probeBody(map[string]any{"quote_currency": "USD"}), http.StatusOK, &got)
+	h.MustDo(
+		http.MethodPost,
+		probePath,
+		probeBody(map[string]any{"quote_currency": "USD"}),
+		http.StatusOK,
+		&got,
+	)
 
 	msg := "instrument VWCE: quoted in EUR, want USD"
 	want = probeAPI{
@@ -123,10 +137,19 @@ func expectProbeRejected(t *testing.T, h *apitest.Harness) {
 		field  string
 	}{
 		{"currency type", map[string]any{"type": "currency"}, 422, "validation_failed", "type"},
-		{"quote is no currency", map[string]any{"quote_currency": "VWCE"}, 422, "validation_failed", "quote_currency"},
 		{
-			"symbol of a source without overrides", map[string]any{"symbols": map[string]string{"ecb": "X"}},
-			422, "validation_failed", "symbols.ecb",
+			"quote is no currency",
+			map[string]any{"quote_currency": "VWCE"},
+			422,
+			"validation_failed",
+			"quote_currency",
+		},
+		{
+			"symbol of a source without overrides",
+			map[string]any{"symbols": map[string]string{"ecb": "X"}},
+			422,
+			"validation_failed",
+			"symbols.ecb",
 		},
 		{"lower case code", map[string]any{"code": "vwce"}, 400, "invalid_request", ""},
 	}
@@ -177,7 +200,12 @@ func probeHarness(t *testing.T, enabled []string, bound time.Duration) *apitest.
 
 // probeBody is the request of S366 with the fields of change replaced.
 func probeBody(change map[string]any) map[string]any {
-	body := map[string]any{"code": "VWCE", "type": "etf", "exchange": "XETR", "quote_currency": "EUR"}
+	body := map[string]any{
+		"code":           "VWCE",
+		"type":           "etf",
+		"exchange":       "XETR",
+		"quote_currency": "EUR",
+	}
 	for k, v := range change {
 		body[k] = v
 	}

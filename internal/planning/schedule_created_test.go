@@ -29,13 +29,21 @@ func TestScheduleCreatedWithPayingTransaction(t *testing.T) {
 
 	var out toolSchedule
 	toolOutput(t, f.h, "manage_schedule", map[string]any{
-		"action": "create", "kind": "bill", "description": "Rent", "account_id": f.checking, "counterpart_id": f.rent,
-		"amount": "2100.00", "frequency": "monthly", "day_of_month": 5, "start": "2026-10-05",
+		"action":                 "create",
+		"kind":                   "bill",
+		"description":            "Rent",
+		"account_id":             f.checking,
+		"counterpart_id":         f.rent,
+		"amount":                 "2100.00",
+		"frequency":              "monthly",
+		"day_of_month":           5,
+		"start":                  "2026-10-05",
 		"paid_by_transaction_id": tx,
 	}, &out)
 
 	got := f.occurrences("from=2026-10-01&to=2026-11-30&schedule_id=" + out.ScheduleID)
-	if len(got) != 2 || got[0].State != "realized" || got[0].TransactionID != tx || got[1].State != "skipped" {
+	if len(got) != 2 || got[0].State != "realized" || got[0].TransactionID != tx ||
+		got[1].State != "skipped" {
 		t.Fatalf("occurrences = %+v", got)
 	}
 }
@@ -46,8 +54,15 @@ func TestScheduleCreatedWithRefusedPayingTransaction(t *testing.T) {
 	f := newFixture(t, "2026-11-10")
 	args := func(tx string) map[string]any {
 		return map[string]any{
-			"action": "create", "kind": "bill", "description": "Rent", "account_id": f.checking, "counterpart_id": f.rent,
-			"amount": "2100.00", "frequency": "monthly", "day_of_month": 5, "start": "2026-10-05",
+			"action":                 "create",
+			"kind":                   "bill",
+			"description":            "Rent",
+			"account_id":             f.checking,
+			"counterpart_id":         f.rent,
+			"amount":                 "2100.00",
+			"frequency":              "monthly",
+			"day_of_month":           5,
+			"start":                  "2026-10-05",
 			"paid_by_transaction_id": tx,
 		}
 	}
@@ -65,7 +80,11 @@ func TestScheduleCreatedWithRefusedPayingTransaction(t *testing.T) {
 	var first toolSchedule
 	toolOutput(t, f.h, "manage_schedule", args(paid), &first)
 
-	f.h.ExpectToolError(f.h.Tool("manage_schedule", args(other.ID)), "validation_failed", "paid_by_transaction_id")
+	f.h.ExpectToolError(
+		f.h.Tool("manage_schedule", args(other.ID)),
+		"validation_failed",
+		"paid_by_transaction_id",
+	)
 	f.h.ExpectToolError(f.h.Tool("manage_schedule", args(paid)), "transaction_in_use", "")
 
 	var got toolSchedules

@@ -63,10 +63,13 @@ func TestHeldBackLines(t *testing.T) {
 			want:   map[int]bool{0: true},
 		},
 		{
-			name:   "two stored records hold back two lines",
-			lines:  []ExternalRecord{line("2026-10-05", -5000), line("2026-10-05", -5000)},
-			stored: []ExternalRecord{stored(first, "2026-10-05", -5000), stored(second, "2026-10-05", -5000)},
-			want:   map[int]bool{0: true, 1: true},
+			name:  "two stored records hold back two lines",
+			lines: []ExternalRecord{line("2026-10-05", -5000), line("2026-10-05", -5000)},
+			stored: []ExternalRecord{
+				stored(first, "2026-10-05", -5000),
+				stored(second, "2026-10-05", -5000),
+			},
+			want: map[int]bool{0: true, 1: true},
 		},
 	}
 
@@ -74,7 +77,14 @@ func TestHeldBackLines(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := HeldBackLines(tc.lines, tc.stored, tc.claimed); !reflect.DeepEqual(got, tc.want) {
+			if got := HeldBackLines(
+				tc.lines,
+				tc.stored,
+				tc.claimed,
+			); !reflect.DeepEqual(
+				got,
+				tc.want,
+			) {
 				t.Fatalf("held back = %v, want %v", got, tc.want)
 			}
 		})

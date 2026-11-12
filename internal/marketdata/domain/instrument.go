@@ -13,7 +13,15 @@ import (
 const TypeCurrency = "currency"
 
 // SecurityTypes are the instrument types other than currency.
-var SecurityTypes = []string{"stock", "etf", "reit", "depositary_receipt", "fixed_income", "fund", "crypto"}
+var SecurityTypes = []string{
+	"stock",
+	"etf",
+	"reit",
+	"depositary_receipt",
+	"fixed_income",
+	"fund",
+	"crypto",
+}
 
 var micPattern = regexp.MustCompile(`^[A-Z0-9]{4}$`)
 

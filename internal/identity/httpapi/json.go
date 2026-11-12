@@ -20,7 +20,13 @@ func decodeBody[T any](s *Server, w http.ResponseWriter, r *http.Request) (T, bo
 }
 
 // writeJSONCookie answers status with body as JSON and the Set-Cookie header cookie.
-func (s *Server) writeJSONCookie(w http.ResponseWriter, r *http.Request, status int, cookie string, body any) {
+func (s *Server) writeJSONCookie(
+	w http.ResponseWriter,
+	r *http.Request,
+	status int,
+	cookie string,
+	body any,
+) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
 		s.errs.Write(w, r, err)

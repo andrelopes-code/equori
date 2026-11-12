@@ -12,12 +12,35 @@ import (
 type aprilYear struct{ domain.Jurisdiction }
 
 func (aprilYear) TaxYear(year int) (time.Time, time.Time) {
-	return time.Date(year, 4, 6, 0, 0, 0, 0, time.UTC), time.Date(year+1, 4, 6, 0, 0, 0, 0, time.UTC)
+	return time.Date(
+			year,
+			4,
+			6,
+			0,
+			0,
+			0,
+			0,
+			time.UTC,
+		), time.Date(
+			year+1,
+			4,
+			6,
+			0,
+			0,
+			0,
+			0,
+			time.UTC,
+		)
 }
 
 type fixedJurisdiction struct{ j domain.Jurisdiction }
 
-func (f fixedJurisdiction) For(context.Context, int64) (domain.Jurisdiction, error) { return f.j, nil }
+func (f fixedJurisdiction) For(
+	context.Context,
+	int64,
+) (domain.Jurisdiction, error) {
+	return f.j, nil
+}
 
 func TestTaxYear(t *testing.T) {
 	t.Parallel()

@@ -20,7 +20,12 @@ type Conversion struct {
 
 // Convert values q in currency to at date by the path of P8 amendment A61: direct
 // price, inverse price, or both legs through the intermediate that ConversionIntermediate selects.
-func (m *Module) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (Conversion, error) {
+func (m *Module) Convert(
+	ctx context.Context,
+	q money.Money,
+	to money.Currency,
+	date time.Time,
+) (Conversion, error) {
 	from := q.Currency()
 	if from == to {
 		return Conversion{Value: q}, nil
@@ -67,8 +72,19 @@ func (m *Module) Convert(ctx context.Context, q money.Money, to money.Currency, 
 	return Conversion{Value: v, Prices: prices}, nil
 }
 
-func (m *Module) intermediate(ctx context.Context, from, to money.Currency, date time.Time) (money.Currency, bool, error) {
-	code, err := m.q.ConversionIntermediate(ctx, postgres.ConversionIntermediateParams{FromCode: string(from), ToCode: string(to), Date: date})
+func (m *Module) intermediate(
+	ctx context.Context,
+	from, to money.Currency,
+	date time.Time,
+) (money.Currency, bool, error) {
+	code, err := m.q.ConversionIntermediate(
+		ctx,
+		postgres.ConversionIntermediateParams{
+			FromCode: string(from),
+			ToCode:   string(to),
+			Date:     date,
+		},
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", false, nil
 	}
@@ -80,7 +96,11 @@ func (m *Module) intermediate(ctx context.Context, from, to money.Currency, date
 	return money.Currency(code), true, nil
 }
 
-func (m *Module) leg(ctx context.Context, from, to money.Currency, date time.Time) (money.Leg, Price, bool, error) {
+func (m *Module) leg(
+	ctx context.Context,
+	from, to money.Currency,
+	date time.Time,
+) (money.Leg, Price, bool, error) {
 	p, ok, err := m.PriceOnOrBefore(ctx, from, to, date)
 	if err != nil || ok {
 		return money.Leg{Rate: p.Value}, p, ok, err

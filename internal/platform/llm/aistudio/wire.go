@@ -112,7 +112,14 @@ func toWire(req llm.Request) generateRequest {
 	if len(req.Tools) > 0 {
 		var decls []functionDeclaration
 		for _, t := range req.Tools {
-			decls = append(decls, functionDeclaration{Name: t.Name, Description: t.Description, ParametersJSONSchema: t.Parameters})
+			decls = append(
+				decls,
+				functionDeclaration{
+					Name:                 t.Name,
+					Description:          t.Description,
+					ParametersJSONSchema: t.Parameters,
+				},
+			)
 		}
 
 		w.Tools = []tool{{FunctionDeclarations: decls}}
@@ -122,7 +129,8 @@ func toWire(req llm.Request) generateRequest {
 		}
 	}
 
-	if req.Schema != nil || req.MaxOutputTokens > 0 || req.Temperature != nil || req.Thinking != "" {
+	if req.Schema != nil || req.MaxOutputTokens > 0 || req.Temperature != nil ||
+		req.Thinking != "" {
 		cfg := &generationConfig{MaxOutputTokens: req.MaxOutputTokens, Temperature: req.Temperature}
 		if req.Schema != nil {
 			cfg.ResponseMimeType, cfg.ResponseJSONSchema = "application/json", req.Schema
@@ -142,9 +150,17 @@ func partToWire(p llm.Part) part {
 	var w part
 	switch {
 	case p.ToolCall != nil:
-		w.FunctionCall = &functionCall{ID: p.ToolCall.ID, Name: p.ToolCall.Name, Args: p.ToolCall.Args}
+		w.FunctionCall = &functionCall{
+			ID:   p.ToolCall.ID,
+			Name: p.ToolCall.Name,
+			Args: p.ToolCall.Args,
+		}
 	case p.ToolResult != nil:
-		w.FunctionResponse = &functionResponse{ID: p.ToolResult.CallID, Name: p.ToolResult.Name, Response: asObject(p.ToolResult.Content)}
+		w.FunctionResponse = &functionResponse{
+			ID:       p.ToolResult.CallID,
+			Name:     p.ToolResult.Name,
+			Response: asObject(p.ToolResult.Content),
+		}
 	default:
 		t := p.Text
 		w.Text = &t
@@ -203,7 +219,11 @@ func fromWire(w generateResponse) llm.Response {
 			var np llm.Part
 			switch {
 			case p.FunctionCall != nil:
-				np.ToolCall = &llm.ToolCall{ID: p.FunctionCall.ID, Name: p.FunctionCall.Name, Args: p.FunctionCall.Args}
+				np.ToolCall = &llm.ToolCall{
+					ID:   p.FunctionCall.ID,
+					Name: p.FunctionCall.Name,
+					Args: p.FunctionCall.Args,
+				}
 				hasCall = true
 			case p.Text != nil:
 				np.Text = *p.Text

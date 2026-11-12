@@ -42,7 +42,12 @@ func (c coverageDoc) sources(t *testing.T) []coverageSource {
 			t.Fatalf("source %+v", s)
 		}
 
-		out[i] = coverageSource{ID: s.ID, Enabled: s.Enabled, First: deref(s.First), Last: deref(s.Last)}
+		out[i] = coverageSource{
+			ID:      s.ID,
+			Enabled: s.Enabled,
+			First:   deref(s.First),
+			Last:    deref(s.Last),
+		}
 	}
 
 	return out
@@ -82,11 +87,15 @@ func TestCoverage(t *testing.T) {
 			h.MustDo(http.MethodGet, "/api/v1/instruments/USD", nil, http.StatusOK, &in)
 
 			c := in.Coverage
-			if deref(c.First) != tc.first || deref(c.Last) != "2026-11-06" || c.Count != tc.count || c.Stale != tc.stale {
+			if deref(c.First) != tc.first || deref(c.Last) != "2026-11-06" || c.Count != tc.count ||
+				c.Stale != tc.stale {
 				t.Fatalf("coverage = %+v", c)
 			}
 
-			want := []coverageSource{{"bcb_ptax", true, tc.first, "2026-11-06"}, {"ecb", false, "", ""}}
+			want := []coverageSource{
+				{"bcb_ptax", true, tc.first, "2026-11-06"},
+				{"ecb", false, "", ""},
+			}
 			if got := c.sources(t); !reflect.DeepEqual(got, want) {
 				t.Fatalf("sources = %+v, want %+v", got, want)
 			}

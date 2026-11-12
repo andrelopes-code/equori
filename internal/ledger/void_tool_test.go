@@ -13,7 +13,13 @@ func TestVoidTransactionTool(t *testing.T) {
 	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -100), apitest.Posting(f.food, 100))
 
 	args := map[string]any{"transaction_id": id, "reason": "duplicate"}
-	if p := previewTool(t, f.h, "void_transaction", args); !p.Destructive || p.Basis != "v1" || len(p.Changes) != 2 || p.Changes[0].After.Text != "voided" {
+	if p := previewTool(
+		t,
+		f.h,
+		"void_transaction",
+		args,
+	); !p.Destructive || p.Basis != "v1" || len(p.Changes) != 2 ||
+		p.Changes[0].After.Text != "voided" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -30,7 +36,11 @@ func TestVoidTransactionTool(t *testing.T) {
 		t.Errorf("out = %+v, voided_at = %q", out, tx.VoidedAt)
 	}
 
-	f.h.ExpectToolError(f.h.Tool("void_transaction", map[string]any{"transaction_id": id, "reason": ""}), "invalid_arguments", "reason")
+	f.h.ExpectToolError(
+		f.h.Tool("void_transaction", map[string]any{"transaction_id": id, "reason": ""}),
+		"invalid_arguments",
+		"reason",
+	)
 }
 
 func TestVoidTransactionOtherUser(t *testing.T) {
@@ -40,9 +50,22 @@ func TestVoidTransactionOtherUser(t *testing.T) {
 	var a, b, tx struct {
 		ID string `json:"id"`
 	}
-	f.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "A", "class": "asset", "currency": "BRL", "kind": "checking"}).Decode(t, &a)
-	f.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "B", "class": "expense", "currency": "BRL"}).Decode(t, &b)
-	f.h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{"date": "2026-10-20", "description": "x",
-		"postings": []map[string]any{apitest.Posting(a.ID, -100), apitest.Posting(b.ID, 100)}}).Decode(t, &tx)
-	f.h.ExpectToolError(f.h.Tool("void_transaction", map[string]any{"transaction_id": tx.ID, "reason": "x"}), "not_found", "")
+	f.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "A", "class": "asset", "currency": "BRL", "kind": "checking"}).
+		Decode(t, &a)
+	f.h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "B", "class": "expense", "currency": "BRL"}).
+		Decode(t, &b)
+	f.h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
+		"date":        "2026-10-20",
+		"description": "x",
+		"postings": []map[string]any{
+			apitest.Posting(a.ID, -100),
+			apitest.Posting(b.ID, 100),
+		},
+	}).
+		Decode(t, &tx)
+	f.h.ExpectToolError(
+		f.h.Tool("void_transaction", map[string]any{"transaction_id": tx.ID, "reason": "x"}),
+		"not_found",
+		"",
+	)
 }

@@ -14,7 +14,14 @@ import (
 
 // ruleFields are the fields create_rule and change_rule accept beside their identifiers.
 var ruleFields = []string{
-	"name", "description_contains", "category_id", "payee_id", "conditions", "actions", "enabled", "stop_processing",
+	"name",
+	"description_contains",
+	"category_id",
+	"payee_id",
+	"conditions",
+	"actions",
+	"enabled",
+	"stop_processing",
 }
 
 // ruleForm tells which of the two ways to write a rule a call used.
@@ -37,13 +44,25 @@ func checkRuleForm(in manageRuleIn) error {
 	create := in.Action == "create_rule"
 	switch {
 	case f.simple && (in.DescriptionContains == "" || in.CategoryID == ""):
-		return tool.InvalidArgument(missing(in.DescriptionContains, "description_contains", "category_id"), "is required with the other of the pair")
+		return tool.InvalidArgument(
+			missing(in.DescriptionContains, "description_contains", "category_id"),
+			"is required with the other of the pair",
+		)
 	case f.structured && create && (len(in.Conditions) == 0 || len(in.Actions) == 0):
-		return tool.InvalidArgument(missing(len(in.Conditions) > 0, "conditions", "actions"), "is required for create_rule")
+		return tool.InvalidArgument(
+			missing(len(in.Conditions) > 0, "conditions", "actions"),
+			"is required for create_rule",
+		)
 	case create && !f.simple && !f.structured:
-		return tool.InvalidArgument("conditions", "and actions, or description_contains and category_id, are required for create_rule")
+		return tool.InvalidArgument(
+			"conditions",
+			"and actions, or description_contains and category_id, are required for create_rule",
+		)
 	case !create && !f.simple && !f.structured && in.Name == "" && !in.Enabled.Set && !in.StopProcessing.Set:
-		return tool.InvalidArgument("name", "or another field to change is required for change_rule")
+		return tool.InvalidArgument(
+			"name",
+			"or another field to change is required for change_rule",
+		)
 	}
 
 	return nil
@@ -98,7 +117,10 @@ func buildRule(in manageRuleIn, p ids, old domain.Rule) (domain.Rule, error) {
 	if conditions != nil {
 		r.Conditions = make([]domain.Condition, len(conditions))
 		for i, d := range conditions {
-			if r.Conditions[i], err = domain.ConditionFromDoc(fmt.Sprintf("conditions[%d]", i), d); err != nil {
+			if r.Conditions[i], err = domain.ConditionFromDoc(
+				fmt.Sprintf("conditions[%d]", i),
+				d,
+			); err != nil {
 				return domain.Rule{}, err
 			}
 		}
@@ -107,7 +129,10 @@ func buildRule(in manageRuleIn, p ids, old domain.Rule) (domain.Rule, error) {
 	if actions != nil {
 		r.Actions = make([]domain.Action, len(actions))
 		for i, d := range actions {
-			if r.Actions[i], err = domain.ActionFromDoc(fmt.Sprintf("actions[%d]", i), d); err != nil {
+			if r.Actions[i], err = domain.ActionFromDoc(
+				fmt.Sprintf("actions[%d]", i),
+				d,
+			); err != nil {
 				return domain.Rule{}, err
 			}
 		}
@@ -119,12 +144,23 @@ func buildRule(in manageRuleIn, p ids, old domain.Rule) (domain.Rule, error) {
 // ruleDocs returns the conditions and actions the call writes; nil means the call leaves them.
 func ruleDocs(in manageRuleIn, p ids) ([]domain.ConditionDoc, []domain.ActionDoc, error) {
 	if formOf(in).simple {
-		actions := []domain.ActionDoc{{Type: string(domain.ActionSetCategory), CategoryID: p.category}}
+		actions := []domain.ActionDoc{
+			{Type: string(domain.ActionSetCategory), CategoryID: p.category},
+		}
 		if p.payee != uuid.Nil {
-			actions = append(actions, domain.ActionDoc{Type: string(domain.ActionSetPayee), PayeeID: p.payee})
+			actions = append(
+				actions,
+				domain.ActionDoc{Type: string(domain.ActionSetPayee), PayeeID: p.payee},
+			)
 		}
 
-		return []domain.ConditionDoc{{Field: string(domain.FieldDescription), Operator: string(domain.OpContains), Value: in.DescriptionContains}}, actions, nil
+		return []domain.ConditionDoc{
+			{
+				Field:    string(domain.FieldDescription),
+				Operator: string(domain.OpContains),
+				Value:    in.DescriptionContains,
+			},
+		}, actions, nil
 	}
 
 	var conditions []domain.ConditionDoc
@@ -155,7 +191,10 @@ func ruleDocs(in manageRuleIn, p ids) ([]domain.ConditionDoc, []domain.ActionDoc
 // parseCondition reads "field operator value"; between and in_list read values joined by " | ".
 func parseCondition(i int, s string) (domain.ConditionDoc, error) {
 	bad := func(msg string) (domain.ConditionDoc, error) {
-		return domain.ConditionDoc{}, tool.InvalidArgument("conditions", fmt.Sprintf("[%d] %s", i, msg))
+		return domain.ConditionDoc{}, tool.InvalidArgument(
+			"conditions",
+			fmt.Sprintf("[%d] %s", i, msg),
+		)
 	}
 
 	parts := strings.SplitN(strings.TrimSpace(s), " ", 3)

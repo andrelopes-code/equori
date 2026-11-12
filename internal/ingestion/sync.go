@@ -20,7 +20,15 @@ func (m *Module) SyncConnection(ctx context.Context, booksID int64, connectionID
 func (m *Module) Tick(ctx context.Context) {
 	failures, err := m.svc.Tick(ctx)
 	for _, f := range failures {
-		m.log.Warn("sync failed", "books_id", f.BooksID, "connection_id", f.ConnectionID.String(), "error", f.Err.Error())
+		m.log.Warn(
+			"sync failed",
+			"books_id",
+			f.BooksID,
+			"connection_id",
+			f.ConnectionID.String(),
+			"error",
+			f.Err.Error(),
+		)
 	}
 
 	if err != nil && ctx.Err() == nil {

@@ -30,7 +30,8 @@ func (f syncFixture) counterRole(tx, card string) string {
 		}
 
 		var role *string
-		if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT system_role FROM ledger_account WHERE id = $1`, p.AccountID).Scan(&role); err != nil {
+		if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT system_role FROM ledger_account WHERE id = $1`, p.AccountID).
+			Scan(&role); err != nil {
 			f.h.T().Fatal(err)
 		}
 
@@ -50,7 +51,10 @@ func newCardSync(t *testing.T) (syncFixture, string) {
 	f := newSyncFixture(t)
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapTo(pluggy.SubtypeCard, card)
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0"})
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0"},
+	)
 
 	return f, card
 }
@@ -100,7 +104,11 @@ func TestSyncRetypesARecordedPayment(t *testing.T) {
 	f.sync()
 
 	v := f.h.Transaction(tx)
-	if p := f.cardPosting(tx, card); v.Version != 2 || p.CardRole != "payment" || p.Amount.Amount != 96185 {
+	if p := f.cardPosting(
+		tx,
+		card,
+	); v.Version != 2 || p.CardRole != "payment" ||
+		p.Amount.Amount != 96185 {
 		t.Fatalf("retyped transaction v%d, posting = %+v", v.Version, p)
 	}
 
@@ -118,12 +126,16 @@ func TestSyncRetypesARecordedPayment(t *testing.T) {
 func TestSyncKeepsACategorizedPayment(t *testing.T) {
 	t.Parallel()
 	f, card := newCardSync(t)
-	f.line(pluggy.SubtypeCard, cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov")))
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 	_, tx := f.recordOf("pay-1")
 	gifts := f.h.Account("Gifts", "income", "", nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
-		"expected_version": 1, "parts": []map[string]any{{"account_id": gifts, "amount": apitest.BRL(-96185)}},
+		"expected_version": 1,
+		"parts":            []map[string]any{{"account_id": gifts, "amount": apitest.BRL(-96185)}},
 	}, http.StatusOK, nil)
 
 	f.line(pluggy.SubtypeCard, typedCardLine("pay-1", "2026-11-05", "-961.85", "PAGAMENTO_FATURA"))
@@ -134,7 +146,8 @@ func TestSyncKeepsACategorizedPayment(t *testing.T) {
 	}
 
 	var change *string
-	if err := f.h.Pool.QueryRow(t.Context(), `SELECT unapplied_change FROM ingestion_external_record WHERE external_id = 'pay-1'`).Scan(&change); err != nil {
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT unapplied_change FROM ingestion_external_record WHERE external_id = 'pay-1'`).
+		Scan(&change); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,7 +156,9 @@ func TestSyncKeepsACategorizedPayment(t *testing.T) {
 	}
 
 	// The type stays unapplied, so a later sync offers it again.
-	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-1' AND line_kind IS NULL`); n != 1 {
+	if n := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-1' AND line_kind IS NULL`,
+	); n != 1 {
 		t.Fatal("the refused type is recorded as applied")
 	}
 }
@@ -162,12 +177,22 @@ func TestS46TypedPaymentPairsWithChecking(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ids, err := f.h.App.Ledger.RecordImportedBatch(t.Context(), f.h.OwnerID(), []ledger.ImportedRecord{{
-		RecordID: uuid.New(),
-		Posting: ledger.ImportedPosting{AccountID: uuid.MustParse(f.checking), Date: time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC),
-			Amount: amount, Description: "PAGAMENTO FATURA NUBANK"},
-		Decision: &ledger.ImportDecision{TransferTo: uuid.MustParse(card)},
-	}})
+	ids, err := f.h.App.Ledger.RecordImportedBatch(
+		t.Context(),
+		f.h.OwnerID(),
+		[]ledger.ImportedRecord{
+			{
+				RecordID: uuid.New(),
+				Posting: ledger.ImportedPosting{
+					AccountID:   uuid.MustParse(f.checking),
+					Date:        time.Date(2026, 11, 10, 0, 0, 0, 0, time.UTC),
+					Amount:      amount,
+					Description: "PAGAMENTO FATURA NUBANK",
+				},
+				Decision: &ledger.ImportDecision{TransferTo: uuid.MustParse(card)},
+			},
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +202,10 @@ func TestS46TypedPaymentPairsWithChecking(t *testing.T) {
 		t.Fatalf("paired %s into %s: %+v", ids[0], cardTx, v)
 	}
 
-	if got := postingAmounts(v); got[f.checking] != -150000 || got[card] != 150000 || f.cardPosting(cardTx, card).CardRole != "payment" {
+	if got := postingAmounts(
+		v,
+	); got[f.checking] != -150000 || got[card] != 150000 ||
+		f.cardPosting(cardTx, card).CardRole != "payment" {
 		t.Fatalf("paired transaction = %+v", v)
 	}
 }
@@ -190,21 +218,35 @@ func TestS88PendingPaymentSuperseded(t *testing.T) {
 	pending := cardLine("pay-pending", "2026-11-05", "-784.65", "PENDING", nil)
 	pending.OperationType = new("PAGAMENTO_FATURA")
 	f.line(pluggy.SubtypeCard, pending)
-	f.line(pluggy.SubtypeCard, typedCardLine("pay-posted", "2026-11-05", "-784.65", "PAGAMENTO_FATURA"))
+	f.line(
+		pluggy.SubtypeCard,
+		typedCardLine("pay-posted", "2026-11-05", "-784.65", "PAGAMENTO_FATURA"),
+	)
 	f.line(pluggy.SubtypeCard, cardLine("charge-pending", "2026-11-09", "50.00", "PENDING", nil))
-	f.line(pluggy.SubtypeCard, cardLine("charge-posted", "2026-11-03", "50.00", "POSTED", new("bill-nov")))
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-posted", "2026-11-03", "50.00", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 
-	payments := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
-		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`, card)
+	payments := f.count(
+		`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
+		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`,
+		card,
+	)
 
-	charges := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
-		WHERE p.account_id = $1 AND p.amount = -5000 AND t.voided_at IS NULL`, card)
+	charges := f.count(
+		`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
+		WHERE p.account_id = $1 AND p.amount = -5000 AND t.voided_at IS NULL`,
+		card,
+	)
 	if payments != 1 || charges != 2 {
 		t.Fatalf("payments %d, charges %d; want 1 and 2", payments, charges)
 	}
 
-	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-pending' AND state <> 'withdrawn'`); n != 0 {
+	if n := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-pending' AND state <> 'withdrawn'`,
+	); n != 0 {
 		t.Fatalf("pending payment records = %d", n)
 	}
 }
@@ -218,7 +260,10 @@ func TestSyncPendingLineSupersededLater(t *testing.T) {
 	f.sync()
 	_, tx := f.recordOf("charge-pending")
 
-	f.line(pluggy.SubtypeCard, cardLine("charge-posted", "2026-11-06", "50.00", "POSTED", new("bill-nov")))
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-posted", "2026-11-06", "50.00", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 
 	if state, _ := f.recordOf("charge-pending"); state != "withdrawn" {
@@ -239,7 +284,10 @@ func TestSyncPendingLineSupersededLater(t *testing.T) {
 func TestPaymentBilledByItsDateNotItsBill(t *testing.T) {
 	t.Parallel()
 	f, card := newCardSync(t)
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"},
+	)
 
 	paid := cardLine("pay-1", "2026-11-05", "-784.65", "POSTED", new("bill-nov"))
 	paid.OperationType = new("PAGAMENTO_FATURA")

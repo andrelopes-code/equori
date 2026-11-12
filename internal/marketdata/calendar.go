@@ -102,7 +102,10 @@ func (m *Module) IsBusinessDay(ctx context.Context, name string, d time.Time) (b
 		}
 	}
 
-	instance, err := m.q.IsInstanceHoliday(ctx, postgres.IsInstanceHolidayParams{Calendar: name, Date: d})
+	instance, err := m.q.IsInstanceHoliday(
+		ctx,
+		postgres.IsInstanceHolidayParams{Calendar: name, Date: d},
+	)
 	if err != nil {
 		return false, err
 	}
@@ -113,7 +116,12 @@ func (m *Module) IsBusinessDay(ctx context.Context, name string, d time.Time) (b
 // maxShift bounds the search for a business day; no calendar has 15 consecutive non-business days.
 const maxShift = 15
 
-func (m *Module) Adjust(ctx context.Context, name string, d time.Time, a Adjustment) (time.Time, error) {
+func (m *Module) Adjust(
+	ctx context.Context,
+	name string,
+	d time.Time,
+	a Adjustment,
+) (time.Time, error) {
 	switch a {
 	case AdjustNone, "":
 		if _, err := m.IsBusinessDay(ctx, name, d); err != nil {
@@ -147,5 +155,9 @@ func (m *Module) shift(ctx context.Context, name string, d time.Time, step int) 
 		d = d.AddDate(0, 0, step)
 	}
 
-	return time.Time{}, fmt.Errorf("no business day within %d days of %s", maxShift, d.Format(time.DateOnly))
+	return time.Time{}, fmt.Errorf(
+		"no business day within %d days of %s",
+		maxShift,
+		d.Format(time.DateOnly),
+	)
 }

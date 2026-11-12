@@ -29,7 +29,9 @@ var (
 	// ErrCredentialsRole: only an owner of the book takes its credentials out or in.
 	ErrCredentialsRole = errors.New("only an owner of the book exports credentials")
 	// ErrPassphraseRequired: the archive carries credentials and the import gave neither the passphrase nor the choice to skip them (export design C5).
-	ErrPassphraseRequired = errors.New("the archive carries credentials: give their passphrase or choose to import without them")
+	ErrPassphraseRequired = errors.New(
+		"the archive carries credentials: give their passphrase or choose to import without them",
+	)
 	// ErrPassphraseInvalid: the passphrase does not open the credentials of the archive (export design C5).
 	ErrPassphraseInvalid = errors.New("the passphrase does not open the credentials of the archive")
 )
@@ -85,7 +87,12 @@ type Exports struct {
 }
 
 // NewExports takes the rebuilds of every derived table, run for the book after an import.
-func NewExports(repo ExportRepository, imports ImportRepository, clk Clock, rebuilds ...func(ctx context.Context, booksID int64) error) *Exports {
+func NewExports(
+	repo ExportRepository,
+	imports ImportRepository,
+	clk Clock,
+	rebuilds ...func(ctx context.Context, booksID int64) error,
+) *Exports {
 	return &Exports{repo: repo, imports: imports, clock: clk, rebuilds: rebuilds}
 }
 
@@ -151,7 +158,8 @@ func (s *Exports) Content(ctx context.Context, booksID int64) ([]byte, time.Time
 // failed; any other error is returned for the dispatcher to retry (export design E3).
 func (s *Exports) Build(ctx context.Context, booksID int64, id uuid.UUID) error {
 	e, err := s.repo.Export(ctx, booksID)
-	if errors.Is(err, ErrExportNotFound) || err == nil && (e.ID != id || e.Status != ExportPending) {
+	if errors.Is(err, ErrExportNotFound) ||
+		err == nil && (e.ID != id || e.Status != ExportPending) {
 		return nil
 	}
 

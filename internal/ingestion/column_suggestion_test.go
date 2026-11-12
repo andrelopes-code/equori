@@ -85,7 +85,10 @@ func TestSuggestColumnsS298(t *testing.T) {
 func TestSuggestColumnsUnusableS299(t *testing.T) {
 	t.Parallel()
 
-	provider := llmtest.New("aistudio", columnsStep(`{"date":0,"description":2,"amount":3,"debit":0,"credit":0,"id":0,"sign":0}`))
+	provider := llmtest.New(
+		"aistudio",
+		columnsStep(`{"date":0,"description":2,"amount":3,"debit":0,"credit":0,"id":0,"sign":0}`),
+	)
 	h := apitest.New(t, apitest.LLM(provider))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 
@@ -97,7 +100,10 @@ func TestSuggestColumnsUnusableS299(t *testing.T) {
 func TestSuggestColumnsUnavailableS300(t *testing.T) {
 	t.Parallel()
 
-	quota := llmtest.New("aistudio", llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{}})
+	quota := llmtest.New(
+		"aistudio",
+		llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{}},
+	)
 	h := apitest.New(t, apitest.LLM(quota))
 	checking := h.Account("Nubank checking", "asset", "checking", nil)
 
@@ -128,8 +134,12 @@ func TestSuggestColumnsContract(t *testing.T) {
 		t.Fatalf("13 rows: status = %d: %s", r.Status, r.Body)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, suggestionPath("00000000-0000-4000-8000-000000000000"), sampleBody()),
-		http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, suggestionPath("00000000-0000-4000-8000-000000000000"), sampleBody()),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 
 	if n := len(provider.Requests()); n != 0 {
 		t.Fatalf("calls = %d, want 0", n)

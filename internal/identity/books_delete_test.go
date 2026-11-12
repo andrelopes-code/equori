@@ -44,7 +44,10 @@ func TestDeletingBooksRowCascades(t *testing.T) {
 					WHERE b.attrelid = k.confrelid AND b.attname = 'books_id' AND NOT b.attisdropped)))
 		ORDER BY 1`)
 	if len(orphans) != 0 {
-		t.Fatalf("tables with books_id and no foreign key to a book or a table of a book: %v", orphans)
+		t.Fatalf(
+			"tables with books_id and no foreign key to a book or a table of a book: %v",
+			orphans,
+		)
 	}
 
 	before := rowsOf(t, h, tables, booksID)
@@ -74,7 +77,11 @@ func deleteBooksRow(t *testing.T, h *apitest.Harness, booksID int64) {
 		t.Fatalf("defer constraints: %v", err)
 	}
 
-	if _, err := tx.Exec(t.Context(), `DELETE FROM identity_books WHERE id = $1`, booksID); err != nil {
+	if _, err := tx.Exec(
+		t.Context(),
+		`DELETE FROM identity_books WHERE id = $1`,
+		booksID,
+	); err != nil {
 		t.Fatalf("delete books: %v", err)
 	}
 
@@ -91,7 +98,8 @@ func rowsOf(t *testing.T, h *apitest.Harness, tables []string, booksID int64) ma
 
 	for _, table := range tables {
 		var n int
-		if err := h.Pool.QueryRow(t.Context(), fmt.Sprintf(`SELECT count(*) FROM %s WHERE books_id = $1`, table), booksID).Scan(&n); err != nil {
+		if err := h.Pool.QueryRow(t.Context(), fmt.Sprintf(`SELECT count(*) FROM %s WHERE books_id = $1`, table), booksID).
+			Scan(&n); err != nil {
 			t.Fatalf("count %s: %v", table, err)
 		}
 
@@ -110,9 +118,19 @@ func TestDeleteCurrentBooks(t *testing.T) {
 	home := h.OwnerID()
 
 	var created booksMembership
-	h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Casal", "region": "BR"}, http.StatusCreated, &created)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/books",
+		map[string]any{"name": "Casal", "region": "BR"},
+		http.StatusCreated,
+		&created,
+	)
 	h.Dispatch()
-	expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}),
+		http.StatusNoContent,
+	)
 	h.Account("Checking", "asset", "checking", nil)
 
 	r := h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Casal"})
@@ -124,11 +142,15 @@ func TestDeleteCurrentBooks(t *testing.T) {
 	}
 
 	var books, accounts int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_books WHERE id = $1`, created.ID).Scan(&books); err != nil || books != 0 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_books WHERE id = $1`, created.ID).
+		Scan(&books); err != nil ||
+		books != 0 {
 		t.Fatalf("books rows = %d, %v; want 0", books, err)
 	}
 
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_account WHERE books_id = $1`, created.ID).Scan(&accounts); err != nil || accounts != 0 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_account WHERE books_id = $1`, created.ID).
+		Scan(&accounts); err != nil ||
+		accounts != 0 {
 		t.Fatalf("account rows = %d, %v; want 0", accounts, err)
 	}
 
@@ -151,22 +173,42 @@ func TestDeleteCurrentBooksWithReconciledPostings(t *testing.T) {
 	h := apitest.New(t)
 
 	var created booksMembership
-	h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Casal", "region": "BR"}, http.StatusCreated, &created)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/books",
+		map[string]any{"name": "Casal", "region": "BR"},
+		http.StatusCreated,
+		&created,
+	)
 	h.Dispatch()
-	expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}),
+		http.StatusNoContent,
+	)
 
 	checking := h.Account("Checking", "asset", "checking", nil)
 	salary := h.Account("Salary", "income", "", nil)
 	h.Record("2026-10-05", apitest.Posting(checking, 100000), apitest.Posting(salary, -100000))
 
-	if _, err := h.Pool.Exec(t.Context(), `UPDATE ledger_posting SET status = 'reconciled' WHERE books_id = $1`, created.ID); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET status = 'reconciled' WHERE books_id = $1`,
+		created.ID,
+	); err != nil {
 		t.Fatalf("reconcile postings: %v", err)
 	}
 
-	expectStatus(t, h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Casal"}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Casal"}),
+		http.StatusNoContent,
+	)
 
 	var postings int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_posting WHERE books_id = $1`, created.ID).Scan(&postings); err != nil || postings != 0 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_posting WHERE books_id = $1`, created.ID).
+		Scan(&postings); err != nil ||
+		postings != 0 {
 		t.Fatalf("posting rows = %d, %v; want 0", postings, err)
 	}
 }
@@ -179,20 +221,50 @@ func TestDeleteCurrentBooksRefusals(t *testing.T) {
 
 	t.Run("the book name must be typed", func(t *testing.T) {
 		var created booksMembership
-		h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Casal", "region": "BR"}, http.StatusCreated, &created)
-		expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/books",
+			map[string]any{"name": "Casal", "region": "BR"},
+			http.StatusCreated,
+			&created,
+		)
+		expectStatus(
+			t,
+			h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}),
+			http.StatusNoContent,
+		)
 
-		h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "casal"}), http.StatusUnprocessableEntity, "confirmation_mismatch", "")
+		h.ExpectProblem(
+			h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "casal"}),
+			http.StatusUnprocessableEntity,
+			"confirmation_mismatch",
+			"",
+		)
 	})
 
 	t.Run("a role below owner is refused", func(t *testing.T) {
-		h.ExpectProblem(h.Call(writer, http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "x"}), http.StatusForbidden, "book_role_required", "")
+		h.ExpectProblem(
+			h.Call(writer, http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "x"}),
+			http.StatusForbidden,
+			"book_role_required",
+			"",
+		)
 	})
 
 	t.Run("another member keeps the book", func(t *testing.T) {
 		var created booksMembership
-		h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Dupla", "region": "BR"}, http.StatusCreated, &created)
-		expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/books",
+			map[string]any{"name": "Dupla", "region": "BR"},
+			http.StatusCreated,
+			&created,
+		)
+		expectStatus(
+			t,
+			h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}),
+			http.StatusNoContent,
+		)
 
 		if _, err := h.Pool.Exec(
 			t.Context(),
@@ -203,7 +275,12 @@ func TestDeleteCurrentBooksRefusals(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Dupla"}), http.StatusConflict, "books_has_members", "")
+		h.ExpectProblem(
+			h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Dupla"}),
+			http.StatusConflict,
+			"books_has_members",
+			"",
+		)
 	})
 }
 
@@ -218,7 +295,12 @@ func TestDeleteOnlyBooks(t *testing.T) {
 
 	h.MustDo(http.MethodGet, "/api/v1/books/current", nil, http.StatusOK, &books)
 
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": books.Name}), http.StatusConflict, "last_books", "")
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": books.Name}),
+		http.StatusConflict,
+		"last_books",
+		"",
+	)
 }
 
 // A book deleted before the dispatcher read its books_created event leaves no failing event behind.
@@ -227,9 +309,23 @@ func TestDeleteBooksBeforeItsEventIsDispatched(t *testing.T) {
 	h := apitest.New(t)
 
 	var created booksMembership
-	h.MustDo(http.MethodPost, "/api/v1/books", map[string]any{"name": "Engano", "region": "BR"}, http.StatusCreated, &created)
-	expectStatus(t, h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}), http.StatusNoContent)
-	expectStatus(t, h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Engano"}), http.StatusNoContent)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/books",
+		map[string]any{"name": "Engano", "region": "BR"},
+		http.StatusCreated,
+		&created,
+	)
+	expectStatus(
+		t,
+		h.Do(http.MethodPut, "/api/v1/session/books", map[string]any{"books_id": created.ID}),
+		http.StatusNoContent,
+	)
+	expectStatus(
+		t,
+		h.Do(http.MethodDelete, "/api/v1/books/current", map[string]any{"name": "Engano"}),
+		http.StatusNoContent,
+	)
 
 	h.Dispatch()
 
@@ -238,7 +334,9 @@ func TestDeleteBooksBeforeItsEventIsDispatched(t *testing.T) {
 	}
 
 	var settings int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_settings WHERE books_id = $1`, created.ID).Scan(&settings); err != nil || settings != 0 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_settings WHERE books_id = $1`, created.ID).
+		Scan(&settings); err != nil ||
+		settings != 0 {
 		t.Fatalf("settings of the deleted book = %d, %v; want 0", settings, err)
 	}
 }

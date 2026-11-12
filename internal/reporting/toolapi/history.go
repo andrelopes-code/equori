@@ -20,9 +20,9 @@ func (historyView) Values() []string { return []string{"balances", "flows"} }
 
 type getAccountHistoryIn struct {
 	AccountID string      `json:"account_id" jsonschema:"account from list_accounts"`
-	View      historyView `json:"view" jsonschema:"balances gives the balance each day; flows gives inflow and outflow each day with postings"`
-	From      tool.Date   `json:"from" jsonschema:"first date, inclusive"`
-	To        tool.Date   `json:"to" jsonschema:"last date, inclusive; at most 366 days after from"`
+	View      historyView `json:"view"       jsonschema:"balances gives the balance each day; flows gives inflow and outflow each day with postings"`
+	From      tool.Date   `json:"from"       jsonschema:"first date, inclusive"`
+	To        tool.Date   `json:"to"         jsonschema:"last date, inclusive; at most 366 days after from"`
 }
 
 type pointView struct {
@@ -39,11 +39,11 @@ type flowView struct {
 type getAccountHistoryOut struct {
 	AccountID   string      `json:"account_id"`
 	AccountName string      `json:"account_name"`
-	Currency    string      `json:"currency" jsonschema:"currency or instrument code of the account"`
+	Currency    string      `json:"currency"             jsonschema:"currency or instrument code of the account"`
 	View        string      `json:"view"`
 	Granularity string      `json:"granularity,omitzero" jsonschema:"day lists every day; week, for periods over 92 days, lists each Sunday and the last day"`
 	Points      []pointView `json:"points,omitzero"`
-	Days        []flowView  `json:"days,omitzero" jsonschema:"only days with postings"`
+	Days        []flowView  `json:"days,omitzero"        jsonschema:"only days with postings"`
 }
 
 func getAccountHistory(svc *app.Service) tool.Tool {
@@ -70,7 +70,10 @@ func decodeHistoryArgs(in getAccountHistoryIn) (uuid.UUID, error) {
 	}
 
 	if in.To.Before(in.From.Time) || in.To.After(in.From.AddDate(0, 0, app.MaxFlowDays-1)) {
-		return uuid.Nil, tool.InvalidArgument("to", "must be on or after from and at most 365 days after it")
+		return uuid.Nil, tool.InvalidArgument(
+			"to",
+			"must be on or after from and at most 365 days after it",
+		)
 	}
 
 	return id, nil
@@ -121,7 +124,14 @@ func flowHistory(
 			return getAccountHistoryOut{}, err
 		}
 
-		out.Days = append(out.Days, flowView{Date: tool.DateOf(f.Date), Inflow: tool.MoneyOf(inflow), Outflow: tool.MoneyOf(outflow)})
+		out.Days = append(
+			out.Days,
+			flowView{
+				Date:    tool.DateOf(f.Date),
+				Inflow:  tool.MoneyOf(inflow),
+				Outflow: tool.MoneyOf(outflow),
+			},
+		)
 	}
 
 	return out, nil
@@ -157,7 +167,10 @@ func balanceHistory(
 			return getAccountHistoryOut{}, err
 		}
 
-		out.Points = append(out.Points, pointView{Date: tool.DateOf(p.Date), Balance: tool.MoneyOf(m)})
+		out.Points = append(
+			out.Points,
+			pointView{Date: tool.DateOf(p.Date), Balance: tool.MoneyOf(m)},
+		)
 	}
 
 	return out, nil

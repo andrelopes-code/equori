@@ -22,11 +22,17 @@ func TestAdminCreatesAccount(t *testing.T) {
 
 	var created accountInvitationBody
 
-	r := h.Do(http.MethodPost, "/api/v1/account-invitations", map[string]string{"email": "Sister@Example.com", "region": "BR"})
+	r := h.Do(
+		http.MethodPost,
+		"/api/v1/account-invitations",
+		map[string]string{"email": "Sister@Example.com", "region": "BR"},
+	)
 	expectStatus(t, r, http.StatusCreated)
 	r.Decode(t, &created)
 
-	if created.Email != "sister@example.com" || created.Region != "BR" || created.BaseCurrency != "BRL" || created.Token == "" {
+	if created.Email != "sister@example.com" || created.Region != "BR" ||
+		created.BaseCurrency != "BRL" ||
+		created.Token == "" {
 		t.Fatalf("created = %+v", created)
 	}
 
@@ -44,7 +50,12 @@ func TestAdminCreatesAccount(t *testing.T) {
 		MemberExists bool   `json:"member_exists"`
 	}
 
-	r = h.Call(anon, http.MethodPost, "/api/v1/invitations/preview", map[string]string{"token": created.Token})
+	r = h.Call(
+		anon,
+		http.MethodPost,
+		"/api/v1/invitations/preview",
+		map[string]string{"token": created.Token},
+	)
 	expectStatus(t, r, http.StatusOK)
 	r.Decode(t, &preview)
 
@@ -59,11 +70,23 @@ func TestAdminCreatesAccount(t *testing.T) {
 
 	accept := "/api/v1/invitations/accept"
 	h.ExpectProblem(
-		h.Call(anon, http.MethodPost, accept, map[string]string{"token": created.Token, "password": "short", "language": "pt"}),
-		http.StatusUnprocessableEntity, "validation_failed", "password",
+		h.Call(
+			anon,
+			http.MethodPost,
+			accept,
+			map[string]string{"token": created.Token, "password": "short", "language": "pt"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"password",
 	)
 
-	r = h.Call(anon, http.MethodPost, accept, map[string]string{"token": created.Token, "password": apitest.Password, "language": "pt"})
+	r = h.Call(
+		anon,
+		http.MethodPost,
+		accept,
+		map[string]string{"token": created.Token, "password": apitest.Password, "language": "pt"},
+	)
 	expectStatus(t, r, http.StatusNoContent)
 
 	var me struct {
@@ -77,11 +100,17 @@ func TestAdminCreatesAccount(t *testing.T) {
 	expectStatus(t, r, http.StatusOK)
 	r.Decode(t, &me)
 
-	if me.Role != "member" || me.Language != "pt" || me.BookRole != "owner" || me.BooksID == h.OwnerID() {
+	if me.Role != "member" || me.Language != "pt" || me.BookRole != "owner" ||
+		me.BooksID == h.OwnerID() {
 		t.Fatalf("me = %+v, want a member owning a book other than %d", me, h.OwnerID())
 	}
 
-	h.ExpectProblem(h.Call(anon, http.MethodPost, accept, map[string]string{"token": created.Token}), http.StatusNotFound, "invitation_not_found", "")
+	h.ExpectProblem(
+		h.Call(anon, http.MethodPost, accept, map[string]string{"token": created.Token}),
+		http.StatusNotFound,
+		"invitation_not_found",
+		"",
+	)
 }
 
 func TestAccountInvitationRefusesAMember(t *testing.T) {
@@ -90,8 +119,15 @@ func TestAccountInvitationRefusesAMember(t *testing.T) {
 	member := h.LoginMember("bob@example.com")
 
 	h.ExpectProblem(
-		h.Call(member, http.MethodPost, "/api/v1/account-invitations", map[string]string{"email": "x@example.com", "region": "BR"}),
-		http.StatusForbidden, "admin_required", "",
+		h.Call(
+			member,
+			http.MethodPost,
+			"/api/v1/account-invitations",
+			map[string]string{"email": "x@example.com", "region": "BR"},
+		),
+		http.StatusForbidden,
+		"admin_required",
+		"",
 	)
 }
 
@@ -101,8 +137,14 @@ func TestAccountInvitationRefusesAnExistingEmail(t *testing.T) {
 	h.LoginMember("bob@example.com")
 
 	h.ExpectProblem(
-		h.Do(http.MethodPost, "/api/v1/account-invitations", map[string]string{"email": "bob@example.com", "region": "BR"}),
-		http.StatusConflict, "email_taken", "",
+		h.Do(
+			http.MethodPost,
+			"/api/v1/account-invitations",
+			map[string]string{"email": "bob@example.com", "region": "BR"},
+		),
+		http.StatusConflict,
+		"email_taken",
+		"",
 	)
 }
 
@@ -111,7 +153,22 @@ func TestAccountInvitationValidatesItsFields(t *testing.T) {
 	h := apitest.New(t)
 
 	path := "/api/v1/account-invitations"
-	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"email": "not-an-email", "region": "BR"}), http.StatusUnprocessableEntity, "validation_failed", "email")
-	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"email": "x@example.com", "region": "ZZ"}), http.StatusUnprocessableEntity, "validation_failed", "region")
-	h.ExpectProblem(h.Do(http.MethodPost, path, map[string]string{"email": "x@example.com", "region": "PT"}), http.StatusUnprocessableEntity, "validation_failed", "base_currency")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, path, map[string]string{"email": "not-an-email", "region": "BR"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"email",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPost, path, map[string]string{"email": "x@example.com", "region": "ZZ"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"region",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPost, path, map[string]string{"email": "x@example.com", "region": "PT"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"base_currency",
+	)
 }

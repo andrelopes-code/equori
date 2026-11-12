@@ -8,7 +8,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) getProjection(ctx context.Context, r *http.Request, _ httpserver.None) (Projection, error) {
+func (s *Server) getProjection(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Projection, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Projection{}, err
@@ -39,7 +43,11 @@ func (s *Server) getProjection(ctx context.Context, r *http.Request, _ httpserve
 	return out, nil
 }
 
-func (s *Server) getCommitted(ctx context.Context, r *http.Request, _ httpserver.None) (Committed, error) {
+func (s *Server) getCommitted(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Committed, error) {
 	params, err := httpserver.Query[GetCommittedParams](r)
 	if err != nil {
 		return Committed{}, err
@@ -56,7 +64,13 @@ func (s *Server) getCommitted(ctx context.Context, r *http.Request, _ httpserver
 	}
 
 	return Committed{
-		Month: c.Month.Format(monthLayout), Installments: toMoneyAPI(c.Installments, c.Currency),
-		Occurrences: toMoneyAPI(c.Occurrences, c.Currency), Total: toMoneyAPI(c.Total, c.Currency), Prices: toPricesAPI(c.Prices),
+		Month:        c.Month.Format(monthLayout),
+		Installments: toMoneyAPI(c.Installments, c.Currency),
+		Occurrences: toMoneyAPI(
+			c.Occurrences,
+			c.Currency,
+		),
+		Total:  toMoneyAPI(c.Total, c.Currency),
+		Prices: toPricesAPI(c.Prices),
 	}, nil
 }

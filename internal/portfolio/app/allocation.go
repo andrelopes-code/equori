@@ -63,7 +63,12 @@ type valuedBalance struct {
 
 // valuedBalances values the non-zero balance of every asset and liability account in in with the
 // stored prices of date; the error wraps ErrPriceMissing when one is missing.
-func (s *Service) valuedBalances(ctx context.Context, booksID int64, date time.Time, in money.Currency) ([]valuedBalance, error) {
+func (s *Service) valuedBalances(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+	in money.Currency,
+) ([]valuedBalance, error) {
 	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -100,7 +105,11 @@ func (s *Service) valuedBalances(ctx context.Context, booksID int64, date time.T
 
 // BaseValues values each account's own balance at the end of date in the base currency; an
 // account with a zero balance is absent. A missing price wraps ErrPriceMissing.
-func (s *Service) BaseValues(ctx context.Context, booksID int64, date time.Time) (map[uuid.UUID]money.Money, error) {
+func (s *Service) BaseValues(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+) (map[uuid.UUID]money.Money, error) {
 	in, err := s.reportCurrency(ctx, booksID, "")
 	if err != nil {
 		return nil, err
@@ -119,7 +128,11 @@ func (s *Service) BaseValues(ctx context.Context, booksID int64, date time.Time)
 	return out, nil
 }
 
-func (s *Service) reportCurrency(ctx context.Context, booksID int64, in money.Currency) (money.Currency, error) {
+func (s *Service) reportCurrency(
+	ctx context.Context,
+	booksID int64,
+	in money.Currency,
+) (money.Currency, error) {
 	if in != "" {
 		return in, nil
 	}
@@ -131,7 +144,13 @@ func (s *Service) reportCurrency(ctx context.Context, booksID int64, in money.Cu
 // instrument held), "currency" (the quotation currency of the instrument, or the currency
 // itself) or "institution" (the institution id, empty without one); in defaults to the base
 // currency.
-func (s *Service) Allocation(ctx context.Context, booksID int64, date time.Time, by string, in money.Currency) (AllocationReport, error) {
+func (s *Service) Allocation(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+	by string,
+	in money.Currency,
+) (AllocationReport, error) {
 	in, err := s.reportCurrency(ctx, booksID, in)
 	if err != nil {
 		return AllocationReport{}, err
@@ -172,7 +191,10 @@ func (s *Service) Allocation(ctx context.Context, booksID int64, date time.Time,
 			return AllocationReport{}, fmt.Errorf("sum the groups: %w", err)
 		}
 
-		report.Groups = append(report.Groups, AllocationGroup{Key: g.Key, Value: value, ShareBP: g.ShareBP})
+		report.Groups = append(
+			report.Groups,
+			AllocationGroup{Key: g.Key, Value: value, ShareBP: g.ShareBP},
+		)
 	}
 
 	return report, nil
@@ -205,7 +227,12 @@ func (s *Service) allocationKey(ctx context.Context, v valuedBalance, by string)
 
 // NetWorth is the value of the asset accounts, the value of the liability accounts as a positive
 // amount, and their difference at date, in in (the base currency by default).
-func (s *Service) NetWorth(ctx context.Context, booksID int64, date time.Time, in money.Currency) (NetWorthReport, error) {
+func (s *Service) NetWorth(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+	in money.Currency,
+) (NetWorthReport, error) {
 	in, err := s.reportCurrency(ctx, booksID, in)
 	if err != nil {
 		return NetWorthReport{}, err
@@ -247,7 +274,12 @@ type NetWorthDay struct {
 
 // NetWorthDays is the net worth at the end of each day of [from, to], each valued as NetWorth
 // values its date.
-func (s *Service) NetWorthDays(ctx context.Context, booksID int64, from, to time.Time, in money.Currency) ([]NetWorthDay, error) {
+func (s *Service) NetWorthDays(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+	in money.Currency,
+) ([]NetWorthDay, error) {
 	if to.Before(from) || to.Sub(from) >= MaxNetWorthDays*24*time.Hour {
 		return nil, ErrInvalidDayRange
 	}

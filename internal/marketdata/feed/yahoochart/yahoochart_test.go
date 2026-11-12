@@ -34,17 +34,62 @@ func TestSymbol(t *testing.T) {
 		symbols map[string]string
 		want    string
 	}{
-		{"US stock", feed.Instrument{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"}, nil, "AAPL"},
-		{"dot becomes dash", feed.Instrument{Code: "BRK.B", Type: "stock", Exchange: "XNYS", QuoteCurrency: "USD"}, nil, "BRK-B"},
-		{"B3 stock", feed.Instrument{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"}, nil, "PETR4.SA"},
-		{"Xetra ETF", feed.Instrument{Code: "VWCE", Type: "etf", Exchange: "XETR", QuoteCurrency: "EUR"}, nil, "VWCE.DE"},
+		{
+			"US stock",
+			feed.Instrument{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
+			nil,
+			"AAPL",
+		},
+		{
+			"dot becomes dash",
+			feed.Instrument{Code: "BRK.B", Type: "stock", Exchange: "XNYS", QuoteCurrency: "USD"},
+			nil,
+			"BRK-B",
+		},
+		{
+			"B3 stock",
+			feed.Instrument{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"},
+			nil,
+			"PETR4.SA",
+		},
+		{
+			"Xetra ETF",
+			feed.Instrument{Code: "VWCE", Type: "etf", Exchange: "XETR", QuoteCurrency: "EUR"},
+			nil,
+			"VWCE.DE",
+		},
 		{"currency", feed.Instrument{Code: "EUR", Type: "currency"}, nil, "EURUSD=X"},
 		{"USD", feed.Instrument{Code: "USD", Type: "currency"}, nil, ""},
-		{"crypto", feed.Instrument{Code: "BTC", Type: "crypto", QuoteCurrency: "USD"}, nil, "BTC-USD"},
-		{"MIC outside the table", feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"}, nil, ""},
-		{"override", feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"}, map[string]string{"yahoo_chart": "FPH.NZ"}, "FPH.NZ"},
-		{"override of another source", feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"}, map[string]string{"other": "FPH.NZ"}, ""},
-		{"no exchange", feed.Instrument{Code: "CDB1", Type: "fixed_income", QuoteCurrency: "BRL"}, nil, ""},
+		{
+			"crypto",
+			feed.Instrument{Code: "BTC", Type: "crypto", QuoteCurrency: "USD"},
+			nil,
+			"BTC-USD",
+		},
+		{
+			"MIC outside the table",
+			feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"},
+			nil,
+			"",
+		},
+		{
+			"override",
+			feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"},
+			map[string]string{"yahoo_chart": "FPH.NZ"},
+			"FPH.NZ",
+		},
+		{
+			"override of another source",
+			feed.Instrument{Code: "FPH", Type: "stock", Exchange: "XNZE", QuoteCurrency: "NZD"},
+			map[string]string{"other": "FPH.NZ"},
+			"",
+		},
+		{
+			"no exchange",
+			feed.Instrument{Code: "CDB1", Type: "fixed_income", QuoteCurrency: "BRL"},
+			nil,
+			"",
+		},
 	}
 
 	src := yahoochart.New(http.DefaultClient, "")
@@ -99,8 +144,15 @@ func TestFetch(t *testing.T) {
 		scope  string
 	}{
 		{
-			"fixture", http.StatusOK, string(aapl),
-			[]string{"AAPL USD 2026-11-04 349.51", "AAPL USD 2026-11-05 344.17", "AAPL USD 2026-11-06 342.37"}, "",
+			"fixture",
+			http.StatusOK,
+			string(aapl),
+			[]string{
+				"AAPL USD 2026-11-04 349.51",
+				"AAPL USD 2026-11-05 344.17",
+				"AAPL USD 2026-11-06 342.37",
+			},
+			"",
 		},
 		{"local date", http.StatusOK, localDate, []string{"AAPL USD 2026-11-04 1.5"}, ""},
 		{"pence", http.StatusOK, gbp, nil, "instrument AAPL"},
@@ -117,28 +169,40 @@ func TestFetch(t *testing.T) {
 				requests []string
 			)
 
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				mu.Lock()
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					mu.Lock()
 
-				requests = append(requests, r.URL.RequestURI())
-				mu.Unlock()
+					requests = append(requests, r.URL.RequestURI())
+					mu.Unlock()
 
-				w.WriteHeader(tc.status)
-				_, _ = w.Write([]byte(tc.body))
-			}))
+					w.WriteHeader(tc.status)
+					_, _ = w.Write([]byte(tc.body))
+				}),
+			)
 			t.Cleanup(srv.Close)
 
 			src := yahoochart.New(srv.Client(), srv.URL)
-			src.Codes([]feed.Instrument{{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"}})
+			src.Codes(
+				[]feed.Instrument{
+					{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
+				},
+			)
 
-			got, err := src.Fetch(t.Context(), []money.Currency{"AAPL"}, day("2026-11-01"), day("2026-11-09"))
+			got, err := src.Fetch(
+				t.Context(),
+				[]money.Currency{"AAPL"},
+				day("2026-11-01"),
+				day("2026-11-09"),
+			)
 
 			var scope *feed.ScopeError
 			if tc.scope == "" && err != nil {
 				t.Fatal(err)
 			}
 
-			if tc.scope != "" && (!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
+			if tc.scope != "" &&
+				(!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
 				t.Fatalf("err = %v, want scope %s", err, tc.scope)
 			}
 
@@ -182,14 +246,20 @@ func TestFetchRateLimited(t *testing.T) {
 		{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"},
 	})
 
-	_, err := src.Fetch(t.Context(), []money.Currency{"AAPL", "PETR4"}, day("2026-11-01"), day("2026-11-09"))
+	_, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"AAPL", "PETR4"},
+		day("2026-11-01"),
+		day("2026-11-09"),
+	)
 
 	var (
 		status *feed.StatusError
 		scope  *feed.ScopeError
 	)
 
-	if !errors.As(err, &status) || status.Code != http.StatusTooManyRequests || errors.As(err, &scope) {
+	if !errors.As(err, &status) || status.Code != http.StatusTooManyRequests ||
+		errors.As(err, &scope) {
 		t.Fatalf("err = %v, want a bare status 429", err)
 	}
 
@@ -265,7 +335,16 @@ func TestSearch(t *testing.T) {
 func lines(quotes []feed.Quote) []string {
 	var out []string
 	for _, q := range quotes {
-		out = append(out, fmt.Sprintf("%s %s %s %s", q.Instrument, q.Quote, q.Date.Format(time.DateOnly), q.Value.String()))
+		out = append(
+			out,
+			fmt.Sprintf(
+				"%s %s %s %s",
+				q.Instrument,
+				q.Quote,
+				q.Date.Format(time.DateOnly),
+				q.Value.String(),
+			),
+		)
 	}
 
 	return out

@@ -8,7 +8,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) realizeOccurrence(ctx context.Context, r *http.Request, in RealizeOccurrenceJSONRequestBody) (Occurrence, error) {
+func (s *Server) realizeOccurrence(
+	ctx context.Context,
+	r *http.Request,
+	in RealizeOccurrenceJSONRequestBody,
+) (Occurrence, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Occurrence{}, err
@@ -22,7 +26,11 @@ func (s *Server) realizeOccurrence(ctx context.Context, r *http.Request, in Real
 	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) reopenOccurrence(ctx context.Context, r *http.Request, _ httpserver.None) (Occurrence, error) {
+func (s *Server) reopenOccurrence(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Occurrence, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Occurrence{}, err
@@ -36,7 +44,11 @@ func (s *Server) reopenOccurrence(ctx context.Context, r *http.Request, _ httpse
 	return toOccurrenceAPI(o), nil
 }
 
-func (s *Server) unrealizeOccurrence(ctx context.Context, r *http.Request, _ httpserver.None) (Occurrence, error) {
+func (s *Server) unrealizeOccurrence(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Occurrence, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Occurrence{}, err

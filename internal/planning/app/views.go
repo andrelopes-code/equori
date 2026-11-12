@@ -31,10 +31,19 @@ type Projection struct {
 var beginning = time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // Project returns the projection of a balance account to date to (P7 amendment A56).
-func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUID, to time.Time) (Projection, error) {
+func (s *Service) Project(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	to time.Time,
+) (Projection, error) {
 	today := s.clk.Today(ctx)
 	if !to.After(today) || to.After(s.horizon(ctx)) {
-		return Projection{}, &domain.FieldError{Field: "to", Message: "must be after today and at most today + 12 months", Err: domain.ErrValidation}
+		return Projection{}, &domain.FieldError{
+			Field:   "to",
+			Message: "must be after today and at most today + 12 months",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	facts, err := s.ledger.AccountFacts(ctx, booksID)
@@ -44,7 +53,11 @@ func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUI
 
 	i := slices.IndexFunc(facts, func(a Account) bool { return a.ID == accountID })
 	if i < 0 || (facts[i].Class != "asset" && facts[i].Class != "liability") {
-		return Projection{}, &domain.FieldError{Field: "id", Message: "must be a balance account of the book", Err: domain.ErrValidation}
+		return Projection{}, &domain.FieldError{
+			Field:   "id",
+			Message: "must be a balance account of the book",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	schedules, err := s.repo.SchedulesTouching(ctx, booksID, []uuid.UUID{accountID})
@@ -67,7 +80,15 @@ func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUI
 
 	closing = runBalances(points, opening, closing)
 
-	return Projection{AccountID: accountID, From: today, To: to, Opening: opening, Closing: closing, Currency: facts[i].Instrument, Points: points}, nil
+	return Projection{
+		AccountID: accountID,
+		From:      today,
+		To:        to,
+		Opening:   opening,
+		Closing:   closing,
+		Currency:  facts[i].Instrument,
+		Points:    points,
+	}, nil
 }
 
 type Committed struct {
@@ -78,10 +99,18 @@ type Committed struct {
 }
 
 // committedKinds are the schedule kinds a committed amount counts (A57).
-var committedKinds = map[domain.Kind]bool{domain.Bill: true, domain.Subscription: true, domain.Savings: true}
+var committedKinds = map[domain.Kind]bool{
+	domain.Bill:         true,
+	domain.Subscription: true,
+	domain.Savings:      true,
+}
 
 // Committed returns the installments and the expected occurrences committed in month (A57).
-func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time) (Committed, error) {
+func (s *Service) Committed(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+) (Committed, error) {
 	month = domain.MonthOf(month)
 
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
@@ -147,7 +176,10 @@ func projectionPoints(
 			date = today
 		}
 
-		points = append(points, Point{Date: date, OccurrenceID: o.ID, ScheduleID: o.ScheduleID, Amount: amount})
+		points = append(
+			points,
+			Point{Date: date, OccurrenceID: o.ID, ScheduleID: o.ScheduleID, Amount: amount},
+		)
 	}
 
 	return points

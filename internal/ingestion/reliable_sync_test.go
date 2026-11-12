@@ -26,7 +26,8 @@ func TestA143StoredRecordReceivesItsInstitutionID(t *testing.T) {
 	f.sync()
 
 	var got string
-	if err := f.h.Pool.QueryRow(t.Context(), `SELECT institution_id FROM ingestion_external_record WHERE external_id = 'tx-1'`).Scan(&got); err != nil {
+	if err := f.h.Pool.QueryRow(t.Context(), `SELECT institution_id FROM ingestion_external_record WHERE external_id = 'tx-1'`).
+		Scan(&got); err != nil {
 		t.Fatal(err)
 	}
 
@@ -63,7 +64,9 @@ func TestS203RepeatedPaymentIsReidentified(t *testing.T) {
 		t.Fatalf("pay-2 record = %s on %s, want created on %s", state, got, tx)
 	}
 
-	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-1'`); n != 0 {
+	if n := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'pay-1'`,
+	); n != 0 {
 		t.Fatalf("records of pay-1 = %d, want 0", n)
 	}
 
@@ -72,8 +75,11 @@ func TestS203RepeatedPaymentIsReidentified(t *testing.T) {
 		t.Fatalf("counts = %+v, want re-identified 1, created 0, withdrawn 0", c)
 	}
 
-	payments := f.count(`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
-		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`, card)
+	payments := f.count(
+		`SELECT count(*) FROM ledger_posting p JOIN ledger_transaction t ON t.id = p.transaction_id
+		WHERE p.account_id = $1 AND p.amount = 78465 AND t.voided_at IS NULL`,
+		card,
+	)
 	if payments != 1 {
 		t.Fatalf("payments of 784.65 = %d, want 1", payments)
 	}
@@ -101,7 +107,10 @@ func TestS207PendingLinePostedUnderANewIDOnTheSyncDay(t *testing.T) {
 		t.Fatalf("card-q record = %s on %s, want matched on %s", state, got, tx)
 	}
 
-	postings := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`, card)
+	postings := f.count(
+		`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND NOT voided`,
+		card,
+	)
 	if postings != 1 {
 		t.Fatalf("postings of the card = %d, want 1", postings)
 	}
@@ -134,7 +143,11 @@ func TestS209EmptyReadWithdrawsNothing(t *testing.T) {
 
 	b := f.batches(f.checking)[0]
 	if b.Counts.Withdrawn != 0 || !b.ReadEmpty {
-		t.Fatalf("batch = withdrawn %d, read_empty %v, want 0 and true", b.Counts.Withdrawn, b.ReadEmpty)
+		t.Fatalf(
+			"batch = withdrawn %d, read_empty %v, want 0 and true",
+			b.Counts.Withdrawn,
+			b.ReadEmpty,
+		)
 	}
 }
 
@@ -147,7 +160,9 @@ func TestA145LineBeforeSyncFromIsDropped(t *testing.T) {
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-10-01", "-10.00"))
 	f.sync()
 
-	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'tx-0'`); n != 0 {
+	if n := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'tx-0'`,
+	); n != 0 {
 		t.Fatalf("records of tx-0 = %d, want 0", n)
 	}
 
@@ -168,7 +183,10 @@ func TestS204LateLineIsRead(t *testing.T) {
 	f := newSyncFixture(t, apitest.Clock(clk.now))
 	card := f.h.Card("Nubank card", 3, 10, "next")
 	f.mapTo(pluggy.SubtypeCard, card)
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0.00"})
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0.00"},
+	)
 	f.sync()
 
 	late := cardLine("late-1", "2026-10-05", "120.00", "POSTED", new("bill-nov"))
@@ -192,7 +210,10 @@ func TestS204LateLineIsRead(t *testing.T) {
 		t.Fatalf("counts = ignored %d, created %d, want 1 and 0", c.Ignored, c.Created)
 	}
 
-	if n := f.count(`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND amount = -12000 AND NOT voided`, card); n != 1 {
+	if n := f.count(
+		`SELECT count(*) FROM ledger_posting WHERE account_id = $1 AND amount = -12000 AND NOT voided`,
+		card,
+	); n != 1 {
 		t.Fatalf("postings of 120.00 = %d, want 1", n)
 	}
 }
@@ -204,7 +225,12 @@ func TestS213PeriodicReread(t *testing.T) {
 	clk := newMovingClock(t, "2026-11-12T12:00:00Z")
 	f := newSyncFixture(t, apitest.Clock(clk.now))
 
-	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"})
+	r := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeChecking).ID,
+		map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
@@ -281,7 +307,10 @@ func TestS205AmountChangedAfterReconciliation(t *testing.T) {
 func TestS208HeldBillWritesNoNote(t *testing.T) {
 	t.Parallel()
 	f, card := newCardSync(t)
-	f.line(pluggy.SubtypeCard, cardLine("card-8", "2026-11-03", "40.00", "PENDING", new("bill-nov")))
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("card-8", "2026-11-03", "40.00", "PENDING", new("bill-nov")),
+	)
 	f.sync()
 	f.reconcileStatement(card, "2026-11")
 
@@ -357,7 +386,13 @@ func TestS206DateChangedAfterReconciliation(t *testing.T) {
 			},
 			reconcile: func(f syncFixture, _ string) {
 				body := map[string]any{"date": "2026-11-05", "amount": apitest.BRL(-712)}
-				f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+f.checking+"/balance-assertions", body, http.StatusCreated, nil)
+				f.h.MustDo(
+					http.MethodPost,
+					"/api/v1/accounts/"+f.checking+"/balance-assertions",
+					body,
+					http.StatusCreated,
+					nil,
+				)
 			},
 			changed: func(id string) pluggy.Transaction {
 				return bankLine(id, "2026-11-04", "-7.12")
@@ -384,12 +419,24 @@ func TestS206DateChangedAfterReconciliation(t *testing.T) {
 
 			got := f.h.Transaction(tx)
 			if got.Date != tt.wantDate || got.Version != tt.wantVersion {
-				t.Fatalf("transaction = %s v%d, want %s v%d", got.Date, got.Version, tt.wantDate, tt.wantVersion)
+				t.Fatalf(
+					"transaction = %s v%d, want %s v%d",
+					got.Date,
+					got.Version,
+					tt.wantDate,
+					tt.wantVersion,
+				)
 			}
 
 			p := f.cardPosting(tx, account)
-			if p.Status != "reconciled" || p.Statement != tt.wantStatement || p.Amount.Amount != tt.wantAmount {
-				t.Fatalf("posting = %+v, want reconciled on %q at %d", p, tt.wantStatement, tt.wantAmount)
+			if p.Status != "reconciled" || p.Statement != tt.wantStatement ||
+				p.Amount.Amount != tt.wantAmount {
+				t.Fatalf(
+					"posting = %+v, want reconciled on %q at %d",
+					p,
+					tt.wantStatement,
+					tt.wantAmount,
+				)
 			}
 
 			if reason, _ := f.recordFacts(tt.externalID); reason != tt.wantReason {
@@ -422,9 +469,19 @@ func TestA147RefusedChangesWaitForReview(t *testing.T) {
 		{
 			name: "bill on a reconciled posting",
 			arrange: func(f syncFixture, card string) (string, string) {
-				f.line(pluggy.SubtypeCard, cardLine("card-b", "2026-11-02", "20.00", "PENDING", nil))
+				f.line(
+					pluggy.SubtypeCard,
+					cardLine("card-b", "2026-11-02", "20.00", "PENDING", nil),
+				)
 				f.sync()
-				f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "0"})
+				f.p.AddBill(
+					nubankItem+"-card",
+					pluggy.Bill{
+						ID:          "bill-dec",
+						DueDate:     "2026-12-10T00:00:00.000Z",
+						TotalAmount: "0",
+					},
+				)
 				f.reconcileStatement(card, "2026-11")
 				_, tx := f.recordOf("card-b")
 
@@ -439,13 +496,25 @@ func TestA147RefusedChangesWaitForReview(t *testing.T) {
 		{
 			name: "refused payment type",
 			arrange: func(f syncFixture, card string) (string, string) {
-				f.line(pluggy.SubtypeCard, cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov")))
+				f.line(
+					pluggy.SubtypeCard,
+					cardLine("pay-1", "2026-11-05", "-961.85", "POSTED", new("bill-nov")),
+				)
 				f.sync()
 				_, tx := f.recordOf("pay-1")
 				gifts := f.h.Account("Gifts", "income", "", nil)
-				f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
-					"expected_version": 1, "parts": []map[string]any{{"account_id": gifts, "amount": apitest.BRL(-96185)}},
-				}, http.StatusOK, nil)
+				f.h.MustDo(
+					http.MethodPost,
+					"/api/v1/transactions/"+tx+"/categorize",
+					map[string]any{
+						"expected_version": 1,
+						"parts": []map[string]any{
+							{"account_id": gifts, "amount": apitest.BRL(-96185)},
+						},
+					},
+					http.StatusOK,
+					nil,
+				)
 
 				return "pay-1", tx
 			},
@@ -459,11 +528,17 @@ func TestA147RefusedChangesWaitForReview(t *testing.T) {
 		{
 			name: "line returns to the ledger's amount",
 			arrange: func(f syncFixture, card string) (string, string) {
-				f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "50.00", "POSTED", new("bill-nov")))
+				f.line(
+					pluggy.SubtypeCard,
+					cardLine("card-5", "2026-11-03", "50.00", "POSTED", new("bill-nov")),
+				)
 				f.sync()
 				_, tx := f.recordOf("card-5")
 				f.reconcileStatement(card, "2026-11")
-				f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "55.00", "POSTED", new("bill-nov")))
+				f.line(
+					pluggy.SubtypeCard,
+					cardLine("card-5", "2026-11-03", "55.00", "POSTED", new("bill-nov")),
+				)
 				f.sync()
 
 				return "card-5", tx
@@ -485,12 +560,16 @@ func TestA147RefusedChangesWaitForReview(t *testing.T) {
 			f.line(pluggy.SubtypeCard, tt.changed(id))
 			f.sync()
 
-			if reason, change := f.recordFacts(id); reason != tt.wantReason || (tt.wantReason == "") != (change == "") {
+			if reason, change := f.recordFacts(
+				id,
+			); reason != tt.wantReason ||
+				(tt.wantReason == "") != (change == "") {
 				t.Fatalf("facts = %q, %q, want reason %q", reason, change, tt.wantReason)
 			}
 
 			p := f.cardPosting(tx, card)
-			if p.Amount.Amount != tt.wantAmount || (tt.wantRole != "" && p.CardRole != tt.wantRole) {
+			if p.Amount.Amount != tt.wantAmount ||
+				(tt.wantRole != "" && p.CardRole != tt.wantRole) {
 				t.Fatalf("posting = %+v, want amount %d role %q", p, tt.wantAmount, tt.wantRole)
 			}
 
@@ -524,7 +603,9 @@ func TestS209ExpiredConsentIsNotSynced(t *testing.T) {
 		t.Fatalf("state = %s, want needs_owner", state)
 	}
 
-	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'tx-1'`); n != 0 {
+	if n := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'tx-1'`,
+	); n != 0 {
 		t.Fatalf("records of tx-1 = %d, want 0", n)
 	}
 }
@@ -561,7 +642,11 @@ func TestS211ExpiringConsent(t *testing.T) {
 
 	state, expiry := f.connectionState()
 	if state != "consent_expiring" || expiry != "2026-11-25T12:00:00Z" {
-		t.Fatalf("state = %s, consent_expires_at = %q, want consent_expiring and 2026-11-25T12:00:00Z", state, expiry)
+		t.Fatalf(
+			"state = %s, consent_expires_at = %q, want consent_expiring and 2026-11-25T12:00:00Z",
+			state,
+			expiry,
+		)
 	}
 
 	f.p.SetItemConsentExpiresAt(nubankItem, "2026-11-27T12:00:00.000Z")
@@ -603,7 +688,8 @@ func (f syncFixture) recordFacts(externalID string) (reason, change string) {
 	f.h.T().Helper()
 
 	var r, c *string
-	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT review_reason, unapplied_change FROM ingestion_external_record WHERE external_id = $1`, externalID).Scan(&r, &c); err != nil {
+	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT review_reason, unapplied_change FROM ingestion_external_record WHERE external_id = $1`, externalID).
+		Scan(&r, &c); err != nil {
 		f.h.T().Fatal(err)
 	}
 
@@ -631,14 +717,26 @@ func (f syncFixture) reconcileStatement(card, month string) {
 			} `json:"amount_due"`
 		} `json:"items"`
 	}
-	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from="+month+"&to="+month, nil, http.StatusOK, &statements)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/statements?from="+month+"&to="+month,
+		nil,
+		http.StatusOK,
+		&statements,
+	)
 
 	if len(statements.Items) != 1 {
 		f.h.T().Fatalf("statements = %+v, want one", statements.Items)
 	}
 
 	st := statements.Items[0]
-	f.h.MustDo(http.MethodPost, "/api/v1/statements/"+st.ID+"/reconcile", map[string]any{"amount_due": apitest.BRL(st.AmountDue.Amount)}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/statements/"+st.ID+"/reconcile",
+		map[string]any{"amount_due": apitest.BRL(st.AmountDue.Amount)},
+		http.StatusOK,
+		nil,
+	)
 }
 
 // newDateFixture returns the fixture of S206: a card, or the checking account, mapped to its

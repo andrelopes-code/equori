@@ -72,12 +72,20 @@ func TestStartCreatesTheCluster(t *testing.T) {
 		}
 	}
 
-	if got := query(t, c, "SELECT datlocprovider::text || ' ' || datlocale FROM pg_database WHERE datname = 'equori'"); got != "b C.UTF-8" {
+	if got := query(
+		t,
+		c,
+		"SELECT datlocprovider::text || ' ' || datlocale FROM pg_database WHERE datname = 'equori'",
+	); got != "b C.UTF-8" {
 		t.Fatalf("locale = %q, want %q", got, "b C.UTF-8")
 	}
 
 	// M4: the builtin provider orders by code point, as musl does for the compose database.
-	if got := query(t, c, "SELECT string_agg(x, ',' ORDER BY x) FROM (VALUES ('banco'), ('Água'), ('Zebra'), ('Banco')) v(x)"); got != "Banco,Zebra,banco,Água" {
+	if got := query(
+		t,
+		c,
+		"SELECT string_agg(x, ',' ORDER BY x) FROM (VALUES ('banco'), ('Água'), ('Zebra'), ('Banco')) v(x)",
+	); got != "Banco,Zebra,banco,Água" {
 		t.Fatalf("order = %q", got)
 	}
 
@@ -169,7 +177,11 @@ func TestStartRefusesOtherMajor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, "pg", "PG_VERSION"), []byte("17\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "pg", "PG_VERSION"),
+		[]byte("17\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -254,7 +266,11 @@ func TestStartIgnoresAStalePidFile(t *testing.T) {
 	defer func() { _ = other.Process.Kill(); _ = other.Wait() }()
 
 	pid := fmt.Sprintf("%d\n%s\n", other.Process.Pid, filepath.Join(dir, "pg"))
-	if err := os.WriteFile(filepath.Join(dir, "pg", "postmaster.pid"), []byte(pid), 0o600); err != nil {
+	if err := os.WriteFile(
+		filepath.Join(dir, "pg", "postmaster.pid"),
+		[]byte(pid),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 

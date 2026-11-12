@@ -16,7 +16,10 @@ func (m *Module) Coverage(ctx context.Context, in Instrument) (domain.Coverage, 
 		quote = &q
 	}
 
-	all, err := m.q.InstrumentCoverage(ctx, postgres.InstrumentCoverageParams{Instrument: string(in.Code), QuoteInstrument: quote})
+	all, err := m.q.InstrumentCoverage(
+		ctx,
+		postgres.InstrumentCoverageParams{Instrument: string(in.Code), QuoteInstrument: quote},
+	)
 	if err != nil {
 		return domain.Coverage{}, fmt.Errorf("read the coverage of %s: %w", in.Code, err)
 	}
@@ -72,7 +75,10 @@ func sourceTraits() (map[string]int, map[string]bool) {
 }
 
 // storedSources reads, per source, the first and last stored date and the history request of code.
-func (m *Module) storedSources(ctx context.Context, code string) (map[string]domain.SourceCoverage, error) {
+func (m *Module) storedSources(
+	ctx context.Context,
+	code string,
+) (map[string]domain.SourceCoverage, error) {
 	rows, err := m.q.SourceCoverage(ctx, code)
 	if err != nil {
 		return nil, fmt.Errorf("read the coverage of %s per source: %w", code, err)

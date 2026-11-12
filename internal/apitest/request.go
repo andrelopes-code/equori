@@ -82,18 +82,34 @@ func (h *Harness) Upload(path, fileName string, content []byte) Response {
 }
 
 // UploadWith posts content as the field "file" with other form fields.
-func (h *Harness) UploadWith(path string, fields map[string]string, fileName string, content []byte) Response {
+func (h *Harness) UploadWith(
+	path string,
+	fields map[string]string,
+	fileName string,
+	content []byte,
+) Response {
 	h.t.Helper()
 	return h.UploadAs(h.Client, path, fields, fileName, content)
 }
 
 // Import uploads a statement file in format (ofx or csv) to the account.
 func (h *Harness) Import(account, format, name string, content []byte) Response {
-	return h.UploadWith("/api/v1/accounts/"+account+"/imports", map[string]string{"format": format}, name, content)
+	return h.UploadWith(
+		"/api/v1/accounts/"+account+"/imports",
+		map[string]string{"format": format},
+		name,
+		content,
+	)
 }
 
 // UploadAs posts a multipart form with the given client.
-func (h *Harness) UploadAs(c *http.Client, path string, fields map[string]string, fileName string, content []byte) Response {
+func (h *Harness) UploadAs(
+	c *http.Client,
+	path string,
+	fields map[string]string,
+	fileName string,
+	content []byte,
+) Response {
 	h.t.Helper()
 	var body bytes.Buffer
 

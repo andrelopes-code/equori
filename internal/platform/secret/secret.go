@@ -81,7 +81,11 @@ func newKey(k []byte) (key, error) {
 // Seal returns format byte | key id | nonce | ciphertext and tag. associated binds the
 // value to its row: the same bytes under another row do not open.
 func (b *Box) Seal(plaintext, associated []byte) ([]byte, error) {
-	out := make([]byte, headerSize+nonceSize, headerSize+nonceSize+len(plaintext)+b.current.aead.Overhead())
+	out := make(
+		[]byte,
+		headerSize+nonceSize,
+		headerSize+nonceSize+len(plaintext)+b.current.aead.Overhead(),
+	)
 	out[0] = formatV1
 	copy(out[1:headerSize], b.current.id)
 
@@ -89,7 +93,12 @@ func (b *Box) Seal(plaintext, associated []byte) ([]byte, error) {
 		return nil, fmt.Errorf("nonce: %w", err)
 	}
 
-	return b.current.aead.Seal(out, out[headerSize:], plaintext, b.associated(associated, out[:headerSize])), nil
+	return b.current.aead.Seal(
+		out,
+		out[headerSize:],
+		plaintext,
+		b.associated(associated, out[:headerSize]),
+	), nil
 }
 
 func (b *Box) Open(sealed, associated []byte) ([]byte, error) {
@@ -104,7 +113,12 @@ func (b *Box) Open(sealed, associated []byte) ([]byte, error) {
 
 	nonce := sealed[headerSize : headerSize+nonceSize]
 
-	plaintext, err := k.aead.Open(nil, nonce, sealed[headerSize+nonceSize:], b.associated(associated, sealed[:headerSize]))
+	plaintext, err := k.aead.Open(
+		nil,
+		nonce,
+		sealed[headerSize+nonceSize:],
+		b.associated(associated, sealed[:headerSize]),
+	)
 	if err != nil {
 		return nil, ErrUnreadable
 	}

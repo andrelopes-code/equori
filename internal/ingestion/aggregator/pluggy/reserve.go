@@ -59,7 +59,10 @@ func (p Port) readReserve(
 
 			if held && out.ItemUpdatedAt != nil {
 				l := out.ItemUpdatedAt.In(clock.Location(ctx))
-				out.Balance = &domain.Balance{Date: time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC), Amount: total}
+				out.Balance = &domain.Balance{
+					Date:   time.Date(l.Year(), l.Month(), l.Day(), 0, 0, 0, 0, time.UTC),
+					Amount: total,
+				}
 			}
 
 			return nil

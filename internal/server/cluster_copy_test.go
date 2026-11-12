@@ -49,13 +49,21 @@ func TestClusterS215EncryptedCopy(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-20"), apitest.SecretKeys(apitest.SecretKey, ""))
 	dump := func(ctx context.Context, path string) error { return backup.Dump(ctx, bin, dsnOf(h.Pool), path) }
 	restart := func(day string) {
-		h.Restart(apitest.Today(day), apitest.SecretKeys(apitest.SecretKey, ""), apitest.Backups(dir, copyDir, dump))
+		h.Restart(
+			apitest.Today(day),
+			apitest.SecretKeys(apitest.SecretKey, ""),
+			apitest.Backups(dir, copyDir, dump),
+		)
 	}
 
 	restart("2026-11-20")
 	h.Account("Nubank", "asset", "checking", nil)
 
-	if r := h.Do(http.MethodPut, backupPath+"/copy-password", map[string]string{"password": copyPassword}); r.Status != http.StatusNoContent {
+	if r := h.Do(
+		http.MethodPut,
+		backupPath+"/copy-password",
+		map[string]string{"password": copyPassword},
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("set copy password: status = %d, want 204: %s", r.Status, r.Body)
 	}
 
@@ -68,13 +76,20 @@ func TestClusterS215EncryptedCopy(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want, err := os.ReadFile(filepath.Join(dir, fmt.Sprintf("periodic-2026-11-20-s%d.dump", latest)))
+	want, err := os.ReadFile(
+		filepath.Join(dir, fmt.Sprintf("periodic-2026-11-20-s%d.dump", latest)),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if got, err := os.ReadFile(plain); err != nil || !bytes.Equal(got, want) {
-		t.Fatalf("decrypted copy differs from the dump (%d and %d bytes), %v", len(got), len(want), err)
+		t.Fatalf(
+			"decrypted copy differs from the dump (%d and %d bytes), %v",
+			len(got),
+			len(want),
+			err,
+		)
 	}
 
 	for day := 10; day <= 16; day++ {
@@ -98,9 +113,13 @@ func TestClusterS215EncryptedCopy(t *testing.T) {
 	}
 
 	wantNames := []string{
-		"periodic-2026-11-12-s1.dump.age", "periodic-2026-11-13-s1.dump.age", "periodic-2026-11-14-s1.dump.age",
-		"periodic-2026-11-15-s1.dump.age", "periodic-2026-11-16-s1.dump.age",
-		copyName, fmt.Sprintf("periodic-2026-11-21-s%d.dump.age", latest),
+		"periodic-2026-11-12-s1.dump.age",
+		"periodic-2026-11-13-s1.dump.age",
+		"periodic-2026-11-14-s1.dump.age",
+		"periodic-2026-11-15-s1.dump.age",
+		"periodic-2026-11-16-s1.dump.age",
+		copyName,
+		fmt.Sprintf("periodic-2026-11-21-s%d.dump.age", latest),
 	}
 	if !slices.Equal(got, wantNames) {
 		t.Fatalf("copies = %v, want %v", got, wantNames)
@@ -124,7 +143,11 @@ func TestClusterS216EncryptedCopyRestores(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-20"), apitest.SecretKeys(apitest.SecretKey, ""))
 	dump := func(ctx context.Context, path string) error { return backup.Dump(ctx, bin, dsnOf(h.Pool), path) }
 
-	h.Restart(apitest.Today("2026-11-20"), apitest.SecretKeys(apitest.SecretKey, ""), apitest.Backups(dir, copyDir, dump))
+	h.Restart(
+		apitest.Today("2026-11-20"),
+		apitest.SecretKeys(apitest.SecretKey, ""),
+		apitest.Backups(dir, copyDir, dump),
+	)
 
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
@@ -133,7 +156,11 @@ func TestClusterS216EncryptedCopyRestores(t *testing.T) {
 	h.Record("2026-11-02", apitest.Posting(checking, -50000), apitest.Posting(reserve, 50000))
 	h.Dispatch()
 
-	if r := h.Do(http.MethodPut, backupPath+"/copy-password", map[string]string{"password": copyPassword}); r.Status != http.StatusNoContent {
+	if r := h.Do(
+		http.MethodPut,
+		backupPath+"/copy-password",
+		map[string]string{"password": copyPassword},
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("set copy password: status = %d, want 204: %s", r.Status, r.Body)
 	}
 
@@ -149,7 +176,11 @@ func TestClusterS216EncryptedCopyRestores(t *testing.T) {
 	runBackup(t, h)
 
 	plain := filepath.Join(t.TempDir(), "plain.dump")
-	if err := backup.Decrypt(filepath.Join(copyDir, fmt.Sprintf("periodic-2026-11-20-s%d.dump.age", latest)), plain, copyPassword); err != nil {
+	if err := backup.Decrypt(
+		filepath.Join(copyDir, fmt.Sprintf("periodic-2026-11-20-s%d.dump.age", latest)),
+		plain,
+		copyPassword,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -225,7 +256,13 @@ func restoredServer(t *testing.T, h *apitest.Harness, target *pgxpool.Pool) rest
 }
 
 // readBodies returns the raw body of each GET path, after it checks the status 200.
-func readBodies(t *testing.T, h *apitest.Harness, c *http.Client, base string, paths []string) [][]byte {
+func readBodies(
+	t *testing.T,
+	h *apitest.Harness,
+	c *http.Client,
+	base string,
+	paths []string,
+) [][]byte {
 	t.Helper()
 
 	bodies := make([][]byte, 0, len(paths))

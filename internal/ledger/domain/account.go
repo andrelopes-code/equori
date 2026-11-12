@@ -39,7 +39,17 @@ const (
 
 // kindsByClass is the class/kind matrix of chapter 5, 5.2.2.
 var kindsByClass = map[Class][]Kind{
-	ClassAsset:     {KindChecking, KindSavings, KindCash, KindWallet, KindBenefit, KindReserve, KindBrokerage, KindReceivable, KindLoan},
+	ClassAsset: {
+		KindChecking,
+		KindSavings,
+		KindCash,
+		KindWallet,
+		KindBenefit,
+		KindReserve,
+		KindBrokerage,
+		KindReceivable,
+		KindLoan,
+	},
 	ClassLiability: {KindCreditCard, KindLoan, KindPayable},
 	ClassEquity:    nil,
 	ClassIncome:    nil,
@@ -202,8 +212,12 @@ func checkAccountKind(a Account) error {
 		return invalid("kind", "is not allowed for class "+string(a.Class))
 	}
 
-	if a.HoldsSecurity() && (a.Class != ClassAsset || a.Kind != KindBrokerage || a.ParentID == uuid.Nil) {
-		return invalid("currency", "a security is held only by a brokerage account that is a child of a brokerage account")
+	if a.HoldsSecurity() &&
+		(a.Class != ClassAsset || a.Kind != KindBrokerage || a.ParentID == uuid.Nil) {
+		return invalid(
+			"currency",
+			"a security is held only by a brokerage account that is a child of a brokerage account",
+		)
 	}
 
 	return nil
@@ -238,9 +252,15 @@ func ValidateParent(child, parent Account) error {
 	case child.Class != parent.Class:
 		return invalid("parent_id", "must have the same class")
 	case child.HoldsSecurity() && (parent.Kind != KindBrokerage || parent.HoldsSecurity() || parent.Instrument != child.QuoteCurrency):
-		return invalid("currency", "a security is held by a child of a brokerage account in its quote currency")
+		return invalid(
+			"currency",
+			"a security is held by a child of a brokerage account in its quote currency",
+		)
 	case !child.HoldsSecurity() && child.Instrument != parent.Instrument:
-		return invalid("parent_id", "must use the same currency, so the parent balance is a sum of one currency")
+		return invalid(
+			"parent_id",
+			"must use the same currency, so the parent balance is a sum of one currency",
+		)
 	case child.IsBalance() && child.InstitutionID != parent.InstitutionID:
 		return invalid("parent_id", "must be at the same institution")
 	}

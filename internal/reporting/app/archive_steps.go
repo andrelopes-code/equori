@@ -80,12 +80,16 @@ func dropConversations(tables []ArchiveTable) ([]ArchiveTable, error) {
 // 00077 gives existing rows, with no decision to undo and not kept; each batch re-identified no
 // line and was not an empty read. The new nullable columns read null.
 func addReliableSync(tables []ArchiveTable) ([]ArchiveTable, error) {
-	tables, err := editRows(tables, "ingestion_external_record", func(fields map[string]jsontext.Value) {
-		fields["reported_amount"] = fields["amount"]
-		fields["reported_on"] = fields["booked_on"]
-		fields["decision_undo"] = jsontext.Value("{}")
-		fields["kept"] = jsontext.Value("false")
-	})
+	tables, err := editRows(
+		tables,
+		"ingestion_external_record",
+		func(fields map[string]jsontext.Value) {
+			fields["reported_amount"] = fields["amount"]
+			fields["reported_on"] = fields["booked_on"]
+			fields["decision_undo"] = jsontext.Value("{}")
+			fields["kept"] = jsontext.Value("false")
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -170,13 +174,21 @@ func addTransferPairing(tables []ArchiveTable) ([]ArchiveTable, error) {
 
 // withField returns tables with field set to value in every row of table; the input is left
 // unchanged.
-func withField(tables []ArchiveTable, table, field string, value jsontext.Value) ([]ArchiveTable, error) {
+func withField(
+	tables []ArchiveTable,
+	table, field string,
+	value jsontext.Value,
+) ([]ArchiveTable, error) {
 	return editRows(tables, table, func(fields map[string]jsontext.Value) { fields[field] = value })
 }
 
 // editRows returns tables with edit applied to the fields of every row of table; the input is
 // left unchanged.
-func editRows(tables []ArchiveTable, table string, edit func(map[string]jsontext.Value)) ([]ArchiveTable, error) {
+func editRows(
+	tables []ArchiveTable,
+	table string,
+	edit func(map[string]jsontext.Value),
+) ([]ArchiveTable, error) {
 	out := make([]ArchiveTable, len(tables))
 	for i, t := range tables {
 		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}

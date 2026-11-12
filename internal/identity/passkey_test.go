@@ -80,8 +80,13 @@ func TestPasskeyRegistration(t *testing.T) {
 		t.Fatalf("second key recovery codes = %v; want none", other.RecoveryCodes)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/passkeys/"+uuid.NewString()+"/remove",
-		map[string]string{"password": apitest.Password}), http.StatusNotFound, "passkey_not_found", "")
+	h.ExpectProblem(h.Do(
+		http.MethodPost,
+		"/api/v1/me/passkeys/"+uuid.NewString()+"/remove",
+		map[string]string{
+			"password": apitest.Password,
+		},
+	), http.StatusNotFound, "passkey_not_found", "")
 	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/passkeys/"+created.Passkey.ID+"/remove",
 		map[string]string{"password": wrongPassword}), http.StatusForbidden, "password_invalid", "")
 
@@ -102,14 +107,26 @@ func TestPasskeyChallengeExpires(t *testing.T) {
 
 	now.Store(start.UnixNano())
 
-	h := apitest.New(t, apitest.IdentityClock(func() time.Time { return time.Unix(0, now.Load()).UTC() }))
+	h := apitest.New(
+		t,
+		apitest.IdentityClock(func() time.Time { return time.Unix(0, now.Load()).UTC() }),
+	)
 	key := newSoftKey([]byte{1, 2, 3, 4})
 	options := passkeyOptionsOf(t, h)
 
 	now.Store(start.Add(5*time.Minute + time.Second).UnixNano())
 
-	h.ExpectProblem(postWithOrigin(t, h, "/api/v1/me/passkeys", key.registration("Laptop", decodeB64(t, options.Challenge), h.URL())),
-		http.StatusUnprocessableEntity, "passkey_invalid", "")
+	h.ExpectProblem(
+		postWithOrigin(
+			t,
+			h,
+			"/api/v1/me/passkeys",
+			key.registration("Laptop", decodeB64(t, options.Challenge), h.URL()),
+		),
+		http.StatusUnprocessableEntity,
+		"passkey_invalid",
+		"",
+	)
 }
 
 func passkeyOptionsOf(t *testing.T, h *apitest.Harness) passkeyOptions {
@@ -131,7 +148,12 @@ func registerPasskey(t *testing.T, h *apitest.Harness, key softKey) passkeyCreat
 	t.Helper()
 
 	options := passkeyOptionsOf(t, h)
-	r := postWithOrigin(t, h, "/api/v1/me/passkeys", key.registration("Laptop", decodeB64(t, options.Challenge), h.URL()))
+	r := postWithOrigin(
+		t,
+		h,
+		"/api/v1/me/passkeys",
+		key.registration("Laptop", decodeB64(t, options.Challenge), h.URL()),
+	)
 
 	if r.Status != http.StatusCreated {
 		t.Fatalf("createPasskey status = %d: %s", r.Status, r.Body)
@@ -210,7 +232,9 @@ func (k softKey) registration(name string, challenge []byte, origin string) map[
 }
 
 func (k softKey) clientData(typ string, challenge []byte, origin string) []byte {
-	b, _ := json.Marshal(map[string]string{"type": typ, "challenge": b64(challenge), "origin": origin})
+	b, _ := json.Marshal(
+		map[string]string{"type": typ, "challenge": b64(challenge), "origin": origin},
+	)
 
 	return b
 }

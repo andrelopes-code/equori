@@ -31,8 +31,11 @@ func (r *Repository) Settings(ctx context.Context) (domain.Settings, error) {
 	}
 
 	s := domain.Settings{
-		UpdateCheck: row.UpdateCheck, CopyPassword: row.CopyPassword, CopyState: domain.CopyState(row.CopyState),
-		CopyAttemptAt: row.CopyAttemptAt, CopyAt: row.CopyAt,
+		UpdateCheck:   row.UpdateCheck,
+		CopyPassword:  row.CopyPassword,
+		CopyState:     domain.CopyState(row.CopyState),
+		CopyAttemptAt: row.CopyAttemptAt,
+		CopyAt:        row.CopyAt,
 	}
 	if row.CopyFile != nil {
 		s.CopyFile = *row.CopyFile
@@ -45,7 +48,13 @@ func (r *Repository) SetCopyPassword(ctx context.Context, sealed []byte) error {
 	return r.q.SetCopyPassword(ctx, sealed)
 }
 
-func (r *Repository) SaveCopyAttempt(ctx context.Context, state domain.CopyState, attemptAt time.Time, copyAt *time.Time, copyFile *string) error {
+func (r *Repository) SaveCopyAttempt(
+	ctx context.Context,
+	state domain.CopyState,
+	attemptAt time.Time,
+	copyAt *time.Time,
+	copyFile *string,
+) error {
 	return r.q.SaveCopyAttempt(ctx, SaveCopyAttemptParams{
 		CopyState:     string(state),
 		CopyAttemptAt: &attemptAt,

@@ -32,7 +32,8 @@ func (c Connection) StateAt(base ConnectionState, now time.Time) ConnectionState
 		return base
 	}
 
-	if base == StateOK && (olderThan(c.LastItemUpdateAt, now, StallAfter) || olderThan(c.LastSyncedAt, now, StallAfter)) {
+	if base == StateOK &&
+		(olderThan(c.LastItemUpdateAt, now, StallAfter) || olderThan(c.LastSyncedAt, now, StallAfter)) {
 		return StateStalled
 	}
 

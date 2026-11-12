@@ -21,17 +21,64 @@ func TestNewProvider(t *testing.T) {
 		wantErr                         error
 		wantField                       string
 	}{
-		{name: "groq with key", preset: "groq", provName: "Groq", hasKey: true, wantURL: "https://api.groq.com/openai/v1"},
+		{
+			name:     "groq with key",
+			preset:   "groq",
+			provName: "Groq",
+			hasKey:   true,
+			wantURL:  "https://api.groq.com/openai/v1",
+		},
 		{name: "groq without key", preset: "groq", provName: "Groq", wantErr: ErrKeyRequired},
-		{name: "ollama without key", preset: "ollama", provName: "Local", wantURL: "http://127.0.0.1:11434/v1"},
-		{name: "own base URL", preset: "ollama", provName: "Box", baseURL: "http://10.0.0.5:11434/v1/", wantURL: "http://10.0.0.5:11434/v1"},
+		{
+			name:     "ollama without key",
+			preset:   "ollama",
+			provName: "Local",
+			wantURL:  "http://127.0.0.1:11434/v1",
+		},
+		{
+			name:     "own base URL",
+			preset:   "ollama",
+			provName: "Box",
+			baseURL:  "http://10.0.0.5:11434/v1/",
+			wantURL:  "http://10.0.0.5:11434/v1",
+		},
 		{name: "custom without URL", preset: "custom", provName: "X", wantField: "base_url"},
 		{name: "unknown preset", preset: "nope", provName: "X", wantField: "preset"},
-		{name: "ftp", preset: "custom", provName: "X", baseURL: "ftp://h/v1", wantField: "base_url"},
-		{name: "user info", preset: "custom", provName: "X", baseURL: "http://u:p@h/v1", wantField: "base_url"},
-		{name: "query", preset: "custom", provName: "X", baseURL: "http://h/v1?q=1", wantField: "base_url"},
-		{name: "fragment", preset: "custom", provName: "X", baseURL: "http://h/v1#f", wantField: "base_url"},
-		{name: "no host", preset: "custom", provName: "X", baseURL: "http:///v1", wantField: "base_url"},
+		{
+			name:      "ftp",
+			preset:    "custom",
+			provName:  "X",
+			baseURL:   "ftp://h/v1",
+			wantField: "base_url",
+		},
+		{
+			name:      "user info",
+			preset:    "custom",
+			provName:  "X",
+			baseURL:   "http://u:p@h/v1",
+			wantField: "base_url",
+		},
+		{
+			name:      "query",
+			preset:    "custom",
+			provName:  "X",
+			baseURL:   "http://h/v1?q=1",
+			wantField: "base_url",
+		},
+		{
+			name:      "fragment",
+			preset:    "custom",
+			provName:  "X",
+			baseURL:   "http://h/v1#f",
+			wantField: "base_url",
+		},
+		{
+			name:      "no host",
+			preset:    "custom",
+			provName:  "X",
+			baseURL:   "http:///v1",
+			wantField: "base_url",
+		},
 		{name: "blank name", preset: "ollama", provName: "  ", wantField: "name"},
 		{name: "long name", preset: "ollama", provName: strings.Repeat("é", 61), wantField: "name"},
 	}
@@ -55,7 +102,8 @@ func TestNewProvider(t *testing.T) {
 					t.Fatalf("NewProvider: %v", err)
 				}
 
-				if p.BaseURL != tt.wantURL || p.BooksID != 7 || p.Preset != tt.preset || !p.CreatedAt.Equal(now) {
+				if p.BaseURL != tt.wantURL || p.BooksID != 7 || p.Preset != tt.preset ||
+					!p.CreatedAt.Equal(now) {
 					t.Fatalf("provider = %+v, want base URL %s", p, tt.wantURL)
 				}
 			}

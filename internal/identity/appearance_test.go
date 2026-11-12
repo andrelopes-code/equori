@@ -26,7 +26,12 @@ func TestS189AppearanceFollowsMember(t *testing.T) {
 	second := &http.Client{Jar: jar}
 
 	login := map[string]string{"email": "owner@example.com", "password": apitest.Password}
-	if r := h.Call(second, http.MethodPost, "/api/v1/session", login); r.Status != http.StatusNoContent {
+	if r := h.Call(
+		second,
+		http.MethodPost,
+		"/api/v1/session",
+		login,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("second login status %d: %s", r.Status, r.Body)
 	}
 
@@ -47,7 +52,12 @@ func TestAppearanceSize(t *testing.T) {
 		code   string
 	}{
 		{"at the limit", map[string]any{"themes": strings.Repeat("a", 16371)}, http.StatusOK, ""},
-		{"over the limit", map[string]any{"themes": strings.Repeat("a", 16372)}, http.StatusUnprocessableEntity, "appearance_too_large"},
+		{
+			"over the limit",
+			map[string]any{"themes": strings.Repeat("a", 16372)},
+			http.StatusUnprocessableEntity,
+			"appearance_too_large",
+		},
 		{"array", []any{}, http.StatusBadRequest, "invalid_request"},
 	}
 
@@ -75,7 +85,14 @@ func TestAppearanceSize(t *testing.T) {
 }
 
 // assertAppearance sends the request to /me/appearance and compares the 200 body with want.
-func assertAppearance(t *testing.T, h *apitest.Harness, c *http.Client, method string, body any, want map[string]any) {
+func assertAppearance(
+	t *testing.T,
+	h *apitest.Harness,
+	c *http.Client,
+	method string,
+	body any,
+	want map[string]any,
+) {
 	t.Helper()
 
 	r := h.Call(c, method, appearancePath, body)

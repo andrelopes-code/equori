@@ -18,21 +18,45 @@ func TestDedupKey(t *testing.T) {
 
 	o := Ordinals{}
 
-	first, second := DedupKey(account, SourceCSV, line, o.Next(line)), DedupKey(account, SourceCSV, same, o.Next(same))
+	first, second := DedupKey(
+		account,
+		SourceCSV,
+		line,
+		o.Next(line),
+	), DedupKey(
+		account,
+		SourceCSV,
+		same,
+		o.Next(same),
+	)
 	if bytes.Equal(first, second) {
 		t.Fatal("two identical lines in one file share a key")
 	}
 
-	if again := DedupKey(account, SourceOFX, line, Ordinals{}.Next(line)); !bytes.Equal(first, again) {
+	if again := DedupKey(
+		account,
+		SourceOFX,
+		line,
+		Ordinals{}.Next(line),
+	); !bytes.Equal(
+		first,
+		again,
+	) {
 		t.Fatal("the first identical line differs between files or sources")
 	}
 
 	withID := NormalizedRecord{ExternalID: "a1", Date: day, Amount: -850}
-	if bytes.Equal(DedupKey(account, SourceOFX, withID, 0), DedupKey(uuid.New(), SourceOFX, withID, 0)) {
+	if bytes.Equal(
+		DedupKey(account, SourceOFX, withID, 0),
+		DedupKey(uuid.New(), SourceOFX, withID, 0),
+	) {
 		t.Fatal("the same FITID on two accounts shares a key")
 	}
 
-	if bytes.Equal(DedupKey(account, SourceOFX, withID, 0), DedupKey(account, SourceCSV, withID, 0)) {
+	if bytes.Equal(
+		DedupKey(account, SourceOFX, withID, 0),
+		DedupKey(account, SourceCSV, withID, 0),
+	) {
 		t.Fatal("an OFX FITID and a CSV id share a key")
 	}
 

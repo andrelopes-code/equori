@@ -7,5 +7,9 @@ import (
 )
 
 func Tools(svc *app.Service, clk app.Clock) []tool.Tool {
-	return []tool.Tool{getCategoryTotals(svc), getAccountHistory(svc), getFinancialIndicators(svc, clk)}
+	return []tool.Tool{
+		getCategoryTotals(svc),
+		getAccountHistory(svc),
+		getFinancialIndicators(svc, clk),
+	}
 }

@@ -47,7 +47,15 @@ func (s *Server) createInstitution(
 	r *http.Request,
 	in CreateInstitutionJSONRequestBody,
 ) (Institution, error) {
-	i, err := s.svc.CreateInstitution(ctx, auth.MustBooksID(ctx), app.Institution{Name: in.Name, Code: optString(in.Code), Identifier: institutionIdentifier(in.Identifier)})
+	i, err := s.svc.CreateInstitution(
+		ctx,
+		auth.MustBooksID(ctx),
+		app.Institution{
+			Name:       in.Name,
+			Code:       optString(in.Code),
+			Identifier: institutionIdentifier(in.Identifier),
+		},
+	)
 	if err != nil {
 		return Institution{}, err
 	}
@@ -65,14 +73,21 @@ func (s *Server) setInstitutionIdentifier(
 		return Institution{}, err
 	}
 
-	ident := app.InstitutionIdentifier{Scheme: optString(in.Scheme), Value: optString(in.Identifier)}
+	ident := app.InstitutionIdentifier{
+		Scheme: optString(in.Scheme),
+		Value:  optString(in.Identifier),
+	}
 	if (ident.Scheme == "") != (ident.Value == "") {
 		field := "identifier"
 		if ident.Scheme == "" {
 			field = "scheme"
 		}
 
-		return Institution{}, &domain.FieldError{Field: field, Message: "must be set together with the other identifier field", Err: domain.ErrValidation}
+		return Institution{}, &domain.FieldError{
+			Field:   field,
+			Message: "must be set together with the other identifier field",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	i, err := s.svc.SetInstitutionIdentifier(ctx, auth.MustBooksID(ctx), id, ident)

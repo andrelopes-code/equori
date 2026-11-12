@@ -8,7 +8,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) getSyncSchedule(ctx context.Context, _ *http.Request, _ httpserver.None) (SyncSchedule, error) {
+func (s *Server) getSyncSchedule(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (SyncSchedule, error) {
 	minutes, err := s.svc.SyncInterval(ctx)
 	if err != nil {
 		return SyncSchedule{}, err

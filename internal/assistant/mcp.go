@@ -14,7 +14,10 @@ func Prompts() []Prompt {
 			args = append(args, PromptArgument(a))
 		}
 
-		out = append(out, Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render})
+		out = append(
+			out,
+			Prompt{Name: p.Name, Description: p.Description, Arguments: args, Render: p.Render},
+		)
 	}
 
 	return out

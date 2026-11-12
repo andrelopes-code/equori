@@ -92,7 +92,11 @@ func newProposalEnv(t *testing.T, opts ...apitest.Option) proposalEnv {
 	start := time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 	now.Store(&start)
 
-	opts = append(opts, apitest.ExtraTools(note.group(), makeGroup()), apitest.Clock(func() time.Time { return *now.Load() }))
+	opts = append(
+		opts,
+		apitest.ExtraTools(note.group(), makeGroup()),
+		apitest.Clock(func() time.Time { return *now.Load() }),
+	)
 	h := apitest.New(t, opts...)
 
 	return proposalEnv{h: h, note: note, now: now}
@@ -102,12 +106,26 @@ func newProposalEnv(t *testing.T, opts ...apitest.Option) proposalEnv {
 func (e proposalEnv) propose(t *testing.T, booksID int64, text string) string {
 	t.Helper()
 
-	conv := domain.Conversation{ID: uuid.New(), Title: "t", CreatedAt: *e.now.Load(), UpdatedAt: *e.now.Load()}
-	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), booksID, e.h.MemberIDOf("owner@example.com"), conv); err != nil {
+	conv := domain.Conversation{
+		ID:        uuid.New(),
+		Title:     "t",
+		CreatedAt: *e.now.Load(),
+		UpdatedAt: *e.now.Load(),
+	}
+	if err := postgres.NewRepository(e.h.Pool).
+		CreateConversation(t.Context(), booksID, e.h.MemberIDOf("owner@example.com"), conv); err != nil {
 		t.Fatal(err)
 	}
 
-	content, err := assistant.ProposeForTest(e.h.App.Assistant, t.Context(), booksID, conv.ID, "note_for_test", json.RawMessage(`{"text":"`+text+`"}`), app.ProposalMeta{})
+	content, err := assistant.ProposeForTest(
+		e.h.App.Assistant,
+		t.Context(),
+		booksID,
+		conv.ID,
+		"note_for_test",
+		json.RawMessage(`{"text":"`+text+`"}`),
+		app.ProposalMeta{},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +149,8 @@ func (e proposalEnv) status(t *testing.T, id string) string {
 	t.Helper()
 
 	var s string
-	if err := e.h.Pool.QueryRow(t.Context(), `SELECT status FROM assistant_proposal WHERE id = $1`, id).Scan(&s); err != nil {
+	if err := e.h.Pool.QueryRow(t.Context(), `SELECT status FROM assistant_proposal WHERE id = $1`, id).
+		Scan(&s); err != nil {
 		t.Fatal(err)
 	}
 
@@ -302,7 +321,10 @@ func TestChatSetRefusesWriteWithoutPreview(t *testing.T) {
 	bare := tool.New(tool.Spec{Name: "bare_write", Description: "Writes.", Effect: tool.Write},
 		func(context.Context, int64, noteIn) (noteOut, error) { return noteOut{}, nil })
 
-	reg, err := tool.NewRegistry(slog.New(slog.DiscardHandler), tool.Group{Tools: []tool.Tool{bare}})
+	reg, err := tool.NewRegistry(
+		slog.New(slog.DiscardHandler),
+		tool.Group{Tools: []tool.Tool{bare}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,13 +334,16 @@ func TestChatSetRefusesWriteWithoutPreview(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := llmapi.NewChatSet(set); err == nil || !strings.Contains(err.Error(), "bare_write") {
+	if _, err := llmapi.NewChatSet(
+		set,
+	); err == nil ||
+		!strings.Contains(err.Error(), "bare_write") {
 		t.Fatalf("err = %v", err)
 	}
 }
 
 type makeIn struct {
-	IDRef          string `json:"id_ref" jsonschema:"id of the entity this one uses"`
+	IDRef          string `json:"id_ref"                    jsonschema:"id of the entity this one uses"`
 	FailIfResolved bool   `json:"fail_if_resolved,omitzero" jsonschema:"fails the preview when id_ref is 42"`
 }
 
@@ -328,20 +353,23 @@ type makeOut struct {
 
 // makeGroup is the write tool make_for_test: it creates an entity with id "42" from the id_ref it uses.
 func makeGroup() tool.Group {
-	return tool.Group{Tools: []tool.Tool{tool.NewWrite(
-		tool.Spec{Name: "make_for_test", Description: "Makes an entity.", Effect: tool.Write},
-		func(_ context.Context, _ int64, in makeIn) (tool.Preview, error) {
-			if in.FailIfResolved && in.IDRef == "42" {
-				return tool.Preview{}, tool.InvalidArgument("id_ref", "is already in use")
-			}
+	return tool.Group{Tools: []tool.Tool{
+		tool.NewWrite(
+			tool.Spec{Name: "make_for_test", Description: "Makes an entity.", Effect: tool.Write},
+			func(_ context.Context, _ int64, in makeIn) (tool.Preview, error) {
+				if in.FailIfResolved && in.IDRef == "42" {
+					return tool.Preview{}, tool.InvalidArgument("id_ref", "is already in use")
+				}
 
-			return tool.Preview{
-				Action:  "make_for_test",
-				Changes: []tool.Change{{Field: "description", After: tool.TextValue(in.IDRef)}},
-				Basis:   "v1",
-			}, nil
-		},
-		func(_ context.Context, _ int64, _ makeIn) (makeOut, error) { return makeOut{ID: "42"}, nil })}}
+				return tool.Preview{
+					Action:  "make_for_test",
+					Changes: []tool.Change{{Field: "description", After: tool.TextValue(in.IDRef)}},
+					Basis:   "v1",
+				}, nil
+			},
+			func(_ context.Context, _ int64, _ makeIn) (makeOut, error) { return makeOut{ID: "42"}, nil },
+		),
+	}}
 }
 
 type proposed struct {
@@ -353,8 +381,14 @@ type proposed struct {
 func (e proposalEnv) conversation(t *testing.T) uuid.UUID {
 	t.Helper()
 
-	conv := domain.Conversation{ID: uuid.New(), Title: "t", CreatedAt: *e.now.Load(), UpdatedAt: *e.now.Load()}
-	if err := postgres.NewRepository(e.h.Pool).CreateConversation(t.Context(), e.h.OwnerID(), e.h.MemberIDOf("owner@example.com"), conv); err != nil {
+	conv := domain.Conversation{
+		ID:        uuid.New(),
+		Title:     "t",
+		CreatedAt: *e.now.Load(),
+		UpdatedAt: *e.now.Load(),
+	}
+	if err := postgres.NewRepository(e.h.Pool).
+		CreateConversation(t.Context(), e.h.OwnerID(), e.h.MemberIDOf("owner@example.com"), conv); err != nil {
 		t.Fatal(err)
 	}
 
@@ -362,10 +396,23 @@ func (e proposalEnv) conversation(t *testing.T) uuid.UUID {
 }
 
 // tryMake proposes make_for_test and returns the error of the call.
-func (e proposalEnv) tryMake(t *testing.T, conv uuid.UUID, args string, meta app.ProposalMeta) (proposed, error) {
+func (e proposalEnv) tryMake(
+	t *testing.T,
+	conv uuid.UUID,
+	args string,
+	meta app.ProposalMeta,
+) (proposed, error) {
 	t.Helper()
 
-	content, err := assistant.ProposeForTest(e.h.App.Assistant, t.Context(), e.h.OwnerID(), conv, "make_for_test", json.RawMessage(args), meta)
+	content, err := assistant.ProposeForTest(
+		e.h.App.Assistant,
+		t.Context(),
+		e.h.OwnerID(),
+		conv,
+		"make_for_test",
+		json.RawMessage(args),
+		meta,
+	)
 	if err != nil {
 		return proposed{}, err
 	}
@@ -403,7 +450,8 @@ func (e proposalEnv) column(t *testing.T, id, column string) map[string]any {
 	t.Helper()
 
 	var raw []byte
-	if err := e.h.Pool.QueryRow(t.Context(), `SELECT `+column+`::text FROM assistant_proposal WHERE id = $1`, id).Scan(&raw); err != nil {
+	if err := e.h.Pool.QueryRow(t.Context(), `SELECT `+column+`::text FROM assistant_proposal WHERE id = $1`, id).
+		Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -465,21 +513,30 @@ func TestProposeRefsRefused(t *testing.T) {
 		{
 			name: "ref_missing",
 			setup: func(*testing.T, proposalEnv, uuid.UUID) (string, app.ProposalMeta) {
-				return `{"id_ref":"x"}`, app.ProposalMeta{Refs: map[string]string{"/id_ref": uuid.NewString()}, Summary: "s"}
+				return `{"id_ref":"x"}`, app.ProposalMeta{
+					Refs:    map[string]string{"/id_ref": uuid.NewString()},
+					Summary: "s",
+				}
 			},
 			field: "proposal.refs",
 		},
 		{
 			name: "ref_not_a_field",
 			setup: func(t *testing.T, e proposalEnv, conv uuid.UUID) (string, app.ProposalMeta) {
-				return `{"id_ref":"x"}`, app.ProposalMeta{Refs: map[string]string{"/other": e.make(t, conv, nil).ID}, Summary: "s"}
+				return `{"id_ref":"x"}`, app.ProposalMeta{
+					Refs:    map[string]string{"/other": e.make(t, conv, nil).ID},
+					Summary: "s",
+				}
 			},
 			field: "proposal.refs",
 		},
 		{
 			name: "ref_malformed",
 			setup: func(*testing.T, proposalEnv, uuid.UUID) (string, app.ProposalMeta) {
-				return `{"id_ref":"x"}`, app.ProposalMeta{Refs: map[string]string{"/id_ref": "not-an-id"}, Summary: "s"}
+				return `{"id_ref":"x"}`, app.ProposalMeta{
+					Refs:    map[string]string{"/id_ref": "not-an-id"},
+					Summary: "s",
+				}
 			},
 			field: "proposal.refs",
 		},
@@ -500,7 +557,10 @@ func TestProposeRefsRefused(t *testing.T) {
 		{
 			name: "waiting_with_invalid_arguments",
 			setup: func(t *testing.T, e proposalEnv, conv uuid.UUID) (string, app.ProposalMeta) {
-				return `{"id_ref":1}`, app.ProposalMeta{Refs: ref(e.make(t, conv, nil)), Summary: "s"}
+				return `{"id_ref":1}`, app.ProposalMeta{
+					Refs:    ref(e.make(t, conv, nil)),
+					Summary: "s",
+				}
 			},
 			code: "invalid_arguments",
 		},
@@ -529,7 +589,8 @@ func TestProposeRefsRefused(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if got.Code != "invalid_arguments" || tt.field != "" && (len(got.Errors) == 0 || got.Errors[0].Field != tt.field) {
+			if got.Code != "invalid_arguments" ||
+				tt.field != "" && (len(got.Errors) == 0 || got.Errors[0].Field != tt.field) {
 				t.Fatalf("content = %s, want field %q", tf.Content, tt.field)
 			}
 		})
@@ -544,7 +605,8 @@ func TestWaitingProposalPromotes(t *testing.T) {
 	parent := e.make(t, conv, nil)
 	child := e.make(t, conv, ref(parent))
 
-	if child.Status != "waiting_for_confirmation_of" || len(child.WaitingFor) != 1 || child.WaitingFor[0] != parent.ID {
+	if child.Status != "waiting_for_confirmation_of" || len(child.WaitingFor) != 1 ||
+		child.WaitingFor[0] != parent.ID {
 		t.Fatalf("child = %+v", child)
 	}
 
@@ -557,7 +619,12 @@ func TestWaitingProposalPromotes(t *testing.T) {
 		t.Fatalf("id_ref = %v", got)
 	}
 
-	if got := fmt.Sprint(e.column(t, child.ID, "preview")["changes"]); !strings.Contains(got, "42") {
+	if got := fmt.Sprint(
+		e.column(t, child.ID, "preview")["changes"],
+	); !strings.Contains(
+		got,
+		"42",
+	) {
 		t.Fatalf("preview changes = %s", got)
 	}
 
@@ -677,7 +744,10 @@ func TestRestartDiscardsWaiting(t *testing.T) {
 	conv := e.conversation(t)
 	parent := e.make(t, conv, nil)
 
-	args := fmt.Sprintf(`{"id_ref":"x","proposal":{"refs":{"/id_ref":%q},"summary":"s"}}`, parent.ID)
+	args := fmt.Sprintf(
+		`{"id_ref":"x","proposal":{"refs":{"/id_ref":%q},"summary":"s"}}`,
+		parent.ID,
+	)
 	steps[0] = callStep("make_for_test", args) // llmtest.New keeps the slice
 
 	r := sendTurn(e.h, e.h.Client, map[string]any{"text": "go", "conversation_id": conv.String()})
@@ -687,7 +757,11 @@ func TestRestartDiscardsWaiting(t *testing.T) {
 
 	var got []string
 
-	rows, err := e.h.Pool.Query(t.Context(), `SELECT status FROM assistant_proposal WHERE conversation_id = $1 ORDER BY created_at`, conv)
+	rows, err := e.h.Pool.Query(
+		t.Context(),
+		`SELECT status FROM assistant_proposal WHERE conversation_id = $1 ORDER BY created_at`,
+		conv,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -712,7 +786,10 @@ func TestChatDeclarationsCarryProposal(t *testing.T) {
 	t.Parallel()
 	e := newProposalEnv(t)
 
-	decls, _ := assistant.ChatHandlersForTest(e.h.App.Assistant, func(context.Context) uuid.UUID { return uuid.Nil })
+	decls, _ := assistant.ChatHandlersForTest(
+		e.h.App.Assistant,
+		func(context.Context) uuid.UUID { return uuid.Nil },
+	)
 
 	effects := map[string]tool.Effect{}
 
@@ -761,11 +838,22 @@ func TestChatHandlerStoresSuggestion(t *testing.T) {
 	e := newProposalEnv(t)
 	conv := e.conversation(t)
 
-	_, handlers := assistant.ChatHandlersForTest(e.h.App.Assistant, func(context.Context) uuid.UUID { return conv })
-	ctx := auth.WithIdentity(t.Context(), e.h.MemberIDOf("owner@example.com"), e.h.OwnerID(), auth.RoleOwner)
+	_, handlers := assistant.ChatHandlersForTest(
+		e.h.App.Assistant,
+		func(context.Context) uuid.UUID { return conv },
+	)
+	ctx := auth.WithIdentity(
+		t.Context(),
+		e.h.MemberIDOf("owner@example.com"),
+		e.h.OwnerID(),
+		auth.RoleOwner,
+	)
 
 	t.Run("object", func(t *testing.T) {
-		out, err := handlers["note_for_test"](ctx, json.RawMessage(`{"text":"x","proposal":{"suggested":true,"reason":"seen twice"}}`))
+		out, err := handlers["note_for_test"](
+			ctx,
+			json.RawMessage(`{"text":"x","proposal":{"suggested":true,"reason":"seen twice"}}`),
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -782,7 +870,8 @@ func TestChatHandlerStoresSuggestion(t *testing.T) {
 			reason    string
 		)
 
-		if err := e.h.Pool.QueryRow(t.Context(), `SELECT suggested, reason FROM assistant_proposal WHERE id = $1`, got.ProposalID).Scan(&suggested, &reason); err != nil {
+		if err := e.h.Pool.QueryRow(t.Context(), `SELECT suggested, reason FROM assistant_proposal WHERE id = $1`, got.ProposalID).
+			Scan(&suggested, &reason); err != nil {
 			t.Fatal(err)
 		}
 

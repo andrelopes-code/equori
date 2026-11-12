@@ -16,7 +16,11 @@ import (
 )
 
 func TestPluggyPortCapabilities(t *testing.T) {
-	p, err := pluggy.NewPort("https://pluggy.example", http.DefaultClient, clock.New(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }))
+	p, err := pluggy.NewPort(
+		"https://pluggy.example",
+		http.DefaultClient,
+		clock.New(func() time.Time { return time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC) }),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +29,10 @@ func TestPluggyPortCapabilities(t *testing.T) {
 		t.Errorf("ID = %q", p.ID())
 	}
 
-	wantFields := []domain.CredentialField{{Name: "client_id", Secret: false}, {Name: "client_secret", Secret: true}}
+	wantFields := []domain.CredentialField{
+		{Name: "client_id", Secret: false},
+		{Name: "client_secret", Secret: true},
+	}
 	if got := p.CredentialFields(); !slices.Equal(got, wantFields) {
 		t.Errorf("CredentialFields = %v", got)
 	}
@@ -55,7 +62,11 @@ func TestAccountsHolder(t *testing.T) {
 		want      *domain.PartyID
 	}{
 		{"cpf", "529.982.247-25", &domain.PartyID{Scheme: "br_cpf", Value: "529.982.247-25"}},
-		{"cnpj", "18.236.120/0001-58", &domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"}},
+		{
+			"cnpj",
+			"18.236.120/0001-58",
+			&domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"},
+		},
 		{"unknown length", "1234567", nil},
 		{"empty", "", nil},
 	}
@@ -65,7 +76,12 @@ func TestAccountsHolder(t *testing.T) {
 			b := newPluggyBackend(t)
 			b.server.SetAccountTaxNumber(b.account, tt.taxNumber)
 
-			listed, err := b.port.Accounts(context.Background(), uuid.Nil, b.Credentials(), b.ItemID())
+			listed, err := b.port.Accounts(
+				context.Background(),
+				uuid.Nil,
+				b.Credentials(),
+				b.ItemID(),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}

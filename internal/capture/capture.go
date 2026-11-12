@@ -34,9 +34,24 @@ var SuggestUse = llmapi.Use
 
 // New wires the module. Without a resolvable target, category suggestions serve kept answers
 // only (ADR 014 L6).
-func New(pool *pgxpool.Pool, l *ledger.Module, c *classification.Module, profiles Profiles, router *llm.Router, clk clock.Clock, log *slog.Logger) *Module {
+func New(
+	pool *pgxpool.Pool,
+	l *ledger.Module,
+	c *classification.Module,
+	profiles Profiles,
+	router *llm.Router,
+	clk clock.Clock,
+	log *slog.Logger,
+) *Module {
 	suggester := llmapi.New(router)
-	svc := app.NewService(ledgerPort{l}, classifierPort{c}, postgres.NewRepository(pool), profiles, suggester, clk)
+	svc := app.NewService(
+		ledgerPort{l},
+		classifierPort{c},
+		postgres.NewRepository(pool),
+		profiles,
+		suggester,
+		clk,
+	)
 
 	return &Module{http: httpapi.NewServer(svc, log)}
 }

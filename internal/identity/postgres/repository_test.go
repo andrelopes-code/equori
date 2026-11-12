@@ -16,7 +16,12 @@ func TestRepositoryUsers(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
-	in := domain.Member{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleAdmin, Language: "pt"}
+	in := domain.Member{
+		Email:        "ann@example.com",
+		PasswordHash: "h",
+		Role:         domain.RoleAdmin,
+		Language:     "pt",
+	}
 
 	created, _, err := repo.CreateMember(ctx, in, "BR", "BRL")
 	if err != nil {
@@ -46,7 +51,17 @@ func TestRepositorySessions(t *testing.T) {
 	ctx := t.Context()
 	repo := NewRepository(pgtest.New(t))
 
-	user, booksID, err := repo.CreateMember(ctx, domain.Member{Email: "ann@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "pt"}, "BR", "BRL")
+	user, booksID, err := repo.CreateMember(
+		ctx,
+		domain.Member{
+			Email:        "ann@example.com",
+			PasswordHash: "h",
+			Role:         domain.RoleMember,
+			Language:     "pt",
+		},
+		"BR",
+		"BRL",
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,11 +73,23 @@ func TestRepositorySessions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got, err := repo.MemberBySession(ctx, s.TokenHash, now); err != nil || got.Member.ID != user.ID || got.BooksID != booksID {
+	if got, err := repo.MemberBySession(
+		ctx,
+		s.TokenHash,
+		now,
+	); err != nil || got.Member.ID != user.ID ||
+		got.BooksID != booksID {
 		t.Fatalf("MemberBySession = %+v, %v; want member %d, books %d", got, err, user.ID, booksID)
 	}
 
-	if _, err := repo.MemberBySession(ctx, s.TokenHash, s.ExpiresAt); !errors.Is(err, app.ErrNotFound) {
+	if _, err := repo.MemberBySession(
+		ctx,
+		s.TokenHash,
+		s.ExpiresAt,
+	); !errors.Is(
+		err,
+		app.ErrNotFound,
+	) {
 		t.Fatalf("expired session err = %v, want ErrNotFound", err)
 	}
 
@@ -98,13 +125,20 @@ func TestChangeRoleConcurrent(t *testing.T) {
 
 	var m2 int64
 
-	err := pool.QueryRow(ctx,
-		`INSERT INTO identity_member (email, password_hash, role, language) VALUES ('second@example.com', 'x', 'member', 'en') RETURNING id`).Scan(&m2)
+	err := pool.QueryRow(
+		ctx,
+		`INSERT INTO identity_member (email, password_hash, role, language) VALUES ('second@example.com', 'x', 'member', 'en') RETURNING id`,
+	).Scan(&m2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(ctx, `INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`, m2, b); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`,
+		m2,
+		b,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -136,7 +170,9 @@ func TestChangeRoleConcurrent(t *testing.T) {
 	}
 
 	var owners int
-	if err := pool.QueryRow(ctx, `SELECT count(*) FROM identity_membership WHERE books_id = $1 AND role = 'owner'`, b).Scan(&owners); err != nil || owners != 1 {
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM identity_membership WHERE books_id = $1 AND role = 'owner'`, b).
+		Scan(&owners); err != nil ||
+		owners != 1 {
 		t.Fatalf("owners = %d, %v; want 1", owners, err)
 	}
 }

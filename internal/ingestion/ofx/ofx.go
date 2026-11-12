@@ -17,14 +17,27 @@ import (
 // tag matches an element: SGML leaves have no end tag, so a value runs to the next "<".
 var tag = regexp.MustCompile(`<(/?)([A-Za-z0-9.]+)>([^<]*)`)
 
-var entities = strings.NewReplacer("&amp;", "&", "&lt;", "<", "&gt;", ">", "&quot;", `"`, "&apos;", "'")
+var entities = strings.NewReplacer(
+	"&amp;",
+	"&",
+	"&lt;",
+	"<",
+	"&gt;",
+	">",
+	"&quot;",
+	`"`,
+	"&apos;",
+	"'",
+)
 
 // Leaves of a transaction that identify the account; they are never stored (N16).
 var accountLeaves = map[string]bool{"ACCTID": true, "BANKID": true, "BRANCHID": true}
 
 var (
 	sgmlCharset     = regexp.MustCompile(`(?im)^CHARSET:\s*([A-Za-z0-9_-]+)`)
-	xmlEncodingDecl = regexp.MustCompile(`(?i)^\s*<\?xml[^>]*\sencoding\s*=\s*["']([A-Za-z0-9_-]+)["']`)
+	xmlEncodingDecl = regexp.MustCompile(
+		`(?i)^\s*<\?xml[^>]*\sencoding\s*=\s*["']([A-Za-z0-9_-]+)["']`,
+	)
 )
 
 // declaredEncoding reads the encoding from the SGML header or the XML declaration, or "auto".
@@ -73,7 +86,9 @@ func Parse(data []byte, scale int) (domain.Statement, error) {
 	}
 
 	if !p.statements {
-		return domain.Statement{}, errors.New("no statement: the file has no STMTRS or CCSTMTRS element")
+		return domain.Statement{}, errors.New(
+			"no statement: the file has no STMTRS or CCSTMTRS element",
+		)
 	}
 
 	return p.out, nil
@@ -115,7 +130,10 @@ func (p *parser) run(start int) error {
 	}
 
 	if p.txn != nil {
-		return fmt.Errorf("unexpected end of file inside STMTTRN opened on line %d", p.line(p.txnOffset))
+		return fmt.Errorf(
+			"unexpected end of file inside STMTTRN opened on line %d",
+			p.line(p.txnOffset),
+		)
 	}
 
 	return nil
@@ -214,7 +232,13 @@ func (p *parser) record(leaves map[string]string) (domain.NormalizedRecord, erro
 		description = strings.TrimSpace(description + " " + memo)
 	}
 
-	return domain.NormalizedRecord{ExternalID: leaves["FITID"], Date: d, Amount: amount, Description: description, Raw: leaves}, nil
+	return domain.NormalizedRecord{
+		ExternalID:  leaves["FITID"],
+		Date:        d,
+		Amount:      amount,
+		Description: description,
+		Raw:         leaves,
+	}, nil
 }
 
 func (p *parser) ledgerBalance(leaves map[string]string) (*domain.Balance, error) {

@@ -18,9 +18,21 @@ func TestRateOf(t *testing.T) {
 		in   pgtype.Numeric
 		want string
 	}{
-		{name: "trailing zeros of numeric(30,12)", in: pgtype.Numeric{Int: big.NewInt(5500000000000), Exp: -12, Valid: true}, want: "5.5"},
-		{name: "positive exponent", in: pgtype.Numeric{Int: big.NewInt(12), Exp: 2, Valid: true}, want: "1200"},
-		{name: "twelve decimals", in: pgtype.Numeric{Int: big.NewInt(1), Exp: -12, Valid: true}, want: "0.000000000001"},
+		{
+			name: "trailing zeros of numeric(30,12)",
+			in:   pgtype.Numeric{Int: big.NewInt(5500000000000), Exp: -12, Valid: true},
+			want: "5.5",
+		},
+		{
+			name: "positive exponent",
+			in:   pgtype.Numeric{Int: big.NewInt(12), Exp: 2, Valid: true},
+			want: "1200",
+		},
+		{
+			name: "twelve decimals",
+			in:   pgtype.Numeric{Int: big.NewInt(1), Exp: -12, Valid: true},
+			want: "0.000000000001",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

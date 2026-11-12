@@ -12,8 +12,11 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 	pool := pgtest.New(t)
 
 	ctx := t.Context()
-	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
-		VALUES ('MXRF11', 'reit', 0, 'Maxi Renda', 'BRL', 'BVMF')`); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange)
+		VALUES ('MXRF11', 'reit', 0, 'Maxi Renda', 'BRL', 'BVMF')`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -21,21 +24,66 @@ func TestSchemaRejectsInvalidPrices(t *testing.T) {
 		name string
 		sql  string
 	}{
-		{name: "zero value", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 0, 'manual', 1)`},
-		{name: "priority of another source", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'csv', 1)`},
-		{name: "source outside the identifier pattern", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'BCB', 3)`},
-		{name: "manual with priority 3", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'manual', 3)`},
-		{name: "official source with priority 2", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'bcb_ptax', 2)`},
-		{name: "priority 6", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'bcb_ptax', 6)`},
-		{name: "accrual with priority 1", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'accrual', 1)`},
-		{name: "same instrument", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'USD', '2026-10-30', 1, 'manual', 1)`},
-		{name: "unknown instrument", sql: `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('PETR4', 'BRL', '2026-10-30', 30, 'manual', 1)`},
-		{name: "security without quote currency", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name) VALUES ('PETR4', 'stock', 0, 'Petrobras')`},
-		{name: "currency with quote currency", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('SEK', 'currency', 2, 'Krona', 'BRL')`},
-		{name: "unknown exchange", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'NASDAQ')`},
-		{name: "legacy exchange", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'B3')`},
-		{name: "subtype outside the identifier pattern", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, subtype) VALUES ('CRIXPTO', 'fixed_income', 2, 'CRI', 'BRL', 'Bad-Value')`},
-		{name: "legacy type", sql: `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('HGLG11', 'fii', 0, 'CSHG', 'BRL')`},
+		{
+			name: "zero value",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 0, 'manual', 1)`,
+		},
+		{
+			name: "priority of another source",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'csv', 1)`,
+		},
+		{
+			name: "source outside the identifier pattern",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'BCB', 3)`,
+		},
+		{
+			name: "manual with priority 3",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'manual', 3)`,
+		},
+		{
+			name: "official source with priority 2",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'bcb_ptax', 2)`,
+		},
+		{
+			name: "priority 6",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'bcb_ptax', 6)`,
+		},
+		{
+			name: "accrual with priority 1",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'BRL', '2026-10-30', 5.5, 'accrual', 1)`,
+		},
+		{
+			name: "same instrument",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('USD', 'USD', '2026-10-30', 1, 'manual', 1)`,
+		},
+		{
+			name: "unknown instrument",
+			sql:  `INSERT INTO marketdata_price (instrument, quote_instrument, date, value, source, priority) VALUES ('PETR4', 'BRL', '2026-10-30', 30, 'manual', 1)`,
+		},
+		{
+			name: "security without quote currency",
+			sql:  `INSERT INTO marketdata_instrument (code, instrument_type, scale, name) VALUES ('PETR4', 'stock', 0, 'Petrobras')`,
+		},
+		{
+			name: "currency with quote currency",
+			sql:  `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('SEK', 'currency', 2, 'Krona', 'BRL')`,
+		},
+		{
+			name: "unknown exchange",
+			sql:  `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'NASDAQ')`,
+		},
+		{
+			name: "legacy exchange",
+			sql:  `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange) VALUES ('AAPL', 'stock', 0, 'Apple', 'USD', 'B3')`,
+		},
+		{
+			name: "subtype outside the identifier pattern",
+			sql:  `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, subtype) VALUES ('CRIXPTO', 'fixed_income', 2, 'CRI', 'BRL', 'Bad-Value')`,
+		},
+		{
+			name: "legacy type",
+			sql:  `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency) VALUES ('HGLG11', 'fii', 0, 'CSHG', 'BRL')`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -53,7 +101,10 @@ func TestSchemaRejectsInvalidHistory(t *testing.T) {
 	pool := pgtest.New(t)
 	ctx := t.Context()
 
-	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_history VALUES ('bcb_ptax', 'USD', '2006-01-01', now())`); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO marketdata_history VALUES ('bcb_ptax', 'USD', '2006-01-01', now())`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -112,7 +163,10 @@ func TestSchemaRejectsInvalidSymbols(t *testing.T) {
 	pool := pgtest.New(t)
 	ctx := t.Context()
 
-	if _, err := pool.Exec(ctx, `INSERT INTO marketdata_instrument_symbol VALUES ('USD', 'yahoo_chart', 'USDBRL=X')`); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO marketdata_instrument_symbol VALUES ('USD', 'yahoo_chart', 'USDBRL=X')`,
+	); err != nil {
 		t.Fatal(err)
 	}
 

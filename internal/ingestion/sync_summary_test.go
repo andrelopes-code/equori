@@ -41,7 +41,12 @@ func TestA148LinkIsADecision(t *testing.T) {
 
 	decision, batch, kept := m.decisionOf("uber-1")
 	if decision != "linked" || batch != m.batches(m.checking)[0].ID || kept {
-		t.Fatalf("decision = %q, %q, %v; want linked in the batch of the run", decision, batch, kept)
+		t.Fatalf(
+			"decision = %q, %q, %v; want linked in the batch of the run",
+			decision,
+			batch,
+			kept,
+		)
 	}
 }
 
@@ -56,15 +61,31 @@ func TestA148WithdrawalIsADecision(t *testing.T) {
 
 	_, tx := f.recordOf("tx-1")
 
-	if decision, batch, kept := f.decisionOf("tx-1"); decision != "" || batch != f.batches(f.checking)[0].ID || kept {
-		t.Fatalf("decision after the first sync = %q, %q, %v; want none in the batch of the run", decision, batch, kept)
+	if decision, batch, kept := f.decisionOf(
+		"tx-1",
+	); decision != "" || batch != f.batches(f.checking)[0].ID ||
+		kept {
+		t.Fatalf(
+			"decision after the first sync = %q, %q, %v; want none in the batch of the run",
+			decision,
+			batch,
+			kept,
+		)
 	}
 
 	f.p.RemoveTransaction(nubankItem+"-checking", "tx-1")
 	f.sync()
 
-	if decision, batch, kept := f.decisionOf("tx-1"); decision != "withdrawn" || batch != f.batches(f.checking)[0].ID || kept {
-		t.Fatalf("decision after the withdrawal = %q, %q, %v; want withdrawn in the batch of the run", decision, batch, kept)
+	if decision, batch, kept := f.decisionOf(
+		"tx-1",
+	); decision != "withdrawn" || batch != f.batches(f.checking)[0].ID ||
+		kept {
+		t.Fatalf(
+			"decision after the withdrawal = %q, %q, %v; want withdrawn in the batch of the run",
+			decision,
+			batch,
+			kept,
+		)
 	}
 
 	const stored = `SELECT decision_undo->>'state' || ' ' || (decision_undo->>'transaction_id')
@@ -76,8 +97,16 @@ func TestA148WithdrawalIsADecision(t *testing.T) {
 	f.line(pluggy.SubtypeChecking, bankLine("tx-1", "2026-11-05", "-10.00"))
 	f.sync()
 
-	if decision, batch, kept := f.decisionOf("tx-1"); decision != "linked" || batch != f.batches(f.checking)[0].ID || kept {
-		t.Fatalf("decision after the return = %q, %q, %v; want linked in the batch of the run", decision, batch, kept)
+	if decision, batch, kept := f.decisionOf(
+		"tx-1",
+	); decision != "linked" || batch != f.batches(f.checking)[0].ID ||
+		kept {
+		t.Fatalf(
+			"decision after the return = %q, %q, %v; want linked in the batch of the run",
+			decision,
+			batch,
+			kept,
+		)
 	}
 
 	if state, got := f.recordOf("tx-1"); state != "matched" || got != tx {
@@ -101,8 +130,16 @@ func TestA148ReidentificationIsADecision(t *testing.T) {
 	f.line(pluggy.SubtypeCard, again)
 	f.sync()
 
-	if decision, batch, kept := f.decisionOf("pay-2"); decision != "re_identified" || batch != f.batches(card)[0].ID || kept {
-		t.Fatalf("decision = %q, %q, %v; want re_identified in the batch of the run", decision, batch, kept)
+	if decision, batch, kept := f.decisionOf(
+		"pay-2",
+	); decision != "re_identified" || batch != f.batches(card)[0].ID ||
+		kept {
+		t.Fatalf(
+			"decision = %q, %q, %v; want re_identified in the batch of the run",
+			decision,
+			batch,
+			kept,
+		)
 	}
 
 	const stored = `SELECT decision_undo->>'external_id' FROM ingestion_external_record WHERE external_id = 'pay-2'`
@@ -117,7 +154,12 @@ func TestA148FollowedChangeIsADecision(t *testing.T) {
 	clk := newMovingClock(t, "2026-11-12T12:00:00Z")
 	f := newSyncFixture(t, apitest.Clock(clk.now))
 
-	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"})
+	r := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeChecking).ID,
+		map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
@@ -129,8 +171,16 @@ func TestA148FollowedChangeIsADecision(t *testing.T) {
 	clk.set(t, "2026-11-19T12:00:00Z")
 	f.sync()
 
-	if decision, batch, kept := f.decisionOf("old-1"); decision != "followed" || batch != f.batches(f.checking)[0].ID || kept {
-		t.Fatalf("decision = %q, %q, %v; want followed in the batch of the run", decision, batch, kept)
+	if decision, batch, kept := f.decisionOf(
+		"old-1",
+	); decision != "followed" || batch != f.batches(f.checking)[0].ID ||
+		kept {
+		t.Fatalf(
+			"decision = %q, %q, %v; want followed in the batch of the run",
+			decision,
+			batch,
+			kept,
+		)
 	}
 
 	const stored = `SELECT (decision_undo->>'amount') || ' ' || (decision_undo->>'on')
@@ -152,14 +202,21 @@ func TestA149ReviewChangeIsListedWithoutDecision(t *testing.T) {
 	f.line(pluggy.SubtypeCard, cardLine("card-5", "2026-11-03", "55.00", "POSTED", new("bill-nov")))
 	f.sync()
 
-	if decision, batch, kept := f.decisionOf("card-5"); decision != "" || batch != f.batches(card)[0].ID || kept {
+	if decision, batch, kept := f.decisionOf(
+		"card-5",
+	); decision != "" || batch != f.batches(card)[0].ID ||
+		kept {
 		t.Fatalf("decision = %q, %q, %v; want none in the batch of the run", decision, batch, kept)
 	}
 
 	f.sync()
 
 	if _, batch, _ := f.decisionOf("card-5"); batch != f.batches(card)[1].ID {
-		t.Fatalf("summary batch = %q, want the batch of the run that changed it, %q", batch, f.batches(card)[1].ID)
+		t.Fatalf(
+			"summary batch = %q, want the batch of the run that changed it, %q",
+			batch,
+			f.batches(card)[1].ID,
+		)
 	}
 }
 
@@ -185,9 +242,15 @@ func TestS212UndoLinkedLine(t *testing.T) {
 	}
 	r.Decode(t, &got)
 
-	if got.State != "needs_review" || got.ReviewReason != "probable" || !slices.Equal(got.Candidates, []string{entry}) ||
-		got.TransactionID != "" || got.Decision != "" {
-		t.Fatalf("undone record = %+v, want needs_review, probable, candidate %s, no transaction, no decision", got, entry)
+	if got.State != "needs_review" || got.ReviewReason != "probable" ||
+		!slices.Equal(got.Candidates, []string{entry}) ||
+		got.TransactionID != "" ||
+		got.Decision != "" {
+		t.Fatalf(
+			"undone record = %+v, want needs_review, probable, candidate %s, no transaction, no decision",
+			got,
+			entry,
+		)
 	}
 
 	if c := m.batches(m.checking)[0].Counts; c.Matched != 0 || c.NeedsReview != 1 {
@@ -199,10 +262,17 @@ func TestS212UndoLinkedLine(t *testing.T) {
 	m.sync()
 
 	if state, tx := m.recordOf("uber-1"); state != "needs_review" || tx != "" {
-		t.Fatalf("record after the next sync = %s on %q, want needs_review without a transaction", state, tx)
+		t.Fatalf(
+			"record after the next sync = %s on %q, want needs_review without a transaction",
+			state,
+			tx,
+		)
 	}
 
-	linked := m.count("SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND external_record_id IS NOT NULL", entry)
+	linked := m.count(
+		"SELECT count(*) FROM ledger_posting WHERE transaction_id = $1 AND external_record_id IS NOT NULL",
+		entry,
+	)
 	if linked != 0 {
 		t.Fatalf("postings of the entry linked to a record = %d, want 0", linked)
 	}
@@ -318,7 +388,11 @@ func TestS206UndoFollowedDate(t *testing.T) {
 		t.Fatalf("transaction = %s v%d, want 2026-11-03 v3", tr.Date, tr.Version)
 	}
 
-	if p := f.cardPosting(tx, card); p.Status != "reconciled" || p.Statement != "2026-11" || p.Amount.Amount != -712 {
+	if p := f.cardPosting(
+		tx,
+		card,
+	); p.Status != "reconciled" || p.Statement != "2026-11" ||
+		p.Amount.Amount != -712 {
 		t.Fatalf("posting = %+v, want reconciled on 2026-11 at -712", p)
 	}
 
@@ -345,7 +419,12 @@ func TestS213UndoFollowedAmount(t *testing.T) {
 	clk := newMovingClock(t, "2026-11-12T12:00:00Z")
 	f := newSyncFixture(t, apitest.Clock(clk.now))
 
-	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeChecking).ID, map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"})
+	r := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeChecking).ID,
+		map[string]any{"account_id": f.checking, "sync_from": "2026-08-01"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
@@ -425,7 +504,12 @@ func TestA148UndoReidentification(t *testing.T) {
 
 	b := f.batches(card)[0]
 	if got := f.text(batchOf); got != b.ID || b.Counts.NeedsReview != 1 {
-		t.Fatalf("pay-2 batch = %s, needs_review = %d; want %s and 1", got, b.Counts.NeedsReview, b.ID)
+		t.Fatalf(
+			"pay-2 batch = %s, needs_review = %d; want %s and 1",
+			got,
+			b.Counts.NeedsReview,
+			b.ID,
+		)
 	}
 
 	f.h.ExpectProblem(f.undo("pay-1"), http.StatusConflict, "no_decision", "")
@@ -448,11 +532,14 @@ func TestA149SyncSummary(t *testing.T) {
 		t.Fatalf("runs = %d, want 2", len(runs))
 	}
 
-	if runs[0].SyncID != f.batches(card)[0].SyncID || len(runs[0].Batches) != 1 || runs[0].Batches[0].Counts.Withdrawn != 1 {
+	if runs[0].SyncID != f.batches(card)[0].SyncID || len(runs[0].Batches) != 1 ||
+		runs[0].Batches[0].Counts.Withdrawn != 1 {
 		t.Fatalf("run 0 = %+v, want the last sync with one batch that withdrew one line", runs[0])
 	}
 
-	if len(runs[0].Records) != 1 || runs[0].Records[0].ExternalID != "c-2" || runs[0].Records[0].State != "withdrawn" || runs[0].Records[0].Decision != "withdrawn" {
+	if len(runs[0].Records) != 1 || runs[0].Records[0].ExternalID != "c-2" ||
+		runs[0].Records[0].State != "withdrawn" ||
+		runs[0].Records[0].Decision != "withdrawn" {
 		t.Fatalf("run 0 records = %+v, want c-2 withdrawn by decision", runs[0].Records)
 	}
 
@@ -460,7 +547,9 @@ func TestA149SyncSummary(t *testing.T) {
 		t.Fatalf("run 1 = %s, want the first sync %s", runs[1].SyncID, f.batches(card)[2].SyncID)
 	}
 
-	if len(runs[1].Records) != 1 || runs[1].Records[0].ExternalID != "c-1" || runs[1].Records[0].State != "created" || runs[1].Records[0].Decision != "" {
+	if len(runs[1].Records) != 1 || runs[1].Records[0].ExternalID != "c-1" ||
+		runs[1].Records[0].State != "created" ||
+		runs[1].Records[0].Decision != "" {
 		t.Fatalf("run 1 records = %+v, want c-1 created without decision", runs[1].Records)
 	}
 }
@@ -481,7 +570,8 @@ func TestA149SyncSummaryListsTenRuns(t *testing.T) {
 		t.Fatalf("runs = %d, want 10", len(runs))
 	}
 
-	if runs[0].SyncID != f.batches(f.checking)[0].SyncID || runs[9].SyncID != f.batches(f.checking)[9].SyncID {
+	if runs[0].SyncID != f.batches(f.checking)[0].SyncID ||
+		runs[9].SyncID != f.batches(f.checking)[9].SyncID {
 		t.Fatalf("runs = %s ... %s, want the ten newest syncs", runs[0].SyncID, runs[9].SyncID)
 	}
 }
@@ -501,7 +591,9 @@ func TestS205SummaryListsTheChange(t *testing.T) {
 		t.Fatalf("sync id = %s, want %s", run.SyncID, f.batches(card)[0].SyncID)
 	}
 
-	if len(run.Records) != 1 || run.Records[0].ExternalID != "card-5" || run.Records[0].ReviewReason != "changed" || run.Records[0].Decision != "" {
+	if len(run.Records) != 1 || run.Records[0].ExternalID != "card-5" ||
+		run.Records[0].ReviewReason != "changed" ||
+		run.Records[0].Decision != "" {
 		t.Fatalf("records = %+v, want card-5 changed without decision", run.Records)
 	}
 
@@ -517,14 +609,22 @@ func TestA149SyncsOfAnUnknownConnection(t *testing.T) {
 	t.Parallel()
 	f := newSyncFixture(t)
 
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/connections/"+uuid.NewString()+"/syncs", nil), http.StatusNotFound, "not_found", "")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/connections/"+uuid.NewString()+"/syncs", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 // recordID returns the id of a line's record.
 func (f syncFixture) recordID(externalID string) string {
 	f.h.T().Helper()
 
-	return f.text(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+	return f.text(
+		`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	)
 }
 
 // text returns the one text value sql selects.
@@ -544,7 +644,8 @@ func (f syncFixture) decisionOf(externalID string) (decision, summaryBatch strin
 	f.h.T().Helper()
 
 	var d, s *string
-	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT decision, summary_batch_id::text, kept FROM ingestion_external_record WHERE external_id = $1`, externalID).Scan(&d, &s, &kept); err != nil {
+	if err := f.h.Pool.QueryRow(f.h.T().Context(), `SELECT decision, summary_batch_id::text, kept FROM ingestion_external_record WHERE external_id = $1`, externalID).
+		Scan(&d, &s, &kept); err != nil {
 		f.h.T().Fatal(err)
 	}
 

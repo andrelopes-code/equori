@@ -21,7 +21,10 @@ func TestSchemaInvariants(t *testing.T) {
 		sql  string
 	}{
 		{"the row id is true", `INSERT INTO instance_settings (id) VALUES (false)`},
-		{"a copy state from the list", `INSERT INTO instance_settings (copy_state) VALUES ('other')`},
+		{
+			"a copy state from the list",
+			`INSERT INTO instance_settings (copy_state) VALUES ('other')`,
+		},
 		{"at most one row", `INSERT INTO instance_settings DEFAULT VALUES`},
 	}
 	for _, tt := range tests {

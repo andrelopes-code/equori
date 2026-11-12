@@ -37,12 +37,15 @@ func TestGetHelp(t *testing.T) {
 		return out, ""
 	}
 
-	appendix, err := os.ReadFile("../../../docs/plans/2026-10-23-assistant-chat/appendix-b-guide.md")
+	appendix, err := os.ReadFile(
+		"../../../docs/plans/2026-10-23-assistant-chat/appendix-b-guide.md",
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	m := regexp.MustCompile("(?s)## credit_cards_and_statements\n\n```markdown\n([^\n]*)").FindSubmatch(appendix)
+	m := regexp.MustCompile("(?s)## credit_cards_and_statements\n\n```markdown\n([^\n]*)").
+		FindSubmatch(appendix)
 	if m == nil {
 		t.Fatal("article not found in appendix B")
 	}
@@ -68,5 +71,9 @@ func TestGetHelp(t *testing.T) {
 		t.Fatalf("budgets = %s", r.Content)
 	}
 
-	h.ExpectToolError(h.Tool("get_help", map[string]string{"topic": "nope"}), "invalid_arguments", "")
+	h.ExpectToolError(
+		h.Tool("get_help", map[string]string{"topic": "nope"}),
+		"invalid_arguments",
+		"",
+	)
 }

@@ -45,11 +45,13 @@ func TestFetch(t *testing.T) {
 	}
 
 	// 13.25 − 0.10 = 13.15% a year; 11.75 − 0.10 = 11.65%.
-	if p := got.Points[0]; p.Date.Format("2006-01-02") != "2026-12-31" || p.Rate != "0.131500000000" {
+	if p := got.Points[0]; p.Date.Format("2006-01-02") != "2026-12-31" ||
+		p.Rate != "0.131500000000" {
 		t.Fatalf("2026 = %+v", p)
 	}
 
-	if p := got.Points[1]; p.Date.Format("2006-01-02") != "2027-12-31" || p.Rate != "0.116500000000" {
+	if p := got.Points[1]; p.Date.Format("2006-01-02") != "2027-12-31" ||
+		p.Rate != "0.116500000000" {
 		t.Fatalf("2027 = %+v", p)
 	}
 }

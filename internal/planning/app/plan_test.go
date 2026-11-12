@@ -14,7 +14,11 @@ func TestPlanSavingsFigures(t *testing.T) {
 
 	fixed := func(amount int64, targetBP int, hasTarget bool) Plan {
 		return Plan{Reference: domain.Reference{
-			Source: domain.SourceFixed, Fixed: amount, HasFixed: true, TargetBP: targetBP, HasTarget: hasTarget,
+			Source:    domain.SourceFixed,
+			Fixed:     amount,
+			HasFixed:  true,
+			TargetBP:  targetBP,
+			HasTarget: hasTarget,
 		}}
 	}
 
@@ -29,10 +33,46 @@ func TestPlanSavingsFigures(t *testing.T) {
 	}{
 		{"rate truncates", fixed(800000, 0, false), 120000, 1500, true, 0, 0, false},
 		{"rate truncates toward zero", fixed(300000, 0, false), 100000, 3333, true, 0, 0, false},
-		{"target rounds down below the half", fixed(800001, 3333, true), 0, 0, true, 266640, 266640, true},
-		{"target rounds up above the half", fixed(800005, 3333, true), 0, 0, true, 266642, 266642, true},
-		{"target rounds half up at the half", fixed(10001, 5000, true), 0, 0, true, 5001, 5001, true},
-		{"savings above the target leave no gap", fixed(800000, 2500, true), 250000, 3125, true, 200000, 0, true},
+		{
+			"target rounds down below the half",
+			fixed(800001, 3333, true),
+			0,
+			0,
+			true,
+			266640,
+			266640,
+			true,
+		},
+		{
+			"target rounds up above the half",
+			fixed(800005, 3333, true),
+			0,
+			0,
+			true,
+			266642,
+			266642,
+			true,
+		},
+		{
+			"target rounds half up at the half",
+			fixed(10001, 5000, true),
+			0,
+			0,
+			true,
+			5001,
+			5001,
+			true,
+		},
+		{
+			"savings above the target leave no gap",
+			fixed(800000, 2500, true),
+			250000,
+			3125,
+			true,
+			200000,
+			0,
+			true,
+		},
 		{"zero reference has no figures", fixed(0, 2500, true), 100, 0, false, 0, 0, false},
 		{"absent reference has no figures", Plan{Reference: domain.Reference{
 			Source: domain.SourceExpectedIncome, TargetBP: 2500, HasTarget: true,
@@ -68,19 +108,49 @@ func TestReceivedIncomeSkipsWhatTheFactsOmit(t *testing.T) {
 	t.Parallel()
 
 	account, other := uuid.New(), uuid.New()
-	income := domain.Schedule{ID: uuid.New(), Kind: domain.Income, AccountID: account, CounterpartID: other}
-	savings := domain.Schedule{ID: uuid.New(), Kind: domain.Savings, AccountID: account, CounterpartID: other}
+	income := domain.Schedule{
+		ID:            uuid.New(),
+		Kind:          domain.Income,
+		AccountID:     account,
+		CounterpartID: other,
+	}
+	savings := domain.Schedule{
+		ID:            uuid.New(),
+		Kind:          domain.Savings,
+		AccountID:     account,
+		CounterpartID: other,
+	}
 	known, missing := uuid.New(), uuid.New()
 
-	realized := domain.Occurrence{ID: uuid.New(), ScheduleID: income.ID, State: domain.Realized, TransactionID: known}
-	omitted := domain.Occurrence{ID: uuid.New(), ScheduleID: income.ID, State: domain.Realized, TransactionID: missing}
+	realized := domain.Occurrence{
+		ID:            uuid.New(),
+		ScheduleID:    income.ID,
+		State:         domain.Realized,
+		TransactionID: known,
+	}
+	omitted := domain.Occurrence{
+		ID:            uuid.New(),
+		ScheduleID:    income.ID,
+		State:         domain.Realized,
+		TransactionID: missing,
+	}
 	expected := domain.Occurrence{ID: uuid.New(), ScheduleID: income.ID, State: domain.Expected}
-	saved := domain.Occurrence{ID: uuid.New(), ScheduleID: savings.ID, State: domain.Realized, TransactionID: known}
+	saved := domain.Occurrence{
+		ID:            uuid.New(),
+		ScheduleID:    savings.ID,
+		State:         domain.Realized,
+		TransactionID: known,
+	}
 
-	svc := &Service{ledger: factsLedger{facts: []domain.Transaction{{
-		ID:       known,
-		Postings: []domain.Posting{{AccountID: account, Amount: 275142}, {AccountID: other, Amount: -275142}},
-	}}}}
+	svc := &Service{ledger: factsLedger{facts: []domain.Transaction{
+		{
+			ID: known,
+			Postings: []domain.Posting{
+				{AccountID: account, Amount: 275142},
+				{AccountID: other, Amount: -275142},
+			},
+		},
+	}}}
 
 	got, err := svc.receivedIncome(
 		context.Background(),
@@ -102,6 +172,10 @@ type factsLedger struct {
 	facts []domain.Transaction
 }
 
-func (l factsLedger) TransactionFacts(context.Context, int64, []uuid.UUID) ([]domain.Transaction, error) {
+func (l factsLedger) TransactionFacts(
+	context.Context,
+	int64,
+	[]uuid.UUID,
+) ([]domain.Transaction, error) {
 	return l.facts, nil
 }

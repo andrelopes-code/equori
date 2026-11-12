@@ -36,23 +36,43 @@ func TestS346RepeatedFileLine(t *testing.T) {
 			wantTxs: 1,
 		},
 		{
-			name:    "same FITID, another description",
-			first:   apitest.OFXLine{Date: date, Amount: amount, FITID: "a", Name: "PADARIA CENTRAL"},
+			name: "same FITID, another description",
+			first: apitest.OFXLine{
+				Date:   date,
+				Amount: amount,
+				FITID:  "a",
+				Name:   "PADARIA CENTRAL",
+			},
 			again:   apitest.OFXLine{Date: date, Amount: amount, FITID: "a", Name: "OUTRO NOME"},
 			want:    "received 1 ignored 1 matched 0 created 0 review 0",
 			wantTxs: 1,
 		},
 		{
-			name:    "another FITID, same description",
-			first:   apitest.OFXLine{Date: date, Amount: amount, FITID: "a", Name: "PADARIA CENTRAL"},
-			again:   apitest.OFXLine{Date: date, Amount: amount, FITID: "b", Name: "PADARIA CENTRAL"},
+			name: "another FITID, same description",
+			first: apitest.OFXLine{
+				Date:   date,
+				Amount: amount,
+				FITID:  "a",
+				Name:   "PADARIA CENTRAL",
+			},
+			again: apitest.OFXLine{
+				Date:   date,
+				Amount: amount,
+				FITID:  "b",
+				Name:   "PADARIA CENTRAL",
+			},
 			want:    "received 1 ignored 0 matched 0 created 0 review 1",
 			wantTxs: 1,
 		},
 		{
-			name:    "a FITID it lacked",
-			first:   apitest.OFXLine{Date: date, Amount: amount, Name: "PADARIA CENTRAL"},
-			again:   apitest.OFXLine{Date: date, Amount: amount, FITID: "b", Name: "PADARIA CENTRAL"},
+			name:  "a FITID it lacked",
+			first: apitest.OFXLine{Date: date, Amount: amount, Name: "PADARIA CENTRAL"},
+			again: apitest.OFXLine{
+				Date:   date,
+				Amount: amount,
+				FITID:  "b",
+				Name:   "PADARIA CENTRAL",
+			},
 			want:    "received 1 ignored 0 matched 0 created 0 review 1",
 			wantTxs: 1,
 		},
@@ -101,23 +121,57 @@ func TestS346DistinctLinesOfOneFile(t *testing.T) {
 			market := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "MERCADO"}
 			third := apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "FARMACIA"}
 
-			b := mustImport(t, h, account, "ofx", "a.ofx", apitest.OFXIn(pr.Base, "", bakery, market))
-			if got, want := counts(b), "received 2 ignored 0 matched 0 created 2 review 0"; got != want {
+			b := mustImport(
+				t,
+				h,
+				account,
+				"ofx",
+				"a.ofx",
+				apitest.OFXIn(pr.Base, "", bakery, market),
+			)
+			if got, want := counts(
+				b,
+			), "received 2 ignored 0 matched 0 created 2 review 0"; got != want {
 				t.Fatalf("first file = %s, want %s", got, want)
 			}
 
-			b = mustImport(t, h, account, "ofx", "b.ofx", apitest.OFXIn(pr.Base, "", bakery, market, third))
-			if got, want := counts(b), "received 3 ignored 2 matched 0 created 1 review 0"; got != want {
+			b = mustImport(
+				t,
+				h,
+				account,
+				"ofx",
+				"b.ofx",
+				apitest.OFXIn(pr.Base, "", bakery, market, third),
+			)
+			if got, want := counts(
+				b,
+			), "received 3 ignored 2 matched 0 created 1 review 0"; got != want {
 				t.Fatalf("second file = %s, want %s", got, want)
 			}
 
-			b = mustImport(t, h, account, "ofx", "c.ofx", apitest.OFXIn(pr.Base, "", apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "PADARIA LTDA"}))
-			if got, want := counts(b), "received 1 ignored 0 matched 0 created 0 review 1"; got != want {
+			b = mustImport(
+				t,
+				h,
+				account,
+				"ofx",
+				"c.ofx",
+				apitest.OFXIn(
+					pr.Base,
+					"",
+					apitest.OFXLine{Date: "20261005", Amount: "-50.00", Name: "PADARIA LTDA"},
+				),
+			)
+			if got, want := counts(
+				b,
+			), "received 1 ignored 0 matched 0 created 0 review 1"; got != want {
 				t.Fatalf("third file = %s, want %s", got, want)
 			}
 
 			var record, reason string
-			row := h.Pool.QueryRow(t.Context(), `SELECT id::text, review_reason FROM ingestion_external_record WHERE state = 'needs_review'`)
+			row := h.Pool.QueryRow(
+				t.Context(),
+				`SELECT id::text, review_reason FROM ingestion_external_record WHERE state = 'needs_review'`,
+			)
 
 			if err := row.Scan(&record, &reason); err != nil {
 				t.Fatal(err)
@@ -127,7 +181,13 @@ func TestS346DistinctLinesOfOneFile(t *testing.T) {
 				t.Fatalf("reason = %s, want duplicate", reason)
 			}
 
-			h.MustDo(http.MethodPost, "/api/v1/external-records/"+record+"/resolve", map[string]any{"action": "discard"}, http.StatusOK, nil)
+			h.MustDo(
+				http.MethodPost,
+				"/api/v1/external-records/"+record+"/resolve",
+				map[string]any{"action": "discard"},
+				http.StatusOK,
+				nil,
+			)
 
 			if got := transactionCount(t, h); got != 3 {
 				t.Fatalf("transactions = %d, want 3", got)
@@ -143,7 +203,14 @@ func TestS347SyncLineRepeatsFileLine(t *testing.T) {
 
 	f := newSyncFixture(t)
 	f.mapTo(pluggy.SubtypeChecking, f.checking)
-	mustImport(t, f.h, f.checking, "ofx", "a.ofx", apitest.OFX("", apitest.OFXLine{Date: "20261020", Amount: "-50.00", Name: "PADARIA"}))
+	mustImport(
+		t,
+		f.h,
+		f.checking,
+		"ofx",
+		"a.ofx",
+		apitest.OFX("", apitest.OFXLine{Date: "20261020", Amount: "-50.00", Name: "PADARIA"}),
+	)
 
 	f.line(pluggy.SubtypeChecking, bankLine("s347-repeat", "2026-10-20", "-50.00"))
 	f.line(pluggy.SubtypeChecking, bankLine("s347-synced", "2026-10-21", "-60.00"))

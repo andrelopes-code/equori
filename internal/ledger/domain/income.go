@@ -58,22 +58,41 @@ func BuildIncome(o IncomeOrder) ([]Posting, Income, error) {
 	case o.Withheld != nil:
 		withheld = *o.Withheld
 	case o.DefaultWithholdingBP > 0:
-		if withheld, err = money.Fraction(o.Gross, int64(o.DefaultWithholdingBP), 10000); err != nil {
+		if withheld, err = money.Fraction(
+			o.Gross,
+			int64(o.DefaultWithholdingBP),
+			10000,
+		); err != nil {
 			return nil, Income{}, err
 		}
 	}
 
 	net, err := o.Gross.Sub(withheld)
 	if err != nil || withheld.IsNegative() || net.IsZero() || net.IsNegative() {
-		return nil, Income{}, invalid("withheld", "must be at least zero and less than gross, in "+string(o.Gross.Currency()))
+		return nil, Income{}, invalid(
+			"withheld",
+			"must be at least zero and less than gross, in "+string(o.Gross.Currency()),
+		)
 	}
 
 	postings := []Posting{{AccountID: o.CashAccountID, Amount: net, Weight: net}}
 	if !withheld.IsZero() {
-		postings = append(postings, Posting{AccountID: o.WithheldCategoryID, Amount: withheld, Weight: withheld})
+		postings = append(
+			postings,
+			Posting{AccountID: o.WithheldCategoryID, Amount: withheld, Weight: withheld},
+		)
 	}
 
-	postings = append(postings, Posting{AccountID: o.CategoryID, Amount: o.Gross.Neg(), Weight: o.Gross.Neg()})
+	postings = append(
+		postings,
+		Posting{AccountID: o.CategoryID, Amount: o.Gross.Neg(), Weight: o.Gross.Neg()},
+	)
 
-	return postings, Income{AccountID: o.AccountID, CashAccountID: o.CashAccountID, Type: o.Type, Gross: o.Gross, Withheld: withheld}, nil
+	return postings, Income{
+		AccountID:     o.AccountID,
+		CashAccountID: o.CashAccountID,
+		Type:          o.Type,
+		Gross:         o.Gross,
+		Withheld:      withheld,
+	}, nil
 }

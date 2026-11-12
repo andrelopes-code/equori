@@ -147,9 +147,19 @@ type LineError = app.LineError
 // MarketData is the part of marketdata the ledger uses to shift due dates and value
 // instruments. *marketdata.Module satisfies it.
 type MarketData interface {
-	Adjust(ctx context.Context, name string, d time.Time, a marketdata.Adjustment) (time.Time, error)
+	Adjust(
+		ctx context.Context,
+		name string,
+		d time.Time,
+		a marketdata.Adjustment,
+	) (time.Time, error)
 	Instrument(ctx context.Context, code string) (marketdata.Instrument, error)
-	Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (marketdata.Conversion, error)
+	Convert(
+		ctx context.Context,
+		q money.Money,
+		to money.Currency,
+		date time.Time,
+	) (marketdata.Conversion, error)
 	DefaultCalendar(region string) string
 }
 

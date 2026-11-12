@@ -27,7 +27,13 @@ func BenchmarkBalanceAt(b *testing.B) {
 	}
 
 	for b.Loop() {
-		if _, err := f.svc.BalanceAt(b.Context(), f.booksID, f.checking.ID, date("2025-12-31"), app.BasisBooked); err != nil {
+		if _, err := f.svc.BalanceAt(
+			b.Context(),
+			f.booksID,
+			f.checking.ID,
+			date("2025-12-31"),
+			app.BasisBooked,
+		); err != nil {
 			b.Fatal(err)
 		}
 	}

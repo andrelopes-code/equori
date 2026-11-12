@@ -80,13 +80,26 @@ type Service struct {
 	clock     Clock
 }
 
-func NewService(l Ledger, c Classifier, h HintRepository, p Profiles, sg Suggester, clk Clock) *Service {
+func NewService(
+	l Ledger,
+	c Classifier,
+	h HintRepository,
+	p Profiles,
+	sg Suggester,
+	clk Clock,
+) *Service {
 	return &Service{ledger: l, classifier: c, hints: h, profiles: p, suggester: sg, clock: clk}
 }
 
 // Preview reads text into drafts (A106–A113). It records nothing.
 // Preview reads text into lines; a zero reference reads it against today (A128).
-func (s *Service) Preview(ctx context.Context, booksID int64, text string, defaultAccount uuid.UUID, reference time.Time) ([]Line, error) {
+func (s *Service) Preview(
+	ctx context.Context,
+	booksID int64,
+	text string,
+	defaultAccount uuid.UUID,
+	reference time.Time,
+) ([]Line, error) {
 	if nonBlankLines(domain.SplitLines(text)) > MaxLines {
 		return nil, ErrTooManyLines
 	}
@@ -151,7 +164,11 @@ func (s *Service) previewVocabulary(
 	}
 
 	v := vocabulary(accounts, base, profile)
-	if defaultAccount != uuid.Nil && !slices.ContainsFunc(v.Accounts, func(a domain.Account) bool { return a.ID == defaultAccount }) {
+	if defaultAccount != uuid.Nil &&
+		!slices.ContainsFunc(
+			v.Accounts,
+			func(a domain.Account) bool { return a.ID == defaultAccount },
+		) {
 		return domain.Vocabulary{}, nil, ErrDefaultAccount
 	}
 
@@ -224,12 +241,17 @@ func vocabulary(accounts []Account, base money.Currency, profile locale.Locale) 
 	c := locale.ConventionsOf(profile)
 
 	v := domain.Vocabulary{
-		Base:        base,
-		Lexicon:     domain.Merge(lexiconOf(profile.Language), domain.English()),
-		Conventions: domain.Conventions{Decimal: c.Decimal, Group: c.Group, Order: domain.DateOrder(c.Order)},
+		Base:    base,
+		Lexicon: domain.Merge(lexiconOf(profile.Language), domain.English()),
+		Conventions: domain.Conventions{
+			Decimal: c.Decimal,
+			Group:   c.Group,
+			Order:   domain.DateOrder(c.Order),
+		},
 	}
 	for _, a := range accounts {
-		if a.Closed || a.SystemRole != "" || parents[a.ID] || (a.Class != "asset" && a.Class != "liability") {
+		if a.Closed || a.SystemRole != "" || parents[a.ID] ||
+			(a.Class != "asset" && a.Class != "liability") {
 			continue
 		}
 
@@ -246,7 +268,16 @@ func vocabulary(accounts []Account, base money.Currency, profile locale.Locale) 
 			handles = append(handles, "final "+digits, "*"+digits)
 		}
 
-		v.Accounts = append(v.Accounts, domain.Account{ID: a.ID, Class: a.Class, Kind: a.Kind, Currency: a.Instrument, Handles: handles})
+		v.Accounts = append(
+			v.Accounts,
+			domain.Account{
+				ID:       a.ID,
+				Class:    a.Class,
+				Kind:     a.Kind,
+				Currency: a.Instrument,
+				Handles:  handles,
+			},
+		)
 	}
 
 	return v

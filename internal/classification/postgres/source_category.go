@@ -16,10 +16,18 @@ func toSourceCategory(row ClassificationSourceCategory) app.SourceCategory {
 	}
 }
 
-func (r *Repository) CountSourceCategories(ctx context.Context, booksID int64, seen []app.SourceCategory) error {
+func (r *Repository) CountSourceCategories(
+	ctx context.Context,
+	booksID int64,
+	seen []app.SourceCategory,
+) error {
 	for _, c := range seen {
 		if err := r.q.CountSourceCategory(ctx, CountSourceCategoryParams{
-			BooksID: booksID, Aggregator: c.Aggregator, ExternalID: c.ExternalID, Name: c.Name, Seen: int32(c.Count), //nolint:gosec // lines of one sync
+			BooksID:    booksID,
+			Aggregator: c.Aggregator,
+			ExternalID: c.ExternalID,
+			Name:       c.Name,
+			Seen:       int32(c.Count), //nolint:gosec // lines of one sync
 		}); err != nil {
 			return err
 		}
@@ -28,8 +36,20 @@ func (r *Repository) CountSourceCategories(ctx context.Context, booksID int64, s
 	return nil
 }
 
-func (r *Repository) MappedSourceCategories(ctx context.Context, booksID int64, aggregator string, externalIDs []string) (map[string]uuid.UUID, error) {
-	rows, err := r.q.MappedSourceCategories(ctx, MappedSourceCategoriesParams{BooksID: booksID, Aggregator: aggregator, ExternalIds: externalIDs})
+func (r *Repository) MappedSourceCategories(
+	ctx context.Context,
+	booksID int64,
+	aggregator string,
+	externalIDs []string,
+) (map[string]uuid.UUID, error) {
+	rows, err := r.q.MappedSourceCategories(
+		ctx,
+		MappedSourceCategoriesParams{
+			BooksID:     booksID,
+			Aggregator:  aggregator,
+			ExternalIds: externalIDs,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -42,10 +62,20 @@ func (r *Repository) MappedSourceCategories(ctx context.Context, booksID int64, 
 	return out, nil
 }
 
-func (r *Repository) ListSourceCategories(ctx context.Context, booksID int64, p page.Request[app.NameKey]) ([]app.SourceCategory, *app.NameKey, error) {
-	params := ListSourceCategoriesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListSourceCategories(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.NameKey],
+) ([]app.SourceCategory, *app.NameKey, error) {
+	params := ListSourceCategoriesParams{
+		BooksID:  booksID,
+		RowLimit: int32(p.Limit + 1),
+	} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
-		params.AfterName, params.AfterID = &p.After.Name, uuid.NullUUID{UUID: p.After.ID, Valid: true}
+		params.AfterName, params.AfterID = &p.After.Name, uuid.NullUUID{
+			UUID:  p.After.ID,
+			Valid: true,
+		}
 	}
 
 	rows, err := r.q.ListSourceCategories(ctx, params)
@@ -69,8 +99,19 @@ func (r *Repository) ListSourceCategories(ctx context.Context, booksID int64, p 
 	return out, &app.NameKey{Name: last.Name, ID: last.ID}, nil
 }
 
-func (r *Repository) MapSourceCategory(ctx context.Context, booksID int64, id, categoryID uuid.UUID) (app.SourceCategory, error) {
-	row, err := r.q.MapSourceCategory(ctx, MapSourceCategoryParams{BooksID: booksID, ID: id, CategoryID: uuid.NullUUID{UUID: categoryID, Valid: categoryID != uuid.Nil}})
+func (r *Repository) MapSourceCategory(
+	ctx context.Context,
+	booksID int64,
+	id, categoryID uuid.UUID,
+) (app.SourceCategory, error) {
+	row, err := r.q.MapSourceCategory(
+		ctx,
+		MapSourceCategoryParams{
+			BooksID:    booksID,
+			ID:         id,
+			CategoryID: uuid.NullUUID{UUID: categoryID, Valid: categoryID != uuid.Nil},
+		},
+	)
 	if err != nil {
 		return app.SourceCategory{}, notFound(err)
 	}
@@ -79,46 +120,91 @@ func (r *Repository) MapSourceCategory(ctx context.Context, booksID int64, id, c
 }
 
 func (r *Repository) MergeCategory(ctx context.Context, booksID int64, from, into uuid.UUID) error {
-	if err := r.q.DeleteMergeCollidingSuggestions(ctx, DeleteMergeCollidingSuggestionsParams{BooksID: booksID, FromID: from.String(), IntoID: into.String()}); err != nil {
+	if err := r.q.DeleteMergeCollidingSuggestions(
+		ctx,
+		DeleteMergeCollidingSuggestionsParams{
+			BooksID: booksID,
+			FromID:  from.String(),
+			IntoID:  into.String(),
+		},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.MergeSuggestions(ctx, MergeSuggestionsParams{BooksID: booksID, FromID: from.String(), IntoID: into.String()}); err != nil {
+	if err := r.q.MergeSuggestions(
+		ctx,
+		MergeSuggestionsParams{BooksID: booksID, FromID: from.String(), IntoID: into.String()},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.MergeRuleActions(ctx, MergeRuleActionsParams{BooksID: booksID, FromID: from.String(), IntoID: into.String()}); err != nil {
+	if err := r.q.MergeRuleActions(
+		ctx,
+		MergeRuleActionsParams{BooksID: booksID, FromID: from.String(), IntoID: into.String()},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.MergeSourceCategories(ctx, MergeSourceCategoriesParams{BooksID: booksID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}}); err != nil {
+	if err := r.q.MergeSourceCategories(
+		ctx,
+		MergeSourceCategoriesParams{
+			BooksID: booksID,
+			FromID:  uuid.NullUUID{UUID: from, Valid: true},
+			IntoID:  uuid.NullUUID{UUID: into, Valid: true},
+		},
+	); err != nil {
 		return err
 	}
 
-	return r.q.MergeCategorizations(ctx, MergeCategorizationsParams{BooksID: booksID, FromID: uuid.NullUUID{UUID: from, Valid: true}, IntoID: uuid.NullUUID{UUID: into, Valid: true}})
+	return r.q.MergeCategorizations(
+		ctx,
+		MergeCategorizationsParams{
+			BooksID: booksID,
+			FromID:  uuid.NullUUID{UUID: from, Valid: true},
+			IntoID:  uuid.NullUUID{UUID: into, Valid: true},
+		},
+	)
 }
 
 func (r *Repository) RenameRuleTag(ctx context.Context, booksID int64, from, into string) error {
-	return r.q.RenameRuleTag(ctx, RenameRuleTagParams{BooksID: booksID, FromName: from, IntoName: into})
+	return r.q.RenameRuleTag(
+		ctx,
+		RenameRuleTagParams{BooksID: booksID, FromName: from, IntoName: into},
+	)
 }
 
 func (r *Repository) MergePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error {
 	f, i := from.String(), into.String()
-	if err := r.q.MergePayeeAliases(ctx, MergePayeeAliasesParams{BooksID: booksID, FromID: from, IntoID: into}); err != nil {
+	if err := r.q.MergePayeeAliases(
+		ctx,
+		MergePayeeAliasesParams{BooksID: booksID, FromID: from, IntoID: into},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.DeletePayeeMergeCollidingSuggestions(ctx, DeletePayeeMergeCollidingSuggestionsParams{BooksID: booksID, FromID: f, IntoID: i}); err != nil {
+	if err := r.q.DeletePayeeMergeCollidingSuggestions(
+		ctx,
+		DeletePayeeMergeCollidingSuggestionsParams{BooksID: booksID, FromID: f, IntoID: i},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.MergePayeeSuggestions(ctx, MergePayeeSuggestionsParams{BooksID: booksID, FromID: f, IntoID: i}); err != nil {
+	if err := r.q.MergePayeeSuggestions(
+		ctx,
+		MergePayeeSuggestionsParams{BooksID: booksID, FromID: f, IntoID: i},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.MergePayeeRules(ctx, MergePayeeRulesParams{BooksID: booksID, FromID: f, IntoID: i}); err != nil {
+	if err := r.q.MergePayeeRules(
+		ctx,
+		MergePayeeRulesParams{BooksID: booksID, FromID: f, IntoID: i},
+	); err != nil {
 		return err
 	}
 
-	return r.q.MergePayeeMatchKeys(ctx, MergePayeeMatchKeysParams{BooksID: booksID, FromID: f, IntoID: i})
+	return r.q.MergePayeeMatchKeys(
+		ctx,
+		MergePayeeMatchKeysParams{BooksID: booksID, FromID: f, IntoID: i},
+	)
 }

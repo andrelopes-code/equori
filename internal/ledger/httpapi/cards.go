@@ -71,10 +71,18 @@ func (s *Server) createBillingCycleRule(
 
 	from, err := domain.ParseReferenceMonth(b.EffectiveFrom)
 	if err != nil {
-		return BillingCycleRule{}, &domain.FieldError{Field: "effective_from", Message: "must be YYYY-MM", Err: domain.ErrValidation}
+		return BillingCycleRule{}, &domain.FieldError{
+			Field:   "effective_from",
+			Message: "must be YYYY-MM",
+			Err:     domain.ErrValidation,
+		}
 	}
 
-	rec := domain.BillingCycleRule{EffectiveFrom: from, DueDay: b.DueDay, Calendar: optString(b.Calendar)}
+	rec := domain.BillingCycleRule{
+		EffectiveFrom: from,
+		DueDay:        b.DueDay,
+		Calendar:      optString(b.Calendar),
+	}
 	if b.ClosingDay != nil {
 		rec.ClosingDay = *b.ClosingDay
 	}
@@ -124,7 +132,10 @@ func (s *Server) listCreditLimits(
 
 	out := CreditLimitList{Items: make([]CreditLimit, len(limits))}
 	for i, l := range limits {
-		out.Items[i] = CreditLimit{EffectiveFrom: apiDate(l.EffectiveFrom), Amount: toMoneyAPI(l.Amount)}
+		out.Items[i] = CreditLimit{
+			EffectiveFrom: apiDate(l.EffectiveFrom),
+			Amount:        toMoneyAPI(l.Amount),
+		}
 	}
 
 	return out, nil
@@ -145,7 +156,11 @@ func (s *Server) createCreditLimit(
 		return CreditLimit{}, err
 	}
 
-	l, err := s.svc.AddCreditLimit(ctx, auth.MustBooksID(ctx), app.CreditLimit{AccountID: id, EffectiveFrom: dateOf(in.EffectiveFrom), Amount: amount})
+	l, err := s.svc.AddCreditLimit(
+		ctx,
+		auth.MustBooksID(ctx),
+		app.CreditLimit{AccountID: id, EffectiveFrom: dateOf(in.EffectiveFrom), Amount: amount},
+	)
 	if err != nil {
 		return CreditLimit{}, err
 	}
@@ -155,7 +170,14 @@ func (s *Server) createCreditLimit(
 
 func toCardAPI(c domain.Card) Card {
 	virtual := c.Virtual
-	return Card{Id: c.ID, Holder: c.Holder, LastFour: c.LastFour, Virtual: &virtual, Active: c.Active, ForeignChargeBp: c.ForeignChargeBP}
+	return Card{
+		Id:              c.ID,
+		Holder:          c.Holder,
+		LastFour:        c.LastFour,
+		Virtual:         &virtual,
+		Active:          c.Active,
+		ForeignChargeBp: c.ForeignChargeBP,
+	}
 }
 
 func (s *Server) listCards(
@@ -193,7 +215,12 @@ func (s *Server) createCard(
 
 	virtual := in.Virtual != nil && *in.Virtual
 
-	c, err := s.svc.AddCard(ctx, auth.MustBooksID(ctx), domain.Card{AccountID: id, Holder: in.Holder, LastFour: in.LastFour, Virtual: virtual}, in.ForeignChargeBp)
+	c, err := s.svc.AddCard(
+		ctx,
+		auth.MustBooksID(ctx),
+		domain.Card{AccountID: id, Holder: in.Holder, LastFour: in.LastFour, Virtual: virtual},
+		in.ForeignChargeBp,
+	)
 	if err != nil {
 		return Card{}, err
 	}
@@ -213,7 +240,12 @@ func (s *Server) updateCard(
 
 	b := in
 
-	c, err := s.svc.EditCard(ctx, auth.MustBooksID(ctx), id, domain.CardEdit{Holder: b.Holder, LastFour: b.LastFour, Active: b.Active})
+	c, err := s.svc.EditCard(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		domain.CardEdit{Holder: b.Holder, LastFour: b.LastFour, Active: b.Active},
+	)
 	if err != nil {
 		return Card{}, err
 	}

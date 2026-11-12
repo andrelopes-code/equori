@@ -35,7 +35,11 @@ func TestInviteNewMember(t *testing.T) {
 
 	var created invitationBody
 
-	r := h.Do(http.MethodPost, "/api/v1/books/current/invitations", map[string]string{"email": "new@example.com", "role": "write"})
+	r := h.Do(
+		http.MethodPost,
+		"/api/v1/books/current/invitations",
+		map[string]string{"email": "new@example.com", "role": "write"},
+	)
 	expectStatus(t, r, http.StatusCreated)
 	r.Decode(t, &created)
 
@@ -71,7 +75,12 @@ func TestInviteNewMember(t *testing.T) {
 
 	var preview previewBody
 
-	r = h.Call(anon, http.MethodPost, "/api/v1/invitations/preview", map[string]string{"token": tok})
+	r = h.Call(
+		anon,
+		http.MethodPost,
+		"/api/v1/invitations/preview",
+		map[string]string{"token": tok},
+	)
 	expectStatus(t, r, http.StatusOK)
 	r.Decode(t, &preview)
 
@@ -80,17 +89,41 @@ func TestInviteNewMember(t *testing.T) {
 	}
 
 	accept := "/api/v1/invitations/accept"
-	h.ExpectProblem(h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok}), http.StatusUnprocessableEntity, "validation_failed", "password")
 	h.ExpectProblem(
-		h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok, "password": "short", "language": "en"}),
-		http.StatusUnprocessableEntity, "validation_failed", "password",
+		h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"password",
 	)
 	h.ExpectProblem(
-		h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok, "password": apitest.Password}),
-		http.StatusUnprocessableEntity, "validation_failed", "language",
+		h.Call(
+			anon,
+			http.MethodPost,
+			accept,
+			map[string]string{"token": tok, "password": "short", "language": "en"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"password",
+	)
+	h.ExpectProblem(
+		h.Call(
+			anon,
+			http.MethodPost,
+			accept,
+			map[string]string{"token": tok, "password": apitest.Password},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"language",
 	)
 
-	r = h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok, "password": apitest.Password, "language": "en"})
+	r = h.Call(
+		anon,
+		http.MethodPost,
+		accept,
+		map[string]string{"token": tok, "password": apitest.Password, "language": "en"},
+	)
 	expectStatus(t, r, http.StatusNoContent)
 
 	var me struct {
@@ -114,7 +147,12 @@ func TestInviteNewMember(t *testing.T) {
 	}
 
 	expectStatus(t, h.Call(anon, http.MethodGet, "/api/v1/accounts", nil), http.StatusOK)
-	h.ExpectProblem(h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok}), http.StatusNotFound, "invitation_not_found", "")
+	h.ExpectProblem(
+		h.Call(anon, http.MethodPost, accept, map[string]string{"token": tok}),
+		http.StatusNotFound,
+		"invitation_not_found",
+		"",
+	)
 
 	r = h.Do(http.MethodGet, "/api/v1/books/current/invitations", nil)
 	expectStatus(t, r, http.StatusOK)
@@ -135,7 +173,12 @@ func TestInviteExistingMember(t *testing.T) {
 
 	var preview previewBody
 
-	r := h.Call(&http.Client{}, http.MethodPost, "/api/v1/invitations/preview", map[string]string{"token": tok})
+	r := h.Call(
+		&http.Client{},
+		http.MethodPost,
+		"/api/v1/invitations/preview",
+		map[string]string{"token": tok},
+	)
 	expectStatus(t, r, http.StatusOK)
 	r.Decode(t, &preview)
 
@@ -144,8 +187,17 @@ func TestInviteExistingMember(t *testing.T) {
 	}
 
 	accept := "/api/v1/invitations/accept"
-	h.ExpectProblem(h.Call(&http.Client{}, http.MethodPost, accept, map[string]string{"token": tok}), http.StatusUnauthorized, "unauthenticated", "")
-	expectStatus(t, h.Call(bob, http.MethodPost, accept, map[string]string{"token": tok}), http.StatusNoContent)
+	h.ExpectProblem(
+		h.Call(&http.Client{}, http.MethodPost, accept, map[string]string{"token": tok}),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
+	expectStatus(
+		t,
+		h.Call(bob, http.MethodPost, accept, map[string]string{"token": tok}),
+		http.StatusNoContent,
+	)
 
 	var books struct {
 		Items []struct {
@@ -167,7 +219,16 @@ func TestInviteExistingMember(t *testing.T) {
 		t.Fatalf("books = %+v, want %d inactive and %d active", books.Items, bobBooks, h.OwnerID())
 	}
 
-	expectStatus(t, h.Call(bob, http.MethodPut, "/api/v1/session/books", map[string]int64{"books_id": bobBooks}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Call(
+			bob,
+			http.MethodPut,
+			"/api/v1/session/books",
+			map[string]int64{"books_id": bobBooks},
+		),
+		http.StatusNoContent,
+	)
 
 	var me struct {
 		BooksID int64 `json:"books_id"`
@@ -196,22 +257,46 @@ func TestInvitationProblems(t *testing.T) {
 	}
 
 	h.ExpectProblem(post("owner@example.com", "read"), http.StatusConflict, "already_member", "")
-	h.ExpectProblem(post("not an email", "read"), http.StatusUnprocessableEntity, "validation_failed", "email")
+	h.ExpectProblem(
+		post("not an email", "read"),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"email",
+	)
 
 	carolTok := invite(t, h, "carol@example.com", "read")
 	accept := "/api/v1/invitations/accept"
-	h.ExpectProblem(h.Call(bob, http.MethodPost, accept, map[string]string{"token": carolTok}), http.StatusForbidden, "invitation_email_mismatch", "")
+	h.ExpectProblem(
+		h.Call(bob, http.MethodPost, accept, map[string]string{"token": carolTok}),
+		http.StatusForbidden,
+		"invitation_email_mismatch",
+		"",
+	)
 
 	bobTok := invite(t, h, "bob@example.com", "read")
-	expectStatus(t, h.Call(bob, http.MethodPost, accept, map[string]string{"token": bobTok}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Call(bob, http.MethodPost, accept, map[string]string{"token": bobTok}),
+		http.StatusNoContent,
+	)
 	h.ExpectProblem(post("bob@example.com", "write"), http.StatusConflict, "already_member", "")
 
 	preview := func(token string) apitest.Response {
-		return h.Call(&http.Client{}, http.MethodPost, "/api/v1/invitations/preview", map[string]string{"token": token})
+		return h.Call(
+			&http.Client{},
+			http.MethodPost,
+			"/api/v1/invitations/preview",
+			map[string]string{"token": token},
+		)
 	}
 
 	h.ExpectProblem(preview("unknown"), http.StatusNotFound, "invitation_not_found", "")
-	h.ExpectProblem(h.Do(http.MethodDelete, invitations+"/"+uuid.NewString(), nil), http.StatusNotFound, "invitation_not_found", "")
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, invitations+"/"+uuid.NewString(), nil),
+		http.StatusNotFound,
+		"invitation_not_found",
+		"",
+	)
 
 	var list struct {
 		Items []invitationBody `json:"items"`
@@ -225,7 +310,11 @@ func TestInvitationProblems(t *testing.T) {
 		t.Fatalf("items = %+v, want the invitation of carol", list.Items)
 	}
 
-	expectStatus(t, h.Do(http.MethodDelete, invitations+"/"+list.Items[0].ID, nil), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Do(http.MethodDelete, invitations+"/"+list.Items[0].ID, nil),
+		http.StatusNoContent,
+	)
 	h.ExpectProblem(preview(carolTok), http.StatusNotFound, "invitation_not_found", "")
 }
 
@@ -235,13 +324,23 @@ func TestInvitationExpiry(t *testing.T) {
 	h := apitest.New(t)
 	tok := invite(t, h, "late@example.com", "read")
 
-	if _, err := h.Pool.Exec(t.Context(), `UPDATE identity_invitation SET expires_at = now() - interval '1 second'`); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE identity_invitation SET expires_at = now() - interval '1 second'`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	h.ExpectProblem(
-		h.Call(&http.Client{}, http.MethodPost, "/api/v1/invitations/preview", map[string]string{"token": tok}),
-		http.StatusNotFound, "invitation_not_found", "",
+		h.Call(
+			&http.Client{},
+			http.MethodPost,
+			"/api/v1/invitations/preview",
+			map[string]string{"token": tok},
+		),
+		http.StatusNotFound,
+		"invitation_not_found",
+		"",
 	)
 
 	var list struct {
@@ -257,7 +356,9 @@ func TestInvitationExpiry(t *testing.T) {
 	}
 
 	var rows int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_invitation`).Scan(&rows); err != nil || rows != 0 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_invitation`).
+		Scan(&rows); err != nil ||
+		rows != 0 {
 		t.Fatalf("rows = %d, %v; want 0", rows, err)
 	}
 }
@@ -270,7 +371,12 @@ func TestInvitationReplaced(t *testing.T) {
 	second := invite(t, h, "x@example.com", "write")
 	preview := "/api/v1/invitations/preview"
 
-	h.ExpectProblem(h.Call(&http.Client{}, http.MethodPost, preview, map[string]string{"token": first}), http.StatusNotFound, "invitation_not_found", "")
+	h.ExpectProblem(
+		h.Call(&http.Client{}, http.MethodPost, preview, map[string]string{"token": first}),
+		http.StatusNotFound,
+		"invitation_not_found",
+		"",
+	)
 
 	var p previewBody
 
@@ -302,8 +408,15 @@ func TestInvitationOwnerOnly(t *testing.T) {
 	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
 
 	h.ExpectProblem(
-		h.Call(writer, http.MethodPost, "/api/v1/books/current/invitations", map[string]string{"email": "x@example.com", "role": "read"}),
-		http.StatusForbidden, "book_role_required", "",
+		h.Call(
+			writer,
+			http.MethodPost,
+			"/api/v1/books/current/invitations",
+			map[string]string{"email": "x@example.com", "role": "read"},
+		),
+		http.StatusForbidden,
+		"book_role_required",
+		"",
 	)
 }
 
@@ -311,7 +424,11 @@ func TestInvitationOwnerOnly(t *testing.T) {
 func invite(t *testing.T, h *apitest.Harness, email, role string) string {
 	t.Helper()
 
-	r := h.Do(http.MethodPost, "/api/v1/books/current/invitations", map[string]string{"email": email, "role": role})
+	r := h.Do(
+		http.MethodPost,
+		"/api/v1/books/current/invitations",
+		map[string]string{"email": email, "role": role},
+	)
 	expectStatus(t, r, http.StatusCreated)
 
 	var inv invitationBody

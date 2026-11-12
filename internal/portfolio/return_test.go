@@ -51,7 +51,9 @@ func TestS126ReturnOfBrokerage(t *testing.T) {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
 
-	if got.AnnualBP != 500 || got.Opening["amount"] != float64(100000) || got.Closing["amount"] != float64(105000) || len(got.Flows) != 0 {
+	if got.AnnualBP != 500 || got.Opening["amount"] != float64(100000) ||
+		got.Closing["amount"] != float64(105000) ||
+		len(got.Flows) != 0 {
 		t.Fatalf("return = %+v", got)
 	}
 
@@ -60,7 +62,9 @@ func TestS126ReturnOfBrokerage(t *testing.T) {
 	f.h.Record("2026-04-30", apitest.Posting(checking, -100000), apitest.Posting(f.cash, 100000))
 
 	_, got = f.returnOf(t, f.xp, "2025-11-01", "2026-10-31")
-	if got.AnnualBP != 333 || got.Closing["amount"] != float64(205000) || len(got.Flows) != 1 || got.Flows[0].Date != "2026-04-30" || got.Flows[0].Amount["amount"] != float64(100000) {
+	if got.AnnualBP != 333 || got.Closing["amount"] != float64(205000) || len(got.Flows) != 1 ||
+		got.Flows[0].Date != "2026-04-30" ||
+		got.Flows[0].Amount["amount"] != float64(100000) {
 		t.Fatalf("return with a contribution = %+v", got)
 	}
 }
@@ -71,7 +75,12 @@ func TestReturnOfTheWholePortfolio(t *testing.T) {
 	f := newFixture(t)
 	checking := f.h.Account("Checking", "asset", "checking", nil)
 	other := f.h.Account("Other broker", "asset", "brokerage", nil)
-	otherCash := f.h.Account("Other cash", "asset", "brokerage", map[string]any{"parent_id": other, "currency": "BRL"})
+	otherCash := f.h.Account(
+		"Other cash",
+		"asset",
+		"brokerage",
+		map[string]any{"parent_id": other, "currency": "BRL"},
+	)
 	f.h.Record("2025-10-15", apitest.Posting(checking, -100000), apitest.Posting(f.cash, 100000))
 	f.h.Record("2025-10-15", apitest.Posting(checking, -100000), apitest.Posting(otherCash, 100000))
 	f.income(t, f.mxrf11, "dividend", 5000, f.dividends)
@@ -85,13 +94,25 @@ func TestReturnOfTheWholePortfolio(t *testing.T) {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
 
-	if got.AnnualBP != 250 || got.Opening["amount"] != float64(200000) || got.Closing["amount"] != float64(205000) || len(got.Flows) != 0 {
+	if got.AnnualBP != 250 || got.Opening["amount"] != float64(200000) ||
+		got.Closing["amount"] != float64(205000) ||
+		len(got.Flows) != 0 {
 		t.Fatalf("portfolio return = %+v", got)
 	}
 
 	// Another book has no brokerage: no money was invested.
 	stranger := f.h.Login("stranger@example.com")
-	f.h.ExpectProblem(f.h.Call(stranger, http.MethodGet, "/api/v1/reports/return?from=2025-11-01&to=2026-10-31", nil), http.StatusUnprocessableEntity, "return_undefined", "")
+	f.h.ExpectProblem(
+		f.h.Call(
+			stranger,
+			http.MethodGet,
+			"/api/v1/reports/return?from=2025-11-01&to=2026-10-31",
+			nil,
+		),
+		http.StatusUnprocessableEntity,
+		"return_undefined",
+		"",
+	)
 }
 
 // S127: a period in which no money was invested has no return (amendment A123).
@@ -121,15 +142,44 @@ func TestReturnValuedInAnotherCurrency(t *testing.T) {
 	f.income(t, f.mxrf11, "dividend", 5000, f.dividends)
 	f.h.Dispatch()
 	url := "/api/v1/reports/return?account_id=" + f.xp + "&from=2025-11-01&to=2026-10-31&value_in=USD"
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, url, nil), http.StatusUnprocessableEntity, "price_missing", "")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, url, nil),
+		http.StatusUnprocessableEntity,
+		"price_missing",
+		"",
+	)
 
 	// A constant rate keeps the return of the same flows: 1,000.00 BRL to 1,050.00 BRL is 5% in USD too.
-	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2025-10-31", "value": "5"}, http.StatusCreated, nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-31", "value": "5"}, http.StatusCreated, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "USD",
+			"quote_instrument": "BRL",
+			"date":             "2025-10-31",
+			"value":            "5",
+		},
+		http.StatusCreated,
+		nil,
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "USD",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-31",
+			"value":            "5",
+		},
+		http.StatusCreated,
+		nil,
+	)
 	var got returnOut
 	f.h.MustDo(http.MethodGet, url, nil, http.StatusOK, &got)
 
-	if got.AnnualBP != 500 || got.Opening["currency"] != "USD" || got.Opening["amount"] != float64(20000) || got.Closing["amount"] != float64(21000) {
+	if got.AnnualBP != 500 || got.Opening["currency"] != "USD" ||
+		got.Opening["amount"] != float64(20000) ||
+		got.Closing["amount"] != float64(21000) {
 		t.Fatalf("return in USD = %+v", got)
 	}
 }

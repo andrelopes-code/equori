@@ -88,7 +88,10 @@ func PlanRows(in PlanInput) ([]PlanRow, int) {
 		}
 	}
 
-	slices.SortFunc(rows, func(a, b PlanRow) int { return slices.Compare(a.CategoryID[:], b.CategoryID[:]) })
+	slices.SortFunc(
+		rows,
+		func(a, b PlanRow) int { return slices.Compare(a.CategoryID[:], b.CategoryID[:]) },
+	)
 
 	return rows, n
 }

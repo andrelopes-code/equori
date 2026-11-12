@@ -10,7 +10,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) getCurrentBooks(ctx context.Context, _ *http.Request, _ httpserver.None) (BooksSettings, error) {
+func (s *Server) getCurrentBooks(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (BooksSettings, error) {
 	settings, err := s.svc.BooksSettings(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return BooksSettings{}, err
@@ -24,7 +28,13 @@ func (s *Server) updateCurrentBooks(
 	_ *http.Request,
 	in UpdateCurrentBooksJSONRequestBody,
 ) (BooksSettings, error) {
-	settings, err := s.svc.UpdateBooksSettings(ctx, auth.MustBooksID(ctx), in.Region, in.TimeZone, in.Name)
+	settings, err := s.svc.UpdateBooksSettings(
+		ctx,
+		auth.MustBooksID(ctx),
+		in.Region,
+		in.TimeZone,
+		in.Name,
+	)
 	if err != nil {
 		return BooksSettings{}, err
 	}
@@ -32,7 +42,11 @@ func (s *Server) updateCurrentBooks(
 	return toAPIBooksSettings(settings), nil
 }
 
-func (s *Server) listMyBooks(ctx context.Context, _ *http.Request, _ httpserver.None) (BooksMembershipList, error) {
+func (s *Server) listMyBooks(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (BooksMembershipList, error) {
 	books, err := s.svc.Books(ctx, auth.MustMemberID(ctx), auth.MustBooksID(ctx))
 	if err != nil {
 		return BooksMembershipList{}, err
@@ -51,7 +65,13 @@ func (s *Server) createBooks(
 	_ *http.Request,
 	in CreateBooksJSONRequestBody,
 ) (BooksMembership, error) {
-	created, err := s.svc.CreateBooks(ctx, auth.MustMemberID(ctx), in.Name, in.Region, money.Currency(deref(in.BaseCurrency)))
+	created, err := s.svc.CreateBooks(
+		ctx,
+		auth.MustMemberID(ctx),
+		in.Name,
+		in.Region,
+		money.Currency(deref(in.BaseCurrency)),
+	)
 	if err != nil {
 		return BooksMembership{}, err
 	}
@@ -69,7 +89,12 @@ func (s *Server) switchBooks(
 		return httpserver.None{}, app.ErrUnauthenticated
 	}
 
-	if err := s.svc.SwitchBooks(ctx, auth.MustMemberID(ctx), session.Value, in.BooksId); err != nil {
+	if err := s.svc.SwitchBooks(
+		ctx,
+		auth.MustMemberID(ctx),
+		session.Value,
+		in.BooksId,
+	); err != nil {
 		return httpserver.None{}, err
 	}
 
@@ -81,5 +106,10 @@ func toAPIBooksMembership(b app.BooksMembership) BooksMembership {
 }
 
 func toAPIBooksSettings(b app.BooksSettings) BooksSettings {
-	return BooksSettings{Name: b.Name, Region: b.Region, TimeZone: b.TimeZone, DefaultTimeZone: b.DefaultTimeZone}
+	return BooksSettings{
+		Name:            b.Name,
+		Region:          b.Region,
+		TimeZone:        b.TimeZone,
+		DefaultTimeZone: b.DefaultTimeZone,
+	}
 }

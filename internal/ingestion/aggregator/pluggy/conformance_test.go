@@ -49,7 +49,9 @@ func newPluggyBackend(t *testing.T) *pluggyBackend {
 	}
 
 	updated := "2026-11-12T06:00:00.000Z"
-	s.AddItem(client.Item{ID: conformanceItem, Status: client.StatusUpdated, LastUpdatedAt: &updated})
+	s.AddItem(
+		client.Item{ID: conformanceItem, Status: client.StatusUpdated, LastUpdatedAt: &updated},
+	)
 	s.AddAccount(conformanceItem, client.Account{
 		ID: conformanceAccount, Type: "BANK", Subtype: client.SubtypeChecking, Name: "Checking",
 		Number: "0001/1", Balance: "10.00", CurrencyCode: "BRL",
@@ -111,7 +113,10 @@ func (b *pluggyBackend) AddCounterpartyLine(id string, party domain.PartyID) {
 	t := b.transaction(id, "Pix", nil)
 	t.Amount = "-250.00"
 	t.PaymentData = &client.PaymentData{Receiver: &client.PaymentParty{
-		DocumentNumber: &client.DocumentNumber{Type: map[string]string{"br_cpf": "CPF", "br_cnpj": "CNPJ"}[party.Scheme], Value: party.Value},
+		DocumentNumber: &client.DocumentNumber{
+			Type:  map[string]string{"br_cpf": "CPF", "br_cnpj": "CNPJ"}[party.Scheme],
+			Value: party.Value,
+		},
 	}}
 	b.server.AddTransaction(b.account, t)
 }

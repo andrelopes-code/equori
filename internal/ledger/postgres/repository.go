@@ -67,7 +67,11 @@ func notFound(err error) error {
 
 func duplicate(err error, field string) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
-		return &domain.FieldError{Field: field, Message: "already exists", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   field,
+			Message: "already exists",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return err
@@ -77,7 +81,11 @@ func duplicate(err error, field string) error {
 // database refused a reference to a row of another book or a missing row (DD3).
 func referenceError(err error) error {
 	if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == foreignKeyViolation {
-		return &domain.FieldError{Field: "reference", Message: "unknown reference: " + pgErr.ConstraintName, Err: domain.ErrUnknownAccount}
+		return &domain.FieldError{
+			Field:   "reference",
+			Message: "unknown reference: " + pgErr.ConstraintName,
+			Err:     domain.ErrUnknownAccount,
+		}
 	}
 
 	return err

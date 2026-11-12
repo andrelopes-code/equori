@@ -70,10 +70,23 @@ func TestIndicatorMonths(t *testing.T) {
 		got := indicatorMonths(s154(), month("2026-04"))
 
 		want := IndicatorMonth{
-			Month: month("2026-10"), Income: 500000, Expense: 285000, Committed: 5000, DebtService: 125000,
-			Liquid: 1790000, Liabilities: 640000, HasMeans: true, MeanIncome: 500000, MeanExpense: 267500,
-			SavingsRate: bp(4300), TrailingSavingsRate: bp(4650), Liquidity: bp(66915),
-			CommittedShare: bp(100), DebtServiceShare: bp(2500),
+			Month: month(
+				"2026-10",
+			),
+			Income:              500000,
+			Expense:             285000,
+			Committed:           5000,
+			DebtService:         125000,
+			Liquid:              1790000,
+			Liabilities:         640000,
+			HasMeans:            true,
+			MeanIncome:          500000,
+			MeanExpense:         267500,
+			SavingsRate:         bp(4300),
+			TrailingSavingsRate: bp(4650),
+			Liquidity:           bp(66915),
+			CommittedShare:      bp(100),
+			DebtServiceShare:    bp(2500),
 		}
 		if len(got) != 12 || !reflect.DeepEqual(got[11], want) {
 			t.Fatalf("last month = %+v, want %+v", got[len(got)-1], want)
@@ -90,11 +103,25 @@ func TestIndicatorMonths(t *testing.T) {
 
 		var savings, trailing []Ratio
 		for _, m := range got {
-			savings, trailing = append(savings, m.SavingsRate), append(trailing, m.TrailingSavingsRate)
+			savings, trailing = append(
+				savings,
+				m.SavingsRate,
+			), append(
+				trailing,
+				m.TrailingSavingsRate,
+			)
 		}
 
-		wantSavings := append(append(repeat(because(ReasonNoIncome), 5), repeat(bp(5000), 3)...), repeat(bp(4300), 4)...)
-		wantTrailing := append(repeat(because(ReasonInsufficientHistory), 8), bp(5000), bp(4825), bp(4720), bp(4650))
+		wantSavings := append(
+			append(repeat(because(ReasonNoIncome), 5), repeat(bp(5000), 3)...),
+			repeat(bp(4300), 4)...)
+		wantTrailing := append(
+			repeat(because(ReasonInsufficientHistory), 8),
+			bp(5000),
+			bp(4825),
+			bp(4720),
+			bp(4650),
+		)
 
 		if !reflect.DeepEqual(savings, wantSavings) {
 			t.Errorf("savings rates = %v, want %v", savings, wantSavings)
@@ -117,7 +144,9 @@ func TestIndicatorMonths(t *testing.T) {
 			check: func(t *testing.T, m IndicatorMonth) {
 				short := because(ReasonInsufficientHistory)
 				if m.SavingsRate != because(ReasonNoIncome) || m.TrailingSavingsRate != short || m.Liquidity != short ||
-					m.CommittedShare != short || m.DebtServiceShare != short || m.HasMeans || m.MeanIncome != 0 {
+					m.CommittedShare != short || m.DebtServiceShare != short ||
+					m.HasMeans ||
+					m.MeanIncome != 0 {
 					t.Errorf("month = %+v", m)
 				}
 			},
@@ -147,7 +176,9 @@ func TestIndicatorMonths(t *testing.T) {
 			first: month("2026-07"),
 			check: func(t *testing.T, m IndicatorMonth) {
 				if m.SavingsRate != bp(10000) || m.TrailingSavingsRate != bp(10000) ||
-					m.Liquidity != because(ReasonNoExpense) || m.CommittedShare != bp(0) || m.DebtServiceShare != bp(0) {
+					m.Liquidity != because(
+						ReasonNoExpense,
+					) || m.CommittedShare != bp(0) || m.DebtServiceShare != bp(0) {
 					t.Errorf("month = %+v", m)
 				}
 			},

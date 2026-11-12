@@ -6,7 +6,12 @@ func (s *seeder) localizeSystemAccounts() {
 	for _, n := range systemNames {
 		id := s.id("system." + n.role)
 		s.do(http.MethodPatch, "/accounts/"+id, map[string]any{"name": n.name}, nil)
-		s.do(http.MethodPut, "/accounts/"+id+"/appearance", map[string]any{"color": n.color, "icon": nil}, nil)
+		s.do(
+			http.MethodPut,
+			"/accounts/"+id+"/appearance",
+			map[string]any{"color": n.color, "icon": nil},
+			nil,
+		)
 	}
 }
 
@@ -30,7 +35,14 @@ func (s *seeder) buildInstitutions() {
 
 func (s *seeder) buildAccounts(start string) {
 	for _, a := range accounts {
-		body := map[string]any{"name": a.name, "class": a.class, "kind": a.kind, "currency": "BRL", "opened_on": start, "color": a.color}
+		body := map[string]any{
+			"name":      a.name,
+			"class":     a.class,
+			"kind":      a.kind,
+			"currency":  "BRL",
+			"opened_on": start,
+			"color":     a.color,
+		}
 		if a.institution != "" {
 			body["institution_id"] = s.id("inst." + a.institution)
 		}
@@ -54,7 +66,14 @@ func (s *seeder) buildCards(start string) {
 			"institution_id": s.id("inst." + c.institution), "opened_on": start, "color": c.color,
 		})
 		for _, p := range c.plastics {
-			s.create("/accounts/"+s.id(c.key)+"/cards", map[string]any{"holder": "MARIANA C RIBEIRO", "last_four": p.lastFour, "virtual": p.virtual})
+			s.create(
+				"/accounts/"+s.id(c.key)+"/cards",
+				map[string]any{
+					"holder":    "MARIANA C RIBEIRO",
+					"last_four": p.lastFour,
+					"virtual":   p.virtual,
+				},
+			)
 		}
 
 		for i, r := range c.rules {

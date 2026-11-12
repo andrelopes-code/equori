@@ -15,7 +15,12 @@ type transferResult struct {
 	VoidedTransactionID string                  `json:"voided_transaction_id"`
 }
 
-func transfer(h *apitest.Harness, id string, version int, account, pairWith string) apitest.Response {
+func transfer(
+	h *apitest.Harness,
+	id string,
+	version int,
+	account, pairWith string,
+) apitest.Response {
 	body := map[string]any{"expected_version": version, "account_id": account}
 	if pairWith != "" {
 		body["pair_with"] = pairWith
@@ -24,7 +29,13 @@ func transfer(h *apitest.Harness, id string, version int, account, pairWith stri
 	return h.Do(http.MethodPost, "/api/v1/transactions/"+id+"/transfer", body)
 }
 
-func mustTransfer(t *testing.T, h *apitest.Harness, id string, version int, account, pairWith string) transferResult {
+func mustTransfer(
+	t *testing.T,
+	h *apitest.Harness,
+	id string,
+	version int,
+	account, pairWith string,
+) transferResult {
 	t.Helper()
 
 	r := transfer(h, id, version, account, pairWith)
@@ -39,12 +50,22 @@ func mustTransfer(t *testing.T, h *apitest.Harness, id string, version int, acco
 }
 
 // importLine records an imported line and returns its transaction and record ids.
-func importLine(t *testing.T, h *apitest.Harness, account, date string, amount int64) (string, uuid.UUID) {
+func importLine(
+	t *testing.T,
+	h *apitest.Harness,
+	account, date string,
+	amount int64,
+) (string, uuid.UUID) {
 	t.Helper()
 
 	record := uuid.New()
 
-	id, err := h.App.Ledger.RecordImported(t.Context(), h.OwnerID(), record, imported(t, account, date, amount))
+	id, err := h.App.Ledger.RecordImported(
+		t.Context(),
+		h.OwnerID(),
+		record,
+		imported(t, account, date, amount),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,10 +73,15 @@ func importLine(t *testing.T, h *apitest.Harness, account, date string, amount i
 	return id.String(), record
 }
 
-func postingOfRecord(t *testing.T, h *apitest.Harness, record uuid.UUID) (transaction, account string) {
+func postingOfRecord(
+	t *testing.T,
+	h *apitest.Harness,
+	record uuid.UUID,
+) (transaction, account string) {
 	t.Helper()
 
-	if err := h.Pool.QueryRow(t.Context(), `SELECT transaction_id, account_id FROM ledger_posting WHERE external_record_id = $1`, record).Scan(&transaction, &account); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT transaction_id, account_id FROM ledger_posting WHERE external_record_id = $1`, record).
+		Scan(&transaction, &account); err != nil {
 		t.Fatal(err)
 	}
 
@@ -66,7 +92,8 @@ func voidReason(t *testing.T, h *apitest.Harness, id string) string {
 	t.Helper()
 
 	var reason *string
-	if err := h.Pool.QueryRow(t.Context(), `SELECT void_reason FROM ledger_transaction WHERE id = $1`, id).Scan(&reason); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT void_reason FROM ledger_transaction WHERE id = $1`, id).
+		Scan(&reason); err != nil {
 		t.Fatal(err)
 	}
 
@@ -95,8 +122,11 @@ func TestTransferWithoutCounterpart(t *testing.T) {
 	id, record := importLine(t, c.h, c.checking, "2026-11-05", -50000)
 
 	res := mustTransfer(t, c.h, id, 1, savings, "")
-	if got := amountsByAccount(res.Transaction); res.Transaction.ID != id || res.Transaction.Version != 2 || len(res.Transaction.Postings) != 2 ||
-		got[c.checking] != -50000 || got[savings] != 50000 || res.VoidedTransactionID != "" {
+	if got := amountsByAccount(
+		res.Transaction,
+	); res.Transaction.ID != id || res.Transaction.Version != 2 || len(res.Transaction.Postings) != 2 ||
+		got[c.checking] != -50000 || got[savings] != 50000 ||
+		res.VoidedTransactionID != "" {
 		t.Fatalf("result = %+v", res)
 	}
 
@@ -105,7 +135,8 @@ func TestTransferWithoutCounterpart(t *testing.T) {
 	}
 
 	event := events(t, c.h, id)["ledger.transaction_corrected.v1"]
-	if len(event) != 1 || !event[0].CategoriesChanged || event[0].CategoryState != "none" || event[0].Version != 2 {
+	if len(event) != 1 || !event[0].CategoriesChanged || event[0].CategoryState != "none" ||
+		event[0].Version != 2 {
 		t.Fatalf("corrected events = %+v", event)
 	}
 }
@@ -119,11 +150,16 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 	cardTx, cardRecord := importLine(t, c.h, c.card, "2026-11-11", 150000)
 
 	res := mustTransfer(t, c.h, checkingTx, 1, c.card, "")
-	if res.Transaction.ID != checkingTx || res.VoidedTransactionID != cardTx || len(res.Transaction.Postings) != 2 {
+	if res.Transaction.ID != checkingTx || res.VoidedTransactionID != cardTx ||
+		len(res.Transaction.Postings) != 2 {
 		t.Fatalf("result = %+v", res)
 	}
 
-	if p := postingOn(res.Transaction, c.card); p.Amount.Amount != 150000 || p.CardRole != "payment" || p.Statement != "2026-12" {
+	if p := postingOn(
+		res.Transaction,
+		c.card,
+	); p.Amount.Amount != 150000 || p.CardRole != "payment" ||
+		p.Statement != "2026-12" {
 		t.Fatalf("card posting = %+v", p)
 	}
 
@@ -137,7 +173,8 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 		}
 	}
 
-	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Settled != 150000 || s.Credits != 0 {
+	if s := statements(t, c.h, c.card)["2026-11"]; s.Status != "paid" || s.Settled != 150000 ||
+		s.Credits != 0 {
 		t.Fatalf("statement = %+v", s)
 	}
 
@@ -148,7 +185,8 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 	}
 
 	var raw []byte
-	if err := c.h.Pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'ledger.transactions_paired.v1'`).Scan(&raw); err != nil {
+	if err := c.h.Pool.QueryRow(t.Context(), `SELECT payload FROM outbox_event WHERE type = 'ledger.transactions_paired.v1'`).
+		Scan(&raw); err != nil {
 		t.Fatal(err)
 	}
 
@@ -156,7 +194,8 @@ func TestTransferPairsImportedCardPayment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if paired.Kept != checkingTx || paired.Voided != cardTx || len(paired.RecordIDs) != 1 || paired.RecordIDs[0] != cardRecord.String() {
+	if paired.Kept != checkingTx || paired.Voided != cardTx || len(paired.RecordIDs) != 1 ||
+		paired.RecordIDs[0] != cardRecord.String() {
 		t.Fatalf("paired event = %+v", paired)
 	}
 }
@@ -169,8 +208,18 @@ func TestTransferWithSeveralCandidates(t *testing.T) {
 	first, _ := importLine(t, c.h, c.card, "2026-11-09", 150000)
 	second, _ := importLine(t, c.h, c.card, "2026-11-11", 150000)
 
-	c.h.ExpectProblem(transfer(c.h, checkingTx, 1, c.card, ""), http.StatusConflict, "pairing_ambiguous", "")
-	c.h.ExpectProblem(transfer(c.h, checkingTx, 1, c.card, checkingTx), http.StatusUnprocessableEntity, "validation_failed", "pair_with")
+	c.h.ExpectProblem(
+		transfer(c.h, checkingTx, 1, c.card, ""),
+		http.StatusConflict,
+		"pairing_ambiguous",
+		"",
+	)
+	c.h.ExpectProblem(
+		transfer(c.h, checkingTx, 1, c.card, checkingTx),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"pair_with",
+	)
 
 	res := mustTransfer(t, c.h, checkingTx, 1, c.card, second)
 	if res.VoidedTransactionID != second || voidReason(t, c.h, first) != "" {
@@ -191,7 +240,8 @@ func TestTransferKeepsTheReconciledSide(t *testing.T) {
 	cardTx, cardRecord := importLine(t, c.h, c.card, "2026-11-11", 150000)
 
 	res := mustTransfer(t, c.h, cardTx, 1, c.checking, "")
-	if res.Transaction.ID != checkingTx || res.VoidedTransactionID != cardTx || res.Transaction.Version != 2 {
+	if res.Transaction.ID != checkingTx || res.VoidedTransactionID != cardTx ||
+		res.Transaction.Version != 2 {
 		t.Fatalf("result = %+v", res)
 	}
 
@@ -220,10 +270,19 @@ func TestTransferWithBothSidesReconciled(t *testing.T) {
 
 	checkingTx, _ := importLine(t, c.h, c.checking, "2026-10-21", -150000)
 
-	c.h.ExpectProblem(transfer(c.h, checkingTx, 1, c.card, ""), http.StatusConflict, "posting_reconciled", "")
+	c.h.ExpectProblem(
+		transfer(c.h, checkingTx, 1, c.card, ""),
+		http.StatusConflict,
+		"posting_reconciled",
+		"",
+	)
 
 	if v := c.h.Transaction(checkingTx); v.Version != 1 || voidReason(t, c.h, cardTx) != "" {
-		t.Fatalf("partial change: checking version %d, card void %q", v.Version, voidReason(t, c.h, cardTx))
+		t.Fatalf(
+			"partial change: checking version %d, card void %q",
+			v.Version,
+			voidReason(t, c.h, cardTx),
+		)
 	}
 }
 
@@ -233,17 +292,37 @@ func TestTransferRejections(t *testing.T) {
 	c := newCardSetup(t, "2026-11-12")
 	sys := systemAccounts(c.h)
 	closed := c.h.Account("Old savings", "asset", "savings", nil)
-	c.h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]any{"closed_on": "2026-10-31"}, http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+closed+"/close",
+		map[string]any{"closed_on": "2026-10-31"},
+		http.StatusOK,
+		nil,
+	)
 	usd := c.h.Account("Wise", "asset", "checking", map[string]any{"currency": "USD"})
 
 	id, _ := importLine(t, c.h, c.checking, "2026-11-05", -50000)
 	for _, account := range []string{c.checking, c.food, closed, usd, sys["uncategorized_expense"]} {
-		c.h.ExpectProblem(transfer(c.h, id, 1, account, ""), http.StatusUnprocessableEntity, "validation_failed", "account_id")
+		c.h.ExpectProblem(
+			transfer(c.h, id, 1, account, ""),
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"account_id",
+		)
 	}
 
 	c.h.ExpectProblem(transfer(c.h, id, 2, c.card, ""), http.StatusConflict, "version_conflict", "")
-	other := c.h.Record("2026-11-05", apitest.Posting(c.checking, -100), apitest.Posting(c.card, 100))
-	c.h.ExpectProblem(transfer(c.h, other, 1, closed, ""), http.StatusUnprocessableEntity, "not_categorizable", "")
+	other := c.h.Record(
+		"2026-11-05",
+		apitest.Posting(c.checking, -100),
+		apitest.Posting(c.card, 100),
+	)
+	c.h.ExpectProblem(
+		transfer(c.h, other, 1, closed, ""),
+		http.StatusUnprocessableEntity,
+		"not_categorizable",
+		"",
+	)
 }
 
 // A card credit transferred to checking becomes the payment of the oldest unpaid statement (A28).
@@ -253,12 +332,20 @@ func TestTransferTurnsCardCreditIntoPayment(t *testing.T) {
 	c.purchase("2026-10-14", 150000)
 
 	cardTx, cardRecord := importLine(t, c.h, c.card, "2026-11-11", 150000)
-	if p := postingOn(c.h.Transaction(cardTx), c.card); p.CardRole != "credit" || p.Statement != "2026-12" {
+	if p := postingOn(
+		c.h.Transaction(cardTx),
+		c.card,
+	); p.CardRole != "credit" ||
+		p.Statement != "2026-12" {
 		t.Fatalf("imported card posting = %+v", p)
 	}
 
 	res := mustTransfer(t, c.h, cardTx, 1, c.checking, "")
-	if p := postingOn(res.Transaction, c.card); p.CardRole != "payment" || p.Statement != "2026-12" || p.Amount.Amount != 150000 {
+	if p := postingOn(
+		res.Transaction,
+		c.card,
+	); p.CardRole != "payment" || p.Statement != "2026-12" ||
+		p.Amount.Amount != 150000 {
 		t.Fatalf("card posting = %+v", p)
 	}
 

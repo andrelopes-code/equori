@@ -14,17 +14,26 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-func (r *Repository) SaveInvitation(ctx context.Context, inv domain.Invitation) (domain.Invitation, error) {
+func (r *Repository) SaveInvitation(
+	ctx context.Context,
+	inv domain.Invitation,
+) (domain.Invitation, error) {
 	var stored domain.Invitation
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
-		if err := q.DeleteExpiredInvitations(ctx, DeleteExpiredInvitationsParams{BooksID: inv.BooksID, ExpiresAt: inv.CreatedAt}); err != nil {
+		if err := q.DeleteExpiredInvitations(
+			ctx,
+			DeleteExpiredInvitationsParams{BooksID: inv.BooksID, ExpiresAt: inv.CreatedAt},
+		); err != nil {
 			return err
 		}
 
-		member, err := q.IsBooksMemberEmail(ctx, IsBooksMemberEmailParams{BooksID: inv.BooksID, Email: inv.Email})
+		member, err := q.IsBooksMemberEmail(
+			ctx,
+			IsBooksMemberEmailParams{BooksID: inv.BooksID, Email: inv.Email},
+		)
 		if err != nil {
 			return err
 		}
@@ -58,13 +67,20 @@ func (r *Repository) SaveInvitation(ctx context.Context, inv domain.Invitation) 
 	return stored, nil
 }
 
-func (r *Repository) Invitations(ctx context.Context, booksID int64, now time.Time) ([]domain.Invitation, error) {
+func (r *Repository) Invitations(
+	ctx context.Context,
+	booksID int64,
+	now time.Time,
+) ([]domain.Invitation, error) {
 	var out []domain.Invitation
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
-		if err := q.DeleteExpiredInvitations(ctx, DeleteExpiredInvitationsParams{BooksID: booksID, ExpiresAt: now}); err != nil {
+		if err := q.DeleteExpiredInvitations(
+			ctx,
+			DeleteExpiredInvitationsParams{BooksID: booksID, ExpiresAt: now},
+		); err != nil {
 			return err
 		}
 
@@ -100,8 +116,15 @@ func (r *Repository) DeleteInvitation(ctx context.Context, booksID int64, id uui
 	return nil
 }
 
-func (r *Repository) InvitationPreview(ctx context.Context, tokenHash []byte, now time.Time) (app.InvitationPreview, error) {
-	row, err := r.q.GetInvitationPreview(ctx, GetInvitationPreviewParams{TokenHash: tokenHash, ExpiresAt: now})
+func (r *Repository) InvitationPreview(
+	ctx context.Context,
+	tokenHash []byte,
+	now time.Time,
+) (app.InvitationPreview, error) {
+	row, err := r.q.GetInvitationPreview(
+		ctx,
+		GetInvitationPreviewParams{TokenHash: tokenHash, ExpiresAt: now},
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.InvitationPreview{}, app.ErrInvitationNotFound
 	}
@@ -121,7 +144,12 @@ func (r *Repository) InvitationPreview(ctx context.Context, tokenHash []byte, no
 	}, nil
 }
 
-func (r *Repository) AcceptAsNewMember(ctx context.Context, tokenHash []byte, m domain.Member, now time.Time) (domain.Member, int64, error) {
+func (r *Repository) AcceptAsNewMember(
+	ctx context.Context,
+	tokenHash []byte,
+	m domain.Member,
+	now time.Time,
+) (domain.Member, int64, error) {
 	var (
 		created domain.Member
 		booksID int64
@@ -130,7 +158,10 @@ func (r *Repository) AcceptAsNewMember(ctx context.Context, tokenHash []byte, m 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
-		claim, err := q.ClaimInvitation(ctx, ClaimInvitationParams{TokenHash: tokenHash, ExpiresAt: now})
+		claim, err := q.ClaimInvitation(
+			ctx,
+			ClaimInvitationParams{TokenHash: tokenHash, ExpiresAt: now},
+		)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return app.ErrInvitationNotFound
 		}
@@ -153,7 +184,10 @@ func (r *Repository) AcceptAsNewMember(ctx context.Context, tokenHash []byte, m 
 			return err
 		}
 
-		if err := q.CreateMembership(ctx, CreateMembershipParams{MemberID: row.ID, BooksID: claim.BooksID, Role: claim.Role}); err != nil {
+		if err := q.CreateMembership(
+			ctx,
+			CreateMembershipParams{MemberID: row.ID, BooksID: claim.BooksID, Role: claim.Role},
+		); err != nil {
 			return err
 		}
 
@@ -168,11 +202,20 @@ func (r *Repository) AcceptAsNewMember(ctx context.Context, tokenHash []byte, m 
 	return created, booksID, nil
 }
 
-func (r *Repository) AcceptAsMember(ctx context.Context, tokenHash []byte, memberID int64, sessionHash []byte, now time.Time) error {
+func (r *Repository) AcceptAsMember(
+	ctx context.Context,
+	tokenHash []byte,
+	memberID int64,
+	sessionHash []byte,
+	now time.Time,
+) error {
 	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
-		claim, err := q.ClaimInvitation(ctx, ClaimInvitationParams{TokenHash: tokenHash, ExpiresAt: now})
+		claim, err := q.ClaimInvitation(
+			ctx,
+			ClaimInvitationParams{TokenHash: tokenHash, ExpiresAt: now},
+		)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return app.ErrInvitationNotFound
 		}
@@ -181,7 +224,10 @@ func (r *Repository) AcceptAsMember(ctx context.Context, tokenHash []byte, membe
 			return err
 		}
 
-		err = q.CreateMembership(ctx, CreateMembershipParams{MemberID: memberID, BooksID: claim.BooksID, Role: claim.Role})
+		err = q.CreateMembership(
+			ctx,
+			CreateMembershipParams{MemberID: memberID, BooksID: claim.BooksID, Role: claim.Role},
+		)
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == uniqueViolation {
 			return app.ErrAlreadyMember
 		}
@@ -190,11 +236,17 @@ func (r *Repository) AcceptAsMember(ctx context.Context, tokenHash []byte, membe
 			return err
 		}
 
-		if _, err := q.TouchMembership(ctx, TouchMembershipParams{MemberID: memberID, BooksID: claim.BooksID, LastActiveAt: now}); err != nil {
+		if _, err := q.TouchMembership(
+			ctx,
+			TouchMembershipParams{MemberID: memberID, BooksID: claim.BooksID, LastActiveAt: now},
+		); err != nil {
 			return err
 		}
 
-		n, err := q.SwitchSession(ctx, SwitchSessionParams{TokenHash: sessionHash, MemberID: memberID, BooksID: claim.BooksID})
+		n, err := q.SwitchSession(
+			ctx,
+			SwitchSessionParams{TokenHash: sessionHash, MemberID: memberID, BooksID: claim.BooksID},
+		)
 		if err != nil {
 			return err
 		}

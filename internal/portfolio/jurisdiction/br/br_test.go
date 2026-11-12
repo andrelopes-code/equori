@@ -25,7 +25,14 @@ func TestBR(t *testing.T) {
 		{"stock", "cri", "BVMF", "stock"},
 	} {
 		if got := j.TaxClass(c.instrumentType, c.subtype, c.exchange); got != c.want {
-			t.Errorf("TaxClass(%q, %q, %q) = %q, want %q", c.instrumentType, c.subtype, c.exchange, got, c.want)
+			t.Errorf(
+				"TaxClass(%q, %q, %q) = %q, want %q",
+				c.instrumentType,
+				c.subtype,
+				c.exchange,
+				got,
+				c.want,
+			)
 		}
 	}
 
@@ -53,7 +60,16 @@ func TestBR(t *testing.T) {
 		t.Errorf("ID = %q, IncomeTypes = %v", j.ID(), j.IncomeTypes())
 	}
 
-	if got, want := j.Subtypes("fund"), []string{"equity_fund", "fixed_income_fund", "multimarket"}; !slices.Equal(got, want) {
+	if got, want := j.Subtypes(
+		"fund",
+	), []string{
+		"equity_fund",
+		"fixed_income_fund",
+		"multimarket",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("Subtypes(fund) = %v, want %v", got, want)
 	}
 

@@ -37,16 +37,24 @@ func linkedTransaction(t *testing.T, h *apitest.Harness, id string) linkedView {
 	return out
 }
 
-func inflowWithLink(b reimbursementBooks, original, linkType string, amount int64) apitest.Response {
+func inflowWithLink(
+	b reimbursementBooks,
+	original, linkType string,
+	amount int64,
+) apitest.Response {
 	link := map[string]any{"type": linkType, "target": original}
 	if amount != 0 {
 		link["amount"] = apitest.BRL(amount)
 	}
 
 	return b.h.Do(http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-20", "description": "received",
-		"postings": []map[string]any{apitest.Posting(b.nubank, 1500), apitest.Posting(b.car, -1500)},
-		"links":    []map[string]any{link},
+		"date":        "2026-10-20",
+		"description": "received",
+		"postings": []map[string]any{
+			apitest.Posting(b.nubank, 1500),
+			apitest.Posting(b.car, -1500),
+		},
+		"links": []map[string]any{link},
 	})
 }
 
@@ -67,12 +75,14 @@ func TestReimbursementLinkAmountRoundTrips(t *testing.T) {
 	r.Decode(t, &created)
 
 	got := linkedTransaction(t, b.h, created.ID)
-	if len(got.Links) != 1 || got.Links[0].Amount == nil || got.Links[0].Amount.Amount != 1000 || got.Links[0].Amount.Currency != "BRL" {
+	if len(got.Links) != 1 || got.Links[0].Amount == nil || got.Links[0].Amount.Amount != 1000 ||
+		got.Links[0].Amount.Currency != "BRL" {
 		t.Fatalf("links = %+v, want amount 1000 BRL", got.Links)
 	}
 
 	original := linkedTransaction(t, b.h, expense)
-	if len(original.ReferencedBy) != 1 || original.ReferencedBy[0].Amount == nil || original.ReferencedBy[0].Amount.Amount != 1000 {
+	if len(original.ReferencedBy) != 1 || original.ReferencedBy[0].Amount == nil ||
+		original.ReferencedBy[0].Amount.Amount != 1000 {
 		t.Fatalf("referenced_by = %+v, want amount 1000", original.ReferencedBy)
 	}
 }
@@ -88,9 +98,17 @@ func TestCorrectKeepsReimbursementLinkAmount(t *testing.T) {
 	r.Decode(t, &created)
 
 	put := b.h.Do(http.MethodPut, "/api/v1/transactions/"+created.ID, map[string]any{
-		"date": "2026-10-20", "description": "renamed", "expected_version": 1, "reason": "rename",
-		"postings": []map[string]any{apitest.Posting(b.nubank, 1500), apitest.Posting(b.car, -1500)},
-		"links":    []map[string]any{{"type": "reimbursement_of", "target": expense, "amount": apitest.BRL(1000)}},
+		"date":             "2026-10-20",
+		"description":      "renamed",
+		"expected_version": 1,
+		"reason":           "rename",
+		"postings": []map[string]any{
+			apitest.Posting(b.nubank, 1500),
+			apitest.Posting(b.car, -1500),
+		},
+		"links": []map[string]any{
+			{"type": "reimbursement_of", "target": expense, "amount": apitest.BRL(1000)},
+		},
 	})
 
 	if put.Status != http.StatusOK {
@@ -98,7 +116,8 @@ func TestCorrectKeepsReimbursementLinkAmount(t *testing.T) {
 	}
 
 	got := linkedTransaction(t, b.h, created.ID)
-	if got.Version != 2 || len(got.Links) != 1 || got.Links[0].Amount == nil || got.Links[0].Amount.Amount != 1000 {
+	if got.Version != 2 || len(got.Links) != 1 || got.Links[0].Amount == nil ||
+		got.Links[0].Amount.Amount != 1000 {
 		t.Fatalf("after correction = %+v", got)
 	}
 }
@@ -123,8 +142,14 @@ func TestCorrectWithoutLinksKeepsReimbursementLinks(t *testing.T) {
 
 	correct := func(version int, extra map[string]any) apitest.Response {
 		body := map[string]any{
-			"date": "2026-10-20", "description": "renamed", "expected_version": version, "reason": "rename",
-			"postings": []map[string]any{apitest.Posting(b.nubank, 1500), apitest.Posting(b.car, -1500)},
+			"date":             "2026-10-20",
+			"description":      "renamed",
+			"expected_version": version,
+			"reason":           "rename",
+			"postings": []map[string]any{
+				apitest.Posting(b.nubank, 1500),
+				apitest.Posting(b.car, -1500),
+			},
 		}
 		for k, v := range extra {
 			body[k] = v
@@ -138,7 +163,8 @@ func TestCorrectWithoutLinksKeepsReimbursementLinks(t *testing.T) {
 	}
 
 	got := linkedTransaction(t, b.h, inflow)
-	if len(got.Links) != 1 || got.Links[0].Target != expense || got.Links[0].Amount == nil || got.Links[0].Amount.Amount != 1500 {
+	if len(got.Links) != 1 || got.Links[0].Target != expense || got.Links[0].Amount == nil ||
+		got.Links[0].Amount.Amount != 1500 {
 		t.Fatalf("links after a correction without links = %+v", got.Links)
 	}
 

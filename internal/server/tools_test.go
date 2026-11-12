@@ -79,7 +79,12 @@ func TestToolExposure(t *testing.T) {
 
 		if strings.HasPrefix(v, "-") {
 			if !exclusions[v] {
-				t.Errorf("operation %s has exclusion %q, not one of %v", op, v, slices.Sorted(maps.Keys(exclusions)))
+				t.Errorf(
+					"operation %s has exclusion %q, not one of %v",
+					op,
+					v,
+					slices.Sorted(maps.Keys(exclusions)),
+				)
 			}
 
 			continue
@@ -118,8 +123,12 @@ func TestToolCatalog(t *testing.T) {
 	for _, tl := range h.App.Tools.Tools() {
 		s := tl.Spec()
 		catalog = append(catalog, entry{
-			Name: s.Name, Description: s.Description, Effect: s.Effect.String(), Idempotent: s.Idempotent,
-			InputSchema: tl.InputSchema(), OutputSchema: tl.OutputSchema(),
+			Name:         s.Name,
+			Description:  s.Description,
+			Effect:       s.Effect.String(),
+			Idempotent:   s.Idempotent,
+			InputSchema:  tl.InputSchema(),
+			OutputSchema: tl.OutputSchema(),
 		})
 	}
 
@@ -145,6 +154,10 @@ func TestToolCatalog(t *testing.T) {
 	}
 
 	if !bytes.Equal(got, want) {
-		t.Errorf("the tool catalog differs from %s; review the change, then run go test ./internal/server -run TestToolCatalog -update\n%s", path, got)
+		t.Errorf(
+			"the tool catalog differs from %s; review the change, then run go test ./internal/server -run TestToolCatalog -update\n%s",
+			path,
+			got,
+		)
 	}
 }

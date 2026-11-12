@@ -22,7 +22,7 @@ func Limit(n int) (int, error) {
 
 // PageArgs holds the paging arguments of a list tool; the tool's input embeds it.
 type PageArgs struct {
-	Limit  int    `json:"limit,omitzero" jsonschema:"items per page, 1 to 50; 20 when absent"`
+	Limit  int    `json:"limit,omitzero"  jsonschema:"items per page, 1 to 50; 20 when absent"`
 	Cursor string `json:"cursor,omitzero" jsonschema:"next_cursor of the previous page; absent for the first page"`
 }
 
@@ -67,7 +67,10 @@ func Paginate[T any](items []T, key func(T) string, limit int, cursor string) ([
 }
 
 func invalidCursor() *Error {
-	return InvalidArgument("cursor", "is not a next_cursor of this list, or its item left the list; start again without cursor")
+	return InvalidArgument(
+		"cursor",
+		"is not a next_cursor of this list, or its item left the list; start again without cursor",
+	)
 }
 
 // PageOf pages items with the arguments of a list tool.

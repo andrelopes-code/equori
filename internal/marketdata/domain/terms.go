@@ -43,7 +43,13 @@ func (t Terms) Validate(daily BusinessDayIndexes) error {
 	case t.DayCount != DayCountBus252 && t.DayCount != DayCountAct365:
 		return invalid("day_count", "must be bus252 or act365")
 	case t.DayCount == DayCountBus252 && !daily.Has(t.IndexID):
-		return invalid("day_count", "bus252 counts the business days of the "+strings.Join(daily, " or ")+" index; use act365")
+		return invalid(
+			"day_count",
+			"bus252 counts the business days of the "+strings.Join(
+				daily,
+				" or ",
+			)+" index; use act365",
+		)
 	}
 
 	return nil

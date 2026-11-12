@@ -25,7 +25,13 @@ type received struct {
 
 // serve starts a fake chat completions API that answers every request with status, header
 // and body, recording the request into got.
-func serve(t *testing.T, status int, header http.Header, body string, got *received) *httptest.Server {
+func serve(
+	t *testing.T,
+	status int,
+	header http.Header,
+	body string,
+	got *received,
+) *httptest.Server {
 	t.Helper()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -77,14 +83,19 @@ func TestGenerateText(t *testing.T) {
 	srv := serve(t, http.StatusOK, nil, textAnswer, &got)
 	temperature := 0.0
 
-	resp, err := openai.New(srv.URL+"/v1", "k", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{
-		System: "sys", Messages: []llm.Message{user("hi")}, MaxOutputTokens: 64, Temperature: &temperature,
-	})
+	resp, err := openai.New(srv.URL+"/v1", "k", http.DefaultClient).
+		Generate(context.Background(), "m1", llm.Request{
+			System:          "sys",
+			Messages:        []llm.Message{user("hi")},
+			MaxOutputTokens: 64,
+			Temperature:     &temperature,
+		})
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
 
-	if got.method != http.MethodPost || got.path != "/v1/chat/completions" || got.auth != "Bearer k" {
+	if got.method != http.MethodPost || got.path != "/v1/chat/completions" ||
+		got.auth != "Bearer k" {
 		t.Fatalf("request = %s %s auth %q", got.method, got.path, got.auth)
 	}
 
@@ -94,7 +105,8 @@ func TestGenerateText(t *testing.T) {
 		t.Fatalf("body = %s\nwant   %s", body, want)
 	}
 
-	if resp.Text() != "ok" || resp.FinishReason != llm.FinishStop || resp.Usage != (llm.Usage{InputTokens: 3, OutputTokens: 1}) {
+	if resp.Text() != "ok" || resp.FinishReason != llm.FinishStop ||
+		resp.Usage != (llm.Usage{InputTokens: 3, OutputTokens: 1}) {
 		t.Fatalf("response = %+v", resp)
 	}
 
@@ -108,7 +120,8 @@ func TestGenerateNoKey(t *testing.T) {
 	var got received
 
 	srv := serve(t, http.StatusOK, nil, textAnswer, &got)
-	if _, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}}); err != nil {
+	if _, err := openai.New(srv.URL, "", http.DefaultClient).
+		Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}}); err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
 
@@ -122,7 +135,8 @@ func TestBaseURLSlash(t *testing.T) {
 	var got received
 
 	srv := serve(t, http.StatusOK, nil, textAnswer, &got)
-	if _, err := openai.New(srv.URL+"/v1/", "", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}}); err != nil {
+	if _, err := openai.New(srv.URL+"/v1/", "", http.DefaultClient).
+		Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}}); err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
 
@@ -139,12 +153,31 @@ func TestGenerateToolRoundTrip(t *testing.T) {
 	srv := serve(t, http.StatusOK, nil, answer, &got)
 	history := []llm.Message{
 		user("go"),
-		{Role: llm.RoleModel, Parts: []llm.Part{{ToolCall: &llm.ToolCall{ID: "c1", Name: "f", Args: json.RawMessage(`{"x":1}`)}}}},
-		{Role: llm.RoleTool, Parts: []llm.Part{{ToolResult: &llm.ToolResult{CallID: "c1", Name: "f", Content: json.RawMessage(`{"r":true}`)}}}},
+		{
+			Role: llm.RoleModel,
+			Parts: []llm.Part{
+				{ToolCall: &llm.ToolCall{ID: "c1", Name: "f", Args: json.RawMessage(`{"x":1}`)}},
+			},
+		},
+		{
+			Role: llm.RoleTool,
+			Parts: []llm.Part{
+				{
+					ToolResult: &llm.ToolResult{
+						CallID:  "c1",
+						Name:    "f",
+						Content: json.RawMessage(`{"r":true}`),
+					},
+				},
+			},
+		},
 	}
-	tools := []llm.Tool{{Name: "g", Description: "does g", Parameters: json.RawMessage(`{"type":"object"}`)}}
+	tools := []llm.Tool{
+		{Name: "g", Description: "does g", Parameters: json.RawMessage(`{"type":"object"}`)},
+	}
 
-	resp, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{Messages: history, Tools: tools})
+	resp, err := openai.New(srv.URL, "", http.DefaultClient).
+		Generate(context.Background(), "m1", llm.Request{Messages: history, Tools: tools})
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
@@ -157,8 +190,11 @@ func TestGenerateToolRoundTrip(t *testing.T) {
 		t.Fatalf("body = %s\nwant   %s", body, want)
 	}
 
-	wantParts := []llm.Part{{ToolCall: &llm.ToolCall{ID: "c2", Name: "g", Args: json.RawMessage(`{"y":2}`)}}}
-	if !reflect.DeepEqual(resp.Message.Parts, wantParts) || resp.FinishReason != llm.FinishToolCalls {
+	wantParts := []llm.Part{
+		{ToolCall: &llm.ToolCall{ID: "c2", Name: "g", Args: json.RawMessage(`{"y":2}`)}},
+	}
+	if !reflect.DeepEqual(resp.Message.Parts, wantParts) ||
+		resp.FinishReason != llm.FinishToolCalls {
 		t.Fatalf("response = %+v", resp)
 	}
 }
@@ -168,8 +204,12 @@ func TestGenerateSchema(t *testing.T) {
 	var got received
 	srv := serve(t, http.StatusOK, nil, textAnswer, &got)
 
-	req := llm.Request{Messages: []llm.Message{user("hi")}, Schema: json.RawMessage(`{"type":"object"}`)}
-	if _, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1", req); err != nil {
+	req := llm.Request{
+		Messages: []llm.Message{user("hi")},
+		Schema:   json.RawMessage(`{"type":"object"}`),
+	}
+	if _, err := openai.New(srv.URL, "", http.DefaultClient).
+		Generate(context.Background(), "m1", req); err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
 
@@ -183,14 +223,24 @@ func TestGenerateFinishReason(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]llm.FinishReason{
-		"stop": llm.FinishStop, "length": llm.FinishLength, "content_filter": llm.FinishBlocked, "other": llm.FinishOther,
+		"stop":           llm.FinishStop,
+		"length":         llm.FinishLength,
+		"content_filter": llm.FinishBlocked,
+		"other":          llm.FinishOther,
 	}
 	for reason, want := range tests {
 		t.Run(reason, func(t *testing.T) {
 			t.Parallel()
-			srv := serve(t, http.StatusOK, nil, `{"choices":[{"message":{"content":"x"},"finish_reason":"`+reason+`"}]}`, nil)
+			srv := serve(
+				t,
+				http.StatusOK,
+				nil,
+				`{"choices":[{"message":{"content":"x"},"finish_reason":"`+reason+`"}]}`,
+				nil,
+			)
 
-			resp, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}})
+			resp, err := openai.New(srv.URL, "", http.DefaultClient).
+				Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}})
 			if err != nil {
 				t.Fatalf("Generate: %v", err)
 			}
@@ -212,8 +262,19 @@ func TestGenerateStatus(t *testing.T) {
 		wantErr   error
 		wantRetry time.Duration
 	}{
-		{name: "quota with delay", status: 429, header: http.Header{"Retry-After": {"7"}}, wantErr: llm.ErrQuota, wantRetry: 7 * time.Second},
-		{name: "quota with date", status: 429, header: http.Header{"Retry-After": {"Wed, 21 Oct 2026 07:28:00 GMT"}}, wantErr: llm.ErrQuota},
+		{
+			name:      "quota with delay",
+			status:    429,
+			header:    http.Header{"Retry-After": {"7"}},
+			wantErr:   llm.ErrQuota,
+			wantRetry: 7 * time.Second,
+		},
+		{
+			name:    "quota with date",
+			status:  429,
+			header:  http.Header{"Retry-After": {"Wed, 21 Oct 2026 07:28:00 GMT"}},
+			wantErr: llm.ErrQuota,
+		},
 		{name: "quota without header", status: 429, wantErr: llm.ErrQuota},
 		{name: "unauthorized", status: 401, wantErr: llm.ErrUnauthorized},
 		{name: "forbidden", status: 403, wantErr: llm.ErrUnauthorized},
@@ -229,7 +290,8 @@ func TestGenerateStatus(t *testing.T) {
 			t.Parallel()
 			srv := serve(t, tt.status, tt.header, `{"error":{"message":"secret-body"}}`, nil)
 
-			_, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}})
+			_, err := openai.New(srv.URL, "", http.DefaultClient).
+				Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}})
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("err = %v, want %v", err, tt.wantErr)
 			}
@@ -250,7 +312,8 @@ func TestGenerateTransport(t *testing.T) {
 	srv := serve(t, http.StatusOK, nil, textAnswer, nil)
 	srv.Close()
 
-	_, err := openai.New(srv.URL, "", http.DefaultClient).Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}})
+	_, err := openai.New(srv.URL, "", http.DefaultClient).
+		Generate(context.Background(), "m1", llm.Request{Messages: []llm.Message{user("hi")}})
 	if !errors.Is(err, llm.ErrTransient) {
 		t.Fatalf("err = %v, want ErrTransient", err)
 	}
@@ -279,7 +342,11 @@ func TestModelsUnauthorized(t *testing.T) {
 	t.Parallel()
 
 	srv := serve(t, http.StatusUnauthorized, nil, `{}`, nil)
-	if _, err := openai.New(srv.URL, "k", http.DefaultClient).Models(context.Background()); !errors.Is(err, llm.ErrUnauthorized) {
+	if _, err := openai.New(srv.URL, "k", http.DefaultClient).
+		Models(context.Background()); !errors.Is(
+		err,
+		llm.ErrUnauthorized,
+	) {
 		t.Fatalf("err = %v, want ErrUnauthorized", err)
 	}
 }
@@ -341,11 +408,14 @@ func TestStream(t *testing.T) {
 		},
 		{
 			name: "tool calls by index",
-			body: frames(`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"c0","type":"function","function":{"name":"get_x","arguments":"{\"a\""}}]}}]}`,
+			body: frames(
+				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"c0","type":"function","function":{"name":"get_x","arguments":"{\"a\""}}]}}]}`,
 				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":1,"id":"c1","type":"function","function":{"name":"get_y","arguments":""}}]}}]}`,
 				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":":1"}}]}}]}`,
 				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"}"}},{"index":1,"function":{"arguments":"{}"}}]}}]}`,
-				`{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`, "[DONE]"),
+				`{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
+				"[DONE]",
+			),
 			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
 				p := resp.Message.Parts
 				if err != nil || len(p) != 2 || p[0].ToolCall == nil || p[1].ToolCall == nil ||
@@ -359,7 +429,11 @@ func TestStream(t *testing.T) {
 		{
 			// Review Focus 2: a server that ignores stream_options sends no usage chunk.
 			name: "no usage chunk",
-			body: frames(`{"choices":[{"index":0,"delta":{"content":"A"}}]}`, `{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`, "[DONE]"),
+			body: frames(
+				`{"choices":[{"index":0,"delta":{"content":"A"}}]}`,
+				`{"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+				"[DONE]",
+			),
 			check: func(t *testing.T, resp llm.Response, _ []string, err error) {
 				if err != nil || resp.Usage != (llm.Usage{}) || resp.Text() != "A" {
 					t.Fatalf("resp = %+v, err = %v", resp, err)
@@ -369,8 +443,11 @@ func TestStream(t *testing.T) {
 		{
 			// Review of phase 2: the index comes from the server.
 			name: "tool call index out of range",
-			body: frames(`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":-1,"id":"c0","function":{"name":"x","arguments":"{}"}}]}}]}`,
-				`{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`, "[DONE]"),
+			body: frames(
+				`{"choices":[{"index":0,"delta":{"tool_calls":[{"index":-1,"id":"c0","function":{"name":"x","arguments":"{}"}}]}}]}`,
+				`{"choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
+				"[DONE]",
+			),
 			check: func(t *testing.T, _ llm.Response, _ []string, err error) {
 				if !errors.Is(err, llm.ErrTransient) {
 					t.Fatalf("err = %v, want ErrTransient", err)
@@ -394,10 +471,16 @@ func TestStream(t *testing.T) {
 			srv := serve(t, 200, http.Header{}, tt.body, &got)
 			var chunks []string
 			resp, err := openai.New(srv.URL, "", srv.Client()).Stream(context.Background(), "m",
-				llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "oi"}}}}},
+				llm.Request{
+					Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "oi"}}}},
+				},
 				func(s string) { chunks = append(chunks, s) })
 
-			if got.body["stream"] != true || !reflect.DeepEqual(got.body["stream_options"], map[string]any{"include_usage": true}) {
+			if got.body["stream"] != true ||
+				!reflect.DeepEqual(
+					got.body["stream_options"],
+					map[string]any{"include_usage": true},
+				) {
 				t.Fatalf("request body = %v", got.body)
 			}
 

@@ -25,7 +25,11 @@ type HistoryMessage struct {
 // History applies spec 5.3: the latest turns that fit HistoryBytes, at most HistoryTurns, oldest first. A turn is
 // a user message with its answer; a user message without an answer is left out. Each proposal of an answer
 // adds a line with its status at now.
-func History(messages []domain.Message, proposals []domain.Proposal, now time.Time) []HistoryMessage {
+func History(
+	messages []domain.Message,
+	proposals []domain.Proposal,
+	now time.Time,
+) []HistoryMessage {
 	var turns [][2]HistoryMessage
 	for i := 0; i+1 < len(messages); i++ {
 		u, a := messages[i], messages[i+1]
@@ -55,7 +59,10 @@ func History(messages []domain.Message, proposals []domain.Proposal, now time.Ti
 			continue
 		}
 
-		turns = append(turns, [2]HistoryMessage{{domain.RoleUser, u.Content}, {domain.RoleAssistant, text}})
+		turns = append(
+			turns,
+			[2]HistoryMessage{{domain.RoleUser, u.Content}, {domain.RoleAssistant, text}},
+		)
 	}
 
 	size, from := 0, len(turns)

@@ -69,7 +69,10 @@ func (r *lineReader) settleAmount(chosen *amountAt, amounts []amountAt) {
 		}
 
 		others := func(i int) bool { return i != a.at && r.words[i].role == RoleAmount && !r.inPhrase(a, i) }
-		choices = append(choices, Choice{Amount: v, Description: r.description(others), Describes: true})
+		choices = append(
+			choices,
+			Choice{Amount: v, Description: r.description(others), Describes: true},
+		)
 	}
 
 	r.issue(IssueAmbiguousAmount, FieldAmount, choices...)

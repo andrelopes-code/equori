@@ -22,7 +22,11 @@ func TestReadEnvFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := map[string]string{"EQUORI_HTTP_ADDR": "127.0.0.1:9000", "EQUORI_PRICE_FEEDS": "bcb_ptax,ecb", "EQUORI_EMPTY": ""}
+	want := map[string]string{
+		"EQUORI_HTTP_ADDR":   "127.0.0.1:9000",
+		"EQUORI_PRICE_FEEDS": "bcb_ptax,ecb",
+		"EQUORI_EMPTY":       "",
+	}
 	if !maps.Equal(got, want) {
 		t.Fatalf("ReadEnvFile = %v, want %v", got, want)
 	}
@@ -57,7 +61,10 @@ func TestWithFile(t *testing.T) {
 
 	process := map[string]string{"A": "process", "B": ""}
 
-	getenv := WithFile(func(k string) string { return process[k] }, map[string]string{"A": "file", "B": "file", "C": "file"})
+	getenv := WithFile(
+		func(k string) string { return process[k] },
+		map[string]string{"A": "file", "B": "file", "C": "file"},
+	)
 	for key, want := range map[string]string{"A": "process", "B": "file", "C": "file", "D": ""} {
 		if got := getenv(key); got != want {
 			t.Errorf("getenv(%q) = %q, want %q", key, got, want)

@@ -60,7 +60,12 @@ type Resolver struct {
 
 var _ llm.Recorder = (*Resolver)(nil)
 
-func NewResolver(svc *app.Service, instance []llm.Provider, build Factory, log *slog.Logger) *Resolver {
+func NewResolver(
+	svc *app.Service,
+	instance []llm.Provider,
+	build Factory,
+	log *slog.Logger,
+) *Resolver {
 	m := make(map[string]llm.Provider, len(instance))
 	for _, p := range instance {
 		m[p.Name()] = p
@@ -78,11 +83,28 @@ func (r *Resolver) Record(ctx context.Context, a llm.Attempt) {
 	}
 
 	err := r.svc.Record(ctx, booksID, app.Attempt{
-		ProviderID: a.Target.Provider, Model: a.Target.Model, UseID: a.Use, Outcome: a.Outcome,
-		InputTokens: int64(a.Usage.InputTokens), OutputTokens: int64(a.Usage.OutputTokens), CoolingUntil: a.CooldownUntil,
+		ProviderID: a.Target.Provider,
+		Model:      a.Target.Model,
+		UseID:      a.Use,
+		Outcome:    a.Outcome,
+		InputTokens: int64(
+			a.Usage.InputTokens,
+		),
+		OutputTokens: int64(a.Usage.OutputTokens),
+		CoolingUntil: a.CooldownUntil,
 	})
 	if err != nil {
-		r.log.Warn("llm usage not recorded", "use", a.Use, "provider", a.Target.Provider, "model", a.Target.Model, "error", err)
+		r.log.Warn(
+			"llm usage not recorded",
+			"use",
+			a.Use,
+			"provider",
+			a.Target.Provider,
+			"model",
+			a.Target.Model,
+			"error",
+			err,
+		)
 	}
 }
 
@@ -105,7 +127,10 @@ func (r *Resolver) Resolve(ctx context.Context, use llm.Use) ([]llm.Binding, err
 			p = r.build(string(t.API), t.BaseURL, t.Key)
 		}
 
-		out = append(out, llm.Binding{Target: llm.Target{Provider: t.ProviderID, Model: t.Model}, Provider: p})
+		out = append(
+			out,
+			llm.Binding{Target: llm.Target{Provider: t.ProviderID, Model: t.Model}, Provider: p},
+		)
 	}
 
 	return out, nil

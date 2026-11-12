@@ -17,7 +17,17 @@ func TestConvert(t *testing.T) {
 	md := marketdata.New(pgtest.New(t))
 
 	ctx := t.Context()
-	if _, err := md.DefineInstrument(ctx, marketdata.Instrument{Code: "MXRF11", Type: "reit", Scale: 0, Name: "Maxi Renda", QuoteCurrency: "BRL", Exchange: "BVMF"}); err != nil {
+	if _, err := md.DefineInstrument(
+		ctx,
+		marketdata.Instrument{
+			Code:          "MXRF11",
+			Type:          "reit",
+			Scale:         0,
+			Name:          "Maxi Renda",
+			QuoteCurrency: "BRL",
+			Exchange:      "BVMF",
+		},
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -27,7 +37,13 @@ func TestConvert(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		return marketdata.Price{Instrument: instrument, Quote: quote, Date: day(date), Value: v, Source: "manual"}
+		return marketdata.Price{
+			Instrument: instrument,
+			Quote:      quote,
+			Date:       day(date),
+			Value:      v,
+			Source:     "manual",
+		}
 	}
 	if err := md.RecordPrices(ctx, []marketdata.Price{
 		price("USD", "BRL", "2026-10-30", "5.5"),
@@ -53,9 +69,27 @@ func TestConvert(t *testing.T) {
 		prices int
 	}{
 		{name: "same currency", q: amount(100, "BRL", 2), to: "BRL", want: amount(100, "BRL", 2)},
-		{name: "direct", q: amount(100000, "USD", 2), to: "BRL", want: amount(550000, "BRL", 2), prices: 1},
-		{name: "inverse", q: amount(275000, "BRL", 2), to: "USD", want: amount(50000, "USD", 2), prices: 1},
-		{name: "through BRL", q: amount(100, "MXRF11", 0), to: "USD", want: amount(17018, "USD", 2), prices: 2},
+		{
+			name:   "direct",
+			q:      amount(100000, "USD", 2),
+			to:     "BRL",
+			want:   amount(550000, "BRL", 2),
+			prices: 1,
+		},
+		{
+			name:   "inverse",
+			q:      amount(275000, "BRL", 2),
+			to:     "USD",
+			want:   amount(50000, "USD", 2),
+			prices: 1,
+		},
+		{
+			name:   "through BRL",
+			q:      amount(100, "MXRF11", 0),
+			to:     "USD",
+			want:   amount(17018, "USD", 2),
+			prices: 2,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -71,11 +105,20 @@ func TestConvert(t *testing.T) {
 	}
 
 	_, err := md.Convert(ctx, amount(100, "EUR", 2), "BRL", day("2026-11-01"))
-	if !errors.Is(err, marketdata.ErrPriceMissing) || err.Error() != "price missing: EUR in BRL on 2026-11-01" {
+	if !errors.Is(err, marketdata.ErrPriceMissing) ||
+		err.Error() != "price missing: EUR in BRL on 2026-11-01" {
 		t.Fatalf("missing price err = %v", err)
 	}
 
-	if _, err := md.Convert(ctx, amount(100000, "USD", 2), "BRL", day("2026-10-29")); !errors.Is(err, marketdata.ErrPriceMissing) {
+	if _, err := md.Convert(
+		ctx,
+		amount(100000, "USD", 2),
+		"BRL",
+		day("2026-10-29"),
+	); !errors.Is(
+		err,
+		marketdata.ErrPriceMissing,
+	) {
 		t.Fatalf("price after the date used: err = %v", err)
 	}
 }
@@ -87,7 +130,18 @@ func intermediateModule(t *testing.T, prices map[string][]string) *marketdata.Mo
 	for pair, entries := range prices {
 		for _, e := range entries {
 			date, value, _ := strings.Cut(e, "=")
-			h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": pair[:3], "quote_instrument": pair[3:], "date": date, "value": value}, http.StatusCreated, nil)
+			h.MustDo(
+				http.MethodPost,
+				"/api/v1/prices",
+				map[string]any{
+					"instrument":       pair[:3],
+					"quote_instrument": pair[3:],
+					"date":             date,
+					"value":            value,
+				},
+				http.StatusCreated,
+				nil,
+			)
 		}
 	}
 
@@ -107,7 +161,10 @@ func usd100(t *testing.T) money.Money {
 
 func TestConvertThroughIntermediate(t *testing.T) {
 	t.Parallel()
-	md := intermediateModule(t, map[string][]string{"EURUSD": {"2026-10-01=1.10"}, "EURGBP": {"2026-10-01=0.85"}})
+	md := intermediateModule(
+		t,
+		map[string][]string{"EURUSD": {"2026-10-01=1.10"}, "EURGBP": {"2026-10-01=0.85"}},
+	)
 
 	got, err := md.Convert(t.Context(), usd100(t), "GBP", day("2026-10-02"))
 	if err != nil {
@@ -165,14 +222,18 @@ func TestIntermediateChoice(t *testing.T) {
 // Review Focus 4: a stale leg does not block a conversion.
 func TestIntermediateOldLeg(t *testing.T) {
 	t.Parallel()
-	md := intermediateModule(t, map[string][]string{"EURUSD": {"2026-03-16=1.10"}, "EURGBP": {"2026-10-02=0.85"}})
+	md := intermediateModule(
+		t,
+		map[string][]string{"EURUSD": {"2026-03-16=1.10"}, "EURGBP": {"2026-10-02=0.85"}},
+	)
 
 	got, err := md.Convert(t.Context(), usd100(t), "GBP", day("2026-10-02"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(got.Prices) != 2 || got.Prices[0].Date != day("2026-03-16") || got.Prices[1].Date != day("2026-10-02") {
+	if len(got.Prices) != 2 || got.Prices[0].Date != day("2026-03-16") ||
+		got.Prices[1].Date != day("2026-10-02") {
 		t.Fatalf("prices = %+v", got.Prices)
 	}
 }
@@ -181,7 +242,15 @@ func TestNoPath(t *testing.T) {
 	t.Parallel()
 
 	md := marketdata.New(pgtest.New(t))
-	if _, err := md.Convert(t.Context(), usd100(t), "GBP", day("2026-10-02")); !errors.Is(err, marketdata.ErrPriceMissing) {
+	if _, err := md.Convert(
+		t.Context(),
+		usd100(t),
+		"GBP",
+		day("2026-10-02"),
+	); !errors.Is(
+		err,
+		marketdata.ErrPriceMissing,
+	) {
 		t.Fatalf("err = %v", err)
 	}
 }

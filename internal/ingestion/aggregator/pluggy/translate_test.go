@@ -26,26 +26,56 @@ func saoPaulo(t *testing.T) *time.Location {
 func TestNormalize(t *testing.T) {
 	t.Parallel()
 	loc := saoPaulo(t)
-	checking := client.Account{ID: "acc-1", Type: "BANK", Subtype: client.SubtypeChecking, CurrencyCode: "BRL"}
-	card := client.Account{ID: "acc-2", Type: client.TypeCredit, Subtype: client.SubtypeCard, CurrencyCode: "BRL"}
+	checking := client.Account{
+		ID:           "acc-1",
+		Type:         "BANK",
+		Subtype:      client.SubtypeChecking,
+		CurrencyCode: "BRL",
+	}
+	card := client.Account{
+		ID:           "acc-2",
+		Type:         client.TypeCredit,
+		Subtype:      client.SubtypeCard,
+		CurrencyCode: "BRL",
+	}
 	bills := map[string]client.Bill{"bill-1": {ID: "bill-1", DueDate: "2026-12-10T00:00:00.000Z"}}
 
 	t.Run("bank debit", func(t *testing.T) {
 		r, ok, err := Normalize(client.Transaction{
-			ID: "t1", Description: "Padaria", DescriptionRaw: ptr("PAG*PADARIA"), CurrencyCode: "BRL", Amount: "-8.5",
-			Date: "2026-10-07T00:00:00.000Z", Balance: "1234.56", Status: "POSTED", Category: ptr("Bakery"), CategoryID: ptr("01010000"),
+			ID:             "t1",
+			Description:    "Padaria",
+			DescriptionRaw: ptr("PAG*PADARIA"),
+			CurrencyCode:   "BRL",
+			Amount:         "-8.5",
+			Date:           "2026-10-07T00:00:00.000Z",
+			Balance:        "1234.56",
+			Status:         "POSTED",
+			Category:       ptr("Bakery"),
+			CategoryID:     ptr("01010000"),
 		}, checking, bills, 2, loc)
 		if err != nil || !ok {
 			t.Fatal(ok, err)
 		}
 
 		if r.ExternalID != "t1" || r.Amount != -850 || r.Date.Format(time.DateOnly) != "2026-10-07" || r.Description != "PAG*PADARIA" ||
-			r.Pending || r.BalanceAfter == nil || *r.BalanceAfter != 123456 || r.Category == nil || r.Category.ID != "01010000" || r.Category.Name != "Bakery" {
+			r.Pending ||
+			r.BalanceAfter == nil ||
+			*r.BalanceAfter != 123456 ||
+			r.Category == nil ||
+			r.Category.ID != "01010000" ||
+			r.Category.Name != "Bakery" {
 			t.Fatalf("record = %+v", r)
 		}
 	})
 	t.Run("institution line id", func(t *testing.T) {
-		line := client.Transaction{ID: "t1", Description: "Padaria", CurrencyCode: "BRL", Amount: "-8.5", Date: "2026-10-07T00:00:00.000Z", Status: "POSTED"}
+		line := client.Transaction{
+			ID:           "t1",
+			Description:  "Padaria",
+			CurrencyCode: "BRL",
+			Amount:       "-8.5",
+			Date:         "2026-10-07T00:00:00.000Z",
+			Status:       "POSTED",
+		}
 
 		without, ok, err := Normalize(line, checking, bills, 2, loc)
 		if err != nil || !ok {
@@ -53,7 +83,11 @@ func TestNormalize(t *testing.T) {
 		}
 
 		if _, has := without.Raw["provider_id"]; without.InstitutionID != "" || has {
-			t.Fatalf("without provider id: InstitutionID %q, raw %v", without.InstitutionID, without.Raw)
+			t.Fatalf(
+				"without provider id: InstitutionID %q, raw %v",
+				without.InstitutionID,
+				without.Raw,
+			)
 		}
 
 		line.ProviderID = ptr("p-1")
@@ -68,40 +102,119 @@ func TestNormalize(t *testing.T) {
 		}
 	})
 	t.Run("bank pending is skipped", func(t *testing.T) {
-		if _, ok, err := Normalize(client.Transaction{ID: "t2", Amount: "-10", Date: "2026-11-20T00:00:00.000Z", Status: statusPending, CurrencyCode: "BRL"}, checking, bills, 2, loc); ok || err != nil {
+		if _, ok, err := Normalize(
+			client.Transaction{
+				ID:           "t2",
+				Amount:       "-10",
+				Date:         "2026-11-20T00:00:00.000Z",
+				Status:       statusPending,
+				CurrencyCode: "BRL",
+			},
+			checking,
+			bills,
+			2,
+			loc,
+		); ok ||
+			err != nil {
 			t.Fatalf("ok %v, err %v", ok, err)
 		}
 	})
 	t.Run("card charge changes sign and keeps pending", func(t *testing.T) {
-		r, ok, err := Normalize(client.Transaction{ID: "t3", Description: "MERCADO", Amount: "230", Date: "2026-11-05T00:00:00.000Z", Status: statusPending, CurrencyCode: "BRL"}, card, bills, 2, loc)
+		r, ok, err := Normalize(
+			client.Transaction{
+				ID:           "t3",
+				Description:  "MERCADO",
+				Amount:       "230",
+				Date:         "2026-11-05T00:00:00.000Z",
+				Status:       statusPending,
+				CurrencyCode: "BRL",
+			},
+			card,
+			bills,
+			2,
+			loc,
+		)
 		if err != nil || !ok || r.Amount != -23000 || !r.Pending || r.DueDate != nil {
 			t.Fatalf("record = %+v, %v, %v", r, ok, err)
 		}
 	})
 	t.Run("card line with bill and installment", func(t *testing.T) {
 		r, ok, err := Normalize(client.Transaction{
-			ID: "t4", Description: "LOJA 3/6", Amount: "100", Date: "2026-11-01T00:00:00.000Z", Status: "POSTED", CurrencyCode: "BRL",
-			CreditCardMetadata: &client.CardMetadata{InstallmentNumber: 3, TotalInstallments: 6, PurchaseDate: ptr("2026-08-14T00:00:00.000Z"), BillID: ptr("bill-1")},
+			ID:           "t4",
+			Description:  "LOJA 3/6",
+			Amount:       "100",
+			Date:         "2026-11-01T00:00:00.000Z",
+			Status:       "POSTED",
+			CurrencyCode: "BRL",
+			CreditCardMetadata: &client.CardMetadata{
+				InstallmentNumber: 3,
+				TotalInstallments: 6,
+				PurchaseDate:      ptr("2026-08-14T00:00:00.000Z"),
+				BillID:            ptr("bill-1"),
+			},
 		}, card, bills, 2, loc)
-		if err != nil || !ok || r.Amount != -10000 || r.Pending || r.DueDate == nil || r.DueDate.Format(time.DateOnly) != "2026-12-10" ||
-			r.Installment == nil || r.Installment.Number != 3 || r.Installment.Count != 6 || r.Installment.PurchaseDate.Format(time.DateOnly) != "2026-08-14" {
+		if err != nil || !ok || r.Amount != -10000 || r.Pending || r.DueDate == nil ||
+			r.DueDate.Format(time.DateOnly) != "2026-12-10" ||
+			r.Installment == nil ||
+			r.Installment.Number != 3 ||
+			r.Installment.Count != 6 ||
+			r.Installment.PurchaseDate.Format(time.DateOnly) != "2026-08-14" {
 			t.Fatalf("record = %+v, %v, %v", r, ok, err)
 		}
 	})
 	t.Run("card payment is a credit to the card", func(t *testing.T) {
-		r, _, err := Normalize(client.Transaction{ID: "t5", Description: "PAGAMENTO", Amount: "-1500", Date: "2026-11-11T00:00:00.000Z", Status: "POSTED", CurrencyCode: "BRL"}, card, bills, 2, loc)
+		r, _, err := Normalize(
+			client.Transaction{
+				ID:           "t5",
+				Description:  "PAGAMENTO",
+				Amount:       "-1500",
+				Date:         "2026-11-11T00:00:00.000Z",
+				Status:       "POSTED",
+				CurrencyCode: "BRL",
+			},
+			card,
+			bills,
+			2,
+			loc,
+		)
 		if err != nil || r.Amount != 150000 {
 			t.Fatalf("record = %+v, %v", r, err)
 		}
 	})
 	t.Run("foreign line uses the account currency amount", func(t *testing.T) {
-		r, _, err := Normalize(client.Transaction{ID: "t6", Description: "NETFLIX", Amount: "58", AmountInAccountCurrency: "298.19", CurrencyCode: "USD", Date: "2026-11-02T00:00:00.000Z", Status: "POSTED"}, card, bills, 2, loc)
+		r, _, err := Normalize(
+			client.Transaction{
+				ID:                      "t6",
+				Description:             "NETFLIX",
+				Amount:                  "58",
+				AmountInAccountCurrency: "298.19",
+				CurrencyCode:            "USD",
+				Date:                    "2026-11-02T00:00:00.000Z",
+				Status:                  "POSTED",
+			},
+			card,
+			bills,
+			2,
+			loc,
+		)
 		if err != nil || r.Amount != -29819 {
 			t.Fatalf("record = %+v, %v", r, err)
 		}
 	})
 	t.Run("instant after midnight UTC is a Sao Paulo date", func(t *testing.T) {
-		r, _, err := Normalize(client.Transaction{ID: "t7", Amount: "-1", Date: "2026-11-02T01:30:00.000Z", Status: "POSTED", CurrencyCode: "BRL"}, checking, bills, 2, loc)
+		r, _, err := Normalize(
+			client.Transaction{
+				ID:           "t7",
+				Amount:       "-1",
+				Date:         "2026-11-02T01:30:00.000Z",
+				Status:       "POSTED",
+				CurrencyCode: "BRL",
+			},
+			checking,
+			bills,
+			2,
+			loc,
+		)
 		if err != nil || r.Date.Format(time.DateOnly) != "2026-11-01" {
 			t.Fatalf("date = %s, %v", r.Date, err)
 		}
@@ -123,7 +236,12 @@ func TestNormalize(t *testing.T) {
 func TestNormalizeReserveTransfer(t *testing.T) {
 	t.Parallel()
 
-	checking := client.Account{ID: "acc-1", Type: "BANK", Subtype: client.SubtypeChecking, CurrencyCode: "BRL"}
+	checking := client.Account{
+		ID:           "acc-1",
+		Type:         "BANK",
+		Subtype:      client.SubtypeChecking,
+		CurrencyCode: "BRL",
+	}
 
 	const reserveOp = "TRANSFERENCIA_SALDO_RESERVADO"
 	for _, tc := range []struct {
@@ -143,8 +261,13 @@ func TestNormalizeReserveTransfer(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r, ok, err := Normalize(client.Transaction{
-				ID: "t1", Description: tc.description, OperationType: tc.operation, CurrencyCode: "BRL", Amount: tc.amount,
-				Date: "2026-11-11T00:00:00.000Z", Status: "POSTED",
+				ID:            "t1",
+				Description:   tc.description,
+				OperationType: tc.operation,
+				CurrencyCode:  "BRL",
+				Amount:        tc.amount,
+				Date:          "2026-11-11T00:00:00.000Z",
+				Status:        "POSTED",
 			}, checking, nil, 2, time.UTC)
 			if err != nil || !ok {
 				t.Fatal(ok, err)
@@ -161,7 +284,12 @@ func TestNormalizeCounterparty(t *testing.T) {
 	t.Parallel()
 
 	loc := saoPaulo(t)
-	checking := client.Account{ID: "acc-1", Type: "BANK", Subtype: client.SubtypeChecking, CurrencyCode: "BRL"}
+	checking := client.Account{
+		ID:           "acc-1",
+		Type:         "BANK",
+		Subtype:      client.SubtypeChecking,
+		CurrencyCode: "BRL",
+	}
 	cpf := &client.DocumentNumber{Type: "CPF", Value: "529.982.247-25"}
 	cnpj := &client.DocumentNumber{Type: "CNPJ", Value: "18.236.120/0001-58"}
 
@@ -171,11 +299,42 @@ func TestNormalizeCounterparty(t *testing.T) {
 		data   *client.PaymentData
 		want   *domain.PartyID
 	}{
-		{"debit with receiver", "-250.00", &client.PaymentData{Receiver: &client.PaymentParty{DocumentNumber: cpf}}, &domain.PartyID{Scheme: "br_cpf", Value: "529.982.247-25"}},
-		{"credit with payer", "250.00", &client.PaymentData{Payer: &client.PaymentParty{DocumentNumber: cnpj}}, &domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"}},
-		{"debit with only a payer", "-250.00", &client.PaymentData{Payer: &client.PaymentParty{DocumentNumber: cpf}}, nil},
-		{"unknown document type", "-250.00", &client.PaymentData{Receiver: &client.PaymentParty{DocumentNumber: &client.DocumentNumber{Type: "PASSPORT", Value: "AB123456"}}}, nil},
-		{"empty document value", "-250.00", &client.PaymentData{Receiver: &client.PaymentParty{DocumentNumber: &client.DocumentNumber{Type: "CPF"}}}, nil},
+		{
+			"debit with receiver",
+			"-250.00",
+			&client.PaymentData{Receiver: &client.PaymentParty{DocumentNumber: cpf}},
+			&domain.PartyID{Scheme: "br_cpf", Value: "529.982.247-25"},
+		},
+		{
+			"credit with payer",
+			"250.00",
+			&client.PaymentData{Payer: &client.PaymentParty{DocumentNumber: cnpj}},
+			&domain.PartyID{Scheme: "br_cnpj", Value: "18.236.120/0001-58"},
+		},
+		{
+			"debit with only a payer",
+			"-250.00",
+			&client.PaymentData{Payer: &client.PaymentParty{DocumentNumber: cpf}},
+			nil,
+		},
+		{
+			"unknown document type",
+			"-250.00",
+			&client.PaymentData{
+				Receiver: &client.PaymentParty{
+					DocumentNumber: &client.DocumentNumber{Type: "PASSPORT", Value: "AB123456"},
+				},
+			},
+			nil,
+		},
+		{
+			"empty document value",
+			"-250.00",
+			&client.PaymentData{
+				Receiver: &client.PaymentParty{DocumentNumber: &client.DocumentNumber{Type: "CPF"}},
+			},
+			nil,
+		},
 		{"no payment data", "-250.00", nil, nil},
 	}
 

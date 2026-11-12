@@ -10,7 +10,10 @@ import (
 )
 
 // StartTOTP stores a new unconfirmed secret and returns it with its otpauth URI.
-func (s *Service) StartTOTP(ctx context.Context, memberID int64) (secret []byte, uri string, err error) {
+func (s *Service) StartTOTP(
+	ctx context.Context,
+	memberID int64,
+) (secret []byte, uri string, err error) {
 	if s.box == nil {
 		return nil, "", ErrSecretKeyMissing
 	}
@@ -35,7 +38,11 @@ func (s *Service) StartTOTP(ctx context.Context, memberID int64) (secret []byte,
 }
 
 // ConfirmTOTP enables the stored secret; it returns the recovery codes when no second factor existed.
-func (s *Service) ConfirmTOTP(ctx context.Context, memberID int64, sessionToken, code string) ([]string, error) {
+func (s *Service) ConfirmTOTP(
+	ctx context.Context,
+	memberID int64,
+	sessionToken, code string,
+) ([]string, error) {
 	if s.box == nil {
 		return nil, ErrSecretKeyMissing
 	}
@@ -94,7 +101,12 @@ func (s *Service) DisableTOTP(ctx context.Context, memberID int64, password stri
 	return s.repo.DisableTOTP(ctx, memberID)
 }
 
-func (s *Service) useTOTP(ctx context.Context, memberID int64, code string, now time.Time) (bool, error) {
+func (s *Service) useTOTP(
+	ctx context.Context,
+	memberID int64,
+	code string,
+	now time.Time,
+) (bool, error) {
 	if s.box == nil {
 		return false, ErrSecretKeyMissing
 	}

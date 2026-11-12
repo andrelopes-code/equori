@@ -147,9 +147,19 @@ func planSetBillingCycle(
 	out manageCardOut,
 ) (tool.Preview, func() (manageCardOut, error), error) {
 	rule := domain.BillingCycleRule{
-		EffectiveFrom: domain.MonthOf(in.EffectiveFrom.Time), ClosingMode: string(in.ClosingMode), ClosingDay: in.ClosingDay,
-		ClosingDaysBeforeDue: in.ClosingDaysBeforeDue, DueDay: in.DueDay, Assignment: string(in.ClosingDayAssignment),
-		Adjustment: string(in.DueDateAdjustment), ClosingAdjustment: string(in.ClosingAdjustment), Calendar: in.Calendar,
+		EffectiveFrom: domain.MonthOf(
+			in.EffectiveFrom.Time,
+		),
+		ClosingMode:          string(in.ClosingMode),
+		ClosingDay:           in.ClosingDay,
+		ClosingDaysBeforeDue: in.ClosingDaysBeforeDue,
+		DueDay:               in.DueDay,
+		Assignment:           string(in.ClosingDayAssignment),
+		Adjustment: string(
+			in.DueDateAdjustment,
+		),
+		ClosingAdjustment: string(in.ClosingAdjustment),
+		Calendar:          in.Calendar,
 	}
 	pv.Changes = cycleChanges(in, rule)
 
@@ -161,7 +171,16 @@ func planSetBillingCycle(
 	}, nil
 }
 
-func planEditCard(ctx context.Context, svc *app.Service, booksID int64, a domain.Account, cardID uuid.UUID, in manageCardIn, pv tool.Preview, out manageCardOut) (tool.Preview, func() (manageCardOut, error), error) {
+func planEditCard(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	a domain.Account,
+	cardID uuid.UUID,
+	in manageCardIn,
+	pv tool.Preview,
+	out manageCardOut,
+) (tool.Preview, func() (manageCardOut, error), error) {
 	if in.Holder == "" && in.LastFour == "" {
 		return pv, nil, tool.InvalidArgument("holder", "give the holder, the last_four or both")
 	}
@@ -193,7 +212,13 @@ func planEditCard(ctx context.Context, svc *app.Service, booksID int64, a domain
 		after.LastFour = *edit.LastFour
 	}
 
-	pv.Changes = []tool.Change{{Field: "card", Before: tool.TextValue(cardText(c)), After: tool.TextValue(cardText(after))}}
+	pv.Changes = []tool.Change{
+		{
+			Field:  "card",
+			Before: tool.TextValue(cardText(c)),
+			After:  tool.TextValue(cardText(after)),
+		},
+	}
 
 	return pv, func() (manageCardOut, error) {
 		_, err := svc.EditCard(ctx, booksID, c.ID, edit)
@@ -204,7 +229,12 @@ func planEditCard(ctx context.Context, svc *app.Service, booksID int64, a domain
 }
 
 // cardOf returns the card of the account, or app.ErrNotFound.
-func cardOf(ctx context.Context, svc *app.Service, booksID int64, accountID, cardID uuid.UUID) (domain.Card, error) {
+func cardOf(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	accountID, cardID uuid.UUID,
+) (domain.Card, error) {
 	cards, err := svc.Cards(ctx, booksID, accountID)
 	if err != nil {
 		return domain.Card{}, err
@@ -253,7 +283,10 @@ func cycleChanges(in manageCardIn, rule domain.BillingCycleRule) []tool.Change {
 	}
 
 	if len(options) > 0 {
-		changes = append(changes, tool.Change{Field: "terms", After: tool.TextValue(strings.Join(options, ", "))})
+		changes = append(
+			changes,
+			tool.Change{Field: "terms", After: tool.TextValue(strings.Join(options, ", "))},
+		)
 	}
 
 	return changes

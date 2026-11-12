@@ -52,7 +52,13 @@ func TestClusterBackupRestoresAcrossForms(t *testing.T) {
 
 	defer func() { _ = c.Stop() }()
 
-	if err := backup.Restore(t.Context(), bin, c.DSN(pgcluster.Database), dump, latest); err != nil {
+	if err := backup.Restore(
+		t.Context(),
+		bin,
+		c.DSN(pgcluster.Database),
+		dump,
+		latest,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -87,5 +93,12 @@ func TestClusterBackupRestoresAcrossForms(t *testing.T) {
 // maintenance database, not the database pgtest created.
 func dsnOf(pool *pgxpool.Pool) string {
 	cc := pool.Config().ConnConfig
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cc.Host, cc.Port, cc.User, cc.Password, cc.Database)
+	return fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		cc.Host,
+		cc.Port,
+		cc.User,
+		cc.Password,
+		cc.Database,
+	)
 }

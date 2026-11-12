@@ -16,7 +16,10 @@ import (
 var (
 	// ErrIntegrationUnavailable: the instance has no EQUORI_SECRET_KEY (ADR 008 K2).
 	ErrIntegrationUnavailable = errors.New("integrations need EQUORI_SECRET_KEY")
-	ErrCredentialsUnreadable  = fmt.Errorf("%w: the stored credentials do not open with the configured key; enter them again", ErrIntegrationUnavailable)
+	ErrCredentialsUnreadable  = fmt.Errorf(
+		"%w: the stored credentials do not open with the configured key; enter them again",
+		ErrIntegrationUnavailable,
+	)
 	ErrIntegrationInUse       = errors.New("the integration has connections")
 	ErrAggregatorUnauthorized = errors.New("the aggregator rejected the credentials")
 	ErrAggregatorUnavailable  = errors.New("the aggregator did not answer")
@@ -86,7 +89,10 @@ func (s *Service) Aggregators() []Aggregator {
 func (s *Service) aggregator(p domain.AggregatorID) (Aggregator, error) {
 	a, err := s.aggs.Get(string(p))
 	if err != nil {
-		return nil, &domain.FieldError{Field: "aggregator", Message: "is not an aggregator of this instance"}
+		return nil, &domain.FieldError{
+			Field:   "aggregator",
+			Message: "is not an aggregator of this instance",
+		}
 	}
 
 	return a, nil
@@ -104,7 +110,12 @@ func secretField(fields []domain.CredentialField) string {
 	return name
 }
 
-func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c domain.Credentials) error {
+func (s *Service) verify(
+	ctx context.Context,
+	agg Aggregator,
+	id uuid.UUID,
+	c domain.Credentials,
+) error {
 	if err := c.Validate(agg.CredentialFields()); err != nil {
 		return err
 	}
@@ -118,7 +129,13 @@ func (s *Service) verify(ctx context.Context, agg Aggregator, id uuid.UUID, c do
 }
 
 // CreateIntegration stores credentials the aggregator accepts; rejected ones store nothing (S57).
-func (s *Service) CreateIntegration(ctx context.Context, booksID int64, p domain.AggregatorID, name string, c domain.Credentials) (domain.Integration, error) {
+func (s *Service) CreateIntegration(
+	ctx context.Context,
+	booksID int64,
+	p domain.AggregatorID,
+	name string,
+	c domain.Credentials,
+) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
@@ -150,7 +167,11 @@ func (s *Service) CreateIntegration(ctx context.Context, booksID int64, p domain
 	return saved, err
 }
 
-func (s *Service) Integration(ctx context.Context, booksID int64, id uuid.UUID) (domain.Integration, error) {
+func (s *Service) Integration(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
@@ -158,7 +179,11 @@ func (s *Service) Integration(ctx context.Context, booksID int64, id uuid.UUID) 
 	return s.repo.Integration(ctx, booksID, id)
 }
 
-func (s *Service) ListIntegrations(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Integration, *NameKey, error) {
+func (s *Service) ListIntegrations(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[NameKey],
+) ([]domain.Integration, *NameKey, error) {
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
@@ -168,7 +193,12 @@ func (s *Service) ListIntegrations(ctx context.Context, booksID int64, p page.Re
 
 // UpdateCredentials replaces the credentials after the aggregator accepts them; rejected ones
 // leave the stored ones in place.
-func (s *Service) UpdateCredentials(ctx context.Context, booksID int64, id uuid.UUID, c domain.Credentials) (domain.Integration, error) {
+func (s *Service) UpdateCredentials(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	c domain.Credentials,
+) (domain.Integration, error) {
 	if err := s.available(); err != nil {
 		return domain.Integration{}, err
 	}
@@ -225,21 +255,24 @@ func (s *Service) RotateSecrets(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	return s.repo.ResealCredentials(ctx, func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
-		// An imported integration holds no credential until the owner enters it (export design E2).
-		if len(sealed) == 0 || !s.box.NeedsReseal(sealed) {
-			return nil, nil
-		}
+	return s.repo.ResealCredentials(
+		ctx,
+		func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
+			// An imported integration holds no credential until the owner enters it (export design E2).
+			if len(sealed) == 0 || !s.box.NeedsReseal(sealed) {
+				return nil, nil
+			}
 
-		row := credentialRow(booksID, id)
+			row := credentialRow(booksID, id)
 
-		plain, err := s.box.Open(sealed, row)
-		if err != nil {
-			return nil, fmt.Errorf("integration %s: %w", id, ErrCredentialsUnreadable)
-		}
+			plain, err := s.box.Open(sealed, row)
+			if err != nil {
+				return nil, fmt.Errorf("integration %s: %w", id, ErrCredentialsUnreadable)
+			}
 
-		return s.box.Seal(plain, row)
-	})
+			return s.box.Seal(plain, row)
+		},
+	)
 }
 
 // ItemState is what the aggregator reports about an item.

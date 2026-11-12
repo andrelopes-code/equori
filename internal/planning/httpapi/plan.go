@@ -27,10 +27,21 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	}
 
 	out := BudgetPlan{
-		Month: p.Month.Format(monthLayout), Currency: string(p.Currency), Source: BudgetPlanSource(p.Reference.Source),
-		ExpectedIncome: optional(p.Expected), AverageIncome: optional(p.Average),
-		ReceivedIncome: m(p.Received), Installments: m(p.Installments), Savings: m(p.Savings), Planned: m(p.Planned),
-		Prices: toPricesAPI(p.Prices), Rows: make([]BudgetPlanRow, len(p.Rows)),
+		Month: p.Month.Format(
+			monthLayout,
+		),
+		Currency:       string(p.Currency),
+		Source:         BudgetPlanSource(p.Reference.Source),
+		ExpectedIncome: optional(p.Expected),
+		AverageIncome:  optional(p.Average),
+		ReceivedIncome: m(
+			p.Received,
+		),
+		Installments: m(p.Installments),
+		Savings:      m(p.Savings),
+		Planned:      m(p.Planned),
+		Prices:       toPricesAPI(p.Prices),
+		Rows:         make([]BudgetPlanRow, len(p.Rows)),
 	}
 	if p.Reference.HasFixed {
 		out.Fixed = optional(&p.Reference.Fixed)
@@ -39,7 +50,11 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	if len(p.ExpectedItems) > 0 {
 		items := make([]BudgetPlanIncome, len(p.ExpectedItems))
 		for i, x := range p.ExpectedItems {
-			items[i] = BudgetPlanIncome{ScheduleId: x.ScheduleID, Description: x.Description, Amount: m(x.Amount)}
+			items[i] = BudgetPlanIncome{
+				ScheduleId:  x.ScheduleID,
+				Description: x.Description,
+				Amount:      m(x.Amount),
+			}
 		}
 
 		out.ExpectedItems = &items
@@ -103,7 +118,11 @@ func toBudgetPlanRowAPI(r domain.PlanRow, m func(int64) Money) BudgetPlanRow {
 	return row
 }
 
-func (s *Server) getBudgetPlan(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetPlan, error) {
+func (s *Server) getBudgetPlan(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (BudgetPlan, error) {
 	params, err := httpserver.Query[GetBudgetPlanParams](r)
 	if err != nil {
 		return BudgetPlan{}, err
@@ -122,7 +141,11 @@ func (s *Server) getBudgetPlan(ctx context.Context, r *http.Request, _ httpserve
 	return toBudgetPlanAPI(p), nil
 }
 
-func (s *Server) saveBudgetPlan(ctx context.Context, r *http.Request, in SaveBudgetPlanJSONRequestBody) (BudgetPlan, error) {
+func (s *Server) saveBudgetPlan(
+	ctx context.Context,
+	r *http.Request,
+	in SaveBudgetPlanJSONRequestBody,
+) (BudgetPlan, error) {
 	params, err := httpserver.Query[SaveBudgetPlanParams](r)
 	if err != nil {
 		return BudgetPlan{}, err
@@ -153,7 +176,15 @@ func (s *Server) saveBudgetPlan(ctx context.Context, r *http.Request, in SaveBud
 		amounts[i] = app.PlanAmount{CategoryID: a.CategoryId, Amount: m}
 	}
 
-	p, err := s.svc.SaveBudgetPlan(ctx, auth.MustBooksID(ctx), month, domain.ReferenceSource(in.Source), fixed, in.SavingsTargetBp, amounts)
+	p, err := s.svc.SaveBudgetPlan(
+		ctx,
+		auth.MustBooksID(ctx),
+		month,
+		domain.ReferenceSource(in.Source),
+		fixed,
+		in.SavingsTargetBp,
+		amounts,
+	)
 	if err != nil {
 		return BudgetPlan{}, err
 	}

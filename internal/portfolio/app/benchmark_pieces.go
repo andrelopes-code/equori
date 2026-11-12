@@ -21,7 +21,11 @@ func (p period) factor(start int64, ends []domain.Subperiod) (float64, bool) {
 // pieces lists the subperiods of (start − 1, end] of R1: the value of the tree at the end of
 // start − 1, then each flow date in [start, end] and end, with the value of the tree at the end of
 // that day and the day's flows. dates holds the end date of each subperiod.
-func (s *Service) pieces(ctx context.Context, p period, start, end time.Time) (int64, []domain.Subperiod, []time.Time, error) {
+func (s *Service) pieces(
+	ctx context.Context,
+	p period,
+	start, end time.Time,
+) (int64, []domain.Subperiod, []time.Time, error) {
 	before := start.AddDate(0, 0, -1)
 
 	opening := p.report.Opening.Amount()

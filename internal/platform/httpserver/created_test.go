@@ -57,7 +57,12 @@ func TestHandleCreated(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/x", strings.NewReader(tt.body))
+			req := httptest.NewRequestWithContext(
+				t.Context(),
+				http.MethodPost,
+				"/x",
+				strings.NewReader(tt.body),
+			)
 
 			httpserver.HandleCreated(writer, tt.fn)(rec, req)
 
@@ -115,7 +120,12 @@ func createdWriter(errBoom error) httpserver.ErrorWriter {
 	}
 }
 
-func assertCreated(t *testing.T, rec *httptest.ResponseRecorder, status int, location, body string) {
+func assertCreated(
+	t *testing.T,
+	rec *httptest.ResponseRecorder,
+	status int,
+	location, body string,
+) {
 	t.Helper()
 
 	if rec.Code != status {

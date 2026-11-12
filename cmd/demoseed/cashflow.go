@@ -6,13 +6,19 @@ import (
 )
 
 // expense records a purchase of cents in category paid through via: a card, a checking account, the wallet or the meal benefit.
-func (s *seeder) expense(d time.Time, via, category, payee, desc string, cents int64, tags ...string) {
+func (s *seeder) expense(
+	d time.Time,
+	via, category, payee, desc string,
+	cents int64,
+	tags ...string,
+) {
 	if via == "alelo.meal" && s.bal[s.id(via)] < cents {
 		via = "card.nubank"
 	}
 
 	// The meal card is spent first on food it is accepted for, so that the credit of the month does not pile up.
-	if strings.HasPrefix(category, "food.") && category != "food.bars" && via != "wallet" && s.bal[s.id("alelo.meal")] >= cents+mealReserve {
+	if strings.HasPrefix(category, "food.") && category != "food.bars" && via != "wallet" &&
+		s.bal[s.id("alelo.meal")] >= cents+mealReserve {
 		via = "alelo.meal"
 	}
 
@@ -45,14 +51,29 @@ func (s *seeder) payroll(month time.Time) {
 	irrf := irrfOf(g-inss, month)
 	net := g - inss - irrf - healthPlanDiscount
 	s.at(s.businessDay(month, 5), func() {
-		s.record(iso(s.businessDay(month, 5)), "Salário "+ym(month), map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")},
-			post(s.id("income.salary"), -g), post(s.id("tax.inss"), inss), post(s.id("tax.irrf"), irrf),
-			post(s.id("health.plan"), healthPlanDiscount), post(s.id("itau.checking"), net))
+		s.record(
+			iso(s.businessDay(month, 5)),
+			"Salário "+ym(month),
+			map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")},
+			post(
+				s.id("income.salary"),
+				-g,
+			),
+			post(s.id("tax.inss"), inss),
+			post(s.id("tax.irrf"), irrf),
+			post(s.id("health.plan"), healthPlanDiscount),
+			post(s.id("itau.checking"), net),
+		)
 	})
 	meal := step(month, 132000, map[string]int64{"2026-01": 143000})
 	s.at(s.businessDay(month, 1), func() {
-		s.record(iso(s.businessDay(month, 1)), "Crédito Alelo Refeição "+ym(month), map[string]any{"payee_id": s.id("payee.Alelo")},
-			post(s.id("alelo.meal"), meal), post(s.id("income.meal"), -meal))
+		s.record(
+			iso(s.businessDay(month, 1)),
+			"Crédito Alelo Refeição "+ym(month),
+			map[string]any{"payee_id": s.id("payee.Alelo")},
+			post(s.id("alelo.meal"), meal),
+			post(s.id("income.meal"), -meal),
+		)
 	})
 }
 
@@ -77,16 +98,60 @@ func (s *seeder) extrasEmployer() {
 			}
 
 			ps = append(ps, post(s.id(account), g-inss-irrf))
-			s.record(d, desc, map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")}, ps...)
+			s.record(
+				d,
+				desc,
+				map[string]any{"payee_id": s.id("payee.Tarsus Tecnologia Ltda")},
+				ps...)
 		})
 	}
 	// First installment of the 13th salary has no withholding; the second carries the tax of the whole.
-	p("2024-11-28", "13º salário, 1ª parcela 2024", "income.thirteenth", 745000, 0, 0, "itau.checking")
-	p("2024-12-20", "13º salário, 2ª parcela 2024", "income.thirteenth", 745000, inss2024, irrfOf(1490000-inss2024, time.Date(2024, 12, 1, 0, 0, 0, 0, time.UTC)), "itau.checking")
-	p("2025-11-28", "13º salário, 1ª parcela 2025", "income.thirteenth", 745000, 0, 0, "itau.checking")
-	p("2025-12-19", "13º salário, 2ª parcela 2025", "income.thirteenth", 745000, inss2025, irrfOf(1490000-inss2025, time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC)), "itau.checking")
+	p(
+		"2024-11-28",
+		"13º salário, 1ª parcela 2024",
+		"income.thirteenth",
+		745000,
+		0,
+		0,
+		"itau.checking",
+	)
+	p(
+		"2024-12-20",
+		"13º salário, 2ª parcela 2024",
+		"income.thirteenth",
+		745000,
+		inss2024,
+		irrfOf(1490000-inss2024, time.Date(2024, 12, 1, 0, 0, 0, 0, time.UTC)),
+		"itau.checking",
+	)
+	p(
+		"2025-11-28",
+		"13º salário, 1ª parcela 2025",
+		"income.thirteenth",
+		745000,
+		0,
+		0,
+		"itau.checking",
+	)
+	p(
+		"2025-12-19",
+		"13º salário, 2ª parcela 2025",
+		"income.thirteenth",
+		745000,
+		inss2025,
+		irrfOf(1490000-inss2025, time.Date(2025, 12, 1, 0, 0, 0, 0, time.UTC)),
+		"itau.checking",
+	)
 	// The constitutional third of the vacation; the monthly salary already reached the INSS ceiling.
-	p("2025-07-02", "Adicional de férias (1/3)", "income.vacation", 496667, 0, 496667*275/1000, "itau.checking")
+	p(
+		"2025-07-02",
+		"Adicional de férias (1/3)",
+		"income.vacation",
+		496667,
+		0,
+		496667*275/1000,
+		"itau.checking",
+	)
 	// PLR is taxed apart from the salary; 17 % is an approximate effective rate.
 	p("2025-03-14", "PLR 2024", "income.bonus", 1380000, 0, 1380000*17/100, "itau.checking")
 	p("2026-03-13", "PLR 2025", "income.bonus", 1530000, 0, 1530000*17/100, "itau.checking")
@@ -96,7 +161,13 @@ func (s *seeder) extrasFreelance() {
 	free := func(d, desc string, cents int64) {
 		day, _ := time.Parse(time.DateOnly, d)
 		s.at(day, func() {
-			s.record(d, desc, map[string]any{"tags": []string{"trabalho-extra"}}, post(s.id("nubank.checking"), cents), post(s.id("income.freelance"), -cents))
+			s.record(
+				d,
+				desc,
+				map[string]any{"tags": []string{"trabalho-extra"}},
+				post(s.id("nubank.checking"), cents),
+				post(s.id("income.freelance"), -cents),
+			)
 		})
 	}
 	free("2025-04-11", "Consultoria de discovery para startup", 320000)
@@ -114,12 +185,36 @@ func (s *seeder) extrasRefunds() {
 				extra["tags"] = tags
 			}
 
-			s.record(d, desc, extra, post(s.id("itau.checking"), cents), post(s.id("income.refunds"), -cents))
+			s.record(
+				d,
+				desc,
+				extra,
+				post(s.id("itau.checking"), cents),
+				post(s.id("income.refunds"), -cents),
+			)
 		})
 	}
-	refund("2025-05-23", "Reembolso de viagem a trabalho, São Paulo para Recife", "Tarsus Tecnologia Ltda", 148620, "trabalho")
-	refund("2025-11-14", "Reembolso de transporte do evento de produto", "Tarsus Tecnologia Ltda", 48630, "trabalho")
-	refund("2026-06-20", "Reembolso de curso aprovado pela empresa", "Tarsus Tecnologia Ltda", 129000, "trabalho")
+	refund(
+		"2025-05-23",
+		"Reembolso de viagem a trabalho, São Paulo para Recife",
+		"Tarsus Tecnologia Ltda",
+		148620,
+		"trabalho",
+	)
+	refund(
+		"2025-11-14",
+		"Reembolso de transporte do evento de produto",
+		"Tarsus Tecnologia Ltda",
+		48630,
+		"trabalho",
+	)
+	refund(
+		"2026-06-20",
+		"Reembolso de curso aprovado pela empresa",
+		"Tarsus Tecnologia Ltda",
+		129000,
+		"trabalho",
+	)
 	refund("2025-06-12", "Reembolso de consulta, plano de saúde", "Bradesco Saúde", 28000)
 	refund("2026-04-15", "Reembolso de consulta, plano de saúde", "Bradesco Saúde", 31500)
 }
@@ -141,24 +236,170 @@ var (
 )
 
 var bills = []bill{
-	{category: "housing.rent", payee: "QuintoAndar", via: "itau.checking", desc: "Aluguel", day: 5, base: 345000, steps: map[string]int64{"2025-08": 364000, "2026-08": 383000}},
-	{category: "housing.condo", payee: "Condomínio Edifício Aurora", via: "itau.checking", desc: "Condomínio", day: 10, base: 78000, steps: map[string]int64{"2025-05": 83500, "2026-05": 89000}},
-	{category: "housing.electricity", payee: "Enel SP", via: "itau.checking", desc: "Conta de luz", day: 18, base: 22000, steps: map[string]int64{"2025-07": 23800, "2026-07": 25200}, noise: 8, seasonal: &electricitySeason},
-	{category: "housing.water", payee: "Sabesp", via: "itau.checking", desc: "Conta de água", day: 22, base: 9800, steps: map[string]int64{"2025-02": 10600, "2026-02": 11300}, noise: 10},
-	{category: "housing.gas", payee: "Comgás", via: "nubank.checking", desc: "Conta de gás", day: 25, base: 7200, noise: 9, seasonal: &gasSeason},
-	{category: "housing.internet", payee: "Vivo Fibra", via: "card.itau", desc: "Internet fibra 500 mega", day: 12, base: 12990, steps: map[string]int64{"2025-06": 13990}},
-	{category: "housing.mobile", payee: "Vivo Móvel", via: "card.nubank", desc: "Plano de celular", day: 20, base: 8990, steps: map[string]int64{"2025-09": 9990}},
-	{category: "health.gym", payee: "Smart Fit", via: "card.nubank", desc: "Mensalidade da academia", day: 8, base: 11990, steps: map[string]int64{"2025-09": 12990}},
-	{category: "leisure.streaming", payee: "Netflix", via: "card.nubank", desc: "Netflix", day: 14, base: 5590, steps: map[string]int64{"2025-11": 5990}},
-	{category: "leisure.music", payee: "Spotify", via: "card.itau", desc: "Spotify Premium", day: 6, base: 2390, steps: map[string]int64{"2025-10": 2690}},
-	{category: "leisure.streaming", payee: "HBO Max", via: "card.nubank", desc: "HBO Max", day: 17, base: 3490, until: "2025-09"},
-	{category: "leisure.streaming", payee: "Disney+", via: "card.itau", desc: "Disney+", day: 9, base: 3390, from: "2025-03"},
-	{category: "pets.supplies", payee: "Petz", via: "card.nubank", desc: "Assinatura de ração Petz", day: 3, base: 18990, steps: map[string]int64{"2025-08": 20990}, tags: []string{"gato"}},
-	{category: "leisure.apps", payee: "Apple", via: "card.itau", desc: "iCloud+ 200 GB", day: 15, base: 1490, steps: map[string]int64{"2026-03": 1690}},
-	{category: "education.courses", payee: "Duolingo", via: "card.nubank", desc: "Duolingo Super", day: 23, base: 4990, from: "2025-06"},
-	{category: "giving", payee: "Instituto Pequeno Cidadão", via: "card.itau", desc: "Doação mensal", day: 28, base: 5000},
-	{category: "fee.card", payee: "Itaú Unibanco", via: "card.itau", desc: "Anuidade do cartão Platinum", day: 21, base: 6240},
-	{category: "fee.bank", payee: "Itaú Unibanco", via: "itau.checking", desc: "Pacote de serviços da conta", day: 2, base: 3860},
+	{
+		category: "housing.rent",
+		payee:    "QuintoAndar",
+		via:      "itau.checking",
+		desc:     "Aluguel",
+		day:      5,
+		base:     345000,
+		steps:    map[string]int64{"2025-08": 364000, "2026-08": 383000},
+	},
+	{
+		category: "housing.condo",
+		payee:    "Condomínio Edifício Aurora",
+		via:      "itau.checking",
+		desc:     "Condomínio",
+		day:      10,
+		base:     78000,
+		steps:    map[string]int64{"2025-05": 83500, "2026-05": 89000},
+	},
+	{
+		category: "housing.electricity",
+		payee:    "Enel SP",
+		via:      "itau.checking",
+		desc:     "Conta de luz",
+		day:      18,
+		base:     22000,
+		steps:    map[string]int64{"2025-07": 23800, "2026-07": 25200},
+		noise:    8,
+		seasonal: &electricitySeason,
+	},
+	{
+		category: "housing.water",
+		payee:    "Sabesp",
+		via:      "itau.checking",
+		desc:     "Conta de água",
+		day:      22,
+		base:     9800,
+		steps:    map[string]int64{"2025-02": 10600, "2026-02": 11300},
+		noise:    10,
+	},
+	{
+		category: "housing.gas",
+		payee:    "Comgás",
+		via:      "nubank.checking",
+		desc:     "Conta de gás",
+		day:      25,
+		base:     7200,
+		noise:    9,
+		seasonal: &gasSeason,
+	},
+	{
+		category: "housing.internet",
+		payee:    "Vivo Fibra",
+		via:      "card.itau",
+		desc:     "Internet fibra 500 mega",
+		day:      12,
+		base:     12990,
+		steps:    map[string]int64{"2025-06": 13990},
+	},
+	{
+		category: "housing.mobile",
+		payee:    "Vivo Móvel",
+		via:      "card.nubank",
+		desc:     "Plano de celular",
+		day:      20,
+		base:     8990,
+		steps:    map[string]int64{"2025-09": 9990},
+	},
+	{
+		category: "health.gym",
+		payee:    "Smart Fit",
+		via:      "card.nubank",
+		desc:     "Mensalidade da academia",
+		day:      8,
+		base:     11990,
+		steps:    map[string]int64{"2025-09": 12990},
+	},
+	{
+		category: "leisure.streaming",
+		payee:    "Netflix",
+		via:      "card.nubank",
+		desc:     "Netflix",
+		day:      14,
+		base:     5590,
+		steps:    map[string]int64{"2025-11": 5990},
+	},
+	{
+		category: "leisure.music",
+		payee:    "Spotify",
+		via:      "card.itau",
+		desc:     "Spotify Premium",
+		day:      6,
+		base:     2390,
+		steps:    map[string]int64{"2025-10": 2690},
+	},
+	{
+		category: "leisure.streaming",
+		payee:    "HBO Max",
+		via:      "card.nubank",
+		desc:     "HBO Max",
+		day:      17,
+		base:     3490,
+		until:    "2025-09",
+	},
+	{
+		category: "leisure.streaming",
+		payee:    "Disney+",
+		via:      "card.itau",
+		desc:     "Disney+",
+		day:      9,
+		base:     3390,
+		from:     "2025-03",
+	},
+	{
+		category: "pets.supplies",
+		payee:    "Petz",
+		via:      "card.nubank",
+		desc:     "Assinatura de ração Petz",
+		day:      3,
+		base:     18990,
+		steps:    map[string]int64{"2025-08": 20990},
+		tags:     []string{"gato"},
+	},
+	{
+		category: "leisure.apps",
+		payee:    "Apple",
+		via:      "card.itau",
+		desc:     "iCloud+ 200 GB",
+		day:      15,
+		base:     1490,
+		steps:    map[string]int64{"2026-03": 1690},
+	},
+	{
+		category: "education.courses",
+		payee:    "Duolingo",
+		via:      "card.nubank",
+		desc:     "Duolingo Super",
+		day:      23,
+		base:     4990,
+		from:     "2025-06",
+	},
+	{
+		category: "giving",
+		payee:    "Instituto Pequeno Cidadão",
+		via:      "card.itau",
+		desc:     "Doação mensal",
+		day:      28,
+		base:     5000,
+	},
+	{
+		category: "fee.card",
+		payee:    "Itaú Unibanco",
+		via:      "card.itau",
+		desc:     "Anuidade do cartão Platinum",
+		day:      21,
+		base:     6240,
+	},
+	{
+		category: "fee.bank",
+		payee:    "Itaú Unibanco",
+		via:      "itau.checking",
+		desc:     "Pacote de serviços da conta",
+		day:      2,
+		base:     3860,
+	},
 }
 
 func (s *seeder) fixedBills(month time.Time) {
@@ -206,7 +447,12 @@ func (s *seeder) cashback(month time.Time) {
 	cents := s.between(500, 2500, 1)
 
 	s.at(d, func() {
-		s.record(iso(d), "Cashback do cartão Nubank", map[string]any{"payee_id": s.id("payee.Nubank")},
-			post(s.id("nubank.checking"), cents), post(s.id("income.cashback"), -cents))
+		s.record(
+			iso(d),
+			"Cashback do cartão Nubank",
+			map[string]any{"payee_id": s.id("payee.Nubank")},
+			post(s.id("nubank.checking"), cents),
+			post(s.id("income.cashback"), -cents),
+		)
 	})
 }

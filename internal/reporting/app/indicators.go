@@ -26,7 +26,13 @@ type IndicatorReport struct {
 }
 
 // liquidKinds are the asset kinds the liquidity indicator counts (analytics design 4.1).
-var liquidKinds = map[string]bool{"checking": true, "savings": true, "cash": true, "wallet": true, "reserve": true}
+var liquidKinds = map[string]bool{
+	"checking": true,
+	"savings":  true,
+	"cash":     true,
+	"wallet":   true,
+	"reserve":  true,
+}
 
 // UseIndicatorSources sets the late-bound sources of Indicators.
 func (s *Service) UseIndicatorSources(c Commitments, v Valuations) {
@@ -35,7 +41,11 @@ func (s *Service) UseIndicatorSources(c Commitments, v Valuations) {
 
 // Indicators returns the indicators of month and the 11 months before it in the cash view
 // (analytics design 4); today bounds the current month.
-func (s *Service) Indicators(ctx context.Context, booksID int64, month, today time.Time) (IndicatorReport, error) {
+func (s *Service) Indicators(
+	ctx context.Context,
+	booksID int64,
+	month, today time.Time,
+) (IndicatorReport, error) {
 	if s.commitments == nil || s.valuations == nil {
 		return IndicatorReport{}, errors.New("indicators: sources not set")
 	}
@@ -125,7 +135,11 @@ type indicatorInputs struct {
 	loans          map[time.Time]int64
 }
 
-func (s *Service) indicatorFacts(ctx context.Context, booksID int64, in indicatorInputs) ([]MonthFacts, error) {
+func (s *Service) indicatorFacts(
+	ctx context.Context,
+	booksID int64,
+	in indicatorInputs,
+) ([]MonthFacts, error) {
 	facts := make([]MonthFacts, 24)
 	for i := range facts {
 		m := in.start.AddDate(0, i, 0)
@@ -144,7 +158,11 @@ func (s *Service) indicatorFacts(ctx context.Context, booksID int64, in indicato
 	return facts, nil
 }
 
-func (s *Service) indicatorSets(ctx context.Context, booksID int64, base string) (indicatorSets, error) {
+func (s *Service) indicatorSets(
+	ctx context.Context,
+	booksID int64,
+	base string,
+) (indicatorSets, error) {
 	accounts, err := s.repo.IndicatorAccounts(ctx, booksID)
 	if err != nil {
 		return indicatorSets{}, err

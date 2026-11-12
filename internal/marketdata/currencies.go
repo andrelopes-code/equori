@@ -17,10 +17,19 @@ func (m *Module) ReconcileCurrencies(ctx context.Context) error {
 
 	names := make([]string, len(all))
 	for i, c := range all {
-		codes[i], scales[i], names[i] = string(c), int16(c.MinorUnits()), money.Name(c) //nolint:gosec // minor units are 0 to 4
+		codes[i], scales[i], names[i] = string(
+			c,
+		), int16(
+			c.MinorUnits(),
+		), money.Name(
+			c,
+		) //nolint:gosec // minor units are 0 to 4
 	}
 
-	err := m.q.InsertMissingCurrencies(ctx, postgres.InsertMissingCurrenciesParams{Codes: codes, Scales: scales, Names: names})
+	err := m.q.InsertMissingCurrencies(
+		ctx,
+		postgres.InsertMissingCurrenciesParams{Codes: codes, Scales: scales, Names: names},
+	)
 	if err != nil {
 		return fmt.Errorf("insert missing currencies: %w", err)
 	}

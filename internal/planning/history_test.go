@@ -25,16 +25,40 @@ func TestScheduleStartingBeforeCreationRealizesRecordedTransactions(t *testing.T
 	id := f.schedule("subscription", f.checking, f.rent, 2390, monthly("2026-07-30", 30, ""), nil)
 
 	got := f.occurrences("from=2026-07-01&to=2026-11-30&schedule_id=" + id)
-	if want := []string{"2026-07-30", "2026-08-30", "2026-09-30", "2026-10-30", "2026-11-30"}; !slices.Equal(dates(got), want) {
+	if want := []string{
+		"2026-07-30",
+		"2026-08-30",
+		"2026-09-30",
+		"2026-10-30",
+		"2026-11-30",
+	}; !slices.Equal(
+		dates(got),
+		want,
+	) {
 		t.Fatalf("dates = %v, want %v", dates(got), want)
 	}
 
-	if want := []string{"realized", "realized", "realized", "expected", "expected"}; !slices.Equal(states(got), want) {
+	if want := []string{
+		"realized",
+		"realized",
+		"realized",
+		"expected",
+		"expected",
+	}; !slices.Equal(
+		states(got),
+		want,
+	) {
 		t.Fatalf("states = %v, want %v", states(got), want)
 	}
 
-	if got[0].TransactionID != july || got[1].TransactionID != august || got[2].TransactionID != september {
-		t.Fatalf("transactions = %v %v %v", got[0].TransactionID, got[1].TransactionID, got[2].TransactionID)
+	if got[0].TransactionID != july || got[1].TransactionID != august ||
+		got[2].TransactionID != september {
+		t.Fatalf(
+			"transactions = %v %v %v",
+			got[0].TransactionID,
+			got[1].TransactionID,
+			got[2].TransactionID,
+		)
 	}
 }
 
@@ -63,7 +87,11 @@ func TestBackfillRebuildsTheHistoryOfAnExistingSchedule(t *testing.T) {
 	paid := f.pay("2026-08-16", 1990, f.rent, "")
 
 	id := f.schedule("subscription", f.checking, f.rent, 1990, monthly("2026-07-16", 16, ""), nil)
-	if _, err := f.h.Pool.Exec(t.Context(), `DELETE FROM planning_occurrence WHERE schedule_id = $1 AND expected_on < '2026-10-20'`, id); err != nil {
+	if _, err := f.h.Pool.Exec(
+		t.Context(),
+		`DELETE FROM planning_occurrence WHERE schedule_id = $1 AND expected_on < '2026-10-20'`,
+		id,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -76,11 +104,29 @@ func TestBackfillRebuildsTheHistoryOfAnExistingSchedule(t *testing.T) {
 	}
 
 	got := f.occurrences("from=2026-07-01&to=2026-11-30&schedule_id=" + id)
-	if want := []string{"2026-07-16", "2026-08-16", "2026-09-16", "2026-10-16", "2026-11-16"}; !slices.Equal(dates(got), want) {
+	if want := []string{
+		"2026-07-16",
+		"2026-08-16",
+		"2026-09-16",
+		"2026-10-16",
+		"2026-11-16",
+	}; !slices.Equal(
+		dates(got),
+		want,
+	) {
 		t.Fatalf("dates = %v, want %v", dates(got), want)
 	}
 
-	if want := []string{"skipped", "realized", "skipped", "skipped", "expected"}; !slices.Equal(states(got), want) {
+	if want := []string{
+		"skipped",
+		"realized",
+		"skipped",
+		"skipped",
+		"expected",
+	}; !slices.Equal(
+		states(got),
+		want,
+	) {
 		t.Fatalf("states = %v, want %v", states(got), want)
 	}
 

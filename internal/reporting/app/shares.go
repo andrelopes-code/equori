@@ -48,7 +48,9 @@ func scale(x, d int64, weights Shares) Shares {
 
 // floorDiv is ⌊a·b/d⌋ without overflow.
 func floorDiv(a, b, d int64) int64 {
-	q, m := new(big.Int).DivMod(new(big.Int).Mul(big.NewInt(a), big.NewInt(b)), big.NewInt(d), new(big.Int))
+	q, m := new(
+		big.Int,
+	).DivMod(new(big.Int).Mul(big.NewInt(a), big.NewInt(b)), big.NewInt(d), new(big.Int))
 	// DivMod is Euclidean: for a negative divisor it rounds up when there is a remainder.
 	if d < 0 && m.Sign() != 0 {
 		q.Sub(q, big.NewInt(1))

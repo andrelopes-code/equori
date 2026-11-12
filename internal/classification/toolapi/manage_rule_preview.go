@@ -100,8 +100,15 @@ func previewRule(
 		return err
 	}
 
-	pv.Changes = append(ruleChanges(in, p, old, rule, categories, payees),
-		tool.Change{Field: "count", After: text(fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count))})
+	pv.Changes = append(
+		ruleChanges(in, p, old, rule, categories, payees),
+		tool.Change{
+			Field: "count",
+			After: text(
+				fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count),
+			),
+		},
+	)
 
 	return nil
 }
@@ -152,13 +159,24 @@ func previewReorder(
 	slices.SortFunc(current, compareIDs)
 
 	if !slices.Equal(sorted, current) {
-		return &domain.FieldError{Field: "rule_ids", Message: "must list every rule exactly once", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "rule_ids",
+			Message: "must list every rule exactly once",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	pv.Target = "Rule order"
 	for i, id := range p.rules {
 		if r := byID[id]; r.Priority != i+1 {
-			pv.Changes = append(pv.Changes, tool.Change{Field: "priority", Before: text(fmt.Sprintf("%s: %d", r.Name, r.Priority)), After: text(fmt.Sprintf("%s: %d", r.Name, i+1))})
+			pv.Changes = append(
+				pv.Changes,
+				tool.Change{
+					Field:  "priority",
+					Before: text(fmt.Sprintf("%s: %d", r.Name, r.Priority)),
+					After:  text(fmt.Sprintf("%s: %d", r.Name, i+1)),
+				},
+			)
 		}
 	}
 
@@ -187,12 +205,18 @@ func previewSuggestion(
 
 	pv.Target = "Suggested rule " + conditionsText(s.Conditions)
 	if in.Action == "dismiss_suggestion" {
-		pv.Changes = []tool.Change{{Field: "status", Before: text(s.State), After: text(app.SuggestionDismissed)}}
+		pv.Changes = []tool.Change{
+			{Field: "status", Before: text(s.State), After: text(app.SuggestionDismissed)},
+		}
 		return nil
 	}
 
 	pv.Changes = []tool.Change{
-		{Field: "rule", After: text(in.Name)}, {Field: "pattern", After: text(conditionsText(s.Conditions))},
+		{
+			Field: "rule",
+			After: text(in.Name),
+		},
+		{Field: "pattern", After: text(conditionsText(s.Conditions))},
 		{Field: "category", After: text(actionsText(s.Actions, categories, payees))},
 	}
 
@@ -214,7 +238,12 @@ func previewRunRules(
 	}
 
 	pv.Target = "Categorization rules"
-	pv.Changes = []tool.Change{{Field: "count", After: text(fmt.Sprintf("%d uncategorized transactions", st.Uncategorized))}}
+	pv.Changes = []tool.Change{
+		{
+			Field: "count",
+			After: text(fmt.Sprintf("%d uncategorized transactions", st.Uncategorized)),
+		},
+	}
 
 	return nil
 }
@@ -235,11 +264,21 @@ func previewSourceCategory(
 	}
 
 	if _, ok := categories[p.category]; !ok {
-		return &domain.FieldError{Field: "category_id", Message: "unknown category", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "category_id",
+			Message: "unknown category",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	pv.Target = "Source category " + sc.Name
-	pv.Changes = []tool.Change{{Field: "category", Before: text(categories[sc.CategoryID]), After: text(categories[p.category])}}
+	pv.Changes = []tool.Change{
+		{
+			Field:  "category",
+			Before: text(categories[sc.CategoryID]),
+			After:  text(categories[p.category]),
+		},
+	}
 
 	return nil
 }
@@ -266,7 +305,10 @@ func previewAlias(
 
 	if in.Action == "delete_alias" {
 		pv.Target, pv.Destructive = "Alias "+old.Pattern, true
-		pv.Changes = []tool.Change{{Field: "pattern", Before: text(old.Pattern)}, {Field: "payee", Before: text(payees[old.PayeeID])}}
+		pv.Changes = []tool.Change{
+			{Field: "pattern", Before: text(old.Pattern)},
+			{Field: "payee", Before: text(payees[old.PayeeID])},
+		}
 
 		return nil
 	}
@@ -276,14 +318,28 @@ func previewAlias(
 	}
 
 	if _, ok := payees[p.payee]; !ok {
-		return &domain.FieldError{Field: "payee_id", Message: "unknown payee", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "payee_id",
+			Message: "unknown payee",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	pv.Target = "Alias " + in.Pattern
 
-	pv.Changes = []tool.Change{{Field: "pattern", After: text(in.Pattern)}, {Field: "kind", After: text(string(in.MatchType))}, {Field: "payee", After: text(payees[p.payee])}}
+	pv.Changes = []tool.Change{
+		{Field: "pattern", After: text(in.Pattern)},
+		{Field: "kind", After: text(string(in.MatchType))},
+		{Field: "payee", After: text(payees[p.payee])},
+	}
 	if in.Action == "change_alias" {
-		pv.Changes[0].Before, pv.Changes[1].Before, pv.Changes[2].Before = text(old.Pattern), text(string(old.MatchType)), text(payees[old.PayeeID])
+		pv.Changes[0].Before, pv.Changes[1].Before, pv.Changes[2].Before = text(
+			old.Pattern,
+		), text(
+			string(old.MatchType),
+		), text(
+			payees[old.PayeeID],
+		)
 	}
 
 	return nil

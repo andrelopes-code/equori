@@ -27,23 +27,56 @@ func TestBookRoles(t *testing.T) {
 		owner              want
 	}{
 		{
-			name: "read operation", method: http.MethodGet, path: "/api/v1/accounts",
-			reader: want{http.StatusOK, ""}, writer: want{http.StatusOK, ""}, owner: want{http.StatusOK, ""},
+			name:   "read operation",
+			method: http.MethodGet,
+			path:   "/api/v1/accounts",
+			reader: want{
+				http.StatusOK,
+				"",
+			},
+			writer: want{http.StatusOK, ""},
+			owner:  want{http.StatusOK, ""},
 		},
 		{
-			name: "write operation", method: http.MethodPost, path: "/api/v1/accounts",
-			body:   map[string]any{"name": "<role>", "class": "asset", "kind": "cash", "currency": "BRL"},
-			reader: want{http.StatusForbidden, "book_role_required"}, writer: want{http.StatusCreated, ""}, owner: want{http.StatusCreated, ""},
+			name:   "write operation",
+			method: http.MethodPost,
+			path:   "/api/v1/accounts",
+			body: map[string]any{
+				"name":     "<role>",
+				"class":    "asset",
+				"kind":     "cash",
+				"currency": "BRL",
+			},
+			reader: want{
+				http.StatusForbidden,
+				"book_role_required",
+			},
+			writer: want{http.StatusCreated, ""},
+			owner:  want{http.StatusCreated, ""},
 		},
 		{
-			name: "owner operation", method: http.MethodPatch, path: "/api/v1/books/current",
+			name:   "owner operation",
+			method: http.MethodPatch,
+			path:   "/api/v1/books/current",
 			body:   map[string]any{"region": "BR", "time_zone": nil},
-			reader: want{http.StatusForbidden, "book_role_required"}, writer: want{http.StatusForbidden, "book_role_required"}, owner: want{http.StatusOK, ""},
+			reader: want{
+				http.StatusForbidden,
+				"book_role_required",
+			},
+			writer: want{http.StatusForbidden, "book_role_required"},
+			owner:  want{http.StatusOK, ""},
 		},
 		{
-			name: "role before the contract", method: http.MethodPost, path: "/api/v1/accounts",
+			name:   "role before the contract",
+			method: http.MethodPost,
+			path:   "/api/v1/accounts",
 			body:   map[string]any{"colour": "red"},
-			reader: want{http.StatusForbidden, "book_role_required"}, writer: want{http.StatusBadRequest, "invalid_request"}, owner: want{http.StatusBadRequest, "invalid_request"},
+			reader: want{
+				http.StatusForbidden,
+				"book_role_required",
+			},
+			writer: want{http.StatusBadRequest, "invalid_request"},
+			owner:  want{http.StatusBadRequest, "invalid_request"},
 		},
 	}
 	for _, tt := range tests {
@@ -58,7 +91,12 @@ func TestBookRoles(t *testing.T) {
 			} {
 				body := tt.body
 				if m, ok := body.(map[string]any); ok && m["name"] == "<role>" {
-					body = map[string]any{"name": who, "class": m["class"], "kind": m["kind"], "currency": m["currency"]}
+					body = map[string]any{
+						"name":     who,
+						"class":    m["class"],
+						"kind":     m["kind"],
+						"currency": m["currency"],
+					}
 				}
 
 				r := h.Call(c.client, tt.method, tt.path, body)
@@ -83,14 +121,27 @@ func TestRoleChangeAppliesAtOnce(t *testing.T) {
 	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
 	body := map[string]any{"name": "Wallet", "class": "asset", "kind": "cash", "currency": "BRL"}
 
-	h.ExpectProblem(h.Call(reader, http.MethodPost, "/api/v1/accounts", body), http.StatusForbidden, "book_role_required", "")
+	h.ExpectProblem(
+		h.Call(reader, http.MethodPost, "/api/v1/accounts", body),
+		http.StatusForbidden,
+		"book_role_required",
+		"",
+	)
 
-	if _, err := h.Pool.Exec(t.Context(),
-		`UPDATE identity_membership SET role = 'write' WHERE member_id = $1`, h.MemberIDOf("reader@example.com")); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE identity_membership SET role = 'write' WHERE member_id = $1`,
+		h.MemberIDOf("reader@example.com"),
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if r := h.Call(reader, http.MethodPost, "/api/v1/accounts", body); r.Status != http.StatusCreated {
+	if r := h.Call(
+		reader,
+		http.MethodPost,
+		"/api/v1/accounts",
+		body,
+	); r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
 }
@@ -107,7 +158,20 @@ func TestPublicOperations(t *testing.T) {
 	}
 
 	h.ExpectProblem(
-		h.Call(anonymous, http.MethodPost, "/api/v1/session", map[string]string{"email": "owner@example.com", "password": "wrong password!"}),
-		http.StatusUnauthorized, "invalid_credentials", "")
-	h.ExpectProblem(h.Call(anonymous, http.MethodGet, "/api/v1/accounts", nil), http.StatusUnauthorized, "unauthenticated", "")
+		h.Call(
+			anonymous,
+			http.MethodPost,
+			"/api/v1/session",
+			map[string]string{"email": "owner@example.com", "password": "wrong password!"},
+		),
+		http.StatusUnauthorized,
+		"invalid_credentials",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(anonymous, http.MethodGet, "/api/v1/accounts", nil),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 }

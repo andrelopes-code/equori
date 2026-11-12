@@ -43,7 +43,13 @@ func MigrateTo(ctx context.Context, pool *pgxpool.Pool, version int64, log *slog
 
 	latest := sources[len(sources)-1].Version
 	if current > latest {
-		return fmt.Errorf("%w: database at version %d, this binary knows up to %d; restore a backup taken before the upgrade, or run a release that knows version %d", ErrSchemaAhead, current, latest, current)
+		return fmt.Errorf(
+			"%w: database at version %d, this binary knows up to %d; restore a backup taken before the upgrade, or run a release that knows version %d",
+			ErrSchemaAhead,
+			current,
+			latest,
+			current,
+		)
 	}
 
 	results, err := provider.UpTo(ctx, version)

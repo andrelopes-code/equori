@@ -41,7 +41,11 @@ func Encrypt(src, dir, password string) (string, error) {
 	path := filepath.Join(dir, name)
 	partial := path + ".partial"
 
-	out, err := os.OpenFile(partial, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644) //nolint:gosec // G302, G304: a copy is read by the host user of the folder; the folder is the owner's configuration.
+	out, err := os.OpenFile(
+		partial,
+		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
+		0o644,
+	) //nolint:gosec // G302, G304: a copy is read by the host user of the folder; the folder is the owner's configuration.
 	if errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
 		return "", fmt.Errorf("%w: %w", ErrFolderNotWritable, err)
 	}
@@ -93,7 +97,11 @@ func Decrypt(src, dst, password string) error {
 		return fmt.Errorf("decrypt %s: %w", src, err)
 	}
 
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600) //nolint:gosec // G304: the destination is chosen by the caller.
+	out, err := os.OpenFile(
+		dst,
+		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
+		0o600,
+	) //nolint:gosec // G304: the destination is chosen by the caller.
 	if err != nil {
 		return fmt.Errorf("create %s: %w", dst, err)
 	}

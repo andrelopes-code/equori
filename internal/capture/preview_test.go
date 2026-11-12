@@ -60,35 +60,71 @@ func newBooks(t *testing.T, opts ...apitest.Option) books {
 		var out struct {
 			ID string `json:"id"`
 		}
-		h.MustDo(http.MethodPost, "/api/v1/institutions", map[string]any{"name": name}, http.StatusCreated, &out)
+		h.MustDo(
+			http.MethodPost,
+			"/api/v1/institutions",
+			map[string]any{"name": name},
+			http.StatusCreated,
+			&out,
+		)
 
 		return out.ID
 	}
 	nubank, itau := institution("Nubank"), institution("Itaú")
 	b := books{
-		h:           h,
-		checking:    h.Account("Nubank checking", "asset", "checking", map[string]any{"institution_id": nubank}),
+		h: h,
+		checking: h.Account(
+			"Nubank checking",
+			"asset",
+			"checking",
+			map[string]any{"institution_id": nubank},
+		),
 		visa:        h.Card("Itaú Visa", 3, 10, "next"),
 		wallet:      h.Account("Wallet", "asset", "cash", nil),
 		reserve:     h.Account("Emergency fund", "asset", "reserve", nil),
 		supermarket: h.Account("Supermarket", "expense", "", nil),
 		transport:   h.Account("Transport", "expense", "", nil),
 	}
-	h.MustDo(http.MethodPatch, "/api/v1/accounts/"+b.visa, map[string]any{"institution_id": itau}, http.StatusOK, nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+b.visa+"/cards", map[string]any{"holder": "Owner", "last_four": "1234"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/accounts/"+b.visa,
+		map[string]any{"institution_id": itau},
+		http.StatusOK,
+		nil,
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+b.visa+"/cards",
+		map[string]any{"holder": "Owner", "last_four": "1234"},
+		http.StatusCreated,
+		nil,
+	)
 	h.MustDo(http.MethodPost, "/api/v1/rules", map[string]any{
-		"name":       "Supermarket",
-		"conditions": []any{map[string]any{"field": "description", "operator": "contains", "value": "mercado"}},
-		"actions":    []any{map[string]any{"type": "set_category", "category_id": b.supermarket}},
+		"name": "Supermarket",
+		"conditions": []any{
+			map[string]any{"field": "description", "operator": "contains", "value": "mercado"},
+		},
+		"actions": []any{map[string]any{"type": "set_category", "category_id": b.supermarket}},
 	}, http.StatusCreated, nil)
 	var payee struct {
 		ID string `json:"id"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]any{"name": "Uber"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]any{"name": "Uber"},
+		http.StatusCreated,
+		&payee,
+	)
 	b.uber = payee.ID
 	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-01", "description": "ride", "payee_id": b.uber,
-		"postings": []map[string]any{apitest.Posting(b.wallet, -1500), apitest.Posting(b.transport, 1500)},
+		"date":        "2026-10-01",
+		"description": "ride",
+		"payee_id":    b.uber,
+		"postings": []map[string]any{
+			apitest.Posting(b.wallet, -1500),
+			apitest.Posting(b.transport, 1500),
+		},
 	}, http.StatusCreated, nil)
 
 	return b
@@ -145,7 +181,11 @@ func TestPreviewScenarios(t *testing.T) {
 	t.Run("S99", func(t *testing.T) {
 		l := b.one(t, "ontem mercado 230 nubank checking", "")
 		if l.Kind != "expense" || amount(l) != 23000 || l.Amount.Currency != "BRL" || l.Date != "2026-10-20" || l.AccountID != b.checking ||
-			l.AccountSource != "text" || l.Description != "Mercado" || l.CategoryID != b.supermarket || l.CategorySource != "rule" || len(l.Issues) != 0 {
+			l.AccountSource != "text" ||
+			l.Description != "Mercado" ||
+			l.CategoryID != b.supermarket ||
+			l.CategorySource != "rule" ||
+			len(l.Issues) != 0 {
 			t.Fatalf("line = %+v", l)
 		}
 	})
@@ -159,23 +199,36 @@ func TestPreviewScenarios(t *testing.T) {
 			t.Fatalf("first = %+v", l)
 		}
 
-		if l := lines[1]; l.AccountID != b.visa || amount(l) != 5800 || l.Installments != 3 || len(l.Issues) != 0 {
+		if l := lines[1]; l.AccountID != b.visa || amount(l) != 5800 || l.Installments != 3 ||
+			len(l.Issues) != 0 {
 			t.Fatalf("second = %+v", l)
 		}
 	})
 	t.Run("S101", func(t *testing.T) {
-		if l := b.one(t, "notebook 3x de 1.200 itaú", ""); amount(l) != 360000 || l.Installments != 3 || l.AccountID != b.visa {
+		if l := b.one(
+			t,
+			"notebook 3x de 1.200 itaú",
+			"",
+		); amount(l) != 360000 || l.Installments != 3 ||
+			l.AccountID != b.visa {
 			t.Fatalf("line = %+v", l)
 		}
 	})
 	t.Run("S102", func(t *testing.T) {
 		l := b.one(t, "transferi 500 do nubank checking pra wallet", "")
-		if l.Kind != "transfer" || amount(l) != 50000 || l.AccountID != b.checking || l.ToAccountID != b.wallet || l.CategoryID != "" {
+		if l.Kind != "transfer" || amount(l) != 50000 || l.AccountID != b.checking ||
+			l.ToAccountID != b.wallet ||
+			l.CategoryID != "" {
 			t.Fatalf("line = %+v", l)
 		}
 	})
 	t.Run("S103", func(t *testing.T) {
-		if l := b.one(t, "recebi 1.5k nubank checking", ""); l.Kind != "income" || amount(l) != 150000 || l.AccountID != b.checking {
+		if l := b.one(
+			t,
+			"recebi 1.5k nubank checking",
+			"",
+		); l.Kind != "income" || amount(l) != 150000 ||
+			l.AccountID != b.checking {
 			t.Fatalf("line = %+v", l)
 		}
 	})
@@ -186,7 +239,9 @@ func TestPreviewScenarios(t *testing.T) {
 		}
 
 		c := l.Issues[0].Choices
-		if c[0].Amount.Amount != 200 || c[0].Description != "Padaria irmãos 15" || c[1].Amount.Amount != 1500 || c[1].Description != "Padaria 2 irmãos" {
+		if c[0].Amount.Amount != 200 || c[0].Description != "Padaria irmãos 15" ||
+			c[1].Amount.Amount != 1500 ||
+			c[1].Description != "Padaria 2 irmãos" {
 			t.Fatalf("choices = %+v", c)
 		}
 	})
@@ -195,7 +250,12 @@ func TestPreviewScenarios(t *testing.T) {
 			t.Fatalf("line = %+v", l)
 		}
 
-		if l := b.one(t, "cinema 40", b.wallet); codes(l) != "" || l.AccountID != b.wallet || l.AccountSource != "default" {
+		if l := b.one(
+			t,
+			"cinema 40",
+			b.wallet,
+		); codes(l) != "" || l.AccountID != b.wallet ||
+			l.AccountSource != "default" {
 			t.Fatalf("line = %+v", l)
 		}
 	})
@@ -214,7 +274,12 @@ func TestPreviewScenarios(t *testing.T) {
 		}
 	})
 	t.Run("S108", func(t *testing.T) {
-		if l := b.one(t, "31/02 50 wallet", ""); codes(l) != "invalid_date" || l.Issues[0].Field != "date" {
+		if l := b.one(
+			t,
+			"31/02 50 wallet",
+			"",
+		); codes(l) != "invalid_date" ||
+			l.Issues[0].Field != "date" {
 			t.Fatalf("line = %+v", l)
 		}
 	})
@@ -224,24 +289,34 @@ func TestPreviewScenarios(t *testing.T) {
 		}
 	})
 	t.Run("S110", func(t *testing.T) {
-		if l := b.one(t, "taxi 30,999 wallet", ""); codes(l) != "invalid_amount" || l.Amount != nil {
+		if l := b.one(
+			t,
+			"taxi 30,999 wallet",
+			"",
+		); codes(l) != "invalid_amount" ||
+			l.Amount != nil {
 			t.Fatalf("line = %+v", l)
 		}
 	})
 	t.Run("payee history", func(t *testing.T) {
 		l := b.one(t, "uber 30 wallet #trabalho", "")
-		if l.PayeeID != b.uber || l.CategoryID != b.transport || l.CategorySource != "history" || len(l.Tags) != 1 || l.Tags[0] != "trabalho" {
+		if l.PayeeID != b.uber || l.CategoryID != b.transport || l.CategorySource != "history" ||
+			len(l.Tags) != 1 ||
+			l.Tags[0] != "trabalho" {
 			t.Fatalf("line = %+v", l)
 		}
 	})
 	t.Run("a word one edit from a handle asks", func(t *testing.T) {
 		l := b.one(t, "almoço 30 nubnak", b.wallet)
-		if codes(l) != "possible_account" || l.AccountID != b.wallet || l.AccountSource != "default" {
+		if codes(l) != "possible_account" || l.AccountID != b.wallet ||
+			l.AccountSource != "default" {
 			t.Fatalf("line = %+v", l)
 		}
 
 		c := l.Issues[0].Choices
-		if len(c) != 2 || c[0].AccountID != b.checking || c[0].Description != "Almoço" || c[1].AccountID != b.wallet || c[1].Description != "Almoço nubnak" {
+		if len(c) != 2 || c[0].AccountID != b.checking || c[0].Description != "Almoço" ||
+			c[1].AccountID != b.wallet ||
+			c[1].Description != "Almoço nubnak" {
 			t.Fatalf("choices = %+v", c)
 		}
 	})
@@ -259,7 +334,8 @@ func TestPreviewScenarios(t *testing.T) {
 			sb.WriteString(s.Text)
 		}
 
-		if sb.String() != l.Text || l.Text != "R$ 12 café   #manhã wallet" || l.Segments[0].Role != "amount" {
+		if sb.String() != l.Text || l.Text != "R$ 12 café   #manhã wallet" ||
+			l.Segments[0].Role != "amount" {
 			t.Fatalf("segments = %+v", l.Segments)
 		}
 	})
@@ -273,12 +349,36 @@ func TestPreviewScenarios(t *testing.T) {
 func TestPreviewRejections(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": strings.Repeat("café 5\n", 101)}),
-		http.StatusUnprocessableEntity, "too_many_lines", "")
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": "café 5", "default_account_id": b.transport}),
-		http.StatusUnprocessableEntity, "validation_failed", "default_account_id")
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": strings.Repeat("a", 10001)}),
-		http.StatusBadRequest, "invalid_request", "text")
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			"/api/v1/capture/preview",
+			map[string]any{"text": strings.Repeat("café 5\n", 101)},
+		),
+		http.StatusUnprocessableEntity,
+		"too_many_lines",
+		"",
+	)
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			"/api/v1/capture/preview",
+			map[string]any{"text": "café 5", "default_account_id": b.transport},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"default_account_id",
+	)
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			"/api/v1/capture/preview",
+			map[string]any{"text": strings.Repeat("a", 10001)},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"text",
+	)
 
 	if lines := b.preview(t, strings.Repeat("café 5\n\n", 100), b.wallet); len(lines) != 100 {
 		t.Fatalf("lines = %d, want 100", len(lines))
@@ -290,11 +390,30 @@ func TestPreviewCandidates(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	old := b.h.Account("Old wallet", "asset", "cash", nil)
-	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+old+"/close", map[string]string{"closed_on": "2026-10-15"}, http.StatusOK, nil)
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/capture/preview", map[string]any{"text": "café 5", "default_account_id": old}),
-		http.StatusUnprocessableEntity, "validation_failed", "default_account_id")
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+old+"/close",
+		map[string]string{"closed_on": "2026-10-15"},
+		http.StatusOK,
+		nil,
+	)
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			"/api/v1/capture/preview",
+			map[string]any{"text": "café 5", "default_account_id": old},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"default_account_id",
+	)
 
-	if l := b.one(t, "café 5 old wallet", b.checking); l.AccountID != b.wallet || l.Description != "Café old" {
+	if l := b.one(
+		t,
+		"café 5 old wallet",
+		b.checking,
+	); l.AccountID != b.wallet ||
+		l.Description != "Café old" {
 		t.Fatalf("line = %+v", l)
 	}
 }
@@ -308,8 +427,17 @@ func TestPreviewReferenceDate(t *testing.T) {
 		var out struct {
 			Lines []lineView `json:"lines"`
 		}
-		b.h.MustDo(http.MethodPost, "/api/v1/capture/preview",
-			map[string]any{"text": text, "default_account_id": b.wallet, "reference_date": reference}, http.StatusOK, &out)
+		b.h.MustDo(
+			http.MethodPost,
+			"/api/v1/capture/preview",
+			map[string]any{
+				"text":               text,
+				"default_account_id": b.wallet,
+				"reference_date":     reference,
+			},
+			http.StatusOK,
+			&out,
+		)
 
 		if len(out.Lines) != 1 {
 			t.Fatalf("lines = %d, want 1", len(out.Lines))

@@ -39,8 +39,15 @@ func Hash(password string, c Cost) string {
 	_, _ = rand.Read(salt) // crypto/rand.Read never returns an error since Go 1.24.
 	key := argon2.IDKey([]byte(password), salt, passes, memory, parallelism, keyLength)
 
-	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, memory, passes, parallelism, b64.EncodeToString(salt), b64.EncodeToString(key))
+	return fmt.Sprintf(
+		"$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
+		argon2.Version,
+		memory,
+		passes,
+		parallelism,
+		b64.EncodeToString(salt),
+		b64.EncodeToString(key),
+	)
 }
 
 // Verify reads the parameters from the encoded hash, so hashes created with older parameters stay valid.
@@ -72,7 +79,14 @@ func Verify(password, encoded string) (bool, error) {
 		return false, ErrMalformedHash
 	}
 
-	got := argon2.IDKey([]byte(password), salt, time, memory, threads, uint32(len(want))) //nolint:gosec // len(want) is a decoded hash length, far below 2^32.
+	got := argon2.IDKey(
+		[]byte(password),
+		salt,
+		time,
+		memory,
+		threads,
+		uint32(len(want)),
+	) //nolint:gosec // len(want) is a decoded hash length, far below 2^32.
 
 	return subtle.ConstantTimeCompare(got, want) == 1, nil
 }

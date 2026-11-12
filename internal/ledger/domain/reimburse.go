@@ -45,7 +45,10 @@ func (t Transaction) Reimburse(
 	}
 
 	if plan.allocated > -total {
-		return Transaction{}, invalid("allocations", fmt.Sprintf("allocations total %d, above the inflow %d", plan.allocated, -total))
+		return Transaction{}, invalid(
+			"allocations",
+			fmt.Sprintf("allocations total %d, above the inflow %d", plan.allocated, -total),
+		)
 	}
 
 	if rest := -total - plan.allocated; rest > 0 {
@@ -57,7 +60,10 @@ func (t Transaction) Reimburse(
 		plan.parts = append(plan.parts, CategoryPart{AccountID: uncategorized.ID, Amount: m})
 	}
 
-	next, err := t.Categorize(Categorization{ExpectedVersion: expectedVersion, Parts: plan.parts}, accounts)
+	next, err := t.Categorize(
+		Categorization{ExpectedVersion: expectedVersion, Parts: plan.parts},
+		accounts,
+	)
 	if err != nil {
 		return Transaction{}, err
 	}
@@ -79,7 +85,11 @@ func (t Transaction) reimbursableTotal(
 	allocations []Allocation,
 	accounts map[uuid.UUID]Account,
 ) (int64, money.Currency, error) {
-	if t.VoidedAt != nil || slices.ContainsFunc(allocations, func(a Allocation) bool { return a.Original.VoidedAt != nil }) {
+	if t.VoidedAt != nil ||
+		slices.ContainsFunc(
+			allocations,
+			func(a Allocation) bool { return a.Original.VoidedAt != nil },
+		) {
 		return 0, "", ErrVoided
 	}
 
@@ -132,7 +142,10 @@ func (plan *reimbursementPlan) allocate(
 		}
 
 		plan.allocated += a.Amount
-		plan.links = append(plan.links, Link{Type: LinkReimbursementOf, Target: a.Original.ID, Amount: a.Amount})
+		plan.links = append(
+			plan.links,
+			Link{Type: LinkReimbursementOf, Target: a.Original.ID, Amount: a.Amount},
+		)
 	}
 
 	return nil
@@ -176,7 +189,14 @@ func checkAllocation(
 	case spent[0].Amount.Currency() != instrument:
 		return invalid(field("original_id"), "must be in the currency "+string(instrument))
 	case a.HeldByOthers+a.Amount > expense:
-		return invalid(field("original_id"), fmt.Sprintf("reimbursements would total %d, above the expense %d", a.HeldByOthers+a.Amount, expense))
+		return invalid(
+			field("original_id"),
+			fmt.Sprintf(
+				"reimbursements would total %d, above the expense %d",
+				a.HeldByOthers+a.Amount,
+				expense,
+			),
+		)
 	}
 
 	return nil

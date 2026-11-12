@@ -40,7 +40,11 @@ func New(name string, steps ...Step) *Provider {
 
 func (p *Provider) Name() string { return p.name }
 
-func (p *Provider) Generate(_ context.Context, model string, req llm.Request) (llm.Response, error) {
+func (p *Provider) Generate(
+	_ context.Context,
+	model string,
+	req llm.Request,
+) (llm.Response, error) {
 	step, err := p.next(model, req)
 	if err != nil {
 		return llm.Response{}, err
@@ -49,7 +53,12 @@ func (p *Provider) Generate(_ context.Context, model string, req llm.Request) (l
 	return step.Response, step.Err
 }
 
-func (p *Provider) Stream(_ context.Context, model string, req llm.Request, onText func(string)) (llm.Response, error) {
+func (p *Provider) Stream(
+	_ context.Context,
+	model string,
+	req llm.Request,
+	onText func(string),
+) (llm.Response, error) {
 	step, err := p.next(model, req)
 	if err != nil {
 		return llm.Response{}, err
@@ -73,7 +82,12 @@ func (p *Provider) next(model string, req llm.Request) (Step, error) {
 
 	step := p.steps[0]
 	if step.Model != model {
-		return Step{}, fmt.Errorf("llmtest %s: call for model %s, want %s", p.name, model, step.Model)
+		return Step{}, fmt.Errorf(
+			"llmtest %s: call for model %s, want %s",
+			p.name,
+			model,
+			step.Model,
+		)
 	}
 
 	p.steps = p.steps[1:]

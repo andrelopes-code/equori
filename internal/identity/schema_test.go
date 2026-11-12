@@ -33,7 +33,12 @@ func TestProfileSchema(t *testing.T) {
 
 		pgErr, ok := errors.AsType[*pgconn.PgError](err)
 		if !ok || pgErr.Code != checkViolation {
-			t.Errorf("UPDATE %s SET %s: error = %v, want check violation", set.table, set.assignment, err)
+			t.Errorf(
+				"UPDATE %s SET %s: error = %v, want check violation",
+				set.table,
+				set.assignment,
+				err,
+			)
 		}
 	}
 }
@@ -73,14 +78,24 @@ func TestDisplayNameSchema(t *testing.T) {
 	member, _ := pgtest.CreateMember(t, pool)
 
 	for _, name := range []string{"", strings.Repeat("a", 61), "Ann\nLee"} {
-		_, err := pool.Exec(t.Context(), `UPDATE identity_member SET display_name = $2 WHERE id = $1`, member, name)
+		_, err := pool.Exec(
+			t.Context(),
+			`UPDATE identity_member SET display_name = $2 WHERE id = $1`,
+			member,
+			name,
+		)
 		if pgErr, ok := errors.AsType[*pgconn.PgError](err); !ok || pgErr.Code != checkViolation {
 			t.Errorf("display_name = %q: error = %v, want check violation", name, err)
 		}
 	}
 
 	for _, name := range []*string{nil, new(strings.Repeat("é", 60))} {
-		if _, err := pool.Exec(t.Context(), `UPDATE identity_member SET display_name = $2 WHERE id = $1`, member, name); err != nil {
+		if _, err := pool.Exec(
+			t.Context(),
+			`UPDATE identity_member SET display_name = $2 WHERE id = $1`,
+			member,
+			name,
+		); err != nil {
 			t.Errorf("display_name = %v: %v", name, err)
 		}
 	}
@@ -92,8 +107,13 @@ func TestSecondFactorSchema(t *testing.T) {
 	member, _ := pgtest.CreateMember(t, pool)
 
 	passkey := func(credential, algorithm, name string) string {
-		return fmt.Sprintf(`INSERT INTO identity_passkey (id, member_id, credential_id, public_key, algorithm, sign_count, rp_id, name, created_at)
-			VALUES (gen_random_uuid(), $1, '%s', '\x02', %s, 0, 'localhost', %s, now())`, credential, algorithm, name)
+		return fmt.Sprintf(
+			`INSERT INTO identity_passkey (id, member_id, credential_id, public_key, algorithm, sign_count, rp_id, name, created_at)
+			VALUES (gen_random_uuid(), $1, '%s', '\x02', %s, 0, 'localhost', %s, now())`,
+			credential,
+			algorithm,
+			name,
+		)
 	}
 	if _, err := pool.Exec(t.Context(), passkey(`\x01`, "-7", "'Phone'"), member); err != nil {
 		t.Fatal(err)
@@ -124,12 +144,17 @@ func TestSecondFactorSchema(t *testing.T) {
 		}
 	}
 
-	if _, err := pool.Exec(t.Context(), `DELETE FROM identity_member WHERE id = $1`, member); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		`DELETE FROM identity_member WHERE id = $1`,
+		member,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	var left int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_passkey WHERE member_id = $1`, member).Scan(&left); err != nil {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_passkey WHERE member_id = $1`, member).
+		Scan(&left); err != nil {
 		t.Fatal(err)
 	}
 
@@ -144,7 +169,8 @@ func TestMembershipSchema(t *testing.T) {
 	member, books := pgtest.CreateMember(t, pool)
 
 	var other int64
-	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).Scan(&other); err != nil {
+	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).
+		Scan(&other); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,21 +195,40 @@ func TestMembershipSchema(t *testing.T) {
 		}
 	}
 
-	if _, err := pool.Exec(t.Context(), session, bytes.Repeat([]byte{1}, 32), member, books); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		session,
+		bytes.Repeat([]byte{1}, 32),
+		member,
+		books,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(t.Context(), token, member, books, bytes.Repeat([]byte{2}, 32)); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		token,
+		member,
+		books,
+		bytes.Repeat([]byte{2}, 32),
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(t.Context(), `DELETE FROM identity_membership WHERE member_id = $1 AND books_id = $2`, member, books); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		`DELETE FROM identity_membership WHERE member_id = $1 AND books_id = $2`,
+		member,
+		books,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, table := range []string{"identity_session", "identity_access_token"} {
 		var n int
-		if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM `+table).Scan(&n); err != nil || n != 0 {
+		if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM `+table).
+			Scan(&n); err != nil ||
+			n != 0 {
 			t.Errorf("rows of %s after the membership is deleted = %d, %v; want 0", table, n, err)
 		}
 	}
@@ -197,7 +242,15 @@ func TestAccessTokenSchema(t *testing.T) {
 		VALUES (gen_random_uuid(), $1, $2, 'x', $3, $4, '2026-10-27T12:00:00Z', $5)`
 
 	hash := func(b byte) []byte { return bytes.Repeat([]byte{b}, 32) }
-	if _, err := pool.Exec(t.Context(), insert, member, books, "read", hash(1), "2026-11-27T12:00:00Z"); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		insert,
+		member,
+		books,
+		"read",
+		hash(1),
+		"2026-11-27T12:00:00Z",
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -226,7 +279,8 @@ func TestBusinessRowNeedsBooks(t *testing.T) {
 	_, books := pgtest.CreateMember(t, pool)
 
 	var account string
-	if err := pool.QueryRow(t.Context(), `INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Checking', 'asset', 'checking', 'BRL', '2026-10-30') RETURNING id`, books).Scan(&account); err != nil {
+	if err := pool.QueryRow(t.Context(), `INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on) VALUES ($1, 'Checking', 'asset', 'checking', 'BRL', '2026-10-30') RETURNING id`, books).
+		Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 
@@ -270,11 +324,21 @@ func TestBooksReachDetectsMissingKey(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
 
-	if _, err := pool.Exec(t.Context(), `ALTER TABLE ledger_settings DROP CONSTRAINT ledger_settings_user_id_fkey`); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		`ALTER TABLE ledger_settings DROP CONSTRAINT ledger_settings_user_id_fkey`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if got := tableNames(t, pool, unreachedBooksTables); !slices.Equal(got, []string{"ledger_settings"}) {
+	if got := tableNames(
+		t,
+		pool,
+		unreachedBooksTables,
+	); !slices.Equal(
+		got,
+		[]string{"ledger_settings"},
+	) {
 		t.Errorf("unreached tables = %v; want [ledger_settings]", got)
 	}
 }
@@ -324,14 +388,23 @@ func TestInvitationSchema(t *testing.T) {
 	member, books := pgtest.CreateMember(t, pool)
 
 	var other int64
-	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).Scan(&other); err != nil {
+	if err := pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).
+		Scan(&other); err != nil {
 		t.Fatal(err)
 	}
 
 	insert := `INSERT INTO identity_invitation (id, books_id, email, role, token_hash, invited_by, created_at, expires_at)
 		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, '2026-10-30T12:00:00Z', '2026-11-06T12:00:00Z')`
 
-	if _, err := pool.Exec(t.Context(), insert, books, "b@example.com", "read", bytes.Repeat([]byte{2}, 32), member); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		insert,
+		books,
+		"b@example.com",
+		"read",
+		bytes.Repeat([]byte{2}, 32),
+		member,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -350,16 +423,30 @@ func TestInvitationSchema(t *testing.T) {
 		}
 	}
 
-	if _, err := pool.Exec(t.Context(), insert, other, "d@example.com", "read", bytes.Repeat([]byte{4}, 32), member); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		insert,
+		other,
+		"d@example.com",
+		"read",
+		bytes.Repeat([]byte{4}, 32),
+		member,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(t.Context(), `DELETE FROM identity_books WHERE id = $1`, other); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		`DELETE FROM identity_books WHERE id = $1`,
+		other,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	var n int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_invitation WHERE books_id = $1`, other).Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_invitation WHERE books_id = $1`, other).
+		Scan(&n); err != nil ||
+		n != 0 {
 		t.Errorf("invitations of the deleted book = %d, %v; want 0", n, err)
 	}
 }
@@ -374,7 +461,15 @@ func TestAccountInvitationSchema(t *testing.T) {
 	insert := `INSERT INTO identity_account_invitation (id, email, region, base_currency, token_hash, invited_by, created_at, expires_at)
 		VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, '2026-11-01T12:00:00Z', '2026-11-08T12:00:00Z')`
 
-	if _, err := pool.Exec(t.Context(), insert, "a@example.com", "BR", "BRL", bytes.Repeat([]byte{1}, 32), member); err != nil {
+	if _, err := pool.Exec(
+		t.Context(),
+		insert,
+		"a@example.com",
+		"BR",
+		"BRL",
+		bytes.Repeat([]byte{1}, 32),
+		member,
+	); err != nil {
 		t.Fatal(err)
 	}
 

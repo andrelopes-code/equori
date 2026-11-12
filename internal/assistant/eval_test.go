@@ -49,9 +49,21 @@ type evalLimits struct {
 }
 
 // baseLimits keep chat spec 13.2, except steps and input tokens, raised by spec 2026-11-03 section 8.
-var baseLimits = evalLimits{minSuccess: 0.80, minPassK: 0.65, maxSteps: 4.5, maxInputTokens: 60000, strict: adversarial}
+var baseLimits = evalLimits{
+	minSuccess:     0.80,
+	minPassK:       0.65,
+	maxSteps:       4.5,
+	maxInputTokens: 60000,
+	strict:         adversarial,
+}
 
-var inferenceLimits = evalLimits{minSuccess: 0.70, minPassK: 0.50, maxSteps: 7, maxInputTokens: 120000, strict: noSpurious}
+var inferenceLimits = evalLimits{
+	minSuccess:     0.70,
+	minPassK:       0.50,
+	maxSteps:       7,
+	maxInputTokens: 120000,
+	strict:         noSpurious,
+}
 
 type evalTask struct {
 	ID      string `json:"id"`
@@ -130,9 +142,15 @@ func readEvalConfig(t *testing.T) evalConfig {
 	t.Helper()
 
 	c := evalConfig{
-		provider: os.Getenv("EQUORI_EVAL_PROVIDER"), model: os.Getenv("EQUORI_EVAL_MODEL"),
-		key: os.Getenv("EQUORI_EVAL_KEY"), baseURL: os.Getenv("EQUORI_EVAL_BASE_URL"), out: os.Getenv("EQUORI_EVAL_OUT"),
-		k: 3, gap: time.Minute / 8,
+		provider: os.Getenv("EQUORI_EVAL_PROVIDER"),
+		model:    os.Getenv("EQUORI_EVAL_MODEL"),
+		key: os.Getenv(
+			"EQUORI_EVAL_KEY",
+		),
+		baseURL: os.Getenv("EQUORI_EVAL_BASE_URL"),
+		out:     os.Getenv("EQUORI_EVAL_OUT"),
+		k:       3,
+		gap:     time.Minute / 8,
 	}
 	if c.provider == "" {
 		t.Fatal("set EQUORI_EVAL_PROVIDER to a preset (gemini, groq, ollama, ...) or llmtest")
@@ -161,8 +179,18 @@ func readEvalConfig(t *testing.T) evalConfig {
 	}
 
 	if c.out == "" {
-		c.out = filepath.Join("..", "..", "docs", "assistant-eval",
-			fmt.Sprintf("%s-%s-%s.json", time.Now().Format(time.DateOnly), c.provider, strings.ReplaceAll(c.model, "/", "_")))
+		c.out = filepath.Join(
+			"..",
+			"..",
+			"docs",
+			"assistant-eval",
+			fmt.Sprintf(
+				"%s-%s-%s.json",
+				time.Now().Format(time.DateOnly),
+				c.provider,
+				strings.ReplaceAll(c.model, "/", "_"),
+			),
+		)
 	}
 
 	return c
@@ -171,11 +199,21 @@ func readEvalConfig(t *testing.T) evalConfig {
 // scripts are the llmtest runs that prove the harness and its graders without a real model.
 var scripts = map[string]func() *llmtest.Provider{
 	"E01": func() *llmtest.Provider {
-		return llmtest.New("aistudio", callStep("get_balances", `{}`), textStep("O saldo da Nubank checking é R$ 15.459,90."))
+		return llmtest.New(
+			"aistudio",
+			callStep("get_balances", `{}`),
+			textStep("O saldo da Nubank checking é R$ 15.459,90."),
+		)
 	},
 	"E02": func() *llmtest.Provider {
-		return llmtest.New("aistudio", callStep("get_category_totals", `{"class":"expense","from":"2026-10-01","to":"2026-10-31"}`),
-			textStep("Em outubro você gastou R$ 718,45 com mercado."))
+		return llmtest.New(
+			"aistudio",
+			callStep(
+				"get_category_totals",
+				`{"class":"expense","from":"2026-10-01","to":"2026-10-31"}`,
+			),
+			textStep("Em outubro você gastou R$ 718,45 com mercado."),
+		)
 	},
 	"E12": func() *llmtest.Provider { return llmtest.New("aistudio", textStep("Faltam R$ 10.000,00.")) },
 	"E19": func() *llmtest.Provider {
@@ -202,7 +240,12 @@ func TestAssistantEval(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	run := evalRun{Date: time.Now().Format(time.DateOnly), Provider: cfg.provider, Model: cfg.model, K: cfg.k}
+	run := evalRun{
+		Date:     time.Now().Format(time.DateOnly),
+		Provider: cfg.provider,
+		Model:    cfg.model,
+		K:        cfg.k,
+	}
 	defer func() { writeEvalRun(t, cfg, &run) }()
 
 	for _, task := range tasks {
@@ -274,8 +317,14 @@ func evalHarness(t *testing.T, cfg evalConfig, task evalTask) *apitest.Harness {
 	}
 
 	factory := llmapi.NewFactory()
-	h := apitest.New(t, apitest.Today(evalToday), apitest.SecretKeys(apitest.SecretKey, ""),
-		apitest.LLMFactory(func(api, baseURL, key string) llm.Provider { return paced{factory(api, baseURL, key), cfg.gap} }))
+	h := apitest.New(
+		t,
+		apitest.Today(evalToday),
+		apitest.SecretKeys(apitest.SecretKey, ""),
+		apitest.LLMFactory(
+			func(api, baseURL, key string) llm.Provider { return paced{factory(api, baseURL, key), cfg.gap} },
+		),
+	)
 
 	body := map[string]any{"preset": cfg.provider, "name": "Evaluation"}
 	if cfg.key != "" {
@@ -288,9 +337,19 @@ func evalHarness(t *testing.T, cfg evalConfig, task evalTask) *apitest.Harness {
 
 	var provider idOnly
 	h.MustDo(http.MethodPost, "/api/v1/assistant/providers", body, http.StatusCreated, &provider)
-	h.MustDo(http.MethodPut, "/api/v1/assistant/uses/assistant.chat/chain", map[string]any{"targets": []any{
-		map[string]any{"provider_id": provider.ID, "model": cfg.model, "capabilities": []string{"tools"}},
-	}}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/assistant/uses/assistant.chat/chain",
+		map[string]any{"targets": []any{
+			map[string]any{
+				"provider_id":  provider.ID,
+				"model":        cfg.model,
+				"capabilities": []string{"tools"},
+			},
+		}},
+		http.StatusOK,
+		nil,
+	)
 
 	return h
 }
@@ -338,7 +397,16 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 	}
 
 	line := lastTurnLog(h)
-	tr.Steps, tr.InputTokens, tr.OutputTokens = logInt(line, "steps"), logInt(line, "input_tokens"), logInt(line, "output_tokens")
+	tr.Steps, tr.InputTokens, tr.OutputTokens = logInt(
+		line,
+		"steps",
+	), logInt(
+		line,
+		"input_tokens",
+	), logInt(
+		line,
+		"output_tokens",
+	)
 
 	g := grading{t: t, h: h, s: s}
 	for _, e := range events {
@@ -366,7 +434,8 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 		p := &g.answer.Proposals[i]
 
 		var raw, refs []byte
-		if err := h.Pool.QueryRow(t.Context(), `SELECT arguments, refs, suggested FROM assistant_proposal WHERE id = $1`, p.ID).Scan(&raw, &refs, &p.Suggested); err != nil {
+		if err := h.Pool.QueryRow(t.Context(), `SELECT arguments, refs, suggested FROM assistant_proposal WHERE id = $1`, p.ID).
+			Scan(&raw, &refs, &p.Suggested); err != nil {
 			t.Fatal(err)
 		}
 
@@ -386,8 +455,14 @@ func runTrial(t *testing.T, cfg evalConfig, task evalTask) (tr evalTrial, stop s
 			var out struct {
 				Status string `json:"status"`
 			}
-			if r.Status != http.StatusOK || json.Unmarshal(r.Body, &out) != nil || out.Status != "executed" {
-				tr.Failure = fmt.Sprintf("confirm %s = %d %s", p.Tool, r.Status, truncate(string(r.Body), 300))
+			if r.Status != http.StatusOK || json.Unmarshal(r.Body, &out) != nil ||
+				out.Status != "executed" {
+				tr.Failure = fmt.Sprintf(
+					"confirm %s = %d %s",
+					p.Tool,
+					r.Status,
+					truncate(string(r.Body), 300),
+				)
 				return tr, ""
 			}
 		}
@@ -479,7 +554,10 @@ func summarize(tasks []evalTaskResult) evalSummary {
 	sum.Inference = &inf
 	if !inf.ThresholdsMet {
 		sum.ThresholdsMet = false
-		sum.ThresholdFailure = strings.Trim(sum.ThresholdFailure+"; E21-E28: "+inf.ThresholdFailure, "; ")
+		sum.ThresholdFailure = strings.Trim(
+			sum.ThresholdFailure+"; E21-E28: "+inf.ThresholdFailure,
+			"; ",
+		)
 	}
 
 	return sum
@@ -669,7 +747,13 @@ func (g *grading) statement(reference string) map[string]any {
 	var out struct {
 		Items []map[string]any `json:"items"`
 	}
-	g.h.MustDo(http.MethodGet, "/api/v1/accounts/"+g.s.accounts["Itaú Visa"]+"/statements", nil, http.StatusOK, &out)
+	g.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+g.s.accounts["Itaú Visa"]+"/statements",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	for _, st := range out.Items {
 		if st["reference"] == reference {
@@ -752,13 +836,17 @@ func (g *grading) noTool(tool string) string {
 func (g *grading) creatingCategory(words ...string) (evalProposal, string) {
 	for _, p := range g.answer.Proposals {
 		name := strings.ToLower(fmt.Sprint(p.args["name"]))
-		if p.Tool == "manage_accounts_and_payees" && p.args["action"] == "create_account" && p.args["class"] == "expense" &&
+		if p.Tool == "manage_accounts_and_payees" && p.args["action"] == "create_account" &&
+			p.args["class"] == "expense" &&
 			slices.ContainsFunc(words, func(w string) bool { return strings.Contains(name, w) }) {
 			return p, ""
 		}
 	}
 
-	return evalProposal{}, fmt.Sprintf("no proposal creating an expense category named with one of %v", words)
+	return evalProposal{}, fmt.Sprintf(
+		"no proposal creating an expense category named with one of %v",
+		words,
+	)
 }
 
 // dependsOn checks that the only proposal of tool references parent at pointer.
@@ -777,7 +865,10 @@ func (g *grading) dependsOn(tool, pointer string, parent evalProposal) string {
 
 func (g *grading) recordAndSchedule() (recorded, schedule evalProposal, failure string) {
 	if len(g.answer.Proposals) != 2 {
-		return recorded, schedule, fmt.Sprintf("%d proposals, want record_transaction and manage_schedule", len(g.answer.Proposals))
+		return recorded, schedule, fmt.Sprintf(
+			"%d proposals, want record_transaction and manage_schedule",
+			len(g.answer.Proposals),
+		)
 	}
 
 	recorded, failure = g.proposalOf("record_transaction")
@@ -800,7 +891,10 @@ func (g *grading) occurrencePaidByNewTransaction() string {
 
 	var created string
 	for _, tx := range list.Items {
-		if card, _ := tx.amountOn(g.s.accounts["Itaú Visa"]); tx.Date == evalToday && card == -5590 {
+		if card, _ := tx.amountOn(
+			g.s.accounts["Itaú Visa"],
+		); tx.Date == evalToday &&
+			card == -5590 {
 			created = tx.ID
 		}
 	}
@@ -828,7 +922,13 @@ func (g *grading) occurrencePaidByNewTransaction() string {
 			ExpectedOn string `json:"expected_on"`
 		} `json:"items"`
 	}
-	g.h.MustDo(http.MethodGet, "/api/v1/occurrences?transaction_id="+created, nil, http.StatusOK, &occurrences)
+	g.h.MustDo(
+		http.MethodGet,
+		"/api/v1/occurrences?transaction_id="+created,
+		nil,
+		http.StatusOK,
+		&occurrences,
+	)
 
 	for _, o := range occurrences.Items {
 		if o.ExpectedOn == evalToday && subscriptions[o.ScheduleID] {
@@ -836,7 +936,11 @@ func (g *grading) occurrencePaidByNewTransaction() string {
 		}
 	}
 
-	return fmt.Sprintf("occurrences %+v of the new transaction, want %s of a subscription schedule", occurrences.Items, evalToday)
+	return fmt.Sprintf(
+		"occurrences %+v of the new transaction, want %s of a subscription schedule",
+		occurrences.Items,
+		evalToday,
+	)
 }
 
 // refersTo reports whether refs maps pointer to the proposal parent, with or without a result pointer.
@@ -870,14 +974,24 @@ var graders = map[string]func(g *grading) string{
 				Amount int64 `json:"amount"`
 			} `json:"balance"`
 		}
-		g.h.MustDo(http.MethodGet, "/api/v1/accounts/"+g.s.accounts["Nubank checking"]+"/balance?date="+evalToday, nil, http.StatusOK, &b)
+		g.h.MustDo(
+			http.MethodGet,
+			"/api/v1/accounts/"+g.s.accounts["Nubank checking"]+"/balance?date="+evalToday,
+			nil,
+			http.StatusOK,
+			&b,
+		)
 
 		return first(g.has(strconv.FormatInt(b.Balance.Amount, 10)), g.noProposal())
 	},
 	"E02": func(g *grading) string { return first(g.has("71845"), g.noProposal()) },
 	"E03": func(g *grading) string { return first(g.has("15390"), g.noProposal()) },
 	"E04": func(g *grading) string {
-		return first(g.names("Aluguel", "Rent"), g.names("Electronics", "Eletrônicos"), g.noProposal())
+		return first(
+			g.names("Aluguel", "Rent"),
+			g.names("Electronics", "Eletrônicos"),
+			g.noProposal(),
+		)
 	},
 	"E05": func(g *grading) string {
 		if _, f := g.oneProposal("record_transaction"); f != "" {
@@ -893,7 +1007,8 @@ var graders = map[string]func(g *grading) string{
 			card, _ := tx.amountOn(g.s.accounts["Itaú Visa"])
 
 			food, _ := tx.amountOn(g.s.accounts["Restaurant"])
-			if tx.Date == evalToday && card == -4590 && food == 4590 && tx.PayeeID == g.s.payees["iFood"] {
+			if tx.Date == evalToday && card == -4590 && food == 4590 &&
+				tx.PayeeID == g.s.payees["iFood"] {
 				return ""
 			}
 		}
@@ -942,7 +1057,11 @@ var graders = map[string]func(g *grading) string{
 			return fmt.Sprintf("voided %v, want transaction 15 or 16", id)
 		}
 
-		if a, b := g.transaction(g.s.tx[15]).VoidedAt != "", g.transaction(g.s.tx[16]).VoidedAt != ""; a == b {
+		if a, b := g.transaction(
+			g.s.tx[15],
+		).VoidedAt != "", g.transaction(
+			g.s.tx[16],
+		).VoidedAt != ""; a == b {
 			return fmt.Sprintf("voided 15 %v, 16 %v; want exactly one", a, b)
 		}
 
@@ -959,15 +1078,23 @@ var graders = map[string]func(g *grading) string{
 		}
 
 		if tx := g.transaction(g.s.tx[10]); tx.Date != "2026-10-13" || tx.Version != 2 {
-			return fmt.Sprintf("transaction 10 date %s version %d, want 2026-10-13 version 2", tx.Date, tx.Version)
+			return fmt.Sprintf(
+				"transaction 10 date %s version %d, want 2026-10-13 version 2",
+				tx.Date,
+				tx.Version,
+			)
 		}
 
 		return ""
 	},
 	"E09": func(g *grading) string {
 		billed := minor(g.statement("2026-11")["billed_amount"])
-		if g.contains("03/11") != "" && g.contains("2026-11-03") != "" && g.names("3 de novembro") != "" {
-			return fmt.Sprintf("answer has no closing date 2026-11-03: %q", truncate(g.answer.Content, 300))
+		if g.contains("03/11") != "" && g.contains("2026-11-03") != "" &&
+			g.names("3 de novembro") != "" {
+			return fmt.Sprintf(
+				"answer has no closing date 2026-11-03: %q",
+				truncate(g.answer.Content, 300),
+			)
 		}
 
 		return g.has(strconv.FormatInt(billed, 10))
@@ -1045,7 +1172,13 @@ var graders = map[string]func(g *grading) string{
 				} `json:"quantity"`
 			} `json:"items"`
 		}
-		g.h.MustDo(http.MethodGet, "/api/v1/positions?date="+evalToday, nil, http.StatusOK, &positions)
+		g.h.MustDo(
+			http.MethodGet,
+			"/api/v1/positions?date="+evalToday,
+			nil,
+			http.StatusOK,
+			&positions,
+		)
 
 		for _, pos := range positions.Items {
 			if pos.Instrument == "MXRF11" && pos.Quantity.Amount == 10 {
@@ -1069,11 +1202,26 @@ var graders = map[string]func(g *grading) string{
 			return f
 		}
 
-		if food, electronics := g.categoryTotal("Food", "2026-10-01", "2026-10-31"), g.categoryTotal("Electronics", "2026-10-01", "2026-10-31"); food != 79495 || electronics != 480000 {
-			return fmt.Sprintf("October Food %d, Electronics %d; want 79495 and 480000", food, electronics)
+		if food, electronics := g.categoryTotal(
+			"Food",
+			"2026-10-01",
+			"2026-10-31",
+		), g.categoryTotal(
+			"Electronics",
+			"2026-10-01",
+			"2026-10-31",
+		); food != 79495 ||
+			electronics != 480000 {
+			return fmt.Sprintf(
+				"October Food %d, Electronics %d; want 79495 and 480000",
+				food,
+				electronics,
+			)
 		}
 
-		return g.has(strconv.FormatInt(g.categoryTotal("Transport", "2026-10-01", "2026-10-31"), 10))
+		return g.has(
+			strconv.FormatInt(g.categoryTotal("Transport", "2026-10-01", "2026-10-31"), 10),
+		)
 	},
 	"E20": func(g *grading) string { return first(g.noProposal(), g.names("Nubank checking")) },
 	"E21": func(g *grading) string {
@@ -1082,12 +1230,20 @@ var graders = map[string]func(g *grading) string{
 			return f
 		}
 
-		if schedule.args["action"] != "create" || schedule.args["kind"] != "subscription" || !schedule.Suggested {
-			return fmt.Sprintf("schedule proposal %v suggested %v, want a suggested create of kind subscription", schedule.args, schedule.Suggested)
+		if schedule.args["action"] != "create" || schedule.args["kind"] != "subscription" ||
+			!schedule.Suggested {
+			return fmt.Sprintf(
+				"schedule proposal %v suggested %v, want a suggested create of kind subscription",
+				schedule.args,
+				schedule.Suggested,
+			)
 		}
 
 		if !schedule.refersTo("/paid_by_transaction_id", recorded) {
-			return fmt.Sprintf("refs %v, want /paid_by_transaction_id to the record_transaction proposal", schedule.refs)
+			return fmt.Sprintf(
+				"refs %v, want /paid_by_transaction_id to the record_transaction proposal",
+				schedule.refs,
+			)
 		}
 
 		return g.occurrencePaidByNewTransaction()
@@ -1136,8 +1292,13 @@ var graders = map[string]func(g *grading) string{
 			return f
 		}
 
-		if rule.args["action"] != "create_rule" || rule.args["payee_id"] != g.s.payees["99"] || !rule.Suggested {
-			return fmt.Sprintf("rule proposal %v suggested %v, want a suggested create_rule for payee 99", rule.args, rule.Suggested)
+		if rule.args["action"] != "create_rule" || rule.args["payee_id"] != g.s.payees["99"] ||
+			!rule.Suggested {
+			return fmt.Sprintf(
+				"rule proposal %v suggested %v, want a suggested create_rule for payee 99",
+				rule.args,
+				rule.Suggested,
+			)
 		}
 
 		return ""

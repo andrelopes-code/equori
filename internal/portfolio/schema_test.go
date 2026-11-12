@@ -15,7 +15,8 @@ func TestSchemaRejectsInvalidRows(t *testing.T) {
 
 	var account string
 	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on)
-		VALUES ($1, 'XP', 'asset', 'brokerage', 'BRL', '2026-01-01') RETURNING id`, user).Scan(&account); err != nil {
+		VALUES ($1, 'XP', 'asset', 'brokerage', 'BRL', '2026-01-01') RETURNING id`, user).
+		Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,15 +43,26 @@ func TestSchemaAcceptsOpenIncomeTypesAndNullTax(t *testing.T) {
 
 	var account string
 	if err := pool.QueryRow(ctx, `INSERT INTO ledger_account (books_id, name, account_class, kind, instrument, opened_on)
-		VALUES ($1, 'XP', 'asset', 'brokerage', 'BRL', '2026-01-01') RETURNING id`, user).Scan(&account); err != nil {
+		VALUES ($1, 'XP', 'asset', 'brokerage', 'BRL', '2026-01-01') RETURNING id`, user).
+		Scan(&account); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(ctx, `INSERT INTO portfolio_income_event (books_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency) VALUES ($2, gen_random_uuid(), $1, 'BRL', '2026-10-05', 'rent', NULL, 1, 0, 'BRL')`, account, user); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO portfolio_income_event (books_id, transaction_id, account_id, instrument, date, income_type, tax_treatment, gross, withheld, currency) VALUES ($2, gen_random_uuid(), $1, 'BRL', '2026-10-05', 'rent', NULL, 1, 0, 'BRL')`,
+		account,
+		user,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := pool.Exec(ctx, `INSERT INTO portfolio_realized_result (books_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency) VALUES ($2, gen_random_uuid(), $1, 'BRL', '2026-10-05', '2026-10-01', 1, 1, 1, 0, NULL, 'BRL')`, account, user); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO portfolio_realized_result (books_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency) VALUES ($2, gen_random_uuid(), $1, 'BRL', '2026-10-05', '2026-10-01', 1, 1, 1, 0, NULL, 'BRL')`,
+		account,
+		user,
+	); err != nil {
 		t.Fatal(err)
 	}
 }

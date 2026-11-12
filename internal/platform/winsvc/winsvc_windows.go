@@ -25,7 +25,11 @@ func Run(name string, run func(context.Context) error) error {
 
 type handler struct{ run func(context.Context) error }
 
-func (h handler) Execute(_ []string, req <-chan svc.ChangeRequest, status chan<- svc.Status) (bool, uint32) {
+func (h handler) Execute(
+	_ []string,
+	req <-chan svc.ChangeRequest,
+	status chan<- svc.Status,
+) (bool, uint32) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -98,7 +102,10 @@ func Install(name, exe string, args []string, account string) error {
 
 	defer func() { _ = s.Close() }()
 
-	if err := s.SetRecoveryActions([]mgr.RecoveryAction{{Type: mgr.ServiceRestart, Delay: 5 * time.Second}}, 86400); err != nil {
+	if err := s.SetRecoveryActions(
+		[]mgr.RecoveryAction{{Type: mgr.ServiceRestart, Delay: 5 * time.Second}},
+		86400,
+	); err != nil {
 		return fmt.Errorf("set recovery of service %s: %w", name, err)
 	}
 

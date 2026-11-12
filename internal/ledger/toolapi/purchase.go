@@ -16,7 +16,13 @@ import (
 type handleCardPurchaseAction string
 
 func (handleCardPurchaseAction) Values() []string {
-	return []string{"refund", "open_dispute", "resolve_dispute", "cancel_installments", "anticipate_installments"}
+	return []string{
+		"refund",
+		"open_dispute",
+		"resolve_dispute",
+		"cancel_installments",
+		"anticipate_installments",
+	}
 }
 
 type handleCardPurchaseOutcome string
@@ -24,14 +30,14 @@ type handleCardPurchaseOutcome string
 func (handleCardPurchaseOutcome) Values() []string { return []string{"won", "lost"} }
 
 type handleCardPurchaseIn struct {
-	TransactionID   string                    `json:"transaction_id" jsonschema:"the card purchase, from search_transactions"`
-	Action          handleCardPurchaseAction  `json:"action" jsonschema:"operation to propose"`
-	Date            tool.Date                 `json:"date,omitzero" jsonschema:"date of the event; today when absent"`
-	Amount          string                    `json:"amount,omitzero" jsonschema:"for refund and anticipate_installments: positive amount in the card's currency"`
-	Outcome         handleCardPurchaseOutcome `json:"outcome,omitzero" jsonschema:"for resolve_dispute: won refunds the remaining charged amount"`
+	TransactionID   string                    `json:"transaction_id"            jsonschema:"the card purchase, from search_transactions"`
+	Action          handleCardPurchaseAction  `json:"action"                    jsonschema:"operation to propose"`
+	Date            tool.Date                 `json:"date,omitzero"             jsonschema:"date of the event; today when absent"`
+	Amount          string                    `json:"amount,omitzero"           jsonschema:"for refund and anticipate_installments: positive amount in the card's currency"`
+	Outcome         handleCardPurchaseOutcome `json:"outcome,omitzero"          jsonschema:"for resolve_dispute: won refunds the remaining charged amount"`
 	FromInstallment int                       `json:"from_installment,omitzero" jsonschema:"for anticipate_installments: first installment number paid early"`
-	ToInstallment   int                       `json:"to_installment,omitzero" jsonschema:"for anticipate_installments: last installment number paid early"`
-	Statement       string                    `json:"statement,omitzero" jsonschema:"statement month the credit or the anticipated installments go to; the next open statement when absent; written YYYY-MM"`
+	ToInstallment   int                       `json:"to_installment,omitzero"   jsonschema:"for anticipate_installments: last installment number paid early"`
+	Statement       string                    `json:"statement,omitzero"        jsonschema:"statement month the credit or the anticipated installments go to; the next open statement when absent; written YYYY-MM"`
 }
 
 type handleCardPurchaseOut struct {
@@ -60,10 +66,23 @@ func handleCardPurchase(svc *app.Service) tool.Tool {
 }
 
 // nextOpenStatement returns the first open statement of the card from the month of date.
-func nextOpenStatement(ctx context.Context, svc *app.Service, booksID int64, card uuid.UUID, date time.Time) (domain.ReferenceMonth, error) {
+func nextOpenStatement(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	card uuid.UUID,
+	date time.Time,
+) (domain.ReferenceMonth, error) {
 	from := domain.MonthOf(date)
 
-	views, _, _, err := svc.Statements(ctx, booksID, card, &from, nil, page.Request[app.StatementKey]{Limit: page.MaxLimit})
+	views, _, _, err := svc.Statements(
+		ctx,
+		booksID,
+		card,
+		&from,
+		nil,
+		page.Request[app.StatementKey]{Limit: page.MaxLimit},
+	)
 	if err != nil {
 		return from, err
 	}
@@ -158,9 +177,13 @@ func planInstallmentEvent(
 
 func checkPurchaseFields(in handleCardPurchaseIn) error {
 	given := map[string]bool{
-		"transaction_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "outcome": in.Outcome != "",
-		"from_installment": in.FromInstallment != 0, "to_installment": in.ToInstallment != 0,
-		"statement": in.Statement != "",
+		"transaction_id":   true,
+		"date":             !in.Date.IsZero(),
+		"amount":           in.Amount != "",
+		"outcome":          in.Outcome != "",
+		"from_installment": in.FromInstallment != 0,
+		"to_installment":   in.ToInstallment != 0,
+		"statement":        in.Statement != "",
 	}
 	required := []string{"transaction_id"}
 
@@ -175,7 +198,15 @@ func checkPurchaseFields(in handleCardPurchaseIn) error {
 	case "cancel_installments":
 		optional = []string{"date", "statement"}
 	default:
-		required, optional = append(required, "amount", "from_installment", "to_installment"), []string{"date", "statement"}
+		required, optional = append(
+			required,
+			"amount",
+			"from_installment",
+			"to_installment",
+		), []string{
+			"date",
+			"statement",
+		}
 	}
 
 	return checkFields(string(in.Action), given, required, optional...)

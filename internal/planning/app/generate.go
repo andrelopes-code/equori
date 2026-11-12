@@ -32,7 +32,11 @@ func (b businessDays) IsBusinessDay(d time.Time) bool {
 
 // days loads the holidays of the years [from, to] touches, plus one year on each side for
 // adjustments that cross a year boundary.
-func (s *Service) days(ctx context.Context, calendar string, from, to time.Time) (businessDays, error) {
+func (s *Service) days(
+	ctx context.Context,
+	calendar string,
+	from, to time.Time,
+) (businessDays, error) {
 	out := businessDays{}
 	for y := from.Year() - 1; y <= to.Year()+1; y++ {
 		hs, err := s.cal.Holidays(ctx, calendar, y)
@@ -50,13 +54,28 @@ func (s *Service) days(ctx context.Context, calendar string, from, to time.Time)
 
 // generate adds the occurrences of sch after its GeneratedUntil up to the horizon and
 // advances GeneratedUntil; existing sequences are kept (A49).
-func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, paidBy uuid.UUID) error {
+func (s *Service) generate(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	sch domain.Schedule,
+	paidBy uuid.UUID,
+) error {
 	horizon := s.horizon(ctx)
 	if !sch.GeneratedUntil.Before(horizon) {
 		return nil
 	}
 
-	if err := s.fill(ctx, repo, booksID, sch, sch.GeneratedUntil.AddDate(0, 0, 1), horizon, createdDay(ctx, sch), paidBy); err != nil {
+	if err := s.fill(
+		ctx,
+		repo,
+		booksID,
+		sch,
+		sch.GeneratedUntil.AddDate(0, 0, 1),
+		horizon,
+		createdDay(ctx, sch),
+		paidBy,
+	); err != nil {
 		return err
 	}
 
@@ -67,7 +86,14 @@ func (s *Service) generate(ctx context.Context, repo Repository, booksID int64, 
 // transactions already recorded realize the ones dated by today (A51), and skips the ones dated
 // before keepFrom that none realizes, so the past is neither overdue nor projected (A127).
 // Generation passes the creation day of the schedule as keepFrom.
-func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, from, to, keepFrom time.Time, paidBy uuid.UUID) error {
+func (s *Service) fill(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	sch domain.Schedule,
+	from, to, keepFrom time.Time,
+	paidBy uuid.UUID,
+) error {
 	days, err := s.days(ctx, sch.Calendar, sch.Terms[0].Rule.Start, to)
 	if err != nil {
 		return err
@@ -98,13 +124,23 @@ func (s *Service) fill(ctx context.Context, repo Repository, booksID int64, sch 
 	}
 
 	for _, id := range ids {
-		e := TransactionChanged{BooksID: booksID, TransactionID: id, AccountIDs: []uuid.UUID{sch.AccountID}}
+		e := TransactionChanged{
+			BooksID:       booksID,
+			TransactionID: id,
+			AccountIDs:    []uuid.UUID{sch.AccountID},
+		}
 		if err := s.reevaluate(ctx, repo, e); err != nil {
 			return err
 		}
 	}
 
-	open, err := repo.ExpectedOccurrences(ctx, booksID, []uuid.UUID{sch.ID}, first, keepFrom.AddDate(0, 0, -1))
+	open, err := repo.ExpectedOccurrences(
+		ctx,
+		booksID,
+		[]uuid.UUID{sch.ID},
+		first,
+		keepFrom.AddDate(0, 0, -1),
+	)
 	if err != nil {
 		return err
 	}
@@ -124,9 +160,20 @@ func createdDay(ctx context.Context, sch domain.Schedule) time.Time {
 
 // realizeFirst links the occurrence on date to txID with the checks of a manual Realize, before
 // the matching pass, so that pass neither matches nor skips it.
-func (s *Service) realizeFirst(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, date time.Time, txID uuid.UUID) error {
+func (s *Service) realizeFirst(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	sch domain.Schedule,
+	date time.Time,
+	txID uuid.UUID,
+) error {
 	invalid := func(message string) error {
-		return &domain.FieldError{Field: "paid_by_transaction_id", Message: message, Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "paid_by_transaction_id",
+			Message: message,
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	os, err := repo.Occurrences(ctx, booksID, date, date, sch.ID)
@@ -182,7 +229,16 @@ func (s *Service) Backfill(ctx context.Context) error {
 				return err
 			}
 
-			return s.fill(bctx, repo, ref.BooksID, sch, time.Time{}, sch.GeneratedUntil, createdDay(bctx, sch), uuid.Nil)
+			return s.fill(
+				bctx,
+				repo,
+				ref.BooksID,
+				sch,
+				time.Time{},
+				sch.GeneratedUntil,
+				createdDay(bctx, sch),
+				uuid.Nil,
+			)
 		})
 		if err != nil {
 			return fmt.Errorf("backfill schedule %s: %w", ref.ID, err)

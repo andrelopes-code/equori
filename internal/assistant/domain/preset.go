@@ -51,13 +51,41 @@ var toolsAndStructured = []string{CapTools, CapStructuredOutput}
 // live tests of their adapter.
 func Presets() []Preset {
 	return []Preset{
-		{ID: "gemini", API: APIGemini, BaseURL: "https://generativelanguage.googleapis.com", KeyRequired: true, Notice: NoticeTrains,
-			Models: []PresetModel{{"gemini-3.5-flash", toolsAndStructured}, {"gemini-3.5-flash-lite", toolsAndStructured}, {"gemini-3.1-flash-lite", toolsAndStructured}}},
-		{ID: "groq", API: APIOpenAI, BaseURL: "https://api.groq.com/openai/v1", KeyRequired: true, Notice: NoticeProviderTerms,
-			Models: []PresetModel{{"openai/gpt-oss-120b", toolsAndStructured}}},
-		{ID: "openrouter", API: APIOpenAI, BaseURL: "https://openrouter.ai/api/v1", KeyRequired: true, Notice: NoticeProviderTerms},
-		{ID: "mistral", API: APIOpenAI, BaseURL: "https://api.mistral.ai/v1", KeyRequired: true, Notice: NoticeProviderTerms,
-			Models: []PresetModel{{"mistral-small-latest", toolsAndStructured}}},
+		{
+			ID:          "gemini",
+			API:         APIGemini,
+			BaseURL:     "https://generativelanguage.googleapis.com",
+			KeyRequired: true,
+			Notice:      NoticeTrains,
+			Models: []PresetModel{
+				{"gemini-3.5-flash", toolsAndStructured},
+				{"gemini-3.5-flash-lite", toolsAndStructured},
+				{"gemini-3.1-flash-lite", toolsAndStructured},
+			},
+		},
+		{
+			ID:          "groq",
+			API:         APIOpenAI,
+			BaseURL:     "https://api.groq.com/openai/v1",
+			KeyRequired: true,
+			Notice:      NoticeProviderTerms,
+			Models:      []PresetModel{{"openai/gpt-oss-120b", toolsAndStructured}},
+		},
+		{
+			ID:          "openrouter",
+			API:         APIOpenAI,
+			BaseURL:     "https://openrouter.ai/api/v1",
+			KeyRequired: true,
+			Notice:      NoticeProviderTerms,
+		},
+		{
+			ID:          "mistral",
+			API:         APIOpenAI,
+			BaseURL:     "https://api.mistral.ai/v1",
+			KeyRequired: true,
+			Notice:      NoticeProviderTerms,
+			Models:      []PresetModel{{"mistral-small-latest", toolsAndStructured}},
+		},
 		{ID: "ollama", API: APIOpenAI, BaseURL: "http://127.0.0.1:11434/v1", Notice: NoticeLocal,
 			Models: []PresetModel{{"qwen3:32b", toolsAndStructured}}},
 		{ID: "lmstudio", API: APIOpenAI, BaseURL: "http://127.0.0.1:1234/v1", Notice: NoticeLocal},
@@ -77,7 +105,10 @@ func FindPreset(id string) (Preset, bool) {
 // ModelCapabilities returns the preset's capabilities for a model it names, else asserted.
 func ModelCapabilities(preset, model string, asserted []string) []string {
 	if p, ok := FindPreset(preset); ok {
-		if i := slices.IndexFunc(p.Models, func(m PresetModel) bool { return m.ID == model }); i >= 0 {
+		if i := slices.IndexFunc(
+			p.Models,
+			func(m PresetModel) bool { return m.ID == model },
+		); i >= 0 {
 			return p.Models[i].Capabilities
 		}
 	}

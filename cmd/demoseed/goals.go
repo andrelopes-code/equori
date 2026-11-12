@@ -11,7 +11,15 @@ func (s *seeder) goals() {
 		"account_ids": []string{s.id("sec.CDBXP27")},
 	})
 	s.create("/goals", map[string]any{
-		"name": "Entrada do apartamento", "target": brl(12000000), "due_on": "2030-01-01",
-		"account_ids": []string{s.id("sec.ITUB4"), s.id("sec.WEGE3"), s.id("sec.HGLG11"), s.id("sec.KNRI11"), s.id("sec.TIPCA35")},
+		"name":   "Entrada do apartamento",
+		"target": brl(12000000),
+		"due_on": "2030-01-01",
+		"account_ids": []string{
+			s.id("sec.ITUB4"),
+			s.id("sec.WEGE3"),
+			s.id("sec.HGLG11"),
+			s.id("sec.KNRI11"),
+			s.id("sec.TIPCA35"),
+		},
 	})
 }

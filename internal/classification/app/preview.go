@@ -36,7 +36,11 @@ type RulePreview struct {
 
 // PreviewRule evaluates r, validated as CreateRule validates it, without the other rules over
 // the non-voided transactions dated in [today - 365 days, today]. Nothing is written.
-func (s *Service) PreviewRule(ctx context.Context, booksID int64, r domain.Rule) (RulePreview, error) {
+func (s *Service) PreviewRule(
+	ctx context.Context,
+	booksID int64,
+	r domain.Rule,
+) (RulePreview, error) {
 	r, err := s.checkRule(ctx, booksID, r)
 	if err != nil {
 		return RulePreview{}, err
@@ -53,7 +57,14 @@ func (s *Service) PreviewRule(ctx context.Context, booksID int64, r domain.Rule)
 
 	var after *PendingKey
 	for {
-		ids, next, err := s.repo.PreviewCandidates(ctx, booksID, today.AddDate(0, 0, -previewDays), today, after, runPage)
+		ids, next, err := s.repo.PreviewCandidates(
+			ctx,
+			booksID,
+			today.AddDate(0, 0, -previewDays),
+			today,
+			after,
+			runPage,
+		)
 		if err != nil {
 			return RulePreview{}, err
 		}

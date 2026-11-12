@@ -17,7 +17,10 @@ const probeDays = 10
 // days, and names the disabled sources that would quote it. Nothing is stored (A222 MQ27).
 func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeResult, error) {
 	if !slices.Contains(domain.SecurityTypes, in.Type) {
-		return domain.ProbeResult{}, &domain.FieldError{Field: "type", Message: "must be a security type"}
+		return domain.ProbeResult{}, &domain.FieldError{
+			Field:   "type",
+			Message: "must be a security type",
+		}
 	}
 
 	if err := m.checkSymbolSources(in.Symbols); err != nil {
@@ -26,7 +29,10 @@ func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeRes
 
 	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
 	if errors.Is(err, ErrUnknownInstrument) || (err == nil && quote.Type != domain.TypeCurrency) {
-		return domain.ProbeResult{}, &domain.FieldError{Field: "quote_currency", Message: "must be a currency"}
+		return domain.ProbeResult{}, &domain.FieldError{
+			Field:   "quote_currency",
+			Message: "must be a currency",
+		}
 	}
 
 	if err != nil {
@@ -52,7 +58,12 @@ func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeRes
 			ctx, cancel := context.WithTimeout(ctx, m.feeds.ProbeBound)
 			defer cancel()
 
-			quotes, err := src.Fetch(ctx, []money.Currency{in.Code}, to.AddDate(0, 0, -probeDays), to)
+			quotes, err := src.Fetch(
+				ctx,
+				[]money.Currency{in.Code},
+				to.AddDate(0, 0, -probeDays),
+				to,
+			)
 
 			out.Quotes[i] = latestQuote(src.ID(), in.Code, quotes, err)
 		})
@@ -65,7 +76,11 @@ func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeRes
 
 // probeSources returns the enabled sources that would quote in and lists the disabled ones in
 // out.Available.
-func (m *Module) probeSources(in Instrument, on map[string]bool, out *domain.ProbeResult) []feed.Source {
+func (m *Module) probeSources(
+	in Instrument,
+	on map[string]bool,
+	out *domain.ProbeResult,
+) []feed.Source {
 	var sources []feed.Source
 
 	for _, src := range m.feeds.Sources {
@@ -83,7 +98,12 @@ func (m *Module) probeSources(in Instrument, on map[string]bool, out *domain.Pro
 
 // latestQuote keeps the quote of code with the latest date, also when Fetch failed after it read
 // some quotes (a source returns the quotes read before a failure).
-func latestQuote(source string, code money.Currency, quotes []feed.Quote, err error) domain.ProbeQuote {
+func latestQuote(
+	source string,
+	code money.Currency,
+	quotes []feed.Quote,
+	err error,
+) domain.ProbeQuote {
 	out := domain.ProbeQuote{Source: source}
 
 	for _, q := range quotes {

@@ -21,7 +21,11 @@ func (s *Service) Profile(ctx context.Context, booksID, memberID int64) (locale.
 
 // ProfileChange returns the language and region before and after UpdateProfile with the
 // same arguments, validated, without storing anything.
-func (s *Service) ProfileChange(ctx context.Context, booksID, memberID int64, language, region string) (before, after locale.Locale, err error) {
+func (s *Service) ProfileChange(
+	ctx context.Context,
+	booksID, memberID int64,
+	language, region string,
+) (before, after locale.Locale, err error) {
 	before, err = s.Profile(ctx, booksID, memberID)
 	if err != nil {
 		return locale.Locale{}, locale.Locale{}, err
@@ -40,7 +44,11 @@ func (s *Service) ProfileChange(ctx context.Context, booksID, memberID int64, la
 }
 
 // UpdateProfile changes the language of the member and the region of the books; an empty field keeps the stored value.
-func (s *Service) UpdateProfile(ctx context.Context, booksID, memberID int64, language, region string) (locale.Locale, error) {
+func (s *Service) UpdateProfile(
+	ctx context.Context,
+	booksID, memberID int64,
+	language, region string,
+) (locale.Locale, error) {
 	_, l, err := s.ProfileChange(ctx, booksID, memberID, language, region)
 	if err != nil {
 		return locale.Locale{}, err

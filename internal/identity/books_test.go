@@ -30,13 +30,23 @@ func TestSetupCreatesBooks(t *testing.T) {
 	var role, region string
 
 	err := h.Pool.QueryRow(t.Context(), `SELECT ms.books_id, ms.role, b.region FROM identity_membership ms
-		JOIN identity_books b ON b.id = ms.books_id WHERE ms.member_id = $1`, h.MemberIDOf("ann@example.com")).Scan(&booksID, &role, &region)
+		JOIN identity_books b ON b.id = ms.books_id WHERE ms.member_id = $1`, h.MemberIDOf("ann@example.com")).
+		Scan(&booksID, &role, &region)
 	if err != nil || role != "owner" || region != withDefault {
-		t.Fatalf("membership = %d, %q, %q, %v; want owner of a book in %q", booksID, role, region, err, withDefault)
+		t.Fatalf(
+			"membership = %d, %q, %q, %v; want owner of a book in %q",
+			booksID,
+			role,
+			region,
+			err,
+			withDefault,
+		)
 	}
 
 	var base string
-	if err := h.Pool.QueryRow(t.Context(), `SELECT base_currency FROM ledger_settings WHERE books_id = $1`, booksID).Scan(&base); err != nil || base != "BRL" {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT base_currency FROM ledger_settings WHERE books_id = $1`, booksID).
+		Scan(&base); err != nil ||
+		base != "BRL" {
 		t.Errorf("base_currency = %q, %v; want BRL", base, err)
 	}
 }
@@ -50,7 +60,11 @@ func TestDeletedMembershipEndsSession(t *testing.T) {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
 
-	if _, err := h.Pool.Exec(t.Context(), `DELETE FROM identity_membership WHERE member_id = $1`, h.MemberIDOf("ann@example.com")); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`DELETE FROM identity_membership WHERE member_id = $1`,
+		h.MemberIDOf("ann@example.com"),
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -73,7 +87,14 @@ func TestLoginBooksOrder(t *testing.T) {
 			h := apitest.Empty(t)
 			email := "ann@example.com"
 
-			if _, err := h.App.Identity.CreateMember(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+			if _, err := h.App.Identity.CreateMember(
+				t.Context(),
+				email,
+				apitest.Password,
+				"admin",
+				locale.Locale{Language: "pt", Region: "BR"},
+				"BRL",
+			); err != nil {
 				t.Fatal(err)
 			}
 
@@ -83,7 +104,12 @@ func TestLoginBooksOrder(t *testing.T) {
 				}
 			}
 
-			r := h.Call(jarClient(t), http.MethodPost, "/api/v1/session", map[string]string{"email": email, "password": apitest.Password})
+			r := h.Call(
+				jarClient(t),
+				http.MethodPost,
+				"/api/v1/session",
+				map[string]string{"email": email, "password": apitest.Password},
+			)
 			if r.Status != tt.status {
 				t.Fatalf("status %d: %s; want %d", r.Status, r.Body, tt.status)
 			}
@@ -110,7 +136,14 @@ func TestLoginOpensLastActiveBooks(t *testing.T) {
 			h := apitest.Empty(t)
 			email := "ann@example.com"
 
-			if _, err := h.App.Identity.CreateMember(t.Context(), email, apitest.Password, "admin", locale.Locale{Language: "pt", Region: "BR"}, "BRL"); err != nil {
+			if _, err := h.App.Identity.CreateMember(
+				t.Context(),
+				email,
+				apitest.Password,
+				"admin",
+				locale.Locale{Language: "pt", Region: "BR"},
+				"BRL",
+			); err != nil {
 				t.Fatal(err)
 			}
 
@@ -118,21 +151,38 @@ func TestLoginOpensLastActiveBooks(t *testing.T) {
 			memberID := h.MemberIDOf(email)
 
 			var other int64
-			if err := h.Pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'other') RETURNING id`).Scan(&other); err != nil {
+			if err := h.Pool.QueryRow(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'other') RETURNING id`).
+				Scan(&other); err != nil {
 				t.Fatal(err)
 			}
 
-			if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'write')`, memberID, other); err != nil {
+			if _, err := h.Pool.Exec(
+				t.Context(),
+				`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'write')`,
+				memberID,
+				other,
+			); err != nil {
 				t.Fatal(err)
 			}
 
 			for books, at := range map[int64]string{own: tt.own, other: tt.other} {
-				if _, err := h.Pool.Exec(t.Context(), `UPDATE identity_membership SET last_active_at = $3 WHERE member_id = $1 AND books_id = $2`, memberID, books, at); err != nil {
+				if _, err := h.Pool.Exec(
+					t.Context(),
+					`UPDATE identity_membership SET last_active_at = $3 WHERE member_id = $1 AND books_id = $2`,
+					memberID,
+					books,
+					at,
+				); err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			r := h.Call(jarClient(t), http.MethodPost, "/api/v1/session", map[string]string{"email": email, "password": apitest.Password})
+			r := h.Call(
+				jarClient(t),
+				http.MethodPost,
+				"/api/v1/session",
+				map[string]string{"email": email, "password": apitest.Password},
+			)
 			if r.Status != http.StatusNoContent {
 				t.Fatalf("status %d: %s", r.Status, r.Body)
 			}
@@ -143,7 +193,8 @@ func TestLoginOpensLastActiveBooks(t *testing.T) {
 			}
 
 			var got int64
-			if err := h.Pool.QueryRow(t.Context(), `SELECT books_id FROM identity_session WHERE member_id = $1`, memberID).Scan(&got); err != nil {
+			if err := h.Pool.QueryRow(t.Context(), `SELECT books_id FROM identity_session WHERE member_id = $1`, memberID).
+				Scan(&got); err != nil {
 				t.Fatal(err)
 			}
 
@@ -152,8 +203,14 @@ func TestLoginOpensLastActiveBooks(t *testing.T) {
 			}
 
 			var touched bool
-			if err := h.Pool.QueryRow(t.Context(), `SELECT last_active_at > '2026-03-01' FROM identity_membership WHERE member_id = $1 AND books_id = $2`, memberID, want).Scan(&touched); err != nil || !touched {
-				t.Fatalf("last_active_at after login: later than 2026-03-01 = %v, %v; want true", touched, err)
+			if err := h.Pool.QueryRow(t.Context(), `SELECT last_active_at > '2026-03-01' FROM identity_membership WHERE member_id = $1 AND books_id = $2`, memberID, want).
+				Scan(&touched); err != nil ||
+				!touched {
+				t.Fatalf(
+					"last_active_at after login: later than 2026-03-01 = %v, %v; want true",
+					touched,
+					err,
+				)
 			}
 		})
 	}

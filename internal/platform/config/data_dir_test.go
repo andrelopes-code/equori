@@ -14,11 +14,19 @@ func TestDefaultDataDir(t *testing.T) {
 	}{
 		{"linux", map[string]string{"HOME": "/home/a"}, "/home/a/.local/share/equori"},
 		{"linux", map[string]string{"HOME": "/home/a", "XDG_DATA_HOME": "/data"}, "/data/equori"},
-		{"darwin", map[string]string{"HOME": "/Users/a"}, "/Users/a/Library/Application Support/equori"},
+		{
+			"darwin",
+			map[string]string{"HOME": "/Users/a"},
+			"/Users/a/Library/Application Support/equori",
+		},
 		{"linux", map[string]string{}, ""},
 		{"windows", map[string]string{"HOME": "C:/a"}, ""},
 		{"windows", map[string]string{"ProgramData": `C:\ProgramData`}, `C:\ProgramData\equori`},
-		{"windows", map[string]string{"ProgramData": `C:\ProgramData`, "HOME": ""}, `C:\ProgramData\equori`},
+		{
+			"windows",
+			map[string]string{"ProgramData": `C:\ProgramData`, "HOME": ""},
+			`C:\ProgramData\equori`,
+		},
 		{"windows", map[string]string{}, ""},
 	}
 	for _, tt := range tests {

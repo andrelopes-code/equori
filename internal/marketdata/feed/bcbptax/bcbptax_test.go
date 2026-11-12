@@ -41,7 +41,12 @@ func TestPTAX(t *testing.T) {
 	t.Cleanup(srv.Close)
 	src := bcbptax.New(srv.Client(), srv.URL)
 
-	got, err := src.Fetch(t.Context(), []money.Currency{"USD"}, day("2026-10-29"), day("2026-10-30"))
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"USD"},
+		day("2026-10-29"),
+		day("2026-10-30"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,16 +56,30 @@ func TestPTAX(t *testing.T) {
 		t.Fatalf("request = %s", rawURL)
 	}
 
-	if len(got) != 2 || got[0].Instrument != "USD" || got[0].Quote != "BRL" || !got[0].Date.Equal(day("2026-10-29")) || got[0].Value.String() != "5.49500" ||
-		!got[1].Date.Equal(day("2026-10-30")) || got[1].Value.String() != "5.5" {
+	if len(got) != 2 || got[0].Instrument != "USD" || got[0].Quote != "BRL" ||
+		!got[0].Date.Equal(day("2026-10-29")) ||
+		got[0].Value.String() != "5.49500" ||
+		!got[1].Date.Equal(day("2026-10-30")) ||
+		got[1].Value.String() != "5.5" {
 		t.Fatalf("quotes = %+v", got)
 	}
 
-	if got, err := src.Fetch(t.Context(), []money.Currency{"SEK"}, day("2026-10-29"), day("2026-10-30")); err != nil || len(got) != 0 {
+	if got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"SEK"},
+		day("2026-10-29"),
+		day("2026-10-30"),
+	); err != nil ||
+		len(got) != 0 {
 		t.Fatalf("empty answer = %+v, %v", got, err)
 	}
 
-	if _, err := src.Fetch(t.Context(), []money.Currency{"EUR"}, day("2026-10-29"), day("2026-10-30")); err == nil {
+	if _, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"EUR"},
+		day("2026-10-29"),
+		day("2026-10-30"),
+	); err == nil {
 		t.Fatal("a 503 answer returned no error")
 	}
 }
@@ -82,9 +101,13 @@ func TestFetchWindows(t *testing.T) {
 			},
 		},
 		{
-			name:    "first failing window ends the code",
-			failAt:  "'11-06-2016'",
-			want:    []string{"11-09-2006/11-07-2011", "11-08-2011/11-05-2016", "11-06-2016/11-04-2021"},
+			name:   "first failing window ends the code",
+			failAt: "'11-06-2016'",
+			want: []string{
+				"11-09-2006/11-07-2011",
+				"11-08-2011/11-05-2016",
+				"11-06-2016/11-04-2021",
+			},
 			wantErr: true,
 		},
 	}
@@ -93,26 +116,39 @@ func TestFetchWindows(t *testing.T) {
 			t.Parallel()
 
 			var got []string
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				q := r.URL.Query()
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					q := r.URL.Query()
 
-				got = append(got, strings.Trim(q.Get("@dataInicial"), "'")+"/"+strings.Trim(q.Get("@dataFinalCotacao"), "'"))
-				if q.Get("@dataInicial") == tt.failAt {
-					http.Error(w, "busy", http.StatusInternalServerError)
-					return
-				}
+					got = append(
+						got,
+						strings.Trim(
+							q.Get("@dataInicial"),
+							"'",
+						)+"/"+strings.Trim(
+							q.Get("@dataFinalCotacao"),
+							"'",
+						),
+					)
+					if q.Get("@dataInicial") == tt.failAt {
+						http.Error(w, "busy", http.StatusInternalServerError)
+						return
+					}
 
-				_, _ = w.Write([]byte(`{"value":[]}`))
-			}))
+					_, _ = w.Write([]byte(`{"value":[]}`))
+				}),
+			)
 			t.Cleanup(srv.Close)
 
-			_, err := bcbptax.New(srv.Client(), srv.URL).Fetch(t.Context(), []money.Currency{"USD"}, day("2006-11-09"), day("2026-11-09"))
+			_, err := bcbptax.New(srv.Client(), srv.URL).
+				Fetch(t.Context(), []money.Currency{"USD"}, day("2006-11-09"), day("2026-11-09"))
 			if !slices.Equal(got, tt.want) {
 				t.Fatalf("requests = %v", got)
 			}
 
 			var scope *feed.ScopeError
-			if tt.wantErr && (!errors.As(err, &scope) || scope.Key != "instrument" || scope.Value != "USD") {
+			if tt.wantErr &&
+				(!errors.As(err, &scope) || scope.Key != "instrument" || scope.Value != "USD") {
 				t.Fatalf("error = %v", err)
 			}
 
@@ -136,8 +172,17 @@ func TestCodes(t *testing.T) {
 	t.Parallel()
 
 	ins := []feed.Instrument{
-		{Code: "BRL", Type: "currency"}, {Code: "USD", Type: "currency"}, {Code: "KWD", Type: "currency"},
-		{Code: "EUR", Type: "currency"}, {Code: "MXRF11", Type: "reit", Exchange: "BVMF", QuoteCurrency: "BRL"},
+		{
+			Code: "BRL",
+			Type: "currency",
+		},
+		{Code: "USD", Type: "currency"},
+		{Code: "KWD", Type: "currency"},
+		{
+			Code: "EUR",
+			Type: "currency",
+		},
+		{Code: "MXRF11", Type: "reit", Exchange: "BVMF", QuoteCurrency: "BRL"},
 	}
 
 	got := bcbptax.New(nil, "").Codes(ins)

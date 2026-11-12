@@ -41,7 +41,11 @@ type ReimbursementCandidate struct {
 
 // categorySide returns the amount that comes in on the category side of t and its currency;
 // the amount is zero for a voided transaction or an outflow.
-func (s *Service) categorySide(ctx context.Context, booksID int64, t domain.Transaction) (int64, money.Currency, error) {
+func (s *Service) categorySide(
+	ctx context.Context,
+	booksID int64,
+	t domain.Transaction,
+) (int64, money.Currency, error) {
 	accounts, err := s.repo.Accounts(ctx, booksID, postingAccounts(t))
 	if err != nil {
 		return 0, "", err
@@ -66,7 +70,11 @@ func (s *Service) categorySide(ctx context.Context, booksID int64, t domain.Tran
 
 // ReimbursementCandidates lists the expenses the inflow id can repay and, when a single
 // combination of them adds up to the inflow, the ids of that combination (A117).
-func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id uuid.UUID) ([]ReimbursementCandidate, []uuid.UUID, error) {
+func (s *Service) ReimbursementCandidates(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) ([]ReimbursementCandidate, []uuid.UUID, error) {
 	t, err := s.repo.Transaction(ctx, booksID, id)
 	if err != nil {
 		return nil, nil, err
@@ -78,8 +86,17 @@ func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id
 	}
 
 	rows, err := s.repo.ReimbursementCandidates(ctx, CandidateQuery{
-		BooksID: booksID, ExcludeID: t.ID, Instrument: instrument, Amount: inflow,
-		From: t.Date.AddDate(0, 0, -reimbursementWindowDays), To: t.Date, MaxRows: reimbursementCandidateMax,
+		BooksID:    booksID,
+		ExcludeID:  t.ID,
+		Instrument: instrument,
+		Amount:     inflow,
+		From: t.Date.AddDate(
+			0,
+			0,
+			-reimbursementWindowDays,
+		),
+		To:      t.Date,
+		MaxRows: reimbursementCandidateMax,
 	})
 	if err != nil {
 		return nil, nil, err
@@ -108,7 +125,11 @@ func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id
 
 // candidateList builds the candidates of rows, their remaining amounts and whether any row
 // already holds an allocation.
-func candidateList(rows []CandidateRow, byID map[uuid.UUID]domain.Transaction, instrument money.Currency) ([]ReimbursementCandidate, []int64, bool, error) {
+func candidateList(
+	rows []CandidateRow,
+	byID map[uuid.UUID]domain.Transaction,
+	instrument money.Currency,
+) ([]ReimbursementCandidate, []int64, bool, error) {
 	out := make([]ReimbursementCandidate, 0, len(rows))
 	remaining := make([]int64, len(rows))
 
@@ -124,7 +145,10 @@ func candidateList(rows []CandidateRow, byID map[uuid.UUID]domain.Transaction, i
 			return nil, nil, false, err
 		}
 
-		out = append(out, ReimbursementCandidate{Transaction: byID[row.ID], Remaining: rest, Allocated: held})
+		out = append(
+			out,
+			ReimbursementCandidate{Transaction: byID[row.ID], Remaining: rest, Allocated: held},
+		)
 		remaining[i] = row.Remaining
 		allocated = allocated || row.Allocated > 0
 	}
@@ -145,7 +169,11 @@ func suggestedCombination(rows []CandidateRow, remaining []int64, inflow int64) 
 }
 
 // transactionsByID loads the transactions whose ids ids yields.
-func (s *Service) transactionsByID(ctx context.Context, booksID int64, ids func(yield func(uuid.UUID))) (map[uuid.UUID]domain.Transaction, error) {
+func (s *Service) transactionsByID(
+	ctx context.Context,
+	booksID int64,
+	ids func(yield func(uuid.UUID)),
+) (map[uuid.UUID]domain.Transaction, error) {
 	var list []uuid.UUID
 	ids(func(id uuid.UUID) { list = append(list, id) })
 
@@ -184,7 +212,11 @@ type ReimbursementSource struct {
 }
 
 // ReimbursementSources lists the inflows that can repay the expense id (A117).
-func (s *Service) ReimbursementSources(ctx context.Context, booksID int64, id uuid.UUID) ([]ReimbursementSource, error) {
+func (s *Service) ReimbursementSources(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) ([]ReimbursementSource, error) {
 	t, err := s.repo.Transaction(ctx, booksID, id)
 	if err != nil {
 		return nil, err
@@ -207,8 +239,12 @@ func (s *Service) ReimbursementSources(ctx context.Context, booksID int64, id uu
 	}
 
 	rows, err := s.repo.ReimbursementSources(ctx, SourceQuery{
-		BooksID: booksID, ExcludeID: t.ID, Instrument: instrument,
-		From: t.Date, To: t.Date.AddDate(0, 0, reimbursementWindowDays), MaxRows: reimbursementSourceMax,
+		BooksID:    booksID,
+		ExcludeID:  t.ID,
+		Instrument: instrument,
+		From:       t.Date,
+		To:         t.Date.AddDate(0, 0, reimbursementWindowDays),
+		MaxRows:    reimbursementSourceMax,
 	})
 	if err != nil {
 		return nil, err

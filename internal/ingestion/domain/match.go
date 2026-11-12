@@ -176,7 +176,10 @@ func Assign(lines []MatchLine, postings []LedgerPosting) []Assignment {
 		}
 
 		done[next] = true
-		cands := slices.DeleteFunc(slices.Clone(scored[next]), func(c Scored) bool { return taken[c.TransactionID] })
+		cands := slices.DeleteFunc(
+			slices.Clone(scored[next]),
+			func(c Scored) bool { return taken[c.TransactionID] },
+		)
 
 		out[next] = decide(cands)
 		if out[next].Zone == ZoneLink {
@@ -232,7 +235,11 @@ func decide(cands []Scored) Assignment {
 
 	switch {
 	case cands[0].Score >= LinkScore && cands[0].Amount == AmountIdentical && rivals == 0:
-		return Assignment{Zone: ZoneLink, TransactionID: cands[0].TransactionID, Candidates: cands[:1]}
+		return Assignment{
+			Zone:          ZoneLink,
+			TransactionID: cands[0].TransactionID,
+			Candidates:    cands[:1],
+		}
 	case cands[0].Score >= LinkScore && rivals > 0 && cands[1].Score >= LinkScore:
 		return Assignment{Zone: ZoneAmbiguous, Candidates: reviewed(cands)}
 	default:

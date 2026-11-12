@@ -13,7 +13,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (r *Repository) SaveAccountInvitation(ctx context.Context, inv domain.AccountInvitation) (domain.AccountInvitation, error) {
+func (r *Repository) SaveAccountInvitation(
+	ctx context.Context,
+	inv domain.AccountInvitation,
+) (domain.AccountInvitation, error) {
 	var stored domain.AccountInvitation
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
@@ -57,8 +60,15 @@ func (r *Repository) SaveAccountInvitation(ctx context.Context, inv domain.Accou
 	return stored, nil
 }
 
-func (r *Repository) AccountInvitationPreview(ctx context.Context, tokenHash []byte, now time.Time) (app.InvitationPreview, error) {
-	row, err := r.q.GetAccountInvitationPreview(ctx, GetAccountInvitationPreviewParams{TokenHash: tokenHash, ExpiresAt: now})
+func (r *Repository) AccountInvitationPreview(
+	ctx context.Context,
+	tokenHash []byte,
+	now time.Time,
+) (app.InvitationPreview, error) {
+	row, err := r.q.GetAccountInvitationPreview(
+		ctx,
+		GetAccountInvitationPreviewParams{TokenHash: tokenHash, ExpiresAt: now},
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return app.InvitationPreview{}, app.ErrInvitationNotFound
 	}
@@ -75,14 +85,20 @@ func (r *Repository) AccountInvitationPreview(ctx context.Context, tokenHash []b
 	}, nil
 }
 
-func (r *Repository) AcceptAccountInvitation(ctx context.Context, tokenHash []byte, m domain.Member, now time.Time) (domain.Member, int64, error) {
+func (r *Repository) AcceptAccountInvitation(
+	ctx context.Context,
+	tokenHash []byte,
+	m domain.Member,
+	now time.Time,
+) (domain.Member, int64, error) {
 	var (
 		created domain.Member
 		booksID int64
 	)
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
-		claim, err := r.q.WithTx(tx).ClaimAccountInvitation(ctx, ClaimAccountInvitationParams{TokenHash: tokenHash, ExpiresAt: now})
+		claim, err := r.q.WithTx(tx).
+			ClaimAccountInvitation(ctx, ClaimAccountInvitationParams{TokenHash: tokenHash, ExpiresAt: now})
 		if errors.Is(err, pgx.ErrNoRows) {
 			return app.ErrInvitationNotFound
 		}
@@ -91,7 +107,14 @@ func (r *Repository) AcceptAccountInvitation(ctx context.Context, tokenHash []by
 			return err
 		}
 
-		created, booksID, err = r.insertMember(ctx, tx, m, claim.Region, money.Currency(claim.BaseCurrency), domain.DefaultBooksName(m.Email))
+		created, booksID, err = r.insertMember(
+			ctx,
+			tx,
+			m,
+			claim.Region,
+			money.Currency(claim.BaseCurrency),
+			domain.DefaultBooksName(m.Email),
+		)
 
 		return err
 	})

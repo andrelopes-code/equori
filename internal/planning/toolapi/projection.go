@@ -11,7 +11,7 @@ import (
 
 type projectBalanceIn struct {
 	AccountID string    `json:"account_id" jsonschema:"balance account from list_accounts"`
-	To        tool.Date `json:"to" jsonschema:"last date projected, after today and at most 12 months ahead"`
+	To        tool.Date `json:"to"         jsonschema:"last date projected, after today and at most 12 months ahead"`
 }
 
 type projectionPoint struct {
@@ -36,7 +36,8 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 		Description: "Projects the balance of an account to a future date from its schedules, with each expected occurrence on the way. " +
 			"Use it for will there be enough money on a date. " +
 			"Do not use it for past balances: get_account_history does.",
-		Effect: tool.ReadOnly, Idempotent: true,
+		Effect:     tool.ReadOnly,
+		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in projectBalanceIn) (projectBalanceOut, error) {
 		id, err := optionalID(in.AccountID, "account_id")
 		if err != nil {
@@ -58,7 +59,12 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 			return projectBalanceOut{}, err
 		}
 
-		out := projectBalanceOut{AccountName: accountName(accounts, id), From: tool.DateOf(p.From), To: tool.DateOf(p.To), Points: []projectionPoint{}}
+		out := projectBalanceOut{
+			AccountName: accountName(accounts, id),
+			From:        tool.DateOf(p.From),
+			To:          tool.DateOf(p.To),
+			Points:      []projectionPoint{},
+		}
 		if out.Opening, err = moneyOf(p.Opening, p.Currency); err != nil {
 			return out, err
 		}
@@ -75,7 +81,11 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 	})
 }
 
-func scheduleDescriptions(ctx context.Context, svc *app.Service, booksID int64) (map[uuid.UUID]string, error) {
+func scheduleDescriptions(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+) (map[uuid.UUID]string, error) {
 	schedules, err := allSchedules(ctx, svc, booksID)
 	if err != nil {
 		return nil, err
@@ -89,7 +99,11 @@ func scheduleDescriptions(ctx context.Context, svc *app.Service, booksID int64) 
 	return descriptions, nil
 }
 
-func fillProjectionPoints(out *projectBalanceOut, p app.Projection, descriptions map[uuid.UUID]string) error {
+func fillProjectionPoints(
+	out *projectBalanceOut,
+	p app.Projection,
+	descriptions map[uuid.UUID]string,
+) error {
 	for _, pt := range p.Points {
 		var err error
 

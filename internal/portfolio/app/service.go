@@ -51,7 +51,11 @@ func (s *Service) WithRepository(repo Repository) *Service {
 }
 
 // HandleTransaction rebuilds every brokerage that has one of accountIDs as a child (A71).
-func (s *Service) HandleTransaction(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
+func (s *Service) HandleTransaction(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+) error {
 	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return err
@@ -67,7 +71,8 @@ func (s *Service) HandleTransaction(ctx context.Context, booksID int64, accountI
 		a, ok := byID[id]
 
 		parent, hasParent := byID[a.ParentID]
-		if !ok || a.Kind != kindBrokerage || !hasParent || parent.Kind != kindBrokerage || seen[parent.ID] {
+		if !ok || a.Kind != kindBrokerage || !hasParent || parent.Kind != kindBrokerage ||
+			seen[parent.ID] {
 			continue
 		}
 
@@ -132,7 +137,11 @@ func (s *Service) IncomeTypes(ctx context.Context, booksID int64) ([]string, err
 
 // Subtypes returns the subtypes of an instrument type that the book's jurisdiction knows; none
 // when the book has no jurisdiction.
-func (s *Service) Subtypes(ctx context.Context, booksID int64, instrumentType string) ([]string, error) {
+func (s *Service) Subtypes(
+	ctx context.Context,
+	booksID int64,
+	instrumentType string,
+) ([]string, error) {
 	j, err := s.juris.For(ctx, booksID)
 	if err != nil || j == nil {
 		return []string{}, err
@@ -172,7 +181,12 @@ type Position struct {
 // Positions returns the non-empty positions at the end of date with the cost in the base currency
 // and the market value in in (the base currency by default); a position without a price has no
 // market value, and a missing price to in is ErrPriceMissing.
-func (s *Service) Positions(ctx context.Context, booksID int64, date time.Time, in money.Currency) ([]Position, error) {
+func (s *Service) Positions(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+	in money.Currency,
+) ([]Position, error) {
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -252,7 +266,11 @@ type Result struct {
 
 // TaxYear returns the tax year that starts in year under the book's jurisdiction: from inclusive,
 // to exclusive.
-func (s *Service) TaxYear(ctx context.Context, booksID int64, year int) (time.Time, time.Time, error) {
+func (s *Service) TaxYear(
+	ctx context.Context,
+	booksID int64,
+	year int,
+) (time.Time, time.Time, error) {
 	j, err := s.juris.For(ctx, booksID)
 	if err != nil {
 		return time.Time{}, time.Time{}, err
@@ -308,7 +326,11 @@ type IncomeEvent struct {
 }
 
 // IncomeEvents returns the income of the tax year that starts in year, in date order.
-func (s *Service) IncomeEvents(ctx context.Context, booksID int64, year int) ([]IncomeEvent, error) {
+func (s *Service) IncomeEvents(
+	ctx context.Context,
+	booksID int64,
+	year int,
+) ([]IncomeEvent, error) {
 	from, to, err := s.TaxYear(ctx, booksID, year)
 	if err != nil {
 		return nil, err
@@ -336,7 +358,11 @@ func (s *Service) IncomeEvents(ctx context.Context, booksID int64, year int) ([]
 	return out, nil
 }
 
-func (s *Service) amount(ctx context.Context, units int64, code money.Currency) (money.Money, error) {
+func (s *Service) amount(
+	ctx context.Context,
+	units int64,
+	code money.Currency,
+) (money.Money, error) {
 	scale, err := s.md.Scale(ctx, code)
 	if err != nil {
 		return money.Money{}, err

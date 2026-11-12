@@ -103,11 +103,21 @@ func ToProblem(err error) (problem.Details, bool) {
 	}
 
 	if ce, ok := errors.AsType[*app.CurrencyError](err); ok {
-		return fieldProblem(http.StatusUnprocessableEntity, "currency_unsupported", ce.Field, app.ErrCurrencyUnsupported.Error()), true
+		return fieldProblem(
+			http.StatusUnprocessableEntity,
+			"currency_unsupported",
+			ce.Field,
+			app.ErrCurrencyUnsupported.Error(),
+		), true
 	}
 
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
-		return fieldProblem(http.StatusUnprocessableEntity, "validation_failed", fe.Field, fe.Message), true
+		return fieldProblem(
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			fe.Field,
+			fe.Message,
+		), true
 	}
 
 	switch {
@@ -152,8 +162,13 @@ func toPricesAPI(ps []app.Price) *[]Price {
 	out := make([]Price, len(ps))
 	for i, p := range ps {
 		out[i] = Price{
-			Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: apiDate(p.Date),
-			Value: p.Value.Reduced().String(), Source: p.Source,
+			Instrument: string(
+				p.Instrument,
+			),
+			QuoteInstrument: string(p.Quote),
+			Date:            apiDate(p.Date),
+			Value:           p.Value.Reduced().String(),
+			Source:          p.Source,
 		}
 	}
 
@@ -167,7 +182,11 @@ func toMoneyAPI(amount int64, c money.Currency) Money {
 func fromMoneyAPI(field string, m Money) (money.Money, error) {
 	v, err := money.New(m.Amount, money.Currency(m.Currency))
 	if err != nil {
-		return money.Money{}, &domain.FieldError{Field: field, Message: err.Error(), Err: domain.ErrValidation}
+		return money.Money{}, &domain.FieldError{
+			Field:   field,
+			Message: err.Error(),
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return v, nil

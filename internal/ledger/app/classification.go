@@ -33,13 +33,22 @@ type TransactionFacts struct {
 
 // AccountTransactionsBetween returns the non-voided transactions with a posting on the account
 // dated in [from, to], by date.
-func (s *Service) AccountTransactionsBetween(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]uuid.UUID, error) {
+func (s *Service) AccountTransactionsBetween(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]uuid.UUID, error) {
 	return s.repo.AccountTransactionsBetween(ctx, booksID, accountID, from, to)
 }
 
 // TransactionFacts returns the facts of the book's transactions among ids, in the order of
 // ids; unknown ids are omitted.
-func (s *Service) TransactionFacts(ctx context.Context, booksID int64, ids []uuid.UUID) ([]TransactionFacts, error) {
+func (s *Service) TransactionFacts(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) ([]TransactionFacts, error) {
 	ts, err := s.repo.TransactionsByIDs(ctx, booksID, ids)
 	if err != nil || len(ts) == 0 {
 		return nil, err
@@ -70,9 +79,16 @@ func (s *Service) TransactionFacts(ctx context.Context, booksID int64, ids []uui
 		t := ts[i]
 
 		f := TransactionFacts{
-			ID: t.ID, Version: t.Version, Date: t.Date, Description: t.Description, RawDescription: t.Description,
-			PayeeID: t.PayeeID, Origin: string(t.Origin), Voided: t.VoidedAt != nil, CategoryState: string(t.CategoryState(accounts)),
-			Postings: make([]FactPosting, len(t.Postings)),
+			ID:             t.ID,
+			Version:        t.Version,
+			Date:           t.Date,
+			Description:    t.Description,
+			RawDescription: t.Description,
+			PayeeID:        t.PayeeID,
+			Origin:         string(t.Origin),
+			Voided:         t.VoidedAt != nil,
+			CategoryState:  string(t.CategoryState(accounts)),
+			Postings:       make([]FactPosting, len(t.Postings)),
 		}
 		if d, ok := raw[t.ID]; ok {
 			f.RawDescription = d
@@ -81,8 +97,12 @@ func (s *Service) TransactionFacts(ctx context.Context, booksID int64, ids []uui
 		for j, p := range t.Postings {
 			a := accounts[p.AccountID]
 			f.Postings[j] = FactPosting{
-				AccountID: p.AccountID, Class: string(a.Class), Kind: string(a.Kind), SystemRole: string(a.SystemRole),
-				Amount: p.Amount, Installment: p.Installment != nil,
+				AccountID:   p.AccountID,
+				Class:       string(a.Class),
+				Kind:        string(a.Kind),
+				SystemRole:  string(a.SystemRole),
+				Amount:      p.Amount,
+				Installment: p.Installment != nil,
 			}
 		}
 
@@ -110,8 +130,15 @@ func (s *Service) AccountFacts(ctx context.Context, booksID int64) ([]AccountFac
 	out := make([]AccountFact, len(as))
 	for i, a := range as {
 		out[i] = AccountFact{
-			ID: a.ID, ParentID: a.ParentID, InstitutionID: a.InstitutionID, Class: string(a.Class), Kind: string(a.Kind), SystemRole: string(a.SystemRole),
-			Instrument: a.Instrument, OpenedOn: a.OpenedOn, ClosedOn: a.ClosedOn,
+			ID:            a.ID,
+			ParentID:      a.ParentID,
+			InstitutionID: a.InstitutionID,
+			Class:         string(a.Class),
+			Kind:          string(a.Kind),
+			SystemRole:    string(a.SystemRole),
+			Instrument:    a.Instrument,
+			OpenedOn:      a.OpenedOn,
+			ClosedOn:      a.ClosedOn,
 		}
 	}
 
@@ -119,7 +146,11 @@ func (s *Service) AccountFacts(ctx context.Context, booksID int64) ([]AccountFac
 }
 
 // MissingPayees returns the ids that are not payees of the book, in input order.
-func (s *Service) MissingPayees(ctx context.Context, booksID int64, ids []uuid.UUID) ([]uuid.UUID, error) {
+func (s *Service) MissingPayees(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) ([]uuid.UUID, error) {
 	found, err := s.repo.ExistingPayees(ctx, booksID, ids)
 	if err != nil {
 		return nil, err
@@ -143,6 +174,10 @@ type PayeeClass struct {
 
 // LatestPayeeCategories returns, per payee and class, the category of the most recent
 // non-voided transaction whose only category posting is categorized (P5 amendment A23).
-func (s *Service) LatestPayeeCategories(ctx context.Context, booksID int64, payees []uuid.UUID) (map[PayeeClass]uuid.UUID, error) {
+func (s *Service) LatestPayeeCategories(
+	ctx context.Context,
+	booksID int64,
+	payees []uuid.UUID,
+) (map[PayeeClass]uuid.UUID, error) {
 	return s.repo.LatestPayeeCategories(ctx, booksID, payees)
 }

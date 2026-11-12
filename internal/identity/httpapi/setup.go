@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-func (s *Server) getSetup(ctx context.Context, _ *http.Request, _ httpserver.None) (SetupStatus, error) {
+func (s *Server) getSetup(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (SetupStatus, error) {
 	required, err := s.svc.SetupRequired(ctx)
 	if err != nil {
 		return SetupStatus{}, err
@@ -44,9 +48,21 @@ func (s *Server) completeSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.log.InfoContext(ctx, "first member created", "member_id", user.ID, "request_id", httpserver.RequestID(ctx))
+	s.log.InfoContext(
+		ctx,
+		"first member created",
+		"member_id",
+		user.ID,
+		"request_id",
+		httpserver.RequestID(ctx),
+	)
 	cookie := s.cookie(session.Token, session.ExpiresAt)
-	body := toAPIUser(user, locale.Locale{Language: user.Language, Region: b.Region}, session.BooksID, auth.RoleOwner)
+	body := toAPIUser(
+		user,
+		locale.Locale{Language: user.Language, Region: b.Region},
+		session.BooksID,
+		auth.RoleOwner,
+	)
 
 	s.writeJSONCookie(w, r, http.StatusCreated, cookie, body)
 }

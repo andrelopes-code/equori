@@ -24,7 +24,14 @@ func TestDBReconciliationNeedsOneSubject(t *testing.T) {
 	_, err = f.pool.Exec(t.Context(), insert, f.booksID, f.checking, assertion, f.statement)
 	requireViolation(t, err, checkViolation, "")
 
-	if _, err := f.pool.Exec(t.Context(), insert, f.booksID, f.checking, assertion, ""); err != nil {
+	if _, err := f.pool.Exec(
+		t.Context(),
+		insert,
+		f.booksID,
+		f.checking,
+		assertion,
+		"",
+	); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -41,7 +48,13 @@ func TestDBAttachmentRejectsOtherUsersBlob(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 
-	id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
+	id, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-03-01",
+		postingRow{f.checking, -100},
+		postingRow{f.food, 100},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

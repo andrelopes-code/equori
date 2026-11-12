@@ -15,7 +15,14 @@ import (
 )
 
 // insert writes rows in one statement; a shared row already present is kept.
-func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID int64, shared bool) (int, error) {
+func insert(
+	ctx context.Context,
+	tx pgx.Tx,
+	table string,
+	rows [][]byte,
+	booksID int64,
+	shared bool,
+) (int, error) {
 	cols, err := columns(ctx, tx, table)
 	if err != nil {
 		return 0, err
@@ -43,8 +50,13 @@ func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID
 
 	name := pgx.Identifier{table}.Sanitize()
 
-	sql := fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r`,
-		name, strings.Join(cols, ", "), strings.Join(values, ", "), name)
+	sql := fmt.Sprintf(
+		`INSERT INTO %s (%s) SELECT %s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r`,
+		name,
+		strings.Join(cols, ", "),
+		strings.Join(values, ", "),
+		name,
+	)
 	if shared {
 		sql += " ON CONFLICT DO NOTHING"
 	}
@@ -57,7 +69,13 @@ func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID
 // foreignBook returns the column of table through which a row of rows names a row of
 // another book, or "" when none does (A179). It reads single-column foreign keys whose
 // referenced table has books_id; a reference to a row of the same import names no row yet.
-func foreignBook(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID int64) (string, error) {
+func foreignBook(
+	ctx context.Context,
+	tx pgx.Tx,
+	table string,
+	rows [][]byte,
+	booksID int64,
+) (string, error) {
 	keys, err := tx.Query(ctx, `SELECT a.attname::text, c.confrelid::regclass::text, f.attname::text
 		FROM pg_constraint c
 		JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
@@ -85,8 +103,12 @@ func foreignBook(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, bo
 		var names bool
 		if err := tx.QueryRow(ctx, fmt.Sprintf(`SELECT EXISTS (SELECT 1 FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
 			JOIN %s x ON x.%s = r.%s WHERE x.books_id <> $2)`,
-			pgx.Identifier{table}.Sanitize(), k.ref, pgx.Identifier{k.refCol}.Sanitize(), pgx.Identifier{k.col}.Sanitize()),
-			jsonArray(rows), booksID).Scan(&names); err != nil {
+			pgx.Identifier{
+				table,
+			}.Sanitize(),
+			k.ref, pgx.Identifier{k.refCol}.Sanitize(), pgx.Identifier{k.col}.Sanitize()),
+			jsonArray(rows), booksID).
+			Scan(&names); err != nil {
 			return "", err
 		}
 
@@ -115,7 +137,11 @@ func withContent(rows [][]byte, attachments map[string][]byte) ([][]byte, error)
 
 		content, ok := attachments[strings.TrimPrefix(blob.SHA256, `\x`)]
 		if !ok {
-			return nil, fmt.Errorf("%w: no file for attachment %s", app.ErrArchiveInvalid, blob.SHA256)
+			return nil, fmt.Errorf(
+				"%w: no file for attachment %s",
+				app.ErrArchiveInvalid,
+				blob.SHA256,
+			)
 		}
 
 		field, err := json.Marshal(`\x` + hex.EncodeToString(content))
@@ -123,7 +149,9 @@ func withContent(rows [][]byte, attachments map[string][]byte) ([][]byte, error)
 			return nil, err
 		}
 
-		out[i] = append(append(bytes.TrimSuffix(row, []byte("}")), `,"content":`...), append(field, '}')...)
+		out[i] = append(
+			append(bytes.TrimSuffix(row, []byte("}")), `,"content":`...),
+			append(field, '}')...)
 	}
 
 	return out, nil

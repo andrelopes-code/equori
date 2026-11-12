@@ -33,7 +33,9 @@ func (m *Module) UseNotices(n func(context.Context, int64) ([]AccountNotice, err
 }
 
 // UseSignals sets the lookup of the signals of a preview; nil attaches none.
-func (m *Module) UseSignals(f func(ctx context.Context, booksID int64, p tool.Preview) ([]Signal, error)) {
+func (m *Module) UseSignals(
+	f func(ctx context.Context, booksID int64, p tool.Preview) ([]Signal, error),
+) {
 	m.svc.UseSignals(f)
 }
 

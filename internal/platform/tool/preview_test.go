@@ -33,7 +33,10 @@ func newPreviewRegistry(t *testing.T, field string) (*Registry, *int, *strings.B
 		func(context.Context, int64, renameIn) (echoOut, error) { return echoOut{}, nil })
 	logs := &strings.Builder{}
 
-	r, err := NewRegistry(slog.New(slog.NewTextHandler(logs, nil)), Group{Tools: []Tool{rename, plain}})
+	r, err := NewRegistry(
+		slog.New(slog.NewTextHandler(logs, nil)),
+		Group{Tools: []Tool{rename, plain}},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,17 +125,26 @@ func TestRegistryPreviewWithout(t *testing.T) {
 func TestPreviewDigest(t *testing.T) {
 	t.Parallel()
 
-	base := Preview{Action: "a", Changes: []Change{{Field: "name", After: TextValue("x")}}, Basis: "v1"}
+	base := Preview{
+		Action:  "a",
+		Changes: []Change{{Field: "name", After: TextValue("x")}},
+		Basis:   "v1",
+	}
 	same := base
 	other := base
 	other.Basis = "v2"
-	changed := Preview{Action: "a", Changes: []Change{{Field: "name", After: TextValue("y")}}, Basis: "v1"}
+	changed := Preview{
+		Action:  "a",
+		Changes: []Change{{Field: "name", After: TextValue("y")}},
+		Basis:   "v1",
+	}
 
 	if PreviewDigest(base) != PreviewDigest(same) {
 		t.Error("equal previews differ")
 	}
 
-	if PreviewDigest(base) == PreviewDigest(other) || PreviewDigest(base) == PreviewDigest(changed) {
+	if PreviewDigest(base) == PreviewDigest(other) ||
+		PreviewDigest(base) == PreviewDigest(changed) {
 		t.Error("different previews collide")
 	}
 
@@ -152,7 +164,8 @@ func TestParseAmount(t *testing.T) {
 	_, err = ParsePositive("amount", "0", unit)
 
 	e, ok := errors.AsType[*Error](err)
-	if !ok || len(e.Errors) != 1 || e.Errors[0].Field != "amount" || e.Errors[0].Message != "must be greater than zero" {
+	if !ok || len(e.Errors) != 1 || e.Errors[0].Field != "amount" ||
+		e.Errors[0].Message != "must be greater than zero" {
 		t.Errorf("err = %v", err)
 	}
 
@@ -162,7 +175,10 @@ func TestParseAmount(t *testing.T) {
 	}
 
 	_, err = ParseAmount("amount", "1.234", unit)
-	if e, ok := errors.AsType[*Error](err); !ok || e.Errors[0].Message != "must be a decimal such as 125.90 with at most 2 decimals" {
+	if e, ok := errors.AsType[*Error](
+		err,
+	); !ok ||
+		e.Errors[0].Message != "must be a decimal such as 125.90 with at most 2 decimals" {
 		t.Errorf("err = %v", err)
 	}
 }

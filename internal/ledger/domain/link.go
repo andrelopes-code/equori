@@ -13,7 +13,14 @@ const (
 	LinkCorrectionOf    LinkType = "correction_of"
 )
 
-var linkTypes = []LinkType{LinkRefundOf, LinkReimbursementOf, LinkCancellationOf, LinkAnticipationOf, LinkChargebackOf, LinkCorrectionOf}
+var linkTypes = []LinkType{
+	LinkRefundOf,
+	LinkReimbursementOf,
+	LinkCancellationOf,
+	LinkAnticipationOf,
+	LinkChargebackOf,
+	LinkCorrectionOf,
+}
 
 // Link relates a transaction to another. Amount, when not zero, is the part of the target that a
 // reimbursement_of link repays (A117), in the balancing currency of the transaction.

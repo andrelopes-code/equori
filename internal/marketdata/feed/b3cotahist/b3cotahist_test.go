@@ -47,7 +47,9 @@ func TestCOTAHIST(t *testing.T) {
 		t.Fatalf("path %s, quotes %+v", path, got)
 	}
 
-	if q := got[0]; q.Instrument != "MXRF11" || q.Quote != "BRL" || !q.Date.Equal(day("2026-10-29")) || q.Value.String() != "9.36" {
+	if q := got[0]; q.Instrument != "MXRF11" || q.Quote != "BRL" ||
+		!q.Date.Equal(day("2026-10-29")) ||
+		q.Value.String() != "9.36" {
 		t.Fatalf("MXRF11 = %+v", q)
 	}
 
@@ -55,12 +57,24 @@ func TestCOTAHIST(t *testing.T) {
 		t.Fatalf("PETR4 = %+v", q)
 	}
 
-	if _, err := src.FetchDay(t.Context(), day("2026-11-02"), []string{"MXRF11"}); !errors.Is(err, feed.ErrNoData) {
+	if _, err := src.FetchDay(
+		t.Context(),
+		day("2026-11-02"),
+		[]string{"MXRF11"},
+	); !errors.Is(
+		err,
+		feed.ErrNoData,
+	) {
 		t.Fatalf("404 err = %v", err)
 	}
 
 	for _, d := range []string{"2026-10-30", "2026-10-31"} {
-		if _, err := src.FetchDay(t.Context(), day(d), []string{"MXRF11"}); err == nil || errors.Is(err, feed.ErrNoData) {
+		if _, err := src.FetchDay(
+			t.Context(),
+			day(d),
+			[]string{"MXRF11"},
+		); err == nil ||
+			errors.Is(err, feed.ErrNoData) {
 			t.Fatalf("%s err = %v", d, err)
 		}
 	}
@@ -71,7 +85,12 @@ func TestCOTAHISTReadsNamesOutsideASCII(t *testing.T) {
 	t.Parallel()
 
 	named := func(ticker, name string, close int64) string {
-		return strings.Replace(cotahistRecord("20261022", ticker, "010", close), "NAME        ", name, 1)
+		return strings.Replace(
+			cotahistRecord("20261022", ticker, "010", close),
+			"NAME        ",
+			name,
+			1,
+		)
 	}
 	latin1 := strings.Replace(named("FRTA3", "OCEANICA    ", 512), "OCEANICA", "OCE\xc2NICA", 1)
 	file := cotahistZIP(t, "20261022",
@@ -79,15 +98,19 @@ func TestCOTAHISTReadsNamesOutsideASCII(t *testing.T) {
 		latin1,
 		cotahistRecord("20261022", "PETR4", "010", 3842),
 	)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(file) }))
+	srv := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(file) }),
+	)
 	t.Cleanup(srv.Close)
 
-	got, err := b3cotahist.New(srv.Client(), srv.URL).FetchDay(t.Context(), day("2026-10-22"), []string{"FRTA3", "PETR4"})
+	got, err := b3cotahist.New(srv.Client(), srv.URL).
+		FetchDay(t.Context(), day("2026-10-22"), []string{"FRTA3", "PETR4"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(got) != 3 || got[0].Value.String() != "5.11" || got[1].Value.String() != "5.12" || got[2].Value.String() != "38.42" {
+	if len(got) != 3 || got[0].Value.String() != "5.11" || got[1].Value.String() != "5.12" ||
+		got[2].Value.String() != "38.42" {
 		t.Fatalf("quotes %+v", got)
 	}
 }
@@ -100,15 +123,24 @@ func TestCOTAHISTRejectsMalformedFiles(t *testing.T) {
 	tests := map[string][]byte{
 		"short line": cotahistZIP(t, "20261029", short),
 		"other date": cotahistZIP(t, "20261029", cotahistRecord("20261028", "MXRF11", "010", 936)),
-		"bad price":  cotahistZIP(t, "20261029", cotahistRecord("20261029", "MXRF11", "010", 936)[:110]+"X"+cotahistRecord("20261029", "MXRF11", "010", 936)[111:]),
+		"bad price": cotahistZIP(
+			t,
+			"20261029",
+			cotahistRecord("20261029", "MXRF11", "010", 936)[:110]+"X"+cotahistRecord("20261029", "MXRF11", "010", 936)[111:],
+		),
 		"zero price": cotahistZIP(t, "20261029", cotahistRecord("20261029", "MXRF11", "010", 0)),
 	}
 	for name, file := range tests {
 		t.Run(name, func(t *testing.T) {
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(file) }))
+			srv := httptest.NewServer(
+				http.HandlerFunc(
+					func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write(file) },
+				),
+			)
 			t.Cleanup(srv.Close)
 
-			got, err := b3cotahist.New(srv.Client(), srv.URL).FetchDay(t.Context(), day("2026-10-29"), []string{"MXRF11"})
+			got, err := b3cotahist.New(srv.Client(), srv.URL).
+				FetchDay(t.Context(), day("2026-10-29"), []string{"MXRF11"})
 			if err == nil || errors.Is(err, feed.ErrNoData) || got != nil {
 				t.Fatalf("got %+v, %v", got, err)
 			}
@@ -131,7 +163,8 @@ func TestFetchRangeSkipsWeekendsAndKeepsEarlierDays(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	got, err := b3cotahist.New(srv.Client(), srv.URL).Fetch(t.Context(), []money.Currency{"MXRF11"}, day("2026-10-29"), day("2026-11-03"))
+	got, err := b3cotahist.New(srv.Client(), srv.URL).
+		Fetch(t.Context(), []money.Currency{"MXRF11"}, day("2026-10-29"), day("2026-11-03"))
 
 	var scope *feed.ScopeError
 	if !errors.As(err, &scope) || scope.Key != "day" || scope.Value != "2026-10-30" {
@@ -183,7 +216,12 @@ func TestFetchYears(t *testing.T) {
 	t.Cleanup(srv.Close)
 	src := b3cotahist.New(srv.Client(), srv.URL)
 
-	got, err := src.Fetch(t.Context(), []money.Currency{"PETR4"}, day("2025-06-01"), day("2026-11-09"))
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"PETR4"},
+		day("2025-06-01"),
+		day("2026-11-09"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -199,7 +237,9 @@ func TestFetchYears(t *testing.T) {
 
 	for i, want := range []struct{ date, value string }{{"2025-07-01", "31.50"}, {"2026-11-06", "32.45"}} {
 		q := got[i]
-		if q.Instrument != "PETR4" || !q.Date.Equal(day(want.date)) || q.Value.String() != want.value || q.Source != "b3_cotahist" {
+		if q.Instrument != "PETR4" || !q.Date.Equal(day(want.date)) ||
+			q.Value.String() != want.value ||
+			q.Source != "b3_cotahist" {
 			t.Fatalf("quote %d = %+v", i, q)
 		}
 	}

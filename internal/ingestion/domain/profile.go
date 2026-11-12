@@ -161,11 +161,17 @@ func validateProfileShape(p Profile) error {
 	case p.HeaderRows < 0 || p.HeaderRows > 10:
 		return invalid("header_rows", "must be between 0 and 10")
 	case p.DateLayout.GoLayout() == "":
-		return invalid("date_layout", `must hold DD, MM and YYYY or YY once each, joined by "/", ".", "-" or " "`)
+		return invalid(
+			"date_layout",
+			`must hold DD, MM and YYYY or YY once each, joined by "/", ".", "-" or " "`,
+		)
 	case p.DecimalSeparator != "," && p.DecimalSeparator != ".":
 		return invalid("decimal_separator", `must be "," or "."`)
 	case !slices.Contains(groupSeparators, p.GroupSeparator) || p.GroupSeparator == p.DecimalSeparator && p.GroupSeparator != "":
-		return invalid("group_separator", `must be "," , ".", a space, a no-break space, "'" or empty, and differ from decimal_separator`)
+		return invalid(
+			"group_separator",
+			`must be "," , ".", a space, a no-break space, "'" or empty, and differ from decimal_separator`,
+		)
 	case !encodingName.MatchString(p.Encoding):
 		return invalid("encoding", "must match ^[a-z0-9_-]{2,40}$")
 	case p.AmountSign != SignAsIs && p.AmountSign != SignInverted:
@@ -189,8 +195,13 @@ func validateProfileShape(p Profile) error {
 
 func validateProfileColumns(p Profile) error {
 	columns := map[string]string{
-		"date_column": p.DateColumn, "description_column": p.DescriptionColumn, "amount_column": p.AmountColumn,
-		"debit_column": p.DebitColumn, "credit_column": p.CreditColumn, "id_column": p.IDColumn, "sign_column": p.SignColumn,
+		"date_column":        p.DateColumn,
+		"description_column": p.DescriptionColumn,
+		"amount_column":      p.AmountColumn,
+		"debit_column":       p.DebitColumn,
+		"credit_column":      p.CreditColumn,
+		"id_column":          p.IDColumn,
+		"sign_column":        p.SignColumn,
 	}
 	for _, field := range []string{"date_column", "description_column", "amount_column", "debit_column", "credit_column", "id_column", "sign_column"} {
 		c := columns[field]
@@ -206,7 +217,10 @@ func validateProfileColumns(p Profile) error {
 
 		if p.HeaderRows == 0 {
 			if n, err := strconv.Atoi(c); err != nil || n < 1 {
-				return invalid(field, "must be a column position from 1 when the file has no header row")
+				return invalid(
+					field,
+					"must be a column position from 1 when the file has no header row",
+				)
 			}
 		}
 	}

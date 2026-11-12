@@ -63,7 +63,10 @@ func pageRequest[K any](args tool.PageArgs) (page.Request[K], error) {
 	if args.Cursor != "" {
 		var k K
 		if page.DecodeCursor(args.Cursor, &k) != nil {
-			return page.Request[K]{}, tool.InvalidArgument("cursor", "is not a next_cursor of this list; start again without cursor")
+			return page.Request[K]{}, tool.InvalidArgument(
+				"cursor",
+				"is not a next_cursor of this list; start again without cursor",
+			)
 		}
 
 		r.After = &k

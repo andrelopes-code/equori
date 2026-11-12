@@ -11,24 +11,45 @@ import (
 
 // UnlinkedPostings lists the account's postings in [from, to] that no external record
 // confirms yet and whose transaction is not voided.
-func (m *Module) UnlinkedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+func (m *Module) UnlinkedPostings(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]UnlinkedPosting, error) {
 	return m.svc.UnlinkedPostings(ctx, booksID, accountID, from, to)
 }
 
 // UnconfirmedPostings lists the account's postings that neither a line nor a balance
 // confirms, dated by when the institution reports them, in [from, to] (A133).
-func (m *Module) UnconfirmedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+func (m *Module) UnconfirmedPostings(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]UnlinkedPosting, error) {
 	return m.svc.UnconfirmedPostings(ctx, booksID, accountID, from, to)
 }
 
 // ConfirmLine corrects a transaction to the amount and date of the statement line matched to
 // it on the account (A101).
-func (m *Module) ConfirmLine(ctx context.Context, booksID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error {
+func (m *Module) ConfirmLine(
+	ctx context.Context,
+	booksID int64,
+	txID, accountID uuid.UUID,
+	amount int64,
+	date time.Time,
+) error {
 	return m.svc.ConfirmLine(ctx, booksID, txID, accountID, amount, date)
 }
 
 // MoveReconciledDate moves a transaction to its card line's date on a kept statement (P12 A147).
-func (m *Module) MoveReconciledDate(ctx context.Context, booksID int64, txID, accountID uuid.UUID, date time.Time) error {
+func (m *Module) MoveReconciledDate(
+	ctx context.Context,
+	booksID int64,
+	txID, accountID uuid.UUID,
+	date time.Time,
+) error {
 	return m.svc.MoveReconciledDate(ctx, booksID, txID, accountID, date)
 }
 
@@ -38,19 +59,32 @@ func (m *Module) AccountChecks(ctx context.Context, booksID int64) ([]AccountChe
 }
 
 // Counterparts lists the transactions a sync line may pair with (A216 rule 2).
-func (m *Module) Counterparts(ctx context.Context, booksID int64, q CounterpartQuery) ([]Counterpart, error) {
+func (m *Module) Counterparts(
+	ctx context.Context,
+	booksID int64,
+	q CounterpartQuery,
+) ([]Counterpart, error) {
 	return m.svc.Counterparts(ctx, booksID, q)
 }
 
 // PairImported makes a transaction the transfer of an imported line on accountID and returns
 // its new version; ErrNotPairable when the ledger refuses (A218 rule 1).
-func (m *Module) PairImported(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error) {
+func (m *Module) PairImported(
+	ctx context.Context,
+	booksID int64,
+	txID, accountID, recordID uuid.UUID,
+) (int, error) {
 	return m.svc.PairImported(ctx, booksID, txID, accountID, recordID)
 }
 
 // UnpairImported returns a transaction that a pairing left at version to its postings
 // before the pairing; ErrNotUnpairable when it changed since or the ledger refuses (A220 rule 2).
-func (m *Module) UnpairImported(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error {
+func (m *Module) UnpairImported(
+	ctx context.Context,
+	booksID int64,
+	txID, recordID uuid.UUID,
+	version int,
+) error {
 	return m.svc.UnpairImported(ctx, booksID, txID, recordID, version)
 }
 

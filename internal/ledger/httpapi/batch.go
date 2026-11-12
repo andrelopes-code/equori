@@ -20,7 +20,10 @@ func (s *Server) createTransactionBatch(
 		if e.Transaction != nil {
 			t, err := fromTransactionInput(ctx, *e.Transaction, s.svc.AmountOf)
 			if err != nil {
-				return TransactionBatch{}, domain.WithFieldPrefix(fmt.Sprintf("entries[%d].transaction.", i), err)
+				return TransactionBatch{}, domain.WithFieldPrefix(
+					fmt.Sprintf("entries[%d].transaction.", i),
+					err,
+				)
 			}
 
 			entries[i].Transaction = &t
@@ -29,7 +32,10 @@ func (s *Server) createTransactionBatch(
 		if e.InstallmentPurchase != nil {
 			p, err := fromInstallmentPurchaseInput(*e.InstallmentPurchase)
 			if err != nil {
-				return TransactionBatch{}, domain.WithFieldPrefix(fmt.Sprintf("entries[%d].installment_purchase.", i), err)
+				return TransactionBatch{}, domain.WithFieldPrefix(
+					fmt.Sprintf("entries[%d].installment_purchase.", i),
+					err,
+				)
 			}
 
 			entries[i].Purchase = &p

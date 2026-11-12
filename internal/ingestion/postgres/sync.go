@@ -43,12 +43,28 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 
 		f := factsOf(rec)
 		params[i] = UpdateRecordFactsParams{
-			BooksID: rec.BooksID, ID: rec.ID, Raw: raw, ExternalStatus: f.status, DueDate: f.dueDate,
-			InstallmentNumber: f.number, InstallmentCount: f.count, CategoryID: f.category, BalanceAfter: f.balanceAfter,
-			LineKind: f.kind, UnappliedChange: optional(rec.UnappliedChange),
-			BookedOn: rec.Date, Amount: rec.Amount, ReviewReason: optional(rec.ReviewReason),
-			InstitutionID: f.institution, ReportedAmount: rec.ReportedAmount, ReportedOn: rec.ReportedOn,
-			Decision: optional(string(rec.Decision)), DecisionUndo: undo, SummaryBatchID: nullableID(rec.SummaryBatchID),
+			BooksID:           rec.BooksID,
+			ID:                rec.ID,
+			Raw:               raw,
+			ExternalStatus:    f.status,
+			DueDate:           f.dueDate,
+			InstallmentNumber: f.number,
+			InstallmentCount:  f.count,
+			CategoryID:        f.category,
+			BalanceAfter:      f.balanceAfter,
+			LineKind:          f.kind,
+			UnappliedChange:   optional(rec.UnappliedChange),
+			BookedOn:          rec.Date,
+			Amount:            rec.Amount,
+			ReviewReason:      optional(rec.ReviewReason),
+			InstitutionID:     f.institution,
+			ReportedAmount:    rec.ReportedAmount,
+			ReportedOn:        rec.ReportedOn,
+			Decision: optional(
+				string(rec.Decision),
+			),
+			DecisionUndo:   undo,
+			SummaryBatchID: nullableID(rec.SummaryBatchID),
 		}
 	}
 
@@ -62,8 +78,16 @@ func (r *Repository) UpdateRecordFacts(ctx context.Context, recs []domain.Extern
 	return first
 }
 
-func (r *Repository) SyncedRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error) {
-	rows, err := r.q.ListSyncedRecords(ctx, ListSyncedRecordsParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to})
+func (r *Repository) SyncedRecords(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListSyncedRecords(
+		ctx,
+		ListSyncedRecordsParams{BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +102,12 @@ func (r *Repository) SyncedRecords(ctx context.Context, booksID int64, accountID
 	return out, nil
 }
 
-func (r *Repository) CreatedRecords(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]domain.ExternalRecord, error) {
+func (r *Repository) CreatedRecords(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]domain.ExternalRecord, error) {
 	rows, err := r.q.ListCreatedRecords(ctx, ListCreatedRecordsParams{
 		BooksID: booksID, AccountID: accountID, FromDate: from, ToDate: to,
 	})
@@ -106,8 +135,15 @@ func (r *Repository) RepeatableRecords(
 	return toRecords(rows)
 }
 
-func (r *Repository) GroupRecords(ctx context.Context, booksID int64, accountID, entry uuid.UUID) ([]domain.ExternalRecord, error) {
-	rows, err := r.q.ListGroupRecords(ctx, ListGroupRecordsParams{BooksID: booksID, AccountID: accountID, Entry: entry})
+func (r *Repository) GroupRecords(
+	ctx context.Context,
+	booksID int64,
+	accountID, entry uuid.UUID,
+) ([]domain.ExternalRecord, error) {
+	rows, err := r.q.ListGroupRecords(
+		ctx,
+		ListGroupRecordsParams{BooksID: booksID, AccountID: accountID, Entry: entry},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -128,9 +164,17 @@ func toRecords(rows []IngestionExternalRecord) ([]domain.ExternalRecord, error) 
 	return out, nil
 }
 
-func (r *Repository) RecordsByLineIDs(ctx context.Context, booksID int64, accountID uuid.UUID, externalIDs, institutionIDs []string) ([]domain.ExternalRecord, error) {
+func (r *Repository) RecordsByLineIDs(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	externalIDs, institutionIDs []string,
+) ([]domain.ExternalRecord, error) {
 	rows, err := r.q.ListRecordsByLineIDs(ctx, ListRecordsByLineIDsParams{
-		BooksID: booksID, AccountID: accountID, ExternalIds: externalIDs, InstitutionIds: institutionIDs,
+		BooksID:        booksID,
+		AccountID:      accountID,
+		ExternalIds:    externalIDs,
+		InstitutionIds: institutionIDs,
 	})
 	if err != nil {
 		return nil, err
@@ -146,34 +190,63 @@ func (r *Repository) RecordsByLineIDs(ctx context.Context, booksID int64, accoun
 	return out, nil
 }
 
-func (r *Repository) Reidentify(ctx context.Context, booksID int64, batchID, id uuid.UUID, externalID string, dedupKey []byte, raw map[string]string) error {
+func (r *Repository) Reidentify(
+	ctx context.Context,
+	booksID int64,
+	batchID, id uuid.UUID,
+	externalID string,
+	dedupKey []byte,
+	raw map[string]string,
+) error {
 	payload, err := json.Marshal(raw)
 	if err != nil {
 		return err
 	}
 
 	return r.q.ReidentifyRecord(ctx, ReidentifyRecordParams{
-		BooksID: booksID, ID: id, ExternalID: &externalID, DedupKey: dedupKey, Raw: payload, BatchID: batchID,
+		BooksID:    booksID,
+		ID:         id,
+		ExternalID: &externalID,
+		DedupKey:   dedupKey,
+		Raw:        payload,
+		BatchID:    batchID,
 	})
 }
 
-func (r *Repository) WithdrawRecords(ctx context.Context, booksID int64, batchID uuid.UUID, ids []uuid.UUID) error {
+func (r *Repository) WithdrawRecords(
+	ctx context.Context,
+	booksID int64,
+	batchID uuid.UUID,
+	ids []uuid.UUID,
+) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
-		if err := q.WithdrawReviewCounts(ctx, WithdrawReviewCountsParams{BooksID: booksID, RecordIds: ids}); err != nil {
+		if err := q.WithdrawReviewCounts(
+			ctx,
+			WithdrawReviewCountsParams{BooksID: booksID, RecordIds: ids},
+		); err != nil {
 			return err
 		}
 
-		return q.WithdrawRecords(ctx, WithdrawRecordsParams{BooksID: booksID, RecordIds: ids, BatchID: batchID})
+		return q.WithdrawRecords(
+			ctx,
+			WithdrawRecordsParams{BooksID: booksID, RecordIds: ids, BatchID: batchID},
+		)
 	})
 }
 
 func (r *Repository) MarkAccountSynced(ctx context.Context, a domain.ExternalAccount) error {
-	params := MarkAccountSyncedParams{BooksID: a.BooksID, ID: a.ID, LastSyncedOn: a.LastSyncedOn, LastReadAt: a.LastReadAt, LastDeepReadOn: a.LastDeepReadOn}
+	params := MarkAccountSyncedParams{
+		BooksID:        a.BooksID,
+		ID:             a.ID,
+		LastSyncedOn:   a.LastSyncedOn,
+		LastReadAt:     a.LastReadAt,
+		LastDeepReadOn: a.LastDeepReadOn,
+	}
 	if a.Balance != nil {
 		params.BalanceOn, params.BalanceAmount = &a.Balance.Date, &a.Balance.Amount
 	}
@@ -183,8 +256,13 @@ func (r *Repository) MarkAccountSynced(ctx context.Context, a domain.ExternalAcc
 
 func (r *Repository) SaveConnectionState(ctx context.Context, c domain.Connection) error {
 	return r.q.SaveConnectionState(ctx, SaveConnectionStateParams{
-		BooksID: c.BooksID, ID: c.ID, ProviderStatus: c.ProviderStatus, LastItemUpdateAt: c.LastItemUpdateAt,
-		NextItemUpdateAt: c.NextItemUpdateAt, LastSyncedAt: c.LastSyncedAt, LastError: optional(c.LastError),
+		BooksID:          c.BooksID,
+		ID:               c.ID,
+		ProviderStatus:   c.ProviderStatus,
+		LastItemUpdateAt: c.LastItemUpdateAt,
+		NextItemUpdateAt: c.NextItemUpdateAt,
+		LastSyncedAt:     c.LastSyncedAt,
+		LastError:        optional(c.LastError),
 		ConsentExpiresAt: c.ConsentExpiresAt,
 	})
 }
@@ -203,8 +281,15 @@ func (r *Repository) AllConnections(ctx context.Context) ([]app.ConnectionRef, e
 	return out, nil
 }
 
-func (r *Repository) InstallmentPlans(ctx context.Context, booksID int64, keys [][]byte) (map[string]uuid.UUID, error) {
-	rows, err := r.q.ListInstallmentPlans(ctx, ListInstallmentPlansParams{BooksID: booksID, Keys: keys})
+func (r *Repository) InstallmentPlans(
+	ctx context.Context,
+	booksID int64,
+	keys [][]byte,
+) (map[string]uuid.UUID, error) {
+	rows, err := r.q.ListInstallmentPlans(
+		ctx,
+		ListInstallmentPlansParams{BooksID: booksID, Keys: keys},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -217,11 +302,30 @@ func (r *Repository) InstallmentPlans(ctx context.Context, booksID int64, keys [
 	return out, nil
 }
 
-func (r *Repository) SaveInstallmentPlan(ctx context.Context, booksID int64, accountID uuid.UUID, key []byte, planID uuid.UUID) error {
-	return r.q.SaveInstallmentPlan(ctx, SaveInstallmentPlanParams{BooksID: booksID, AccountID: accountID, PlanKey: key, PlanID: planID})
+func (r *Repository) SaveInstallmentPlan(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	key []byte,
+	planID uuid.UUID,
+) error {
+	return r.q.SaveInstallmentPlan(
+		ctx,
+		SaveInstallmentPlanParams{
+			BooksID:   booksID,
+			AccountID: accountID,
+			PlanKey:   key,
+			PlanID:    planID,
+		},
+	)
 }
 
-func (r *Repository) SyncRuns(ctx context.Context, booksID int64, connectionID uuid.UUID, limit int) ([]domain.SyncRun, error) {
+func (r *Repository) SyncRuns(
+	ctx context.Context,
+	booksID int64,
+	connectionID uuid.UUID,
+	limit int,
+) ([]domain.SyncRun, error) {
 	heads, err := r.q.ListConnectionSyncs(ctx, ListConnectionSyncsParams{
 		BooksID:      booksID,
 		ConnectionID: connectionID,
@@ -260,7 +364,10 @@ func (r *Repository) attachBatches(
 	index map[uuid.UUID]int,
 	runs []domain.SyncRun,
 ) ([]uuid.UUID, error) {
-	batchRows, err := r.q.ListSyncBatches(ctx, ListSyncBatchesParams{BooksID: booksID, SyncIds: syncIDs})
+	batchRows, err := r.q.ListSyncBatches(
+		ctx,
+		ListSyncBatchesParams{BooksID: booksID, SyncIds: syncIDs},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +395,10 @@ func (r *Repository) attachRecords(
 		}
 	}
 
-	recRows, err := r.q.ListSummaryRecords(ctx, ListSummaryRecordsParams{BooksID: booksID, BatchIds: batchIDs})
+	recRows, err := r.q.ListSummaryRecords(
+		ctx,
+		ListSummaryRecordsParams{BooksID: booksID, BatchIds: batchIDs},
+	)
 	if err != nil {
 		return err
 	}
@@ -299,7 +409,10 @@ func (r *Repository) attachRecords(
 			return err
 		}
 
-		runs[owner[rec.SummaryBatchID]].Records = append(runs[owner[rec.SummaryBatchID]].Records, rec)
+		runs[owner[rec.SummaryBatchID]].Records = append(
+			runs[owner[rec.SummaryBatchID]].Records,
+			rec,
+		)
 	}
 
 	return nil

@@ -17,7 +17,11 @@ var ErrBudgetExists = errors.New("the category already has a budget")
 
 // category returns the category account of the book and checks the base currency: budgets
 // stay in it (P7 amendment A47, kept by P8 amendment A72).
-func (s *Service) category(ctx context.Context, booksID int64, id uuid.UUID) (Account, money.Currency, error) {
+func (s *Service) category(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (Account, money.Currency, error) {
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
 		return Account{}, "", err
@@ -44,22 +48,41 @@ func (s *Service) category(ctx context.Context, booksID int64, id uuid.UUID) (Ac
 		return a, base, nil
 	}
 
-	return Account{}, "", &domain.FieldError{Field: "category_id", Message: "must be an income or expense category of the book", Err: domain.ErrValidation}
+	return Account{}, "", &domain.FieldError{
+		Field:   "category_id",
+		Message: "must be an income or expense category of the book",
+		Err:     domain.ErrValidation,
+	}
 }
 
 func checkBudgetAmount(m money.Money, currency money.Currency) error {
 	if m.Currency() != currency {
-		return &domain.FieldError{Field: "amount.currency", Message: "must be the base currency " + string(currency), Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "amount.currency",
+			Message: "must be the base currency " + string(currency),
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	if m.IsNegative() {
-		return &domain.FieldError{Field: "amount", Message: "must not be negative", Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "amount",
+			Message: "must not be negative",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return nil
 }
 
-func (s *Service) CreateBudget(ctx context.Context, booksID int64, categoryID uuid.UUID, amount money.Money, from time.Time, rollover bool) (domain.Budget, error) {
+func (s *Service) CreateBudget(
+	ctx context.Context,
+	booksID int64,
+	categoryID uuid.UUID,
+	amount money.Money,
+	from time.Time,
+	rollover bool,
+) (domain.Budget, error) {
 	_, base, err := s.category(ctx, booksID, categoryID)
 	if err != nil {
 		return domain.Budget{}, err
@@ -69,8 +92,14 @@ func (s *Service) CreateBudget(ctx context.Context, booksID int64, categoryID uu
 		return domain.Budget{}, err
 	}
 
-	b := domain.Budget{CategoryID: categoryID, Rollover: rollover, Currency: base,
-		Amounts: []domain.BudgetAmount{{EffectiveFrom: domain.MonthOf(from), Amount: amount.Amount()}}}
+	b := domain.Budget{
+		CategoryID: categoryID,
+		Rollover:   rollover,
+		Currency:   base,
+		Amounts: []domain.BudgetAmount{
+			{EffectiveFrom: domain.MonthOf(from), Amount: amount.Amount()},
+		},
+	}
 	var created domain.Budget
 	err = s.repo.InTx(ctx, func(repo Repository) error {
 		var err error
@@ -83,7 +112,13 @@ func (s *Service) CreateBudget(ctx context.Context, booksID int64, categoryID uu
 }
 
 // AddBudgetAmount sets the amount from a month after the latest one on (T09).
-func (s *Service) AddBudgetAmount(ctx context.Context, booksID int64, id uuid.UUID, from time.Time, amount money.Money) (domain.Budget, error) {
+func (s *Service) AddBudgetAmount(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	from time.Time,
+	amount money.Money,
+) (domain.Budget, error) {
 	var out domain.Budget
 	err := s.repo.InTx(ctx, func(repo Repository) error {
 		b, err := repo.LockBudget(ctx, booksID, id)
@@ -93,14 +128,23 @@ func (s *Service) AddBudgetAmount(ctx context.Context, booksID int64, id uuid.UU
 
 		from = domain.MonthOf(from)
 		if !from.After(b.Amounts[len(b.Amounts)-1].EffectiveFrom) {
-			return &domain.FieldError{Field: "effective_from", Message: "must be after the latest amount", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "effective_from",
+				Message: "must be after the latest amount",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		if err := checkBudgetAmount(amount, b.Currency); err != nil {
 			return err
 		}
 
-		if err := repo.InsertBudgetAmount(ctx, booksID, id, domain.BudgetAmount{EffectiveFrom: from, Amount: amount.Amount()}); err != nil {
+		if err := repo.InsertBudgetAmount(
+			ctx,
+			booksID,
+			id,
+			domain.BudgetAmount{EffectiveFrom: from, Amount: amount.Amount()},
+		); err != nil {
 			return err
 		}
 
@@ -116,17 +160,29 @@ func (s *Service) Budget(ctx context.Context, booksID int64, id uuid.UUID) (doma
 	return s.repo.Budget(ctx, booksID, id)
 }
 
-func (s *Service) ListBudgets(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Budget, *IDKey, error) {
+func (s *Service) ListBudgets(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[IDKey],
+) ([]domain.Budget, *IDKey, error) {
 	return s.repo.ListBudgets(ctx, booksID, p)
 }
 
 // BudgetProgress reports the month of a budget; spending of an income category is positive (A54).
 // DeleteBudget removes a budget with its amounts (S144).
 func (s *Service) DeleteBudget(ctx context.Context, booksID int64, id uuid.UUID) error {
-	return s.repo.InTx(ctx, func(repo Repository) error { return repo.DeleteBudget(ctx, booksID, id) })
+	return s.repo.InTx(
+		ctx,
+		func(repo Repository) error { return repo.DeleteBudget(ctx, booksID, id) },
+	)
 }
 
-func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUID, month time.Time) (domain.Progress, money.Currency, error) {
+func (s *Service) BudgetProgress(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	month time.Time,
+) (domain.Progress, money.Currency, error) {
 	b, err := s.repo.Budget(ctx, booksID, id)
 	if err != nil {
 		return domain.Progress{}, "", err
@@ -139,7 +195,11 @@ func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUI
 
 	month = domain.MonthOf(month)
 	if month.After(s.horizon(ctx)) {
-		return domain.Progress{}, "", &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
+		return domain.Progress{}, "", &domain.FieldError{
+			Field:   "month",
+			Message: "must be at most today + 12 months",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	sign := int64(1)
@@ -160,7 +220,11 @@ func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUI
 	}
 
 	if !ok {
-		return domain.Progress{}, "", &domain.FieldError{Field: "month", Message: "precedes the first amount of the budget", Err: domain.ErrValidation}
+		return domain.Progress{}, "", &domain.FieldError{
+			Field:   "month",
+			Message: "precedes the first amount of the budget",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return p, b.Currency, nil
@@ -209,11 +273,19 @@ func (s *Service) spentFunc(
 
 // HandleCategoriesMerged moves the budget and the schedules of from to into; when into has a
 // budget, the budget of from is dropped (A75).
-func (s *Service) HandleCategoriesMerged(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+func (s *Service) HandleCategoriesMerged(
+	ctx context.Context,
+	booksID int64,
+	from, into uuid.UUID,
+) error {
 	return s.repo.MergeCategory(ctx, booksID, from, into)
 }
 
 // HandlePayeesMerged moves the schedules of from to into (A82).
-func (s *Service) HandlePayeesMerged(ctx context.Context, booksID int64, from, into uuid.UUID) error {
+func (s *Service) HandlePayeesMerged(
+	ctx context.Context,
+	booksID int64,
+	from, into uuid.UUID,
+) error {
 	return s.repo.MergePayee(ctx, booksID, from, into)
 }

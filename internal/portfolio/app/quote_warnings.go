@@ -16,7 +16,11 @@ type QuoteWarning struct {
 
 // QuoteWarnings lists, sorted by code, the instruments held at date whose quote is stale, has
 // no price, or starts after date.
-func (s *Service) QuoteWarnings(ctx context.Context, booksID int64, date time.Time) ([]QuoteWarning, error) {
+func (s *Service) QuoteWarnings(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+) ([]QuoteWarning, error) {
 	rows, err := s.repo.PositionsAt(ctx, booksID, date)
 	if err != nil {
 		return nil, err

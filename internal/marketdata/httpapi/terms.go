@@ -19,8 +19,12 @@ func (s *Server) putInstrumentTerms(
 	ctx context.Context, r *http.Request, b PutInstrumentTermsJSONRequestBody,
 ) (FixedIncomeTerms, error) {
 	t := domain.Terms{
-		IssuedOn: b.IssuedOn.Time, MaturesOn: b.MaturesOn.Time, DayCount: string(b.DayCount), FaceValue: b.FaceValue,
-		PercentOfIndexBP: defaultPercentOfIndexBP, SpreadBP: defaultSpreadBP,
+		IssuedOn:         b.IssuedOn.Time,
+		MaturesOn:        b.MaturesOn.Time,
+		DayCount:         string(b.DayCount),
+		FaceValue:        b.FaceValue,
+		PercentOfIndexBP: defaultPercentOfIndexBP,
+		SpreadBP:         defaultSpreadBP,
 	}
 	if b.IndexId != nil {
 		t.IndexID = *b.IndexId
@@ -55,8 +59,14 @@ func (s *Server) getInstrumentTerms(
 
 func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 	out := FixedIncomeTerms{
-		IssuedOn: openapi_types.Date{Time: t.IssuedOn}, MaturesOn: openapi_types.Date{Time: t.MaturesOn},
-		PercentOfIndexBp: t.PercentOfIndexBP, SpreadBp: t.SpreadBP, DayCount: TermsDayCount(t.DayCount), FaceValue: t.FaceValue,
+		IssuedOn: openapi_types.Date{
+			Time: t.IssuedOn,
+		},
+		MaturesOn:        openapi_types.Date{Time: t.MaturesOn},
+		PercentOfIndexBp: t.PercentOfIndexBP,
+		SpreadBp:         t.SpreadBP,
+		DayCount:         TermsDayCount(t.DayCount),
+		FaceValue:        t.FaceValue,
 	}
 	if t.IndexID != "" {
 		index := t.IndexID

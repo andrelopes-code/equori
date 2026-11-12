@@ -16,7 +16,8 @@ func TestPrecedingDateBeforeStartIsGenerated(t *testing.T) {
 	id := f.schedule("bill", f.checking, f.rent, 10000, monthly("2026-11-01", 1, "preceding"), nil)
 
 	got := f.occurrences("from=2026-10-01&to=2026-12-30&schedule_id=" + id)
-	if len(got) != 2 || got[0].ExpectedOn != "2026-10-30" || got[0].Sequence != 1 || got[1].ExpectedOn != "2026-12-01" {
+	if len(got) != 2 || got[0].ExpectedOn != "2026-10-30" || got[0].Sequence != 1 ||
+		got[1].ExpectedOn != "2026-12-01" {
 		t.Fatalf("occurrences = %+v", got)
 	}
 }
@@ -29,7 +30,13 @@ func TestRuleChangeAfterAnEarlyPayment(t *testing.T) {
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 10, ""), nil)
 	tx := f.pay("2026-11-04", 210000, f.rent, "")
 	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{
-		"effective_from": "2026-11-05", "recurrence": map[string]any{"frequency": "monthly", "interval": 1, "day_of_month": 1, "start": "2026-11-05"},
+		"effective_from": "2026-11-05",
+		"recurrence": map[string]any{
+			"frequency":    "monthly",
+			"interval":     1,
+			"day_of_month": 1,
+			"start":        "2026-11-05",
+		},
 	}, http.StatusCreated, nil)
 
 	got := f.bySequence(id, "2026-11-01", "2027-01-31")
@@ -61,14 +68,22 @@ func TestTermsChangeBeforeCreation(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-01-05", 5, ""), nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2026-02-01", "amount": apitest.BRL(220000)}, http.StatusCreated, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/terms",
+		map[string]any{"effective_from": "2026-02-01", "amount": apitest.BRL(220000)},
+		http.StatusCreated,
+		nil,
+	)
 
 	past := f.occurrences("from=2026-01-01&to=2026-10-31&schedule_id=" + id)
-	if len(past) != 10 || slices.ContainsFunc(past, func(o occurrenceView) bool { return o.State != "skipped" }) {
+	if len(past) != 10 ||
+		slices.ContainsFunc(past, func(o occurrenceView) bool { return o.State != "skipped" }) {
 		t.Fatalf("occurrences before creation = %v %v", dates(past), states(past))
 	}
 
-	if o := f.bySequence(id, "2026-11-01", "2026-11-30")[11]; o.ExpectedOn != "2026-11-05" || o.ExpectedAmount.Amount != 220000 {
+	if o := f.bySequence(id, "2026-11-01", "2026-11-30")[11]; o.ExpectedOn != "2026-11-05" ||
+		o.ExpectedAmount.Amount != 220000 {
 		t.Fatalf("2026-11 = %+v", o)
 	}
 }
@@ -83,8 +98,15 @@ func TestUnrealizedMatchStaysReleased(t *testing.T) {
 	occ := f.occurrence(id, 1)
 	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/unrealize", nil, http.StatusOK, nil)
 	f.h.MustDo(http.MethodPut, "/api/v1/transactions/"+wrong, map[string]any{
-		"date": "2026-11-05", "description": "fixed", "expected_version": 1, "reason": "description", "payee_id": f.landlord,
-		"postings": []any{apitest.Posting(f.checking, -210000), apitest.Posting(f.rent, 210000)},
+		"date":             "2026-11-05",
+		"description":      "fixed",
+		"expected_version": 1,
+		"reason":           "description",
+		"payee_id":         f.landlord,
+		"postings": []any{
+			apitest.Posting(f.checking, -210000),
+			apitest.Posting(f.rent, 210000),
+		},
 	}, http.StatusOK, nil)
 	f.h.Dispatch()
 
@@ -93,7 +115,13 @@ func TestUnrealizedMatchStaysReleased(t *testing.T) {
 	}
 
 	right := f.pay("2026-11-20", 210000, f.rent, "")
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/realize", map[string]string{"transaction_id": right}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/realize",
+		map[string]string{"transaction_id": right},
+		http.StatusOK,
+		nil,
+	)
 }
 
 // Final review, finding 7: budget progress is bounded by the horizon.
@@ -101,6 +129,17 @@ func TestBudgetProgressBeyondHorizon(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-12-01")
 	id := f.budget(f.rent, 100000, "2026-10", true)
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/budgets/"+id+"/progress?month=2028-01", nil), http.StatusUnprocessableEntity, "validation_failed", "month")
-	f.h.MustDo(http.MethodGet, "/api/v1/budgets/"+id+"/progress?month=2027-12", nil, http.StatusOK, nil)
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/budgets/"+id+"/progress?month=2028-01", nil),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"month",
+	)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/budgets/"+id+"/progress?month=2027-12",
+		nil,
+		http.StatusOK,
+		nil,
+	)
 }

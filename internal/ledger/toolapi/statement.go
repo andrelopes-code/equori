@@ -35,7 +35,7 @@ type getStatementOut struct {
 	StatementID string              `json:"statement_id"`
 	AccountID   string              `json:"account_id"`
 	AccountName string              `json:"account_name"`
-	Reference   string              `json:"reference" jsonschema:"YYYY-MM"`
+	Reference   string              `json:"reference"            jsonschema:"YYYY-MM"`
 	Status      string              `json:"status"`
 	ClosingDate tool.Date           `json:"closing_date"`
 	DueDate     tool.Date           `json:"due_date"`
@@ -92,7 +92,11 @@ func runGetStatement(
 		return getStatementOut{}, amounts.err
 	}
 
-	out.Lines, out.NextCursor, err = tool.PageOf(lines, func(l statementLineView) string { return l.key }, in.PageArgs)
+	out.Lines, out.NextCursor, err = tool.PageOf(
+		lines,
+		func(l statementLineView) string { return l.key },
+		in.PageArgs,
+	)
 
 	return out, err
 }
@@ -112,18 +116,38 @@ func (c *statementAmounts) of(n int64) tool.Money {
 	return m
 }
 
-func statementHeader(v app.StatementView, a domain.Account, amounts *statementAmounts) getStatementOut {
+func statementHeader(
+	v app.StatementView,
+	a domain.Account,
+	amounts *statementAmounts,
+) getStatementOut {
 	s := v.Summary
 
 	out := getStatementOut{
-		StatementID: v.ID.String(), AccountID: a.ID.String(), AccountName: a.Name, Reference: v.Input.Reference.String(),
-		Status: s.Status, ClosingDate: tool.DateOf(v.Input.Closing), DueDate: tool.DateOf(v.Input.Due),
-		Opening: amounts.of(s.Opening), Charges: amounts.of(s.Charges), Credits: amounts.of(s.Credits),
-		Payments: amounts.of(s.Payments), AmountDue: amounts.of(s.AmountDue), Unpaid: amounts.of(s.Unpaid),
+		StatementID: v.ID.String(),
+		AccountID:   a.ID.String(),
+		AccountName: a.Name,
+		Reference:   v.Input.Reference.String(),
+		Status:      s.Status,
+		ClosingDate: tool.DateOf(v.Input.Closing),
+		DueDate:     tool.DateOf(v.Input.Due),
+		Opening: amounts.of(
+			s.Opening,
+		),
+		Charges: amounts.of(s.Charges),
+		Credits: amounts.of(s.Credits),
+		Payments: amounts.of(
+			s.Payments,
+		),
+		AmountDue:  amounts.of(s.AmountDue),
+		Unpaid:     amounts.of(s.Unpaid),
 		Reconciled: v.Reconciled,
 	}
 	if f := v.Fact; f != nil {
-		out.Institution = institutionFactView{DueDate: tool.DateOf(f.Due), Total: amounts.of(f.Total)}
+		out.Institution = institutionFactView{
+			DueDate: tool.DateOf(f.Due),
+			Total:   amounts.of(f.Total),
+		}
 		if f.Minimum != nil {
 			out.Institution.Minimum = amounts.of(*f.Minimum)
 		}
@@ -132,15 +156,26 @@ func statementHeader(v app.StatementView, a domain.Account, amounts *statementAm
 	return out
 }
 
-func statementLines(postings []app.StatementPosting, amounts *statementAmounts) []statementLineView {
+func statementLines(
+	postings []app.StatementPosting,
+	amounts *statementAmounts,
+) []statementLineView {
 	lines := make([]statementLineView, len(postings))
 	for i, p := range postings {
 		lines[i] = statementLineView{
-			TransactionID: p.TransactionID.String(), Date: tool.DateOf(p.Date), Description: p.Description,
-			CardRole: p.CardRole, Amount: amounts.of(p.Amount), key: p.TransactionID.String() + ":" + strconv.Itoa(i),
+			TransactionID: p.TransactionID.String(),
+			Date:          tool.DateOf(p.Date),
+			Description:   p.Description,
+			CardRole:      p.CardRole,
+			Amount:        amounts.of(p.Amount),
+			key:           p.TransactionID.String() + ":" + strconv.Itoa(i),
 		}
 		if p.Installment != nil {
-			lines[i].Installment = strconv.Itoa(p.Installment.Number) + "/" + strconv.Itoa(p.Installment.Count)
+			lines[i].Installment = strconv.Itoa(
+				p.Installment.Number,
+			) + "/" + strconv.Itoa(
+				p.Installment.Count,
+			)
 		}
 	}
 

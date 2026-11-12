@@ -24,23 +24,58 @@ func NewRepository(pool *pgxpool.Pool) *Repository { return &Repository{pool: po
 // NewTxRepository runs on an outbox delivery's transaction; it serves MoveRecords only.
 func NewTxRepository(tx pgx.Tx) *Repository { return &Repository{q: New(tx)} }
 
-func (r *Repository) MoveRecords(ctx context.Context, booksID int64, recordIDs []uuid.UUID, transactionID uuid.UUID) error {
-	return r.q.MoveRecords(ctx, MoveRecordsParams{BooksID: booksID, RecordIds: recordIDs, TransactionID: uuid.NullUUID{UUID: transactionID, Valid: true}})
+func (r *Repository) MoveRecords(
+	ctx context.Context,
+	booksID int64,
+	recordIDs []uuid.UUID,
+	transactionID uuid.UUID,
+) error {
+	return r.q.MoveRecords(
+		ctx,
+		MoveRecordsParams{
+			BooksID:       booksID,
+			RecordIds:     recordIDs,
+			TransactionID: uuid.NullUUID{UUID: transactionID, Valid: true},
+		},
+	)
 }
 
 func toBatch(row IngestionBatch) domain.Batch {
 	b := domain.Batch{
-		ID: row.ID, BooksID: row.BooksID, AccountID: row.AccountID, Source: domain.Source(row.Source),
-		FileName: value(row.FileName), Currency: row.Currency, PeriodFrom: row.PeriodFrom, PeriodTo: row.PeriodTo,
+		ID:        row.ID,
+		BooksID:   row.BooksID,
+		AccountID: row.AccountID,
+		Source:    domain.Source(row.Source),
+		FileName: value(
+			row.FileName,
+		),
+		Currency:   row.Currency,
+		PeriodFrom: row.PeriodFrom,
+		PeriodTo:   row.PeriodTo,
 		Counts: domain.Counts{
-			Received: int(row.Received), Ignored: int(row.Ignored), Matched: int(row.Matched),
-			Created: int(row.Created), NeedsReview: int(row.NeedsReview), Discarded: int(row.Discarded),
-			Updated: int(row.Updated), Withdrawn: int(row.Withdrawn), ReIdentified: int(row.ReIdentified),
-			Paired: int(row.Paired),
+			Received: int(row.Received),
+			Ignored:  int(row.Ignored),
+			Matched:  int(row.Matched),
+			Created: int(
+				row.Created,
+			),
+			NeedsReview: int(row.NeedsReview),
+			Discarded:   int(row.Discarded),
+			Updated: int(
+				row.Updated,
+			),
+			Withdrawn:    int(row.Withdrawn),
+			ReIdentified: int(row.ReIdentified),
+			Paired:       int(row.Paired),
 		},
 		ReadEmpty: row.ReadEmpty,
-		Balance:   domain.FileBalance{Status: domain.BalanceStatus(row.BalanceStatus), Date: row.BalanceDate},
-		StartedAt: row.StartedAt, CompletedAt: row.CompletedAt, SyncID: row.SyncID.UUID,
+		Balance: domain.FileBalance{
+			Status: domain.BalanceStatus(row.BalanceStatus),
+			Date:   row.BalanceDate,
+		},
+		StartedAt:   row.StartedAt,
+		CompletedAt: row.CompletedAt,
+		SyncID:      row.SyncID.UUID,
 	}
 	if row.ExternalAccountID.Valid {
 		b.ExternalAccountID = &row.ExternalAccountID.UUID
@@ -57,10 +92,20 @@ func toBatch(row IngestionBatch) domain.Batch {
 	return b
 }
 
-func (r *Repository) ListBatches(ctx context.Context, booksID int64, p page.Request[app.BatchKey]) ([]domain.Batch, *app.BatchKey, error) {
-	params := ListBatchesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListBatches(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.BatchKey],
+) ([]domain.Batch, *app.BatchKey, error) {
+	params := ListBatchesParams{
+		BooksID:  booksID,
+		RowLimit: int32(p.Limit + 1),
+	} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
-		params.AfterStarted, params.AfterID = &p.After.StartedAt, uuid.NullUUID{UUID: p.After.ID, Valid: true}
+		params.AfterStarted, params.AfterID = &p.After.StartedAt, uuid.NullUUID{
+			UUID:  p.After.ID,
+			Valid: true,
+		}
 	}
 
 	rows, err := r.q.ListBatches(ctx, params)

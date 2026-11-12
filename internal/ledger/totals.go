@@ -14,19 +14,34 @@ import (
 
 // Commitment is the sum of installments billed on the statement of month while it is open
 // (P2; P7 amendment A57).
-func (m *Module) Commitment(ctx context.Context, booksID int64, accountID uuid.UUID, month time.Time) (money.Money, error) {
+func (m *Module) Commitment(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	month time.Time,
+) (money.Money, error) {
 	return m.svc.Commitment(ctx, booksID, accountID, domain.MonthOf(month))
 }
 
 // PriorInstallments sums the installments billed on the statement of month of purchases booked
 // before month (budget plan amendment A129).
-func (m *Module) PriorInstallments(ctx context.Context, booksID int64, accountID uuid.UUID, month time.Time) (money.Money, error) {
+func (m *Module) PriorInstallments(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	month time.Time,
+) (money.Money, error) {
 	return m.svc.PriorInstallments(ctx, booksID, accountID, domain.MonthOf(month))
 }
 
 // OwnCategoryMonthlyTotals returns the own postings of every category of class (income or
 // expense) by month in [from, to), in the base currency.
-func (m *Module) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, class string, from, to time.Time) ([]CategoryMonth, error) {
+func (m *Module) OwnCategoryMonthlyTotals(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+) ([]CategoryMonth, error) {
 	rows, base, err := m.svc.OwnCategoryMonthlyTotals(ctx, booksID, class, from, to)
 	if err != nil {
 		return nil, err
@@ -46,12 +61,22 @@ func (m *Module) OwnCategoryMonthlyTotals(ctx context.Context, booksID int64, cl
 }
 
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
-func (m *Module) CategoryMonthlyTotals(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (map[time.Time]money.Money, error) {
+func (m *Module) CategoryMonthlyTotals(
+	ctx context.Context,
+	booksID int64,
+	categoryID uuid.UUID,
+	from, to time.Time,
+) (map[time.Time]money.Money, error) {
 	return m.svc.CategoryMonthlyTotals(ctx, booksID, categoryID, from, to)
 }
 
 // CategoryTotal sums the postings of a category subtree booked in [from, to), in the base
 // currency (P7 amendment A54).
-func (m *Module) CategoryTotal(ctx context.Context, booksID int64, categoryID uuid.UUID, from, to time.Time) (money.Money, error) {
+func (m *Module) CategoryTotal(
+	ctx context.Context,
+	booksID int64,
+	categoryID uuid.UUID,
+	from, to time.Time,
+) (money.Money, error) {
 	return m.svc.CategoryTotal(ctx, booksID, categoryID, from, to)
 }

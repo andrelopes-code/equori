@@ -20,7 +20,11 @@ type ImportTarget struct {
 
 // ImportTarget returns the currency and kind of an account that can hold statement lines: a
 // leaf balance account, like a balance assertion's (P3 amendment A9).
-func (s *Service) ImportTarget(ctx context.Context, booksID int64, accountID uuid.UUID) (ImportTarget, error) {
+func (s *Service) ImportTarget(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (ImportTarget, error) {
 	a, err := s.repo.Account(ctx, booksID, accountID)
 	if err != nil {
 		return ImportTarget{}, err
@@ -35,7 +39,11 @@ func (s *Service) ImportTarget(ctx context.Context, booksID int64, accountID uui
 
 // LinkedTransaction returns the transaction carrying the external record and whether the
 // import created it (origin import) or matched it; ErrNotFound when none carries it.
-func (s *Service) LinkedTransaction(ctx context.Context, booksID int64, recordID uuid.UUID) (uuid.UUID, bool, error) {
+func (s *Service) LinkedTransaction(
+	ctx context.Context,
+	booksID int64,
+	recordID uuid.UUID,
+) (uuid.UUID, bool, error) {
 	id, err := s.repo.TransactionByExternalRecord(ctx, booksID, recordID)
 	if err != nil {
 		return uuid.Nil, false, err
@@ -63,14 +71,24 @@ type UnlinkedPosting struct {
 // UnconfirmedPostings lists the first posting of each transaction on the account that no
 // external record links and no balance reconciled, with Date the date by which the
 // institution reports its line, in [from, to] (A133).
-func (s *Service) UnconfirmedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+func (s *Service) UnconfirmedPostings(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]UnlinkedPosting, error) {
 	return s.repo.UnconfirmedPostings(ctx, booksID, accountID, from, to)
 }
 
 // UnlinkedPostings lists the account's postings in [from, to] whose transaction is not
 // voided and carries no external record (I07). Ingestion chooses among them (chapter 5,
 // 5.7, Matcher).
-func (s *Service) UnlinkedPostings(ctx context.Context, booksID int64, accountID uuid.UUID, from, to time.Time) ([]UnlinkedPosting, error) {
+func (s *Service) UnlinkedPostings(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]UnlinkedPosting, error) {
 	return s.repo.UnlinkedPostings(ctx, booksID, accountID, from, to)
 }
 
@@ -105,7 +123,12 @@ type ImportedUpdate struct {
 // the line's bill is (false, nil) (P12 A147); another reconciled posting is ErrReconciled and
 // stays as it is. A transaction changed since its import is domain.ErrNotRetypable after the
 // other changes; a record no posting carries is ErrNotFound.
-func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, recordID uuid.UUID, u ImportedUpdate) (changed bool, err error) {
+func (s *Service) UpdateImportedPosting(
+	ctx context.Context,
+	booksID int64,
+	recordID uuid.UUID,
+	u ImportedUpdate,
+) (changed bool, err error) {
 	var role string
 
 	err = s.repo.InTx(ctx, func(r Repository) error {
@@ -114,11 +137,13 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 			return err
 		}
 
-		billed := u.DueDate != nil && p.CardRole != "" && p.CardRole != domain.RolePayment && u.Kind != LineKindPayment
+		billed := u.DueDate != nil && p.CardRole != "" && p.CardRole != domain.RolePayment &&
+			u.Kind != LineKindPayment
 		retype := u.Kind == LineKindPayment && p.CardRole == domain.RoleCredit
 
 		if p.Status == domain.StatusReconciled {
-			if !u.Pending && !retype && (!billed || (p.StatementDue != nil && p.StatementDue.Equal(*u.DueDate))) {
+			if !u.Pending && !retype &&
+				(!billed || (p.StatementDue != nil && p.StatementDue.Equal(*u.DueDate))) {
 				return nil
 			}
 
@@ -132,7 +157,13 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 
 		var statementID uuid.UUID
 		if billed {
-			if statementID, err = s.dueStatementID(ctx, r, booksID, p.AccountID, *u.DueDate); err != nil {
+			if statementID, err = s.dueStatementID(
+				ctx,
+				r,
+				booksID,
+				p.AccountID,
+				*u.DueDate,
+			); err != nil {
 				return err
 			}
 		}
@@ -146,7 +177,10 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 		return changed, err
 	}
 
-	err = s.repo.InTx(ctx, func(r Repository) error { return s.retypeAsPayment(ctx, r, booksID, recordID) })
+	err = s.repo.InTx(
+		ctx,
+		func(r Repository) error { return s.retypeAsPayment(ctx, r, booksID, recordID) },
+	)
 	if err != nil {
 		return changed, err
 	}
@@ -156,7 +190,12 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 
 // retypeAsPayment rewrites the transaction carrying the record as a card payment against
 // the transit account (A88).
-func (s *Service) retypeAsPayment(ctx context.Context, r Repository, booksID int64, recordID uuid.UUID) error {
+func (s *Service) retypeAsPayment(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	recordID uuid.UUID,
+) error {
 	id, err := r.TransactionByExternalRecord(ctx, booksID, recordID)
 	if err != nil {
 		return err
@@ -194,7 +233,15 @@ func (s *Service) retypeAsPayment(ctx context.Context, r Repository, booksID int
 	event.PreviousDate = prev.Date.Format(time.DateOnly)
 	event.CategoriesChanged = true
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionCorrected,
+			BooksID:     booksID,
+			AggregateID: next.ID.String(),
+			Payload:     event,
+		},
+	)
 }
 
 // ReleaseRecord unlinks an external record from its posting; the transaction stays (P6 A38).
@@ -210,8 +257,16 @@ type Match struct {
 }
 
 // ClearMatched links one record; a transaction carrying another record is ErrAlreadyMatched.
-func (s *Service) ClearMatched(ctx context.Context, booksID int64, recordID, txID, accountID uuid.UUID) error {
-	conflicts, err := s.ClearMatchedBatch(ctx, booksID, []Match{{RecordID: recordID, TransactionID: txID, AccountID: accountID}})
+func (s *Service) ClearMatched(
+	ctx context.Context,
+	booksID int64,
+	recordID, txID, accountID uuid.UUID,
+) error {
+	conflicts, err := s.ClearMatchedBatch(
+		ctx,
+		booksID,
+		[]Match{{RecordID: recordID, TransactionID: txID, AccountID: accountID}},
+	)
 	if err == nil && len(conflicts) > 0 {
 		return ErrAlreadyMatched
 	}
@@ -237,17 +292,28 @@ func (s *Service) ClearMatchedBatch(ctx context.Context, booksID int64, ms []Mat
 				return err
 			}
 
-			if slices.ContainsFunc(links, func(l PostingLink) bool { return l.RecordID == m.RecordID }) {
+			if slices.ContainsFunc(
+				links,
+				func(l PostingLink) bool { return l.RecordID == m.RecordID },
+			) {
 				continue
 			}
 
-			free := slices.IndexFunc(links, func(l PostingLink) bool { return l.RecordID == uuid.Nil })
+			free := slices.IndexFunc(
+				links,
+				func(l PostingLink) bool { return l.RecordID == uuid.Nil },
+			)
 			if free < 0 || links[free].Voided {
 				conflicts = append(conflicts, i)
 				continue
 			}
 
-			if err := r.LinkExternalRecord(ctx, booksID, links[free].PostingID, m.RecordID); err != nil {
+			if err := r.LinkExternalRecord(
+				ctx,
+				booksID,
+				links[free].PostingID,
+				m.RecordID,
+			); err != nil {
 				return err
 			}
 
@@ -255,7 +321,12 @@ func (s *Service) ClearMatchedBatch(ctx context.Context, booksID int64, ms []Mat
 				continue
 			}
 
-			if err := r.ClearPendingPostings(ctx, booksID, m.TransactionID, m.AccountID); err != nil {
+			if err := r.ClearPendingPostings(
+				ctx,
+				booksID,
+				m.TransactionID,
+				m.AccountID,
+			); err != nil {
 				return err
 			}
 		}

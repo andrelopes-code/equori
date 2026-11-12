@@ -60,8 +60,20 @@ func TestS368CVMFunds(t *testing.T) {
 
 	got := pricesOf(t, h, "00017024000153")
 	want := []priceAPI{
-		{Instrument: "00017024000153", QuoteInstrument: "BRL", Date: "2026-11-03", Value: "45.3607553", Source: "cvm_funds"},
-		{Instrument: "00017024000153", QuoteInstrument: "BRL", Date: "2026-11-04", Value: "45.3795138", Source: "cvm_funds"},
+		{
+			Instrument:      "00017024000153",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-03",
+			Value:           "45.3607553",
+			Source:          "cvm_funds",
+		},
+		{
+			Instrument:      "00017024000153",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-04",
+			Value:           "45.3795138",
+			Source:          "cvm_funds",
+		},
 	}
 
 	if len(got) != len(want) {

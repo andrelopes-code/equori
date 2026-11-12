@@ -76,8 +76,14 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	defer unlock()
 
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
-		BooksID: f.BooksID, AccountID: f.AccountID, Source: f.Source, FileName: f.FileName, Currency: string(currency),
-		PeriodFrom: st.From, PeriodTo: st.To, Balance: domain.FileBalance{Status: domain.BalanceNone},
+		BooksID:    f.BooksID,
+		AccountID:  f.AccountID,
+		Source:     f.Source,
+		FileName:   f.FileName,
+		Currency:   string(currency),
+		PeriodFrom: st.From,
+		PeriodTo:   st.To,
+		Balance:    domain.FileBalance{Status: domain.BalanceNone},
 	})
 	if err != nil {
 		return domain.Batch{}, err
@@ -88,7 +94,11 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	}
 
 	if st.Balance != nil {
-		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &st.Balance.Date, Amount: st.Balance.Amount}
+		batch.Balance = domain.FileBalance{
+			Status: domain.BalanceRecorded,
+			Date:   &st.Balance.Date,
+			Amount: st.Balance.Amount,
+		}
 
 		err := s.ledger.AssertBalance(ctx, f.BooksID, f.AccountID, *st.Balance, currency)
 		if errors.Is(err, ErrBalanceRejected) {
@@ -116,12 +126,19 @@ func validateFile(f ImportFile) error {
 	return nil
 }
 
-func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currency) (domain.Statement, error) {
+func (s *Service) read(
+	ctx context.Context,
+	f ImportFile,
+	currency money.Currency,
+) (domain.Statement, error) {
 	scale := currency.MinorUnits()
 	if f.Source == domain.SourceCSV {
 		p, err := s.repo.Profile(ctx, f.BooksID, f.AccountID)
 		if errors.Is(err, ErrNotFound) {
-			return domain.Statement{}, &domain.FieldError{Field: "format", Message: "the account has no CSV profile; set it with PUT /accounts/{id}/csv-profile"}
+			return domain.Statement{}, &domain.FieldError{
+				Field:   "format",
+				Message: "the account has no CSV profile; set it with PUT /accounts/{id}/csv-profile",
+			}
 		}
 
 		if err != nil {
@@ -142,7 +159,9 @@ func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currenc
 	}
 
 	if st.Currency != "" && st.Currency != string(currency) {
-		return domain.Statement{}, fileError(fmt.Sprintf("is in %s and the account in %s", st.Currency, currency))
+		return domain.Statement{}, fileError(
+			fmt.Sprintf("is in %s and the account in %s", st.Currency, currency),
+		)
 	}
 
 	return st, nil

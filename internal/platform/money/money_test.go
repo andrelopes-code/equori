@@ -73,7 +73,14 @@ func TestArithmetic(t *testing.T) {
 		t.Fatalf("Sub across currencies err = %v", err)
 	}
 
-	if _, err := mustNew(t, MaxAmount, "BRL").Add(mustNew(t, 1, "BRL")); !errors.Is(err, ErrOutOfRange) {
+	if _, err := mustNew(
+		t,
+		MaxAmount,
+		"BRL",
+	).Add(mustNew(t, 1, "BRL")); !errors.Is(
+		err,
+		ErrOutOfRange,
+	) {
 		t.Fatalf("Add beyond MaxAmount err = %v", err)
 	}
 }
@@ -167,7 +174,13 @@ func TestNewOf(t *testing.T) {
 		{name: "negative scale", amount: 1, code: "X1", scale: -1, want: ErrInvalidInstrument},
 		{name: "lowercase code", amount: 1, code: "mx", scale: 0, want: ErrInvalidInstrument},
 		{name: "one letter code", amount: 1, code: "M", scale: 0, want: ErrInvalidInstrument},
-		{name: "currency with another scale", amount: 1, code: "BRL", scale: 0, want: ErrInvalidInstrument},
+		{
+			name:   "currency with another scale",
+			amount: 1,
+			code:   "BRL",
+			scale:  0,
+			want:   ErrInvalidInstrument,
+		},
 		{name: "above max", amount: MaxAmount + 1, code: "MXRF11", scale: 0, want: ErrOutOfRange},
 	}
 	for _, tt := range tests {
@@ -177,7 +190,8 @@ func TestNewOf(t *testing.T) {
 				t.Fatalf("err = %v, want %v", err, tt.want)
 			}
 
-			if err == nil && (m.Amount() != tt.amount || m.Currency() != tt.code || m.Scale() != tt.scale) {
+			if err == nil &&
+				(m.Amount() != tt.amount || m.Currency() != tt.code || m.Scale() != tt.scale) {
 				t.Fatalf("got %v scale %d", m, m.Scale())
 			}
 		})

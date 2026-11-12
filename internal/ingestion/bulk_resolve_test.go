@@ -20,8 +20,13 @@ func TestS289BulkResolve(t *testing.T) {
 	h, batch, record, _, second := ambiguous(t)
 	unknown := "01a15600-0000-7000-8000-000000000000"
 
-	got := bulkResolve(t, h,
-		map[string]any{"record_id": record.ID, "resolution": map[string]any{"action": "match", "transaction_id": second}},
+	got := bulkResolve(
+		t,
+		h,
+		map[string]any{
+			"record_id":  record.ID,
+			"resolution": map[string]any{"action": "match", "transaction_id": second},
+		},
 		map[string]any{"record_id": unknown, "resolution": map[string]any{"action": "discard"}},
 	)
 
@@ -30,7 +35,13 @@ func TestS289BulkResolve(t *testing.T) {
 		t.Fatalf("step 1 results = %+v, want %+v", got, want)
 	}
 
-	if matched := records(t, h, batch, "matched"); len(matched) != 1 || matched[0].TransactionID != second {
+	if matched := records(
+		t,
+		h,
+		batch,
+		"matched",
+	); len(matched) != 1 ||
+		matched[0].TransactionID != second {
 		t.Fatalf("matched records = %+v", matched)
 	}
 
@@ -41,7 +52,11 @@ func TestS289BulkResolve(t *testing.T) {
 		t.Fatalf("batch after step 1: %s", c)
 	}
 
-	got = bulkResolve(t, h, map[string]any{"record_id": record.ID, "resolution": map[string]any{"action": "discard"}})
+	got = bulkResolve(
+		t,
+		h,
+		map[string]any{"record_id": record.ID, "resolution": map[string]any{"action": "discard"}},
+	)
 
 	if len(got) != 1 || got[0] != (bulkResolution{record.ID, "record_resolved"}) {
 		t.Fatalf("step 2 results = %+v", got)
@@ -49,9 +64,20 @@ func TestS289BulkResolve(t *testing.T) {
 
 	h2, batch2, record2, first2, _ := ambiguous(t)
 	tx := h2.Transaction(first2)
-	stranger := h2.Record("2026-10-10", apitest.Posting(tx.Postings[0].AccountID, -1), apitest.Posting(tx.Postings[1].AccountID, 1))
+	stranger := h2.Record(
+		"2026-10-10",
+		apitest.Posting(tx.Postings[0].AccountID, -1),
+		apitest.Posting(tx.Postings[1].AccountID, 1),
+	)
 
-	got = bulkResolve(t, h2, map[string]any{"record_id": record2.ID, "resolution": map[string]any{"action": "match", "transaction_id": stranger}})
+	got = bulkResolve(
+		t,
+		h2,
+		map[string]any{
+			"record_id":  record2.ID,
+			"resolution": map[string]any{"action": "match", "transaction_id": stranger},
+		},
+	)
 
 	if len(got) != 1 || got[0] != (bulkResolution{record2.ID, "validation_failed"}) {
 		t.Fatalf("step 3 results = %+v", got)

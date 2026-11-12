@@ -42,23 +42,127 @@ func TestContractRejectsNonConformingRequests(t *testing.T) {
 		code                                  string
 		fields                                []string
 	}{
-		{"unknown member", "POST", "/api/v1/accounts", "application/json", `{"name":"X","class":"asset","kind":"cash","currency":"BRL","colour":"red"}`, 400, "invalid_request", []string{"colour"}},
-		{"misspelled patch member", "PATCH", "/api/v1/accounts/" + checking, "application/json", `{"nmae":"Y"}`, 400, "invalid_request", []string{"nmae"}},
-		{"wrong type", "POST", "/api/v1/transactions", "application/json", `{"date":"2026-10-01","postings":[{"account_id":"` + checking + `","amount":{"amount":"1","currency":"BRL"}},{"account_id":"` + food + `","amount":{"amount":1,"currency":"BRL"}}]}`, 400, "invalid_request", []string{"postings[0].amount.amount"}},
-		{"invalid uuid", "GET", "/api/v1/accounts/not-a-uuid", "", "", 400, "invalid_request", []string{"id"}},
-		{"invalid date", "GET", "/api/v1/accounts/" + checking + "/balance?date=2026-13-01", "", "", 400, "invalid_request", []string{"date"}},
-		{"limit out of range", "GET", "/api/v1/transactions?limit=0", "", "", 400, "invalid_request", []string{"limit"}},
-		{"invalid cursor", "GET", "/api/v1/transactions?cursor=zzz", "", "", 400, "invalid_request", []string{"cursor"}},
-		{"plain text body", "POST", "/api/v1/accounts", "text/plain", `{"name":"X","class":"asset","kind":"cash","currency":"BRL"}`, 415, "unsupported_media_type", []string{}},
-		{"trailing value", "POST", "/api/v1/accounts", "application/json", `{"name":"X","class":"asset","kind":"cash","currency":"BRL"} {}`, 400, "invalid_request", []string{"body"}},
-		{"wrong method", "DELETE", "/api/v1/accounts", "", "", 405, "method_not_allowed", []string{}},
+		{
+			"unknown member",
+			"POST",
+			"/api/v1/accounts",
+			"application/json",
+			`{"name":"X","class":"asset","kind":"cash","currency":"BRL","colour":"red"}`,
+			400,
+			"invalid_request",
+			[]string{"colour"},
+		},
+		{
+			"misspelled patch member",
+			"PATCH",
+			"/api/v1/accounts/" + checking,
+			"application/json",
+			`{"nmae":"Y"}`,
+			400,
+			"invalid_request",
+			[]string{"nmae"},
+		},
+		{
+			"wrong type",
+			"POST",
+			"/api/v1/transactions",
+			"application/json",
+			`{"date":"2026-10-01","postings":[{"account_id":"` + checking + `","amount":{"amount":"1","currency":"BRL"}},{"account_id":"` + food + `","amount":{"amount":1,"currency":"BRL"}}]}`,
+			400,
+			"invalid_request",
+			[]string{"postings[0].amount.amount"},
+		},
+		{
+			"invalid uuid",
+			"GET",
+			"/api/v1/accounts/not-a-uuid",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"id"},
+		},
+		{
+			"invalid date",
+			"GET",
+			"/api/v1/accounts/" + checking + "/balance?date=2026-13-01",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"date"},
+		},
+		{
+			"limit out of range",
+			"GET",
+			"/api/v1/transactions?limit=0",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"limit"},
+		},
+		{
+			"invalid cursor",
+			"GET",
+			"/api/v1/transactions?cursor=zzz",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"cursor"},
+		},
+		{
+			"plain text body",
+			"POST",
+			"/api/v1/accounts",
+			"text/plain",
+			`{"name":"X","class":"asset","kind":"cash","currency":"BRL"}`,
+			415,
+			"unsupported_media_type",
+			[]string{},
+		},
+		{
+			"trailing value",
+			"POST",
+			"/api/v1/accounts",
+			"application/json",
+			`{"name":"X","class":"asset","kind":"cash","currency":"BRL"} {}`,
+			400,
+			"invalid_request",
+			[]string{"body"},
+		},
+		{
+			"wrong method",
+			"DELETE",
+			"/api/v1/accounts",
+			"",
+			"",
+			405,
+			"method_not_allowed",
+			[]string{},
+		},
 		{"unknown path", "GET", "/api/v1/nope", "", "", 404, "not_found", []string{}},
 		// Review Focus 1: a conforming request that breaks a domain rule stays 422.
-		{"domain rule", "POST", "/api/v1/transactions", "application/json", `{"date":"2026-10-01","postings":[{"account_id":"` + checking + `","amount":{"amount":0,"currency":"BRL"}},{"account_id":"` + food + `","amount":{"amount":0,"currency":"BRL"}}]}`, 422, "validation_failed", []string{"postings[0].amount"}},
+		{
+			"domain rule",
+			"POST",
+			"/api/v1/transactions",
+			"application/json",
+			`{"date":"2026-10-01","postings":[{"account_id":"` + checking + `","amount":{"amount":0,"currency":"BRL"}},{"account_id":"` + food + `","amount":{"amount":0,"currency":"BRL"}}]}`,
+			422,
+			"validation_failed",
+			[]string{"postings[0].amount"},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequestWithContext(t.Context(), tc.method, h.URL()+tc.path, strings.NewReader(tc.body))
+			req, err := http.NewRequestWithContext(
+				t.Context(),
+				tc.method,
+				h.URL()+tc.path,
+				strings.NewReader(tc.body),
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -93,10 +197,25 @@ func TestUnauthenticatedInvalidRequestIs401(t *testing.T) {
 func TestContractReportsEveryInvalidField(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	r := h.Do("POST", "/api/v1/accounts", map[string]any{"name": "", "class": "foo", "kind": "", "currency": "brl"})
+	r := h.Do(
+		"POST",
+		"/api/v1/accounts",
+		map[string]any{"name": "", "class": "foo", "kind": "", "currency": "brl"},
+	)
 	h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "")
 
-	if got, want := problemFields(t, r), []string{"class", "currency", "kind", "name"}; !slices.Equal(got, want) {
+	if got, want := problemFields(
+		t,
+		r,
+	), []string{
+		"class",
+		"currency",
+		"kind",
+		"name",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("fields = %v, want %v: %s", got, want, r.Body)
 	}
 
@@ -107,6 +226,10 @@ func TestContractReportsEveryInvalidField(t *testing.T) {
 		postings[i] = apitest.Posting(checking, 1)
 	}
 
-	r = h.Do("POST", "/api/v1/transactions", map[string]any{"date": "2026-10-01", "postings": postings})
+	r = h.Do(
+		"POST",
+		"/api/v1/transactions",
+		map[string]any{"date": "2026-10-01", "postings": postings},
+	)
 	h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "postings")
 }

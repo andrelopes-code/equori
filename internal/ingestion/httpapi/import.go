@@ -87,7 +87,13 @@ func (s *Server) importFile(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	b, err := s.svc.Import(ctx, app.ImportFile{
-		BooksID: auth.MustBooksID(ctx), AccountID: id, Source: domain.Source(format), FileName: name, Content: content,
+		BooksID: auth.MustBooksID(
+			ctx,
+		),
+		AccountID: id,
+		Source:    domain.Source(format),
+		FileName:  name,
+		Content:   content,
 	})
 	if err != nil {
 		s.errs.Write(w, r, err)
@@ -98,7 +104,11 @@ func (s *Server) importFile(w http.ResponseWriter, r *http.Request) {
 	httpserver.WriteCreated(s.errs, w, r, BaseURL+"/import-batches/"+b.ID.String(), toBatchAPI(b))
 }
 
-func (s *Server) getImportBatch(ctx context.Context, r *http.Request, _ httpserver.None) (ImportBatch, error) {
+func (s *Server) getImportBatch(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ImportBatch, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return ImportBatch{}, err

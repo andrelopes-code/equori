@@ -41,7 +41,10 @@ func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) 
 		if err := m.validatePrice(ctx, p, checked); err != nil {
 			var fe *domain.FieldError
 			if errors.As(err, &fe) {
-				return 0, &domain.FieldError{Field: fmt.Sprintf("line %d", i+2), Message: fe.Field + " " + fe.Message}
+				return 0, &domain.FieldError{
+					Field:   fmt.Sprintf("line %d", i+2),
+					Message: fe.Field + " " + fe.Message,
+				}
 			}
 
 			return 0, err
@@ -61,7 +64,10 @@ func (m *Module) RecordInstrumentPrices(
 	}
 
 	if len(points) == 0 {
-		return domain.PriceCounts{}, &domain.FieldError{Field: "prices", Message: "must not be empty"}
+		return domain.PriceCounts{}, &domain.FieldError{
+			Field:   "prices",
+			Message: "must not be empty",
+		}
 	}
 
 	ps := make([]Price, len(points))
@@ -69,17 +75,30 @@ func (m *Module) RecordInstrumentPrices(
 
 	for i, pt := range points {
 		if !domain.StorableRate(pt.Value) {
-			return domain.PriceCounts{}, &domain.FieldError{Field: fmt.Sprintf("prices[%d]", i), Message: rateMessage}
+			return domain.PriceCounts{}, &domain.FieldError{
+				Field:   fmt.Sprintf("prices[%d]", i),
+				Message: rateMessage,
+			}
 		}
 
 		if j, ok := firstOf[pt.Date]; ok {
 			return domain.PriceCounts{}, &domain.FieldError{
-				Field: fmt.Sprintf("prices[%d]", i), Message: fmt.Sprintf("date repeats prices[%d]", j),
+				Field: fmt.Sprintf(
+					"prices[%d]",
+					i,
+				),
+				Message: fmt.Sprintf("date repeats prices[%d]", j),
 			}
 		}
 
 		firstOf[pt.Date] = i
-		ps[i] = Price{Instrument: money.Currency(code), Quote: quote, Date: pt.Date, Value: pt.Value, Source: domain.SourceCSV}
+		ps[i] = Price{
+			Instrument: money.Currency(code),
+			Quote:      quote,
+			Date:       pt.Date,
+			Value:      pt.Value,
+			Source:     domain.SourceCSV,
+		}
 	}
 
 	if err := m.validatePrice(ctx, ps[0], map[money.Currency]Instrument{}); err != nil {
@@ -148,7 +167,11 @@ func (m *Module) priceCounts(ctx context.Context, ps []Price) (domain.PriceCount
 	return counts, nil
 }
 
-func (m *Module) validatePrice(ctx context.Context, p Price, checked map[money.Currency]Instrument) error {
+func (m *Module) validatePrice(
+	ctx context.Context,
+	p Price,
+	checked map[money.Currency]Instrument,
+) error {
 	lookup := func(code money.Currency) (Instrument, bool, error) {
 		if in, ok := checked[code]; ok {
 			return in, true, nil
@@ -183,11 +206,17 @@ func (m *Module) validatePrice(ctx context.Context, p Price, checked map[money.C
 	}
 
 	if !ok || quote.Type != domain.TypeCurrency || p.Quote == p.Instrument {
-		return &domain.FieldError{Field: "quote_instrument", Message: "must be a currency other than the instrument"}
+		return &domain.FieldError{
+			Field:   "quote_instrument",
+			Message: "must be a currency other than the instrument",
+		}
 	}
 
 	if !domain.StorableRate(p.Value) {
-		return &domain.FieldError{Field: "value", Message: "must be positive with at most 18 integer digits"}
+		return &domain.FieldError{
+			Field:   "value",
+			Message: "must be positive with at most 18 integer digits",
+		}
 	}
 
 	return nil
@@ -215,8 +244,19 @@ func (m *Module) upsert(ctx context.Context, ps []Price) error {
 }
 
 // PriceOnOrBefore returns the chosen price of the latest date ≤ date (A60).
-func (m *Module) PriceOnOrBefore(ctx context.Context, instrument, quote money.Currency, date time.Time) (Price, bool, error) {
-	rows, err := m.q.PriceOnOrBefore(ctx, postgres.PriceOnOrBeforeParams{Instrument: string(instrument), QuoteInstrument: string(quote), Date: date})
+func (m *Module) PriceOnOrBefore(
+	ctx context.Context,
+	instrument, quote money.Currency,
+	date time.Time,
+) (Price, bool, error) {
+	rows, err := m.q.PriceOnOrBefore(
+		ctx,
+		postgres.PriceOnOrBeforeParams{
+			Instrument:      string(instrument),
+			QuoteInstrument: string(quote),
+			Date:            date,
+		},
+	)
 	if err != nil || len(rows) == 0 {
 		return Price{}, false, err
 	}
@@ -227,12 +267,24 @@ func (m *Module) PriceOnOrBefore(ctx context.Context, instrument, quote money.Cu
 }
 
 // ListPrices returns the chosen price of each date with prices in [from, to].
-func (m *Module) ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]Price, error) {
+func (m *Module) ListPrices(
+	ctx context.Context,
+	instrument, quote money.Currency,
+	from, to time.Time,
+) ([]Price, error) {
 	if err := domain.ValidRange(from, to); err != nil {
 		return nil, err
 	}
 
-	rows, err := m.q.ListChosenPrices(ctx, postgres.ListChosenPricesParams{Instrument: string(instrument), QuoteInstrument: string(quote), FromDate: from, ToDate: to})
+	rows, err := m.q.ListChosenPrices(
+		ctx,
+		postgres.ListChosenPricesParams{
+			Instrument:      string(instrument),
+			QuoteInstrument: string(quote),
+			FromDate:        from,
+			ToDate:          to,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -253,5 +305,11 @@ func toPrice(r postgres.MarketdataPrice) (Price, error) {
 		return Price{}, err
 	}
 
-	return Price{Instrument: money.Currency(r.Instrument), Quote: money.Currency(r.QuoteInstrument), Date: r.Date, Value: v, Source: r.Source}, nil
+	return Price{
+		Instrument: money.Currency(r.Instrument),
+		Quote:      money.Currency(r.QuoteInstrument),
+		Date:       r.Date,
+		Value:      v,
+		Source:     r.Source,
+	}, nil
 }

@@ -16,7 +16,12 @@ type incomeEventOut struct {
 func (f fixture) income(t *testing.T, account, typ string, gross int64, category string) {
 	t.Helper()
 	f.h.MustDo(http.MethodPost, "/api/v1/investment-income", map[string]any{
-		"account_id": account, "cash_account_id": f.cash, "income_type": typ, "date": "2026-10-26", "gross": apitest.BRL(gross), "category_id": category,
+		"account_id":      account,
+		"cash_account_id": f.cash,
+		"income_type":     typ,
+		"date":            "2026-10-26",
+		"gross":           apitest.BRL(gross),
+		"category_id":     category,
 	}, http.StatusCreated, nil)
 }
 
@@ -44,7 +49,11 @@ func (f fixture) incomeTypes(t *testing.T) []string {
 func (f fixture) moveToRegion(t *testing.T, region string) {
 	t.Helper()
 
-	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE identity_books SET region = $1`, region); err != nil {
+	if _, err := f.h.Pool.Exec(
+		t.Context(),
+		`UPDATE identity_books SET region = $1`,
+		region,
+	); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -56,11 +65,24 @@ func TestJurisdictionBRTreatments(t *testing.T) {
 	f.income(t, f.petr4, "jcp", 4500, f.jcp)
 
 	es := f.incomeEvents(t)
-	if len(es) != 2 || es[0].TaxTreatment == nil || *es[0].TaxTreatment != "exempt" || es[1].TaxTreatment == nil || *es[1].TaxTreatment != "exclusive" {
+	if len(es) != 2 || es[0].TaxTreatment == nil || *es[0].TaxTreatment != "exempt" ||
+		es[1].TaxTreatment == nil ||
+		*es[1].TaxTreatment != "exclusive" {
 		t.Fatalf("events = %+v", es)
 	}
 
-	if got, want := f.incomeTypes(t), []string{"coupon", "distribution", "dividend", "interest", "jcp"}; !slices.Equal(got, want) {
+	if got, want := f.incomeTypes(
+		t,
+	), []string{
+		"coupon",
+		"distribution",
+		"dividend",
+		"interest",
+		"jcp",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("types = %v, want %v", got, want)
 	}
 }
@@ -73,11 +95,23 @@ func TestJurisdictionWithoutDefaultHasNoTreatment(t *testing.T) {
 	f.income(t, f.petr4, "jcp", 4500, f.jcp)
 
 	es := f.incomeEvents(t)
-	if len(es) != 2 || es[0].IncomeType != "dividend" || es[0].TaxTreatment != nil || es[1].IncomeType != "jcp" || es[1].TaxTreatment != nil {
+	if len(es) != 2 || es[0].IncomeType != "dividend" || es[0].TaxTreatment != nil ||
+		es[1].IncomeType != "jcp" ||
+		es[1].TaxTreatment != nil {
 		t.Fatalf("events = %+v", es)
 	}
 
-	if got, want := f.incomeTypes(t), []string{"coupon", "distribution", "dividend", "interest"}; !slices.Equal(got, want) {
+	if got, want := f.incomeTypes(
+		t,
+	), []string{
+		"coupon",
+		"distribution",
+		"dividend",
+		"interest",
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("types = %v, want %v", got, want)
 	}
 }
@@ -86,7 +120,12 @@ func TestIncomeTypeMustBeAnIdentifier(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
 	r := f.h.Do(http.MethodPost, "/api/v1/investment-income", map[string]any{
-		"account_id": f.mxrf11, "cash_account_id": f.cash, "income_type": "Bad!", "date": "2026-10-26", "gross": apitest.BRL(1000), "category_id": f.dividends,
+		"account_id":      f.mxrf11,
+		"cash_account_id": f.cash,
+		"income_type":     "Bad!",
+		"date":            "2026-10-26",
+		"gross":           apitest.BRL(1000),
+		"category_id":     f.dividends,
 	})
 	f.h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "income_type")
 }
@@ -97,7 +136,10 @@ func TestRebuildAllRestoresTaxData(t *testing.T) {
 	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
 	f.incomeEvents(t)
 
-	if _, err := f.h.Pool.Exec(t.Context(), `UPDATE portfolio_income_event SET tax_treatment = NULL`); err != nil {
+	if _, err := f.h.Pool.Exec(
+		t.Context(),
+		`UPDATE portfolio_income_event SET tax_treatment = NULL`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -149,7 +191,12 @@ func TestTaxYearRangeInResponses(t *testing.T) {
 				f.h.MustDo(http.MethodGet, path, nil, http.StatusOK, &out)
 
 				if out.From != "2026-01-01" || out.To != "2026-12-31" {
-					t.Errorf("%s range = %s to %s, want 2026-01-01 to 2026-12-31", path, out.From, out.To)
+					t.Errorf(
+						"%s range = %s to %s, want 2026-01-01 to 2026-12-31",
+						path,
+						out.From,
+						out.To,
+					)
 				}
 			}
 		})

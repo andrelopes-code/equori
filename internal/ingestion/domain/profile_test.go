@@ -9,7 +9,14 @@ import (
 func TestNewProfile(t *testing.T) {
 	t.Parallel()
 
-	base := Profile{HeaderRows: 1, DateColumn: "Data", DateLayout: LayoutDayMonthYear, AmountColumn: "Valor", DecimalSeparator: ",", DescriptionColumn: "Descrição"}
+	base := Profile{
+		HeaderRows:        1,
+		DateColumn:        "Data",
+		DateLayout:        LayoutDayMonthYear,
+		AmountColumn:      "Valor",
+		DecimalSeparator:  ",",
+		DescriptionColumn: "Descrição",
+	}
 
 	p, err := NewProfile(base)
 	if err != nil || p.Delimiter != "," || p.AmountSign != SignAsIs {
@@ -21,25 +28,53 @@ func TestNewProfile(t *testing.T) {
 		edit  func(*Profile)
 		field string
 	}{
-		{"amount and debit columns", func(p *Profile) { p.DebitColumn, p.CreditColumn = "D", "C" }, "amount_column"},
+		{
+			"amount and debit columns",
+			func(p *Profile) { p.DebitColumn, p.CreditColumn = "D", "C" },
+			"amount_column",
+		},
 		{"no amount column", func(p *Profile) { p.AmountColumn = "" }, "amount_column"},
-		{"debit without credit", func(p *Profile) { p.AmountColumn, p.DebitColumn = "", "D" }, "credit_column"},
+		{
+			"debit without credit",
+			func(p *Profile) { p.AmountColumn, p.DebitColumn = "", "D" },
+			"credit_column",
+		},
 		{"encoding pattern", func(p *Profile) { p.Encoding = "Windows 1252" }, "encoding"},
 		{"delimiter", func(p *Profile) { p.Delimiter = ":" }, "delimiter"},
 		{"layout repeats the day", func(p *Profile) { p.DateLayout = "DD/DD/YYYY" }, "date_layout"},
-		{"layout mixes separators", func(p *Profile) { p.DateLayout = "DD/MM-YYYY" }, "date_layout"},
+		{
+			"layout mixes separators",
+			func(p *Profile) { p.DateLayout = "DD/MM-YYYY" },
+			"date_layout",
+		},
 		{"layout lacks the year", func(p *Profile) { p.DateLayout = "DD/MM/MM" }, "date_layout"},
 		{"group separator", func(p *Profile) { p.GroupSeparator = ";" }, "group_separator"},
-		{"group separator equals the decimal separator", func(p *Profile) { p.GroupSeparator = "," }, "group_separator"},
+		{
+			"group separator equals the decimal separator",
+			func(p *Profile) { p.GroupSeparator = "," },
+			"group_separator",
+		},
 		{"position without header", func(p *Profile) { p.HeaderRows = 0 }, "date_column"},
-		{"description required", func(p *Profile) { p.DescriptionColumn = "" }, "description_column"},
+		{
+			"description required",
+			func(p *Profile) { p.DescriptionColumn = "" },
+			"description_column",
+		},
 		{"footer rows above ten", func(p *Profile) { p.FooterRows = 11 }, "footer_rows"},
 		{"footer rows below zero", func(p *Profile) { p.FooterRows = -1 }, "footer_rows"},
-		{"sign column without a marker", func(p *Profile) { p.SignColumn = "Tipo" }, "debit_marker"},
+		{
+			"sign column without a marker",
+			func(p *Profile) { p.SignColumn = "Tipo" },
+			"debit_marker",
+		},
 		{"marker without an amount column", func(p *Profile) {
 			p.AmountColumn, p.DebitColumn, p.CreditColumn, p.DebitMarker = "", "D", "C", "D"
 		}, "debit_marker"},
-		{"marker above forty characters", func(p *Profile) { p.DebitMarker = strings.Repeat("é", 41) }, "debit_marker"},
+		{
+			"marker above forty characters",
+			func(p *Profile) { p.DebitMarker = strings.Repeat("é", 41) },
+			"debit_marker",
+		},
 		{"sign column position without header", func(p *Profile) {
 			p.HeaderRows, p.DateColumn, p.DescriptionColumn, p.AmountColumn = 0, "1", "2", "3"
 			p.SignColumn, p.DebitMarker = "Tipo", "D"
@@ -63,7 +98,14 @@ func TestNewProfile(t *testing.T) {
 		t.Fatalf("footer rows with a marker: %v", err)
 	}
 
-	positional := Profile{DateColumn: "1", DateLayout: LayoutISO, DebitColumn: "3", CreditColumn: "4", DecimalSeparator: ".", DescriptionColumn: "2"}
+	positional := Profile{
+		DateColumn:        "1",
+		DateLayout:        LayoutISO,
+		DebitColumn:       "3",
+		CreditColumn:      "4",
+		DecimalSeparator:  ".",
+		DescriptionColumn: "2",
+	}
 	if _, err := NewProfile(positional); err != nil {
 		t.Fatalf("positional profile: %v", err)
 	}

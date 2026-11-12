@@ -47,7 +47,9 @@ func toDiagnostic(d domain.Diagnostic) Diagnostic {
 	out.Schema.Database, out.Schema.Binary = d.Server.Schema, d.BinarySchema
 	out.Postgres.Version, out.Postgres.LocaleProvider, out.Postgres.Locale = d.Server.PostgresVersion, d.Server.LocaleProvider, d.Server.Locale
 	out.Backup.Backups = toBackupStatus(d.Backup).Backups
-	out.Backup.Copy.State, out.Backup.Copy.CopiedAt, out.Backup.Copy.Late = string(d.Backup.Copy.State), d.Backup.Copy.CopiedAt, d.Backup.Copy.Late
+	out.Backup.Copy.State, out.Backup.Copy.CopiedAt, out.Backup.Copy.Late = string(
+		d.Backup.Copy.State,
+	), d.Backup.Copy.CopiedAt, d.Backup.Copy.Late
 
 	// sized gives each list an element type it cannot name: oapi-codegen declares it inline.
 	out.Tables = sized(out.Tables, len(d.Tables))

@@ -31,7 +31,13 @@ func TestCreateAccountAndRecordExpense(t *testing.T) {
 			Currency string `json:"currency"`
 		} `json:"balance"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+checking+"/balance?date=2026-10-31", nil, http.StatusOK, &bal)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+checking+"/balance?date=2026-10-31",
+		nil,
+		http.StatusOK,
+		&bal,
+	)
 
 	if bal.Balance.Amount != -12000 || bal.Balance.Currency != "BRL" {
 		t.Fatalf("balance = %+v", bal)
@@ -44,12 +50,40 @@ func TestValidationErrorsHaveFields(t *testing.T) {
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", apitest.Posting(checking, 0), apitest.Posting(food, 0))),
-		http.StatusUnprocessableEntity, "validation_failed", "postings[0].amount")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", apitest.Posting(checking, -9007199254740992), apitest.Posting(food, 9007199254740992))),
-		http.StatusUnprocessableEntity, "validation_failed", "postings[0].amount")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", apitest.Posting(checking, -100), apitest.Posting(food, 90))),
-		http.StatusUnprocessableEntity, "validation_failed", "postings")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx("2026-10-14", apitest.Posting(checking, 0), apitest.Posting(food, 0)),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"postings[0].amount",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx(
+				"2026-10-14",
+				apitest.Posting(checking, -9007199254740992),
+				apitest.Posting(food, 9007199254740992),
+			),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"postings[0].amount",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx("2026-10-14", apitest.Posting(checking, -100), apitest.Posting(food, 90)),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"postings",
+	)
 }
 
 func TestForeignAccountIs422(t *testing.T) {
@@ -58,11 +92,25 @@ func TestForeignAccountIs422(t *testing.T) {
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	otherClient := h.Login("other@example.com")
 	var other idOnly
-	h.Call(otherClient, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": "BRL"}).Decode(t, &other)
+	h.Call(otherClient, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": "BRL"}).
+		Decode(t, &other)
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", apitest.Posting(checking, -100), apitest.Posting(other.ID, 100))),
-		http.StatusUnprocessableEntity, "invalid_account", "postings[1].account_id")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/accounts/"+other.ID, nil), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx("2026-10-14", apitest.Posting(checking, -100), apitest.Posting(other.ID, 100)),
+		),
+		http.StatusUnprocessableEntity,
+		"invalid_account",
+		"postings[1].account_id",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/accounts/"+other.ID, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 func TestCorrectionConflictIs409(t *testing.T) {
@@ -76,7 +124,12 @@ func TestCorrectionConflictIs409(t *testing.T) {
 	correction["expected_version"] = 1
 	correction["reason"] = "typo"
 	h.MustDo(http.MethodPut, "/api/v1/transactions/"+id, correction, http.StatusOK, nil)
-	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/transactions/"+id, correction), http.StatusConflict, "version_conflict", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, "/api/v1/transactions/"+id, correction),
+		http.StatusConflict,
+		"version_conflict",
+		"",
+	)
 
 	var versions struct {
 		Items []struct {
@@ -89,9 +142,23 @@ func TestCorrectionConflictIs409(t *testing.T) {
 		t.Fatalf("versions = %+v", versions)
 	}
 
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "again"}),
-		http.StatusConflict, "transaction_voided", "")
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+id+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions/"+id+"/void",
+			map[string]string{"reason": "again"},
+		),
+		http.StatusConflict,
+		"transaction_voided",
+		"",
+	)
 }
 
 // The correction response carries the stored postings, ids included, as a read does.
@@ -127,7 +194,11 @@ func TestPaginationTies(t *testing.T) {
 
 	food := h.Account("Food", "expense", "", nil)
 	for i := range 120 {
-		h.Record(fmt.Sprintf("2026-10-%02d", 1+i%3), apitest.Posting(checking, -1), apitest.Posting(food, 1))
+		h.Record(
+			fmt.Sprintf("2026-10-%02d", 1+i%3),
+			apitest.Posting(checking, -1),
+			apitest.Posting(food, 1),
+		)
 	}
 
 	seen := map[string]bool{}
@@ -166,20 +237,47 @@ func TestPaginationTies(t *testing.T) {
 func TestInvalidCursorIs400(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?cursor=abc", nil), http.StatusBadRequest, "invalid_request", "")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?limit=500", nil), http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/transactions?cursor=abc", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/transactions?limit=500", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 }
 
 func TestSettingsLockAfterFirstTransaction(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	h.MustDo(http.MethodPut, "/api/v1/settings", map[string]string{"base_currency": "USD"}, http.StatusOK, nil)
-	h.MustDo(http.MethodPut, "/api/v1/settings", map[string]string{"base_currency": "BRL"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/settings",
+		map[string]string{"base_currency": "USD"},
+		http.StatusOK,
+		nil,
+	)
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/settings",
+		map[string]string{"base_currency": "BRL"},
+		http.StatusOK,
+		nil,
+	)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-14", apitest.Posting(checking, -100), apitest.Posting(food, 100))
 
-	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/settings", map[string]string{"base_currency": "USD"}), http.StatusConflict, "settings_locked", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, "/api/v1/settings", map[string]string{"base_currency": "USD"}),
+		http.StatusConflict,
+		"settings_locked",
+		"",
+	)
 }
 
 func TestUnauthenticated(t *testing.T) {
@@ -200,6 +298,14 @@ func TestCloseAccountWithBalanceIs409(t *testing.T) {
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(food, 100))
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+checking+"/close", map[string]string{"closed_on": "2026-10-31"}),
-		http.StatusConflict, "account_not_empty", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/accounts/"+checking+"/close",
+			map[string]string{"closed_on": "2026-10-31"},
+		),
+		http.StatusConflict,
+		"account_not_empty",
+		"",
+	)
 }

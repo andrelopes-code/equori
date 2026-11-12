@@ -18,7 +18,12 @@ func (r *Repository) InsertPayee(ctx context.Context, p app.Payee) (app.Payee, e
 	return toPayee(row), nil
 }
 
-func (r *Repository) RenamePayee(ctx context.Context, booksID int64, id uuid.UUID, name string) (app.Payee, error) {
+func (r *Repository) RenamePayee(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	name string,
+) (app.Payee, error) {
 	row, err := r.q.RenamePayee(ctx, RenamePayeeParams{BooksID: booksID, ID: id, Name: name})
 	if err != nil {
 		return app.Payee{}, duplicate(notFound(err), "name")
@@ -27,20 +32,40 @@ func (r *Repository) RenamePayee(ctx context.Context, booksID int64, id uuid.UUI
 	return toPayee(row), nil
 }
 
-func (r *Repository) TransactionsWithPayee(ctx context.Context, booksID int64, payeeID uuid.UUID) ([]uuid.UUID, error) {
-	return r.q.TransactionsWithPayee(ctx, TransactionsWithPayeeParams{BooksID: booksID, PayeeID: nullUUID(payeeID)})
+func (r *Repository) TransactionsWithPayee(
+	ctx context.Context,
+	booksID int64,
+	payeeID uuid.UUID,
+) ([]uuid.UUID, error) {
+	return r.q.TransactionsWithPayee(
+		ctx,
+		TransactionsWithPayeeParams{BooksID: booksID, PayeeID: nullUUID(payeeID)},
+	)
 }
 
 func (r *Repository) RetirePayee(ctx context.Context, booksID int64, from, into uuid.UUID) error {
-	if err := r.q.MoveVoidedPayee(ctx, MoveVoidedPayeeParams{BooksID: booksID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
+	if err := r.q.MoveVoidedPayee(
+		ctx,
+		MoveVoidedPayeeParams{BooksID: booksID, FromID: nullUUID(from), IntoID: nullUUID(into)},
+	); err != nil {
 		return err
 	}
 
-	if err := r.q.MoveCounterpartyPayee(ctx, MoveCounterpartyPayeeParams{BooksID: booksID, FromID: nullUUID(from), IntoID: nullUUID(into)}); err != nil {
+	if err := r.q.MoveCounterpartyPayee(
+		ctx,
+		MoveCounterpartyPayeeParams{
+			BooksID: booksID,
+			FromID:  nullUUID(from),
+			IntoID:  nullUUID(into),
+		},
+	); err != nil {
 		return err
 	}
 
-	return r.q.MarkPayeeMerged(ctx, MarkPayeeMergedParams{BooksID: booksID, FromID: from, IntoID: nullUUID(into)})
+	return r.q.MarkPayeeMerged(
+		ctx,
+		MarkPayeeMergedParams{BooksID: booksID, FromID: from, IntoID: nullUUID(into)},
+	)
 }
 
 func (r *Repository) Payee(ctx context.Context, booksID int64, id uuid.UUID) (app.Payee, error) {
@@ -52,7 +77,11 @@ func (r *Repository) Payee(ctx context.Context, booksID int64, id uuid.UUID) (ap
 	return toPayee(row), nil
 }
 
-func (r *Repository) PayeeNames(ctx context.Context, booksID int64, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+func (r *Repository) PayeeNames(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+) (map[uuid.UUID]string, error) {
 	rows, err := r.q.PayeeNames(ctx, PayeeNamesParams{BooksID: booksID, Ids: ids})
 	if err != nil {
 		return nil, err
@@ -66,7 +95,11 @@ func (r *Repository) PayeeNames(ctx context.Context, booksID int64, ids []uuid.U
 	return out, nil
 }
 
-func (r *Repository) ListPayees(ctx context.Context, booksID int64, p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
+func (r *Repository) ListPayees(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.PayeeKey],
+) ([]app.Payee, *app.PayeeKey, error) {
 	params := ListPayeesParams{BooksID: booksID, RowLimit: rowLimit(p.Limit)}
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, nullUUID(p.After.ID)
@@ -77,11 +110,14 @@ func (r *Repository) ListPayees(ctx context.Context, booksID int64, p page.Reque
 		return nil, nil, err
 	}
 
-	items, next := pageOf(rows, p.Limit,
+	items, next := pageOf(
+		rows,
+		p.Limit,
 		func(row ListPayeesRow) app.Payee {
 			return toPayee(LedgerPayee{ID: row.ID, BooksID: row.BooksID, Name: row.Name})
 		},
-		func(row ListPayeesRow) app.PayeeKey { return app.PayeeKey{Name: row.SortName, ID: row.ID} })
+		func(row ListPayeesRow) app.PayeeKey { return app.PayeeKey{Name: row.SortName, ID: row.ID} },
+	)
 
 	return items, next, nil
 }

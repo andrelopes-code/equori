@@ -43,7 +43,17 @@ func TestSeedKeepsExistingPrices(t *testing.T) {
 	s.localizeSystemAccounts()
 	s.buildChart(start)
 	s.buildInvestments(start)
-	s.do(http.MethodPost, "/prices", map[string]any{"instrument": "ITUB4", "quote_instrument": "BRL", "date": "2026-11-04", "value": "41.20"}, nil)
+	s.do(
+		http.MethodPost,
+		"/prices",
+		map[string]any{
+			"instrument":       "ITUB4",
+			"quote_instrument": "BRL",
+			"date":             "2026-11-04",
+			"value":            "41.20",
+		},
+		nil,
+	)
 
 	s.postPrices()
 
@@ -53,7 +63,12 @@ func TestSeedKeepsExistingPrices(t *testing.T) {
 			Value string `json:"value"`
 		} `json:"items"`
 	}
-	s.do(http.MethodGet, "/prices?instrument=ITUB4&quote_instrument=BRL&from="+start+"&to="+testToday, nil, &list)
+	s.do(
+		http.MethodGet,
+		"/prices?instrument=ITUB4&quote_instrument=BRL&from="+start+"&to="+testToday,
+		nil,
+		&list,
+	)
 
 	if s.err != nil {
 		t.Fatal(s.err)
@@ -82,7 +97,8 @@ func TestSeed(t *testing.T) {
 			// Spending on the first day of the history moves the balance of that day.
 			got := s.balanceOn(a.key, iso(s.start))
 			for _, e := range s.entries {
-				if e.account == s.id(a.key) && e.date == iso(s.start) && !strings.HasPrefix(e.desc, "Saldo inicial") {
+				if e.account == s.id(a.key) && e.date == iso(s.start) &&
+					!strings.HasPrefix(e.desc, "Saldo inicial") {
 					got -= e.cents
 				}
 			}
@@ -130,7 +146,14 @@ func TestSeed(t *testing.T) {
 			t.Logf("%s balance on %s = %d", c.key, testToday, got)
 
 			if got < c.min || got > c.max {
-				t.Errorf("%s balance on %s = %d, want %d to %d", c.key, testToday, got, c.min, c.max)
+				t.Errorf(
+					"%s balance on %s = %d, want %d to %d",
+					c.key,
+					testToday,
+					got,
+					c.min,
+					c.max,
+				)
 			}
 		}
 	})
@@ -223,10 +246,17 @@ func TestSeed(t *testing.T) {
 		// The cheapest months, without the first month of the history, are the ordinary ones: they do not repeat the same total.
 		ordinary := expenses[1:11]
 		spread := (ordinary[len(ordinary)-1] - ordinary[0]) / ordinary[0]
-		t.Logf("monthly expenses: %.0f; the ten cheapest after the first span %.1f %%", expenses, spread*100)
+		t.Logf(
+			"monthly expenses: %.0f; the ten cheapest after the first span %.1f %%",
+			expenses,
+			spread*100,
+		)
 
 		if spread < .08 {
-			t.Errorf("the ordinary months span %.1f %% of the cheapest, want at least 8 %%", spread*100)
+			t.Errorf(
+				"the ordinary months span %.1f %% of the cheapest, want at least 8 %%",
+				spread*100,
+			)
 		}
 	})
 
@@ -242,8 +272,10 @@ func TestSeed(t *testing.T) {
 
 		// The invoices and tickets of the large purchases are attached to them.
 		want := map[string]bool{
-			"MacBook Air 13 polegadas": false, "Sofá de três lugares": false,
-			"Passagens São Paulo para Lisboa (ida e volta)": false, "Compra não reconhecida, Mercado Livre": false,
+			"MacBook Air 13 polegadas":                      false,
+			"Sofá de três lugares":                          false,
+			"Passagens São Paulo para Lisboa (ida e volta)": false,
+			"Compra não reconhecida, Mercado Livre":         false,
 		}
 
 		for _, tx := range s.transactions(t) {
@@ -354,7 +386,12 @@ func TestSeed(t *testing.T) {
 			s.do(http.MethodGet, "/budgets/"+b.ID+"/progress?month=2026-10", nil, &progress)
 
 			if b.Rollover && progress.Carried.Amount > progress.Planned.Amount*4 {
-				t.Errorf("budget %s carries %d over %d planned, want at most four months", b.ID, progress.Carried.Amount, progress.Planned.Amount)
+				t.Errorf(
+					"budget %s carries %d over %d planned, want at most four months",
+					b.ID,
+					progress.Carried.Amount,
+					progress.Planned.Amount,
+				)
 			}
 		}
 
@@ -426,7 +463,9 @@ func TestSeed(t *testing.T) {
 		}
 
 		for _, a := range accs.Items {
-			if (a.Class == "expense" || a.Class == "income") && a.SystemRole == "" && !parents[a.ID] && !usedAccount[a.ID] {
+			if (a.Class == "expense" || a.Class == "income") && a.SystemRole == "" &&
+				!parents[a.ID] &&
+				!usedAccount[a.ID] {
 				t.Errorf("category %q has no transaction", a.Name)
 			}
 		}
@@ -470,12 +509,18 @@ func TestSeed(t *testing.T) {
 			imported++
 			months[tx.Date[:7]] = true
 
-			if tx.Description == strings.ToUpper(tx.Description) || strings.HasPrefix(tx.Description, "Compra no debito ") {
+			if tx.Description == strings.ToUpper(tx.Description) ||
+				strings.HasPrefix(tx.Description, "Compra no debito ") {
 				raw++
 			}
 		}
 
-		t.Logf("imported before 2026-10-15: %d in %d months, %d with a raw descriptor", imported, len(months), raw)
+		t.Logf(
+			"imported before 2026-10-15: %d in %d months, %d with a raw descriptor",
+			imported,
+			len(months),
+			raw,
+		)
 
 		if imported < 150 {
 			t.Errorf("imported transactions before 2026-10-15 = %d, want at least 150", imported)
@@ -486,7 +531,11 @@ func TestSeed(t *testing.T) {
 		}
 
 		if raw*100 < imported*95 {
-			t.Errorf("%d of %d imported descriptions are institution descriptors, want at least 95 %%", raw, imported)
+			t.Errorf(
+				"%d of %d imported descriptions are institution descriptors, want at least 95 %%",
+				raw,
+				imported,
+			)
 		}
 	})
 
@@ -533,7 +582,11 @@ func TestSeed(t *testing.T) {
 		}
 
 		if weekendGroceries*100 < groceries*40 {
-			t.Errorf("%d of %d grocery purchases on a weekend, want at least 40 %%", weekendGroceries, groceries)
+			t.Errorf(
+				"%d of %d grocery purchases on a weekend, want at least 40 %%",
+				weekendGroceries,
+				groceries,
+			)
 		}
 	})
 
@@ -554,7 +607,12 @@ func TestSeed(t *testing.T) {
 
 			for _, st := range out.Items {
 				if st.DueDate < "2026-11-04" && st.Unpaid.Amount != 0 {
-					t.Errorf("%s statement due %s is unpaid by %d", card, st.DueDate, st.Unpaid.Amount)
+					t.Errorf(
+						"%s statement due %s is unpaid by %d",
+						card,
+						st.DueDate,
+						st.Unpaid.Amount,
+					)
 				}
 			}
 		}
@@ -621,7 +679,11 @@ func TestSeed(t *testing.T) {
 			s.do(http.MethodGet, "/occurrences?state=overdue&from="+w[0]+"&to="+w[1], nil, &past)
 
 			for _, o := range past.Items {
-				t.Errorf("occurrence of %s on %s is overdue, want realized", s.keyOf(o.ScheduleID), o.ExpectedOn)
+				t.Errorf(
+					"occurrence of %s on %s is overdue, want realized",
+					s.keyOf(o.ScheduleID),
+					o.ExpectedOn,
+				)
 			}
 		}
 
@@ -655,7 +717,14 @@ func TestSeed(t *testing.T) {
 				ExpectedOn     string `json:"expected_on"`
 			} `json:"items"`
 		}
-		s.do(http.MethodGet, "/occurrences?state=realized&schedule_id="+s.id("schedule.pet")+"&from=2026-10-06&to="+testToday, nil, &out)
+		s.do(
+			http.MethodGet,
+			"/occurrences?state=realized&schedule_id="+s.id(
+				"schedule.pet",
+			)+"&from=2026-10-06&to="+testToday,
+			nil,
+			&out,
+		)
 
 		if s.err != nil {
 			t.Fatal(s.err)
@@ -667,7 +736,12 @@ func TestSeed(t *testing.T) {
 
 		for _, o := range out.Items {
 			if o.ActualAmount == nil || o.ActualAmount.Amount != o.ExpectedAmount.Amount {
-				t.Errorf("pet subscription on %s: expected %d, received %v", o.ExpectedOn, o.ExpectedAmount.Amount, o.ActualAmount)
+				t.Errorf(
+					"pet subscription on %s: expected %d, received %v",
+					o.ExpectedOn,
+					o.ExpectedAmount.Amount,
+					o.ActualAmount,
+				)
 			}
 		}
 	})
@@ -687,7 +761,14 @@ func TestSeed(t *testing.T) {
 				ActualAmount *money `json:"actual_amount"`
 			} `json:"items"`
 		}
-		s.do(http.MethodGet, "/occurrences?state=realized&schedule_id="+s.id("schedule.gym")+"&from=2026-08-01&to=2026-11-05", nil, &out)
+		s.do(
+			http.MethodGet,
+			"/occurrences?state=realized&schedule_id="+s.id(
+				"schedule.gym",
+			)+"&from=2026-08-01&to=2026-11-05",
+			nil,
+			&out,
+		)
 
 		if s.err != nil {
 			t.Fatal(s.err)
@@ -700,7 +781,11 @@ func TestSeed(t *testing.T) {
 		current := sch.Terms[len(sch.Terms)-1].Amount.Amount
 		for _, o := range out.Items {
 			if o.ActualAmount == nil || o.ActualAmount.Amount*100 < current*101 {
-				t.Errorf("gym occurrence: actual %v, current term %d, want an actual at least 1 %% above", o.ActualAmount, current)
+				t.Errorf(
+					"gym occurrence: actual %v, current term %d, want an actual at least 1 %% above",
+					o.ActualAmount,
+					current,
+				)
 			}
 		}
 	})
@@ -743,7 +828,10 @@ func TestRulesMatchDescriptorsByWord(t *testing.T) {
 	for _, r := range rules {
 		for _, c := range r.conditions {
 			if c["field"] == "description" && c["operator"] == "in_list" {
-				t.Errorf("rule %q compares the whole description with a list; use a regex over the words", r.name)
+				t.Errorf(
+					"rule %q compares the whole description with a list; use a regex over the words",
+					r.name,
+				)
 			}
 
 			// The engine runs a regex on the description as the institution prints it, in capitals.
@@ -830,7 +918,12 @@ func TestSeedFollowsToday(t *testing.T) {
 		found++
 
 		if tx.Date < "2026-11-28" || tx.Date > date {
-			t.Errorf("%s dated %s, want a date from 2026-11-28 to %s", tx.Description, tx.Date, date)
+			t.Errorf(
+				"%s dated %s, want a date from 2026-11-28 to %s",
+				tx.Description,
+				tx.Date,
+				date,
+			)
 		}
 	}
 

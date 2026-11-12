@@ -17,7 +17,9 @@ func OFX(balance string, lines ...OFXLine) []byte { return OFXIn("BRL", balance,
 // optional LEDGERBAL element.
 func OFXIn(currency money.Currency, balance string, lines ...OFXLine) []byte {
 	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>")
+	b.WriteString(
+		"OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nCHARSET:UTF-8\n\n<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><CURDEF>",
+	)
 	b.WriteString(string(currency))
 	b.WriteString("\n<BANKTRANLIST><DTSTART>20261001<DTEND>20261031\n")
 
@@ -41,10 +43,19 @@ func OFXIn(currency money.Currency, balance string, lines ...OFXLine) []byte {
 // CardOFX returns an OFX 1.x credit card statement for November 2026.
 func CardOFX(lines ...OFXLine) []byte {
 	var b strings.Builder
-	b.WriteString("OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261104<DTEND>20261203\n")
+	b.WriteString(
+		"OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\n\n<OFX><CREDITCARDMSGSRSV1><CCSTMTTRNRS><CCSTMTRS><CURDEF>BRL\n<BANKTRANLIST><DTSTART>20261104<DTEND>20261203\n",
+	)
 
 	for _, l := range lines {
-		fmt.Fprintf(&b, "<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<MEMO>%s</STMTTRN>\n", l.Date, l.Amount, l.FITID, l.Name)
+		fmt.Fprintf(
+			&b,
+			"<STMTTRN><TRNTYPE>OTHER<DTPOSTED>%s<TRNAMT>%s<FITID>%s<MEMO>%s</STMTTRN>\n",
+			l.Date,
+			l.Amount,
+			l.FITID,
+			l.Name,
+		)
 	}
 
 	b.WriteString("</BANKTRANLIST></CCSTMTRS></CCSTMTTRNRS></CREDITCARDMSGSRSV1></OFX>\n")

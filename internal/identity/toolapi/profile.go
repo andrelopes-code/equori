@@ -30,13 +30,23 @@ func updateProfile(svc *app.Service) tool.Tool {
 			return tool.Preview{}, tool.InvalidArgument("language", "is required")
 		}
 
-		before, after, err := svc.ProfileChange(ctx, booksID, auth.MustMemberID(ctx), in.Language, "")
+		before, after, err := svc.ProfileChange(
+			ctx,
+			booksID,
+			auth.MustMemberID(ctx),
+			in.Language,
+			"",
+		)
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
 		return tool.Preview{Action: "update_profile", Changes: []tool.Change{
-			{Field: "language", Before: tool.TextValue(before.Language), After: tool.TextValue(after.Language)},
+			{
+				Field:  "language",
+				Before: tool.TextValue(before.Language),
+				After:  tool.TextValue(after.Language),
+			},
 		}}, nil
 	}, func(ctx context.Context, booksID int64, in updateProfileIn) (updateProfileOut, error) {
 		if in.Language == "" {

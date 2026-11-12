@@ -34,7 +34,11 @@ func TestLoadOrCreateKeyRejectsAShortKey(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), "secret.key")
-	if err := os.WriteFile(path, []byte(base64.StdEncoding.EncodeToString(make([]byte, 16))+"\n"), 0o600); err != nil {
+	if err := os.WriteFile(
+		path,
+		[]byte(base64.StdEncoding.EncodeToString(make([]byte, 16))+"\n"),
+		0o600,
+	); err != nil {
 		t.Fatal(err)
 	}
 

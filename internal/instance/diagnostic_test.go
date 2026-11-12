@@ -29,18 +29,26 @@ type diagnosticFile struct {
 func TestS219DiagnosticHoldsNoBookData(t *testing.T) {
 	t.Parallel()
 
-	h := apitest.New(t, apitest.Today("2026-11-20"), apitest.Backups(t.TempDir(), "", apitest.FakeDump))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-20"),
+		apitest.Backups(t.TempDir(), "", apitest.FakeDump),
+	)
 	zebra := h.Account("Zebra Checking 7731", "asset", "checking", nil)
 	quokka := h.Account("Quokka Bakery 5520", "expense", "", nil)
 
 	h.MustDo(http.MethodPost, "/api/v1/transactions", map[string]any{
 		"date":        "2026-11-10",
 		"description": "Narwhal Pastry 3309",
-		"postings":    []map[string]any{apitest.Posting(zebra, -98765), apitest.Posting(quokka, 98765)},
+		"postings": []map[string]any{
+			apitest.Posting(zebra, -98765),
+			apitest.Posting(quokka, 98765),
+		},
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, backupPath, nil, http.StatusOK, nil)
 
-	h.Logger().Warn("sync failed", "error", "Narwhal Pastry 3309 98765", "code", "aggregator_timeout", "route", "/api/v1/x")
+	h.Logger().
+		Warn("sync failed", "error", "Narwhal Pastry 3309 98765", "code", "aggregator_timeout", "route", "/api/v1/x")
 
 	r := h.Do(http.MethodGet, diagnosticPath, nil)
 	if r.Status != http.StatusOK {

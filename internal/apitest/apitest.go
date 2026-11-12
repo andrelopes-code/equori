@@ -57,15 +57,26 @@ func Empty(t testing.TB, opts ...Option) *Harness {
 		out = io.MultiWriter(logs, os.Stderr)
 	}
 
-	ring := logring.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}), instance.LogRecordsKept, instance.LogKeys)
+	ring := logring.New(
+		slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}),
+		instance.LogRecordsKept,
+		instance.LogKeys,
+	)
 	h := &Harness{t: t, Pool: pgtest.New(t), logs: logs, ring: ring, log: slog.New(ring)}
 
 	// BK17: a book without members, so a member ID never equals a books ID by chance.
-	if _, err := h.Pool.Exec(t.Context(), `INSERT INTO identity_books (region, name) VALUES ('US', 'empty')`); err != nil {
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`INSERT INTO identity_books (region, name) VALUES ('US', 'empty')`,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	h.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) }))
+	h.server = httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) { (*h.handler.Load()).ServeHTTP(w, r) },
+		),
+	)
 	t.Cleanup(h.server.Close)
 	h.Profile = h.start(opts)
 

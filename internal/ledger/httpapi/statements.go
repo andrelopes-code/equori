@@ -20,13 +20,28 @@ func toStatementAPI(v app.StatementView, currency money.Currency) StatementSumma
 	m := func(amount int64) Money { return Money{Amount: amount, Currency: string(currency)} }
 
 	out := StatementSummary{
-		Id: v.ID, AccountId: v.AccountID, Reference: v.Input.Reference.String(),
-		ClosingDate: apiDate(v.Input.Closing), DueDate: apiDate(v.Input.Due),
-		Opening: m(v.Summary.Opening), Charges: m(v.Summary.Charges), Credits: m(v.Summary.Credits), AmountDue: m(v.Summary.AmountDue),
-		Payments: m(v.Summary.Payments), Unpaid: m(v.Summary.Unpaid), Status: StatementSummaryStatus(v.Summary.Status),
-		Reconciled: v.Reconciled, Settled: m(v.Summary.Settled), PriorCredits: m(v.Summary.PriorCredits),
-		EarlyPayments: m(v.Summary.EarlyPayments), BilledAmount: m(v.Summary.BilledAmount),
-		OpenAmount: m(v.Summary.OpenAmount),
+		Id:          v.ID,
+		AccountId:   v.AccountID,
+		Reference:   v.Input.Reference.String(),
+		ClosingDate: apiDate(v.Input.Closing),
+		DueDate:     apiDate(v.Input.Due),
+		Opening: m(
+			v.Summary.Opening,
+		),
+		Charges:   m(v.Summary.Charges),
+		Credits:   m(v.Summary.Credits),
+		AmountDue: m(v.Summary.AmountDue),
+		Payments: m(
+			v.Summary.Payments,
+		),
+		Unpaid:        m(v.Summary.Unpaid),
+		Status:        StatementSummaryStatus(v.Summary.Status),
+		Reconciled:    v.Reconciled,
+		Settled:       m(v.Summary.Settled),
+		PriorCredits:  m(v.Summary.PriorCredits),
+		EarlyPayments: m(v.Summary.EarlyPayments),
+		BilledAmount:  m(v.Summary.BilledAmount),
+		OpenAmount:    m(v.Summary.OpenAmount),
 	}
 	if v.Summary.Feed {
 		confirmed, awaiting := m(v.Summary.ConfirmedAmount), m(v.Summary.AwaitingAmount)
@@ -34,7 +49,12 @@ func toStatementAPI(v app.StatementView, currency money.Currency) StatementSumma
 	}
 
 	if f := v.Fact; f != nil {
-		fact := StatementFact{Source: StatementFactSource(f.Source), ClosingDate: apiOptDate(f.Closing), DueDate: apiDate(f.Due), Total: m(f.Total)}
+		fact := StatementFact{
+			Source:      StatementFactSource(f.Source),
+			ClosingDate: apiOptDate(f.Closing),
+			DueDate:     apiDate(f.Due),
+			Total:       m(f.Total),
+		}
 		if f.Minimum != nil {
 			minimum := m(*f.Minimum)
 			fact.Minimum = &minimum
@@ -109,7 +129,11 @@ func optMonth(field string, s *string) (*domain.ReferenceMonth, error) {
 
 	m, err := domain.ParseReferenceMonth(*s)
 	if err != nil {
-		return nil, &domain.FieldError{Field: field, Message: "must be YYYY-MM", Err: domain.ErrValidation}
+		return nil, &domain.FieldError{
+			Field:   field,
+			Message: "must be YYYY-MM",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return &m, nil
@@ -178,7 +202,11 @@ func (s *Server) getStatement(
 	return out, nil
 }
 
-func (s *Server) statementDetail(ctx context.Context, booksID int64, id uuid.UUID) (StatementDetail, error) {
+func (s *Server) statementDetail(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (StatementDetail, error) {
 	v, a, postings, err := s.svc.Statement(ctx, booksID, id)
 	if err != nil {
 		return StatementDetail{}, err
@@ -187,16 +215,37 @@ func (s *Server) statementDetail(ctx context.Context, booksID int64, id uuid.UUI
 	summary := toStatementAPI(v, a.Instrument)
 
 	out := StatementDetail{
-		Id: summary.Id, AccountId: summary.AccountId, Reference: summary.Reference, ClosingDate: summary.ClosingDate,
-		DueDate: summary.DueDate, Opening: summary.Opening, Charges: summary.Charges,
-		Credits: summary.Credits, AmountDue: summary.AmountDue, Payments: summary.Payments, Unpaid: summary.Unpaid,
-		Status: StatementDetailStatus(summary.Status), Reconciled: summary.Reconciled, Postings: make([]StatementPosting, len(postings)),
-		Settled: summary.Settled, PriorCredits: summary.PriorCredits, EarlyPayments: summary.EarlyPayments,
-		BilledAmount: summary.BilledAmount, Institution: summary.Institution, AmountDifference: summary.AmountDifference,
-		OpenAmount: summary.OpenAmount, ConfirmedAmount: summary.ConfirmedAmount, AwaitingAmount: summary.AwaitingAmount,
+		Id:          summary.Id,
+		AccountId:   summary.AccountId,
+		Reference:   summary.Reference,
+		ClosingDate: summary.ClosingDate,
+		DueDate:     summary.DueDate,
+		Opening:     summary.Opening,
+		Charges:     summary.Charges,
+		Credits:     summary.Credits,
+		AmountDue:   summary.AmountDue,
+		Payments:    summary.Payments,
+		Unpaid:      summary.Unpaid,
+		Status: StatementDetailStatus(
+			summary.Status,
+		),
+		Reconciled:       summary.Reconciled,
+		Postings:         make([]StatementPosting, len(postings)),
+		Settled:          summary.Settled,
+		PriorCredits:     summary.PriorCredits,
+		EarlyPayments:    summary.EarlyPayments,
+		BilledAmount:     summary.BilledAmount,
+		Institution:      summary.Institution,
+		AmountDifference: summary.AmountDifference,
+		OpenAmount:       summary.OpenAmount,
+		ConfirmedAmount:  summary.ConfirmedAmount,
+		AwaitingAmount:   summary.AwaitingAmount,
 	}
 	if e := v.Explanation; e.Move != nil {
-		out.DifferenceProposal = &DifferenceProposal{TransactionIds: e.Move, Amount: *summary.AmountDifference}
+		out.DifferenceProposal = &DifferenceProposal{
+			TransactionIds: e.Move,
+			Amount:         *summary.AmountDifference,
+		}
 	}
 
 	if v.Explanation.Rounding {
@@ -205,12 +254,21 @@ func (s *Server) statementDetail(ctx context.Context, booksID int64, id uuid.UUI
 
 	for i, p := range postings {
 		sp := StatementPosting{
-			TransactionId: p.TransactionID, Date: apiDate(p.Date), Description: p.Description,
-			CardRole: StatementPostingCardRole(p.CardRole), Amount: Money{Amount: p.Amount, Currency: string(a.Instrument)},
+			TransactionId: p.TransactionID,
+			Date:          apiDate(p.Date),
+			Description:   p.Description,
+			CardRole: StatementPostingCardRole(
+				p.CardRole,
+			),
+			Amount:      Money{Amount: p.Amount, Currency: string(a.Instrument)},
 			Provisional: p.Provisional,
 		}
 		if p.Installment != nil {
-			sp.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}
+			sp.Installment = &Installment{
+				PlanId: p.Installment.PlanID,
+				Number: p.Installment.Number,
+				Count:  p.Installment.Count,
+			}
 		}
 
 		out.Postings[i] = sp

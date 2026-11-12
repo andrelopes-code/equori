@@ -17,7 +17,10 @@ func previewInstrument(
 		return tool.Preview{}, err
 	}
 
-	p := tool.Preview{Action: "manage_instrument." + string(in.Action), Target: "Instrument " + in.Code}
+	p := tool.Preview{
+		Action: "manage_instrument." + string(in.Action),
+		Target: "Instrument " + in.Code,
+	}
 	switch in.Action {
 	case "define":
 		return previewDefine(ctx, svc, in, p)
@@ -63,7 +66,11 @@ func previewDefine(
 		return tool.Preview{}, err
 	}
 
-	if q, err := svc.Instrument(ctx, in.QuoteCurrency); err != nil || q.Type != domain.TypeCurrency {
+	if q, err := svc.Instrument(
+		ctx,
+		in.QuoteCurrency,
+	); err != nil ||
+		q.Type != domain.TypeCurrency {
 		return tool.Preview{}, &domain.FieldError{
 			Field:   "quote_currency",
 			Message: "must be a currency",

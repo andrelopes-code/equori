@@ -14,12 +14,24 @@ import (
 
 func toSuggestionAPI(s app.Suggestion) RuleSuggestion {
 	out := RuleSuggestion{
-		Id: s.ID, State: RuleSuggestionState(s.State), ExampleTransactionIds: s.Examples, CreatedAt: s.CreatedAt, DecidedAt: s.DecidedAt,
-		Conditions: make([]RuleCondition, len(s.Conditions)), Actions: make([]RuleAction, len(s.Actions)),
+		Id:                    s.ID,
+		State:                 RuleSuggestionState(s.State),
+		ExampleTransactionIds: s.Examples,
+		CreatedAt:             s.CreatedAt,
+		DecidedAt:             s.DecidedAt,
+		Conditions: make(
+			[]RuleCondition,
+			len(s.Conditions),
+		),
+		Actions: make([]RuleAction, len(s.Actions)),
 	}
 	for i, c := range s.Conditions {
 		d := c.Doc()
-		out.Conditions[i] = RuleCondition{Field: RuleConditionField(d.Field), Operator: RuleConditionOperator(d.Operator), Value: d.Value}
+		out.Conditions[i] = RuleCondition{
+			Field:    RuleConditionField(d.Field),
+			Operator: RuleConditionOperator(d.Operator),
+			Value:    d.Value,
+		}
 	}
 
 	for i, a := range s.Actions {

@@ -22,13 +22,29 @@ func TestConfirmGroup(t *testing.T) {
 
 	entry := h.Record("2026-10-30", apitest.Posting(card, -11840), apitest.Posting(food, 11840))
 	created := h.Record("2026-10-30", apitest.Posting(card, -11440), apitest.Posting(food, 11440))
-	a, b := uuid.MustParse("00000000-0000-0000-0000-00000000000a"), uuid.MustParse("00000000-0000-0000-0000-00000000000b")
+	a, b := uuid.MustParse(
+		"00000000-0000-0000-0000-00000000000a",
+	), uuid.MustParse(
+		"00000000-0000-0000-0000-00000000000b",
+	)
 	parts := []ledger.GroupPart{
 		{RecordID: b, Amount: -400, Date: day("2026-10-31"), Pending: true},
-		{RecordID: a, Amount: -11440, Date: day("2026-10-30"), Pending: true, CreatedTx: uuid.MustParse(created)},
+		{
+			RecordID:  a,
+			Amount:    -11440,
+			Date:      day("2026-10-30"),
+			Pending:   true,
+			CreatedTx: uuid.MustParse(created),
+		},
 	}
 
-	if err := h.App.Ledger.ConfirmGroup(ctx, uid, uuid.MustParse(entry), uuid.MustParse(card), parts); err != nil {
+	if err := h.App.Ledger.ConfirmGroup(
+		ctx,
+		uid,
+		uuid.MustParse(entry),
+		uuid.MustParse(card),
+		parts,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -40,19 +56,34 @@ func TestConfirmGroup(t *testing.T) {
 		t.Fatalf("card postings = %v, want %v", rows, want)
 	}
 
-	if got := h.Rows(`SELECT date::text || ' ' || version::text FROM ledger_transaction WHERE id = $1`, entry); got[0] != "2026-10-30 2" {
+	if got := h.Rows(
+		`SELECT date::text || ' ' || version::text FROM ledger_transaction WHERE id = $1`,
+		entry,
+	); got[0] != "2026-10-30 2" {
 		t.Fatalf("entry = %v, want date 2026-10-30 and version 2", got)
 	}
 
-	if got := h.Rows(`SELECT (voided_at IS NOT NULL)::text FROM ledger_transaction WHERE id = $1`, created); got[0] != "true" {
+	if got := h.Rows(
+		`SELECT (voided_at IS NOT NULL)::text FROM ledger_transaction WHERE id = $1`,
+		created,
+	); got[0] != "true" {
 		t.Fatalf("created transaction voided = %v, want true", got)
 	}
 
-	if err := h.App.Ledger.ConfirmGroup(ctx, uid, uuid.MustParse(entry), uuid.MustParse(card), parts); err != nil {
+	if err := h.App.Ledger.ConfirmGroup(
+		ctx,
+		uid,
+		uuid.MustParse(entry),
+		uuid.MustParse(card),
+		parts,
+	); err != nil {
 		t.Fatalf("repeating the same parts: %v", err)
 	}
 
-	if got := h.Rows(`SELECT version::text FROM ledger_transaction WHERE id = $1`, entry); got[0] != "2" {
+	if got := h.Rows(
+		`SELECT version::text FROM ledger_transaction WHERE id = $1`,
+		entry,
+	); got[0] != "2" {
 		t.Fatalf("version after the repeat = %v, want 2", got)
 	}
 }
@@ -64,21 +95,42 @@ func TestConfirmGroupRefusals(t *testing.T) {
 	card := h.Card("Nubank card", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
 	voided := h.Record("2026-10-30", apitest.Posting(card, -11840), apitest.Posting(food, 11840))
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]any{"reason": "test"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]any{"reason": "test"},
+		http.StatusOK,
+		nil,
+	)
 
 	parts := []ledger.GroupPart{
 		{RecordID: uuid.New(), Amount: -11440, Date: day("2026-10-30")},
 		{RecordID: uuid.New(), Amount: -400, Date: day("2026-10-31")},
 	}
 
-	if err := h.App.Ledger.ConfirmGroup(ctx, uid, uuid.MustParse(voided), uuid.MustParse(card), parts); !errors.Is(err, ledger.ErrVoided) {
+	if err := h.App.Ledger.ConfirmGroup(
+		ctx,
+		uid,
+		uuid.MustParse(voided),
+		uuid.MustParse(card),
+		parts,
+	); !errors.Is(
+		err,
+		ledger.ErrVoided,
+	) {
 		t.Fatalf("voided entry: err = %v, want ErrVoided", err)
 	}
 
 	mismatch := h.Record("2026-10-30", apitest.Posting(card, -11840), apitest.Posting(food, 11840))
 	parts[1].Amount = -390
 
-	if err := h.App.Ledger.ConfirmGroup(ctx, uid, uuid.MustParse(mismatch), uuid.MustParse(card), parts); err == nil {
+	if err := h.App.Ledger.ConfirmGroup(
+		ctx,
+		uid,
+		uuid.MustParse(mismatch),
+		uuid.MustParse(card),
+		parts,
+	); err == nil {
 		t.Fatal("parts that do not sum to the entry: want an error")
 	}
 }
@@ -91,7 +143,11 @@ func TestGroupableTransactions(t *testing.T) {
 	food := h.Account("Food", "expense", "", nil)
 	manual := h.Record("2026-10-30", apitest.Posting(card, -11440), apitest.Posting(food, 11440))
 
-	got, err := h.App.Ledger.GroupableTransactions(ctx, uid, []uuid.UUID{uuid.MustParse(manual), uuid.New()})
+	got, err := h.App.Ledger.GroupableTransactions(
+		ctx,
+		uid,
+		[]uuid.UUID{uuid.MustParse(manual), uuid.New()},
+	)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("a manual and an unknown transaction: got %v, err %v, want none", got, err)
 	}
@@ -109,7 +165,13 @@ func TestS240AnAccountWithoutAFeedReportsNoParts(t *testing.T) {
 		Items []map[string]any `json:"items"`
 	}
 
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-11&to=2026-11", nil, http.StatusOK, &list)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/statements?from=2026-11&to=2026-11",
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
 	if len(list.Items) != 1 {
 		t.Fatalf("statements = %d, want 1", len(list.Items))

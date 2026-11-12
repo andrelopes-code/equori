@@ -21,7 +21,10 @@ func checkCondition(field string, c Condition) (Condition, error) {
 	}
 
 	if !slices.Contains(operators, c.Operator) {
-		return Condition{}, invalid(field+".operator", fmt.Sprintf("is not allowed for %s", c.Field))
+		return Condition{}, invalid(
+			field+".operator",
+			fmt.Sprintf("is not allowed for %s", c.Field),
+		)
 	}
 
 	want := 1
@@ -141,11 +144,22 @@ func conditionShape(f Field) ([]Operator, func(Condition) int) {
 	case FieldPayee, FieldAccount:
 		return []Operator{OpEquals, OpInList}, func(c Condition) int { return len(c.IDs) }
 	case FieldAmount, FieldAbsoluteAmount:
-		return []Operator{OpEquals, OpGreaterThan, OpLessThan, OpBetween}, func(c Condition) int { return len(c.Money) }
+		return []Operator{
+			OpEquals,
+			OpGreaterThan,
+			OpLessThan,
+			OpBetween,
+		}, func(c Condition) int { return len(c.Money) }
 	case FieldAccountKind, FieldSource, FieldWeekday:
 		return []Operator{OpEquals, OpInList}, text
 	case FieldDayOfMonth:
-		return []Operator{OpEquals, OpGreaterThan, OpLessThan, OpBetween, OpInList}, func(c Condition) int { return len(c.Ints) }
+		return []Operator{
+			OpEquals,
+			OpGreaterThan,
+			OpLessThan,
+			OpBetween,
+			OpInList,
+		}, func(c Condition) int { return len(c.Ints) }
 	case FieldInstallment:
 		return []Operator{OpEquals}, func(Condition) int { return 1 }
 	}
@@ -181,7 +195,10 @@ func checkAction(field string, a Action) (Action, error) {
 
 		for i, t := range a.Tags {
 			if !tagPattern.MatchString(t) {
-				return Action{}, invalid(fmt.Sprintf("%s.tags[%d]", field, i), "must use lowercase letters, digits and hyphens, up to 60 characters")
+				return Action{}, invalid(
+					fmt.Sprintf("%s.tags[%d]", field, i),
+					"must use lowercase letters, digits and hyphens, up to 60 characters",
+				)
 			}
 		}
 	case ActionSplit:

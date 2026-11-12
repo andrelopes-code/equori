@@ -37,7 +37,8 @@ func TestAccountDayFlowChecks(t *testing.T) {
 			VALUES ($1, $2, '2026-10-01', $3, 0, $3, 0, $4, $5)`, booksID, account, tc.delta, tc.inflow, tc.outflow)
 
 		var pgErr *pgconn.PgError
-		if !errors.As(err, &pgErr) || pgErr.Code != "23514" || !strings.Contains(pgErr.ConstraintName, tc.constraint) {
+		if !errors.As(err, &pgErr) || pgErr.Code != "23514" ||
+			!strings.Contains(pgErr.ConstraintName, tc.constraint) {
 			t.Errorf("%s: err = %v, want check violation of %s", tc.name, err, tc.constraint)
 		}
 	}

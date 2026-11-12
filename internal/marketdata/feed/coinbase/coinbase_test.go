@@ -66,30 +66,53 @@ func TestFetch(t *testing.T) {
 		scope    string
 	}{
 		{
-			"refused product and fixture", []money.Currency{"BTC", "ETH"}, "2026-11-01", "2026-11-09", false,
+			"refused product and fixture",
+			[]money.Currency{"BTC", "ETH"},
+			"2026-11-01",
+			"2026-11-09",
+			false,
 			[]string{
 				"/products/BTC-BRL/candles?granularity=ONE_DAY&start=1793491200&end=1794182400",
 				"/products/ETH-USD/candles?granularity=ONE_DAY&start=1793491200&end=1794182400",
 			},
-			[]string{"ETH USD 2026-11-07 3001.5", "ETH USD 2026-11-08 3050.12", "ETH USD 2026-11-09 3088.45"},
+			[]string{
+				"ETH USD 2026-11-07 3001.5",
+				"ETH USD 2026-11-08 3050.12",
+				"ETH USD 2026-11-09 3088.45",
+			},
 			"",
 		},
 		{
-			"two windows", []money.Currency{"ETH"}, "2025-11-09", "2026-11-09", false,
+			"two windows",
+			[]money.Currency{"ETH"},
+			"2025-11-09",
+			"2026-11-09",
+			false,
 			[]string{
 				"/products/ETH-USD/candles?granularity=ONE_DAY&start=1762646400&end=1788480000",
 				"/products/ETH-USD/candles?granularity=ONE_DAY&start=1788566400&end=1794182400",
 			},
 			[]string{
-				"ETH USD 2026-11-07 3001.5", "ETH USD 2026-11-08 3050.12", "ETH USD 2026-11-09 3088.45",
-				"ETH USD 2026-11-07 3001.5", "ETH USD 2026-11-08 3050.12", "ETH USD 2026-11-09 3088.45",
+				"ETH USD 2026-11-07 3001.5",
+				"ETH USD 2026-11-08 3050.12",
+				"ETH USD 2026-11-09 3088.45",
+				"ETH USD 2026-11-07 3001.5",
+				"ETH USD 2026-11-08 3050.12",
+				"ETH USD 2026-11-09 3088.45",
 			},
 			"",
 		},
 		{
-			"server error", []money.Currency{"ETH"}, "2026-11-01", "2026-11-09", true,
-			[]string{"/products/ETH-USD/candles?granularity=ONE_DAY&start=1793491200&end=1794182400"},
-			nil, "instrument ETH",
+			"server error",
+			[]money.Currency{"ETH"},
+			"2026-11-01",
+			"2026-11-09",
+			true,
+			[]string{
+				"/products/ETH-USD/candles?granularity=ONE_DAY&start=1793491200&end=1794182400",
+			},
+			nil,
+			"instrument ETH",
 		},
 	}
 
@@ -102,22 +125,24 @@ func TestFetch(t *testing.T) {
 				requests []string
 			)
 
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				mu.Lock()
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					mu.Lock()
 
-				requests = append(requests, r.URL.RequestURI())
-				mu.Unlock()
+					requests = append(requests, r.URL.RequestURI())
+					mu.Unlock()
 
-				switch {
-				case tc.fail:
-					w.WriteHeader(http.StatusInternalServerError)
-				case r.URL.Path == "/products/BTC-BRL/candles":
-					w.WriteHeader(http.StatusBadRequest)
-					_, _ = w.Write([]byte(refused))
-				default:
-					_, _ = w.Write([]byte(ethCandles))
-				}
-			}))
+					switch {
+					case tc.fail:
+						w.WriteHeader(http.StatusInternalServerError)
+					case r.URL.Path == "/products/BTC-BRL/candles":
+						w.WriteHeader(http.StatusBadRequest)
+						_, _ = w.Write([]byte(refused))
+					default:
+						_, _ = w.Write([]byte(ethCandles))
+					}
+				}),
+			)
 			t.Cleanup(srv.Close)
 
 			src := coinbase.New(srv.Client(), srv.URL)
@@ -133,7 +158,8 @@ func TestFetch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if tc.scope != "" && (!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
+			if tc.scope != "" &&
+				(!errors.As(err, &scope) || scope.Key+" "+scope.Value != tc.scope) {
 				t.Fatalf("err = %v, want scope %s", err, tc.scope)
 			}
 
@@ -208,7 +234,9 @@ func TestSearch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want = []feed.Listing{{Code: "ETH", Name: "Ethereum", Type: "crypto", QuoteCurrency: "EUR", Symbol: "ETH-EUR"}}
+	want = []feed.Listing{
+		{Code: "ETH", Name: "Ethereum", Type: "crypto", QuoteCurrency: "EUR", Symbol: "ETH-EUR"},
+	}
 	if !slices.Equal(got, want) {
 		t.Fatalf("eth = %+v, want %+v", got, want)
 	}

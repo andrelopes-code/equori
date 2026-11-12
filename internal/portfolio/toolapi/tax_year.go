@@ -14,7 +14,7 @@ type getTaxYearView string
 func (getTaxYearView) Values() []string { return []string{"sales", "income", "both"} }
 
 type getTaxYearIn struct {
-	Year int            `json:"year" jsonschema:"year in which the owner's tax year starts"`
+	Year int            `json:"year"          jsonschema:"year in which the owner's tax year starts"`
 	View getTaxYearView `json:"view,omitzero" jsonschema:"sales gives realized results, income gives income events; both when absent"`
 }
 

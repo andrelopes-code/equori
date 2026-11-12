@@ -38,13 +38,20 @@ func TestGetPortfolioToolAllocation(t *testing.T) {
 		Total  tool.Money  `json:"total"`
 		Groups []toolGroup `json:"groups"`
 	}
-	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "allocation", "by": "type", "date": "2026-11-01"}, &got)
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{"view": "allocation", "by": "type", "date": "2026-11-01"},
+		&got,
+	)
 
 	want := []toolGroup{
 		{"currency", tool.Money{Amount: "900.00", Currency: "BRL"}, 8955},
 		{"reit", tool.Money{Amount: "105.00", Currency: "BRL"}, 1045},
 	}
-	if got.Total != (tool.Money{Amount: "1005.00", Currency: "BRL"}) || !reflect.DeepEqual(got.Groups, want) {
+	if got.Total != (tool.Money{Amount: "1005.00", Currency: "BRL"}) ||
+		!reflect.DeepEqual(got.Groups, want) {
 		t.Errorf("allocation = %+v, want groups %+v", got, want)
 	}
 
@@ -68,9 +75,19 @@ func TestGetPortfolioToolNetWorth(t *testing.T) {
 	f.h.Dispatch()
 	type netWorth struct{ Assets, Liabilities, Net tool.Money }
 	var got netWorth
-	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "net_worth", "date": "2026-11-01"}, &got)
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{"view": "net_worth", "date": "2026-11-01"},
+		&got,
+	)
 
-	want := netWorth{tool.Money{Amount: "2205.00", Currency: "BRL"}, tool.Money{Amount: "1200.00", Currency: "BRL"}, tool.Money{Amount: "1005.00", Currency: "BRL"}}
+	want := netWorth{
+		tool.Money{Amount: "2205.00", Currency: "BRL"},
+		tool.Money{Amount: "1200.00", Currency: "BRL"},
+		tool.Money{Amount: "1005.00", Currency: "BRL"},
+	}
 	if got != want {
 		t.Errorf("net worth = %+v, want %+v", got, want)
 	}
@@ -81,7 +98,18 @@ func TestGetPortfolioToolPositions(t *testing.T) {
 	f := newFixture(t)
 	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
 	f.trade(t, "sell", "2026-10-20", 50, "10.80", 210)
-	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "MXRF11", "quote_instrument": "BRL", "date": "2026-10-29", "value": "9.36"}, http.StatusCreated, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "MXRF11",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-29",
+			"value":            "9.36",
+		},
+		http.StatusCreated,
+		nil,
+	)
 	f.h.Dispatch()
 	var got struct {
 		Positions []struct {
@@ -94,15 +122,24 @@ func TestGetPortfolioToolPositions(t *testing.T) {
 			MarketValue tool.Money `json:"market_value"`
 		} `json:"positions"`
 	}
-	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "positions", "date": "2026-11-01"}, &got)
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{"view": "positions", "date": "2026-11-01"},
+		&got,
+	)
 
 	if len(got.Positions) != 1 {
 		t.Fatalf("positions = %+v", got.Positions)
 	}
 
 	p := got.Positions[0]
-	if p.AccountID != f.mxrf11 || p.AccountName != "XP MXRF11" || p.Instrument != "MXRF11" || p.Quantity.Amount != "100" ||
-		p.AverageCost != "10.0827" || p.CostBasis.Amount != "1008.27" || p.MarketValue.Amount != "936.00" {
+	if p.AccountID != f.mxrf11 || p.AccountName != "XP MXRF11" || p.Instrument != "MXRF11" ||
+		p.Quantity.Amount != "100" ||
+		p.AverageCost != "10.0827" ||
+		p.CostBasis.Amount != "1008.27" ||
+		p.MarketValue.Amount != "936.00" {
 		t.Errorf("position = %+v", p)
 	}
 }
@@ -126,7 +163,13 @@ func TestGetPortfolioToolLists(t *testing.T) {
 	var sub struct {
 		Subtypes []string `json:"subtypes"`
 	}
-	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "subtypes", "instrument_type": "reit"}, &sub)
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{"view": "subtypes", "instrument_type": "reit"},
+		&sub,
+	)
 	var want struct {
 		Items []string `json:"items"`
 	}
@@ -150,7 +193,18 @@ func TestGetPortfolioToolReturn(t *testing.T) {
 		Opening  tool.Money `json:"opening"`
 		Closing  tool.Money `json:"closing"`
 	}
-	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "return", "account_id": f.xp, "from": "2025-11-01", "to": "2026-10-31"}, &got)
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{
+			"view":       "return",
+			"account_id": f.xp,
+			"from":       "2025-11-01",
+			"to":         "2026-10-31",
+		},
+		&got,
+	)
 
 	if got.AnnualBP != 500 || got.Opening.Amount != "1000.00" || got.Closing.Amount != "1050.00" {
 		t.Errorf("return = %+v", got)
@@ -179,7 +233,12 @@ func TestGetPortfolioToolOtherUser(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-01"))
 	other := h.LoginAs("other@example.com", locale.Locale{Language: "pt", Region: "BR"}, "BRL")
-	r := h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "asset", "kind": "brokerage", "currency": "BRL"})
+	r := h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/accounts",
+		map[string]any{"name": "Theirs", "class": "asset", "kind": "brokerage", "currency": "BRL"},
+	)
 
 	var account struct {
 		ID string `json:"id"`
@@ -188,13 +247,37 @@ func TestGetPortfolioToolOtherUser(t *testing.T) {
 		t.Fatalf("create account status %d: %s", r.Status, r.Body)
 	}
 
-	h.ExpectToolError(h.Tool("get_portfolio", map[string]any{"view": "return", "account_id": account.ID, "from": "2026-01-01", "to": "2026-10-31"}), "not_found", "")
+	h.ExpectToolError(
+		h.Tool(
+			"get_portfolio",
+			map[string]any{
+				"view":       "return",
+				"account_id": account.ID,
+				"from":       "2026-01-01",
+				"to":         "2026-10-31",
+			},
+		),
+		"not_found",
+		"",
+	)
 }
 
 func TestGetPortfolioToolReturnUndefined(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	f.h.ExpectToolError(f.h.Tool("get_portfolio", map[string]any{"view": "return", "account_id": f.xp, "from": "2026-01-01", "to": "2026-10-31"}), "return_undefined", "")
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"get_portfolio",
+			map[string]any{
+				"view":       "return",
+				"account_id": f.xp,
+				"from":       "2026-01-01",
+				"to":         "2026-10-31",
+			},
+		),
+		"return_undefined",
+		"",
+	)
 }
 
 // S21: a sale's realized result with its tax class.
@@ -229,14 +312,20 @@ func TestGetTaxYearTool(t *testing.T) {
 	}
 
 	s := got.Sales[0]
-	if s.AccountName != "XP MXRF11" || s.Instrument != "MXRF11" || s.Date != "2026-10-20" || s.Quantity.Amount != "50" || s.Cost.Amount != "504.13" ||
-		s.Proceeds.Amount != "537.90" || s.Result.Amount != "33.77" || s.TaxClass != "fii" {
+	if s.AccountName != "XP MXRF11" || s.Instrument != "MXRF11" || s.Date != "2026-10-20" ||
+		s.Quantity.Amount != "50" ||
+		s.Cost.Amount != "504.13" ||
+		s.Proceeds.Amount != "537.90" ||
+		s.Result.Amount != "33.77" ||
+		s.TaxClass != "fii" {
 		t.Errorf("sale = %+v", s)
 	}
 
 	toolOutput(t, f.h, "get_tax_year", map[string]any{"year": 2026}, &got)
 
-	if len(got.Income) != 1 || got.Income[0].Instrument != "MXRF11" || got.Income[0].IncomeType != "dividend" || got.Income[0].Gross.Amount != "50.00" {
+	if len(got.Income) != 1 || got.Income[0].Instrument != "MXRF11" ||
+		got.Income[0].IncomeType != "dividend" ||
+		got.Income[0].Gross.Amount != "50.00" {
 		t.Errorf("income = %+v", got.Income)
 	}
 }

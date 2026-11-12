@@ -31,12 +31,24 @@ func TestIdentity(t *testing.T) {
 
 			memberID, hasMember := auth.MemberID(tt.ctx)
 			if memberID != tt.memberID || hasMember != tt.hasMember {
-				t.Errorf("MemberID = %d, %v; want %d, %v", memberID, hasMember, tt.memberID, tt.hasMember)
+				t.Errorf(
+					"MemberID = %d, %v; want %d, %v",
+					memberID,
+					hasMember,
+					tt.memberID,
+					tt.hasMember,
+				)
 			}
 
 			booksID, hasBooks := auth.BooksID(tt.ctx)
 			if booksID != tt.booksID || hasBooks != tt.hasBooks {
-				t.Errorf("BooksID = %d, %v; want %d, %v", booksID, hasBooks, tt.booksID, tt.hasBooks)
+				t.Errorf(
+					"BooksID = %d, %v; want %d, %v",
+					booksID,
+					hasBooks,
+					tt.booksID,
+					tt.hasBooks,
+				)
 			}
 		})
 	}

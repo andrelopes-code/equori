@@ -11,7 +11,7 @@ import (
 
 type voidTransactionIn struct {
 	TransactionID string `json:"transaction_id" jsonschema:"ID of the transaction, from search_transactions"`
-	Reason        string `json:"reason" jsonschema:"why the transaction is voided, kept in its history"`
+	Reason        string `json:"reason"         jsonschema:"why the transaction is voided, kept in its history"`
 }
 
 type voidTransactionOut struct {
@@ -42,7 +42,11 @@ func voidTransaction(svc *app.Service) tool.Tool {
 		return tool.Preview{
 			Action: "void_transaction", Target: targetOf(t), Destructive: true, Basis: basisOf(t),
 			Changes: []tool.Change{
-				{Field: "status", Before: tool.TextValue("active"), After: tool.TextValue("voided")},
+				{
+					Field:  "status",
+					Before: tool.TextValue("active"),
+					After:  tool.TextValue("voided"),
+				},
 				{Field: "reason", After: tool.TextValue(in.Reason)},
 			},
 		}, nil
@@ -60,7 +64,12 @@ func voidTransaction(svc *app.Service) tool.Tool {
 	})
 }
 
-func voidTarget(ctx context.Context, svc *app.Service, booksID int64, in voidTransactionIn) (domain.Transaction, error) {
+func voidTarget(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in voidTransactionIn,
+) (domain.Transaction, error) {
 	id, err := requiredID(in.TransactionID, "transaction_id")
 	if err != nil {
 		return domain.Transaction{}, err

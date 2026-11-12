@@ -26,7 +26,10 @@ func normalizeTags(in []string) ([]string, error) {
 	for i, raw := range in {
 		tag := strings.ReplaceAll(strings.ToLower(strings.TrimSpace(raw)), " ", "-")
 		if utf8.RuneCountInString(tag) > maxTagLength || !tagPattern.MatchString(tag) {
-			return nil, invalid(fmt.Sprintf("tags[%d]", i), "must use letters, digits and hyphens, up to 60 characters")
+			return nil, invalid(
+				fmt.Sprintf("tags[%d]", i),
+				"must use letters, digits and hyphens, up to 60 characters",
+			)
 		}
 
 		out = append(out, tag)

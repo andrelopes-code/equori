@@ -53,7 +53,11 @@ type PairingQuery struct {
 	ExcludedAccounts []uuid.UUID
 }
 
-func (s *Service) Transfer(ctx context.Context, booksID int64, req TransferRequest) (TransferResult, error) {
+func (s *Service) Transfer(
+	ctx context.Context,
+	booksID int64,
+	req TransferRequest,
+) (TransferResult, error) {
 	var res TransferResult
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
@@ -65,7 +69,12 @@ func (s *Service) Transfer(ctx context.Context, booksID int64, req TransferReque
 	return res, err
 }
 
-func (s *Service) transfer(ctx context.Context, r Repository, booksID int64, req TransferRequest) (TransferResult, error) {
+func (s *Service) transfer(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	req TransferRequest,
+) (TransferResult, error) {
 	t, err := r.LockTransaction(ctx, booksID, req.TransactionID)
 	if err != nil {
 		return TransferResult{}, err
@@ -95,7 +104,16 @@ func (s *Service) transfer(ctx context.Context, r Repository, booksID int64, req
 
 // pairWithCandidate pairs t with the opposite transfer candidate, or keeps the candidate
 // when it holds a reconciled posting.
-func (s *Service) pairWithCandidate(ctx context.Context, r Repository, booksID int64, req TransferRequest, t domain.Transaction, target domain.Account, accounts map[uuid.UUID]domain.Account, candidate uuid.UUID) (TransferResult, error) {
+func (s *Service) pairWithCandidate(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	req TransferRequest,
+	t domain.Transaction,
+	target domain.Account,
+	accounts map[uuid.UUID]domain.Account,
+	candidate uuid.UUID,
+) (TransferResult, error) {
 	other, err := r.LockTransaction(ctx, booksID, candidate)
 	if err != nil {
 		return TransferResult{}, err
@@ -138,7 +156,13 @@ func (s *Service) pairWithCandidate(ctx context.Context, r Repository, booksID i
 }
 
 // transferAccounts loads the target account and the accounts of t with it.
-func (s *Service) transferAccounts(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, t domain.Transaction) (domain.Account, map[uuid.UUID]domain.Account, error) {
+func (s *Service) transferAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accountID uuid.UUID,
+	t domain.Transaction,
+) (domain.Account, map[uuid.UUID]domain.Account, error) {
 	accounts, err := r.Accounts(ctx, booksID, append(postingAccounts(t), accountID))
 	if err != nil {
 		return domain.Account{}, nil, err
@@ -148,10 +172,20 @@ func (s *Service) transferAccounts(ctx context.Context, r Repository, booksID in
 }
 
 // pairingCandidate returns the transaction to pair with, or uuid.Nil without candidates.
-func (s *Service) pairingCandidate(ctx context.Context, r Repository, t, plain domain.Transaction, accounts map[uuid.UUID]domain.Account, req TransferRequest) (uuid.UUID, error) {
+func (s *Service) pairingCandidate(
+	ctx context.Context,
+	r Repository,
+	t, plain domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	req TransferRequest,
+) (uuid.UUID, error) {
 	q := PairingQuery{
-		BooksID: t.BooksID, TransactionID: t.ID, AccountID: req.AccountID, Amount: plain.Postings[len(plain.Postings)-1].Amount.Amount(),
-		From: t.Date.AddDate(0, 0, -pairingWindowDays), To: t.Date.AddDate(0, 0, pairingWindowDays),
+		BooksID:       t.BooksID,
+		TransactionID: t.ID,
+		AccountID:     req.AccountID,
+		Amount:        plain.Postings[len(plain.Postings)-1].Amount.Amount(),
+		From:          t.Date.AddDate(0, 0, -pairingWindowDays),
+		To:            t.Date.AddDate(0, 0, pairingWindowDays),
 	}
 	for _, p := range t.Postings {
 		if !accounts[p.AccountID].IsReplaceable() {
@@ -165,7 +199,11 @@ func (s *Service) pairingCandidate(ctx context.Context, r Repository, t, plain d
 		return uuid.Nil, err
 	case req.PairWith != uuid.Nil:
 		if !slices.Contains(ids, req.PairWith) {
-			return uuid.Nil, &domain.FieldError{Field: "pair_with", Message: "is not a pairing candidate", Err: domain.ErrValidation}
+			return uuid.Nil, &domain.FieldError{
+				Field:   "pair_with",
+				Message: "is not a pairing candidate",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		return req.PairWith, nil
@@ -179,7 +217,14 @@ func (s *Service) pairingCandidate(ctx context.Context, r Repository, t, plain d
 }
 
 // pair voids dropped, moves its record link to kept's new posting and stores kept's transfer.
-func (s *Service) pair(ctx context.Context, r Repository, kept, next, dropped domain.Transaction, accounts map[uuid.UUID]domain.Account, link uuid.UUID, cause Cause) (TransferResult, error) {
+func (s *Service) pair(
+	ctx context.Context,
+	r Repository,
+	kept, next, dropped domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	link uuid.UUID,
+	cause Cause,
+) (TransferResult, error) {
 	voided, err := dropped.Void(s.clock.Now(), "paired with "+kept.ID.String())
 	if err != nil {
 		return TransferResult{}, err
@@ -199,7 +244,10 @@ func (s *Service) pair(ctx context.Context, r Repository, kept, next, dropped do
 	}
 
 	if err := r.Publish(ctx, outbox.Event{
-		Type: EventTransactionVoided, BooksID: dropped.BooksID, AggregateID: dropped.ID.String(), Payload: newTransactionEvent(voided, droppedAccounts),
+		Type:        EventTransactionVoided,
+		BooksID:     dropped.BooksID,
+		AggregateID: dropped.ID.String(),
+		Payload:     newTransactionEvent(voided, droppedAccounts),
 	}); err != nil {
 		return TransferResult{}, err
 	}
@@ -219,7 +267,13 @@ func (s *Service) pair(ctx context.Context, r Repository, kept, next, dropped do
 	})
 }
 
-func (s *Service) saveTransfer(ctx context.Context, r Repository, prev, next domain.Transaction, accounts map[uuid.UUID]domain.Account, cause Cause) error {
+func (s *Service) saveTransfer(
+	ctx context.Context,
+	r Repository,
+	prev, next domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	cause Cause,
+) error {
 	if err := s.bill(ctx, r, &next); err != nil {
 		return err
 	}
@@ -236,7 +290,15 @@ func (s *Service) saveTransfer(ctx context.Context, r Repository, prev, next dom
 		event.Cause = &cause
 	}
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionCorrected,
+			BooksID:     next.BooksID,
+			AggregateID: next.ID.String(),
+			Payload:     event,
+		},
+	)
 }
 
 // linkOn returns the record that confirms t's posting on the account.

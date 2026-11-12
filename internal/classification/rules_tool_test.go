@@ -26,7 +26,12 @@ func toolOutput(t *testing.T, h *apitest.Harness, name string, args map[string]a
 	}
 }
 
-func previewTool(t *testing.T, h *apitest.Harness, name string, args map[string]any) (tool.Preview, tool.Result) {
+func previewTool(
+	t *testing.T,
+	h *apitest.Harness,
+	name string,
+	args map[string]any,
+) (tool.Preview, tool.Result) {
 	t.Helper()
 
 	b, err := json.Marshal(args)
@@ -60,11 +65,19 @@ func TestManageRuleToolCreateAndRun(t *testing.T) {
 	second := b.record(t, "2026-10-11", "IFOOD *Loja", "", b.uncategorized, 2000)
 	dispatch(t, b.h)
 
-	args := map[string]any{"action": "create_rule", "name": "iFood", "description_contains": "ifood", "category_id": restaurant}
+	args := map[string]any{
+		"action":               "create_rule",
+		"name":                 "iFood",
+		"description_contains": "ifood",
+		"category_id":          restaurant,
+	}
 
 	p, r := previewTool(t, b.h, "manage_rule", args)
-	if r.IsError || p.Target != "Rule iFood" || p.Destructive || len(p.Changes) != 4 || p.Changes[2].Field != "category" || p.Changes[2].After.Text != "Restaurant" ||
-		p.Changes[3].Field != "count" || p.Changes[3].After.Text != "2 transactions of the last year" {
+	if r.IsError || p.Target != "Rule iFood" || p.Destructive || len(p.Changes) != 4 ||
+		p.Changes[2].Field != "category" ||
+		p.Changes[2].After.Text != "Restaurant" ||
+		p.Changes[3].Field != "count" ||
+		p.Changes[3].After.Text != "2 transactions of the last year" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -105,9 +118,23 @@ func TestManageRuleToolCreateAndRun(t *testing.T) {
 	var list struct {
 		Rules []toolRule `json:"rules"`
 	}
-	toolOutput(t, b.h, "list_rules", map[string]any{"kind": "rules", "rule_id": created.RuleID}, &list)
+	toolOutput(
+		t,
+		b.h,
+		"list_rules",
+		map[string]any{"kind": "rules", "rule_id": created.RuleID},
+		&list,
+	)
 
-	want := toolRule{RuleID: created.RuleID, Name: "iFood", Priority: 1, Enabled: true, ConditionsText: `description contains "ifood"`, ActionsText: "set category Restaurant", CategorizedCount: 2}
+	want := toolRule{
+		RuleID:           created.RuleID,
+		Name:             "iFood",
+		Priority:         1,
+		Enabled:          true,
+		ConditionsText:   `description contains "ifood"`,
+		ActionsText:      "set category Restaurant",
+		CategorizedCount: 2,
+	}
 	if len(list.Rules) != 1 || list.Rules[0] != want {
 		t.Errorf("rules = %+v, want %+v", list.Rules, want)
 	}
@@ -119,18 +146,33 @@ func TestManageRuleToolCreateAndRun(t *testing.T) {
 			RuleName      string `json:"rule_name"`
 		} `json:"items"`
 	}
-	toolOutput(t, b.h, "explain_categorization", map[string]any{"view": "transactions", "transaction_ids": []string{first}}, &expl)
+	toolOutput(
+		t,
+		b.h,
+		"explain_categorization",
+		map[string]any{"view": "transactions", "transaction_ids": []string{first}},
+		&expl,
+	)
 
-	if len(expl.Items) != 1 || expl.Items[0].TransactionID != first || expl.Items[0].Method != "rule" || expl.Items[0].RuleName != "iFood" {
+	if len(expl.Items) != 1 || expl.Items[0].TransactionID != first ||
+		expl.Items[0].Method != "rule" ||
+		expl.Items[0].RuleName != "iFood" {
 		t.Errorf("explanation = %+v", expl.Items)
 	}
 
 	var stats struct {
 		Statistics struct{ Total, Rule, Uncategorized int } `json:"statistics"`
 	}
-	toolOutput(t, b.h, "explain_categorization", map[string]any{"view": "statistics", "from": "2026-10-01", "to": "2026-10-31"}, &stats)
+	toolOutput(
+		t,
+		b.h,
+		"explain_categorization",
+		map[string]any{"view": "statistics", "from": "2026-10-01", "to": "2026-10-31"},
+		&stats,
+	)
 
-	if stats.Statistics.Total != 2 || stats.Statistics.Rule != 2 || stats.Statistics.Uncategorized != 0 {
+	if stats.Statistics.Total != 2 || stats.Statistics.Rule != 2 ||
+		stats.Statistics.Uncategorized != 0 {
 		t.Errorf("statistics = %+v", stats)
 	}
 
@@ -141,7 +183,17 @@ func TestManageRuleToolCreateAndRun(t *testing.T) {
 			Conflicts           int    `json:"conflicts"`
 		} `json:"rule_preview"`
 	}
-	toolOutput(t, b.h, "explain_categorization", map[string]any{"view": "rule_preview", "description_contains": "ifood", "category_id": restaurant}, &prev)
+	toolOutput(
+		t,
+		b.h,
+		"explain_categorization",
+		map[string]any{
+			"view":                 "rule_preview",
+			"description_contains": "ifood",
+			"category_id":          restaurant,
+		},
+		&prev,
+	)
 
 	if prev.RulePreview.DescriptionContains != "ifood" {
 		t.Errorf("rule preview = %+v", prev)
@@ -160,15 +212,52 @@ type manageOut struct {
 func TestManageRuleToolChangeReorderDelete(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	a := createRule(t, b.h, "A", []map[string]any{contains("a")}, []map[string]any{setCategory(b.transport)})
-	c := createRule(t, b.h, "B", []map[string]any{contains("b")}, []map[string]any{setCategory(b.transport)})
+	a := createRule(
+		t,
+		b.h,
+		"A",
+		[]map[string]any{contains("a")},
+		[]map[string]any{setCategory(b.transport)},
+	)
+	c := createRule(
+		t,
+		b.h,
+		"B",
+		[]map[string]any{contains("b")},
+		[]map[string]any{setCategory(b.transport)},
+	)
 
-	p, _ := previewTool(t, b.h, "manage_rule", map[string]any{"action": "change_rule", "rule_id": a.ID, "name": "A2", "description_contains": "uber", "category_id": b.travel})
-	if p.Changes[0].Before.Text != "A" || p.Changes[0].After.Text != "A2" || p.Changes[2].Before.Text != "set category Ride-hailing" || p.Changes[2].After.Text != "Travel" {
+	p, _ := previewTool(
+		t,
+		b.h,
+		"manage_rule",
+		map[string]any{
+			"action":               "change_rule",
+			"rule_id":              a.ID,
+			"name":                 "A2",
+			"description_contains": "uber",
+			"category_id":          b.travel,
+		},
+	)
+	if p.Changes[0].Before.Text != "A" || p.Changes[0].After.Text != "A2" ||
+		p.Changes[2].Before.Text != "set category Ride-hailing" ||
+		p.Changes[2].After.Text != "Travel" {
 		t.Fatalf("change preview = %+v", p)
 	}
 
-	toolOutput(t, b.h, "manage_rule", map[string]any{"action": "change_rule", "rule_id": a.ID, "name": "A2", "description_contains": "uber", "category_id": b.travel}, &manageOut{})
+	toolOutput(
+		t,
+		b.h,
+		"manage_rule",
+		map[string]any{
+			"action":               "change_rule",
+			"rule_id":              a.ID,
+			"name":                 "A2",
+			"description_contains": "uber",
+			"category_id":          b.travel,
+		},
+		&manageOut{},
+	)
 	order := map[string]any{"action": "reorder_rules", "rule_ids": []string{c.ID, a.ID}}
 
 	p, _ = previewTool(t, b.h, "manage_rule", order)
@@ -182,11 +271,19 @@ func TestManageRuleToolChangeReorderDelete(t *testing.T) {
 	}
 	toolOutput(t, b.h, "list_rules", map[string]any{"kind": "rules"}, &list)
 
-	if len(list.Rules) != 2 || list.Rules[0].Name != "B" || list.Rules[1].Name != "A2" || list.Rules[1].ConditionsText != `description contains "uber"` {
+	if len(list.Rules) != 2 || list.Rules[0].Name != "B" || list.Rules[1].Name != "A2" ||
+		list.Rules[1].ConditionsText != `description contains "uber"` {
 		t.Fatalf("rules = %+v", list.Rules)
 	}
 
-	b.h.ExpectToolError(b.h.Tool("manage_rule", map[string]any{"action": "reorder_rules", "rule_ids": []string{a.ID}}), "validation_failed", "rule_ids")
+	b.h.ExpectToolError(
+		b.h.Tool(
+			"manage_rule",
+			map[string]any{"action": "reorder_rules", "rule_ids": []string{a.ID}},
+		),
+		"validation_failed",
+		"rule_ids",
+	)
 
 	del := map[string]any{"action": "delete_rule", "rule_id": a.ID}
 	if p, _ = previewTool(t, b.h, "manage_rule", del); !p.Destructive {
@@ -195,9 +292,26 @@ func TestManageRuleToolChangeReorderDelete(t *testing.T) {
 
 	var out manageOut
 	toolOutput(t, b.h, "manage_rule", del, &out)
-	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/rules/"+a.ID, nil), http.StatusNotFound, "not_found", "")
+	b.h.ExpectProblem(
+		b.h.Do(http.MethodGet, "/api/v1/rules/"+a.ID, nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 	b.h.ExpectToolError(b.h.Tool("manage_rule", del), "not_found", "")
-	b.h.ExpectToolError(b.h.Tool("manage_rule", map[string]any{"action": "create_rule", "name": "x", "description_contains": "x", "category_id": "00000000-0000-7000-8000-000000000000"}), "validation_failed", "")
+	b.h.ExpectToolError(
+		b.h.Tool(
+			"manage_rule",
+			map[string]any{
+				"action":               "create_rule",
+				"name":                 "x",
+				"description_contains": "x",
+				"category_id":          "00000000-0000-7000-8000-000000000000",
+			},
+		),
+		"validation_failed",
+		"",
+	)
 }
 
 func TestManageRuleToolSuggestion(t *testing.T) {
@@ -207,7 +321,12 @@ func TestManageRuleToolSuggestion(t *testing.T) {
 	txs := b.importLines(t, "a.ofx", line("20261005", "-8.50", "p1", "PADARIA SÃO JOÃO"))
 	b.categorize(t, txs["PADARIA SÃO JOÃO"].ID, 1, bakery, 850)
 	dispatch(t, b.h)
-	b.h.Import(b.checking, "ofx", "b.ofx", apitest.OFX("", line("20261006", "-9.00", "p2", "Padaria São João")))
+	b.h.Import(
+		b.checking,
+		"ofx",
+		"b.ofx",
+		apitest.OFX("", line("20261006", "-9.00", "p2", "Padaria São João")),
+	)
 	var unc struct {
 		Items []importedView `json:"items"`
 	}
@@ -224,15 +343,27 @@ func TestManageRuleToolSuggestion(t *testing.T) {
 	}
 	toolOutput(t, b.h, "list_rules", map[string]any{"kind": "suggestions"}, &list)
 
-	if len(list.Suggestions) != 1 || list.Suggestions[0].ConditionsText != `raw description equals "padaria sao joao"` || list.Suggestions[0].ActionsText != "set category Bakery" {
+	if len(list.Suggestions) != 1 ||
+		list.Suggestions[0].ConditionsText != `raw description equals "padaria sao joao"` ||
+		list.Suggestions[0].ActionsText != "set category Bakery" {
 		t.Fatalf("suggestions = %+v", list.Suggestions)
 	}
 
 	id := list.Suggestions[0].SuggestionID
-	b.h.ExpectToolError(b.h.Tool("manage_rule", map[string]any{"action": "accept_suggestion", "suggestion_id": id}), "invalid_arguments", "name")
+	b.h.ExpectToolError(
+		b.h.Tool("manage_rule", map[string]any{"action": "accept_suggestion", "suggestion_id": id}),
+		"invalid_arguments",
+		"name",
+	)
 
 	accept := map[string]any{"action": "accept_suggestion", "suggestion_id": id, "name": "Bakery"}
-	if p, r := previewTool(t, b.h, "manage_rule", accept); r.IsError || p.Changes[0].After.Text != "Bakery" {
+	if p, r := previewTool(
+		t,
+		b.h,
+		"manage_rule",
+		accept,
+	); r.IsError ||
+		p.Changes[0].After.Text != "Bakery" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -254,8 +385,19 @@ func TestManageRuleToolAliases(t *testing.T) {
 	var payee struct {
 		ID string `json:"id"`
 	}
-	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Uber"}, http.StatusCreated, &payee)
-	create := map[string]any{"action": "create_alias", "pattern": "uber *trip", "match_type": "contains", "payee_id": payee.ID}
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Uber"},
+		http.StatusCreated,
+		&payee,
+	)
+	create := map[string]any{
+		"action":     "create_alias",
+		"pattern":    "uber *trip",
+		"match_type": "contains",
+		"payee_id":   payee.ID,
+	}
 
 	p, _ := previewTool(t, b.h, "manage_rule", create)
 	if p.Target != "Alias uber *trip" || p.Changes[2].After.Text != "Uber" {
@@ -275,12 +417,20 @@ func TestManageRuleToolAliases(t *testing.T) {
 	}
 	toolOutput(t, b.h, "list_rules", map[string]any{"kind": "payee_aliases"}, &list)
 
-	if len(list.PayeeAliases) != 1 || list.PayeeAliases[0].AliasID != out.AliasID || list.PayeeAliases[0].PayeeName != "Uber" || list.PayeeAliases[0].MatchType != "contains" {
+	if len(list.PayeeAliases) != 1 || list.PayeeAliases[0].AliasID != out.AliasID ||
+		list.PayeeAliases[0].PayeeName != "Uber" ||
+		list.PayeeAliases[0].MatchType != "contains" {
 		t.Fatalf("aliases = %+v", list.PayeeAliases)
 	}
 
 	del := map[string]any{"action": "delete_alias", "alias_id": out.AliasID}
-	if p, _ = previewTool(t, b.h, "manage_rule", del); !p.Destructive || p.Changes[0].Before.Text != "uber *trip" {
+	if p, _ = previewTool(
+		t,
+		b.h,
+		"manage_rule",
+		del,
+	); !p.Destructive ||
+		p.Changes[0].Before.Text != "uber *trip" {
 		t.Fatalf("delete preview = %+v", p)
 	}
 
@@ -321,15 +471,29 @@ func TestRulesToolsOtherUser(t *testing.T) {
 	var category, rule struct {
 		ID string `json:"id"`
 	}
-	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "expense", "currency": "BRL"}).Decode(t, &category)
-	r := h.Call(other, http.MethodPost, "/api/v1/rules", map[string]any{"name": "Theirs", "conditions": []any{contains("x")}, "actions": []any{setCategory(category.ID)}})
+	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Theirs", "class": "expense", "currency": "BRL"}).
+		Decode(t, &category)
+	r := h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/rules",
+		map[string]any{
+			"name":       "Theirs",
+			"conditions": []any{contains("x")},
+			"actions":    []any{setCategory(category.ID)},
+		},
+	)
 	r.Decode(t, &rule)
 
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create rule status %d: %s", r.Status, r.Body)
 	}
 
-	h.ExpectToolError(h.Tool("list_rules", map[string]any{"kind": "rules", "rule_id": rule.ID}), "not_found", "")
+	h.ExpectToolError(
+		h.Tool("list_rules", map[string]any{"kind": "rules", "rule_id": rule.ID}),
+		"not_found",
+		"",
+	)
 
 	for _, action := range []map[string]any{
 		{"action": "delete_rule", "rule_id": rule.ID},
@@ -345,12 +509,35 @@ func TestRulesToolsOtherUser(t *testing.T) {
 func TestManageRuleToolChangeKeepsConditionsAndActions(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	conditions := []map[string]any{contains("uber"), {"field": "day_of_month", "operator": "between", "value": []any{1, 5}}}
-	actions := []map[string]any{setCategory(b.transport), {"type": "add_tags", "tags": []string{"trip"}}}
+	conditions := []map[string]any{
+		contains("uber"),
+		{"field": "day_of_month", "operator": "between", "value": []any{1, 5}},
+	}
+	actions := []map[string]any{
+		setCategory(b.transport),
+		{"type": "add_tags", "tags": []string{"trip"}},
+	}
 	rule := createRule(t, b.h, "Uber", conditions, actions)
 
-	toolOutput(t, b.h, "manage_rule", map[string]any{"action": "change_rule", "rule_id": rule.ID, "name": "Uber rides"}, &manageOut{})
-	toolOutput(t, b.h, "manage_rule", map[string]any{"action": "change_rule", "rule_id": rule.ID, "enabled": false, "stop_processing": true}, &manageOut{})
+	toolOutput(
+		t,
+		b.h,
+		"manage_rule",
+		map[string]any{"action": "change_rule", "rule_id": rule.ID, "name": "Uber rides"},
+		&manageOut{},
+	)
+	toolOutput(
+		t,
+		b.h,
+		"manage_rule",
+		map[string]any{
+			"action":          "change_rule",
+			"rule_id":         rule.ID,
+			"enabled":         false,
+			"stop_processing": true,
+		},
+		&manageOut{},
+	)
 
 	var got ruleView
 	b.h.MustDo(http.MethodGet, "/api/v1/rules/"+rule.ID, nil, http.StatusOK, &got)
@@ -359,8 +546,15 @@ func TestManageRuleToolChangeKeepsConditionsAndActions(t *testing.T) {
 		t.Errorf("rule = %+v", got)
 	}
 
-	if !reflect.DeepEqual(got.Conditions, rule.Conditions) || !reflect.DeepEqual(got.Actions, rule.Actions) {
-		t.Errorf("conditions = %v, actions = %v; want %v, %v", got.Conditions, got.Actions, rule.Conditions, rule.Actions)
+	if !reflect.DeepEqual(got.Conditions, rule.Conditions) ||
+		!reflect.DeepEqual(got.Actions, rule.Actions) {
+		t.Errorf(
+			"conditions = %v, actions = %v; want %v, %v",
+			got.Conditions,
+			got.Actions,
+			rule.Conditions,
+			rule.Actions,
+		)
 	}
 }
 
@@ -392,7 +586,11 @@ func TestManageRuleToolStructuredRule(t *testing.T) {
 	wantConditions := []map[string]any{
 		{"field": "description", "operator": "contains", "value": "uber"},
 		{"field": "absolute_amount", "operator": "between", "value": []any{
-			map[string]any{"amount": 1000.0, "currency": "BRL"}, map[string]any{"amount": 5000.0, "currency": "BRL"},
+			map[string]any{
+				"amount":   1000.0,
+				"currency": "BRL",
+			},
+			map[string]any{"amount": 5000.0, "currency": "BRL"},
 		}},
 		{"field": "weekday", "operator": "in_list", "value": []any{"friday", "saturday"}},
 		{"field": "day_of_month", "operator": "equals", "value": 5.0},
@@ -402,7 +600,8 @@ func TestManageRuleToolStructuredRule(t *testing.T) {
 		{"type": "add_tags", "tags": []any{"trip"}},
 	}
 
-	if got.Enabled || !got.StopProcessing || !reflect.DeepEqual(got.Conditions, wantConditions) || !reflect.DeepEqual(got.Actions, wantActions) {
+	if got.Enabled || !got.StopProcessing || !reflect.DeepEqual(got.Conditions, wantConditions) ||
+		!reflect.DeepEqual(got.Actions, wantActions) {
 		t.Fatalf("rule = %+v", got)
 	}
 
@@ -412,7 +611,8 @@ func TestManageRuleToolStructuredRule(t *testing.T) {
 	}, &manageOut{})
 	b.h.MustDo(http.MethodGet, "/api/v1/rules/"+out.RuleID, nil, http.StatusOK, &got)
 
-	if len(got.Conditions) != 1 || got.Conditions[0]["operator"] != "starts_with" || !reflect.DeepEqual(got.Actions, wantActions) {
+	if len(got.Conditions) != 1 || got.Conditions[0]["operator"] != "starts_with" ||
+		!reflect.DeepEqual(got.Actions, wantActions) {
 		t.Errorf("after the change: conditions = %v, actions = %v", got.Conditions, got.Actions)
 	}
 }
@@ -429,12 +629,63 @@ func TestManageRuleToolStructuredRuleInvalidArguments(t *testing.T) {
 		code  string
 		field string
 	}{
-		{"change without a field", map[string]any{"action": "change_rule", "rule_id": b.food}, "invalid_arguments", "name"},
-		{"conditions beside description_contains", map[string]any{"action": "create_rule", "name": "x", "conditions": cond, "actions": act, "description_contains": "x"}, "invalid_arguments", "description_contains"},
-		{"create with conditions only", map[string]any{"action": "create_rule", "name": "x", "conditions": cond}, "invalid_arguments", "actions"},
-		{"a malformed amount", map[string]any{"action": "create_rule", "name": "x", "actions": act, "conditions": []string{"amount equals ten"}}, "invalid_arguments", "conditions"},
-		{"a missing value", map[string]any{"action": "create_rule", "name": "x", "actions": act, "conditions": []string{"description contains"}}, "invalid_arguments", "conditions"},
-		{"an operator the field rejects", map[string]any{"action": "create_rule", "name": "x", "actions": act, "conditions": []string{"weekday contains friday"}}, "validation_failed", ""},
+		{
+			"change without a field",
+			map[string]any{"action": "change_rule", "rule_id": b.food},
+			"invalid_arguments",
+			"name",
+		},
+		{
+			"conditions beside description_contains",
+			map[string]any{
+				"action":               "create_rule",
+				"name":                 "x",
+				"conditions":           cond,
+				"actions":              act,
+				"description_contains": "x",
+			},
+			"invalid_arguments",
+			"description_contains",
+		},
+		{
+			"create with conditions only",
+			map[string]any{"action": "create_rule", "name": "x", "conditions": cond},
+			"invalid_arguments",
+			"actions",
+		},
+		{
+			"a malformed amount",
+			map[string]any{
+				"action":     "create_rule",
+				"name":       "x",
+				"actions":    act,
+				"conditions": []string{"amount equals ten"},
+			},
+			"invalid_arguments",
+			"conditions",
+		},
+		{
+			"a missing value",
+			map[string]any{
+				"action":     "create_rule",
+				"name":       "x",
+				"actions":    act,
+				"conditions": []string{"description contains"},
+			},
+			"invalid_arguments",
+			"conditions",
+		},
+		{
+			"an operator the field rejects",
+			map[string]any{
+				"action":     "create_rule",
+				"name":       "x",
+				"actions":    act,
+				"conditions": []string{"weekday contains friday"},
+			},
+			"validation_failed",
+			"",
+		},
 	}
 	for _, tt := range tests {
 		b.h.ExpectToolError(b.h.Tool("manage_rule", tt.args), tt.code, tt.field)

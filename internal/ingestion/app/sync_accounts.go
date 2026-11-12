@@ -13,7 +13,12 @@ import (
 // addMissingAccounts stores, pending, every account and reserved balance the item reports
 // that the connection lacks (A73), and the name the item now reports for a stored account
 // it renamed; the mapping of a stored account is not changed (A94).
-func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *domain.Connection, creds domain.Credentials) error {
+func (s *Service) addMissingAccounts(
+	ctx context.Context,
+	agg Aggregator,
+	c *domain.Connection,
+	creds domain.Credentials,
+) error {
 	listed, err := agg.Accounts(ctx, c.IntegrationID, creds, c.ExternalID)
 	if err != nil {
 		return err
@@ -119,7 +124,14 @@ func (s *Service) updateStored(
 		return changed, nil
 	}
 
-	if err := s.repo.RenameExternalAccount(ctx, c.BooksID, stored.ID, a.Name, previous, today); err != nil {
+	if err := s.repo.RenameExternalAccount(
+		ctx,
+		c.BooksID,
+		stored.ID,
+		a.Name,
+		previous,
+		today,
+	); err != nil {
 		return false, err
 	}
 
@@ -132,11 +144,19 @@ func (s *Service) updateStored(
 // id finds its released posting (A38); then the lines go through the P4 pipeline, and a
 // bank balance becomes a balance assertion (A42).
 // markGone dates the stored accounts this listing lacks and clears those it holds again (A214).
-func (s *Service) markGone(ctx context.Context, c *domain.Connection, listed []domain.ExternalAccount, today time.Time) (bool, error) {
+func (s *Service) markGone(
+	ctx context.Context,
+	c *domain.Connection,
+	listed []domain.ExternalAccount,
+	today time.Time,
+) (bool, error) {
 	changed := false
 
 	for _, stored := range c.Accounts {
-		held := slices.ContainsFunc(listed, func(a domain.ExternalAccount) bool { return a.ExternalID == stored.ExternalID })
+		held := slices.ContainsFunc(
+			listed,
+			func(a domain.ExternalAccount) bool { return a.ExternalID == stored.ExternalID },
+		)
 		if held == (stored.GoneSince == nil) {
 			continue
 		}

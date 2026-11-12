@@ -9,7 +9,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
-func (r *Repository) LinksTo(ctx context.Context, booksID int64, id uuid.UUID) ([]app.Reference, error) {
+func (r *Repository) LinksTo(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) ([]app.Reference, error) {
 	rows, err := r.q.ListLinksTo(ctx, ListLinksToParams{BooksID: booksID, ToTransactionID: id})
 	if err != nil {
 		return nil, err
@@ -17,7 +21,12 @@ func (r *Repository) LinksTo(ctx context.Context, booksID int64, id uuid.UUID) (
 
 	out := make([]app.Reference, len(rows))
 	for i, row := range rows {
-		out[i] = app.Reference{Type: domain.LinkType(row.LinkType), Source: row.FromTransactionID, Amount: storedAmount(row.Amount), Currency: row.BalancingCurrency}
+		out[i] = app.Reference{
+			Type:     domain.LinkType(row.LinkType),
+			Source:   row.FromTransactionID,
+			Amount:   storedAmount(row.Amount),
+			Currency: row.BalancingCurrency,
+		}
 	}
 
 	return out, nil

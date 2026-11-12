@@ -31,7 +31,12 @@ func TestReaderCannotConfirmProposal(t *testing.T) {
 	r := sendTurn(h, reader, map[string]any{"text": "Anula a transação."})
 	proposalID := firstProposalID(t, r)
 
-	confirm := h.Call(reader, http.MethodPost, "/api/v1/assistant/proposals/"+proposalID+"/confirm", nil)
+	confirm := h.Call(
+		reader,
+		http.MethodPost,
+		"/api/v1/assistant/proposals/"+proposalID+"/confirm",
+		nil,
+	)
 	if confirm.Status != http.StatusForbidden {
 		t.Fatalf("confirm status = %d, want 403: %s", confirm.Status, confirm.Body)
 	}

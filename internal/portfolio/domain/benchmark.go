@@ -55,7 +55,10 @@ func ComparisonStart(credits, flows []time.Time) (start time.Time, restarted boo
 			continue
 		}
 
-		if slices.ContainsFunc(flows, func(f time.Time) bool { return f.After(before) && f.Before(after) }) {
+		if slices.ContainsFunc(
+			flows,
+			func(f time.Time) bool { return f.After(before) && f.Before(after) },
+		) {
 			start, restarted = after, true
 		}
 	}
@@ -159,7 +162,10 @@ func RealBP(returnFactor, inflationFactor float64) (bp int, ok bool) {
 // WholeMonths returns the calendar months that lie whole inside [from, to], from the first one up
 // to the month before the first without a rate in rates (keyed by the first day of the month),
 // and the rates of those months (amendment A208 R16). ok is false without such a month.
-func WholeMonths(from, to time.Time, rates map[time.Time]float64) (first, until time.Time, monthly []float64, ok bool) {
+func WholeMonths(
+	from, to time.Time,
+	rates map[time.Time]float64,
+) (first, until time.Time, monthly []float64, ok bool) {
 	first = time.Date(from.Year(), from.Month(), 1, 0, 0, 0, 0, time.UTC)
 	if !first.Equal(from) {
 		first = first.AddDate(0, 1, 0)

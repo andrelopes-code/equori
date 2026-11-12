@@ -39,7 +39,12 @@ type TableCount struct {
 type ArchiveTooNewError struct{ Archive, Instance int }
 
 func (e *ArchiveTooNewError) Error() string {
-	return fmt.Sprintf("%v: archive version %d, instance version %d", ErrArchiveTooNew, e.Archive, e.Instance)
+	return fmt.Sprintf(
+		"%v: archive version %d, instance version %d",
+		ErrArchiveTooNew,
+		e.Archive,
+		e.Instance,
+	)
 }
 
 func (e *ArchiveTooNewError) Unwrap() error { return ErrArchiveTooNew }
@@ -171,7 +176,11 @@ func (s *Exports) runRebuilds(ctx context.Context, booksID int64) error {
 
 func readManifest(files map[string][]byte) (archiveManifest, int, error) {
 	var m archiveManifest
-	if err := json.Unmarshal(files["manifest.json"], &m); err != nil || m.Format != "equori-export" || m.FormatVersion != 1 {
+	if err := json.Unmarshal(
+		files["manifest.json"],
+		&m,
+	); err != nil || m.Format != "equori-export" ||
+		m.FormatVersion != 1 {
 		return m, 0, fmt.Errorf("%w: manifest", ErrArchiveInvalid)
 	}
 
@@ -191,7 +200,11 @@ func readManifest(files map[string][]byte) (archiveManifest, int, error) {
 	return m, version, nil
 }
 
-func readMigratedTables(files map[string][]byte, m archiveManifest, version int) ([]ArchiveTable, error) {
+func readMigratedTables(
+	files map[string][]byte,
+	m archiveManifest,
+	version int,
+) ([]ArchiveTable, error) {
 	tables, err := readTables(files, m)
 	if err != nil {
 		return nil, err
@@ -262,7 +275,11 @@ func readCredentialsBundle(files map[string][]byte, m archiveManifest) ([]byte, 
 
 // resealCredentials opens the credentials entry of the archive with the passphrase and seals each
 // secret for this instance; empty when the archive has none or the owner skips them.
-func (s *Exports) resealCredentials(booksID int64, bundle []byte, c ImportCredentials) (SealedCredentials, error) {
+func (s *Exports) resealCredentials(
+	booksID int64,
+	bundle []byte,
+	c ImportCredentials,
+) (SealedCredentials, error) {
 	switch {
 	case bundle == nil:
 		return SealedCredentials{}, nil

@@ -6,12 +6,24 @@ func TestDBLinkAmountConstraint(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 
-	spent, err := f.recordTx(t, f.booksID, "2026-10-17", postingRow{f.checking, -1500}, postingRow{f.food, 1500})
+	spent, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-10-17",
+		postingRow{f.checking, -1500},
+		postingRow{f.food, 1500},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	received, err := f.recordTx(t, f.booksID, "2026-10-20", postingRow{f.checking, 1500}, postingRow{f.food, -1500})
+	received, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-10-20",
+		postingRow{f.checking, 1500},
+		postingRow{f.food, -1500},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}

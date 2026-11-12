@@ -13,8 +13,12 @@ func (f fixture) pay(date string, amount int64, counterpart, payee string) strin
 	f.h.T().Helper()
 
 	body := map[string]any{
-		"date": date, "description": "payment",
-		"postings": []any{apitest.Posting(f.checking, -amount), apitest.Posting(counterpart, amount)},
+		"date":        date,
+		"description": "payment",
+		"postings": []any{
+			apitest.Posting(f.checking, -amount),
+			apitest.Posting(counterpart, amount),
+		},
 	}
 	if payee != "" {
 		body["payee_id"] = payee
@@ -30,7 +34,14 @@ func (f fixture) pay(date string, amount int64, counterpart, payee string) strin
 }
 
 func (f fixture) rentSchedule() string {
-	return f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
+	return f.schedule(
+		"bill",
+		f.checking,
+		f.rent,
+		210000,
+		monthly("2026-11-01", 5, "following"),
+		map[string]any{"payee_id": f.landlord},
+	)
 }
 
 func (f fixture) occurrence(scheduleID string, sequence int) occurrenceView {
@@ -114,7 +125,10 @@ func TestRealizedAfterCategorization(t *testing.T) {
 	}
 
 	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
-		"expected_version": 1, "parts": []any{map[string]any{"account_id": f.rent, "amount": apitest.BRL(210000)}},
+		"expected_version": 1,
+		"parts": []any{
+			map[string]any{"account_id": f.rent, "amount": apitest.BRL(210000)},
+		},
 	}, http.StatusOK, nil)
 	f.h.Dispatch()
 
@@ -127,7 +141,14 @@ func TestRealizedAfterCategorization(t *testing.T) {
 func TestTransactionFitsTwoOccurrences(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
-	id := f.schedule("bill", f.checking, f.rent, 10000, map[string]any{"frequency": "weekly", "interval": 1, "start": "2026-11-02"}, nil)
+	id := f.schedule(
+		"bill",
+		f.checking,
+		f.rent,
+		10000,
+		map[string]any{"frequency": "weekly", "interval": 1, "start": "2026-11-02"},
+		nil,
+	)
 	tx := f.pay("2026-11-06", 10000, f.rent, "")
 	f.h.Dispatch()
 
@@ -149,11 +170,21 @@ func TestVoidReleasesTheOccurrence(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	id := f.rentSchedule()
 	first := f.pay("2026-11-05", 210000, f.rent, f.landlord)
-	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+first+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+first+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 	f.h.Dispatch()
 	f.h.Restart(apitest.Today("2026-11-09"))
 
-	if o := f.occurrence(id, 1); o.State != "overdue" || o.TransactionID != "" || o.ActualAmount != nil {
+	if o := f.occurrence(
+		id,
+		1,
+	); o.State != "overdue" || o.TransactionID != "" ||
+		o.ActualAmount != nil {
 		t.Fatalf("after void = %+v, want overdue without a transaction or an actual amount", o)
 	}
 
@@ -170,7 +201,13 @@ func TestManualRealization(t *testing.T) {
 	tx := f.pay("2026-11-20", 150000, f.rent, "")
 	occ := f.occurrence(id, 1)
 	var got occurrenceView
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/realize", map[string]string{"transaction_id": tx}, http.StatusOK, &got)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/realize",
+		map[string]string{"transaction_id": tx},
+		http.StatusOK,
+		&got,
+	)
 
 	if got.State != "realized" || got.TransactionID != tx {
 		t.Fatalf("realize = %+v", got)
@@ -187,21 +224,63 @@ func TestManualRealization(t *testing.T) {
 		t.Fatalf("after correction = %+v", o)
 	}
 
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/realize", map[string]string{"transaction_id": tx}), http.StatusConflict, "occurrence_closed", "")
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/occurrences/"+occ.ID+"/realize",
+			map[string]string{"transaction_id": tx},
+		),
+		http.StatusConflict,
+		"occurrence_closed",
+		"",
+	)
 	next := f.occurrence(id, 2)
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+next.ID+"/realize", map[string]string{"transaction_id": tx}), http.StatusConflict, "transaction_in_use", "")
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/occurrences/"+next.ID+"/realize",
+			map[string]string{"transaction_id": tx},
+		),
+		http.StatusConflict,
+		"transaction_in_use",
+		"",
+	)
 	misc := f.h.Account("Misc", "asset", "cash", nil)
-	elsewhere := f.h.Record("2026-12-07", apitest.Posting(misc, -210000), apitest.Posting(f.rent, 210000))
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+next.ID+"/realize", map[string]string{"transaction_id": elsewhere}), http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+	elsewhere := f.h.Record(
+		"2026-12-07",
+		apitest.Posting(misc, -210000),
+		apitest.Posting(f.rent, 210000),
+	)
+	f.h.ExpectProblem(
+		f.h.Do(
+			http.MethodPost,
+			"/api/v1/occurrences/"+next.ID+"/realize",
+			map[string]string{"transaction_id": elsewhere},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"transaction_id",
+	)
 
 	var released occurrenceView
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/unrealize", nil, http.StatusOK, &released)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/unrealize",
+		nil,
+		http.StatusOK,
+		&released,
+	)
 
 	if released.State != "expected" || released.TransactionID != "" {
 		t.Fatalf("unrealize = %+v", released)
 	}
 
-	f.h.ExpectProblem(f.h.Do(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/unrealize", nil), http.StatusConflict, "occurrence_closed", "")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/unrealize", nil),
+		http.StatusConflict,
+		"occurrence_closed",
+		"",
+	)
 }
 
 func TestRealizeOccurrenceOfAnotherUser(t *testing.T) {
@@ -211,7 +290,12 @@ func TestRealizeOccurrenceOfAnotherUser(t *testing.T) {
 	tx := f.pay("2026-11-20", 150000, f.rent, "")
 	other := f.h.Login("other@example.com")
 
-	r := f.h.Call(other, http.MethodPost, "/api/v1/occurrences/"+f.occurrence(id, 1).ID+"/realize", map[string]string{"transaction_id": tx})
+	r := f.h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/occurrences/"+f.occurrence(id, 1).ID+"/realize",
+		map[string]string{"transaction_id": tx},
+	)
 	if r.Status != http.StatusNotFound {
 		t.Fatalf("status = %d, want 404", r.Status)
 	}
@@ -236,7 +320,12 @@ func TestManualRealizationRacingAutomaticIs409(t *testing.T) {
 
 	defer func() { _ = auto.Rollback(ctx) }()
 
-	if _, err := auto.Exec(ctx, `UPDATE planning_occurrence SET state = 'realized', transaction_id = $1, realized_by = 'auto' WHERE id = $2`, tx, november.ID); err != nil {
+	if _, err := auto.Exec(
+		ctx,
+		`UPDATE planning_occurrence SET state = 'realized', transaction_id = $1, realized_by = 'auto' WHERE id = $2`,
+		tx,
+		november.ID,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -249,7 +338,8 @@ func TestManualRealizationRacingAutomaticIs409(t *testing.T) {
 	for {
 		var n int
 		if err := f.h.Pool.QueryRow(ctx, `SELECT count(*) FROM pg_locks l JOIN pg_stat_activity a ON a.pid = l.pid
-			WHERE NOT l.granted AND a.datname = current_database()`).Scan(&n); err != nil {
+			WHERE NOT l.granted AND a.datname = current_database()`).
+			Scan(&n); err != nil {
 			t.Fatalf("the manual realization never waited: %v", err)
 		}
 
@@ -272,10 +362,17 @@ func TestOccurrencesOfATransaction(t *testing.T) {
 	// The payment is 45 days after the expected date of the occurrence.
 	tx := f.pay("2026-12-20", 150000, f.rent, "")
 	occ := f.occurrence(id, 1)
-	f.h.MustDo(http.MethodPost, "/api/v1/occurrences/"+occ.ID+"/realize", map[string]string{"transaction_id": tx}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/occurrences/"+occ.ID+"/realize",
+		map[string]string{"transaction_id": tx},
+		http.StatusOK,
+		nil,
+	)
 
 	got := f.occurrences("transaction_id=" + tx)
-	if len(got) != 1 || got[0].ID != occ.ID || got[0].State != "realized" || got[0].TransactionID != tx {
+	if len(got) != 1 || got[0].ID != occ.ID || got[0].State != "realized" ||
+		got[0].TransactionID != tx {
 		t.Fatalf("occurrences of the transaction = %+v", got)
 	}
 
@@ -295,8 +392,18 @@ func TestOccurrencesOfATransaction(t *testing.T) {
 		t.Fatalf("another book's occurrences of the transaction = %d %+v", r.Status, out.Items)
 	}
 
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?to=2026-12-31", nil), http.StatusBadRequest, "invalid_request", "from")
-	f.h.ExpectProblem(f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01", nil), http.StatusBadRequest, "invalid_request", "to")
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/occurrences?to=2026-12-31", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"from",
+	)
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodGet, "/api/v1/occurrences?from=2026-11-01", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"to",
+	)
 }
 
 // The actual amount is read from the transaction, so a correction changes it with no stored copy.

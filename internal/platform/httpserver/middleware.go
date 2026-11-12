@@ -50,7 +50,10 @@ func securityHeaders(next http.Handler) http.Handler {
 			h.Set("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'")
 			h.Set("Cache-Control", "no-store")
 		} else {
-			h.Set("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+			h.Set(
+				"Content-Security-Policy",
+				"default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+			)
 		}
 
 		next.ServeHTTP(w, r)
@@ -89,7 +92,11 @@ func limitBody(next http.Handler, limits []BodyLimit) http.Handler {
 // NotFound answers unmatched /api/ routes, so API clients always receive ADR 004 problems.
 func NotFound() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		d := problem.New(http.StatusNotFound, "not_found", "no endpoint matches "+r.Method+" "+r.URL.Path)
+		d := problem.New(
+			http.StatusNotFound,
+			"not_found",
+			"no endpoint matches "+r.Method+" "+r.URL.Path,
+		)
 		d.RequestID = RequestID(r.Context())
 		problem.Write(w, d)
 	})

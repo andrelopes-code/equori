@@ -64,16 +64,22 @@ func TestCounterparts(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := s.h.App.Ledger.Counterparts(t.Context(), s.h.OwnerID(), ledger.CounterpartQuery{
-				AccountID: uuid.MustParse(s.b), Amount: lineAmount, Date: day("2026-11-10"),
-			})
+			got, err := s.h.App.Ledger.Counterparts(
+				t.Context(),
+				s.h.OwnerID(),
+				ledger.CounterpartQuery{
+					AccountID: uuid.MustParse(s.b), Amount: lineAmount, Date: day("2026-11-10"),
+				},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			var want []ledger.Counterpart
 			if tc.listed {
-				want = []ledger.Counterpart{{TransactionID: tx, AccountID: uuid.MustParse(s.a), RecordID: record}}
+				want = []ledger.Counterpart{
+					{TransactionID: tx, AccountID: uuid.MustParse(s.a), RecordID: record},
+				}
 			}
 
 			if len(got) != len(want) || (len(want) == 1 && got[0] != want[0]) {
@@ -91,7 +97,13 @@ func TestPairImported(t *testing.T) {
 	record := uuid.New()
 	booksID := s.h.OwnerID()
 
-	version, err := s.h.App.Ledger.PairImported(t.Context(), booksID, tx, uuid.MustParse(s.b), record)
+	version, err := s.h.App.Ledger.PairImported(
+		t.Context(),
+		booksID,
+		tx,
+		uuid.MustParse(s.b),
+		record,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +113,10 @@ func TestPairImported(t *testing.T) {
 	}
 
 	view := s.h.Transaction(tx.String())
-	if got := amountsByAccount(view); view.Version != 2 || len(view.Postings) != 2 || got[s.a] != -25000 || got[s.b] != 25000 {
+	if got := amountsByAccount(
+		view,
+	); view.Version != 2 || len(view.Postings) != 2 || got[s.a] != -25000 ||
+		got[s.b] != 25000 {
 		t.Fatalf("transaction = %+v", view)
 	}
 
@@ -123,7 +138,13 @@ func TestUnpairImported(t *testing.T) {
 	record := uuid.New()
 	booksID := s.h.OwnerID()
 
-	version, err := s.h.App.Ledger.PairImported(t.Context(), booksID, tx, uuid.MustParse(s.b), record)
+	version, err := s.h.App.Ledger.PairImported(
+		t.Context(),
+		booksID,
+		tx,
+		uuid.MustParse(s.b),
+		record,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,12 +156,16 @@ func TestUnpairImported(t *testing.T) {
 	uncategorized := systemAccounts(s.h)["uncategorized_expense"]
 
 	view := s.h.Transaction(tx.String())
-	if got := amountsByAccount(view); view.Version != 3 || len(view.Postings) != 2 || got[s.a] != -25000 || got[uncategorized] != 25000 {
+	if got := amountsByAccount(
+		view,
+	); view.Version != 3 || len(view.Postings) != 2 || got[s.a] != -25000 ||
+		got[uncategorized] != 25000 {
 		t.Fatalf("transaction = %+v", view)
 	}
 
 	var linked int
-	if err := s.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_posting WHERE external_record_id = $1`, record).Scan(&linked); err != nil {
+	if err := s.h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM ledger_posting WHERE external_record_id = $1`, record).
+		Scan(&linked); err != nil {
 		t.Fatal(err)
 	}
 
@@ -162,14 +187,23 @@ func TestUnpairImportedAfterCorrection(t *testing.T) {
 	record := uuid.New()
 	booksID := s.h.OwnerID()
 
-	version, err := s.h.App.Ledger.PairImported(t.Context(), booksID, tx, uuid.MustParse(s.b), record)
+	version, err := s.h.App.Ledger.PairImported(
+		t.Context(),
+		booksID,
+		tx,
+		uuid.MustParse(s.b),
+		record,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	correction := map[string]any{
-		"date": "2026-11-07", "description": "Renamed", "expected_version": version, "reason": "typo",
-		"postings": []any{apitest.Posting(s.a, -25000), apitest.Posting(s.b, 25000)},
+		"date":             "2026-11-07",
+		"description":      "Renamed",
+		"expected_version": version,
+		"reason":           "typo",
+		"postings":         []any{apitest.Posting(s.a, -25000), apitest.Posting(s.b, 25000)},
 	}
 	s.h.MustDo(http.MethodPut, "/api/v1/transactions/"+tx.String(), correction, http.StatusOK, nil)
 
@@ -198,7 +232,11 @@ func (s counterpartSetup) candidate(t *testing.T, tc counterpartCase) (uuid.UUID
 	t.Helper()
 
 	if tc.manual {
-		id := s.h.Record(tc.date, apitest.Posting(s.a, tc.amount), apitest.Posting(s.gifts, -tc.amount))
+		id := s.h.Record(
+			tc.date,
+			apitest.Posting(s.a, tc.amount),
+			apitest.Posting(s.gifts, -tc.amount),
+		)
 
 		return uuid.MustParse(id), uuid.Nil
 	}
@@ -228,16 +266,27 @@ func (s counterpartSetup) candidate(t *testing.T, tc counterpartCase) (uuid.UUID
 
 	if tc.category {
 		part := ledger.CategoryPart{AccountID: uuid.MustParse(s.gifts), Amount: amount.Neg()}
-		rec.Decision = &ledger.ImportDecision{Parts: []ledger.CategoryPart{part}, Cause: ledger.Cause{Method: "rule", RuleID: uuid.New()}}
+		rec.Decision = &ledger.ImportDecision{
+			Parts: []ledger.CategoryPart{part},
+			Cause: ledger.Cause{Method: "rule", RuleID: uuid.New()},
+		}
 	}
 
-	ids, err := s.h.App.Ledger.RecordImportedBatch(t.Context(), s.h.OwnerID(), []ledger.ImportedRecord{rec})
+	ids, err := s.h.App.Ledger.RecordImportedBatch(
+		t.Context(),
+		s.h.OwnerID(),
+		[]ledger.ImportedRecord{rec},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if tc.card {
-		if _, err := s.h.Pool.Exec(t.Context(), `UPDATE ledger_posting SET status = 'reconciled' WHERE external_record_id = $1`, record); err != nil {
+		if _, err := s.h.Pool.Exec(
+			t.Context(),
+			`UPDATE ledger_posting SET status = 'reconciled' WHERE external_record_id = $1`,
+			record,
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -247,7 +296,10 @@ func (s counterpartSetup) candidate(t *testing.T, tc counterpartCase) (uuid.UUID
 
 // foreignCandidate records a transaction in USD, which the import path cannot book without a
 // weight, and marks it as imported.
-func (s counterpartSetup) foreignCandidate(t *testing.T, tc counterpartCase) (uuid.UUID, uuid.UUID) {
+func (s counterpartSetup) foreignCandidate(
+	t *testing.T,
+	tc counterpartCase,
+) (uuid.UUID, uuid.UUID) {
 	t.Helper()
 
 	usd := map[string]any{"amount": tc.amount, "currency": "USD"}
@@ -257,11 +309,21 @@ func (s counterpartSetup) foreignCandidate(t *testing.T, tc counterpartCase) (uu
 	)
 	record := uuid.New()
 
-	if _, err := s.h.Pool.Exec(t.Context(), `UPDATE ledger_transaction SET origin = 'import' WHERE id = $1`, id); err != nil {
+	if _, err := s.h.Pool.Exec(
+		t.Context(),
+		`UPDATE ledger_transaction SET origin = 'import' WHERE id = $1`,
+		id,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := s.h.Pool.Exec(t.Context(), `UPDATE ledger_posting SET external_record_id = $2 WHERE transaction_id = $1 AND account_id = $3`, id, record, s.usd); err != nil {
+	if _, err := s.h.Pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET external_record_id = $2 WHERE transaction_id = $1 AND account_id = $3`,
+		id,
+		record,
+		s.usd,
+	); err != nil {
 		t.Fatal(err)
 	}
 

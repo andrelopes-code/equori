@@ -30,8 +30,24 @@ func (e *ToolFailure) Error() string { return "tool failed" }
 // UseTools sets the tool set proposals preview and execute; the chat does not run without it.
 func (s *Service) UseTools(t Tools) { s.tools = t }
 
-func (s *Service) logProposal(ctx context.Context, booksID int64, id uuid.UUID, name, decision string) {
-	s.log.InfoContext(ctx, "assistant proposal", "books_id", booksID, "proposal_id", id, "tool", name, "decision", decision)
+func (s *Service) logProposal(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	name, decision string,
+) {
+	s.log.InfoContext(
+		ctx,
+		"assistant proposal",
+		"books_id",
+		booksID,
+		"proposal_id",
+		id,
+		"tool",
+		name,
+		"decision",
+		decision,
+	)
 }
 
 // ProposalMeta is the chat metadata of a write call (spec 2026-11-03 §4.1).
@@ -44,14 +60,28 @@ type ProposalMeta struct {
 
 // Propose stores a proposal of a write tool and returns what the model receives: a pending proposal
 // with its preview, or a waiting one when it refers to proposals that are not executed yet.
-func (s *Service) Propose(ctx context.Context, booksID int64, conversationID uuid.UUID, name string, args json.RawMessage, meta ProposalMeta) (json.RawMessage, error) {
+func (s *Service) Propose(
+	ctx context.Context,
+	booksID int64,
+	conversationID uuid.UUID,
+	name string,
+	args json.RawMessage,
+	meta ProposalMeta,
+) (json.RawMessage, error) {
 	if err := validateMeta(meta); err != nil {
 		return nil, err
 	}
 
 	p := domain.Proposal{
-		ID: uuid.New(), ConversationID: conversationID, Tool: name, Arguments: args, Status: domain.ProposalPending,
-		Suggested: meta.Suggested, Reason: strings.TrimSpace(meta.Reason), Summary: strings.TrimSpace(meta.Summary), Refs: meta.Refs,
+		ID:             uuid.New(),
+		ConversationID: conversationID,
+		Tool:           name,
+		Arguments:      args,
+		Status:         domain.ProposalPending,
+		Suggested:      meta.Suggested,
+		Reason:         strings.TrimSpace(meta.Reason),
+		Summary:        strings.TrimSpace(meta.Summary),
+		Refs:           meta.Refs,
 	}
 
 	if len(meta.Refs) > 0 {
@@ -119,7 +149,14 @@ func (s *Service) resolveProposal(p *domain.Proposal, parents map[uuid.UUID]doma
 	}
 
 	if missing != "" {
-		return argumentFailure("proposal.refs", fmt.Sprintf("%s: the referenced result has no value at %s", missing, resultPointer(p.Refs[missing])))
+		return argumentFailure(
+			"proposal.refs",
+			fmt.Sprintf(
+				"%s: the referenced result has no value at %s",
+				missing,
+				resultPointer(p.Refs[missing]),
+			),
+		)
 	}
 
 	p.Arguments = args
@@ -185,7 +222,11 @@ func (s *Service) unclaimed(ctx context.Context, booksID, memberID int64, id uui
 }
 
 // Confirm executes a pending proposal at most once (spec 8.2).
-func (s *Service) Confirm(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Proposal, error) {
+func (s *Service) Confirm(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (domain.Proposal, error) {
 	now := s.now()
 
 	p, ok, err := s.repo.ClaimProposal(ctx, booksID, memberID, id, now)
@@ -241,7 +282,14 @@ func (s *Service) checkBasis(
 	}
 
 	if res.IsError || tool.PreviewDigest(pv) != p.Basis {
-		if err := s.repo.DecideProposal(ctx, booksID, id, domain.ProposalStale, nil, now); err != nil {
+		if err := s.repo.DecideProposal(
+			ctx,
+			booksID,
+			id,
+			domain.ProposalStale,
+			nil,
+			now,
+		); err != nil {
 			return err
 		}
 
@@ -258,7 +306,11 @@ func (s *Service) checkBasis(
 }
 
 // Reject closes a pending proposal without executing it.
-func (s *Service) Reject(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Proposal, error) {
+func (s *Service) Reject(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (domain.Proposal, error) {
 	ok, err := s.repo.RejectProposal(ctx, booksID, memberID, id, s.now())
 	if err != nil {
 		return domain.Proposal{}, err

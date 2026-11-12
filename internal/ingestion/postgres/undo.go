@@ -28,7 +28,13 @@ type undoRow struct {
 
 // SaveUndo stores a record after the undo of its decision, moves it out of the count of left
 // when it entered review, and inserts line, when not nil, as a new record in review (A148).
-func (r *Repository) SaveUndo(ctx context.Context, rec domain.ExternalRecord, decided domain.DecisionKind, left domain.RecordState, line *domain.ExternalRecord) error {
+func (r *Repository) SaveUndo(
+	ctx context.Context,
+	rec domain.ExternalRecord,
+	decided domain.DecisionKind,
+	left domain.RecordState,
+	line *domain.ExternalRecord,
+) error {
 	params, err := undoParams(rec, decided)
 	if err != nil {
 		return err
@@ -47,7 +53,15 @@ func (r *Repository) SaveUndo(ctx context.Context, rec domain.ExternalRecord, de
 		}
 
 		if rec.State == domain.StateNeedsReview && left != domain.StateNeedsReview {
-			if err := q.MoveUndoneCount(ctx, MoveUndoneCountParams{BooksID: rec.BooksID, ID: rec.BatchID, LeftState: string(left), Paired: decided == domain.DecisionPaired}); err != nil {
+			if err := q.MoveUndoneCount(
+				ctx,
+				MoveUndoneCountParams{
+					BooksID:   rec.BooksID,
+					ID:        rec.BatchID,
+					LeftState: string(left),
+					Paired:    decided == domain.DecisionPaired,
+				},
+			); err != nil {
 				return err
 			}
 		}
@@ -60,7 +74,10 @@ func (r *Repository) SaveUndo(ctx context.Context, rec domain.ExternalRecord, de
 	})
 }
 
-func undoParams(rec domain.ExternalRecord, decided domain.DecisionKind) (UndoRecordDecisionParams, error) {
+func undoParams(
+	rec domain.ExternalRecord,
+	decided domain.DecisionKind,
+) (UndoRecordDecisionParams, error) {
 	raw, err := json.Marshal(rec.Raw)
 	if err != nil {
 		return UndoRecordDecisionParams{}, err
@@ -72,10 +89,23 @@ func undoParams(rec domain.ExternalRecord, decided domain.DecisionKind) (UndoRec
 	}
 
 	return UndoRecordDecisionParams{
-		ExternalID: optional(rec.ExternalID), DedupKey: rec.DedupKey, Raw: raw, BookedOn: rec.Date, Amount: rec.Amount,
-		State: o.State, TransactionID: o.TransactionID, Candidates: o.Candidates, CandidateScores: o.CandidateScores,
-		ReviewReason: o.ReviewReason, UnappliedChange: optional(rec.UnappliedChange), Kept: rec.Kept,
-		BooksID: rec.BooksID, ID: rec.ID, Decision: string(decided),
+		ExternalID: optional(
+			rec.ExternalID,
+		),
+		DedupKey:        rec.DedupKey,
+		Raw:             raw,
+		BookedOn:        rec.Date,
+		Amount:          rec.Amount,
+		State:           o.State,
+		TransactionID:   o.TransactionID,
+		Candidates:      o.Candidates,
+		CandidateScores: o.CandidateScores,
+		ReviewReason:    o.ReviewReason,
+		UnappliedChange: optional(rec.UnappliedChange),
+		Kept:            rec.Kept,
+		BooksID:         rec.BooksID,
+		ID:              rec.ID,
+		Decision:        string(decided),
 	}, nil
 }
 
@@ -91,9 +121,10 @@ func insertUndoneLine(ctx context.Context, q *Queries, line *domain.ExternalReco
 
 	var insertErr error
 
-	q.InsertRecords(ctx, []InsertRecordsParams{params}).QueryRow(func(_ int, row IngestionExternalRecord, err error) {
-		inserted, insertErr = row, err
-	})
+	q.InsertRecords(ctx, []InsertRecordsParams{params}).
+		QueryRow(func(_ int, row IngestionExternalRecord, err error) {
+			inserted, insertErr = row, err
+		})
 
 	if insertErr != nil {
 		return insertErr
@@ -105,7 +136,14 @@ func insertUndoneLine(ctx context.Context, q *Queries, line *domain.ExternalReco
 		return err
 	}
 
-	return q.MoveUndoneCount(ctx, MoveUndoneCountParams{BooksID: line.BooksID, ID: line.BatchID, LeftState: string(domain.StateReceived)})
+	return q.MoveUndoneCount(
+		ctx,
+		MoveUndoneCountParams{
+			BooksID:   line.BooksID,
+			ID:        line.BatchID,
+			LeftState: string(domain.StateReceived),
+		},
+	)
 }
 
 func encodeUndo(u domain.Undo) ([]byte, error) {

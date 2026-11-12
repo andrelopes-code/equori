@@ -31,8 +31,20 @@ type Module struct {
 	log    *slog.Logger
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c *classification.Module, cfg Config, log *slog.Logger) (*Module, error) {
-	in := app.Integrations{Now: cfg.Clock.Now, Today: cfg.Clock.Today, InBooks: cfg.InBooks, Admins: cfg.Admins}
+func New(
+	pool *pgxpool.Pool,
+	dispatcher *outbox.Dispatcher,
+	l *ledger.Module,
+	c *classification.Module,
+	cfg Config,
+	log *slog.Logger,
+) (*Module, error) {
+	in := app.Integrations{
+		Now:     cfg.Clock.Now,
+		Today:   cfg.Clock.Today,
+		InBooks: cfg.InBooks,
+		Admins:  cfg.Admins,
+	}
 	if cfg.SecretKey != "" {
 		var previous []byte
 		if cfg.PreviousSecretKey != "" {
@@ -45,7 +57,9 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 		}
 
 		// A redirect would leave the configured address (N17).
-		hc := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+		hc := &http.Client{
+			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+		}
 
 		port, err := pluggy.NewPort(cfg.URLs["pluggy"], hc, cfg.Clock)
 		if err != nil {
@@ -54,7 +68,10 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 
 		in.Box = b
 
-		in.Aggregators, err = registry.New("aggregator", registry.Entry[app.Aggregator]{ID: port.ID(), Value: port})
+		in.Aggregators, err = registry.New(
+			"aggregator",
+			registry.Entry[app.Aggregator]{ID: port.ID(), Value: port},
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +90,10 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, c 
 
 // Tools returns the ingestion module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
-	return tool.Group{Tools: toolapi.Tools(m.svc, m.accountNames), Errors: tool.FromProblem(httpapi.ToProblem)}
+	return tool.Group{
+		Tools:  toolapi.Tools(m.svc, m.accountNames),
+		Errors: tool.FromProblem(httpapi.ToProblem),
+	}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

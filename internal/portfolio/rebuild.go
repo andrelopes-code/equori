@@ -27,5 +27,6 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, e.BooksID, payload.AccountIDs)
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).
+		HandleTransaction(ctx, e.BooksID, payload.AccountIDs)
 }

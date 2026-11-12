@@ -68,7 +68,12 @@ func TestHandle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/x", strings.NewReader(tt.body))
+			req := httptest.NewRequestWithContext(
+				t.Context(),
+				http.MethodPost,
+				"/x",
+				strings.NewReader(tt.body),
+			)
 
 			httpserver.Handle(writer, http.StatusCreated, tt.fn)(rec, req)
 

@@ -16,8 +16,13 @@ import (
 // toProposal converts a stored proposal; a pending or waiting proposal past its expiry reads as expired.
 func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
 	out := AssistantProposal{
-		Id: p.ID, Tool: p.Tool, Status: AssistantProposalStatus(p.Status), CreatedAt: p.CreatedAt, ExpiresAt: p.ExpiresAt,
-		Suggested: p.Suggested, WaitingFor: p.WaitingFor(),
+		Id:         p.ID,
+		Tool:       p.Tool,
+		Status:     AssistantProposalStatus(p.Status),
+		CreatedAt:  p.CreatedAt,
+		ExpiresAt:  p.ExpiresAt,
+		Suggested:  p.Suggested,
+		WaitingFor: p.WaitingFor(),
 	}
 	if p.Reason != "" {
 		out.Reason = &p.Reason
@@ -52,7 +57,11 @@ func (s *Server) toProposal(p domain.Proposal) (AssistantProposal, error) {
 	return out, nil
 }
 
-func (s *Server) confirmAssistantProposal(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantProposal, error) {
+func (s *Server) confirmAssistantProposal(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (AssistantProposal, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return AssistantProposal{}, err
@@ -66,7 +75,11 @@ func (s *Server) confirmAssistantProposal(ctx context.Context, r *http.Request, 
 	return s.toProposal(p)
 }
 
-func (s *Server) rejectAssistantProposal(ctx context.Context, r *http.Request, _ httpserver.None) (AssistantProposal, error) {
+func (s *Server) rejectAssistantProposal(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (AssistantProposal, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return AssistantProposal{}, err

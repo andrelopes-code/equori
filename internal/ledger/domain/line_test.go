@@ -15,7 +15,12 @@ func TestToLine(t *testing.T) {
 
 	checking, food, drinks := uuid.New(), uuid.New(), uuid.New()
 	tx := Transaction{Date: day("2026-10-20"), Description: "Lunch", Postings: []Posting{
-		{AccountID: checking, Amount: brl(t, -700)}, {AccountID: food, Amount: brl(t, 300)}, {AccountID: drinks, Amount: brl(t, 400)},
+		{
+			AccountID: checking,
+			Amount:    brl(t, -700),
+		},
+		{AccountID: food, Amount: brl(t, 300)},
+		{AccountID: drinks, Amount: brl(t, 400)},
 	}}
 
 	next, changed, err := tx.ToLine(checking, -712, day("2026-10-21"))
@@ -23,8 +28,13 @@ func TestToLine(t *testing.T) {
 		t.Fatalf("ToLine = %v, %v", changed, err)
 	}
 
-	got := []int64{next.Postings[0].Amount.Amount(), next.Postings[1].Amount.Amount(), next.Postings[2].Amount.Amount()}
-	if got[0] != -712 || got[1] != 305 || got[2] != 407 || !next.Date.Equal(day("2026-10-21")) || next.Description != "Lunch" {
+	got := []int64{
+		next.Postings[0].Amount.Amount(),
+		next.Postings[1].Amount.Amount(),
+		next.Postings[2].Amount.Amount(),
+	}
+	if got[0] != -712 || got[1] != 305 || got[2] != 407 || !next.Date.Equal(day("2026-10-21")) ||
+		next.Description != "Lunch" {
 		t.Fatalf("next = %v on %s", got, next.Date.Format(time.DateOnly))
 	}
 

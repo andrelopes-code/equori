@@ -31,12 +31,30 @@ func parseManage(in manageRuleIn) (ids, error) {
 // manageFields marks which arguments the call gave.
 func manageFields(in manageRuleIn) []field {
 	return []field{
-		{"rule_id", in.RuleID != ""}, {"suggestion_id", in.SuggestionID != ""}, {"source_category_id", in.SourceCategoryID != ""},
-		{"alias_id", in.AliasID != ""}, {"name", in.Name != ""}, {"description_contains", in.DescriptionContains != ""},
-		{"category_id", in.CategoryID != ""}, {"payee_id", in.PayeeID != ""}, {"pattern", in.Pattern != ""},
-		{"match_type", in.MatchType != ""}, {"rule_ids", len(in.RuleIDs) > 0},
-		{"conditions", len(in.Conditions) > 0}, {"actions", len(in.Actions) > 0},
-		{"enabled", in.Enabled.Set}, {"stop_processing", in.StopProcessing.Set},
+		{
+			"rule_id",
+			in.RuleID != "",
+		},
+		{"suggestion_id", in.SuggestionID != ""},
+		{"source_category_id", in.SourceCategoryID != ""},
+		{
+			"alias_id",
+			in.AliasID != "",
+		},
+		{"name", in.Name != ""},
+		{"description_contains", in.DescriptionContains != ""},
+		{
+			"category_id",
+			in.CategoryID != "",
+		},
+		{"payee_id", in.PayeeID != ""},
+		{"pattern", in.Pattern != ""},
+		{"match_type", in.MatchType != ""},
+		{"rule_ids", len(in.RuleIDs) > 0},
+		{"conditions", len(in.Conditions) > 0},
+		{"actions", len(in.Actions) > 0},
+		{"enabled", in.Enabled.Set},
+		{"stop_processing", in.StopProcessing.Set},
 	}
 }
 

@@ -53,16 +53,28 @@ func TestECB(t *testing.T) {
 		t.Fatalf("codes = %v", got)
 	}
 
-	got, err := src.Fetch(t.Context(), []money.Currency{"USD"}, day("2026-10-20"), day("2026-10-20"))
+	got, err := src.Fetch(
+		t.Context(),
+		[]money.Currency{"USD"},
+		day("2026-10-20"),
+		day("2026-10-20"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(got) != 1 || got[0].Instrument != "EUR" || got[0].Quote != "USD" || !got[0].Date.Equal(day("2026-10-20")) || got[0].Value.String() != "1.0832" {
+	if len(got) != 1 || got[0].Instrument != "EUR" || got[0].Quote != "USD" ||
+		!got[0].Date.Equal(day("2026-10-20")) ||
+		got[0].Value.String() != "1.0832" {
 		t.Fatalf("quotes = %+v", got)
 	}
 
-	got, err = src.Fetch(t.Context(), []money.Currency{"GBP", "USD"}, day("2026-10-19"), day("2026-10-20"))
+	got, err = src.Fetch(
+		t.Context(),
+		[]money.Currency{"GBP", "USD"},
+		day("2026-10-19"),
+		day("2026-10-20"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +84,15 @@ func TestECB(t *testing.T) {
 	}
 
 	missing := ecb.New(srv.Client(), srv.URL+"/missing.xml")
-	if _, err := missing.Fetch(t.Context(), []money.Currency{"USD"}, day("2026-10-19"), day("2026-10-20")); !errors.Is(err, feed.ErrNoData) {
+	if _, err := missing.Fetch(
+		t.Context(),
+		[]money.Currency{"USD"},
+		day("2026-10-19"),
+		day("2026-10-20"),
+	); !errors.Is(
+		err,
+		feed.ErrNoData,
+	) {
 		t.Fatalf("404 error = %v", err)
 	}
 }
@@ -127,7 +147,10 @@ func TestECBHistory(t *testing.T) {
 			t.Fatalf("instrument = %s", q.Instrument)
 		}
 
-		gotSet = append(gotSet, fmt.Sprintf("%s %s %s", q.Quote, q.Date.Format(time.DateOnly), q.Value.String()))
+		gotSet = append(
+			gotSet,
+			fmt.Sprintf("%s %s %s", q.Quote, q.Date.Format(time.DateOnly), q.Value.String()),
+		)
 	}
 
 	want := []string{

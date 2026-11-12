@@ -13,7 +13,13 @@ import (
 // keeps its rhythm: the dates it already produced stay, with their occurrences, and take the
 // next sequences; the dates it gains before them are inserted. A gained date is expected while
 // it is not overdue and skipped after that, unless a recorded transaction realizes it.
-func (s *Service) moveStart(ctx context.Context, repo Repository, booksID int64, sch domain.Schedule, startsOn time.Time) error {
+func (s *Service) moveStart(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	sch domain.Schedule,
+	startsOn time.Time,
+) error {
 	first := sch.Terms[0]
 	if !startsOn.Before(first.Rule.Start) {
 		return startError("must be before the current start")
@@ -26,12 +32,21 @@ func (s *Service) moveStart(ctx context.Context, repo Repository, booksID int64,
 		return startError("cannot move earlier a recurrence that has a count")
 	}
 
-	days, err := s.days(ctx, sch.Calendar, startsOn, first.Rule.Start.AddDate(first.Rule.Interval+1, 0, 0))
+	days, err := s.days(
+		ctx,
+		sch.Calendar,
+		startsOn,
+		first.Rule.Start.AddDate(first.Rule.Interval+1, 0, 0),
+	)
 	if err != nil {
 		return err
 	}
 
-	firstDates := first.Rule.Dates(time.Time{}, first.Rule.Start.AddDate(first.Rule.Interval+1, 0, 0), days)
+	firstDates := first.Rule.Dates(
+		time.Time{},
+		first.Rule.Start.AddDate(first.Rule.Interval+1, 0, 0),
+		days,
+	)
 	if len(firstDates) == 0 {
 		return startError("the schedule has no date to start before")
 	}
@@ -48,7 +63,14 @@ func (s *Service) moveStart(ctx context.Context, repo Repository, booksID int64,
 		return startError("is not on the rhythm of the recurrence")
 	}
 
-	if err := repo.MoveScheduleStart(ctx, booksID, sch.ID, first.EffectiveFrom, startsOn, shift); err != nil {
+	if err := repo.MoveScheduleStart(
+		ctx,
+		booksID,
+		sch.ID,
+		first.EffectiveFrom,
+		startsOn,
+		shift,
+	); err != nil {
 		return err
 	}
 
@@ -59,7 +81,16 @@ func (s *Service) moveStart(ctx context.Context, repo Repository, booksID int64,
 
 	keepFrom := s.clk.Today(ctx).AddDate(0, 0, -moved.GraceDays)
 
-	return s.fill(ctx, repo, booksID, moved, startsOn, firstDates[0].Date.AddDate(0, 0, -1), keepFrom, uuid.Nil)
+	return s.fill(
+		ctx,
+		repo,
+		booksID,
+		moved,
+		startsOn,
+		firstDates[0].Date.AddDate(0, 0, -1),
+		keepFrom,
+		uuid.Nil,
+	)
 }
 
 func startError(message string) error {

@@ -31,7 +31,13 @@ const (
 )
 
 // Records lists a batch's records in file order; state filters them when not empty.
-func (s *Service) Records(ctx context.Context, booksID int64, batchID uuid.UUID, state domain.RecordState, p page.Request[RecordKey]) ([]domain.ExternalRecord, *RecordKey, domain.Batch, error) {
+func (s *Service) Records(
+	ctx context.Context,
+	booksID int64,
+	batchID uuid.UUID,
+	state domain.RecordState,
+	p page.Request[RecordKey],
+) ([]domain.ExternalRecord, *RecordKey, domain.Batch, error) {
 	b, err := s.repo.Batch(ctx, booksID, batchID)
 	if err != nil {
 		return nil, nil, domain.Batch{}, err
@@ -54,7 +60,11 @@ func (s *Service) Records(ctx context.Context, booksID int64, batchID uuid.UUID,
 // Resolve settles a record that needs review with the owner's choice (chapter 4, 4.3.3,
 // ResolveMatch) and moves it between the batch counts.
 // Record returns one of the book's external records.
-func (s *Service) Record(ctx context.Context, booksID int64, id uuid.UUID) (domain.ExternalRecord, error) {
+func (s *Service) Record(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.ExternalRecord, error) {
 	rec, err := s.repo.Record(ctx, booksID, id)
 	if err != nil {
 		return domain.ExternalRecord{}, err
@@ -68,9 +78,18 @@ func (s *Service) Record(ctx context.Context, booksID int64, id uuid.UUID) (doma
 	return rec, s.refreshReview(ctx, &rec, currencyOf(b))
 }
 
-func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID, action string, txID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+func (s *Service) Resolve(
+	ctx context.Context,
+	booksID int64,
+	recordID uuid.UUID,
+	action string,
+	txID uuid.UUID,
+) (domain.ExternalRecord, domain.Batch, error) {
 	if action != ActionMatch && action != ActionCreate && action != ActionDiscard {
-		return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: "must be match, create or discard"}
+		return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{
+			Field:   "action",
+			Message: "must be match, create or discard",
+		}
 	}
 
 	found, err := s.repo.Record(ctx, booksID, recordID)
@@ -173,12 +192,27 @@ func (s *Service) resolveMatch(
 	txID uuid.UUID,
 ) error {
 	if !slices.Contains(rec.Candidates, txID) {
-		return &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
+		return &domain.FieldError{
+			Field:   "transaction_id",
+			Message: "must be one of the record's candidates",
+		}
 	}
 
 	if rec.ReviewReason == domain.ReviewTransfer {
-		if _, err := s.ledger.PairLine(ctx, booksID, txID, rec.AccountID, rec.ID); errors.Is(err, ErrNotPairable) {
-			return &domain.FieldError{Field: "transaction_id", Message: "cannot become the transfer of the line"}
+		if _, err := s.ledger.PairLine(
+			ctx,
+			booksID,
+			txID,
+			rec.AccountID,
+			rec.ID,
+		); errors.Is(
+			err,
+			ErrNotPairable,
+		) {
+			return &domain.FieldError{
+				Field:   "transaction_id",
+				Message: "cannot become the transfer of the line",
+			}
 		} else if err != nil {
 			return err
 		}
@@ -189,11 +223,22 @@ func (s *Service) resolveMatch(
 	}
 
 	// A101: the institution's amount and date win; the owner's classification stays.
-	if err := s.ledger.ConfirmLine(ctx, booksID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
+	if err := s.ledger.ConfirmLine(
+		ctx,
+		booksID,
+		txID,
+		rec.AccountID,
+		rec.Amount,
+		rec.Date,
+	); err != nil {
 		return err
 	}
 
-	conflicts, err := s.ledger.ClearMatched(ctx, booksID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
+	conflicts, err := s.ledger.ClearMatched(
+		ctx,
+		booksID,
+		[]Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}},
+	)
 	if err != nil {
 		return err
 	}
@@ -218,7 +263,13 @@ func (s *Service) resolveCreate(
 	rec *domain.ExternalRecord,
 	currency money.Currency,
 ) error {
-	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+	line := Line{
+		AccountID:   rec.AccountID,
+		Currency:    currency,
+		Date:        rec.Date,
+		Amount:      rec.Amount,
+		Description: truncate(rec.Description),
+	}
 
 	ids, err := s.ledger.RecordImported(ctx, booksID, []NewLine{{RecordID: rec.ID, Line: line}})
 	if errors.Is(err, ErrLineRejected) {
@@ -243,7 +294,11 @@ type Resolution struct {
 
 // ResolveMany settles each record as Resolve does, in request order (A201). errs[i] is the
 // error of item i; the error return refuses the request before any item runs.
-func (s *Service) ResolveMany(ctx context.Context, booksID int64, items []Resolution) ([]error, error) {
+func (s *Service) ResolveMany(
+	ctx context.Context,
+	booksID int64,
+	items []Resolution,
+) ([]error, error) {
 	seen := make(map[uuid.UUID]bool, len(items))
 	for _, it := range items {
 		if seen[it.RecordID] {
@@ -264,7 +319,11 @@ func (s *Service) ResolveMany(ctx context.Context, booksID int64, items []Resolu
 // Unconfirmed lists the account's entries that neither an institution line nor an institution
 // balance confirmed, expected within its feed and more than MatchHardLimit days before the
 // feed's end, oldest first (A103, A133).
-func (s *Service) Unconfirmed(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.LedgerPosting, money.Currency, error) {
+func (s *Service) Unconfirmed(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) ([]domain.LedgerPosting, money.Currency, error) {
 	target, err := s.ledger.ImportTarget(ctx, booksID, accountID)
 	if err != nil {
 		return nil, "", err
@@ -287,7 +346,11 @@ func (s *Service) Unconfirmed(ctx context.Context, booksID int64, accountID uuid
 
 // Reopen returns a discarded record to review with the candidates the ledger holds now, so a
 // line discarded before the entry it confirms existed can still confirm it (A140).
-func (s *Service) Reopen(ctx context.Context, booksID int64, recordID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+func (s *Service) Reopen(
+	ctx context.Context,
+	booksID int64,
+	recordID uuid.UUID,
+) (domain.ExternalRecord, domain.Batch, error) {
 	found, err := s.repo.Record(ctx, booksID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
@@ -327,7 +390,11 @@ func (s *Service) Reopen(ctx context.Context, booksID int64, recordID uuid.UUID)
 // refreshReview prepares a record in review for reading. A record in review group keeps its
 // entry as the only candidate and lists the other lines of its group; a group that no longer
 // holds lists none. Another record has its candidates scored again.
-func (s *Service) refreshReview(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
+func (s *Service) refreshReview(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	currency money.Currency,
+) error {
 	if rec.State != domain.StateNeedsReview || rec.ReviewReason != domain.ReviewGroup {
 		return s.refreshCandidates(ctx, rec, currency)
 	}
@@ -350,19 +417,38 @@ func (s *Service) refreshReview(ctx context.Context, rec *domain.ExternalRecord,
 	return nil
 }
 
-func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRecord, currency money.Currency) error {
+func (s *Service) refreshCandidates(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	currency money.Currency,
+) error {
 	if rec.State != domain.StateNeedsReview {
 		return nil
 	}
 
-	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+	line := Line{
+		AccountID:   rec.AccountID,
+		Currency:    currency,
+		Date:        rec.Date,
+		Amount:      rec.Amount,
+		Description: truncate(rec.Description),
+	}
 
 	if rec.ReviewReason == domain.ReviewTransfer {
 		return s.refreshTransferCandidates(ctx, rec, line)
 	}
 
-	postings, err := s.ledger.UnlinkedPostings(ctx, rec.BooksID, rec.AccountID,
-		rec.Date.AddDate(0, 0, -domain.MatchHardLimit), rec.Date.AddDate(0, 0, domain.MatchHardLimit))
+	postings, err := s.ledger.UnlinkedPostings(
+		ctx,
+		rec.BooksID,
+		rec.AccountID,
+		rec.Date.AddDate(
+			0,
+			0,
+			-domain.MatchHardLimit,
+		),
+		rec.Date.AddDate(0, 0, domain.MatchHardLimit),
+	)
 	if err != nil {
 		return err
 	}
@@ -384,7 +470,11 @@ func (s *Service) refreshCandidates(ctx context.Context, rec *domain.ExternalRec
 
 // refreshTransferCandidates lists the transactions the line may pair with (A219); rule 2 does not
 // score them.
-func (s *Service) refreshTransferCandidates(ctx context.Context, rec *domain.ExternalRecord, line Line) error {
+func (s *Service) refreshTransferCandidates(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	line Line,
+) error {
 	cps, _, err := s.counterparts(ctx, rec.BooksID, rec, line)
 	if err != nil {
 		return err

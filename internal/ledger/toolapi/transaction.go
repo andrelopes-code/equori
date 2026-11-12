@@ -14,7 +14,7 @@ import (
 )
 
 type getTransactionIn struct {
-	TransactionID        string `json:"transaction_id" jsonschema:"ID of the transaction, from search_transactions"`
+	TransactionID        string `json:"transaction_id"                 jsonschema:"ID of the transaction, from search_transactions"`
 	IncludeReimbursement bool   `json:"include_reimbursement,omitzero" jsonschema:"also list the incoming transactions that can repay this expense, or the expenses this incoming transaction can repay"`
 }
 
@@ -34,7 +34,7 @@ type transactionDetailView struct {
 type historyEntry struct {
 	Version    int    `json:"version"`
 	Reason     string `json:"reason,omitzero"`
-	ReplacedAt string `json:"replaced_at" jsonschema:"RFC 3339 timestamp"`
+	ReplacedAt string `json:"replaced_at"     jsonschema:"RFC 3339 timestamp"`
 }
 
 type attachmentView struct {
@@ -163,7 +163,12 @@ func loadTransactionSources(
 		return src, err
 	}
 
-	if src.attachments, _, err = svc.Attachments(ctx, booksID, t.ID, page.Request[app.AttachmentKey]{Limit: 20}); err != nil {
+	if src.attachments, _, err = svc.Attachments(
+		ctx,
+		booksID,
+		t.ID,
+		page.Request[app.AttachmentKey]{Limit: 20},
+	); err != nil {
 		return src, err
 	}
 
@@ -213,15 +218,29 @@ func transactionOutOf(t domain.Transaction, src transactionSources) (getTransact
 	}
 
 	for _, v := range src.versions {
-		out.History = append(out.History, historyEntry{Version: v.Version, Reason: v.Reason, ReplacedAt: v.ReplacedAt.Format(time.RFC3339)})
+		out.History = append(
+			out.History,
+			historyEntry{
+				Version:    v.Version,
+				Reason:     v.Reason,
+				ReplacedAt: v.ReplacedAt.Format(time.RFC3339),
+			},
+		)
 	}
 
 	for _, a := range src.attachments {
-		out.Attachments = append(out.Attachments, attachmentView{FileName: a.FileName, Size: a.Size})
+		out.Attachments = append(
+			out.Attachments,
+			attachmentView{FileName: a.FileName, Size: a.Size},
+		)
 	}
 
 	for _, d := range src.disputes {
-		v := disputeView{DisputeID: d.ID.String(), OpenedOn: tool.DateOf(d.OpenedOn), Outcome: d.Outcome}
+		v := disputeView{
+			DisputeID: d.ID.String(),
+			OpenedOn:  tool.DateOf(d.OpenedOn),
+			Outcome:   d.Outcome,
+		}
 		if d.ResolvedOn != nil {
 			v.ResolvedOn = tool.DateOf(*d.ResolvedOn)
 		}
@@ -232,7 +251,12 @@ func transactionOutOf(t domain.Transaction, src transactionSources) (getTransact
 	return out, nil
 }
 
-func linkOf(kind string, target uuid.UUID, amount int64, currency money.Currency) (linkView, error) {
+func linkOf(
+	kind string,
+	target uuid.UUID,
+	amount int64,
+	currency money.Currency,
+) (linkView, error) {
 	v := linkView{Type: kind, TransactionID: target.String()}
 	if amount == 0 {
 		return v, nil
@@ -248,7 +272,12 @@ func linkOf(kind string, target uuid.UUID, amount int64, currency money.Currency
 	return v, nil
 }
 
-func installmentPlanOf(ctx context.Context, svc *app.Service, booksID int64, t domain.Transaction) (installmentPlanView, error) {
+func installmentPlanOf(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	t domain.Transaction,
+) (installmentPlanView, error) {
 	for _, p := range t.Postings {
 		if p.Installment == nil {
 			continue
@@ -259,14 +288,27 @@ func installmentPlanOf(ctx context.Context, svc *app.Service, booksID int64, t d
 			return installmentPlanView{}, err
 		}
 
-		out := installmentPlanView{PlanID: plan.Plan.ID.String(), Count: plan.Plan.Count, Status: plan.Status, Installments: []installmentView{}}
+		out := installmentPlanView{
+			PlanID:       plan.Plan.ID.String(),
+			Count:        plan.Plan.Count,
+			Status:       plan.Status,
+			Installments: []installmentView{},
+		}
 		for _, i := range plan.Installments {
 			amount, err := minorMoney(plan.Plan.Principal, i.Amount)
 			if err != nil {
 				return installmentPlanView{}, err
 			}
 
-			out.Installments = append(out.Installments, installmentView{Number: i.Number, Amount: amount, Statement: i.Reference.String(), Reversed: i.Reversed})
+			out.Installments = append(
+				out.Installments,
+				installmentView{
+					Number:    i.Number,
+					Amount:    amount,
+					Statement: i.Reference.String(),
+					Reversed:  i.Reversed,
+				},
+			)
 		}
 
 		return out, nil
@@ -275,7 +317,13 @@ func installmentPlanOf(ctx context.Context, svc *app.Service, booksID int64, t d
 	return installmentPlanView{}, nil
 }
 
-func reimbursementsOf(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID, out *getTransactionOut) error {
+func reimbursementsOf(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+	out *getTransactionOut,
+) error {
 	candidates, _, err := svc.ReimbursementCandidates(ctx, booksID, id)
 	if err != nil {
 		return err

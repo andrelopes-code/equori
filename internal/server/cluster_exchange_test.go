@@ -24,7 +24,9 @@ func exchangeEnv(t *testing.T) (dir, bin string) {
 
 	dir, bin = os.Getenv("EQUORI_TEST_EXCHANGE"), os.Getenv("EQUORI_TEST_POSTGRES_BIN")
 	if dir == "" || bin == "" {
-		t.Fatal("EQUORI_TEST_EXCHANGE and EQUORI_TEST_POSTGRES_BIN must be set; run make test-exchange")
+		t.Fatal(
+			"EQUORI_TEST_EXCHANGE and EQUORI_TEST_POSTGRES_BIN must be set; run make test-exchange",
+		)
 	}
 
 	return dir, bin
@@ -41,11 +43,20 @@ func TestExchangeDump(t *testing.T) {
 	h.Dispatch()
 
 	want := snapshot(t, h.Pool)
-	if err := backup.Dump(t.Context(), bin, dsnOf(h.Pool), filepath.Join(dir, runtime.GOOS+".dump")); err != nil {
+	if err := backup.Dump(
+		t.Context(),
+		bin,
+		dsnOf(h.Pool),
+		filepath.Join(dir, runtime.GOOS+".dump"),
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(dir, runtime.GOOS+".snapshot"), []byte(strings.Join(want, "\n")+"\n"), 0o644); err != nil { //nolint:gosec // G306: the CI reads it back as another user.
+	if err := os.WriteFile(
+		filepath.Join(dir, runtime.GOOS+".snapshot"),
+		[]byte(strings.Join(want, "\n")+"\n"),
+		0o644,
+	); err != nil { //nolint:gosec // G306: the CI reads it back as another user.
 		t.Fatal(err)
 	}
 }
@@ -77,14 +88,23 @@ func TestExchangeRestore(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		want := strings.Split(strings.TrimSuffix(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n"), "\n")
+		want := strings.Split(
+			strings.TrimSuffix(strings.ReplaceAll(string(b), "\r\n", "\n"), "\n"),
+			"\n",
+		)
 
 		c, err := pgcluster.Start(t.Context(), t.TempDir(), bin)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if err := backup.Restore(t.Context(), bin, c.DSN(pgcluster.Database), dump, latest); err != nil {
+		if err := backup.Restore(
+			t.Context(),
+			bin,
+			c.DSN(pgcluster.Database),
+			dump,
+			latest,
+		); err != nil {
 			t.Fatal(err)
 		}
 

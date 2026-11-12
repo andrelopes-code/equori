@@ -27,7 +27,13 @@ func TestCategoryTotalsTool(t *testing.T) {
 	food := h.Account("Food", "expense", "", nil)
 	groceries := h.Account("Groceries", "expense", "", map[string]any{"parent_id": food})
 	closed := h.Account("Closed", "expense", "", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-20"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+closed+"/close",
+		map[string]string{"closed_on": "2026-10-20"},
+		http.StatusOK,
+		nil,
+	)
 	h.Record("2026-10-05", apitest.Posting(checking, -1000), apitest.Posting(groceries, 1000))
 	h.Dispatch()
 
@@ -58,10 +64,31 @@ func TestCategoryTotalsTool(t *testing.T) {
 	brl := func(amount string) tool.Money { return tool.Money{Amount: amount, Currency: "BRL"} }
 
 	want := output{From: "2026-10-01", To: "2026-10-31", Categories: []toolCategory{
-		{AccountID: flights, Name: "Flights", ParentID: travel, ParentName: "Travel", Total: brl("10.00"), SubtreeTotal: brl("10.00")},
+		{
+			AccountID:    flights,
+			Name:         "Flights",
+			ParentID:     travel,
+			ParentName:   "Travel",
+			Total:        brl("10.00"),
+			SubtreeTotal: brl("10.00"),
+		},
 		{AccountID: food, Name: "Food", Total: brl("0.00"), SubtreeTotal: brl("10.00")},
-		{AccountID: groceries, Name: "Groceries", ParentID: food, ParentName: "Food", Total: brl("10.00"), SubtreeTotal: brl("10.00")},
-		{AccountID: hotel, Name: "Hotel", ParentID: travel, ParentName: "Travel", Total: brl("-10.00"), SubtreeTotal: brl("-10.00")},
+		{
+			AccountID:    groceries,
+			Name:         "Groceries",
+			ParentID:     food,
+			ParentName:   "Food",
+			Total:        brl("10.00"),
+			SubtreeTotal: brl("10.00"),
+		},
+		{
+			AccountID:    hotel,
+			Name:         "Hotel",
+			ParentID:     travel,
+			ParentName:   "Travel",
+			Total:        brl("-10.00"),
+			SubtreeTotal: brl("-10.00"),
+		},
 		{AccountID: travel, Name: "Travel", Total: brl("0.00"), SubtreeTotal: brl("0.00")},
 	}}
 	if !reflect.DeepEqual(got, want) {
@@ -96,6 +123,17 @@ func TestCategoryTotalsTool(t *testing.T) {
 		t.Errorf("pages of two = %+v", paged)
 	}
 
-	h.ExpectToolError(h.Tool("get_category_totals", map[string]any{"class": "expense", "from": "2026-01-01", "to": "2027-01-10"}), "invalid_request", "to")
-	h.ExpectToolError(h.Tool("get_category_totals", map[string]any{"from": "2026-10-01", "to": "2026-10-31"}), "invalid_arguments", "")
+	h.ExpectToolError(
+		h.Tool(
+			"get_category_totals",
+			map[string]any{"class": "expense", "from": "2026-01-01", "to": "2027-01-10"},
+		),
+		"invalid_request",
+		"to",
+	)
+	h.ExpectToolError(
+		h.Tool("get_category_totals", map[string]any{"from": "2026-10-01", "to": "2026-10-31"}),
+		"invalid_arguments",
+		"",
+	)
 }

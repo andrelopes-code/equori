@@ -27,8 +27,16 @@ type Repository interface {
 	UpdateProvider(ctx context.Context, p domain.Provider) error
 	DeleteProvider(ctx context.Context, booksID int64, id uuid.UUID) error
 	Chains(ctx context.Context, booksID int64) (map[string][]domain.ChainTarget, error)
-	ReplaceChain(ctx context.Context, booksID int64, useID string, targets []domain.ChainTarget) error
-	ResealKeys(ctx context.Context, reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error)
+	ReplaceChain(
+		ctx context.Context,
+		booksID int64,
+		useID string,
+		targets []domain.ChainTarget,
+	) error
+	ResealKeys(
+		ctx context.Context,
+		reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error),
+	) (int, error)
 	UsageRepository
 	ConversationRepository
 }
@@ -55,8 +63,17 @@ type ConversationKey struct {
 // ConversationRepository stores conversations, their messages and their proposals (ADR 020).
 type ConversationRepository interface {
 	CreateConversation(ctx context.Context, booksID, memberID int64, c domain.Conversation) error
-	Conversation(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Conversation, error)
-	Conversations(ctx context.Context, booksID, memberID int64, after *ConversationKey, limit int) ([]domain.Conversation, error)
+	Conversation(
+		ctx context.Context,
+		booksID, memberID int64,
+		id uuid.UUID,
+	) (domain.Conversation, error)
+	Conversations(
+		ctx context.Context,
+		booksID, memberID int64,
+		after *ConversationKey,
+		limit int,
+	) ([]domain.Conversation, error)
 	DeleteConversation(ctx context.Context, booksID, memberID int64, id uuid.UUID) error
 	DeleteConversations(ctx context.Context, booksID, memberID int64) error
 	AppendMessage(ctx context.Context, booksID int64, m domain.Message) (domain.Message, error)
@@ -64,10 +81,31 @@ type ConversationRepository interface {
 
 	InsertProposal(ctx context.Context, booksID int64, p domain.Proposal) error
 	Proposal(ctx context.Context, booksID, memberID int64, id uuid.UUID) (domain.Proposal, error)
-	Proposals(ctx context.Context, booksID int64, conversationID uuid.UUID) ([]domain.Proposal, error)
-	ClaimProposal(ctx context.Context, booksID, memberID int64, id uuid.UUID, now time.Time) (domain.Proposal, bool, error)
-	DecideProposal(ctx context.Context, booksID int64, id uuid.UUID, status domain.ProposalStatus, result []byte, at time.Time) error
-	RejectProposal(ctx context.Context, booksID, memberID int64, id uuid.UUID, now time.Time) (bool, error)
+	Proposals(
+		ctx context.Context,
+		booksID int64,
+		conversationID uuid.UUID,
+	) ([]domain.Proposal, error)
+	ClaimProposal(
+		ctx context.Context,
+		booksID, memberID int64,
+		id uuid.UUID,
+		now time.Time,
+	) (domain.Proposal, bool, error)
+	DecideProposal(
+		ctx context.Context,
+		booksID int64,
+		id uuid.UUID,
+		status domain.ProposalStatus,
+		result []byte,
+		at time.Time,
+	) error
+	RejectProposal(
+		ctx context.Context,
+		booksID, memberID int64,
+		id uuid.UUID,
+		now time.Time,
+	) (bool, error)
 	AttachProposals(ctx context.Context, booksID int64, messageID uuid.UUID, ids []uuid.UUID) error
 	DiscardProposals(ctx context.Context, booksID int64, ids []uuid.UUID, at time.Time) error
 	// PromoteProposal moves a waiting proposal to pending with the arguments, preview, basis and expiry of p.
@@ -76,7 +114,11 @@ type ConversationRepository interface {
 
 // Tools is the chat's tool set: what a proposal previews, executes and classifies.
 type Tools interface {
-	Preview(ctx context.Context, name string, args json.RawMessage) (tool.Preview, tool.Result, error)
+	Preview(
+		ctx context.Context,
+		name string,
+		args json.RawMessage,
+	) (tool.Preview, tool.Result, error)
 	Call(ctx context.Context, name string, args json.RawMessage) (tool.Result, error)
 	Validate(name string, args json.RawMessage) (tool.Result, error)
 	Effect(name string) (tool.Effect, bool)
@@ -85,7 +127,14 @@ type Tools interface {
 // Agent runs the model loop over the chat tools. Its errors are *LimitError, ErrChatUnavailable, ErrTurnFailed
 // or a context error. Write tools reach Service.Propose with ctx. onText receives the model's text as it arrives.
 type Agent interface {
-	Run(ctx context.Context, booksID int64, req AgentRequest, onStep func(tool string), onText func(text string), onRestart func()) (AgentResult, error)
+	Run(
+		ctx context.Context,
+		booksID int64,
+		req AgentRequest,
+		onStep func(tool string),
+		onText func(text string),
+		onRestart func(),
+	) (AgentResult, error)
 }
 
 // TurnEvents receives the progress of a turn. Turn is called once the user message is stored; after it the turn
@@ -101,7 +150,11 @@ type TurnEvents interface {
 // UsageRepository holds the day counters and the declared limits (ADR 019 U2, U4).
 type UsageRepository interface {
 	AddUsage(ctx context.Context, e domain.UsageEntry) error
-	UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error)
+	UsageSince(
+		ctx context.Context,
+		booksID int64,
+		today, since time.Time,
+	) ([]domain.UsageSummary, error)
 	UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error)
 	Limits(ctx context.Context, booksID int64) ([]domain.Limit, error)
 	SetLimit(ctx context.Context, booksID int64, l domain.Limit) error

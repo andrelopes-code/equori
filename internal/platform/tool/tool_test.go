@@ -14,7 +14,7 @@ type kind string
 func (kind) Values() []string { return []string{"asset", "expense"} }
 
 type searchIn struct {
-	Query string `json:"query" jsonschema:"text to find"`
+	Query string `json:"query"          jsonschema:"text to find"`
 	Kind  kind   `json:"kind,omitzero"`
 	From  Date   `json:"from,omitzero"`
 	Limit int    `json:"limit,omitzero"`
@@ -55,15 +55,23 @@ func TestNewInfersSchemas(t *testing.T) {
 	t.Parallel()
 
 	tl := New(searchSpec, search)
-	assertJSON(t, tl.InputSchema(), `{"type":"object","additionalProperties":false,"required":["query"],"properties":{
+	assertJSON(
+		t,
+		tl.InputSchema(),
+		`{"type":"object","additionalProperties":false,"required":["query"],"properties":{
 		"query":{"type":"string","description":"text to find"},
 		"kind":{"type":"string","enum":["asset","expense"]},
 		"from":{"type":"string","format":"date"},
-		"limit":{"type":"integer"}}}`)
-	assertJSON(t, tl.OutputSchema(), `{"type":"object","additionalProperties":false,"required":["total"],"properties":{
+		"limit":{"type":"integer"}}}`,
+	)
+	assertJSON(
+		t,
+		tl.OutputSchema(),
+		`{"type":"object","additionalProperties":false,"required":["total"],"properties":{
 		"total":{"type":"object","additionalProperties":false,"required":["amount","currency"],"properties":{
 			"amount":{"type":"string","description":"decimal amount in the instrument's scale, such as -1234.56"},
-			"currency":{"type":"string","description":"currency or instrument code"}}}}}`)
+			"currency":{"type":"string","description":"currency or instrument code"}}}}}`,
+	)
 
 	if tl.Spec() != searchSpec {
 		t.Errorf("Spec() = %+v", tl.Spec())
@@ -78,10 +86,17 @@ func TestNewSliceIsArray(t *testing.T) {
 	type listOut struct {
 		Items []item `json:"items"`
 	}
-	tl := New(searchSpec, func(context.Context, int64, searchIn) (listOut, error) { return listOut{}, nil })
-	assertJSON(t, tl.OutputSchema(), `{"type":"object","additionalProperties":false,"required":["items"],"properties":{
+	tl := New(
+		searchSpec,
+		func(context.Context, int64, searchIn) (listOut, error) { return listOut{}, nil },
+	)
+	assertJSON(
+		t,
+		tl.OutputSchema(),
+		`{"type":"object","additionalProperties":false,"required":["items"],"properties":{
 		"items":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["tags"],"properties":{
-			"tags":{"type":"array","items":{"type":"string"}}}}}}}`)
+			"tags":{"type":"array","items":{"type":"string"}}}}}}}`,
+	)
 }
 
 func TestNewRejects(t *testing.T) {
@@ -101,20 +116,40 @@ func TestNewRejects(t *testing.T) {
 	}{
 		{"uppercase name", func() { New(spec("Search"), search) }, "name"},
 		{"name starting with a digit", func() { New(spec("9x"), search) }, "name"},
-		{"name of 65 characters", func() { New(spec("a"+strings.Repeat("b", 64)), search) }, "name"},
-		{"empty description", func() { New(Spec{Name: "x", Effect: ReadOnly}, search) }, "description"},
+		{
+			"name of 65 characters",
+			func() { New(spec("a"+strings.Repeat("b", 64)), search) },
+			"name",
+		},
+		{
+			"empty description",
+			func() { New(Spec{Name: "x", Effect: ReadOnly}, search) },
+			"description",
+		},
 		{"zero effect", func() { New(Spec{Name: "x", Description: "d"}, search) }, "effect"},
 		{"input not a struct", func() {
-			New(spec("x"), func(context.Context, int64, string) (totalOut, error) { return totalOut{}, nil })
+			New(
+				spec("x"),
+				func(context.Context, int64, string) (totalOut, error) { return totalOut{}, nil },
+			)
 		}, "object"},
 		{"pointer field", func() {
-			New(spec("x"), func(context.Context, int64, withPointer) (totalOut, error) { return totalOut{}, nil })
+			New(
+				spec("x"),
+				func(context.Context, int64, withPointer) (totalOut, error) { return totalOut{}, nil },
+			)
 		}, "type"},
 		{"map field", func() {
-			New(spec("x"), func(context.Context, int64, withMap) (totalOut, error) { return totalOut{}, nil })
+			New(
+				spec("x"),
+				func(context.Context, int64, withMap) (totalOut, error) { return totalOut{}, nil },
+			)
 		}, "additionalProperties"},
 		{"output not a struct", func() {
-			New(spec("x"), func(context.Context, int64, searchIn) ([]int, error) { return nil, nil })
+			New(
+				spec("x"),
+				func(context.Context, int64, searchIn) ([]int, error) { return nil, nil },
+			)
 		}, "object"},
 	}
 	for _, tt := range tests {
@@ -139,7 +174,9 @@ func TestValidateOutput(t *testing.T) {
 	t.Parallel()
 
 	tl := New(searchSpec, search)
-	if err := tl.ValidateOutput([]byte(`{"total":{"amount":"1.00","currency":"BRL"}}`)); err != nil {
+	if err := tl.ValidateOutput(
+		[]byte(`{"total":{"amount":"1.00","currency":"BRL"}}`),
+	); err != nil {
 		t.Errorf("valid output: %v", err)
 	}
 

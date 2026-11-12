@@ -24,10 +24,17 @@ func newBatchBooks(t *testing.T) batchBooks {
 	}
 }
 
-func (b batchBooks) expense(date, description, account, category string, amount int64) map[string]any {
+func (b batchBooks) expense(
+	date, description, account, category string,
+	amount int64,
+) map[string]any {
 	return map[string]any{"transaction": map[string]any{
-		"date": date, "description": description,
-		"postings": []map[string]any{apitest.Posting(account, -amount), apitest.Posting(category, amount)},
+		"date":        date,
+		"description": description,
+		"postings": []map[string]any{
+			apitest.Posting(account, -amount),
+			apitest.Posting(category, amount),
+		},
 	}}
 }
 
@@ -48,14 +55,25 @@ func TestTransactionBatchRecordsEveryEntry(t *testing.T) {
 	var out struct {
 		Items []apitest.TransactionView `json:"items"`
 	}
-	b.h.MustDo(http.MethodPost, "/api/v1/transaction-batches", map[string]any{"entries": []map[string]any{
-		b.expense("2026-10-20", "Mercado", b.checking, b.food, 23000),
-		b.expense("2026-10-21", "Uber", b.card, b.transport, 3250),
-		{"installment_purchase": map[string]any{
-			"card_account_id": b.card, "date": "2026-10-21", "description": "Ifood",
-			"splits": []map[string]any{{"account_id": b.food, "amount": apitest.BRL(5800)}}, "installment_count": 3,
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transaction-batches",
+		map[string]any{"entries": []map[string]any{
+			b.expense("2026-10-20", "Mercado", b.checking, b.food, 23000),
+			b.expense("2026-10-21", "Uber", b.card, b.transport, 3250),
+			{"installment_purchase": map[string]any{
+				"card_account_id": b.card,
+				"date":            "2026-10-21",
+				"description":     "Ifood",
+				"splits": []map[string]any{
+					{"account_id": b.food, "amount": apitest.BRL(5800)},
+				},
+				"installment_count": 3,
+			}},
 		}},
-	}}, http.StatusCreated, &out)
+		http.StatusCreated,
+		&out,
+	)
 
 	if len(out.Items) != 3 {
 		t.Fatalf("items = %d, want 3", len(out.Items))
@@ -63,7 +81,13 @@ func TestTransactionBatchRecordsEveryEntry(t *testing.T) {
 
 	for i, want := range []string{"Mercado", "Uber", "Ifood"} {
 		if out.Items[i].Description != want || out.Items[i].Origin != "manual" {
-			t.Errorf("item %d = %q origin %q, want %q manual", i, out.Items[i].Description, out.Items[i].Origin, want)
+			t.Errorf(
+				"item %d = %q origin %q, want %q manual",
+				i,
+				out.Items[i].Description,
+				out.Items[i].Origin,
+				want,
+			)
 		}
 	}
 
@@ -82,13 +106,28 @@ func TestTransactionBatchIsAtomic(t *testing.T) {
 	t.Parallel()
 	b := newBatchBooks(t)
 	closed := b.h.Account("Old wallet", "asset", "cash", nil)
-	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+closed+"/close", map[string]string{"closed_on": "2026-10-15"}, http.StatusOK, nil)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+closed+"/close",
+		map[string]string{"closed_on": "2026-10-15"},
+		http.StatusOK,
+		nil,
+	)
 
-	r := b.h.Do(http.MethodPost, "/api/v1/transaction-batches", map[string]any{"entries": []map[string]any{
-		b.expense("2026-10-20", "Mercado", b.checking, b.food, 23000),
-		b.expense("2026-10-20", "Taxi", closed, b.transport, 3000),
-	}})
-	b.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "entries[1].transaction.postings[0].account_id")
+	r := b.h.Do(
+		http.MethodPost,
+		"/api/v1/transaction-batches",
+		map[string]any{"entries": []map[string]any{
+			b.expense("2026-10-20", "Mercado", b.checking, b.food, 23000),
+			b.expense("2026-10-20", "Taxi", closed, b.transport, 3000),
+		}},
+	)
+	b.h.ExpectProblem(
+		r,
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"entries[1].transaction.postings[0].account_id",
+	)
 
 	if got := b.count(t); got != 0 {
 		t.Fatalf("recorded = %d, want 0", got)
@@ -99,8 +138,12 @@ func TestTransactionBatchRejections(t *testing.T) {
 	t.Parallel()
 	b := newBatchBooks(t)
 	purchase := map[string]any{
-		"card_account_id": b.checking, "date": "2026-10-21",
-		"splits": []map[string]any{{"account_id": b.food, "amount": apitest.BRL(5800)}}, "installment_count": 3,
+		"card_account_id": b.checking,
+		"date":            "2026-10-21",
+		"splits": []map[string]any{
+			{"account_id": b.food, "amount": apitest.BRL(5800)},
+		},
+		"installment_count": 3,
 	}
 
 	unknown := "0192b7a0-0000-7000-8000-000000000000"
@@ -119,13 +162,25 @@ func TestTransactionBatchRejections(t *testing.T) {
 		}}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			r := b.h.Do(http.MethodPost, "/api/v1/transaction-batches", map[string]any{"entries": []map[string]any{c.entry}})
+			r := b.h.Do(
+				http.MethodPost,
+				"/api/v1/transaction-batches",
+				map[string]any{"entries": []map[string]any{c.entry}},
+			)
 			b.h.ExpectProblem(r, http.StatusUnprocessableEntity, c.code, c.field)
 		})
 	}
 
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/transaction-batches", map[string]any{"entries": []map[string]any{}}),
-		http.StatusBadRequest, "invalid_request", "entries")
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			"/api/v1/transaction-batches",
+			map[string]any{"entries": []map[string]any{}},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"entries",
+	)
 
 	if got := b.count(t); got != 0 {
 		t.Fatalf("recorded = %d, want 0", got)

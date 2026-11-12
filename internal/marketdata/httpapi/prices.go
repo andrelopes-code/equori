@@ -27,10 +27,19 @@ func (s *Server) recordPrice(
 ) (Price, error) {
 	value, err := money.ParseRate(b.Value)
 	if err != nil {
-		return Price{}, &domain.FieldError{Field: "value", Message: "must be a positive decimal with at most 12 decimals"}
+		return Price{}, &domain.FieldError{
+			Field:   "value",
+			Message: "must be a positive decimal with at most 12 decimals",
+		}
 	}
 
-	p := domain.Price{Instrument: money.Currency(b.Instrument), Quote: money.Currency(b.QuoteInstrument), Date: b.Date.Time, Value: value, Source: domain.SourceManual}
+	p := domain.Price{
+		Instrument: money.Currency(b.Instrument),
+		Quote:      money.Currency(b.QuoteInstrument),
+		Date:       b.Date.Time,
+		Value:      value,
+		Source:     domain.SourceManual,
+	}
 	if err := s.svc.RecordPrices(ctx, []domain.Price{p}); err != nil {
 		return Price{}, err
 	}
@@ -66,7 +75,10 @@ func (s *Server) importPrices(w http.ResponseWriter, r *http.Request) {
 	_, _ = buf.WriteTo(w)
 }
 
-func (s *Server) importPricesFile(ctx context.Context, body *multipart.Reader) (PriceImport, error) {
+func (s *Server) importPricesFile(
+	ctx context.Context,
+	body *multipart.Reader,
+) (PriceImport, error) {
 	for {
 		part, err := body.NextPart()
 		if errors.Is(err, io.EOF) {
@@ -102,31 +114,51 @@ func (s *Server) recordInstrumentPrices(
 	for i, p := range b.Prices {
 		value, err := money.ParseRate(p.Value)
 		if err != nil {
-			return InstrumentPricesResult{}, &domain.FieldError{Field: fmt.Sprintf("prices[%d]", i), Message: rateMessage}
+			return InstrumentPricesResult{}, &domain.FieldError{
+				Field:   fmt.Sprintf("prices[%d]", i),
+				Message: rateMessage,
+			}
 		}
 
 		points[i] = domain.PricePoint{Date: p.Date.Time, Value: value}
 	}
 
 	counts, err := s.svc.RecordInstrumentPrices(
-		ctx, r.PathValue("code"), money.Currency(b.QuoteInstrument), points, b.DryRun != nil && *b.DryRun,
+		ctx,
+		r.PathValue("code"),
+		money.Currency(b.QuoteInstrument),
+		points,
+		b.DryRun != nil && *b.DryRun,
 	)
 	if err != nil {
 		return InstrumentPricesResult{}, err
 	}
 
 	return InstrumentPricesResult{
-		New: counts.New, Replaced: counts.Replaced, Unchanged: counts.Unchanged, BelowFeed: counts.BelowFeed,
+		New:       counts.New,
+		Replaced:  counts.Replaced,
+		Unchanged: counts.Unchanged,
+		BelowFeed: counts.BelowFeed,
 	}, nil
 }
 
-func (s *Server) listPrices(ctx context.Context, r *http.Request, _ httpserver.None) (PriceList, error) {
+func (s *Server) listPrices(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (PriceList, error) {
 	p, err := httpserver.Query[ListPricesParams](r)
 	if err != nil {
 		return PriceList{}, err
 	}
 
-	ps, err := s.svc.ListPrices(ctx, money.Currency(p.Instrument), money.Currency(p.QuoteInstrument), p.From.Time, p.To.Time)
+	ps, err := s.svc.ListPrices(
+		ctx,
+		money.Currency(p.Instrument),
+		money.Currency(p.QuoteInstrument),
+		p.From.Time,
+		p.To.Time,
+	)
 	if err != nil {
 		return PriceList{}, err
 	}
@@ -141,7 +173,12 @@ func (s *Server) listPrices(ctx context.Context, r *http.Request, _ httpserver.N
 
 func toPriceAPI(p domain.Price) Price {
 	return Price{
-		Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: openapi_types.Date{Time: p.Date},
-		Value: p.Value.Reduced().String(), Source: p.Source,
+		Instrument: string(
+			p.Instrument,
+		),
+		QuoteInstrument: string(p.Quote),
+		Date:            openapi_types.Date{Time: p.Date},
+		Value:           p.Value.Reduced().String(),
+		Source:          p.Source,
 	}
 }

@@ -38,11 +38,22 @@ func (s *Server) getIndicators(
 	out := Indicators{Currency: report.Currency, Months: make([]IndicatorMonth, len(report.Months))}
 	for i, m := range report.Months {
 		out.Months[i] = IndicatorMonth{
-			Month: m.Month.Format("2006-01"), Income: money(m.Income), Expense: money(m.Expense),
-			Committed: money(m.Committed), DebtService: money(m.DebtService), LiquidBalance: money(m.Liquid),
-			Liabilities: money(m.Liabilities), SavingsRate: toRatio(m.SavingsRate),
-			TrailingSavingsRate: toRatio(m.TrailingSavingsRate), Liquidity: toRatio(m.Liquidity),
-			CommittedShare: toRatio(m.CommittedShare), DebtServiceShare: toRatio(m.DebtServiceShare),
+			Month:   m.Month.Format("2006-01"),
+			Income:  money(m.Income),
+			Expense: money(m.Expense),
+			Committed: money(
+				m.Committed,
+			),
+			DebtService:         money(m.DebtService),
+			LiquidBalance:       money(m.Liquid),
+			Liabilities:         money(m.Liabilities),
+			SavingsRate:         toRatio(m.SavingsRate),
+			TrailingSavingsRate: toRatio(m.TrailingSavingsRate),
+			Liquidity:           toRatio(m.Liquidity),
+			CommittedShare: toRatio(
+				m.CommittedShare,
+			),
+			DebtServiceShare: toRatio(m.DebtServiceShare),
 		}
 		if m.HasMeans {
 			income, expense := money(m.MeanIncome), money(m.MeanExpense)

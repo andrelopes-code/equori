@@ -16,13 +16,31 @@ func anticipatedTV(t *testing.T, today string) (c cardSetup, planID string) {
 	t.Helper()
 	c = newCardSetup(t, today)
 	res := installmentPurchase(t, c.h, map[string]any{
-		"card_account_id": c.card, "date": "2026-10-25", "description": "TV",
-		"splits":            []map[string]any{{"account_id": c.h.Account("Electronics", "expense", "", nil), "amount": apitest.BRL(200000)}},
-		"installment_count": 10, "interest": apitest.BRL(22540),
+		"card_account_id": c.card,
+		"date":            "2026-10-25",
+		"description":     "TV",
+		"splits": []map[string]any{
+			{
+				"account_id": c.h.Account("Electronics", "expense", "", nil),
+				"amount":     apitest.BRL(200000),
+			},
+		},
+		"installment_count": 10,
+		"interest":          apitest.BRL(22540),
 	})
-	c.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+res.PlanID+"/anticipation", map[string]any{
-		"date": "2027-01-15", "from_installment": 5, "to_installment": 10, "target_statement": "2027-02", "amount": apitest.BRL(126000),
-	}, http.StatusCreated, nil)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/installment-plans/"+res.PlanID+"/anticipation",
+		map[string]any{
+			"date":             "2027-01-15",
+			"from_installment": 5,
+			"to_installment":   10,
+			"target_statement": "2027-02",
+			"amount":           apitest.BRL(126000),
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	return c, res.PlanID
 }
@@ -31,7 +49,13 @@ func anticipatedTV(t *testing.T, today string) (c cardSetup, planID string) {
 func cancelPlan(t *testing.T, c cardSetup, planID, date string) apitest.TransactionView {
 	t.Helper()
 	var out apitest.TransactionView
-	c.h.MustDo(http.MethodPost, "/api/v1/installment-plans/"+planID+"/cancellation", map[string]any{"date": date}, http.StatusCreated, &out)
+	c.h.MustDo(
+		http.MethodPost,
+		"/api/v1/installment-plans/"+planID+"/cancellation",
+		map[string]any{"date": date},
+		http.StatusCreated,
+		&out,
+	)
 
 	return out
 }
@@ -110,13 +134,35 @@ func TestS174AnticipationOfReversedInstallments(t *testing.T) {
 	t.Parallel()
 	c, planID := anticipatedTV(t, "2027-01-20")
 	again := func() apitest.Response {
-		return c.h.Do(http.MethodPost, "/api/v1/installment-plans/"+planID+"/anticipation", map[string]any{
-			"date": "2027-01-20", "from_installment": 4, "to_installment": 6, "target_statement": "2027-02", "amount": apitest.BRL(60000),
-		})
+		return c.h.Do(
+			http.MethodPost,
+			"/api/v1/installment-plans/"+planID+"/anticipation",
+			map[string]any{
+				"date":             "2027-01-20",
+				"from_installment": 4,
+				"to_installment":   6,
+				"target_statement": "2027-02",
+				"amount":           apitest.BRL(60000),
+			},
+		)
 	}
-	c.h.ExpectProblem(again(), http.StatusUnprocessableEntity, "validation_failed", "from_installment")
+	c.h.ExpectProblem(
+		again(),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"from_installment",
+	)
 	cancelPlan(t, c, planID, "2027-01-20")
-	c.h.ExpectProblem(c.h.Do(http.MethodPost, "/api/v1/installment-plans/"+planID+"/anticipation", map[string]any{
-		"date": "2027-01-20", "from_installment": 4, "to_installment": 4, "target_statement": "2027-02", "amount": apitest.BRL(22254),
-	}), http.StatusUnprocessableEntity, "validation_failed", "from_installment")
+	c.h.ExpectProblem(
+		c.h.Do(http.MethodPost, "/api/v1/installment-plans/"+planID+"/anticipation", map[string]any{
+			"date":             "2027-01-20",
+			"from_installment": 4,
+			"to_installment":   4,
+			"target_statement": "2027-02",
+			"amount":           apitest.BRL(22254),
+		}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"from_installment",
+	)
 }

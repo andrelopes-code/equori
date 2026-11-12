@@ -23,9 +23,12 @@ func (m *Module) handle(ctx context.Context, tx pgx.Tx, e outbox.Delivered) erro
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleTransaction(ctx, app.TransactionChanged{
-		BooksID: e.BooksID, TransactionID: payload.TransactionID, AccountIDs: payload.AccountIDs,
-	})
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).
+		HandleTransaction(ctx, app.TransactionChanged{
+			BooksID:       e.BooksID,
+			TransactionID: payload.TransactionID,
+			AccountIDs:    payload.AccountIDs,
+		})
 }
 
 // handleMerge follows a category merge in the dispatcher's transaction (A75).
@@ -35,7 +38,8 @@ func (m *Module) handleMerge(ctx context.Context, tx pgx.Tx, e outbox.Delivered)
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandleCategoriesMerged(ctx, e.BooksID, payload.From, payload.Into)
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).
+		HandleCategoriesMerged(ctx, e.BooksID, payload.From, payload.Into)
 }
 
 // handlePayeeMerge follows a payee merge in the dispatcher's transaction (A82).
@@ -45,5 +49,6 @@ func (m *Module) handlePayeeMerge(ctx context.Context, tx pgx.Tx, e outbox.Deliv
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return m.svc.WithRepository(postgres.NewTxRepository(tx)).HandlePayeesMerged(ctx, e.BooksID, payload.From, payload.Into)
+	return m.svc.WithRepository(postgres.NewTxRepository(tx)).
+		HandlePayeesMerged(ctx, e.BooksID, payload.From, payload.Into)
 }

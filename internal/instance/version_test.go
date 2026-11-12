@@ -133,7 +133,8 @@ func TestA159FailedCheckKeepsAnswer(t *testing.T) {
 		t.Fatal("CheckVersion error = nil, want an error")
 	}
 
-	if !strings.Contains(h.Logs(), "level=WARN") || !strings.Contains(h.Logs(), "version_check_failed") {
+	if !strings.Contains(h.Logs(), "level=WARN") ||
+		!strings.Contains(h.Logs(), "version_check_failed") {
 		t.Fatalf("logs hold no warn record with code version_check_failed:\n%s", h.Logs())
 	}
 
@@ -156,7 +157,8 @@ func TestA159PrereleaseChannel(t *testing.T) {
 	stub.wantURI(t, "/?per_page=1")
 
 	got := getVersion(t, h)
-	if got.Latest == nil || got.Latest.Version != "v1.0.0-rc.2" || got.Latest.URL != prereleaseNotes {
+	if got.Latest == nil || got.Latest.Version != "v1.0.0-rc.2" ||
+		got.Latest.URL != prereleaseNotes {
 		t.Fatalf("latest = %+v, want v1.0.0-rc.2 at %s", got.Latest, prereleaseNotes)
 	}
 
@@ -174,7 +176,12 @@ func TestA159SetupStoresConsent(t *testing.T) {
 		h := apitest.Empty(t)
 		client := setupClient(t)
 
-		r := h.Call(client, http.MethodPost, "/api/v1/setup", setupBody(t, h, map[string]any{"update_check": true}))
+		r := h.Call(
+			client,
+			http.MethodPost,
+			"/api/v1/setup",
+			setupBody(t, h, map[string]any{"update_check": true}),
+		)
 		if r.Status != http.StatusCreated {
 			t.Fatalf("setup: status = %d, want 201: %s", r.Status, r.Body)
 		}
@@ -226,7 +233,9 @@ func newReleaseStub(t *testing.T) *releaseStub {
 			return
 		}
 
-		_, _ = w.Write([]byte(`[{"tag_name": "v1.0.0-rc.2", "html_url": "` + prereleaseNotes + `"}]`))
+		_, _ = w.Write(
+			[]byte(`[{"tag_name": "v1.0.0-rc.2", "html_url": "` + prereleaseNotes + `"}]`),
+		)
 	}))
 	t.Cleanup(s.Close)
 

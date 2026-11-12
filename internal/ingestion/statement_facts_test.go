@@ -29,7 +29,13 @@ func (f syncFixture) statement(card, ref string) factView {
 	var out struct {
 		Items []factView `json:"items"`
 	}
-	f.h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from="+ref+"&to="+ref, nil, http.StatusOK, &out)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/statements?from="+ref+"&to="+ref,
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	if len(out.Items) != 1 {
 		f.h.T().Fatalf("statements %s = %+v", ref, out.Items)
@@ -51,26 +57,52 @@ func cardWithBill(t *testing.T, bill pluggy.Bill) (syncFixture, string) {
 // the statement takes the dates and, with no difference, is reconciled by the sync.
 func TestS80StatementFactsFromBill(t *testing.T) {
 	t.Parallel()
-	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "230.00"})
-	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
+	f, card := cardWithBill(
+		t,
+		pluggy.Bill{
+			ID:              "bill-nov",
+			DueDate:         "2026-11-10T00:00:00.000Z",
+			BillClosingDate: new("2026-11-02T00:00:00.000Z"),
+			TotalAmount:     "230.00",
+		},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 
 	s := f.statement(card, "2026-11")
 	if s.ClosingDate != "2026-11-02" || s.DueDate != "2026-11-10" || s.Institution == nil || s.Institution.Source != "aggregator" ||
-		s.Institution.Total.Amount != 23000 || s.Difference == nil || s.Difference.Amount != 0 || !s.Reconciled {
-		t.Fatalf("statement = %+v (institution %+v, difference %+v)", s, s.Institution, s.Difference)
+		s.Institution.Total.Amount != 23000 ||
+		s.Difference == nil ||
+		s.Difference.Amount != 0 ||
+		!s.Reconciled {
+		t.Fatalf(
+			"statement = %+v (institution %+v, difference %+v)",
+			s,
+			s.Institution,
+			s.Difference,
+		)
 	}
 }
 
 // A92: a total that differs from the derived amount due is reported and not reconciled.
 func TestStatementFactsReportADifference(t *testing.T) {
 	t.Parallel()
-	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "240.00"})
-	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
+	f, card := cardWithBill(
+		t,
+		pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "240.00"},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 
 	s := f.statement(card, "2026-11")
-	if s.ClosingDate != "2026-11-03" || s.Difference == nil || s.Difference.Amount != -1000 || s.Reconciled {
+	if s.ClosingDate != "2026-11-03" || s.Difference == nil || s.Difference.Amount != -1000 ||
+		s.Reconciled {
 		t.Fatalf("statement = %+v (difference %+v)", s, s.Difference)
 	}
 }
@@ -79,8 +111,14 @@ func TestStatementFactsReportADifference(t *testing.T) {
 // later entry closes the difference, without waiting for the bank to send the bill again.
 func TestStatementReconciledWhenAnEntryClosesTheDifference_S181(t *testing.T) {
 	t.Parallel()
-	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "230.00"})
-	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "240.00", "POSTED", new("bill-nov")))
+	f, card := cardWithBill(
+		t,
+		pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "230.00"},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-1", "2026-10-20", "240.00", "POSTED", new("bill-nov")),
+	)
 	f.sync()
 
 	if s := f.statement(card, "2026-11"); s.Reconciled {
@@ -89,11 +127,24 @@ func TestStatementReconciledWhenAnEntryClosesTheDifference_S181(t *testing.T) {
 
 	refunds := f.h.Account("Refunds", "income", "", nil)
 
-	f.h.Record("2026-10-21", map[string]any{"account_id": card, "amount": map[string]any{"amount": 1000, "currency": "BRL"}},
-		map[string]any{"account_id": refunds, "amount": map[string]any{"amount": -1000, "currency": "BRL"}})
+	f.h.Record(
+		"2026-10-21",
+		map[string]any{
+			"account_id": card,
+			"amount":     map[string]any{"amount": 1000, "currency": "BRL"},
+		},
+		map[string]any{
+			"account_id": refunds,
+			"amount":     map[string]any{"amount": -1000, "currency": "BRL"},
+		},
+	)
 	f.h.Dispatch()
 
-	if s := f.statement(card, "2026-11"); !s.Reconciled || s.Difference == nil || s.Difference.Amount != 0 {
+	if s := f.statement(
+		card,
+		"2026-11",
+	); !s.Reconciled || s.Difference == nil ||
+		s.Difference.Amount != 0 {
 		t.Fatalf("statement = %+v (difference %+v), want reconciled", s, s.Difference)
 	}
 }
@@ -102,8 +153,19 @@ func TestStatementReconciledWhenAnEntryClosesTheDifference_S181(t *testing.T) {
 // the difference shows it, and the line moves when the bank reports it with its bill.
 func TestPendingLineOutsideTheReportedTotalStays(t *testing.T) {
 	t.Parallel()
-	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "230.00"})
-	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
+	f, card := cardWithBill(
+		t,
+		pluggy.Bill{
+			ID:              "bill-nov",
+			DueDate:         "2026-11-10T00:00:00.000Z",
+			BillClosingDate: new("2026-11-02T00:00:00.000Z"),
+			TotalAmount:     "230.00",
+		},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")),
+	)
 	f.line(pluggy.SubtypeCard, cardLine("pending-1", "2026-10-25", "86.13", "PENDING", nil))
 	f.sync()
 
@@ -112,12 +174,22 @@ func TestPendingLineOutsideTheReportedTotalStays(t *testing.T) {
 		t.Fatalf("pending posting = %+v", p)
 	}
 
-	if s := f.statement(card, "2026-11"); s.Difference == nil || s.Difference.Amount != 8613 || s.Reconciled {
+	if s := f.statement(
+		card,
+		"2026-11",
+	); s.Difference == nil || s.Difference.Amount != 8613 ||
+		s.Reconciled {
 		t.Fatalf("2026-11 difference = %+v", s.Difference)
 	}
 
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "86.13"})
-	f.line(pluggy.SubtypeCard, cardLine("pending-1", "2026-10-25", "86.13", "POSTED", new("bill-dec")))
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-dec", DueDate: "2026-12-10T00:00:00.000Z", TotalAmount: "86.13"},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("pending-1", "2026-10-25", "86.13", "POSTED", new("bill-dec")),
+	)
 	f.sync()
 
 	if p := f.cardPosting(tx, card); p.Statement != "2026-12" {
@@ -133,8 +205,19 @@ func TestPendingLineOutsideTheReportedTotalStays(t *testing.T) {
 // billed it although the aggregator still reports it pending.
 func TestPendingLineInTheReportedTotalStays_S184(t *testing.T) {
 	t.Parallel()
-	f, card := cardWithBill(t, pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", BillClosingDate: new("2026-11-02T00:00:00.000Z"), TotalAmount: "316.13"})
-	f.line(pluggy.SubtypeCard, cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")))
+	f, card := cardWithBill(
+		t,
+		pluggy.Bill{
+			ID:              "bill-nov",
+			DueDate:         "2026-11-10T00:00:00.000Z",
+			BillClosingDate: new("2026-11-02T00:00:00.000Z"),
+			TotalAmount:     "316.13",
+		},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("charge-1", "2026-10-20", "230.00", "POSTED", new("bill-nov")),
+	)
 	f.line(pluggy.SubtypeCard, cardLine("pending-1", "2026-10-25", "86.13", "PENDING", nil))
 	f.sync()
 
@@ -155,20 +238,40 @@ func TestReportedClosingTakesTheRuleShift(t *testing.T) {
 	f := newSyncFixture(t)
 	card := f.h.Account("Nubank Gold", "liability", "credit_card", nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-01", "due_day": 5, "closing_mode": "before_due", "closing_days_before_due": 7,
-		"closing_adjustment": "preceding",
+		"effective_from":          "2026-01",
+		"due_day":                 5,
+		"closing_mode":            "before_due",
+		"closing_days_before_due": 7,
+		"closing_adjustment":      "preceding",
 	}, http.StatusCreated, nil)
 
-	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeCard).ID, map[string]any{"account_id": card, "sync_from": "2026-08-01"})
+	r := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeCard).ID,
+		map[string]any{"account_id": card, "sync_from": "2026-08-01"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
 
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-sep", DueDate: "2026-09-08T00:00:00.000Z", BillClosingDate: new("2026-08-29T00:00:00.000Z"), TotalAmount: "16.61"})
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{
+			ID:              "bill-sep",
+			DueDate:         "2026-09-08T00:00:00.000Z",
+			BillClosingDate: new("2026-08-29T00:00:00.000Z"),
+			TotalAmount:     "16.61",
+		},
+	)
 	f.line(pluggy.SubtypeCard, cardLine("uber-1", "2026-08-27", "16.61", "POSTED", new("bill-sep")))
 	f.sync()
 
-	if s := f.statement(card, "2026-09"); s.ClosingDate != "2026-08-28" || s.DueDate != "2026-09-08" || s.Institution.ClosingDate != "2026-08-29" {
+	if s := f.statement(
+		card,
+		"2026-09",
+	); s.ClosingDate != "2026-08-28" || s.DueDate != "2026-09-08" ||
+		s.Institution.ClosingDate != "2026-08-29" {
 		t.Fatalf("statement = %+v (institution %+v)", s, s.Institution)
 	}
 }
@@ -180,27 +283,70 @@ func TestS89CardSyncStart(t *testing.T) {
 	f := newSyncFixture(t)
 	card := f.h.Account("Nubank Gold", "liability", "credit_card", nil)
 	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2025-01", "due_day": 5, "closing_mode": "before_due", "closing_days_before_due": 7,
-		"closing_adjustment": "preceding",
+		"effective_from":          "2025-01",
+		"due_day":                 5,
+		"closing_mode":            "before_due",
+		"closing_days_before_due": 7,
+		"closing_adjustment":      "preceding",
 	}, http.StatusCreated, nil)
 
-	r := f.mapAccount(f.h.Client, f.conn.ID, externalAccount(f.conn, pluggy.SubtypeCard).ID, map[string]any{"account_id": card, "sync_from": "2026-07-01"})
+	r := f.mapAccount(
+		f.h.Client,
+		f.conn.ID,
+		externalAccount(f.conn, pluggy.SubtypeCard).ID,
+		map[string]any{"account_id": card, "sync_from": "2026-07-01"},
+	)
 	if r.Status != http.StatusOK {
 		t.Fatalf("map status %d: %s", r.Status, r.Body)
 	}
 
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-jun", DueDate: "2026-06-05T00:00:00.000Z", BillClosingDate: new("2026-05-29T00:00:00.000Z"), TotalAmount: "724.7593"})
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-jul", DueDate: "2026-07-06T00:00:00.000Z", BillClosingDate: new("2026-06-28T00:00:00.000Z"), TotalAmount: "701.4808"})
-	f.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-aug", DueDate: "2026-08-05T00:00:00.000Z", BillClosingDate: new("2026-07-29T00:00:00.000Z"), TotalAmount: "773.5371"})
-	f.line(pluggy.SubtypeCard, cardLine("jul-line", "2026-06-20", "50.00", "POSTED", new("bill-jul")))
-	f.line(pluggy.SubtypeCard, cardLine("youtube", "2026-06-30", "26.90", "POSTED", new("bill-aug")))
-	f.line(pluggy.SubtypeCard, cardLine("purchase", "2026-07-20", "746.64", "POSTED", new("bill-aug")))
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{
+			ID:              "bill-jun",
+			DueDate:         "2026-06-05T00:00:00.000Z",
+			BillClosingDate: new("2026-05-29T00:00:00.000Z"),
+			TotalAmount:     "724.7593",
+		},
+	)
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{
+			ID:              "bill-jul",
+			DueDate:         "2026-07-06T00:00:00.000Z",
+			BillClosingDate: new("2026-06-28T00:00:00.000Z"),
+			TotalAmount:     "701.4808",
+		},
+	)
+	f.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{
+			ID:              "bill-aug",
+			DueDate:         "2026-08-05T00:00:00.000Z",
+			BillClosingDate: new("2026-07-29T00:00:00.000Z"),
+			TotalAmount:     "773.5371",
+		},
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("jul-line", "2026-06-20", "50.00", "POSTED", new("bill-jul")),
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("youtube", "2026-06-30", "26.90", "POSTED", new("bill-aug")),
+	)
+	f.line(
+		pluggy.SubtypeCard,
+		cardLine("purchase", "2026-07-20", "746.64", "POSTED", new("bill-aug")),
+	)
 	paid := cardLine("payment", "2026-07-05", "-701.48", "POSTED", new("bill-aug"))
 	paid.OperationType = new("PAGAMENTO_FATURA")
 	f.line(pluggy.SubtypeCard, paid)
 	f.sync()
 
-	if n := f.count(`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'jul-line'`); n != 0 {
+	if n := f.count(
+		`SELECT count(*) FROM ingestion_external_record WHERE external_id = 'jul-line'`,
+	); n != 0 {
 		t.Fatalf("a line of the bill before the start was recorded")
 	}
 
@@ -212,7 +358,11 @@ func TestS89CardSyncStart(t *testing.T) {
 		t.Fatalf("2026-08 = %+v (difference %+v)", s, s.Difference)
 	}
 
-	if s := f.statement(card, "2026-07"); s.Institution == nil || s.Difference == nil || s.Difference.Amount != 0 {
+	if s := f.statement(
+		card,
+		"2026-07",
+	); s.Institution == nil || s.Difference == nil ||
+		s.Difference.Amount != 0 {
 		t.Fatalf("2026-07 = %+v (difference %+v)", s, s.Difference)
 	}
 

@@ -87,7 +87,11 @@ func TestCounterpartyAtImport(t *testing.T) {
 		want string
 	}{
 		{"receiver holder", pixLine("cp-holder", "2026-11-05", "-10.00", cpf(holderCPF)), "holder"},
-		{"payer third party", pixLine("cp-third", "2026-11-06", "20.00", cpf(thirdPartyCPF)), "third_party"},
+		{
+			"payer third party",
+			pixLine("cp-third", "2026-11-06", "20.00", cpf(thirdPartyCPF)),
+			"third_party",
+		},
 		{"payer masked", pixLine("cp-masked", "2026-11-07", "30.00", cpf(maskedCPF)), ""},
 		{"no payment data", bankLine("cp-none", "2026-11-08", "-40.00"), ""},
 	}
@@ -111,7 +115,10 @@ func TestCounterpartyOfAnotherHolder(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixtureOf(t, thirdPartyCPF, true)
-	f.p.AddTransaction(nubankItem+"-checking", pixLine("cp-other", "2026-11-05", "-10.00", cpf(thirdPartyCPF)))
+	f.p.AddTransaction(
+		nubankItem+"-checking",
+		pixLine("cp-other", "2026-11-05", "-10.00", cpf(thirdPartyCPF)),
+	)
 	f.sync(f.nubank)
 
 	if got := f.counterparty("cp-other"); got != "holder" {
@@ -124,7 +131,10 @@ func TestCounterpartyNotRevised(t *testing.T) {
 	t.Parallel()
 
 	f := newPairingFixtureOf(t, thirdPartyCPF, false)
-	f.p.AddTransaction(nubankItem+"-checking", pixLine("cp-late", "2026-11-05", "10.00", cpf(thirdPartyCPF)))
+	f.p.AddTransaction(
+		nubankItem+"-checking",
+		pixLine("cp-late", "2026-11-05", "10.00", cpf(thirdPartyCPF)),
+	)
 	f.sync(f.nubank)
 
 	if got := f.counterparty("cp-late"); got != "third_party" {
@@ -180,7 +190,9 @@ func TestS378ThirdParty(t *testing.T) {
 		t.Errorf("nu-in-60 postings = %v, want %v", got, wantIn)
 	}
 
-	if n := f.scalar(`SELECT count(*) FROM ingestion_external_record WHERE state = 'needs_review'`); n != 0 {
+	if n := f.scalar(
+		`SELECT count(*) FROM ingestion_external_record WHERE state = 'needs_review'`,
+	); n != 0 {
 		t.Errorf("records in review = %d, want 0", n)
 	}
 }
@@ -206,7 +218,11 @@ func TestS381NoDocument(t *testing.T) {
 			f.mpLine(bankLine("mp-in-40", "2026-11-10", "40.00"))
 			f.sync(f.mercadoPago)
 
-			want := recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{f.record("nu-out-40").Tx}}
+			want := recordRow{
+				State:      "needs_review",
+				Reason:     "transfer",
+				Candidates: []string{f.record("nu-out-40").Tx},
+			}
 			if got := f.record("mp-in-40"); !got.equal(want) {
 				t.Fatalf("mp-in-40 = %+v, want %+v", got, want)
 			}
@@ -226,7 +242,11 @@ func TestS382SeveralCounterparts(t *testing.T) {
 	f.mpLine(pixLine("mp-in-100", "2026-11-10", "100.00", cpf(holderCPF)))
 	f.sync(f.mercadoPago)
 
-	want := recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{f.record("nu-a").Tx, f.record("nu-b").Tx}}
+	want := recordRow{
+		State:      "needs_review",
+		Reason:     "transfer",
+		Candidates: []string{f.record("nu-a").Tx, f.record("nu-b").Tx},
+	}
 	if got := f.record("mp-in-100"); !got.equal(want) {
 		t.Fatalf("mp-in-100 = %+v, want %+v", got, want)
 	}
@@ -237,7 +257,11 @@ func TestS382SeveralCounterparts(t *testing.T) {
 
 	f.resolve("mp-in-100", map[string]any{"action": "match", "transaction_id": f.record("nu-b").Tx})
 
-	if got, want := f.record("mp-in-100"), (recordRow{State: "matched", Reason: "transfer", Tx: f.record("nu-b").Tx}); !got.equal(want) {
+	if got, want := f.record(
+		"mp-in-100",
+	), (recordRow{State: "matched", Reason: "transfer", Tx: f.record("nu-b").Tx}); !got.equal(
+		want,
+	) {
 		t.Fatalf("mp-in-100 = %+v, want %+v", got, want)
 	}
 
@@ -283,7 +307,10 @@ func TestS377CardPayment(t *testing.T) {
 			t.Parallel()
 
 			f := newPairingFixture(t)
-			f.p.AddTransaction(nubankItem+"-card", withBase(f, typedCardLine("pay-784", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")))
+			f.p.AddTransaction(
+				nubankItem+"-card",
+				withBase(f, typedCardLine("pay-784", "2026-11-05", "-784.65", "PAGAMENTO_FATURA")),
+			)
 			f.p.SetItemUpdatedAt(nubankItem, "2026-11-09T10:00:00.000Z")
 			f.sync(f.nubank)
 
@@ -294,7 +321,11 @@ func TestS377CardPayment(t *testing.T) {
 
 			v.line(f)
 
-			want := recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{payment}}
+			want := recordRow{
+				State:      "needs_review",
+				Reason:     "transfer",
+				Candidates: []string{payment},
+			}
 			if got := f.record("out-784"); !got.equal(want) {
 				t.Fatalf("out-784 = %+v, want %+v", got, want)
 			}
@@ -305,7 +336,11 @@ func TestS377CardPayment(t *testing.T) {
 
 			f.resolve("out-784", map[string]any{"action": "match", "transaction_id": payment})
 
-			if got, want := f.record("out-784"), (recordRow{State: "matched", Reason: "transfer", Tx: payment}); !got.equal(want) {
+			if got, want := f.record(
+				"out-784",
+			), (recordRow{State: "matched", Reason: "transfer", Tx: payment}); !got.equal(
+				want,
+			) {
 				t.Fatalf("out-784 = %+v, want %+v", got, want)
 			}
 
@@ -314,7 +349,11 @@ func TestS377CardPayment(t *testing.T) {
 				t.Errorf("postings = %v, want %v", got, wantLegs)
 			}
 
-			role := f.scalarText(`SELECT card_role FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2`, payment, f.cardLedger)
+			role := f.scalarText(
+				`SELECT card_role FROM ledger_posting WHERE transaction_id = $1 AND account_id = $2`,
+				payment,
+				f.cardLedger,
+			)
 			if role != "payment" {
 				t.Errorf("card posting role = %q, want payment", role)
 			}
@@ -345,7 +384,11 @@ func TestS380MaskedCounterparty(t *testing.T) {
 
 	f.resolve("mp-out", map[string]any{"action": "match", "transaction_id": booked})
 
-	if got, want := f.record("mp-out"), (recordRow{State: "matched", Reason: "transfer", Tx: booked}); !got.equal(want) {
+	if got, want := f.record(
+		"mp-out",
+	), (recordRow{State: "matched", Reason: "transfer", Tx: booked}); !got.equal(
+		want,
+	) {
 		t.Fatalf("mp-out = %+v, want %+v", got, want)
 	}
 
@@ -364,11 +407,20 @@ func TestMatchRefusedCandidate(t *testing.T) {
 		"categorized after the import": func(f pairingFixture, tx string) {
 			gifts := f.h.Account("Gifts", "income", "", nil)
 			f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
-				"expected_version": 1, "parts": []map[string]any{{"account_id": gifts, "amount": apitest.BRL(10000)}},
+				"expected_version": 1,
+				"parts": []map[string]any{
+					{"account_id": gifts, "amount": apitest.BRL(10000)},
+				},
 			}, http.StatusOK, nil)
 		},
 		"voided after the import": func(f pairingFixture, tx string) {
-			f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+			f.h.MustDo(
+				http.MethodPost,
+				"/api/v1/transactions/"+tx+"/void",
+				map[string]string{"reason": "typo"},
+				http.StatusOK,
+				nil,
+			)
 		},
 	}
 
@@ -391,10 +443,17 @@ func TestMatchRefusedCandidate(t *testing.T) {
 			change(f, booked)
 			version := f.h.Transaction(booked).Version
 
-			id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = 'mp-in'`)
+			id := f.scalarText(
+				`SELECT id::text FROM ingestion_external_record WHERE external_id = 'mp-in'`,
+			)
 			r := f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/resolve",
 				map[string]any{"action": "match", "transaction_id": booked})
-			f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "transaction_id")
+			f.h.ExpectProblem(
+				r,
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"transaction_id",
+			)
 
 			if got := f.record("mp-in"); got.State != "needs_review" {
 				t.Errorf("mp-in = %+v, want needs_review", got)
@@ -414,12 +473,22 @@ func TestS383Precedence(t *testing.T) {
 	f := newPairingFixture(t)
 	gifts := f.h.Account("Gifts", "income", "", nil)
 	salary := f.h.Account("Salary", "income", "", nil)
-	manual := f.h.Record("2026-11-10", f.h.Posting(f.nubankLedger, 12000), f.h.Posting(salary, -12000))
+	manual := f.h.Record(
+		"2026-11-10",
+		f.h.Posting(f.nubankLedger, 12000),
+		f.h.Posting(salary, -12000),
+	)
 
 	f.h.MustDo(http.MethodPost, "/api/v1/rules", map[string]any{
-		"name":       "Received transfer",
-		"conditions": []any{map[string]any{"field": "description", "operator": "contains", "value": "Transferência recebida"}},
-		"actions":    []any{map[string]any{"type": "set_category", "category_id": gifts}},
+		"name": "Received transfer",
+		"conditions": []any{
+			map[string]any{
+				"field":    "description",
+				"operator": "contains",
+				"value":    "Transferência recebida",
+			},
+		},
+		"actions": []any{map[string]any{"type": "set_category", "category_id": gifts}},
 	}, http.StatusCreated, nil)
 
 	f.mpLine(pixLine("mp-out-250", "2026-11-10", "-250.00", cpf(holderCPF)))
@@ -432,7 +501,11 @@ func TestS383Precedence(t *testing.T) {
 	f.nubankLine(pixLine("nu-in-120", "2026-11-10", "120.00", cpf(holderCPF)))
 	f.sync(f.nubank)
 
-	if mp := f.record("mp-out-250"); !mp.equal(recordRow{State: "needs_review", Reason: "transfer"}) {
+	if mp := f.record(
+		"mp-out-250",
+	); !mp.equal(
+		recordRow{State: "needs_review", Reason: "transfer"},
+	) {
 		t.Errorf("mp-out-250 = %+v, want needs_review transfer without candidates", mp)
 	}
 
@@ -441,11 +514,22 @@ func TestS383Precedence(t *testing.T) {
 		t.Fatalf("nu-in-250 = %+v, want created", nu)
 	}
 
-	if got, want := f.legs(nu.Tx), map[string]int64{"Nubank": 25000, "Gifts": -25000}; !maps.Equal(got, want) {
+	if got, want := f.legs(
+		nu.Tx,
+	), map[string]int64{
+		"Nubank": 25000,
+		"Gifts":  -25000,
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("nu-in-250 postings = %v, want %v", got, want)
 	}
 
-	if linked := f.record("nu-in-120"); linked.State != "matched" || linked.Decision != "linked" || linked.Tx != manual {
+	if linked := f.record(
+		"nu-in-120",
+	); linked.State != "matched" || linked.Decision != "linked" ||
+		linked.Tx != manual {
 		t.Errorf("nu-in-120 = %+v, want matched linked to %s", linked, manual)
 	}
 }
@@ -462,9 +546,27 @@ func TestS384Bounds(t *testing.T) {
 		pending bool
 		want    recordRow
 	}{
-		{"three days", "2026-11-07", "250.00", false, recordRow{State: "matched", Decision: "paired"}},
-		{"four days", "2026-11-06", "250.00", false, recordRow{State: "needs_review", Reason: "transfer"}},
-		{"another amount", "2026-11-07", "250.01", false, recordRow{State: "needs_review", Reason: "transfer"}},
+		{
+			"three days",
+			"2026-11-07",
+			"250.00",
+			false,
+			recordRow{State: "matched", Decision: "paired"},
+		},
+		{
+			"four days",
+			"2026-11-06",
+			"250.00",
+			false,
+			recordRow{State: "needs_review", Reason: "transfer"},
+		},
+		{
+			"another amount",
+			"2026-11-07",
+			"250.01",
+			false,
+			recordRow{State: "needs_review", Reason: "transfer"},
+		},
 		{"pending line", "2026-11-07", "250.00", true, recordRow{}},
 	}
 
@@ -516,7 +618,10 @@ func TestPairWithTransaction(t *testing.T) {
 	f.nubankLine(pixLine("nu-in", "2026-11-10", "250.00", cpf(holderCPF)))
 	f.sync(f.nubank)
 
-	if nu := f.record("nu-in"); nu.State != "matched" || nu.Decision != "paired" || nu.Tx != booked {
+	if nu := f.record(
+		"nu-in",
+	); nu.State != "matched" || nu.Decision != "paired" ||
+		nu.Tx != booked {
 		t.Fatalf("nu-in = %+v, want matched paired with %s", nu, booked)
 	}
 
@@ -529,7 +634,15 @@ func TestPairWithTransaction(t *testing.T) {
 		t.Errorf("version = %d, want 2", tx.Version)
 	}
 
-	if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+	if got, want := f.legs(
+		booked,
+	), map[string]int64{
+		"Mercado Pago": -25000,
+		"Nubank":       25000,
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("postings = %v, want %v", got, want)
 	}
 }
@@ -564,11 +677,18 @@ func TestS375HolderOnBothLines(t *testing.T) {
 			}
 
 			booked := f.record(first).Tx
-			if got := f.record(first); got.State != "created" || got.Decision != "" || booked == "" {
+			if got := f.record(
+				first,
+			); got.State != "created" || got.Decision != "" ||
+				booked == "" {
 				t.Fatalf("%s = %+v, want created", first, got)
 			}
 
-			if got, want := f.record(second), (recordRow{State: "matched", Decision: "paired", Tx: booked}); !got.equal(want) {
+			if got, want := f.record(
+				second,
+			), (recordRow{State: "matched", Decision: "paired", Tx: booked}); !got.equal(
+				want,
+			) {
 				t.Fatalf("%s = %+v, want %+v", second, got, want)
 			}
 
@@ -576,16 +696,35 @@ func TestS375HolderOnBothLines(t *testing.T) {
 				t.Errorf("version = %d, want 2", tx.Version)
 			}
 
-			if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+			if got, want := f.legs(
+				booked,
+			), map[string]int64{
+				"Mercado Pago": -25000,
+				"Nubank":       25000,
+			}; !maps.Equal(
+				got,
+				want,
+			) {
 				t.Errorf("postings = %v, want %v", got, want)
 			}
 
-			if got := f.legRecords(booked); !maps.Equal(got, map[string]string{"Mercado Pago": "mp-out", "Nubank": "nu-in"}) {
+			if got := f.legRecords(
+				booked,
+			); !maps.Equal(
+				got,
+				map[string]string{"Mercado Pago": "mp-out", "Nubank": "nu-in"},
+			) {
 				t.Errorf("posting records = %v", got)
 			}
 
-			if b := f.batchOf(secondLedger); b.Counts.Paired != 1 || b.Counts.Created != 0 || b.Counts.NeedsReview != 0 {
-				t.Errorf("second batch counts = %+v, want paired 1 created 0 needs_review 0", b.Counts)
+			if b := f.batchOf(
+				secondLedger,
+			); b.Counts.Paired != 1 || b.Counts.Created != 0 ||
+				b.Counts.NeedsReview != 0 {
+				t.Errorf(
+					"second batch counts = %+v, want paired 1 created 0 needs_review 0",
+					b.Counts,
+				)
 			}
 
 			if b := f.batchOf(firstLedger); b.Counts.Created != 1 || b.Counts.NeedsReview != 0 {
@@ -616,12 +755,18 @@ func TestS375HolderOnBothLines(t *testing.T) {
 			}
 
 			for _, account := range []string{f.nubankLedger, f.mpLedger} {
-				if c := f.batchOf(account).Counts; c.Created != 0 || c.Paired != 0 || c.NeedsReview != 0 {
+				if c := f.batchOf(
+					account,
+				).Counts; c.Created != 0 || c.Paired != 0 ||
+					c.NeedsReview != 0 {
 					t.Errorf("third sync counts of %s = %+v, want none", account, c)
 				}
 			}
 
-			if got := f.record(second); got.State != "matched" || got.Decision != "paired" || got.Tx != booked {
+			if got := f.record(
+				second,
+			); got.State != "matched" || got.Decision != "paired" ||
+				got.Tx != booked {
 				t.Errorf("%s after the third sync = %+v", second, got)
 			}
 		})
@@ -648,11 +793,23 @@ func TestS376Undo(t *testing.T) {
 			t.Errorf("version after undo = %d, want 3", tx.Version)
 		}
 
-		if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "uncategorized_expense": 25000}; !maps.Equal(got, want) {
+		if got, want := f.legs(
+			booked,
+		), map[string]int64{
+			"Mercado Pago":          -25000,
+			"uncategorized_expense": 25000,
+		}; !maps.Equal(
+			got,
+			want,
+		) {
 			t.Errorf("postings after undo = %v, want %v", got, want)
 		}
 
-		if got, want := f.record("nu-in"), (recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{booked}}); !got.equal(want) {
+		if got, want := f.record(
+			"nu-in",
+		), (recordRow{State: "needs_review", Reason: "transfer", Candidates: []string{booked}}); !got.equal(
+			want,
+		) {
 			t.Errorf("nu-in after undo = %+v, want %+v", got, want)
 		}
 
@@ -666,11 +823,23 @@ func TestS376Undo(t *testing.T) {
 			t.Errorf("version after match = %d, want 4", tx.Version)
 		}
 
-		if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+		if got, want := f.legs(
+			booked,
+		), map[string]int64{
+			"Mercado Pago": -25000,
+			"Nubank":       25000,
+		}; !maps.Equal(
+			got,
+			want,
+		) {
 			t.Errorf("postings after match = %v, want %v", got, want)
 		}
 
-		if got, want := f.record("nu-in"), (recordRow{State: "matched", Reason: "transfer", Tx: booked}); !got.equal(want) {
+		if got, want := f.record(
+			"nu-in",
+		), (recordRow{State: "matched", Reason: "transfer", Tx: booked}); !got.equal(
+			want,
+		) {
 			t.Errorf("nu-in after match = %+v, want %+v", got, want)
 		}
 
@@ -683,14 +852,23 @@ func TestS376Undo(t *testing.T) {
 		f, booked := pairedFixture(t)
 
 		correction := map[string]any{
-			"date": "2026-11-10", "description": "Renamed", "expected_version": 2, "reason": "typo",
-			"postings": []any{apitest.Posting(f.nubankLedger, 25000), apitest.Posting(f.mpLedger, -25000)},
+			"date":             "2026-11-10",
+			"description":      "Renamed",
+			"expected_version": 2,
+			"reason":           "typo",
+			"postings": []any{
+				apitest.Posting(f.nubankLedger, 25000),
+				apitest.Posting(f.mpLedger, -25000),
+			},
 		}
 		f.h.MustDo(http.MethodPut, "/api/v1/transactions/"+booked, correction, http.StatusOK, nil)
 
 		f.h.ExpectProblem(f.undo("nu-in"), http.StatusConflict, "no_decision", "")
 
-		if got := f.record("nu-in"); got.State != "matched" || got.Decision != "paired" || got.Tx != booked {
+		if got := f.record(
+			"nu-in",
+		); got.State != "matched" || got.Decision != "paired" ||
+			got.Tx != booked {
 			t.Errorf("nu-in after the refused undo = %+v, want matched paired", got)
 		}
 	})
@@ -710,7 +888,11 @@ func TestWithdrawnPairedLine(t *testing.T) {
 	f.p.RemoveTransaction(nubankItem+"-checking", "nu-in")
 	f.syncLater(f.nubank, nubankItem, "2026-11-12T15:00:00.000Z")
 
-	if got, want := f.record("nu-in"), (recordRow{State: "withdrawn", Decision: "withdrawn"}); !got.equal(want) {
+	if got, want := f.record(
+		"nu-in",
+	), (recordRow{State: "withdrawn", Decision: "withdrawn"}); !got.equal(
+		want,
+	) {
 		t.Fatalf("nu-in = %+v, want %+v", got, want)
 	}
 
@@ -718,11 +900,26 @@ func TestWithdrawnPairedLine(t *testing.T) {
 		t.Errorf("version = %d, want 2", tx.Version)
 	}
 
-	if got, want := f.legs(booked), map[string]int64{"Mercado Pago": -25000, "Nubank": 25000}; !maps.Equal(got, want) {
+	if got, want := f.legs(
+		booked,
+	), map[string]int64{
+		"Mercado Pago": -25000,
+		"Nubank":       25000,
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("postings = %v, want %v", got, want)
 	}
 
-	if got, want := f.legRecords(booked), map[string]string{"Mercado Pago": "mp-out"}; !maps.Equal(got, want) {
+	if got, want := f.legRecords(
+		booked,
+	), map[string]string{
+		"Mercado Pago": "mp-out",
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("posting records = %v, want %v", got, want)
 	}
 }
@@ -750,14 +947,36 @@ func TestS379AccountNotConnected(t *testing.T) {
 	f.resolve("mp-in-1200", map[string]any{"action": "create"})
 	tx := f.record("mp-in-1200").Tx
 
-	if got, want := f.legs(tx), map[string]int64{"Mercado Pago": 120000, "uncategorized_income": -120000}; !maps.Equal(got, want) {
+	if got, want := f.legs(
+		tx,
+	), map[string]int64{
+		"Mercado Pago":         120000,
+		"uncategorized_income": -120000,
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("postings = %v, want %v", got, want)
 	}
 
 	itau := f.h.Account("Itaú", "asset", "checking", nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/transfer", map[string]any{"expected_version": 1, "account_id": itau}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+tx+"/transfer",
+		map[string]any{"expected_version": 1, "account_id": itau},
+		http.StatusOK,
+		nil,
+	)
 
-	if got, want := f.legs(tx), map[string]int64{"Mercado Pago": 120000, "Itaú": -120000}; !maps.Equal(got, want) {
+	if got, want := f.legs(
+		tx,
+	), map[string]int64{
+		"Mercado Pago": 120000,
+		"Itaú":         -120000,
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("postings after the transfer = %v, want %v", got, want)
 	}
 }
@@ -771,8 +990,14 @@ func TestBothLinesInOneRun(t *testing.T) {
 	f.p.SetAccountTaxNumber(nubankItem+"-savings", holderCPF)
 	f.mapTo(f.nubank, pluggy.SubtypeSavings, savings)
 
-	f.p.AddTransaction(nubankItem+"-checking", withBase(f, pixLine("nu-out-50", "2026-11-09", "-50.00", cpf(holderCPF))))
-	f.p.AddTransaction(nubankItem+"-savings", withBase(f, pixLine("nu-sv-in-50", "2026-11-09", "50.00", cpf(holderCPF))))
+	f.p.AddTransaction(
+		nubankItem+"-checking",
+		withBase(f, pixLine("nu-out-50", "2026-11-09", "-50.00", cpf(holderCPF))),
+	)
+	f.p.AddTransaction(
+		nubankItem+"-savings",
+		withBase(f, pixLine("nu-sv-in-50", "2026-11-09", "50.00", cpf(holderCPF))),
+	)
 	f.sync(f.nubank)
 
 	if n := f.scalar(`SELECT count(*) FROM ledger_transaction`); n != 1 {
@@ -780,15 +1005,30 @@ func TestBothLinesInOneRun(t *testing.T) {
 	}
 
 	booked := f.record("nu-out-50").Tx
-	if got := f.record("nu-out-50"); got.State != "created" || got.Decision != "" || got.Tx != booked {
+	if got := f.record(
+		"nu-out-50",
+	); got.State != "created" || got.Decision != "" ||
+		got.Tx != booked {
 		t.Errorf("nu-out-50 = %+v, want created", got)
 	}
 
-	if got, want := f.record("nu-sv-in-50"), (recordRow{State: "matched", Decision: "paired", Tx: booked}); !got.equal(want) {
+	if got, want := f.record(
+		"nu-sv-in-50",
+	), (recordRow{State: "matched", Decision: "paired", Tx: booked}); !got.equal(
+		want,
+	) {
 		t.Errorf("nu-sv-in-50 = %+v, want %+v", got, want)
 	}
 
-	if got, want := f.legs(booked), map[string]int64{"Nubank": -5000, "Nubank Caixinha": 5000}; !maps.Equal(got, want) {
+	if got, want := f.legs(
+		booked,
+	), map[string]int64{
+		"Nubank":          -5000,
+		"Nubank Caixinha": 5000,
+	}; !maps.Equal(
+		got,
+		want,
+	) {
 		t.Errorf("postings = %v, want %v", got, want)
 	}
 }
@@ -801,8 +1041,10 @@ func TestReviewForAnotherReasonIsNoCounterpart(t *testing.T) {
 	f.mpLine(pixLine("mp-out", "2026-11-10", "-250.00", cpf(holderCPF)))
 	f.sync(f.mercadoPago)
 
-	_, err := f.h.Pool.Exec(f.h.T().Context(),
-		`UPDATE ingestion_external_record SET review_reason = 'duplicate', counterparty = 'holder' WHERE external_id = 'mp-out'`)
+	_, err := f.h.Pool.Exec(
+		f.h.T().Context(),
+		`UPDATE ingestion_external_record SET review_reason = 'duplicate', counterparty = 'holder' WHERE external_id = 'mp-out'`,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -810,7 +1052,11 @@ func TestReviewForAnotherReasonIsNoCounterpart(t *testing.T) {
 	f.nubankLine(pixLine("nu-in", "2026-11-10", "250.00", cpf(holderCPF)))
 	f.sync(f.nubank)
 
-	if got, want := f.record("nu-in"), (recordRow{State: "needs_review", Reason: "transfer"}); !got.equal(want) {
+	if got, want := f.record(
+		"nu-in",
+	), (recordRow{State: "needs_review", Reason: "transfer"}); !got.equal(
+		want,
+	) {
 		t.Errorf("nu-in = %+v, want %+v", got, want)
 	}
 
@@ -835,7 +1081,11 @@ func TestBookPairingLock(t *testing.T) {
 	defer conn.Release()
 
 	lock := fmt.Sprintf("books:%d:pairing", f.h.OwnerID())
-	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(hashtextextended($1::text, 0))`, lock); err != nil {
+	if _, err := conn.Exec(
+		ctx,
+		`SELECT pg_advisory_lock(hashtextextended($1::text, 0))`,
+		lock,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -899,7 +1149,12 @@ func newPairingFixture(t *testing.T, opts ...apitest.Option) pairingFixture {
 
 // newPairingFixtureOf sets the holder the Mercado Pago checking account reports and whether
 // the fixture maps it.
-func newPairingFixtureOf(t *testing.T, mpHolder string, mapMP bool, opts ...apitest.Option) pairingFixture {
+func newPairingFixtureOf(
+	t *testing.T,
+	mpHolder string,
+	mapMP bool,
+	opts ...apitest.Option,
+) pairingFixture {
 	t.Helper()
 
 	a := newAggregator(t, opts...)
@@ -908,7 +1163,10 @@ func newPairingFixtureOf(t *testing.T, mpHolder string, mapMP bool, opts ...apit
 	a.serveItemIn(pluggyClient, mercadoPagoItem, "Mercado Pago", base)
 	a.p.SetAccountTaxNumber(nubankItem+"-checking", holderCPF)
 	a.p.SetAccountTaxNumber(mercadoPagoItem+"-checking", mpHolder)
-	a.p.AddBill(nubankItem+"-card", pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0"})
+	a.p.AddBill(
+		nubankItem+"-card",
+		pluggy.Bill{ID: "bill-nov", DueDate: "2026-11-10T00:00:00.000Z", TotalAmount: "0"},
+	)
 
 	in := a.integrate(a.h.Client, "Meu Pluggy", pluggyClient, pluggySecret)
 	f := pairingFixture{
@@ -920,9 +1178,18 @@ func newPairingFixtureOf(t *testing.T, mpHolder string, mapMP bool, opts ...apit
 	f.nubankLedger = a.h.Account("Nubank", "asset", "checking", nil)
 	f.cardLedger = a.h.Account("Nubank Gold", "liability", "credit_card", nil)
 	f.mpLedger = a.h.Account("Mercado Pago", "asset", "checking", nil)
-	a.h.MustDo(http.MethodPost, "/api/v1/accounts/"+f.cardLedger+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-01", "closing_day": 3, "due_day": 10, "closing_day_assignment": "next",
-	}, http.StatusCreated, nil)
+	a.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+f.cardLedger+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from":         "2026-01",
+			"closing_day":            3,
+			"due_day":                10,
+			"closing_day_assignment": "next",
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	f.mapTo(f.nubank, pluggy.SubtypeChecking, f.nubankLedger)
 	f.mapTo(f.nubank, pluggy.SubtypeCard, f.cardLedger)
@@ -938,7 +1205,12 @@ func (f pairingFixture) mapTo(c connectionView, subtype, account string) {
 	f.h.T().Helper()
 
 	body := map[string]any{"account_id": account, "sync_from": "2026-10-01"}
-	if r := f.mapAccount(f.h.Client, c.ID, externalAccount(c, subtype).ID, body); r.Status != http.StatusOK {
+	if r := f.mapAccount(
+		f.h.Client,
+		c.ID,
+		externalAccount(c, subtype).ID,
+		body,
+	); r.Status != http.StatusOK {
 		f.h.T().Fatalf("map status %d: %s", r.Status, r.Body)
 	}
 }
@@ -946,7 +1218,11 @@ func (f pairingFixture) mapTo(c connectionView, subtype, account string) {
 func (f pairingFixture) sync(c connectionView) {
 	f.h.T().Helper()
 
-	if err := f.h.App.Ingestion.SyncConnection(f.h.T().Context(), f.h.OwnerID(), uuid.MustParse(c.ID)); err != nil {
+	if err := f.h.App.Ingestion.SyncConnection(
+		f.h.T().Context(),
+		f.h.OwnerID(),
+		uuid.MustParse(c.ID),
+	); err != nil {
 		f.h.T().Fatalf("sync: %v", err)
 	}
 }
@@ -957,9 +1233,12 @@ func (f pairingFixture) holderDigest(connectionID, subtype string) string {
 
 	var digest *string
 
-	err := f.h.Pool.QueryRow(f.h.T().Context(),
+	err := f.h.Pool.QueryRow(
+		f.h.T().Context(),
 		`SELECT encode(holder_digest, 'hex') FROM ingestion_external_account WHERE connection_id = $1 AND subtype = $2`,
-		connectionID, subtype).Scan(&digest)
+		connectionID,
+		subtype,
+	).Scan(&digest)
 	if err != nil {
 		f.h.T().Fatal(err)
 	}
@@ -977,8 +1256,11 @@ func (f pairingFixture) counterparty(externalID string) string {
 
 	var cp *string
 
-	err := f.h.Pool.QueryRow(f.h.T().Context(),
-		`SELECT counterparty FROM ingestion_external_record WHERE external_id = $1`, externalID).Scan(&cp)
+	err := f.h.Pool.QueryRow(
+		f.h.T().Context(),
+		`SELECT counterparty FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	).Scan(&cp)
 	if err != nil {
 		f.h.T().Fatal(err)
 	}
@@ -995,7 +1277,11 @@ func cpf(value string) *pluggy.DocumentNumber {
 }
 
 // pixLine builds a bank line whose receiver (amount below zero) or payer (above zero) is party.
-func pixLine(id, date string, amount pluggy.Decimal, party *pluggy.DocumentNumber) pluggy.Transaction {
+func pixLine(
+	id, date string,
+	amount pluggy.Decimal,
+	party *pluggy.DocumentNumber,
+) pluggy.Transaction {
 	line := bankLine(id, date, amount)
 	pd := &pluggy.PaymentData{}
 
@@ -1040,10 +1326,12 @@ func (f pairingFixture) record(externalID string) recordRow {
 		candidates string
 	)
 
-	err := f.h.Pool.QueryRow(f.h.T().Context(),
+	err := f.h.Pool.QueryRow(
+		f.h.T().Context(),
 		`SELECT state, COALESCE(review_reason, ''), COALESCE(decision, ''), COALESCE(transaction_id::text, ''),
 			array_to_string(candidates, ',') FROM ingestion_external_record WHERE external_id = $1`,
-		externalID).Scan(&r.State, &r.Reason, &r.Decision, &r.Tx, &candidates)
+		externalID,
+	).Scan(&r.State, &r.Reason, &r.Decision, &r.Tx, &candidates)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return recordRow{}
@@ -1068,8 +1356,11 @@ func (f pairingFixture) legs(tx string) map[string]int64 {
 	for _, p := range f.h.Transaction(tx).Postings {
 		var name string
 
-		err := f.h.Pool.QueryRow(f.h.T().Context(),
-			`SELECT COALESCE(system_role, name) FROM ledger_account WHERE id = $1`, p.AccountID).Scan(&name)
+		err := f.h.Pool.QueryRow(
+			f.h.T().Context(),
+			`SELECT COALESCE(system_role, name) FROM ledger_account WHERE id = $1`,
+			p.AccountID,
+		).Scan(&name)
 		if err != nil {
 			f.h.T().Fatal(err)
 		}
@@ -1092,7 +1383,10 @@ func pairedFixture(t *testing.T) (pairingFixture, string) {
 	f.sync(f.nubank)
 
 	booked := f.record("mp-out").Tx
-	if got := f.record("nu-in"); got.State != "matched" || got.Decision != "paired" || got.Tx != booked {
+	if got := f.record(
+		"nu-in",
+	); got.State != "matched" || got.Decision != "paired" ||
+		got.Tx != booked {
 		t.Fatalf("nu-in = %+v, want matched paired on %s", got, booked)
 	}
 
@@ -1103,7 +1397,10 @@ func pairedFixture(t *testing.T) (pairingFixture, string) {
 func (f pairingFixture) undo(externalID string) apitest.Response {
 	f.h.T().Helper()
 
-	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+	id := f.scalarText(
+		`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	)
 
 	return f.h.Do(http.MethodPost, "/api/v1/external-records/"+id+"/undo", nil)
 }
@@ -1143,7 +1440,10 @@ func (f pairingFixture) batchOf(account string) syncBatch {
 func (f pairingFixture) resolve(externalID string, body map[string]any) {
 	f.h.T().Helper()
 
-	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+	id := f.scalarText(
+		`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	)
 	f.h.MustDo(http.MethodPost, "/api/v1/external-records/"+id+"/resolve", body, http.StatusOK, nil)
 }
 
@@ -1221,14 +1521,26 @@ func withBase(f pairingFixture, l pluggy.Transaction) pluggy.Transaction {
 func (f pairingFixture) read(externalID string) recordView {
 	f.h.T().Helper()
 
-	batch := f.scalarText(`SELECT batch_id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
-	id := f.scalarText(`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`, externalID)
+	batch := f.scalarText(
+		`SELECT batch_id::text FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	)
+	id := f.scalarText(
+		`SELECT id::text FROM ingestion_external_record WHERE external_id = $1`,
+		externalID,
+	)
 
 	var out struct {
 		Items []recordView `json:"items"`
 	}
 
-	f.h.MustDo(http.MethodGet, "/api/v1/import-batches/"+batch+"/records?state=needs_review", nil, http.StatusOK, &out)
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/import-batches/"+batch+"/records?state=needs_review",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	for _, r := range out.Items {
 		if r.ID == id {

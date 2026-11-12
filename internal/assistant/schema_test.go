@@ -23,29 +23,60 @@ func TestSchema(t *testing.T) {
 	b := pgtest.CreateBooks(t, pool)
 
 	const provider = "11111111-1111-1111-1111-111111111111"
-	if _, err := pool.Exec(ctx, `INSERT INTO assistant_provider (id, books_id, preset, name, base_url, created_at)
-		VALUES ($1, $2, 'ollama', 'Local', 'http://127.0.0.1:11434/v1', now())`, provider, a); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO assistant_provider (id, books_id, preset, name, base_url, created_at)
+		VALUES ($1, $2, 'ollama', 'Local', 'http://127.0.0.1:11434/v1', now())`,
+		provider,
+		a,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	const conv = "22222222-2222-2222-2222-222222222222"
-	if _, err := pool.Exec(ctx, `INSERT INTO assistant_conversation (id, books_id, member_id, title, created_at, updated_at)
-		VALUES ($1, $2, $3, 'T', now(), now())`, conv, a, ma); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO assistant_conversation (id, books_id, member_id, title, created_at, updated_at)
+		VALUES ($1, $2, $3, 'T', now(), now())`,
+		conv,
+		a,
+		ma,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	msg := func(user int64, role, content string, outcome any) (string, []any) {
-		return `INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 1, $3, $4, $5, now())`, []any{user, conv, role, content, outcome}
+		return `INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 1, $3, $4, $5, now())`, []any{
+			user,
+			conv,
+			role,
+			content,
+			outcome,
+		}
 	}
 	proposal := func(status, basis string, decided, expires string) (string, []any) {
 		return `INSERT INTO assistant_proposal VALUES (gen_random_uuid(), $1, $2, NULL, 'create_transaction', '{}', '{}', $3, $4, NULL,
-			'2026-10-23T10:00:00Z', $5::timestamptz, $6::timestamptz)`, []any{a, conv, basis, status, expires, nilIfEmpty(decided)}
+			'2026-10-23T10:00:00Z', $5::timestamptz, $6::timestamptz)`, []any{
+			a,
+			conv,
+			basis,
+			status,
+			expires,
+			nilIfEmpty(decided),
+		}
 	}
 	refProposal := func(status, basis, decided, refs string) (string, []any) {
 		return `INSERT INTO assistant_proposal (id, books_id, conversation_id, tool, arguments, preview, basis, status, refs,
 			created_at, expires_at, decided_at)
 			VALUES (gen_random_uuid(), $1, $2, 'create_transaction', '{}', '{}', $3, $4, $5::jsonb,
-			'2026-10-23T10:00:00Z', '2026-10-23T10:15:00Z', $6::timestamptz)`, []any{a, conv, basis, status, nilIfEmpty(refs), nilIfEmpty(decided)}
+			'2026-10-23T10:00:00Z', '2026-10-23T10:15:00Z', $6::timestamptz)`, []any{
+			a,
+			conv,
+			basis,
+			status,
+			nilIfEmpty(refs),
+			nilIfEmpty(decided),
+		}
 	}
 	hash := strings.Repeat("a", 64)
 	other := func() (string, []any) { return msg(b, "user", "x", nil) }
@@ -54,14 +85,54 @@ func TestSchema(t *testing.T) {
 		args      []any
 		code      string
 	}{
-		{"preset pattern", `INSERT INTO assistant_provider VALUES (gen_random_uuid(), $1, 'Bad-Preset', 'x', 'http://h', NULL, now())`, []any{a}, checkViolation},
-		{"empty name", `INSERT INTO assistant_provider VALUES (gen_random_uuid(), $1, 'ollama', '', 'http://h', NULL, now())`, []any{a}, checkViolation},
-		{"base URL scheme", `INSERT INTO assistant_provider VALUES (gen_random_uuid(), $1, 'ollama', 'x', 'ftp://h', NULL, now())`, []any{a}, checkViolation},
-		{"use pattern", `INSERT INTO assistant_chain_target VALUES ($1, 'Bad Use', 0, $2, 'm', '{}')`, []any{a, provider}, checkViolation},
-		{"negative position", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', -1, $2, 'm', '{}')`, []any{a, provider}, checkViolation},
-		{"empty model", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, '', '{}')`, []any{a, provider}, checkViolation},
-		{"unknown capability", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{speech}')`, []any{a, provider}, checkViolation},
-		{"another book's provider", `INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{}')`, []any{b, provider}, foreignKeyViolation},
+		{
+			"preset pattern",
+			`INSERT INTO assistant_provider VALUES (gen_random_uuid(), $1, 'Bad-Preset', 'x', 'http://h', NULL, now())`,
+			[]any{a},
+			checkViolation,
+		},
+		{
+			"empty name",
+			`INSERT INTO assistant_provider VALUES (gen_random_uuid(), $1, 'ollama', '', 'http://h', NULL, now())`,
+			[]any{a},
+			checkViolation,
+		},
+		{
+			"base URL scheme",
+			`INSERT INTO assistant_provider VALUES (gen_random_uuid(), $1, 'ollama', 'x', 'ftp://h', NULL, now())`,
+			[]any{a},
+			checkViolation,
+		},
+		{
+			"use pattern",
+			`INSERT INTO assistant_chain_target VALUES ($1, 'Bad Use', 0, $2, 'm', '{}')`,
+			[]any{a, provider},
+			checkViolation,
+		},
+		{
+			"negative position",
+			`INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', -1, $2, 'm', '{}')`,
+			[]any{a, provider},
+			checkViolation,
+		},
+		{
+			"empty model",
+			`INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, '', '{}')`,
+			[]any{a, provider},
+			checkViolation,
+		},
+		{
+			"unknown capability",
+			`INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{speech}')`,
+			[]any{a, provider},
+			checkViolation,
+		},
+		{
+			"another book's provider",
+			`INSERT INTO assistant_chain_target VALUES ($1, 'assistant.chat', 0, $2, 'm', '{}')`,
+			[]any{b, provider},
+			foreignKeyViolation,
+		},
 	}
 	add := func(name string, f func() (string, []any), code string) {
 		sql, args := f()
@@ -73,16 +144,56 @@ func TestSchema(t *testing.T) {
 	}
 	add("message of another book's conversation", other, foreignKeyViolation)
 	add("role system", func() (string, []any) { return msg(a, "system", "x", nil) }, checkViolation)
-	add("user message with outcome", func() (string, []any) { return msg(a, "user", "x", "answered") }, checkViolation)
-	add("assistant message without outcome", func() (string, []any) { return msg(a, "assistant", "x", nil) }, checkViolation)
-	add("content over 16000", func() (string, []any) { return msg(a, "assistant", strings.Repeat("x", 16001), "answered") }, checkViolation)
-	add("assistant message unknown outcome", func() (string, []any) { return msg(a, "assistant", "", "lost") }, checkViolation)
-	add("empty user content", func() (string, []any) { return msg(a, "user", "", nil) }, checkViolation)
-	add("proposal status", func() (string, []any) { return proposal("done", hash, "", "2026-10-23T10:15:00Z") }, checkViolation)
-	add("executed without decided_at", func() (string, []any) { return proposal("executed", hash, "", "2026-10-23T10:15:00Z") }, checkViolation)
-	add("basis", func() (string, []any) { return proposal("pending", "abc", "", "2026-10-23T10:15:00Z") }, checkViolation)
-	add("expires_at equals created_at", func() (string, []any) { return proposal("pending", hash, "", "2026-10-23T10:00:00Z") }, checkViolation)
-	add("empty basis without refs", func() (string, []any) { return refProposal("pending", "", "", "") }, checkViolation)
+	add(
+		"user message with outcome",
+		func() (string, []any) { return msg(a, "user", "x", "answered") },
+		checkViolation,
+	)
+	add(
+		"assistant message without outcome",
+		func() (string, []any) { return msg(a, "assistant", "x", nil) },
+		checkViolation,
+	)
+	add(
+		"content over 16000",
+		func() (string, []any) { return msg(a, "assistant", strings.Repeat("x", 16001), "answered") },
+		checkViolation,
+	)
+	add(
+		"assistant message unknown outcome",
+		func() (string, []any) { return msg(a, "assistant", "", "lost") },
+		checkViolation,
+	)
+	add(
+		"empty user content",
+		func() (string, []any) { return msg(a, "user", "", nil) },
+		checkViolation,
+	)
+	add(
+		"proposal status",
+		func() (string, []any) { return proposal("done", hash, "", "2026-10-23T10:15:00Z") },
+		checkViolation,
+	)
+	add(
+		"executed without decided_at",
+		func() (string, []any) { return proposal("executed", hash, "", "2026-10-23T10:15:00Z") },
+		checkViolation,
+	)
+	add(
+		"basis",
+		func() (string, []any) { return proposal("pending", "abc", "", "2026-10-23T10:15:00Z") },
+		checkViolation,
+	)
+	add(
+		"expires_at equals created_at",
+		func() (string, []any) { return proposal("pending", hash, "", "2026-10-23T10:00:00Z") },
+		checkViolation,
+	)
+	add(
+		"empty basis without refs",
+		func() (string, []any) { return refProposal("pending", "", "", "") },
+		checkViolation,
+	)
 	add("waiting with decided_at", func() (string, []any) {
 		return refProposal("waiting", "", "2026-10-23T10:05:00Z", "{}")
 	}, checkViolation)
@@ -113,7 +224,12 @@ func TestSchema(t *testing.T) {
 		t.Errorf("assistant message with empty content rejected: %v", err)
 	}
 
-	if _, err := pool.Exec(ctx, `INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 2, 'assistant', '', 'canceled', now())`, a, conv); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO assistant_message VALUES (gen_random_uuid(), $1, $2, 2, 'assistant', '', 'canceled', now())`,
+		a,
+		conv,
+	); err != nil {
 		t.Errorf("assistant message canceled rejected: %v", err)
 	}
 }

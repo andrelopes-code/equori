@@ -19,7 +19,12 @@ type purchase struct {
 	categories []domain.Posting
 }
 
-func (s *Service) lockPurchase(ctx context.Context, r Repository, booksID int64, id uuid.UUID) (purchase, error) {
+func (s *Service) lockPurchase(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+) (purchase, error) {
 	t, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return purchase{}, err
@@ -96,14 +101,24 @@ func (s *Service) checkCeiling(ctx context.Context, r Repository, pu purchase, a
 	}
 
 	if charged := pu.charged - discount; done+adding > charged {
-		return validationError("amount", fmt.Sprintf("refunds would total %d, above the charged %d", done+adding, charged))
+		return validationError(
+			"amount",
+			fmt.Sprintf("refunds would total %d, above the charged %d", done+adding, charged),
+		)
 	}
 
 	return nil
 }
 
 // RefundPurchase credits amount on the card and takes it back from the categories (M06, S08).
-func (s *Service) RefundPurchase(ctx context.Context, booksID int64, originID uuid.UUID, date time.Time, amount money.Money, statement *domain.ReferenceMonth) (domain.Transaction, error) {
+func (s *Service) RefundPurchase(
+	ctx context.Context,
+	booksID int64,
+	originID uuid.UUID,
+	date time.Time,
+	amount money.Money,
+	statement *domain.ReferenceMonth,
+) (domain.Transaction, error) {
 	if amount.Amount() <= 0 {
 		return domain.Transaction{}, validationError("amount", "must be positive")
 	}
@@ -124,7 +139,16 @@ func (s *Service) RefundPurchase(ctx context.Context, booksID int64, originID uu
 			return err
 		}
 
-		postings := append([]domain.Posting{{AccountID: pu.card.ID, Amount: amount, CardRole: domain.RoleCredit, Statement: statement}}, reversals...)
+		postings := append(
+			[]domain.Posting{
+				{
+					AccountID: pu.card.ID,
+					Amount:    amount,
+					CardRole:  domain.RoleCredit,
+					Statement: statement,
+				},
+			},
+			reversals...)
 
 		w, err := s.writerFor(ctx, booksID)
 		if err != nil {
@@ -132,8 +156,12 @@ func (s *Service) RefundPurchase(ctx context.Context, booksID int64, originID uu
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Refund, pu.tx.Description), PayeeID: pu.tx.PayeeID,
-			Postings: postings, Links: []domain.Link{{Type: domain.LinkRefundOf, Target: originID}},
+			BooksID:     booksID,
+			Date:        date,
+			Description: fmt.Sprintf(w.Refund, pu.tx.Description),
+			PayeeID:     pu.tx.PayeeID,
+			Postings:    postings,
+			Links:       []domain.Link{{Type: domain.LinkRefundOf, Target: originID}},
 		})
 
 		return err
@@ -142,7 +170,12 @@ func (s *Service) RefundPurchase(ctx context.Context, booksID int64, originID uu
 	return created, err
 }
 
-func (s *Service) lockPlan(ctx context.Context, r Repository, booksID int64, planID uuid.UUID) (domain.InstallmentPlan, purchase, []PlanInstallment, error) {
+func (s *Service) lockPlan(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	planID uuid.UUID,
+) (domain.InstallmentPlan, purchase, []PlanInstallment, error) {
 	plan, err := r.Plan(ctx, booksID, planID)
 	if err != nil {
 		return domain.InstallmentPlan{}, purchase{}, nil, err
@@ -162,7 +195,13 @@ func (s *Service) lockPlan(ctx context.Context, r Repository, booksID int64, pla
 // on creditStatement (default: the statement the date falls in) (M25, S14, T08). An
 // installment an anticipation reversed stays reversed; the anticipation's charge is reversed
 // or credited in its place and its discount returns (A135).
-func (s *Service) CancelPlan(ctx context.Context, booksID int64, planID uuid.UUID, date time.Time, creditStatement *domain.ReferenceMonth) (domain.Transaction, error) {
+func (s *Service) CancelPlan(
+	ctx context.Context,
+	booksID int64,
+	planID uuid.UUID,
+	date time.Time,
+	creditStatement *domain.ReferenceMonth,
+) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		_, pu, installments, err := s.lockPlan(ctx, r, booksID, planID)
@@ -189,7 +228,14 @@ func (s *Service) CancelPlan(ctx context.Context, booksID int64, planID uuid.UUI
 			return err
 		}
 
-		created, err = s.insertCancellation(ctx, r, booksID, pu, date, append(postings, reversals...))
+		created, err = s.insertCancellation(
+			ctx,
+			r,
+			booksID,
+			pu,
+			date,
+			append(postings, reversals...),
+		)
 
 		return err
 	})
@@ -205,7 +251,13 @@ type cancelState struct {
 	discount int64
 }
 
-func (s *Service) loadCancelState(ctx context.Context, r Repository, booksID int64, pu purchase, installments []PlanInstallment) (cancelState, error) {
+func (s *Service) loadCancelState(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	pu purchase,
+	installments []PlanInstallment,
+) (cancelState, error) {
 	anticipated, err := r.AnticipatedReferences(ctx, booksID, pu.tx.ID)
 	if err != nil {
 		return cancelState{}, err
@@ -234,7 +286,12 @@ func (s *Service) loadCancelState(ctx context.Context, r Repository, booksID int
 
 // cancelPostings returns the card postings that reverse or credit the open installments and
 // the amount they credit.
-func cancelPostings(pu purchase, open []PlanInstallment, date time.Time, creditStatement *domain.ReferenceMonth) ([]domain.Posting, int64, error) {
+func cancelPostings(
+	pu purchase,
+	open []PlanInstallment,
+	date time.Time,
+	creditStatement *domain.ReferenceMonth,
+) ([]domain.Posting, int64, error) {
 	var postings []domain.Posting
 	var billed, credited int64
 
@@ -252,7 +309,15 @@ func cancelPostings(pu purchase, open []PlanInstallment, date time.Time, creditS
 			return nil, 0, err
 		}
 
-		postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: &ref})
+		postings = append(
+			postings,
+			domain.Posting{
+				AccountID: pu.card.ID,
+				Amount:    m,
+				CardRole:  domain.RoleCredit,
+				Statement: &ref,
+			},
+		)
 	}
 
 	if billed > 0 {
@@ -261,7 +326,15 @@ func cancelPostings(pu purchase, open []PlanInstallment, date time.Time, creditS
 			return nil, 0, err
 		}
 
-		postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: creditStatement})
+		postings = append(
+			postings,
+			domain.Posting{
+				AccountID: pu.card.ID,
+				Amount:    m,
+				CardRole:  domain.RoleCredit,
+				Statement: creditStatement,
+			},
+		)
 	}
 
 	return postings, credited, nil
@@ -269,7 +342,13 @@ func cancelPostings(pu purchase, open []PlanInstallment, date time.Time, creditS
 
 // cancelReversals returns the postings that reverse the categories of the purchase and the
 // discount of its anticipations.
-func (s *Service) cancelReversals(ctx context.Context, r Repository, booksID int64, pu purchase, st cancelState) ([]domain.Posting, error) {
+func (s *Service) cancelReversals(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	pu purchase,
+	st cancelState,
+) ([]domain.Posting, error) {
 	reversals, err := pu.reverseCategories(st.total)
 	if err != nil {
 		return nil, err
@@ -292,14 +371,25 @@ func (s *Service) cancelReversals(ctx context.Context, r Repository, booksID int
 	return reversals, nil
 }
 
-func (s *Service) insertCancellation(ctx context.Context, r Repository, booksID int64, pu purchase, date time.Time, postings []domain.Posting) (domain.Transaction, error) {
+func (s *Service) insertCancellation(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	pu purchase,
+	date time.Time,
+	postings []domain.Posting,
+) (domain.Transaction, error) {
 	w, err := s.writerFor(ctx, booksID)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
 
 	return s.insert(ctx, r, domain.Transaction{
-		BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Cancellation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
-		Postings: postings, Links: []domain.Link{{Type: domain.LinkCancellationOf, Target: pu.tx.ID}},
+		BooksID:     booksID,
+		Date:        date,
+		Description: fmt.Sprintf(w.Cancellation, pu.tx.Description),
+		PayeeID:     pu.tx.PayeeID,
+		Postings:    postings,
+		Links:       []domain.Link{{Type: domain.LinkCancellationOf, Target: pu.tx.ID}},
 	})
 }

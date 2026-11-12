@@ -27,20 +27,35 @@ func TestCopyStatus(t *testing.T) {
 		{"ok at 48 hours", true, true, CopyOK, &t1, CopyOK, &t1, true},
 		{"stored password unset reads ok", true, true, CopyPasswordUnset, nil, CopyOK, nil, false},
 		{"stored folder unset reads ok", true, true, CopyFolderUnset, &t1, CopyOK, &t1, true},
-		{"folder not writable is late", true, true, CopyFolderNotWritable, &t0, CopyFolderNotWritable, &t0, true},
+		{
+			"folder not writable is late",
+			true,
+			true,
+			CopyFolderNotWritable,
+			&t0,
+			CopyFolderNotWritable,
+			&t0,
+			true,
+		},
 		{"failed is late", true, true, CopyFailed, nil, CopyFailed, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := CopyStatus(tt.folderSet, tt.passwordSet, Settings{CopyState: tt.state, CopyAt: tt.copyAt}, now)
+			got := CopyStatus(
+				tt.folderSet,
+				tt.passwordSet,
+				Settings{CopyState: tt.state, CopyAt: tt.copyAt},
+				now,
+			)
 
 			if got.State != tt.wantState {
 				t.Errorf("state = %q, want %q", got.State, tt.wantState)
 			}
 
-			if (got.CopiedAt == nil) != (tt.wantCopiedAt == nil) || got.CopiedAt != nil && !got.CopiedAt.Equal(*tt.wantCopiedAt) {
+			if (got.CopiedAt == nil) != (tt.wantCopiedAt == nil) ||
+				got.CopiedAt != nil && !got.CopiedAt.Equal(*tt.wantCopiedAt) {
 				t.Errorf("copied at = %v, want %v", got.CopiedAt, tt.wantCopiedAt)
 			}
 

@@ -13,7 +13,13 @@ import (
 )
 
 var unitWords = map[domain.Frequency][2]string{
-	domain.Daily: {"daily", "days"}, domain.Weekly: {"weekly", "weeks"}, domain.Monthly: {"monthly", "months"}, domain.Yearly: {"yearly", "years"},
+	domain.Daily: {
+		"daily",
+		"days",
+	},
+	domain.Weekly:  {"weekly", "weeks"},
+	domain.Monthly: {"monthly", "months"},
+	domain.Yearly:  {"yearly", "years"},
 }
 
 func previewSchedule(in manageScheduleIn, p schedulePlan) (tool.Preview, error) {
@@ -53,27 +59,47 @@ func previewScheduleCreate(pv *tool.Preview, in manageScheduleIn, p schedulePlan
 		{Field: "date", After: tool.DateValue(in.Start.Time)},
 	}
 	if p.paidBy != uuid.Nil {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "transaction",
-			After: tool.TextValue(p.paidByFact.Description + " " + p.paidByFact.Date.Format(time.DateOnly))})
+		pv.Changes = append(pv.Changes, tool.Change{
+			Field: "transaction",
+			After: tool.TextValue(
+				p.paidByFact.Description + " " + p.paidByFact.Date.Format(time.DateOnly),
+			),
+		})
 	}
 }
 
 func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) error {
 	last := p.schedule.Terms[len(p.schedule.Terms)-1]
 
-	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(time.DateOnly)+"|"+fmt.Sprint(last.Amount)
+	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(
+		time.DateOnly,
+	)+"|"+fmt.Sprint(
+		last.Amount,
+	)
 	if p.amount != nil {
 		before, err := money.New(last.Amount, p.schedule.Currency)
 		if err != nil {
 			return err
 		}
 
-		pv.Changes = append(pv.Changes, tool.Change{Field: "amount", Before: tool.MoneyValue(before), After: tool.MoneyValue(*p.amount)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "amount",
+				Before: tool.MoneyValue(before),
+				After:  tool.MoneyValue(*p.amount),
+			},
+		)
 	}
 
 	if p.rule != nil {
-		pv.Changes = append(pv.Changes, tool.Change{Field: "terms",
-			Before: tool.TextValue(describeTerms(last.Rule, last.EffectiveFrom)), After: tool.TextValue(describeTerms(*p.rule, in.From.Time))})
+		pv.Changes = append(pv.Changes, tool.Change{
+			Field: "terms",
+			Before: tool.TextValue(
+				describeTerms(last.Rule, last.EffectiveFrom),
+			),
+			After: tool.TextValue(describeTerms(*p.rule, in.From.Time)),
+		})
 	}
 
 	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.From.Time)})
@@ -83,15 +109,27 @@ func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) e
 
 func previewScheduleStop(pv *tool.Preview, in manageScheduleIn, p schedulePlan) {
 	last := p.schedule.Terms[len(p.schedule.Terms)-1]
-	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(time.DateOnly)+"|"+fmt.Sprint(last.Amount)
+	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(
+		time.DateOnly,
+	)+"|"+fmt.Sprint(
+		last.Amount,
+	)
 
 	after := "ends on " + in.From.Format(time.DateOnly)
 	if in.Action == "pause" {
-		after = "paused from " + in.From.Format(time.DateOnly) + " to " + in.To.Format(time.DateOnly)
+		after = "paused from " + in.From.Format(
+			time.DateOnly,
+		) + " to " + in.To.Format(
+			time.DateOnly,
+		)
 	}
 
 	pv.Changes = []tool.Change{
-		{Field: "schedule", Before: tool.TextValue(p.schedule.Description), After: tool.TextValue(after)},
+		{
+			Field:  "schedule",
+			Before: tool.TextValue(p.schedule.Description),
+			After:  tool.TextValue(after),
+		},
 		{Field: "date", After: tool.DateValue(in.From.Time)},
 	}
 }
@@ -150,8 +188,13 @@ func updateChanges(s domain.Schedule, in manageScheduleIn) []tool.Change {
 	}
 
 	if !in.StartsOn.IsZero() {
-		changes = append(changes, tool.Change{Field: "date",
-			Before: tool.DateValue(s.Terms[0].EffectiveFrom), After: tool.DateValue(in.StartsOn.Time)})
+		changes = append(changes, tool.Change{
+			Field: "date",
+			Before: tool.DateValue(
+				s.Terms[0].EffectiveFrom,
+			),
+			After: tool.DateValue(in.StartsOn.Time),
+		})
 	}
 
 	if in.MatchToleranceBP.Set || in.GraceDays.Set || in.MatchWindowDays.Set {
@@ -159,8 +202,13 @@ func updateChanges(s domain.Schedule, in manageScheduleIn) []tool.Change {
 		after.ToleranceBP = pick(in.MatchToleranceBP, s.ToleranceBP)
 		after.GraceDays = pick(in.GraceDays, s.GraceDays)
 		after.WindowDays = pick(in.MatchWindowDays, s.WindowDays)
-		changes = append(changes, tool.Change{Field: "terms",
-			Before: tool.TextValue(describeMatching(s)), After: tool.TextValue(describeMatching(after))})
+		changes = append(changes, tool.Change{
+			Field: "terms",
+			Before: tool.TextValue(
+				describeMatching(s),
+			),
+			After: tool.TextValue(describeMatching(after)),
+		})
 	}
 
 	return changes
@@ -175,5 +223,10 @@ func pick(o tool.OptionalInt, current int) int {
 }
 
 func describeMatching(s domain.Schedule) string {
-	return fmt.Sprintf("amount tolerance %d bp, %d grace days, %d day window", s.ToleranceBP, s.GraceDays, s.WindowDays)
+	return fmt.Sprintf(
+		"amount tolerance %d bp, %d grace days, %d day window",
+		s.ToleranceBP,
+		s.GraceDays,
+		s.WindowDays,
+	)
 }

@@ -24,7 +24,12 @@ func newCardBooks(t *testing.T) cardBooks {
 func (b cardBooks) importCard(t *testing.T, lines ...apitest.OFXLine) {
 	t.Helper()
 
-	if r := b.h.Import(b.card, "ofx", "fatura.ofx", apitest.CardOFX(lines...)); r.Status != http.StatusCreated {
+	if r := b.h.Import(
+		b.card,
+		"ofx",
+		"fatura.ofx",
+		apitest.CardOFX(lines...),
+	); r.Status != http.StatusCreated {
 		t.Fatalf("card import status %d: %s", r.Status, r.Body)
 	}
 }
@@ -34,7 +39,13 @@ func (b cardBooks) transactions(t *testing.T) []apitest.TransactionView {
 	var out struct {
 		Items []apitest.TransactionView `json:"items"`
 	}
-	b.h.MustDo(http.MethodGet, "/api/v1/transactions?account_id="+b.card+"&from=2026-11-01", nil, http.StatusOK, &out)
+	b.h.MustDo(
+		http.MethodGet,
+		"/api/v1/transactions?account_id="+b.card+"&from=2026-11-01",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	return out.Items
 }
@@ -43,7 +54,13 @@ func (b cardBooks) transactions(t *testing.T) []apitest.TransactionView {
 func TestRuleTransfersCardPayment(t *testing.T) {
 	t.Parallel()
 	b := newCardBooks(t)
-	createRule(t, b.h, "Fatura", []map[string]any{contains("pagamento fatura")}, []map[string]any{{"type": "transfer", "account_id": b.card}})
+	createRule(
+		t,
+		b.h,
+		"Fatura",
+		[]map[string]any{contains("pagamento fatura")},
+		[]map[string]any{{"type": "transfer", "account_id": b.card}},
+	)
 	b.importLines(t, "nubank.ofx", line("20261110", "-1500.00", "c1", "PAGAMENTO FATURA ITAU"))
 	b.importCard(t, line("20261111", "1500.00", "p1", "PAGAMENTO RECEBIDO"))
 
@@ -53,7 +70,8 @@ func TestRuleTransfersCardPayment(t *testing.T) {
 	}
 
 	for _, p := range txs[0].Postings {
-		if p.AccountID == b.card && (p.CardRole != "payment" || p.Statement != "2026-12" || p.Amount.Amount != 150000) {
+		if p.AccountID == b.card &&
+			(p.CardRole != "payment" || p.Statement != "2026-12" || p.Amount.Amount != 150000) {
 			t.Fatalf("card posting = %+v", p)
 		}
 	}
@@ -64,7 +82,13 @@ func TestRuleCompletesCardPayment(t *testing.T) {
 	t.Parallel()
 	b := newCardBooks(t)
 	b.importCard(t, line("20261111", "1500.00", "p1", "PAGAMENTO RECEBIDO"))
-	createRule(t, b.h, "Fatura", []map[string]any{contains("pagamento fatura")}, []map[string]any{{"type": "transfer", "account_id": b.card}})
+	createRule(
+		t,
+		b.h,
+		"Fatura",
+		[]map[string]any{contains("pagamento fatura")},
+		[]map[string]any{{"type": "transfer", "account_id": b.card}},
+	)
 	b.importLines(t, "nubank.ofx", line("20261110", "-1500.00", "c1", "PAGAMENTO FATURA ITAU"))
 
 	txs := b.transactions(t)
@@ -89,7 +113,13 @@ func TestRunRulesPairsImportedSides(t *testing.T) {
 	b.importLines(t, "nubank.ofx", line("20261110", "-1500.00", "c1", "PAGAMENTO FATURA ITAU"))
 	b.importCard(t, line("20261111", "1500.00", "p1", "PAGAMENTO RECEBIDO"))
 	dispatch(t, b.h)
-	createRule(t, b.h, "Fatura", []map[string]any{contains("pagamento fatura")}, []map[string]any{{"type": "transfer", "account_id": b.card}})
+	createRule(
+		t,
+		b.h,
+		"Fatura",
+		[]map[string]any{contains("pagamento fatura")},
+		[]map[string]any{{"type": "transfer", "account_id": b.card}},
+	)
 
 	var run struct {
 		Examined    int `json:"examined"`
@@ -123,7 +153,13 @@ func TestRuleMarksReimbursable(t *testing.T) {
 	t.Parallel()
 	b := newCardBooks(t)
 	employer := b.h.Account("Receivable Employer", "asset", "receivable", nil)
-	createRule(t, b.h, "Hotel", []map[string]any{contains("hotel")}, []map[string]any{{"type": "mark_reimbursable", "account_id": employer}})
+	createRule(
+		t,
+		b.h,
+		"Hotel",
+		[]map[string]any{contains("hotel")},
+		[]map[string]any{{"type": "mark_reimbursable", "account_id": employer}},
+	)
 	b.importCard(t, line("20261105", "-800.00", "h1", "HOTEL IBIS"))
 
 	txs := b.transactions(t)
@@ -160,8 +196,20 @@ func TestTransferActionRejections(t *testing.T) {
 		{"transfer and category", []map[string]any{setCategory(b.food), {"type": "transfer", "account_id": b.card}}, "actions[1].type"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/rules", map[string]any{"name": "r", "conditions": []any{contains("x")}, "actions": tt.actions}),
-				http.StatusUnprocessableEntity, "validation_failed", tt.field)
+			b.h.ExpectProblem(
+				b.h.Do(
+					http.MethodPost,
+					"/api/v1/rules",
+					map[string]any{
+						"name":       "r",
+						"conditions": []any{contains("x")},
+						"actions":    tt.actions,
+					},
+				),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				tt.field,
+			)
 		})
 	}
 }

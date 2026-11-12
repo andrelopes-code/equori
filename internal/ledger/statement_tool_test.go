@@ -26,7 +26,11 @@ func TestGetStatementTool(t *testing.T) {
 		t.Errorf("statement = %+v", got)
 	}
 
-	c.h.ExpectToolError(c.h.Tool("get_statement", map[string]any{"statement_id": "nope"}), "invalid_arguments", "statement_id")
+	c.h.ExpectToolError(
+		c.h.Tool("get_statement", map[string]any{"statement_id": "nope"}),
+		"invalid_arguments",
+		"statement_id",
+	)
 }
 
 func TestGetStatementOtherUser(t *testing.T) {
@@ -36,22 +40,44 @@ func TestGetStatementOtherUser(t *testing.T) {
 	var card, food struct {
 		ID string `json:"id"`
 	}
-	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "C", "class": "liability", "currency": "BRL", "kind": "credit_card"}).Decode(t, &card)
-	h.Call(other, http.MethodPost, "/api/v1/accounts/"+card.ID+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-01", "closing_day": 3, "due_day": 10, "closing_day_assignment": "next"})
-	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "F", "class": "expense", "currency": "BRL"}).Decode(t, &food)
+	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "C", "class": "liability", "currency": "BRL", "kind": "credit_card"}).
+		Decode(t, &card)
+	h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/accounts/"+card.ID+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from":         "2026-01",
+			"closing_day":            3,
+			"due_day":                10,
+			"closing_day_assignment": "next",
+		},
+	)
+	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "F", "class": "expense", "currency": "BRL"}).
+		Decode(t, &food)
 	h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-14", "description": "x", "postings": []map[string]any{apitest.Posting(card.ID, -100), apitest.Posting(food.ID, 100)}})
+		"date":        "2026-10-14",
+		"description": "x",
+		"postings": []map[string]any{
+			apitest.Posting(card.ID, -100),
+			apitest.Posting(food.ID, 100),
+		},
+	})
 	var list struct {
 		Items []struct {
 			ID string `json:"id"`
 		} `json:"items"`
 	}
-	h.Call(other, http.MethodGet, "/api/v1/accounts/"+card.ID+"/statements?from=2026-01&to=2027-12", nil).Decode(t, &list)
+	h.Call(other, http.MethodGet, "/api/v1/accounts/"+card.ID+"/statements?from=2026-01&to=2027-12", nil).
+		Decode(t, &list)
 
 	if len(list.Items) == 0 {
 		t.Fatal("no statements")
 	}
 
-	h.ExpectToolError(h.Tool("get_statement", map[string]any{"statement_id": list.Items[0].ID}), "not_found", "")
+	h.ExpectToolError(
+		h.Tool("get_statement", map[string]any{"statement_id": list.Items[0].ID}),
+		"not_found",
+		"",
+	)
 }

@@ -40,11 +40,21 @@ func nameTaken(err error) error {
 
 func (r *Repository) InsertProvider(ctx context.Context, p domain.Provider) error {
 	return nameTaken(r.q.InsertProvider(ctx, InsertProviderParams{
-		ID: p.ID, BooksID: p.BooksID, Preset: p.Preset, Name: p.Name, BaseUrl: p.BaseURL, SealedKey: p.SealedKey, CreatedAt: p.CreatedAt,
+		ID:        p.ID,
+		BooksID:   p.BooksID,
+		Preset:    p.Preset,
+		Name:      p.Name,
+		BaseUrl:   p.BaseURL,
+		SealedKey: p.SealedKey,
+		CreatedAt: p.CreatedAt,
 	}))
 }
 
-func (r *Repository) Provider(ctx context.Context, booksID int64, id uuid.UUID) (domain.Provider, error) {
+func (r *Repository) Provider(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Provider, error) {
 	row, err := r.q.GetProvider(ctx, GetProviderParams{BooksID: booksID, ID: id})
 	if errors.Is(err, pgx.ErrNoRows) {
 		return domain.Provider{}, domain.ErrProviderNotFound
@@ -68,7 +78,16 @@ func (r *Repository) Providers(ctx context.Context, booksID int64) ([]domain.Pro
 }
 
 func (r *Repository) UpdateProvider(ctx context.Context, p domain.Provider) error {
-	n, err := r.q.UpdateProvider(ctx, UpdateProviderParams{BooksID: p.BooksID, ID: p.ID, Name: p.Name, BaseUrl: p.BaseURL, SealedKey: p.SealedKey})
+	n, err := r.q.UpdateProvider(
+		ctx,
+		UpdateProviderParams{
+			BooksID:   p.BooksID,
+			ID:        p.ID,
+			Name:      p.Name,
+			BaseUrl:   p.BaseURL,
+			SealedKey: p.SealedKey,
+		},
+	)
 	if err != nil {
 		return nameTaken(err)
 	}
@@ -95,16 +114,25 @@ func (r *Repository) DeleteProvider(ctx context.Context, booksID int64, id uuid.
 			return domain.ErrProviderNotFound
 		}
 
-		if err := q.DeleteProviderUsage(ctx, DeleteProviderUsageParams{BooksID: booksID, ProviderID: id.String()}); err != nil {
+		if err := q.DeleteProviderUsage(
+			ctx,
+			DeleteProviderUsageParams{BooksID: booksID, ProviderID: id.String()},
+		); err != nil {
 			return err
 		}
 
-		return q.DeleteProviderLimits(ctx, DeleteProviderLimitsParams{BooksID: booksID, ProviderID: id.String()})
+		return q.DeleteProviderLimits(
+			ctx,
+			DeleteProviderLimitsParams{BooksID: booksID, ProviderID: id.String()},
+		)
 	})
 }
 
 // Chains returns the book's chain targets by use ID, in position order.
-func (r *Repository) Chains(ctx context.Context, booksID int64) (map[string][]domain.ChainTarget, error) {
+func (r *Repository) Chains(
+	ctx context.Context,
+	booksID int64,
+) (map[string][]domain.ChainTarget, error) {
 	rows, err := r.q.ListChainTargets(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -112,7 +140,14 @@ func (r *Repository) Chains(ctx context.Context, booksID int64) (map[string][]do
 
 	out := map[string][]domain.ChainTarget{}
 	for _, row := range rows {
-		out[row.UseID] = append(out[row.UseID], domain.ChainTarget{ProviderID: row.ProviderID, Model: row.Model, Capabilities: row.Capabilities})
+		out[row.UseID] = append(
+			out[row.UseID],
+			domain.ChainTarget{
+				ProviderID:   row.ProviderID,
+				Model:        row.Model,
+				Capabilities: row.Capabilities,
+			},
+		)
 	}
 
 	return out, nil
@@ -120,17 +155,29 @@ func (r *Repository) Chains(ctx context.Context, booksID int64) (map[string][]do
 
 // ReplaceChain stores targets as the book's chain for useID; an empty list deletes it. A
 // target on a provider the book does not own returns ErrProviderNotFound.
-func (r *Repository) ReplaceChain(ctx context.Context, booksID int64, useID string, targets []domain.ChainTarget) error {
+func (r *Repository) ReplaceChain(
+	ctx context.Context,
+	booksID int64,
+	useID string,
+	targets []domain.ChainTarget,
+) error {
 	return pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
-		if err := q.DeleteChain(ctx, DeleteChainParams{BooksID: booksID, UseID: useID}); err != nil {
+		if err := q.DeleteChain(
+			ctx,
+			DeleteChainParams{BooksID: booksID, UseID: useID},
+		); err != nil {
 			return err
 		}
 
 		for i, t := range targets {
 			err := q.InsertChainTarget(ctx, InsertChainTargetParams{
-				BooksID: booksID, UseID: useID, Position: int32(i), //nolint:gosec // a chain has few targets
-				ProviderID: t.ProviderID, Model: t.Model, Capabilities: t.Capabilities,
+				BooksID:      booksID,
+				UseID:        useID,
+				Position:     int32(i), //nolint:gosec // a chain has few targets
+				ProviderID:   t.ProviderID,
+				Model:        t.Model,
+				Capabilities: t.Capabilities,
 			})
 			if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == "23503" {
 				return domain.ErrProviderNotFound
@@ -145,7 +192,10 @@ func (r *Repository) ReplaceChain(ctx context.Context, booksID int64, useID stri
 	})
 }
 
-func (r *Repository) ResealKeys(ctx context.Context, reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error) {
+func (r *Repository) ResealKeys(
+	ctx context.Context,
+	reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error),
+) (int, error) {
 	changed := 0
 
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
@@ -166,7 +216,10 @@ func (r *Repository) ResealKeys(ctx context.Context, reseal func(booksID int64, 
 				continue
 			}
 
-			if err := q.ResealKey(ctx, ResealKeyParams{BooksID: row.BooksID, ID: row.ID, SealedKey: sealed}); err != nil {
+			if err := q.ResealKey(
+				ctx,
+				ResealKeyParams{BooksID: row.BooksID, ID: row.ID, SealedKey: sealed},
+			); err != nil {
 				return err
 			}
 

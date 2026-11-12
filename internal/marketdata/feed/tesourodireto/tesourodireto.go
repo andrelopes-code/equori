@@ -43,7 +43,12 @@ type Source struct {
 
 // New returns a Source that reads the CSV file at url.
 func New(c *http.Client, url string) Source {
-	return Source{client: c, url: url, seen: feed.NewConditional(), list: feed.NewListCache(time.Now)}
+	return Source{
+		client: c,
+		url:    url,
+		seen:   feed.NewConditional(),
+		list:   feed.NewListCache(time.Now),
+	}
 }
 
 func (Source) ID() string { return "tesouro_direto" }
@@ -65,7 +70,11 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 
 // Fetch returns PU Venda Manha of each code for each Data Base in [from, to]. A row with a zero
 // price or a title type outside the map is skipped.
-func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (s Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	key := s.url + "|" + joinCodes(codes)
 
 	since := ""
@@ -75,18 +84,24 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 
 	var out []feed.Quote
 
-	lastModified, err := feed.DownloadSince(ctx, s.client, s.url, since, func(f *os.File, _ int64) error {
-		var err error
+	lastModified, err := feed.DownloadSince(
+		ctx,
+		s.client,
+		s.url,
+		since,
+		func(f *os.File, _ int64) error {
+			var err error
 
-		var list []feed.Listing
+			var list []feed.Listing
 
-		out, list, err = readFile(f, codes, from, to)
-		if err == nil {
-			s.list.Set(list)
-		}
+			out, list, err = readFile(f, codes, from, to)
+			if err == nil {
+				s.list.Set(list)
+			}
 
-		return err
-	})
+			return err
+		},
+	)
 	if errors.Is(err, feed.ErrNoData) {
 		return nil, nil
 	}
@@ -177,7 +192,15 @@ func readColumns(cr *csv.Reader) (columns, error) {
 	}
 
 	col := func(name string) int { return slices.Index(header, name) }
-	iType, iMaturity, iBase, iPrice := col("Tipo Titulo"), col("Data Vencimento"), col("Data Base"), col("PU Venda Manha")
+	iType, iMaturity, iBase, iPrice := col(
+		"Tipo Titulo",
+	), col(
+		"Data Vencimento",
+	), col(
+		"Data Base",
+	), col(
+		"PU Venda Manha",
+	)
 
 	if slices.Contains([]int{iType, iMaturity, iBase, iPrice}, -1) {
 		return columns{}, fmt.Errorf("read Tesouro header: columns missing in %q", header)
@@ -262,7 +285,10 @@ func (t *latestTitles) add(base time.Time, l feed.Listing) {
 
 func (t *latestTitles) sorted() []feed.Listing {
 	out := slices.Collect(maps.Values(t.list))
-	slices.SortFunc(out, func(a, b feed.Listing) int { return strings.Compare(string(a.Code), string(b.Code)) })
+	slices.SortFunc(
+		out,
+		func(a, b feed.Listing) int { return strings.Compare(string(a.Code), string(b.Code)) },
+	)
 
 	return out
 }

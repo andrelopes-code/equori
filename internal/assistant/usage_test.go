@@ -43,7 +43,10 @@ func usage(t *testing.T, h *apitest.Harness) []usageView {
 
 func call(ctx context.Context, h *apitest.Harness, use llm.Use) error {
 	_, err := h.App.LLM.Use(use).Generate(ctx, llm.Request{
-		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}, Schema: []byte(`{"type":"object"}`),
+		Messages: []llm.Message{
+			{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}},
+		},
+		Schema: []byte(`{"type":"object"}`),
 	})
 
 	return err
@@ -57,7 +60,10 @@ func TestUsageA1A3(t *testing.T) {
 	ok := structured(`{"items":[]}`)
 	ok.Model = "gemini-3.5-flash-lite"
 	ok.Response.Usage = llm.Usage{InputTokens: 40, OutputTokens: 2}
-	quota := llmtest.Step{Model: "gemini-3.5-flash-lite", Err: &llm.QuotaError{RetryAfter: time.Hour}}
+	quota := llmtest.Step{
+		Model: "gemini-3.5-flash-lite",
+		Err:   &llm.QuotaError{RetryAfter: time.Hour},
+	}
 	h := apitest.New(t, apitest.LLM(llmtest.New("aistudio", ok, quota)))
 
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
@@ -76,8 +82,12 @@ func TestUsageA1A3(t *testing.T) {
 
 	u := got[0]
 	if u.ProviderID != "aistudio" || !u.Instance || u.Model != "gemini-3.5-flash-lite" || u.TodayRequests != 2 ||
-		u.TodayErrors != 1 || u.TodayTokens != 42 || u.PeriodRequests != 2 || u.PeriodTokens != 42 || u.PeriodDays != 30 ||
-		u.CoolingUntil == nil || u.RequestsPerDay != nil {
+		u.TodayErrors != 1 || u.TodayTokens != 42 ||
+		u.PeriodRequests != 2 ||
+		u.PeriodTokens != 42 ||
+		u.PeriodDays != 30 ||
+		u.CoolingUntil == nil ||
+		u.RequestsPerDay != nil {
 		t.Fatalf("usage row = %+v", u)
 	}
 
@@ -111,9 +121,10 @@ func TestUsageWithoutUseOrUserA2(t *testing.T) {
 	}
 
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
-	if _, err := h.App.LLM.Client(llm.Target{Provider: "aistudio", Model: "gemini-3.5-flash-lite"}).Generate(ctx, llm.Request{
-		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
-	}); err != nil {
+	if _, err := h.App.LLM.Client(llm.Target{Provider: "aistudio", Model: "gemini-3.5-flash-lite"}).
+		Generate(ctx, llm.Request{
+			Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}},
+		}); err != nil {
 		t.Fatalf("fixed chain: %v", err)
 	}
 
@@ -129,23 +140,74 @@ func TestUsageLimitsA4A5(t *testing.T) {
 	h := harness(t, newFakes())
 	p := createProvider(t, h, h.Client, map[string]any{"preset": "ollama", "name": "Local"})
 	path := "/api/v1/assistant/usage/limits"
-	h.MustDo(http.MethodPut, path, map[string]any{"provider_id": "aistudio", "model": "gemini-3.5-flash", "requests_per_day": 250}, http.StatusNoContent, nil)
-	h.MustDo(http.MethodPut, path, map[string]any{"provider_id": p.ID, "model": "qwen3:32b", "tokens_per_day": 100000}, http.StatusNoContent, nil)
-	h.ExpectProblem(h.Do(http.MethodPut, path, map[string]any{"provider_id": "aistudio", "model": "m", "requests_per_day": 0}),
-		http.StatusBadRequest, "invalid_request", "")
+	h.MustDo(
+		http.MethodPut,
+		path,
+		map[string]any{
+			"provider_id":      "aistudio",
+			"model":            "gemini-3.5-flash",
+			"requests_per_day": 250,
+		},
+		http.StatusNoContent,
+		nil,
+	)
+	h.MustDo(
+		http.MethodPut,
+		path,
+		map[string]any{"provider_id": p.ID, "model": "qwen3:32b", "tokens_per_day": 100000},
+		http.StatusNoContent,
+		nil,
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPut,
+			path,
+			map[string]any{"provider_id": "aistudio", "model": "m", "requests_per_day": 0},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 	other := h.Login("other@example.com")
-	h.ExpectProblem(h.Call(other, http.MethodPut, path, map[string]any{"provider_id": p.ID, "model": "m", "requests_per_day": 1}),
-		http.StatusNotFound, "provider_not_found", "")
-	h.ExpectProblem(h.Do(http.MethodPut, path, map[string]any{"provider_id": "nope", "model": "m", "requests_per_day": 1}),
-		http.StatusNotFound, "provider_not_found", "")
+	h.ExpectProblem(
+		h.Call(
+			other,
+			http.MethodPut,
+			path,
+			map[string]any{"provider_id": p.ID, "model": "m", "requests_per_day": 1},
+		),
+		http.StatusNotFound,
+		"provider_not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPut,
+			path,
+			map[string]any{"provider_id": "nope", "model": "m", "requests_per_day": 1},
+		),
+		http.StatusNotFound,
+		"provider_not_found",
+		"",
+	)
 
 	got := usage(t, h)
-	if len(got) != 2 || got[0].ProviderID != p.ID || got[0].TokensPerDay == nil || *got[0].TokensPerDay != 100000 ||
-		got[1].ProviderID != "aistudio" || got[1].RequestsPerDay == nil || *got[1].RequestsPerDay != 250 || got[1].TodayRequests != 0 {
+	if len(got) != 2 || got[0].ProviderID != p.ID || got[0].TokensPerDay == nil ||
+		*got[0].TokensPerDay != 100000 ||
+		got[1].ProviderID != "aistudio" ||
+		got[1].RequestsPerDay == nil ||
+		*got[1].RequestsPerDay != 250 ||
+		got[1].TodayRequests != 0 {
 		t.Fatalf("usage = %+v", got)
 	}
 
-	h.MustDo(http.MethodPut, path, map[string]any{"provider_id": "aistudio", "model": "gemini-3.5-flash"}, http.StatusNoContent, nil)
+	h.MustDo(
+		http.MethodPut,
+		path,
+		map[string]any{"provider_id": "aistudio", "model": "gemini-3.5-flash"},
+		http.StatusNoContent,
+		nil,
+	)
 	h.MustDo(http.MethodDelete, "/api/v1/assistant/providers/"+p.ID, nil, http.StatusNoContent, nil)
 
 	if got := usage(t, h); len(got) != 0 {
@@ -207,9 +269,27 @@ func TestUsageDays(t *testing.T) {
 
 	// Day 2 has no use; on day 3 the lite model refused and the call moved to the next target.
 	want := []usageDayView{
-		{Day: "2026-10-20", ProviderID: "aistudio", Model: "gemini-3.5-flash", Requests: 1, Tokens: 42},
-		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.5-flash", Requests: 1, Errors: 1},
-		{Day: "2026-10-22", ProviderID: "aistudio", Model: "gemini-3.5-flash-lite", Requests: 1, Tokens: 15},
+		{
+			Day:        "2026-10-20",
+			ProviderID: "aistudio",
+			Model:      "gemini-3.5-flash",
+			Requests:   1,
+			Tokens:     42,
+		},
+		{
+			Day:        "2026-10-22",
+			ProviderID: "aistudio",
+			Model:      "gemini-3.5-flash",
+			Requests:   1,
+			Errors:     1,
+		},
+		{
+			Day:        "2026-10-22",
+			ProviderID: "aistudio",
+			Model:      "gemini-3.5-flash-lite",
+			Requests:   1,
+			Tokens:     15,
+		},
 	}
 
 	got := usageDays(t, h, h.Client, "from=2026-10-20&to=2026-10-22")
@@ -233,6 +313,11 @@ func TestUsageDays(t *testing.T) {
 	}
 
 	for _, q := range []string{"from=2026-10-20&to=2027-01-20", "from=2026-10-22&to=2026-10-20", "to=2026-10-22", "from=2026-10-20"} {
-		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/assistant/usage/days?"+q, nil), http.StatusBadRequest, "invalid_request", "")
+		h.ExpectProblem(
+			h.Do(http.MethodGet, "/api/v1/assistant/usage/days?"+q, nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"",
+		)
 	}
 }

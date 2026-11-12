@@ -21,7 +21,10 @@ func newTxFixture(t *testing.T) txFixture {
 		checking: mustAccount(t, Account{Class: ClassAsset, Kind: KindChecking}),
 		food:     mustAccount(t, Account{Class: ClassExpense}),
 		wise:     mustAccount(t, Account{Class: ClassAsset, Kind: KindChecking, Instrument: "USD"}),
-		closed:   mustAccount(t, Account{Class: ClassAsset, Kind: KindCash, ClosedOn: ptr(day("2026-02-28"))}),
+		closed: mustAccount(
+			t,
+			Account{Class: ClassAsset, Kind: KindCash, ClosedOn: ptr(day("2026-02-28"))},
+		),
 	}
 	f.accounts = accountMap(f.checking, f.food, f.wise, f.closed)
 
@@ -76,29 +79,107 @@ func TestNewTransactionRejections(t *testing.T) {
 		field    string
 		sentinel error
 	}{
-		{name: "unbalanced", tx: f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -9000)}, Posting{AccountID: f.food.ID, Amount: brl(t, 10000)}), field: "postings", sentinel: ErrUnbalanced},
-		{name: "one posting", tx: f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -9000)}), field: "postings", sentinel: ErrTooFewPostings},
-		{name: "zero amount", tx: f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, 0)}, Posting{AccountID: f.food.ID, Amount: brl(t, 0)}), field: "postings[0].amount", sentinel: ErrValidation},
-		{name: "amount currency differs from account", tx: f.tx(Posting{AccountID: f.checking.ID, Amount: usd(-100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)}), field: "postings[0].amount", sentinel: ErrValidation},
-		{name: "weight differs on base currency account", tx: f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100), Weight: brl(t, -90)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)}), field: "postings[0].weight", sentinel: ErrCurrencyMismatch},
-		{name: "missing weight on foreign account", tx: f.tx(Posting{AccountID: f.wise.ID, Amount: usd(100000)}, Posting{AccountID: f.checking.ID, Amount: brl(t, -548300)}), field: "postings[0].weight", sentinel: ErrValidation},
-		{name: "weight sign opposite to amount", tx: f.tx(Posting{AccountID: f.wise.ID, Amount: usd(100000), Weight: brl(t, -548300)}, Posting{AccountID: f.checking.ID, Amount: brl(t, 548300)}), field: "postings[0].weight", sentinel: ErrValidation},
-		{name: "account closed", tx: f.tx(Posting{AccountID: f.closed.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)}), field: "postings[0].account_id", sentinel: ErrAccountClosed},
-		{name: "unknown account", tx: f.tx(Posting{AccountID: uuid.Must(uuid.NewV7()), Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)}), field: "postings[0].account_id", sentinel: ErrUnknownAccount},
+		{
+			name: "unbalanced",
+			tx: f.tx(
+				Posting{AccountID: f.checking.ID, Amount: brl(t, -9000)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 10000)},
+			),
+			field:    "postings",
+			sentinel: ErrUnbalanced,
+		},
+		{
+			name:     "one posting",
+			tx:       f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -9000)}),
+			field:    "postings",
+			sentinel: ErrTooFewPostings,
+		},
+		{
+			name: "zero amount",
+			tx: f.tx(
+				Posting{AccountID: f.checking.ID, Amount: brl(t, 0)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 0)},
+			),
+			field:    "postings[0].amount",
+			sentinel: ErrValidation,
+		},
+		{
+			name: "amount currency differs from account",
+			tx: f.tx(
+				Posting{AccountID: f.checking.ID, Amount: usd(-100)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			),
+			field:    "postings[0].amount",
+			sentinel: ErrValidation,
+		},
+		{
+			name: "weight differs on base currency account",
+			tx: f.tx(
+				Posting{AccountID: f.checking.ID, Amount: brl(t, -100), Weight: brl(t, -90)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			),
+			field:    "postings[0].weight",
+			sentinel: ErrCurrencyMismatch,
+		},
+		{
+			name: "missing weight on foreign account",
+			tx: f.tx(
+				Posting{AccountID: f.wise.ID, Amount: usd(100000)},
+				Posting{AccountID: f.checking.ID, Amount: brl(t, -548300)},
+			),
+			field:    "postings[0].weight",
+			sentinel: ErrValidation,
+		},
+		{
+			name: "weight sign opposite to amount",
+			tx: f.tx(
+				Posting{AccountID: f.wise.ID, Amount: usd(100000), Weight: brl(t, -548300)},
+				Posting{AccountID: f.checking.ID, Amount: brl(t, 548300)},
+			),
+			field:    "postings[0].weight",
+			sentinel: ErrValidation,
+		},
+		{
+			name: "account closed",
+			tx: f.tx(
+				Posting{AccountID: f.closed.ID, Amount: brl(t, -100)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			),
+			field:    "postings[0].account_id",
+			sentinel: ErrAccountClosed,
+		},
+		{
+			name: "unknown account",
+			tx: f.tx(
+				Posting{AccountID: uuid.Must(uuid.NewV7()), Amount: brl(t, -100)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			),
+			field:    "postings[0].account_id",
+			sentinel: ErrUnknownAccount,
+		},
 		{name: "description too long", tx: func() Transaction {
-			tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
+			tx := f.tx(
+				Posting{AccountID: f.checking.ID, Amount: brl(t, -100)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			)
 			tx.Description = strings.Repeat("x", 501)
 
 			return tx
 		}(), field: "description", sentinel: ErrValidation},
 		{name: "invalid tag", tx: func() Transaction {
-			tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
+			tx := f.tx(
+				Posting{AccountID: f.checking.ID, Amount: brl(t, -100)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			)
 			tx.Tags = []string{"café!"}
 
 			return tx
 		}(), field: "tags[0]", sentinel: ErrValidation},
 		{name: "unknown link type", tx: func() Transaction {
-			tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
+			tx := f.tx(
+				Posting{AccountID: f.checking.ID, Amount: brl(t, -100)},
+				Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+			)
 			tx.Links = []Link{{Type: "paid_by", Target: uuid.Must(uuid.NewV7())}}
 
 			return tx
@@ -118,7 +199,11 @@ func TestNewTransactionPostingLimit(t *testing.T) {
 
 	postings := make([]Posting, 0, MaxPostings+2)
 	for range MaxPostings/2 + 1 {
-		postings = append(postings, Posting{AccountID: f.checking.ID, Amount: brl(t, -1)}, Posting{AccountID: f.food.ID, Amount: brl(t, 1)})
+		postings = append(
+			postings,
+			Posting{AccountID: f.checking.ID, Amount: brl(t, -1)},
+			Posting{AccountID: f.food.ID, Amount: brl(t, 1)},
+		)
 	}
 
 	_, err := NewTransaction(f.tx(postings...), f.accounts)
@@ -145,7 +230,10 @@ func TestNewTransactionForeignCurrency(t *testing.T) {
 func TestTagsAreNormalized(t *testing.T) {
 	t.Parallel()
 	f := newTxFixture(t)
-	tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
+	tx := f.tx(
+		Posting{AccountID: f.checking.ID, Amount: brl(t, -100)},
+		Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+	)
 	tx.Tags = []string{"Trip Lisbon", "trip-lisbon", "work"}
 
 	got, err := NewTransaction(tx, f.accounts)
@@ -160,7 +248,10 @@ func TestTagsAreNormalized(t *testing.T) {
 
 func recorded(t *testing.T, f txFixture) Transaction {
 	t.Helper()
-	tx := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -100)}, Posting{AccountID: f.food.ID, Amount: brl(t, 100)})
+	tx := f.tx(
+		Posting{AccountID: f.checking.ID, Amount: brl(t, -100)},
+		Posting{AccountID: f.food.ID, Amount: brl(t, 100)},
+	)
 	tx.ID = uuid.Must(uuid.NewV7())
 
 	got, err := NewTransaction(tx, f.accounts)
@@ -175,7 +266,10 @@ func TestCorrect(t *testing.T) {
 	t.Parallel()
 	f := newTxFixture(t)
 	orig := recorded(t, f)
-	next := f.tx(Posting{AccountID: f.checking.ID, Amount: brl(t, -3200)}, Posting{AccountID: f.food.ID, Amount: brl(t, 3200)})
+	next := f.tx(
+		Posting{AccountID: f.checking.ID, Amount: brl(t, -3200)},
+		Posting{AccountID: f.food.ID, Amount: brl(t, 3200)},
+	)
 
 	got, err := orig.Correct(next, 1, f.accounts)
 	if err != nil {

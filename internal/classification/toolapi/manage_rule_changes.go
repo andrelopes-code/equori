@@ -9,7 +9,12 @@ import (
 
 // ruleChanges lists the fields a create_rule or change_rule call sets. The simple form shows the
 // text and the category it was given; the structured form shows the rendered conditions and actions.
-func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, payees map[uuid.UUID]string) []tool.Change {
+func ruleChanges(
+	in manageRuleIn,
+	p ids,
+	old, rule domain.Rule,
+	categories, payees map[uuid.UUID]string,
+) []tool.Change {
 	text := tool.TextValue
 	create := in.Action == "create_rule"
 	f := formOf(in)

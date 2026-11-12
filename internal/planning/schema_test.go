@@ -18,7 +18,11 @@ func TestSchemaInvariants(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	h := f.h
 	id := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, ""), nil)
-	tx := h.Record("2026-11-05", apitest.Posting(f.checking, -210000), apitest.Posting(f.rent, 210000))
+	tx := h.Record(
+		"2026-11-05",
+		apitest.Posting(f.checking, -210000),
+		apitest.Posting(f.rent, 210000),
+	)
 	uid := h.OwnerID()
 	ctx := t.Context()
 	exec := func(sql string, args ...any) error {
@@ -27,15 +31,25 @@ func TestSchemaInvariants(t *testing.T) {
 	}
 
 	pause := func(period string) error {
-		return exec(`INSERT INTO planning_schedule_pause (books_id, schedule_id, period) VALUES ($1, $2, $3::daterange)`, uid, id, period)
+		return exec(
+			`INSERT INTO planning_schedule_pause (books_id, schedule_id, period) VALUES ($1, $2, $3::daterange)`,
+			uid,
+			id,
+			period,
+		)
 	}
 	if err := pause("[2027-02-01,2027-03-31]"); err != nil {
 		t.Fatal(err)
 	}
 
 	realize := func(sequence int, txID any) error {
-		return exec(`UPDATE planning_occurrence SET state = 'realized', transaction_id = $3, realized_by = 'manual'
-			WHERE schedule_id = $1 AND sequence = $2`, id, sequence, txID)
+		return exec(
+			`UPDATE planning_occurrence SET state = 'realized', transaction_id = $3, realized_by = 'manual'
+			WHERE schedule_id = $1 AND sequence = $2`,
+			id,
+			sequence,
+			txID,
+		)
 	}
 	if err := realize(1, tx); err != nil {
 		t.Fatal(err)
@@ -46,7 +60,12 @@ func TestSchemaInvariants(t *testing.T) {
 		ID string `json:"id"`
 	}
 
-	r := h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Other", "class": "asset", "kind": "checking", "currency": "BRL"})
+	r := h.Call(
+		other,
+		http.MethodPost,
+		"/api/v1/accounts",
+		map[string]any{"name": "Other", "class": "asset", "kind": "checking", "currency": "BRL"},
+	)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("other account: %d %s", r.Status, r.Body)
 	}
@@ -54,7 +73,12 @@ func TestSchemaInvariants(t *testing.T) {
 	r.Decode(t, &foreign)
 
 	reference := func(source string, amount any) error {
-		return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, $2, $3, 'BRL')`, uid, source, amount)
+		return exec(
+			`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, $2, $3, 'BRL')`,
+			uid,
+			source,
+			amount,
+		)
 	}
 	if err := reference("fixed", 0); err != nil {
 		t.Fatal(err)
@@ -67,24 +91,44 @@ func TestSchemaInvariants(t *testing.T) {
 		run  func() error
 	}{
 		{"terms twice on one date (I08)", func() error {
-			return exec(`INSERT INTO planning_schedule_terms (books_id, schedule_id, effective_from, frequency, interval, day_of_month, adjustment, calendar, start, amount)
-				VALUES ($1, $2, '2026-11-01', 'monthly', 1, 10, 'none', 'br_banking', '2026-11-01', 100)`, uid, id)
+			return exec(
+				`INSERT INTO planning_schedule_terms (books_id, schedule_id, effective_from, frequency, interval, day_of_month, adjustment, calendar, start, amount)
+				VALUES ($1, $2, '2026-11-01', 'monthly', 1, 10, 'none', 'br_banking', '2026-11-01', 100)`,
+				uid,
+				id,
+			)
 		}},
 		{"monthly terms without a selector", func() error {
-			return exec(`INSERT INTO planning_schedule_terms (books_id, schedule_id, effective_from, frequency, interval, adjustment, calendar, start, amount)
-				VALUES ($1, $2, '2027-01-01', 'monthly', 1, 'none', 'br_banking', '2026-11-01', 100)`, uid, id)
+			return exec(
+				`INSERT INTO planning_schedule_terms (books_id, schedule_id, effective_from, frequency, interval, adjustment, calendar, start, amount)
+				VALUES ($1, $2, '2027-01-01', 'monthly', 1, 'none', 'br_banking', '2026-11-01', 100)`,
+				uid,
+				id,
+			)
 		}},
 		{"overlapping pause", func() error { return pause("[2027-03-01,2027-04-30]") }},
 		{"one transaction on two occurrences (I07)", func() error { return realize(2, tx) }},
 		{"realized without a transaction", func() error {
-			return exec(`UPDATE planning_occurrence SET state = 'realized' WHERE schedule_id = $1 AND sequence = 3`, id)
+			return exec(
+				`UPDATE planning_occurrence SET state = 'realized' WHERE schedule_id = $1 AND sequence = 3`,
+				id,
+			)
 		}},
 		{"expected with a transaction", func() error {
-			return exec(`UPDATE planning_occurrence SET transaction_id = $2 WHERE schedule_id = $1 AND sequence = 4`, id, tx)
+			return exec(
+				`UPDATE planning_occurrence SET transaction_id = $2 WHERE schedule_id = $1 AND sequence = 4`,
+				id,
+				tx,
+			)
 		}},
 		{"schedule on another book's account", func() error {
-			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
-				VALUES ($1, 'bill', $2, $3, 'x', 1000, 3, '2026-11-01')`, uid, foreign.ID, f.rent)
+			return exec(
+				`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
+				VALUES ($1, 'bill', $2, $3, 'x', 1000, 3, '2026-11-01')`,
+				uid,
+				foreign.ID,
+				f.rent,
+			)
 		}},
 		{"match window above 31", func() error {
 			return exec(`UPDATE planning_schedule SET match_window_days = 32 WHERE id = $1`, id)
@@ -93,37 +137,66 @@ func TestSchemaInvariants(t *testing.T) {
 			return exec(`UPDATE planning_schedule SET match_window_days = -1 WHERE id = $1`, id)
 		}},
 		{"same account on both sides", func() error {
-			return exec(`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
-				VALUES ($1, 'transfer', $2, $2, 'x', 1000, 3, '2026-11-01')`, uid, f.checking)
+			return exec(
+				`INSERT INTO planning_schedule (books_id, kind, account_id, counterpart_id, description, match_tolerance_bp, grace_days, generated_until)
+				VALUES ($1, 'transfer', $2, $2, 'x', 1000, 3, '2026-11-01')`,
+				uid,
+				f.checking,
+			)
 		}},
 		{"sequence twice", func() error {
-			return exec(`INSERT INTO planning_occurrence (books_id, schedule_id, sequence, expected_on, expected_amount, state)
-				VALUES ($1, $2, 1, '2026-11-05', 210000, 'expected')`, uid, id)
+			return exec(
+				`INSERT INTO planning_occurrence (books_id, schedule_id, sequence, expected_on, expected_amount, state)
+				VALUES ($1, $2, 1, '2026-11-05', 210000, 'expected')`,
+				uid,
+				id,
+			)
 		}},
 		{"two references for one book", func() error { return reference("fixed", 100) }},
 		{"reference with an unknown source", func() error {
-			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'monthly_income', NULL, 'BRL')`, otherID)
+			return exec(
+				`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'monthly_income', NULL, 'BRL')`,
+				otherID,
+			)
 		}},
 		{"fixed reference without an amount", func() error {
-			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', NULL, 'BRL')`, otherID)
+			return exec(
+				`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', NULL, 'BRL')`,
+				otherID,
+			)
 		}},
 		{"average reference with an amount", func() error {
-			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'average_income', 100, 'BRL')`, otherID)
+			return exec(
+				`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'average_income', 100, 'BRL')`,
+				otherID,
+			)
 		}},
 		{"negative fixed reference", func() error {
-			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', -1, 'BRL')`, otherID)
+			return exec(
+				`INSERT INTO planning_budget_reference (books_id, source, amount, currency) VALUES ($1, 'fixed', -1, 'BRL')`,
+				otherID,
+			)
 		}},
 		{"savings target above 10000", func() error {
-			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency, savings_target_bp) VALUES ($1, 'fixed', 0, 'BRL', 10001)`, otherID)
+			return exec(
+				`INSERT INTO planning_budget_reference (books_id, source, amount, currency, savings_target_bp) VALUES ($1, 'fixed', 0, 'BRL', 10001)`,
+				otherID,
+			)
 		}},
 		{"negative savings target", func() error {
-			return exec(`INSERT INTO planning_budget_reference (books_id, source, amount, currency, savings_target_bp) VALUES ($1, 'fixed', 0, 'BRL', -1)`, otherID)
+			return exec(
+				`INSERT INTO planning_budget_reference (books_id, source, amount, currency, savings_target_bp) VALUES ($1, 'fixed', 0, 'BRL', -1)`,
+				otherID,
+			)
 		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Class 23 is an integrity constraint violation; a typo in the SQL is not.
-			if pe, ok := errors.AsType[*pgconn.PgError](tt.run()); !ok || !strings.HasPrefix(pe.Code, "23") {
+			if pe, ok := errors.AsType[*pgconn.PgError](
+				tt.run(),
+			); !ok ||
+				!strings.HasPrefix(pe.Code, "23") {
 				t.Fatalf("error = %v, want an integrity constraint violation", pe)
 			}
 		})

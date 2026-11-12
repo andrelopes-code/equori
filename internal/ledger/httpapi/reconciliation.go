@@ -18,15 +18,26 @@ import (
 
 func toAssertionAPI(a app.BalanceAssertion, currency money.Currency) BalanceAssertion {
 	return BalanceAssertion{
-		Id: a.ID, AccountId: a.AccountID, Date: apiDate(a.Date), Source: BalanceAssertionSource(a.Source),
-		Amount: Money{Amount: a.Amount, Currency: string(currency)}, RecordedAt: a.RecordedAt, Reconciled: a.Reconciled,
+		Id:        a.ID,
+		AccountId: a.AccountID,
+		Date:      apiDate(a.Date),
+		Source:    BalanceAssertionSource(a.Source),
+		Amount: Money{
+			Amount:   a.Amount,
+			Currency: string(currency),
+		},
+		RecordedAt: a.RecordedAt,
+		Reconciled: a.Reconciled,
 	}
 }
 
 func toAssertionResultAPI(res app.AssertionResult) AssertionResult {
 	out := AssertionResult{
-		Assertion:  toAssertionAPI(res.Assertion, res.Difference.Currency()),
-		Difference: toMoneyAPI(res.Difference), ResolutionTransactionId: apiOptUUID(res.ResolutionTransactionID),
+		Assertion: toAssertionAPI(res.Assertion, res.Difference.Currency()),
+		Difference: toMoneyAPI(
+			res.Difference,
+		),
+		ResolutionTransactionId: apiOptUUID(res.ResolutionTransactionID),
 	}
 	if res.Resolution != "" {
 		r := AssertionResultResolution(res.Resolution)
@@ -51,7 +62,14 @@ func (s *Server) createBalanceAssertion(
 		return AssertionResult{}, err
 	}
 
-	res, err := s.svc.AssertBalance(ctx, auth.MustBooksID(ctx), id, dateOf(in.Date), amount, optString((*string)(in.Source)))
+	res, err := s.svc.AssertBalance(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		dateOf(in.Date),
+		amount,
+		optString((*string)(in.Source)),
+	)
 	if err != nil {
 		return AssertionResult{}, err
 	}
@@ -111,7 +129,12 @@ func (s *Server) resolveBalanceAssertion(
 		return AssertionResult{}, err
 	}
 
-	res, err := s.svc.ResolveAssertion(ctx, auth.MustBooksID(ctx), id, domain.Resolution(in.Resolution))
+	res, err := s.svc.ResolveAssertion(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		domain.Resolution(in.Resolution),
+	)
 	if err != nil {
 		return AssertionResult{}, err
 	}
@@ -137,7 +160,11 @@ func (s *Server) getReconciliationStatus(
 	return out, nil
 }
 
-func (s *Server) reconciliationStatus(ctx context.Context, booksID int64, accountID uuid.UUID) (ReconciliationStatus, error) {
+func (s *Server) reconciliationStatus(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (ReconciliationStatus, error) {
 	st, err := s.svc.ReconciliationStatus(ctx, booksID, accountID)
 	if err != nil {
 		return ReconciliationStatus{}, err
@@ -145,7 +172,11 @@ func (s *Server) reconciliationStatus(ctx context.Context, booksID int64, accoun
 
 	out := ReconciliationStatus{LastReconciledOn: apiOptDate(st.LastReconciledOn)}
 	if st.Open != nil {
-		out.OpenDifference = &OpenDifference{AssertionId: st.Open.AssertionID, Date: apiDate(st.Open.Date), Difference: toMoneyAPI(st.Open.Difference)}
+		out.OpenDifference = &OpenDifference{
+			AssertionId: st.Open.AssertionID,
+			Date:        apiDate(st.Open.Date),
+			Difference:  toMoneyAPI(st.Open.Difference),
+		}
 	}
 
 	return out, nil

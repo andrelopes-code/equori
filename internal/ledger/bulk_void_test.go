@@ -15,14 +15,25 @@ type voidResult struct {
 // S291 (A202)
 func TestS291BulkVoid(t *testing.T) {
 	r := newReserveSetup(t)
-	if got := assertBalance(r.h, r.reserve, "2026-10-31", 1000000).Status; got != http.StatusCreated {
+	if got := assertBalance(
+		r.h,
+		r.reserve,
+		"2026-10-31",
+		1000000,
+	).Status; got != http.StatusCreated {
 		t.Fatalf("balance assertion status = %d, want 201", got)
 	}
 
 	fees := r.h.Account("Bank fees", "expense", "", nil)
 	plain := r.h.Record("2026-10-05", apitest.Posting(r.checking, -500), apitest.Posting(fees, 500))
 	done := r.h.Record("2026-10-06", apitest.Posting(r.checking, -700), apitest.Posting(fees, 700))
-	r.h.MustDo(http.MethodPost, "/api/v1/transactions/"+done+"/void", map[string]string{"reason": "typo"}, http.StatusOK, nil)
+	r.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+done+"/void",
+		map[string]string{"reason": "typo"},
+		http.StatusOK,
+		nil,
+	)
 
 	missing := "01a15600-0000-7000-8000-000000000000"
 
@@ -52,7 +63,11 @@ func TestS291BulkVoid(t *testing.T) {
 // S292 (A202)
 func TestS292BulkVoidRepeatedTransaction(t *testing.T) {
 	c := newCategoryTree(t)
-	a := c.h.Record("2026-10-01", apitest.Posting(c.checking, -100), apitest.Posting(c.uncategorizedExpense, 100))
+	a := c.h.Record(
+		"2026-10-01",
+		apitest.Posting(c.checking, -100),
+		apitest.Posting(c.uncategorizedExpense, 100),
+	)
 
 	post := func(ids ...string) apitest.Response {
 		return c.h.Do(http.MethodPost, "/api/v1/transactions/void", voidBody("duplicate", ids...))
@@ -71,7 +86,13 @@ func bulkVoid(t *testing.T, h *apitest.Harness, reason string, ids ...string) []
 	var out struct {
 		Results []voidResult `json:"results"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/transactions/void", voidBody(reason, ids...), http.StatusOK, &out)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/void",
+		voidBody(reason, ids...),
+		http.StatusOK,
+		&out,
+	)
 
 	return out.Results
 }

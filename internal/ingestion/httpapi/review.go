@@ -16,9 +16,17 @@ import (
 
 func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 	out := ExternalRecord{
-		Id: r.ID, BatchId: r.BatchID, AccountId: r.AccountID, Date: openapi_types.Date{Time: r.Date},
-		Amount: Money{Amount: r.Amount, Currency: currency}, Description: r.Description,
-		State: ExternalRecordState(r.State), ExternalId: ref(r.ExternalID), Candidates: make([]openapi_types.UUID, len(r.Candidates)),
+		Id:          r.ID,
+		BatchId:     r.BatchID,
+		AccountId:   r.AccountID,
+		Date:        openapi_types.Date{Time: r.Date},
+		Amount:      Money{Amount: r.Amount, Currency: currency},
+		Description: r.Description,
+		State: ExternalRecordState(
+			r.State,
+		),
+		ExternalId:      ref(r.ExternalID),
+		Candidates:      make([]openapi_types.UUID, len(r.Candidates)),
 		UnappliedChange: ref(r.UnappliedChange),
 	}
 	copy(out.Candidates, r.Candidates)
@@ -32,8 +40,13 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 		scored := make([]ScoredCandidate, len(r.Scores))
 		for i, s := range r.Scores {
 			scored[i] = ScoredCandidate{
-				TransactionId: s.TransactionID, Score: s.Score, Amount: ScoredCandidateAmount(s.Amount),
-				Date: ScoredCandidateDate(s.Date), Counterparty: ScoredCandidateCounterparty(s.Counterparty),
+				TransactionId: s.TransactionID,
+				Score:         s.Score,
+				Amount:        ScoredCandidateAmount(s.Amount),
+				Date: ScoredCandidateDate(
+					s.Date,
+				),
+				Counterparty: ScoredCandidateCounterparty(s.Counterparty),
 			}
 		}
 
@@ -173,7 +186,11 @@ func (s *Server) reopenExternalRecord(
 	return toRecordAPI(rec, b.Currency), nil
 }
 
-func (s *Server) listUnconfirmed(ctx context.Context, r *http.Request, _ httpserver.None) (UnconfirmedList, error) {
+func (s *Server) listUnconfirmed(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (UnconfirmedList, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return UnconfirmedList{}, err

@@ -61,12 +61,27 @@ type Integrations struct {
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
-	return &Service{repo: repo, ledger: ledger, box: in.Box, aggs: in.Aggregators, now: in.Now, today: in.Today, inBooks: in.InBooks, admins: in.Admins, columns: in.Columns}
+	return &Service{
+		repo:    repo,
+		ledger:  ledger,
+		box:     in.Box,
+		aggs:    in.Aggregators,
+		now:     in.Now,
+		today:   in.Today,
+		inBooks: in.InBooks,
+		admins:  in.Admins,
+		columns: in.Columns,
+	}
 }
 
 // FollowPairing points the records that a ledger pairing moved to the kept transaction
 // (P5b amendment A32); repeating it changes nothing.
-func (s *Service) FollowPairing(ctx context.Context, booksID int64, kept uuid.UUID, recordIDs []uuid.UUID) error {
+func (s *Service) FollowPairing(
+	ctx context.Context,
+	booksID int64,
+	kept uuid.UUID,
+	recordIDs []uuid.UUID,
+) error {
 	return s.repo.MoveRecords(ctx, booksID, recordIDs, kept)
 }
 
@@ -74,6 +89,10 @@ func (s *Service) Batch(ctx context.Context, booksID int64, id uuid.UUID) (domai
 	return s.repo.Batch(ctx, booksID, id)
 }
 
-func (s *Service) ListBatches(ctx context.Context, booksID int64, p page.Request[BatchKey]) ([]domain.Batch, *BatchKey, error) {
+func (s *Service) ListBatches(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[BatchKey],
+) ([]domain.Batch, *BatchKey, error) {
 	return s.repo.ListBatches(ctx, booksID, p)
 }

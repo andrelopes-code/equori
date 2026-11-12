@@ -32,8 +32,20 @@ func compose(t *testing.T, stdin []byte, args ...string) []byte {
 
 	// The service that holds the test databases; make test sets it, db-test by default.
 	service := cmp.Or(os.Getenv("EQUORI_TEST_DB_SERVICE"), "db-test")
-	base := []string{"compose", "-f", filepath.Join(root, "compose.yaml"), "-f", filepath.Join(root, "compose.dev.yaml"), "exec", "-T", service}
-	cmd := exec.CommandContext(t.Context(), "docker", append(base, args...)...) //nolint:gosec // fixed binary; arguments built by the test
+	base := []string{
+		"compose",
+		"-f",
+		filepath.Join(root, "compose.yaml"),
+		"-f",
+		filepath.Join(root, "compose.dev.yaml"),
+		"exec",
+		"-T",
+		service,
+	}
+	cmd := exec.CommandContext(
+		t.Context(),
+		"docker",
+		append(base, args...)...) //nolint:gosec // fixed binary; arguments built by the test
 	cmd.Stdin = bytes.NewReader(stdin)
 	var stdout, stderr bytes.Buffer
 
@@ -52,7 +64,10 @@ func snapshot(t *testing.T, pool *pgxpool.Pool) []string {
 	ctx := t.Context()
 	var out []string
 
-	rows, err := pool.Query(ctx, `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1`)
+	rows, err := pool.Query(
+		ctx,
+		`SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1`,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,25 +132,64 @@ func TestRestoredBackupMatchesTheOriginal(t *testing.T) {
 	h.Record("2026-10-02", apitest.Posting(checking, -100000), apitest.Posting(reserve, 100000))
 	groceries := h.Record("2026-10-14", apitest.Posting(card, -23000), apitest.Posting(food, 23000))
 	duplicate := h.Record("2026-10-15", apitest.Posting(checking, -500), apitest.Posting(food, 500))
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+duplicate+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+reserve+"/balance-assertions", map[string]any{"date": "2026-10-31", "amount": apitest.BRL(100841)}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+duplicate+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+reserve+"/balance-assertions",
+		map[string]any{"date": "2026-10-31", "amount": apitest.BRL(100841)},
+		http.StatusCreated,
+		nil,
+	)
 
-	if r := h.Upload("/api/v1/transactions/"+groceries+"/attachments", "receipt.pdf", append([]byte("%PDF-1.7\n"), bytes.Repeat([]byte("x"), 4096)...)); r.Status != http.StatusCreated {
+	if r := h.Upload(
+		"/api/v1/transactions/"+groceries+"/attachments",
+		"receipt.pdf",
+		append([]byte("%PDF-1.7\n"), bytes.Repeat([]byte("x"), 4096)...),
+	); r.Status != http.StatusCreated {
 		t.Fatalf("upload: %d %s", r.Status, r.Body)
 	}
 
 	h.Dispatch()
 	want := snapshot(t, h.Pool)
 
-	dump := compose(t, nil, "pg_dump", "-U", "equori", "-Fc", "-d", h.Pool.Config().ConnConfig.Database)
+	dump := compose(
+		t,
+		nil,
+		"pg_dump",
+		"-U",
+		"equori",
+		"-Fc",
+		"-d",
+		h.Pool.Config().ConnConfig.Database,
+	)
 	restored := pgtest.Empty(t)
-	compose(t, dump, "pg_restore", "-U", "equori", "--no-owner", "--exit-on-error", "-d", restored.Config().ConnConfig.Database)
+	compose(
+		t,
+		dump,
+		"pg_restore",
+		"-U",
+		"equori",
+		"--no-owner",
+		"--exit-on-error",
+		"-d",
+		restored.Config().ConnConfig.Database,
+	)
 
 	if got := snapshot(t, restored); !slices.Equal(got, want) {
 		t.Fatalf("restored database differs:\n got %v\nwant %v", got, want)
 	}
 
-	app, err := server.New(restored, server.Config{}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	app, err := server.New(
+		restored,
+		server.Config{},
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,6 +199,10 @@ func TestRestoredBackupMatchesTheOriginal(t *testing.T) {
 	}
 
 	if got := snapshot(t, restored); !slices.Equal(got, want) {
-		t.Fatalf("derived tables rebuilt on the restored database differ:\n got %v\nwant %v", got, want)
+		t.Fatalf(
+			"derived tables rebuilt on the restored database differ:\n got %v\nwant %v",
+			got,
+			want,
+		)
 	}
 }

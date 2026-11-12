@@ -72,7 +72,11 @@ func TestDBAcceptsBilledCardPosting(t *testing.T) {
 	t.Parallel()
 
 	f := newCardFixture(t)
-	if _, err := f.recordCard(t, cardPosting{f.card, f.statement, "charge", -23000}, cardPosting{account: f.food, amount: 23000}); err != nil {
+	if _, err := f.recordCard(
+		t,
+		cardPosting{f.card, f.statement, "charge", -23000},
+		cardPosting{account: f.food, amount: 23000},
+	); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -82,12 +86,20 @@ func TestDBRejectsUnknownStatementBasis(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 
-	id, err := f.recordCard(t, cardPosting{f.card, f.statement, "charge", -100}, cardPosting{account: f.food, amount: 100})
+	id, err := f.recordCard(
+		t,
+		cardPosting{f.card, f.statement, "charge", -100},
+		cardPosting{account: f.food, amount: 100},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET statement_basis = 'guess' WHERE transaction_id = $1`, id)
+	_, err = f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET statement_basis = 'guess' WHERE transaction_id = $1`,
+		id,
+	)
 
 	requireViolation(t, err, checkViolation, "statement_basis")
 }
@@ -95,28 +107,44 @@ func TestDBRejectsUnknownStatementBasis(t *testing.T) {
 func TestDBRejectsCardPostingWithoutStatement(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
-	_, err := f.recordCard(t, cardPosting{account: f.card, amount: -100}, cardPosting{account: f.food, amount: 100})
+	_, err := f.recordCard(
+		t,
+		cardPosting{account: f.card, amount: -100},
+		cardPosting{account: f.food, amount: 100},
+	)
 	requireViolation(t, err, checkViolation, "statement")
 }
 
 func TestDBRejectsStatementOnNonCardPosting(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
-	_, err := f.recordCard(t, cardPosting{f.checking, f.statement, "charge", -100}, cardPosting{account: f.food, amount: 100})
+	_, err := f.recordCard(
+		t,
+		cardPosting{f.checking, f.statement, "charge", -100},
+		cardPosting{account: f.food, amount: 100},
+	)
 	requireViolation(t, err, checkViolation, "statement")
 }
 
 func TestDBRejectsStatementOfAnotherCard(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
-	_, err := f.recordCard(t, cardPosting{f.card, f.otherStatement, "charge", -100}, cardPosting{account: f.food, amount: 100})
+	_, err := f.recordCard(
+		t,
+		cardPosting{f.card, f.otherStatement, "charge", -100},
+		cardPosting{account: f.food, amount: 100},
+	)
 	requireViolation(t, err, checkViolation, "statement")
 }
 
 func TestDBRejectsRoleWithoutStatement(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
-	_, err := f.recordCard(t, cardPosting{account: f.checking, role: "charge", amount: -100}, cardPosting{account: f.food, amount: 100})
+	_, err := f.recordCard(
+		t,
+		cardPosting{account: f.checking, role: "charge", amount: -100},
+		cardPosting{account: f.food, amount: 100},
+	)
 	requireViolation(t, err, checkViolation, "")
 }
 
@@ -124,32 +152,62 @@ func TestDBProtectsReconciledPostings(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 
-	id, err := f.recordTx(t, f.booksID, "2026-03-01", postingRow{f.checking, -100}, postingRow{f.food, 100})
+	id, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-03-01",
+		postingRow{f.checking, -100},
+		postingRow{f.food, 100},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_posting SET status = 'reconciled' WHERE transaction_id = $1`, id); err != nil {
+	if _, err := f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET status = 'reconciled' WHERE transaction_id = $1`,
+		id,
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET amount = -200, weight = -200 WHERE transaction_id = $1 AND position = 0`, id)
+	_, err = f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET amount = -200, weight = -200 WHERE transaction_id = $1 AND position = 0`,
+		id,
+	)
 	requireViolation(t, err, checkViolation, "reconciled")
 	_, err = f.pool.Exec(t.Context(), `DELETE FROM ledger_posting WHERE transaction_id = $1`, id)
 	requireViolation(t, err, checkViolation, "reconciled")
-	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET status = 'cleared' WHERE transaction_id = $1`, id)
+	_, err = f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET status = 'cleared' WHERE transaction_id = $1`,
+		id,
+	)
 	requireViolation(t, err, checkViolation, "reconciled")
-	_, err = f.pool.Exec(t.Context(), `UPDATE ledger_posting SET memo = 'changed', external_record_id = gen_random_uuid() WHERE transaction_id = $1 AND position = 0`, id)
+	_, err = f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_posting SET memo = 'changed', external_record_id = gen_random_uuid() WHERE transaction_id = $1 AND position = 0`,
+		id,
+	)
 	requireViolation(t, err, checkViolation, "reconciled")
 
 	// P6 A38: the link to an external record may change on a reconciled posting.
 	for _, link := range []string{"gen_random_uuid()", "NULL"} {
-		if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_posting SET external_record_id = `+link+` WHERE transaction_id = $1 AND position = 0`, id); err != nil {
+		if _, err := f.pool.Exec(
+			t.Context(),
+			`UPDATE ledger_posting SET external_record_id = `+link+` WHERE transaction_id = $1 AND position = 0`,
+			id,
+		); err != nil {
 			t.Fatalf("relinking a reconciled posting to %s: %v", link, err)
 		}
 	}
 
-	if _, err := f.pool.Exec(t.Context(), `UPDATE ledger_transaction SET voided_at = now() WHERE id = $1`, id); err != nil {
+	if _, err := f.pool.Exec(
+		t.Context(),
+		`UPDATE ledger_transaction SET voided_at = now() WHERE id = $1`,
+		id,
+	); err != nil {
 		t.Fatalf("voiding a transaction with reconciled postings: %v", err)
 	}
 }
@@ -158,7 +216,11 @@ func TestDBOneOpenDisputePerTransaction(t *testing.T) {
 	t.Parallel()
 	f := newCardFixture(t)
 
-	id, err := f.recordCard(t, cardPosting{f.card, f.statement, "charge", -100}, cardPosting{account: f.food, amount: 100})
+	id, err := f.recordCard(
+		t,
+		cardPosting{f.card, f.statement, "charge", -100},
+		cardPosting{account: f.food, amount: 100},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,15 +268,26 @@ func TestDBStatementFactChecks(t *testing.T) {
 
 	var statement string
 	if err := f.pool.QueryRow(t.Context(), `INSERT INTO ledger_statement (books_id, account_id, reference_month, closing_date, due_date)
-		VALUES ($1, $2, '2027-05-01', '2027-05-03', '2027-05-10') RETURNING id::text`, f.booksID, f.card).Scan(&statement); err != nil {
+		VALUES ($1, $2, '2027-05-01', '2027-05-03', '2027-05-10') RETURNING id::text`, f.booksID, f.card).
+		Scan(&statement); err != nil {
 		t.Fatal(err)
 	}
 
-	_, err := f.pool.Exec(t.Context(), `INSERT INTO ledger_statement_fact (books_id, statement_id, source, closing_date, due_date, total)
-		VALUES ($1, $2, 'aggregator', '2026-11-10', '2026-11-03', 100)`, f.booksID, statement)
+	_, err := f.pool.Exec(
+		t.Context(),
+		`INSERT INTO ledger_statement_fact (books_id, statement_id, source, closing_date, due_date, total)
+		VALUES ($1, $2, 'aggregator', '2026-11-10', '2026-11-03', 100)`,
+		f.booksID,
+		statement,
+	)
 	requireViolation(t, err, checkViolation, "")
-	_, err = f.pool.Exec(t.Context(), `INSERT INTO ledger_statement_fact (books_id, statement_id, source, due_date, total)
-		VALUES ($1, $2, 'bank', '2026-11-10', 100)`, f.booksID, statement)
+	_, err = f.pool.Exec(
+		t.Context(),
+		`INSERT INTO ledger_statement_fact (books_id, statement_id, source, due_date, total)
+		VALUES ($1, $2, 'bank', '2026-11-10', 100)`,
+		f.booksID,
+		statement,
+	)
 	requireViolation(t, err, checkViolation, "")
 }
 

@@ -40,7 +40,11 @@ type SecondFactorLogin struct {
 
 // CompleteSecondFactor finishes a pending login with one answer. ErrSecondFactorInvalid is returned
 // with the member of the pending login in Session.MemberID, for the log line.
-func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin string, a SecondFactorAnswer) (SecondFactorLogin, error) {
+func (s *Service) CompleteSecondFactor(
+	ctx context.Context,
+	loginToken, origin string,
+	a SecondFactorAnswer,
+) (SecondFactorLogin, error) {
 	now := s.now()
 	hash := domain.HashToken(loginToken)
 
@@ -60,7 +64,11 @@ func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin s
 
 	attempts, counted, err := s.repo.CountLoginAttempt(ctx, hash, now, secondFactorAttempts)
 	if err != nil {
-		return result, fmt.Errorf("count second factor attempt of member %d: %w", pending.MemberID, err)
+		return result, fmt.Errorf(
+			"count second factor attempt of member %d: %w",
+			pending.MemberID,
+			err,
+		)
 	}
 
 	if !counted {
@@ -75,7 +83,11 @@ func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin s
 	if !ok {
 		if attempts >= secondFactorAttempts {
 			if _, err := s.repo.DeleteLoginChallenge(ctx, hash); err != nil {
-				return result, fmt.Errorf("delete pending login of member %d: %w", pending.MemberID, err)
+				return result, fmt.Errorf(
+					"delete pending login of member %d: %w",
+					pending.MemberID,
+					err,
+				)
 			}
 		}
 
@@ -91,7 +103,12 @@ func (s *Service) CompleteSecondFactor(ctx context.Context, loginToken, origin s
 }
 
 // startPendingLogin stores a pending login of the member and returns its token and methods.
-func (s *Service) startPendingLogin(ctx context.Context, memberID int64, origin string, now time.Time) (*PendingLogin, error) {
+func (s *Service) startPendingLogin(
+	ctx context.Context,
+	memberID int64,
+	origin string,
+	now time.Time,
+) (*PendingLogin, error) {
 	if _, err := s.repo.LoginBooks(ctx, memberID); errors.Is(err, ErrNotFound) {
 		return nil, ErrInvalidCredentials
 	} else if err != nil {
@@ -129,7 +146,13 @@ func (s *Service) startPendingLogin(ctx context.Context, memberID int64, origin 
 }
 
 // useSecondFactor consumes the factor of the answer; ok is false for a refused value.
-func (s *Service) useSecondFactor(ctx context.Context, pending domain.LoginChallenge, origin string, a SecondFactorAnswer, now time.Time) (method string, left int, ok bool, err error) {
+func (s *Service) useSecondFactor(
+	ctx context.Context,
+	pending domain.LoginChallenge,
+	origin string,
+	a SecondFactorAnswer,
+	now time.Time,
+) (method string, left int, ok bool, err error) {
 	switch {
 	case a.TOTPCode != "":
 		ok, err = s.useTOTP(ctx, pending.MemberID, a.TOTPCode, now)
@@ -149,7 +172,12 @@ func (s *Service) useSecondFactor(ctx context.Context, pending domain.LoginChall
 }
 
 // finishSecondFactor consumes the pending login after a right factor and starts the session.
-func (s *Service) finishSecondFactor(ctx context.Context, tokenHash []byte, memberID int64, now time.Time) (Session, error) {
+func (s *Service) finishSecondFactor(
+	ctx context.Context,
+	tokenHash []byte,
+	memberID int64,
+	now time.Time,
+) (Session, error) {
 	deleted, err := s.repo.DeleteLoginChallenge(ctx, tokenHash)
 	if err != nil {
 		return Session{}, fmt.Errorf("delete pending login of member %d: %w", memberID, err)

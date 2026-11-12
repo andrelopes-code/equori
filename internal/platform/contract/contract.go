@@ -23,7 +23,13 @@ import (
 var registerFormats sync.Once
 
 // methods are tried in this order to build the Allow header of a 405 response.
-var methods = []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete}
+var methods = []string{
+	http.MethodGet,
+	http.MethodPost,
+	http.MethodPut,
+	http.MethodPatch,
+	http.MethodDelete,
+}
 
 type Validator struct {
 	prefix string
@@ -36,10 +42,13 @@ func New(spec []byte, prefix string) (*Validator, error) {
 	registerFormats.Do(func() {
 		// kin-openapi keeps string formats in a package registry, and its predefined
 		// uuid format accepts versions 1 to 5 only; identifiers are UUIDv7.
-		openapi3.DefineStringFormatValidator("uuid", openapi3.NewCallbackValidator(func(s string) error {
-			_, err := uuid.Parse(s)
-			return err
-		}))
+		openapi3.DefineStringFormatValidator(
+			"uuid",
+			openapi3.NewCallbackValidator(func(s string) error {
+				_, err := uuid.Parse(s)
+				return err
+			}),
+		)
 	})
 
 	loader := openapi3.NewLoader()
@@ -62,7 +71,13 @@ func New(spec []byte, prefix string) (*Validator, error) {
 			// kin-openapi from reading the whole body for an authentication function.
 			unsecured := *op
 			unsecured.Security = &openapi3.SecurityRequirements{}
-			v.byKey[pattern] = &routers.Route{Spec: doc, Path: path, PathItem: item, Method: method, Operation: &unsecured}
+			v.byKey[pattern] = &routers.Route{
+				Spec:      doc,
+				Path:      path,
+				PathItem:  item,
+				Method:    method,
+				Operation: &unsecured,
+			}
 		}
 	}
 
@@ -100,7 +115,15 @@ func (v *Validator) Middleware(next http.Handler) http.Handler {
 		if route == nil {
 			if allow := v.allowed(r); allow != "" {
 				w.Header().Set("Allow", allow)
-				write(w, r, problem.New(http.StatusMethodNotAllowed, "method_not_allowed", r.Method+" is not allowed on "+r.URL.Path))
+				write(
+					w,
+					r,
+					problem.New(
+						http.StatusMethodNotAllowed,
+						"method_not_allowed",
+						r.Method+" is not allowed on "+r.URL.Path,
+					),
+				)
 
 				return
 			}
@@ -139,7 +162,11 @@ func write(w http.ResponseWriter, r *http.Request, d problem.Details) {
 }
 
 func invalid(errs ...problem.FieldError) problem.Details {
-	d := problem.New(http.StatusBadRequest, "invalid_request", "the request does not match the API contract")
+	d := problem.New(
+		http.StatusBadRequest,
+		"invalid_request",
+		"the request does not match the API contract",
+	)
 	d.Errors = errs
 
 	return d
@@ -164,7 +191,10 @@ func (v *Validator) check(r *http.Request, route *routers.Route) (problem.Detail
 	}
 
 	err := openapi3filter.ValidateRequest(r.Context(), &openapi3filter.RequestValidationInput{
-		Request: r, PathParams: pathParams(route.Path, strings.TrimPrefix(r.URL.Path, v.prefix)), Route: route, Options: opts,
+		Request:    r,
+		PathParams: pathParams(route.Path, strings.TrimPrefix(r.URL.Path, v.prefix)),
+		Route:      route,
+		Options:    opts,
 	})
 	if err == nil {
 		return problem.Details{}, true
@@ -194,7 +224,11 @@ func checkMediaType(r *http.Request, body *openapi3.RequestBody) (string, proble
 		declared = append(declared, t)
 	}
 
-	return "", problem.New(http.StatusUnsupportedMediaType, "unsupported_media_type", "Content-Type must be "+strings.Join(declared, " or ")), false
+	return "", problem.New(
+		http.StatusUnsupportedMediaType,
+		"unsupported_media_type",
+		"Content-Type must be "+strings.Join(declared, " or "),
+	), false
 }
 
 // checkJSON requires exactly one JSON value and leaves the body readable for the next reader.
@@ -213,7 +247,9 @@ func checkJSON(r *http.Request) (problem.Details, bool) {
 	case len(bytes.TrimSpace(b)) == 0:
 		return invalid(problem.FieldError{Field: "body", Message: "is required"}), false
 	case !jsontext.Value(b).IsValid():
-		return invalid(problem.FieldError{Field: "body", Message: "must be exactly one JSON value"}), false
+		return invalid(
+			problem.FieldError{Field: "body", Message: "must be exactly one JSON value"},
+		), false
 	}
 
 	return problem.Details{}, true

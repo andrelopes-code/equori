@@ -20,7 +20,12 @@ func Convert(m Money, to Currency, legs ...Leg) (Money, error) {
 	}
 
 	if len(legs) == 0 && m.currency != to {
-		return Money{}, fmt.Errorf("%w: %s to %s without a rate", ErrCurrencyMismatch, m.currency, to)
+		return Money{}, fmt.Errorf(
+			"%w: %s to %s without a rate",
+			ErrCurrencyMismatch,
+			m.currency,
+			to,
+		)
 	}
 
 	v := new(big.Rat).SetFrac(big.NewInt(m.amount), pow10(int(m.scale)))
@@ -49,7 +54,11 @@ func Fraction(m Money, num, den int64) (Money, error) {
 		return Money{}, ErrDivisionByZero
 	}
 
-	amount, err := roundHalfEven(new(big.Rat).SetFrac(new(big.Int).Mul(big.NewInt(m.amount), big.NewInt(num)), big.NewInt(den)))
+	amount, err := roundHalfEven(
+		new(
+			big.Rat,
+		).SetFrac(new(big.Int).Mul(big.NewInt(m.amount), big.NewInt(num)), big.NewInt(den)),
+	)
 	if err != nil {
 		return Money{}, err
 	}
@@ -64,7 +73,9 @@ func Quotient(a, b Money, decimals int) (Rate, error) {
 		return Rate{}, ErrDivisionByZero
 	}
 
-	v := new(big.Rat).SetFrac(new(big.Int).Mul(big.NewInt(a.amount), pow10(int(b.scale))), new(big.Int).Mul(big.NewInt(b.amount), pow10(int(a.scale))))
+	v := new(
+		big.Rat,
+	).SetFrac(new(big.Int).Mul(big.NewInt(a.amount), pow10(int(b.scale))), new(big.Int).Mul(big.NewInt(b.amount), pow10(int(a.scale))))
 	v.Mul(v, new(big.Rat).SetInt(pow10(decimals)))
 
 	mantissa, err := roundHalfEven(v)

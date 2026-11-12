@@ -61,7 +61,13 @@ func TestOpenWithPassphraseRejects(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			if _, err := OpenWithPassphrase(tc.sealed, tc.passphrase); !errors.Is(err, ErrUnreadable) {
+			if _, err := OpenWithPassphrase(
+				tc.sealed,
+				tc.passphrase,
+			); !errors.Is(
+				err,
+				ErrUnreadable,
+			) {
 				t.Fatalf("err = %v, want ErrUnreadable", err)
 			}
 		})

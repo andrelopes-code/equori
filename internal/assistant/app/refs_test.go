@@ -30,9 +30,11 @@ func TestResolveRefs(t *testing.T) {
 			result: `{"data":{"id":"7"}}`, want: `{"a":{"b":"7"}}`,
 		},
 		{
-			name: "array index in args and result",
-			args: `{"items":["x","y"]}`, refs: map[string]string{"/items/1": id.String() + "#/ids/0"},
-			result: `{"ids":["a","b"]}`, want: `{"items":["x","a"]}`,
+			name:   "array index in args and result",
+			args:   `{"items":["x","y"]}`,
+			refs:   map[string]string{"/items/1": id.String() + "#/ids/0"},
+			result: `{"ids":["a","b"]}`,
+			want:   `{"items":["x","a"]}`,
 		},
 		{
 			name:   "escaped key",
@@ -46,22 +48,34 @@ func TestResolveRefs(t *testing.T) {
 			result: `{"id":12345678901234567890}`, want: `{"n":12345678901234567890}`,
 		},
 		{
-			name: "missing result pointer",
-			args: `{"a":"x","b":"y"}`, refs: map[string]string{"/a": id.String() + "#/nope", "/b": id.String()},
-			result: `{"id":"1"}`, wantMissing: "/a",
+			name:        "missing result pointer",
+			args:        `{"a":"x","b":"y"}`,
+			refs:        map[string]string{"/a": id.String() + "#/nope", "/b": id.String()},
+			result:      `{"id":"1"}`,
+			wantMissing: "/a",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got, missing, err := resolveRefs([]byte(tt.args), tt.refs, map[uuid.UUID][]byte{id: []byte(tt.result)})
+			got, missing, err := resolveRefs(
+				[]byte(tt.args),
+				tt.refs,
+				map[uuid.UUID][]byte{id: []byte(tt.result)},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			if missing != tt.wantMissing || string(got) != tt.want && tt.wantMissing == "" {
-				t.Fatalf("got %s, missing %q; want %s, missing %q", got, missing, tt.want, tt.wantMissing)
+				t.Fatalf(
+					"got %s, missing %q; want %s, missing %q",
+					got,
+					missing,
+					tt.want,
+					tt.wantMissing,
+				)
 			}
 		})
 	}

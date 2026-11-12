@@ -8,7 +8,23 @@ var (
 	transferWords = []string{"transferi", "transferir", "transferencia", "transf", "transfer"}
 	incomeWords   = []string{"recebi", "recebido", "ganhei", "received", "income"}
 	expenseWords  = []string{"gastei", "paguei", "comprei", "spent", "paid", "bought"}
-	connectors    = []string{"de", "do", "da", "dos", "das", "no", "na", "nos", "nas", "em", "com", "para", "pra", "pro", "por"}
+	connectors    = []string{
+		"de",
+		"do",
+		"da",
+		"dos",
+		"das",
+		"no",
+		"na",
+		"nos",
+		"nas",
+		"em",
+		"com",
+		"para",
+		"pra",
+		"pro",
+		"por",
+	}
 )
 
 // keywords marks the kind words and reports the transfer and income words found.

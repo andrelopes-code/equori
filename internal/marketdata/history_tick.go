@@ -47,7 +47,10 @@ func (m *Module) tickHistory(ctx context.Context, src feed.Source) error {
 			continue
 		}
 
-		earliest, err := m.q.EarliestSourceDate(ctx, postgres.EarliestSourceDateParams{Source: src.ID(), Instrument: row.Instrument})
+		earliest, err := m.q.EarliestSourceDate(
+			ctx,
+			postgres.EarliestSourceDateParams{Source: src.ID(), Instrument: row.Instrument},
+		)
 		if err != nil {
 			return fmt.Errorf("read the earliest price of %s from %s: %w", code, src.ID(), err)
 		}
@@ -109,7 +112,11 @@ func (m *Module) fetchHistory(ctx context.Context, src feed.Source, jobs []histo
 // finishHistory marks row done, or failed with text; it matches the request read at the start
 // of the run, so a request that lowered from_date meanwhile keeps the row pending (D9).
 func (m *Module) finishHistory(ctx context.Context, row postgres.MarketdataHistory, text string) {
-	arg := postgres.FinishHistoryParams{Source: row.Source, Instrument: row.Instrument, RequestedAt: row.RequestedAt}
+	arg := postgres.FinishHistoryParams{
+		Source:      row.Source,
+		Instrument:  row.Instrument,
+		RequestedAt: row.RequestedAt,
+	}
 
 	if text == "" {
 		now := m.feeds.Clock.Now()
@@ -119,7 +126,10 @@ func (m *Module) finishHistory(ctx context.Context, row postgres.MarketdataHisto
 	}
 
 	if err := m.q.FinishHistory(ctx, arg); err != nil {
-		m.logFeed(ctx, fmt.Errorf("finish the history of %s from %s: %w", row.Instrument, row.Source, err))
+		m.logFeed(
+			ctx,
+			fmt.Errorf("finish the history of %s from %s: %w", row.Instrument, row.Source, err),
+		)
 	}
 }
 
@@ -131,7 +141,8 @@ func historyFailures(err error, codes []money.Currency) map[money.Currency]strin
 
 	for _, leaf := range leaves(err) {
 		var scope *feed.ScopeError
-		if errors.As(leaf, &scope) && scope.Key == "instrument" && slices.Contains(codes, money.Currency(scope.Value)) {
+		if errors.As(leaf, &scope) && scope.Key == "instrument" &&
+			slices.Contains(codes, money.Currency(scope.Value)) {
 			failures[money.Currency(scope.Value)] = scope.Err.Error()
 			continue
 		}
@@ -173,7 +184,11 @@ func leaves(err error) []error {
 
 // quotesOfRows keeps the quotes of the rows that did not fail: a quote belongs to the row of
 // its instrument when that code is in the fetch, otherwise to the row of its quote (D8).
-func quotesOfRows(quotes []feed.Quote, codes []money.Currency, failures map[money.Currency]string) []feed.Quote {
+func quotesOfRows(
+	quotes []feed.Quote,
+	codes []money.Currency,
+	failures map[money.Currency]string,
+) []feed.Quote {
 	var out []feed.Quote
 
 	for _, q := range quotes {

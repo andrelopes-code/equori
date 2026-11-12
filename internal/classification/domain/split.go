@@ -17,7 +17,8 @@ type Category struct {
 }
 
 func (c Category) usable(instrument money.Currency, date time.Time) bool {
-	return c.Instrument == instrument && !date.Before(c.OpenedOn) && (c.ClosedOn == nil || !date.After(*c.ClosedOn))
+	return c.Instrument == instrument && !date.Before(c.OpenedOn) &&
+		(c.ClosedOn == nil || !date.After(*c.ClosedOn))
 }
 
 // Allocation is one category posting of a decision, signed like the posting.
@@ -30,7 +31,12 @@ type Allocation struct {
 // so their sum never exceeds the total, then fixed parts, then the remainder; zero shares are
 // dropped. It returns false when a category cannot take a posting on date or the fixed parts
 // exceed the total.
-func Allocate(total money.Money, parts []Part, categories map[uuid.UUID]Category, date time.Time) ([]Allocation, bool) {
+func Allocate(
+	total money.Money,
+	parts []Part,
+	categories map[uuid.UUID]Category,
+	date time.Time,
+) ([]Allocation, bool) {
 	sign := int64(1)
 
 	n := total.Amount()
@@ -66,7 +72,11 @@ func fixedShares(
 		switch {
 		case p.Percent != 0:
 			// Split n to keep n·percent within int64 for amounts up to 2^53.
-			shares[i] = n/basisPointsAll*int64(p.Percent) + n%basisPointsAll*int64(p.Percent)/basisPointsAll
+			shares[i] = n/basisPointsAll*int64(
+				p.Percent,
+			) + n%basisPointsAll*int64(
+				p.Percent,
+			)/basisPointsAll
 		case p.Amount != nil:
 			if p.Amount.Currency() != total.Currency() {
 				return nil, 0, false

@@ -61,7 +61,11 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 // A range over 31 days reads the year files first, then the daily files from the day after the
 // latest year-file record (D14). A day with no data is skipped. The first failing file ends the
 // run: its failure, a feed.ScopeError, is returned with the quotes read before it.
-func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (c Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var out []feed.Quote
 
 	dayFrom := from
@@ -92,7 +96,11 @@ func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 // FetchYears returns the spot-market closing price of each code for each date of [from, to]
 // held by the year files of the years of from to to, and the latest record date read from them
 // (zero when none was read). A missing year is skipped. Each quote carries Source b3_cotahist.
-func (c Source) FetchYears(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, time.Time, error) {
+func (c Source) FetchYears(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, time.Time, error) {
 	tickers := tickerSet(codes)
 
 	var (
@@ -103,25 +111,30 @@ func (c Source) FetchYears(ctx context.Context, codes []money.Currency, from, to
 	for year := from.Year(); year <= to.Year(); year++ {
 		name := fmt.Sprintf("COTAHIST_A%d", year)
 
-		err := feed.Download(ctx, c.client, c.baseURL+"/"+name+".ZIP", func(f *os.File, size int64) error {
-			zr, err := zip.NewReader(f, size)
-			if err != nil {
-				return fmt.Errorf("open %s: %w", name, err)
-			}
+		err := feed.Download(
+			ctx,
+			c.client,
+			c.baseURL+"/"+name+".ZIP",
+			func(f *os.File, size int64) error {
+				zr, err := zip.NewReader(f, size)
+				if err != nil {
+					return fmt.Errorf("open %s: %w", name, err)
+				}
 
-			quotes, last, err := readZIP(zr, name, tickers, from, to, false)
-			if err != nil {
-				return err
-			}
+				quotes, last, err := readZIP(zr, name, tickers, from, to, false)
+				if err != nil {
+					return err
+				}
 
-			out = append(out, quotes...)
+				out = append(out, quotes...)
 
-			if last.After(latest) {
-				latest = last
-			}
+				if last.After(latest) {
+					latest = last
+				}
 
-			return nil
-		})
+				return nil
+			},
+		)
 		if errors.Is(err, feed.ErrNoData) {
 			continue
 		}
@@ -134,7 +147,11 @@ func (c Source) FetchYears(ctx context.Context, codes []money.Currency, from, to
 	return out, latest, nil
 }
 
-func (c Source) fetchDays(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (c Source) fetchDays(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	tickers := make([]string, len(codes))
 	for i, code := range codes {
 		tickers[i] = string(code)
@@ -163,7 +180,11 @@ func (c Source) fetchDays(ctx context.Context, codes []money.Currency, from, to 
 
 // FetchDay returns the spot-market closing price of each ticker traded on day.
 // A malformed file returns an error and no quote.
-func (c Source) FetchDay(ctx context.Context, day time.Time, tickers []string) ([]feed.Quote, error) {
+func (c Source) FetchDay(
+	ctx context.Context,
+	day time.Time,
+	tickers []string,
+) ([]feed.Quote, error) {
 	name := "COTAHIST_D" + day.Format("02012006")
 
 	body, err := feed.Get(ctx, c.client, c.baseURL+"/"+name+".ZIP")

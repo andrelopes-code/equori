@@ -25,8 +25,14 @@ func TestS369TesouroDireto(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	h := apitest.New(t, apitest.Today("2026-11-09"),
-		apitest.PriceFeeds([]string{"tesouro_direto"}, map[string]string{"tesouro_direto": srv.URL + "/td.csv"}))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-09"),
+		apitest.PriceFeeds(
+			[]string{"tesouro_direto"},
+			map[string]string{"tesouro_direto": srv.URL + "/td.csv"},
+		),
+	)
 	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
 		"code": "NTNBP.20350515", "type": "fixed_income", "scale": 2,
 		"name": "Tesouro IPCA+ 2035", "quote_currency": "BRL",
@@ -36,9 +42,27 @@ func TestS369TesouroDireto(t *testing.T) {
 
 	got := pricesOf(t, h, "NTNBP.20350515")
 	want := []priceAPI{
-		{Instrument: "NTNBP.20350515", QuoteInstrument: "BRL", Date: "2026-11-04", Value: "2475.64", Source: "tesouro_direto"},
-		{Instrument: "NTNBP.20350515", QuoteInstrument: "BRL", Date: "2026-11-05", Value: "2476.57", Source: "tesouro_direto"},
-		{Instrument: "NTNBP.20350515", QuoteInstrument: "BRL", Date: "2026-11-06", Value: "2491.12", Source: "tesouro_direto"},
+		{
+			Instrument:      "NTNBP.20350515",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-04",
+			Value:           "2475.64",
+			Source:          "tesouro_direto",
+		},
+		{
+			Instrument:      "NTNBP.20350515",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-05",
+			Value:           "2476.57",
+			Source:          "tesouro_direto",
+		},
+		{
+			Instrument:      "NTNBP.20350515",
+			QuoteInstrument: "BRL",
+			Date:            "2026-11-06",
+			Value:           "2491.12",
+			Source:          "tesouro_direto",
+		},
 	}
 
 	if len(got) != len(want) {

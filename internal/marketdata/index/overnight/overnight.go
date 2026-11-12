@@ -129,7 +129,11 @@ func get(ctx context.Context, s Source, u string) ([]byte, error) {
 // readECB reads the volume-weighted trimmed mean of the euro short-term rate from the ECB Data
 // Portal, series EST.B.EU000A2X2A25.WT; a period without data answers an empty body.
 func readECB(ctx context.Context, s Source, from, to time.Time) ([]publication, error) {
-	q := url.Values{"startPeriod": {from.Format(time.DateOnly)}, "endPeriod": {to.Format(time.DateOnly)}, "format": {"csvdata"}}
+	q := url.Values{
+		"startPeriod": {from.Format(time.DateOnly)},
+		"endPeriod":   {to.Format(time.DateOnly)},
+		"format":      {"csvdata"},
+	}
 
 	body, err := get(ctx, s, s.base+"/service/data/EST/B.EU000A2X2A25.WT?"+q.Encode())
 	if err != nil || strings.TrimSpace(string(body)) == "" {
@@ -141,7 +145,13 @@ func readECB(ctx context.Context, s Source, from, to time.Time) ([]publication, 
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}
 
-	dateAt, valueAt := slices.Index(records[0], "TIME_PERIOD"), slices.Index(records[0], "OBS_VALUE")
+	dateAt, valueAt := slices.Index(
+		records[0],
+		"TIME_PERIOD",
+	), slices.Index(
+		records[0],
+		"OBS_VALUE",
+	)
 	if dateAt < 0 || valueAt < 0 {
 		return nil, fmt.Errorf("%s: decode: no TIME_PERIOD or OBS_VALUE column", s.id)
 	}
@@ -161,7 +171,10 @@ func readECB(ctx context.Context, s Source, from, to time.Time) ([]publication, 
 
 // readNYFed reads SOFR from the Markets Data API of the Federal Reserve Bank of New York.
 func readNYFed(ctx context.Context, s Source, from, to time.Time) ([]publication, error) {
-	q := url.Values{"startDate": {from.Format(time.DateOnly)}, "endDate": {to.Format(time.DateOnly)}}
+	q := url.Values{
+		"startDate": {from.Format(time.DateOnly)},
+		"endDate":   {to.Format(time.DateOnly)},
+	}
 
 	body, err := get(ctx, s, s.base+"/api/rates/secured/sofr/search.json?"+q.Encode())
 	if err != nil {

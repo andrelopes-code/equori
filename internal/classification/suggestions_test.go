@@ -32,7 +32,13 @@ func TestSuggestionFromRepeatedCorrections(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	bakery := b.h.Account("Bakery", "expense", "", nil)
-	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
+	createRule(
+		t,
+		b.h,
+		"Uber",
+		[]map[string]any{contains("uber")},
+		[]map[string]any{setCategory(b.transport)},
+	)
 	txs := b.importLines(t, "s42a.ofx", line("20261005", "-8.50", "p1", "PADARIA SÃO JOÃO"))
 	first := txs["PADARIA SÃO JOÃO"].ID
 	b.categorize(t, first, 1, bakery, 850)
@@ -42,7 +48,12 @@ func TestSuggestionFromRepeatedCorrections(t *testing.T) {
 		t.Fatalf("one correction suggested %+v", got)
 	}
 
-	if r := b.h.Import(b.checking, "ofx", "s42b.ofx", apitest.OFX("", line("20261006", "-9.00", "p2", "Padaria São João"))); r.Status != http.StatusCreated {
+	if r := b.h.Import(
+		b.checking,
+		"ofx",
+		"s42b.ofx",
+		apitest.OFX("", line("20261006", "-9.00", "p2", "Padaria São João")),
+	); r.Status != http.StatusCreated {
 		t.Fatalf("import status %d: %s", r.Status, r.Body)
 	}
 
@@ -65,13 +76,22 @@ func TestSuggestionFromRepeatedCorrections(t *testing.T) {
 	}
 
 	s := pending[0]
-	if !slices.Equal(s.Examples, []string{first, second}) || len(s.Conditions) != 1 || s.Conditions[0]["field"] != "raw_description" ||
-		s.Conditions[0]["operator"] != "equals" || s.Conditions[0]["value"] != "padaria sao joao" || s.Actions[0]["category_id"] != bakery {
+	if !slices.Equal(s.Examples, []string{first, second}) || len(s.Conditions) != 1 ||
+		s.Conditions[0]["field"] != "raw_description" ||
+		s.Conditions[0]["operator"] != "equals" ||
+		s.Conditions[0]["value"] != "padaria sao joao" ||
+		s.Actions[0]["category_id"] != bakery {
 		t.Fatalf("suggestion = %+v", s)
 	}
 
 	var accepted suggestionView
-	b.h.MustDo(http.MethodPost, "/api/v1/rule-suggestions/"+s.ID+"/accept", map[string]string{"name": "Bakery"}, http.StatusOK, &accepted)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/rule-suggestions/"+s.ID+"/accept",
+		map[string]string{"name": "Bakery"},
+		http.StatusOK,
+		&accepted,
+	)
 
 	if accepted.State != "accepted" || accepted.RuleID == "" {
 		t.Fatalf("accepted = %+v", accepted)
@@ -95,8 +115,22 @@ func TestSuggestionFromRepeatedCorrections(t *testing.T) {
 		t.Fatalf("third categorization = %+v", c)
 	}
 
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/rule-suggestions/"+s.ID+"/accept", map[string]string{"name": "Again"}), http.StatusConflict, "suggestion_closed", "")
-	b.h.ExpectProblem(b.h.Do(http.MethodPost, "/api/v1/rule-suggestions/"+s.ID+"/dismiss", nil), http.StatusConflict, "suggestion_closed", "")
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodPost,
+			"/api/v1/rule-suggestions/"+s.ID+"/accept",
+			map[string]string{"name": "Again"},
+		),
+		http.StatusConflict,
+		"suggestion_closed",
+		"",
+	)
+	b.h.ExpectProblem(
+		b.h.Do(http.MethodPost, "/api/v1/rule-suggestions/"+s.ID+"/dismiss", nil),
+		http.StatusConflict,
+		"suggestion_closed",
+		"",
+	)
 }
 
 func TestSuggestionExamplesAndDismissal(t *testing.T) {
@@ -108,13 +142,26 @@ func TestSuggestionExamplesAndDismissal(t *testing.T) {
 		pharmacy = append(pharmacy, b.record(t, date, "FARMÁCIA", "", b.uncategorized, 1000))
 	}
 
-	market := []string{b.record(t, "2026-10-05", "MERCADO", "", b.uncategorized, 1000), b.record(t, "2026-10-06", "MERCADO", "", b.uncategorized, 1000)}
+	market := []string{
+		b.record(t, "2026-10-05", "MERCADO", "", b.uncategorized, 1000),
+		b.record(t, "2026-10-06", "MERCADO", "", b.uncategorized, 1000),
+	}
 	dispatch(t, b.h)
 
 	for _, tx := range market {
-		b.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{"expected_version": 1, "parts": []any{
-			map[string]any{"account_id": b.food, "amount": apitest.BRL(600)}, map[string]any{"account_id": b.delivery, "amount": apitest.BRL(400)},
-		}}, http.StatusOK, nil)
+		b.h.MustDo(
+			http.MethodPost,
+			"/api/v1/transactions/"+tx+"/categorize",
+			map[string]any{"expected_version": 1, "parts": []any{
+				map[string]any{
+					"account_id": b.food,
+					"amount":     apitest.BRL(600),
+				},
+				map[string]any{"account_id": b.delivery, "amount": apitest.BRL(400)},
+			}},
+			http.StatusOK,
+			nil,
+		)
 	}
 
 	for _, tx := range pharmacy[:3] {
@@ -129,7 +176,13 @@ func TestSuggestionExamplesAndDismissal(t *testing.T) {
 	}
 
 	var dismissed suggestionView
-	b.h.MustDo(http.MethodPost, "/api/v1/rule-suggestions/"+pending[0].ID+"/dismiss", nil, http.StatusOK, &dismissed)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/rule-suggestions/"+pending[0].ID+"/dismiss",
+		nil,
+		http.StatusOK,
+		&dismissed,
+	)
 
 	if dismissed.State != "dismissed" || dismissed.RuleID != "" {
 		t.Fatalf("dismissed = %+v", dismissed)

@@ -16,7 +16,13 @@ const lineReason = "matched to the institution's line"
 // ConfirmLine corrects the transaction to the amount and date of the statement line matched
 // to it on accountID, as a new version, keeping its description, payee, categories and tags
 // (A101). A voided transaction is refused with ErrVoided.
-func (s *Service) ConfirmLine(ctx context.Context, booksID int64, txID, accountID uuid.UUID, amount int64, date time.Time) error {
+func (s *Service) ConfirmLine(
+	ctx context.Context,
+	booksID int64,
+	txID, accountID uuid.UUID,
+	amount int64,
+	date time.Time,
+) error {
 	tx, err := s.repo.Transaction(ctx, booksID, txID)
 	if err != nil {
 		return err
@@ -40,7 +46,12 @@ func (s *Service) ConfirmLine(ctx context.Context, booksID int64, txID, accountI
 // with reason lineReason, when the posting on accountID is a card posting, every reconciled
 // posting is a card posting and each keeps its statement after billing (P12 A147 rule 3).
 // Otherwise domain.ErrReconciled; a voided transaction is domain.ErrVoided.
-func (s *Service) MoveReconciledDate(ctx context.Context, booksID int64, txID, accountID uuid.UUID, date time.Time) error {
+func (s *Service) MoveReconciledDate(
+	ctx context.Context,
+	booksID int64,
+	txID, accountID uuid.UUID,
+	date time.Time,
+) error {
 	return s.repo.InTx(ctx, func(r Repository) error {
 		prev, err := r.LockTransaction(ctx, booksID, txID)
 		if err != nil {
@@ -84,7 +95,10 @@ func (s *Service) MoveReconciledDate(ctx context.Context, booksID int64, txID, a
 		event.CategoriesChanged = domain.CategoriesChanged(prev, corrected, accounts)
 
 		return r.Publish(ctx, outbox.Event{
-			Type: EventTransactionCorrected, BooksID: booksID, AggregateID: txID.String(), Payload: event,
+			Type:        EventTransactionCorrected,
+			BooksID:     booksID,
+			AggregateID: txID.String(),
+			Payload:     event,
 		})
 	})
 }

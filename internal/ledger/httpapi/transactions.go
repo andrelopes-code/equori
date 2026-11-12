@@ -31,9 +31,21 @@ func (s *Server) listTransactions(
 	}
 
 	q := app.TransactionQuery{
-		BooksID: auth.MustBooksID(ctx), AccountID: optUUID(params.AccountId), PayeeID: optUUID(params.PayeeId),
-		Tag: optString(params.Tag), Q: optString(params.Q), From: optDate(params.From), To: optDate(params.To), Limit: p.Limit, After: p.After,
-		AmountMin: params.AmountMin, AmountMax: params.AmountMax,
+		BooksID: auth.MustBooksID(
+			ctx,
+		),
+		AccountID: optUUID(params.AccountId),
+		PayeeID:   optUUID(params.PayeeId),
+		Tag: optString(
+			params.Tag,
+		),
+		Q:             optString(params.Q),
+		From:          optDate(params.From),
+		To:            optDate(params.To),
+		Limit:         p.Limit,
+		After:         p.After,
+		AmountMin:     params.AmountMin,
+		AmountMax:     params.AmountMax,
 		Uncategorized: params.Uncategorized != nil && *params.Uncategorized,
 	}
 
@@ -96,7 +108,11 @@ func (s *Server) getTransaction(
 
 	referencedBy := make([]LinkReference, len(refs))
 	for i, rec := range refs {
-		referencedBy[i] = LinkReference{Type: LinkReferenceType(rec.Type), Source: rec.Source, Amount: linkAmountAPI(rec.Amount, rec.Currency)}
+		referencedBy[i] = LinkReference{
+			Type:   LinkReferenceType(rec.Type),
+			Source: rec.Source,
+			Amount: linkAmountAPI(rec.Amount, rec.Currency),
+		}
 	}
 
 	out.ReferencedBy = &referencedBy
@@ -117,13 +133,25 @@ func (s *Server) correctTransaction(
 	b := in
 
 	input, err := fromTransactionInput(ctx, TransactionInput{
-		Date: b.Date, Description: b.Description, PayeeId: b.PayeeId, Tags: b.Tags, Links: b.Links, Postings: b.Postings,
+		Date:        b.Date,
+		Description: b.Description,
+		PayeeId:     b.PayeeId,
+		Tags:        b.Tags,
+		Links:       b.Links,
+		Postings:    b.Postings,
 	}, s.svc.AmountOf)
 	if err != nil {
 		return Transaction{}, err
 	}
 
-	t, err := s.svc.CorrectTransaction(ctx, auth.MustBooksID(ctx), id, b.ExpectedVersion, input, b.Reason)
+	t, err := s.svc.CorrectTransaction(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		b.ExpectedVersion,
+		input,
+		b.Reason,
+	)
 	if err != nil {
 		return Transaction{}, err
 	}
@@ -214,7 +242,10 @@ func (s *Server) transferTransaction(
 	booksID := auth.MustBooksID(ctx)
 
 	input := app.TransferRequest{
-		TransactionID: id, ExpectedVersion: in.ExpectedVersion, AccountID: in.AccountId, Cause: app.Cause{Method: app.MethodManual},
+		TransactionID:   id,
+		ExpectedVersion: in.ExpectedVersion,
+		AccountID:       in.AccountId,
+		Cause:           app.Cause{Method: app.MethodManual},
 	}
 	if in.PairWith != nil {
 		input.PairWith = *in.PairWith
@@ -256,7 +287,10 @@ func (s *Server) listTransactionVersions(
 	out := TransactionVersionList{Items: make([]TransactionVersion, len(versions))}
 	for i, v := range versions {
 		out.Items[i] = TransactionVersion{
-			Version: v.Version, Reason: v.Reason, ReplacedAt: v.ReplacedAt, Transaction: toTransactionAPI(v.Transaction),
+			Version:     v.Version,
+			Reason:      v.Reason,
+			ReplacedAt:  v.ReplacedAt,
+			Transaction: toTransactionAPI(v.Transaction),
 		}
 	}
 

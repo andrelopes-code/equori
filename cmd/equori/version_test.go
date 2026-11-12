@@ -22,7 +22,11 @@ func TestVersionText(t *testing.T) {
 	}
 
 	// S268 (A192.1)
-	want := fmt.Sprintf("equori v0.1.0\nschema %d\npostgresql >= 18\narchive %d\n", latest, reporting.ArchiveVersion)
+	want := fmt.Sprintf(
+		"equori v0.1.0\nschema %d\npostgresql >= 18\narchive %d\n",
+		latest,
+		reporting.ArchiveVersion,
+	)
 	if got != want {
 		t.Fatalf("versionText() = %q, want %q", got, want)
 	}

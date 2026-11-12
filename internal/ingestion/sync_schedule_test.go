@@ -34,10 +34,25 @@ func TestS190SyncSchedule(t *testing.T) {
 	}
 
 	wantMinutes(h.Do(http.MethodGet, path, nil), 60)
-	h.ExpectProblem(h.Call(member, http.MethodPut, path, syncSchedule{Minutes: 15}), http.StatusForbidden, "admin_required", "")
+	h.ExpectProblem(
+		h.Call(member, http.MethodPut, path, syncSchedule{Minutes: 15}),
+		http.StatusForbidden,
+		"admin_required",
+		"",
+	)
 	wantMinutes(h.Do(http.MethodPut, path, syncSchedule{Minutes: 15}), 15)
 	wantMinutes(h.Call(member, http.MethodGet, path, nil), 15)
-	h.ExpectProblem(h.Do(http.MethodPut, path, syncSchedule{Minutes: 0}), http.StatusBadRequest, "invalid_request", "minutes")
-	h.ExpectProblem(h.Do(http.MethodPut, path, syncSchedule{Minutes: 1441}), http.StatusBadRequest, "invalid_request", "minutes")
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, syncSchedule{Minutes: 0}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"minutes",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPut, path, syncSchedule{Minutes: 1441}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"minutes",
+	)
 	wantMinutes(h.Do(http.MethodGet, path, nil), 15)
 }

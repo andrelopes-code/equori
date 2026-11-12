@@ -55,11 +55,26 @@ func TestChangeAndRemoveMember(t *testing.T) {
 	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
 	path := fmt.Sprintf("/api/v1/books/current/members/%d", h.MemberIDOf("writer@example.com"))
 
-	expectStatus(t, h.Do(http.MethodPatch, path, map[string]string{"role": "read"}), http.StatusNoContent)
-	h.ExpectProblem(h.Call(writer, http.MethodPost, "/api/v1/accounts", map[string]any{}), http.StatusForbidden, "book_role_required", "")
+	expectStatus(
+		t,
+		h.Do(http.MethodPatch, path, map[string]string{"role": "read"}),
+		http.StatusNoContent,
+	)
 	h.ExpectProblem(
-		h.Do(http.MethodPatch, "/api/v1/books/current/members/999999", map[string]string{"role": "read"}),
-		http.StatusNotFound, "member_not_found", "",
+		h.Call(writer, http.MethodPost, "/api/v1/accounts", map[string]any{}),
+		http.StatusForbidden,
+		"book_role_required",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPatch,
+			"/api/v1/books/current/members/999999",
+			map[string]string{"role": "read"},
+		),
+		http.StatusNotFound,
+		"member_not_found",
+		"",
 	)
 
 	token := h.Call(writer, http.MethodPost, "/api/v1/access-tokens",
@@ -67,7 +82,12 @@ func TestChangeAndRemoveMember(t *testing.T) {
 	expectStatus(t, token, http.StatusCreated)
 
 	expectStatus(t, h.Do(http.MethodDelete, path, nil), http.StatusNoContent)
-	h.ExpectProblem(h.Call(writer, http.MethodGet, "/api/v1/me", nil), http.StatusUnauthorized, "unauthenticated", "")
+	h.ExpectProblem(
+		h.Call(writer, http.MethodGet, "/api/v1/me", nil),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 
 	var tokens int
 	if err := h.Pool.QueryRow(t.Context(),
@@ -85,13 +105,34 @@ func TestLastOwner(t *testing.T) {
 	h := apitest.New(t)
 	h.JoinAs("writer@example.com", h.OwnerID(), "write")
 	ownerPath := fmt.Sprintf("/api/v1/books/current/members/%d", h.MemberIDOf("owner@example.com"))
-	writerPath := fmt.Sprintf("/api/v1/books/current/members/%d", h.MemberIDOf("writer@example.com"))
+	writerPath := fmt.Sprintf(
+		"/api/v1/books/current/members/%d",
+		h.MemberIDOf("writer@example.com"),
+	)
 
-	h.ExpectProblem(h.Do(http.MethodPatch, ownerPath, map[string]string{"role": "write"}), http.StatusConflict, "last_owner", "")
-	h.ExpectProblem(h.Do(http.MethodDelete, "/api/v1/books/current/membership", nil), http.StatusConflict, "last_owner", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, ownerPath, map[string]string{"role": "write"}),
+		http.StatusConflict,
+		"last_owner",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodDelete, "/api/v1/books/current/membership", nil),
+		http.StatusConflict,
+		"last_owner",
+		"",
+	)
 
-	expectStatus(t, h.Do(http.MethodPatch, writerPath, map[string]string{"role": "owner"}), http.StatusNoContent)
-	expectStatus(t, h.Do(http.MethodPatch, ownerPath, map[string]string{"role": "write"}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Do(http.MethodPatch, writerPath, map[string]string{"role": "owner"}),
+		http.StatusNoContent,
+	)
+	expectStatus(
+		t,
+		h.Do(http.MethodPatch, ownerPath, map[string]string{"role": "write"}),
+		http.StatusNoContent,
+	)
 }
 
 // HA20: a member leaves the active book and the next login opens its own book.
@@ -141,7 +182,15 @@ func TestConcurrentDemotions(t *testing.T) {
 	ownerID := h.MemberIDOf("owner@example.com")
 	writerID := h.MemberIDOf("writer@example.com")
 
-	expectStatus(t, h.Do(http.MethodPatch, fmt.Sprintf("/api/v1/books/current/members/%d", writerID), map[string]string{"role": "owner"}), http.StatusNoContent)
+	expectStatus(
+		t,
+		h.Do(
+			http.MethodPatch,
+			fmt.Sprintf("/api/v1/books/current/members/%d", writerID),
+			map[string]string{"role": "owner"},
+		),
+		http.StatusNoContent,
+	)
 
 	owner := h.SignIn("owner@example.com")
 
@@ -165,8 +214,15 @@ func TestConcurrentDemotions(t *testing.T) {
 
 			<-start
 
-			results[i] = h.Call(call.client, http.MethodPatch,
-				fmt.Sprintf("/api/v1/books/current/members/%d", call.memberID), map[string]string{"role": "write"})
+			results[i] = h.Call(
+				call.client,
+				http.MethodPatch,
+				fmt.Sprintf(
+					"/api/v1/books/current/members/%d",
+					call.memberID,
+				),
+				map[string]string{"role": "write"},
+			)
 		}()
 	}
 
@@ -184,8 +240,11 @@ func TestConcurrentDemotions(t *testing.T) {
 	}
 
 	var owners int
-	if err := h.Pool.QueryRow(t.Context(),
-		`SELECT count(*) FROM identity_membership WHERE books_id = $1 AND role = 'owner'`, h.OwnerID()).Scan(&owners); err != nil || owners != 1 {
+	if err := h.Pool.QueryRow(
+		t.Context(),
+		`SELECT count(*) FROM identity_membership WHERE books_id = $1 AND role = 'owner'`,
+		h.OwnerID(),
+	).Scan(&owners); err != nil || owners != 1 {
 		t.Fatalf("owners = %d, %v; want 1", owners, err)
 	}
 }

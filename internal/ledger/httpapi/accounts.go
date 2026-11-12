@@ -201,7 +201,12 @@ func (s *Server) setAccountParent(
 		parent = *in.ParentId
 	}
 
-	a, err := s.svc.UpdateAccount(ctx, auth.MustBooksID(ctx), id, app.AccountPatch{ParentID: &parent})
+	a, err := s.svc.UpdateAccount(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		app.AccountPatch{ParentID: &parent},
+	)
 	if err != nil {
 		return Account{}, err
 	}

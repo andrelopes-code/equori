@@ -30,9 +30,17 @@ func ref(s string) *string {
 
 func toProfileAPI(p domain.Profile) CsvProfile {
 	out := CsvProfile{
-		DateColumn: p.DateColumn, DateLayout: string(p.DateLayout), DecimalSeparator: CsvProfileDecimalSeparator(p.DecimalSeparator),
-		DescriptionColumn: p.DescriptionColumn, HeaderRows: &p.HeaderRows, AmountColumn: ref(p.AmountColumn),
-		DebitColumn: ref(p.DebitColumn), CreditColumn: ref(p.CreditColumn), IdColumn: ref(p.IDColumn),
+		DateColumn:        p.DateColumn,
+		DateLayout:        string(p.DateLayout),
+		DecimalSeparator:  CsvProfileDecimalSeparator(p.DecimalSeparator),
+		DescriptionColumn: p.DescriptionColumn,
+		HeaderRows:        &p.HeaderRows,
+		AmountColumn:      ref(p.AmountColumn),
+		DebitColumn: ref(
+			p.DebitColumn,
+		),
+		CreditColumn: ref(p.CreditColumn),
+		IdColumn:     ref(p.IDColumn),
 	}
 	for name, c := range delimiters {
 		if c == p.Delimiter {
@@ -51,7 +59,11 @@ func toProfileAPI(p domain.Profile) CsvProfile {
 	return out
 }
 
-func (s *Server) getCsvProfile(ctx context.Context, r *http.Request, _ httpserver.None) (CsvProfile, error) {
+func (s *Server) getCsvProfile(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (CsvProfile, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return CsvProfile{}, err
@@ -74,9 +86,23 @@ func (s *Server) saveCsvProfile(
 	}
 
 	p := domain.Profile{
-		BooksID: auth.MustBooksID(ctx), AccountID: id, HeaderRows: 1, DateColumn: b.DateColumn, DateLayout: domain.DateLayout(b.DateLayout),
-		AmountColumn: opt(b.AmountColumn), DebitColumn: opt(b.DebitColumn), CreditColumn: opt(b.CreditColumn),
-		DecimalSeparator: string(b.DecimalSeparator), DescriptionColumn: b.DescriptionColumn, IDColumn: opt(b.IdColumn),
+		BooksID: auth.MustBooksID(
+			ctx,
+		),
+		AccountID:  id,
+		HeaderRows: 1,
+		DateColumn: b.DateColumn,
+		DateLayout: domain.DateLayout(b.DateLayout),
+		AmountColumn: opt(
+			b.AmountColumn,
+		),
+		DebitColumn:  opt(b.DebitColumn),
+		CreditColumn: opt(b.CreditColumn),
+		DecimalSeparator: string(
+			b.DecimalSeparator,
+		),
+		DescriptionColumn: b.DescriptionColumn,
+		IDColumn:          opt(b.IdColumn),
 	}
 	if b.Delimiter != nil {
 		p.Delimiter = delimiters[*b.Delimiter]
@@ -135,7 +161,14 @@ func (s *Server) suggestCsvColumns(
 	}
 
 	return CsvColumnSuggestion{
-		DateColumn: got.Date, DescriptionColumn: got.Description, AmountColumn: ref(got.Amount),
-		DebitColumn: ref(got.Debit), CreditColumn: ref(got.Credit), IdColumn: ref(got.ID), SignColumn: ref(got.Sign),
+		DateColumn:        got.Date,
+		DescriptionColumn: got.Description,
+		AmountColumn:      ref(got.Amount),
+		DebitColumn: ref(
+			got.Debit,
+		),
+		CreditColumn: ref(got.Credit),
+		IdColumn:     ref(got.ID),
+		SignColumn:   ref(got.Sign),
 	}, nil
 }

@@ -103,7 +103,11 @@ type indexRateRow struct {
 func indexRates(t *testing.T, h *apitest.Harness, index string) []indexRateRow {
 	t.Helper()
 
-	rows, err := h.Pool.Query(t.Context(), `SELECT to_char(date, 'YYYY-MM-DD'), rate::text, source FROM marketdata_index_rate WHERE index_id = $1 ORDER BY date`, index)
+	rows, err := h.Pool.Query(
+		t.Context(),
+		`SELECT to_char(date, 'YYYY-MM-DD'), rate::text, source FROM marketdata_index_rate WHERE index_id = $1 ORDER BY date`,
+		index,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,10 +129,17 @@ func indexRates(t *testing.T, h *apitest.Harness, index string) []indexRateRow {
 func TestIndexFeeds(t *testing.T) {
 	t.Parallel()
 
-	s := &sgsServer{cdi: cdiWeek, ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}}}
+	s := &sgsServer{
+		cdi:  cdiWeek,
+		ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}},
+	}
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-01-09"), apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, indexURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-09"),
+		apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, indexURLs(srv)),
+	)
 
 	// A source that answers 503 is logged and fetched again on the next tick.
 	s.setFail(true)
@@ -155,12 +166,14 @@ func TestIndexFeeds(t *testing.T) {
 		}
 	}
 
-	if len(got) != 5 || !strings.Contains(got[0], "dataInicial=09%2F01%2F2006") || !strings.Contains(got[4], "dataFinal=09%2F01%2F2026") {
+	if len(got) != 5 || !strings.Contains(got[0], "dataInicial=09%2F01%2F2006") ||
+		!strings.Contains(got[4], "dataFinal=09%2F01%2F2026") {
 		t.Fatalf("requests = %v", got)
 	}
 
 	rates := indexRates(t, h, "cdi")
-	if len(rates) != 6 || rates[0] != (indexRateRow{"2026-01-02", "0.000551310000", "br_cdi"}) || rates[5].Date != "2026-01-09" {
+	if len(rates) != 6 || rates[0] != (indexRateRow{"2026-01-02", "0.000551310000", "br_cdi"}) ||
+		rates[5].Date != "2026-01-09" {
 		t.Fatalf("rates = %+v", rates)
 	}
 
@@ -181,15 +194,25 @@ func TestIndexFeedsIPCA(t *testing.T) {
 	s := &sgsServer{ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}}}
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-03-15"), apitest.IndexFeeds([]string{"br_ipca"}, indexURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-03-15"),
+		apitest.IndexFeeds([]string{"br_ipca"}, indexURLs(srv)),
+	)
 	defineFixedIncome(t, h, "NTNBXPTO")
 	h.MustDo(http.MethodPut, "/api/v1/instruments/NTNBXPTO/terms", map[string]any{
-		"issued_on": "2026-01-01", "matures_on": "2035-05-15", "index_id": "ipca", "spread_bp": 600, "day_count": "act365", "face_value": 100000,
+		"issued_on":  "2026-01-01",
+		"matures_on": "2035-05-15",
+		"index_id":   "ipca",
+		"spread_bp":  600,
+		"day_count":  "act365",
+		"face_value": 100000,
 	}, http.StatusOK, nil)
 	h.App.Marketdata.TickFeeds(t.Context())
 
 	rates := indexRates(t, h, "ipca")
-	if len(rates) != 2 || rates[0] != (indexRateRow{"2026-01-01", "0.004200000000", "br_ipca"}) || rates[1] != (indexRateRow{"2026-02-01", "-0.003000000000", "br_ipca"}) {
+	if len(rates) != 2 || rates[0] != (indexRateRow{"2026-01-01", "0.004200000000", "br_ipca"}) ||
+		rates[1] != (indexRateRow{"2026-02-01", "-0.003000000000", "br_ipca"}) {
 		t.Fatalf("rates = %+v", rates)
 	}
 
@@ -209,15 +232,28 @@ func TestIndexFeedsIPCA(t *testing.T) {
 func TestNewIndexSources(t *testing.T) {
 	t.Parallel()
 
-	if got := marketdata.IndexSourceIDs(); !slices.Equal(got, []string{"br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi"}) {
+	if got := marketdata.IndexSourceIDs(); !slices.Equal(
+		got,
+		[]string{"br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi"},
+	) {
 		t.Fatalf("IndexSourceIDs = %v", got)
 	}
 
-	if _, err := marketdata.NewIndexSources([]string{"nope"}, nil, http.DefaultClient); err == nil || !strings.Contains(err.Error(), "unknown index feed") || !strings.Contains(err.Error(), "nope") {
+	if _, err := marketdata.NewIndexSources(
+		[]string{"nope"},
+		nil,
+		http.DefaultClient,
+	); err == nil || !strings.Contains(err.Error(), "unknown index feed") ||
+		!strings.Contains(err.Error(), "nope") {
 		t.Fatalf("error = %v", err)
 	}
 
-	if got, err := marketdata.NewIndexSources([]string{"br_cdi"}, nil, http.DefaultClient); err != nil || len(got) != 1 || got[0].ID() != "br_cdi" {
+	if got, err := marketdata.NewIndexSources(
+		[]string{"br_cdi"},
+		nil,
+		http.DefaultClient,
+	); err != nil || len(got) != 1 ||
+		got[0].ID() != "br_cdi" {
 		t.Fatalf("sources = %v, %v", got, err)
 	}
 }

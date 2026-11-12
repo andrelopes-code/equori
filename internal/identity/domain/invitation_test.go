@@ -25,7 +25,9 @@ func TestNewInvitation(t *testing.T) {
 		t.Errorf("len(token) = %d, want 43", len(token))
 	}
 
-	if inv.BooksID != 7 || inv.InvitedBy != 3 || inv.Email != "new@example.com" || inv.Role != "write" || !inv.CreatedAt.Equal(now) {
+	if inv.BooksID != 7 || inv.InvitedBy != 3 || inv.Email != "new@example.com" ||
+		inv.Role != "write" ||
+		!inv.CreatedAt.Equal(now) {
 		t.Errorf("invitation = %+v", inv)
 	}
 

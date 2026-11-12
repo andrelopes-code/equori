@@ -15,7 +15,7 @@ type getFinancialIndicatorsIn struct {
 
 // ratioView carries bp always: ADR 012 T4 admits no nullable type.
 type ratioView struct {
-	BP     int64  `json:"bp" jsonschema:"basis points truncated toward zero; 0 and meaningless when reason is present"`
+	BP     int64  `json:"bp"              jsonschema:"basis points truncated toward zero; 0 and meaningless when reason is present"`
 	Reason string `json:"reason,omitzero" jsonschema:"present when the ratio has no value: no_income, no_expense or insufficient_history"`
 }
 
@@ -27,7 +27,7 @@ type indicatorView struct {
 	DebtService         tool.Money `json:"debt_service"`
 	LiquidBalance       tool.Money `json:"liquid_balance"`
 	Liabilities         tool.Money `json:"liabilities"`
-	MeanIncome          tool.Money `json:"mean_income,omitzero" jsonschema:"absent when the trailing window holds fewer than 3 months"`
+	MeanIncome          tool.Money `json:"mean_income,omitzero"  jsonschema:"absent when the trailing window holds fewer than 3 months"`
 	MeanExpense         tool.Money `json:"mean_expense,omitzero" jsonschema:"absent when the trailing window holds fewer than 3 months"`
 	SavingsRate         ratioView  `json:"savings_rate"`
 	TrailingSavingsRate ratioView  `json:"trailing_savings_rate"`
@@ -99,7 +99,10 @@ func indicatorViews(report app.IndicatorReport) (getFinancialIndicatorsOut, erro
 	return out, nil
 }
 
-func monthView(m app.IndicatorMonth, amount func(int64) (tool.Money, error)) (indicatorView, error) {
+func monthView(
+	m app.IndicatorMonth,
+	amount func(int64) (tool.Money, error),
+) (indicatorView, error) {
 	var err error
 
 	v := indicatorView{

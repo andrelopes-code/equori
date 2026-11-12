@@ -24,12 +24,35 @@ func TestAcceptAsNewMemberEmailTaken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, _, err := repo.CreateMember(ctx, domain.Member{Email: "new@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "en"}, "US", "USD"); err != nil {
+	if _, _, err := repo.CreateMember(
+		ctx,
+		domain.Member{
+			Email:        "new@example.com",
+			PasswordHash: "h",
+			Role:         domain.RoleMember,
+			Language:     "en",
+		},
+		"US",
+		"USD",
+	); err != nil {
 		t.Fatal(err)
 	}
 
-	m := domain.Member{Email: "new@example.com", PasswordHash: "h", Role: domain.RoleMember, Language: "en"}
-	if _, _, err := repo.AcceptAsNewMember(ctx, domain.HashToken(token), m, now); !errors.Is(err, app.ErrEmailTaken) {
+	m := domain.Member{
+		Email:        "new@example.com",
+		PasswordHash: "h",
+		Role:         domain.RoleMember,
+		Language:     "en",
+	}
+	if _, _, err := repo.AcceptAsNewMember(
+		ctx,
+		domain.HashToken(token),
+		m,
+		now,
+	); !errors.Is(
+		err,
+		app.ErrEmailTaken,
+	) {
 		t.Fatalf("AcceptAsNewMember err = %v, want ErrEmailTaken", err)
 	}
 

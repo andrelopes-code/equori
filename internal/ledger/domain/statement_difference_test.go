@@ -32,11 +32,21 @@ func TestExplainDifference(t *testing.T) {
 
 	many := make([]DifferenceCandidate, 0, 25)
 	for i := range 20 {
-		many = append(many, DifferenceCandidate{TransactionID: uuid.New(), Date: day("2026-10-28"), Amount: -100000 - int64(i)})
+		many = append(
+			many,
+			DifferenceCandidate{
+				TransactionID: uuid.New(),
+				Date:          day("2026-10-28"),
+				Amount:        -100000 - int64(i),
+			},
+		)
 	}
 
 	for range 5 {
-		many = append(many, DifferenceCandidate{TransactionID: uuid.New(), Date: day("2026-10-20"), Amount: -7})
+		many = append(
+			many,
+			DifferenceCandidate{TransactionID: uuid.New(), Date: day("2026-10-20"), Amount: -7},
+		)
 	}
 
 	tests := []struct {
@@ -47,19 +57,36 @@ func TestExplainDifference(t *testing.T) {
 		want       DifferenceExplanation
 	}{
 		{
-			name: "S177 the latest of equal amounts", difference: 713, lines: 45,
-			candidates: []DifferenceCandidate{candidate(idB, "2026-10-23", -713), candidate(idA, "2026-10-28", -713), candidate(idC, "2026-10-27", -1112)},
-			want:       DifferenceExplanation{Move: ids(idA)},
+			name:       "S177 the latest of equal amounts",
+			difference: 713,
+			lines:      45,
+			candidates: []DifferenceCandidate{
+				candidate(idB, "2026-10-23", -713),
+				candidate(idA, "2026-10-28", -713),
+				candidate(idC, "2026-10-27", -1112),
+			},
+			want: DifferenceExplanation{Move: ids(idA)},
 		},
 		{
-			name: "two postings", difference: 1825, lines: 45,
-			candidates: []DifferenceCandidate{candidate(idA, "2026-10-28", -713), candidate(idB, "2026-10-27", -1112), candidate(idC, "2026-10-26", -399)},
-			want:       DifferenceExplanation{Move: ids(idA, idB)},
+			name:       "two postings",
+			difference: 1825,
+			lines:      45,
+			candidates: []DifferenceCandidate{
+				candidate(idA, "2026-10-28", -713),
+				candidate(idB, "2026-10-27", -1112),
+				candidate(idC, "2026-10-26", -399),
+			},
+			want: DifferenceExplanation{Move: ids(idA, idB)},
 		},
 		{
-			name: "equal amount and date", difference: 713, lines: 45,
-			candidates: []DifferenceCandidate{candidate(idB, "2026-10-28", -713), candidate(idA, "2026-10-28", -713)},
-			want:       DifferenceExplanation{Move: ids(idA)},
+			name:       "equal amount and date",
+			difference: 713,
+			lines:      45,
+			candidates: []DifferenceCandidate{
+				candidate(idB, "2026-10-28", -713),
+				candidate(idA, "2026-10-28", -713),
+			},
+			want: DifferenceExplanation{Move: ids(idA)},
 		},
 		{
 			name: "a credit", difference: -500, lines: 45,
@@ -76,7 +103,12 @@ func TestExplainDifference(t *testing.T) {
 			candidates: []DifferenceCandidate{candidate(idA, "2026-10-28", -713)},
 			want:       DifferenceExplanation{},
 		},
-		{name: "no difference", difference: 0, lines: 40, candidates: []DifferenceCandidate{candidate(idA, "2026-10-28", -713)}},
+		{
+			name:       "no difference",
+			difference: 0,
+			lines:      40,
+			candidates: []DifferenceCandidate{candidate(idA, "2026-10-28", -713)},
+		},
 		{name: "only the 20 latest enter", difference: 7, lines: 5, candidates: many},
 	}
 	for _, tt := range tests {

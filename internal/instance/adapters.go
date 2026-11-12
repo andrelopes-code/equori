@@ -9,7 +9,9 @@ import (
 )
 
 // connections adapts the server's read to the domain type; nil stays nil.
-func connections(read func(ctx context.Context) ([]Connection, error)) func(ctx context.Context) ([]domain.Connection, error) {
+func connections(
+	read func(ctx context.Context) ([]Connection, error),
+) func(ctx context.Context) ([]domain.Connection, error) {
 	if read == nil {
 		return nil
 	}

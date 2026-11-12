@@ -31,7 +31,10 @@ func (t Transaction) MoveReconciledDate(
 		return Transaction{}, false, ErrReconciled
 	}
 
-	if slices.ContainsFunc(t.Postings, func(p Posting) bool { return p.Status == StatusReconciled && p.CardRole == "" }) {
+	if slices.ContainsFunc(
+		t.Postings,
+		func(p Posting) bool { return p.Status == StatusReconciled && p.CardRole == "" },
+	) {
 		return Transaction{}, false, ErrReconciled
 	}
 
@@ -54,7 +57,8 @@ func (t Transaction) KeepsReconciledStatements(next Transaction) bool {
 		}
 
 		i := nthOnAccount(next.Postings, p.AccountID, ordinalOnAccount(t.Postings, k))
-		if i == -1 || p.Statement == nil || next.Postings[i].Statement == nil || *next.Postings[i].Statement != *p.Statement {
+		if i == -1 || p.Statement == nil || next.Postings[i].Statement == nil ||
+			*next.Postings[i].Statement != *p.Statement {
 			return false
 		}
 	}
@@ -127,7 +131,10 @@ func scaleLinePostings(
 		}
 
 		if p.Amount.Currency() != old.Currency() {
-			return nil, invalid("postings", "a transaction in several currencies cannot take a line's amount")
+			return nil, invalid(
+				"postings",
+				"a transaction in several currencies cannot take a line's amount",
+			)
 		}
 
 		scaled := amount

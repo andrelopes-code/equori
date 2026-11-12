@@ -62,7 +62,11 @@ func checkMajor(ctx context.Context, bin string) (int, error) {
 	}
 
 	if major < postgres.MinMajor {
-		return 0, fmt.Errorf("PostgreSQL %d is older than %d, the oldest the migrations run on", major, postgres.MinMajor)
+		return 0, fmt.Errorf(
+			"PostgreSQL %d is older than %d, the oldest the migrations run on",
+			major,
+			postgres.MinMajor,
+		)
 	}
 
 	return major, nil
@@ -70,8 +74,17 @@ func checkMajor(ctx context.Context, bin string) (int, error) {
 
 func spawn(dir, bin, pgdata, socket string, lock *os.File) (*Cluster, error) {
 	// Not CommandContext: the server outlives the start context and stops in Stop, after HTTP.
-	cmd := exec.Command(filepath.Join(bin, "postgres"), "-D", pgdata, "-k", socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
-		"-c", "listen_addresses=", "-c", "max_connections="+maxConnections)
+	cmd := exec.Command(
+		filepath.Join(bin, "postgres"),
+		"-D",
+		pgdata,
+		"-k",
+		socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
+		"-c",
+		"listen_addresses=",
+		"-c",
+		"max_connections="+maxConnections,
+	)
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 
 	p, err := newProc(cmd)
@@ -84,7 +97,15 @@ func spawn(dir, bin, pgdata, socket string, lock *os.File) (*Cluster, error) {
 		return nil, fmt.Errorf("start postgres: %w", err)
 	}
 
-	c := &Cluster{dir: dir, bin: bin, socket: socket, lock: lock, cmd: cmd, proc: p, done: make(chan struct{})}
+	c := &Cluster{
+		dir:    dir,
+		bin:    bin,
+		socket: socket,
+		lock:   lock,
+		cmd:    cmd,
+		proc:   p,
+		done:   make(chan struct{}),
+	}
 	go func() {
 		c.exitErr = cmd.Wait()
 		close(c.done)

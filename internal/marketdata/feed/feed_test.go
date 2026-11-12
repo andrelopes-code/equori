@@ -28,20 +28,25 @@ func TestDownload(t *testing.T) {
 
 		var name string
 
-		err := Download(t.Context(), srv.Client(), srv.URL+"/file", func(f *os.File, size int64) error {
-			name = f.Name()
+		err := Download(
+			t.Context(),
+			srv.Client(),
+			srv.URL+"/file",
+			func(f *os.File, size int64) error {
+				name = f.Name()
 
-			body, err := io.ReadAll(f)
-			if err != nil {
-				return err
-			}
+				body, err := io.ReadAll(f)
+				if err != nil {
+					return err
+				}
 
-			if size != 3 || string(body) != "abc" {
-				t.Errorf("size %d, body %q", size, body)
-			}
+				if size != 3 || string(body) != "abc" {
+					t.Errorf("size %d, body %q", size, body)
+				}
 
-			return nil
-		})
+				return nil
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,11 +76,18 @@ func TestDownload(t *testing.T) {
 
 		var name string
 
-		_, err := download(t.Context(), srv.Client(), srv.URL+"/file", "", 2, func(f *os.File, _ int64) error {
-			name = f.Name()
+		_, err := download(
+			t.Context(),
+			srv.Client(),
+			srv.URL+"/file",
+			"",
+			2,
+			func(f *os.File, _ int64) error {
+				name = f.Name()
 
-			return nil
-		})
+				return nil
+			},
+		)
 		if err == nil || err.Error() != "answer over 2 bytes" {
 			t.Fatalf("err = %v", err)
 		}

@@ -27,7 +27,10 @@ func (r *Repository) FirstPosting(ctx context.Context, booksID int64) (time.Time
 	return first, true, nil
 }
 
-func (r *Repository) IndicatorAccounts(ctx context.Context, booksID int64) ([]app.IndicatorAccount, error) {
+func (r *Repository) IndicatorAccounts(
+	ctx context.Context,
+	booksID int64,
+) ([]app.IndicatorAccount, error) {
 	rows, err := r.q.IndicatorAccounts(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -44,8 +47,15 @@ func (r *Repository) IndicatorAccounts(ctx context.Context, booksID int64) ([]ap
 	return out, nil
 }
 
-func (r *Repository) LoanPrincipalByMonth(ctx context.Context, booksID int64, from, to time.Time) (map[time.Time]int64, error) {
-	rows, err := r.q.LoanPrincipalByMonth(ctx, LoanPrincipalByMonthParams{BooksID: booksID, FromDate: from, ToDate: to})
+func (r *Repository) LoanPrincipalByMonth(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+) (map[time.Time]int64, error) {
+	rows, err := r.q.LoanPrincipalByMonth(
+		ctx,
+		LoanPrincipalByMonthParams{BooksID: booksID, FromDate: from, ToDate: to},
+	)
 	if err != nil {
 		return nil, err
 	}

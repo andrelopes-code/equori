@@ -16,7 +16,13 @@ func TestListTransactionsSearch(t *testing.T) {
 	checking := h.Account("Checking", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
 	var payee idOnly
-	h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Padaria Real"}, http.StatusCreated, &payee)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Padaria Real"},
+		http.StatusCreated,
+		&payee,
+	)
 
 	record := func(date, description string, extra map[string]any, foodMemo string) string {
 		t.Helper()
@@ -89,7 +95,11 @@ func TestListTransactionsSearch(t *testing.T) {
 		r.Decode(t, out)
 	}
 
-	otherBody := tx("2026-10-01", apitest.Posting(otherChecking.ID, -100), apitest.Posting(otherFood.ID, 100))
+	otherBody := tx(
+		"2026-10-01",
+		apitest.Posting(otherChecking.ID, -100),
+		apitest.Posting(otherFood.ID, 100),
+	)
 	otherBody["description"] = "Mercado Central"
 
 	r := h.Call(other, http.MethodPost, "/api/v1/transactions", otherBody)
@@ -110,11 +120,31 @@ func TestListTransactionsSearch(t *testing.T) {
 		{"payee name", h.Client, "q=PADARIA", []string{b}},
 		{"posting memo", h.Client, "q=queijo", []string{c}},
 		{"accent in the text matches a plain query", h.Client, "q=pao", []string{c}},
-		{"accent in the query matches plain text", h.Client, "q=" + url.QueryEscape("mercádo"), []string{a}},
-		{"tokens match in any order", h.Client, "q=" + url.QueryEscape("central mercado"), []string{a}},
-		{"tokens may match different fields", h.Client, "q=" + url.QueryEscape("padaria x"), []string{b}},
+		{
+			"accent in the query matches plain text",
+			h.Client,
+			"q=" + url.QueryEscape("mercádo"),
+			[]string{a},
+		},
+		{
+			"tokens match in any order",
+			h.Client,
+			"q=" + url.QueryEscape("central mercado"),
+			[]string{a},
+		},
+		{
+			"tokens may match different fields",
+			h.Client,
+			"q=" + url.QueryEscape("padaria x"),
+			[]string{b},
+		},
 		{"every token must match", h.Client, "q=" + url.QueryEscape("mercado queijo"), []string{}},
-		{"surrounding blanks are ignored", h.Client, "q=" + url.QueryEscape("  mercado  "), []string{a}},
+		{
+			"surrounding blanks are ignored",
+			h.Client,
+			"q=" + url.QueryEscape("  mercado  "),
+			[]string{a},
+		},
 		{"percent is literal", h.Client, "q=" + url.QueryEscape("%"), []string{d}},
 		{"underscore is literal", h.Client, "q=_", []string{}},
 		{"combined with account filter", h.Client, "q=mercado&account_id=" + food, []string{a}},
@@ -140,7 +170,8 @@ func TestListTransactionsSearch(t *testing.T) {
 		}
 		h.MustDo(http.MethodGet, "/api/v1/transactions?q=feira&limit=2", nil, http.StatusOK, &first)
 
-		if len(first.Items) != 2 || first.Items[0].ID != g || first.Items[1].ID != f || first.NextCursor == "" {
+		if len(first.Items) != 2 || first.Items[0].ID != g || first.Items[1].ID != f ||
+			first.NextCursor == "" {
 			t.Fatalf("first page = %+v, want [%s %s] with a cursor", first, g, f)
 		}
 
@@ -148,7 +179,13 @@ func TestListTransactionsSearch(t *testing.T) {
 			Items      []idOnly `json:"items"`
 			NextCursor string   `json:"next_cursor"`
 		}
-		h.MustDo(http.MethodGet, "/api/v1/transactions?q=feira&limit=2&cursor="+url.QueryEscape(first.NextCursor), nil, http.StatusOK, &second)
+		h.MustDo(
+			http.MethodGet,
+			"/api/v1/transactions?q=feira&limit=2&cursor="+url.QueryEscape(first.NextCursor),
+			nil,
+			http.StatusOK,
+			&second,
+		)
 
 		if len(second.Items) != 1 || second.Items[0].ID != e || second.NextCursor != "" {
 			t.Fatalf("second page = %+v, want [%s] without a cursor", second, e)
@@ -156,7 +193,12 @@ func TestListTransactionsSearch(t *testing.T) {
 	})
 
 	t.Run("q of 101 characters is rejected", func(t *testing.T) {
-		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?q="+strings.Repeat("a", 101), nil), http.StatusBadRequest, "invalid_request", "q")
+		h.ExpectProblem(
+			h.Do(http.MethodGet, "/api/v1/transactions?q="+strings.Repeat("a", 101), nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"q",
+		)
 	})
 
 	t.Run("q of 100 characters is accepted", func(t *testing.T) {
@@ -166,7 +208,12 @@ func TestListTransactionsSearch(t *testing.T) {
 	})
 
 	t.Run("empty q is rejected", func(t *testing.T) {
-		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?q=", nil), http.StatusBadRequest, "invalid_request", "q")
+		h.ExpectProblem(
+			h.Do(http.MethodGet, "/api/v1/transactions?q=", nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"q",
+		)
 	})
 }
 
@@ -181,8 +228,17 @@ func TestListTransactionsAmountRange(t *testing.T) {
 	fuel := h.Account("Fuel", "expense", "", nil)
 	small := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(food, 100))
 	middle := h.Record("2026-10-02", apitest.Posting(checking, -250), apitest.Posting(food, 250))
-	split := h.Record("2026-10-03", apitest.Posting(checking, -1000), apitest.Posting(food, 600), apitest.Posting(fuel, 400))
-	transfer := h.Record("2026-10-04", apitest.Posting(checking, -500), apitest.Posting(savings, 500))
+	split := h.Record(
+		"2026-10-03",
+		apitest.Posting(checking, -1000),
+		apitest.Posting(food, 600),
+		apitest.Posting(fuel, 400),
+	)
+	transfer := h.Record(
+		"2026-10-04",
+		apitest.Posting(checking, -500),
+		apitest.Posting(savings, 500),
+	)
 
 	tests := []struct {
 		name  string
@@ -206,7 +262,12 @@ func TestListTransactionsAmountRange(t *testing.T) {
 	}
 
 	t.Run("a negative bound is rejected", func(t *testing.T) {
-		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/transactions?amount_min=-1", nil), http.StatusBadRequest, "invalid_request", "amount_min")
+		h.ExpectProblem(
+			h.Do(http.MethodGet, "/api/v1/transactions?amount_min=-1", nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"amount_min",
+		)
 	})
 }
 
@@ -253,17 +314,50 @@ func TestAccountFilterIncludesSubAccounts(t *testing.T) {
 	bakery := h.Account("Bakery", "expense", "", map[string]any{"parent_id": food})
 	delivery := h.Account("Delivery", "expense", "", map[string]any{"parent_id": food})
 	travel := h.Account("Travel", "expense", "", nil)
-	onDelivery := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(delivery, 100))
-	onGroceries := h.Record("2026-10-02", apitest.Posting(checking, -100), apitest.Posting(groceries, 100))
-	onBakery := h.Record("2026-10-03", apitest.Posting(checking, -100), apitest.Posting(bakery, 100))
+	onDelivery := h.Record(
+		"2026-10-01",
+		apitest.Posting(checking, -100),
+		apitest.Posting(delivery, 100),
+	)
+	onGroceries := h.Record(
+		"2026-10-02",
+		apitest.Posting(checking, -100),
+		apitest.Posting(groceries, 100),
+	)
+	onBakery := h.Record(
+		"2026-10-03",
+		apitest.Posting(checking, -100),
+		apitest.Posting(bakery, 100),
+	)
 	onFood := h.Record("2026-10-04", apitest.Posting(checking, -100), apitest.Posting(food, 100))
 	h.Record("2026-10-05", apitest.Posting(checking, -100), apitest.Posting(travel, 100))
 
-	if got, want := transactionIDs(t, h, "account_id="+food), []string{onFood, onBakery, onGroceries, onDelivery}; !slices.Equal(got, want) {
+	if got, want := transactionIDs(
+		t,
+		h,
+		"account_id="+food,
+	), []string{
+		onFood,
+		onBakery,
+		onGroceries,
+		onDelivery,
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("food subtree = %v, want %v", got, want)
 	}
 
-	if got, want := transactionIDs(t, h, "account_id="+bakery), []string{onBakery}; !slices.Equal(got, want) {
+	if got, want := transactionIDs(
+		t,
+		h,
+		"account_id="+bakery,
+	), []string{
+		onBakery,
+	}; !slices.Equal(
+		got,
+		want,
+	) {
 		t.Fatalf("bakery = %v, want %v", got, want)
 	}
 }
@@ -293,10 +387,21 @@ func TestAccountFilterSubtreeWithCursorAndUncategorized(t *testing.T) {
 
 	var want []string
 	for _, date := range []string{"2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04", "2026-10-05"} {
-		want = append(want, h.Record(date, apitest.Posting(checking, -100), apitest.Posting(groceries, 100)))
+		want = append(
+			want,
+			h.Record(date, apitest.Posting(checking, -100), apitest.Posting(groceries, 100)),
+		)
 	}
 
-	want = append(want, h.Record("2026-10-06", apitest.Posting(checking, -1000), apitest.Posting(groceries, 600), apitest.Posting(uncategorized, 400)))
+	want = append(
+		want,
+		h.Record(
+			"2026-10-06",
+			apitest.Posting(checking, -1000),
+			apitest.Posting(groceries, 600),
+			apitest.Posting(uncategorized, 400),
+		),
+	)
 	slices.Reverse(want)
 
 	if got := transactionIDs(t, h, "limit=2&account_id="+food); !slices.Equal(got, want) {
@@ -329,9 +434,23 @@ func TestUncategorizedLeavesOutVoided(t *testing.T) {
 	}
 
 	checking := h.Account("Checking", "asset", "checking", nil)
-	open := h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(uncategorized, 100))
-	voided := h.Record("2026-10-02", apitest.Posting(checking, -200), apitest.Posting(uncategorized, 200))
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "paired"}, http.StatusOK, nil)
+	open := h.Record(
+		"2026-10-01",
+		apitest.Posting(checking, -100),
+		apitest.Posting(uncategorized, 100),
+	)
+	voided := h.Record(
+		"2026-10-02",
+		apitest.Posting(checking, -200),
+		apitest.Posting(uncategorized, 200),
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "paired"},
+		http.StatusOK,
+		nil,
+	)
 
 	if got := transactionIDs(t, h, "uncategorized=true"); !slices.Equal(got, []string{open}) {
 		t.Fatalf("uncategorized = %v, want [%s]", got, open)

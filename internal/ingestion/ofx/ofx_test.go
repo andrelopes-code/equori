@@ -35,12 +35,15 @@ func TestParseBankStatements(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if st.Currency != "BRL" || !st.From.Equal(day("2026-10-01")) || !st.To.Equal(day("2026-10-31")) {
+			if st.Currency != "BRL" || !st.From.Equal(day("2026-10-01")) ||
+				!st.To.Equal(day("2026-10-31")) {
 				t.Fatalf("header = %s %v %v", st.Currency, st.From, st.To)
 			}
 
 			first := st.Records[0]
-			if first.ExternalID != "a1" || !first.Date.Equal(day("2026-10-05")) || first.Amount != -4590 || !strings.Contains(first.Description, "Pão de Açúcar") {
+			if first.ExternalID != "a1" || !first.Date.Equal(day("2026-10-05")) ||
+				first.Amount != -4590 ||
+				!strings.Contains(first.Description, "Pão de Açúcar") {
 				t.Fatalf("first record = %+v", first)
 			}
 
@@ -49,7 +52,8 @@ func TestParseBankStatements(t *testing.T) {
 			}
 
 			last := st.Records[len(st.Records)-1]
-			if last.Amount != 300000 || last.Description != "Salário" || !last.Date.Equal(day("2026-10-15")) {
+			if last.Amount != 300000 || last.Description != "Salário" ||
+				!last.Date.Equal(day("2026-10-15")) {
 				t.Fatalf("last record = %+v", last)
 			}
 
@@ -60,7 +64,8 @@ func TestParseBankStatements(t *testing.T) {
 	}
 
 	st, _ := parseFile(t, "bank-1x-cp1252.ofx")
-	if r := st.Records[1]; r.Amount != -12000 || r.Description != "Farmácia & Drogaria" || r.ExternalID != "a2" {
+	if r := st.Records[1]; r.Amount != -12000 || r.Description != "Farmácia & Drogaria" ||
+		r.ExternalID != "a2" {
 		t.Fatalf("comma decimal and entity: %+v", r)
 	}
 
@@ -82,7 +87,8 @@ func TestParseCreditCardStatement(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(st.Records) != 2 || st.Records[0].Amount != -23000 || st.Records[1].Amount != 23000 || st.Records[1].Description != "ESTORNO SUPERMERCADO" {
+	if len(st.Records) != 2 || st.Records[0].Amount != -23000 || st.Records[1].Amount != 23000 ||
+		st.Records[1].Description != "ESTORNO SUPERMERCADO" {
 		t.Fatalf("records = %+v", st.Records)
 	}
 }
@@ -98,8 +104,16 @@ func TestParseRejectsMalformedFiles(t *testing.T) {
 		{"not ofx", "Data,Valor\n01/10/2026,10", "not an OFX file"},
 		{"amount", strings.Replace(valid, "%s", "12.3.4", 1), "TRNAMT"},
 		{"too many decimals", strings.Replace(valid, "%s", "1.234", 1), "TRNAMT"},
-		{"missing date", strings.Replace(strings.Replace(valid, "%s", "1.00", 1), "<DTPOSTED>20261005\n", "", 1), "DTPOSTED"},
-		{"truncated", "<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n<DTPOSTED>20261005\n<TRNAMT>1.00", "end of file"},
+		{
+			"missing date",
+			strings.Replace(strings.Replace(valid, "%s", "1.00", 1), "<DTPOSTED>20261005\n", "", 1),
+			"DTPOSTED",
+		},
+		{
+			"truncated",
+			"<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n<DTPOSTED>20261005\n<TRNAMT>1.00",
+			"end of file",
+		},
 		{"no statement", "<OFX></OFX>", "no statement"},
 	}
 	for _, tc := range tests {
@@ -122,11 +136,22 @@ func TestParseDeclaredEncoding(t *testing.T) {
 	body := "<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>\n<STMTTRN>\n<DTPOSTED>20261005\n<TRNAMT>-1.00\n<FITID>x\n<MEMO>Caf\xe9\n</STMTTRN>\n</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>"
 
 	tests := []struct{ name, in string }{
-		{"sgml charset 1252", "OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nENCODING:USASCII\nCHARSET:1252\n\n" + body},
+		{
+			"sgml charset 1252",
+			"OFXHEADER:100\nDATA:OFXSGML\nVERSION:102\nENCODING:USASCII\nCHARSET:1252\n\n" + body,
+		},
 		{"sgml charset iso-8859-1", "OFXHEADER:100\nCHARSET:ISO-8859-1\n\n" + body},
 		{"xml declaration", "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" + body},
 		{"no declaration", body},
-		{"xml windows-1251", "<?xml version=\"1.0\" encoding=\"windows-1251\"?>\n" + strings.Replace(body, "Caf\xe9", "\xcc\xe0\xe3\xe0\xe7\xe8\xed", 1)},
+		{
+			"xml windows-1251",
+			"<?xml version=\"1.0\" encoding=\"windows-1251\"?>\n" + strings.Replace(
+				body,
+				"Caf\xe9",
+				"\xcc\xe0\xe3\xe0\xe7\xe8\xed",
+				1,
+			),
+		},
 	}
 	for _, tc := range tests {
 		st, err := Parse([]byte(tc.in), 2)

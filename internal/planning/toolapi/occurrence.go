@@ -18,11 +18,11 @@ func (manageOccurrenceAction) Values() []string {
 }
 
 type manageOccurrenceIn struct {
-	OccurrenceID  string                 `json:"occurrence_id" jsonschema:"occurrence from list_schedules"`
-	Action        manageOccurrenceAction `json:"action" jsonschema:"operation to propose"`
+	OccurrenceID  string                 `json:"occurrence_id"           jsonschema:"occurrence from list_schedules"`
+	Action        manageOccurrenceAction `json:"action"                  jsonschema:"operation to propose"`
 	TransactionID string                 `json:"transaction_id,omitzero" jsonschema:"for realize: the transaction that fulfilled the occurrence, from search_transactions"`
-	Date          tool.Date              `json:"date,omitzero" jsonschema:"for move: new date"`
-	Reason        string                 `json:"reason,omitzero" jsonschema:"for skip: why it is skipped"`
+	Date          tool.Date              `json:"date,omitzero"           jsonschema:"for move: new date"`
+	Reason        string                 `json:"reason,omitzero"         jsonschema:"for skip: why it is skipped"`
 }
 
 type manageOccurrenceOut struct {
@@ -38,7 +38,11 @@ type occurrencePlan struct {
 }
 
 func prepareOccurrence(in manageOccurrenceIn) (occurrencePlan, error) {
-	fields := []field{{"transaction_id", in.TransactionID != ""}, {"date", !in.Date.IsZero()}, {"reason", in.Reason != ""}}
+	fields := []field{
+		{"transaction_id", in.TransactionID != ""},
+		{"date", !in.Date.IsZero()},
+		{"reason", in.Reason != ""},
+	}
 
 	var err error
 	switch in.Action {
@@ -122,7 +126,11 @@ func previewOccurrence(
 	}
 
 	name := sch.Description + " expected " + o.ExpectedOn.Format(time.DateOnly)
-	pv := tool.Preview{Action: "manage_occurrence." + string(in.Action), Target: "Occurrence " + name, Basis: string(o.State)}
+	pv := tool.Preview{
+		Action: "manage_occurrence." + string(in.Action),
+		Target: "Occurrence " + name,
+		Basis:  string(o.State),
+	}
 	pv.Changes = []tool.Change{{Field: "occurrence", After: tool.TextValue(name)}}
 
 	if err := occurrenceChanges(&pv, in, o, sch); err != nil {
@@ -132,17 +140,33 @@ func previewOccurrence(
 	return pv, nil
 }
 
-func occurrenceChanges(pv *tool.Preview, in manageOccurrenceIn, o app.OccurrenceView, sch domain.Schedule) error {
+func occurrenceChanges(
+	pv *tool.Preview,
+	in manageOccurrenceIn,
+	o app.OccurrenceView,
+	sch domain.Schedule,
+) error {
 	status := func(after string) tool.Change {
-		return tool.Change{Field: "status", Before: tool.TextValue(string(o.Shown)), After: tool.TextValue(after)}
+		return tool.Change{
+			Field:  "status",
+			Before: tool.TextValue(string(o.Shown)),
+			After:  tool.TextValue(after),
+		}
 	}
 	switch in.Action {
 	case "realize":
-		pv.Changes = append(pv.Changes, status("realized"), tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
+		pv.Changes = append(
+			pv.Changes,
+			status("realized"),
+			tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)},
+		)
 	case "skip":
 		pv.Changes = append(pv.Changes, status("skipped"))
 		if in.Reason != "" {
-			pv.Changes = append(pv.Changes, tool.Change{Field: "reason", After: tool.TextValue(in.Reason)})
+			pv.Changes = append(
+				pv.Changes,
+				tool.Change{Field: "reason", After: tool.TextValue(in.Reason)},
+			)
 		}
 	case "move":
 		if sch.EndsOn != nil && !in.Date.Before(*sch.EndsOn) {
@@ -153,9 +177,20 @@ func occurrenceChanges(pv *tool.Preview, in manageOccurrenceIn, o app.Occurrence
 			return validationError("date", "falls inside a pause of the schedule")
 		}
 
-		pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(o.ExpectedOn), After: tool.DateValue(in.Date.Time)})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{
+				Field:  "date",
+				Before: tool.DateValue(o.ExpectedOn),
+				After:  tool.DateValue(in.Date.Time),
+			},
+		)
 	case "unrealize":
-		pv.Changes = append(pv.Changes, status("expected"), tool.Change{Field: "transaction", Before: tool.TextValue(o.TransactionID.String())})
+		pv.Changes = append(
+			pv.Changes,
+			status("expected"),
+			tool.Change{Field: "transaction", Before: tool.TextValue(o.TransactionID.String())},
+		)
 	case "reopen":
 		pv.Changes = append(pv.Changes, status("expected"))
 	}
@@ -192,7 +227,11 @@ func runOccurrence(
 		return manageOccurrenceOut{}, err
 	}
 
-	out := manageOccurrenceOut{OccurrenceID: o.ID.String(), State: string(o.Shown), ExpectedOn: tool.DateOf(o.ExpectedOn)}
+	out := manageOccurrenceOut{
+		OccurrenceID: o.ID.String(),
+		State:        string(o.Shown),
+		ExpectedOn:   tool.DateOf(o.ExpectedOn),
+	}
 	if o.TransactionID != uuid.Nil {
 		out.TransactionID = o.TransactionID.String()
 	}

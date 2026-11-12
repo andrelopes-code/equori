@@ -32,7 +32,11 @@ func TestBookRoleDeclared(t *testing.T) {
 			}
 
 			if role == "owner" && !strings.HasPrefix(exposure[op.OperationID], "-") {
-				t.Errorf("owner operation %s has exposure %q, want an exclusion", op.OperationID, exposure[op.OperationID])
+				t.Errorf(
+					"owner operation %s has exposure %q, want an exclusion",
+					op.OperationID,
+					exposure[op.OperationID],
+				)
 			}
 		}
 	}

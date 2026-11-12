@@ -24,8 +24,10 @@ func (s *Server) reimburseTransaction(
 	booksID := auth.MustBooksID(ctx)
 
 	input := app.ReimbursementRequest{
-		TransactionID: id, ExpectedVersion: in.ExpectedVersion, Cause: app.Cause{Method: app.MethodManual},
-		Allocations: make([]app.AllocationRequest, len(in.Allocations)),
+		TransactionID:   id,
+		ExpectedVersion: in.ExpectedVersion,
+		Cause:           app.Cause{Method: app.MethodManual},
+		Allocations:     make([]app.AllocationRequest, len(in.Allocations)),
 	}
 	for i, a := range in.Allocations {
 		amount, err := fromMoneyAPI(fmt.Sprintf("allocations[%d].amount", i), a.Amount)
@@ -70,7 +72,11 @@ func (s *Server) listReimbursementCandidates(
 	out := ReimbursementCandidateList{Items: make([]ReimbursementCandidate, len(candidates))}
 	for i, c := range candidates {
 		out.Items[i] = ReimbursementCandidate{
-			Transaction: toTransactionAPI(c.Transaction), Remaining: toMoneyAPI(c.Remaining), Allocated: toMoneyAPI(c.Allocated),
+			Transaction: toTransactionAPI(
+				c.Transaction,
+			),
+			Remaining: toMoneyAPI(c.Remaining),
+			Allocated: toMoneyAPI(c.Allocated),
 		}
 	}
 
@@ -98,7 +104,10 @@ func (s *Server) listReimbursementSources(
 
 	out := ReimbursementSourceList{Items: make([]ReimbursementSource, len(sources))}
 	for i, c := range sources {
-		out.Items[i] = ReimbursementSource{Transaction: toTransactionAPI(c.Transaction), Free: toMoneyAPI(c.Free)}
+		out.Items[i] = ReimbursementSource{
+			Transaction: toTransactionAPI(c.Transaction),
+			Free:        toMoneyAPI(c.Free),
+		}
 	}
 
 	return out, nil

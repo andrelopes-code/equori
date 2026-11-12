@@ -15,22 +15,41 @@ import (
 
 func toConnection(row IngestionConnection) domain.Connection {
 	return domain.Connection{
-		ID: row.ID, BooksID: row.BooksID, IntegrationID: row.IntegrationID, ExternalID: row.ExternalID, Name: row.Name,
-		ProviderStatus: row.ProviderStatus, LastItemUpdateAt: row.LastItemUpdateAt, NextItemUpdateAt: row.NextItemUpdateAt,
-		LastSyncedAt: row.LastSyncedAt, ConsentExpiresAt: row.ConsentExpiresAt,
-		LastError: value(row.LastError), CreatedAt: row.CreatedAt,
+		ID:               row.ID,
+		BooksID:          row.BooksID,
+		IntegrationID:    row.IntegrationID,
+		ExternalID:       row.ExternalID,
+		Name:             row.Name,
+		ProviderStatus:   row.ProviderStatus,
+		LastItemUpdateAt: row.LastItemUpdateAt,
+		NextItemUpdateAt: row.NextItemUpdateAt,
+		LastSyncedAt:     row.LastSyncedAt,
+		ConsentExpiresAt: row.ConsentExpiresAt,
+		LastError:        value(row.LastError),
+		CreatedAt:        row.CreatedAt,
 	}
 }
 
 func toExternalAccount(row IngestionExternalAccount) domain.ExternalAccount {
 	a := domain.ExternalAccount{
-		ID: row.ID, BooksID: row.BooksID, ConnectionID: row.ConnectionID, ExternalID: row.ExternalAccountID,
-		Type: row.Type, Subtype: row.Subtype, Name: row.Name, FormerNames: row.FormerNames, NumberLast4: value(row.NumberLast4),
-		Currency: row.Currency,
-		Ignored:  row.Ignored, LastSyncedOn: row.LastSyncedOn,
-		LastReadAt: row.LastReadAt, LastDeepReadOn: row.LastDeepReadOn,
-		NameFrom: row.NameFrom, NameOn: row.NameOn, GoneSince: row.GoneSince,
-		HolderDigest: row.HolderDigest,
+		ID:             row.ID,
+		BooksID:        row.BooksID,
+		ConnectionID:   row.ConnectionID,
+		ExternalID:     row.ExternalAccountID,
+		Type:           row.Type,
+		Subtype:        row.Subtype,
+		Name:           row.Name,
+		FormerNames:    row.FormerNames,
+		NumberLast4:    value(row.NumberLast4),
+		Currency:       row.Currency,
+		Ignored:        row.Ignored,
+		LastSyncedOn:   row.LastSyncedOn,
+		LastReadAt:     row.LastReadAt,
+		LastDeepReadOn: row.LastDeepReadOn,
+		NameFrom:       row.NameFrom,
+		NameOn:         row.NameOn,
+		GoneSince:      row.GoneSince,
+		HolderDigest:   row.HolderDigest,
 	}
 	if row.AccountID.Valid {
 		a.AccountID, a.SyncFrom = &row.AccountID.UUID, row.SyncFrom
@@ -47,19 +66,36 @@ func (r *Repository) BookHolders(ctx context.Context, booksID int64) ([][]byte, 
 	return r.q.ListBookHolders(ctx, booksID)
 }
 
-func (r *Repository) SetExternalAccountHolder(ctx context.Context, booksID int64, id uuid.UUID, digest []byte) error {
-	return notFound(r.q.SetExternalAccountHolder(ctx, SetExternalAccountHolderParams{BooksID: booksID, ID: id, HolderDigest: digest}))
+func (r *Repository) SetExternalAccountHolder(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	digest []byte,
+) error {
+	return notFound(
+		r.q.SetExternalAccountHolder(
+			ctx,
+			SetExternalAccountHolderParams{BooksID: booksID, ID: id, HolderDigest: digest},
+		),
+	)
 }
 
-func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) (domain.Connection, error) {
+func (r *Repository) InsertConnection(
+	ctx context.Context,
+	c domain.Connection,
+) (domain.Connection, error) {
 	var out domain.Connection
 
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
 		q := r.q.WithTx(tx)
 
 		row, err := q.InsertConnection(ctx, InsertConnectionParams{
-			BooksID: c.BooksID, IntegrationID: c.IntegrationID, ExternalID: c.ExternalID, Name: c.Name,
-			ProviderStatus: c.ProviderStatus, LastItemUpdateAt: c.LastItemUpdateAt,
+			BooksID:          c.BooksID,
+			IntegrationID:    c.IntegrationID,
+			ExternalID:       c.ExternalID,
+			Name:             c.Name,
+			ProviderStatus:   c.ProviderStatus,
+			LastItemUpdateAt: c.LastItemUpdateAt,
 		})
 		if err != nil {
 			return err
@@ -68,9 +104,15 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 		out = toConnection(row)
 		for _, a := range c.Accounts {
 			saved, err := q.InsertExternalAccount(ctx, InsertExternalAccountParams{
-				BooksID: c.BooksID, ConnectionID: row.ID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
-				Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
-				HolderDigest: a.HolderDigest,
+				BooksID:           c.BooksID,
+				ConnectionID:      row.ID,
+				ExternalAccountID: a.ExternalID,
+				Type:              a.Type,
+				Subtype:           a.Subtype,
+				Name:              a.Name,
+				NumberLast4:       optional(a.NumberLast4),
+				Currency:          a.Currency,
+				HolderDigest:      a.HolderDigest,
 			})
 			if err != nil {
 				return err
@@ -83,7 +125,10 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 	})
 	switch {
 	case violates(err, uniqueViolation, "ingestion_connection_item_key"):
-		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is already connected through this integration"}
+		return domain.Connection{}, &domain.FieldError{
+			Field:   "external_id",
+			Message: "is already connected through this integration",
+		}
 	case err != nil:
 		return domain.Connection{}, notFound(err)
 	}
@@ -91,11 +136,22 @@ func (r *Repository) InsertConnection(ctx context.Context, c domain.Connection) 
 	return out, nil
 }
 
-func (r *Repository) InsertMissingExternalAccount(ctx context.Context, a domain.ExternalAccount) error {
+func (r *Repository) InsertMissingExternalAccount(
+	ctx context.Context,
+	a domain.ExternalAccount,
+) error {
 	return notFound(r.q.InsertMissingExternalAccount(ctx, InsertMissingExternalAccountParams{
-		BooksID: a.BooksID, ConnectionID: a.ConnectionID, ExternalAccountID: a.ExternalID, Type: a.Type, Subtype: a.Subtype,
-		Name: a.Name, NumberLast4: optional(a.NumberLast4), Currency: a.Currency,
-		HolderDigest: a.HolderDigest, NameFrom: a.NameFrom, NameOn: a.NameOn,
+		BooksID:           a.BooksID,
+		ConnectionID:      a.ConnectionID,
+		ExternalAccountID: a.ExternalID,
+		Type:              a.Type,
+		Subtype:           a.Subtype,
+		Name:              a.Name,
+		NumberLast4:       optional(a.NumberLast4),
+		Currency:          a.Currency,
+		HolderDigest:      a.HolderDigest,
+		NameFrom:          a.NameFrom,
+		NameOn:            a.NameOn,
 	}))
 }
 
@@ -112,11 +168,22 @@ func (r *Repository) RenameExternalAccount(
 	})
 }
 
-func (r *Repository) SetExternalAccountGone(ctx context.Context, booksID int64, id uuid.UUID, since *time.Time) error {
-	return r.q.SetExternalAccountGone(ctx, SetExternalAccountGoneParams{BooksID: booksID, ID: id, GoneSince: since})
+func (r *Repository) SetExternalAccountGone(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	since *time.Time,
+) error {
+	return r.q.SetExternalAccountGone(
+		ctx,
+		SetExternalAccountGoneParams{BooksID: booksID, ID: id, GoneSince: since},
+	)
 }
 
-func (r *Repository) ReplaceMapping(ctx context.Context, released, mapped domain.ExternalAccount) (domain.ExternalAccount, error) {
+func (r *Repository) ReplaceMapping(
+	ctx context.Context,
+	released, mapped domain.ExternalAccount,
+) (domain.ExternalAccount, error) {
 	var out domain.ExternalAccount
 
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
@@ -135,12 +202,23 @@ func (r *Repository) ReplaceMapping(ctx context.Context, released, mapped domain
 	return out, err
 }
 
-func (r *Repository) OpenReserveReviews(ctx context.Context, booksID int64, connectionID uuid.UUID) (int64, error) {
-	return r.q.OpenReserveReviews(ctx, OpenReserveReviewsParams{BooksID: booksID, ConnectionID: connectionID})
+func (r *Repository) OpenReserveReviews(
+	ctx context.Context,
+	booksID int64,
+	connectionID uuid.UUID,
+) (int64, error) {
+	return r.q.OpenReserveReviews(
+		ctx,
+		OpenReserveReviewsParams{BooksID: booksID, ConnectionID: connectionID},
+	)
 }
 
 // withAccounts loads the external accounts of the connections in one query.
-func (r *Repository) withAccounts(ctx context.Context, booksID int64, cs []domain.Connection) error {
+func (r *Repository) withAccounts(
+	ctx context.Context,
+	booksID int64,
+	cs []domain.Connection,
+) error {
 	ids := make([]uuid.UUID, len(cs))
 
 	index := make(map[uuid.UUID]int, len(cs))
@@ -148,7 +226,10 @@ func (r *Repository) withAccounts(ctx context.Context, booksID int64, cs []domai
 		ids[i], index[c.ID] = c.ID, i
 	}
 
-	rows, err := r.q.ExternalAccountsOf(ctx, ExternalAccountsOfParams{BooksID: booksID, ConnectionIds: ids})
+	rows, err := r.q.ExternalAccountsOf(
+		ctx,
+		ExternalAccountsOfParams{BooksID: booksID, ConnectionIds: ids},
+	)
 	if err != nil {
 		return err
 	}
@@ -161,7 +242,11 @@ func (r *Repository) withAccounts(ctx context.Context, booksID int64, cs []domai
 	return nil
 }
 
-func (r *Repository) Connection(ctx context.Context, booksID int64, id uuid.UUID) (domain.Connection, error) {
+func (r *Repository) Connection(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Connection, error) {
 	row, err := r.q.GetConnection(ctx, GetConnectionParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Connection{}, notFound(err)
@@ -172,10 +257,17 @@ func (r *Repository) Connection(ctx context.Context, booksID int64, id uuid.UUID
 	return cs[0], r.withAccounts(ctx, booksID, cs)
 }
 
-func (r *Repository) ListConnections(ctx context.Context, booksID int64, p page.Request[app.NameKey]) ([]domain.Connection, *app.NameKey, error) {
+func (r *Repository) ListConnections(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.NameKey],
+) ([]domain.Connection, *app.NameKey, error) {
 	limit, name, id := namePage(p)
 
-	rows, err := r.q.ListConnections(ctx, ListConnectionsParams{BooksID: booksID, RowLimit: limit, AfterName: name, AfterID: id})
+	rows, err := r.q.ListConnections(
+		ctx,
+		ListConnectionsParams{BooksID: booksID, RowLimit: limit, AfterName: name, AfterID: id},
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -196,7 +288,10 @@ func (r *Repository) DeleteConnection(ctx context.Context, booksID int64, id uui
 	return err
 }
 
-func (r *Repository) SaveMapping(ctx context.Context, a domain.ExternalAccount) (domain.ExternalAccount, error) {
+func (r *Repository) SaveMapping(
+	ctx context.Context,
+	a domain.ExternalAccount,
+) (domain.ExternalAccount, error) {
 	params := SaveMappingParams{
 		BooksID:        a.BooksID,
 		ConnectionID:   a.ConnectionID,
@@ -213,13 +308,20 @@ func (r *Repository) SaveMapping(ctx context.Context, a domain.ExternalAccount) 
 
 	row, err := r.q.SaveMapping(ctx, params)
 	if violates(err, uniqueViolation, "ingestion_external_account_feed_key") {
-		return domain.ExternalAccount{}, &domain.FieldError{Field: "account_id", Message: "already receives another external account"}
+		return domain.ExternalAccount{}, &domain.FieldError{
+			Field:   "account_id",
+			Message: "already receives another external account",
+		}
 	}
 
 	return toExternalAccount(row), notFound(err)
 }
 
-func (r *Repository) AccountFeed(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Feed, error) {
+func (r *Repository) AccountFeed(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (domain.Feed, error) {
 	var f domain.Feed
 	widen := func(from, to *time.Time) {
 		if from != nil && (f.From == nil || from.Before(*f.From)) {
@@ -231,7 +333,13 @@ func (r *Repository) AccountFeed(ctx context.Context, booksID int64, accountID u
 		}
 	}
 
-	m, err := r.q.AccountMapping(ctx, AccountMappingParams{BooksID: booksID, AccountID: uuid.NullUUID{UUID: accountID, Valid: true}})
+	m, err := r.q.AccountMapping(
+		ctx,
+		AccountMappingParams{
+			BooksID:   booksID,
+			AccountID: uuid.NullUUID{UUID: accountID, Valid: true},
+		},
+	)
 	switch {
 	case err == nil:
 		widen(m.SyncFrom, m.LastSyncedOn)
@@ -239,7 +347,10 @@ func (r *Repository) AccountFeed(ctx context.Context, booksID int64, accountID u
 		return domain.Feed{}, err
 	}
 
-	periods, err := r.q.AccountFilePeriods(ctx, AccountFilePeriodsParams{BooksID: booksID, AccountID: accountID})
+	periods, err := r.q.AccountFilePeriods(
+		ctx,
+		AccountFilePeriodsParams{BooksID: booksID, AccountID: accountID},
+	)
 	for _, p := range periods {
 		widen(p.PeriodFrom, p.PeriodTo)
 	}

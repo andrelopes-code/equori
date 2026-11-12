@@ -16,17 +16,54 @@ func TestNewAccount(t *testing.T) {
 		wantField string
 		wantYield YieldMode
 	}{
-		{name: "checking", in: Account{Name: "Nubank", Class: ClassAsset, Kind: KindChecking}, wantYield: YieldNone},
-		{name: "reserve defaults to auto yield", in: Account{Name: "Emergency", Class: ClassAsset, Kind: KindReserve}, wantYield: YieldAuto},
+		{
+			name:      "checking",
+			in:        Account{Name: "Nubank", Class: ClassAsset, Kind: KindChecking},
+			wantYield: YieldNone,
+		},
+		{
+			name:      "reserve defaults to auto yield",
+			in:        Account{Name: "Emergency", Class: ClassAsset, Kind: KindReserve},
+			wantYield: YieldAuto,
+		},
 		{name: "category", in: Account{Name: "Food", Class: ClassExpense}, wantYield: YieldNone},
-		{name: "kind on category", in: Account{Name: "Food", Class: ClassExpense, Kind: KindChecking}, wantField: "kind"},
-		{name: "missing kind on balance account", in: Account{Name: "X", Class: ClassAsset}, wantField: "kind"},
-		{name: "liability with asset kind", in: Account{Name: "X", Class: ClassLiability, Kind: KindCash}, wantField: "kind"},
+		{
+			name:      "kind on category",
+			in:        Account{Name: "Food", Class: ClassExpense, Kind: KindChecking},
+			wantField: "kind",
+		},
+		{
+			name:      "missing kind on balance account",
+			in:        Account{Name: "X", Class: ClassAsset},
+			wantField: "kind",
+		},
+		{
+			name:      "liability with asset kind",
+			in:        Account{Name: "X", Class: ClassLiability, Kind: KindCash},
+			wantField: "kind",
+		},
 		{name: "unknown class", in: Account{Name: "X", Class: "other"}, wantField: "class"},
 		{name: "empty name", in: Account{Name: "  ", Class: ClassExpense}, wantField: "name"},
-		{name: "unknown currency", in: Account{Name: "X", Class: ClassExpense, Instrument: "XYZ"}, wantField: "currency"},
-		{name: "closed before opened", in: Account{Name: "X", Class: ClassExpense, OpenedOn: day("2026-02-01"), ClosedOn: ptr(day("2026-01-31"))}, wantField: "closed_on"},
-		{name: "system role of other class", in: Account{Name: "X", Class: ClassExpense, SystemRole: RoleYield}, wantField: "system_role"},
+		{
+			name:      "unknown currency",
+			in:        Account{Name: "X", Class: ClassExpense, Instrument: "XYZ"},
+			wantField: "currency",
+		},
+		{
+			name: "closed before opened",
+			in: Account{
+				Name:     "X",
+				Class:    ClassExpense,
+				OpenedOn: day("2026-02-01"),
+				ClosedOn: ptr(day("2026-01-31")),
+			},
+			wantField: "closed_on",
+		},
+		{
+			name:      "system role of other class",
+			in:        Account{Name: "X", Class: ClassExpense, SystemRole: RoleYield},
+			wantField: "system_role",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -60,11 +97,18 @@ func TestSystemRolesHaveClasses(t *testing.T) {
 	t.Parallel()
 
 	want := map[SystemRole]Class{
-		RoleOpeningBalances: ClassEquity, RoleAdjustments: ClassEquity, RoleTransfersInTransit: ClassEquity,
-		RoleUncategorizedExpense: ClassExpense, RoleInterest: ClassExpense, RoleTaxes: ClassExpense,
-		RoleFees: ClassExpense, RoleRealizedLosses: ClassExpense,
-		RoleUncategorizedIncome: ClassIncome, RoleYield: ClassIncome, RoleDiscounts: ClassIncome,
-		RoleRealizedGains: ClassIncome,
+		RoleOpeningBalances:      ClassEquity,
+		RoleAdjustments:          ClassEquity,
+		RoleTransfersInTransit:   ClassEquity,
+		RoleUncategorizedExpense: ClassExpense,
+		RoleInterest:             ClassExpense,
+		RoleTaxes:                ClassExpense,
+		RoleFees:                 ClassExpense,
+		RoleRealizedLosses:       ClassExpense,
+		RoleUncategorizedIncome:  ClassIncome,
+		RoleYield:                ClassIncome,
+		RoleDiscounts:            ClassIncome,
+		RoleRealizedGains:        ClassIncome,
 	}
 	if len(SystemRoles()) != len(want) {
 		t.Fatalf("SystemRoles() has %d roles, want %d", len(SystemRoles()), len(want))
@@ -80,7 +124,10 @@ func TestSystemRolesHaveClasses(t *testing.T) {
 func TestIsOpenOn(t *testing.T) {
 	t.Parallel()
 
-	a := mustAccount(t, Account{Class: ClassExpense, OpenedOn: day("2026-01-01"), ClosedOn: ptr(day("2026-06-30"))})
+	a := mustAccount(
+		t,
+		Account{Class: ClassExpense, OpenedOn: day("2026-01-01"), ClosedOn: ptr(day("2026-06-30"))},
+	)
 	for d, want := range map[string]bool{"2025-12-31": false, "2026-01-01": true, "2026-06-30": true, "2026-07-01": false} {
 		if got := a.IsOpenOn(day(d)); got != want {
 			t.Errorf("IsOpenOn(%s) = %v, want %v", d, got, want)
@@ -93,11 +140,17 @@ func TestValidateParent(t *testing.T) {
 
 	nubank := uuid.Must(uuid.NewV7())
 	itau := uuid.Must(uuid.NewV7())
-	checking := mustAccount(t, Account{Class: ClassAsset, Kind: KindChecking, InstitutionID: nubank})
+	checking := mustAccount(
+		t,
+		Account{Class: ClassAsset, Kind: KindChecking, InstitutionID: nubank},
+	)
 	food := mustAccount(t, Account{Class: ClassExpense})
 	income := mustAccount(t, Account{Class: ClassIncome})
 
-	if err := ValidateParent(mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: nubank}), checking); err != nil {
+	if err := ValidateParent(
+		mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: nubank}),
+		checking,
+	); err != nil {
 		t.Fatalf("reserve under same-institution checking: %v", err)
 	}
 
@@ -105,11 +158,45 @@ func TestValidateParent(t *testing.T) {
 		t.Fatalf("subcategory: %v", err)
 	}
 
-	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassExpense}), income), "parent_id", ErrValidation)
-	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: itau}), checking), "parent_id", ErrValidation)
-	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: nubank, Instrument: "USD"}), checking), "parent_id", ErrValidation)
+	requireField(
+		t,
+		ValidateParent(mustAccount(t, Account{Class: ClassExpense}), income),
+		"parent_id",
+		ErrValidation,
+	)
+	requireField(
+		t,
+		ValidateParent(
+			mustAccount(t, Account{Class: ClassAsset, Kind: KindReserve, InstitutionID: itau}),
+			checking,
+		),
+		"parent_id",
+		ErrValidation,
+	)
+	requireField(
+		t,
+		ValidateParent(
+			mustAccount(
+				t,
+				Account{
+					Class:         ClassAsset,
+					Kind:          KindReserve,
+					InstitutionID: nubank,
+					Instrument:    "USD",
+				},
+			),
+			checking,
+		),
+		"parent_id",
+		ErrValidation,
+	)
 	requireField(t, ValidateParent(checking, checking), "parent_id", ErrValidation)
-	requireField(t, ValidateParent(mustAccount(t, Account{Class: ClassExpense, Instrument: "USD"}), food), "parent_id", ErrValidation)
+	requireField(
+		t,
+		ValidateParent(mustAccount(t, Account{Class: ClassExpense, Instrument: "USD"}), food),
+		"parent_id",
+		ErrValidation,
+	)
 }
 
 func requireField(t *testing.T, err error, field string, sentinel error) {

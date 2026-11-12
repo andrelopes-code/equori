@@ -26,7 +26,12 @@ type database struct {
 
 // openDatabase attaches (or, for serve, starts) the managed server, backs up before pending
 // migrations when a backup directory is set, and migrates.
-func openDatabase(ctx context.Context, cfg config.Config, log *slog.Logger, serving bool) (*database, error) {
+func openDatabase(
+	ctx context.Context,
+	cfg config.Config,
+	log *slog.Logger,
+	serving bool,
+) (*database, error) {
 	if !cfg.Managed() {
 		return openExternal(ctx, cfg, log)
 	}
@@ -114,7 +119,10 @@ func (d *database) migrate(ctx context.Context, cfg config.Config, log *slog.Log
 	}
 
 	if pending && cfg.BackupDir != "" {
-		path := filepath.Join(cfg.BackupDir, backup.Name(backup.PreMigration, time.Now().UTC(), current))
+		path := filepath.Join(
+			cfg.BackupDir,
+			backup.Name(backup.PreMigration, time.Now().UTC(), current),
+		)
 		if err := backup.Dump(ctx, d.Bin, d.DSN, path); err != nil {
 			return fmt.Errorf("back up before migrating into %s: %w", cfg.BackupDir, err)
 		}
@@ -128,8 +136,17 @@ func (d *database) migrate(ctx context.Context, cfg config.Config, log *slog.Log
 
 	err = postgres.Migrate(ctx, d.Pool, log)
 	if errors.Is(err, postgres.ErrSchemaAhead) && cfg.BackupDir != "" {
-		if newest, nerr := backup.Newest(cfg.BackupDir, backup.PreMigration); nerr == nil && newest != "" {
-			return fmt.Errorf("%w; newest pre-migration backup: %s (equori restore %s)", err, newest, newest)
+		if newest, nerr := backup.Newest(
+			cfg.BackupDir,
+			backup.PreMigration,
+		); nerr == nil &&
+			newest != "" {
+			return fmt.Errorf(
+				"%w; newest pre-migration backup: %s (equori restore %s)",
+				err,
+				newest,
+				newest,
+			)
 		}
 	}
 

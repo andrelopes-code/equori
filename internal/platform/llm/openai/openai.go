@@ -34,14 +34,25 @@ func New(baseURL, apiKey string, client *http.Client) *Provider {
 
 func (p *Provider) Name() string { return name }
 
-func (p *Provider) Generate(ctx context.Context, model string, req llm.Request) (llm.Response, error) {
+func (p *Provider) Generate(
+	ctx context.Context,
+	model string,
+	req llm.Request,
+) (llm.Response, error) {
 	body, err := json.Marshal(toWire(model, req))
 	if err != nil {
 		return llm.Response{}, fmt.Errorf("encode request: %w", err)
 	}
 
 	var wire chatResponse
-	if err := p.do(ctx, http.MethodPost, "/chat/completions", model, body, decodeInto(model, &wire)); err != nil {
+	if err := p.do(
+		ctx,
+		http.MethodPost,
+		"/chat/completions",
+		model,
+		body,
+		decodeInto(model, &wire),
+	); err != nil {
 		return llm.Response{}, err
 	}
 
@@ -206,7 +217,14 @@ func decodeInto(what string, out any) func(io.Reader) error {
 // Models returns the model IDs the API lists, sorted and without duplicates.
 func (p *Provider) Models(ctx context.Context) ([]string, error) {
 	var wire modelList
-	if err := p.do(ctx, http.MethodGet, "/models", "models", nil, decodeInto("models", &wire)); err != nil {
+	if err := p.do(
+		ctx,
+		http.MethodGet,
+		"/models",
+		"models",
+		nil,
+		decodeInto("models", &wire),
+	); err != nil {
 		return nil, err
 	}
 
@@ -220,7 +238,12 @@ func (p *Provider) Models(ctx context.Context) ([]string, error) {
 	return slices.Compact(ids), nil
 }
 
-func (p *Provider) do(ctx context.Context, method, path, what string, body []byte, read func(io.Reader) error) error {
+func (p *Provider) do(
+	ctx context.Context,
+	method, path, what string,
+	body []byte,
+	read func(io.Reader) error,
+) error {
 	var reader io.Reader
 	if body != nil {
 		reader = bytes.NewReader(body)

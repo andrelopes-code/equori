@@ -12,7 +12,12 @@ import (
 )
 
 func toIntegrationAPI(i domain.Integration) Integration {
-	return Integration{Id: i.ID, Aggregator: string(i.Aggregator), Name: i.Name, UpdatedAt: i.UpdatedAt.UTC()}
+	return Integration{
+		Id:         i.ID,
+		Aggregator: string(i.Aggregator),
+		Name:       i.Name,
+		UpdatedAt:  i.UpdatedAt.UTC(),
+	}
 }
 
 func (s *Server) createIntegration(
@@ -27,7 +32,11 @@ func (s *Server) createIntegration(
 	return toIntegrationAPI(i), BaseURL + "/integrations/" + i.ID.String(), nil
 }
 
-func (s *Server) listIntegrations(ctx context.Context, r *http.Request, _ httpserver.None) (IntegrationList, error) {
+func (s *Server) listIntegrations(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (IntegrationList, error) {
 	params, err := httpserver.Query[ListIntegrationsParams](r)
 	if err != nil {
 		return IntegrationList{}, err
@@ -53,7 +62,11 @@ func (s *Server) listIntegrations(ctx context.Context, r *http.Request, _ httpse
 	return out, err
 }
 
-func (s *Server) getIntegration(ctx context.Context, r *http.Request, _ httpserver.None) (Integration, error) {
+func (s *Server) getIntegration(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Integration, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Integration{}, err
@@ -98,7 +111,11 @@ func (s *Server) deleteIntegration(
 	return httpserver.None{}, nil
 }
 
-func (s *Server) listAggregators(_ context.Context, _ *http.Request, _ httpserver.None) (AggregatorList, error) {
+func (s *Server) listAggregators(
+	_ context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (AggregatorList, error) {
 	all := s.svc.Aggregators()
 
 	out := AggregatorList{Items: make([]Aggregator, len(all))}
@@ -111,7 +128,12 @@ func (s *Server) listAggregators(_ context.Context, _ *http.Request, _ httpserve
 			fields[j].Name, fields[j].Secret = f.Name, f.Secret
 		}
 
-		out.Items[i] = Aggregator{Id: a.ID(), Name: a.Name(), CredentialFields: fields, ConnectMethod: a.ConnectMethod()}
+		out.Items[i] = Aggregator{
+			Id:               a.ID(),
+			Name:             a.Name(),
+			CredentialFields: fields,
+			ConnectMethod:    a.ConnectMethod(),
+		}
 	}
 
 	return out, nil

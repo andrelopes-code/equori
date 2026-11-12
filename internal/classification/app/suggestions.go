@@ -48,7 +48,13 @@ func (s *Service) suggest(ctx context.Context, rec Record) error {
 		return nil
 	}
 
-	examples, err := s.repo.CorrectedExamples(ctx, rec.BooksID, rec.MatchKey, rec.CategoryID, maxExamples)
+	examples, err := s.repo.CorrectedExamples(
+		ctx,
+		rec.BooksID,
+		rec.MatchKey,
+		rec.CategoryID,
+		maxExamples,
+	)
 	if err != nil || len(examples) < 2 {
 		return err
 	}
@@ -61,12 +67,22 @@ func (s *Service) suggest(ctx context.Context, rec Record) error {
 	})
 }
 
-func (s *Service) ListSuggestions(ctx context.Context, booksID int64, state string, p page.Request[SuggestionKey]) ([]Suggestion, *SuggestionKey, error) {
+func (s *Service) ListSuggestions(
+	ctx context.Context,
+	booksID int64,
+	state string,
+	p page.Request[SuggestionKey],
+) ([]Suggestion, *SuggestionKey, error) {
 	return s.repo.ListSuggestions(ctx, booksID, state, p)
 }
 
 // AcceptSuggestion creates the suggested rule at the last priority.
-func (s *Service) AcceptSuggestion(ctx context.Context, booksID int64, id uuid.UUID, name string) (Suggestion, error) {
+func (s *Service) AcceptSuggestion(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	name string,
+) (Suggestion, error) {
 	var out Suggestion
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		sg, err := r.LockSuggestion(ctx, booksID, id)
@@ -78,7 +94,11 @@ func (s *Service) AcceptSuggestion(ctx context.Context, booksID int64, id uuid.U
 			return ErrSuggestionClosed
 		}
 
-		rule, err := s.checkRule(ctx, booksID, domain.Rule{Name: name, Enabled: true, Conditions: sg.Conditions, Actions: sg.Actions})
+		rule, err := s.checkRule(
+			ctx,
+			booksID,
+			domain.Rule{Name: name, Enabled: true, Conditions: sg.Conditions, Actions: sg.Actions},
+		)
 		if err != nil {
 			return err
 		}
@@ -95,7 +115,11 @@ func (s *Service) AcceptSuggestion(ctx context.Context, booksID int64, id uuid.U
 	return out, err
 }
 
-func (s *Service) DismissSuggestion(ctx context.Context, booksID int64, id uuid.UUID) (Suggestion, error) {
+func (s *Service) DismissSuggestion(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (Suggestion, error) {
 	var out Suggestion
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		sg, err := r.LockSuggestion(ctx, booksID, id)

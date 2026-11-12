@@ -12,14 +12,22 @@ import (
 
 // CreateConnection reads the item through the integration and stores it with its accounts,
 // all pending (A35).
-func (s *Service) CreateConnection(ctx context.Context, booksID int64, integrationID uuid.UUID, itemID, name string) (domain.Connection, error) {
+func (s *Service) CreateConnection(
+	ctx context.Context,
+	booksID int64,
+	integrationID uuid.UUID,
+	itemID, name string,
+) (domain.Connection, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
 
 	i, err := s.repo.Integration(ctx, booksID, integrationID)
 	if errors.Is(err, ErrNotFound) {
-		return domain.Connection{}, &domain.FieldError{Field: "integration_id", Message: "unknown integration"}
+		return domain.Connection{}, &domain.FieldError{
+			Field:   "integration_id",
+			Message: "unknown integration",
+		}
 	}
 
 	if err != nil {
@@ -63,7 +71,11 @@ func (s *Service) CreateConnection(ctx context.Context, booksID int64, integrati
 
 // withState sets the connection's state from the aggregator of its integration; an
 // integration whose aggregator this instance no longer offers reads as failed.
-func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[uuid.UUID]Aggregator) error {
+func (s *Service) withState(
+	ctx context.Context,
+	c *domain.Connection,
+	aggs map[uuid.UUID]Aggregator,
+) error {
 	agg, ok := aggs[c.IntegrationID]
 	if !ok {
 		i, err := s.repo.Integration(ctx, c.BooksID, c.IntegrationID)
@@ -85,7 +97,11 @@ func (s *Service) withState(ctx context.Context, c *domain.Connection, aggs map[
 	return nil
 }
 
-func (s *Service) Connection(ctx context.Context, booksID int64, id uuid.UUID) (domain.Connection, error) {
+func (s *Service) Connection(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Connection, error) {
 	if err := s.available(); err != nil {
 		return domain.Connection{}, err
 	}
@@ -98,7 +114,11 @@ func (s *Service) Connection(ctx context.Context, booksID int64, id uuid.UUID) (
 	return c, s.withState(ctx, &c, map[uuid.UUID]Aggregator{})
 }
 
-func (s *Service) ListConnections(ctx context.Context, booksID int64, p page.Request[NameKey]) ([]domain.Connection, *NameKey, error) {
+func (s *Service) ListConnections(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[NameKey],
+) ([]domain.Connection, *NameKey, error) {
 	if err := s.available(); err != nil {
 		return nil, nil, err
 	}
@@ -127,7 +147,12 @@ func (s *Service) DeleteConnection(ctx context.Context, booksID int64, id uuid.U
 }
 
 // MapAccount maps an external account to a ledger account or ignores it (A35).
-func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, externalAccountID uuid.UUID, m domain.Mapping) (domain.ExternalAccount, error) {
+func (s *Service) MapAccount(
+	ctx context.Context,
+	booksID int64,
+	connectionID, externalAccountID uuid.UUID,
+	m domain.Mapping,
+) (domain.ExternalAccount, error) {
 	if err := s.available(); err != nil {
 		return domain.ExternalAccount{}, err
 	}
@@ -159,7 +184,8 @@ func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, e
 	if !m.Ignored {
 		// A214: a ledger account fed by an account the item stopped listing passes to this one.
 		for _, held := range c.Accounts {
-			if held.ID == ext.ID || held.GoneSince == nil || held.AccountID == nil || *held.AccountID != *m.AccountID {
+			if held.ID == ext.ID || held.GoneSince == nil || held.AccountID == nil ||
+				*held.AccountID != *m.AccountID {
 				continue
 			}
 
@@ -198,7 +224,10 @@ func (s *Service) mappingTarget(
 
 		target, err = s.ledger.ImportTarget(ctx, booksID, *m.AccountID)
 		if errors.Is(err, ErrNotFound) {
-			return domain.ImportTarget{}, &domain.FieldError{Field: "account_id", Message: "unknown account"}
+			return domain.ImportTarget{}, &domain.FieldError{
+				Field:   "account_id",
+				Message: "unknown account",
+			}
 		}
 
 		if err != nil {
@@ -221,7 +250,10 @@ func (s *Service) fetchItem(
 	case errors.Is(err, ErrAggregatorUnauthorized):
 		return domain.Connection{}, &UnauthorizedError{Field: "integration_id"}
 	case errors.Is(err, ErrItemNotFound):
-		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is not an item of this integration's application"}
+		return domain.Connection{}, &domain.FieldError{
+			Field:   "external_id",
+			Message: "is not an item of this integration's application",
+		}
 	case err != nil:
 		return domain.Connection{}, err
 	}

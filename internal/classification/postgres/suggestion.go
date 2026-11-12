@@ -30,14 +30,31 @@ func toSuggestion(row ClassificationSuggestion) (app.Suggestion, error) {
 	}
 
 	return app.Suggestion{
-		ID: row.ID, BooksID: row.BooksID, Fingerprint: row.Fingerprint, Conditions: rule.Conditions, Actions: rule.Actions,
-		Examples: row.ExampleTransactionIds, State: row.State, RuleID: row.RuleID.UUID, CreatedAt: row.CreatedAt, DecidedAt: row.DecidedAt,
+		ID:          row.ID,
+		BooksID:     row.BooksID,
+		Fingerprint: row.Fingerprint,
+		Conditions:  rule.Conditions,
+		Actions:     rule.Actions,
+		Examples:    row.ExampleTransactionIds,
+		State:       row.State,
+		RuleID:      row.RuleID.UUID,
+		CreatedAt:   row.CreatedAt,
+		DecidedAt:   row.DecidedAt,
 	}, nil
 }
 
-func (r *Repository) CorrectedExamples(ctx context.Context, booksID int64, matchKey string, categoryID uuid.UUID, limit int) ([]uuid.UUID, error) {
+func (r *Repository) CorrectedExamples(
+	ctx context.Context,
+	booksID int64,
+	matchKey string,
+	categoryID uuid.UUID,
+	limit int,
+) ([]uuid.UUID, error) {
 	return r.q.CorrectedExamples(ctx, CorrectedExamplesParams{
-		BooksID: booksID, MatchKey: &matchKey, CategoryID: nullUUID(categoryID), RowLimit: int32(limit), //nolint:gosec // a small fixed limit
+		BooksID:    booksID,
+		MatchKey:   &matchKey,
+		CategoryID: nullUUID(categoryID),
+		RowLimit:   int32(limit), //nolint:gosec // a small fixed limit
 	})
 }
 
@@ -55,8 +72,17 @@ func (r *Repository) UpsertSuggestion(ctx context.Context, s app.Suggestion) err
 	})
 }
 
-func (r *Repository) ListSuggestions(ctx context.Context, booksID int64, state string, p page.Request[app.SuggestionKey]) ([]app.Suggestion, *app.SuggestionKey, error) {
-	params := ListSuggestionsParams{BooksID: booksID, State: nullString(state), RowLimit: int32(p.Limit + 1)} //nolint:gosec // limit is at most page.MaxLimit
+func (r *Repository) ListSuggestions(
+	ctx context.Context,
+	booksID int64,
+	state string,
+	p page.Request[app.SuggestionKey],
+) ([]app.Suggestion, *app.SuggestionKey, error) {
+	params := ListSuggestionsParams{
+		BooksID:  booksID,
+		State:    nullString(state),
+		RowLimit: int32(p.Limit + 1),
+	} //nolint:gosec // limit is at most page.MaxLimit
 	if p.After != nil {
 		params.AfterID = nullUUID(p.After.ID)
 	}
@@ -82,7 +108,11 @@ func (r *Repository) ListSuggestions(ctx context.Context, booksID int64, state s
 	return out, &app.SuggestionKey{ID: kept[len(kept)-1].ID}, nil
 }
 
-func (r *Repository) LockSuggestion(ctx context.Context, booksID int64, id uuid.UUID) (app.Suggestion, error) {
+func (r *Repository) LockSuggestion(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (app.Suggestion, error) {
 	row, err := r.q.LockSuggestion(ctx, LockSuggestionParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return app.Suggestion{}, notFound(err)
@@ -91,8 +121,17 @@ func (r *Repository) LockSuggestion(ctx context.Context, booksID int64, id uuid.
 	return toSuggestion(row)
 }
 
-func (r *Repository) DecideSuggestion(ctx context.Context, booksID int64, id uuid.UUID, state string, ruleID uuid.UUID) (app.Suggestion, error) {
-	row, err := r.q.DecideSuggestion(ctx, DecideSuggestionParams{BooksID: booksID, ID: id, State: state, RuleID: nullUUID(ruleID)})
+func (r *Repository) DecideSuggestion(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	state string,
+	ruleID uuid.UUID,
+) (app.Suggestion, error) {
+	row, err := r.q.DecideSuggestion(
+		ctx,
+		DecideSuggestionParams{BooksID: booksID, ID: id, State: state, RuleID: nullUUID(ruleID)},
+	)
 	if err != nil {
 		return app.Suggestion{}, notFound(err)
 	}

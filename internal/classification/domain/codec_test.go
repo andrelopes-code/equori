@@ -19,13 +19,24 @@ func TestRuleDocsRoundTrip(t *testing.T) {
 			{Field: FieldDescription, Operator: OpRegex, Text: []string{`^UBER`}},
 			{Field: FieldRawDescription, Operator: OpInList, Text: []string{"a", "b"}},
 			{Field: FieldPayee, Operator: OpEquals, IDs: []uuid.UUID{id()}},
-			{Field: FieldAmount, Operator: OpBetween, Money: []money.Money{brl(t, -5000), brl(t, -100)}},
+			{
+				Field:    FieldAmount,
+				Operator: OpBetween,
+				Money:    []money.Money{brl(t, -5000), brl(t, -100)},
+			},
 			{Field: FieldDayOfMonth, Operator: OpInList, Ints: []int{1, 15}},
 			{Field: FieldInstallment, Operator: OpEquals, Bool: true},
 			{Field: FieldWeekday, Operator: OpEquals, Text: []string{"friday"}},
 		},
 		Actions: []Action{
-			{Type: ActionSplit, Parts: []Part{{CategoryID: id(), Percent: 2500}, {CategoryID: id(), Amount: ptr(brl(t, 1000))}, {CategoryID: id(), Remainder: true}}},
+			{
+				Type: ActionSplit,
+				Parts: []Part{
+					{CategoryID: id(), Percent: 2500},
+					{CategoryID: id(), Amount: ptr(brl(t, 1000))},
+					{CategoryID: id(), Remainder: true},
+				},
+			},
 			{Type: ActionAddTags, Tags: []string{"car"}},
 			{Type: ActionSetPayee, PayeeID: id()},
 		},
@@ -74,13 +85,29 @@ func TestConditionFromDocRejections(t *testing.T) {
 		name string
 		doc  ConditionDoc
 	}{
-		{"list operator without array", ConditionDoc{Field: "description", Operator: "in_list", Value: "x"}},
+		{
+			"list operator without array",
+			ConditionDoc{Field: "description", Operator: "in_list", Value: "x"},
+		},
 		{"payee not an id", ConditionDoc{Field: "payee", Operator: "equals", Value: "iFood"}},
 		{"amount as number", ConditionDoc{Field: "amount", Operator: "equals", Value: float64(10)}},
-		{"amount with extra member", ConditionDoc{Field: "amount", Operator: "equals", Value: map[string]any{"amount": float64(1), "currency": "BRL", "x": 1}}},
+		{
+			"amount with extra member",
+			ConditionDoc{
+				Field:    "amount",
+				Operator: "equals",
+				Value:    map[string]any{"amount": float64(1), "currency": "BRL", "x": 1},
+			},
+		},
 		{"fractional day", ConditionDoc{Field: "day_of_month", Operator: "equals", Value: 1.5}},
-		{"installment as string", ConditionDoc{Field: "installment", Operator: "equals", Value: "true"}},
-		{"text as number", ConditionDoc{Field: "description", Operator: "equals", Value: float64(1)}},
+		{
+			"installment as string",
+			ConditionDoc{Field: "installment", Operator: "equals", Value: "true"},
+		},
+		{
+			"text as number",
+			ConditionDoc{Field: "description", Operator: "equals", Value: float64(1)},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

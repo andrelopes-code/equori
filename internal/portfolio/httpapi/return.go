@@ -12,7 +12,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
 )
 
-func (s *Server) getReturn(ctx context.Context, r *http.Request, _ httpserver.None) (ReturnReport, error) {
+func (s *Server) getReturn(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ReturnReport, error) {
 	params, err := httpserver.Query[GetReturnParams](r)
 	if err != nil {
 		return ReturnReport{}, err
@@ -33,7 +37,15 @@ func (s *Server) getReturn(ctx context.Context, r *http.Request, _ httpserver.No
 		index = *params.Index
 	}
 
-	res, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, params.From.Time, params.To.Time, in, index)
+	res, err := s.svc.Return(
+		ctx,
+		auth.MustBooksID(ctx),
+		account,
+		params.From.Time,
+		params.To.Time,
+		in,
+		index,
+	)
 	if err != nil {
 		return ReturnReport{}, err
 	}

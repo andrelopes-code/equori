@@ -18,9 +18,15 @@ func TestUnpair(t *testing.T) {
 		Posting{AccountID: f.uncategorized.ID, Amount: brl(t, 25000)},
 	)
 	paired := func(t *testing.T, status PostingStatus) Transaction {
-		p := f.record(t,
+		p := f.record(
+			t,
 			Posting{AccountID: f.checking.ID, Amount: brl(t, -25000)},
-			Posting{AccountID: f.savings.ID, Amount: brl(t, 25000), Status: status, ExternalRecordID: link},
+			Posting{
+				AccountID:        f.savings.ID,
+				Amount:           brl(t, 25000),
+				Status:           status,
+				ExternalRecordID: link,
+			},
 		)
 		p.Version = 2
 
@@ -42,16 +48,48 @@ func TestUnpair(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "returns the category side", tx: paired(t, StatusCleared), version: 2, link: link, before: before,
+			name:    "returns the category side",
+			tx:      paired(t, StatusCleared),
+			version: 2,
+			link:    link,
+			before:  before,
 			want: []Posting{
 				{AccountID: f.checking.ID, Amount: brl(t, -25000)},
 				{AccountID: f.uncategorized.ID, Amount: brl(t, 25000)},
 			},
 		},
-		{name: "stale version", tx: paired(t, StatusCleared), version: 1, link: link, before: before, wantErr: ErrVersionConflict},
-		{name: "reconciled", tx: paired(t, StatusReconciled), version: 2, link: link, before: before, wantErr: ErrReconciled},
-		{name: "link absent", tx: paired(t, StatusCleared), version: 2, link: uuid.Must(uuid.NewV7()), before: before, wantErr: ErrValidation},
-		{name: "card credit", tx: paired(t, StatusCleared), version: 2, link: link, before: credit, wantErr: ErrValidation},
+		{
+			name:    "stale version",
+			tx:      paired(t, StatusCleared),
+			version: 1,
+			link:    link,
+			before:  before,
+			wantErr: ErrVersionConflict,
+		},
+		{
+			name:    "reconciled",
+			tx:      paired(t, StatusReconciled),
+			version: 2,
+			link:    link,
+			before:  before,
+			wantErr: ErrReconciled,
+		},
+		{
+			name:    "link absent",
+			tx:      paired(t, StatusCleared),
+			version: 2,
+			link:    uuid.Must(uuid.NewV7()),
+			before:  before,
+			wantErr: ErrValidation,
+		},
+		{
+			name:    "card credit",
+			tx:      paired(t, StatusCleared),
+			version: 2,
+			link:    link,
+			before:  credit,
+			wantErr: ErrValidation,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -72,8 +110,15 @@ func TestUnpair(t *testing.T) {
 
 			for i, w := range tt.want {
 				p := got.Postings[i]
-				if p.AccountID != w.AccountID || p.Amount != w.Amount || p.ExternalRecordID != uuid.Nil {
-					t.Fatalf("posting %d = %+v, want account %s amount %s unlinked", i, p, w.AccountID, w.Amount)
+				if p.AccountID != w.AccountID || p.Amount != w.Amount ||
+					p.ExternalRecordID != uuid.Nil {
+					t.Fatalf(
+						"posting %d = %+v, want account %s amount %s unlinked",
+						i,
+						p,
+						w.AccountID,
+						w.Amount,
+					)
 				}
 			}
 		})

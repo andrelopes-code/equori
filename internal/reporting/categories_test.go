@@ -70,7 +70,8 @@ func TestS76CategoryTotals(t *testing.T) {
 
 			// Name order; the system expense categories of the book sit among them.
 			pos := func(id string) int { return slices.Index(order, id) }
-			if pos(delivery) > pos(food) || pos(food) > pos(groceries) || pos(groceries) > pos(travel) {
+			if pos(delivery) > pos(food) || pos(food) > pos(groceries) ||
+				pos(groceries) > pos(travel) {
 				t.Fatalf("order = %v", order)
 			}
 		})
@@ -103,7 +104,12 @@ func TestCategoryTotalsRange(t *testing.T) {
 
 	h := apitest.New(t)
 	for _, q := range []string{"from=2026-10-31&to=2026-10-01&class=expense", "from=2026-01-01&to=2027-01-02&class=expense"} {
-		h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/categories?"+q, nil), http.StatusBadRequest, "invalid_request", "to")
+		h.ExpectProblem(
+			h.Do(http.MethodGet, "/api/v1/reports/categories?"+q, nil),
+			http.StatusBadRequest,
+			"invalid_request",
+			"to",
+		)
 	}
 }
 
@@ -115,7 +121,8 @@ func TestCategoryTotalsOtherUser(t *testing.T) {
 	var foreign struct {
 		ID string `json:"id"`
 	}
-	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": "BRL"}).Decode(t, &foreign)
+	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Food", "class": "expense", "currency": "BRL"}).
+		Decode(t, &foreign)
 
 	for _, it := range categoryTotals(t, h, "from=2026-10-01&to=2026-10-31&class=expense") {
 		if it.AccountID == foreign.ID {

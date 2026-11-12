@@ -61,7 +61,11 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 // Fetch returns VL_QUOTA of each code for each day in [from, to]: the year files up to 2020, then
 // one file per month (plan 2 D9). A failing file ends the fetch with a ScopeError and the quotes
 // read before it.
-func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (s Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var (
 		out     []feed.Quote
 		pending = map[string]string{}
@@ -78,18 +82,28 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 			since = s.seen.Since(key)
 		}
 
-		lastModified, err := feed.DownloadSince(ctx, s.client, url, since, func(file *os.File, size int64) error {
-			quotes, err := readZip(file, size, codes, from, to)
-			out = append(out, quotes...)
+		lastModified, err := feed.DownloadSince(
+			ctx,
+			s.client,
+			url,
+			since,
+			func(file *os.File, size int64) error {
+				quotes, err := readZip(file, size, codes, from, to)
+				out = append(out, quotes...)
 
-			return err
-		})
+				return err
+			},
+		)
 		if errors.Is(err, feed.ErrNoData) {
 			continue
 		}
 
 		if err != nil {
-			return out, &feed.ScopeError{Key: f.key, Value: f.value, Err: fmt.Errorf("fetch CVM funds: %w", err)}
+			return out, &feed.ScopeError{
+				Key:   f.key,
+				Value: f.value,
+				Err:   fmt.Errorf("fetch CVM funds: %w", err),
+			}
 		}
 
 		if f.monthly {
@@ -138,7 +152,12 @@ func files(from, to time.Time) []file {
 	return out
 }
 
-func readZip(f *os.File, size int64, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func readZip(
+	f *os.File,
+	size int64,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	zr, err := zip.NewReader(f, size)
 	if err != nil {
 		return nil, fmt.Errorf("open CVM archive: %w", err)

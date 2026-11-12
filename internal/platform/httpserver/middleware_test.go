@@ -25,7 +25,9 @@ func serve(t *testing.T, h http.Handler, req *http.Request) (*httptest.ResponseR
 func TestMiddlewareRequestID(t *testing.T) {
 	t.Parallel()
 	var seen string
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { seen = RequestID(r.Context()) })
+	h := http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) { seen = RequestID(r.Context()) },
+	)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("X-Request-ID", "client-supplied")
 
@@ -92,7 +94,9 @@ func TestMiddlewareAccessLogProblem(t *testing.T) {
 func TestMiddlewareAccessLogSuccessHasNoProblem(t *testing.T) {
 	t.Parallel()
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "ok") })
+	h := http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) { _, _ = io.WriteString(w, "ok") },
+	)
 	_, logs := serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x", nil))
 
 	if strings.Contains(logs, `"problem"`) {
@@ -141,7 +145,9 @@ func TestMiddlewareRejectsCrossOriginWrite(t *testing.T) {
 func TestMiddlewareLimitsBody(t *testing.T) {
 	t.Parallel()
 	var readErr error
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) })
+	h := http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) },
+	)
 	body := strings.NewReader(strings.Repeat("a", maxBodyBytes+1))
 
 	serve(t, h, httptest.NewRequestWithContext(t.Context(), http.MethodPut, "/", body))
@@ -169,9 +175,19 @@ func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var readErr error
-			h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) })
-			req := httptest.NewRequestWithContext(t.Context(), tc.method, tc.path, strings.NewReader(strings.Repeat("a", tc.size)))
-			Middleware(h, slog.New(slog.DiscardHandler), limits...).ServeHTTP(httptest.NewRecorder(), req)
+			h := http.HandlerFunc(
+				func(w http.ResponseWriter, r *http.Request) { _, readErr = io.ReadAll(r.Body) },
+			)
+			req := httptest.NewRequestWithContext(
+				t.Context(),
+				tc.method,
+				tc.path,
+				strings.NewReader(strings.Repeat("a", tc.size)),
+			)
+			Middleware(
+				h,
+				slog.New(slog.DiscardHandler),
+				limits...).ServeHTTP(httptest.NewRecorder(), req)
 
 			if _, rejected := problem.Transport(readErr); rejected != tc.rejected {
 				t.Fatalf("rejected = %v, want %v (err %v)", rejected, tc.rejected, readErr)
@@ -182,13 +198,22 @@ func TestMiddlewareRaisesBodyLimitForRoute(t *testing.T) {
 
 func TestNotFound(t *testing.T) {
 	t.Parallel()
-	rec, _ := serve(t, NotFound(), httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/nope", nil))
+	rec, _ := serve(
+		t,
+		NotFound(),
+		httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/api/v1/nope", nil),
+	)
 
 	if rec.Code != http.StatusNotFound || rec.Header().Get("Content-Type") != problem.ContentType {
-		t.Fatalf("status = %d, content type = %q; want 404 problem", rec.Code, rec.Header().Get("Content-Type"))
+		t.Fatalf(
+			"status = %d, content type = %q; want 404 problem",
+			rec.Code,
+			rec.Header().Get("Content-Type"),
+		)
 	}
 
-	if !strings.Contains(rec.Body.String(), `"code":"not_found"`) || !strings.Contains(rec.Body.String(), `"request_id":"`) {
+	if !strings.Contains(rec.Body.String(), `"code":"not_found"`) ||
+		!strings.Contains(rec.Body.String(), `"request_id":"`) {
 		t.Fatalf("body = %s", rec.Body.String())
 	}
 }
@@ -197,15 +222,23 @@ func TestNotFound(t *testing.T) {
 func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 	t.Parallel()
 
-	common := map[string]string{"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"}
+	common := map[string]string{
+		"X-Content-Type-Options": "nosniff",
+		"Referrer-Policy":        "no-referrer",
+	}
 	byKind := map[bool]map[string]string{
-		true: {"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'", "Cache-Control": "no-store"},
+		true: {
+			"Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+			"Cache-Control":           "no-store",
+		},
 		false: {
 			"Content-Security-Policy": "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 			"Cache-Control":           "",
 		},
 	}
-	ok := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok")) })
+	ok := http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("ok")) },
+	)
 	failing := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		problem.Write(w, problem.New(http.StatusConflict, "conflict", "conflict"))
 	})
@@ -225,7 +258,11 @@ func TestMiddlewareSetsSecurityHeaders(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			rec, _ := serve(t, tc.h, httptest.NewRequestWithContext(t.Context(), http.MethodGet, tc.path, nil))
+			rec, _ := serve(
+				t,
+				tc.h,
+				httptest.NewRequestWithContext(t.Context(), http.MethodGet, tc.path, nil),
+			)
 			for k, v := range common {
 				if got := rec.Header().Get(k); got != v {
 					t.Errorf("%s = %q, want %q", k, got, v)

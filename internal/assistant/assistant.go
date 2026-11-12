@@ -58,7 +58,16 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 	// assistant_usage days are instance days, in UTC (BK19).
 	today := func() time.Time { return clock.DateOf(cfg.Clock.Now(), time.UTC) }
 
-	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, today, log)
+	svc := app.NewService(
+		postgres.NewRepository(pool),
+		box,
+		llmapi.NewModels(build),
+		instance,
+		uses,
+		cfg.Clock.Now,
+		today,
+		log,
+	)
 
 	return &Module{
 		svc:      svc,

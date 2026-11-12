@@ -17,7 +17,7 @@ func (listRulesKind) Values() []string {
 }
 
 type listRulesIn struct {
-	Kind   listRulesKind `json:"kind" jsonschema:"what to list"`
+	Kind   listRulesKind `json:"kind"             jsonschema:"what to list"`
 	RuleID string        `json:"rule_id,omitzero" jsonschema:"for rules: return only this rule"`
 	tool.PageArgs
 }
@@ -59,7 +59,7 @@ type listRulesOut struct {
 	Suggestions      []suggestionView     `json:"suggestions,omitzero"`
 	SourceCategories []sourceCategoryView `json:"source_categories,omitzero"`
 	PayeeAliases     []aliasView          `json:"payee_aliases,omitzero"`
-	NextCursor       string               `json:"next_cursor,omitzero" jsonschema:"present when more items follow; pass it as cursor"`
+	NextCursor       string               `json:"next_cursor,omitzero"       jsonschema:"present when more items follow; pass it as cursor"`
 }
 
 func listRules(svc *app.Service, names Names) tool.Tool {
@@ -72,7 +72,10 @@ func listRules(svc *app.Service, names Names) tool.Tool {
 		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in listRulesIn) (listRulesOut, error) {
 		if in.RuleID != "" && in.Kind != "rules" {
-			return listRulesOut{}, tool.InvalidArgument("rule_id", "is not used by kind "+string(in.Kind))
+			return listRulesOut{}, tool.InvalidArgument(
+				"rule_id",
+				"is not used by kind "+string(in.Kind),
+			)
 		}
 
 		ruleID, err := optionalID(in.RuleID, "rule_id")
@@ -156,8 +159,15 @@ func listRuleViews(
 	out.Rules = []ruleView{}
 	for _, r := range rules {
 		out.Rules = append(out.Rules, ruleView{
-			RuleID: r.ID.String(), Name: r.Name, Priority: r.Priority, Enabled: r.Enabled,
-			ConditionsText: conditionsText(r.Conditions), ActionsText: actionsText(r.Actions, categories, payees), CategorizedCount: usage[r.ID].Count,
+			RuleID:   r.ID.String(),
+			Name:     r.Name,
+			Priority: r.Priority,
+			Enabled:  r.Enabled,
+			ConditionsText: conditionsText(
+				r.Conditions,
+			),
+			ActionsText:      actionsText(r.Actions, categories, payees),
+			CategorizedCount: usage[r.ID].Count,
 		})
 	}
 
@@ -193,7 +203,10 @@ func listSuggestionViews(
 		}
 
 		out.Suggestions = append(out.Suggestions, suggestionView{
-			SuggestionID: s.ID.String(), ConditionsText: conditionsText(s.Conditions), ActionsText: actionsText(s.Actions, categories, payees), ExampleTransactionIDs: ex,
+			SuggestionID:          s.ID.String(),
+			ConditionsText:        conditionsText(s.Conditions),
+			ActionsText:           actionsText(s.Actions, categories, payees),
+			ExampleTransactionIDs: ex,
 		})
 	}
 
@@ -224,7 +237,11 @@ func listSourceCategoryViews(
 	out.SourceCategories = []sourceCategoryView{}
 	for _, c := range items {
 		out.SourceCategories = append(out.SourceCategories, sourceCategoryView{
-			SourceCategoryID: c.ID.String(), Aggregator: c.Aggregator, Name: c.Name, Count: c.Count, CategoryName: categories[c.CategoryID],
+			SourceCategoryID: c.ID.String(),
+			Aggregator:       c.Aggregator,
+			Name:             c.Name,
+			Count:            c.Count,
+			CategoryName:     categories[c.CategoryID],
 		})
 	}
 
@@ -254,7 +271,15 @@ func listAliasViews(
 
 	out.PayeeAliases = []aliasView{}
 	for _, a := range items {
-		out.PayeeAliases = append(out.PayeeAliases, aliasView{AliasID: a.ID.String(), Pattern: a.Pattern, MatchType: string(a.MatchType), PayeeName: payees[a.PayeeID]})
+		out.PayeeAliases = append(
+			out.PayeeAliases,
+			aliasView{
+				AliasID:   a.ID.String(),
+				Pattern:   a.Pattern,
+				MatchType: string(a.MatchType),
+				PayeeName: payees[a.PayeeID],
+			},
+		)
 	}
 
 	out.NextCursor, err = nextCursor(next)

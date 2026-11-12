@@ -49,7 +49,9 @@ func (d *Dispatcher) Subscribe(consumer, eventType string, h Handler) {
 
 // UseBooks sets the context of every delivery from the event's books ID; without it handlers run
 // in the dispatcher's context. An error of inBooks counts as an error of the handler.
-func (d *Dispatcher) UseBooks(inBooks func(ctx context.Context, booksID int64) (context.Context, error)) {
+func (d *Dispatcher) UseBooks(
+	inBooks func(ctx context.Context, booksID int64) (context.Context, error),
+) {
 	d.inBooks = inBooks
 }
 
@@ -242,7 +244,16 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 		return false, fmt.Errorf("record failed delivery of %s to %s: %w", e.ID, s.consumer, err)
 	}
 
-	d.log.WarnContext(ctx, "outbox handler failed", "consumer", s.consumer, "event_id", e.ID, "error", handlerErr)
+	d.log.WarnContext(
+		ctx,
+		"outbox handler failed",
+		"consumer",
+		s.consumer,
+		"event_id",
+		e.ID,
+		"error",
+		handlerErr,
+	)
 
 	return false, nil
 }

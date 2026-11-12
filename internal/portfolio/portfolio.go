@@ -37,13 +37,28 @@ type Profiles interface {
 	Profile(ctx context.Context, booksID int64) (locale.Locale, error)
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, log *slog.Logger) (*Module, error) {
-	byID, err := registry.New[domain.Jurisdiction]("jurisdiction", registry.Entry[domain.Jurisdiction]{ID: "br", Value: br.New()})
+func New(
+	pool *pgxpool.Pool,
+	dispatcher *outbox.Dispatcher,
+	l *ledger.Module,
+	md *marketdata.Module,
+	profiles Profiles,
+	log *slog.Logger,
+) (*Module, error) {
+	byID, err := registry.New[domain.Jurisdiction](
+		"jurisdiction",
+		registry.Entry[domain.Jurisdiction]{ID: "br", Value: br.New()},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l, md}, marketPort{md, profiles}, jurisdictions{profiles, byID})
+	svc := app.NewService(
+		postgres.NewRepository(pool),
+		ledgerPort{l, md},
+		marketPort{md, profiles},
+		jurisdictions{profiles, byID},
+	)
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, ledger: l}
 	// P8 amendment A71: categorization never changes a security account.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionVoided} {
@@ -55,7 +70,10 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md
 
 // Tools returns the portfolio module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
-	return tool.Group{Tools: toolapi.Tools(m.svc, m.accountNames, m.ledger.Today), Errors: tool.FromProblem(httpapi.ToProblem)}
+	return tool.Group{
+		Tools:  toolapi.Tools(m.svc, m.accountNames, m.ledger.Today),
+		Errors: tool.FromProblem(httpapi.ToProblem),
+	}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

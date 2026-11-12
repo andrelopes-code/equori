@@ -12,10 +12,29 @@ func TestBillingCycleRules(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
 
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2026-12", "closing_day": 15, "due_day": 22}, http.StatusCreated, nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2026-01", "closing_day": 3, "due_day": 10, "closing_day_assignment": "closing"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2026-12",
+			"closing_day":    15,
+			"due_day":        22,
+		},
+		http.StatusCreated,
+		nil,
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from":         "2026-01",
+			"closing_day":            3,
+			"due_day":                10,
+			"closing_day_assignment": "closing",
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	var rules struct {
 		Items []struct {
@@ -25,38 +44,89 @@ func TestBillingCycleRules(t *testing.T) {
 			DueDateAdjustment    string `json:"due_date_adjustment"`
 		} `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/billing-cycle-rules", nil, http.StatusOK, &rules)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		nil,
+		http.StatusOK,
+		&rules,
+	)
 
-	if len(rules.Items) != 2 || rules.Items[0].EffectiveFrom != "2026-01" || rules.Items[0].ClosingDayAssignment != "closing" ||
-		rules.Items[1].ClosingDay != 15 || rules.Items[1].DueDateAdjustment != "following" {
+	if len(rules.Items) != 2 || rules.Items[0].EffectiveFrom != "2026-01" ||
+		rules.Items[0].ClosingDayAssignment != "closing" ||
+		rules.Items[1].ClosingDay != 15 ||
+		rules.Items[1].DueDateAdjustment != "following" {
 		t.Fatalf("rules = %+v", rules.Items)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2026-12", "closing_day": 5, "due_day": 12}), http.StatusUnprocessableEntity, "validation_failed", "effective_from")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2027-01", "closing_day": 0, "due_day": 12}), http.StatusBadRequest, "invalid_request", "closing_day")
+	h.ExpectProblem(h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2026-12",
+			"closing_day":    5,
+			"due_day":        12,
+		},
+	), http.StatusUnprocessableEntity, "validation_failed", "effective_from")
+	h.ExpectProblem(h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2027-01",
+			"closing_day":    0,
+			"due_day":        12,
+		},
+	), http.StatusBadRequest, "invalid_request", "closing_day")
 }
 
 func TestCardProfileOnlyForCards(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+checking+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2026-01", "closing_day": 3, "due_day": 10}), http.StatusUnprocessableEntity, "validation_failed", "account_id")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+checking+"/cards",
-		map[string]any{"holder": "Owner", "last_four": "4021"}), http.StatusUnprocessableEntity, "validation_failed", "account_id")
+	h.ExpectProblem(h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+checking+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2026-01",
+			"closing_day":    3,
+			"due_day":        10,
+		},
+	), http.StatusUnprocessableEntity, "validation_failed", "account_id")
+	h.ExpectProblem(h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+checking+"/cards",
+		map[string]any{
+			"holder":    "Owner",
+			"last_four": "4021",
+		},
+	), http.StatusUnprocessableEntity, "validation_failed", "account_id")
 }
 
 func TestCreditLimitAndAvailableLimit(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
-		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(500000)}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/credit-limits",
+		map[string]any{
+			"effective_from": "2026-01-01",
+			"amount":         apitest.BRL(500000),
+		},
+		http.StatusCreated,
+		nil,
+	)
 	// A version from a day that already has one replaces it.
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
-		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(1000000)}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/credit-limits",
+		map[string]any{
+			"effective_from": "2026-01-01",
+			"amount":         apitest.BRL(1000000),
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	var limits struct {
 		Items []struct {
@@ -68,7 +138,8 @@ func TestCreditLimitAndAvailableLimit(t *testing.T) {
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/credit-limits", nil, http.StatusOK, &limits)
 
-	if len(limits.Items) != 1 || limits.Items[0].EffectiveFrom != "2026-01-01" || limits.Items[0].Amount.Amount != 1000000 {
+	if len(limits.Items) != 1 || limits.Items[0].EffectiveFrom != "2026-01-01" ||
+		limits.Items[0].Amount.Amount != 1000000 {
 		t.Fatalf("limits = %+v, want one version of 1000000 from 2026-01-01", limits.Items)
 	}
 
@@ -96,8 +167,16 @@ func TestAccountListCarriesCardLimits(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	h.Account("Nubank", "asset", "checking", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
-		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(1000000)}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/credit-limits",
+		map[string]any{
+			"effective_from": "2026-01-01",
+			"amount":         apitest.BRL(1000000),
+		},
+		http.StatusCreated,
+		nil,
+	)
 	food := h.Account("Food", "expense", "", nil)
 	h.Record("2026-03-02", apitest.Posting(food, 28640), apitest.Posting(card, -28640))
 
@@ -120,7 +199,8 @@ func TestAccountListCarriesCardLimits(t *testing.T) {
 	for _, a := range list.Items {
 		switch a.Name {
 		case "Itaú Visa":
-			if a.Card == nil || a.Card.CreditLimit.Amount != 1000000 || a.Card.AvailableLimit.Amount != 971360 {
+			if a.Card == nil || a.Card.CreditLimit.Amount != 1000000 ||
+				a.Card.AvailableLimit.Amount != 971360 {
 				t.Fatalf("Itaú Visa card = %+v, want limit 1000000 and 971360 free", a.Card)
 			}
 
@@ -141,9 +221,23 @@ func TestCards(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/cards", map[string]any{"holder": "Owner", "last_four": "4021", "virtual": true}, http.StatusCreated, nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/cards", map[string]any{"holder": "Owner", "last_four": "40a1"}),
-		http.StatusBadRequest, "invalid_request", "last_four")
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/cards",
+		map[string]any{"holder": "Owner", "last_four": "4021", "virtual": true},
+		http.StatusCreated,
+		nil,
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/accounts/"+card+"/cards",
+			map[string]any{"holder": "Owner", "last_four": "40a1"},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"last_four",
+	)
 	var cards struct {
 		Items []struct {
 			LastFour string `json:"last_four"`
@@ -153,7 +247,8 @@ func TestCards(t *testing.T) {
 	}
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/cards", nil, http.StatusOK, &cards)
 
-	if len(cards.Items) != 1 || cards.Items[0].LastFour != "4021" || !cards.Items[0].Virtual || !cards.Items[0].Active {
+	if len(cards.Items) != 1 || cards.Items[0].LastFour != "4021" || !cards.Items[0].Virtual ||
+		!cards.Items[0].Active {
 		t.Fatalf("cards = %+v", cards.Items)
 	}
 }
@@ -162,8 +257,16 @@ func TestBillingRuleUnknownCalendarIs422(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	card := h.Account("Itaú Visa", "liability", "credit_card", nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2026-01", "closing_day": 3, "due_day": 10, "calendar": "mars"}), http.StatusUnprocessableEntity, "validation_failed", "calendar")
+	h.ExpectProblem(h.Do(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2026-01",
+			"closing_day":    3,
+			"due_day":        10,
+			"calendar":       "mars",
+		},
+	), http.StatusUnprocessableEntity, "validation_failed", "calendar")
 }
 
 func TestCardActivation(t *testing.T) {
@@ -174,7 +277,13 @@ func TestCardActivation(t *testing.T) {
 		ID     string `json:"id"`
 		Active bool   `json:"active"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+account+"/cards", map[string]any{"holder": "Owner", "last_four": "4021"}, http.StatusCreated, &created)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+account+"/cards",
+		map[string]any{"holder": "Owner", "last_four": "4021"},
+		http.StatusCreated,
+		&created,
+	)
 
 	if !created.Active {
 		t.Fatalf("created card = %+v, want active", created)
@@ -210,15 +319,34 @@ func TestCardActivation(t *testing.T) {
 		t.Fatalf("reactivated card = %+v", card)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{}), http.StatusBadRequest, "invalid_request", "body")
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, path, map[string]any{}),
+		http.StatusBadRequest,
+		"invalid_request",
+		"body",
+	)
 
 	other := h.Login("other@example.com")
-	h.ExpectProblem(h.Call(other, http.MethodPatch, path, map[string]any{"active": false}), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Call(other, http.MethodPatch, path, map[string]any{"active": false}),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 	h.MustDo(http.MethodGet, "/api/v1/accounts/"+account+"/cards", nil, http.StatusOK, &list)
 
 	if len(list.Items) != 1 || !list.Items[0].Active {
 		t.Fatalf("cards after other book's patch = %+v", list.Items)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, "/api/v1/cards/00000000-0000-4000-8000-000000000000", map[string]any{"active": false}), http.StatusNotFound, "not_found", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPatch,
+			"/api/v1/cards/00000000-0000-4000-8000-000000000000",
+			map[string]any{"active": false},
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

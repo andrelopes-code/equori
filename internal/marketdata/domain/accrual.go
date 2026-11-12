@@ -86,7 +86,10 @@ func Accrue(
 
 	percent := ratio(int64(t.PercentOfIndexBP), 10000)
 	dayRoot := spreadRoot(t)
-	scale := new(big.Float).SetPrec(precision).SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(quoteScale)), nil))
+	scale := new(
+		big.Float,
+	).SetPrec(precision).
+		SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(quoteScale)), nil))
 	face := new(big.Float).SetPrec(precision).SetInt64(t.FaceValue)
 	face.Quo(face, scale)
 
@@ -129,7 +132,10 @@ type accrualState struct {
 func (s *accrualState) advanceDaily(t Terms, parsed []parsedRate, percent *big.Float, d time.Time) {
 	for s.next < len(parsed) && !parsed[s.next].date.After(d) {
 		if parsed[s.next].date.After(t.IssuedOn) {
-			s.index.Mul(s.index, newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[s.next].rate, percent)))
+			s.index.Mul(
+				s.index,
+				newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[s.next].rate, percent)),
+			)
 
 			s.businessDays++
 		}
@@ -159,7 +165,11 @@ func parseRates(rates []IndexRate) ([]parsedRate, error) {
 	for i, r := range rates {
 		v, ok := newFloat().SetString(r.Rate)
 		if !ok {
-			return nil, fmt.Errorf("rate of %s: %q is not a decimal", r.Date.Format(time.DateOnly), r.Rate)
+			return nil, fmt.Errorf(
+				"rate of %s: %q is not a decimal",
+				r.Date.Format(time.DateOnly),
+				r.Rate,
+			)
 		}
 
 		out[i] = parsedRate{date: r.Date, rate: v}

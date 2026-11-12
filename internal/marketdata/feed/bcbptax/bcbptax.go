@@ -43,7 +43,20 @@ func (s Source) Codes(ins []feed.Instrument) []money.Currency {
 
 func supports(code money.Currency) bool {
 	switch code {
-	case "ARS", "AUD", "CAD", "CHF", "CLP", "CNY", "COP", "EUR", "GBP", "JPY", "MXN", "PYG", "USD", "UYU":
+	case "ARS",
+		"AUD",
+		"CAD",
+		"CHF",
+		"CLP",
+		"CNY",
+		"COP",
+		"EUR",
+		"GBP",
+		"JPY",
+		"MXN",
+		"PYG",
+		"USD",
+		"UYU":
 		return true
 	}
 
@@ -61,7 +74,11 @@ type ptaxAnswer struct {
 // Fetch returns the closing bulletin (sell rate, in BRL) of each code for each day of
 // [from, to] the BCB published. A code with no data is skipped; a code that fails is
 // skipped and its failure, a feed.ScopeError, is joined into the returned error.
-func (p Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (p Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var out []feed.Quote
 
 	var errs []error
@@ -78,7 +95,11 @@ func (p Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 }
 
 // fetchCode reads [from, to] in windows of ptaxWindowDays; the first failing window ends the code.
-func (p Source) fetchCode(ctx context.Context, code money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (p Source) fetchCode(
+	ctx context.Context,
+	code money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var out []feed.Quote
 
 	for start := from; !start.After(to); {
@@ -99,9 +120,18 @@ func (p Source) fetchCode(ctx context.Context, code money.Currency, from, to tim
 	return out, nil
 }
 
-func (p Source) fetchWindow(ctx context.Context, code money.Currency, from, to time.Time) ([]feed.Quote, error) {
-	url := fmt.Sprintf("%s/ExchangeRatePeriod(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='%s'&@dataInicial='%s'&@dataFinalCotacao='%s'&$format=json",
-		p.baseURL, code, from.Format("01-02-2006"), to.Format("01-02-2006"))
+func (p Source) fetchWindow(
+	ctx context.Context,
+	code money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
+	url := fmt.Sprintf(
+		"%s/ExchangeRatePeriod(moeda=@moeda,dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)?@moeda='%s'&@dataInicial='%s'&@dataFinalCotacao='%s'&$format=json",
+		p.baseURL,
+		code,
+		from.Format("01-02-2006"),
+		to.Format("01-02-2006"),
+	)
 
 	body, err := feed.Get(ctx, p.client, url)
 	if err != nil {

@@ -27,7 +27,10 @@ func TestBuiltScriptsHaveNoCommonJSRequire(t *testing.T) {
 		}
 
 		if strings.Contains(string(body), "typeof require") {
-			t.Errorf("%s contains \"typeof require\": a dependency bundled a CommonJS module that throws in the browser", path.Base(name))
+			t.Errorf(
+				"%s contains \"typeof require\": a dependency bundled a CommonJS module that throws in the browser",
+				path.Base(name),
+			)
 		}
 	}
 }

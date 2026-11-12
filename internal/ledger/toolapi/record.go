@@ -14,25 +14,25 @@ import (
 
 type recordTransactionSplitsItem struct {
 	ToAccountID string `json:"to_account_id" jsonschema:"expense category or account receiving this part"`
-	Amount      string `json:"amount" jsonschema:"positive decimal amount of this part"`
+	Amount      string `json:"amount"        jsonschema:"positive decimal amount of this part"`
 }
 
 type recordTransactionIn struct {
-	Date             tool.Date                     `json:"date" jsonschema:"transaction date"`
-	Description      string                        `json:"description" jsonschema:"short description, such as the merchant or the purpose"`
-	Amount           string                        `json:"amount" jsonschema:"positive decimal amount in the currency of from_account_id, such as 125.90"`
-	FromAccountID    string                        `json:"from_account_id" jsonschema:"account or category the money leaves: a checking, cash or card account for a purchase, an income category for income"`
-	ToAccountID      string                        `json:"to_account_id,omitzero" jsonschema:"account or category the money reaches: an expense category for a purchase, an asset account for income or a transfer; absent when splits is set"`
-	Splits           []recordTransactionSplitsItem `json:"splits,omitzero" jsonschema:"several destinations whose amounts add up to amount"`
-	PayeeID          string                        `json:"payee_id,omitzero" jsonschema:"payee from list_payees_and_tags"`
-	Tags             []string                      `json:"tags,omitzero" jsonschema:"tags of the transaction"`
-	Installments     int                           `json:"installments,omitzero" jsonschema:"number of installments, 2 to 48, for a purchase on a credit card account"`
-	OriginalAmount   string                        `json:"original_amount,omitzero" jsonschema:"for a foreign purchase on a card: positive amount charged in original_currency"`
+	Date             tool.Date                     `json:"date"                       jsonschema:"transaction date"`
+	Description      string                        `json:"description"                jsonschema:"short description, such as the merchant or the purpose"`
+	Amount           string                        `json:"amount"                     jsonschema:"positive decimal amount in the currency of from_account_id, such as 125.90"`
+	FromAccountID    string                        `json:"from_account_id"            jsonschema:"account or category the money leaves: a checking, cash or card account for a purchase, an income category for income"`
+	ToAccountID      string                        `json:"to_account_id,omitzero"     jsonschema:"account or category the money reaches: an expense category for a purchase, an asset account for income or a transfer; absent when splits is set"`
+	Splits           []recordTransactionSplitsItem `json:"splits,omitzero"            jsonschema:"several destinations whose amounts add up to amount"`
+	PayeeID          string                        `json:"payee_id,omitzero"          jsonschema:"payee from list_payees_and_tags"`
+	Tags             []string                      `json:"tags,omitzero"              jsonschema:"tags of the transaction"`
+	Installments     int                           `json:"installments,omitzero"      jsonschema:"number of installments, 2 to 48, for a purchase on a credit card account"`
+	OriginalAmount   string                        `json:"original_amount,omitzero"   jsonschema:"for a foreign purchase on a card: positive amount charged in original_currency"`
 	OriginalCurrency string                        `json:"original_currency,omitzero" jsonschema:"for a foreign purchase on a card: ISO 4217 code of the charged currency"`
-	ExchangeRate     string                        `json:"exchange_rate,omitzero" jsonschema:"for a foreign purchase: decimal rate from original_currency to the card's currency, such as 5.4830"`
-	ToAmount         string                        `json:"to_amount,omitzero" jsonschema:"for an exchange between accounts in two currencies: positive amount received in the currency of to_account_id"`
-	Fee              string                        `json:"fee,omitzero" jsonschema:"for an exchange: positive fee in the base currency"`
-	FeeCategoryID    string                        `json:"fee_category_id,omitzero" jsonschema:"for an exchange: expense category of the fee; the fees account when absent"`
+	ExchangeRate     string                        `json:"exchange_rate,omitzero"     jsonschema:"for a foreign purchase: decimal rate from original_currency to the card's currency, such as 5.4830"`
+	ToAmount         string                        `json:"to_amount,omitzero"         jsonschema:"for an exchange between accounts in two currencies: positive amount received in the currency of to_account_id"`
+	Fee              string                        `json:"fee,omitzero"               jsonschema:"for an exchange: positive fee in the base currency"`
+	FeeCategoryID    string                        `json:"fee_category_id,omitzero"   jsonschema:"for an exchange: expense category of the fee; the fees account when absent"`
 }
 
 type recordTransactionOut struct {
@@ -77,7 +77,10 @@ func previewRecord(
 			return tool.Preview{}, err
 		}
 
-		pv.Changes = append(pv.Changes, tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])})
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "payee", After: tool.TextValue(names[p.payeeID])},
+		)
 	}
 
 	pv.Changes = append(pv.Changes, recordOptionChanges(in, p)...)
@@ -101,7 +104,11 @@ func runRecord(
 		return recordTransactionOut{}, err
 	}
 
-	return recordTransactionOut{TransactionID: t.ID.String(), Date: tool.DateOf(t.Date), Description: t.Description}, nil
+	return recordTransactionOut{
+		TransactionID: t.ID.String(),
+		Date:          tool.DateOf(t.Date),
+		Description:   t.Description,
+	}, nil
 }
 
 func recordMainChanges(in recordTransactionIn, p recordPlan) []tool.Change {
@@ -126,15 +133,28 @@ func recordMainChanges(in recordTransactionIn, p recordPlan) []tool.Change {
 func recordOptionChanges(in recordTransactionIn, p recordPlan) []tool.Change {
 	var changes []tool.Change
 	if len(in.Tags) > 0 {
-		changes = append(changes, tool.Change{Field: "tags", After: tool.TextValue(strings.Join(in.Tags, ", "))})
+		changes = append(
+			changes,
+			tool.Change{Field: "tags", After: tool.TextValue(strings.Join(in.Tags, ", "))},
+		)
 	}
 
 	if in.Installments > 0 {
-		changes = append(changes, tool.Change{Field: "installments", After: tool.TextValue(strconv.Itoa(in.Installments))})
+		changes = append(
+			changes,
+			tool.Change{
+				Field: "installments",
+				After: tool.TextValue(strconv.Itoa(in.Installments)),
+			},
+		)
 	}
 
 	if p.foreign {
-		changes = append(changes, tool.Change{Field: "rate", After: tool.TextValue(p.rate.String())}, tool.Change{Field: "amount", After: tool.MoneyValue(p.original)})
+		changes = append(
+			changes,
+			tool.Change{Field: "rate", After: tool.TextValue(p.rate.String())},
+			tool.Change{Field: "amount", After: tool.MoneyValue(p.original)},
+		)
 	}
 
 	if p.exchange {
@@ -168,8 +188,14 @@ func recordByKind(
 		})
 	case p.exchange:
 		t, err = svc.Exchange(ctx, booksID, app.Exchange{
-			FromAccountID: p.from.ID, ToAccountID: p.dests[0].account.ID, Date: in.Date.Time, Description: in.Description,
-			FromAmount: p.amount, ToAmount: p.toAmount, Fee: p.fee, FeeCategoryID: p.feeID,
+			FromAccountID: p.from.ID,
+			ToAccountID:   p.dests[0].account.ID,
+			Date:          in.Date.Time,
+			Description:   in.Description,
+			FromAmount:    p.amount,
+			ToAmount:      p.toAmount,
+			Fee:           p.fee,
+			FeeCategoryID: p.feeID,
 		})
 	default:
 		postings := []domain.Posting{{AccountID: p.from.ID, Amount: p.amount.Neg()}}
@@ -178,7 +204,12 @@ func recordByKind(
 		}
 
 		t, err = svc.RecordTransaction(ctx, booksID, domain.Transaction{
-			Date: in.Date.Time, Description: in.Description, PayeeID: p.payeeID, Tags: in.Tags, Postings: postings, Origin: domain.OriginManual,
+			Date:        in.Date.Time,
+			Description: in.Description,
+			PayeeID:     p.payeeID,
+			Tags:        in.Tags,
+			Postings:    postings,
+			Origin:      domain.OriginManual,
 		})
 	}
 
@@ -198,8 +229,13 @@ func recordInstallments(
 	}
 
 	t, _, err := svc.InstallmentPurchase(ctx, booksID, app.InstallmentPurchaseInput{
-		CardAccountID: p.from.ID, Date: in.Date.Time, Description: in.Description, PayeeID: p.payeeID, Tags: in.Tags,
-		Splits: splits, Count: in.Installments,
+		CardAccountID: p.from.ID,
+		Date:          in.Date.Time,
+		Description:   in.Description,
+		PayeeID:       p.payeeID,
+		Tags:          in.Tags,
+		Splits:        splits,
+		Count:         in.Installments,
 	})
 
 	return t, err

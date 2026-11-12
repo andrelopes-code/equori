@@ -26,21 +26,36 @@ func TestLoad(t *testing.T) {
 		},
 		{
 			name: "text log format",
-			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_FORMAT": "text"},
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_LOG_FORMAT":   "text",
+			},
 			want: Config{
-				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, LogFormat: "text",
+				DatabaseURL: "postgres://x",
+				HTTPAddr:    ":8080",
+				LogLevel:    slog.LevelInfo,
+				LogFormat:   "text",
 			},
 		},
 		{
 			name: "pretty log format",
-			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_FORMAT": "pretty"},
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_LOG_FORMAT":   "pretty",
+			},
 			want: Config{
-				DatabaseURL: "postgres://x", HTTPAddr: ":8080", LogLevel: slog.LevelInfo, LogFormat: "pretty",
+				DatabaseURL: "postgres://x",
+				HTTPAddr:    ":8080",
+				LogLevel:    slog.LevelInfo,
+				LogFormat:   "pretty",
 			},
 		},
 		{
-			name:    "invalid log format",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_FORMAT": "xml"},
+			name: "invalid log format",
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_LOG_FORMAT":   "xml",
+			},
 			wantErr: true,
 		},
 		{
@@ -59,27 +74,42 @@ func TestLoad(t *testing.T) {
 			},
 		},
 		{
-			name:    "invalid web dev port",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_WEB_DEV_PORT": "vite"},
+			name: "invalid web dev port",
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_WEB_DEV_PORT": "vite",
+			},
 			wantErr: true,
 		},
 		{
-			name:    "web dev port out of range",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_WEB_DEV_PORT": "70000"},
+			name: "web dev port out of range",
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_WEB_DEV_PORT": "70000",
+			},
 			wantErr: true,
 		},
 		{name: "missing database url and data directory", env: map[string]string{}, wantErr: true},
 		{
 			name: "managed with explicit directories",
-			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_POSTGRES_BIN": "/usr/lib/postgresql/18/bin"},
+			env: map[string]string{
+				"EQUORI_DATA_DIR":     "/srv/equori",
+				"EQUORI_POSTGRES_BIN": "/usr/lib/postgresql/18/bin",
+			},
 			want: Config{
-				DataDir: "/srv/equori", BackupDir: filepath.Join("/srv/equori", "backups"), PostgresBin: "/usr/lib/postgresql/18/bin",
-				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
+				DataDir:     "/srv/equori",
+				BackupDir:   filepath.Join("/srv/equori", "backups"),
+				PostgresBin: "/usr/lib/postgresql/18/bin",
+				HTTPAddr:    ":8080",
+				LogLevel:    slog.LevelInfo,
 			},
 		},
 		{
 			name: "managed with a backup directory",
-			env:  map[string]string{"EQUORI_DATA_DIR": "/srv/equori", "EQUORI_BACKUP_DIR": "/mnt/backups"},
+			env: map[string]string{
+				"EQUORI_DATA_DIR":   "/srv/equori",
+				"EQUORI_BACKUP_DIR": "/mnt/backups",
+			},
 			want: Config{
 				DataDir: "/srv/equori", BackupDir: "/mnt/backups",
 				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
@@ -87,25 +117,37 @@ func TestLoad(t *testing.T) {
 		},
 		{
 			name: "copy directory",
-			env:  map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_COPY_DIR": "/copies"},
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_COPY_DIR":     "/copies",
+			},
 			want: Config{
 				DatabaseURL: "postgres://x", CopyDir: "/copies",
 				HTTPAddr: ":8080", LogLevel: slog.LevelInfo,
 			},
 		},
 		{
-			name:    "invalid insecure cookies",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_INSECURE_COOKIES": "maybe"},
+			name: "invalid insecure cookies",
+			env: map[string]string{
+				"EQUORI_DATABASE_URL":     "postgres://x",
+				"EQUORI_INSECURE_COOKIES": "maybe",
+			},
 			wantErr: true,
 		},
 		{
-			name:    "invalid api docs",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_API_DOCS": "maybe"},
+			name: "invalid api docs",
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_API_DOCS":     "maybe",
+			},
 			wantErr: true,
 		},
 		{
-			name:    "invalid log level",
-			env:     map[string]string{"EQUORI_DATABASE_URL": "postgres://x", "EQUORI_LOG_LEVEL": "verbose"},
+			name: "invalid log level",
+			env: map[string]string{
+				"EQUORI_DATABASE_URL": "postgres://x",
+				"EQUORI_LOG_LEVEL":    "verbose",
+			},
 			wantErr: true,
 		},
 	}
@@ -138,8 +180,13 @@ func TestLoadSecretKeys(t *testing.T) {
 		return func(k string) string { return env[k] }
 	}
 
-	got, err := Load(base("EQUORI_SECRET_KEY", current, "EQUORI_SECRET_KEY_PREVIOUS", previous), Families{})
-	if err != nil || len(got.SecretKey) != 32 || got.SecretKey[0] != 1 || len(got.PreviousSecretKey) != 32 || got.PreviousSecretKey[0] != 2 {
+	got, err := Load(
+		base("EQUORI_SECRET_KEY", current, "EQUORI_SECRET_KEY_PREVIOUS", previous),
+		Families{},
+	)
+	if err != nil || len(got.SecretKey) != 32 || got.SecretKey[0] != 1 ||
+		len(got.PreviousSecretKey) != 32 ||
+		got.PreviousSecretKey[0] != 2 {
 		t.Fatalf("keys = %x, %x, %v", got.SecretKey, got.PreviousSecretKey, err)
 	}
 
@@ -253,7 +300,10 @@ func TestS222S223Report(t *testing.T) {
 				env[k] = v
 			}
 
-			_, err := Load(func(k string) string { return env[k] }, Families{Aggregators: []string{"pluggy"}})
+			_, err := Load(
+				func(k string) string { return env[k] },
+				Families{Aggregators: []string{"pluggy"}},
+			)
 			if err == nil {
 				t.Fatal("err = nil")
 			}
@@ -284,16 +334,28 @@ func TestLoadFamilies(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 
-	if want := map[string]string{"pluggy": "http://127.0.0.1:9"}; !reflect.DeepEqual(got.AggregatorURLs, want) {
+	if want := map[string]string{
+		"pluggy": "http://127.0.0.1:9",
+	}; !reflect.DeepEqual(
+		got.AggregatorURLs,
+		want,
+	) {
 		t.Fatalf("AggregatorURLs = %v, want %v", got.AggregatorURLs, want)
 	}
 
-	if want := map[string]string{"bcb_ptax": "https://feed.example"}; !reflect.DeepEqual(got.FeedURLs, want) {
+	if want := map[string]string{
+		"bcb_ptax": "https://feed.example",
+	}; !reflect.DeepEqual(
+		got.FeedURLs,
+		want,
+	) {
 		t.Fatalf("FeedURLs = %v, want %v", got.FeedURLs, want)
 	}
 
-	got, err = Load(func(k string) string { return map[string]string{"EQUORI_DATABASE_URL": "postgres://x"}[k] },
-		Families{Aggregators: []string{"pluggy"}, Feeds: []string{"bcb_ptax"}})
+	got, err = Load(
+		func(k string) string { return map[string]string{"EQUORI_DATABASE_URL": "postgres://x"}[k] },
+		Families{Aggregators: []string{"pluggy"}, Feeds: []string{"bcb_ptax"}},
+	)
 	if err != nil || got.AggregatorURLs != nil || got.FeedURLs != nil {
 		t.Fatalf("without family variables = %+v, %v", got, err)
 	}

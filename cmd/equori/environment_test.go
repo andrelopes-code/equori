@@ -77,7 +77,11 @@ func TestStartWarnings(t *testing.T) {
 			cfg:   external,
 			names: []string{"EQUORI_DATABASE_URL", "EQUORI_LOG_LEVL"},
 			want: []map[string]any{
-				{"level": "WARN", "msg": "environment variable unknown", "variable": "EQUORI_LOG_LEVL"},
+				{
+					"level":    "WARN",
+					"msg":      "environment variable unknown",
+					"variable": "EQUORI_LOG_LEVL",
+				},
 			},
 		},
 		{

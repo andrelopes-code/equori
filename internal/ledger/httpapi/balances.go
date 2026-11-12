@@ -32,7 +32,14 @@ func (s *Server) getAccountBalance(
 	}
 
 	if params.ValueIn != nil {
-		b, c, err := s.svc.ValuedBalance(ctx, auth.MustBooksID(ctx), id, dateOf(params.Date), basis, money.Currency(*params.ValueIn))
+		b, c, err := s.svc.ValuedBalance(
+			ctx,
+			auth.MustBooksID(ctx),
+			id,
+			dateOf(params.Date),
+			basis,
+			money.Currency(*params.ValueIn),
+		)
 		if err != nil {
 			return Balance{}, err
 		}
@@ -40,14 +47,23 @@ func (s *Server) getAccountBalance(
 		value, prices := toMoneyAPI(c.Value), make([]Price, len(c.Prices))
 		for i, p := range c.Prices {
 			prices[i] = Price{
-				Instrument: string(p.Instrument), QuoteInstrument: string(p.Quote), Date: apiDate(p.Date),
-				Value: p.Value.Reduced().String(), Source: p.Source,
+				Instrument: string(
+					p.Instrument,
+				),
+				QuoteInstrument: string(p.Quote),
+				Date:            apiDate(p.Date),
+				Value:           p.Value.Reduced().String(),
+				Source:          p.Source,
 			}
 		}
 
 		return Balance{
-			AccountId: b.AccountID, Date: apiDate(b.Date), Basis: BalanceBasis(b.Basis), Balance: toMoneyAPI(b.Amount),
-			Value: &value, Prices: &prices,
+			AccountId: b.AccountID,
+			Date:      apiDate(b.Date),
+			Basis:     BalanceBasis(b.Basis),
+			Balance:   toMoneyAPI(b.Amount),
+			Value:     &value,
+			Prices:    &prices,
 		}, nil
 	}
 
@@ -57,7 +73,10 @@ func (s *Server) getAccountBalance(
 	}
 
 	return Balance{
-		AccountId: b.AccountID, Date: apiDate(b.Date), Basis: BalanceBasis(b.Basis), Balance: toMoneyAPI(b.Amount),
+		AccountId: b.AccountID,
+		Date:      apiDate(b.Date),
+		Basis:     BalanceBasis(b.Basis),
+		Balance:   toMoneyAPI(b.Amount),
 	}, nil
 }
 
@@ -83,7 +102,12 @@ func (s *Server) listBalances(
 
 	out := BalanceList{Items: make([]Balance, len(balances))}
 	for i, b := range balances {
-		out.Items[i] = Balance{AccountId: b.AccountID, Date: apiDate(b.Date), Basis: BalanceBasis(b.Basis), Balance: toMoneyAPI(b.Amount)}
+		out.Items[i] = Balance{
+			AccountId: b.AccountID,
+			Date:      apiDate(b.Date),
+			Basis:     BalanceBasis(b.Basis),
+			Balance:   toMoneyAPI(b.Amount),
+		}
 	}
 
 	return out, nil

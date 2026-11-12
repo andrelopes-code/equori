@@ -34,7 +34,11 @@ func readFile(body *multipart.Reader) (string, []byte, error) {
 	for {
 		part, err := body.NextPart()
 		if errors.Is(err, io.EOF) {
-			return "", nil, &domain.FieldError{Field: "file", Message: "is required", Err: domain.ErrValidation}
+			return "", nil, &domain.FieldError{
+				Field:   "file",
+				Message: "is required",
+				Err:     domain.ErrValidation,
+			}
 		}
 
 		if err != nil {
@@ -79,7 +83,14 @@ func (s *Server) createAttachment(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	att, err := s.svc.Attach(ctx, auth.MustBooksID(ctx), id, name, http.DetectContentType(content), content)
+	att, err := s.svc.Attach(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		name,
+		http.DetectContentType(content),
+		content,
+	)
 	if err != nil {
 		s.errs.Write(w, r, err)
 
@@ -159,7 +170,8 @@ func (s *Server) getAttachmentContent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	kind, csp := "attachment", "default-src 'none'; frame-ancestors 'none'"
-	if params.Disposition != nil && *params.Disposition == GetAttachmentContentParamsDispositionInline {
+	if params.Disposition != nil &&
+		*params.Disposition == GetAttachmentContentParamsDispositionInline {
 		if !app.Inlineable(c.MediaType) {
 			s.errs.Write(w, r, app.ErrNotInlineable)
 
@@ -176,7 +188,8 @@ func (s *Server) getAttachmentContent(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", strconv.Itoa(len(c.Content)))
 	}
 
-	w.Header().Set("Content-Disposition", mime.FormatMediaType(kind, map[string]string{"filename": c.FileName}))
+	w.Header().
+		Set("Content-Disposition", mime.FormatMediaType(kind, map[string]string{"filename": c.FileName}))
 	w.Header().Set("Content-Security-Policy", csp)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(c.Content)

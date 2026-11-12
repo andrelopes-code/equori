@@ -33,7 +33,8 @@ func TestToolFieldCoverage(t *testing.T) {
 	for _, item := range doc.Paths.Map() {
 		for method, op := range item.Operations() {
 			names, ok := exposure[op.OperationID]
-			if !ok || strings.HasPrefix(names, "-") || method == http.MethodGet || op.RequestBody == nil {
+			if !ok || strings.HasPrefix(names, "-") || method == http.MethodGet ||
+				op.RequestBody == nil {
 				continue
 			}
 
@@ -61,13 +62,21 @@ func TestToolFieldCoverage(t *testing.T) {
 
 		want := uncoveredFields[op]
 		if !slices.Equal(fields, want) {
-			t.Errorf("operation %s: request fields with no tool input = %v; uncoveredFields lists %v", op, fields, want)
+			t.Errorf(
+				"operation %s: request fields with no tool input = %v; uncoveredFields lists %v",
+				op,
+				fields,
+				want,
+			)
 		}
 	}
 
 	for _, op := range slices.Sorted(maps.Keys(uncoveredFields)) {
 		if _, ok := got[op]; !ok {
-			t.Errorf("uncoveredFields lists %s, whose request fields every tool input now reads", op)
+			t.Errorf(
+				"uncoveredFields lists %s, whose request fields every tool input now reads",
+				op,
+			)
 		}
 	}
 }
@@ -113,42 +122,144 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
-	"addBudgetAmount":           {"effective_from"},                                                                                                     // read as month
-	"anticipateInstallments":    {"target_statement"},                                                                                                   // read as statement
-	"cancelInstallmentPlan":     {"credit_statement"},                                                                                                   // read as statement
-	"categorizeTransaction":     {"expected_version", "parts"},                                                                                          // expected_version is the version the preview read; parts: see change_transaction allocations
-	"categorizeTransactions":    {"items"},                                                                                                              // one category for the whole call; a call per category
-	"changeScheduleTerms":       {"effective_from", "recurrence"},                                                                                       // effective_from is read as from; recurrence beyond frequency, interval and day_of_month is not offered
-	"closeAccount":              {"closed_on"},                                                                                                          // read as date
-	"correctTransaction":        {"expected_version", "links", "postings"},                                                                              // expected_version is the version the preview read; postings and links are not offered
-	"createAccount":             {"color", "icon"},                                                                                                      // color and icon are visual (-visual)
-	"createBalanceAssertion":    {"source"},                                                                                                             // the tool records source manual
-	"createBudget":              {"effective_from"},                                                                                                     // read as month
-	"createGoal":                {"target"},                                                                                                             // read as amount
-	"createInstallmentPurchase": {"card_account_id", "first_statement", "installment_amounts", "installment_count", "interest"},                         // card_account_id is from_account_id and installment_count is installments; first_statement, installment_amounts and interest are not offered
-	"createInstitution":         {"code", "identifier"},                                                                                                 // code and identifier are visual (-visual)
-	"createSchedule":            {"calendar", "recurrence"},                                                                                             // calendar is the region default; recurrence beyond frequency, interval and day_of_month is not offered
-	"createTransactionBatch":    {"entries"},                                                                                                            // a call per transaction
-	"createTransaction":         {"links", "postings"},                                                                                                  // postings and links are not offered; from, to and splits cover the common cases
-	"exchangeCurrency":          {"from_amount"},                                                                                                        // read as amount
-	"mapExternalAccount":        {"ignored"},                                                                                                            // read as ignore
-	"mergeAccount":              {"into"},                                                                                                               // read as into_id
-	"mergePayee":                {"into"},                                                                                                               // read as into_id
-	"mergeTag":                  {"into"},                                                                                                               // read as into_tag
-	"openDispute":               {"opened_on"},                                                                                                          // read as date
-	"previewRule":               {"actions", "conditions", "enabled", "name", "stop_processing"},                                                        // explain_categorization previews a description rule only
-	"reconcileStatement":        {"amount_due"},                                                                                                         // read as amount
-	"recordForeignPurchase":     {"account_id", "category_id", "foreign_charge_category_id", "foreign_charge_rate_bp", "original", "rate", "statement"}, // read as original_amount, original_currency, exchange_rate and to_account_id; the foreign charge overrides are not offered
-	"recordPrice":               {"instrument", "quote_instrument", "value"},                                                                            // read as code and price
-	"recordTrade":               {"side"},                                                                                                               // read as kind
-	"reimburseTransaction":      {"expected_version"},                                                                                                   // expected_version is the version the preview read
-	"resolveDispute":            {"resolved_on"},                                                                                                        // read as date
-	"resolveExternalRecords":    {"items"},                                                                                                              // a call per record
-	"saveBudgetPlan":            {"fixed"},                                                                                                              // read as amount
-	"setStatementFacts":         {"total"},                                                                                                              // read as amount
-	"transferTransaction":       {"account_id", "expected_version", "pair_with"},                                                                        // read as to_account_id; pair_with is not offered
-	"unlockAccount":             {"from"},                                                                                                               // read as date
-	"updateCurrentUser":         {"display_name"},                                                                                                       // display_name is not offered; update_profile sets the language
-	"updateGoal":                {"target"},                                                                                                             // read as amount
-	"voidTransactions":          {"items"},                                                                                                              // a call per transaction
+	"addBudgetAmount": {
+		"effective_from",
+	}, // read as month
+	"anticipateInstallments": {
+		"target_statement",
+	}, // read as statement
+	"cancelInstallmentPlan": {
+		"credit_statement",
+	}, // read as statement
+	"categorizeTransaction": {
+		"expected_version",
+		"parts",
+	}, // expected_version is the version the preview read; parts: see change_transaction allocations
+	"categorizeTransactions": {
+		"items",
+	}, // one category for the whole call; a call per category
+	"changeScheduleTerms": {
+		"effective_from",
+		"recurrence",
+	}, // effective_from is read as from; recurrence beyond frequency, interval and day_of_month is not offered
+	"closeAccount": {
+		"closed_on",
+	}, // read as date
+	"correctTransaction": {
+		"expected_version",
+		"links",
+		"postings",
+	}, // expected_version is the version the preview read; postings and links are not offered
+	"createAccount": {
+		"color",
+		"icon",
+	}, // color and icon are visual (-visual)
+	"createBalanceAssertion": {
+		"source",
+	}, // the tool records source manual
+	"createBudget": {
+		"effective_from",
+	}, // read as month
+	"createGoal": {
+		"target",
+	}, // read as amount
+	"createInstallmentPurchase": {
+		"card_account_id",
+		"first_statement",
+		"installment_amounts",
+		"installment_count",
+		"interest",
+	}, // card_account_id is from_account_id and installment_count is installments; first_statement, installment_amounts and interest are not offered
+	"createInstitution": {
+		"code",
+		"identifier",
+	}, // code and identifier are visual (-visual)
+	"createSchedule": {
+		"calendar",
+		"recurrence",
+	}, // calendar is the region default; recurrence beyond frequency, interval and day_of_month is not offered
+	"createTransactionBatch": {
+		"entries",
+	}, // a call per transaction
+	"createTransaction": {
+		"links",
+		"postings",
+	}, // postings and links are not offered; from, to and splits cover the common cases
+	"exchangeCurrency": {
+		"from_amount",
+	}, // read as amount
+	"mapExternalAccount": {
+		"ignored",
+	}, // read as ignore
+	"mergeAccount": {
+		"into",
+	}, // read as into_id
+	"mergePayee": {
+		"into",
+	}, // read as into_id
+	"mergeTag": {
+		"into",
+	}, // read as into_tag
+	"openDispute": {
+		"opened_on",
+	}, // read as date
+	"previewRule": {
+		"actions",
+		"conditions",
+		"enabled",
+		"name",
+		"stop_processing",
+	}, // explain_categorization previews a description rule only
+	"reconcileStatement": {
+		"amount_due",
+	}, // read as amount
+	"recordForeignPurchase": {
+		"account_id",
+		"category_id",
+		"foreign_charge_category_id",
+		"foreign_charge_rate_bp",
+		"original",
+		"rate",
+		"statement",
+	}, // read as original_amount, original_currency, exchange_rate and to_account_id; the foreign charge overrides are not offered
+	"recordPrice": {
+		"instrument",
+		"quote_instrument",
+		"value",
+	}, // read as code and price
+	"recordTrade": {
+		"side",
+	}, // read as kind
+	"reimburseTransaction": {
+		"expected_version",
+	}, // expected_version is the version the preview read
+	"resolveDispute": {
+		"resolved_on",
+	}, // read as date
+	"resolveExternalRecords": {
+		"items",
+	}, // a call per record
+	"saveBudgetPlan": {
+		"fixed",
+	}, // read as amount
+	"setStatementFacts": {
+		"total",
+	}, // read as amount
+	"transferTransaction": {
+		"account_id",
+		"expected_version",
+		"pair_with",
+	}, // read as to_account_id; pair_with is not offered
+	"unlockAccount": {
+		"from",
+	}, // read as date
+	"updateCurrentUser": {
+		"display_name",
+	}, // display_name is not offered; update_profile sets the language
+	"updateGoal": {
+		"target",
+	}, // read as amount
+	"voidTransactions": {
+		"items",
+	}, // a call per transaction
 }

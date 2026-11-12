@@ -23,31 +23,56 @@ func violates(err error, code, constraint string) bool {
 
 func toIntegration(row IngestionIntegration) domain.Integration {
 	return domain.Integration{
-		ID: row.ID, BooksID: row.BooksID, Aggregator: domain.AggregatorID(row.Aggregator), Name: row.Name,
-		SealedCredentials: row.CredentialCiphertext, UpdatedAt: row.UpdatedAt,
+		ID:                row.ID,
+		BooksID:           row.BooksID,
+		Aggregator:        domain.AggregatorID(row.Aggregator),
+		Name:              row.Name,
+		SealedCredentials: row.CredentialCiphertext,
+		UpdatedAt:         row.UpdatedAt,
 	}
 }
 
-func (r *Repository) InsertIntegration(ctx context.Context, i domain.Integration) (domain.Integration, error) {
+func (r *Repository) InsertIntegration(
+	ctx context.Context,
+	i domain.Integration,
+) (domain.Integration, error) {
 	row, err := r.q.InsertIntegration(ctx, InsertIntegrationParams{
-		ID: i.ID, BooksID: i.BooksID, Aggregator: string(i.Aggregator), Name: i.Name, CredentialCiphertext: i.SealedCredentials,
+		ID:                   i.ID,
+		BooksID:              i.BooksID,
+		Aggregator:           string(i.Aggregator),
+		Name:                 i.Name,
+		CredentialCiphertext: i.SealedCredentials,
 	})
 	if violates(err, uniqueViolation, "ingestion_integration_name_key") {
-		return domain.Integration{}, &domain.FieldError{Field: "name", Message: "is already used by another integration"}
+		return domain.Integration{}, &domain.FieldError{
+			Field:   "name",
+			Message: "is already used by another integration",
+		}
 	}
 
 	return toIntegration(row), err
 }
 
-func (r *Repository) Integration(ctx context.Context, booksID int64, id uuid.UUID) (domain.Integration, error) {
+func (r *Repository) Integration(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Integration, error) {
 	row, err := r.q.GetIntegration(ctx, GetIntegrationParams{BooksID: booksID, ID: id})
 	return toIntegration(row), notFound(err)
 }
 
-func (r *Repository) ListIntegrations(ctx context.Context, booksID int64, p page.Request[app.NameKey]) ([]domain.Integration, *app.NameKey, error) {
+func (r *Repository) ListIntegrations(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[app.NameKey],
+) ([]domain.Integration, *app.NameKey, error) {
 	limit, name, id := namePage(p)
 
-	rows, err := r.q.ListIntegrations(ctx, ListIntegrationsParams{BooksID: booksID, RowLimit: limit, AfterName: name, AfterID: id})
+	rows, err := r.q.ListIntegrations(
+		ctx,
+		ListIntegrationsParams{BooksID: booksID, RowLimit: limit, AfterName: name, AfterID: id},
+	)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -59,7 +84,10 @@ func (r *Repository) ListIntegrations(ctx context.Context, booksID int64, p page
 	return out, next, nil
 }
 
-func (r *Repository) StoredCredentials(ctx context.Context, booksID int64) ([]domain.Integration, error) {
+func (r *Repository) StoredCredentials(
+	ctx context.Context,
+	booksID int64,
+) ([]domain.Integration, error) {
 	rows, err := r.q.ListStoredCredentials(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -83,8 +111,16 @@ func namePage(p page.Request[app.NameKey]) (int32, *string, uuid.NullUUID) {
 	return limit, &p.After.Name, uuid.NullUUID{UUID: p.After.ID, Valid: true}
 }
 
-func (r *Repository) UpdateCredentials(ctx context.Context, booksID int64, id uuid.UUID, sealed []byte) (domain.Integration, error) {
-	row, err := r.q.UpdateCredentials(ctx, UpdateCredentialsParams{BooksID: booksID, ID: id, CredentialCiphertext: sealed})
+func (r *Repository) UpdateCredentials(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	sealed []byte,
+) (domain.Integration, error) {
+	row, err := r.q.UpdateCredentials(
+		ctx,
+		UpdateCredentialsParams{BooksID: booksID, ID: id, CredentialCiphertext: sealed},
+	)
 	return toIntegration(row), notFound(err)
 }
 
@@ -102,7 +138,10 @@ func (r *Repository) DeleteIntegration(ctx context.Context, booksID int64, id uu
 	return nil
 }
 
-func (r *Repository) ResealCredentials(ctx context.Context, reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error)) (int, error) {
+func (r *Repository) ResealCredentials(
+	ctx context.Context,
+	reseal func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error),
+) (int, error) {
 	changed := 0
 
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
@@ -123,7 +162,14 @@ func (r *Repository) ResealCredentials(ctx context.Context, reseal func(booksID 
 				continue
 			}
 
-			if err := q.ResealCredentials(ctx, ResealCredentialsParams{BooksID: row.BooksID, ID: row.ID, CredentialCiphertext: sealed}); err != nil {
+			if err := q.ResealCredentials(
+				ctx,
+				ResealCredentialsParams{
+					BooksID:              row.BooksID,
+					ID:                   row.ID,
+					CredentialCiphertext: sealed,
+				},
+			); err != nil {
 				return err
 			}
 

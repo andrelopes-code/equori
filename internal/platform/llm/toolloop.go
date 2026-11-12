@@ -277,7 +277,11 @@ func runSequential(
 	return nil
 }
 
-func runTool(ctx context.Context, handlers map[string]ToolHandler, call ToolCall) (ToolResult, error) {
+func runTool(
+	ctx context.Context,
+	handlers map[string]ToolHandler,
+	call ToolCall,
+) (ToolResult, error) {
 	result := ToolResult{CallID: call.ID, Name: call.Name}
 
 	h, ok := handlers[call.Name]

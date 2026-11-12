@@ -23,7 +23,11 @@ type Budget struct {
 }
 
 // MonthOf returns the first day of the month of d.
-func MonthOf(d time.Time) time.Time { return time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC) }
+func MonthOf(
+	d time.Time,
+) time.Time {
+	return time.Date(d.Year(), d.Month(), 1, 0, 0, 0, 0, time.UTC)
+}
 
 // planned returns the amount in force in month; ok is false before the first amount.
 func (b Budget) planned(month time.Time) (int64, bool) {
@@ -49,7 +53,10 @@ type Progress struct {
 // Progress walks the months from the first amount to month: available = planned + carried −
 // spent, and carried is the previous month's available when Rollover is set. spent returns the
 // spending of a month; ok is false when month precedes the first amount.
-func (b Budget) Progress(month time.Time, spent func(month time.Time) (int64, error)) (Progress, bool, error) {
+func (b Budget) Progress(
+	month time.Time,
+	spent func(month time.Time) (int64, error),
+) (Progress, bool, error) {
 	month = MonthOf(month)
 	if _, ok := b.planned(month); !ok {
 		return Progress{}, false, nil
@@ -66,7 +73,13 @@ func (b Budget) Progress(month time.Time, spent func(month time.Time) (int64, er
 			return Progress{}, true, err
 		}
 
-		p = Progress{Month: m, Planned: planned, Carried: carried, Spent: s, Available: planned + carried - s}
+		p = Progress{
+			Month:     m,
+			Planned:   planned,
+			Carried:   carried,
+			Spent:     s,
+			Available: planned + carried - s,
+		}
 
 		carried = 0
 		if b.Rollover {

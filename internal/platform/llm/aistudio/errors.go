@@ -39,7 +39,10 @@ func statusError(model string, status int, body []byte) error {
 		return fmt.Errorf("%s: %w", prefix, llm.ErrInvalidRequest)
 	case http.StatusUnauthorized, http.StatusForbidden:
 		return fmt.Errorf("%s: %w", prefix, llm.ErrUnauthorized)
-	case http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+	case http.StatusInternalServerError,
+		http.StatusBadGateway,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout:
 		return fmt.Errorf("%s: %w", prefix, llm.ErrTransient)
 	default:
 		return fmt.Errorf("%s", prefix)

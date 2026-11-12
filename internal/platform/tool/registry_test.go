@@ -51,7 +51,11 @@ func newTestRegistry(t *testing.T) (*Registry, *bytes.Buffer) {
 		func(ctx context.Context, _ int64, in failIn) (echoOut, error) {
 			switch in.Kind {
 			case "tool":
-				return echoOut{}, &Error{Code: "invalid_arguments", Detail: "d", Errors: []FieldError{{Field: "account_id", Message: "is not a UUID"}}}
+				return echoOut{}, &Error{
+					Code:   "invalid_arguments",
+					Detail: "d",
+					Errors: []FieldError{{Field: "account_id", Message: "is not a UUID"}},
+				}
 			case "mapped":
 				return echoOut{}, errNotFound
 			case "canceled":
@@ -60,8 +64,10 @@ func newTestRegistry(t *testing.T) (*Registry, *bytes.Buffer) {
 
 			return echoOut{}, errors.New("pq: secret")
 		})
-	optional := New(Spec{Name: "optional", Description: "Echo an optional text.", Effect: ReadOnly},
-		func(_ context.Context, _ int64, in optionalIn) (echoOut, error) { return echoOut(in), nil })
+	optional := New(
+		Spec{Name: "optional", Description: "Echo an optional text.", Effect: ReadOnly},
+		func(_ context.Context, _ int64, in optionalIn) (echoOut, error) { return echoOut(in), nil },
+	)
 	logs := &bytes.Buffer{}
 
 	r, err := NewRegistry(slog.New(slog.NewTextHandler(logs, nil)),
@@ -106,7 +112,11 @@ func TestRegistry(t *testing.T) {
 		echo := New(Spec{Name: "echo", Description: "d", Effect: ReadOnly},
 			func(context.Context, int64, echoIn) (echoOut, error) { return echoOut{}, nil })
 
-		_, err := NewRegistry(slog.Default(), Group{Tools: []Tool{echo}}, Group{Tools: []Tool{echo}})
+		_, err := NewRegistry(
+			slog.Default(),
+			Group{Tools: []Tool{echo}},
+			Group{Tools: []Tool{echo}},
+		)
 		if err == nil || !strings.Contains(err.Error(), "duplicate tool echo") {
 			t.Errorf("err = %v", err)
 		}
@@ -137,7 +147,14 @@ func TestRegistry(t *testing.T) {
 	})
 	t.Run("no user", func(t *testing.T) {
 		r, _ := newTestRegistry(t)
-		if _, err := r.Call(t.Context(), "echo", []byte(`{"text":"hi"}`)); !errors.Is(err, ErrNoBooks) {
+		if _, err := r.Call(
+			t.Context(),
+			"echo",
+			[]byte(`{"text":"hi"}`),
+		); !errors.Is(
+			err,
+			ErrNoBooks,
+		) {
 			t.Errorf("err = %v", err)
 		}
 	})
@@ -222,11 +239,13 @@ func TestRegistry(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if want := `{"code":"not_found","detail":"resource not found"}`; !res.IsError || string(res.Content) != want {
+		if want := `{"code":"not_found","detail":"resource not found"}`; !res.IsError ||
+			string(res.Content) != want {
 			t.Errorf("result = %s, want %s", res.Content, want)
 		}
 
-		if !strings.Contains(logs.String(), "outcome=not_found") || !strings.Contains(logs.String(), "effect=write") {
+		if !strings.Contains(logs.String(), "outcome=not_found") ||
+			!strings.Contains(logs.String(), "effect=write") {
 			t.Errorf("logs = %s", logs)
 		}
 	})
@@ -253,7 +272,14 @@ func TestRegistry(t *testing.T) {
 		ctx, cancel := context.WithCancel(userCtx(t))
 		cancel()
 
-		if _, err := r.Call(ctx, "fail", []byte(`{"kind":"canceled"}`)); !errors.Is(err, context.Canceled) {
+		if _, err := r.Call(
+			ctx,
+			"fail",
+			[]byte(`{"kind":"canceled"}`),
+		); !errors.Is(
+			err,
+			context.Canceled,
+		) {
 			t.Errorf("err = %v", err)
 		}
 	})
@@ -276,11 +302,23 @@ func TestRegistry(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if _, err := s.Call(userCtx(t), "fail", []byte(`{"kind":"tool"}`)); !errors.Is(err, ErrUnknownTool) {
+		if _, err := s.Call(
+			userCtx(t),
+			"fail",
+			[]byte(`{"kind":"tool"}`),
+		); !errors.Is(
+			err,
+			ErrUnknownTool,
+		) {
 			t.Errorf("err = %v", err)
 		}
 
-		if res, err := s.Call(userCtx(t), "echo", []byte(`{"text":"hi"}`)); err != nil || string(res.Content) != `{"text":"hi"}` {
+		if res, err := s.Call(
+			userCtx(t),
+			"echo",
+			[]byte(`{"text":"hi"}`),
+		); err != nil ||
+			string(res.Content) != `{"text":"hi"}` {
 			t.Errorf("result = %+v, %v", res, err)
 		}
 
@@ -298,11 +336,16 @@ func TestFromProblem(t *testing.T) {
 	m := FromProblem(func(error) (problem.Details, bool) { return d, true })
 
 	got, ok := m(errNotFound)
-	if !ok || got.Code != "not_found" || got.Detail != "x" || len(got.Errors) != 1 || got.Errors[0] != (FieldError{Field: "id", Message: "unknown"}) {
+	if !ok || got.Code != "not_found" || got.Detail != "x" || len(got.Errors) != 1 ||
+		got.Errors[0] != (FieldError{Field: "id", Message: "unknown"}) {
 		t.Errorf("FromProblem = %+v, %v", got, ok)
 	}
 
-	if _, ok := FromProblem(func(error) (problem.Details, bool) { return problem.Details{}, false })(errNotFound); ok {
+	if _, ok := FromProblem(
+		func(error) (problem.Details, bool) { return problem.Details{}, false },
+	)(
+		errNotFound,
+	); ok {
 		t.Error("unmapped error reported as mapped")
 	}
 }
@@ -352,11 +395,21 @@ func TestSetValidate(t *testing.T) {
 func TestRegistryBookRole(t *testing.T) {
 	t.Parallel()
 
-	gated := New(Spec{Name: "gated", Description: "Needs an owner.", Effect: Write, Role: auth.RoleOwner},
-		func(_ context.Context, _ int64, _ failIn) (echoOut, error) { return echoOut{Text: "ran"}, nil })
+	gated := New(
+		Spec{Name: "gated", Description: "Needs an owner.", Effect: Write, Role: auth.RoleOwner},
+		func(_ context.Context, _ int64, _ failIn) (echoOut, error) { return echoOut{Text: "ran"}, nil },
+	)
 	preview := func(_ context.Context, _ int64, _ failIn) (Preview, error) { return Preview{Action: "gated"}, nil }
-	withPreview := NewWrite(Spec{Name: "gated_preview", Description: "Needs an owner.", Effect: Write, Role: auth.RoleOwner}, preview,
-		func(_ context.Context, _ int64, _ failIn) (echoOut, error) { return echoOut{Text: "ran"}, nil })
+	withPreview := NewWrite(
+		Spec{
+			Name:        "gated_preview",
+			Description: "Needs an owner.",
+			Effect:      Write,
+			Role:        auth.RoleOwner,
+		},
+		preview,
+		func(_ context.Context, _ int64, _ failIn) (echoOut, error) { return echoOut{Text: "ran"}, nil },
+	)
 
 	r, err := NewRegistry(slog.New(slog.DiscardHandler), Group{Tools: []Tool{gated, withPreview}})
 	if err != nil {

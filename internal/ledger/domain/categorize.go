@@ -63,7 +63,10 @@ type Categorization struct {
 
 // Categorize returns the next version of t. Balance-sheet postings keep their ids and
 // status, so a reconciled posting does not block it; category postings are never reconciled.
-func (t Transaction) Categorize(c Categorization, accounts map[uuid.UUID]Account) (Transaction, error) {
+func (t Transaction) Categorize(
+	c Categorization,
+	accounts map[uuid.UUID]Account,
+) (Transaction, error) {
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}
@@ -117,7 +120,11 @@ func (t Transaction) ReassignCategory(from uuid.UUID, into Account) (Transaction
 	}
 
 	if !into.IsOpenOn(t.Date) {
-		return Transaction{}, &FieldError{Field: "into", Message: "account is not open on " + t.Date.Format(time.DateOnly), Err: ErrAccountClosed}
+		return Transaction{}, &FieldError{
+			Field:   "into",
+			Message: "account is not open on " + t.Date.Format(time.DateOnly),
+			Err:     ErrAccountClosed,
+		}
 	}
 
 	postings := make([]Posting, len(t.Postings))
@@ -135,7 +142,12 @@ func (t Transaction) ReassignCategory(from uuid.UUID, into Account) (Transaction
 	return t, nil
 }
 
-func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, accounts map[uuid.UUID]Account) ([]Posting, error) {
+func categoryPostings(
+	t Transaction,
+	replaced []Posting,
+	parts []CategoryPart,
+	accounts map[uuid.UUID]Account,
+) ([]Posting, error) {
 	if len(parts) == 0 || len(parts) > maxCategoryParts {
 		return nil, invalid("parts", fmt.Sprintf("must have 1 to %d parts", maxCategoryParts))
 	}
@@ -145,7 +157,10 @@ func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, a
 	var total int64
 	for _, p := range replaced {
 		if p.Amount.Currency() != instrument || p.Weight != p.Amount {
-			return nil, invalid("parts", "category postings in several currencies cannot be categorized")
+			return nil, invalid(
+				"parts",
+				"category postings in several currencies cannot be categorized",
+			)
 		}
 
 		total += p.Amount.Amount()
@@ -160,11 +175,19 @@ func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, a
 		a, ok := accounts[part.AccountID]
 		switch {
 		case !ok || a.BooksID != t.BooksID:
-			return nil, &FieldError{Field: field("account_id"), Message: "unknown account", Err: ErrUnknownAccount}
+			return nil, &FieldError{
+				Field:   field("account_id"),
+				Message: "unknown account",
+				Err:     ErrUnknownAccount,
+			}
 		case !a.IsCategory():
 			return nil, invalid(field("account_id"), "must be an income or expense account")
 		case !a.IsOpenOn(t.Date):
-			return nil, &FieldError{Field: field("account_id"), Message: "account is not open on the transaction date", Err: ErrAccountClosed}
+			return nil, &FieldError{
+				Field:   field("account_id"),
+				Message: "account is not open on the transaction date",
+				Err:     ErrAccountClosed,
+			}
 		case a.Instrument != instrument || part.Amount.Currency() != instrument:
 			return nil, invalid(field("amount"), "must be in the currency "+string(instrument))
 		case part.Amount.IsZero():
@@ -172,7 +195,12 @@ func categoryPostings(t Transaction, replaced []Posting, parts []CategoryPart, a
 		}
 
 		sum += part.Amount.Amount()
-		out[i] = Posting{AccountID: a.ID, Amount: part.Amount, Weight: part.Amount, Status: defaultPostStatus}
+		out[i] = Posting{
+			AccountID: a.ID,
+			Amount:    part.Amount,
+			Weight:    part.Amount,
+			Status:    defaultPostStatus,
+		}
 	}
 
 	if sum != total {

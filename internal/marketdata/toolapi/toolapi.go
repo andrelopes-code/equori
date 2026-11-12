@@ -21,7 +21,11 @@ type Service interface {
 	) (domain.Instrument, error)
 	DeleteInstrument(ctx context.Context, code string) error
 	RecordPrices(ctx context.Context, ps []domain.Price) error
-	ListPrices(ctx context.Context, instrument, quote money.Currency, from, to time.Time) ([]domain.Price, error)
+	ListPrices(
+		ctx context.Context,
+		instrument, quote money.Currency,
+		from, to time.Time,
+	) ([]domain.Price, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
 	BusinessDayIndexes() domain.BusinessDayIndexes

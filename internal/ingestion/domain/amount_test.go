@@ -31,7 +31,15 @@ func TestMinorUnits(t *testing.T) {
 
 		got, err := MinorUnits(tc.in, tc.decimal, group, 2)
 		if (err == nil) != tc.ok || got != tc.want {
-			t.Errorf("MinorUnits(%q, %q) = %d, %v; want %d, ok %v", tc.in, tc.decimal, got, err, tc.want, tc.ok)
+			t.Errorf(
+				"MinorUnits(%q, %q) = %d, %v; want %d, ok %v",
+				tc.in,
+				tc.decimal,
+				got,
+				err,
+				tc.want,
+				tc.ok,
+			)
 		}
 	}
 }

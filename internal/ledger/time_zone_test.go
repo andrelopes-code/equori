@@ -17,8 +17,11 @@ func TestS188TodayInBooksTimeZone(t *testing.T) {
 	}))
 	tokyo := h.Login("tokyo@example.com")
 
-	_, err := h.Pool.Exec(t.Context(), `UPDATE identity_books SET time_zone = 'Asia/Tokyo' WHERE id = $1`,
-		h.BooksIDOf("tokyo@example.com"))
+	_, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE identity_books SET time_zone = 'Asia/Tokyo' WHERE id = $1`,
+		h.BooksIDOf("tokyo@example.com"),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,7 +31,11 @@ func TestS188TodayInBooksTimeZone(t *testing.T) {
 		client     *http.Client
 		wantStatus int
 	}{
-		{name: "region BR without time zone, today 2026-10-30", client: h.Client, wantStatus: http.StatusUnprocessableEntity},
+		{
+			name:       "region BR without time zone, today 2026-10-30",
+			client:     h.Client,
+			wantStatus: http.StatusUnprocessableEntity,
+		},
 		{name: "Asia/Tokyo, today 2026-10-31", client: tokyo, wantStatus: http.StatusCreated},
 	}
 
@@ -46,8 +53,12 @@ func TestS188TodayInBooksTimeZone(t *testing.T) {
 			}
 			account.Decode(t, &created)
 
-			r := h.Call(tt.client, http.MethodPost, "/api/v1/accounts/"+created.ID+"/balance-assertions",
-				map[string]any{"date": "2026-10-31", "amount": apitest.BRL(0)})
+			r := h.Call(
+				tt.client,
+				http.MethodPost,
+				"/api/v1/accounts/"+created.ID+"/balance-assertions",
+				map[string]any{"date": "2026-10-31", "amount": apitest.BRL(0)},
+			)
 			if r.Status != tt.wantStatus {
 				t.Fatalf("status = %d, want %d", r.Status, tt.wantStatus)
 			}

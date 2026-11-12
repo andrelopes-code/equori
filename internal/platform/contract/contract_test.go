@@ -70,7 +70,10 @@ components:
 
 const itemID = "01a140de-2df9-729e-9a70-f46e7ad59fcb"
 
-func serve(t *testing.T, method, path, contentType, body string) (*httptest.ResponseRecorder, string) {
+func serve(
+	t *testing.T,
+	method, path, contentType, body string,
+) (*httptest.ResponseRecorder, string) {
 	t.Helper()
 
 	v, err := New([]byte(spec), "/api/v1")
@@ -122,19 +125,143 @@ func TestValidatorRejectsContractViolations(t *testing.T) {
 		code                                  string
 		fields                                []string
 	}{
-		{"unknown member", "POST", "/api/v1/items", "application/json", `{"name":"x","lines":[],"colour":"red"}`, 400, "invalid_request", []string{"colour"}},
-		{"unknown nested member", "POST", "/api/v1/items", "application/json", `{"name":"x","lines":[{"amount":1,"memo":"m"}]}`, 400, "invalid_request", []string{"lines[0].memo"}},
-		{"missing required", "POST", "/api/v1/items", "application/json", `{"lines":[]}`, 400, "invalid_request", []string{"name"}},
-		{"wrong type", "POST", "/api/v1/items", "application/json", `{"name":"x","lines":[{"amount":"1"}]}`, 400, "invalid_request", []string{"lines[0].amount"}},
-		{"every violation", "POST", "/api/v1/items", "application/json", `{"name":"","kind":"c","lines":[{},{},{}]}`, 400, "invalid_request", []string{"kind", "lines", "lines[0].amount", "lines[1].amount", "lines[2].amount", "name"}},
-		{"empty body", "POST", "/api/v1/items", "application/json", ``, 400, "invalid_request", []string{"body"}},
-		{"trailing value", "POST", "/api/v1/items", "application/json", `{"name":"x","lines":[]} {}`, 400, "invalid_request", []string{"body"}},
-		{"malformed json", "POST", "/api/v1/items", "application/json", `{"name":`, 400, "invalid_request", []string{"body"}},
-		{"wrong media type", "POST", "/api/v1/items", "text/plain", `{"name":"x","lines":[]}`, 415, "unsupported_media_type", []string{}},
-		{"invalid uuid", "GET", "/api/v1/items/not-a-uuid", "", "", 400, "invalid_request", []string{"id"}},
-		{"invalid date", "GET", "/api/v1/items?from=2026-13-01", "", "", 400, "invalid_request", []string{"from"}},
-		{"limit out of range", "GET", "/api/v1/items?limit=0", "", "", 400, "invalid_request", []string{"limit"}},
-		{"multipart with json media type", "POST", "/api/v1/items/" + itemID + "/files", "application/json", `{}`, 415, "unsupported_media_type", []string{}},
+		{
+			"unknown member",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"name":"x","lines":[],"colour":"red"}`,
+			400,
+			"invalid_request",
+			[]string{"colour"},
+		},
+		{
+			"unknown nested member",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"name":"x","lines":[{"amount":1,"memo":"m"}]}`,
+			400,
+			"invalid_request",
+			[]string{"lines[0].memo"},
+		},
+		{
+			"missing required",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"lines":[]}`,
+			400,
+			"invalid_request",
+			[]string{"name"},
+		},
+		{
+			"wrong type",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"name":"x","lines":[{"amount":"1"}]}`,
+			400,
+			"invalid_request",
+			[]string{"lines[0].amount"},
+		},
+		{
+			"every violation",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"name":"","kind":"c","lines":[{},{},{}]}`,
+			400,
+			"invalid_request",
+			[]string{
+				"kind",
+				"lines",
+				"lines[0].amount",
+				"lines[1].amount",
+				"lines[2].amount",
+				"name",
+			},
+		},
+		{
+			"empty body",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			``,
+			400,
+			"invalid_request",
+			[]string{"body"},
+		},
+		{
+			"trailing value",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"name":"x","lines":[]} {}`,
+			400,
+			"invalid_request",
+			[]string{"body"},
+		},
+		{
+			"malformed json",
+			"POST",
+			"/api/v1/items",
+			"application/json",
+			`{"name":`,
+			400,
+			"invalid_request",
+			[]string{"body"},
+		},
+		{
+			"wrong media type",
+			"POST",
+			"/api/v1/items",
+			"text/plain",
+			`{"name":"x","lines":[]}`,
+			415,
+			"unsupported_media_type",
+			[]string{},
+		},
+		{
+			"invalid uuid",
+			"GET",
+			"/api/v1/items/not-a-uuid",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"id"},
+		},
+		{
+			"invalid date",
+			"GET",
+			"/api/v1/items?from=2026-13-01",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"from"},
+		},
+		{
+			"limit out of range",
+			"GET",
+			"/api/v1/items?limit=0",
+			"",
+			"",
+			400,
+			"invalid_request",
+			[]string{"limit"},
+		},
+		{
+			"multipart with json media type",
+			"POST",
+			"/api/v1/items/" + itemID + "/files",
+			"application/json",
+			`{}`,
+			415,
+			"unsupported_media_type",
+			[]string{},
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -143,7 +270,8 @@ func TestValidatorRejectsContractViolations(t *testing.T) {
 				t.Fatal("the handler ran for an invalid request")
 			}
 
-			if rec.Code != tc.status || rec.Header().Get("Content-Type") != problem.ContentType || !strings.Contains(rec.Body.String(), `"code":"`+tc.code+`"`) {
+			if rec.Code != tc.status || rec.Header().Get("Content-Type") != problem.ContentType ||
+				!strings.Contains(rec.Body.String(), `"code":"`+tc.code+`"`) {
 				t.Fatalf("status %d: %s", rec.Code, rec.Body)
 			}
 
@@ -158,10 +286,22 @@ func TestValidatorPassesConformingRequests(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct{ name, method, path, contentType, body string }{
-		{"json body reaches the handler intact", "POST", "/api/v1/items", "application/json; charset=utf-8", `{"name":"x","kind":"a","lines":[{"amount":-1}]}`},
+		{
+			"json body reaches the handler intact",
+			"POST",
+			"/api/v1/items",
+			"application/json; charset=utf-8",
+			`{"name":"x","kind":"a","lines":[{"amount":-1}]}`,
+		},
 		{"uuid v7 path", "GET", "/api/v1/items/" + itemID, "", ""},
 		{"query", "GET", "/api/v1/items?limit=200&from=2026-02-28", "", ""},
-		{"multipart body is not read", "POST", "/api/v1/items/" + itemID + "/files", "multipart/form-data; boundary=x", "--x--"},
+		{
+			"multipart body is not read",
+			"POST",
+			"/api/v1/items/" + itemID + "/files",
+			"multipart/form-data; boundary=x",
+			"--x--",
+		},
 		{"unknown api path is left to the router", "GET", "/api/v1/nope", "", ""},
 		{"non-api path", "GET", "/healthz", "", ""},
 	}
@@ -179,7 +319,8 @@ func TestValidatorAnswersWrongMethod(t *testing.T) {
 	t.Parallel()
 
 	rec, reached := serve(t, "DELETE", "/api/v1/items", "", "")
-	if reached != "" || rec.Code != http.StatusMethodNotAllowed || !strings.Contains(rec.Body.String(), `"code":"method_not_allowed"`) {
+	if reached != "" || rec.Code != http.StatusMethodNotAllowed ||
+		!strings.Contains(rec.Body.String(), `"code":"method_not_allowed"`) {
 		t.Fatalf("status %d: %s", rec.Code, rec.Body)
 	}
 
@@ -221,7 +362,12 @@ func TestValidatorDoesNotReadUploads(t *testing.T) {
 			t.Errorf("handler body = %q", b)
 		}
 	})
-	req := httptest.NewRequestWithContext(t.Context(), "POST", "/api/v1/items/"+itemID+"/files", nil)
+	req := httptest.NewRequestWithContext(
+		t.Context(),
+		"POST",
+		"/api/v1/items/"+itemID+"/files",
+		nil,
+	)
 	req.Body = untouched{t: t, handler: &inHandler, r: strings.NewReader("--x--")}
 	req.Header.Set("Content-Type", "multipart/form-data; boundary=x")
 	v.Middleware(next).ServeHTTP(httptest.NewRecorder(), req)
@@ -271,7 +417,13 @@ func TestExtension(t *testing.T) {
 
 			value, matched := v.Extension(req, "x-book-role")
 			if value != tt.value || matched != tt.matched {
-				t.Fatalf("Extension = (%q, %t), want (%q, %t)", value, matched, tt.value, tt.matched)
+				t.Fatalf(
+					"Extension = (%q, %t), want (%q, %t)",
+					value,
+					matched,
+					tt.value,
+					tt.matched,
+				)
 			}
 		})
 	}

@@ -57,8 +57,19 @@ func TestReadAmount(t *testing.T) {
 			}
 
 			minor, _ := p.value.minor(2)
-			if minor != c.minor || p.explicit != c.explicit || p.sign != c.sign || p.words != c.words {
-				t.Fatalf("got %d explicit %v sign %d words %d, want %d %v %d %d", minor, p.explicit, p.sign, p.words, c.minor, c.explicit, c.sign, c.words)
+			if minor != c.minor || p.explicit != c.explicit || p.sign != c.sign ||
+				p.words != c.words {
+				t.Fatalf(
+					"got %d explicit %v sign %d words %d, want %d %v %d %d",
+					minor,
+					p.explicit,
+					p.sign,
+					p.words,
+					c.minor,
+					c.explicit,
+					c.sign,
+					c.words,
+				)
 			}
 		})
 	}

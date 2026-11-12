@@ -58,7 +58,11 @@ func (Source) Codes(ins []feed.Instrument) []money.Currency {
 // latest year-file record (D14). A day without a file is skipped. A file not yet final ends the run without a failure, so the next
 // tick fetches its day again. The first failing day ends the run: its failure, a
 // feed.ScopeError, is returned with the quotes of the earlier days.
-func (c Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (c Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	want := make(map[string]bool, len(codes))
 	for _, code := range codes {
 		want[string(code)] = true
@@ -114,9 +118,17 @@ func (c Source) Search(_ context.Context, query string, limit int) ([]feed.Listi
 
 // fetchDay downloads the file of day in two steps: a request by name returns a token, the token
 // returns the file.
-func (c Source) fetchDay(ctx context.Context, day time.Time, want map[string]bool) ([]feed.Quote, error) {
+func (c Source) fetchDay(
+	ctx context.Context,
+	day time.Time,
+	want map[string]bool,
+) ([]feed.Quote, error) {
 	date := day.Format(time.DateOnly)
-	body, err := feed.Get(ctx, c.client, c.baseURL+"/api/download/requestname?fileName="+fileName+"&date="+date+"&recaptchaToken=")
+	body, err := feed.Get(
+		ctx,
+		c.client,
+		c.baseURL+"/api/download/requestname?fileName="+fileName+"&date="+date+"&recaptchaToken=",
+	)
 	// The B3 answers 400 for a day without a file: a weekend, a holiday or a day not yet
 	// published. A renamed file answers 400 too; the feed then turns stale (ADR 025 F9).
 	var status *feed.StatusError
@@ -139,7 +151,11 @@ func (c Source) fetchDay(ctx context.Context, day time.Time, want map[string]boo
 		return nil, errors.New("read the download token: empty")
 	}
 
-	body, err = feed.Get(ctx, c.client, c.baseURL+"/api/download/?token="+url.QueryEscape(ticket.Token))
+	body, err = feed.Get(
+		ctx,
+		c.client,
+		c.baseURL+"/api/download/?token="+url.QueryEscape(ticket.Token),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("download the file: %w", err)
 	}

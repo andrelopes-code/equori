@@ -33,7 +33,17 @@ func TestForeignChargeDefaults(t *testing.T) {
 	newCard := func(c *http.Client, currency string, extra map[string]any) (account string, card cardOut) {
 		t.Helper()
 		var a idOut
-		create(c, "/api/v1/accounts", map[string]any{"name": "Card", "class": "liability", "kind": "credit_card", "currency": currency}, &a)
+		create(
+			c,
+			"/api/v1/accounts",
+			map[string]any{
+				"name":     "Card",
+				"class":    "liability",
+				"kind":     "credit_card",
+				"currency": currency,
+			},
+			&a,
+		)
 
 		body := map[string]any{"holder": "Ana", "last_four": "1234"}
 		for k, v := range extra {
@@ -41,7 +51,10 @@ func TestForeignChargeDefaults(t *testing.T) {
 		}
 
 		create(c, "/api/v1/accounts/"+a.ID+"/billing-cycle-rules", map[string]any{
-			"effective_from": "2026-01", "closing_day": 10, "due_day": 21, "closing_day_assignment": "next",
+			"effective_from":         "2026-01",
+			"closing_day":            10,
+			"due_day":                21,
+			"closing_day_assignment": "next",
 		}, &struct{}{})
 		create(c, "/api/v1/accounts/"+a.ID+"/cards", body, &card)
 
@@ -50,7 +63,12 @@ func TestForeignChargeDefaults(t *testing.T) {
 	expense := func(c *http.Client, name, currency string) string {
 		t.Helper()
 		var a idOut
-		create(c, "/api/v1/accounts", map[string]any{"name": name, "class": "expense", "currency": currency}, &a)
+		create(
+			c,
+			"/api/v1/accounts",
+			map[string]any{"name": name, "class": "expense", "currency": currency},
+			&a,
+		)
 
 		return a.ID
 	}
@@ -86,12 +104,27 @@ func TestForeignChargeDefaults(t *testing.T) {
 	travel := expense(h.Client, "Travel", "BRL")
 	charge := expense(h.Client, "Foreign charge", "BRL")
 
-	got := purchase(h.Client, map[string]any{"account_id": brAccount, "category_id": travel, "foreign_charge_category_id": charge})
+	got := purchase(
+		h.Client,
+		map[string]any{
+			"account_id":                 brAccount,
+			"category_id":                travel,
+			"foreign_charge_category_id": charge,
+		},
+	)
 	if len(got) != 3 || got[travel] != 50000 || got[charge] != 1750 || got[brAccount] != -51750 {
 		t.Fatalf("BR purchase postings = %v", got)
 	}
 
-	got = purchase(h.Client, map[string]any{"account_id": brAccount, "category_id": travel, "foreign_charge_category_id": charge, "foreign_charge_rate_bp": 100})
+	got = purchase(
+		h.Client,
+		map[string]any{
+			"account_id":                 brAccount,
+			"category_id":                travel,
+			"foreign_charge_category_id": charge,
+			"foreign_charge_rate_bp":     100,
+		},
+	)
 	if got[charge] != 500 || got[brAccount] != -50500 {
 		t.Fatalf("explicit rate postings = %v", got)
 	}
@@ -109,7 +142,12 @@ func TestForeignChargeDefaults(t *testing.T) {
 	}
 
 	// Review Focus 1: a region change keeps the foreign charge rate of existing cards.
-	if r := h.Call(de, http.MethodPatch, "/api/v1/books/current", map[string]any{"region": "BR", "time_zone": nil}); r.Status != http.StatusOK {
+	if r := h.Call(
+		de,
+		http.MethodPatch,
+		"/api/v1/books/current",
+		map[string]any{"region": "BR", "time_zone": nil},
+	); r.Status != http.StatusOK {
 		t.Fatalf("patch books status = %d: %s", r.Status, r.Body)
 	}
 
@@ -137,6 +175,15 @@ func TestForeignChargeDefaults(t *testing.T) {
 		t.Fatalf("explicit foreign_charge_bp = %d, want 200", explicit.ForeignChargeBP)
 	}
 
-	h.ExpectProblem(h.Call(de, http.MethodPost, "/api/v1/accounts/"+deAccount+"/cards", map[string]any{"holder": "Ana", "last_four": "1234", "foreign_charge_bp": 10001}),
-		http.StatusBadRequest, "invalid_request", "foreign_charge_bp")
+	h.ExpectProblem(
+		h.Call(
+			de,
+			http.MethodPost,
+			"/api/v1/accounts/"+deAccount+"/cards",
+			map[string]any{"holder": "Ana", "last_four": "1234", "foreign_charge_bp": 10001},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"foreign_charge_bp",
+	)
 }

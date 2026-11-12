@@ -21,7 +21,16 @@ func TestUpdateProfileTool(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	p, r, err := h.App.Tools.Preview(auth.WithIdentity(t.Context(), h.MemberIDOf("owner@example.com"), h.BooksIDOf("owner@example.com"), auth.RoleOwner), "update_profile", b)
+	p, r, err := h.App.Tools.Preview(
+		auth.WithIdentity(
+			t.Context(),
+			h.MemberIDOf("owner@example.com"),
+			h.BooksIDOf("owner@example.com"),
+			auth.RoleOwner,
+		),
+		"update_profile",
+		b,
+	)
 	if err != nil || r.IsError {
 		t.Fatalf("preview = %v, %s", err, r.Content)
 	}
@@ -55,5 +64,9 @@ func TestUpdateProfileTool(t *testing.T) {
 	}
 
 	h.ExpectToolError(h.Tool("update_profile", map[string]any{}), "invalid_arguments", "language")
-	h.ExpectToolError(h.Tool("update_profile", map[string]any{"region": "US"}), "invalid_arguments", "")
+	h.ExpectToolError(
+		h.Tool("update_profile", map[string]any{"region": "US"}),
+		"invalid_arguments",
+		"",
+	)
 }

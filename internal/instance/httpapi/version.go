@@ -9,7 +9,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) getVersion(ctx context.Context, _ *http.Request, _ httpserver.None) (VersionStatus, error) {
+func (s *Server) getVersion(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (VersionStatus, error) {
 	status, err := s.svc.VersionStatus(ctx, auth.MustMemberID(ctx))
 	if err != nil {
 		return VersionStatus{}, err
@@ -40,7 +44,11 @@ func toVersionStatus(v app.VersionStatus) VersionStatus {
 	}
 
 	if v.Latest != nil {
-		out.Latest = &Release{Version: v.Latest.Version, Url: v.Latest.URL, CheckedAt: v.Latest.CheckedAt}
+		out.Latest = &Release{
+			Version:   v.Latest.Version,
+			Url:       v.Latest.URL,
+			CheckedAt: v.Latest.CheckedAt,
+		}
 	}
 
 	return out

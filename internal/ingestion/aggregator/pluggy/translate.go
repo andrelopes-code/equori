@@ -25,7 +25,10 @@ var documentSchemes = map[string]string{"CPF": "br_cpf", "CNPJ": "br_cnpj"}
 
 // cardKinds are the card operation types that state a line's type (A88); any other type
 // follows the amount's sign.
-var cardKinds = map[string]string{"PAGAMENTO_FATURA": domain.KindPayment, "ESTORNO": domain.KindRefund}
+var cardKinds = map[string]string{
+	"PAGAMENTO_FATURA": domain.KindPayment,
+	"ESTORNO":          domain.KindRefund,
+}
 
 // Normalize translates a Pluggy transaction of account a into a record from the account's
 // point of view. ok is false for lines that are not recorded: a pending bank line is a

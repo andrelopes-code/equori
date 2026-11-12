@@ -55,7 +55,12 @@ func (s *seeder) loadHolidays() {
 				Date string `json:"date"`
 			} `json:"items"`
 		}
-		s.do(http.MethodGet, "/calendars/"+calendars.Default+"/holidays?year="+strconv.Itoa(year), nil, &out)
+		s.do(
+			http.MethodGet,
+			"/calendars/"+calendars.Default+"/holidays?year="+strconv.Itoa(year),
+			nil,
+			&out,
+		)
 
 		for _, h := range out.Items {
 			s.holidays[day(h.Date)] = true
@@ -145,7 +150,11 @@ func (s *seeder) pick(keys []string, weights []int) string {
 }
 
 // transferPayees names the institution that receives a transfer, by the account it fills.
-var transferPayees = map[string]string{"nubank.checking": "Nubank", "xp.cash": "XP Investimentos", "itau.checking": "Itaú Unibanco"}
+var transferPayees = map[string]string{
+	"nubank.checking": "Nubank",
+	"xp.cash":         "XP Investimentos",
+	"itau.checking":   "Itaú Unibanco",
+}
 
 // funders names the account that refills an account that cannot pay.
 var funders = map[string]string{

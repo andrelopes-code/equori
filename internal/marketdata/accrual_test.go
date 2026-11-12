@@ -14,12 +14,22 @@ type accrualPrice struct {
 	Source string `json:"source"`
 }
 
-func pricesBetween(t *testing.T, h *apitest.Harness, instrument, from, to string) map[string]accrualPrice {
+func pricesBetween(
+	t *testing.T,
+	h *apitest.Harness,
+	instrument, from, to string,
+) map[string]accrualPrice {
 	t.Helper()
 	var list struct {
 		Items []accrualPrice `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/prices?instrument="+instrument+"&quote_instrument=BRL&from="+from+"&to="+to, nil, http.StatusOK, &list)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument="+instrument+"&quote_instrument=BRL&from="+from+"&to="+to,
+		nil,
+		http.StatusOK,
+		&list,
+	)
 
 	out := map[string]accrualPrice{}
 	for _, p := range list.Items {
@@ -38,7 +48,11 @@ func TestS123AccruedCDB(t *testing.T) {
 	s := &sgsServer{cdi: cdiWeek}
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-01-09"), apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-09"),
+		apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)),
+	)
 	defineFixedIncome(t, h, "CDBXPTO")
 	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", cdbTerms(), http.StatusOK, nil)
 
@@ -46,8 +60,12 @@ func TestS123AccruedCDB(t *testing.T) {
 	got := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31")
 
 	want := map[string]string{
-		"2026-01-02": "1000", "2026-01-05": "1000.606441", "2026-01-06": "1001.213249770686",
-		"2026-01-07": "1001.820426535091", "2026-01-08": "1002.427971516379", "2026-01-09": "1003.035884937853",
+		"2026-01-02": "1000",
+		"2026-01-05": "1000.606441",
+		"2026-01-06": "1001.213249770686",
+		"2026-01-07": "1001.820426535091",
+		"2026-01-08": "1002.427971516379",
+		"2026-01-09": "1003.035884937853",
 	}
 	if len(got) != len(want) {
 		t.Fatalf("prices = %+v", got)
@@ -67,9 +85,21 @@ func TestS123AccruedCDB(t *testing.T) {
 	}
 
 	// A manual price of the same day wins over the accrued one.
-	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{"instrument": "CDBXPTO", "quote_instrument": "BRL", "date": "2026-01-07", "value": "1500"}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "CDBXPTO",
+			"quote_instrument": "BRL",
+			"date":             "2026-01-07",
+			"value":            "1500",
+		},
+		http.StatusCreated,
+		nil,
+	)
 
-	if p := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31")["2026-01-07"]; p.Source != "manual" || p.Value != "1500" {
+	if p := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31")["2026-01-07"]; p.Source != "manual" ||
+		p.Value != "1500" {
 		t.Fatalf("price on the 7th = %+v", p)
 	}
 
@@ -78,7 +108,14 @@ func TestS123AccruedCDB(t *testing.T) {
 	changed["face_value"] = 200000
 	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", changed, http.StatusOK, nil)
 
-	if after := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31"); len(after) != 1 || after["2026-01-07"].Source != "manual" {
+	if after := pricesBetween(
+		t,
+		h,
+		"CDBXPTO",
+		"2026-01-01",
+		"2026-01-31",
+	); len(after) != 1 ||
+		after["2026-01-07"].Source != "manual" {
 		t.Fatalf("prices after new terms = %+v", after)
 	}
 
@@ -96,10 +133,19 @@ func TestS124AccruedIPCA(t *testing.T) {
 	s := &sgsServer{ipca: [][2]string{{"01/01/2026", "0.42"}, {"01/02/2026", "-0.30"}}}
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-03-02"), apitest.IndexFeeds([]string{"br_ipca"}, indexURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-03-02"),
+		apitest.IndexFeeds([]string{"br_ipca"}, indexURLs(srv)),
+	)
 	defineFixedIncome(t, h, "NTNBXPTO")
 	h.MustDo(http.MethodPut, "/api/v1/instruments/NTNBXPTO/terms", map[string]any{
-		"issued_on": "2026-01-01", "matures_on": "2035-05-15", "index_id": "ipca", "spread_bp": 600, "day_count": "act365", "face_value": 100000,
+		"issued_on":  "2026-01-01",
+		"matures_on": "2035-05-15",
+		"index_id":   "ipca",
+		"spread_bp":  600,
+		"day_count":  "act365",
+		"face_value": 100000,
 	}, http.StatusOK, nil)
 	h.App.Marketdata.TickFeeds(t.Context())
 
@@ -123,7 +169,11 @@ func TestAccrualStopsAtMaturity(t *testing.T) {
 	s := &sgsServer{cdi: cdiWeek}
 	srv := httptest.NewServer(s)
 	t.Cleanup(srv.Close)
-	h := apitest.New(t, apitest.Today("2026-01-09"), apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)))
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-09"),
+		apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)),
+	)
 	defineFixedIncome(t, h, "CDBXPTO")
 
 	terms := cdbTerms()

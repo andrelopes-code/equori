@@ -27,7 +27,13 @@ func flows(t *testing.T, h *apitest.Harness, account, from, to string) map[strin
 			} `json:"outflow"`
 		} `json:"items"`
 	}
-	h.MustDo(http.MethodGet, fmt.Sprintf("/api/v1/reports/flows?account_id=%s&from=%s&to=%s", account, from, to), nil, http.StatusOK, &out)
+	h.MustDo(
+		http.MethodGet,
+		fmt.Sprintf("/api/v1/reports/flows?account_id=%s&from=%s&to=%s", account, from, to),
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	m := make(map[string]flowDay, len(out.Items))
 	for _, it := range out.Items {
@@ -57,12 +63,25 @@ func TestFlowsSplitInflowAndOutflow(t *testing.T) {
 
 	got := flows(t, h, checking, "2026-10-01", "2026-10-31")
 
-	want := map[string]flowDay{"2026-10-05": {Inflow: 100000, Outflow: 12500}, "2026-10-07": {Outflow: 800}}
+	want := map[string]flowDay{
+		"2026-10-05": {Inflow: 100000, Outflow: 12500},
+		"2026-10-07": {Outflow: 800},
+	}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("checking flows = %v, want %v", got, want)
 	}
 
-	if got := flows(t, h, savings, "2026-10-01", "2026-10-31"); fmt.Sprint(got) != fmt.Sprint(map[string]flowDay{"2026-10-05": {Inflow: 10000}}) {
+	if got := flows(
+		t,
+		h,
+		savings,
+		"2026-10-01",
+		"2026-10-31",
+	); fmt.Sprint(
+		got,
+	) != fmt.Sprint(
+		map[string]flowDay{"2026-10-05": {Inflow: 10000}},
+	) {
 		t.Fatalf("savings flows = %v", got)
 	}
 }
@@ -100,7 +119,17 @@ func TestFlowsListsZeroDeltaDay(t *testing.T) {
 	h.Record("2026-10-02", apitest.Posting(checking, -700), apitest.Posting(food, 700))
 	h.Dispatch()
 
-	if got := flows(t, h, checking, "2026-10-02", "2026-10-02"); fmt.Sprint(got) != fmt.Sprint(map[string]flowDay{"2026-10-02": {Inflow: 700, Outflow: 700}}) {
+	if got := flows(
+		t,
+		h,
+		checking,
+		"2026-10-02",
+		"2026-10-02",
+	); fmt.Sprint(
+		got,
+	) != fmt.Sprint(
+		map[string]flowDay{"2026-10-02": {Inflow: 700, Outflow: 700}},
+	) {
 		t.Fatalf("flows = %v", got)
 	}
 
@@ -119,17 +148,49 @@ func TestFlowsProblems(t *testing.T) {
 	h.Record("2026-10-01", apitest.Posting(checking, -100), apitest.Posting(food, 100))
 	id := h.Record("2026-10-02", apitest.Posting(checking, -50), apitest.Posting(food, 50))
 	h.Dispatch()
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+id+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+id+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 	h.Dispatch()
 
-	if got := flows(t, h, checking, "2026-10-01", "2026-10-03"); fmt.Sprint(got) != fmt.Sprint(map[string]flowDay{"2026-10-01": {Outflow: 100}}) {
+	if got := flows(
+		t,
+		h,
+		checking,
+		"2026-10-01",
+		"2026-10-03",
+	); fmt.Sprint(
+		got,
+	) != fmt.Sprint(
+		map[string]flowDay{"2026-10-01": {Outflow: 100}},
+	) {
 		t.Fatalf("flows after void = %v", got)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/flows?account_id="+checking+"&from=2026-10-03&to=2026-10-01", nil),
-		http.StatusBadRequest, "invalid_request", "to")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/flows?account_id="+checking+"&from=2026-01-01&to=2027-01-02", nil),
-		http.StatusBadRequest, "invalid_request", "to")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodGet,
+			"/api/v1/reports/flows?account_id="+checking+"&from=2026-10-03&to=2026-10-01",
+			nil,
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"to",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodGet,
+			"/api/v1/reports/flows?account_id="+checking+"&from=2026-01-01&to=2027-01-02",
+			nil,
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"to",
+	)
 
 	if got := flows(t, h, checking, "2026-01-01", "2027-01-01"); len(got) != 1 {
 		t.Fatalf("366-day range = %v, want one day", got)
@@ -139,7 +200,16 @@ func TestFlowsProblems(t *testing.T) {
 	var acc struct {
 		ID string `json:"id"`
 	}
-	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Cash", "class": "asset", "kind": "cash", "currency": "BRL"}).Decode(t, &acc)
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/flows?account_id="+acc.ID+"&from=2026-10-01&to=2026-10-02", nil),
-		http.StatusNotFound, "not_found", "")
+	h.Call(other, http.MethodPost, "/api/v1/accounts", map[string]any{"name": "Cash", "class": "asset", "kind": "cash", "currency": "BRL"}).
+		Decode(t, &acc)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodGet,
+			"/api/v1/reports/flows?account_id="+acc.ID+"&from=2026-10-01&to=2026-10-02",
+			nil,
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

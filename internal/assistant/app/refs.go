@@ -14,7 +14,11 @@ import (
 
 // resolveRefs returns args with the value at each pointer of refs replaced by the value at the result
 // pointer of the referenced proposal. missing names the first pointer whose result value is absent.
-func resolveRefs(args []byte, refs map[string]string, results map[uuid.UUID][]byte) (out []byte, missing string, err error) {
+func resolveRefs(
+	args []byte,
+	refs map[string]string,
+	results map[uuid.UUID][]byte,
+) (out []byte, missing string, err error) {
 	doc, err := decodeJSON(args)
 	if err != nil {
 		return nil, "", fmt.Errorf("decode arguments: %w", err)

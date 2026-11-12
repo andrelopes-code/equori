@@ -18,9 +18,27 @@ func TestPeriodFactor(t *testing.T) {
 	}{
 		{"no flow", 100000, []Subperiod{{Value: 105000}}, 1.05, true},
 		// 10% before the deposit of 1,000.00 and 10% after it: 1.1 × 1.1.
-		{"a deposit inside the period", 100000, []Subperiod{{Value: 210000, Flow: 100000}, {Value: 231000}}, 1.21, true},
-		{"a withdrawal inside the period", 100000, []Subperiod{{Value: 60000, Flow: -50000}, {Value: 66000}}, 1.21, true},
-		{"an empty start and a first deposit", 0, []Subperiod{{Value: 100000, Flow: 100000}, {Value: 110000}}, 1.1, true},
+		{
+			"a deposit inside the period",
+			100000,
+			[]Subperiod{{Value: 210000, Flow: 100000}, {Value: 231000}},
+			1.21,
+			true,
+		},
+		{
+			"a withdrawal inside the period",
+			100000,
+			[]Subperiod{{Value: 60000, Flow: -50000}, {Value: 66000}},
+			1.21,
+			true,
+		},
+		{
+			"an empty start and a first deposit",
+			0,
+			[]Subperiod{{Value: 100000, Flow: 100000}, {Value: 110000}},
+			1.1,
+			true,
+		},
 		{"a gain on an empty start", 0, []Subperiod{{Value: 100500, Flow: 100000}}, 0, false},
 		{"total loss", 100000, []Subperiod{{Value: 0}}, 0, false},
 		{"no subperiod", 100000, nil, 1, true},
@@ -165,7 +183,11 @@ func TestWholeMonths(t *testing.T) {
 		d, _ := time.Parse(time.DateOnly, s)
 		return d
 	}
-	rates := map[time.Time]float64{day("2025-11-01"): 0.005, day("2025-12-01"): 0.004, day("2026-02-01"): 0.003}
+	rates := map[time.Time]float64{
+		day("2025-11-01"): 0.005,
+		day("2025-12-01"): 0.004,
+		day("2026-02-01"): 0.003,
+	}
 
 	tests := []struct {
 		name         string
@@ -175,8 +197,24 @@ func TestWholeMonths(t *testing.T) {
 		wantOK       bool
 	}{
 		{"two whole months", "2025-11-01", "2026-01-09", "2025-11-01", "2025-12-31", 2, true},
-		{"a start inside a month skips it", "2025-11-02", "2025-12-31", "2025-12-01", "2025-12-31", 1, true},
-		{"the first month without a rate ends the run", "2025-11-01", "2026-02-28", "2025-11-01", "2025-12-31", 2, true},
+		{
+			"a start inside a month skips it",
+			"2025-11-02",
+			"2025-12-31",
+			"2025-12-01",
+			"2025-12-31",
+			1,
+			true,
+		},
+		{
+			"the first month without a rate ends the run",
+			"2025-11-01",
+			"2026-02-28",
+			"2025-11-01",
+			"2025-12-31",
+			2,
+			true,
+		},
 		{"no whole month", "2026-01-02", "2026-01-09", "", "", 0, false},
 		{"a first month without a rate", "2026-01-01", "2026-02-28", "", "", 0, false},
 	}
@@ -198,7 +236,11 @@ func TestRecordedPeriodFactor(t *testing.T) {
 	t.Parallel()
 
 	// A piece that starts at 0 and gains 200 holds no money: factor 1, not undefined.
-	if f, ok := RecordedPeriodFactor(0, []Subperiod{{Value: 1_000_200, Flow: 1_000_000}, {Value: 1_000_350}}); !ok || f != 1+150.0/1_000_200 {
+	if f, ok := RecordedPeriodFactor(
+		0,
+		[]Subperiod{{Value: 1_000_200, Flow: 1_000_000}, {Value: 1_000_350}},
+	); !ok ||
+		f != 1+150.0/1_000_200 {
 		t.Fatalf("factor = %v, %v", f, ok)
 	}
 
@@ -232,10 +274,34 @@ func TestComparisonStart(t *testing.T) {
 		restarted bool
 	}{
 		{"no flow", days("2026-01-02", "2026-02-02"), nil, day("2026-01-02"), false},
-		{"flow in a 7 day gap", days("2026-01-02", "2026-01-09"), days("2026-01-05"), day("2026-01-02"), false},
-		{"flow in an 8 day gap", days("2026-01-02", "2026-01-10"), days("2026-01-05"), day("2026-01-10"), true},
-		{"flow on a credit day", days("2026-01-02", "2026-02-02"), days("2026-01-02", "2026-02-02"), day("2026-01-02"), false},
-		{"last restart wins", days("2026-01-02", "2026-02-02", "2026-03-02"), days("2026-01-15", "2026-02-15"), day("2026-03-02"), true},
+		{
+			"flow in a 7 day gap",
+			days("2026-01-02", "2026-01-09"),
+			days("2026-01-05"),
+			day("2026-01-02"),
+			false,
+		},
+		{
+			"flow in an 8 day gap",
+			days("2026-01-02", "2026-01-10"),
+			days("2026-01-05"),
+			day("2026-01-10"),
+			true,
+		},
+		{
+			"flow on a credit day",
+			days("2026-01-02", "2026-02-02"),
+			days("2026-01-02", "2026-02-02"),
+			day("2026-01-02"),
+			false,
+		},
+		{
+			"last restart wins",
+			days("2026-01-02", "2026-02-02", "2026-03-02"),
+			days("2026-01-15", "2026-02-15"),
+			day("2026-03-02"),
+			true,
+		},
 	}
 
 	for _, tt := range tests {

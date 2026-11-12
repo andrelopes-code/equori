@@ -16,8 +16,8 @@ func (categoryClass) Values() []string { return []string{"income", "expense"} }
 
 type getCategoryTotalsIn struct {
 	Class categoryClass `json:"class" jsonschema:"expense totals spending, income totals earnings; both are positive"`
-	From  tool.Date     `json:"from" jsonschema:"first date, inclusive"`
-	To    tool.Date     `json:"to" jsonschema:"last date, inclusive; at most 366 days after from"`
+	From  tool.Date     `json:"from"  jsonschema:"first date, inclusive"`
+	To    tool.Date     `json:"to"    jsonschema:"last date, inclusive; at most 366 days after from"`
 	tool.PageArgs
 }
 
@@ -26,8 +26,8 @@ type categoryView struct {
 	Name         string     `json:"name"`
 	ParentID     string     `json:"parent_id,omitzero"`
 	ParentName   string     `json:"parent_name,omitzero"`
-	Total        tool.Money `json:"total" jsonschema:"postings on the category itself"`
-	SubtreeTotal tool.Money `json:"subtree_total" jsonschema:"postings on the category and its descendants"`
+	Total        tool.Money `json:"total"                jsonschema:"postings on the category itself"`
+	SubtreeTotal tool.Money `json:"subtree_total"        jsonschema:"postings on the category and its descendants"`
 }
 
 type getCategoryTotalsOut struct {
@@ -46,7 +46,14 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 			"Do not use it for the transactions behind a total: search_transactions with account_id lists them.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in getCategoryTotalsIn) (getCategoryTotalsOut, error) {
-		totals, err := svc.CategoryTotals(ctx, booksID, string(in.Class), in.From.Time, in.To.Time, app.ViewAccrual)
+		totals, err := svc.CategoryTotals(
+			ctx,
+			booksID,
+			string(in.Class),
+			in.From.Time,
+			in.To.Time,
+			app.ViewAccrual,
+		)
 		if err != nil {
 			return getCategoryTotalsOut{}, err
 		}
@@ -68,7 +75,12 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 				return getCategoryTotalsOut{}, err
 			}
 
-			v := categoryView{AccountID: t.AccountID.String(), Name: t.Name, Total: tool.MoneyOf(total), SubtreeTotal: tool.MoneyOf(subtree)}
+			v := categoryView{
+				AccountID:    t.AccountID.String(),
+				Name:         t.Name,
+				Total:        tool.MoneyOf(total),
+				SubtreeTotal: tool.MoneyOf(subtree),
+			}
 			if t.ParentID != uuid.Nil {
 				v.ParentID, v.ParentName = t.ParentID.String(), names[t.ParentID]
 			}
@@ -77,7 +89,11 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 		}
 
 		out := getCategoryTotalsOut{From: in.From, To: in.To}
-		out.Categories, out.NextCursor, err = tool.PageOf(views, func(v categoryView) string { return v.AccountID }, in.PageArgs)
+		out.Categories, out.NextCursor, err = tool.PageOf(
+			views,
+			func(v categoryView) string { return v.AccountID },
+			in.PageArgs,
+		)
 
 		return out, err
 	})

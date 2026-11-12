@@ -22,13 +22,48 @@ var (
 )
 
 func vocabulary(extra ...Account) Vocabulary {
-	return Vocabulary{Base: "BRL", Lexicon: Merge(Portuguese(), English()), Conventions: Conventions{',', '.', DMY}, Accounts: append([]Account{
-		{ID: checking, Class: "asset", Kind: "checking", Currency: "BRL", Handles: []string{"Nubank checking", "Nubank"}},
-		{ID: visa, Class: "liability", Kind: "credit_card", Currency: "BRL", Handles: []string{"Itaú Visa", "Itaú", "final 1234", "*1234"}},
-		{ID: wallet, Class: "asset", Kind: "cash", Currency: "BRL", Handles: []string{"Wallet"}},
-		{ID: reserve, Class: "asset", Kind: "reserve", Currency: "BRL", Handles: []string{"Emergency fund"}},
-		{ID: wise, Class: "asset", Kind: "checking", Currency: "USD", Handles: []string{"Wise USD"}},
-	}, extra...)}
+	return Vocabulary{
+		Base:        "BRL",
+		Lexicon:     Merge(Portuguese(), English()),
+		Conventions: Conventions{',', '.', DMY},
+		Accounts: append([]Account{
+			{
+				ID:       checking,
+				Class:    "asset",
+				Kind:     "checking",
+				Currency: "BRL",
+				Handles:  []string{"Nubank checking", "Nubank"},
+			},
+			{
+				ID:       visa,
+				Class:    "liability",
+				Kind:     "credit_card",
+				Currency: "BRL",
+				Handles:  []string{"Itaú Visa", "Itaú", "final 1234", "*1234"},
+			},
+			{
+				ID:       wallet,
+				Class:    "asset",
+				Kind:     "cash",
+				Currency: "BRL",
+				Handles:  []string{"Wallet"},
+			},
+			{
+				ID:       reserve,
+				Class:    "asset",
+				Kind:     "reserve",
+				Currency: "BRL",
+				Handles:  []string{"Emergency fund"},
+			},
+			{
+				ID:       wise,
+				Class:    "asset",
+				Kind:     "checking",
+				Currency: "USD",
+				Handles:  []string{"Wise USD"},
+			},
+		}, extra...),
+	}
 }
 
 // draft is the part of a Line a case asserts; Issues lists codes only.
@@ -47,8 +82,15 @@ type draft struct {
 
 func draftOf(l Line) draft {
 	d := draft{
-		Kind: l.Kind, Amount: l.Amount, Date: l.Date.Format(time.DateOnly), Account: l.AccountID, Source: l.AccountSource,
-		To: l.ToAccountID, Installments: l.Installments, Description: l.Description, Tags: l.Tags,
+		Kind:         l.Kind,
+		Amount:       l.Amount,
+		Date:         l.Date.Format(time.DateOnly),
+		Account:      l.AccountID,
+		Source:       l.AccountSource,
+		To:           l.ToAccountID,
+		Installments: l.Installments,
+		Description:  l.Description,
+		Tags:         l.Tags,
 	}
 	for _, i := range l.Issues {
 		d.Issues = append(d.Issues, i.Code)
@@ -162,7 +204,15 @@ func TestReadAmbiguousAmount(t *testing.T) {
 func TestReadAmbiguousAccount(t *testing.T) {
 	t.Parallel()
 
-	v := vocabulary(Account{ID: nubankCC, Class: "liability", Kind: "credit_card", Currency: "BRL", Handles: []string{"Nubank card", "Nubank"}})
+	v := vocabulary(
+		Account{
+			ID:       nubankCC,
+			Class:    "liability",
+			Kind:     "credit_card",
+			Currency: "BRL",
+			Handles:  []string{"Nubank card", "Nubank"},
+		},
+	)
 	for _, c := range []struct {
 		text    string
 		account uuid.UUID
@@ -179,7 +229,8 @@ func TestReadAmbiguousAccount(t *testing.T) {
 			t.Errorf("%q: account = %s, want %s", c.text, l.AccountID, c.account)
 		}
 
-		if c.issue == nil && len(l.Issues) > 0 || c.issue != nil && !reflect.DeepEqual(l.Issues, []Issue{*c.issue}) {
+		if c.issue == nil && len(l.Issues) > 0 ||
+			c.issue != nil && !reflect.DeepEqual(l.Issues, []Issue{*c.issue}) {
 			t.Errorf("%q: issues = %+v", c.text, l.Issues)
 		}
 	}
@@ -188,7 +239,12 @@ func TestReadAmbiguousAccount(t *testing.T) {
 func TestReadLinesAndSegments(t *testing.T) {
 	t.Parallel()
 
-	lines := Read("uber 32,50 itaú; ifood 58 3x final 1234\n\n  R$ 12 café   #manhã  \n", vocabulary(), wednesday, wallet)
+	lines := Read(
+		"uber 32,50 itaú; ifood 58 3x final 1234\n\n  R$ 12 café   #manhã  \n",
+		vocabulary(),
+		wednesday,
+		wallet,
+	)
 	if len(lines) != 3 || lines[0].Number != 1 || lines[1].Number != 2 || lines[2].Number != 4 {
 		t.Fatalf("lines = %+v", lines)
 	}
@@ -203,7 +259,15 @@ func TestReadLinesAndSegments(t *testing.T) {
 	got := lines[1].Segments
 
 	want = []Segment{
-		{"ifood ", RoleText}, {"58", RoleAmount}, {" ", RoleText}, {"3x", RoleInstallments}, {" ", RoleText}, {"final 1234", RoleAccount},
+		{
+			"ifood ",
+			RoleText,
+		},
+		{"58", RoleAmount},
+		{" ", RoleText},
+		{"3x", RoleInstallments},
+		{" ", RoleText},
+		{"final 1234", RoleAccount},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("segments = %+v", got)
@@ -224,14 +288,23 @@ func TestReadLinesAndSegments(t *testing.T) {
 func TestReadUsesTheAccountCurrency(t *testing.T) {
 	t.Parallel()
 
-	v := vocabulary(Account{ID: interAcct, Class: "asset", Kind: "checking", Currency: money.Currency("JPY"), Handles: []string{"Tokyo"}})
+	v := vocabulary(
+		Account{
+			ID:       interAcct,
+			Class:    "asset",
+			Kind:     "checking",
+			Currency: money.Currency("JPY"),
+			Handles:  []string{"Tokyo"},
+		},
+	)
 
 	l := Read("ramen 1200 tokyo", v, wednesday, uuid.Nil)[0]
 	if l.Amount != 1200 || l.Currency != "JPY" {
 		t.Fatalf("amount = %d %s", l.Amount, l.Currency)
 	}
 
-	if l := Read("ramen 12,5 tokyo", v, wednesday, uuid.Nil)[0]; len(l.Issues) != 1 || l.Issues[0].Code != IssueInvalidAmount {
+	if l := Read("ramen 12,5 tokyo", v, wednesday, uuid.Nil)[0]; len(l.Issues) != 1 ||
+		l.Issues[0].Code != IssueInvalidAmount {
 		t.Fatalf("issues = %+v", l.Issues)
 	}
 }
@@ -319,8 +392,17 @@ func TestReadByConventions(t *testing.T) {
 			}
 
 			got := lines[0]
-			if got.Amount != c.amount || got.Date.Format(time.DateOnly) != c.date || got.Description != c.desc {
-				t.Fatalf("got %d %s %q, want %d %s %q", got.Amount, got.Date.Format(time.DateOnly), got.Description, c.amount, c.date, c.desc)
+			if got.Amount != c.amount || got.Date.Format(time.DateOnly) != c.date ||
+				got.Description != c.desc {
+				t.Fatalf(
+					"got %d %s %q, want %d %s %q",
+					got.Amount,
+					got.Date.Format(time.DateOnly),
+					got.Description,
+					c.amount,
+					c.date,
+					c.desc,
+				)
 			}
 		})
 	}

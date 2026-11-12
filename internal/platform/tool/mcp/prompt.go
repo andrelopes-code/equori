@@ -21,7 +21,10 @@ type PromptArgument struct {
 func addPrompt(s *sdk.Server, p Prompt) {
 	args := make([]*sdk.PromptArgument, 0, len(p.Arguments))
 	for _, a := range p.Arguments {
-		args = append(args, &sdk.PromptArgument{Name: a.Name, Description: a.Description, Required: a.Required})
+		args = append(
+			args,
+			&sdk.PromptArgument{Name: a.Name, Description: a.Description, Required: a.Required},
+		)
 	}
 
 	s.AddPrompt(&sdk.Prompt{Name: p.Name, Description: p.Description, Arguments: args},
@@ -31,6 +34,10 @@ func addPrompt(s *sdk.Server, p Prompt) {
 				return nil, err
 			}
 
-			return &sdk.GetPromptResult{Messages: []*sdk.PromptMessage{{Role: "user", Content: &sdk.TextContent{Text: text}}}}, nil
+			return &sdk.GetPromptResult{
+				Messages: []*sdk.PromptMessage{
+					{Role: "user", Content: &sdk.TextContent{Text: text}},
+				},
+			}, nil
 		})
 }

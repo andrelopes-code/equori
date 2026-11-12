@@ -85,7 +85,11 @@ func newBooks(t *testing.T) books {
 }
 
 // record posts a manual transaction; category is the expense account, or b.uncategorized.
-func (b books) record(t *testing.T, date, description, payee, category string, amount int64) string {
+func (b books) record(
+	t *testing.T,
+	date, description, payee, category string,
+	amount int64,
+) string {
 	t.Helper()
 
 	body := map[string]any{"date": date, "description": description,
@@ -105,7 +109,10 @@ func (b books) record(t *testing.T, date, description, payee, category string, a
 func (b books) categorize(t *testing.T, tx string, version int, category string, amount int64) {
 	t.Helper()
 	b.h.MustDo(http.MethodPost, "/api/v1/transactions/"+tx+"/categorize", map[string]any{
-		"expected_version": version, "parts": []any{map[string]any{"account_id": category, "amount": apitest.BRL(amount)}},
+		"expected_version": version,
+		"parts": []any{
+			map[string]any{"account_id": category, "amount": apitest.BRL(amount)},
+		},
 	}, http.StatusOK, nil)
 }
 
@@ -126,7 +133,13 @@ func categoryOf(t *testing.T, h *apitest.Harness, tx string) (int, map[string]in
 func TestNewTransactionIsClassifiedByRule(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	rule := createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
+	rule := createRule(
+		t,
+		b.h,
+		"Uber",
+		[]map[string]any{contains("uber")},
+		[]map[string]any{setCategory(b.transport)},
+	)
 	tx := b.record(t, "2026-10-14", "UBER *TRIP", "", b.uncategorized, 2390)
 	dispatch(t, b.h)
 
@@ -135,7 +148,12 @@ func TestNewTransactionIsClassifiedByRule(t *testing.T) {
 		t.Fatalf("version %d, postings %v", version, postings)
 	}
 
-	if c := categorizationOf(t, b.h, tx); method(c) != "rule" || c.RuleID != rule.ID || c.TransactionID != tx {
+	if c := categorizationOf(
+		t,
+		b.h,
+		tx,
+	); method(c) != "rule" || c.RuleID != rule.ID ||
+		c.TransactionID != tx {
 		t.Fatalf("categorization = %+v", c)
 	}
 }
@@ -158,8 +176,14 @@ func TestOwnerCategorizationIsManual(t *testing.T) {
 	}
 
 	b.h.MustDo(http.MethodPut, "/api/v1/transactions/"+tx, map[string]any{
-		"date": "2026-10-14", "description": "Padaria São João", "expected_version": 2, "reason": "rename",
-		"postings": []any{apitest.Posting(b.checking, -1000), apitest.Posting(b.food, 1000)},
+		"date":             "2026-10-14",
+		"description":      "Padaria São João",
+		"expected_version": 2,
+		"reason":           "rename",
+		"postings": []any{
+			apitest.Posting(b.checking, -1000),
+			apitest.Posting(b.food, 1000),
+		},
 	}, http.StatusOK, nil)
 	dispatch(t, b.h)
 
@@ -167,9 +191,18 @@ func TestOwnerCategorizationIsManual(t *testing.T) {
 		t.Fatalf("after rename = %+v", c)
 	}
 
-	transfer := b.h.Record("2026-10-14", apitest.Posting(b.checking, -500), apitest.Posting(b.savings, 500))
+	transfer := b.h.Record(
+		"2026-10-14",
+		apitest.Posting(b.checking, -500),
+		apitest.Posting(b.savings, 500),
+	)
 	dispatch(t, b.h)
-	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/transactions/"+transfer+"/categorization", nil), http.StatusNotFound, "not_found", "")
+	b.h.ExpectProblem(
+		b.h.Do(http.MethodGet, "/api/v1/transactions/"+transfer+"/categorization", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }
 
 // Events of one transaction delivered out of order and twice (P5 Review Focus 2).
@@ -196,7 +229,8 @@ func TestCategorizationFollowsTheHighestVersion(t *testing.T) {
 		t.Helper()
 		var version int
 
-		err := b.h.Pool.QueryRow(t.Context(), `SELECT transaction_version FROM classification_categorization WHERE transaction_id = $1`, tx).Scan(&version)
+		err := b.h.Pool.QueryRow(t.Context(), `SELECT transaction_version FROM classification_categorization WHERE transaction_id = $1`, tx).
+			Scan(&version)
 		if c := categorizationOf(t, b.h, tx); method(c) != "manual" || err != nil || version != 2 {
 			t.Fatalf("%s: categorization %+v, row version %d, %v", when, c, version, err)
 		}
@@ -245,10 +279,21 @@ func TestRunRules(t *testing.T) {
 	}
 
 	b.categorize(t, trip, 1, b.travel, 2390)
-	split := b.h.Record("2026-10-16", apitest.Posting(b.checking, -1000), apitest.Posting(b.food, 600), apitest.Posting(b.uncategorized, 400))
+	split := b.h.Record(
+		"2026-10-16",
+		apitest.Posting(b.checking, -1000),
+		apitest.Posting(b.food, 600),
+		apitest.Posting(b.uncategorized, 400),
+	)
 	dispatch(t, b.h)
 
-	rule := createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
+	rule := createRule(
+		t,
+		b.h,
+		"Uber",
+		[]map[string]any{contains("uber")},
+		[]map[string]any{setCategory(b.transport)},
+	)
 	var run struct {
 		Examined    int `json:"examined"`
 		Categorized int `json:"categorized"`
@@ -288,11 +333,23 @@ func TestRunRules(t *testing.T) {
 func TestCategorizationStatistics(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
-	createRule(t, b.h, "Uber", []map[string]any{contains("uber")}, []map[string]any{setCategory(b.transport)})
+	createRule(
+		t,
+		b.h,
+		"Uber",
+		[]map[string]any{contains("uber")},
+		[]map[string]any{setCategory(b.transport)},
+	)
 	var ifood struct {
 		ID string `json:"id"`
 	}
-	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &ifood)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "iFood"},
+		http.StatusCreated,
+		&ifood,
+	)
 
 	b.record(t, "2026-10-01", "iFood", ifood.ID, b.delivery, 4000)                 // manual
 	history := b.record(t, "2026-10-02", "iFood", ifood.ID, b.uncategorized, 4500) // history
@@ -301,7 +358,13 @@ func TestCategorizationStatistics(t *testing.T) {
 	corrected := b.record(t, "2026-10-05", "Padaria", "", b.uncategorized, 800)
 	b.categorize(t, corrected, 1, b.food, 800) // manual
 	voided := b.record(t, "2026-10-06", "Duplicate", "", b.food, 100)
-	b.h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 	b.record(t, "2026-09-30", "Before", "", b.food, 100)
 	b.h.Record("2026-10-07", apitest.Posting(b.checking, -500), apitest.Posting(b.savings, 500))
 	dispatch(t, b.h)
@@ -311,15 +374,34 @@ func TestCategorizationStatistics(t *testing.T) {
 	}
 
 	var st map[string]any
-	b.h.MustDo(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01&to=2026-10-31", nil, http.StatusOK, &st)
+	b.h.MustDo(
+		http.MethodGet,
+		"/api/v1/categorization-statistics?from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&st,
+	)
 
-	want := map[string]any{"from": "2026-10-01", "to": "2026-10-31", "total": float64(5), "rule": float64(1), "source": float64(0),
-		"history": float64(1), "manual": float64(2), "uncategorized": float64(1)}
+	want := map[string]any{
+		"from":          "2026-10-01",
+		"to":            "2026-10-31",
+		"total":         float64(5),
+		"rule":          float64(1),
+		"source":        float64(0),
+		"history":       float64(1),
+		"manual":        float64(2),
+		"uncategorized": float64(1),
+	}
 	for k, v := range want {
 		if st[k] != v {
 			t.Fatalf("statistics = %v, want %v", st, want)
 		}
 	}
 
-	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01", nil), http.StatusBadRequest, "invalid_request", "to")
+	b.h.ExpectProblem(
+		b.h.Do(http.MethodGet, "/api/v1/categorization-statistics?from=2026-10-01", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"to",
+	)
 }

@@ -7,7 +7,11 @@ import (
 )
 
 // FeedStates reads the feed of each given ledger account (P12 A152).
-func (m *Module) FeedStates(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (map[uuid.UUID]FeedState, error) {
+func (m *Module) FeedStates(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+) (map[uuid.UUID]FeedState, error) {
 	return m.svc.FeedStates(ctx, booksID, accountIDs)
 }
 

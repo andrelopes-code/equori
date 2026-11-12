@@ -19,12 +19,20 @@ func TestTOTPEnrolment(t *testing.T) {
 	t.Parallel()
 
 	now := time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
-	h := apitest.New(t, apitest.SecretKeys(apitest.SecretKey, ""), apitest.IdentityClock(func() time.Time { return now }))
+	h := apitest.New(
+		t,
+		apitest.SecretKeys(apitest.SecretKey, ""),
+		apitest.IdentityClock(func() time.Time { return now }),
+	)
 	other := h.SignIn("owner@example.com")
 
 	expectEmptySecondFactor(t, h)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": "123456"}),
-		http.StatusUnprocessableEntity, "totp_code_invalid", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": "123456"}),
+		http.StatusUnprocessableEntity,
+		"totp_code_invalid",
+		"",
+	)
 
 	first := startTOTP(t, h)
 	secret := startTOTP(t, h)
@@ -40,21 +48,39 @@ func TestTOTPEnrolment(t *testing.T) {
 	}
 
 	code := domain.TOTPCode(raw, domain.TOTPStepAt(now))
-	if stale := domain.TOTPCode(decodeSecret(t, first.Secret), domain.TOTPStepAt(now)); stale != code {
-		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": stale}),
-			http.StatusUnprocessableEntity, "totp_code_invalid", "")
+	if stale := domain.TOTPCode(
+		decodeSecret(t, first.Secret),
+		domain.TOTPStepAt(now),
+	); stale != code {
+		h.ExpectProblem(
+			h.Do(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": stale}),
+			http.StatusUnprocessableEntity,
+			"totp_code_invalid",
+			"",
+		)
 	}
 
 	var confirmed struct {
 		RecoveryCodes []string `json:"recovery_codes"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": code}, http.StatusOK, &confirmed)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/me/totp/confirm",
+		map[string]string{"code": code},
+		http.StatusOK,
+		&confirmed,
+	)
 
 	if len(confirmed.RecoveryCodes) != 10 {
 		t.Fatalf("recovery codes = %v", confirmed.RecoveryCodes)
 	}
 
-	h.ExpectProblem(h.Call(other, http.MethodGet, "/api/v1/me/second-factor", nil), http.StatusUnauthorized, "unauthenticated", "")
+	h.ExpectProblem(
+		h.Call(other, http.MethodGet, "/api/v1/me/second-factor", nil),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 
 	var state struct {
 		TOTP              bool  `json:"totp"`
@@ -67,11 +93,22 @@ func TestTOTPEnrolment(t *testing.T) {
 		t.Fatalf("second factor = %+v", state)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp", nil), http.StatusConflict, "totp_enabled", "")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": code}), http.StatusConflict, "totp_enabled", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/me/totp", nil),
+		http.StatusConflict,
+		"totp_enabled",
+		"",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": code}),
+		http.StatusConflict,
+		"totp_enabled",
+		"",
+	)
 
 	var sealed []byte
-	if err := h.Pool.QueryRow(t.Context(), `SELECT sealed_secret FROM identity_totp`).Scan(&sealed); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT sealed_secret FROM identity_totp`).
+		Scan(&sealed); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,13 +116,27 @@ func TestTOTPEnrolment(t *testing.T) {
 		t.Fatal("the stored secret holds the plain bytes")
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/recovery-codes", map[string]string{"password": wrongPassword}),
-		http.StatusForbidden, "password_invalid", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/me/recovery-codes",
+			map[string]string{"password": wrongPassword},
+		),
+		http.StatusForbidden,
+		"password_invalid",
+		"",
+	)
 
 	var regenerated struct {
 		RecoveryCodes []string `json:"recovery_codes"`
 	}
-	h.MustDo(http.MethodPost, "/api/v1/me/recovery-codes", map[string]string{"password": apitest.Password}, http.StatusOK, &regenerated)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/me/recovery-codes",
+		map[string]string{"password": apitest.Password},
+		http.StatusOK,
+		&regenerated,
+	)
 
 	if len(regenerated.RecoveryCodes) != 10 {
 		t.Fatalf("regenerated codes = %v", regenerated.RecoveryCodes)
@@ -97,12 +148,34 @@ func TestTOTPEnrolment(t *testing.T) {
 		}
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp/disable", map[string]string{"password": wrongPassword}),
-		http.StatusForbidden, "password_invalid", "")
-	h.MustDo(http.MethodPost, "/api/v1/me/totp/disable", map[string]string{"password": apitest.Password}, http.StatusNoContent, nil)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/me/totp/disable",
+			map[string]string{"password": wrongPassword},
+		),
+		http.StatusForbidden,
+		"password_invalid",
+		"",
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/me/totp/disable",
+		map[string]string{"password": apitest.Password},
+		http.StatusNoContent,
+		nil,
+	)
 	expectEmptySecondFactor(t, h)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/recovery-codes", map[string]string{"password": apitest.Password}),
-		http.StatusConflict, "second_factor_missing", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/me/recovery-codes",
+			map[string]string{"password": apitest.Password},
+		),
+		http.StatusConflict,
+		"second_factor_missing",
+		"",
+	)
 }
 
 func TestTOTPWithoutSecretKey(t *testing.T) {
@@ -110,7 +183,12 @@ func TestTOTPWithoutSecretKey(t *testing.T) {
 
 	h := apitest.New(t)
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp", nil), http.StatusConflict, "secret_key_missing", "")
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/me/totp", nil),
+		http.StatusConflict,
+		"secret_key_missing",
+		"",
+	)
 }
 
 func TestPasswordCheckThrottled(t *testing.T) {
@@ -119,12 +197,28 @@ func TestPasswordCheckThrottled(t *testing.T) {
 	h, _ := confirmedTOTP(t)
 
 	for range 5 {
-		h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp/disable", map[string]string{"password": wrongPassword}),
-			http.StatusForbidden, "password_invalid", "")
+		h.ExpectProblem(
+			h.Do(
+				http.MethodPost,
+				"/api/v1/me/totp/disable",
+				map[string]string{"password": wrongPassword},
+			),
+			http.StatusForbidden,
+			"password_invalid",
+			"",
+		)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/me/totp/disable", map[string]string{"password": apitest.Password}),
-		http.StatusTooManyRequests, "too_many_attempts", "")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/me/totp/disable",
+			map[string]string{"password": apitest.Password},
+		),
+		http.StatusTooManyRequests,
+		"too_many_attempts",
+		"",
+	)
 }
 
 func TestRotateTOTPSecret(t *testing.T) {
@@ -161,7 +255,13 @@ func confirmedTOTP(t *testing.T) (*apitest.Harness, apitest.Option) {
 
 	secret := decodeSecret(t, startTOTP(t, h).Secret)
 	code := domain.TOTPCode(secret, domain.TOTPStepAt(now))
-	h.MustDo(http.MethodPost, "/api/v1/me/totp/confirm", map[string]string{"code": code}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/me/totp/confirm",
+		map[string]string{"code": code},
+		http.StatusOK,
+		nil,
+	)
 
 	return h, clock
 }

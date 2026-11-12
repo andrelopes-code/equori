@@ -12,10 +12,16 @@ import (
 )
 
 var (
-	ErrTradeTargetRequired    = errors.New("name account_id, or brokerage_id with instrument, not both")
-	ErrBrokerageCashMissing   = errors.New("the brokerage has no open cash account in the base currency; create a cash account named Cash in it")
-	ErrBrokerageCashAmbiguous = errors.New("the brokerage has several cash accounts; name one in cash_account_id")
-	ErrHoldingNotFound        = errors.New("the brokerage holds no such investment")
+	ErrTradeTargetRequired = errors.New(
+		"name account_id, or brokerage_id with instrument, not both",
+	)
+	ErrBrokerageCashMissing = errors.New(
+		"the brokerage has no open cash account in the base currency; create a cash account named Cash in it",
+	)
+	ErrBrokerageCashAmbiguous = errors.New(
+		"the brokerage has several cash accounts; name one in cash_account_id",
+	)
+	ErrHoldingNotFound = errors.New("the brokerage holds no such investment")
 )
 
 // target names the holding of a trade or income in one of two forms: AccountID, or
@@ -28,7 +34,13 @@ type target struct {
 
 // resolveTarget returns the holding and the cash account of a trade. With the pair form it
 // locks the brokerage row, so two first purchases of one instrument create one holding.
-func (s *Service) resolveTarget(ctx context.Context, r Repository, booksID int64, base money.Currency, o target) (accountID, cashID uuid.UUID, err error) {
+func (s *Service) resolveTarget(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	base money.Currency,
+	o target,
+) (accountID, cashID uuid.UUID, err error) {
 	if err := checkTargetForm(o); err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
@@ -81,10 +93,19 @@ func checkTargetForm(o target) error {
 	return nil
 }
 
-func (s *Service) lockBrokerage(ctx context.Context, r Repository, booksID int64, id uuid.UUID) (domain.Account, error) {
+func (s *Service) lockBrokerage(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Account, error) {
 	brokerage, err := r.LockAccount(ctx, booksID, id)
 	if errors.Is(err, ErrNotFound) {
-		return domain.Account{}, fieldErr("brokerage_id", "unknown account", domain.ErrUnknownAccount)
+		return domain.Account{}, fieldErr(
+			"brokerage_id",
+			"unknown account",
+			domain.ErrUnknownAccount,
+		)
 	}
 
 	if err != nil {
@@ -92,13 +113,22 @@ func (s *Service) lockBrokerage(ctx context.Context, r Repository, booksID int64
 	}
 
 	if brokerage.Kind != domain.KindBrokerage || brokerage.HoldsSecurity() {
-		return domain.Account{}, fieldErr("brokerage_id", "must be a brokerage account", domain.ErrValidation)
+		return domain.Account{}, fieldErr(
+			"brokerage_id",
+			"must be a brokerage account",
+			domain.ErrValidation,
+		)
 	}
 
 	return brokerage, nil
 }
 
-func (s *Service) findOrCreateHolding(ctx context.Context, r Repository, brokerage domain.Account, o target) (domain.Account, error) {
+func (s *Service) findOrCreateHolding(
+	ctx context.Context,
+	r Repository,
+	brokerage domain.Account,
+	o target,
+) (domain.Account, error) {
 	children, err := r.ChildAccounts(ctx, brokerage.BooksID, brokerage.ID)
 	if err != nil {
 		return domain.Account{}, err
@@ -110,7 +140,11 @@ func (s *Service) findOrCreateHolding(ctx context.Context, r Repository, brokera
 		}
 
 		if c.ClosedOn != nil {
-			return domain.Account{}, fieldErr("instrument", fmt.Sprintf("the holding account %q is closed", c.Name), domain.ErrValidation)
+			return domain.Account{}, fieldErr(
+				"instrument",
+				fmt.Sprintf("the holding account %q is closed", c.Name),
+				domain.ErrValidation,
+			)
 		}
 
 		return c, nil
@@ -123,10 +157,21 @@ func (s *Service) findOrCreateHolding(ctx context.Context, r Repository, brokera
 	return s.createHolding(ctx, r, brokerage, o.Instrument)
 }
 
-func (s *Service) createHolding(ctx context.Context, r Repository, brokerage domain.Account, instrument money.Currency) (domain.Account, error) {
+func (s *Service) createHolding(
+	ctx context.Context,
+	r Repository,
+	brokerage domain.Account,
+	instrument money.Currency,
+) (domain.Account, error) {
 	holding := domain.Account{
-		BooksID: brokerage.BooksID, Name: string(instrument), Class: domain.ClassAsset, Kind: domain.KindBrokerage,
-		Instrument: instrument, ParentID: brokerage.ID, InstitutionID: brokerage.InstitutionID, OpenedOn: brokerage.OpenedOn,
+		BooksID:       brokerage.BooksID,
+		Name:          string(instrument),
+		Class:         domain.ClassAsset,
+		Kind:          domain.KindBrokerage,
+		Instrument:    instrument,
+		ParentID:      brokerage.ID,
+		InstitutionID: brokerage.InstitutionID,
+		OpenedOn:      brokerage.OpenedOn,
 	}
 
 	if err := s.describeInstrument(ctx, &holding); err != nil {
@@ -156,7 +201,13 @@ func onInstrument(err error) error {
 }
 
 // defaultCash returns the single open cash account of the brokerage in the base currency.
-func defaultCash(ctx context.Context, r Repository, booksID int64, brokerageID uuid.UUID, base money.Currency) (uuid.UUID, error) {
+func defaultCash(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	brokerageID uuid.UUID,
+	base money.Currency,
+) (uuid.UUID, error) {
 	children, err := r.ChildAccounts(ctx, booksID, brokerageID)
 	if err != nil {
 		return uuid.Nil, err

@@ -39,7 +39,8 @@ func TestMigrateArchive(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if string(got[0].Rows[0]) != `{"id":"a","name":"Market"}` || string(got[1].Rows[0]) != `{"id":"b","label":"trip"}` {
+	if string(got[0].Rows[0]) != `{"id":"a","name":"Market"}` ||
+		string(got[1].Rows[0]) != `{"id":"b","label":"trip"}` {
 		t.Fatalf("migrated = %s, %s", got[0].Rows[0], got[1].Rows[0])
 	}
 
@@ -54,7 +55,11 @@ func TestMigrateArchive(t *testing.T) {
 
 	broken := errors.New("broken")
 
-	_, err = migrateArchive(v1, 1, []ArchiveStep{func([]ArchiveTable) ([]ArchiveTable, error) { return nil, broken }})
+	_, err = migrateArchive(
+		v1,
+		1,
+		[]ArchiveStep{func([]ArchiveTable) ([]ArchiveTable, error) { return nil, broken }},
+	)
 	if !errors.Is(err, broken) || !strings.Contains(err.Error(), "version 1 to 2") {
 		t.Fatalf("a failed step = %v", err)
 	}
@@ -136,7 +141,8 @@ func TestAddStatementBasis(t *testing.T) {
 		t.Fatalf("ledger_posting row = %s", got[0].Rows[0])
 	}
 
-	if string(got[1].Rows[0]) != `{"id":"b"}` || string(v3[0].Rows[0]) != `{"amount":-713,"id":"a"}` {
+	if string(got[1].Rows[0]) != `{"id":"b"}` ||
+		string(v3[0].Rows[0]) != `{"amount":-713,"id":"a"}` {
 		t.Fatalf("other table %s, input %s", got[1].Rows[0], v3[0].Rows[0])
 	}
 
@@ -276,7 +282,8 @@ func TestAddAssistantConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(got) != 1 || got[0].Name != "planning_schedule" || string(got[0].Rows[0]) != `{"id":"a"}` {
+	if len(got) != 1 || got[0].Name != "planning_schedule" ||
+		string(got[0].Rows[0]) != `{"id":"a"}` {
 		t.Fatalf("tables = %+v, want them unchanged", got)
 	}
 
@@ -390,14 +397,17 @@ func TestAddTransferPairing(t *testing.T) {
 func TestAddInstrumentSymbols(t *testing.T) {
 	t.Parallel()
 
-	v12 := []ArchiveTable{{Name: "marketdata_instrument", Rows: [][]byte{[]byte(`{"code":"AAPL"}`)}}}
+	v12 := []ArchiveTable{
+		{Name: "marketdata_instrument", Rows: [][]byte{[]byte(`{"code":"AAPL"}`)}},
+	}
 
 	got, err := addInstrumentSymbols(v12)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(got) != 1 || got[0].Name != "marketdata_instrument" || string(got[0].Rows[0]) != `{"code":"AAPL"}` {
+	if len(got) != 1 || got[0].Name != "marketdata_instrument" ||
+		string(got[0].Rows[0]) != `{"code":"AAPL"}` {
 		t.Fatalf("tables = %+v", got)
 	}
 

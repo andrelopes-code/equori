@@ -25,7 +25,11 @@ type RecurringFilter struct {
 
 // Recurring returns the series of the book, filtered; ScheduleID is the active schedule that
 // covers the series.
-func (s *Service) Recurring(ctx context.Context, booksID int64, f RecurringFilter) ([]domain.Series, error) {
+func (s *Service) Recurring(
+	ctx context.Context,
+	booksID int64,
+	f RecurringFilter,
+) ([]domain.Series, error) {
 	facts, err := s.seriesFacts(ctx, booksID, f.AccountID)
 	if err != nil {
 		return nil, err
@@ -70,7 +74,11 @@ func (f RecurringFilter) matches(s domain.Series) bool {
 }
 
 // seriesFacts reads the expenses of the open balance accounts in the detector window.
-func (s *Service) seriesFacts(ctx context.Context, booksID int64, only uuid.UUID) ([]domain.SeriesFact, error) {
+func (s *Service) seriesFacts(
+	ctx context.Context,
+	booksID int64,
+	only uuid.UUID,
+) ([]domain.SeriesFact, error) {
 	accounts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
 		return nil, err
@@ -87,7 +95,8 @@ func (s *Service) seriesFacts(ctx context.Context, booksID int64, only uuid.UUID
 	var out []domain.SeriesFact
 
 	for _, a := range accounts {
-		if a.Closed || (a.Class != "asset" && a.Class != "liability") || (only != uuid.Nil && a.ID != only) {
+		if a.Closed || (a.Class != "asset" && a.Class != "liability") ||
+			(only != uuid.Nil && a.ID != only) {
 			continue
 		}
 
@@ -114,7 +123,11 @@ func (s *Service) seriesFacts(ctx context.Context, booksID int64, only uuid.UUID
 // seriesFact is the expense t books on account: the sum of its expense postings and the expense
 // account of the largest one. ok is false for a voided transaction, one without an expense
 // amount and one without a payee or description.
-func seriesFact(t domain.Transaction, account uuid.UUID, classes map[uuid.UUID]string) (domain.SeriesFact, bool) {
+func seriesFact(
+	t domain.Transaction,
+	account uuid.UUID,
+	classes map[uuid.UUID]string,
+) (domain.SeriesFact, bool) {
 	if t.Voided {
 		return domain.SeriesFact{}, false
 	}

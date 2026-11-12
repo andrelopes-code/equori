@@ -24,7 +24,13 @@ type sourceList struct {
 func (b reimbursementBooks) sources(t *testing.T, id string) sourceList {
 	t.Helper()
 	var out sourceList
-	b.h.MustDo(http.MethodGet, "/api/v1/transactions/"+id+"/reimbursement-sources", nil, http.StatusOK, &out)
+	b.h.MustDo(
+		http.MethodGet,
+		"/api/v1/transactions/"+id+"/reimbursement-sources",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	return out
 }
@@ -52,7 +58,13 @@ func TestReimbursementSources_S114(t *testing.T) {
 	linked := b.inflow("2026-10-13", 3000)
 	mustReimburse(t, b.h, linked, 1, alloc(expense, 3000))
 	voided := b.inflow("2026-10-14", 3000)
-	b.h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "x"}, http.StatusOK, nil)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "x"},
+		http.StatusOK,
+		nil,
+	)
 	salary := b.h.Account("Salary", "income", "", nil)
 	b.h.Record("2026-10-15", apitest.Posting(b.nubank, 3000), apitest.Posting(salary, -3000))
 	full := b.inflow("2026-10-16", 4000)
@@ -64,7 +76,8 @@ func TestReimbursementSources_S114(t *testing.T) {
 		t.Fatalf("sources = %v, want %v", got.ids(), want)
 	}
 
-	if got.Items[0].Free.Amount != 3000 || got.Items[0].Free.Currency != "BRL" || got.Items[1].Free.Amount != 3000 {
+	if got.Items[0].Free.Amount != 3000 || got.Items[0].Free.Currency != "BRL" ||
+		got.Items[1].Free.Amount != 3000 {
 		t.Fatalf("free = %+v, want 3000 and 3000", got.Items)
 	}
 }
@@ -85,5 +98,14 @@ func TestReimbursementSourcesOfInflow_S114(t *testing.T) {
 func TestReimbursementSourcesUnknownTransaction_S114(t *testing.T) {
 	t.Parallel()
 	b := newReimbursementBooks(t)
-	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/transactions/00000000-0000-7000-8000-000000000000/reimbursement-sources", nil), http.StatusNotFound, "not_found", "")
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodGet,
+			"/api/v1/transactions/00000000-0000-7000-8000-000000000000/reimbursement-sources",
+			nil,
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

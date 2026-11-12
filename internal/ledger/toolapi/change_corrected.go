@@ -44,8 +44,12 @@ func correctedTransaction(
 
 func copyTransaction(cur domain.Transaction) domain.Transaction {
 	next := domain.Transaction{
-		Date: cur.Date, Description: cur.Description, PayeeID: cur.PayeeID, Tags: cur.Tags, Links: cur.Links,
-		Origin: cur.Origin,
+		Date:        cur.Date,
+		Description: cur.Description,
+		PayeeID:     cur.PayeeID,
+		Tags:        cur.Tags,
+		Links:       cur.Links,
+		Origin:      cur.Origin,
 	}
 	for _, po := range cur.Postings {
 		next.Postings = append(next.Postings, domain.Posting{
@@ -86,18 +90,28 @@ func applyCorrectedFields(next *domain.Transaction, in changeTransactionIn) erro
 
 func checkCorrectedSides(in changeTransactionIn, two bool) error {
 	fields := map[string]bool{
-		"amount": in.Amount != "", "from_account_id": in.FromAccountID != "", "to_account_id": in.ToAccountID != "",
+		"amount":          in.Amount != "",
+		"from_account_id": in.FromAccountID != "",
+		"to_account_id":   in.ToAccountID != "",
 	}
 	for field, given := range fields {
 		if given && !two {
-			return tool.InvalidArgument(field, "applies only to a transaction with one source and one destination")
+			return tool.InvalidArgument(
+				field,
+				"applies only to a transaction with one source and one destination",
+			)
 		}
 	}
 
 	return nil
 }
 
-func applyCorrectedAmount(next *domain.Transaction, cur domain.Transaction, in changeTransactionIn, from, to int) error {
+func applyCorrectedAmount(
+	next *domain.Transaction,
+	cur domain.Transaction,
+	in changeTransactionIn,
+	from, to int,
+) error {
 	amount, err := tool.ParsePositive("amount", in.Amount, cur.Postings[from].Amount)
 	if err != nil {
 		return err
@@ -143,16 +157,36 @@ func applyCorrectedAccounts(
 	return nil
 }
 
-func correctionChanges(ctx context.Context, svc *app.Service, booksID int64, p changePlan, accounts map[uuid.UUID]domain.Account) ([]tool.Change, error) {
+func correctionChanges(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	p changePlan,
+	accounts map[uuid.UUID]domain.Account,
+) ([]tool.Change, error) {
 	cur, next := p.current, p.next
 
 	var out []tool.Change
 	if !cur.Date.Equal(next.Date) {
-		out = append(out, tool.Change{Field: "date", Before: tool.DateValue(cur.Date), After: tool.DateValue(next.Date)})
+		out = append(
+			out,
+			tool.Change{
+				Field:  "date",
+				Before: tool.DateValue(cur.Date),
+				After:  tool.DateValue(next.Date),
+			},
+		)
 	}
 
 	if cur.Description != next.Description {
-		out = append(out, tool.Change{Field: "description", Before: tool.TextValue(cur.Description), After: tool.TextValue(next.Description)})
+		out = append(
+			out,
+			tool.Change{
+				Field:  "description",
+				Before: tool.TextValue(cur.Description),
+				After:  tool.TextValue(next.Description),
+			},
+		)
 	}
 
 	if cur.PayeeID != next.PayeeID {
@@ -161,16 +195,29 @@ func correctionChanges(ctx context.Context, svc *app.Service, booksID int64, p c
 			return nil, err
 		}
 
-		out = append(out, tool.Change{Field: "payee", Before: tool.TextValue(names[cur.PayeeID]), After: tool.TextValue(names[next.PayeeID])})
+		out = append(
+			out,
+			tool.Change{
+				Field:  "payee",
+				Before: tool.TextValue(names[cur.PayeeID]),
+				After:  tool.TextValue(names[next.PayeeID]),
+			},
+		)
 	}
 
 	if a, b := strings.Join(cur.Tags, ", "), strings.Join(next.Tags, ", "); a != b {
-		out = append(out, tool.Change{Field: "tags", Before: tool.TextValue(a), After: tool.TextValue(b)})
+		out = append(
+			out,
+			tool.Change{Field: "tags", Before: tool.TextValue(a), After: tool.TextValue(b)},
+		)
 	}
 
 	if from, to, ok := sides(cur); ok {
 		if a, b := cur.Postings[to].Amount, next.Postings[to].Amount; a != b {
-			out = append(out, tool.Change{Field: "amount", Before: tool.MoneyValue(a), After: tool.MoneyValue(b)})
+			out = append(
+				out,
+				tool.Change{Field: "amount", Before: tool.MoneyValue(a), After: tool.MoneyValue(b)},
+			)
 		}
 
 		for _, i := range []int{from, to} {
@@ -184,7 +231,14 @@ func correctionChanges(ctx context.Context, svc *app.Service, booksID int64, p c
 				field = "category"
 			}
 
-			out = append(out, tool.Change{Field: field, Before: tool.TextValue(a.Name), After: tool.TextValue(b.Name)})
+			out = append(
+				out,
+				tool.Change{
+					Field:  field,
+					Before: tool.TextValue(a.Name),
+					After:  tool.TextValue(b.Name),
+				},
+			)
 		}
 	}
 

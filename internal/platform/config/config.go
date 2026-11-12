@@ -120,7 +120,9 @@ func resolveDataDir(cfg *Config, getenv func(string) string) []string {
 			cfg.BackupDir = filepath.Join(cfg.DataDir, "backups")
 		}
 	case getenv("EQUORI_DATABASE_URL") == "":
-		return []string{"EQUORI_DATABASE_URL is not set and this system has no default data directory; set EQUORI_DATABASE_URL or EQUORI_DATA_DIR"}
+		return []string{
+			"EQUORI_DATABASE_URL is not set and this system has no default data directory; set EQUORI_DATABASE_URL or EQUORI_DATA_DIR",
+		}
 	}
 
 	return nil

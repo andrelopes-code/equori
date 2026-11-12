@@ -33,7 +33,12 @@ func execute(t *testing.T, stop bool, err error) (bool, uint32) {
 func TestExecuteEndsARequestedStopWithoutFailure(t *testing.T) {
 	t.Parallel()
 
-	if specific, code := execute(t, true, errors.New("shut down http: context deadline exceeded")); specific || code != 0 {
+	if specific, code := execute(
+		t,
+		true,
+		errors.New("shut down http: context deadline exceeded"),
+	); specific ||
+		code != 0 {
 		t.Fatalf("Execute after Stop = %v, %d; want false, 0", specific, code)
 	}
 }
@@ -42,7 +47,12 @@ func TestExecuteEndsARequestedStopWithoutFailure(t *testing.T) {
 func TestExecuteReportsAFailure(t *testing.T) {
 	t.Parallel()
 
-	if specific, code := execute(t, false, errors.New("listen tcp 127.0.0.1:8080: bind")); !specific || code != 1 {
+	if specific, code := execute(
+		t,
+		false,
+		errors.New("listen tcp 127.0.0.1:8080: bind"),
+	); !specific ||
+		code != 1 {
 		t.Fatalf("Execute after a failure = %v, %d; want true, 1", specific, code)
 	}
 }

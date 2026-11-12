@@ -134,24 +134,48 @@ func TestS154(t *testing.T) {
 	h.Record("2026-06-01", apitest.Posting(checking, 1000000), apitest.Posting(loan, -1000000))
 
 	for _, m := range months(7, 10) {
-		h.Record(m+"-20", apitest.Posting(checking, -125000), apitest.Posting(loan, 90000), apitest.Posting(interest, 35000))
+		h.Record(
+			m+"-20",
+			apitest.Posting(checking, -125000),
+			apitest.Posting(loan, 90000),
+			apitest.Posting(interest, 35000),
+		)
 	}
 
 	h.Record("2026-08-01", apitest.Posting(checking, -300000), apitest.Posting(savings, 300000))
 	h.Record("2026-08-02", apitest.Posting(checking, -400000), apitest.Posting(cdb, 400000))
 	h.Record("2026-10-01", apitest.Posting(checking, -60000), apitest.Posting(meal, 60000))
 	h.MustDo(http.MethodPost, "/api/v1/exchanges", map[string]any{
-		"from_account_id": checking, "to_account_id": dollars, "date": "2026-10-01",
-		"from_amount": apitest.BRL(50000), "to_amount": map[string]any{"amount": 10000, "currency": "USD"},
+		"from_account_id": checking,
+		"to_account_id":   dollars,
+		"date":            "2026-10-01",
+		"from_amount": apitest.BRL(
+			50000,
+		),
+		"to_amount": map[string]any{"amount": 10000, "currency": "USD"},
 	}, http.StatusCreated, nil)
 	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
 		"instrument": "USD", "quote_instrument": "BRL", "date": "2026-10-20", "value": "5",
 	}, http.StatusCreated, nil)
-	h.MustDo(http.MethodPatch, "/api/v1/accounts/"+cdb, map[string]any{"excluded_from_liquidity": true}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/accounts/"+cdb,
+		map[string]any{"excluded_from_liquidity": true},
+		http.StatusOK,
+		nil,
+	)
 	h.MustDo(http.MethodPost, "/api/v1/schedules", map[string]any{
-		"kind": "subscription", "account_id": checking, "counterpart_id": streaming, "description": "Streaming",
-		"amount":     apitest.BRL(5000),
-		"recurrence": map[string]any{"frequency": "monthly", "interval": 1, "day_of_month": 25, "start": "2026-10-25"},
+		"kind":           "subscription",
+		"account_id":     checking,
+		"counterpart_id": streaming,
+		"description":    "Streaming",
+		"amount":         apitest.BRL(5000),
+		"recurrence": map[string]any{
+			"frequency":    "monthly",
+			"interval":     1,
+			"day_of_month": 25,
+			"start":        "2026-10-25",
+		},
 	}, http.StatusCreated, nil)
 	h.Dispatch()
 
@@ -171,7 +195,8 @@ func TestS154(t *testing.T) {
 	}
 
 	got := indicators(t, h, "2026-10")
-	if got.Currency != "BRL" || len(got.Months) != 12 || got.Months[0].Month != "2025-11" || got.Months[11].Month != "2026-10" {
+	if got.Currency != "BRL" || len(got.Months) != 12 || got.Months[0].Month != "2025-11" ||
+		got.Months[11].Month != "2026-10" {
 		t.Fatalf("report = %+v", got)
 	}
 
@@ -194,7 +219,8 @@ func TestS154(t *testing.T) {
 		}
 	}
 
-	if last.MeanIncome == nil || *last.MeanIncome != brl(500000) || last.MeanExpense == nil || *last.MeanExpense != brl(267500) {
+	if last.MeanIncome == nil || *last.MeanIncome != brl(500000) || last.MeanExpense == nil ||
+		*last.MeanExpense != brl(267500) {
 		t.Errorf("means = %+v, %+v", last.MeanIncome, last.MeanExpense)
 	}
 
@@ -215,12 +241,27 @@ func TestS154(t *testing.T) {
 	}
 
 	wantSavings := slices.Concat(times("no_income", 5), times("5000", 3), times("4300", 4))
-	if s := ratios(got, func(m indicatorMonth) ratio { return m.SavingsRate }); !slices.Equal(s, wantSavings) {
+	if s := ratios(
+		got,
+		func(m indicatorMonth) ratio { return m.SavingsRate },
+	); !slices.Equal(
+		s,
+		wantSavings,
+	) {
 		t.Errorf("savings rates = %v, want %v", s, wantSavings)
 	}
 
-	wantTrailing := slices.Concat(times("insufficient_history", 8), []string{"5000", "4825", "4720", "4650"})
-	if s := ratios(got, func(m indicatorMonth) ratio { return m.TrailingSavingsRate }); !slices.Equal(s, wantTrailing) {
+	wantTrailing := slices.Concat(
+		times("insufficient_history", 8),
+		[]string{"5000", "4825", "4720", "4650"},
+	)
+	if s := ratios(
+		got,
+		func(m indicatorMonth) ratio { return m.TrailingSavingsRate },
+	); !slices.Equal(
+		s,
+		wantTrailing,
+	) {
 		t.Errorf("trailing savings rates = %v, want %v", s, wantTrailing)
 	}
 }
@@ -242,12 +283,31 @@ func TestS155(t *testing.T) {
 
 		return out.ID
 	}
-	checking := create(map[string]any{"name": "Checking", "class": "asset", "kind": "checking", "currency": "BRL", "opened_on": "2026-01-01"})
-	salary := create(map[string]any{"name": "Salary", "class": "income", "currency": "BRL", "opened_on": "2026-01-01"})
+	checking := create(
+		map[string]any{
+			"name":      "Checking",
+			"class":     "asset",
+			"kind":      "checking",
+			"currency":  "BRL",
+			"opened_on": "2026-01-01",
+		},
+	)
+	salary := create(
+		map[string]any{
+			"name":      "Salary",
+			"class":     "income",
+			"currency":  "BRL",
+			"opened_on": "2026-01-01",
+		},
+	)
 
 	r := h.Call(other, http.MethodPost, "/api/v1/transactions", map[string]any{
-		"date": "2026-10-05", "description": "salary",
-		"postings": []map[string]any{apitest.Posting(checking, 500000), apitest.Posting(salary, -500000)},
+		"date":        "2026-10-05",
+		"description": "salary",
+		"postings": []map[string]any{
+			apitest.Posting(checking, 500000),
+			apitest.Posting(salary, -500000),
+		},
 	})
 	if r.Status != http.StatusCreated {
 		t.Fatalf("record = %d: %s", r.Status, r.Body)
@@ -318,8 +378,18 @@ func TestS156(t *testing.T) {
 func TestIndicatorsMonthProblems(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-10-20"))
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/indicators?month=2026-11", nil), http.StatusBadRequest, "invalid_request", "month")
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/indicators?month=2026-13", nil), http.StatusBadRequest, "invalid_request", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/reports/indicators?month=2026-11", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"month",
+	)
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/reports/indicators?month=2026-13", nil),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
 }
 
 func TestIndicatorsPriceMissing(t *testing.T) {
@@ -328,8 +398,18 @@ func TestIndicatorsPriceMissing(t *testing.T) {
 	checking := h.Account("Checking", "asset", "checking", opened(nil))
 	dollars := h.Account("Dollars", "asset", "wallet", opened(map[string]any{"currency": "USD"}))
 	h.MustDo(http.MethodPost, "/api/v1/exchanges", map[string]any{
-		"from_account_id": checking, "to_account_id": dollars, "date": "2026-10-01",
-		"from_amount": apitest.BRL(50000), "to_amount": map[string]any{"amount": 10000, "currency": "USD"},
+		"from_account_id": checking,
+		"to_account_id":   dollars,
+		"date":            "2026-10-01",
+		"from_amount": apitest.BRL(
+			50000,
+		),
+		"to_amount": map[string]any{"amount": 10000, "currency": "USD"},
 	}, http.StatusCreated, nil)
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/reports/indicators?month=2026-10", nil), http.StatusUnprocessableEntity, "price_missing", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/reports/indicators?month=2026-10", nil),
+		http.StatusUnprocessableEntity,
+		"price_missing",
+		"",
+	)
 }

@@ -12,12 +12,25 @@ import (
 
 func toGoalAPI(g app.GoalView) Goal {
 	out := Goal{
-		Id: g.ID, Name: g.Name, Target: toMoneyAPI(g.Target, g.Currency), DueOn: apiDate(g.DueOn), AccountIds: g.AccountIDs,
-		Current: toMoneyAPI(g.Progress.Current, g.Currency), Remaining: toMoneyAPI(g.Progress.Remaining, g.Currency),
-		ProgressBp: g.Progress.ProgressBP, Prices: toPricesAPI(g.Prices), Parts: toGoalPartsAPI(g.Parts),
+		Id:         g.ID,
+		Name:       g.Name,
+		Target:     toMoneyAPI(g.Target, g.Currency),
+		DueOn:      apiDate(g.DueOn),
+		AccountIds: g.AccountIDs,
+		Current: toMoneyAPI(
+			g.Progress.Current,
+			g.Currency,
+		),
+		Remaining:  toMoneyAPI(g.Progress.Remaining, g.Currency),
+		ProgressBp: g.Progress.ProgressBP,
+		Prices:     toPricesAPI(g.Prices),
+		Parts:      toGoalPartsAPI(g.Parts),
 	}
 	if g.Trailing != nil {
-		out.TrailingReturn = &TrailingReturn{PeriodMonths: g.Trailing.Months, AnnualBp: g.Trailing.BP}
+		out.TrailingReturn = &TrailingReturn{
+			PeriodMonths: g.Trailing.Months,
+			AnnualBp:     g.Trailing.BP,
+		}
 	}
 
 	return out
@@ -31,8 +44,13 @@ func toGoalPartsAPI(ps []app.ValuedPart) *[]GoalPart {
 	out := make([]GoalPart, len(ps))
 	for i, p := range ps {
 		out[i] = GoalPart{
-			AccountId: p.AccountID, Instrument: string(p.Instrument),
-			Quantity: toMoneyAPI(p.Quantity.Amount(), p.Quantity.Currency()), Value: toMoneyAPI(p.Value.Amount(), p.Value.Currency()),
+			AccountId:  p.AccountID,
+			Instrument: string(p.Instrument),
+			Quantity: toMoneyAPI(
+				p.Quantity.Amount(),
+				p.Quantity.Currency(),
+			),
+			Value: toMoneyAPI(p.Value.Amount(), p.Value.Currency()),
 		}
 	}
 
@@ -50,7 +68,11 @@ func (s *Server) createGoal(
 	return toGoalAPI(g), BaseURL + "/goals/" + g.ID.String(), nil
 }
 
-func (s *Server) updateGoal(ctx context.Context, r *http.Request, in UpdateGoalJSONRequestBody) (Goal, error) {
+func (s *Server) updateGoal(
+	ctx context.Context,
+	r *http.Request,
+	in UpdateGoalJSONRequestBody,
+) (Goal, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Goal{}, err
@@ -78,7 +100,11 @@ func (s *Server) updateGoal(ctx context.Context, r *http.Request, in UpdateGoalJ
 	return toGoalAPI(g), nil
 }
 
-func (s *Server) deleteGoal(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+func (s *Server) deleteGoal(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return httpserver.None{}, err
@@ -105,7 +131,11 @@ func (s *Server) getGoal(ctx context.Context, r *http.Request, _ httpserver.None
 	return toGoalAPI(g), nil
 }
 
-func (s *Server) listGoals(ctx context.Context, r *http.Request, _ httpserver.None) (GoalPage, error) {
+func (s *Server) listGoals(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (GoalPage, error) {
 	params, err := httpserver.Query[ListGoalsParams](r)
 	if err != nil {
 		return GoalPage{}, err
@@ -137,5 +167,12 @@ func (s *Server) addGoal(ctx context.Context, in CreateGoalJSONRequestBody) (app
 		return app.GoalView{}, err
 	}
 
-	return s.svc.CreateGoal(ctx, auth.MustBooksID(ctx), in.Name, target, in.DueOn.Time, in.AccountIds)
+	return s.svc.CreateGoal(
+		ctx,
+		auth.MustBooksID(ctx),
+		in.Name,
+		target,
+		in.DueOn.Time,
+		in.AccountIds,
+	)
 }

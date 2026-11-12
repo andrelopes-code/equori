@@ -38,13 +38,16 @@ func TestLoginWithTOTP(t *testing.T) {
 	right := domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)+1)
 
 	c, r := passwordLogin(t, h, "owner@example.com")
-	if r.Status != http.StatusAccepted || strings.TrimSpace(string(r.Body)) != `{"methods":["totp","recovery_code"],"passkey":null}` {
+	if r.Status != http.StatusAccepted ||
+		strings.TrimSpace(string(r.Body)) != `{"methods":["totp","recovery_code"],"passkey":null}` {
 		t.Fatalf("password = %d: %s", r.Status, r.Body)
 	}
 
 	set := r.Header.Values("Set-Cookie")
-	if len(set) != 1 || !strings.HasPrefix(set[0], "equori_login=") || !strings.Contains(set[0], "Path=/api/v1/session") ||
-		!strings.Contains(set[0], "HttpOnly") || !strings.Contains(set[0], "Expires=Sat, 31 Oct 2026 12:05:00 GMT") {
+	if len(set) != 1 || !strings.HasPrefix(set[0], "equori_login=") ||
+		!strings.Contains(set[0], "Path=/api/v1/session") ||
+		!strings.Contains(set[0], "HttpOnly") ||
+		!strings.Contains(set[0], "Expires=Sat, 31 Oct 2026 12:05:00 GMT") {
 		t.Fatalf("Set-Cookie = %q", set)
 	}
 
@@ -54,7 +57,8 @@ func TestLoginWithTOTP(t *testing.T) {
 	}
 
 	set = r.Header.Values("Set-Cookie")
-	if len(set) != 2 || !strings.HasPrefix(set[0], "equori_session=") || !strings.HasPrefix(set[1], "equori_login=") ||
+	if len(set) != 2 || !strings.HasPrefix(set[0], "equori_session=") ||
+		!strings.HasPrefix(set[1], "equori_login=") ||
 		!strings.Contains(set[1], "Expires=Thu, 01 Jan 1970 00:00:00 GMT") {
 		t.Fatalf("Set-Cookie = %q", set)
 	}
@@ -68,7 +72,12 @@ func TestLoginWithTOTP(t *testing.T) {
 	}
 
 	c, _ = passwordLogin(t, h, "owner@example.com")
-	h.ExpectProblem(answer(t, h, c, map[string]any{"totp_code": right}), http.StatusUnauthorized, "second_factor_invalid", "")
+	h.ExpectProblem(
+		answer(t, h, c, map[string]any{"totp_code": right}),
+		http.StatusUnauthorized,
+		"second_factor_invalid",
+		"",
+	)
 
 	c, _ = passwordLogin(t, h, "owner@example.com")
 	h.ExpectProblem(answer(t, h, c, map[string]any{}), http.StatusBadRequest, "invalid_request", "")
@@ -87,19 +96,28 @@ func TestLoginWithPasskey(t *testing.T) {
 	c, r := passwordLogin(t, h, "owner@example.com")
 	first := decodeChallenge(t, r)
 
-	if len(first.Methods) != 2 || first.Methods[0] != "passkey" || first.Methods[1] != "recovery_code" ||
-		first.Passkey == nil || len(first.Passkey.AllowCredentials) != 1 || first.Passkey.AllowCredentials[0] != b64(key.credentialID) ||
+	if len(first.Methods) != 2 || first.Methods[0] != "passkey" ||
+		first.Methods[1] != "recovery_code" ||
+		first.Passkey == nil ||
+		len(first.Passkey.AllowCredentials) != 1 ||
+		first.Passkey.AllowCredentials[0] != b64(key.credentialID) ||
 		len(decodeB64(t, first.Passkey.Challenge)) != 32 {
 		t.Fatalf("challenge = %s", r.Body)
 	}
 
 	bare := h.Call(&http.Client{}, http.MethodPost, "/api/v1/session",
 		map[string]string{"email": "owner@example.com", "password": apitest.Password})
-	if bare.Status != http.StatusAccepted || strings.TrimSpace(string(bare.Body)) != `{"methods":["recovery_code"],"passkey":null}` {
+	if bare.Status != http.StatusAccepted ||
+		strings.TrimSpace(string(bare.Body)) != `{"methods":["recovery_code"],"passkey":null}` {
 		t.Fatalf("password without Origin = %d: %s", bare.Status, bare.Body)
 	}
 
-	r = answer(t, h, c, key.assertion(key.credentialID, decodeB64(t, first.Passkey.Challenge), 1, h.URL()))
+	r = answer(
+		t,
+		h,
+		c,
+		key.assertion(key.credentialID, decodeB64(t, first.Passkey.Challenge), 1, h.URL()),
+	)
 	if r.Status != http.StatusNoContent {
 		t.Fatalf("assertion = %d: %s", r.Status, r.Body)
 	}
@@ -117,7 +135,8 @@ func TestLoginWithPasskey(t *testing.T) {
 		used  time.Time
 	)
 
-	if err := h.Pool.QueryRow(t.Context(), `SELECT sign_count, last_used_at FROM identity_passkey`).Scan(&count, &used); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT sign_count, last_used_at FROM identity_passkey`).
+		Scan(&count, &used); err != nil {
 		t.Fatal(err)
 	}
 
@@ -127,22 +146,54 @@ func TestLoginWithPasskey(t *testing.T) {
 
 	replay, r := passwordLogin(t, h, "owner@example.com")
 	next := decodeChallenge(t, r)
-	h.ExpectProblem(answer(t, h, replay, key.assertion(key.credentialID, decodeB64(t, next.Passkey.Challenge), 1, h.URL())),
-		http.StatusUnauthorized, "second_factor_invalid", "")
+	h.ExpectProblem(
+		answer(
+			t,
+			h,
+			replay,
+			key.assertion(key.credentialID, decodeB64(t, next.Passkey.Challenge), 1, h.URL()),
+		),
+		http.StatusUnauthorized,
+		"second_factor_invalid",
+		"",
+	)
 
 	unknown, r := passwordLogin(t, h, "owner@example.com")
 	next = decodeChallenge(t, r)
-	h.ExpectProblem(answer(t, h, unknown, key.assertion([]byte{9, 9, 9, 9}, decodeB64(t, next.Passkey.Challenge), 2, h.URL())),
-		http.StatusUnauthorized, "second_factor_invalid", "")
+	h.ExpectProblem(
+		answer(
+			t,
+			h,
+			unknown,
+			key.assertion([]byte{9, 9, 9, 9}, decodeB64(t, next.Passkey.Challenge), 2, h.URL()),
+		),
+		http.StatusUnauthorized,
+		"second_factor_invalid",
+		"",
+	)
 
 	stale, _ := passwordLogin(t, h, "owner@example.com")
-	h.ExpectProblem(answer(t, h, stale, key.assertion(key.credentialID, decodeB64(t, first.Passkey.Challenge), 2, h.URL())),
-		http.StatusUnauthorized, "second_factor_invalid", "")
+	h.ExpectProblem(
+		answer(
+			t,
+			h,
+			stale,
+			key.assertion(key.credentialID, decodeB64(t, first.Passkey.Challenge), 2, h.URL()),
+		),
+		http.StatusUnauthorized,
+		"second_factor_invalid",
+		"",
+	)
 
 	good, r := passwordLogin(t, h, "owner@example.com")
 	next = decodeChallenge(t, r)
 
-	if r := answer(t, h, good, key.assertion(key.credentialID, decodeB64(t, next.Passkey.Challenge), 2, h.URL())); r.Status != http.StatusNoContent {
+	if r := answer(
+		t,
+		h,
+		good,
+		key.assertion(key.credentialID, decodeB64(t, next.Passkey.Challenge), 2, h.URL()),
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("assertion = %d: %s", r.Status, r.Body)
 	}
 }
@@ -155,13 +206,21 @@ func TestLoginWithRecoveryCode(t *testing.T) {
 	_, codes := enableTOTP(t, h)
 
 	c, _ := passwordLogin(t, h, "owner@example.com")
-	hyphenated := strings.ToLower(codes[0][:4] + "-" + codes[0][4:8] + "-" + codes[0][8:12] + "-" + codes[0][12:])
+	hyphenated := strings.ToLower(
+		codes[0][:4] + "-" + codes[0][4:8] + "-" + codes[0][8:12] + "-" + codes[0][12:],
+	)
 
-	if r := answer(t, h, c, map[string]any{"recovery_code": hyphenated}); r.Status != http.StatusNoContent {
+	if r := answer(
+		t,
+		h,
+		c,
+		map[string]any{"recovery_code": hyphenated},
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("recovery code = %d: %s", r.Status, r.Body)
 	}
 
-	if logs := h.Logs(); !strings.Contains(logs, "method=recovery_code") || !strings.Contains(logs, "recovery_codes_left=9") {
+	if logs := h.Logs(); !strings.Contains(logs, "method=recovery_code") ||
+		!strings.Contains(logs, "recovery_codes_left=9") {
 		t.Fatal("logs hold no method=recovery_code with recovery_codes_left=9")
 	}
 
@@ -181,7 +240,12 @@ func TestLoginWithRecoveryCode(t *testing.T) {
 		http.StatusUnauthorized, "second_factor_invalid", "")
 
 	c, _ = passwordLogin(t, h, "owner@example.com")
-	if r := answer(t, h, c, map[string]any{"recovery_code": codes[1]}); r.Status != http.StatusNoContent {
+	if r := answer(
+		t,
+		h,
+		c,
+		map[string]any{"recovery_code": codes[1]},
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("second recovery code = %d: %s", r.Status, r.Body)
 	}
 }
@@ -202,14 +266,26 @@ func TestSecondFactorAttempts(t *testing.T) {
 	c, _ := passwordLogin(t, h, "owner@example.com")
 
 	for range 5 {
-		h.ExpectProblem(answer(t, h, c, map[string]any{"totp_code": wrong}), http.StatusUnauthorized, "second_factor_invalid", "")
+		h.ExpectProblem(
+			answer(t, h, c, map[string]any{"totp_code": wrong}),
+			http.StatusUnauthorized,
+			"second_factor_invalid",
+			"",
+		)
 	}
 
-	h.ExpectProblem(answer(t, h, c, map[string]any{"totp_code": right}), http.StatusUnauthorized, "unauthenticated", "")
+	h.ExpectProblem(
+		answer(t, h, c, map[string]any{"totp_code": right}),
+		http.StatusUnauthorized,
+		"unauthenticated",
+		"",
+	)
 
 	var pending int
 
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_login_challenge`).Scan(&pending); err != nil || pending != 0 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_login_challenge`).
+		Scan(&pending); err != nil ||
+		pending != 0 {
 		t.Fatalf("pending logins = %d, %v; want 0", pending, err)
 	}
 
@@ -282,8 +358,17 @@ func TestSecondFactorEdges(t *testing.T) {
 
 		clock.Store(later.UnixNano())
 
-		h.ExpectProblem(answer(t, h, c, map[string]any{"totp_code": domain.TOTPCode(secret, domain.TOTPStepAt(later))}),
-			http.StatusUnauthorized, "unauthenticated", "")
+		h.ExpectProblem(
+			answer(
+				t,
+				h,
+				c,
+				map[string]any{"totp_code": domain.TOTPCode(secret, domain.TOTPStepAt(later))},
+			),
+			http.StatusUnauthorized,
+			"unauthenticated",
+			"",
+		)
 	})
 
 	t.Run("password throttle holds with a factor", func(t *testing.T) {
@@ -309,7 +394,10 @@ func TestSecondFactorEdges(t *testing.T) {
 		h.Login("plain@example.com")
 
 		_, r := passwordLogin(t, h, "plain@example.com")
-		if set := r.Header.Values("Set-Cookie"); r.Status != http.StatusNoContent || len(set) != 1 || !strings.HasPrefix(set[0], "equori_session=") {
+		if set := r.Header.Values(
+			"Set-Cookie",
+		); r.Status != http.StatusNoContent || len(set) != 1 ||
+			!strings.HasPrefix(set[0], "equori_session=") {
 			t.Fatalf("password = %d, Set-Cookie %q", r.Status, set)
 		}
 
@@ -327,10 +415,24 @@ func TestSecondFactorEdges(t *testing.T) {
 		h.Restart(clockOption(clock))
 
 		c, _ := passwordLogin(t, h, "owner@example.com")
-		h.ExpectProblem(answer(t, h, c, map[string]any{"totp_code": domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)+1)}),
-			http.StatusConflict, "secret_key_missing", "")
+		h.ExpectProblem(
+			answer(
+				t,
+				h,
+				c,
+				map[string]any{"totp_code": domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)+1)},
+			),
+			http.StatusConflict,
+			"secret_key_missing",
+			"",
+		)
 
-		if r := answer(t, h, c, map[string]any{"recovery_code": codes[0]}); r.Status != http.StatusNoContent {
+		if r := answer(
+			t,
+			h,
+			c,
+			map[string]any{"recovery_code": codes[0]},
+		); r.Status != http.StatusNoContent {
 			t.Fatalf("recovery code = %d: %s", r.Status, r.Body)
 		}
 	})
@@ -364,7 +466,12 @@ func TestSecondFactorEdges(t *testing.T) {
 		h.Restart(apitest.SecretKeys(rotated, ""), clockOption(clock))
 
 		c, _ := passwordLogin(t, h, "owner@example.com")
-		if r := answer(t, h, c, map[string]any{"totp_code": domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)+1)}); r.Status != http.StatusNoContent {
+		if r := answer(
+			t,
+			h,
+			c,
+			map[string]any{"totp_code": domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)+1)},
+		); r.Status != http.StatusNoContent {
 			t.Fatalf("totp code = %d: %s", r.Status, r.Body)
 		}
 	})
@@ -395,14 +502,25 @@ func enableTOTP(t *testing.T, h *apitest.Harness) (secret []byte, codes []string
 		RecoveryCodes []string `json:"recovery_codes"`
 	}
 
-	h.MustDo(http.MethodPost, "/api/v1/me/totp/confirm",
-		map[string]string{"code": domain.TOTPCode(secret, domain.TOTPStepAt(loginNow))}, http.StatusOK, &confirmed)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/me/totp/confirm",
+		map[string]string{
+			"code": domain.TOTPCode(secret, domain.TOTPStepAt(loginNow)),
+		},
+		http.StatusOK,
+		&confirmed,
+	)
 
 	return secret, confirmed.RecoveryCodes
 }
 
 // passwordLogin posts the right password of email with an Origin on a client with a new cookie jar.
-func passwordLogin(t *testing.T, h *apitest.Harness, email string) (*http.Client, apitest.Response) {
+func passwordLogin(
+	t *testing.T,
+	h *apitest.Harness,
+	email string,
+) (*http.Client, apitest.Response) {
 	t.Helper()
 
 	c := newJarClient(t)
@@ -412,7 +530,12 @@ func passwordLogin(t *testing.T, h *apitest.Harness, email string) (*http.Client
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, h.URL()+"/api/v1/session", body)
+	req, err := http.NewRequestWithContext(
+		t.Context(),
+		http.MethodPost,
+		h.URL()+"/api/v1/session",
+		body,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -446,7 +569,12 @@ func answer(t *testing.T, h *apitest.Harness, c *http.Client, body any) apitest.
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, h.URL()+"/api/v1/session/second-factor", reader)
+	req, err := http.NewRequestWithContext(
+		t.Context(),
+		http.MethodPost,
+		h.URL()+"/api/v1/session/second-factor",
+		reader,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -493,7 +621,11 @@ func jsonBody(v any) (*bytes.Buffer, error) {
 }
 
 // assertion builds the body of completeSecondFactor for a passkey, signed over challenge.
-func (k softKey) assertion(credentialID, challenge []byte, counter uint32, origin string) map[string]any {
+func (k softKey) assertion(
+	credentialID, challenge []byte,
+	counter uint32,
+	origin string,
+) map[string]any {
 	clientData := k.clientData("webauthn.get", challenge, origin)
 	authData := k.assertionData("127.0.0.1", 0x01, counter)
 
@@ -510,7 +642,12 @@ func (k softKey) assertion(credentialID, challenge []byte, counter uint32, origi
 func parallelAnswer(ctx context.Context, baseURL string, c *http.Client, code string) string {
 	body := strings.NewReader(fmt.Sprintf(`{"totp_code":%q}`, code))
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/api/v1/session/second-factor", body)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		baseURL+"/api/v1/session/second-factor",
+		body,
+	)
 	if err != nil {
 		return err.Error()
 	}

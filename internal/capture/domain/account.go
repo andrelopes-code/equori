@@ -136,7 +136,8 @@ func (m method) admits(a Account) bool {
 	case methodCredit, methodCard:
 		return a.Kind == "credit_card"
 	case methodDebit:
-		return a.Class == "asset" && slices.Contains([]string{"checking", "savings", "wallet"}, a.Kind)
+		return a.Class == "asset" &&
+			slices.Contains([]string{"checking", "savings", "wallet"}, a.Kind)
 	case methodCash:
 		return a.Kind == "cash"
 	}

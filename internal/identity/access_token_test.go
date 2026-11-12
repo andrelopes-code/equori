@@ -24,7 +24,12 @@ type accessToken struct {
 func createToken(t *testing.T, h *apitest.Harness, c *http.Client, scope string) accessToken {
 	t.Helper()
 
-	r := h.Call(c, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "Claude Code", "scope": scope, "expires_in_days": 90})
+	r := h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/access-tokens",
+		map[string]any{"name": "Claude Code", "scope": scope, "expires_in_days": 90},
+	)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("create: status %d: %s", r.Status, r.Body)
 	}
@@ -57,7 +62,8 @@ func TestAccessTokens(t *testing.T) {
 	h := apitest.New(t)
 
 	tok := createToken(t, h, h.Client, "read")
-	if tok.Token == nil || !regexp.MustCompile(`^eqt_[A-Z2-7]{52}$`).MatchString(*tok.Token) || tok.Scope != "read" ||
+	if tok.Token == nil || !regexp.MustCompile(`^eqt_[A-Z2-7]{52}$`).MatchString(*tok.Token) ||
+		tok.Scope != "read" ||
 		!tok.ExpiresAt.Equal(tok.CreatedAt.AddDate(0, 0, 90)) {
 		t.Fatalf("created = %+v", tok)
 	}
@@ -76,10 +82,20 @@ func TestAccessTokens(t *testing.T) {
 		t.Fatalf("other member lists %v", items)
 	}
 
-	h.ExpectProblem(h.Call(other, http.MethodDelete, "/api/v1/access-tokens/"+tok.ID, nil), http.StatusNotFound, "access_token_not_found", "")
+	h.ExpectProblem(
+		h.Call(other, http.MethodDelete, "/api/v1/access-tokens/"+tok.ID, nil),
+		http.StatusNotFound,
+		"access_token_not_found",
+		"",
+	)
 
 	// X13: a token never opens /api/.
-	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, h.URL()+"/api/v1/accounts", nil)
+	req, err := http.NewRequestWithContext(
+		t.Context(),
+		http.MethodGet,
+		h.URL()+"/api/v1/accounts",
+		nil,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +106,12 @@ func TestAccessTokens(t *testing.T) {
 		t.Fatalf("bearer on /api/: status %d", r.Status)
 	}
 
-	if r := h.Call(h.Client, http.MethodDelete, "/api/v1/access-tokens/"+tok.ID, nil); r.Status != http.StatusNoContent {
+	if r := h.Call(
+		h.Client,
+		http.MethodDelete,
+		"/api/v1/access-tokens/"+tok.ID,
+		nil,
+	); r.Status != http.StatusNoContent {
 		t.Fatalf("delete: status %d: %s", r.Status, r.Body)
 	}
 
@@ -98,7 +119,13 @@ func TestAccessTokens(t *testing.T) {
 		t.Fatalf("list after delete = %v", items)
 	}
 
-	if _, err := h.App.Identity.VerifyAccessToken(t.Context(), *tok.Token); !errors.Is(err, identity.ErrInvalidAccessToken) {
+	if _, err := h.App.Identity.VerifyAccessToken(
+		t.Context(),
+		*tok.Token,
+	); !errors.Is(
+		err,
+		identity.ErrInvalidAccessToken,
+	) {
 		t.Fatalf("verify a deleted token: %v", err)
 	}
 }
@@ -106,7 +133,12 @@ func TestAccessTokens(t *testing.T) {
 func TestAccessTokenExpiryChoices(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	r := h.Call(h.Client, http.MethodPost, "/api/v1/access-tokens", map[string]any{"name": "x", "scope": "read", "expires_in_days": 7})
+	r := h.Call(
+		h.Client,
+		http.MethodPost,
+		"/api/v1/access-tokens",
+		map[string]any{"name": "x", "scope": "read", "expires_in_days": 7},
+	)
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "expires_in_days")
 }
 
@@ -116,12 +148,16 @@ func TestVerifyAccessToken(t *testing.T) {
 	tok := createToken(t, h, h.Client, "write")
 
 	grant, err := h.App.Identity.VerifyAccessToken(t.Context(), *tok.Token)
-	if err != nil || grant.MemberID != h.MemberIDOf("owner@example.com") || grant.BooksID != h.OwnerID() || grant.Scope != "write" || grant.TokenID.String() != tok.ID {
+	if err != nil || grant.MemberID != h.MemberIDOf("owner@example.com") ||
+		grant.BooksID != h.OwnerID() ||
+		grant.Scope != "write" ||
+		grant.TokenID.String() != tok.ID {
 		t.Fatalf("grant = %+v, %v", grant, err)
 	}
 
 	var first time.Time
-	if err := h.Pool.QueryRow(t.Context(), `SELECT last_used_at FROM identity_access_token`).Scan(&first); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT last_used_at FROM identity_access_token`).
+		Scan(&first); err != nil {
 		t.Fatal(err)
 	}
 
@@ -130,12 +166,20 @@ func TestVerifyAccessToken(t *testing.T) {
 	}
 
 	var second time.Time
-	if err := h.Pool.QueryRow(t.Context(), `SELECT last_used_at FROM identity_access_token`).Scan(&second); err != nil || !second.Equal(first) {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT last_used_at FROM identity_access_token`).
+		Scan(&second); err != nil ||
+		!second.Equal(first) {
 		t.Fatalf("last_used_at moved within a minute: %v -> %v, %v", first, second, err)
 	}
 
 	for _, text := range []string{"", "eqt_unknown", "Bearer " + *tok.Token} {
-		if _, err := h.App.Identity.VerifyAccessToken(t.Context(), text); !errors.Is(err, identity.ErrInvalidAccessToken) {
+		if _, err := h.App.Identity.VerifyAccessToken(
+			t.Context(),
+			text,
+		); !errors.Is(
+			err,
+			identity.ErrInvalidAccessToken,
+		) {
 			t.Errorf("verify %q: %v", text, err)
 		}
 	}
@@ -145,7 +189,13 @@ func TestVerifyAccessToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := h.App.Identity.VerifyAccessToken(t.Context(), *tok.Token); !errors.Is(err, identity.ErrInvalidAccessToken) {
+	if _, err := h.App.Identity.VerifyAccessToken(
+		t.Context(),
+		*tok.Token,
+	); !errors.Is(
+		err,
+		identity.ErrInvalidAccessToken,
+	) {
 		t.Fatalf("verify an expired token: %v", err)
 	}
 }

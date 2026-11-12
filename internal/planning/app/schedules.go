@@ -24,8 +24,24 @@ type Service struct {
 	clk      clock.Clock
 }
 
-func NewService(repo Repository, l Ledger, cal Calendar, profiles Profiles, prices Prices, returns Returns, clk clock.Clock) *Service {
-	return &Service{repo: repo, ledger: l, cal: cal, profiles: profiles, prices: prices, returns: returns, clk: clk}
+func NewService(
+	repo Repository,
+	l Ledger,
+	cal Calendar,
+	profiles Profiles,
+	prices Prices,
+	returns Returns,
+	clk clock.Clock,
+) *Service {
+	return &Service{
+		repo:     repo,
+		ledger:   l,
+		cal:      cal,
+		profiles: profiles,
+		prices:   prices,
+		returns:  returns,
+		clk:      clk,
+	}
 }
 
 // WithRepository returns the service on another repository, as outbox handlers need.
@@ -58,7 +74,11 @@ type ScheduleChange struct {
 	ToleranceBP, GraceDays, WindowDays *int
 }
 
-func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in ScheduleInput) (domain.Schedule, error) {
+func (s *Service) CreateSchedule(
+	ctx context.Context,
+	booksID int64,
+	in ScheduleInput,
+) (domain.Schedule, error) {
 	if in.Rule.Adjustment == "" {
 		in.Rule.Adjustment = "none"
 	}
@@ -111,8 +131,19 @@ func (s *Service) defaultCalendar(ctx context.Context, booksID int64) (string, e
 
 // checkCalendar refuses a calendar the holiday source does not know.
 func (s *Service) checkCalendar(ctx context.Context, calendar string) error {
-	if _, err := s.cal.Holidays(ctx, calendar, s.clk.Today(ctx).Year()); errors.Is(err, ErrUnknownCalendar) {
-		return &domain.FieldError{Field: "calendar", Message: "is not a known calendar", Err: domain.ErrValidation}
+	if _, err := s.cal.Holidays(
+		ctx,
+		calendar,
+		s.clk.Today(ctx).Year(),
+	); errors.Is(
+		err,
+		ErrUnknownCalendar,
+	) {
+		return &domain.FieldError{
+			Field:   "calendar",
+			Message: "is not a known calendar",
+			Err:     domain.ErrValidation,
+		}
 	} else if err != nil {
 		return fmt.Errorf("check calendar: %w", err)
 	}
@@ -122,12 +153,20 @@ func (s *Service) checkCalendar(ctx context.Context, calendar string) error {
 
 // newSchedule builds the schedule of in, with the defaults of the matching settings.
 func newSchedule(in ScheduleInput) domain.Schedule {
-	sch := domain.Schedule{Calendar: in.Calendar,
-		Kind: in.Kind, AccountID: in.AccountID, CounterpartID: in.CounterpartID, PayeeID: in.PayeeID,
-		Description: in.Description, Currency: in.Amount.Currency(),
-		ToleranceBP: domain.DefaultToleranceBP, GraceDays: domain.DefaultGraceDays,
-		WindowDays: domain.DefaultWindowDays,
-		Terms:      []domain.Terms{{EffectiveFrom: in.Rule.Start, Rule: in.Rule, Amount: in.Amount.Amount()}},
+	sch := domain.Schedule{
+		Calendar:      in.Calendar,
+		Kind:          in.Kind,
+		AccountID:     in.AccountID,
+		CounterpartID: in.CounterpartID,
+		PayeeID:       in.PayeeID,
+		Description:   in.Description,
+		Currency:      in.Amount.Currency(),
+		ToleranceBP:   domain.DefaultToleranceBP,
+		GraceDays:     domain.DefaultGraceDays,
+		WindowDays:    domain.DefaultWindowDays,
+		Terms: []domain.Terms{
+			{EffectiveFrom: in.Rule.Start, Rule: in.Rule, Amount: in.Amount.Amount()},
+		},
 	}
 	if in.ToleranceBP != nil {
 		sch.ToleranceBP = *in.ToleranceBP
@@ -168,7 +207,12 @@ func (s *Service) persistSchedule(
 // Update renames a schedule, ended or not, moves its start earlier and changes its matching
 // settings. The matching applies to transactions recorded, corrected or voided afterwards;
 // realized occurrences stay.
-func (s *Service) Update(ctx context.Context, booksID int64, id uuid.UUID, in ScheduleChange) (domain.Schedule, error) {
+func (s *Service) Update(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	in ScheduleChange,
+) (domain.Schedule, error) {
 	return s.changeSchedule(ctx, booksID, id, func(repo Repository, sch *domain.Schedule) error {
 		if in.Description != nil {
 			sch.Description = *in.Description
@@ -194,7 +238,14 @@ func (s *Service) Update(ctx context.Context, booksID int64, id uuid.UUID, in Sc
 			return err
 		}
 
-		if _, err := repo.UpdateScheduleMatching(ctx, booksID, id, sch.ToleranceBP, sch.GraceDays, sch.WindowDays); err != nil {
+		if _, err := repo.UpdateScheduleMatching(
+			ctx,
+			booksID,
+			id,
+			sch.ToleranceBP,
+			sch.GraceDays,
+			sch.WindowDays,
+		); err != nil {
 			return err
 		}
 
@@ -236,7 +287,11 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 func checkAccountSide(accounts map[uuid.UUID]Account, sch domain.Schedule) (Account, error) {
 	account, ok := accounts[sch.AccountID]
 	if !ok || !isBalance(account) {
-		return Account{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book", Err: domain.ErrValidation}
+		return Account{}, &domain.FieldError{
+			Field:   "account_id",
+			Message: "must be a balance account of the book",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	if _, err := money.ParseCurrency(string(account.Instrument)); err != nil {
@@ -244,7 +299,11 @@ func checkAccountSide(accounts map[uuid.UUID]Account, sch domain.Schedule) (Acco
 	}
 
 	if sch.Currency != account.Instrument {
-		return Account{}, &domain.FieldError{Field: "amount.currency", Message: "must be the currency of account_id " + string(account.Instrument), Err: domain.ErrValidation}
+		return Account{}, &domain.FieldError{
+			Field:   "amount.currency",
+			Message: "must be the currency of account_id " + string(account.Instrument),
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	return account, nil
@@ -265,10 +324,15 @@ func checkCounterpart(accounts map[uuid.UUID]Account, sch domain.Schedule, accou
 	}
 
 	if !ok || !fits {
-		return &domain.FieldError{Field: "counterpart_id", Message: "does not fit kind " + string(sch.Kind), Err: domain.ErrValidation}
+		return &domain.FieldError{
+			Field:   "counterpart_id",
+			Message: "does not fit kind " + string(sch.Kind),
+			Err:     domain.ErrValidation,
+		}
 	}
 
-	if (sch.Kind == domain.Transfer || sch.Kind == domain.Savings) && counterpart.Instrument != account.Instrument {
+	if (sch.Kind == domain.Transfer || sch.Kind == domain.Savings) &&
+		counterpart.Instrument != account.Instrument {
 		return &CurrencyError{Field: "counterpart_id"}
 	}
 
@@ -284,7 +348,11 @@ func (s *Service) checkPayee(ctx context.Context, booksID int64, sch domain.Sche
 		}
 
 		if len(missing) > 0 {
-			return &domain.FieldError{Field: "payee_id", Message: "is not a payee of the book", Err: domain.ErrValidation}
+			return &domain.FieldError{
+				Field:   "payee_id",
+				Message: "is not a payee of the book",
+				Err:     domain.ErrValidation,
+			}
 		}
 	}
 
@@ -293,10 +361,18 @@ func (s *Service) checkPayee(ctx context.Context, booksID int64, sch domain.Sche
 
 func isBalance(a Account) bool { return a.Class == "asset" || a.Class == "liability" }
 
-func (s *Service) Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error) {
+func (s *Service) Schedule(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Schedule, error) {
 	return s.repo.Schedule(ctx, booksID, id)
 }
 
-func (s *Service) ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error) {
+func (s *Service) ListSchedules(
+	ctx context.Context,
+	booksID int64,
+	p page.Request[IDKey],
+) ([]domain.Schedule, *IDKey, error) {
 	return s.repo.ListSchedules(ctx, booksID, p)
 }

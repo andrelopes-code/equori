@@ -38,8 +38,13 @@ func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
 	electronics := h.Account("Electronics", "expense", "", nil)
 
 	res := installmentPurchase(t, h, map[string]any{
-		"card_account_id": card, "date": "2026-10-20", "description": "Laptop",
-		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 3,
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"description":     "Laptop",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(100000)},
+		},
+		"installment_count": 3,
 	})
 
 	cards := cardPostings(res.Transaction, card)
@@ -65,7 +70,13 @@ func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
 			Amount int64 `json:"amount"`
 		} `json:"balance"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/balance?date=2026-10-31", nil, http.StatusOK, &bal)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/balance?date=2026-10-31",
+		nil,
+		http.StatusOK,
+		&bal,
+	)
 
 	if bal.Balance.Amount != -100000 {
 		t.Fatalf("card balance = %d, want -100000", bal.Balance.Amount)
@@ -76,7 +87,13 @@ func TestInstallmentPurchaseWithoutInterest(t *testing.T) {
 			Amount int64 `json:"amount"`
 		} `json:"amount"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/commitments?month=2026-12", nil, http.StatusOK, &commit)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/commitments?month=2026-12",
+		nil,
+		http.StatusOK,
+		&commit,
+	)
 
 	if commit.Amount.Amount != 33333 {
 		t.Fatalf("committed for 2026-12 = %d, want 33333", commit.Amount.Amount)
@@ -90,9 +107,14 @@ func TestInstallmentPurchaseWithInterest(t *testing.T) {
 	electronics := h.Account("Electronics", "expense", "", nil)
 
 	res := installmentPurchase(t, h, map[string]any{
-		"card_account_id": card, "date": "2026-10-25", "description": "TV",
-		"splits":            []map[string]any{{"account_id": electronics, "amount": apitest.BRL(200000)}},
-		"installment_count": 10, "interest": apitest.BRL(22540),
+		"card_account_id": card,
+		"date":            "2026-10-25",
+		"description":     "TV",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(200000)},
+		},
+		"installment_count": 10,
+		"interest":          apitest.BRL(22540),
 	})
 
 	cards := cardPostings(res.Transaction, card)
@@ -124,10 +146,17 @@ func TestInstallmentAmountsOverride(t *testing.T) {
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
 	body := map[string]any{
-		"card_account_id": card, "date": "2026-10-20",
-		"splits":              []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}},
-		"installment_count":   3,
-		"installment_amounts": []map[string]any{apitest.BRL(33333), apitest.BRL(33333), apitest.BRL(33334)},
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(100000)},
+		},
+		"installment_count": 3,
+		"installment_amounts": []map[string]any{
+			apitest.BRL(33333),
+			apitest.BRL(33333),
+			apitest.BRL(33334),
+		},
 	}
 
 	res := installmentPurchase(t, h, body)
@@ -135,8 +164,17 @@ func TestInstallmentAmountsOverride(t *testing.T) {
 		t.Fatalf("third installment = %d, want -33334", got)
 	}
 
-	body["installment_amounts"] = []map[string]any{apitest.BRL(33333), apitest.BRL(33333), apitest.BRL(33333)}
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/installment-purchases", body), http.StatusUnprocessableEntity, "validation_failed", "installment_amounts")
+	body["installment_amounts"] = []map[string]any{
+		apitest.BRL(33333),
+		apitest.BRL(33333),
+		apitest.BRL(33333),
+	}
+	h.ExpectProblem(
+		h.Do(http.MethodPost, "/api/v1/installment-purchases", body),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"installment_amounts",
+	)
 }
 
 func TestRuleChangeMovesFutureStatementDates(t *testing.T) {
@@ -145,12 +183,25 @@ func TestRuleChangeMovesFutureStatementDates(t *testing.T) {
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
 	installmentPurchase(t, h, map[string]any{
-		"card_account_id": card, "date": "2026-10-20",
-		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 3,
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(100000)},
+		},
+		"installment_count": 3,
 	})
 
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules",
-		map[string]any{"effective_from": "2027-01", "closing_day": 15, "due_day": 22}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/billing-cycle-rules",
+		map[string]any{
+			"effective_from": "2027-01",
+			"closing_day":    15,
+			"due_day":        22,
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	ss := statements(t, h, card)
 	if s := ss["2027-01"]; s.DueDate != "2027-01-22" || s.Charges != 33333 {
@@ -168,12 +219,17 @@ func TestTwoInstallmentPurchasesGetDistinctIDs(t *testing.T) {
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
 	body := map[string]any{
-		"card_account_id": card, "date": "2026-10-20",
-		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 2,
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(100000)},
+		},
+		"installment_count": 2,
 	}
 
 	a, b := installmentPurchase(t, h, body), installmentPurchase(t, h, body)
-	if a.Transaction.ID == b.Transaction.ID || a.Transaction.ID == "00000000-0000-0000-0000-000000000000" {
+	if a.Transaction.ID == b.Transaction.ID ||
+		a.Transaction.ID == "00000000-0000-0000-0000-000000000000" {
 		t.Fatalf("transaction ids %s and %s", a.Transaction.ID, b.Transaction.ID)
 	}
 }
@@ -184,10 +240,18 @@ func TestInstallmentPurchaseCannotBeCorrected(t *testing.T) {
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	electronics := h.Account("Electronics", "expense", "", nil)
 	res := installmentPurchase(t, h, map[string]any{
-		"card_account_id": card, "date": "2026-10-20",
-		"splits": []map[string]any{{"account_id": electronics, "amount": apitest.BRL(100000)}}, "installment_count": 2,
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(100000)},
+		},
+		"installment_count": 2,
 	})
-	correction := tx("2026-10-20", apitest.Posting(card, -100000), apitest.Posting(electronics, 100000))
+	correction := tx(
+		"2026-10-20",
+		apitest.Posting(card, -100000),
+		apitest.Posting(electronics, 100000),
+	)
 	correction["expected_version"] = 1
 	correction["reason"] = "edit"
 	h.ExpectProblem(h.Do(http.MethodPut, "/api/v1/transactions/"+res.Transaction.ID, correction),

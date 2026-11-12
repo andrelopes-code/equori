@@ -35,7 +35,11 @@ func fieldErr(field, message string, err error) error {
 
 // RecordForeignPurchase records M11: amount = original × rate, the foreign charge on the amount, both
 // charged to the account in the base currency (P8 amendment A66).
-func (s *Service) RecordForeignPurchase(ctx context.Context, booksID int64, in ForeignPurchase) (domain.Transaction, error) {
+func (s *Service) RecordForeignPurchase(
+	ctx context.Context,
+	booksID int64,
+	in ForeignPurchase,
+) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		base, account, err := s.checkForeignPurchase(ctx, r, booksID, in)
@@ -80,7 +84,11 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, booksID int64, in F
 
 // Exchange records M12 between accounts of two currencies, one of them the base
 // currency (P8 amendment A67).
-func (s *Service) Exchange(ctx context.Context, booksID int64, in Exchange) (domain.Transaction, error) {
+func (s *Service) Exchange(
+	ctx context.Context,
+	booksID int64,
+	in Exchange,
+) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		from, to, base, err := loadExchangeAccounts(ctx, r, booksID, in)
@@ -104,7 +112,17 @@ func (s *Service) Exchange(ctx context.Context, booksID int64, in Exchange) (dom
 			}
 		}
 
-		created, err = s.insert(ctx, r, domain.Transaction{BooksID: booksID, Date: in.Date, Description: in.Description, BalancingCurrency: base, Postings: postings})
+		created, err = s.insert(
+			ctx,
+			r,
+			domain.Transaction{
+				BooksID:           booksID,
+				Date:              in.Date,
+				Description:       in.Description,
+				BalancingCurrency: base,
+				Postings:          postings,
+			},
+		)
 
 		return err
 	})
@@ -195,7 +213,11 @@ func exchangeFee(in Exchange, base money.Currency) (money.Money, error) {
 
 	if in.Fee != nil {
 		if in.Fee.Currency() != base || in.Fee.IsNegative() {
-			return money.Money{}, fieldErr("fee", "must be a non-negative amount in "+string(base), domain.ErrValidation)
+			return money.Money{}, fieldErr(
+				"fee",
+				"must be a non-negative amount in "+string(base),
+				domain.ErrValidation,
+			)
 		}
 
 		fee = *in.Fee
@@ -272,7 +294,13 @@ func baseCurrency(ctx context.Context, r Repository, booksID int64) (money.Curre
 	return settings.BaseCurrency, err
 }
 
-func loadAccount(ctx context.Context, r Repository, booksID int64, id uuid.UUID, field string) (domain.Account, error) {
+func loadAccount(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	field string,
+) (domain.Account, error) {
 	a, err := r.Account(ctx, booksID, id)
 	if errors.Is(err, ErrNotFound) {
 		return domain.Account{}, fieldErr(field, "unknown account", domain.ErrUnknownAccount)
@@ -281,7 +309,13 @@ func loadAccount(ctx context.Context, r Repository, booksID int64, id uuid.UUID,
 	return a, err
 }
 
-func (s *Service) expenseCategory(ctx context.Context, r Repository, booksID int64, id uuid.UUID, field string) error {
+func (s *Service) expenseCategory(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	field string,
+) error {
 	a, err := loadAccount(ctx, r, booksID, id, field)
 	if err != nil {
 		return err
@@ -312,15 +346,26 @@ func (s *Service) checkForeignPurchase(
 	}
 
 	if !account.IsBalance() || account.Instrument != base {
-		return "", domain.Account{}, fieldErr("account_id", "must be a balance account in the base currency "+string(base), domain.ErrCurrencyUnsupported)
+		return "", domain.Account{}, fieldErr(
+			"account_id",
+			"must be a balance account in the base currency "+string(base),
+			domain.ErrCurrencyUnsupported,
+		)
 	}
 
 	if err := s.expenseCategory(ctx, r, booksID, in.CategoryID, "category_id"); err != nil {
 		return "", domain.Account{}, err
 	}
 
-	if _, err := money.ParseCurrency(string(in.Original.Currency())); err != nil || in.Original.Currency() == base || in.Original.IsZero() || in.Original.IsNegative() {
-		return "", domain.Account{}, fieldErr("original", "must be a positive amount of a currency other than "+string(base), domain.ErrValidation)
+	if _, err := money.ParseCurrency(
+		string(in.Original.Currency()),
+	); err != nil || in.Original.Currency() == base || in.Original.IsZero() ||
+		in.Original.IsNegative() {
+		return "", domain.Account{}, fieldErr(
+			"original",
+			"must be a positive amount of a currency other than "+string(base),
+			domain.ErrValidation,
+		)
 	}
 
 	return base, account, nil
@@ -345,7 +390,11 @@ func (s *Service) foreignChargeBP(
 	}
 
 	if bp < 0 || bp > 10000 {
-		return 0, fieldErr("foreign_charge_rate_bp", "must be between 0 and 10000", domain.ErrValidation)
+		return 0, fieldErr(
+			"foreign_charge_rate_bp",
+			"must be between 0 and 10000",
+			domain.ErrValidation,
+		)
 	}
 
 	return bp, nil
@@ -362,7 +411,14 @@ func (s *Service) foreignPurchasePostings(
 	original, negOriginal := in.Original, in.Original.Neg()
 	postings := []domain.Posting{{AccountID: in.CategoryID, Amount: amount, Original: &original}}
 
-	charges := []domain.Posting{{AccountID: in.AccountID, Amount: amount.Neg(), Original: &negOriginal, Statement: in.Statement}}
+	charges := []domain.Posting{
+		{
+			AccountID: in.AccountID,
+			Amount:    amount.Neg(),
+			Original:  &negOriginal,
+			Statement: in.Statement,
+		},
+	}
 	if !charge.IsZero() {
 		chargeCategory := in.ForeignChargeCategoryID
 		if chargeCategory == uuid.Nil {
@@ -377,7 +433,10 @@ func (s *Service) foreignPurchasePostings(
 		}
 
 		postings = append(postings, domain.Posting{AccountID: chargeCategory, Amount: charge})
-		charges = append(charges, domain.Posting{AccountID: in.AccountID, Amount: charge.Neg(), Statement: in.Statement})
+		charges = append(
+			charges,
+			domain.Posting{AccountID: in.AccountID, Amount: charge.Neg(), Statement: in.Statement},
+		)
 	}
 
 	return postings, charges, nil

@@ -67,6 +67,13 @@ func (c organizeCall) planDeleteTag(ctx context.Context, pv *tool.Preview) (orga
 	pv.Target, pv.Destructive = tag.Name, true
 
 	return func() (manageAccountsAndPayeesOut, error) {
-		return manageAccountsAndPayeesOut{Action: c.action, Name: tag.Name}, c.svc.DeleteTag(ctx, c.booksID, tag.Name)
+		return manageAccountsAndPayeesOut{
+			Action: c.action,
+			Name:   tag.Name,
+		}, c.svc.DeleteTag(
+			ctx,
+			c.booksID,
+			tag.Name,
+		)
 	}, nil
 }

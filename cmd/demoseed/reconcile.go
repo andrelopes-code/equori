@@ -37,7 +37,16 @@ func (s *seeder) assertBalances() {
 				continue
 			}
 
-			s.do(http.MethodPost, "/accounts/"+s.id(key)+"/balance-assertions", map[string]any{"date": iso(m.AddDate(0, 1, -1)), "amount": brl(cents), "source": "manual"}, nil)
+			s.do(
+				http.MethodPost,
+				"/accounts/"+s.id(key)+"/balance-assertions",
+				map[string]any{
+					"date":   iso(m.AddDate(0, 1, -1)),
+					"amount": brl(cents),
+					"source": "manual",
+				},
+				nil,
+			)
 		}
 	}
 }
@@ -71,14 +80,28 @@ func (s *seeder) reconcileStatements() {
 				continue
 			}
 
-			s.do(http.MethodPut, "/statements/"+st.ID+"/facts", map[string]any{"closing_date": st.Closing, "due_date": st.DueDate, "total": st.AmountDue}, nil)
+			s.do(
+				http.MethodPut,
+				"/statements/"+st.ID+"/facts",
+				map[string]any{
+					"closing_date": st.Closing,
+					"due_date":     st.DueDate,
+					"total":        st.AmountDue,
+				},
+				nil,
+			)
 
 			amount := st.AmountDue
 			if card == "card.nubank" && i == len(out.Items)-2 {
 				amount.Amount += 1290
 			}
 
-			s.do(http.MethodPost, "/statements/"+st.ID+"/reconcile", map[string]any{"amount_due": amount}, nil)
+			s.do(
+				http.MethodPost,
+				"/statements/"+st.ID+"/reconcile",
+				map[string]any{"amount_due": amount},
+				nil,
+			)
 			s.tolerate("difference_remains")
 			// The settlement of the card runs from the outbox and may confirm the statement first.
 			s.tolerate("already_reconciled")
@@ -115,7 +138,15 @@ func (s *seeder) importBankStatements(from, to string) {
 	n := 0
 	for _, e := range s.recent("nubank.checking", 21) {
 		n++
-		lines = append(lines, ofxLine{compact(e.date), reais(e.cents), fmt.Sprintf("NU%s%02d", compact(e.date), n), "Pix enviado " + e.desc})
+		lines = append(
+			lines,
+			ofxLine{
+				compact(e.date),
+				reais(e.cents),
+				fmt.Sprintf("NU%s%02d", compact(e.date), n),
+				"Pix enviado " + e.desc,
+			},
+		)
 	}
 
 	for _, l := range []struct {
@@ -133,13 +164,21 @@ func (s *seeder) importBankStatements(from, to string) {
 	} {
 		n++
 		date := compact(iso(s.today.AddDate(0, 0, -l.daysAgo)))
-		lines = append(lines, ofxLine{date, reais(l.cents), fmt.Sprintf("NU%s%02d", date, n), l.name})
+		lines = append(
+			lines,
+			ofxLine{date, reais(l.cents), fmt.Sprintf("NU%s%02d", date, n), l.name},
+		)
 		added += l.cents
 	}
 
 	// The lines that the ledger lacks start nine days back, so the account is funded before the first of them.
 	s.ensure(s.today.AddDate(0, 0, -10), "nubank.checking", -added+30000)
-	s.upload("/accounts/"+s.id("nubank.checking")+"/imports", map[string]string{"format": "ofx"}, "nubank-"+ym(s.today)+".ofx", bankOFX(from, to, s.bal[s.id("nubank.checking")]+added, lines))
+	s.upload(
+		"/accounts/"+s.id("nubank.checking")+"/imports",
+		map[string]string{"format": "ofx"},
+		"nubank-"+ym(s.today)+".ofx",
+		bankOFX(from, to, s.bal[s.id("nubank.checking")]+added, lines),
+	)
 }
 
 func (s *seeder) importCardStatements(from, to string) {
@@ -148,7 +187,15 @@ func (s *seeder) importCardStatements(from, to string) {
 	n := 0
 	for _, e := range s.recent("card.itau", 21) {
 		n++
-		cards = append(cards, ofxLine{compact(e.date), reais(e.cents), fmt.Sprintf("IT%s%02d", compact(e.date), n), strings.ToUpper(e.desc)})
+		cards = append(
+			cards,
+			ofxLine{
+				compact(e.date),
+				reais(e.cents),
+				fmt.Sprintf("IT%s%02d", compact(e.date), n),
+				strings.ToUpper(e.desc),
+			},
+		)
 	}
 
 	for _, l := range []struct {
@@ -163,10 +210,18 @@ func (s *seeder) importCardStatements(from, to string) {
 	} {
 		n++
 		date := compact(iso(s.today.AddDate(0, 0, -l.daysAgo)))
-		cards = append(cards, ofxLine{date, reais(l.cents), fmt.Sprintf("IT%s%02d", date, n), l.name})
+		cards = append(
+			cards,
+			ofxLine{date, reais(l.cents), fmt.Sprintf("IT%s%02d", date, n), l.name},
+		)
 	}
 
-	s.upload("/accounts/"+s.id("card.itau")+"/imports", map[string]string{"format": "ofx"}, "fatura-itau-"+ym(s.today)+".ofx", cardOFX(from, to, cards))
+	s.upload(
+		"/accounts/"+s.id("card.itau")+"/imports",
+		map[string]string{"format": "ofx"},
+		"fatura-itau-"+ym(s.today)+".ofx",
+		cardOFX(from, to, cards),
+	)
 }
 
 // itauExtraLines are the lines of the Itaú export that the book does not hold yet: a Pix to a person, a fee and the extra contribution to the brokerage, which a rule turns into a transfer.
@@ -183,12 +238,24 @@ var itauExtraLines = []struct {
 // importCSV saves the CSV profiles of two accounts and imports an Itaú checking export of the last three weeks: recorded lines match, two new lines wait for a category.
 func (s *seeder) importCSV() {
 	s.do(http.MethodPut, "/accounts/"+s.id("itau.checking")+"/csv-profile", map[string]any{
-		"delimiter": "semicolon", "header_rows": 1, "date_column": "Data", "date_layout": "DD/MM/YYYY", "decimal_separator": ",",
-		"description_column": "Lançamento", "amount_column": "Valor", "id_column": "Documento",
+		"delimiter":          "semicolon",
+		"header_rows":        1,
+		"date_column":        "Data",
+		"date_layout":        "DD/MM/YYYY",
+		"decimal_separator":  ",",
+		"description_column": "Lançamento",
+		"amount_column":      "Valor",
+		"id_column":          "Documento",
 	}, nil)
 	s.do(http.MethodPut, "/accounts/"+s.id("card.itau")+"/csv-profile", map[string]any{
-		"delimiter": "semicolon", "header_rows": 1, "date_column": "Data", "date_layout": "DD/MM/YYYY", "decimal_separator": ",",
-		"description_column": "Estabelecimento", "amount_column": "Valor", "amount_sign": "inverted",
+		"delimiter":          "semicolon",
+		"header_rows":        1,
+		"date_column":        "Data",
+		"date_layout":        "DD/MM/YYYY",
+		"decimal_separator":  ",",
+		"description_column": "Estabelecimento",
+		"amount_column":      "Valor",
+		"amount_sign":        "inverted",
 	}, nil)
 	var b strings.Builder
 	b.WriteString("Data;Lançamento;Valor;Documento\n")
@@ -198,10 +265,18 @@ func (s *seeder) importCSV() {
 	line := func(date, name string, cents int64) {
 		n++
 		d := day(date)
-		fmt.Fprintf(&b, "%s;%s;%s;%s\n", d.Format("02/01/2006"), name, strings.ReplaceAll(reais(cents), ".", ","), fmt.Sprintf("DOC%s%03d", compact(date), n))
+		fmt.Fprintf(
+			&b,
+			"%s;%s;%s;%s\n",
+			d.Format("02/01/2006"),
+			name,
+			strings.ReplaceAll(reais(cents), ".", ","),
+			fmt.Sprintf("DOC%s%03d", compact(date), n),
+		)
 	}
 	for _, e := range s.recent("itau.checking", 21) {
-		if strings.HasPrefix(e.desc, "TED") || strings.HasPrefix(e.desc, "Aporte") || strings.HasPrefix(e.desc, "Resgate") {
+		if strings.HasPrefix(e.desc, "TED") || strings.HasPrefix(e.desc, "Aporte") ||
+			strings.HasPrefix(e.desc, "Resgate") {
 			continue
 		}
 
@@ -216,7 +291,12 @@ func (s *seeder) importCSV() {
 	}
 
 	s.ensure(s.today.AddDate(0, 0, -7), "itau.checking", added+10000)
-	s.upload("/accounts/"+s.id("itau.checking")+"/imports", map[string]string{"format": "csv"}, "extrato-itau.csv", []byte(b.String()))
+	s.upload(
+		"/accounts/"+s.id("itau.checking")+"/imports",
+		map[string]string{"format": "csv"},
+		"extrato-itau.csv",
+		[]byte(b.String()),
+	)
 }
 
 // touchOccurrences changes two upcoming occurrences: one is skipped and one moves to another day.
@@ -229,7 +309,12 @@ func (s *seeder) touchOccurrences() {
 			State      string `json:"state"`
 		} `json:"items"`
 	}
-	s.do(http.MethodGet, "/occurrences?from="+iso(s.today)+"&to="+iso(s.today.AddDate(0, 0, 40)), nil, &out)
+	s.do(
+		http.MethodGet,
+		"/occurrences?from="+iso(s.today)+"&to="+iso(s.today.AddDate(0, 0, 40)),
+		nil,
+		&out,
+	)
 
 	for _, o := range out.Items {
 		// A realized or skipped occurrence refuses both changes (409 occurrence_closed).
@@ -239,10 +324,20 @@ func (s *seeder) touchOccurrences() {
 
 		switch o.ScheduleID {
 		case s.ids["schedule.donation"]:
-			s.do(http.MethodPost, "/occurrences/"+o.ID+"/skip", map[string]any{"reason": "Doação adiantada para dezembro"}, nil)
+			s.do(
+				http.MethodPost,
+				"/occurrences/"+o.ID+"/skip",
+				map[string]any{"reason": "Doação adiantada para dezembro"},
+				nil,
+			)
 			s.ids["schedule.donation"] = ""
 		case s.ids["schedule.gas"]:
-			s.do(http.MethodPost, "/occurrences/"+o.ID+"/move", map[string]any{"date": iso(day(o.ExpectedOn).AddDate(0, 0, 3))}, nil)
+			s.do(
+				http.MethodPost,
+				"/occurrences/"+o.ID+"/move",
+				map[string]any{"date": iso(day(o.ExpectedOn).AddDate(0, 0, 3))},
+				nil,
+			)
 			s.ids["schedule.gas"] = ""
 		}
 	}

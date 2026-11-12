@@ -53,7 +53,14 @@ func (p ledgerPort) AccountFacts(ctx context.Context, booksID int64) ([]app.Acco
 
 	out := make([]app.Account, len(facts))
 	for i, a := range facts {
-		out[i] = app.Account{ID: a.ID, ParentID: a.ParentID, InstitutionID: a.InstitutionID, Class: a.Class, Kind: a.Kind, Instrument: a.Instrument}
+		out[i] = app.Account{
+			ID:            a.ID,
+			ParentID:      a.ParentID,
+			InstitutionID: a.InstitutionID,
+			Class:         a.Class,
+			Kind:          a.Kind,
+			Instrument:    a.Instrument,
+		}
 	}
 
 	return out, err
@@ -63,7 +70,11 @@ func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Curr
 	return p.l.BaseCurrency(ctx, booksID)
 }
 
-func (p ledgerPort) InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (domain.Facts, error) {
+func (p ledgerPort) InvestmentFacts(
+	ctx context.Context,
+	booksID int64,
+	brokerageID uuid.UUID,
+) (domain.Facts, error) {
 	f, err := p.l.InvestmentFacts(ctx, booksID, brokerageID)
 	if err != nil {
 		return domain.Facts{}, err
@@ -76,11 +87,29 @@ func (p ledgerPort) InvestmentFacts(ctx context.Context, booksID int64, brokerag
 			return domain.Facts{}, err
 		}
 
-		out.Securities = append(out.Securities, domain.Security{AccountID: s.AccountID, Instrument: s.Instrument, Type: in.Type, Subtype: in.Subtype, Exchange: in.Exchange})
+		out.Securities = append(
+			out.Securities,
+			domain.Security{
+				AccountID:  s.AccountID,
+				Instrument: s.Instrument,
+				Type:       in.Type,
+				Subtype:    in.Subtype,
+				Exchange:   in.Exchange,
+			},
+		)
 	}
 
 	for _, x := range f.Postings {
-		out.Postings = append(out.Postings, domain.Posting{AccountID: x.AccountID, TransactionID: x.TransactionID, Date: x.Date, Quantity: x.Quantity, Weight: x.Weight})
+		out.Postings = append(
+			out.Postings,
+			domain.Posting{
+				AccountID:     x.AccountID,
+				TransactionID: x.TransactionID,
+				Date:          x.Date,
+				Quantity:      x.Quantity,
+				Weight:        x.Weight,
+			},
+		)
 	}
 
 	for _, x := range f.Trades {
@@ -91,13 +120,29 @@ func (p ledgerPort) InvestmentFacts(ctx context.Context, booksID int64, brokerag
 	}
 
 	for _, x := range f.Incomes {
-		out.Incomes = append(out.Incomes, domain.Income{TransactionID: x.TransactionID, AccountID: x.AccountID, Date: x.Date, Type: x.Type, Gross: x.Gross, Withheld: x.Withheld})
+		out.Incomes = append(
+			out.Incomes,
+			domain.Income{
+				TransactionID: x.TransactionID,
+				AccountID:     x.AccountID,
+				Date:          x.Date,
+				Type:          x.Type,
+				Gross:         x.Gross,
+				Withheld:      x.Withheld,
+			},
+		)
 	}
 
 	return out, nil
 }
 
-func (p ledgerPort) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, in money.Currency) (money.Money, error) {
+func (p ledgerPort) ValuedBalance(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	in money.Currency,
+) (money.Money, error) {
 	c, err := p.l.ValuedBalance(ctx, booksID, accountID, date, in)
 	switch {
 	case errors.Is(err, ledger.ErrNotFound):
@@ -109,7 +154,12 @@ func (p ledgerPort) ValuedBalance(ctx context.Context, booksID int64, accountID 
 	return c.Value, err
 }
 
-func (p ledgerPort) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (app.Recorded, error) {
+func (p ledgerPort) RecordedYield(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from, to time.Time,
+) (app.Recorded, error) {
 	r, err := p.l.RecordedYield(ctx, booksID, accountIDs, from, to)
 	if errors.Is(err, ledger.ErrNotFound) {
 		return app.Recorded{}, fmt.Errorf("%w: %w", app.ErrNotFound, err)
@@ -142,10 +192,19 @@ func (p ledgerPort) RecordedYield(ctx context.Context, booksID int64, accountIDs
 		return out
 	}
 
-	return app.Recorded{Flows: flows(r.Flows), Credits: credits(r.Credits), Income: categorized(r.Income), Expense: categorized(r.Expense)}, err
+	return app.Recorded{
+		Flows:   flows(r.Flows),
+		Credits: credits(r.Credits),
+		Income:  categorized(r.Income),
+		Expense: categorized(r.Expense),
+	}, err
 }
 
-func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+func (p ledgerPort) FirstPosting(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+) (time.Time, bool, error) {
 	first, found, err := p.l.FirstPosting(ctx, booksID, accountIDs)
 	if errors.Is(err, ledger.ErrNotFound) {
 		return time.Time{}, false, fmt.Errorf("%w: %w", app.ErrNotFound, err)
@@ -154,7 +213,11 @@ func (p ledgerPort) FirstPosting(ctx context.Context, booksID int64, accountIDs 
 	return first, found, err
 }
 
-func (p ledgerPort) Balances(ctx context.Context, booksID int64, date time.Time) ([]app.AccountBalance, error) {
+func (p ledgerPort) Balances(
+	ctx context.Context,
+	booksID int64,
+	date time.Time,
+) ([]app.AccountBalance, error) {
 	bs, err := p.l.Balances(ctx, booksID, date)
 
 	out := make([]app.AccountBalance, len(bs))
@@ -165,7 +228,12 @@ func (p ledgerPort) Balances(ctx context.Context, booksID int64, date time.Time)
 	return out, err
 }
 
-func (p ledgerPort) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]app.Flow, error) {
+func (p ledgerPort) ExternalFlows(
+	ctx context.Context,
+	booksID int64,
+	accountIDs []uuid.UUID,
+	from, to time.Time,
+) ([]app.Flow, error) {
 	fs, err := p.l.ExternalFlows(ctx, booksID, accountIDs, from, to)
 	if errors.Is(err, ledger.ErrNotFound) {
 		return nil, fmt.Errorf("%w: %w", app.ErrNotFound, err)
@@ -189,12 +257,18 @@ func (p marketPort) Scale(ctx context.Context, code money.Currency) (int, error)
 	return in.Scale, err
 }
 
-func (p marketPort) InstrumentOf(ctx context.Context, code money.Currency) (app.InstrumentInfo, error) {
+func (p marketPort) InstrumentOf(
+	ctx context.Context,
+	code money.Currency,
+) (app.InstrumentInfo, error) {
 	in, err := p.md.Instrument(ctx, string(code))
 	return app.InstrumentInfo{Type: in.Type, QuoteCurrency: in.QuoteCurrency}, err
 }
 
-func (p marketPort) QuoteState(ctx context.Context, code money.Currency) (first, last *time.Time, stale bool, err error) {
+func (p marketPort) QuoteState(
+	ctx context.Context,
+	code money.Currency,
+) (first, last *time.Time, stale bool, err error) {
 	in, err := p.md.Instrument(ctx, string(code))
 	if err != nil {
 		return nil, nil, false, err
@@ -208,7 +282,12 @@ func (p marketPort) QuoteState(ctx context.Context, code money.Currency) (first,
 	return cov.First, cov.Last, cov.Stale, nil
 }
 
-func (p marketPort) Convert(ctx context.Context, q money.Money, to money.Currency, date time.Time) (money.Money, []app.Price, error) {
+func (p marketPort) Convert(
+	ctx context.Context,
+	q money.Money,
+	to money.Currency,
+	date time.Time,
+) (money.Money, []app.Price, error) {
 	c, err := p.md.Convert(ctx, q, to, date)
 	if errors.Is(err, marketdata.ErrPriceMissing) {
 		return money.Money{}, nil, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
@@ -220,17 +299,31 @@ func (p marketPort) Convert(ctx context.Context, q money.Money, to money.Currenc
 
 	prices := make([]app.Price, len(c.Prices))
 	for i, x := range c.Prices {
-		prices[i] = app.Price{Instrument: x.Instrument, Quote: x.Quote, Date: x.Date, Value: x.Value, Source: x.Source}
+		prices[i] = app.Price{
+			Instrument: x.Instrument,
+			Quote:      x.Quote,
+			Date:       x.Date,
+			Value:      x.Value,
+			Source:     x.Source,
+		}
 	}
 
 	return c.Value, prices, nil
 }
 
-func (p marketPort) IndexRates(ctx context.Context, id string, from, to time.Time) ([]app.IndexRate, error) {
+func (p marketPort) IndexRates(
+	ctx context.Context,
+	id string,
+	from, to time.Time,
+) ([]app.IndexRate, error) {
 	return p.rates(ctx, id, dailyPeriod, app.ErrIndexNotDaily, from, to)
 }
 
-func (p marketPort) MonthlyRates(ctx context.Context, id string, from, to time.Time) ([]app.IndexRate, error) {
+func (p marketPort) MonthlyRates(
+	ctx context.Context,
+	id string,
+	from, to time.Time,
+) ([]app.IndexRate, error) {
 	return p.rates(ctx, id, monthlyPeriod, app.ErrIndexNotMonthly, from, to)
 }
 
@@ -262,7 +355,12 @@ func (p marketPort) InflationIndex(ctx context.Context, booksID int64) (string, 
 
 // rates returns the rates of an enabled index of the given period in [from, to], parsed to
 // fractions; wrongPeriod is the error for an index of another period.
-func (p marketPort) rates(ctx context.Context, id, period string, wrongPeriod error, from, to time.Time) ([]app.IndexRate, error) {
+func (p marketPort) rates(
+	ctx context.Context,
+	id, period string,
+	wrongPeriod error,
+	from, to time.Time,
+) ([]app.IndexRate, error) {
 	indexes, err := p.md.Indexes(ctx)
 	if err != nil {
 		return nil, err
@@ -286,7 +384,12 @@ func (p marketPort) rates(ctx context.Context, id, period string, wrongPeriod er
 	for i, r := range rates {
 		v, err := strconv.ParseFloat(r.Rate, 64)
 		if err != nil {
-			return nil, fmt.Errorf("parse the rate of %s on %s: %w", id, r.Date.Format(time.DateOnly), err)
+			return nil, fmt.Errorf(
+				"parse the rate of %s on %s: %w",
+				id,
+				r.Date.Format(time.DateOnly),
+				err,
+			)
 		}
 
 		out[i] = app.IndexRate{Date: r.Date, Rate: v}

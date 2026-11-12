@@ -15,7 +15,11 @@ import (
 func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time) (Plan, error) {
 	month = domain.MonthOf(month)
 	if month.After(s.horizon(ctx)) {
-		return Plan{}, &domain.FieldError{Field: "month", Message: "must be at most today + 12 months", Err: domain.ErrValidation}
+		return Plan{}, &domain.FieldError{
+			Field:   "month",
+			Message: "must be at most today + 12 months",
+			Err:     domain.ErrValidation,
+		}
 	}
 
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
@@ -237,7 +241,10 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 	}
 
 	byID := indexSchedules(schedules)
-	if slices.ContainsFunc(schedules, func(sch domain.Schedule) bool { return sch.Kind == domain.Income }) {
+	if slices.ContainsFunc(
+		schedules,
+		func(sch domain.Schedule) bool { return sch.Kind == domain.Income },
+	) {
 		out.Expected = new(int64)
 	}
 
@@ -256,7 +263,8 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 	items := make(map[uuid.UUID]int)
 	for _, o := range os {
 		sch := byID[o.ScheduleID]
-		if (o.State != domain.Expected && o.State != domain.Realized) || (sch.Kind != domain.Income && sch.Kind != domain.Savings) {
+		if (o.State != domain.Expected && o.State != domain.Realized) ||
+			(sch.Kind != domain.Income && sch.Kind != domain.Savings) {
 			continue
 		}
 
@@ -327,7 +335,10 @@ func addIncomeItem(out *Plan, items map[uuid.UUID]int, sch domain.Schedule, amou
 	if !ok {
 		i = len(out.ExpectedItems)
 		items[sch.ID] = i
-		out.ExpectedItems = append(out.ExpectedItems, PlanIncome{ScheduleID: sch.ID, Description: sch.Description})
+		out.ExpectedItems = append(
+			out.ExpectedItems,
+			PlanIncome{ScheduleID: sch.ID, Description: sch.Description},
+		)
 	}
 
 	out.ExpectedItems[i].Amount += amount

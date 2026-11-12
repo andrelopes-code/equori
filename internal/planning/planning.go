@@ -30,8 +30,25 @@ type Module struct {
 	clk    clock.Clock
 }
 
-func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md *marketdata.Module, profiles Profiles, returns app.Returns, clk clock.Clock, log *slog.Logger) *Module {
-	svc := app.NewService(postgres.NewRepository(pool), ledgerPort{l}, calendarPort{md}, profiles, pricesPort{md}, returns, clk)
+func New(
+	pool *pgxpool.Pool,
+	dispatcher *outbox.Dispatcher,
+	l *ledger.Module,
+	md *marketdata.Module,
+	profiles Profiles,
+	returns app.Returns,
+	clk clock.Clock,
+	log *slog.Logger,
+) *Module {
+	svc := app.NewService(
+		postgres.NewRepository(pool),
+		ledgerPort{l},
+		calendarPort{md},
+		profiles,
+		pricesPort{md},
+		returns,
+		clk,
+	)
 	m := &Module{http: httpapi.NewServer(svc, log), svc: svc, log: log, ledger: l, clk: clk}
 	// P7 amendment A51: every change of a transaction can change the occurrence it realizes.
 	for _, t := range []string{ledger.EventTransactionRecorded, ledger.EventTransactionCorrected, ledger.EventTransactionCategorized, ledger.EventTransactionVoided} {
@@ -46,13 +63,20 @@ func New(pool *pgxpool.Pool, dispatcher *outbox.Dispatcher, l *ledger.Module, md
 
 // Tools returns the planning module's tools for language models (ADR 012).
 func (m *Module) Tools() tool.Group {
-	return tool.Group{Tools: toolapi.Tools(m.svc, toolLedger{m.ledger}, m.clk), Errors: tool.FromProblem(httpapi.ToProblem)}
+	return tool.Group{
+		Tools:  toolapi.Tools(m.svc, toolLedger{m.ledger}, m.clk),
+		Errors: tool.FromProblem(httpapi.ToProblem),
+	}
 }
 
 func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 
 // CommittedTotal is the committed amount of month (A57), in the base currency.
-func (m *Module) CommittedTotal(ctx context.Context, booksID int64, month time.Time) (money.Money, error) {
+func (m *Module) CommittedTotal(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+) (money.Money, error) {
 	c, err := m.svc.Committed(ctx, booksID, month)
 	if err != nil {
 		return money.Money{}, err

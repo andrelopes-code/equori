@@ -25,7 +25,9 @@ func TestWebIsServedOutsideAPI(t *testing.T) {
 		t.Errorf("body = %q, want %q", r.Body, index)
 	}
 
-	if got, want := r.Header.Get("Content-Security-Policy"), "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"; got != want {
+	if got, want := r.Header.Get(
+		"Content-Security-Policy",
+	), "default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"; got != want {
 		t.Errorf("Content-Security-Policy = %q, want %q", got, want)
 	}
 
@@ -76,7 +78,8 @@ func TestWebRedirectsToTheDevServer(t *testing.T) {
 	w := httptest.NewRecorder()
 	h.App.Handler.ServeHTTP(w, r)
 
-	if w.Code != http.StatusTemporaryRedirect || w.Header().Get("Location") != "http://devserver.local:5173/admin" {
+	if w.Code != http.StatusTemporaryRedirect ||
+		w.Header().Get("Location") != "http://devserver.local:5173/admin" {
 		t.Fatalf("status %d, location %q", w.Code, w.Header().Get("Location"))
 	}
 

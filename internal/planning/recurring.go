@@ -17,7 +17,11 @@ import (
 // RecurringFor returns the series the probe joins, encoded as find_recurring encodes one series.
 // ok is false when the probe joins no qualifying series or names an unknown account, or when its
 // amount does not parse.
-func (m *Module) RecurringFor(ctx context.Context, booksID int64, p RecurringProbe) (json.RawMessage, bool, error) {
+func (m *Module) RecurringFor(
+	ctx context.Context,
+	booksID int64,
+	p RecurringProbe,
+) (json.RawMessage, bool, error) {
 	accounts, payees, err := m.ledger.CaptureVocabulary(ctx, booksID)
 	if err != nil {
 		return nil, false, err
@@ -52,7 +56,11 @@ func (m *Module) RecurringFor(ctx context.Context, booksID int64, p RecurringPro
 
 // probeFact resolves the names of p into a detector fact; ok is false when the account is not an
 // open balance account of the book or the amount or the key is unusable.
-func probeFact(p RecurringProbe, accounts []ledger.CaptureAccount, payees []ledger.CapturePayee) (domain.SeriesFact, bool) {
+func probeFact(
+	p RecurringProbe,
+	accounts []ledger.CaptureAccount,
+	payees []ledger.CapturePayee,
+) (domain.SeriesFact, bool) {
 	var account ledger.CaptureAccount
 
 	for _, a := range accounts {
@@ -63,7 +71,8 @@ func probeFact(p RecurringProbe, accounts []ledger.CaptureAccount, payees []ledg
 	}
 
 	unit, err := money.New(0, account.Instrument)
-	if err != nil || account.ID == uuid.Nil || (p.Currency != "" && p.Currency != string(account.Instrument)) {
+	if err != nil || account.ID == uuid.Nil ||
+		(p.Currency != "" && p.Currency != string(account.Instrument)) {
 		return domain.SeriesFact{}, false
 	}
 
@@ -72,7 +81,12 @@ func probeFact(p RecurringProbe, accounts []ledger.CaptureAccount, payees []ledg
 		return domain.SeriesFact{}, false
 	}
 
-	fact := domain.SeriesFact{AccountID: account.ID, Date: p.Date, Amount: amount.Amount(), Key: textfold.String(p.Description)}
+	fact := domain.SeriesFact{
+		AccountID: account.ID,
+		Date:      p.Date,
+		Amount:    amount.Amount(),
+		Key:       textfold.String(p.Description),
+	}
 
 	for _, py := range payees {
 		if p.Payee != "" && textfold.String(py.Name) == textfold.String(p.Payee) {

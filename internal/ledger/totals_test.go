@@ -26,9 +26,33 @@ func TestCategoryTotal(t *testing.T) {
 	h.Record("2026-10-20", apitest.Posting(checking, -5000), apitest.Posting(other, 5000))
 	h.Record("2026-11-01", apitest.Posting(checking, -700), apitest.Posting(market, 700))
 	voided := h.Record("2026-10-10", apitest.Posting(checking, -900), apitest.Posting(market, 900))
-	h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "duplicate"}, http.StatusOK, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "duplicate"},
+		http.StatusOK,
+		nil,
+	)
 
-	from, to := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
+	from, to := time.Date(
+		2026,
+		10,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	), time.Date(
+		2026,
+		11,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
 
 	tests := []struct {
 		name     string
@@ -41,7 +65,13 @@ func TestCategoryTotal(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := h.App.Ledger.CategoryTotal(t.Context(), h.OwnerID(), uuid.MustParse(tt.category), from, to)
+			got, err := h.App.Ledger.CategoryTotal(
+				t.Context(),
+				h.OwnerID(),
+				uuid.MustParse(tt.category),
+				from,
+				to,
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -71,7 +101,25 @@ func TestCategoryMonthlyTotals(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	oct, dec := time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC), time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)
+	oct, dec := time.Date(
+		2026,
+		10,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	), time.Date(
+		2026,
+		12,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
 	if len(got) != 2 || got[oct].Amount() != 2300 || got[dec].Amount() != 700 {
 		t.Fatalf("CategoryMonthlyTotals = %v", got)
 	}

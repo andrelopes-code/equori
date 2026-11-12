@@ -14,7 +14,11 @@ func (s *Server) probeQuote(
 	ctx context.Context, _ *http.Request, b ProbeQuoteJSONRequestBody,
 ) (ProbeResult, error) {
 	in := domain.Instrument{
-		Code: money.Currency(b.Code), Type: string(b.Type), QuoteCurrency: money.Currency(b.QuoteCurrency),
+		Code: money.Currency(
+			b.Code,
+		),
+		Type:          string(b.Type),
+		QuoteCurrency: money.Currency(b.QuoteCurrency),
 	}
 	if b.Exchange != nil {
 		in.Exchange = *b.Exchange

@@ -28,7 +28,14 @@ const (
 
 // AssertBalance records the institution's balance of a leaf balance account (A9) and
 // reconciles the account when the settled balance matches, after recording yield (F6, A10).
-func (s *Service) AssertBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money, source string) (AssertionResult, error) {
+func (s *Service) AssertBalance(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	amount money.Money,
+	source string,
+) (AssertionResult, error) {
 	switch source {
 	case "":
 		source = SourceManual
@@ -61,7 +68,14 @@ func (s *Service) AssertBalance(ctx context.Context, booksID int64, accountID uu
 // of that date and amount again, because history recorded since may close the difference (A77).
 // A reserve may book bounded yield (D3, A75). The result is that of the newest assertion of
 // the date and amount: the list orders by creation, newest first.
-func (s *Service) AssertSynced(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money, reserve bool) (AssertionResult, error) {
+func (s *Service) AssertSynced(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	amount money.Money,
+	reserve bool,
+) (AssertionResult, error) {
 	if date.After(s.clock.Today(ctx)) {
 		return AssertionResult{}, validationError("date", "must not be in the future")
 	}
@@ -115,7 +129,8 @@ func (s *Service) decideRepeated(
 ) (bool, error) {
 	var repeated bool
 	for _, found := range assertions {
-		if found.Source != SourceAggregator || !found.Date.Equal(date) || found.Amount != amount.Amount() {
+		if found.Source != SourceAggregator || !found.Date.Equal(date) ||
+			found.Amount != amount.Amount() {
 			continue
 		}
 
@@ -130,7 +145,16 @@ func (s *Service) decideRepeated(
 			continue
 		}
 
-		decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceAggregator, reserve, &found)
+		decided, err := s.decideAssertion(
+			ctx,
+			r,
+			a,
+			date,
+			amount,
+			SourceAggregator,
+			reserve,
+			&found,
+		)
 		if err != nil {
 			return false, err
 		}
@@ -143,7 +167,12 @@ func (s *Service) decideRepeated(
 	return repeated, nil
 }
 
-func (s *Service) BalanceAssertions(ctx context.Context, booksID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
+func (s *Service) BalanceAssertions(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	p page.Request[AssertionKey],
+) ([]BalanceAssertion, *AssertionKey, error) {
 	if _, err := s.repo.Account(ctx, booksID, accountID); err != nil {
 		return nil, nil, err
 	}
@@ -155,7 +184,13 @@ func (s *Service) BalanceAssertions(ctx context.Context, booksID int64, accountI
 // reserve dated after its last reconciliation and before date: a transfer recorded after the
 // sync of its day closes that day's difference, and each day books its own yield within its own
 // bound (D3 amendment). Of one date, only the newest assertion that reconciles counts.
-func (s *Service) redecideOpenReserve(ctx context.Context, r Repository, a domain.Account, date time.Time, assertions []BalanceAssertion) error {
+func (s *Service) redecideOpenReserve(
+	ctx context.Context,
+	r Repository,
+	a domain.Account,
+	date time.Time,
+	assertions []BalanceAssertion,
+) error {
 	last, err := r.LastReconciledOn(ctx, a.BooksID, a.ID)
 	if err != nil {
 		return err
@@ -176,7 +211,16 @@ func (s *Service) redecideOpenReserve(ctx context.Context, r Repository, a domai
 			return err
 		}
 
-		decided, err := s.decideAssertion(ctx, r, a, found.Date, amount, SourceAggregator, true, &found)
+		decided, err := s.decideAssertion(
+			ctx,
+			r,
+			a,
+			found.Date,
+			amount,
+			SourceAggregator,
+			true,
+			&found,
+		)
 		if err != nil {
 			return err
 		}
@@ -191,7 +235,14 @@ func (s *Service) redecideOpenReserve(ctx context.Context, r Repository, a domai
 
 // lockAssertionTarget locks the account and checks that an assertion of date and amount may
 // be decided on it.
-func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, date time.Time, amount money.Money) (domain.Account, error) {
+func (s *Service) lockAssertionTarget(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	amount money.Money,
+) (domain.Account, error) {
 	a, err := s.lockLeafBalance(ctx, r, booksID, accountID)
 	if err != nil {
 		return domain.Account{}, err
@@ -212,7 +263,16 @@ func (s *Service) lockAssertionTarget(ctx context.Context, r Repository, booksID
 // decideAssertion compares the settled balance with the asserted amount and reconciles the
 // account when they match. An existing assertion is decided again; a nil one is inserted.
 // An aggregator's assertion books yield only when reserve is set (A75).
-func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Account, date time.Time, amount money.Money, source string, reserve bool, existing *BalanceAssertion) (AssertionResult, error) {
+func (s *Service) decideAssertion(
+	ctx context.Context,
+	r Repository,
+	a domain.Account,
+	date time.Time,
+	amount money.Money,
+	source string,
+	reserve bool,
+	existing *BalanceAssertion,
+) (AssertionResult, error) {
 	var res AssertionResult
 
 	prev, err := s.previousAssertionDate(ctx, r, a.BooksID, a.ID, date)
@@ -277,7 +337,13 @@ func (s *Service) assertionOutcome(
 			days = int(date.Sub(*prev) / (24 * time.Hour))
 		}
 
-		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode, s.defaults.ReserveYieldPercent(a.Instrument))
+		outcome = domain.DecideSyncedReserve(
+			amount.Amount(),
+			settled,
+			days,
+			a.YieldMode,
+			s.defaults.ReserveYieldPercent(a.Instrument),
+		)
 	case source == SourceAggregator:
 		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
 		outcome = domain.DecideAssertion(amount.Amount(), settled, domain.YieldNone)
@@ -301,15 +367,27 @@ func (s *Service) resolveOutcome(
 	var err error
 
 	if outcome.Resolution == domain.ResolutionYield {
-		if res.ResolutionTransactionID, err = s.recordYield(ctx, r, a, *start, date, outcome.Yield); err != nil {
+		if res.ResolutionTransactionID, err = s.recordYield(
+			ctx,
+			r,
+			a,
+			*start,
+			date,
+			outcome.Yield,
+		); err != nil {
 			return err
 		}
 	}
 
 	res.Resolution = outcome.Resolution
 	if err := s.reconcile(ctx, r, Reconciliation{
-		BooksID: a.BooksID, AccountID: a.ID, Date: date, AssertionID: res.Assertion.ID,
-		Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
+		BooksID:                 a.BooksID,
+		AccountID:               a.ID,
+		Date:                    date,
+		AssertionID:             res.Assertion.ID,
+		Difference:              outcome.Difference,
+		Resolution:              outcome.Resolution,
+		ResolutionTransactionID: res.ResolutionTransactionID,
 	}); err != nil {
 		return err
 	}
@@ -320,7 +398,12 @@ func (s *Service) resolveOutcome(
 }
 
 // lockLeafBalance serializes the reconciliations of one account.
-func (s *Service) lockLeafBalance(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID) (domain.Account, error) {
+func (s *Service) lockLeafBalance(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accountID uuid.UUID,
+) (domain.Account, error) {
 	a, err := r.LockAccount(ctx, booksID, accountID)
 	if err != nil {
 		return domain.Account{}, err
@@ -350,7 +433,13 @@ func checkLeafBalance(ctx context.Context, r Repository, a domain.Account) error
 
 // previousAssertionDate is the date of the latest assertion dated before date; nil when
 // there is none.
-func (s *Service) previousAssertionDate(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID, date time.Time) (*time.Time, error) {
+func (s *Service) previousAssertionDate(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+) (*time.Time, error) {
 	assertions, err := r.BalanceAssertions(ctx, booksID, accountID)
 	if err != nil {
 		return nil, err

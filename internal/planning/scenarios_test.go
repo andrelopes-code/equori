@@ -15,9 +15,27 @@ func TestS29SubscriptionWithPriceChangeAndPause(t *testing.T) {
 	card := f.h.Card("Itaú Visa", 3, 10, "next")
 	subscriptions := f.h.Account("Subscriptions", "expense", "", nil)
 	id := f.schedule("subscription", card, subscriptions, 3990, monthly("2026-11-12", 12, ""), nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/terms", map[string]any{"effective_from": "2027-01-01", "amount": apitest.BRL(4490)}, http.StatusCreated, nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/pauses", map[string]string{"from": "2027-02-01", "to": "2027-03-31"}, http.StatusCreated, nil)
-	f.h.MustDo(http.MethodPost, "/api/v1/schedules/"+id+"/end", map[string]string{"from": "2027-06-01"}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/terms",
+		map[string]any{"effective_from": "2027-01-01", "amount": apitest.BRL(4490)},
+		http.StatusCreated,
+		nil,
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/pauses",
+		map[string]string{"from": "2027-02-01", "to": "2027-03-31"},
+		http.StatusCreated,
+		nil,
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/schedules/"+id+"/end",
+		map[string]string{"from": "2027-06-01"},
+		http.StatusOK,
+		nil,
+	)
 	got := f.occurrences("from=2026-11-01&to=2027-10-31&schedule_id=" + id)
 
 	want := []struct {
@@ -29,7 +47,8 @@ func TestS29SubscriptionWithPriceChangeAndPause(t *testing.T) {
 	}
 
 	for i, w := range want {
-		if got[i].ExpectedOn != w.date || got[i].ExpectedAmount.Amount != w.amount || got[i].State != "expected" {
+		if got[i].ExpectedOn != w.date || got[i].ExpectedAmount.Amount != w.amount ||
+			got[i].State != "expected" {
 			t.Errorf("occurrence %d = %+v, want %s %d", i, got[i], w.date, w.amount)
 		}
 	}

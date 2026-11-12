@@ -43,7 +43,9 @@ func TestEnglishName(t *testing.T) {
 }
 
 func TestValid(t *testing.T) {
-	if !locale.ValidRegion("BR") || locale.ValidRegion("ZZ") || locale.ValidRegion("BRA") || !locale.ValidLanguage("pt") || locale.ValidLanguage("PT") {
+	if !locale.ValidRegion("BR") || locale.ValidRegion("ZZ") || locale.ValidRegion("BRA") ||
+		!locale.ValidLanguage("pt") ||
+		locale.ValidLanguage("PT") {
 		t.Fatal("validation")
 	}
 }
@@ -58,7 +60,8 @@ func TestRegionsAreTheAssignedCodes(t *testing.T) {
 		t.Fatal("Regions() is not sorted")
 	}
 
-	if slices.Compact(slices.Clone(codes)) == nil || len(slices.Compact(slices.Clone(codes))) != 249 {
+	if slices.Compact(slices.Clone(codes)) == nil ||
+		len(slices.Compact(slices.Clone(codes))) != 249 {
 		t.Fatal("Regions() has duplicates")
 	}
 

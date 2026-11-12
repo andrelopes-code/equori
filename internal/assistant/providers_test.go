@@ -68,11 +68,21 @@ func harness(t *testing.T, f *fakes, opts ...apitest.Option) *apitest.Harness {
 	t.Helper()
 
 	return apitest.New(t, append([]apitest.Option{
-		apitest.SecretKeys(apitest.SecretKey, ""), apitest.LLMFactory(f.build), apitest.LLM(llmtest.New("aistudio")),
+		apitest.SecretKeys(
+			apitest.SecretKey,
+			"",
+		),
+		apitest.LLMFactory(f.build),
+		apitest.LLM(llmtest.New("aistudio")),
 	}, opts...)...)
 }
 
-func createProvider(t *testing.T, h *apitest.Harness, c *http.Client, body map[string]any) providerView {
+func createProvider(
+	t *testing.T,
+	h *apitest.Harness,
+	c *http.Client,
+	body map[string]any,
+) providerView {
 	t.Helper()
 
 	r := h.Call(c, http.MethodPost, "/api/v1/assistant/providers", body)
@@ -91,7 +101,15 @@ func TestCreateProviderA1(t *testing.T) {
 	t.Parallel()
 	h := harness(t, newFakes())
 
-	keys := map[string]string{"gemini": "k1", "groq": "k2", "openrouter": "k3", "mistral": "k4", "ollama": "", "lmstudio": "", "custom": ""}
+	keys := map[string]string{
+		"gemini":     "k1",
+		"groq":       "k2",
+		"openrouter": "k3",
+		"mistral":    "k4",
+		"ollama":     "",
+		"lmstudio":   "",
+		"custom":     "",
+	}
 	for preset, key := range keys {
 		body := map[string]any{"preset": preset, "name": "P " + preset}
 		if key != "" {
@@ -125,14 +143,16 @@ func TestCreateProviderA1(t *testing.T) {
 	h.MustDo(http.MethodGet, "/api/v1/assistant/providers", nil, http.StatusOK, &list)
 
 	last := list.Items[len(list.Items)-1]
-	if len(list.Items) != len(keys)+1 || last != (providerView{ID: "aistudio", Preset: "gemini", Name: "aistudio", HasKey: true, Notice: "trains", Instance: true}) {
+	if len(list.Items) != len(keys)+1 ||
+		last != (providerView{ID: "aistudio", Preset: "gemini", Name: "aistudio", HasKey: true, Notice: "trains", Instance: true}) {
 		t.Fatalf("providers = %+v", list.Items)
 	}
 
 	var id string
 
 	var sealed []byte
-	if err := h.Pool.QueryRow(t.Context(), `SELECT id, sealed_key FROM assistant_provider WHERE preset = 'groq'`).Scan(&id, &sealed); err != nil {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT id, sealed_key FROM assistant_provider WHERE preset = 'groq'`).
+		Scan(&id, &sealed); err != nil {
 		t.Fatal(err)
 	}
 
@@ -151,14 +171,38 @@ func TestCreateProviderA1(t *testing.T) {
 func TestProviderKeysA2A3(t *testing.T) {
 	t.Parallel()
 	h := harness(t, newFakes())
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "groq", "name": "Groq"}),
-		http.StatusUnprocessableEntity, "key_required", "key")
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "custom", "name": "X", "base_url": "ftp://h"}),
-		http.StatusUnprocessableEntity, "validation_failed", "base_url")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/assistant/providers",
+			map[string]any{"preset": "groq", "name": "Groq"},
+		),
+		http.StatusUnprocessableEntity,
+		"key_required",
+		"key",
+	)
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/assistant/providers",
+			map[string]any{"preset": "custom", "name": "X", "base_url": "ftp://h"},
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"base_url",
+	)
 
 	bare := apitest.New(t)
-	bare.ExpectProblem(bare.Do(http.MethodPost, "/api/v1/assistant/providers", map[string]any{"preset": "groq", "name": "Groq", "key": "k"}),
-		http.StatusConflict, "secret_key_missing", "")
+	bare.ExpectProblem(
+		bare.Do(
+			http.MethodPost,
+			"/api/v1/assistant/providers",
+			map[string]any{"preset": "groq", "name": "Groq", "key": "k"},
+		),
+		http.StatusConflict,
+		"secret_key_missing",
+		"",
+	)
 	createProvider(t, bare, bare.Client, map[string]any{"preset": "ollama", "name": "Local"})
 }
 
@@ -167,7 +211,12 @@ func TestProviderKeysA2A3(t *testing.T) {
 func TestUpdateProvider(t *testing.T) {
 	t.Parallel()
 	h := harness(t, newFakes())
-	p := createProvider(t, h, h.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "k"})
+	p := createProvider(
+		t,
+		h,
+		h.Client,
+		map[string]any{"preset": "groq", "name": "Groq", "key": "k"},
+	)
 	path := "/api/v1/assistant/providers/" + p.ID
 	var v providerView
 	h.MustDo(http.MethodPatch, path, map[string]any{"name": "Groq free"}, http.StatusOK, &v)
@@ -176,14 +225,30 @@ func TestUpdateProvider(t *testing.T) {
 		t.Fatalf("renamed = %+v", v)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"key": ""}), http.StatusUnprocessableEntity, "key_required", "key")
-	h.MustDo(http.MethodPatch, path, map[string]any{"base_url": "https://proxy.example.com/v1"}, http.StatusOK, &v)
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, path, map[string]any{"key": ""}),
+		http.StatusUnprocessableEntity,
+		"key_required",
+		"key",
+	)
+	h.MustDo(
+		http.MethodPatch,
+		path,
+		map[string]any{"base_url": "https://proxy.example.com/v1"},
+		http.StatusOK,
+		&v,
+	)
 
 	if v.BaseURL != "https://proxy.example.com/v1" || !v.HasKey {
 		t.Fatalf("moved = %+v", v)
 	}
 
-	h.ExpectProblem(h.Do(http.MethodPatch, path, map[string]any{"name": " "}), http.StatusUnprocessableEntity, "validation_failed", "name")
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, path, map[string]any{"name": " "}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"name",
+	)
 }
 
 // A4: another book reaches none of the owner's providers.
@@ -207,9 +272,18 @@ func TestProviderIsolationA4(t *testing.T) {
 	var list struct {
 		Items []providerView `json:"items"`
 	}
-	if r := h.Call(other, http.MethodGet, "/api/v1/assistant/providers", nil); r.Status != http.StatusOK {
+	if r := h.Call(
+		other,
+		http.MethodGet,
+		"/api/v1/assistant/providers",
+		nil,
+	); r.Status != http.StatusOK {
 		t.Fatalf("list = %d", r.Status)
-	} else if r.Decode(t, &list); len(list.Items) != 1 || !list.Items[0].Instance {
+	} else if r.Decode(
+		t,
+		&list,
+	); len(list.Items) != 1 ||
+		!list.Items[0].Instance {
 		t.Fatalf("other book's providers = %+v", list.Items)
 	}
 }
@@ -221,11 +295,22 @@ func TestProviderModelsA10(t *testing.T) {
 	f := newFakes()
 	f.models = []string{"a", "b"}
 	h := harness(t, f)
-	p := createProvider(t, h, h.Client, map[string]any{"preset": "groq", "name": "Groq", "key": "k"})
+	p := createProvider(
+		t,
+		h,
+		h.Client,
+		map[string]any{"preset": "groq", "name": "Groq", "key": "k"},
+	)
 	var out struct {
 		Items []string `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/assistant/providers/"+p.ID+"/models", nil, http.StatusOK, &out)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/assistant/providers/"+p.ID+"/models",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	if strings.Join(out.Items, ",") != "a,b" {
 		t.Fatalf("models = %v", out.Items)
@@ -233,9 +318,19 @@ func TestProviderModelsA10(t *testing.T) {
 
 	f.err = fmt.Errorf("status 401: %w", llm.ErrUnauthorized)
 
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/assistant/providers/"+p.ID+"/models", nil), http.StatusBadGateway, "provider_unauthorized", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/assistant/providers/"+p.ID+"/models", nil),
+		http.StatusBadGateway,
+		"provider_unauthorized",
+		"",
+	)
 
 	f.err = fmt.Errorf("status 503: %w", llm.ErrTransient)
 
-	h.ExpectProblem(h.Do(http.MethodGet, "/api/v1/assistant/providers/"+p.ID+"/models", nil), http.StatusBadGateway, "provider_unavailable", "")
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/assistant/providers/"+p.ID+"/models", nil),
+		http.StatusBadGateway,
+		"provider_unavailable",
+		"",
+	)
 }

@@ -31,7 +31,13 @@ var _ app.Agent = (*Agent)(nil)
 
 // NewAgent declares every tool of set on every step, sorted by name (spec 7.3, delivery A). wait blocks until
 // the instant a transient cooldown ends (design 2026-10-26 E6).
-func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Set, wait func(ctx context.Context, until time.Time) error) *Agent {
+func NewAgent(
+	client *llm.Client,
+	svc *app.Service,
+	tools app.Tools,
+	set tool.Set,
+	wait func(ctx context.Context, until time.Time) error,
+) *Agent {
 	decls, handlers := ChatHandlers(svc, tools, set, app.TurnConversation)
 	slices.SortFunc(decls, func(a, b llm.Tool) int { return strings.Compare(a.Name, b.Name) })
 
@@ -40,14 +46,30 @@ func NewAgent(client *llm.Client, svc *app.Service, tools app.Tools, set tool.Se
 		return ok && e == tool.ReadOnly
 	}
 
-	reads := slices.DeleteFunc(slices.Clone(decls), func(d llm.Tool) bool { return !concurrent(d.Name) })
+	reads := slices.DeleteFunc(
+		slices.Clone(decls),
+		func(d llm.Tool) bool { return !concurrent(d.Name) },
+	)
 
-	return &Agent{client: client, decls: decls, reads: reads, handlers: handlers, wait: wait, concurrent: concurrent}
+	return &Agent{
+		client:     client,
+		decls:      decls,
+		reads:      reads,
+		handlers:   handlers,
+		wait:       wait,
+		concurrent: concurrent,
+	}
 }
 
 // Run calls the model loop once more after a wait when only transient cooldowns block every target and the
 // earliest one ends before the turn's deadline (design 2026-10-26 E6).
-func (a *Agent) Run(ctx context.Context, booksID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
+func (a *Agent) Run(
+	ctx context.Context,
+	booksID int64,
+	in app.AgentRequest,
+	onStep, onText func(string),
+	onRestart func(),
+) (app.AgentResult, error) {
 	out, err := a.run(ctx, booksID, in, onStep, onText, onRestart)
 
 	ee, ok := errors.AsType[*llm.ExhaustedError](err)
@@ -69,7 +91,13 @@ func (a *Agent) Run(ctx context.Context, booksID int64, in app.AgentRequest, onS
 	return second, mapError(err)
 }
 
-func (a *Agent) run(ctx context.Context, booksID int64, in app.AgentRequest, onStep, onText func(string), onRestart func()) (app.AgentResult, error) {
+func (a *Agent) run(
+	ctx context.Context,
+	booksID int64,
+	in app.AgentRequest,
+	onStep, onText func(string),
+	onRestart func(),
+) (app.AgentResult, error) {
 	req := llm.Request{System: in.System, Tools: a.decls}
 	if role, ok := auth.CurrentRole(ctx); ok && !role.Allows(auth.RoleWrite) {
 		req.Tools = a.reads
@@ -81,10 +109,16 @@ func (a *Agent) run(ctx context.Context, booksID int64, in app.AgentRequest, onS
 			role = llm.RoleModel
 		}
 
-		req.Messages = append(req.Messages, llm.Message{Role: role, Parts: []llm.Part{{Text: m.Text}}})
+		req.Messages = append(
+			req.Messages,
+			llm.Message{Role: role, Parts: []llm.Part{{Text: m.Text}}},
+		)
 	}
 
-	req.Messages = append(req.Messages, llm.Message{Role: llm.RoleUser, Parts: []llm.Part{{Text: in.Text}}})
+	req.Messages = append(
+		req.Messages,
+		llm.Message{Role: llm.RoleUser, Parts: []llm.Part{{Text: in.Text}}},
+	)
 	calls := 0
 	res, err := llm.Run(auth.WithBooksID(ctx, booksID), a.client, req, a.handlers, llm.LoopOptions{
 		MaxSteps: app.MaxSteps, ForceAnswer: true, Pin: true,
@@ -98,9 +132,15 @@ func (a *Agent) run(ctx context.Context, booksID int64, in app.AgentRequest, onS
 		Concurrent: a.concurrent,
 	})
 	out := app.AgentResult{
-		Text: res.Response.Text(), StepLimit: res.StepLimit, Restarted: res.Restarted, Steps: res.Steps, ToolCalls: calls,
-		InputTokens: res.Usage.InputTokens, OutputTokens: res.Usage.OutputTokens,
-		ProviderName: res.Response.Target.Provider, Model: res.Response.Target.Model,
+		Text:         res.Response.Text(),
+		StepLimit:    res.StepLimit,
+		Restarted:    res.Restarted,
+		Steps:        res.Steps,
+		ToolCalls:    calls,
+		InputTokens:  res.Usage.InputTokens,
+		OutputTokens: res.Usage.OutputTokens,
+		ProviderName: res.Response.Target.Provider,
+		Model:        res.Response.Target.Model,
 	}
 
 	return out, err

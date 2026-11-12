@@ -23,19 +23,23 @@ func TestS84RefundBeforePayment(t *testing.T) {
 	c.pay("2026-12-09", 78465)
 
 	ss := statements(t, c.h, c.card)
-	if s := ss["2026-11"]; s.AmountDue != 103475 || s.Settled != 103475 || s.Unpaid != 0 || s.Status != "paid" {
+	if s := ss["2026-11"]; s.AmountDue != 103475 || s.Settled != 103475 || s.Unpaid != 0 ||
+		s.Status != "paid" {
 		t.Fatalf("2026-11 = %+v", s)
 	}
 
 	if s := ss["2026-12"]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 || s.Prior != 7290 ||
-		s.Payments != 196185 || s.Early != 100000 || s.AmountDue != 78465 || s.Billed != 178465 || s.Status != "paid" {
+		s.Payments != 196185 || s.Early != 100000 || s.AmountDue != 78465 ||
+		s.Billed != 178465 ||
+		s.Status != "paid" {
 		t.Fatalf("2026-12 = %+v", s)
 	}
 
 	var detail statementView
 	c.h.MustDo(http.MethodGet, "/api/v1/statements/"+ss["2026-12"].ID, nil, http.StatusOK, &detail)
 
-	if detail.Billed != 178465 || detail.Early != 100000 || detail.Prior != 7290 || detail.Settled != 78465 {
+	if detail.Billed != 178465 || detail.Early != 100000 || detail.Prior != 7290 ||
+		detail.Settled != 78465 {
 		t.Fatalf("2026-12 detail = %+v", detail)
 	}
 }
@@ -82,8 +86,17 @@ func TestS82ManualPurchaseAfterRedating(t *testing.T) {
 		t.Fatalf("purchase of 2026-11-02 before the facts billed on %s", got)
 	}
 
-	c.h.MustDo(http.MethodPut, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/facts",
-		map[string]any{"closing_date": "2026-11-01", "due_date": "2026-11-10", "total": apitest.BRL(0)}, http.StatusOK, nil)
+	c.h.MustDo(
+		http.MethodPut,
+		"/api/v1/statements/"+c.statementID(t, "2026-11")+"/facts",
+		map[string]any{
+			"closing_date": "2026-11-01",
+			"due_date":     "2026-11-10",
+			"total":        apitest.BRL(0),
+		},
+		http.StatusOK,
+		nil,
+	)
 
 	if got := c.h.Transaction(before).Postings[0].Statement; got != "2026-12" {
 		t.Fatalf("purchase of 2026-11-02 after the facts billed on %s", got)
@@ -100,7 +113,13 @@ func TestS82ManualPurchaseAfterRedating(t *testing.T) {
 		t.Fatalf("2026-11 = %+v", s)
 	}
 
-	c.h.MustDo(http.MethodDelete, "/api/v1/statements/"+c.statementID(t, "2026-11")+"/facts", nil, http.StatusNoContent, nil)
+	c.h.MustDo(
+		http.MethodDelete,
+		"/api/v1/statements/"+c.statementID(t, "2026-11")+"/facts",
+		nil,
+		http.StatusNoContent,
+		nil,
+	)
 
 	if got := c.h.Transaction(before).Postings[0].Statement; got != "2026-11" {
 		t.Fatalf("purchase of 2026-11-02 after removing the facts billed on %s", got)
@@ -114,8 +133,13 @@ func TestS81ClosingBeforeDue(t *testing.T) {
 	h := apitest.New(t, apitest.Today("2026-11-12"))
 	card := h.Account("Nubank Gold", "liability", "credit_card", nil)
 	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/billing-cycle-rules", map[string]any{
-		"effective_from": "2026-01", "due_day": 5, "due_date_adjustment": "following", "calendar": "br_banking",
-		"closing_mode": "before_due", "closing_days_before_due": 7, "closing_adjustment": "preceding",
+		"effective_from":          "2026-01",
+		"due_day":                 5,
+		"due_date_adjustment":     "following",
+		"calendar":                "br_banking",
+		"closing_mode":            "before_due",
+		"closing_days_before_due": 7,
+		"closing_adjustment":      "preceding",
 	}, http.StatusCreated, nil)
 	food := h.Account("Food", "expense", "", nil)
 
@@ -137,7 +161,13 @@ func TestS81ClosingBeforeDue(t *testing.T) {
 			DueDate     string `json:"due_date"`
 		} `json:"items"`
 	}
-	h.MustDo(http.MethodGet, "/api/v1/accounts/"+card+"/statements?from=2026-08&to=2026-11", nil, http.StatusOK, &out)
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+card+"/statements?from=2026-08&to=2026-11",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	want := map[string][2]string{
 		"2026-08": {"2026-07-29", "2026-08-05"}, "2026-09": {"2026-08-28", "2026-09-08"},

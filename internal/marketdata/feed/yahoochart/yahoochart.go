@@ -137,7 +137,11 @@ func (s Source) Codes(ins []feed.Instrument) []money.Currency {
 // Fetch returns the close of each day in [from, to] for each code. A 404 answer has no data for
 // its code, a 429 answer ends the fetch with the quotes read so far, and any other failure is a
 // ScopeError joined into the returned error while the next code still runs.
-func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (s Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var (
 		out  []feed.Quote
 		errs []error
@@ -300,10 +304,22 @@ func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.
 
 	loc, err := time.LoadLocation(result.Meta.ExchangeTimezoneName)
 	if err != nil {
-		return nil, fmt.Errorf("load exchange time zone %q: %w", result.Meta.ExchangeTimezoneName, err)
+		return nil, fmt.Errorf(
+			"load exchange time zone %q: %w",
+			result.Meta.ExchangeTimezoneName,
+			err,
+		)
 	}
 
-	return closeQuotes(result.Indicators.Quote[0].Close, result.Timestamp, loc, code, quote, from, to)
+	return closeQuotes(
+		result.Indicators.Quote[0].Close,
+		result.Timestamp,
+		loc,
+		code,
+		quote,
+		from,
+		to,
+	)
 }
 
 func closeQuotes(

@@ -46,9 +46,18 @@ type event struct {
 
 func newSeeder(ctx context.Context, base string, c *http.Client) *seeder {
 	return &seeder{
-		ctx: ctx, base: strings.TrimRight(base, "/"), http: c, ids: map[string]string{},
-		rng: rand.New(rand.NewPCG(20241001, 7)), //nolint:gosec // a fixed seed makes the generated history reproducible.
-		bal: map[string]int64{}, px: map[string][]float64{}, pending: map[string][]ofxLine{}, hold: map[string]int64{}, snap: map[string]map[string]int64{},
+		ctx:  ctx,
+		base: strings.TrimRight(base, "/"),
+		http: c,
+		ids:  map[string]string{},
+		rng: rand.New(
+			rand.NewPCG(20241001, 7),
+		), //nolint:gosec // a fixed seed makes the generated history reproducible.
+		bal:     map[string]int64{},
+		px:      map[string][]float64{},
+		pending: map[string][]ofxLine{},
+		hold:    map[string]int64{},
+		snap:    map[string]map[string]int64{},
 	}
 }
 
@@ -82,7 +91,12 @@ func (s *seeder) do(method, path string, body, out any) {
 		reader = bytes.NewReader(b)
 	}
 
-	req, err := http.NewRequestWithContext(s.ctx, method, s.base+"/api/v1"+path, reader) //nolint:gosec // the address is the operator's own instance.
+	req, err := http.NewRequestWithContext(
+		s.ctx,
+		method,
+		s.base+"/api/v1"+path,
+		reader,
+	) //nolint:gosec // the address is the operator's own instance.
 	if err != nil {
 		s.fail("build %s %s: %w", method, path, err)
 		return
@@ -218,13 +232,20 @@ func (s *seeder) loadSystemAccounts() {
 func (s *seeder) requireEmpty() {
 	for _, a := range s.listAccounts() {
 		if a.SystemRole == "" && s.err == nil {
-			s.fail("the book already owns account %q; drop the user and create it again before seeding", a.Name)
+			s.fail(
+				"the book already owns account %q; drop the user and create it again before seeding",
+				a.Name,
+			)
 		}
 	}
 }
 
 // record posts a balanced transaction, keeps the running balances and returns its id.
-func (s *seeder) record(date, description string, extra map[string]any, postings ...posting) string {
+func (s *seeder) record(
+	date, description string,
+	extra map[string]any,
+	postings ...posting,
+) string {
 	body := map[string]any{"date": date, "description": description, "postings": postings}
 	for k, v := range extra {
 		body[k] = v
@@ -234,7 +255,10 @@ func (s *seeder) record(date, description string, extra map[string]any, postings
 	if s.err == nil {
 		for _, p := range postings {
 			s.bal[p.AccountID] += p.Amount.Amount
-			s.entries = append(s.entries, entry{date: date, account: p.AccountID, cents: p.Amount.Amount, desc: description})
+			s.entries = append(
+				s.entries,
+				entry{date: date, account: p.AccountID, cents: p.Amount.Amount, desc: description},
+			)
 		}
 	}
 

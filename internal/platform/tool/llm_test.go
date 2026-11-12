@@ -35,14 +35,24 @@ func runEcho(t *testing.T, args string) llm.ToolResult {
 	)
 	clk := clock.New(func() time.Time { return time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC) })
 	router := llm.NewRouter(&clk, slog.New(slog.DiscardHandler), nil, p)
-	req := llm.Request{Tools: tools, Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "echo"}}}}}
+	req := llm.Request{
+		Tools:    tools,
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "echo"}}}},
+	}
 
-	_, history, err := llm.RunTools(userCtx(t), router.Client(llm.Target{Provider: "a", Model: "m1"}), req, handlers, 3)
+	_, history, err := llm.RunTools(
+		userCtx(t),
+		router.Client(llm.Target{Provider: "a", Model: "m1"}),
+		req,
+		handlers,
+		3,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(history) != 4 || history[2].Role != llm.RoleTool || len(history[2].Parts) != 1 || history[2].Parts[0].ToolResult == nil {
+	if len(history) != 4 || history[2].Role != llm.RoleTool || len(history[2].Parts) != 1 ||
+		history[2].Parts[0].ToolResult == nil {
 		t.Fatalf("history = %+v", history)
 	}
 
@@ -59,7 +69,8 @@ func TestSetLLM(t *testing.T) {
 	}
 
 	tools, handlers := s.LLM()
-	if len(tools) != 2 || len(handlers) != 2 || tools[0].Name != "echo" || tools[1].Name != "optional" {
+	if len(tools) != 2 || len(handlers) != 2 || tools[0].Name != "echo" ||
+		tools[1].Name != "optional" {
 		t.Fatalf("tools = %+v, handlers = %d", tools, len(handlers))
 	}
 

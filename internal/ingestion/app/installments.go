@@ -12,7 +12,12 @@ import (
 // installments places aggregator installment lines in their purchases, in batch order (P6
 // amendment A40): the first line of a purchase creates its ledger plan, the others confirm
 // their installments. A line the ledger refuses waits for review.
-func (s *Service) installments(ctx context.Context, batch *domain.Batch, lines []InstallmentLine, records []*domain.ExternalRecord) error {
+func (s *Service) installments(
+	ctx context.Context,
+	batch *domain.Batch,
+	lines []InstallmentLine,
+	records []*domain.ExternalRecord,
+) error {
 	if len(lines) == 0 {
 		return nil
 	}
@@ -38,7 +43,14 @@ func (s *Service) installments(ctx context.Context, batch *domain.Batch, lines [
 
 		planID, known := plans[string(keys[i])]
 		if known {
-			txID, err = s.ledger.LinkInstallment(ctx, batch.BooksID, l.RecordID, planID, l.Installment.Number, l.Line)
+			txID, err = s.ledger.LinkInstallment(
+				ctx,
+				batch.BooksID,
+				l.RecordID,
+				planID,
+				l.Installment.Number,
+				l.Line,
+			)
 		} else {
 			txID, planID, err = s.ledger.RecordInstallment(ctx, batch.BooksID, l)
 		}
@@ -54,7 +66,13 @@ func (s *Service) installments(ctx context.Context, batch *domain.Batch, lines [
 		rec.State, rec.TransactionID = domain.StateMatched, txID
 		if !known && planID != uuid.Nil {
 			rec.State, plans[string(keys[i])] = domain.StateCreated, planID
-			if err := s.repo.SaveInstallmentPlan(ctx, batch.BooksID, batch.AccountID, keys[i], planID); err != nil {
+			if err := s.repo.SaveInstallmentPlan(
+				ctx,
+				batch.BooksID,
+				batch.AccountID,
+				keys[i],
+				planID,
+			); err != nil {
 				return err
 			}
 		}

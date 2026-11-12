@@ -28,7 +28,11 @@ func newDispatcher(pool *pgxpool.Pool) *outbox.Dispatcher {
 func insertEvent(t *testing.T, pool *pgxpool.Pool, e outbox.Event) {
 	t.Helper()
 
-	err := pgx.BeginFunc(t.Context(), pool, func(tx pgx.Tx) error { return outbox.Insert(t.Context(), tx, e) })
+	err := pgx.BeginFunc(
+		t.Context(),
+		pool,
+		func(tx pgx.Tx) error { return outbox.Insert(t.Context(), tx, e) },
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,8 +52,11 @@ func dispatch(t *testing.T, d *outbox.Dispatcher) int {
 func delivery(t *testing.T, pool *pgxpool.Pool, consumer string) (status string, attempts int) {
 	t.Helper()
 
-	err := pool.QueryRow(t.Context(),
-		`SELECT status, attempts FROM outbox_delivery WHERE consumer = $1`, consumer).Scan(&status, &attempts)
+	err := pool.QueryRow(
+		t.Context(),
+		`SELECT status, attempts FROM outbox_delivery WHERE consumer = $1`,
+		consumer,
+	).Scan(&status, &attempts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -64,7 +71,11 @@ func TestInsertIsTransactional(t *testing.T) {
 	errRollback := errors.New("rollback")
 
 	err := pgx.BeginFunc(t.Context(), pool, func(tx pgx.Tx) error {
-		if err := outbox.Insert(t.Context(), tx, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1}); err != nil {
+		if err := outbox.Insert(
+			t.Context(),
+			tx,
+			outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+		); err != nil {
 			return err
 		}
 
@@ -75,7 +86,9 @@ func TestInsertIsTransactional(t *testing.T) {
 	}
 
 	var n int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM outbox_event`).Scan(&n); err != nil || n != 0 {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM outbox_event`).
+		Scan(&n); err != nil ||
+		n != 0 {
 		t.Fatalf("events = %d, %v; want 0", n, err)
 	}
 }
@@ -86,9 +99,26 @@ func TestDispatchDeliversOncePerConsumer(t *testing.T) {
 	booksID := pgtest.CreateBooks(t, pool)
 	d := newDispatcher(pool)
 	var a, b atomic.Int32
-	d.Subscribe("consumer-a", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error { a.Add(1); return nil })
-	d.Subscribe("consumer-b", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error { b.Add(1); return nil })
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: map[string]int{"n": 1}})
+	d.Subscribe(
+		"consumer-a",
+		eventType,
+		func(context.Context, pgx.Tx, outbox.Delivered) error { a.Add(1); return nil },
+	)
+	d.Subscribe(
+		"consumer-b",
+		eventType,
+		func(context.Context, pgx.Tx, outbox.Delivered) error { b.Add(1); return nil },
+	)
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{
+			Type:        eventType,
+			BooksID:     booksID,
+			AggregateID: "x",
+			Payload:     map[string]int{"n": 1},
+		},
+	)
 
 	if n := dispatch(t, d); n != 2 {
 		t.Fatalf("first pass delivered %d, want 2", n)
@@ -109,8 +139,21 @@ func TestDeliveredCarriesEvent(t *testing.T) {
 	booksID := pgtest.CreateBooks(t, pool)
 	d := newDispatcher(pool)
 	var got outbox.Delivered
-	d.Subscribe("c", eventType, func(_ context.Context, _ pgx.Tx, e outbox.Delivered) error { got = e; return nil })
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "agg-1", Payload: map[string]int{"n": 7}})
+	d.Subscribe(
+		"c",
+		eventType,
+		func(_ context.Context, _ pgx.Tx, e outbox.Delivered) error { got = e; return nil },
+	)
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{
+			Type:        eventType,
+			BooksID:     booksID,
+			AggregateID: "agg-1",
+			Payload:     map[string]int{"n": 7},
+		},
+	)
 
 	dispatch(t, d)
 
@@ -119,7 +162,9 @@ func TestDeliveredCarriesEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got.Type != eventType || got.BooksID != booksID || got.AggregateID != "agg-1" || payload["n"] != 7 || got.OccurredAt.IsZero() {
+	if got.Type != eventType || got.BooksID != booksID || got.AggregateID != "agg-1" ||
+		payload["n"] != 7 ||
+		got.OccurredAt.IsZero() {
 		t.Fatalf("delivered = %+v, payload %v", got, payload)
 	}
 }
@@ -175,13 +220,21 @@ func TestDeliveryRunsInBooksContext(t *testing.T) {
 
 			var zone atomic.Value
 
-			d.Subscribe("c", eventType, func(ctx context.Context, _ pgx.Tx, _ outbox.Delivered) error {
-				runs.Add(1)
-				zone.Store(clock.Location(ctx).String())
+			d.Subscribe(
+				"c",
+				eventType,
+				func(ctx context.Context, _ pgx.Tx, _ outbox.Delivered) error {
+					runs.Add(1)
+					zone.Store(clock.Location(ctx).String())
 
-				return nil
-			})
-			insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+					return nil
+				},
+			)
+			insertEvent(
+				t,
+				pool,
+				outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+			)
 
 			dispatch(t, d)
 
@@ -218,12 +271,18 @@ func TestHandlerWritesCommitWithDelivery(t *testing.T) {
 		_, err := tx.Exec(ctx, `INSERT INTO scratch VALUES (1)`)
 		return err
 	})
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	dispatch(t, d)
 
 	var n int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).Scan(&n); err != nil || n != 1 {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).
+		Scan(&n); err != nil ||
+		n != 1 {
 		t.Fatalf("scratch rows = %d, %v; want 1", n, err)
 	}
 
@@ -256,7 +315,11 @@ func TestHandlerErrorRetriesWithBackoff(t *testing.T) {
 
 		return nil
 	})
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	dispatch(t, d)
 	assertRetry(t, pool, 1, now.Add(time.Second))
@@ -278,7 +341,9 @@ func TestHandlerErrorRetriesWithBackoff(t *testing.T) {
 	}
 
 	var rows int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).Scan(&rows); err != nil || rows != 1 {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).
+		Scan(&rows); err != nil ||
+		rows != 1 {
 		t.Fatalf("scratch rows = %d, %v; want 1 (failed attempts roll back)", rows, err)
 	}
 }
@@ -289,14 +354,23 @@ func assertRetry(t *testing.T, pool *pgxpool.Pool, attempts int, next time.Time)
 	var gotAttempts int
 	var gotNext time.Time
 
-	err := pool.QueryRow(t.Context(),
-		`SELECT status, attempts, next_attempt_at FROM outbox_delivery WHERE consumer = 'c'`).Scan(&status, &gotAttempts, &gotNext)
+	err := pool.QueryRow(
+		t.Context(),
+		`SELECT status, attempts, next_attempt_at FROM outbox_delivery WHERE consumer = 'c'`,
+	).Scan(&status, &gotAttempts, &gotNext)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if status != "retrying" || gotAttempts != attempts || !gotNext.Equal(next) {
-		t.Fatalf("delivery = %s, %d, %v; want retrying, %d, %v", status, gotAttempts, gotNext, attempts, next)
+		t.Fatalf(
+			"delivery = %s, %d, %v; want retrying, %d, %v",
+			status,
+			gotAttempts,
+			gotNext,
+			attempts,
+			next,
+		)
 	}
 }
 
@@ -312,7 +386,11 @@ func TestTenthFailureMarksFailed(t *testing.T) {
 		calls.Add(1)
 		return errors.New("permanent")
 	})
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	for range 12 {
 		dispatch(t, d)
@@ -344,8 +422,16 @@ func TestOtherEventsKeepFlowing(t *testing.T) {
 
 		return nil
 	})
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "bad", Payload: 1})
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "good", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "bad", Payload: 1},
+	)
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "good", Payload: 1},
+	)
 
 	dispatch(t, d)
 
@@ -359,8 +445,16 @@ func TestHandlerPanicIsRetriedNotFatal(t *testing.T) {
 	pool := pgtest.New(t)
 	booksID := pgtest.CreateBooks(t, pool)
 	d := newDispatcher(pool)
-	d.Subscribe("c", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error { panic("handler bug") })
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	d.Subscribe(
+		"c",
+		eventType,
+		func(context.Context, pgx.Tx, outbox.Delivered) error { panic("handler bug") },
+	)
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	if n := dispatch(t, d); n != 0 {
 		t.Fatalf("delivered %d, want 0", n)
@@ -376,7 +470,11 @@ func TestDrainDeliversMoreThanOneBatch(t *testing.T) {
 	pool := pgtest.New(t)
 	booksID := pgtest.CreateBooks(t, pool)
 	d := newDispatcher(pool)
-	d.Subscribe("c", eventType, func(context.Context, pgx.Tx, outbox.Delivered) error { return nil })
+	d.Subscribe(
+		"c",
+		eventType,
+		func(context.Context, pgx.Tx, outbox.Delivered) error { return nil },
+	)
 
 	_, err := pool.Exec(t.Context(), `
 		INSERT INTO outbox_event (books_id, type, aggregate_id, payload)
@@ -401,7 +499,11 @@ func TestN10EventSurvivesCrashBetweenCommitAndDispatch(t *testing.T) {
 	handler := func(context.Context, pgx.Tx, outbox.Delivered) error { calls.Add(1); return nil }
 	crashed := newDispatcher(pool)
 	crashed.Subscribe("c", eventType, handler)
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	restarted := newDispatcher(pool)
 	restarted.Subscribe("c", eventType, handler)
@@ -439,20 +541,28 @@ func TestN10HandlerEffectAppliedOnceAfterCrashBeforeDelivery(t *testing.T) {
 		return err
 	}
 
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	// The process dies inside the handler's transaction: its context ends before commit.
 	dying, die := context.WithCancel(t.Context())
 	crashed := newDispatcher(pool)
-	crashed.Subscribe("c", eventType, func(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
-		if err := effect(ctx, tx, e); err != nil {
-			return err
-		}
+	crashed.Subscribe(
+		"c",
+		eventType,
+		func(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
+			if err := effect(ctx, tx, e); err != nil {
+				return err
+			}
 
-		die()
+			die()
 
-		return ctx.Err()
-	})
+			return ctx.Err()
+		},
+	)
 
 	if _, err := crashed.DispatchPending(dying); !errors.Is(err, context.Canceled) {
 		t.Fatalf("crashed dispatch err = %v, want context.Canceled", err)
@@ -468,7 +578,9 @@ func TestN10HandlerEffectAppliedOnceAfterCrashBeforeDelivery(t *testing.T) {
 	dispatch(t, restarted)
 
 	var n int
-	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).Scan(&n); err != nil || n != 1 {
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM scratch`).
+		Scan(&n); err != nil ||
+		n != 1 {
 		t.Fatalf("scratch rows = %d, %v; want 1", n, err)
 	}
 
@@ -488,12 +600,19 @@ func TestCounts(t *testing.T) {
 	d.Subscribe("c1", "t2", noop)
 
 	for _, typ := range []string{"t1", "t1", "t1", "t2"} {
-		insertEvent(t, pool, outbox.Event{Type: typ, BooksID: booksID, AggregateID: "x", Payload: 1})
+		insertEvent(
+			t,
+			pool,
+			outbox.Event{Type: typ, BooksID: booksID, AggregateID: "x", Payload: 1},
+		)
 	}
 
 	var ids []string
 
-	rows, err := pool.Query(t.Context(), `SELECT id::text FROM outbox_event WHERE type = 't1' ORDER BY id`)
+	rows, err := pool.Query(
+		t.Context(),
+		`SELECT id::text FROM outbox_event WHERE type = 't1' ORDER BY id`,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -503,9 +622,13 @@ func TestCounts(t *testing.T) {
 	}
 
 	for i, row := range []struct{ consumer, status string }{{"c1", "delivered"}, {"c1", "failed"}, {"c2", "retrying"}} {
-		_, err := pool.Exec(t.Context(),
+		_, err := pool.Exec(
+			t.Context(),
 			`INSERT INTO outbox_delivery (event_id, consumer, status, attempts) VALUES ($1, $2, $3, 1)`,
-			ids[i], row.consumer, row.status)
+			ids[i],
+			row.consumer,
+			row.status,
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -556,7 +679,11 @@ func TestDeliveryBuildsTheContextBeforeTheTransaction(t *testing.T) {
 
 		return nil
 	})
-	insertEvent(t, pool, outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1})
+	insertEvent(
+		t,
+		pool,
+		outbox.Event{Type: eventType, BooksID: booksID, AggregateID: "x", Payload: 1},
+	)
 
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
 	defer cancel()

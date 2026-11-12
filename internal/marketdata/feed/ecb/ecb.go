@@ -63,7 +63,11 @@ type envelope struct {
 // Fetch returns the rate of each code for each day of [from, to]. When from is before the
 // earliest date of the 90-day file, every date of the range comes from the full-series ZIP.
 // A code the file does not list is skipped.
-func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (s Source) Fetch(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	key := s.url + "|" + joinCodes(codes)
 
 	since := ""
@@ -99,7 +103,11 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 	return out, nil
 }
 
-func (s Source) fetchHistory(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func (s Source) fetchHistory(
+	ctx context.Context,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	url := s.url[:strings.LastIndex(s.url, "/")+1] + histFile
 
 	body, err := feed.Get(ctx, s.client, url)
@@ -191,7 +199,11 @@ func readHistory(body []byte) ([][]string, error) {
 	return rows, nil
 }
 
-func historyQuotes(rows [][]string, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+func historyQuotes(
+	rows [][]string,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var out []feed.Quote
 	for _, row := range rows[1:] {
 		date, err := time.Parse(time.DateOnly, row[0])
@@ -205,7 +217,8 @@ func historyQuotes(rows [][]string, codes []money.Currency, from, to time.Time) 
 
 		for i, code := range rows[0][1:] {
 			i++
-			if !slices.Contains(codes, money.Currency(code)) || i >= len(row) || row[i] == "" || row[i] == "N/A" {
+			if !slices.Contains(codes, money.Currency(code)) || i >= len(row) || row[i] == "" ||
+				row[i] == "N/A" {
 				continue
 			}
 

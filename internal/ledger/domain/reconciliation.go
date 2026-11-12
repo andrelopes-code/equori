@@ -55,7 +55,12 @@ func YieldBound(settled int64, days int, percent int64) int64 {
 // balance. days is the span since the previous assertion; 0 means there is none. percent is the
 // bound per 30 days of the account's currency. Only a difference within YieldBound on an account
 // with automatic yield becomes yield (A75).
-func DecideSyncedReserve(asserted, settled int64, days int, mode YieldMode, percent int64) AssertionOutcome {
+func DecideSyncedReserve(
+	asserted, settled int64,
+	days int,
+	mode YieldMode,
+	percent int64,
+) AssertionOutcome {
 	diff := asserted - settled
 	switch {
 	case diff == 0:

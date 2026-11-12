@@ -31,7 +31,12 @@ const maxNameBytes = 1024
 var errFileRequired = errors.New("file is required")
 
 func toExport(e app.Export) Export {
-	out := Export{Id: e.ID, Status: ExportStatus(e.Status), RequestedAt: e.RequestedAt, FinishedAt: e.FinishedAt}
+	out := Export{
+		Id:          e.ID,
+		Status:      ExportStatus(e.Status),
+		RequestedAt: e.RequestedAt,
+		FinishedAt:  e.FinishedAt,
+	}
 	if e.Status == app.ExportReady {
 		sum := hex.EncodeToString(e.SHA256)
 		out.Size, out.Sha256, out.ArchiveVersion = &e.Size, &sum, &e.ArchiveVersion
@@ -147,7 +152,10 @@ func (s *Server) writeJSON(w http.ResponseWriter, r *http.Request, status int, v
 	_, _ = buf.WriteTo(w)
 }
 
-func (s *Server) restoreArchive(ctx context.Context, body *multipart.Reader) (ArchiveImport, error) {
+func (s *Server) restoreArchive(
+	ctx context.Context,
+	body *multipart.Reader,
+) (ArchiveImport, error) {
 	up, err := readUpload(body)
 	if err != nil {
 		return ArchiveImport{}, err

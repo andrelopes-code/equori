@@ -7,10 +7,22 @@ import (
 )
 
 // installments records a card purchase in n installments and returns the id of its transaction and of its plan.
-func (s *seeder) installments(d time.Time, card, category, payee, desc string, total int64, n int, tags ...string) (txID, planID string) {
+func (s *seeder) installments(
+	d time.Time,
+	card, category, payee, desc string,
+	total int64,
+	n int,
+	tags ...string,
+) (txID, planID string) {
 	body := map[string]any{
-		"card_account_id": s.id(card), "date": iso(d), "description": desc, "payee_id": s.id("payee." + payee),
-		"splits": []posting{post(s.id(category), total)}, "installment_count": n,
+		"card_account_id": s.id(
+			card,
+		),
+		"date":              iso(d),
+		"description":       desc,
+		"payee_id":          s.id("payee." + payee),
+		"splits":            []posting{post(s.id(category), total)},
+		"installment_count": n,
 	}
 	if len(tags) > 0 {
 		body["tags"] = tags
@@ -28,10 +40,26 @@ func (s *seeder) installments(d time.Time, card, category, payee, desc string, t
 }
 
 // foreign records a charge in euros on a card; the rate is reais per euro.
-func (s *seeder) foreign(d time.Time, card, category, payee, desc string, euroCents int64, rate string) {
+func (s *seeder) foreign(
+	d time.Time,
+	card, category, payee, desc string,
+	euroCents int64,
+	rate string,
+) {
 	s.do(http.MethodPost, "/foreign-purchases", map[string]any{
-		"account_id": s.id(card), "category_id": s.id(category), "date": iso(d), "description": desc, "payee_id": s.id("payee." + payee),
-		"original": money{Amount: euroCents, Currency: "EUR"}, "rate": rate, "foreign_charge_category_id": s.id("tax.iof"),
+		"account_id": s.id(
+			card,
+		),
+		"category_id": s.id(category),
+		"date":        iso(d),
+		"description": desc,
+		"payee_id":    s.id("payee." + payee),
+		"original": money{
+			Amount:   euroCents,
+			Currency: "EUR",
+		},
+		"rate":                       rate,
+		"foreign_charge_category_id": s.id("tax.iof"),
 	}, nil)
 }
 
@@ -45,18 +73,45 @@ func (s *seeder) trip(tag, from, to string, top int64, via string, places []plac
 			cents -= cents % 10
 			p := places[s.rng.IntN(len(places))]
 			when := d
-			s.at(when, func() { s.expense(when, via, p.category, p.payee, "Viagem, "+p.payee, cents, tag) })
+			s.at(
+				when,
+				func() { s.expense(when, via, p.category, p.payee, "Viagem, "+p.payee, cents, tag) },
+			)
 		}
 	}
 }
 
 func (s *seeder) lisbon() {
 	s.at(day("2025-03-20"), func() {
-		tx, _ := s.installments(day("2025-03-20"), "card.itau", "travel.flights", "Latam Airlines", "Passagens São Paulo para Lisboa (ida e volta)", 560000, 10, "viagem-lisboa")
-		s.attach(tx, "bilhete-latam-lisboa.pdf", "LATAM Airlines - bilhete eletrônico", "Passageira: MARIANA C RIBEIRO", "GRU - LIS - GRU", "Valor: R$ 5.600,00 em 10x")
+		tx, _ := s.installments(
+			day("2025-03-20"),
+			"card.itau",
+			"travel.flights",
+			"Latam Airlines",
+			"Passagens São Paulo para Lisboa (ida e volta)",
+			560000,
+			10,
+			"viagem-lisboa",
+		)
+		s.attach(
+			tx,
+			"bilhete-latam-lisboa.pdf",
+			"LATAM Airlines - bilhete eletrônico",
+			"Passageira: MARIANA C RIBEIRO",
+			"GRU - LIS - GRU",
+			"Valor: R$ 5.600,00 em 10x",
+		)
 	})
 	s.at(day("2025-04-02"), func() {
-		s.foreign(day("2025-04-02"), "card.nubank", "travel.lodging", "Booking.com", "Hotel em Alfama, 9 noites", 124000, "6.2140")
+		s.foreign(
+			day("2025-04-02"),
+			"card.nubank",
+			"travel.lodging",
+			"Booking.com",
+			"Hotel em Alfama, 9 noites",
+			124000,
+			"6.2140",
+		)
 	})
 
 	eur := []struct {
@@ -72,7 +127,13 @@ func (s *seeder) lisbon() {
 		{"2025-07-16", "shopping.gifts", "Livraria da Vila", "Livros e lembranças", 5290},
 		{"2025-07-17", "travel.activities", "Sympla", "Day trip a Sintra", 7200},
 		{"2025-07-17", "food.restaurants", "Outback Steakhouse", "Jantar em Sintra", 5640},
-		{"2025-07-19", "food.restaurants", "Bar do Zé Pinheiros", "Petiscos e vinho no Bairro Alto", 4120},
+		{
+			"2025-07-19",
+			"food.restaurants",
+			"Bar do Zé Pinheiros",
+			"Petiscos e vinho no Bairro Alto",
+			4120,
+		},
 		{"2025-07-20", "shopping.clothes", "Zara", "Roupas na Avenida da Liberdade", 8990},
 		{"2025-07-21", "food.restaurants", "Coco Bambu", "Jantar de despedida", 7150},
 	}
@@ -88,74 +149,198 @@ func (s *seeder) lisbon() {
 func (s *seeder) purchases() {
 	// Florianópolis, January 2025.
 	s.at(day("2024-11-26"), func() {
-		s.installments(day("2024-11-26"), "card.itau", "travel.flights", "Azul Linhas Aéreas", "Passagens para Florianópolis (Black Friday)", 148000, 4, "viagem-florianopolis")
+		s.installments(
+			day("2024-11-26"),
+			"card.itau",
+			"travel.flights",
+			"Azul Linhas Aéreas",
+			"Passagens para Florianópolis (Black Friday)",
+			148000,
+			4,
+			"viagem-florianopolis",
+		)
 	})
 	s.at(day("2024-12-12"), func() {
-		s.installments(day("2024-12-12"), "card.nubank", "travel.lodging", "Airbnb", "Casa na Lagoa da Conceição, 6 noites", 225000, 3, "viagem-florianopolis")
+		s.installments(
+			day("2024-12-12"),
+			"card.nubank",
+			"travel.lodging",
+			"Airbnb",
+			"Casa na Lagoa da Conceição, 6 noites",
+			225000,
+			3,
+			"viagem-florianopolis",
+		)
 	})
 	s.trip("viagem-florianopolis", "2025-01-17", "2025-01-23", 14000, "card.itau", []place{
-		{"Coco Bambu", "food.restaurants"}, {"Starbucks", "food.coffee"}, {"Uber", "transport.rideshare"}, {"Sympla", "travel.activities"}, {"Bar do Zé Pinheiros", "food.bars"},
+		{
+			"Coco Bambu",
+			"food.restaurants",
+		},
+		{"Starbucks", "food.coffee"},
+		{"Uber", "transport.rideshare"},
+		{"Sympla", "travel.activities"},
+		{"Bar do Zé Pinheiros", "food.bars"},
 	})
 
 	s.lisbon()
 
 	// Rio de Janeiro, April 2026.
 	s.at(day("2026-02-24"), func() {
-		s.installments(day("2026-02-24"), "card.itau", "travel.flights", "Decolar", "Passagens para o Rio de Janeiro", 204000, 3, "viagem-rio")
+		s.installments(
+			day("2026-02-24"),
+			"card.itau",
+			"travel.flights",
+			"Decolar",
+			"Passagens para o Rio de Janeiro",
+			204000,
+			3,
+			"viagem-rio",
+		)
 	})
 	s.at(day("2026-03-05"), func() {
-		s.installments(day("2026-03-05"), "card.nubank", "travel.lodging", "Booking.com", "Hotel em Ipanema, 4 noites", 318000, 4, "viagem-rio")
+		s.installments(
+			day("2026-03-05"),
+			"card.nubank",
+			"travel.lodging",
+			"Booking.com",
+			"Hotel em Ipanema, 4 noites",
+			318000,
+			4,
+			"viagem-rio",
+		)
 	})
 	s.trip("viagem-rio", "2026-04-17", "2026-04-21", 16000, "card.nubank", []place{
-		{"Madero", "food.restaurants"}, {"Starbucks", "food.coffee"}, {"99", "transport.rideshare"}, {"Sympla", "travel.activities"}, {"Bar do Zé Pinheiros", "food.bars"},
+		{
+			"Madero",
+			"food.restaurants",
+		},
+		{"Starbucks", "food.coffee"},
+		{"99", "transport.rideshare"},
+		{"Sympla", "travel.activities"},
+		{"Bar do Zé Pinheiros", "food.bars"},
 	})
 
 	// Black Friday 2025: the notebook is anticipated in 2026-09.
 	var macbook string
 	s.at(day("2025-11-28"), func() {
 		var tx string
-		tx, macbook = s.installments(day("2025-11-28"), "card.itau", "shopping.electronics", "Apple", "MacBook Air 13 polegadas", 949900, 12, "black-friday")
-		s.attach(tx, "nota-fiscal-macbook.pdf", "Apple Brasil - nota fiscal eletrônica", "MacBook Air 13 polegadas", "Valor: R$ 9.499,00 em 12x no cartão Itaú")
+		tx, macbook = s.installments(
+			day("2025-11-28"),
+			"card.itau",
+			"shopping.electronics",
+			"Apple",
+			"MacBook Air 13 polegadas",
+			949900,
+			12,
+			"black-friday",
+		)
+		s.attach(
+			tx,
+			"nota-fiscal-macbook.pdf",
+			"Apple Brasil - nota fiscal eletrônica",
+			"MacBook Air 13 polegadas",
+			"Valor: R$ 9.499,00 em 12x no cartão Itaú",
+		)
 	})
 	s.at(day("2025-11-28"), func() {
-		s.installments(day("2025-11-28"), "card.itau", "shopping.electronics", "KaBuM!", "Fone de ouvido com cancelamento de ruído", 129000, 3, "black-friday")
+		s.installments(
+			day("2025-11-28"),
+			"card.itau",
+			"shopping.electronics",
+			"KaBuM!",
+			"Fone de ouvido com cancelamento de ruído",
+			129000,
+			3,
+			"black-friday",
+		)
 	})
 	s.at(day("2026-09-02"), func() {
 		s.do(http.MethodPost, "/installment-plans/"+macbook+"/anticipation", map[string]any{
-			"date": "2026-09-02", "from_installment": 11, "to_installment": 12, "target_statement": "2026-09", "amount": brl(153566),
+			"date":             "2026-09-02",
+			"from_installment": 11,
+			"to_installment":   12,
+			"target_statement": "2026-09",
+			"amount":           brl(153566),
 		}, nil)
 	})
 
 	s.at(day("2026-08-09"), func() {
-		tx, _ := s.installments(day("2026-08-09"), "card.nubank", "housing.decor", "Tok&Stok", "Sofá de três lugares", 329000, 6)
-		s.attach(tx, "pedido-tokstok-sofa.pdf", "Tok&Stok - confirmação do pedido", "Sofá de três lugares", "Valor: R$ 3.290,00 em 6x", "Entrega agendada para a semana seguinte")
+		tx, _ := s.installments(
+			day("2026-08-09"),
+			"card.nubank",
+			"housing.decor",
+			"Tok&Stok",
+			"Sofá de três lugares",
+			329000,
+			6,
+		)
+		s.attach(
+			tx,
+			"pedido-tokstok-sofa.pdf",
+			"Tok&Stok - confirmação do pedido",
+			"Sofá de três lugares",
+			"Valor: R$ 3.290,00 em 6x",
+			"Entrega agendada para a semana seguinte",
+		)
 	})
 
 	// A return: the purchase is refunded in full.
 	var zara string
 	s.at(day("2025-03-08"), func() {
-		zara = s.record("2025-03-08", "Vestido, Zara", map[string]any{"payee_id": s.id("payee.Zara")},
-			post(s.id("card.itau"), -38990), post(s.id("shopping.clothes"), 38990))
+		zara = s.record(
+			"2025-03-08",
+			"Vestido, Zara",
+			map[string]any{"payee_id": s.id("payee.Zara")},
+			post(s.id("card.itau"), -38990),
+			post(s.id("shopping.clothes"), 38990),
+		)
 	})
 	s.at(day("2025-03-19"), func() {
-		s.do(http.MethodPost, "/transactions/"+zara+"/refunds", map[string]any{"date": "2025-03-19", "amount": brl(38990)}, nil)
+		s.do(
+			http.MethodPost,
+			"/transactions/"+zara+"/refunds",
+			map[string]any{"date": "2025-03-19", "amount": brl(38990)},
+			nil,
+		)
 	})
 
 	// A charge the owner did not recognize, disputed and won.
 	var charge string
 	s.at(day("2025-09-17"), func() {
-		charge = s.record("2025-09-17", "Compra não reconhecida, Mercado Livre", map[string]any{"payee_id": s.id("payee.Mercado Livre")},
-			post(s.id("card.nubank"), -61200), post(s.id("shopping.electronics"), 61200))
+		charge = s.record(
+			"2025-09-17",
+			"Compra não reconhecida, Mercado Livre",
+			map[string]any{"payee_id": s.id("payee.Mercado Livre")},
+			post(s.id("card.nubank"), -61200),
+			post(s.id("shopping.electronics"), 61200),
+		)
 	})
 	var dispute struct {
 		ID string `json:"id"`
 	}
 	s.at(day("2025-09-19"), func() {
-		s.do(http.MethodPost, "/transactions/"+charge+"/disputes", map[string]any{"opened_on": "2025-09-19"}, &dispute)
-		s.attach(charge, "contestacao-mercado-livre.pdf", "Contestação de compra não reconhecida", "Mercado Livre - R$ 612,00 em 17/09/2025", "Protocolo aberto no aplicativo do banco")
+		s.do(
+			http.MethodPost,
+			"/transactions/"+charge+"/disputes",
+			map[string]any{"opened_on": "2025-09-19"},
+			&dispute,
+		)
+		s.attach(
+			charge,
+			"contestacao-mercado-livre.pdf",
+			"Contestação de compra não reconhecida",
+			"Mercado Livre - R$ 612,00 em 17/09/2025",
+			"Protocolo aberto no aplicativo do banco",
+		)
 	})
 	s.at(day("2025-10-20"), func() {
-		s.do(http.MethodPost, "/disputes/"+dispute.ID+"/resolve", map[string]any{"resolved_on": "2025-10-20", "outcome": "won", "statement": "2025-11"}, nil)
+		s.do(
+			http.MethodPost,
+			"/disputes/"+dispute.ID+"/resolve",
+			map[string]any{"resolved_on": "2025-10-20", "outcome": "won", "statement": "2025-11"},
+			nil,
+		)
 	})
 
 	// Yearly items.
@@ -163,18 +348,91 @@ func (s *seeder) purchases() {
 		date, via, category, payee, desc string
 		cents                            int64
 	}{
-		{"2025-01-08", "card.itau", "leisure.streaming", "Amazon Prime", "Amazon Prime anual", 11900},
-		{"2026-01-08", "card.itau", "leisure.streaming", "Amazon Prime", "Amazon Prime anual", 12900},
-		{"2025-02-10", "card.itau", "education.courses", "Alura", "Assinatura anual da Alura", 149000},
-		{"2026-02-10", "card.itau", "education.courses", "Alura", "Assinatura anual da Alura", 159000},
-		{"2025-03-18", "card.nubank", "education.memberships", "Associação Brasileira de Product Management", "Anuidade da associação", 48000},
-		{"2026-03-18", "card.nubank", "education.memberships", "Associação Brasileira de Product Management", "Anuidade da associação", 52000},
-		{"2025-02-18", "card.nubank", "pets.vet", "Clínica Veterinária Patas", "Vacinas anuais", 18000},
-		{"2025-09-12", "card.nubank", "pets.vet", "Clínica Veterinária Patas", "Limpeza de tártaro", 28500},
-		{"2026-03-14", "card.nubank", "pets.vet", "Clínica Veterinária Patas", "Vacinas anuais", 19800},
-		{"2026-09-10", "card.nubank", "pets.vet", "Clínica Veterinária Patas", "Consulta de rotina", 21000},
+		{
+			"2025-01-08",
+			"card.itau",
+			"leisure.streaming",
+			"Amazon Prime",
+			"Amazon Prime anual",
+			11900,
+		},
+		{
+			"2026-01-08",
+			"card.itau",
+			"leisure.streaming",
+			"Amazon Prime",
+			"Amazon Prime anual",
+			12900,
+		},
+		{
+			"2025-02-10",
+			"card.itau",
+			"education.courses",
+			"Alura",
+			"Assinatura anual da Alura",
+			149000,
+		},
+		{
+			"2026-02-10",
+			"card.itau",
+			"education.courses",
+			"Alura",
+			"Assinatura anual da Alura",
+			159000,
+		},
+		{
+			"2025-03-18",
+			"card.nubank",
+			"education.memberships",
+			"Associação Brasileira de Product Management",
+			"Anuidade da associação",
+			48000,
+		},
+		{
+			"2026-03-18",
+			"card.nubank",
+			"education.memberships",
+			"Associação Brasileira de Product Management",
+			"Anuidade da associação",
+			52000,
+		},
+		{
+			"2025-02-18",
+			"card.nubank",
+			"pets.vet",
+			"Clínica Veterinária Patas",
+			"Vacinas anuais",
+			18000,
+		},
+		{
+			"2025-09-12",
+			"card.nubank",
+			"pets.vet",
+			"Clínica Veterinária Patas",
+			"Limpeza de tártaro",
+			28500,
+		},
+		{
+			"2026-03-14",
+			"card.nubank",
+			"pets.vet",
+			"Clínica Veterinária Patas",
+			"Vacinas anuais",
+			19800,
+		},
+		{
+			"2026-09-10",
+			"card.nubank",
+			"pets.vet",
+			"Clínica Veterinária Patas",
+			"Consulta de rotina",
+			21000,
+		},
 	}
 	for _, a := range annual {
-		s.at(day(a.date), func() { s.expense(day(a.date), a.via, a.category, a.payee, a.desc, a.cents) })
+		s.at(
+			day(a.date),
+			func() { s.expense(day(a.date), a.via, a.category, a.payee, a.desc, a.cents) },
+		)
 	}
 }

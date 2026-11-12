@@ -12,7 +12,11 @@ import (
 
 // DecideImport decides payee, tags and category of each line before the ledger records it
 // (P5 amendment A19); the decision of a line with nothing to set is nil.
-func (m *Module) DecideImport(ctx context.Context, booksID int64, lines []ImportLine) ([]*ledger.ImportDecision, error) {
+func (m *Module) DecideImport(
+	ctx context.Context,
+	booksID int64,
+	lines []ImportLine,
+) ([]*ledger.ImportDecision, error) {
 	decisions, err := m.svc.DecideImport(ctx, booksID, lines)
 	if err != nil {
 		return nil, err
@@ -42,10 +46,16 @@ func importDecisions(ds []domain.Decision) []*ledger.ImportDecision {
 
 func importDecision(d domain.Decision) *ledger.ImportDecision {
 	out := &ledger.ImportDecision{
-		PayeeID: d.PayeeID, AddTags: d.AddTags, TransferTo: d.TransferTo, Cause: ledger.Cause{Method: d.Method, RuleID: d.RuleID},
+		PayeeID:    d.PayeeID,
+		AddTags:    d.AddTags,
+		TransferTo: d.TransferTo,
+		Cause:      ledger.Cause{Method: d.Method, RuleID: d.RuleID},
 	}
 	for _, a := range d.Parts {
-		out.Parts = append(out.Parts, ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount})
+		out.Parts = append(
+			out.Parts,
+			ledger.CategoryPart{AccountID: a.CategoryID, Amount: a.Amount},
+		)
 	}
 
 	return out
@@ -53,11 +63,20 @@ func importDecision(d domain.Decision) *ledger.ImportDecision {
 
 // DecideManual decides payee, tags and category of each line with the precedence of F5 for
 // origin manual (capture A113); the decision of a line with nothing to set is nil.
-func (m *Module) DecideManual(ctx context.Context, booksID int64, lines []ManualLine) ([]*ledger.ImportDecision, error) {
+func (m *Module) DecideManual(
+	ctx context.Context,
+	booksID int64,
+	lines []ManualLine,
+) ([]*ledger.ImportDecision, error) {
 	in := make([]app.ManualLine, len(lines))
 	for i, l := range lines {
 		in[i] = app.ManualLine{
-			ImportLine: app.ImportLine{AccountID: l.AccountID, Date: l.Date, Amount: l.Amount, Description: l.Description},
+			ImportLine: app.ImportLine{
+				AccountID:   l.AccountID,
+				Date:        l.Date,
+				Amount:      l.Amount,
+				Description: l.Description,
+			},
 			NamedPayee: l.NamedPayee,
 		}
 	}

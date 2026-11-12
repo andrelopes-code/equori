@@ -57,7 +57,14 @@ func startSetup(t *testing.T, h *apitest.Harness) string {
 }
 
 func setupBody(token, email, region string) map[string]any {
-	return map[string]any{"token": token, "email": email, "password": "correct horse battery", "language": "en", "region": region, "update_check": false}
+	return map[string]any{
+		"token":        token,
+		"email":        email,
+		"password":     "correct horse battery",
+		"language":     "en",
+		"region":       region,
+		"update_check": false,
+	}
 }
 
 // W-U2: the setup is required until the first member exists.
@@ -80,7 +87,12 @@ func TestSetupRequiredUntilTheFirstUser(t *testing.T) {
 	}
 
 	withDefault, _ := regions(t)
-	if r := h.Call(c, http.MethodPost, "/api/v1/setup", setupBody(startSetup(t, h), "ann@example.com", withDefault)); r.Status != http.StatusCreated {
+	if r := h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(startSetup(t, h), "ann@example.com", withDefault),
+	); r.Status != http.StatusCreated {
 		t.Fatalf("setup status %d: %s", r.Status, r.Body)
 	}
 
@@ -102,7 +114,12 @@ func TestSetupCreatesTheAdmin(t *testing.T) {
 	c := jarClient(t)
 	withDefault, _ := regions(t)
 
-	r := h.Call(c, http.MethodPost, "/api/v1/setup", setupBody(startSetup(t, h), "ann@example.com", withDefault))
+	r := h.Call(
+		c,
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(startSetup(t, h), "ann@example.com", withDefault),
+	)
 	if r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
@@ -115,7 +132,8 @@ func TestSetupCreatesTheAdmin(t *testing.T) {
 	}
 	r.Decode(t, &u)
 
-	if u.Email != "ann@example.com" || u.Role != identity.RoleAdmin || u.Language != "en" || u.Region != withDefault {
+	if u.Email != "ann@example.com" || u.Role != identity.RoleAdmin || u.Language != "en" ||
+		u.Region != withDefault {
 		t.Fatalf("member = %+v", u)
 	}
 
@@ -146,7 +164,12 @@ func TestSetupRejectsAnotherToken(t *testing.T) {
 	h := apitest.Empty(t)
 	startSetup(t, h)
 	withDefault, _ := regions(t)
-	r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody("not-the-token", "ann@example.com", withDefault))
+	r := h.Call(
+		jarClient(t),
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody("not-the-token", "ann@example.com", withDefault),
+	)
 	h.ExpectProblem(r, http.StatusForbidden, "setup_token_invalid", "")
 }
 
@@ -156,17 +179,32 @@ func TestSetupClosesAfterTheFirstUser(t *testing.T) {
 	token := startSetup(t, h)
 
 	withDefault, _ := regions(t)
-	if r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", withDefault)); r.Status != http.StatusCreated {
+	if r := h.Call(
+		jarClient(t),
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(token, "ann@example.com", withDefault),
+	); r.Status != http.StatusCreated {
 		t.Fatalf("status %d: %s", r.Status, r.Body)
 	}
 
-	r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "bob@example.com", withDefault))
+	r := h.Call(
+		jarClient(t),
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(token, "bob@example.com", withDefault),
+	)
 	h.ExpectProblem(r, http.StatusConflict, "setup_complete", "")
 
 	cli := apitest.Empty(t)
 	token = startSetup(t, cli)
 	cli.Login("owner@example.com")
-	r = cli.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "bob@example.com", withDefault))
+	r = cli.Call(
+		jarClient(t),
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(token, "bob@example.com", withDefault),
+	)
 	cli.ExpectProblem(r, http.StatusConflict, "setup_complete", "")
 }
 
@@ -180,7 +218,12 @@ func TestSetupConcurrentRequests(t *testing.T) {
 	var wg sync.WaitGroup
 	for i, email := range []string{"ann@example.com", "bob@example.com"} {
 		wg.Go(func() {
-			statuses[i] = h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, email, withDefault)).Status
+			statuses[i] = h.Call(
+				jarClient(t),
+				http.MethodPost,
+				"/api/v1/setup",
+				setupBody(token, email, withDefault),
+			).Status
 		})
 	}
 
@@ -203,7 +246,9 @@ func TestSetupConcurrentRequests(t *testing.T) {
 	}
 
 	var members int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_member`).Scan(&members); err != nil || members != 1 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM identity_member`).
+		Scan(&members); err != nil ||
+		members != 1 {
 		t.Fatalf("members = %d, %v; want 1", members, err)
 	}
 }
@@ -212,11 +257,21 @@ func TestSetupConcurrentRequests(t *testing.T) {
 func TestSetupValidation(t *testing.T) {
 	h := apitest.Empty(t)
 	token := startSetup(t, h)
-	r := h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", "ZZ"))
+	r := h.Call(
+		jarClient(t),
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(token, "ann@example.com", "ZZ"),
+	)
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "region")
 
 	_, without := regions(t)
-	r = h.Call(jarClient(t), http.MethodPost, "/api/v1/setup", setupBody(token, "ann@example.com", without))
+	r = h.Call(
+		jarClient(t),
+		http.MethodPost,
+		"/api/v1/setup",
+		setupBody(token, "ann@example.com", without),
+	)
 	h.ExpectProblem(r, http.StatusUnprocessableEntity, "validation_failed", "base_currency")
 }
 
@@ -233,22 +288,34 @@ func TestS231SetupNamesTheBook(t *testing.T) {
 		wantNoUser bool
 	}{
 		{
-			name:      "named, own zone",
-			fields:    map[string]any{"books_name": "Casa", "time_zone": "America/Manaus"},
-			status:    http.StatusCreated,
-			wantBooks: map[string]any{"name": "Casa", "time_zone": "America/Manaus", "default_time_zone": "America/Sao_Paulo"},
+			name:   "named, own zone",
+			fields: map[string]any{"books_name": "Casa", "time_zone": "America/Manaus"},
+			status: http.StatusCreated,
+			wantBooks: map[string]any{
+				"name":              "Casa",
+				"time_zone":         "America/Manaus",
+				"default_time_zone": "America/Sao_Paulo",
+			},
 		},
 		{
-			name:      "region default zone",
-			fields:    map[string]any{"time_zone": "America/Sao_Paulo"},
-			status:    http.StatusCreated,
-			wantBooks: map[string]any{"name": "ann@example.com", "time_zone": nil, "default_time_zone": "America/Sao_Paulo"},
+			name:   "region default zone",
+			fields: map[string]any{"time_zone": "America/Sao_Paulo"},
+			status: http.StatusCreated,
+			wantBooks: map[string]any{
+				"name":              "ann@example.com",
+				"time_zone":         nil,
+				"default_time_zone": "America/Sao_Paulo",
+			},
 		},
 		{
-			name:      "trimmed name",
-			fields:    map[string]any{"books_name": "  Casa  "},
-			status:    http.StatusCreated,
-			wantBooks: map[string]any{"name": "Casa", "time_zone": nil, "default_time_zone": "America/Sao_Paulo"},
+			name:   "trimmed name",
+			fields: map[string]any{"books_name": "  Casa  "},
+			status: http.StatusCreated,
+			wantBooks: map[string]any{
+				"name":              "Casa",
+				"time_zone":         nil,
+				"default_time_zone": "America/Sao_Paulo",
+			},
 		},
 		{
 			name:       "unknown zone",
@@ -316,7 +383,8 @@ func TestS231SetupNamesTheBook(t *testing.T) {
 			}
 			got.Decode(t, &books)
 
-			if books.Name != tt.wantBooks["name"] || books.DefaultTimeZone != tt.wantBooks["default_time_zone"] {
+			if books.Name != tt.wantBooks["name"] ||
+				books.DefaultTimeZone != tt.wantBooks["default_time_zone"] {
 				t.Fatalf("books = %+v, want %v", books, tt.wantBooks)
 			}
 

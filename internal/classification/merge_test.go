@@ -9,7 +9,13 @@ import (
 
 func (b books) mergeCategory(t *testing.T, from, into string) {
 	t.Helper()
-	b.h.MustDo(http.MethodPost, "/api/v1/accounts/"+from+"/merge", map[string]string{"into": into}, http.StatusOK, nil)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+from+"/merge",
+		map[string]string{"into": into},
+		http.StatusOK,
+		nil,
+	)
 	dispatch(t, b.h)
 }
 
@@ -36,11 +42,23 @@ func TestMergeKeepsMethodAndRepointsRules(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	tx := b.record(t, "2026-10-10", "Hotel", "", b.travel, 5000)
-	createRule(t, b.h, "Trips", []map[string]any{contains("trip")}, []map[string]any{setCategory(b.travel)})
-	createRule(t, b.h, "Shared", []map[string]any{contains("shared")}, []map[string]any{{"type": "split", "parts": []any{
-		map[string]any{"category_id": b.travel, "percent": 5000},
-		map[string]any{"category_id": b.food, "remainder": true},
-	}}})
+	createRule(
+		t,
+		b.h,
+		"Trips",
+		[]map[string]any{contains("trip")},
+		[]map[string]any{setCategory(b.travel)},
+	)
+	createRule(
+		t,
+		b.h,
+		"Shared",
+		[]map[string]any{contains("shared")},
+		[]map[string]any{{"type": "split", "parts": []any{
+			map[string]any{"category_id": b.travel, "percent": 5000},
+			map[string]any{"category_id": b.food, "remainder": true},
+		}}},
+	)
 	dispatch(t, b.h)
 
 	b.mergeCategory(t, b.travel, b.transport)
@@ -50,7 +68,9 @@ func TestMergeKeepsMethodAndRepointsRules(t *testing.T) {
 	}
 
 	var version int
-	if err := b.h.Pool.QueryRow(t.Context(), `SELECT transaction_version FROM classification_categorization WHERE transaction_id = $1`, tx).Scan(&version); err != nil || version != 2 {
+	if err := b.h.Pool.QueryRow(t.Context(), `SELECT transaction_version FROM classification_categorization WHERE transaction_id = $1`, tx).
+		Scan(&version); err != nil ||
+		version != 2 {
 		t.Fatalf("categorization version = %d, %v; want the merge version 2", version, err)
 	}
 
@@ -70,15 +90,26 @@ func TestMergeRepointsSourceCategoryAndSuggestions(t *testing.T) {
 	t.Parallel()
 
 	b := newBooks(t)
-	if _, err := b.h.Pool.Exec(t.Context(), `INSERT INTO classification_source_category (books_id, aggregator, external_id, name, category_id)
-		VALUES ($1, 'pluggy', '05010000', 'Travel', $2)`, b.h.OwnerID(), b.travel); err != nil {
+	if _, err := b.h.Pool.Exec(
+		t.Context(),
+		`INSERT INTO classification_source_category (books_id, aggregator, external_id, name, category_id)
+		VALUES ($1, 'pluggy', '05010000', 'Travel', $2)`,
+		b.h.OwnerID(),
+		b.travel,
+	); err != nil {
 		t.Fatal(err)
 	}
 
 	var payee struct {
 		ID string `json:"id"`
 	}
-	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Azul"}, http.StatusCreated, &payee)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Azul"},
+		http.StatusCreated,
+		&payee,
+	)
 
 	correct := func(date, category string) {
 		tx := b.record(t, date, "Azul", payee.ID, b.uncategorized, 1000)
@@ -99,12 +130,15 @@ func TestMergeRepointsSourceCategoryAndSuggestions(t *testing.T) {
 	b.mergeCategory(t, b.travel, b.transport)
 
 	left := suggestions(t, b.h, "pending")
-	if len(left) != 1 || left[0].ID != older[0].ID || left[0].Actions[0]["category_id"] != b.transport {
+	if len(left) != 1 || left[0].ID != older[0].ID ||
+		left[0].Actions[0]["category_id"] != b.transport {
 		t.Fatalf("suggestions after merge = %+v, want only %s naming transport", left, older[0].ID)
 	}
 
 	var mapped string
-	if err := b.h.Pool.QueryRow(t.Context(), `SELECT category_id::text FROM classification_source_category WHERE external_id = '05010000'`).Scan(&mapped); err != nil || mapped != b.transport {
+	if err := b.h.Pool.QueryRow(t.Context(), `SELECT category_id::text FROM classification_source_category WHERE external_id = '05010000'`).
+		Scan(&mapped); err != nil ||
+		mapped != b.transport {
 		t.Fatalf("source category = %q, %v", mapped, err)
 	}
 }
@@ -114,15 +148,29 @@ func TestS74MergeCategories(t *testing.T) {
 	t.Parallel()
 	b := newBooks(t)
 	trip := b.record(t, "2026-10-14", "UBER *TRIP", "", b.travel, 2390)
-	createRule(t, b.h, "Trips", []map[string]any{contains("trip")}, []map[string]any{setCategory(b.travel)})
+	createRule(
+		t,
+		b.h,
+		"Trips",
+		[]map[string]any{contains("trip")},
+		[]map[string]any{setCategory(b.travel)},
+	)
 	b.h.MustDo(http.MethodPost, "/api/v1/budgets", map[string]any{
-		"category_id": b.travel, "amount": apitest.BRL(50000), "effective_from": "2026-10", "rollover": false,
+		"category_id":    b.travel,
+		"amount":         apitest.BRL(50000),
+		"effective_from": "2026-10",
+		"rollover":       false,
 	}, http.StatusCreated, nil)
 	dispatch(t, b.h)
 
 	b.mergeCategory(t, b.travel, b.transport)
 
-	if version, postings := categoryOf(t, b.h, trip); version != 2 || postings[b.transport] != 2390 || postings[b.travel] != 0 {
+	if version, postings := categoryOf(
+		t,
+		b.h,
+		trip,
+	); version != 2 || postings[b.transport] != 2390 ||
+		postings[b.travel] != 0 {
 		t.Fatalf("trip version %d, postings %v", version, postings)
 	}
 
@@ -162,14 +210,44 @@ func TestS79MergePayees(t *testing.T) {
 	var ifood, upper struct {
 		ID string `json:"id"`
 	}
-	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "iFood"}, http.StatusCreated, &ifood)
-	b.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "IFOOD SP"}, http.StatusCreated, &upper)
-	b.h.MustDo(http.MethodPost, "/api/v1/payee-aliases", map[string]any{"pattern": "ifd*", "match_type": "starts_with", "payee_id": upper.ID}, http.StatusCreated, nil)
-	createRule(t, b.h, "Delivery", []map[string]any{{"field": "payee", "operator": "equals", "value": upper.ID}}, []map[string]any{setCategory(b.delivery)})
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "iFood"},
+		http.StatusCreated,
+		&ifood,
+	)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "IFOOD SP"},
+		http.StatusCreated,
+		&upper,
+	)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payee-aliases",
+		map[string]any{"pattern": "ifd*", "match_type": "starts_with", "payee_id": upper.ID},
+		http.StatusCreated,
+		nil,
+	)
+	createRule(
+		t,
+		b.h,
+		"Delivery",
+		[]map[string]any{{"field": "payee", "operator": "equals", "value": upper.ID}},
+		[]map[string]any{setCategory(b.delivery)},
+	)
 	tx := b.record(t, "2026-10-01", "IFD*IFOOD", upper.ID, b.delivery, 4500)
 	dispatch(t, b.h)
 
-	b.h.MustDo(http.MethodPost, "/api/v1/payees/"+upper.ID+"/merge", map[string]string{"into": ifood.ID}, http.StatusOK, nil)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees/"+upper.ID+"/merge",
+		map[string]string{"into": ifood.ID},
+		http.StatusOK,
+		nil,
+	)
 	dispatch(t, b.h)
 
 	var aliases struct {

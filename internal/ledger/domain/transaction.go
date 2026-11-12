@@ -123,7 +123,11 @@ func checkTransactionHeader(t Transaction) (Transaction, error) {
 
 func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting, error) {
 	if len(t.Postings) < 2 {
-		return nil, &FieldError{Field: "postings", Message: "at least two postings are required", Err: ErrTooFewPostings}
+		return nil, &FieldError{
+			Field:   "postings",
+			Message: "at least two postings are required",
+			Err:     ErrTooFewPostings,
+		}
 	}
 
 	if len(t.Postings) > MaxPostings {
@@ -135,7 +139,8 @@ func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting
 
 	hasCategory := false
 	for _, p := range t.Postings {
-		if a, ok := accounts[p.AccountID]; ok && (a.Class == ClassIncome || a.Class == ClassExpense) {
+		if a, ok := accounts[p.AccountID]; ok &&
+			(a.Class == ClassIncome || a.Class == ClassExpense) {
 			hasCategory = true
 		}
 	}
@@ -146,7 +151,12 @@ func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting
 			return nil, err
 		}
 
-		if checked, err = checkCardPosting(i, checked, accounts[checked.AccountID], hasCategory); err != nil {
+		if checked, err = checkCardPosting(
+			i,
+			checked,
+			accounts[checked.AccountID],
+			hasCategory,
+		); err != nil {
 			return nil, err
 		}
 
@@ -156,7 +166,11 @@ func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting
 	}
 
 	if sum != 0 {
-		return nil, &FieldError{Field: "postings", Message: fmt.Sprintf("weights sum to %d instead of zero", sum), Err: ErrUnbalanced}
+		return nil, &FieldError{
+			Field:   "postings",
+			Message: fmt.Sprintf("weights sum to %d instead of zero", sum),
+			Err:     ErrUnbalanced,
+		}
 	}
 
 	return postings, nil
@@ -173,7 +187,10 @@ func checkLinks(t Transaction) error {
 		}
 
 		if l.Amount < 0 || (l.Amount != 0 && l.Type != LinkReimbursementOf) {
-			return invalid(fmt.Sprintf("links[%d].amount", i), "must be positive and only on a reimbursement_of link")
+			return invalid(
+				fmt.Sprintf("links[%d].amount", i),
+				"must be positive and only on a reimbursement_of link",
+			)
 		}
 	}
 
@@ -281,9 +298,15 @@ func keepRecordLinks(prev, next []Posting) ([]Posting, error) {
 			continue
 		}
 
-		i := slices.IndexFunc(next, func(n Posting) bool { return n.AccountID == p.AccountID && n.ExternalRecordID == uuid.Nil })
+		i := slices.IndexFunc(
+			next,
+			func(n Posting) bool { return n.AccountID == p.AccountID && n.ExternalRecordID == uuid.Nil },
+		)
 		if i < 0 {
-			return nil, invalid("postings", "must keep a posting on account "+p.AccountID.String()+", which an imported record confirms")
+			return nil, invalid(
+				"postings",
+				"must keep a posting on account "+p.AccountID.String()+", which an imported record confirms",
+			)
 		}
 
 		next[i].ExternalRecordID = p.ExternalRecordID

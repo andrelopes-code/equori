@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 )
 
-func (s *Server) getCurrentUser(ctx context.Context, _ *http.Request, _ httpserver.None) (User, error) {
+func (s *Server) getCurrentUser(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (User, error) {
 	user, ok := ctx.Value(memberKey{}).(domain.Member)
 	if !ok {
 		return User{}, app.ErrUnauthenticated

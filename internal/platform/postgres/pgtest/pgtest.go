@@ -71,10 +71,16 @@ func buildTemplate() (string, error) {
 		return "", err
 	}
 
-	defer admin.Exec(ctx, "SELECT pg_advisory_unlock(hashtextextended($1, 0))", name) //nolint:errcheck // the session ends next
+	defer admin.Exec(
+		ctx,
+		"SELECT pg_advisory_unlock(hashtextextended($1, 0))",
+		name,
+	) //nolint:errcheck // the session ends next
 
 	var ready bool
-	if err := admin.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1 AND datistemplate)", name).Scan(&ready); err != nil || ready {
+	if err := admin.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1 AND datistemplate)", name).
+		Scan(&ready); err != nil ||
+		ready {
 		return name, err
 	}
 
@@ -227,18 +233,26 @@ func CreateMember(t testing.TB, pool *pgxpool.Pool) (memberID, booksID int64) {
 
 	email := strings.ToLower(rand.Text()) + "@example.com"
 
-	err := pool.QueryRow(context.Background(),
-		`INSERT INTO identity_member (email, password_hash, role, language) VALUES ($1, 'x', 'admin', 'en') RETURNING id`, email).Scan(&memberID)
+	err := pool.QueryRow(
+		context.Background(),
+		`INSERT INTO identity_member (email, password_hash, role, language) VALUES ($1, 'x', 'admin', 'en') RETURNING id`,
+		email,
+	).Scan(&memberID)
 	if err != nil {
 		t.Fatalf("create member: %v", err)
 	}
 
-	if err := pool.QueryRow(context.Background(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).Scan(&booksID); err != nil {
+	if err := pool.QueryRow(context.Background(), `INSERT INTO identity_books (region, name) VALUES ('US', 'test') RETURNING id`).
+		Scan(&booksID); err != nil {
 		t.Fatalf("create books: %v", err)
 	}
 
-	if _, err := pool.Exec(context.Background(),
-		`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`, memberID, booksID); err != nil {
+	if _, err := pool.Exec(
+		context.Background(),
+		`INSERT INTO identity_membership (member_id, books_id, role) VALUES ($1, $2, 'owner')`,
+		memberID,
+		booksID,
+	); err != nil {
 		t.Fatalf("create membership: %v", err)
 	}
 
@@ -259,8 +273,11 @@ func CreateUserBeforeBooks(t testing.TB, pool *pgxpool.Pool) int64 {
 	var id int64
 	email := strings.ToLower(rand.Text()) + "@example.com"
 
-	err := pool.QueryRow(context.Background(),
-		`INSERT INTO identity_user (email, password_hash, role, language, region) VALUES ($1, 'x', 'admin', 'en', 'US') RETURNING id`, email).Scan(&id)
+	err := pool.QueryRow(
+		context.Background(),
+		`INSERT INTO identity_user (email, password_hash, role, language, region) VALUES ($1, 'x', 'admin', 'en', 'US') RETURNING id`,
+		email,
+	).Scan(&id)
 	if err != nil {
 		t.Fatalf("create user: %v", err)
 	}
@@ -274,8 +291,11 @@ func CreateUserBeforeProfile(t testing.TB, pool *pgxpool.Pool) int64 {
 	var id int64
 	email := strings.ToLower(rand.Text()) + "@example.com"
 
-	err := pool.QueryRow(context.Background(),
-		`INSERT INTO identity_user (email, password_hash, role) VALUES ($1, 'x', 'admin') RETURNING id`, email).Scan(&id)
+	err := pool.QueryRow(
+		context.Background(),
+		`INSERT INTO identity_user (email, password_hash, role) VALUES ($1, 'x', 'admin') RETURNING id`,
+		email,
+	).Scan(&id)
 	if err != nil {
 		t.Fatalf("create user: %v", err)
 	}

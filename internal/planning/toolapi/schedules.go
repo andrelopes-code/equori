@@ -20,10 +20,10 @@ func (listSchedulesState) Values() []string {
 
 type listSchedulesIn struct {
 	ScheduleID string             `json:"schedule_id,omitzero" jsonschema:"one schedule, with its terms versions and pauses"`
-	From       tool.Date          `json:"from,omitzero" jsonschema:"first date of the occurrences listed; today when absent"`
-	To         tool.Date          `json:"to,omitzero" jsonschema:"last date of the occurrences listed; 31 days after from when absent; at most 366 days after from"`
-	State      listSchedulesState `json:"state,omitzero" jsonschema:"keep occurrences in this state"`
-	Month      string             `json:"month,omitzero" jsonschema:"return the installments and expected occurrences committed to this month; written YYYY-MM"`
+	From       tool.Date          `json:"from,omitzero"        jsonschema:"first date of the occurrences listed; today when absent"`
+	To         tool.Date          `json:"to,omitzero"          jsonschema:"last date of the occurrences listed; 31 days after from when absent; at most 366 days after from"`
+	State      listSchedulesState `json:"state,omitzero"       jsonschema:"keep occurrences in this state"`
+	Month      string             `json:"month,omitzero"       jsonschema:"return the installments and expected occurrences committed to this month; written YYYY-MM"`
 	tool.PageArgs
 }
 
@@ -53,8 +53,8 @@ type scheduleView struct {
 	Pauses          []pauseView `json:"pauses,omitzero"`
 
 	MatchToleranceBP int `json:"match_tolerance_bp" jsonschema:"amount tolerance in basis points"`
-	GraceDays        int `json:"grace_days" jsonschema:"days past the expected date before overdue"`
-	MatchWindowDays  int `json:"match_window_days" jsonschema:"days from the expected date a transaction may realize it"`
+	GraceDays        int `json:"grace_days"         jsonschema:"days past the expected date before overdue"`
+	MatchWindowDays  int `json:"match_window_days"  jsonschema:"days from the expected date a transaction may realize it"`
 }
 
 type occurrenceView struct {
@@ -97,23 +97,43 @@ func toTermsView(s domain.Schedule, t domain.Terms) (termsView, error) {
 	amount, err := moneyOf(t.Amount, s.Currency)
 
 	return termsView{
-		EffectiveFrom: tool.DateOf(t.EffectiveFrom), Amount: amount, Frequency: string(t.Rule.Frequency),
-		Interval: t.Rule.Interval, DayOfMonth: t.Rule.DayOfMonth,
+		EffectiveFrom: tool.DateOf(
+			t.EffectiveFrom,
+		),
+		Amount:     amount,
+		Frequency:  string(t.Rule.Frequency),
+		Interval:   t.Rule.Interval,
+		DayOfMonth: t.Rule.DayOfMonth,
 	}, err
 }
 
 // toScheduleView names the schedule's accounts; detail adds its terms versions and pauses.
-func toScheduleView(s domain.Schedule, accounts map[uuid.UUID]Account, today time.Time, next map[uuid.UUID]time.Time, detail bool) (scheduleView, error) {
+func toScheduleView(
+	s domain.Schedule,
+	accounts map[uuid.UUID]Account,
+	today time.Time,
+	next map[uuid.UUID]time.Time,
+	detail bool,
+) (scheduleView, error) {
 	t, err := toTermsView(s, currentTerms(s, today))
 	if err != nil {
 		return scheduleView{}, err
 	}
 
 	v := scheduleView{
-		ScheduleID: s.ID.String(), Description: s.Description, Kind: string(s.Kind),
-		AccountName: accountName(accounts, s.AccountID), CounterpartName: accountName(accounts, s.CounterpartID),
-		Amount: t.Amount, Frequency: t.Frequency,
-		MatchToleranceBP: s.ToleranceBP, GraceDays: s.GraceDays, MatchWindowDays: s.WindowDays,
+		ScheduleID:  s.ID.String(),
+		Description: s.Description,
+		Kind:        string(s.Kind),
+		AccountName: accountName(
+			accounts,
+			s.AccountID,
+		),
+		CounterpartName:  accountName(accounts, s.CounterpartID),
+		Amount:           t.Amount,
+		Frequency:        t.Frequency,
+		MatchToleranceBP: s.ToleranceBP,
+		GraceDays:        s.GraceDays,
+		MatchWindowDays:  s.WindowDays,
 	}
 	if d, ok := next[s.ID]; ok {
 		v.NextExpectedOn = tool.DateOf(d)
@@ -141,8 +161,20 @@ func toScheduleView(s domain.Schedule, accounts map[uuid.UUID]Account, today tim
 }
 
 // nextExpected returns the date of the first expected occurrence of each schedule from today on.
-func nextExpected(ctx context.Context, svc *app.Service, booksID int64, today time.Time) (map[uuid.UUID]time.Time, error) {
-	os, err := svc.Occurrences(ctx, booksID, today, today.AddDate(0, 0, 365), uuid.Nil, domain.Expected)
+func nextExpected(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	today time.Time,
+) (map[uuid.UUID]time.Time, error) {
+	os, err := svc.Occurrences(
+		ctx,
+		booksID,
+		today,
+		today.AddDate(0, 0, 365),
+		uuid.Nil,
+		domain.Expected,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +195,8 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		Description: "Lists recurring schedules (bills, income, subscriptions, transfers, savings) with their terms, the occurrences expected or realized in a period, or the total committed to a month. " +
 			"Use it for upcoming bills, subscriptions and what is due. " +
 			"Do not use it for budgets or goals: get_budgets_and_goals does.",
-		Effect: tool.ReadOnly, Idempotent: true,
+		Effect:     tool.ReadOnly,
+		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in listSchedulesIn) (listSchedulesOut, error) {
 		q, err := decodeScheduleQuery(ctx, clk, in)
 		if err != nil {
@@ -241,7 +274,11 @@ type scheduleQuery struct {
 	from, to   time.Time
 }
 
-func decodeScheduleQuery(ctx context.Context, clk clock.Clock, in listSchedulesIn) (scheduleQuery, error) {
+func decodeScheduleQuery(
+	ctx context.Context,
+	clk clock.Clock,
+	in listSchedulesIn,
+) (scheduleQuery, error) {
 	scheduleID, err := optionalID(in.ScheduleID, "schedule_id")
 	if err != nil {
 		return scheduleQuery{}, err
@@ -265,14 +302,23 @@ func decodeScheduleQuery(ctx context.Context, clk clock.Clock, in listSchedulesI
 	}
 
 	if to.Before(from) || to.After(from.AddDate(0, 0, 366)) {
-		return scheduleQuery{}, tool.InvalidArgument("to", "must be between from and 366 days after from")
+		return scheduleQuery{}, tool.InvalidArgument(
+			"to",
+			"must be between from and 366 days after from",
+		)
 	}
 
 	if _, err := tool.Limit(in.Limit); err != nil {
 		return scheduleQuery{}, err
 	}
 
-	return scheduleQuery{scheduleID: scheduleID, today: today, month: month, from: from, to: to}, nil
+	return scheduleQuery{
+		scheduleID: scheduleID,
+		today:      today,
+		month:      month,
+		from:       from,
+		to:         to,
+	}, nil
 }
 
 func loadSchedules(
@@ -307,7 +353,11 @@ func fillOccurrences(
 		return err
 	}
 
-	page, nextCursor, err := tool.PageOf(os, func(o app.OccurrenceView) string { return o.ID.String() }, in.PageArgs)
+	page, nextCursor, err := tool.PageOf(
+		os,
+		func(o app.OccurrenceView) string { return o.ID.String() },
+		in.PageArgs,
+	)
 	if err != nil {
 		return err
 	}
@@ -320,8 +370,12 @@ func fillOccurrences(
 		}
 
 		v := occurrenceView{
-			OccurrenceID: o.ID.String(), ScheduleID: o.ScheduleID.String(), Description: descriptions[o.ScheduleID],
-			ExpectedOn: tool.DateOf(o.ExpectedOn), ExpectedAmount: amount, State: string(o.Shown),
+			OccurrenceID:   o.ID.String(),
+			ScheduleID:     o.ScheduleID.String(),
+			Description:    descriptions[o.ScheduleID],
+			ExpectedOn:     tool.DateOf(o.ExpectedOn),
+			ExpectedAmount: amount,
+			State:          string(o.Shown),
 		}
 		if o.TransactionID != uuid.Nil {
 			v.TransactionID = o.TransactionID.String()
@@ -333,7 +387,12 @@ func fillOccurrences(
 	return nil
 }
 
-func committedViewOf(ctx context.Context, svc *app.Service, booksID int64, month time.Time) (committedView, error) {
+func committedViewOf(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	month time.Time,
+) (committedView, error) {
 	c, err := svc.Committed(ctx, booksID, month)
 	if err != nil {
 		return committedView{}, err

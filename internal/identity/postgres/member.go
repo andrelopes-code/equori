@@ -16,7 +16,12 @@ import (
 )
 
 // CreateMember publishes identity.books_created.v1 in the same transaction.
-func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region string, base money.Currency) (domain.Member, int64, error) {
+func (r *Repository) CreateMember(
+	ctx context.Context,
+	u domain.Member,
+	region string,
+	base money.Currency,
+) (domain.Member, int64, error) {
 	var (
 		created domain.Member
 		booksID int64
@@ -24,7 +29,14 @@ func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region s
 
 	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		var err error
-		created, booksID, err = r.insertMember(ctx, tx, u, region, base, domain.DefaultBooksName(u.Email))
+		created, booksID, err = r.insertMember(
+			ctx,
+			tx,
+			u,
+			region,
+			base,
+			domain.DefaultBooksName(u.Email),
+		)
 
 		return err
 	})
@@ -37,7 +49,11 @@ func (r *Repository) CreateMember(ctx context.Context, u domain.Member, region s
 
 // CreateFirstMember creates u only while no member exists; the table lock makes the check and the
 // insert one step for concurrent requests (W-U4).
-func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, b app.FirstBooks) (domain.Member, int64, error) {
+func (r *Repository) CreateFirstMember(
+	ctx context.Context,
+	u domain.Member,
+	b app.FirstBooks,
+) (domain.Member, int64, error) {
 	var (
 		created domain.Member
 		booksID int64
@@ -67,7 +83,10 @@ func (r *Repository) CreateFirstMember(ctx context.Context, u domain.Member, b a
 			return nil
 		}
 
-		_, err = q.UpdateBooksSettings(ctx, UpdateBooksSettingsParams{ID: booksID, Region: b.Region, TimeZone: b.TimeZone})
+		_, err = q.UpdateBooksSettings(
+			ctx,
+			UpdateBooksSettingsParams{ID: booksID, Region: b.Region, TimeZone: b.TimeZone},
+		)
 
 		return err
 	})
@@ -109,7 +128,14 @@ func (r *Repository) MemberByEmail(ctx context.Context, email string) (domain.Me
 	return toMember(row), nil
 }
 
-func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Member, region string, base money.Currency, name string) (domain.Member, int64, error) {
+func (r *Repository) insertMember(
+	ctx context.Context,
+	tx pgx.Tx,
+	u domain.Member,
+	region string,
+	base money.Currency,
+	name string,
+) (domain.Member, int64, error) {
 	q := r.q.WithTx(tx)
 
 	row, err := q.CreateMember(ctx, CreateMemberParams{
@@ -135,7 +161,13 @@ func (r *Repository) insertMember(ctx context.Context, tx pgx.Tx, u domain.Membe
 }
 
 // insertBooks creates the book, the owner membership of memberID and the books_created event.
-func (r *Repository) insertBooks(ctx context.Context, tx pgx.Tx, memberID int64, language, name, region string, base money.Currency) (int64, error) {
+func (r *Repository) insertBooks(
+	ctx context.Context,
+	tx pgx.Tx,
+	memberID int64,
+	language, name, region string,
+	base money.Currency,
+) (int64, error) {
 	q := r.q.WithTx(tx)
 
 	booksID, err := q.CreateBooks(ctx, CreateBooksParams{Region: region, Name: name})
@@ -143,7 +175,10 @@ func (r *Repository) insertBooks(ctx context.Context, tx pgx.Tx, memberID int64,
 		return 0, err
 	}
 
-	if err := q.CreateMembership(ctx, CreateMembershipParams{MemberID: memberID, BooksID: booksID, Role: string(auth.RoleOwner)}); err != nil {
+	if err := q.CreateMembership(
+		ctx,
+		CreateMembershipParams{MemberID: memberID, BooksID: booksID, Role: string(auth.RoleOwner)},
+	); err != nil {
 		return 0, err
 	}
 
@@ -151,7 +186,13 @@ func (r *Repository) insertBooks(ctx context.Context, tx pgx.Tx, memberID int64,
 		Type:        booksCreatedEvent,
 		BooksID:     booksID,
 		AggregateID: strconv.FormatInt(booksID, 10),
-		Payload:     booksCreated{BooksID: booksID, MemberID: memberID, Language: language, Region: region, BaseCurrency: base},
+		Payload: booksCreated{
+			BooksID:      booksID,
+			MemberID:     memberID,
+			Language:     language,
+			Region:       region,
+			BaseCurrency: base,
+		},
 	}); err != nil {
 		return 0, err
 	}

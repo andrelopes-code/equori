@@ -60,7 +60,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listAggregators))
 	mux.HandleFunc("GET "+BaseURL+"/integrations",
 		httpserver.Handle(s.errs, http.StatusOK, s.listIntegrations))
-	mux.HandleFunc("POST "+BaseURL+"/integrations", httpserver.HandleCreated(s.errs, s.createIntegration))
+	mux.HandleFunc(
+		"POST "+BaseURL+"/integrations",
+		httpserver.HandleCreated(s.errs, s.createIntegration),
+	)
 	mux.HandleFunc("GET "+BaseURL+"/integrations/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getIntegration))
 	mux.HandleFunc("DELETE "+BaseURL+"/integrations/{id}",
@@ -69,7 +72,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.updateIntegrationCredentials))
 	mux.HandleFunc("GET "+BaseURL+"/connections",
 		httpserver.Handle(s.errs, http.StatusOK, s.listConnections))
-	mux.HandleFunc("POST "+BaseURL+"/connections", httpserver.HandleCreated(s.errs, s.createConnection))
+	mux.HandleFunc(
+		"POST "+BaseURL+"/connections",
+		httpserver.HandleCreated(s.errs, s.createConnection),
+	)
 	mux.HandleFunc("GET "+BaseURL+"/connections/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getConnection))
 	mux.HandleFunc("DELETE "+BaseURL+"/connections/{id}",
@@ -132,15 +138,31 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrIntegrationUnavailable):
 		return problem.New(http.StatusConflict, "integration_unavailable", err.Error()), true
 	case errors.Is(err, app.ErrIntegrationInUse):
-		return problem.New(http.StatusConflict, "integration_in_use", "delete the integration's connections first"), true
+		return problem.New(
+			http.StatusConflict,
+			"integration_in_use",
+			"delete the integration's connections first",
+		), true
 	case errors.Is(err, app.ErrColumnSuggesterUnavailable):
 		// The cause stays out of the response: it may name a provider.
-		return problem.New(http.StatusServiceUnavailable, "csv_suggestion_unavailable", app.ErrColumnSuggesterUnavailable.Error()), true
+		return problem.New(
+			http.StatusServiceUnavailable,
+			"csv_suggestion_unavailable",
+			app.ErrColumnSuggesterUnavailable.Error(),
+		), true
 	case errors.Is(err, domain.ErrColumnSuggestionUnusable):
-		return problem.New(http.StatusUnprocessableEntity, "csv_suggestion_unusable", err.Error()), true
+		return problem.New(
+			http.StatusUnprocessableEntity,
+			"csv_suggestion_unusable",
+			err.Error(),
+		), true
 	case errors.Is(err, app.ErrAggregatorUnavailable):
 		// The cause stays out of the response: it may name the aggregator's address.
-		return problem.New(http.StatusBadGateway, "aggregator_unavailable", app.ErrAggregatorUnavailable.Error()), true
+		return problem.New(
+			http.StatusBadGateway,
+			"aggregator_unavailable",
+			app.ErrAggregatorUnavailable.Error(),
+		), true
 	}
 
 	return problem.Details{}, false
@@ -160,15 +182,26 @@ func listPage[K any](limit *int, cursor *string) (page.Request[K], error) {
 
 func toBatchAPI(b domain.Batch) ImportBatch {
 	out := ImportBatch{
-		Id: b.ID, AccountId: b.AccountID, Source: ImportBatchSource(b.Source), FileName: ref(b.FileName),
+		Id:                b.ID,
+		AccountId:         b.AccountID,
+		Source:            ImportBatchSource(b.Source),
+		FileName:          ref(b.FileName),
 		ExternalAccountId: b.ExternalAccountID,
 		Counts: ImportCounts{
-			Received: b.Counts.Received, Ignored: b.Counts.Ignored, Matched: b.Counts.Matched,
-			Created: b.Counts.Created, NeedsReview: b.Counts.NeedsReview, Discarded: b.Counts.Discarded,
-			Updated: b.Counts.Updated, Withdrawn: b.Counts.Withdrawn, ReIdentified: b.Counts.ReIdentified, Paired: b.Counts.Paired,
+			Received:     b.Counts.Received,
+			Ignored:      b.Counts.Ignored,
+			Matched:      b.Counts.Matched,
+			Created:      b.Counts.Created,
+			NeedsReview:  b.Counts.NeedsReview,
+			Discarded:    b.Counts.Discarded,
+			Updated:      b.Counts.Updated,
+			Withdrawn:    b.Counts.Withdrawn,
+			ReIdentified: b.Counts.ReIdentified,
+			Paired:       b.Counts.Paired,
 		},
-		Balance:   ImportBalance{Status: ImportBalanceStatus(b.Balance.Status)},
-		StartedAt: b.StartedAt, CompletedAt: b.CompletedAt,
+		Balance:     ImportBalance{Status: ImportBalanceStatus(b.Balance.Status)},
+		StartedAt:   b.StartedAt,
+		CompletedAt: b.CompletedAt,
 	}
 	if b.ReadEmpty {
 		out.ReadEmpty = &b.ReadEmpty

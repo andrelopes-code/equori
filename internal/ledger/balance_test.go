@@ -9,7 +9,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
-func (f ledgerFixture) balance(t *testing.T, accountID domain.Account, on string, basis app.Basis) int64 {
+func (f ledgerFixture) balance(
+	t *testing.T,
+	accountID domain.Account,
+	on string,
+	basis app.Basis,
+) int64 {
 	t.Helper()
 
 	b, err := f.svc.BalanceAt(t.Context(), f.booksID, accountID.ID, date(on), basis)
@@ -81,10 +86,29 @@ func TestBalanceAtDateIncludesThatDay(t *testing.T) {
 func TestParentBalanceSumsChildren(t *testing.T) {
 	t.Parallel()
 	f := newLedgerFixture(t)
-	parent := f.createAccount(t, domain.Account{Name: "Nubank", Class: domain.ClassAsset, Kind: domain.KindChecking})
-	child := f.createAccount(t, domain.Account{Name: "Nubank account", Class: domain.ClassAsset, Kind: domain.KindChecking, ParentID: parent.ID})
+	parent := f.createAccount(
+		t,
+		domain.Account{Name: "Nubank", Class: domain.ClassAsset, Kind: domain.KindChecking},
+	)
+	child := f.createAccount(
+		t,
+		domain.Account{
+			Name:     "Nubank account",
+			Class:    domain.ClassAsset,
+			Kind:     domain.KindChecking,
+			ParentID: parent.ID,
+		},
+	)
 
-	reserve := f.createAccount(t, domain.Account{Name: "Emergency", Class: domain.ClassAsset, Kind: domain.KindReserve, ParentID: parent.ID})
+	reserve := f.createAccount(
+		t,
+		domain.Account{
+			Name:     "Emergency",
+			Class:    domain.ClassAsset,
+			Kind:     domain.KindReserve,
+			ParentID: parent.ID,
+		},
+	)
 	for _, p := range [][2]any{{child, int64(500000)}, {reserve, int64(100000)}} {
 		_, err := f.svc.RecordTransaction(t.Context(), f.booksID, domain.Transaction{
 			Date: date("2026-10-05"),
@@ -109,7 +133,10 @@ func TestParentBalanceSumsChildren(t *testing.T) {
 			{AccountID: f.food.ID, Amount: brl(t, -100)},
 		},
 	})
-	if fe, ok := errors.AsType[*domain.FieldError](err); !ok || fe.Field != "postings[0].account_id" {
+	if fe, ok := errors.AsType[*domain.FieldError](
+		err,
+	); !ok ||
+		fe.Field != "postings[0].account_id" {
 		t.Fatalf("posting on parent err = %v, want field postings[0].account_id", err)
 	}
 }
@@ -119,7 +146,16 @@ func TestBalanceUnknownAccount(t *testing.T) {
 	f := newLedgerFixture(t)
 
 	other := provisionedUser(t, f.pool, f.dispatcher)
-	if _, err := f.svc.BalanceAt(t.Context(), other, f.checking.ID, time.Now(), app.BasisBooked); !errors.Is(err, app.ErrNotFound) {
+	if _, err := f.svc.BalanceAt(
+		t.Context(),
+		other,
+		f.checking.ID,
+		time.Now(),
+		app.BasisBooked,
+	); !errors.Is(
+		err,
+		app.ErrNotFound,
+	) {
 		t.Fatalf("balance of another book's account err = %v, want ErrNotFound", err)
 	}
 }

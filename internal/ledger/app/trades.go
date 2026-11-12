@@ -15,7 +15,11 @@ import (
 
 // RecordTrade records M17: a purchase or sale of a security for cash of the same
 // brokerage, the sale at average cost (P8 amendment A68).
-func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.TradeOrder) (domain.Transaction, error) {
+func (s *Service) RecordTrade(
+	ctx context.Context,
+	booksID int64,
+	o domain.TradeOrder,
+) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		base, err := baseCurrency(ctx, r, booksID)
@@ -31,13 +35,24 @@ func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.Trade
 			return err
 		}
 
-		security, cash, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base)
+		security, cash, err := s.brokerageAccounts(
+			ctx,
+			r,
+			booksID,
+			o.AccountID,
+			o.CashAccountID,
+			base,
+		)
 		if err != nil {
 			return err
 		}
 
 		if o.Quantity.Currency() != security.Instrument {
-			return fieldErr("quantity", "must be an amount of "+string(security.Instrument), domain.ErrValidation)
+			return fieldErr(
+				"quantity",
+				"must be an amount of "+string(security.Instrument),
+				domain.ErrValidation,
+			)
 		}
 
 		h, err := s.lockHolding(ctx, r, booksID, security, base, o.Date)
@@ -56,7 +71,12 @@ func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.Trade
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID: booksID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Trade: &trade,
+			BooksID:           booksID,
+			Date:              o.Date,
+			Description:       o.Description,
+			BalancingCurrency: base,
+			Postings:          postings,
+			Trade:             &trade,
 		})
 
 		return err
@@ -66,7 +86,14 @@ func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.Trade
 }
 
 // lockHolding locks the security account and returns the holding it has on date.
-func (s *Service) lockHolding(ctx context.Context, r Repository, booksID int64, security domain.Account, base money.Currency, date time.Time) (domain.Holding, error) {
+func (s *Service) lockHolding(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	security domain.Account,
+	base money.Currency,
+	date time.Time,
+) (domain.Holding, error) {
 	// Two sales of one account serialize on its row, so each reads the holding the other left.
 	if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
 		return domain.Holding{}, err
@@ -91,7 +118,11 @@ func (s *Service) lockHolding(ctx context.Context, r Repository, booksID int64, 
 
 // RecordIncome records M18: income paid on a security into cash of the same brokerage
 // (P8 amendment A70).
-func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.IncomeOrder) (domain.Transaction, error) {
+func (s *Service) RecordIncome(
+	ctx context.Context,
+	booksID int64,
+	o domain.IncomeOrder,
+) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		base, err := baseCurrency(ctx, r, booksID)
@@ -107,7 +138,14 @@ func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.Inco
 			return err
 		}
 
-		if _, _, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base); err != nil {
+		if _, _, err := s.brokerageAccounts(
+			ctx,
+			r,
+			booksID,
+			o.AccountID,
+			o.CashAccountID,
+			base,
+		); err != nil {
 			return err
 		}
 
@@ -131,7 +169,12 @@ func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.Inco
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID: booksID, Date: o.Date, Description: o.Description, BalancingCurrency: base, Postings: postings, Income: &income,
+			BooksID:           booksID,
+			Date:              o.Date,
+			Description:       o.Description,
+			BalancingCurrency: base,
+			Postings:          postings,
+			Income:            &income,
 		})
 
 		return err
@@ -155,7 +198,11 @@ func checkIncomeCategory(ctx context.Context, r Repository, booksID int64, id uu
 }
 
 // defaultWithholding sets the regional withholding of o when the request names none.
-func (s *Service) defaultWithholding(ctx context.Context, booksID int64, o *domain.IncomeOrder) error {
+func (s *Service) defaultWithholding(
+	ctx context.Context,
+	booksID int64,
+	o *domain.IncomeOrder,
+) error {
 	if o.Withheld != nil {
 		return nil
 	}
@@ -172,14 +219,24 @@ func (s *Service) defaultWithholding(ctx context.Context, booksID int64, o *doma
 
 // brokerageAccounts checks a security account and a cash account of the same brokerage
 // in the base currency.
-func (s *Service) brokerageAccounts(ctx context.Context, r Repository, booksID int64, securityID, cashID uuid.UUID, base money.Currency) (domain.Account, domain.Account, error) {
+func (s *Service) brokerageAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	securityID, cashID uuid.UUID,
+	base money.Currency,
+) (domain.Account, domain.Account, error) {
 	security, err := loadAccount(ctx, r, booksID, securityID, "account_id")
 	if err != nil {
 		return domain.Account{}, domain.Account{}, err
 	}
 
 	if !security.HoldsSecurity() {
-		return domain.Account{}, domain.Account{}, fieldErr("account_id", "must hold a security", domain.ErrValidation)
+		return domain.Account{}, domain.Account{}, fieldErr(
+			"account_id",
+			"must hold a security",
+			domain.ErrValidation,
+		)
 	}
 
 	cash, err := loadAccount(ctx, r, booksID, cashID, "cash_account_id")
@@ -188,11 +245,19 @@ func (s *Service) brokerageAccounts(ctx context.Context, r Repository, booksID i
 	}
 
 	if cash.HoldsSecurity() || cash.ParentID != security.ParentID {
-		return domain.Account{}, domain.Account{}, fieldErr("cash_account_id", "must be a cash account of the brokerage holding account_id", domain.ErrValidation)
+		return domain.Account{}, domain.Account{}, fieldErr(
+			"cash_account_id",
+			"must be a cash account of the brokerage holding account_id",
+			domain.ErrValidation,
+		)
 	}
 
 	if cash.Instrument != base {
-		return domain.Account{}, domain.Account{}, fieldErr("cash_account_id", "must be in the base currency "+string(base), domain.ErrCurrencyUnsupported)
+		return domain.Account{}, domain.Account{}, fieldErr(
+			"cash_account_id",
+			"must be in the base currency "+string(base),
+			domain.ErrCurrencyUnsupported,
+		)
 	}
 
 	return security, cash, nil
@@ -200,7 +265,13 @@ func (s *Service) brokerageAccounts(ctx context.Context, r Repository, booksID i
 
 // tradeAccounts returns the result and tax accounts; taxesCategory, named field in the
 // request, replaces the system account taxes.
-func (s *Service) tradeAccounts(ctx context.Context, r Repository, booksID int64, taxesCategory uuid.UUID, field string) (domain.TradeAccounts, error) {
+func (s *Service) tradeAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	taxesCategory uuid.UUID,
+	field string,
+) (domain.TradeAccounts, error) {
 	var accts domain.TradeAccounts
 	for _, x := range []struct {
 		role domain.SystemRole
@@ -227,7 +298,14 @@ func (s *Service) tradeAccounts(ctx context.Context, r Repository, booksID int64
 
 // checkLaterSales locks the security accounts of postings and rejects a change dated on
 // or before a non-voided sale of one of them other than exclude (P8 amendment A69).
-func checkLaterSales(ctx context.Context, r Repository, booksID int64, date time.Time, postings []domain.Posting, exclude uuid.UUID) error {
+func checkLaterSales(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	date time.Time,
+	postings []domain.Posting,
+	exclude uuid.UUID,
+) error {
 	ids := make([]uuid.UUID, 0, len(postings))
 	for _, p := range postings {
 		if isSecurity(p.Amount.Currency()) {

@@ -28,7 +28,13 @@ type candidateList struct {
 func (b reimbursementBooks) candidates(t *testing.T, id string) candidateList {
 	t.Helper()
 	var out candidateList
-	b.h.MustDo(http.MethodGet, "/api/v1/transactions/"+id+"/reimbursement-candidates", nil, http.StatusOK, &out)
+	b.h.MustDo(
+		http.MethodGet,
+		"/api/v1/transactions/"+id+"/reimbursement-candidates",
+		nil,
+		http.StatusOK,
+		&out,
+	)
 
 	return out
 }
@@ -57,7 +63,8 @@ func TestReimbursementCandidatesRanking_S114(t *testing.T) {
 		t.Fatalf("candidates = %v, want %v", got.ids(), want)
 	}
 
-	if got.Items[0].Remaining.Amount != 1500 || got.Items[0].Remaining.Currency != "BRL" || got.Items[0].Allocated.Amount != 0 {
+	if got.Items[0].Remaining.Amount != 1500 || got.Items[0].Remaining.Currency != "BRL" ||
+		got.Items[0].Allocated.Amount != 0 {
 		t.Fatalf("first = %+v, want remaining 1500 BRL and nothing allocated", got.Items[0])
 	}
 }
@@ -79,7 +86,10 @@ func TestReimbursementCandidatesRemaining_S114(t *testing.T) {
 	}
 
 	if got.Items[1].Remaining.Amount != 500 {
-		t.Fatalf("remaining of the partly reimbursed expense = %d, want 500", got.Items[1].Remaining.Amount)
+		t.Fatalf(
+			"remaining of the partly reimbursed expense = %d, want 500",
+			got.Items[1].Remaining.Amount,
+		)
 	}
 }
 
@@ -92,7 +102,13 @@ func TestReimbursementCandidatesExclusions_S114(t *testing.T) {
 	b.expense("2026-07-21", 1500)
 	b.expense("2026-10-21", 1500)
 	voided := b.expense("2026-10-17", 1500)
-	b.h.MustDo(http.MethodPost, "/api/v1/transactions/"+voided+"/void", map[string]string{"reason": "x"}, http.StatusOK, nil)
+	b.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+voided+"/void",
+		map[string]string{"reason": "x"},
+		http.StatusOK,
+		nil,
+	)
 	repaid := b.expense("2026-10-16", 1500)
 	full := b.inflow("2026-10-18", 1500)
 	mustReimburse(t, b.h, full, 1, alloc(repaid, 1500))
@@ -166,7 +182,8 @@ func TestReimbursementCandidatesAllocated_S114(t *testing.T) {
 		t.Fatalf("candidates = %v, want %v", got.ids(), want)
 	}
 
-	if got.Items[0].Allocated.Amount != 1000 || got.Items[0].Remaining.Amount != 1000 || got.Items[1].Allocated.Amount != 0 {
+	if got.Items[0].Allocated.Amount != 1000 || got.Items[0].Remaining.Amount != 1000 ||
+		got.Items[1].Allocated.Amount != 0 {
 		t.Fatalf("items = %+v", got.Items)
 	}
 
@@ -192,5 +209,14 @@ func TestReimbursementCandidatesOfOutflow_S114(t *testing.T) {
 func TestReimbursementCandidatesUnknownTransaction_S114(t *testing.T) {
 	t.Parallel()
 	b := newReimbursementBooks(t)
-	b.h.ExpectProblem(b.h.Do(http.MethodGet, "/api/v1/transactions/00000000-0000-7000-8000-000000000000/reimbursement-candidates", nil), http.StatusNotFound, "not_found", "")
+	b.h.ExpectProblem(
+		b.h.Do(
+			http.MethodGet,
+			"/api/v1/transactions/00000000-0000-7000-8000-000000000000/reimbursement-candidates",
+			nil,
+		),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
 }

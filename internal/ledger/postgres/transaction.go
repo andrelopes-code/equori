@@ -36,7 +36,10 @@ func (r *Repository) LockTransaction(
 	booksID int64,
 	id uuid.UUID,
 ) (domain.Transaction, error) {
-	row, err := r.q.GetTransactionForUpdate(ctx, GetTransactionForUpdateParams{BooksID: booksID, ID: id})
+	row, err := r.q.GetTransactionForUpdate(
+		ctx,
+		GetTransactionForUpdateParams{BooksID: booksID, ID: id},
+	)
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
 	}
@@ -57,8 +60,16 @@ func (r *Repository) InsertTransaction(
 
 func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transaction) error {
 	_, err := r.q.InsertTransaction(ctx, InsertTransactionParams{
-		ID: t.ID, BooksID: t.BooksID, Date: t.Date, Description: t.Description, PayeeID: nullUUID(t.PayeeID),
-		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
+		ID:          t.ID,
+		BooksID:     t.BooksID,
+		Date:        t.Date,
+		Description: t.Description,
+		PayeeID:     nullUUID(t.PayeeID),
+		BalancingCurrency: string(
+			t.BalancingCurrency,
+		),
+		Origin:  string(t.Origin),
+		Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
 	})
 	if err != nil {
 		return referenceError(err)
@@ -70,8 +81,14 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 
 	if in := t.Income; in != nil {
 		return r.q.InsertInvestmentIncome(ctx, InsertInvestmentIncomeParams{
-			TransactionID: t.ID, BooksID: t.BooksID, AccountID: in.AccountID, CashAccountID: in.CashAccountID, IncomeType: string(in.Type),
-			Gross: in.Gross.Amount(), Withheld: in.Withheld.Amount(), Currency: string(in.Gross.Currency()),
+			TransactionID: t.ID,
+			BooksID:       t.BooksID,
+			AccountID:     in.AccountID,
+			CashAccountID: in.CashAccountID,
+			IncomeType:    string(in.Type),
+			Gross:         in.Gross.Amount(),
+			Withheld:      in.Withheld.Amount(),
+			Currency:      string(in.Gross.Currency()),
 		})
 	}
 
@@ -83,9 +100,18 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 		}
 
 		return r.q.InsertTrade(ctx, InsertTradeParams{
-			TransactionID: t.ID, BooksID: t.BooksID, AccountID: tr.AccountID, CashAccountID: tr.CashAccountID, Side: string(tr.Side),
-			Quantity: tr.Quantity.Amount(), UnitPrice: platformpg.NumericOf(tr.UnitPrice), Gross: tr.Gross.Amount(),
-			Fees: tr.Fees.Amount(), Taxes: tr.Taxes.Amount(), Cost: cost, Currency: string(tr.Gross.Currency()),
+			TransactionID: t.ID,
+			BooksID:       t.BooksID,
+			AccountID:     tr.AccountID,
+			CashAccountID: tr.CashAccountID,
+			Side:          string(tr.Side),
+			Quantity:      tr.Quantity.Amount(),
+			UnitPrice:     platformpg.NumericOf(tr.UnitPrice),
+			Gross:         tr.Gross.Amount(),
+			Fees:          tr.Fees.Amount(),
+			Taxes:         tr.Taxes.Amount(),
+			Cost:          cost,
+			Currency:      string(tr.Gross.Currency()),
 		})
 	}
 
@@ -97,8 +123,19 @@ func (r *Repository) ListTransactions(
 	q app.TransactionQuery,
 ) ([]domain.Transaction, error) {
 	params := ListTransactionsParams{
-		BooksID: q.BooksID, AccountID: nullUUID(q.AccountID), PayeeID: nullUUID(q.PayeeID), Tag: nullString(q.Tag),
-		Q: nullString(q.Q), FromDate: q.From, ToDate: q.To, AmountMin: q.AmountMin, AmountMax: q.AmountMax, Uncategorized: q.Uncategorized, RowLimit: int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
+		BooksID:   q.BooksID,
+		AccountID: nullUUID(q.AccountID),
+		PayeeID:   nullUUID(q.PayeeID),
+		Tag:       nullString(q.Tag),
+		Q: nullString(
+			q.Q,
+		),
+		FromDate:      q.From,
+		ToDate:        q.To,
+		AmountMin:     q.AmountMin,
+		AmountMax:     q.AmountMax,
+		Uncategorized: q.Uncategorized,
+		RowLimit:      int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
 	}
 	if q.After != nil {
 		params.AfterDate = &q.After.Date
@@ -135,14 +172,27 @@ func (r *Repository) Versions(
 			return nil, err
 		}
 
-		out[i] = app.Version{Version: int(row.Version), Reason: row.Reason, ReplacedAt: row.ReplacedAt, Transaction: t}
+		out[i] = app.Version{
+			Version:     int(row.Version),
+			Reason:      row.Reason,
+			ReplacedAt:  row.ReplacedAt,
+			Transaction: t,
+		}
 	}
 
 	return out, nil
 }
 
 func (r *Repository) VoidTransaction(ctx context.Context, t domain.Transaction) error {
-	return r.q.VoidTransaction(ctx, VoidTransactionParams{BooksID: t.BooksID, ID: t.ID, VoidedAt: t.VoidedAt, VoidReason: nullString(t.VoidReason)})
+	return r.q.VoidTransaction(
+		ctx,
+		VoidTransactionParams{
+			BooksID:    t.BooksID,
+			ID:         t.ID,
+			VoidedAt:   t.VoidedAt,
+			VoidReason: nullString(t.VoidReason),
+		},
+	)
 }
 
 func (r *Repository) toTrade(
@@ -177,8 +227,14 @@ func (r *Repository) toTrade(
 	}
 
 	trade := domain.Trade{
-		AccountID: row.AccountID, CashAccountID: row.CashAccountID, Side: domain.Side(row.Side), Quantity: quantity, UnitPrice: price,
-		Gross: amounts[0], Fees: amounts[1], Taxes: amounts[2],
+		AccountID:     row.AccountID,
+		CashAccountID: row.CashAccountID,
+		Side:          domain.Side(row.Side),
+		Quantity:      quantity,
+		UnitPrice:     price,
+		Gross:         amounts[0],
+		Fees:          amounts[1],
+		Taxes:         amounts[2],
 	}
 	if row.Cost != nil {
 		cost, err := money.New(*row.Cost, cur)
@@ -202,7 +258,16 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 	}
 
 	for _, l := range t.Links {
-		if err := r.q.InsertLink(ctx, InsertLinkParams{BooksID: t.BooksID, FromTransactionID: t.ID, ToTransactionID: l.Target, LinkType: string(l.Type), Amount: linkAmount(l.Amount)}); err != nil {
+		if err := r.q.InsertLink(
+			ctx,
+			InsertLinkParams{
+				BooksID:           t.BooksID,
+				FromTransactionID: t.ID,
+				ToTransactionID:   l.Target,
+				LinkType:          string(l.Type),
+				Amount:            linkAmount(l.Amount),
+			},
+		); err != nil {
 			return referenceError(err)
 		}
 	}
@@ -220,13 +285,35 @@ func (r *Repository) insertPostings(
 	postings := make([]InsertPostingsParams, len(ps))
 	for i, p := range ps {
 		postings[i] = InsertPostingsParams{
-			BooksID: t.BooksID, TransactionID: t.ID, AccountID: p.AccountID, Position: first + int16(i), //nolint:gosec // at most 500 postings (domain.MaxPostings).
-			Amount: p.Amount.Amount(), Weight: p.Weight.Amount(), BookedOn: t.Date, SettledOn: p.SettledOn,
-			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original),
-			Memo: nullString(p.Memo), StatementID: nullUUID(p.StatementID), StatementBasis: cmp.Or(p.StatementBasis, domain.BasisDate),
-			CardRole:          nullString(p.CardRole),
-			InstallmentPlanID: installmentPlan(p.Installment), InstallmentNumber: installmentNumber(p.Installment),
-			InstallmentCount: installmentCount(p.Installment), ExternalRecordID: nullUUID(p.ExternalRecordID),
+			BooksID:       t.BooksID,
+			TransactionID: t.ID,
+			AccountID:     p.AccountID,
+			Position: first + int16(
+				i,
+			), //nolint:gosec // at most 500 postings (domain.MaxPostings).
+			Amount:    p.Amount.Amount(),
+			Weight:    p.Weight.Amount(),
+			BookedOn:  t.Date,
+			SettledOn: p.SettledOn,
+			Status: string(
+				p.Status,
+			),
+			OriginalAmount:     originalAmount(p.Original),
+			OriginalInstrument: originalInstrument(p.Original),
+			Memo: nullString(
+				p.Memo,
+			),
+			StatementID:    nullUUID(p.StatementID),
+			StatementBasis: cmp.Or(p.StatementBasis, domain.BasisDate),
+			CardRole:       nullString(p.CardRole),
+			InstallmentPlanID: installmentPlan(
+				p.Installment,
+			),
+			InstallmentNumber: installmentNumber(p.Installment),
+			InstallmentCount: installmentCount(
+				p.Installment,
+			),
+			ExternalRecordID: nullUUID(p.ExternalRecordID),
 		}
 	}
 
@@ -247,7 +334,10 @@ func (r *Repository) writeTags(ctx context.Context, t domain.Transaction) error 
 			return err
 		}
 
-		if err := r.q.InsertTransactionTag(ctx, InsertTransactionTagParams{BooksID: t.BooksID, TransactionID: t.ID, TagID: tagID}); err != nil {
+		if err := r.q.InsertTransactionTag(
+			ctx,
+			InsertTransactionTagParams{BooksID: t.BooksID, TransactionID: t.ID, TagID: tagID},
+		); err != nil {
 			return err
 		}
 	}

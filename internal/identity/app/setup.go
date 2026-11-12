@@ -80,7 +80,10 @@ func (s *Service) SetupRequired(ctx context.Context) (bool, error) {
 }
 
 // CompleteSetup creates the first member, an admin, and signs it in (W-U3, W-U4).
-func (s *Service) CompleteSetup(ctx context.Context, in SetupRequest) (Session, domain.Member, error) {
+func (s *Service) CompleteSetup(
+	ctx context.Context,
+	in SetupRequest,
+) (Session, domain.Member, error) {
 	required, err := s.SetupRequired(ctx)
 	if err != nil {
 		return Session{}, domain.Member{}, err
@@ -121,7 +124,10 @@ func (s *Service) setupTokenValid(token string) bool {
 }
 
 // firstMember validates the request and builds the first member and its books.
-func (s *Service) firstMember(ctx context.Context, in SetupRequest) (domain.Member, FirstBooks, error) {
+func (s *Service) firstMember(
+	ctx context.Context,
+	in SetupRequest,
+) (domain.Member, FirstBooks, error) {
 	base, err := s.baseCurrency(in.Locale.Region, in.BaseCurrency)
 	if err != nil {
 		return domain.Member{}, FirstBooks{}, err
@@ -155,7 +161,11 @@ func (s *Service) firstMember(ctx context.Context, in SetupRequest) (domain.Memb
 }
 
 // finishSetup clears the setup token, runs the setup hooks and signs the first member in.
-func (s *Service) finishSetup(ctx context.Context, in SetupRequest, memberID, booksID int64) (Session, error) {
+func (s *Service) finishSetup(
+	ctx context.Context,
+	in SetupRequest,
+	memberID, booksID int64,
+) (Session, error) {
 	s.setup.mu.Lock()
 	s.setup.token = ""
 	s.setup.mu.Unlock()

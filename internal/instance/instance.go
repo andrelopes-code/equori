@@ -32,19 +32,28 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		return nil, err
 	}
 
-	svc := app.NewService(postgres.NewRepository(pool), postgres.NewCatalog(pool), releases.NewClient(cmp.Or(cfg.ReleaseURL, ReleasesURL)), cfg.Admins, box, cfg.Clock, app.Config{
-		BackupDir:    cfg.BackupDir,
-		CopyDir:      cfg.CopyDir,
-		Dump:         cfg.Dump,
-		Schema:       schema,
-		Mode:         cfg.Mode,
-		Distribution: cfg.Distribution,
-		Version:      cfg.Version,
-		Environment:  cfg.Environment,
-		Log:          cfg.Log,
-		Outbox:       cfg.Outbox,
-		Connections:  connections(cfg.Connections),
-	}, log)
+	svc := app.NewService(
+		postgres.NewRepository(pool),
+		postgres.NewCatalog(pool),
+		releases.NewClient(cmp.Or(cfg.ReleaseURL, ReleasesURL)),
+		cfg.Admins,
+		box,
+		cfg.Clock,
+		app.Config{
+			BackupDir:    cfg.BackupDir,
+			CopyDir:      cfg.CopyDir,
+			Dump:         cfg.Dump,
+			Schema:       schema,
+			Mode:         cfg.Mode,
+			Distribution: cfg.Distribution,
+			Version:      cfg.Version,
+			Environment:  cfg.Environment,
+			Log:          cfg.Log,
+			Outbox:       cfg.Outbox,
+			Connections:  connections(cfg.Connections),
+		},
+		log,
+	)
 
 	return &Module{svc: svc, http: httpapi.NewServer(svc, log)}, nil
 }

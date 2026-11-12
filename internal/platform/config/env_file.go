@@ -14,7 +14,9 @@ var envKey = regexp.MustCompile(`^[A-Z_][A-Z0-9_]*$`)
 // ReadEnvFile reads equori.env of managed mode (C2): one KEY=VALUE per line, # starts a comment
 // line, no quoting, no expansion. A missing file yields an empty map.
 func ReadEnvFile(path string) (map[string]string, error) {
-	b, err := os.ReadFile(path) //nolint:gosec // G304: the data directory is the owner's configuration.
+	b, err := os.ReadFile(
+		path,
+	) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if errors.Is(err, fs.ErrNotExist) {
 		return map[string]string{}, nil
 	}

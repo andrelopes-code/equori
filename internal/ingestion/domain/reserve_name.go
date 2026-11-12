@@ -55,7 +55,10 @@ func answering(r NormalizedRecord, reserves []ExternalAccount) []ExternalAccount
 
 func reserveCandidates(r NormalizedRecord, reserves []ExternalAccount) []ExternalAccount {
 	if r.ReserveExternalID != "" {
-		i := slices.IndexFunc(reserves, func(x ExternalAccount) bool { return x.ExternalID == r.ReserveExternalID })
+		i := slices.IndexFunc(
+			reserves,
+			func(x ExternalAccount) bool { return x.ExternalID == r.ReserveExternalID },
+		)
 		if i < 0 {
 			return nil
 		}
@@ -95,7 +98,11 @@ func reserveCandidates(r NormalizedRecord, reserves []ExternalAccount) []Externa
 	}
 
 	for _, x := range reserves {
-		if textfold.Key(x.Name) != key && slices.ContainsFunc(x.FormerNames, func(n string) bool { return textfold.Key(n) == key }) {
+		if textfold.Key(x.Name) != key &&
+			slices.ContainsFunc(
+				x.FormerNames,
+				func(n string) bool { return textfold.Key(n) == key },
+			) {
 			candidates = append(candidates, x)
 		}
 	}

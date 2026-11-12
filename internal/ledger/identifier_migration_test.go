@@ -21,7 +21,11 @@ func TestInstitutionISPBBecomesIdentifier(t *testing.T) {
 	}
 
 	uid := pgtest.CreateUserBeforeBooks(t, pool)
-	if _, err := pool.Exec(ctx, `INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Banco do Brasil', '00000000'), ($1, 'BB', '00360305'), ($1, 'Wallet', NULL)`, uid); err != nil {
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO ledger_institution (user_id, name, ispb) VALUES ($1, 'Banco do Brasil', '00000000'), ($1, 'BB', '00360305'), ($1, 'Wallet', NULL)`,
+		uid,
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -29,7 +33,11 @@ func TestInstitutionISPBBecomesIdentifier(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	rows, err := pool.Query(ctx, `SELECT name, identifier_scheme, identifier FROM ledger_institution WHERE books_id = $1 ORDER BY name`, uid)
+	rows, err := pool.Query(
+		ctx,
+		`SELECT name, identifier_scheme, identifier FROM ledger_institution WHERE books_id = $1 ORDER BY name`,
+		uid,
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +61,11 @@ func TestInstitutionISPBBecomesIdentifier(t *testing.T) {
 		got = append(got, r)
 	}
 
-	want := []row{{"BB", "br_ispb", "00360305"}, {"Banco do Brasil", "br_ispb", "00000000"}, {"Wallet", "", ""}}
+	want := []row{
+		{"BB", "br_ispb", "00360305"},
+		{"Banco do Brasil", "br_ispb", "00000000"},
+		{"Wallet", "", ""},
+	}
 	if len(got) != len(want) {
 		t.Fatalf("rows = %+v, want %+v", got, want)
 	}

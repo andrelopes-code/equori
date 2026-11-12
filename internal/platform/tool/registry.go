@@ -103,14 +103,27 @@ func (r *Registry) Call(ctx context.Context, name string, args json.RawMessage) 
 		outcome = "canceled"
 	}
 
-	r.log.LogAttrs(ctx, slog.LevelInfo, "tool call", slog.String("tool", name), slog.Int64("books_id", booksID),
-		slog.String("effect", e.tool.spec.Effect.String()), slog.String("outcome", outcome),
-		slog.Duration("duration", time.Since(start)), slog.Int("bytes", len(res.Content)))
+	r.log.LogAttrs(
+		ctx,
+		slog.LevelInfo,
+		"tool call",
+		slog.String("tool", name),
+		slog.Int64("books_id", booksID),
+		slog.String("effect", e.tool.spec.Effect.String()),
+		slog.String("outcome", outcome),
+		slog.Duration("duration", time.Since(start)),
+		slog.Int("bytes", len(res.Content)),
+	)
 
 	return res, err
 }
 
-func (r *Registry) call(ctx context.Context, e entry, booksID int64, args json.RawMessage) (Result, string, error) {
+func (r *Registry) call(
+	ctx context.Context,
+	e entry,
+	booksID int64,
+	args json.RawMessage,
+) (Result, string, error) {
 	name := e.tool.spec.Name
 
 	if denied := roleDenied(ctx, e.tool.spec); denied != nil {
@@ -124,7 +137,8 @@ func (r *Registry) call(ctx context.Context, e entry, booksID int64, args json.R
 
 	out, err := e.tool.call(ctx, booksID, args)
 	if err != nil {
-		if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		if ctx.Err() != nil || errors.Is(err, context.Canceled) ||
+			errors.Is(err, context.DeadlineExceeded) {
 			return Result{}, "", fmt.Errorf("call tool %s: %w", name, err)
 		}
 
@@ -138,7 +152,10 @@ func (r *Registry) call(ctx context.Context, e entry, booksID int64, args json.R
 
 	if len(b) > MaxResultBytes {
 		return failure(Error{Code: "result_too_large", Detail: fmt.Sprintf(
-			"the result has %d bytes, over the limit of %d; narrow the filters or lower limit", len(b), MaxResultBytes)})
+			"the result has %d bytes, over the limit of %d; narrow the filters or lower limit",
+			len(b),
+			MaxResultBytes,
+		)})
 	}
 
 	return Result{Content: b}, "ok", nil
@@ -146,7 +163,8 @@ func (r *Registry) call(ctx context.Context, e entry, booksID int64, args json.R
 
 // mapError turns a handler error into a tool error, or into internal_error when unmapped.
 func (r *Registry) mapError(ctx context.Context, e entry, err error) (Result, string, error) {
-	if ctx.Err() != nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	if ctx.Err() != nil || errors.Is(err, context.Canceled) ||
+		errors.Is(err, context.DeadlineExceeded) {
 		return Result{}, "", fmt.Errorf("tool %s: %w", e.tool.spec.Name, err)
 	}
 
@@ -164,8 +182,16 @@ func (r *Registry) mapError(ctx context.Context, e entry, err error) (Result, st
 }
 
 func (r *Registry) internal(ctx context.Context, name string, err error) (Result, string, error) {
-	r.log.LogAttrs(ctx, slog.LevelError, "tool failed", slog.String("tool", name), slog.Any("err", err))
-	return failure(Error{Code: "internal_error", Detail: "the tool failed; the error is in the server log"})
+	r.log.LogAttrs(
+		ctx,
+		slog.LevelError,
+		"tool failed",
+		slog.String("tool", name),
+		slog.Any("err", err),
+	)
+	return failure(
+		Error{Code: "internal_error", Detail: "the tool failed; the error is in the server log"},
+	)
 }
 
 func failure(e Error) (Result, string, error) {
@@ -187,5 +213,8 @@ func roleDenied(ctx context.Context, s Spec) *Error {
 		return nil
 	}
 
-	return &Error{Code: "book_role_required", Detail: "this tool needs the book role " + string(s.Role)}
+	return &Error{
+		Code:   "book_role_required",
+		Detail: "this tool needs the book role " + string(s.Role),
+	}
 }

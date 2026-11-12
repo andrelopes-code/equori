@@ -20,12 +20,30 @@ func (s *seeder) transfers() {
 		s.at(d, func() {
 			if top := nubankTop(s.bal[s.id("nubank.checking")]); top > 0 {
 				s.ensure(d, "itau.checking", 140000+top)
-				s.record(iso(d), "Pix para Nubank", map[string]any{"payee_id": s.id("payee.Nubank")}, post(s.id("nubank.checking"), top), post(s.id("itau.checking"), -top))
+				s.record(
+					iso(d),
+					"Pix para Nubank",
+					map[string]any{"payee_id": s.id("payee.Nubank")},
+					post(s.id("nubank.checking"), top),
+					post(s.id("itau.checking"), -top),
+				)
 			}
 
 			s.ensure(d, "itau.checking", 140000)
-			s.record(iso(d), "TED para XP Investimentos", map[string]any{"payee_id": s.id("payee.XP Investimentos")}, post(s.id("xp.cash"), 110000), post(s.id("itau.checking"), -110000))
-			s.record(iso(d), "Aporte na caixinha de reserva", nil, post(s.id("nubank.reserve"), 30000), post(s.id("itau.checking"), -30000))
+			s.record(
+				iso(d),
+				"TED para XP Investimentos",
+				map[string]any{"payee_id": s.id("payee.XP Investimentos")},
+				post(s.id("xp.cash"), 110000),
+				post(s.id("itau.checking"), -110000),
+			)
+			s.record(
+				iso(d),
+				"Aporte na caixinha de reserva",
+				nil,
+				post(s.id("nubank.reserve"), 30000),
+				post(s.id("itau.checking"), -30000),
+			)
 		})
 	}
 
@@ -33,7 +51,13 @@ func (s *seeder) transfers() {
 		d := day(date)
 		s.at(d, func() {
 			s.ensure(d, "itau.checking", cents)
-			s.record(date, desc, map[string]any{"payee_id": s.id("payee.XP Investimentos")}, post(s.id("xp.cash"), cents), post(s.id("itau.checking"), -cents))
+			s.record(
+				date,
+				desc,
+				map[string]any{"payee_id": s.id("payee.XP Investimentos")},
+				post(s.id("xp.cash"), cents),
+				post(s.id("itau.checking"), -cents),
+			)
 		})
 	}
 	lump("2024-12-23", "TED para XP Investimentos, parte do 13º", 150000)
@@ -47,8 +71,13 @@ func (s *seeder) transfers() {
 	}{{"2025-06-30", 284731}, {"2026-06-30", 196412}} {
 		d := day(r.date)
 		s.at(d, func() {
-			s.record(r.date, "Restituição do imposto de renda", map[string]any{"payee_id": s.id("payee.Receita Federal")},
-				post(s.id("itau.checking"), r.cents), post(s.id("income.refunds"), -r.cents))
+			s.record(
+				r.date,
+				"Restituição do imposto de renda",
+				map[string]any{"payee_id": s.id("payee.Receita Federal")},
+				post(s.id("itau.checking"), r.cents),
+				post(s.id("income.refunds"), -r.cents),
+			)
 		})
 	}
 }

@@ -65,7 +65,9 @@ func text(s string) llm.Response {
 }
 
 func prompt() llm.Request {
-	return llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "secret prompt"}}}}}
+	return llm.Request{
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "secret prompt"}}}},
+	}
 }
 
 func models(p *llmtest.Provider) []string {
@@ -114,8 +116,10 @@ func TestClientGenerate(t *testing.T) {
 			wantCalls:  2,
 		},
 		{
-			name:      "invalid stops",
-			a:         []llmtest.Step{{Model: "m1", Err: fmt.Errorf("x: %w", llm.ErrInvalidRequest)}},
+			name: "invalid stops",
+			a: []llmtest.Step{
+				{Model: "m1", Err: fmt.Errorf("x: %w", llm.ErrInvalidRequest)},
+			},
 			chain:     []string{"a/m1", "a/m2"},
 			wantErr:   llm.ErrInvalidRequest,
 			wantCalls: 1,
@@ -188,7 +192,8 @@ func TestClientExhausted(t *testing.T) {
 		llmtest.Step{Model: "m2", Err: &llm.QuotaError{}},
 	)
 	f := newFixture(a)
-	_, err := f.router.Client(target("a/m1"), target("a/m2")).Generate(context.Background(), prompt())
+	_, err := f.router.Client(target("a/m1"), target("a/m2")).
+		Generate(context.Background(), prompt())
 
 	var ex *llm.ExhaustedError
 	if !errors.As(err, &ex) || !errors.Is(err, llm.ErrExhausted) {
@@ -264,11 +269,13 @@ func TestClientCooldown(t *testing.T) {
 		)
 
 		f := newFixture(a)
-		if _, err := f.router.Client(target("a/m1"), target("a/m2")).Generate(context.Background(), prompt()); err != nil {
+		if _, err := f.router.Client(target("a/m1"), target("a/m2")).
+			Generate(context.Background(), prompt()); err != nil {
 			t.Fatal(err)
 		}
 
-		if _, err := f.router.Client(target("a/m1"), target("a/m3")).Generate(context.Background(), prompt()); err != nil {
+		if _, err := f.router.Client(target("a/m1"), target("a/m3")).
+			Generate(context.Background(), prompt()); err != nil {
 			t.Fatal(err)
 		}
 
@@ -359,7 +366,8 @@ func TestClientLogs(t *testing.T) {
 	)
 
 	f := newFixture(a)
-	if _, err := f.router.Client(target("a/m1"), target("a/m2")).Generate(context.Background(), prompt()); err != nil {
+	if _, err := f.router.Client(target("a/m1"), target("a/m2")).
+		Generate(context.Background(), prompt()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -378,8 +386,23 @@ func TestClientLogs(t *testing.T) {
 	}
 
 	want := []map[string]any{
-		{"msg": "llm call", "level": "WARN", "provider": "a", "model": "m1", "outcome": "quota", "cooldown_until": "2026-10-16T12:00:30Z"},
-		{"msg": "llm call", "level": "INFO", "provider": "a", "model": "m2", "outcome": "ok", "input_tokens": 3.0, "output_tokens": 5.0},
+		{
+			"msg":            "llm call",
+			"level":          "WARN",
+			"provider":       "a",
+			"model":          "m1",
+			"outcome":        "quota",
+			"cooldown_until": "2026-10-16T12:00:30Z",
+		},
+		{
+			"msg":           "llm call",
+			"level":         "INFO",
+			"provider":      "a",
+			"model":         "m2",
+			"outcome":       "ok",
+			"input_tokens":  3.0,
+			"output_tokens": 5.0,
+		},
 	}
 	if len(records) != len(want) {
 		t.Fatalf("records = %d, want %d: %s", len(records), len(want), f.logs.String())
@@ -414,21 +437,49 @@ func TestClientMalformedOutput(t *testing.T) {
 		wantErr error
 	}{
 		{"valid json", json.RawMessage(`{"type":"object"}`), parts(`{"a":1}`), llm.FinishStop, nil},
-		{"json split over parts", json.RawMessage(`{"type":"object"}`), parts(`{"a":`, `1}`), llm.FinishStop, nil},
-		{"truncated json", json.RawMessage(`{"type":"object"}`), parts(`{"a":`), llm.FinishLength, llm.ErrMalformedOutput},
+		{
+			"json split over parts",
+			json.RawMessage(`{"type":"object"}`),
+			parts(`{"a":`, `1}`),
+			llm.FinishStop,
+			nil,
+		},
+		{
+			"truncated json",
+			json.RawMessage(`{"type":"object"}`),
+			parts(`{"a":`),
+			llm.FinishLength,
+			llm.ErrMalformedOutput,
+		},
 		{"free text is not checked", nil, parts(`{"a":`), llm.FinishStop, nil},
-		{"tool call step is not checked", json.RawMessage(`{"type":"object"}`), []llm.Part{{ToolCall: &llm.ToolCall{ID: "c1", Name: "balance"}}}, llm.FinishToolCalls, nil},
-		{"blocked answer is not checked", json.RawMessage(`{"type":"object"}`), nil, llm.FinishBlocked, nil},
+		{
+			"tool call step is not checked",
+			json.RawMessage(`{"type":"object"}`),
+			[]llm.Part{{ToolCall: &llm.ToolCall{ID: "c1", Name: "balance"}}},
+			llm.FinishToolCalls,
+			nil,
+		},
+		{
+			"blocked answer is not checked",
+			json.RawMessage(`{"type":"object"}`),
+			nil,
+			llm.FinishBlocked,
+			nil,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp := llm.Response{Message: llm.Message{Role: llm.RoleModel, Parts: tt.parts}, FinishReason: tt.finish}
+			resp := llm.Response{
+				Message:      llm.Message{Role: llm.RoleModel, Parts: tt.parts},
+				FinishReason: tt.finish,
+			}
 			a := llmtest.New("a", llmtest.Step{Model: "m1", Response: resp})
 			f := newFixture(a)
 			req := prompt()
 			req.Schema = tt.schema
 
-			_, err := f.router.Client(target("a/m1"), target("a/m2")).Generate(context.Background(), req)
+			_, err := f.router.Client(target("a/m1"), target("a/m2")).
+				Generate(context.Background(), req)
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("err = %v, want %v", err, tt.wantErr)
 			}
@@ -454,9 +505,21 @@ var chatUse = llm.Use{ID: "test.chat", Needs: []llm.Capability{llm.CapTools}}
 func TestClientUse(t *testing.T) {
 	t.Parallel()
 
-	a := llmtest.New("openai", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}})
-	b := llmtest.New("openai", llmtest.Step{Model: "m1", Response: text("ok")}, llmtest.Step{Model: "m1", Response: text("ok")})
-	res := &resolver{bindings: []llm.Binding{{Target: target("u1/m1"), Provider: a}, {Target: target("u2/m1"), Provider: b}}}
+	a := llmtest.New(
+		"openai",
+		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}},
+	)
+	b := llmtest.New(
+		"openai",
+		llmtest.Step{Model: "m1", Response: text("ok")},
+		llmtest.Step{Model: "m1", Response: text("ok")},
+	)
+	res := &resolver{
+		bindings: []llm.Binding{
+			{Target: target("u1/m1"), Provider: a},
+			{Target: target("u2/m1"), Provider: b},
+		},
+	}
 	f := newResolvingFixture(res)
 
 	client := f.router.Use(chatUse)
@@ -519,9 +582,19 @@ func (r *recordingResolver) Record(_ context.Context, a llm.Attempt) {
 func TestClientUseRecords(t *testing.T) {
 	t.Parallel()
 
-	a := llmtest.New("openai", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}})
+	a := llmtest.New(
+		"openai",
+		llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: 30 * time.Second}},
+	)
 	b := llmtest.New("openai", llmtest.Step{Model: "m1", Response: text("ok")})
-	res := &recordingResolver{resolver: resolver{bindings: []llm.Binding{{Target: target("u1/m1"), Provider: a}, {Target: target("u2/m1"), Provider: b}}}}
+	res := &recordingResolver{
+		resolver: resolver{
+			bindings: []llm.Binding{
+				{Target: target("u1/m1"), Provider: a},
+				{Target: target("u2/m1"), Provider: b},
+			},
+		},
+	}
 
 	f := newResolvingFixture(res)
 	if _, err := f.router.Use(chatUse).Generate(context.Background(), prompt()); err != nil {
@@ -529,15 +602,29 @@ func TestClientUseRecords(t *testing.T) {
 	}
 
 	want := []llm.Attempt{
-		{Use: "test.chat", Target: target("u1/m1"), Outcome: "quota", CooldownUntil: start.Add(30 * time.Second)},
-		{Use: "test.chat", Target: target("u2/m1"), Outcome: "ok", Usage: llm.Usage{InputTokens: 3, OutputTokens: 5}},
+		{
+			Use:           "test.chat",
+			Target:        target("u1/m1"),
+			Outcome:       "quota",
+			CooldownUntil: start.Add(30 * time.Second),
+		},
+		{
+			Use:     "test.chat",
+			Target:  target("u2/m1"),
+			Outcome: "ok",
+			Usage:   llm.Usage{InputTokens: 3, OutputTokens: 5},
+		},
 	}
 	if !slices.Equal(res.attempts, want) {
 		t.Fatalf("attempts = %+v\nwant       %+v", res.attempts, want)
 	}
 
-	fixed := newResolvingFixture(res, llmtest.New("c", llmtest.Step{Model: "m", Response: text("ok")}))
-	if _, err := fixed.router.Client(target("c/m")).Generate(context.Background(), prompt()); err != nil {
+	fixed := newResolvingFixture(
+		res,
+		llmtest.New("c", llmtest.Step{Model: "m", Response: text("ok")}),
+	)
+	if _, err := fixed.router.Client(target("c/m")).
+		Generate(context.Background(), prompt()); err != nil {
 		t.Fatalf("fixed chain: %v", err)
 	}
 
@@ -573,7 +660,13 @@ func TestClientPinCooling(t *testing.T) {
 	f := newFixture(a, b)
 
 	client := f.router.Client(target("a/m1"))
-	if _, err := client.Generate(context.Background(), prompt()); !errors.Is(err, llm.ErrExhausted) {
+	if _, err := client.Generate(
+		context.Background(),
+		prompt(),
+	); !errors.Is(
+		err,
+		llm.ErrExhausted,
+	) {
 		t.Fatalf("first err = %v, want ErrExhausted", err)
 	}
 
@@ -635,7 +728,12 @@ func TestExhaustedTransient(t *testing.T) {
 	t.Run("quota", func(t *testing.T) {
 		t.Parallel()
 
-		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}}))
+		f := newFixture(
+			llmtest.New(
+				"a",
+				llmtest.Step{Model: "m1", Err: &llm.QuotaError{RetryAfter: time.Minute}},
+			),
+		)
 
 		_, err := f.router.Client(target("a/m1")).Generate(context.Background(), prompt())
 		if ex := exhausted(t, err); ex.Transient {
@@ -646,7 +744,11 @@ func TestExhaustedTransient(t *testing.T) {
 		t.Parallel()
 
 		a := llmtest.New("a", llmtest.Step{Model: "m1", Err: &llm.QuotaError{}})
-		b := llmtest.New("b", llmtest.Step{Model: "m1", Response: text("ok")}, llmtest.Step{Model: "m1", Err: transient})
+		b := llmtest.New(
+			"b",
+			llmtest.Step{Model: "m1", Response: text("ok")},
+			llmtest.Step{Model: "m1", Err: transient},
+		)
 		f := newFixture(a, b)
 
 		c := f.router.Client(target("a/m1"), target("b/m1"))
@@ -687,7 +789,11 @@ func TestExhaustedTransient(t *testing.T) {
 
 		close(release)
 
-		if ex := exhausted(t, <-done); ex.Transient || !ex.RetryAt.Equal(start.Add(10*time.Second)) {
+		if ex := exhausted(
+			t,
+			<-done,
+		); ex.Transient ||
+			!ex.RetryAt.Equal(start.Add(10*time.Second)) {
 			t.Fatalf("ExhaustedError = %+v, want quota until +10s", ex)
 		}
 	})
@@ -695,13 +801,23 @@ func TestExhaustedTransient(t *testing.T) {
 	t.Run("transient falls through", func(t *testing.T) {
 		t.Parallel()
 
-		a := llmtest.New("a", llmtest.Step{Model: "m1", Err: transient}, llmtest.Step{Model: "m2", Response: text("ok")})
+		a := llmtest.New(
+			"a",
+			llmtest.Step{Model: "m1", Err: transient},
+			llmtest.Step{Model: "m2", Response: text("ok")},
+		)
 		b := llmtest.New("b")
 		f := newFixture(a, b)
 
-		resp, err := f.router.Client(target("a/m1"), target("a/m2"), target("b/m1")).Generate(context.Background(), prompt())
+		resp, err := f.router.Client(target("a/m1"), target("a/m2"), target("b/m1")).
+			Generate(context.Background(), prompt())
 		if err != nil || resp.Target != target("a/m2") || len(b.Requests()) != 0 {
-			t.Fatalf("resp = %+v, err = %v, third target calls = %d", resp.Target, err, len(b.Requests()))
+			t.Fatalf(
+				"resp = %+v, err = %v, third target calls = %d",
+				resp.Target,
+				err,
+				len(b.Requests()),
+			)
 		}
 	})
 }
@@ -711,7 +827,11 @@ type generateOnly struct{ p *llmtest.Provider }
 
 func (g generateOnly) Name() string { return g.p.Name() }
 
-func (g generateOnly) Generate(ctx context.Context, model string, req llm.Request) (llm.Response, error) {
+func (g generateOnly) Generate(
+	ctx context.Context,
+	model string,
+	req llm.Request,
+) (llm.Response, error) {
 	return g.p.Generate(ctx, model, req)
 }
 
@@ -724,10 +844,16 @@ func TestClientStream(t *testing.T) {
 	t.Run("streams the chunks", func(t *testing.T) {
 		t.Parallel()
 
-		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"Sal", "do"}, Response: text("Saldo")}))
+		f := newFixture(
+			llmtest.New(
+				"a",
+				llmtest.Step{Model: "m1", Chunks: []string{"Sal", "do"}, Response: text("Saldo")},
+			),
+		)
 		var got []string
 
-		resp, err := f.router.Client(target("a/m1")).Stream(context.Background(), prompt(), collect(&got))
+		resp, err := f.router.Client(target("a/m1")).
+			Stream(context.Background(), prompt(), collect(&got))
 		if err != nil || resp.Text() != "Saldo" || !slices.Equal(got, []string{"Sal", "do"}) {
 			t.Fatalf("resp = %q, err = %v, chunks = %v", resp.Text(), err, got)
 		}
@@ -736,10 +862,14 @@ func TestClientStream(t *testing.T) {
 		t.Parallel()
 
 		b := llmtest.New("b", llmtest.Step{Model: "m1", Response: text("ok")})
-		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"x"}, Err: transient}), b)
+		f := newFixture(
+			llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"x"}, Err: transient}),
+			b,
+		)
 		var got []string
 
-		_, err := f.router.Client(target("a/m1"), target("b/m1")).Stream(context.Background(), prompt(), collect(&got))
+		_, err := f.router.Client(target("a/m1"), target("b/m1")).
+			Stream(context.Background(), prompt(), collect(&got))
 		if !errors.Is(err, llm.ErrTransient) || len(b.Requests()) != 0 {
 			t.Fatalf("err = %v, second target calls = %d", err, len(b.Requests()))
 		}
@@ -747,11 +877,17 @@ func TestClientStream(t *testing.T) {
 	t.Run("a failure before the first text falls back", func(t *testing.T) {
 		t.Parallel()
 
-		f := newFixture(llmtest.New("a", llmtest.Step{Model: "m1", Err: transient}),
-			llmtest.New("b", llmtest.Step{Model: "m1", Chunks: []string{"ok"}, Response: text("ok")}))
+		f := newFixture(
+			llmtest.New("a", llmtest.Step{Model: "m1", Err: transient}),
+			llmtest.New(
+				"b",
+				llmtest.Step{Model: "m1", Chunks: []string{"ok"}, Response: text("ok")},
+			),
+		)
 		var got []string
 
-		resp, err := f.router.Client(target("a/m1"), target("b/m1")).Stream(context.Background(), prompt(), collect(&got))
+		resp, err := f.router.Client(target("a/m1"), target("b/m1")).
+			Stream(context.Background(), prompt(), collect(&got))
 		if err != nil || resp.Target != target("b/m1") || !slices.Equal(got, []string{"ok"}) {
 			t.Fatalf("resp = %v, err = %v, chunks = %v", resp.Target, err, got)
 		}
@@ -759,10 +895,18 @@ func TestClientStream(t *testing.T) {
 	t.Run("a provider without Stream generates", func(t *testing.T) {
 		t.Parallel()
 
-		f := newFixture(generateOnly{llmtest.New("a", llmtest.Step{Model: "m1", Chunks: []string{"x"}, Response: text("ok")})})
+		f := newFixture(
+			generateOnly{
+				llmtest.New(
+					"a",
+					llmtest.Step{Model: "m1", Chunks: []string{"x"}, Response: text("ok")},
+				),
+			},
+		)
 		var got []string
 
-		resp, err := f.router.Client(target("a/m1")).Stream(context.Background(), prompt(), collect(&got))
+		resp, err := f.router.Client(target("a/m1")).
+			Stream(context.Background(), prompt(), collect(&got))
 		if err != nil || resp.Text() != "ok" || len(got) != 0 {
 			t.Fatalf("resp = %q, err = %v, chunks = %v", resp.Text(), err, got)
 		}

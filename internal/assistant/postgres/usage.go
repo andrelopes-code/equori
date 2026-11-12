@@ -22,14 +22,27 @@ func (r *Repository) AddUsage(ctx context.Context, e domain.UsageEntry) error {
 	}
 
 	return r.q.AddUsage(ctx, AddUsageParams{
-		BooksID: e.BooksID, Day: e.Day, ProviderID: e.ProviderID, Model: e.Model, UseID: e.UseID,
-		Errors: bit(e.Failed), QuotaErrors: bit(e.Quota), InputTokens: e.InputTokens, OutputTokens: e.OutputTokens,
+		BooksID:    e.BooksID,
+		Day:        e.Day,
+		ProviderID: e.ProviderID,
+		Model:      e.Model,
+		UseID:      e.UseID,
+		Errors: bit(
+			e.Failed,
+		),
+		QuotaErrors:  bit(e.Quota),
+		InputTokens:  e.InputTokens,
+		OutputTokens: e.OutputTokens,
 		CoolingUntil: until,
 	})
 }
 
 // UsageSince sums the book's usage per provider and model from since to today, both inclusive.
-func (r *Repository) UsageSince(ctx context.Context, booksID int64, today, since time.Time) ([]domain.UsageSummary, error) {
+func (r *Repository) UsageSince(
+	ctx context.Context,
+	booksID int64,
+	today, since time.Time,
+) ([]domain.UsageSummary, error) {
 	rows, err := r.q.UsageSince(ctx, UsageSinceParams{BooksID: booksID, Today: today, Since: since})
 	if err != nil {
 		return nil, err
@@ -38,9 +51,14 @@ func (r *Repository) UsageSince(ctx context.Context, booksID int64, today, since
 	out := make([]domain.UsageSummary, len(rows))
 	for i, row := range rows {
 		out[i] = domain.UsageSummary{
-			ProviderID: row.ProviderID, Model: row.Model, TodayRequests: row.TodayRequests, TodayErrors: row.TodayErrors,
-			TodayTokens: row.TodayTokens, PeriodRequests: row.PeriodRequests, PeriodTokens: row.PeriodTokens,
-			CoolingUntil: row.CoolingUntil.UTC(),
+			ProviderID:     row.ProviderID,
+			Model:          row.Model,
+			TodayRequests:  row.TodayRequests,
+			TodayErrors:    row.TodayErrors,
+			TodayTokens:    row.TodayTokens,
+			PeriodRequests: row.PeriodRequests,
+			PeriodTokens:   row.PeriodTokens,
+			CoolingUntil:   row.CoolingUntil.UTC(),
 		}
 		if out[i].CoolingUntil.IsZero() {
 			out[i].CoolingUntil = time.Time{}
@@ -50,7 +68,11 @@ func (r *Repository) UsageSince(ctx context.Context, booksID int64, today, since
 	return out, nil
 }
 
-func (r *Repository) UsageByDay(ctx context.Context, booksID int64, from, to time.Time) ([]domain.UsageDay, error) {
+func (r *Repository) UsageByDay(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+) ([]domain.UsageDay, error) {
 	rows, err := r.q.UsageByDay(ctx, UsageByDayParams{BooksID: booksID, FromDate: from, ToDate: to})
 	if err != nil {
 		return nil, err
@@ -58,7 +80,14 @@ func (r *Repository) UsageByDay(ctx context.Context, booksID int64, from, to tim
 
 	out := make([]domain.UsageDay, len(rows))
 	for i, row := range rows {
-		out[i] = domain.UsageDay{Day: row.Day, ProviderID: row.ProviderID, Model: row.Model, Requests: row.Requests, Errors: row.Errors, Tokens: row.Tokens}
+		out[i] = domain.UsageDay{
+			Day:        row.Day,
+			ProviderID: row.ProviderID,
+			Model:      row.Model,
+			Requests:   row.Requests,
+			Errors:     row.Errors,
+			Tokens:     row.Tokens,
+		}
 	}
 
 	return out, nil
@@ -72,7 +101,11 @@ func (r *Repository) Limits(ctx context.Context, booksID int64) ([]domain.Limit,
 
 	out := make([]domain.Limit, len(rows))
 	for i, row := range rows {
-		out[i] = domain.Limit{ProviderID: row.ProviderID, Model: row.Model, TokensPerDay: row.TokensPerDay}
+		out[i] = domain.Limit{
+			ProviderID:   row.ProviderID,
+			Model:        row.Model,
+			TokensPerDay: row.TokensPerDay,
+		}
 		if row.RequestsPerDay != nil {
 			n := int64(*row.RequestsPerDay)
 			out[i].RequestsPerDay = &n
@@ -85,7 +118,10 @@ func (r *Repository) Limits(ctx context.Context, booksID int64) ([]domain.Limit,
 // SetLimit stores l, or removes the stored limit when l has neither quota.
 func (r *Repository) SetLimit(ctx context.Context, booksID int64, l domain.Limit) error {
 	if l.Cleared() {
-		return r.q.DeleteUsageLimit(ctx, DeleteUsageLimitParams{BooksID: booksID, ProviderID: l.ProviderID, Model: l.Model})
+		return r.q.DeleteUsageLimit(
+			ctx,
+			DeleteUsageLimitParams{BooksID: booksID, ProviderID: l.ProviderID, Model: l.Model},
+		)
 	}
 
 	var requests *int32
@@ -95,6 +131,10 @@ func (r *Repository) SetLimit(ctx context.Context, booksID int64, l domain.Limit
 	}
 
 	return r.q.SetUsageLimit(ctx, SetUsageLimitParams{
-		BooksID: booksID, ProviderID: l.ProviderID, Model: l.Model, RequestsPerDay: requests, TokensPerDay: l.TokensPerDay,
+		BooksID:        booksID,
+		ProviderID:     l.ProviderID,
+		Model:          l.Model,
+		RequestsPerDay: requests,
+		TokensPerDay:   l.TokensPerDay,
 	})
 }

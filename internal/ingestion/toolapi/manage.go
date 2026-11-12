@@ -14,7 +14,15 @@ import (
 type manageImportsAction string
 
 func (manageImportsAction) Values() []string {
-	return []string{"sync", "map_account", "resolve_record", "reopen_record", "undo_decision", "delete_connection", "delete_integration"}
+	return []string{
+		"sync",
+		"map_account",
+		"resolve_record",
+		"reopen_record",
+		"undo_decision",
+		"delete_connection",
+		"delete_integration",
+	}
 }
 
 type resolution string
@@ -24,16 +32,16 @@ func (resolution) Values() []string {
 }
 
 type manageImportsIn struct {
-	Action            manageImportsAction `json:"action" jsonschema:"operation to propose"`
-	ConnectionID      string              `json:"connection_id,omitzero" jsonschema:"for sync, map_account and delete_connection: connection from get_imports"`
+	Action            manageImportsAction `json:"action"                       jsonschema:"operation to propose"`
+	ConnectionID      string              `json:"connection_id,omitzero"       jsonschema:"for sync, map_account and delete_connection: connection from get_imports"`
 	ExternalAccountID string              `json:"external_account_id,omitzero" jsonschema:"for map_account: bank account of the connection, from get_imports"`
-	AccountID         string              `json:"account_id,omitzero" jsonschema:"for map_account: ledger account receiving the bank account's lines; absent with ignore"`
-	Ignore            bool                `json:"ignore,omitzero" jsonschema:"for map_account: stop importing this bank account"`
-	SyncFrom          tool.Date           `json:"sync_from,omitzero" jsonschema:"for map_account: first date imported"`
-	RecordID          string              `json:"record_id,omitzero" jsonschema:"for resolve_record, reopen_record and undo_decision: record from get_imports"`
-	Resolution        resolution          `json:"resolution,omitzero" jsonschema:"for resolve_record: match links it to transaction_id, create records a new transaction, discard drops it"`
-	TransactionID     string              `json:"transaction_id,omitzero" jsonschema:"for resolve_record with match: transaction from search_transactions"`
-	IntegrationID     string              `json:"integration_id,omitzero" jsonschema:"for delete_integration: integration from get_imports"`
+	AccountID         string              `json:"account_id,omitzero"          jsonschema:"for map_account: ledger account receiving the bank account's lines; absent with ignore"`
+	Ignore            bool                `json:"ignore,omitzero"              jsonschema:"for map_account: stop importing this bank account"`
+	SyncFrom          tool.Date           `json:"sync_from,omitzero"           jsonschema:"for map_account: first date imported"`
+	RecordID          string              `json:"record_id,omitzero"           jsonschema:"for resolve_record, reopen_record and undo_decision: record from get_imports"`
+	Resolution        resolution          `json:"resolution,omitzero"          jsonschema:"for resolve_record: match links it to transaction_id, create records a new transaction, discard drops it"`
+	TransactionID     string              `json:"transaction_id,omitzero"      jsonschema:"for resolve_record with match: transaction from search_transactions"`
+	IntegrationID     string              `json:"integration_id,omitzero"      jsonschema:"for delete_integration: integration from get_imports"`
 }
 
 type manageImportsOut struct {
@@ -49,7 +57,9 @@ type manageImportsOut struct {
 
 // resolvedState is the state a resolution leaves the record in.
 var resolvedState = map[resolution]domain.RecordState{
-	app.ActionMatch: domain.StateMatched, app.ActionCreate: domain.StateCreated, app.ActionDiscard: domain.StateDiscarded,
+	app.ActionMatch:   domain.StateMatched,
+	app.ActionCreate:  domain.StateCreated,
+	app.ActionDiscard: domain.StateDiscarded,
 }
 
 // importsAction holds the parsed identifiers of a manage_imports call.
@@ -59,9 +69,23 @@ type importsAction struct {
 
 func parseImportsAction(in manageImportsIn) (importsAction, error) {
 	fields := []field{
-		{"connection_id", in.ConnectionID != ""}, {"external_account_id", in.ExternalAccountID != ""},
-		{"account_id", in.AccountID != ""}, {"ignore", in.Ignore}, {"sync_from", !in.SyncFrom.IsZero()},
-		{"record_id", in.RecordID != ""}, {"resolution", in.Resolution != ""}, {"transaction_id", in.TransactionID != ""},
+		{
+			"connection_id",
+			in.ConnectionID != "",
+		},
+		{"external_account_id", in.ExternalAccountID != ""},
+		{
+			"account_id",
+			in.AccountID != "",
+		},
+		{"ignore", in.Ignore},
+		{"sync_from", !in.SyncFrom.IsZero()},
+		{
+			"record_id",
+			in.RecordID != "",
+		},
+		{"resolution", in.Resolution != ""},
+		{"transaction_id", in.TransactionID != ""},
 		{"integration_id", in.IntegrationID != ""},
 	}
 	name := string(in.Action)
@@ -209,7 +233,11 @@ func applySync(
 		return manageImportsOut{}, err
 	}
 
-	out := manageImportsOut{ConnectionID: c.ID.String(), State: string(c.State), Batches: []batchView{}}
+	out := manageImportsOut{
+		ConnectionID: c.ID.String(),
+		State:        string(c.State),
+		Batches:      []batchView{},
+	}
 	for _, b := range batches {
 		out.Batches = append(out.Batches, toBatchView(b, named))
 	}

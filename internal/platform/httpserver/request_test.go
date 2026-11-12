@@ -16,9 +16,9 @@ import (
 )
 
 type listParams struct {
-	Date  openapi_types.Date `form:"date" json:"date"`
+	Date  openapi_types.Date `form:"date"            json:"date"`
 	Limit *int               `form:"limit,omitempty" json:"limit,omitempty"`
-	Kind  *string            `form:"kind,omitempty" json:"kind,omitempty"`
+	Kind  *string            `form:"kind,omitempty"  json:"kind,omitempty"`
 }
 
 func TestQuery(t *testing.T) {
@@ -59,7 +59,11 @@ func TestQuery(t *testing.T) {
 			},
 		},
 		{name: "rejects a missing required value", url: "/x?limit=5", wantErr: true},
-		{name: "rejects a value of the wrong type", url: "/x?date=2026-11-20&limit=many", wantErr: true},
+		{
+			name:    "rejects a value of the wrong type",
+			url:     "/x?date=2026-11-20&limit=many",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -93,7 +97,12 @@ func TestPathValues(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/things/"+id.String()+"/years/2026", http.NoBody)
+	req := httptest.NewRequestWithContext(
+		t.Context(),
+		http.MethodGet,
+		"/things/"+id.String()+"/years/2026",
+		http.NoBody,
+	)
 	mux.ServeHTTP(httptest.NewRecorder(), req)
 
 	bad := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/x", http.NoBody)

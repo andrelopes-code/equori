@@ -10,7 +10,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-func planChange(ctx context.Context, svc *app.Service, booksID int64, in changeTransactionIn) (changePlan, error) {
+func planChange(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in changeTransactionIn,
+) (changePlan, error) {
 	var p changePlan
 
 	id, err := requiredID(in.TransactionID, "transaction_id")
@@ -47,7 +52,14 @@ func planCorrect(
 	p changePlan,
 ) (changePlan, error) {
 	used := []string{
-		"reason", "date", "description", "payee_id", "tags", "amount", "from_account_id", "to_account_id",
+		"reason",
+		"date",
+		"description",
+		"payee_id",
+		"tags",
+		"amount",
+		"from_account_id",
+		"to_account_id",
 	}
 	if err := unusedFields("correct", given, used...); err != nil {
 		return p, err

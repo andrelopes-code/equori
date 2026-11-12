@@ -16,9 +16,9 @@ type getHelpIn struct {
 }
 
 type helpScreen struct {
-	Path   string   `json:"path" jsonschema:"route of the screen; a $name segment stands for an ID"`
+	Path   string   `json:"path"   jsonschema:"route of the screen; a $name segment stands for an ID"`
 	Screen string   `json:"screen" jsonschema:"English name of the screen"`
-	Tasks  []string `json:"tasks" jsonschema:"what is done there"`
+	Tasks  []string `json:"tasks"  jsonschema:"what is done there"`
 }
 
 type getHelpOut struct {
@@ -43,7 +43,10 @@ func getHelp(screens []guide.Screen) tool.Tool {
 		for _, s := range screens {
 			for _, topic := range s.Topics {
 				if topic == string(in.Topic) {
-					out.Screens = append(out.Screens, helpScreen{Path: s.Path, Screen: s.Screen, Tasks: s.Tasks})
+					out.Screens = append(
+						out.Screens,
+						helpScreen{Path: s.Path, Screen: s.Screen, Tasks: s.Tasks},
+					)
 					break
 				}
 			}

@@ -57,7 +57,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteRule))
 	mux.HandleFunc("GET "+BaseURL+"/payee-aliases",
 		httpserver.Handle(s.errs, http.StatusOK, s.listPayeeAliases))
-	mux.HandleFunc("POST "+BaseURL+"/payee-aliases", httpserver.HandleCreated(s.errs, s.createPayeeAlias))
+	mux.HandleFunc(
+		"POST "+BaseURL+"/payee-aliases",
+		httpserver.HandleCreated(s.errs, s.createPayeeAlias),
+	)
 	mux.HandleFunc("GET "+BaseURL+"/payee-aliases/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getPayeeAlias))
 	mux.HandleFunc("PUT "+BaseURL+"/payee-aliases/{id}",

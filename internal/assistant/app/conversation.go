@@ -10,7 +10,12 @@ import (
 
 // ConversationPage returns up to limit conversations after the given position, most recently updated first,
 // and the position of the next page when there is one.
-func (s *Service) ConversationPage(ctx context.Context, booksID, memberID int64, after *ConversationKey, limit int) ([]domain.Conversation, *ConversationKey, error) {
+func (s *Service) ConversationPage(
+	ctx context.Context,
+	booksID, memberID int64,
+	after *ConversationKey,
+	limit int,
+) ([]domain.Conversation, *ConversationKey, error) {
 	rows, err := s.repo.Conversations(ctx, booksID, memberID, after, limit+1)
 	if err != nil {
 		return nil, nil, err
@@ -33,7 +38,11 @@ type ConversationDetail struct {
 	Proposals    []domain.Proposal
 }
 
-func (s *Service) Conversation(ctx context.Context, booksID, memberID int64, id uuid.UUID) (ConversationDetail, error) {
+func (s *Service) Conversation(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (ConversationDetail, error) {
 	c, err := s.repo.Conversation(ctx, booksID, memberID, id)
 	if err != nil {
 		return ConversationDetail{}, err
@@ -52,7 +61,11 @@ func (s *Service) Conversation(ctx context.Context, booksID, memberID int64, id 
 	return ConversationDetail{Conversation: c, Messages: msgs, Proposals: ps}, nil
 }
 
-func (s *Service) DeleteConversation(ctx context.Context, booksID, memberID int64, id uuid.UUID) error {
+func (s *Service) DeleteConversation(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) error {
 	return s.repo.DeleteConversation(ctx, booksID, memberID, id)
 }
 

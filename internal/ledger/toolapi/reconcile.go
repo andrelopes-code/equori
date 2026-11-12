@@ -21,10 +21,10 @@ func (reconcileAccountResolution) Values() []string {
 }
 
 type reconcileAccountIn struct {
-	AccountID  string                     `json:"account_id" jsonschema:"account from list_accounts"`
-	Action     reconcileAccountAction     `json:"action" jsonschema:"operation to propose"`
-	Date       tool.Date                  `json:"date,omitzero" jsonschema:"for record_balance: date of the reported balance; for unlock: first date unlocked"`
-	Amount     string                     `json:"amount,omitzero" jsonschema:"for record_balance: decimal balance the institution reports, negative for a debt"`
+	AccountID  string                     `json:"account_id"          jsonschema:"account from list_accounts"`
+	Action     reconcileAccountAction     `json:"action"              jsonschema:"operation to propose"`
+	Date       tool.Date                  `json:"date,omitzero"       jsonschema:"for record_balance: date of the reported balance; for unlock: first date unlocked"`
+	Amount     string                     `json:"amount,omitzero"     jsonschema:"for record_balance: decimal balance the institution reports, negative for a debt"`
 	Resolution reconcileAccountResolution `json:"resolution,omitzero" jsonschema:"for resolve_difference: adjustment posts the difference to Adjustments, yield to Yield; transactions_added checks again after the user recorded the missing transactions"`
 }
 
@@ -55,7 +55,12 @@ func reconcileAccount(svc *app.Service) tool.Tool {
 	})
 }
 
-func planReconcile(ctx context.Context, svc *app.Service, booksID int64, in reconcileAccountIn) (tool.Preview, func() (reconcileAccountOut, error), error) {
+func planReconcile(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in reconcileAccountIn,
+) (tool.Preview, func() (reconcileAccountOut, error), error) {
 	action := string(in.Action)
 	pv := tool.Preview{Action: "reconcile_account"}
 
@@ -64,7 +69,12 @@ func planReconcile(ctx context.Context, svc *app.Service, booksID int64, in reco
 		return pv, nil, err
 	}
 
-	given := map[string]bool{"account_id": true, "date": !in.Date.IsZero(), "amount": in.Amount != "", "resolution": in.Resolution != ""}
+	given := map[string]bool{
+		"account_id": true,
+		"date":       !in.Date.IsZero(),
+		"amount":     in.Amount != "",
+		"resolution": in.Resolution != "",
+	}
 
 	var required []string
 	switch in.Action {
@@ -114,7 +124,10 @@ func planRecordBalance(
 		return pv, nil, err
 	}
 
-	pv.Changes = []tool.Change{{Field: "amount", After: tool.MoneyValue(amount)}, {Field: "date", After: tool.DateValue(in.Date.Time)}}
+	pv.Changes = []tool.Change{
+		{Field: "amount", After: tool.MoneyValue(amount)},
+		{Field: "date", After: tool.DateValue(in.Date.Time)},
+	}
 
 	return pv, func() (reconcileAccountOut, error) {
 		res, err := svc.AssertBalance(ctx, booksID, a.ID, in.Date.Time, amount, app.SourceManual)
@@ -143,11 +156,20 @@ func planResolveDifference(
 	pv.Changes = []tool.Change{
 		{Field: "amount", After: tool.MoneyValue(st.Open.Difference)},
 		{Field: "date", After: tool.DateValue(st.Open.Date)},
-		{Field: "status", Before: tool.TextValue("open difference"), After: tool.TextValue(string(in.Resolution))},
+		{
+			Field:  "status",
+			Before: tool.TextValue("open difference"),
+			After:  tool.TextValue(string(in.Resolution)),
+		},
 	}
 
 	return pv, func() (reconcileAccountOut, error) {
-		res, err := svc.ResolveAssertion(ctx, booksID, st.Open.AssertionID, domain.Resolution(in.Resolution))
+		res, err := svc.ResolveAssertion(
+			ctx,
+			booksID,
+			st.Open.AssertionID,
+			domain.Resolution(in.Resolution),
+		)
 		return assertionOut(a.ID.String(), res), err
 	}, nil
 }
@@ -160,14 +182,28 @@ func planUnlock(
 	a domain.Account,
 	pv tool.Preview,
 ) (tool.Preview, func() (reconcileAccountOut, error), error) {
-	pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(in.Date.Time)}, {Field: "status", Before: tool.TextValue("reconciled"), After: tool.TextValue("unlocked")}}
+	pv.Changes = []tool.Change{
+		{Field: "date", After: tool.DateValue(in.Date.Time)},
+		{Field: "status", Before: tool.TextValue("reconciled"), After: tool.TextValue("unlocked")},
+	}
 
 	return pv, func() (reconcileAccountOut, error) {
-		return reconcileAccountOut{AccountID: a.ID.String()}, svc.Unlock(ctx, booksID, a.ID, in.Date.Time)
+		return reconcileAccountOut{
+			AccountID: a.ID.String(),
+		}, svc.Unlock(
+			ctx,
+			booksID,
+			a.ID,
+			in.Date.Time,
+		)
 	}, nil
 }
 
 func assertionOut(accountID string, res app.AssertionResult) reconcileAccountOut {
 	d := tool.MoneyOf(res.Difference)
-	return reconcileAccountOut{AccountID: accountID, Difference: d, Resolution: string(res.Resolution)}
+	return reconcileAccountOut{
+		AccountID:  accountID,
+		Difference: d,
+		Resolution: string(res.Resolution),
+	}
 }

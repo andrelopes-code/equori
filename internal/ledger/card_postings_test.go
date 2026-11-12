@@ -40,7 +40,13 @@ func TestCardPurchaseStatements(t *testing.T) {
 
 		got := h.Transaction(id).Postings[0]
 		if got.Statement != tt.want || got.CardRole != "charge" {
-			t.Errorf("purchase on %s: statement %q role %q, want %s charge", tt.date, got.Statement, got.CardRole, tt.want)
+			t.Errorf(
+				"purchase on %s: statement %q role %q, want %s charge",
+				tt.date,
+				got.Statement,
+				got.CardRole,
+				tt.want,
+			)
 		}
 
 		if p := h.Transaction(id).Postings[1]; p.Statement != "" || p.CardRole != "" {
@@ -55,7 +61,11 @@ func TestExplicitStatementOverride(t *testing.T) {
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
 
-	id := h.Record("2026-10-14", cardPosting(card, -1000, "2027-01", ""), apitest.Posting(food, 1000))
+	id := h.Record(
+		"2026-10-14",
+		cardPosting(card, -1000, "2027-01", ""),
+		apitest.Posting(food, 1000),
+	)
 	if got := h.Transaction(id).Postings[0].Statement; got != "2027-01" {
 		t.Fatalf("statement = %q, want 2027-01", got)
 	}
@@ -79,7 +89,11 @@ func TestCardRoleDefaults(t *testing.T) {
 	}
 
 	if pay.CardRole != "payment" || pay.Statement != "2026-12" {
-		t.Fatalf("payment role %q statement %q; want payment on the statement of its cycle 2026-12 (A89)", pay.CardRole, pay.Statement)
+		t.Fatalf(
+			"payment role %q statement %q; want payment on the statement of its cycle 2026-12 (A89)",
+			pay.CardRole,
+			pay.Statement,
+		)
 	}
 }
 
@@ -88,8 +102,16 @@ func TestCardRoleSignMustMatch(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", cardPosting(card, -100, "", "payment"), apitest.Posting(food, 100))),
-		http.StatusUnprocessableEntity, "validation_failed", "postings[0].card_role")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx("2026-10-14", cardPosting(card, -100, "", "payment"), apitest.Posting(food, 100)),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"postings[0].card_role",
+	)
 }
 
 func TestStatementOnNonCardPostingIs422(t *testing.T) {
@@ -97,8 +119,20 @@ func TestStatementOnNonCardPostingIs422(t *testing.T) {
 	h := apitest.New(t)
 	checking := h.Account("Nubank", "asset", "checking", nil)
 	food := h.Account("Food", "expense", "", nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", cardPosting(checking, -100, "2026-11", ""), apitest.Posting(food, 100))),
-		http.StatusUnprocessableEntity, "validation_failed", "postings[0].statement")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx(
+				"2026-10-14",
+				cardPosting(checking, -100, "2026-11", ""),
+				apitest.Posting(food, 100),
+			),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"postings[0].statement",
+	)
 }
 
 func TestCardWithoutRuleIs422(t *testing.T) {
@@ -106,8 +140,16 @@ func TestCardWithoutRuleIs422(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Account("No rule", "liability", "credit_card", nil)
 	food := h.Account("Food", "expense", "", nil)
-	h.ExpectProblem(h.Do(http.MethodPost, "/api/v1/transactions", tx("2026-10-14", apitest.Posting(card, -100), apitest.Posting(food, 100))),
-		http.StatusUnprocessableEntity, "validation_failed", "postings[0].account_id")
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPost,
+			"/api/v1/transactions",
+			tx("2026-10-14", apitest.Posting(card, -100), apitest.Posting(food, 100)),
+		),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"postings[0].account_id",
+	)
 }
 
 func TestCorrectingDateMovesStatement(t *testing.T) {
@@ -131,8 +173,16 @@ func TestPurchaseConsumesLimit(t *testing.T) {
 	h := apitest.New(t)
 	card := h.Card("Itaú Visa", 3, 10, "next")
 	food := h.Account("Food", "expense", "", nil)
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+card+"/credit-limits",
-		map[string]any{"effective_from": "2026-01-01", "amount": apitest.BRL(1000000)}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+card+"/credit-limits",
+		map[string]any{
+			"effective_from": "2026-01-01",
+			"amount":         apitest.BRL(1000000),
+		},
+		http.StatusCreated,
+		nil,
+	)
 	h.Record("2026-10-14", apitest.Posting(card, -23000), apitest.Posting(food, 23000))
 	var acc struct {
 		Card struct {

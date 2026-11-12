@@ -23,7 +23,11 @@ type Invitation struct {
 }
 
 // NewInvitation returns the token, shown once, and the invitation that stores its hash (HA24).
-func NewInvitation(booksID, invitedBy int64, email, role string, now time.Time) (token string, inv Invitation) {
+func NewInvitation(
+	booksID, invitedBy int64,
+	email, role string,
+	now time.Time,
+) (token string, inv Invitation) {
 	token = newToken()
 
 	return token, Invitation{
@@ -52,7 +56,11 @@ type AccountInvitation struct {
 }
 
 // NewAccountInvitation returns the token, shown once, and the invitation that stores its hash.
-func NewAccountInvitation(invitedBy int64, email, region, baseCurrency string, now time.Time) (token string, inv AccountInvitation) {
+func NewAccountInvitation(
+	invitedBy int64,
+	email, region, baseCurrency string,
+	now time.Time,
+) (token string, inv AccountInvitation) {
 	token = newToken()
 
 	return token, AccountInvitation{

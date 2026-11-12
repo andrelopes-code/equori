@@ -42,7 +42,10 @@ func (t Transaction) Transfer(
 
 	for i, p := range kept {
 		if p.AccountID == a.ID {
-			return Transaction{}, invalid("account_id", "must differ from the accounts of the transaction")
+			return Transaction{}, invalid(
+				"account_id",
+				"must differ from the accounts of the transaction",
+			)
 		}
 
 		if p.CardRole == RoleCredit {
@@ -75,7 +78,10 @@ func replaceablePostings(
 		}
 
 		if p.Weight != p.Amount || (instrument != "" && p.Amount.Currency() != instrument) {
-			return nil, 0, "", invalid("account_id", "category postings in several currencies cannot be transferred")
+			return nil, 0, "", invalid(
+				"account_id",
+				"category postings in several currencies cannot be transferred",
+			)
 		}
 
 		instrument = p.Amount.Currency()
@@ -96,7 +102,11 @@ func checkTransferAccount(a Account, t Transaction, instrument money.Currency) e
 	case !a.IsBalance():
 		return invalid("account_id", "must be an asset or liability account")
 	case !a.IsOpenOn(t.Date):
-		return &FieldError{Field: "account_id", Message: "account is not open on the transaction date", Err: ErrAccountClosed}
+		return &FieldError{
+			Field:   "account_id",
+			Message: "account is not open on the transaction date",
+			Err:     ErrAccountClosed,
+		}
 	case a.Instrument != instrument:
 		return invalid("account_id", "must be in the currency "+string(instrument))
 	}
@@ -122,7 +132,10 @@ func (t Transaction) Unpair(
 		return Transaction{}, ErrVersionConflict
 	}
 
-	at := slices.IndexFunc(t.Postings, func(p Posting) bool { return link != uuid.Nil && p.ExternalRecordID == link })
+	at := slices.IndexFunc(
+		t.Postings,
+		func(p Posting) bool { return link != uuid.Nil && p.ExternalRecordID == link },
+	)
 	if at < 0 {
 		return Transaction{}, invalid("record_id", "confirms no posting")
 	}
@@ -131,8 +144,14 @@ func (t Transaction) Unpair(
 		return Transaction{}, ErrReconciled
 	}
 
-	if slices.ContainsFunc(before.Postings, func(p Posting) bool { return p.CardRole == RoleCredit }) {
-		return Transaction{}, invalid("record_id", "a card credit paired as a payment does not return")
+	if slices.ContainsFunc(
+		before.Postings,
+		func(p Posting) bool { return p.CardRole == RoleCredit },
+	) {
+		return Transaction{}, invalid(
+			"record_id",
+			"a card credit paired as a payment does not return",
+		)
 	}
 
 	postings := slices.Delete(slices.Clone(t.Postings), at, at+1)

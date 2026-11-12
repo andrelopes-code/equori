@@ -53,7 +53,12 @@ func (s *seeder) feed(d time.Time, via, payee string, cents int64, tags []string
 
 	s.feedSeq++
 	s.pending[via] = append(s.pending[via], ofxLine{
-		date: compact(iso(d)), amount: reais(-cents), fitid: fmt.Sprintf("%s%s%05d", feedPrefix[via], compact(iso(d)), s.feedSeq), name: name,
+		date: compact(
+			iso(d),
+		),
+		amount: reais(-cents),
+		fitid:  fmt.Sprintf("%s%s%05d", feedPrefix[via], compact(iso(d)), s.feedSeq),
+		name:   name,
 	})
 	s.bal[s.id(via)] -= cents
 
@@ -76,7 +81,12 @@ func (s *seeder) flushFeed(key string) {
 		content = bankOFX(from, to, noBalance, lines)
 	}
 
-	s.upload("/accounts/"+s.id(key)+"/imports", map[string]string{"format": "ofx"}, fmt.Sprintf("%s-%s.ofx", key, to), content)
+	s.upload(
+		"/accounts/"+s.id(key)+"/imports",
+		map[string]string{"format": "ofx"},
+		fmt.Sprintf("%s-%s.ofx", key, to),
+		content,
+	)
 }
 
 // flushFeeds imports what every account still holds.

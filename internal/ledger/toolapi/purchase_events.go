@@ -25,11 +25,17 @@ func planRefund(
 		return pv, nil, err
 	}
 
-	pv.Changes = append(pv.Changes, tool.Change{Field: "amount", After: tool.MoneyValue(amount)}, purchaseDateChange(ev))
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "amount", After: tool.MoneyValue(amount)},
+		purchaseDateChange(ev),
+	)
 	pv.Changes = withStatementChange(pv.Changes, ev.statement)
 
 	return pv, func() (handleCardPurchaseOut, error) {
-		return createdPurchase(svc.RefundPurchase(ctx, booksID, ev.tx.ID, ev.date, amount, ev.statement))
+		return createdPurchase(
+			svc.RefundPurchase(ctx, booksID, ev.tx.ID, ev.date, amount, ev.statement),
+		)
 	}, nil
 }
 
@@ -40,7 +46,11 @@ func planOpenDispute(
 	ev purchaseEvent,
 	pv tool.Preview,
 ) (tool.Preview, func() (handleCardPurchaseOut, error), error) {
-	pv.Changes = append(pv.Changes, tool.Change{Field: "status", After: tool.TextValue("disputed")}, purchaseDateChange(ev))
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "status", After: tool.TextValue("disputed")},
+		purchaseDateChange(ev),
+	)
 
 	return pv, func() (handleCardPurchaseOut, error) {
 		_, err := svc.OpenDispute(ctx, booksID, ev.tx.ID, ev.date)
@@ -80,7 +90,14 @@ func planResolveDispute(
 	pv.Changes = withStatementChange(pv.Changes, ev.statement)
 
 	return pv, func() (handleCardPurchaseOut, error) {
-		d, err := svc.ResolveDispute(ctx, booksID, open.ID, ev.date, string(in.Outcome), ev.statement)
+		d, err := svc.ResolveDispute(
+			ctx,
+			booksID,
+			open.ID,
+			ev.date,
+			string(in.Outcome),
+			ev.statement,
+		)
 		if d.RefundTransactionID != uuid.Nil {
 			return handleCardPurchaseOut{TransactionID: d.RefundTransactionID.String()}, err
 		}
@@ -96,7 +113,11 @@ func planCancelInstallments(
 	ev purchaseEvent,
 	pv tool.Preview,
 ) (tool.Preview, func() (handleCardPurchaseOut, error), error) {
-	pv.Changes = append(pv.Changes, tool.Change{Field: "status", After: tool.TextValue("cancelled")}, purchaseDateChange(ev))
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "status", After: tool.TextValue("cancelled")},
+		purchaseDateChange(ev),
+	)
 	pv.Changes = withStatementChange(pv.Changes, ev.statement)
 
 	return pv, func() (handleCardPurchaseOut, error) {
@@ -146,14 +167,24 @@ func withStatementChange(changes []tool.Change, statement *domain.ReferenceMonth
 		return changes
 	}
 
-	return append(changes, tool.Change{Field: "statement", After: tool.TextValue(statement.String())})
+	return append(
+		changes,
+		tool.Change{Field: "statement", After: tool.TextValue(statement.String())},
+	)
 }
 
 func createdPurchase(t domain.Transaction, err error) (handleCardPurchaseOut, error) {
 	return handleCardPurchaseOut{TransactionID: t.ID.String()}, err
 }
 
-func anticipationTarget(ctx context.Context, svc *app.Service, booksID int64, card uuid.UUID, date time.Time, given *domain.ReferenceMonth) (domain.ReferenceMonth, error) {
+func anticipationTarget(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	card uuid.UUID,
+	date time.Time,
+	given *domain.ReferenceMonth,
+) (domain.ReferenceMonth, error) {
 	if given != nil {
 		return *given, nil
 	}
@@ -162,7 +193,13 @@ func anticipationTarget(ctx context.Context, svc *app.Service, booksID int64, ca
 }
 
 // purchaseIdentity names the purchase a card event acts on, as record_transaction names a purchase.
-func purchaseIdentity(ctx context.Context, svc *app.Service, booksID int64, t domain.Transaction, card uuid.UUID) ([]tool.Change, error) {
+func purchaseIdentity(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	t domain.Transaction,
+	card uuid.UUID,
+) ([]tool.Change, error) {
 	account, err := svc.Account(ctx, booksID, card)
 	if err != nil {
 		return nil, err
@@ -176,7 +213,10 @@ func purchaseIdentity(ctx context.Context, svc *app.Service, booksID int64, t do
 			return nil, err
 		}
 
-		changes = append(changes, tool.Change{Field: "payee", After: tool.TextValue(names[t.PayeeID])})
+		changes = append(
+			changes,
+			tool.Change{Field: "payee", After: tool.TextValue(names[t.PayeeID])},
+		)
 	}
 
 	return append(changes, tool.Change{Field: "account", After: tool.TextValue(account.Name)}), nil

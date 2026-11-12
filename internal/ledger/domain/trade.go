@@ -83,7 +83,16 @@ func BuildTrade(
 		return nil, Trade{}, invalid("unit_price", "must give a positive gross amount")
 	}
 
-	trade := Trade{AccountID: o.AccountID, CashAccountID: o.CashAccountID, Side: o.Side, Quantity: o.Quantity, UnitPrice: o.UnitPrice, Gross: gross, Fees: fees, Taxes: taxes}
+	trade := Trade{
+		AccountID:     o.AccountID,
+		CashAccountID: o.CashAccountID,
+		Side:          o.Side,
+		Quantity:      o.Quantity,
+		UnitPrice:     o.UnitPrice,
+		Gross:         gross,
+		Fees:          fees,
+		Taxes:         taxes,
+	}
 
 	if o.Side == SideBuy {
 		return buyTrade(o, trade)
@@ -160,12 +169,21 @@ func sellTrade(
 		postings = append(postings, Posting{AccountID: accts.Taxes, Amount: taxes, Weight: taxes})
 	}
 
-	postings = append(postings, Posting{AccountID: o.AccountID, Amount: o.Quantity.Neg(), Weight: cost.Neg()})
+	postings = append(
+		postings,
+		Posting{AccountID: o.AccountID, Amount: o.Quantity.Neg(), Weight: cost.Neg()},
+	)
 	switch {
 	case result.IsNegative():
-		postings = append(postings, Posting{AccountID: accts.RealizedLosses, Amount: result.Neg(), Weight: result.Neg()})
+		postings = append(
+			postings,
+			Posting{AccountID: accts.RealizedLosses, Amount: result.Neg(), Weight: result.Neg()},
+		)
 	case !result.IsZero():
-		postings = append(postings, Posting{AccountID: accts.RealizedGains, Amount: result.Neg(), Weight: result.Neg()})
+		postings = append(
+			postings,
+			Posting{AccountID: accts.RealizedGains, Amount: result.Neg(), Weight: result.Neg()},
+		)
 	}
 
 	return postings, trade, nil
@@ -174,12 +192,19 @@ func sellTrade(
 // soldCost is the cost basis of the quantity a sale gives up.
 func soldCost(o TradeOrder, h Holding) (cost money.Money, err error) {
 	if h.Quantity.Amount() < o.Quantity.Amount() {
-		return money.Money{}, invalid("quantity", "must not exceed the "+h.Quantity.String()+" held on the trade date")
+		return money.Money{}, invalid(
+			"quantity",
+			"must not exceed the "+h.Quantity.String()+" held on the trade date",
+		)
 	}
 
 	cost = h.CostBasis
 	if o.Quantity.Amount() < h.Quantity.Amount() {
-		if cost, err = money.Fraction(h.CostBasis, o.Quantity.Amount(), h.Quantity.Amount()); err != nil {
+		if cost, err = money.Fraction(
+			h.CostBasis,
+			o.Quantity.Amount(),
+			h.Quantity.Amount(),
+		); err != nil {
 			return money.Money{}, err
 		}
 	}

@@ -69,7 +69,9 @@ func TestParseMap(t *testing.T) {
 		}
 	}
 
-	got, err := guide.ParseMap([]byte(`[{"path":"/cards/$id","topics":["goals"],"screen":"A","tasks":["x"]}]`))
+	got, err := guide.ParseMap(
+		[]byte(`[{"path":"/cards/$id","topics":["goals"],"screen":"A","tasks":["x"]}]`),
+	)
 	if err != nil || len(got) != 1 || got[0].Path != "/cards/$id" {
 		t.Fatalf("got = %+v, %v", got, err)
 	}

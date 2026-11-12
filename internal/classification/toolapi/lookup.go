@@ -11,7 +11,12 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/page"
 )
 
-func findSuggestion(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.Suggestion, error) {
+func findSuggestion(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (app.Suggestion, error) {
 	r := page.Request[app.SuggestionKey]{Limit: page.MaxLimit}
 	for {
 		items, next, err := svc.ListSuggestions(ctx, booksID, "", r)
@@ -31,7 +36,12 @@ func findSuggestion(ctx context.Context, svc *app.Service, booksID int64, id uui
 	}
 }
 
-func findSourceCategory(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.SourceCategory, error) {
+func findSourceCategory(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (app.SourceCategory, error) {
 	r := page.Request[app.NameKey]{Limit: page.MaxLimit}
 	for {
 		items, next, err := svc.ListSourceCategories(ctx, booksID, r)
@@ -39,7 +49,10 @@ func findSourceCategory(ctx context.Context, svc *app.Service, booksID int64, id
 			return app.SourceCategory{}, err
 		}
 
-		if i := slices.IndexFunc(items, func(c app.SourceCategory) bool { return c.ID == id }); i >= 0 {
+		if i := slices.IndexFunc(
+			items,
+			func(c app.SourceCategory) bool { return c.ID == id },
+		); i >= 0 {
 			return items[i], nil
 		}
 

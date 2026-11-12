@@ -38,7 +38,10 @@ func (s *Server) listCategorizations(
 	}
 
 	if n := len(params.TransactionId); n == 0 || n > 200 {
-		return CategorizationList{}, &paramError{field: "transaction_id", message: "must have 1 to 200 ids"}
+		return CategorizationList{}, &paramError{
+			field:   "transaction_id",
+			message: "must have 1 to 200 ids",
+		}
 	}
 
 	recs, err := s.svc.Categorizations(ctx, auth.MustBooksID(ctx), params.TransactionId)
@@ -68,7 +71,11 @@ func toCategorizationAPI(rec app.Record) Categorization {
 	return out
 }
 
-func (s *Server) runRules(ctx context.Context, _ *http.Request, _ httpserver.None) (RuleRun, error) {
+func (s *Server) runRules(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (RuleRun, error) {
 	examined, categorized, err := s.svc.RunRules(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return RuleRun{}, err
@@ -86,7 +93,10 @@ func (s *Server) getCategorizationStatistics(
 	}
 
 	if params.To.Before(params.From.Time) {
-		return CategorizationStatistics{}, &paramError{field: "to", message: "must not be before from"}
+		return CategorizationStatistics{}, &paramError{
+			field:   "to",
+			message: "must not be before from",
+		}
 	}
 
 	st, err := s.svc.Statistics(ctx, auth.MustBooksID(ctx), params.From.Time, params.To.Time)
@@ -95,7 +105,13 @@ func (s *Server) getCategorizationStatistics(
 	}
 
 	return CategorizationStatistics{
-		From: params.From, To: openapi_types.Date{Time: params.To.Time},
-		Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
+		From:          params.From,
+		To:            openapi_types.Date{Time: params.To.Time},
+		Total:         st.Total,
+		Rule:          st.Rule,
+		Source:        st.Source,
+		History:       st.History,
+		Manual:        st.Manual,
+		Uncategorized: st.Uncategorized,
 	}, nil
 }

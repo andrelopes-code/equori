@@ -35,7 +35,13 @@ func serve(t *testing.T, status int, fixture string, got *received) *httptest.Se
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
 		if got != nil {
-			*got = received{method: r.Method, path: r.URL.Path, key: r.Header.Get("x-goog-api-key"), query: r.URL.RawQuery, body: b}
+			*got = received{
+				method: r.Method,
+				path:   r.URL.Path,
+				key:    r.Header.Get("x-goog-api-key"),
+				query:  r.URL.RawQuery,
+				body:   b,
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -90,7 +96,13 @@ func TestGenerateRequest(t *testing.T) {
 			name: "tools",
 			req: llm.Request{
 				Messages: []llm.Message{user("hi")},
-				Tools:    []llm.Tool{{Name: "balance", Description: "d", Parameters: json.RawMessage(`{"type":"object"}`)}},
+				Tools: []llm.Tool{
+					{
+						Name:        "balance",
+						Description: "d",
+						Parameters:  json.RawMessage(`{"type":"object"}`),
+					},
+				},
 			},
 			want: `{"contents":[{"role":"user","parts":[{"text":"hi"}]}],"tools":[{"functionDeclarations":[{"name":"balance","description":"d","parametersJsonSchema":{"type":"object"}}]}]}`,
 		},
@@ -99,7 +111,10 @@ func TestGenerateRequest(t *testing.T) {
 			req: llm.Request{Messages: []llm.Message{
 				user("hi"),
 				{Role: llm.RoleModel, Parts: []llm.Part{
-					{ToolCall: &call, Signature: &llm.Signature{Provider: "aistudio", Data: []byte("sig")}},
+					{
+						ToolCall:  &call,
+						Signature: &llm.Signature{Provider: "aistudio", Data: []byte("sig")},
+					},
 					{Text: "note", Signature: &llm.Signature{Provider: "other", Data: []byte("x")}},
 				}},
 				{Role: llm.RoleTool, Parts: []llm.Part{{ToolResult: &llm.ToolResult{
@@ -113,9 +128,13 @@ func TestGenerateRequest(t *testing.T) {
 		},
 		{
 			name: "tool result that is not an object",
-			req: llm.Request{Messages: []llm.Message{{Role: llm.RoleTool, Parts: []llm.Part{{ToolResult: &llm.ToolResult{
-				CallID: "c1", Name: "balance", Content: json.RawMessage(`"ok"`),
-			}}}}}},
+			req: llm.Request{
+				Messages: []llm.Message{
+					{Role: llm.RoleTool, Parts: []llm.Part{{ToolResult: &llm.ToolResult{
+						CallID: "c1", Name: "balance", Content: json.RawMessage(`"ok"`),
+					}}}},
+				},
+			},
 			want: `{"contents":[{"role":"user","parts":[{"functionResponse":{"id":"c1","name":"balance","response":{"result":"ok"}}}]}]}`,
 		},
 	}
@@ -129,11 +148,23 @@ func TestGenerateRequest(t *testing.T) {
 				t.Fatalf("Generate: %v", err)
 			}
 
-			if got.method != http.MethodPost || got.path != "/v1beta/models/gemini-x:generateContent" || got.key != "k" || got.query != "" {
+			if got.method != http.MethodPost ||
+				got.path != "/v1beta/models/gemini-x:generateContent" ||
+				got.key != "k" ||
+				got.query != "" {
 				t.Fatalf("request = %s %s?%s key %q", got.method, got.path, got.query, got.key)
 			}
 
-			if body, want := decode(t, got.body), decode(t, []byte(tt.want)); !reflect.DeepEqual(body, want) {
+			if body, want := decode(
+				t,
+				got.body,
+			), decode(
+				t,
+				[]byte(tt.want),
+			); !reflect.DeepEqual(
+				body,
+				want,
+			) {
 				t.Fatalf("body = %s\nwant %s", got.body, tt.want)
 			}
 		})
@@ -158,10 +189,16 @@ func TestGenerateResponse(t *testing.T) {
 		{
 			fixture: "function_call.json",
 			want: llm.Response{
-				Message: llm.Message{Role: llm.RoleModel, Parts: []llm.Part{{
-					ToolCall:  &llm.ToolCall{ID: "c1", Name: "balance", Args: json.RawMessage(`{"account":"x"}`)},
-					Signature: &llm.Signature{Provider: "aistudio", Data: []byte("sig")},
-				}}},
+				Message: llm.Message{Role: llm.RoleModel, Parts: []llm.Part{
+					{
+						ToolCall: &llm.ToolCall{
+							ID:   "c1",
+							Name: "balance",
+							Args: json.RawMessage(`{"account":"x"}`),
+						},
+						Signature: &llm.Signature{Provider: "aistudio", Data: []byte("sig")},
+					},
+				}},
 				FinishReason: llm.FinishToolCalls,
 				Usage:        llm.Usage{InputTokens: 20, OutputTokens: 4},
 			},
@@ -182,22 +219,32 @@ func TestGenerateResponse(t *testing.T) {
 		},
 		{
 			fixture: "safety.json",
-			want:    llm.Response{Message: llm.Message{Role: llm.RoleModel}, FinishReason: llm.FinishBlocked},
+			want: llm.Response{
+				Message:      llm.Message{Role: llm.RoleModel},
+				FinishReason: llm.FinishBlocked,
+			},
 		},
 		{
 			fixture: "prompt_blocked.json",
-			want:    llm.Response{Message: llm.Message{Role: llm.RoleModel}, FinishReason: llm.FinishBlocked},
+			want: llm.Response{
+				Message:      llm.Message{Role: llm.RoleModel},
+				FinishReason: llm.FinishBlocked,
+			},
 		},
 		{
 			fixture: "empty.json",
-			want:    llm.Response{Message: llm.Message{Role: llm.RoleModel}, FinishReason: llm.FinishOther},
+			want: llm.Response{
+				Message:      llm.Message{Role: llm.RoleModel},
+				FinishReason: llm.FinishOther,
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.fixture, func(t *testing.T) {
 			srv := serve(t, http.StatusOK, tt.fixture, nil)
 
-			got, err := aistudio.New(srv.URL, "k", srv.Client()).Generate(context.Background(), "gemini-x", llm.Request{Messages: []llm.Message{user("hi")}})
+			got, err := aistudio.New(srv.URL, "k", srv.Client()).
+				Generate(context.Background(), "gemini-x", llm.Request{Messages: []llm.Message{user("hi")}})
 			if err != nil {
 				t.Fatalf("Generate: %v", err)
 			}
@@ -254,13 +301,21 @@ func TestGenerateToolChoiceNone(t *testing.T) {
 		var got received
 		srv := serve(t, http.StatusOK, "text.json", &got)
 
-		_, err := aistudio.New(srv.URL, "k", http.DefaultClient).Generate(context.Background(), "m1",
-			llm.Request{Messages: []llm.Message{user("hi")}, Tools: tools, ToolChoice: tt.choice})
+		_, err := aistudio.New(srv.URL, "k", http.DefaultClient).
+			Generate(context.Background(), "m1",
+				llm.Request{
+					Messages:   []llm.Message{user("hi")},
+					Tools:      tools,
+					ToolChoice: tt.choice,
+				})
 		if err != nil {
 			t.Fatalf("Generate: %v", err)
 		}
 
-		has := strings.Contains(string(got.body), `"toolConfig":{"functionCallingConfig":{"mode":"NONE"}}`)
+		has := strings.Contains(
+			string(got.body),
+			`"toolConfig":{"functionCallingConfig":{"mode":"NONE"}}`,
+		)
 		if has != tt.want || (!tt.want && strings.Contains(string(got.body), "toolConfig")) {
 			t.Fatalf("choice %q: body %s", tt.choice, got.body)
 		}
@@ -273,7 +328,13 @@ func sse(t *testing.T, status int, frames []string, got *received) *httptest.Ser
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := io.ReadAll(r.Body)
-		*got = received{method: r.Method, path: r.URL.Path, key: r.Header.Get("x-goog-api-key"), query: r.URL.RawQuery, body: b}
+		*got = received{
+			method: r.Method,
+			path:   r.URL.Path,
+			key:    r.Header.Get("x-goog-api-key"),
+			query:  r.URL.RawQuery,
+			body:   b,
+		}
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(status)
 
@@ -291,7 +352,9 @@ func TestStream(t *testing.T) {
 	t.Parallel()
 
 	text := func(s, finish string) string {
-		f := `{"candidates":[{"content":{"role":"model","parts":[{"text":` + strings.TrimSpace(mustJSON(s)) + `}]}`
+		f := `{"candidates":[{"content":{"role":"model","parts":[{"text":` + strings.TrimSpace(
+			mustJSON(s),
+		) + `}]}`
 		if finish != "" {
 			f += `,"finishReason":"` + finish + `"`
 		}
@@ -308,11 +371,17 @@ func TestStream(t *testing.T) {
 		{
 			name:   "text",
 			status: 200,
-			frames: []string{text("A", ""), text("B", ""),
-				`{"candidates":[{"content":{"role":"model","parts":[{"text":"C"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":3,"thoughtsTokenCount":2}}`},
+			frames: []string{
+				text("A", ""),
+				text("B", ""),
+				`{"candidates":[{"content":{"role":"model","parts":[{"text":"C"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":7,"candidatesTokenCount":3,"thoughtsTokenCount":2}}`,
+			},
 			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
-				if err != nil || !reflect.DeepEqual(chunks, []string{"A", "B", "C"}) || len(resp.Message.Parts) != 1 ||
-					resp.Text() != "ABC" || resp.Usage != (llm.Usage{InputTokens: 7, OutputTokens: 5}) || resp.FinishReason != llm.FinishStop {
+				if err != nil || !reflect.DeepEqual(chunks, []string{"A", "B", "C"}) ||
+					len(resp.Message.Parts) != 1 ||
+					resp.Text() != "ABC" ||
+					resp.Usage != (llm.Usage{InputTokens: 7, OutputTokens: 5}) ||
+					resp.FinishReason != llm.FinishStop {
 					t.Fatalf("resp = %+v, chunks = %v, err = %v", resp, chunks, err)
 				}
 			},
@@ -320,11 +389,17 @@ func TestStream(t *testing.T) {
 		{
 			name:   "function call with signature",
 			status: 200,
-			frames: []string{`{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"get_x","args":{}},"thoughtSignature":"AQI="}]},"finishReason":"STOP"}]}`},
+			frames: []string{
+				`{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"get_x","args":{}},"thoughtSignature":"AQI="}]},"finishReason":"STOP"}]}`,
+			},
 			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
 				p := resp.Message.Parts
-				if err != nil || len(p) != 1 || p[0].ToolCall == nil || p[0].ToolCall.Name != "get_x" || p[0].Signature == nil ||
-					!reflect.DeepEqual(p[0].Signature.Data, []byte{1, 2}) || resp.FinishReason != llm.FinishToolCalls || len(chunks) != 0 {
+				if err != nil || len(p) != 1 || p[0].ToolCall == nil ||
+					p[0].ToolCall.Name != "get_x" ||
+					p[0].Signature == nil ||
+					!reflect.DeepEqual(p[0].Signature.Data, []byte{1, 2}) ||
+					resp.FinishReason != llm.FinishToolCalls ||
+					len(chunks) != 0 {
 					t.Fatalf("resp = %+v, err = %v", resp, err)
 				}
 			},
@@ -332,10 +407,14 @@ func TestStream(t *testing.T) {
 		{
 			name:   "signature on the last empty text part",
 			status: 200,
-			frames: []string{text("Hi", ""), `{"candidates":[{"content":{"role":"model","parts":[{"text":"","thoughtSignature":"AQI="}]},"finishReason":"STOP"}]}`},
+			frames: []string{
+				text("Hi", ""),
+				`{"candidates":[{"content":{"role":"model","parts":[{"text":"","thoughtSignature":"AQI="}]},"finishReason":"STOP"}]}`,
+			},
 			check: func(t *testing.T, resp llm.Response, chunks []string, err error) {
 				p := resp.Message.Parts
-				if err != nil || len(p) != 1 || p[0].Text != "Hi" || p[0].Signature == nil || !reflect.DeepEqual(p[0].Signature.Data, []byte{1, 2}) {
+				if err != nil || len(p) != 1 || p[0].Text != "Hi" || p[0].Signature == nil ||
+					!reflect.DeepEqual(p[0].Signature.Data, []byte{1, 2}) {
 					t.Fatalf("resp = %+v, err = %v", resp, err)
 				}
 			},
@@ -368,9 +447,12 @@ func TestStream(t *testing.T) {
 			srv := sse(t, tt.status, tt.frames, &got)
 			var chunks []string
 			resp, err := aistudio.New(srv.URL, "k", srv.Client()).Stream(context.Background(), "m",
-				llm.Request{Messages: []llm.Message{user("oi")}}, func(s string) { chunks = append(chunks, s) })
+				llm.Request{
+					Messages: []llm.Message{user("oi")},
+				}, func(s string) { chunks = append(chunks, s) })
 
-			if got.path != "/v1beta/models/m:streamGenerateContent" || got.query != "alt=sse" || got.key != "k" {
+			if got.path != "/v1beta/models/m:streamGenerateContent" || got.query != "alt=sse" ||
+				got.key != "k" {
 				t.Fatalf("request = %s ? %s, key %q", got.path, got.query, got.key)
 			}
 
@@ -402,7 +484,12 @@ func TestThinkingWire(t *testing.T) {
 
 		cfg, _ := decode(t, got.body)["generationConfig"].(map[string]any)
 		if !reflect.DeepEqual(cfg["thinkingConfig"], tt.want) {
-			t.Fatalf("Thinking %q: generationConfig = %v, want thinkingConfig %v", tt.thinking, cfg, tt.want)
+			t.Fatalf(
+				"Thinking %q: generationConfig = %v, want thinkingConfig %v",
+				tt.thinking,
+				cfg,
+				tt.want,
+			)
 		}
 	}
 }

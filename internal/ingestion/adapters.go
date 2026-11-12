@@ -35,5 +35,6 @@ func followPairing(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		return fmt.Errorf("decode %s: %w", e.Type, err)
 	}
 
-	return app.NewService(postgres.NewTxRepository(tx), nil, app.Integrations{}).FollowPairing(ctx, e.BooksID, p.Kept, p.RecordIDs)
+	return app.NewService(postgres.NewTxRepository(tx), nil, app.Integrations{}).
+		FollowPairing(ctx, e.BooksID, p.Kept, p.RecordIDs)
 }

@@ -39,7 +39,11 @@ func pageOf[R, T, K any](rows []R, limit int, item func(R) T, key func(R) K) ([]
 }
 
 // rowLimit is the LIMIT of a keyset query: one row more than the page, to detect a next page.
-func rowLimit(limit int) int32 { return int32(limit + 1) } //nolint:gosec // limit is at most page.MaxLimit
+func rowLimit(
+	limit int,
+) int32 {
+	return int32(limit + 1)
+} //nolint:gosec // limit is at most page.MaxLimit
 
 func nullString(s string) *string {
 	if s == "" {
@@ -82,21 +86,47 @@ func originalInstrument(m *money.Money) *string {
 }
 
 func toInstitution(row LedgerInstitution) app.Institution {
-	return app.Institution{ID: row.ID, BooksID: row.BooksID, Name: row.Name, Code: deref(row.Code), Identifier: app.InstitutionIdentifier{Scheme: deref(row.IdentifierScheme), Value: deref(row.Identifier)}}
+	return app.Institution{
+		ID:      row.ID,
+		BooksID: row.BooksID,
+		Name:    row.Name,
+		Code:    deref(row.Code),
+		Identifier: app.InstitutionIdentifier{
+			Scheme: deref(row.IdentifierScheme),
+			Value:  deref(row.Identifier),
+		},
+	}
 }
 
 func toPayee(row LedgerPayee) app.Payee {
-	return app.Payee{ID: row.ID, BooksID: row.BooksID, Name: row.Name, MergedInto: row.MergedInto.UUID}
+	return app.Payee{
+		ID:         row.ID,
+		BooksID:    row.BooksID,
+		Name:       row.Name,
+		MergedInto: row.MergedInto.UUID,
+	}
 }
 
 func toAccount(row LedgerAccount) domain.Account {
 	return domain.Account{
-		ID: row.ID, BooksID: row.BooksID, Name: row.Name, Class: domain.Class(row.AccountClass),
-		Kind: domain.Kind(deref(row.Kind)), Instrument: money.Currency(row.Instrument),
-		ParentID: row.ParentID.UUID, InstitutionID: row.InstitutionID.UUID, CounterpartyID: row.CounterpartyPayeeID.UUID,
-		OpenedOn: row.OpenedOn, ClosedOn: row.ClosedOn, YieldMode: domain.YieldMode(row.YieldMode),
+		ID:                    row.ID,
+		BooksID:               row.BooksID,
+		Name:                  row.Name,
+		Class:                 domain.Class(row.AccountClass),
+		Kind:                  domain.Kind(deref(row.Kind)),
+		Instrument:            money.Currency(row.Instrument),
+		ParentID:              row.ParentID.UUID,
+		InstitutionID:         row.InstitutionID.UUID,
+		CounterpartyID:        row.CounterpartyPayeeID.UUID,
+		OpenedOn:              row.OpenedOn,
+		ClosedOn:              row.ClosedOn,
+		YieldMode:             domain.YieldMode(row.YieldMode),
 		ExcludedFromLiquidity: row.ExcludedFromLiquidity,
-		SystemRole:            domain.SystemRole(deref(row.SystemRole)), Color: colorOf(row.Color), Icon: deref(row.Icon),
+		SystemRole: domain.SystemRole(
+			deref(row.SystemRole),
+		),
+		Color: colorOf(row.Color),
+		Icon:  deref(row.Icon),
 	}
 }
 
@@ -121,9 +151,16 @@ func nullColor(c int) *int16 {
 
 func toTransaction(row LedgerTransaction) domain.Transaction {
 	return domain.Transaction{
-		ID: row.ID, BooksID: row.BooksID, Date: row.Date, Description: row.Description, PayeeID: row.PayeeID.UUID,
-		BalancingCurrency: money.Currency(row.BalancingCurrency), Origin: domain.Origin(row.Origin),
-		Version: int(row.Version), VoidedAt: row.VoidedAt, VoidReason: deref(row.VoidReason),
+		ID:                row.ID,
+		BooksID:           row.BooksID,
+		Date:              row.Date,
+		Description:       row.Description,
+		PayeeID:           row.PayeeID.UUID,
+		BalancingCurrency: money.Currency(row.BalancingCurrency),
+		Origin:            domain.Origin(row.Origin),
+		Version:           int(row.Version),
+		VoidedAt:          row.VoidedAt,
+		VoidReason:        deref(row.VoidReason),
 	}
 }
 
@@ -139,9 +176,16 @@ func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain
 	}
 
 	p := domain.Posting{
-		ID: row.ID, AccountID: row.AccountID, Amount: amount, Weight: weight,
-		Status: domain.PostingStatus(row.Status), SettledOn: row.SettledOn, Memo: deref(row.Memo),
-		StatementID: row.StatementID.UUID, StatementBasis: row.StatementBasis, CardRole: deref(row.CardRole),
+		ID:               row.ID,
+		AccountID:        row.AccountID,
+		Amount:           amount,
+		Weight:           weight,
+		Status:           domain.PostingStatus(row.Status),
+		SettledOn:        row.SettledOn,
+		Memo:             deref(row.Memo),
+		StatementID:      row.StatementID.UUID,
+		StatementBasis:   row.StatementBasis,
+		CardRole:         deref(row.CardRole),
 		ExternalRecordID: row.ExternalRecordID.UUID,
 	}
 	if row.StatementReference != nil {
@@ -150,7 +194,11 @@ func (r *Repository) toPosting(ctx context.Context, row ListPostingsRow) (domain
 	}
 
 	if row.InstallmentPlanID.Valid && row.InstallmentNumber != nil && row.InstallmentCount != nil {
-		p.Installment = &domain.InstallmentRef{PlanID: row.InstallmentPlanID.UUID, Number: int(*row.InstallmentNumber), Count: int(*row.InstallmentCount)}
+		p.Installment = &domain.InstallmentRef{
+			PlanID: row.InstallmentPlanID.UUID,
+			Number: int(*row.InstallmentNumber),
+			Count:  int(*row.InstallmentCount),
+		}
 	}
 
 	if row.OriginalAmount != nil && row.OriginalInstrument != nil {
@@ -205,17 +253,37 @@ type snapshotPosting struct {
 
 func toSnapshot(t domain.Transaction) snapshot {
 	s := snapshot{
-		ID: t.ID, BooksID: t.BooksID, Date: t.Date.Format(time.DateOnly), Description: t.Description, PayeeID: t.PayeeID,
-		BalancingCurrency: string(t.BalancingCurrency), Origin: string(t.Origin), Version: t.Version, Tags: t.Tags,
+		ID:          t.ID,
+		BooksID:     t.BooksID,
+		Date:        t.Date.Format(time.DateOnly),
+		Description: t.Description,
+		PayeeID:     t.PayeeID,
+		BalancingCurrency: string(
+			t.BalancingCurrency,
+		),
+		Origin:  string(t.Origin),
+		Version: t.Version,
+		Tags:    t.Tags,
 	}
 	for _, l := range t.Links {
-		s.Links = append(s.Links, snapshotLink{Type: string(l.Type), Target: l.Target, Amount: l.Amount})
+		s.Links = append(
+			s.Links,
+			snapshotLink{Type: string(l.Type), Target: l.Target, Amount: l.Amount},
+		)
 	}
 
 	for _, p := range t.Postings {
 		sp := snapshotPosting{
-			AccountID: p.AccountID, Amount: p.Amount.Amount(), Currency: string(p.Amount.Currency()), Weight: p.Weight.Amount(),
-			Status: string(p.Status), OriginalAmount: originalAmount(p.Original), OriginalInstrument: originalInstrument(p.Original), Memo: p.Memo,
+			AccountID: p.AccountID,
+			Amount:    p.Amount.Amount(),
+			Currency:  string(p.Amount.Currency()),
+			Weight:    p.Weight.Amount(),
+			Status: string(
+				p.Status,
+			),
+			OriginalAmount:     originalAmount(p.Original),
+			OriginalInstrument: originalInstrument(p.Original),
+			Memo:               p.Memo,
 		}
 		if p.SettledOn != nil {
 			sp.SettledOn = p.SettledOn.Format(time.DateOnly)
@@ -242,11 +310,23 @@ func (s snapshot) transaction(
 	}
 
 	t := domain.Transaction{
-		ID: s.ID, BooksID: s.BooksID, Date: d, Description: s.Description, PayeeID: s.PayeeID,
-		BalancingCurrency: money.Currency(s.BalancingCurrency), Origin: domain.Origin(s.Origin), Version: s.Version, Tags: s.Tags,
+		ID:          s.ID,
+		BooksID:     s.BooksID,
+		Date:        d,
+		Description: s.Description,
+		PayeeID:     s.PayeeID,
+		BalancingCurrency: money.Currency(
+			s.BalancingCurrency,
+		),
+		Origin:  domain.Origin(s.Origin),
+		Version: s.Version,
+		Tags:    s.Tags,
 	}
 	for _, l := range s.Links {
-		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.Type), Target: l.Target, Amount: l.Amount})
+		t.Links = append(
+			t.Links,
+			domain.Link{Type: domain.LinkType(l.Type), Target: l.Target, Amount: l.Amount},
+		)
 	}
 
 	for _, sp := range s.Postings {
@@ -277,8 +357,15 @@ func (sp snapshotPosting) posting(
 	}
 
 	p := domain.Posting{
-		AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo,
-		StatementID: sp.StatementID, StatementBasis: sp.StatementBasis, CardRole: sp.CardRole, Installment: sp.Installment,
+		AccountID:      sp.AccountID,
+		Amount:         amount,
+		Weight:         weight,
+		Status:         domain.PostingStatus(sp.Status),
+		Memo:           sp.Memo,
+		StatementID:    sp.StatementID,
+		StatementBasis: sp.StatementBasis,
+		CardRole:       sp.CardRole,
+		Installment:    sp.Installment,
 	}
 	if sp.Statement != "" {
 		m, err := domain.ParseReferenceMonth(sp.Statement)
@@ -312,9 +399,13 @@ func (sp snapshotPosting) posting(
 
 func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
 	r := domain.BillingCycleRule{
-		EffectiveFrom: domain.MonthOf(row.EffectiveFrom), DueDay: int(row.DueDay),
-		Assignment: row.ClosingDayAssignment, Adjustment: row.DueDateAdjustment, Calendar: row.Calendar,
-		ClosingMode: row.ClosingMode, ClosingAdjustment: row.ClosingAdjustment,
+		EffectiveFrom:     domain.MonthOf(row.EffectiveFrom),
+		DueDay:            int(row.DueDay),
+		Assignment:        row.ClosingDayAssignment,
+		Adjustment:        row.DueDateAdjustment,
+		Calendar:          row.Calendar,
+		ClosingMode:       row.ClosingMode,
+		ClosingAdjustment: row.ClosingAdjustment,
 	}
 	if row.ClosingDay != nil {
 		r.ClosingDay = int(*row.ClosingDay)
@@ -328,7 +419,16 @@ func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
 }
 
 func toCard(row LedgerCard) domain.Card {
-	return domain.Card{ID: row.ID, BooksID: row.BooksID, AccountID: row.AccountID, Holder: row.Holder, LastFour: row.LastFour, Virtual: row.Virtual, Active: row.Active, ForeignChargeBP: int(row.ForeignChargeBp)}
+	return domain.Card{
+		ID:              row.ID,
+		BooksID:         row.BooksID,
+		AccountID:       row.AccountID,
+		Holder:          row.Holder,
+		LastFour:        row.LastFour,
+		Virtual:         row.Virtual,
+		Active:          row.Active,
+		ForeignChargeBP: int(row.ForeignChargeBp),
+	}
 }
 
 func installmentPlan(i *domain.InstallmentRef) uuid.NullUUID {

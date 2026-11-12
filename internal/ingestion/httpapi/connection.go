@@ -17,8 +17,14 @@ import (
 
 func toExternalAccountAPI(a domain.ExternalAccount) ExternalAccount {
 	out := ExternalAccount{
-		Id: a.ID, Type: a.Type, Subtype: a.Subtype, Name: a.Name, NumberLast4: ref(a.NumberLast4), Currency: a.Currency,
-		State: ExternalAccountState(a.State()), AccountId: a.AccountID,
+		Id:          a.ID,
+		Type:        a.Type,
+		Subtype:     a.Subtype,
+		Name:        a.Name,
+		NumberLast4: ref(a.NumberLast4),
+		Currency:    a.Currency,
+		State:       ExternalAccountState(a.State()),
+		AccountId:   a.AccountID,
 	}
 	if a.SyncFrom != nil {
 		out.SyncFrom = &openapi_types.Date{Time: *a.SyncFrom}
@@ -47,9 +53,22 @@ func utc(t *time.Time) *time.Time {
 
 func toConnectionAPI(c domain.Connection) Connection {
 	out := Connection{
-		Id: c.ID, IntegrationId: c.IntegrationID, ExternalId: c.ExternalID, State: ConnectionState(c.State), Name: c.Name, ProviderStatus: c.ProviderStatus,
-		Portal: ref(c.Portal), LastItemUpdateAt: utc(c.LastItemUpdateAt), NextItemUpdateAt: utc(c.NextItemUpdateAt), LastSyncedAt: utc(c.LastSyncedAt), ConsentExpiresAt: utc(c.ConsentExpiresAt), LastError: ref(c.LastError), CreatedAt: c.CreatedAt.UTC(),
-		Accounts: make([]ExternalAccount, len(c.Accounts)),
+		Id:             c.ID,
+		IntegrationId:  c.IntegrationID,
+		ExternalId:     c.ExternalID,
+		State:          ConnectionState(c.State),
+		Name:           c.Name,
+		ProviderStatus: c.ProviderStatus,
+		Portal: ref(
+			c.Portal,
+		),
+		LastItemUpdateAt: utc(c.LastItemUpdateAt),
+		NextItemUpdateAt: utc(c.NextItemUpdateAt),
+		LastSyncedAt:     utc(c.LastSyncedAt),
+		ConsentExpiresAt: utc(c.ConsentExpiresAt),
+		LastError:        ref(c.LastError),
+		CreatedAt:        c.CreatedAt.UTC(),
+		Accounts:         make([]ExternalAccount, len(c.Accounts)),
 	}
 	for i, a := range c.Accounts {
 		out.Accounts[i] = toExternalAccountAPI(a)
@@ -61,7 +80,13 @@ func toConnectionAPI(c domain.Connection) Connection {
 func (s *Server) createConnection(
 	ctx context.Context, _ *http.Request, b CreateConnectionJSONRequestBody,
 ) (Connection, string, error) {
-	c, err := s.svc.CreateConnection(ctx, auth.MustBooksID(ctx), b.IntegrationId, b.ExternalId, opt(b.Name))
+	c, err := s.svc.CreateConnection(
+		ctx,
+		auth.MustBooksID(ctx),
+		b.IntegrationId,
+		b.ExternalId,
+		opt(b.Name),
+	)
 	if err != nil {
 		return Connection{}, "", err
 	}
@@ -69,7 +94,11 @@ func (s *Server) createConnection(
 	return toConnectionAPI(c), BaseURL + "/connections/" + c.ID.String(), nil
 }
 
-func (s *Server) listConnections(ctx context.Context, r *http.Request, _ httpserver.None) (ConnectionList, error) {
+func (s *Server) listConnections(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (ConnectionList, error) {
 	params, err := httpserver.Query[ListConnectionsParams](r)
 	if err != nil {
 		return ConnectionList{}, err
@@ -95,7 +124,11 @@ func (s *Server) listConnections(ctx context.Context, r *http.Request, _ httpser
 	return out, err
 }
 
-func (s *Server) getConnection(ctx context.Context, r *http.Request, _ httpserver.None) (Connection, error) {
+func (s *Server) getConnection(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (Connection, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return Connection{}, err
@@ -150,7 +183,11 @@ func (s *Server) mapExternalAccount(
 	return toExternalAccountAPI(a), nil
 }
 
-func (s *Server) syncConnection(ctx context.Context, r *http.Request, _ httpserver.None) (SyncResult, error) {
+func (s *Server) syncConnection(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (SyncResult, error) {
 	id, err := httpserver.PathUUID(r, "id")
 	if err != nil {
 		return SyncResult{}, err
@@ -186,8 +223,13 @@ func (s *Server) listConnectionSyncs(
 	for i, run := range runs {
 		currency := make(map[uuid.UUID]string, len(run.Batches))
 		item := SyncRun{
-			SyncId: run.ID, StartedAt: run.StartedAt.UTC(),
-			Batches: make([]ImportBatch, len(run.Batches)), Records: make([]ExternalRecord, len(run.Records)),
+			SyncId:    run.ID,
+			StartedAt: run.StartedAt.UTC(),
+			Batches: make(
+				[]ImportBatch,
+				len(run.Batches),
+			),
+			Records: make([]ExternalRecord, len(run.Records)),
 		}
 
 		for j, b := range run.Batches {

@@ -38,7 +38,10 @@ func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeT
 
 	code := row.InstrumentCode
 
-	latest, err := m.q.LatestSourceDate(ctx, postgres.LatestSourceDateParams{Source: sourceAccrual, Instrument: &code})
+	latest, err := m.q.LatestSourceDate(
+		ctx,
+		postgres.LatestSourceDateParams{Source: sourceAccrual, Instrument: &code},
+	)
 	if err != nil {
 		return err
 	}
@@ -85,7 +88,10 @@ func (m *Module) accrualRates(
 ) ([]domain.IndexRate, error) {
 	var rates []domain.IndexRate
 	if row.IndexID != nil {
-		stored, err := m.q.ListIndexRates(ctx, postgres.ListIndexRatesParams{IndexID: *row.IndexID, FromDate: row.IssuedOn})
+		stored, err := m.q.ListIndexRates(
+			ctx,
+			postgres.ListIndexRatesParams{IndexID: *row.IndexID, FromDate: row.IssuedOn},
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -109,10 +115,21 @@ func accrualPrices(in Instrument, accrued []domain.DatedPrice) ([]Price, error) 
 	for i, a := range accrued {
 		value, err := money.ParseRate(trimDecimal(a.Value))
 		if err != nil {
-			return nil, fmt.Errorf("price of %s on %s: %w", in.Code, a.Date.Format(time.DateOnly), err)
+			return nil, fmt.Errorf(
+				"price of %s on %s: %w",
+				in.Code,
+				a.Date.Format(time.DateOnly),
+				err,
+			)
 		}
 
-		prices[i] = Price{Instrument: in.Code, Quote: in.QuoteCurrency, Date: a.Date, Value: value, Source: sourceAccrual}
+		prices[i] = Price{
+			Instrument: in.Code,
+			Quote:      in.QuoteCurrency,
+			Date:       a.Date,
+			Value:      value,
+			Source:     sourceAccrual,
+		}
 	}
 
 	return prices, nil

@@ -11,7 +11,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 )
 
-func (s *Service) Profile(ctx context.Context, booksID int64, accountID uuid.UUID) (domain.Profile, error) {
+func (s *Service) Profile(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (domain.Profile, error) {
 	return s.repo.Profile(ctx, booksID, accountID)
 }
 
@@ -23,7 +27,10 @@ func (s *Service) SaveProfile(ctx context.Context, p domain.Profile) (domain.Pro
 	}
 
 	if !slices.Contains(charset.Names(), p.Encoding) {
-		return domain.Profile{}, &domain.FieldError{Field: "encoding", Message: "must be one of " + strings.Join(charset.Names(), ", ")}
+		return domain.Profile{}, &domain.FieldError{
+			Field:   "encoding",
+			Message: "must be one of " + strings.Join(charset.Names(), ", "),
+		}
 	}
 
 	return s.repo.SaveProfile(ctx, p)

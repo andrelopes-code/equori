@@ -64,7 +64,12 @@ func TestPromptAnswersInTheLanguageOfTheMessage(t *testing.T) {
 func TestPromptAllowsOneTableForAComparison(t *testing.T) {
 	t.Parallel()
 
-	got := app.Prompt(app.PromptInput{Today: time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "en", Region: "DE"}})
+	got := app.Prompt(
+		app.PromptInput{
+			Today:  time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC),
+			Locale: locale.Locale{Language: "en", Region: "DE"},
+		},
+	)
 	for _, want := range []string{
 		"When the answer compares three or more rows on two or more columns, write it as one Markdown table with a header row.",
 		"No other table, and no headings, code blocks or charts.",
@@ -114,8 +119,16 @@ func TestInstructions(t *testing.T) {
 func TestPromptAlignsAmountColumns(t *testing.T) {
 	t.Parallel()
 
-	got := app.Prompt(app.PromptInput{Today: time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC), Locale: locale.Locale{Language: "en", Region: "DE"}})
-	if want := "Align columns of amounts and counts to the right with ---: in the separator row."; !strings.Contains(got, want) {
+	got := app.Prompt(
+		app.PromptInput{
+			Today:  time.Date(2026, 10, 26, 12, 0, 0, 0, time.UTC),
+			Locale: locale.Locale{Language: "en", Region: "DE"},
+		},
+	)
+	if want := "Align columns of amounts and counts to the right with ---: in the separator row."; !strings.Contains(
+		got,
+		want,
+	) {
 		t.Fatalf("prompt lacks %q", want)
 	}
 
@@ -139,7 +152,12 @@ func TestPromptNamesAccountsWithAWarning(t *testing.T) {
 		Locale: locale.Locale{Language: "en", Region: "BR"},
 		Notices: []app.AccountNotice{
 			{Name: "Nubank card", ConnectionState: "stalled", LastUpdateOn: &updated},
-			{Name: "Checking", Difference: &diff, DifferenceOn: time.Date(2026, 10, 30, 0, 0, 0, 0, time.UTC), Unconfirmed: 3},
+			{
+				Name:         "Checking",
+				Difference:   &diff,
+				DifferenceOn: time.Date(2026, 10, 30, 0, 0, 0, 0, time.UTC),
+				Unconfirmed:  3,
+			},
 		},
 	})
 

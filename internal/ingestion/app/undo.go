@@ -14,7 +14,11 @@ var ErrNoDecision = errors.New("the record has no decision to undo")
 
 // UndoDecision reverts the record's last automatic decision and returns the record with its
 // batch (P12 A148).
-func (s *Service) UndoDecision(ctx context.Context, booksID int64, recordID uuid.UUID) (domain.ExternalRecord, domain.Batch, error) {
+func (s *Service) UndoDecision(
+	ctx context.Context,
+	booksID int64,
+	recordID uuid.UUID,
+) (domain.ExternalRecord, domain.Batch, error) {
 	found, err := s.repo.Record(ctx, booksID, recordID)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
@@ -87,7 +91,11 @@ func (s *Service) undoDecision(
 }
 
 // undoLinked releases the posting and returns the record to review as a probable match.
-func (s *Service) undoLinked(ctx context.Context, rec *domain.ExternalRecord, b domain.Batch) error {
+func (s *Service) undoLinked(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	b domain.Batch,
+) error {
 	if err := s.ledger.ReleaseRecord(ctx, rec.BooksID, rec.ID); err != nil {
 		return err
 	}
@@ -99,7 +107,11 @@ func (s *Service) undoLinked(ctx context.Context, rec *domain.ExternalRecord, b 
 
 // undoPaired returns the transaction to its postings before the pairing and the record to review
 // as a transfer (A220 rule 2). A transaction that changed since the pairing has no undo (rule 3).
-func (s *Service) undoPaired(ctx context.Context, rec *domain.ExternalRecord, b domain.Batch) error {
+func (s *Service) undoPaired(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	b domain.Batch,
+) error {
 	err := s.ledger.UnpairLine(ctx, rec.BooksID, rec.TransactionID, rec.ID, rec.Undo.Version)
 	if errors.Is(err, ErrNotUnpairable) {
 		return ErrNoDecision
@@ -115,11 +127,20 @@ func (s *Service) undoPaired(ctx context.Context, rec *domain.ExternalRecord, b 
 }
 
 // undoWithdrawn links the record to the posting it had and keeps it from later withdrawals.
-func (s *Service) undoWithdrawn(ctx context.Context, rec *domain.ExternalRecord, b domain.Batch) error {
+func (s *Service) undoWithdrawn(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	b domain.Batch,
+) error {
 	u := rec.Undo
 
 	if u.TransactionID != uuid.Nil {
-		match := Match{RecordID: rec.ID, TransactionID: u.TransactionID, AccountID: rec.AccountID, Pending: rec.ExternalStatus == domain.ExternalPending}
+		match := Match{
+			RecordID:      rec.ID,
+			TransactionID: u.TransactionID,
+			AccountID:     rec.AccountID,
+			Pending:       rec.ExternalStatus == domain.ExternalPending,
+		}
 
 		conflicts, err := s.ledger.ClearMatched(ctx, rec.BooksID, []Match{match})
 		if err != nil {
@@ -159,7 +180,10 @@ func (s *Service) undoFollowed(ctx context.Context, rec *domain.ExternalRecord) 
 
 // undoReidentified restores the previous external id of the record and returns the line it
 // had taken as a new record in review of the batch of the re-identifying run.
-func (s *Service) undoReidentified(ctx context.Context, rec *domain.ExternalRecord) (*domain.ExternalRecord, error) {
+func (s *Service) undoReidentified(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+) (*domain.ExternalRecord, error) {
 	b, err := s.repo.Batch(ctx, rec.BooksID, rec.SummaryBatchID)
 	if err != nil {
 		return nil, err

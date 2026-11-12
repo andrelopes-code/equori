@@ -29,7 +29,11 @@ type ReimbursementRequest struct {
 }
 
 // Reimburse returns the reimbursement after the change.
-func (s *Service) Reimburse(ctx context.Context, booksID int64, req ReimbursementRequest) (domain.Transaction, error) {
+func (s *Service) Reimburse(
+	ctx context.Context,
+	booksID int64,
+	req ReimbursementRequest,
+) (domain.Transaction, error) {
 	var out domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		var err error
@@ -41,7 +45,12 @@ func (s *Service) Reimburse(ctx context.Context, booksID int64, req Reimbursemen
 	return out, err
 }
 
-func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest) (domain.Transaction, error) {
+func (s *Service) reimburse(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	req ReimbursementRequest,
+) (domain.Transaction, error) {
 	locked, all, err := s.lockReimbursed(ctx, r, booksID, req)
 	if err != nil {
 		return domain.Transaction{}, err
@@ -78,7 +87,10 @@ func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, re
 		return domain.Transaction{}, err
 	}
 
-	links := slices.DeleteFunc(slices.Clone(next.Links), func(l domain.Link) bool { return l.Type != domain.LinkReimbursementOf })
+	links := slices.DeleteFunc(
+		slices.Clone(next.Links),
+		func(l domain.Link) bool { return l.Type != domain.LinkReimbursementOf },
+	)
 	if err := r.SetReimbursementLinks(ctx, booksID, next.ID, links); err != nil {
 		return domain.Transaction{}, err
 	}
@@ -87,7 +99,12 @@ func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, re
 }
 
 // lockReimbursed locks the reimbursement and its originals in id order.
-func (s *Service) lockReimbursed(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest) (map[uuid.UUID]domain.Transaction, []domain.Transaction, error) {
+func (s *Service) lockReimbursed(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	req ReimbursementRequest,
+) (map[uuid.UUID]domain.Transaction, []domain.Transaction, error) {
 	ids := []uuid.UUID{req.TransactionID}
 	for _, a := range req.Allocations {
 		if !slices.Contains(ids, a.OriginalID) {
@@ -113,7 +130,14 @@ func (s *Service) lockReimbursed(ctx context.Context, r Repository, booksID int6
 }
 
 // allocations builds the domain allocations of req, recategorizing the originals it names.
-func (s *Service) allocations(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest, locked map[uuid.UUID]domain.Transaction, accounts map[uuid.UUID]domain.Account) ([]domain.Allocation, error) {
+func (s *Service) allocations(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	req ReimbursementRequest,
+	locked map[uuid.UUID]domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+) ([]domain.Allocation, error) {
 	var err error
 
 	prev := locked[req.TransactionID]
@@ -126,7 +150,14 @@ func (s *Service) allocations(ctx context.Context, r Repository, booksID int64, 
 
 		original := locked[a.OriginalID]
 		if a.CategoryID != uuid.Nil && a.OriginalID != req.TransactionID {
-			if original, err = s.recategorizeOriginal(ctx, r, original, accounts, a.CategoryID, req.Cause); err != nil {
+			if original, err = s.recategorizeOriginal(
+				ctx,
+				r,
+				original,
+				accounts,
+				a.CategoryID,
+				req.Cause,
+			); err != nil {
 				return nil, err
 			}
 		}
@@ -136,17 +167,29 @@ func (s *Service) allocations(ctx context.Context, r Repository, booksID int64, 
 			return nil, err
 		}
 
-		allocations[i] = domain.Allocation{Original: original, Amount: a.Amount.Amount(), HeldByOthers: held}
+		allocations[i] = domain.Allocation{
+			Original:     original,
+			Amount:       a.Amount.Amount(),
+			HeldByOthers: held,
+		}
 	}
 
 	return allocations, nil
 }
 
 // checkAllocationCurrency requires the amount in the currency of the category side of t.
-func checkAllocationCurrency(t domain.Transaction, accounts map[uuid.UUID]domain.Account, i int, a AllocationRequest) error {
+func checkAllocationCurrency(
+	t domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	i int,
+	a AllocationRequest,
+) error {
 	for _, p := range t.Postings {
 		if accounts[p.AccountID].IsCategory() && p.Amount.Currency() != a.Amount.Currency() {
-			return validationError(fmt.Sprintf("allocations[%d].amount", i), "must be in the currency "+string(p.Amount.Currency()))
+			return validationError(
+				fmt.Sprintf("allocations[%d].amount", i),
+				"must be in the currency "+string(p.Amount.Currency()),
+			)
 		}
 	}
 
@@ -154,7 +197,14 @@ func checkAllocationCurrency(t domain.Transaction, accounts map[uuid.UUID]domain
 }
 
 // recategorizeOriginal moves the category postings of the expense to the expense category.
-func (s *Service) recategorizeOriginal(ctx context.Context, r Repository, original domain.Transaction, accounts map[uuid.UUID]domain.Account, category uuid.UUID, cause Cause) (domain.Transaction, error) {
+func (s *Service) recategorizeOriginal(
+	ctx context.Context,
+	r Repository,
+	original domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	category uuid.UUID,
+	cause Cause,
+) (domain.Transaction, error) {
 	if c := accounts[category]; c.ID == uuid.Nil || c.Class != domain.ClassExpense {
 		return domain.Transaction{}, validationError("category_id", "must be an expense account")
 	}
@@ -164,7 +214,10 @@ func (s *Service) recategorizeOriginal(ctx context.Context, r Repository, origin
 		return domain.Transaction{}, err
 	}
 
-	next, err := original.Categorize(domain.Categorization{ExpectedVersion: original.Version, Parts: parts}, accounts)
+	next, err := original.Categorize(
+		domain.Categorization{ExpectedVersion: original.Version, Parts: parts},
+		accounts,
+	)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -176,11 +229,25 @@ func (s *Service) recategorizeOriginal(ctx context.Context, r Repository, origin
 	return next, s.publishCategorized(ctx, r, next, original, accounts, cause)
 }
 
-func (s *Service) publishCategorized(ctx context.Context, r Repository, next, prev domain.Transaction, accounts map[uuid.UUID]domain.Account, cause Cause) error {
+func (s *Service) publishCategorized(
+	ctx context.Context,
+	r Repository,
+	next, prev domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+	cause Cause,
+) error {
 	event := newTransactionEvent(next, accounts, prev)
 	if cause.Method != "" {
 		event.Cause = &cause
 	}
 
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event})
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionCategorized,
+			BooksID:     next.BooksID,
+			AggregateID: next.ID.String(),
+			Payload:     event,
+		},
+	)
 }

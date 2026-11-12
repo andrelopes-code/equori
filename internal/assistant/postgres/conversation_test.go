@@ -15,7 +15,12 @@ import (
 
 var t0 = time.Date(2026, 10, 23, 10, 0, 0, 0, time.UTC)
 
-func conversation(t *testing.T, repo *postgres.Repository, booksID, memberID int64, at time.Time) domain.Conversation {
+func conversation(
+	t *testing.T,
+	repo *postgres.Repository,
+	booksID, memberID int64,
+	at time.Time,
+) domain.Conversation {
 	t.Helper()
 
 	c := domain.Conversation{ID: uuid.New(), Title: "T", CreatedAt: at, UpdatedAt: at}
@@ -39,7 +44,13 @@ func TestConversation(t *testing.T) {
 
 	var last time.Time
 	for i, role := range []domain.Role{domain.RoleUser, domain.RoleAssistant, domain.RoleUser} {
-		m := domain.Message{ID: uuid.New(), ConversationID: c1.ID, Role: role, Content: "x", CreatedAt: t0.Add(time.Duration(i+1) * time.Minute)}
+		m := domain.Message{
+			ID:             uuid.New(),
+			ConversationID: c1.ID,
+			Role:           role,
+			Content:        "x",
+			CreatedAt:      t0.Add(time.Duration(i+1) * time.Minute),
+		}
 		if role == domain.RoleAssistant {
 			m.Outcome = domain.OutcomeAnswered
 		}
@@ -53,7 +64,8 @@ func TestConversation(t *testing.T) {
 	}
 
 	msgs, err := repo.Messages(ctx, a, c1.ID)
-	if err != nil || len(msgs) != 3 || msgs[0].Seq != 1 || msgs[2].Seq != 3 || msgs[1].Role != domain.RoleAssistant {
+	if err != nil || len(msgs) != 3 || msgs[0].Seq != 1 || msgs[2].Seq != 3 ||
+		msgs[1].Role != domain.RoleAssistant {
 		t.Fatalf("Messages = %+v, %v", msgs, err)
 	}
 
@@ -67,16 +79,38 @@ func TestConversation(t *testing.T) {
 		t.Fatalf("first page = %+v, %v", page, err)
 	}
 
-	next, err := repo.Conversations(ctx, a, ma, &app.ConversationKey{UpdatedAt: page[1].UpdatedAt, ID: page[1].ID}, 2)
+	next, err := repo.Conversations(
+		ctx,
+		a,
+		ma,
+		&app.ConversationKey{UpdatedAt: page[1].UpdatedAt, ID: page[1].ID},
+		2,
+	)
 	if err != nil || len(next) != 1 || next[0].ID != c1.ID {
 		t.Fatalf("next page = %+v, %v", next, err)
 	}
 
-	if _, err := repo.Conversation(ctx, b, mb, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
+	if _, err := repo.Conversation(
+		ctx,
+		b,
+		mb,
+		c1.ID,
+	); !errors.Is(
+		err,
+		domain.ErrConversationNotFound,
+	) {
 		t.Fatalf("other book's Conversation error = %v", err)
 	}
 
-	if err := repo.DeleteConversation(ctx, b, mb, c1.ID); !errors.Is(err, domain.ErrConversationNotFound) {
+	if err := repo.DeleteConversation(
+		ctx,
+		b,
+		mb,
+		c1.ID,
+	); !errors.Is(
+		err,
+		domain.ErrConversationNotFound,
+	) {
 		t.Fatalf("other book's DeleteConversation error = %v", err)
 	}
 

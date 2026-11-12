@@ -12,22 +12,40 @@ import (
 func TestAccountOpenedOnMovesEarlier(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	checking := h.Account("Checking", "asset", "checking", map[string]any{"opened_on": "2026-06-01"})
+	checking := h.Account(
+		"Checking",
+		"asset",
+		"checking",
+		map[string]any{"opened_on": "2026-06-01"},
+	)
 	food := h.Account("Food", "expense", "", nil)
 	tx := map[string]any{
 		"date":        "2026-05-10",
 		"description": "groceries",
-		"postings":    []map[string]any{apitest.Posting(checking, -1000), apitest.Posting(food, 1000)},
+		"postings": []map[string]any{
+			apitest.Posting(checking, -1000),
+			apitest.Posting(food, 1000),
+		},
 	}
 
-	if r := h.Do(http.MethodPost, "/api/v1/transactions", tx); r.Status != http.StatusUnprocessableEntity {
+	if r := h.Do(
+		http.MethodPost,
+		"/api/v1/transactions",
+		tx,
+	); r.Status != http.StatusUnprocessableEntity {
 		t.Fatalf("transaction before the opening date: status %d, want 422: %s", r.Status, r.Body)
 	}
 
 	var got struct {
 		OpenedOn string `json:"opened_on"`
 	}
-	h.MustDo(http.MethodPatch, "/api/v1/accounts/"+checking, map[string]any{"opened_on": "2026-05-01"}, http.StatusOK, &got)
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/accounts/"+checking,
+		map[string]any{"opened_on": "2026-05-01"},
+		http.StatusOK,
+		&got,
+	)
 
 	if got.OpenedOn != "2026-05-01" {
 		t.Fatalf("opened_on = %s, want 2026-05-01", got.OpenedOn)
@@ -35,7 +53,11 @@ func TestAccountOpenedOnMovesEarlier(t *testing.T) {
 
 	h.MustDo(http.MethodPost, "/api/v1/transactions", tx, http.StatusCreated, nil)
 
-	r := h.Do(http.MethodPatch, "/api/v1/accounts/"+checking, map[string]any{"opened_on": "2026-05-02"})
+	r := h.Do(
+		http.MethodPatch,
+		"/api/v1/accounts/"+checking,
+		map[string]any{"opened_on": "2026-05-02"},
+	)
 	if r.Status != http.StatusUnprocessableEntity {
 		t.Fatalf("later opening date: status %d, want 422: %s", r.Status, r.Body)
 	}

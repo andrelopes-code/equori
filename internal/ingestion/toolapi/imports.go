@@ -24,10 +24,10 @@ func (recordState) Values() []string {
 }
 
 type getImportsIn struct {
-	View         importsView `json:"view" jsonschema:"what to return"`
-	BatchID      string      `json:"batch_id,omitzero" jsonschema:"for records: batch from the batches view"`
-	State        recordState `json:"state,omitzero" jsonschema:"for records: keep records in this state"`
-	AccountID    string      `json:"account_id,omitzero" jsonschema:"for unconfirmed: balance account from list_accounts"`
+	View         importsView `json:"view"                   jsonschema:"what to return"`
+	BatchID      string      `json:"batch_id,omitzero"      jsonschema:"for records: batch from the batches view"`
+	State        recordState `json:"state,omitzero"         jsonschema:"for records: keep records in this state"`
+	AccountID    string      `json:"account_id,omitzero"    jsonschema:"for unconfirmed: balance account from list_accounts"`
 	ConnectionID string      `json:"connection_id,omitzero" jsonschema:"for syncs: connection from the connections view"`
 	tool.PageArgs
 }
@@ -48,10 +48,10 @@ type countsView struct {
 type batchView struct {
 	BatchID     string     `json:"batch_id"`
 	AccountName string     `json:"account_name,omitzero"`
-	Source      string     `json:"source" jsonschema:"file format, or the aggregator for a sync"`
+	Source      string     `json:"source"                jsonschema:"file format, or the aggregator for a sync"`
 	FileName    string     `json:"file_name,omitzero"`
-	StartedAt   string     `json:"started_at" jsonschema:"RFC 3339 time"`
-	Counts      countsView `json:"counts" jsonschema:"lines by outcome; absent outcomes are zero"`
+	StartedAt   string     `json:"started_at"            jsonschema:"RFC 3339 time"`
+	Counts      countsView `json:"counts"                jsonschema:"lines by outcome; absent outcomes are zero"`
 }
 
 type recordView struct {
@@ -61,13 +61,13 @@ type recordView struct {
 	Amount       tool.Money `json:"amount"`
 	State        string     `json:"state"`
 	ReviewReason string     `json:"review_reason,omitzero"`
-	Candidates   []string   `json:"candidates,omitzero" jsonschema:"transactions the record may match, best first; get_transaction describes them"`
-	Decision     string     `json:"decision,omitzero" jsonschema:"linked, followed, withdrawn, re_identified or paired: the automatic decision undo_decision of manage_imports reverts"`
+	Candidates   []string   `json:"candidates,omitzero"    jsonschema:"transactions the record may match, best first; get_transaction describes them"`
+	Decision     string     `json:"decision,omitzero"      jsonschema:"linked, followed, withdrawn, re_identified or paired: the automatic decision undo_decision of manage_imports reverts"`
 }
 
 type syncView struct {
 	SyncID    string       `json:"sync_id"`
-	StartedAt string       `json:"started_at" jsonschema:"RFC 3339 time"`
+	StartedAt string       `json:"started_at"       jsonschema:"RFC 3339 time"`
 	Batches   []batchView  `json:"batches"`
 	Records   []recordView `json:"records,omitzero" jsonschema:"lines of the run with an automatic decision"`
 }
@@ -82,14 +82,14 @@ type unconfirmedView struct {
 type externalAccountView struct {
 	ExternalAccountID string `json:"external_account_id"`
 	Name              string `json:"name"`
-	State             string `json:"state" jsonschema:"mapped, ignored or pending a decision"`
+	State             string `json:"state"                 jsonschema:"mapped, ignored or pending a decision"`
 	AccountName       string `json:"account_name,omitzero" jsonschema:"ledger account receiving the lines"`
 }
 
 type connectionView struct {
 	ConnectionID string                `json:"connection_id"`
 	Name         string                `json:"name"`
-	State        string                `json:"state" jsonschema:"ok, needs_owner, failed, stalled (no institution data for more than 72 hours) or consent_expiring (consent expires within 14 days)"`
+	State        string                `json:"state"                   jsonschema:"ok, needs_owner, failed, stalled (no institution data for more than 72 hours) or consent_expiring (consent expires within 14 days)"`
 	LastSyncedAt string                `json:"last_synced_at,omitzero" jsonschema:"RFC 3339 time"`
 	LastError    string                `json:"last_error,omitzero"`
 	Accounts     []externalAccountView `json:"accounts"`
@@ -111,7 +111,7 @@ type getImportsOut struct {
 	Connections  []connectionView  `json:"connections,omitzero"`
 	Syncs        []syncView        `json:"syncs,omitzero"`
 	Integrations []integrationView `json:"integrations,omitzero"`
-	NextCursor   string            `json:"next_cursor,omitzero" jsonschema:"present when more items follow; pass it as cursor"`
+	NextCursor   string            `json:"next_cursor,omitzero"  jsonschema:"present when more items follow; pass it as cursor"`
 }
 
 func getImports(svc *app.Service, names AccountNames) tool.Tool {
@@ -134,7 +134,12 @@ func getImportsAction(
 	booksID int64,
 	in getImportsIn,
 ) (getImportsOut, error) {
-	fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}, {"connection_id", in.ConnectionID != ""}}
+	fields := []field{
+		{"batch_id", in.BatchID != ""},
+		{"state", in.State != ""},
+		{"account_id", in.AccountID != ""},
+		{"connection_id", in.ConnectionID != ""},
+	}
 
 	named, err := names(ctx, booksID)
 	if err != nil {
@@ -144,7 +149,11 @@ func getImportsAction(
 	switch in.View {
 	case "records":
 		// state is optional for records.
-		if err := required("records", []field{fields[0], fields[2], fields[3]}, "batch_id"); err != nil {
+		if err := required(
+			"records",
+			[]field{fields[0], fields[2], fields[3]},
+			"batch_id",
+		); err != nil {
 			return getImportsOut{}, err
 		}
 
@@ -204,7 +213,13 @@ func listBatches(
 	return out, err
 }
 
-func records(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func records(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getImportsIn,
+	named map[uuid.UUID]string,
+) (getImportsOut, error) {
 	id, err := optionalID(in.BatchID, "batch_id")
 	if err != nil {
 		return getImportsOut{}, err
@@ -220,7 +235,11 @@ func records(ctx context.Context, svc *app.Service, booksID int64, in getImports
 		return getImportsOut{}, err
 	}
 
-	out := getImportsOut{BatchID: b.ID.String(), AccountName: named[b.AccountID], Records: []recordView{}}
+	out := getImportsOut{
+		BatchID:     b.ID.String(),
+		AccountName: named[b.AccountID],
+		Records:     []recordView{},
+	}
 	for _, r := range recs {
 		v, err := toRecordView(r, b.Currency)
 		if err != nil {
@@ -235,7 +254,13 @@ func records(ctx context.Context, svc *app.Service, booksID int64, in getImports
 	return out, err
 }
 
-func syncs(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func syncs(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getImportsIn,
+	named map[uuid.UUID]string,
+) (getImportsOut, error) {
 	id, err := optionalID(in.ConnectionID, "connection_id")
 	if err != nil {
 		return getImportsOut{}, err
@@ -249,7 +274,11 @@ func syncs(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn
 	out := getImportsOut{Syncs: []syncView{}}
 	for _, run := range runs {
 		currency := make(map[uuid.UUID]string, len(run.Batches))
-		v := syncView{SyncID: run.ID.String(), StartedAt: run.StartedAt.UTC().Format(time.RFC3339), Batches: []batchView{}}
+		v := syncView{
+			SyncID:    run.ID.String(),
+			StartedAt: run.StartedAt.UTC().Format(time.RFC3339),
+			Batches:   []batchView{},
+		}
 
 		for _, b := range run.Batches {
 			v.Batches = append(v.Batches, toBatchView(b, named))
@@ -275,7 +304,13 @@ func syncs(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn
 	return out, nil
 }
 
-func unconfirmed(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func unconfirmed(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getImportsIn,
+	named map[uuid.UUID]string,
+) (getImportsOut, error) {
 	id, err := optionalID(in.AccountID, "account_id")
 	if err != nil {
 		return getImportsOut{}, err
@@ -293,16 +328,34 @@ func unconfirmed(ctx context.Context, svc *app.Service, booksID int64, in getImp
 			return getImportsOut{}, err
 		}
 
-		views = append(views, unconfirmedView{TransactionID: p.TransactionID.String(), Date: tool.DateOf(p.Date), Description: p.Description, Amount: amount})
+		views = append(
+			views,
+			unconfirmedView{
+				TransactionID: p.TransactionID.String(),
+				Date:          tool.DateOf(p.Date),
+				Description:   p.Description,
+				Amount:        amount,
+			},
+		)
 	}
 
 	out := getImportsOut{AccountID: in.AccountID, AccountName: named[id]}
-	out.Unconfirmed, out.NextCursor, err = tool.PageOf(views, func(v unconfirmedView) string { return v.TransactionID }, in.PageArgs)
+	out.Unconfirmed, out.NextCursor, err = tool.PageOf(
+		views,
+		func(v unconfirmedView) string { return v.TransactionID },
+		in.PageArgs,
+	)
 
 	return out, err
 }
 
-func connections(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
+func connections(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getImportsIn,
+	named map[uuid.UUID]string,
+) (getImportsOut, error) {
 	p, err := pageRequest[app.NameKey](in.PageArgs)
 	if err != nil {
 		return getImportsOut{}, err

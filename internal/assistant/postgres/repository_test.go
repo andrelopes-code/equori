@@ -40,7 +40,10 @@ func TestProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if fe, ok := errors.AsType[*domain.FieldError](repo.InsertProvider(ctx, provider(t, a, "Local", nil))); !ok || fe.Field != "name" {
+	if fe, ok := errors.AsType[*domain.FieldError](
+		repo.InsertProvider(ctx, provider(t, a, "Local", nil)),
+	); !ok ||
+		fe.Field != "name" {
 		t.Fatal("repeated name accepted")
 	}
 
@@ -110,12 +113,21 @@ func TestChains(t *testing.T) {
 	}
 
 	chains, err := repo.Chains(ctx, a)
-	if err != nil || !reflect.DeepEqual(chains, map[string][]domain.ChainTarget{"assistant.chat": targets}) {
+	if err != nil ||
+		!reflect.DeepEqual(chains, map[string][]domain.ChainTarget{"assistant.chat": targets}) {
 		t.Fatalf("Chains = %+v, %v", chains, err)
 	}
 
 	foreign := []domain.ChainTarget{{ProviderID: q.ID, Model: "m", Capabilities: []string{}}}
-	if err := repo.ReplaceChain(ctx, a, "assistant.chat", foreign); !errors.Is(err, domain.ErrProviderNotFound) {
+	if err := repo.ReplaceChain(
+		ctx,
+		a,
+		"assistant.chat",
+		foreign,
+	); !errors.Is(
+		err,
+		domain.ErrProviderNotFound,
+	) {
 		t.Fatalf("chain on another book's provider err = %v, want ErrProviderNotFound", err)
 	}
 
@@ -148,15 +160,18 @@ func TestResealKeys(t *testing.T) {
 
 	var seen []uuid.UUID
 
-	n, err := repo.ResealKeys(ctx, func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
-		seen = append(seen, id)
+	n, err := repo.ResealKeys(
+		ctx,
+		func(booksID int64, id uuid.UUID, sealed []byte) ([]byte, error) {
+			seen = append(seen, id)
 
-		if booksID != a || string(sealed) != "old" {
-			t.Errorf("reseal got book %d, sealed %q", booksID, sealed)
-		}
+			if booksID != a || string(sealed) != "old" {
+				t.Errorf("reseal got book %d, sealed %q", booksID, sealed)
+			}
 
-		return []byte("new"), nil
-	})
+			return []byte("new"), nil
+		},
+	)
 	if err != nil || n != 1 || !reflect.DeepEqual(seen, []uuid.UUID{keyed.ID}) {
 		t.Fatalf("ResealKeys = %d, %v; seen %v", n, err, seen)
 	}

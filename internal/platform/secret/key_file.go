@@ -13,7 +13,9 @@ import (
 
 // LoadOrCreateKey keeps the key of managed mode beside the data and outside every dump (ADR 008, K2).
 func LoadOrCreateKey(path string) (string, error) {
-	b, err := os.ReadFile(path) //nolint:gosec // G304: the data directory is the owner's configuration.
+	b, err := os.ReadFile(
+		path,
+	) //nolint:gosec // G304: the data directory is the owner's configuration.
 	if errors.Is(err, fs.ErrNotExist) {
 		return createKey(path)
 	}
@@ -40,7 +42,11 @@ func createKey(path string) (string, error) {
 		return "", fmt.Errorf("generate key: %w", err)
 	}
 
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600) //nolint:gosec // G304: as above.
+	f, err := os.OpenFile(
+		path,
+		os.O_CREATE|os.O_EXCL|os.O_WRONLY,
+		0o600,
+	) //nolint:gosec // G304: as above.
 	if err != nil {
 		return "", fmt.Errorf("create %s: %w", path, err)
 	}

@@ -19,7 +19,13 @@ type budgetListView struct {
 
 func (f fixture) mergeCategory(from, into string) {
 	f.h.T().Helper()
-	f.h.MustDo(http.MethodPost, "/api/v1/accounts/"+from+"/merge", map[string]string{"into": into}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+from+"/merge",
+		map[string]string{"into": into},
+		http.StatusOK,
+		nil,
+	)
 	f.h.Dispatch()
 }
 
@@ -37,7 +43,14 @@ func TestMergeMovesBudgetAndSchedules(t *testing.T) {
 	f := newFixture(t, "2026-11-01")
 	housing := f.h.Account("Housing", "expense", "", nil)
 	budget := f.budget(f.rent, 200000, "2026-11", false)
-	schedule := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), nil)
+	schedule := f.schedule(
+		"bill",
+		f.checking,
+		f.rent,
+		210000,
+		monthly("2026-11-01", 5, "following"),
+		nil,
+	)
 
 	f.mergeCategory(f.rent, housing)
 
@@ -80,9 +93,28 @@ func TestPayeeMergeMovesSchedulePayee(t *testing.T) {
 	var other struct {
 		ID string `json:"id"`
 	}
-	f.h.MustDo(http.MethodPost, "/api/v1/payees", map[string]string{"name": "Imobiliaria"}, http.StatusCreated, &other)
-	schedule := f.schedule("bill", f.checking, f.rent, 210000, monthly("2026-11-01", 5, "following"), map[string]any{"payee_id": f.landlord})
-	f.h.MustDo(http.MethodPost, "/api/v1/payees/"+f.landlord+"/merge", map[string]string{"into": other.ID}, http.StatusOK, nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees",
+		map[string]string{"name": "Imobiliaria"},
+		http.StatusCreated,
+		&other,
+	)
+	schedule := f.schedule(
+		"bill",
+		f.checking,
+		f.rent,
+		210000,
+		monthly("2026-11-01", 5, "following"),
+		map[string]any{"payee_id": f.landlord},
+	)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/payees/"+f.landlord+"/merge",
+		map[string]string{"into": other.ID},
+		http.StatusOK,
+		nil,
+	)
 	f.h.Dispatch()
 	var s struct {
 		PayeeID string `json:"payee_id"`

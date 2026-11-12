@@ -10,7 +10,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
-func (s *Server) listMembers(ctx context.Context, _ *http.Request, _ httpserver.None) (BooksMemberList, error) {
+func (s *Server) listMembers(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (BooksMemberList, error) {
 	members, err := s.svc.Members(ctx, auth.MustBooksID(ctx))
 	if err != nil {
 		return BooksMemberList{}, err
@@ -34,14 +38,23 @@ func (s *Server) updateMember(
 		return httpserver.None{}, err
 	}
 
-	if err := s.svc.ChangeRole(ctx, auth.MustBooksID(ctx), memberID, auth.BookRole(in.Role)); err != nil {
+	if err := s.svc.ChangeRole(
+		ctx,
+		auth.MustBooksID(ctx),
+		memberID,
+		auth.BookRole(in.Role),
+	); err != nil {
 		return httpserver.None{}, err
 	}
 
 	return httpserver.None{}, nil
 }
 
-func (s *Server) removeMember(ctx context.Context, r *http.Request, _ httpserver.None) (httpserver.None, error) {
+func (s *Server) removeMember(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (httpserver.None, error) {
 	memberID, err := httpserver.PathInt64(r, "memberId")
 	if err != nil {
 		return httpserver.None{}, err
@@ -58,7 +71,11 @@ func (s *Server) removeMember(ctx context.Context, r *http.Request, _ httpserver
 func (s *Server) leaveBooks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := s.svc.RemoveMembership(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx)); err != nil {
+	if err := s.svc.RemoveMembership(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+	); err != nil {
 		s.errs.Write(w, r, err)
 		return
 	}
@@ -76,7 +93,12 @@ func (s *Server) deleteCurrentBooks(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	if err := s.svc.DeleteBooks(ctx, auth.MustBooksID(ctx), auth.MustMemberID(ctx), in.Name); err != nil {
+	if err := s.svc.DeleteBooks(
+		ctx,
+		auth.MustBooksID(ctx),
+		auth.MustMemberID(ctx),
+		in.Name,
+	); err != nil {
 		s.errs.Write(w, r, err)
 		return
 	}

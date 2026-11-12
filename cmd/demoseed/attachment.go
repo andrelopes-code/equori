@@ -17,7 +17,11 @@ func miniPDF(lines []string) []byte {
 	text.WriteString("BT /F1 12 Tf 56 780 Td 16 TL\n")
 
 	for _, l := range lines {
-		fmt.Fprintf(&text, "(%s) Tj T*\n", strings.NewReplacer(`\`, `\\`, "(", `\(`, ")", `\)`).Replace(l))
+		fmt.Fprintf(
+			&text,
+			"(%s) Tj T*\n",
+			strings.NewReplacer(`\`, `\\`, "(", `\(`, ")", `\)`).Replace(l),
+		)
 	}
 
 	text.WriteString("ET")

@@ -29,13 +29,20 @@ const chatModel = "gemini-3.5-flash"
 
 func textStep(s string) llmtest.Step {
 	return llmtest.Step{Model: chatModel, Response: llm.Response{
-		Message: llm.Message{Role: llm.RoleModel, Parts: []llm.Part{{Text: s}}}, FinishReason: llm.FinishStop,
+		Message: llm.Message{
+			Role:  llm.RoleModel,
+			Parts: []llm.Part{{Text: s}},
+		},
+		FinishReason: llm.FinishStop,
 	}}
 }
 
 func callStep(name, args string) llmtest.Step {
 	return llmtest.Step{Model: chatModel, Response: llm.Response{
-		Message:      llm.Message{Role: llm.RoleModel, Parts: []llm.Part{{ToolCall: &llm.ToolCall{Name: name, Args: json.RawMessage(args)}}}},
+		Message: llm.Message{
+			Role:  llm.RoleModel,
+			Parts: []llm.Part{{ToolCall: &llm.ToolCall{Name: name, Args: json.RawMessage(args)}}},
+		},
 		FinishReason: llm.FinishToolCalls,
 	}}
 }
@@ -91,7 +98,9 @@ func eventNames(events []sseEvent) []string {
 
 func turnHarness(t *testing.T, p *llmtest.Provider, opts ...apitest.Option) *apitest.Harness {
 	t.Helper()
-	return apitest.New(t, append([]apitest.Option{apitest.LLM(p), apitest.Today("2026-10-23")}, opts...)...)
+	return apitest.New(
+		t,
+		append([]apitest.Option{apitest.LLM(p), apitest.Today("2026-10-23")}, opts...)...)
 }
 
 func conversationMessages(t *testing.T, h *apitest.Harness, id string) []turnAnswer {
@@ -123,7 +132,8 @@ func TestTurnRead(t *testing.T) {
 	h := turnHarness(t, p)
 
 	r := sendTurn(h, h.Client, map[string]any{"text": "Qual o saldo?", "page": "/cards"})
-	if r.Status != http.StatusOK || !strings.HasPrefix(r.Header.Get("Content-Type"), "text/event-stream") {
+	if r.Status != http.StatusOK ||
+		!strings.HasPrefix(r.Header.Get("Content-Type"), "text/event-stream") {
 		t.Fatalf("status = %d, type = %q: %s", r.Status, r.Header.Get("Content-Type"), r.Body)
 	}
 
@@ -148,11 +158,17 @@ func TestTurnRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if answer.Content != "Saldo: R$ 10,00" || answer.Outcome != "answered" || answer.Role != "assistant" {
+	if answer.Content != "Saldo: R$ 10,00" || answer.Outcome != "answered" ||
+		answer.Role != "assistant" {
 		t.Fatalf("answer = %+v", answer)
 	}
 
-	if msgs := conversationMessages(t, h, turn.ConversationID); len(msgs) != 2 || msgs[0].Role != "user" || msgs[0].Content != "Qual o saldo?" || msgs[1].ID != answer.ID {
+	if msgs := conversationMessages(
+		t,
+		h,
+		turn.ConversationID,
+	); len(msgs) != 2 || msgs[0].Role != "user" || msgs[0].Content != "Qual o saldo?" ||
+		msgs[1].ID != answer.ID {
 		t.Fatalf("messages = %+v", msgs)
 	}
 
@@ -160,12 +176,19 @@ func TestTurnRead(t *testing.T) {
 
 	today := time.Date(2026, 10, 23, 0, 0, 0, 0, time.UTC)
 
-	bare := app.Prompt(app.PromptInput{Today: today, Locale: locale.Locale{Language: "pt", Region: "BR"}, Page: "/cards"})
+	bare := app.Prompt(
+		app.PromptInput{
+			Today:  today,
+			Locale: locale.Locale{Language: "pt", Region: "BR"},
+			Page:   "/cards",
+		},
+	)
 	if head, _, _ := strings.Cut(bare, "\n\nData\n"); !strings.HasPrefix(req.System, head) {
 		t.Fatalf("system = %q, want prefix %q", req.System, head)
 	}
 
-	if !strings.Contains(req.System, "\n\nBook at the start of this turn\nlist_accounts: {") || !strings.Contains(req.System, "\nlist_schedules: ") {
+	if !strings.Contains(req.System, "\n\nBook at the start of this turn\nlist_accounts: {") ||
+		!strings.Contains(req.System, "\nlist_schedules: ") {
 		t.Fatalf("system lacks the turn-start reads: %q", req.System)
 	}
 
@@ -186,7 +209,8 @@ func TestTurnRead(t *testing.T) {
 
 	// The turn's log line counts steps and tool calls and carries no content (spec 14).
 	line := lastTurnLog(h)
-	if !strings.Contains(line, "steps=2") || !strings.Contains(line, "tool_calls=1") || !strings.Contains(line, "outcome=answered") {
+	if !strings.Contains(line, "steps=2") || !strings.Contains(line, "tool_calls=1") ||
+		!strings.Contains(line, "outcome=answered") {
 		t.Fatalf("turn log = %q", line)
 	}
 
@@ -231,7 +255,11 @@ func TestTurnReadMemberTools(t *testing.T) {
 func TestTurnProposal(t *testing.T) {
 	t.Parallel()
 
-	p := llmtest.New("aistudio", callStep("note_for_test", `{"text":"x"}`), textStep("Confirme no cartão."))
+	p := llmtest.New(
+		"aistudio",
+		callStep("note_for_test", `{"text":"x"}`),
+		textStep("Confirme no cartão."),
+	)
 	h := turnHarness(t, p, apitest.ExtraTools(newNoteFake().group()))
 	r := sendTurn(h, h.Client, map[string]any{"text": "anota x"})
 
@@ -245,7 +273,8 @@ func TestTurnProposal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(answer.Proposals) != 1 || answer.Proposals[0].Status != "pending" || answer.Proposals[0].Tool != "note_for_test" {
+	if len(answer.Proposals) != 1 || answer.Proposals[0].Status != "pending" ||
+		answer.Proposals[0].Tool != "note_for_test" {
 		t.Fatalf("proposals = %+v", answer.Proposals)
 	}
 }
@@ -257,10 +286,16 @@ func TestTurnExhausted(t *testing.T) {
 	quota := func(model string) llmtest.Step {
 		return llmtest.Step{Model: model, Err: &llm.QuotaError{RetryAfter: time.Hour}}
 	}
-	p := llmtest.New("aistudio", quota("gemini-3.5-flash"), quota("gemini-3.5-flash-lite"), quota("gemini-3.1-flash-lite"))
+	p := llmtest.New(
+		"aistudio",
+		quota("gemini-3.5-flash"),
+		quota("gemini-3.5-flash-lite"),
+		quota("gemini-3.1-flash-lite"),
+	)
 	h := turnHarness(t, p)
 	ctx := auth.WithBooksID(t.Context(), h.OwnerID())
-	_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
+	_, _ = h.App.LLM.Use(assistant.ChatUse).
+		Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
 	before := len(p.Requests())
 	r := sendTurn(h, h.Client, map[string]any{"text": "oi"})
 	h.ExpectProblem(r, http.StatusTooManyRequests, "assistant_exhausted", "")
@@ -290,17 +325,26 @@ func TestTurnExhausted(t *testing.T) {
 func TestTurnUnavailable(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
-	h.ExpectProblem(sendTurn(h, h.Client, map[string]any{"text": "oi"}), http.StatusServiceUnavailable, "assistant_unavailable", "")
+	h.ExpectProblem(
+		sendTurn(h, h.Client, map[string]any{"text": "oi"}),
+		http.StatusServiceUnavailable,
+		"assistant_unavailable",
+		"",
+	)
 }
 
 // S139: the first target answers a tool call, then fails for quota; the turn restarts on the second.
 func TestTurnFallback(t *testing.T) {
 	t.Parallel()
 
-	p := llmtest.New("aistudio",
+	p := llmtest.New(
+		"aistudio",
 		callStep("get_balances", `{}`),
 		llmtest.Step{Model: chatModel, Err: &llm.QuotaError{RetryAfter: time.Hour}},
-		llmtest.Step{Model: "gemini-3.5-flash-lite", Response: callStep("get_balances", `{}`).Response},
+		llmtest.Step{
+			Model:    "gemini-3.5-flash-lite",
+			Response: callStep("get_balances", `{}`).Response,
+		},
 		llmtest.Step{Model: "gemini-3.5-flash-lite", Response: textStep("ok").Response},
 	)
 	h := turnHarness(t, p)
@@ -309,7 +353,8 @@ func TestTurnFallback(t *testing.T) {
 	last := events[len(events)-1]
 
 	var answer turnAnswer
-	if last.Name != "answer" || json.Unmarshal([]byte(last.Data), &answer) != nil || answer.Content != "ok" {
+	if last.Name != "answer" || json.Unmarshal([]byte(last.Data), &answer) != nil ||
+		answer.Content != "ok" {
 		t.Fatalf("events = %s", r.Body)
 	}
 
@@ -332,7 +377,10 @@ func TestTurnBookTooLong(t *testing.T) {
 	}
 
 	system := p.Requests()[0].Request.System
-	if !strings.Contains(system, "\nlist_accounts: (too long; call list_accounts)\nlist_schedules: (unavailable; call list_schedules)\n") {
+	if !strings.Contains(
+		system,
+		"\nlist_accounts: (too long; call list_accounts)\nlist_schedules: (unavailable; call list_schedules)\n",
+	) {
 		t.Fatalf("system lacks the replacement lines: %q", system)
 	}
 }
@@ -346,12 +394,20 @@ func bookTools(t *testing.T, h *apitest.Harness, text string) {
 	t.Helper()
 
 	reg, err := tool.NewRegistry(slog.New(slog.DiscardHandler), tool.Group{Tools: []tool.Tool{
-		tool.New(tool.Spec{Name: "list_accounts", Description: "Lists accounts.", Effect: tool.ReadOnly},
-			func(context.Context, int64, struct{}) (bookOut, error) { return bookOut{Text: text}, nil }),
-		tool.New(tool.Spec{Name: "list_schedules", Description: "Lists schedules.", Effect: tool.ReadOnly},
+		tool.New(
+			tool.Spec{Name: "list_accounts", Description: "Lists accounts.", Effect: tool.ReadOnly},
+			func(context.Context, int64, struct{}) (bookOut, error) { return bookOut{Text: text}, nil },
+		),
+		tool.New(
+			tool.Spec{
+				Name:        "list_schedules",
+				Description: "Lists schedules.",
+				Effect:      tool.ReadOnly,
+			},
 			func(context.Context, int64, struct{}) (bookOut, error) {
 				return bookOut{}, tool.InvalidArgument("x", "broken")
-			}),
+			},
+		),
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -382,13 +438,20 @@ func TestTurnStepLimit(t *testing.T) {
 	events := parseSSE(r.Body)
 
 	var answer turnAnswer
-	if last := events[len(events)-1]; last.Name != "answer" || json.Unmarshal([]byte(last.Data), &answer) != nil || answer.Outcome != "step_limit" {
+	if last := events[len(events)-1]; last.Name != "answer" ||
+		json.Unmarshal([]byte(last.Data), &answer) != nil ||
+		answer.Outcome != "step_limit" {
 		t.Fatalf("events = %s", r.Body)
 	}
 
 	reqs := p.Requests()
-	if len(reqs) != app.MaxSteps || reqs[app.MaxSteps-1].Request.ToolChoice != llm.ToolChoiceNone || reqs[0].Request.ToolChoice != llm.ToolChoiceAuto {
-		t.Fatalf("requests = %d, last tool choice = %q", len(reqs), reqs[len(reqs)-1].Request.ToolChoice)
+	if len(reqs) != app.MaxSteps || reqs[app.MaxSteps-1].Request.ToolChoice != llm.ToolChoiceNone ||
+		reqs[0].Request.ToolChoice != llm.ToolChoiceAuto {
+		t.Fatalf(
+			"requests = %d, last tool choice = %q",
+			len(reqs),
+			reqs[len(reqs)-1].Request.ToolChoice,
+		)
 	}
 }
 
@@ -407,7 +470,11 @@ func TestTurnFailed(t *testing.T) {
 	var problem struct {
 		Code string `json:"code"`
 	}
-	if err := json.Unmarshal([]byte(events[1].Data), &problem); err != nil || problem.Code != "assistant_failed" {
+	if err := json.Unmarshal(
+		[]byte(events[1].Data),
+		&problem,
+	); err != nil ||
+		problem.Code != "assistant_failed" {
 		t.Fatalf("error event = %s", events[1].Data)
 	}
 
@@ -419,7 +486,9 @@ func TestTurnFailed(t *testing.T) {
 	}
 
 	msgs := conversationMessages(t, h, turn.ConversationID)
-	if len(msgs) != 2 || msgs[0].Role != "user" || msgs[1].Role != "assistant" || msgs[1].Outcome != "failed" || msgs[1].Content != "" {
+	if len(msgs) != 2 || msgs[0].Role != "user" || msgs[1].Role != "assistant" ||
+		msgs[1].Outcome != "failed" ||
+		msgs[1].Content != "" {
 		t.Fatalf("messages = %+v", msgs)
 	}
 }
@@ -431,7 +500,11 @@ type blockingProvider struct {
 
 func (*blockingProvider) Name() string { return "aistudio" }
 
-func (b *blockingProvider) Generate(ctx context.Context, _ string, _ llm.Request) (llm.Response, error) {
+func (b *blockingProvider) Generate(
+	ctx context.Context,
+	_ string,
+	_ llm.Request,
+) (llm.Response, error) {
 	b.calls.Add(1)
 	close(b.entered)
 	<-ctx.Done()
@@ -451,7 +524,12 @@ func TestTurnClientDisconnect(t *testing.T) {
 
 	body, _ := json.Marshal(map[string]any{"text": "oi"})
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, h.URL()+"/api/v1/assistant/turns", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		h.URL()+"/api/v1/assistant/turns",
+		bytes.NewReader(body),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,12 +560,16 @@ func TestTurnClientDisconnect(t *testing.T) {
 	}
 
 	var outcome string
-	if err := h.Pool.QueryRow(t.Context(), `SELECT outcome FROM assistant_message WHERE role = 'assistant'`).Scan(&outcome); err != nil || outcome != "canceled" {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT outcome FROM assistant_message WHERE role = 'assistant'`).
+		Scan(&outcome); err != nil ||
+		outcome != "canceled" {
 		t.Fatalf("assistant outcome = %q, %v", outcome, err)
 	}
 
 	var count int
-	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM assistant_message WHERE role = 'user'`).Scan(&count); err != nil || count != 1 {
+	if err := h.Pool.QueryRow(t.Context(), `SELECT count(*) FROM assistant_message WHERE role = 'user'`).
+		Scan(&count); err != nil ||
+		count != 1 {
 		t.Fatalf("user messages = %d, %v", count, err)
 	}
 }
@@ -508,8 +590,18 @@ func TestTurnOtherUserConversation(t *testing.T) {
 	}
 
 	other := h.Login("other@example.com")
-	h.ExpectProblem(sendTurn(h, other, map[string]any{"conversation_id": turn.ConversationID, "text": "oi"}), http.StatusNotFound, "conversation_not_found", "")
-	h.ExpectProblem(h.Call(other, http.MethodGet, "/api/v1/assistant/conversations/"+turn.ConversationID, nil), http.StatusNotFound, "conversation_not_found", "")
+	h.ExpectProblem(
+		sendTurn(h, other, map[string]any{"conversation_id": turn.ConversationID, "text": "oi"}),
+		http.StatusNotFound,
+		"conversation_not_found",
+		"",
+	)
+	h.ExpectProblem(
+		h.Call(other, http.MethodGet, "/api/v1/assistant/conversations/"+turn.ConversationID, nil),
+		http.StatusNotFound,
+		"conversation_not_found",
+		"",
+	)
 }
 
 // U3, design 2026-10-26 E6, E7: transient failures on every target make the turn wait once, never a usage limit.
@@ -537,19 +629,31 @@ func TestTurnTransientIsNotALimit(t *testing.T) {
 
 		return h, &waits
 	}
-	steps := []llmtest.Step{transient("gemini-3.5-flash"), transient("gemini-3.5-flash-lite"), transient("gemini-3.1-flash-lite")}
+	steps := []llmtest.Step{
+		transient("gemini-3.5-flash"),
+		transient("gemini-3.5-flash-lite"),
+		transient("gemini-3.1-flash-lite"),
+	}
 	t.Run("waits and answers", func(t *testing.T) {
 		t.Parallel()
-		h, waits := harness(t, llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...))
+		h, waits := harness(
+			t,
+			llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...),
+		)
 		r := sendTurn(h, h.Client, map[string]any{"text": "oi"})
 
 		events := parseSSE(r.Body)
-		if r.Status != http.StatusOK || !slices.Equal(eventNames(events), []string{"turn", "answer"}) {
+		if r.Status != http.StatusOK ||
+			!slices.Equal(eventNames(events), []string{"turn", "answer"}) {
 			t.Fatalf("status = %d: %s", r.Status, r.Body)
 		}
 
 		var answer turnAnswer
-		if err := json.Unmarshal([]byte(events[1].Data), &answer); err != nil || answer.Content != "ok" {
+		if err := json.Unmarshal(
+			[]byte(events[1].Data),
+			&answer,
+		); err != nil ||
+			answer.Content != "ok" {
 			t.Fatalf("answer = %s", events[1].Data)
 		}
 
@@ -567,7 +671,8 @@ func TestTurnTransientIsNotALimit(t *testing.T) {
 		h, _ := harness(t, llmtest.New("aistudio", append(slices.Clone(steps), textStep("ok"))...))
 		ctx := auth.WithBooksID(t.Context(), h.OwnerID())
 
-		_, _ = h.App.LLM.Use(assistant.ChatUse).Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
+		_, _ = h.App.LLM.Use(assistant.ChatUse).
+			Generate(ctx, llm.Request{Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: "x"}}}}})
 		if r := sendTurn(h, h.Client, map[string]any{"text": "oi"}); r.Status != http.StatusOK {
 			t.Fatalf("status = %d: %s", r.Status, r.Body)
 		}
@@ -587,7 +692,12 @@ func TestTurnStreamsText(t *testing.T) {
 	r := sendTurn(h, h.Client, map[string]any{"text": "Qual o saldo?"})
 
 	events := parseSSE(r.Body)
-	if got := eventNames(events); !slices.Equal(got, []string{"turn", "delta", "step", "delta", "delta", "answer"}) {
+	if got := eventNames(
+		events,
+	); !slices.Equal(
+		got,
+		[]string{"turn", "delta", "step", "delta", "delta", "answer"},
+	) {
 		t.Fatalf("events = %v: %s", got, r.Body)
 	}
 
@@ -598,7 +708,11 @@ func TestTurnStreamsText(t *testing.T) {
 	}
 
 	var stored turnAnswer
-	if err := json.Unmarshal([]byte(events[5].Data), &stored); err != nil || stored.Content != "Saldo: R$ 10,00" {
+	if err := json.Unmarshal(
+		[]byte(events[5].Data),
+		&stored,
+	); err != nil ||
+		stored.Content != "Saldo: R$ 10,00" {
 		t.Fatalf("answer = %s", events[5].Data)
 	}
 }
@@ -612,8 +726,16 @@ func TestTurnNamesAccountsWithAWarning(t *testing.T) {
 	salary := h.Account("Salary", "income", "", nil)
 
 	h.Record("2026-10-01", apitest.Posting(checking, 320327), apitest.Posting(salary, -320327))
-	h.MustDo(http.MethodPost, "/api/v1/accounts/"+checking+"/balance-assertions",
-		map[string]any{"date": "2026-10-20", "amount": apitest.BRL(320117)}, http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/accounts/"+checking+"/balance-assertions",
+		map[string]any{
+			"date":   "2026-10-20",
+			"amount": apitest.BRL(320117),
+		},
+		http.StatusCreated,
+		nil,
+	)
 
 	r := sendTurn(h, h.Client, map[string]any{"text": "Saldo?"})
 	if r.Status != http.StatusOK {
