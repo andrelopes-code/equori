@@ -16,6 +16,7 @@ import type {
   TransactionSearch,
   TransactionSearchDraft,
 } from "@/features/transactions/model/search";
+import { VoidedSwitch } from "@/features/transactions/transaction-filters/voided-switch";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Account = components["schemas"]["Account"];
@@ -31,6 +32,8 @@ export function TransactionFilters({
   count,
   hasMore,
   loading,
+  showVoided,
+  onShowVoidedChange,
 }: {
   search: TransactionSearch;
   onSearchChange: (next: TransactionSearchDraft) => void;
@@ -41,6 +44,8 @@ export function TransactionFilters({
   count: number | undefined;
   hasMore: boolean;
   loading: boolean;
+  showVoided: boolean;
+  onShowVoidedChange: (show: boolean) => void;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -154,6 +159,14 @@ export function TransactionFilters({
           : t("transactions.count"),
         search: t("transactions.search"),
       }}
-    />
+    >
+      {/* The queue never lists voided transactions, so the choice has no effect there. */}
+      {uncategorized === undefined && (
+        <VoidedSwitch
+          checked={showVoided}
+          onCheckedChange={onShowVoidedChange}
+        />
+      )}
+    </FilterBar>
   );
 }

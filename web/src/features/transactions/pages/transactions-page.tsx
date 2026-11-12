@@ -10,6 +10,7 @@ import { payeesQuery } from "@/features/setup";
 import { tagsQuery } from "@/features/transactions/api";
 import { validateTransactionSearch } from "@/features/transactions/model/search";
 import type { TransactionSearchDraft } from "@/features/transactions/model/search";
+import { useShowVoided } from "@/features/transactions/transaction-filters/use-show-voided";
 import { TransactionFilters } from "@/features/transactions/transaction-filters/transaction-filters";
 import { TransactionsFooter } from "@/features/transactions/selection/transactions-footer";
 import { TransactionsHeader } from "@/features/transactions/transactions-header/transactions-header";
@@ -35,7 +36,8 @@ export function TransactionsPage() {
   );
   // The tab and the bar paint at once; the grid follows from the deferred search (CP-09).
   const shown = useDeferredValue(search);
-  const list = useTransactionList(shown);
+  const [showVoided, setShowVoided] = useShowVoided();
+  const list = useTransactionList(shown, !showVoided);
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const tags = useQuery(tagsQuery(api));
@@ -63,6 +65,11 @@ export function TransactionsPage() {
       search: validateTransactionSearch({ ...next }),
       replace: next.q !== search.q,
     });
+  };
+
+  const handleShowVoidedChange = (show: boolean) => {
+    commands.setSelection([]);
+    setShowVoided(show);
   };
 
   return (
@@ -107,6 +114,8 @@ export function TransactionsPage() {
             count={list.pending ? undefined : list.rows.length}
             hasMore={list.hasMore}
             loading={list.pending}
+            showVoided={showVoided}
+            onShowVoidedChange={handleShowVoidedChange}
           />
 
           <TransactionsListing
@@ -120,6 +129,10 @@ export function TransactionsPage() {
               commands.setPicking(true);
             }}
             onSearchChange={setSearch}
+            voidedHidden={!showVoided}
+            onShowVoided={() => {
+              handleShowVoidedChange(true);
+            }}
           />
         </div>
       </PageBody>

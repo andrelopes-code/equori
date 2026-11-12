@@ -13,7 +13,9 @@ export function TransactionsEmpty({
   status,
   filtered,
   queue,
+  voidedHidden,
   onClear,
+  onShowVoided,
   onRetry,
 }: {
   status: "empty" | "no-results" | "error";
@@ -21,7 +23,10 @@ export function TransactionsEmpty({
   filtered: boolean;
   // The uncategorized queue is shown.
   queue: boolean;
+  // Voided transactions are left out of the list, so the search may have skipped matches.
+  voidedHidden: boolean;
   onClear: () => void;
+  onShowVoided: () => void;
   onRetry: () => void;
 }) {
   const t = useT();
@@ -55,6 +60,11 @@ export function TransactionsEmpty({
           <Button variant="outline" tone="secondary" onClick={onClear}>
             {t("transactions.clearFilters")}
           </Button>
+          {voidedHidden && (
+            <Button variant="ghost" tone="secondary" onClick={onShowVoided}>
+              {t("transactions.showVoided")}
+            </Button>
+          )}
         </ResultStateActions>
       </ResultState>
     );

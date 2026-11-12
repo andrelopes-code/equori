@@ -31,6 +31,8 @@ interface TransactionsListingProps {
   onSelectionChange: (selection: readonly string[]) => void;
   onCategorizeSelection: () => void;
   onSearchChange: (next: TransactionSearchDraft) => void;
+  voidedHidden: boolean;
+  onShowVoided: () => void;
 }
 
 export function TransactionsListing({
@@ -42,6 +44,8 @@ export function TransactionsListing({
   onSelectionChange,
   onCategorizeSelection,
   onSearchChange,
+  voidedHidden,
+  onShowVoided,
 }: TransactionsListingProps) {
   const t = useT();
 
@@ -104,6 +108,8 @@ export function TransactionsListing({
                 onRetry={list.retry}
                 filtered={filtered}
                 queue={queue}
+                voidedHidden={voidedHidden && !queue}
+                onShowVoided={onShowVoided}
                 onClear={() => {
                   onSearchChange(queue ? { uncategorized: true } : {});
                 }}

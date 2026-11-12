@@ -51,11 +51,18 @@ function byTransaction(
   );
 }
 
-export function useTransactionList(search: TransactionSearch): TransactionList {
+export function useTransactionList(
+  search: TransactionSearch,
+  excludeVoided: boolean,
+): TransactionList {
   const api = useApi();
   // A page of 30 fills a desktop's frame twice, so the first paint mounts no more than that.
   const list = useInfiniteQuery(
-    transactionsInfiniteQuery(api, { ...search, limit: pageSize }),
+    transactionsInfiniteQuery(api, {
+      ...search,
+      limit: pageSize,
+      ...(excludeVoided ? { exclude_voided: true as const } : {}),
+    }),
   );
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));

@@ -1,0 +1,27 @@
+@layer app {
+  /* The bar's grid starts its rows at the top. The count centres its text in the height of a
+     control, so the switch takes that height and both share one centre line. */
+  .root {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--slotted-control-height-md);
+    white-space: nowrap;
+  }
+
+  /* A rule between the switch and the count: without it "Show voided 30+ transactions" reads as
+     one phrase. */
+  .root::after {
+    content: "";
+    inline-size: var(--slotted-border-width-thin);
+    block-size: var(--slotted-control-icon-size-md);
+    margin-inline-start: var(--slotted-space-4);
+    background: var(--slotted-border-subtle);
+  }
+
+  /* From this width the bar is one column and the switch has a row of its own. */
+  @container slotted-filter-bar (width <= 36rem) {
+    .root::after {
+      display: none;
+    }
+  }
+}

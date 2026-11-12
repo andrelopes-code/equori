@@ -532,3 +532,73 @@ describe("TransactionsPage void selection", () => {
     ]);
   });
 });
+
+describe("TransactionsPage voided filter", () => {
+  const storageKey = "equori.transactions.showVoided";
+  const label = catalogEn["transactions.showVoided"];
+
+  it("leaves voided transactions out of the request until the switch is on", async () => {
+    const seen: Seen = { queries: [] };
+    await renderApp("/transactions", { fetch: api(seen) });
+    const toggle = await screen.findByRole("switch", { name: label });
+    await screen.findByText("Weekly shop · Itau");
+    expect(toggle).not.toBeChecked();
+    expect(seen.queries.at(-1)?.get("exclude_voided")).toBe("true");
+
+    await userEvent.click(toggle);
+
+    await waitFor(() => {
+      expect(seen.queries.at(-1)?.has("exclude_voided")).toBe(false);
+    });
+    expect(screen.getByRole("switch", { name: label })).toBeChecked();
+    expect(localStorage.getItem(storageKey)).toBe("true");
+  });
+
+  it("starts from the choice kept on this device", async () => {
+    localStorage.setItem(storageKey, "true");
+    const seen: Seen = { queries: [] };
+    await renderApp("/transactions", { fetch: api(seen) });
+    expect(await screen.findByRole("switch", { name: label })).toBeChecked();
+    await screen.findByText("Weekly shop · Itau");
+    expect(seen.queries.at(-1)?.has("exclude_voided")).toBe(false);
+  });
+
+  it("reads a damaged stored value as off", async () => {
+    localStorage.setItem(storageKey, "{not json");
+    await renderApp("/transactions", { fetch: api({ queries: [] }) });
+    expect(
+      await screen.findByRole("switch", { name: label }),
+    ).not.toBeChecked();
+  });
+
+  it("draws no switch in the uncategorized queue", async () => {
+    await renderApp("/transactions?uncategorized=true", {
+      fetch: api({ queries: [] }),
+    });
+    await screen.findByText("PIX RECEBIDO");
+    expect(screen.queryByRole("switch", { name: label })).toBeNull();
+  });
+
+  it("offers the voided transactions when a search finds nothing while they are hidden", async () => {
+    const empty = () => json(200, { items: [] });
+    const seen: Seen = { queries: [] };
+    await renderApp("/transactions?q=nada", { fetch: api(seen, empty) });
+
+    await userEvent.click(await screen.findByRole("button", { name: label }));
+
+    await waitFor(() => {
+      expect(seen.queries.at(-1)?.has("exclude_voided")).toBe(false);
+    });
+    expect(localStorage.getItem(storageKey)).toBe("true");
+  });
+
+  it("offers nothing extra when the voided transactions are already shown", async () => {
+    localStorage.setItem(storageKey, "true");
+    const empty = () => json(200, { items: [] });
+    await renderApp("/transactions?q=nada", {
+      fetch: api({ queries: [] }, empty),
+    });
+    await screen.findByText(catalogEn["transactions.noResults"]);
+    expect(screen.queryByRole("button", { name: label })).toBeNull();
+  });
+});

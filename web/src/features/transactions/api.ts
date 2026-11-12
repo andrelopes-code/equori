@@ -18,6 +18,8 @@ import type { TransactionSearch } from "@/features/transactions/model/search";
 
 export interface TransactionQuery extends TransactionSearch {
   limit?: number;
+  // Leaves voided transactions out of the pages; absent keeps them as history.
+  exclude_voided?: true;
 }
 
 export const transactionKeys = {

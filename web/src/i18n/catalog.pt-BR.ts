@@ -513,6 +513,7 @@ export const catalogPtBR: Catalog = {
   "transactions.title.openingBalance": "Saldo inicial de {account}",
   "transactions.title.adjustment": "Ajuste de saldo de {account}",
   "transactions.voided": "Anulada",
+  "transactions.showVoided": "Mostrar anuladas",
   "transactions.transfer": "Transferência",
   "transactions.uncategorized": "Sem categoria",
   "transactions.categorize": "Categorizar",

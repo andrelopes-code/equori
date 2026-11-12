@@ -503,6 +503,7 @@ export const catalogEn = {
   "transactions.title.openingBalance": "Opening balance of {account}",
   "transactions.title.adjustment": "Balance adjustment of {account}",
   "transactions.voided": "Voided",
+  "transactions.showVoided": "Show voided",
   "transactions.transfer": "Transfer",
   "transactions.uncategorized": "Uncategorized",
   "transactions.categorize": "Categorize",
