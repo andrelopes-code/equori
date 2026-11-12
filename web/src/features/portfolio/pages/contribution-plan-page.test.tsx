@@ -272,6 +272,28 @@ describe("Contribution plan page", () => {
     }
   });
 
+  it("writes the placeholder in the class selector of a position outside the plan", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    const fetch = portfolioApi({
+      "GET /api/v1/contribution-plan": () =>
+        json(200, {
+          ...saved,
+          outside: [{ instrument: "PETR4", value: brl(100000) }],
+        }),
+      "POST /api/v1/contribution-plan/preview": () => json(200, preview),
+    });
+    await renderApp("/portfolio/contribution-plan", { fetch });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(catalogPtBR["contributionPlan.chooseClass"]),
+      ).toBeInTheDocument();
+    });
+  });
+
   it("draws only the header and the strip for a book without a plan", async () => {
     localStorage.setItem(
       "equori.locale",

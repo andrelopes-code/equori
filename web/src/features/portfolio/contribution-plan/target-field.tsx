@@ -1,16 +1,16 @@
-import { Checkbox } from "@slotted/react/checkbox";
-import { Slider } from "@slotted/react/slider";
+import { Glyph } from "@slotted/react/icon";
 import { TextField } from "@slotted/react/text-field";
+import { Toggle } from "@slotted/react/toggle";
 import { useState } from "react";
 
+import styles from "@/features/portfolio/contribution-plan/target-field.module.css";
 import {
   formatPercent,
   parsePercent,
 } from "@/features/portfolio/contribution-plan/target-percent";
-import styles from "@/features/portfolio/contribution-plan/target-input.module.css";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
-interface TargetInputProps {
+interface TargetFieldProps {
   name: string;
   // Basis points.
   value: number;
@@ -21,21 +21,19 @@ interface TargetInputProps {
   onLock: (locked: boolean) => void;
 }
 
-// Families read: text-field and slider. A percent with one decimal is what the reader types and
-// drags; the plan stores basis points, so the conversion stands here.
-export function TargetInput({
+// Families read: text-field and toggle. A percent with one decimal is what the reader types; the
+// plan stores basis points, so the conversion stands here. The lock is a mode that stays on.
+export function TargetField({
   name,
   value,
   locked,
   disabled,
   onChange,
   onLock,
-}: TargetInputProps) {
+}: TargetFieldProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const [typed, setTyped] = useState<string | null>(null);
-
-  const label = `${t("contributionPlan.colTarget")}: ${name}`;
 
   function handleText(text: string) {
     setTyped(text);
@@ -43,23 +41,23 @@ export function TargetInput({
     if (bp !== undefined) onChange(bp);
   }
 
-  function handleSlider(next: number | readonly number[]) {
-    if (typeof next === "number") onChange(Math.round(next * 10) * 10);
-  }
-
   return (
-    <div className={styles.target}>
-      <Checkbox
-        checked={locked}
+    <div className={styles.field}>
+      <Toggle
+        size="sm"
+        variant="ghost"
+        pressed={locked}
         aria-label={t("contributionPlan.lock", { name })}
-        onCheckedChange={onLock}
+        icon={<Glyph name="lock" />}
+        onPressedChange={onLock}
       />
 
       <TextField
         className={styles.text}
+        size="sm"
         inputMode="decimal"
         autoComplete="off"
-        aria-label={label}
+        aria-label={`${t("contributionPlan.colTarget")}: ${name}`}
         end="%"
         disabled={disabled}
         value={typed ?? formatPercent(tag, value)}
@@ -69,17 +67,6 @@ export function TargetInput({
         onBlur={() => {
           setTyped(null);
         }}
-      />
-
-      <Slider
-        className={styles.slider}
-        aria-label={label}
-        disabled={disabled}
-        value={value / 100}
-        min={0}
-        max={100}
-        step={0.1}
-        onValueChange={handleSlider}
       />
     </div>
   );

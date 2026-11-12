@@ -115,14 +115,17 @@ describe("Contribution plan edit mode", () => {
   it("keeps a locked class at its target", async () => {
     await edit();
 
-    await userEvent.click(
-      await screen.findByRole("checkbox", { name: "Manter Renda fixa fixo" }),
-    );
+    const lock = await screen.findByRole("button", {
+      name: "Manter Renda fixa fixo",
+      pressed: false,
+    });
+    await userEvent.click(lock);
     fireEvent.change(await target("Ações Brasil"), { target: { value: "30" } });
 
     await waitFor(() => {
       expect(lastTargets()).toEqual([4000, 3000, 1500, 1500]);
     });
+    expect(lock).toHaveAttribute("aria-pressed", "true");
   });
 
   it("gives the target of a removed class to the others", async () => {
@@ -155,7 +158,34 @@ describe("Contribution plan edit mode", () => {
     expect(
       await screen.findByRole("button", { name: /CDB Inter.*Em Renda fixa/ }),
     ).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Poupança" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^Poupança/ })).toBeEnabled();
+  });
+
+  it("filters the picker by the search field", async () => {
+    await edit();
+    const rows = within(
+      await screen.findByRole("table", { name: "Plano de aporte" }),
+    ).getAllByRole("row");
+    await userEvent.click(
+      within(rows.at(1) ?? document.body)
+        .getAllByRole("button")
+        .at(0) ?? document.body,
+    );
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Adicionar ativo" }),
+    );
+
+    await userEvent.type(
+      await screen.findByRole("searchbox", { name: "Buscar ativos" }),
+      "poup",
+    );
+
+    const dialog = within(screen.getByRole("dialog"));
+
+    expect(dialog.getByRole("button", { name: /^Poupança/ })).toBeVisible();
+    expect(
+      dialog.queryByRole("button", { name: /CDB Inter/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("saves the input body of the draft", async () => {

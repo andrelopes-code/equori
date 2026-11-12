@@ -68,7 +68,7 @@ export function OutsideSection({
               label={t("contributionPlan.moveTo", { name })}
               placeholder={t("contributionPlan.chooseClass")}
               choices={choices}
-              value=""
+              value={null}
               multiple={false}
               onChange={(next) => {
                 onChoose(Number(next), refOf(entry));

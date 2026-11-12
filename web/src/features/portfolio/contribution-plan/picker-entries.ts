@@ -4,6 +4,8 @@ import type { MemberRef } from "@/features/portfolio/contribution-plan/plan-edit
 type Account = components["schemas"]["Account"];
 type Instrument = components["schemas"]["Instrument"];
 
+export type PickerEntries = ReturnType<typeof pickerEntries>;
+
 const kinds = new Set(["savings", "reserve", "brokerage"]);
 
 // CN3: an open asset account of a kind that holds a balance, without children, in a currency; and
@@ -31,8 +33,30 @@ export function pickerEntries(
   };
 }
 
+// Keeps the entries whose name or code holds the query, ignoring case and accents. The code of an
+// account is its instrument.
+export function filterPickerEntries(
+  entries: PickerEntries,
+  query: string,
+): PickerEntries {
+  const needle = fold(query);
+  if (needle === "") return entries;
+
+  const matches = (name: string, code: string) =>
+    fold(name).includes(needle) || fold(code).includes(needle);
+
+  return {
+    accounts: entries.accounts.filter((a) => matches(a.name, a.currency)),
+    instruments: entries.instruments.filter((i) => matches(i.name, i.code)),
+  };
+}
+
 export function memberKey(ref: MemberRef): string {
   return ref.accountId === undefined
     ? `instrument:${ref.instrument ?? ""}`
     : `account:${ref.accountId}`;
+}
+
+function fold(text: string): string {
+  return text.normalize("NFD").replace(/\p{M}/gu, "").trim().toLowerCase();
 }

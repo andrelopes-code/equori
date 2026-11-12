@@ -1,5 +1,6 @@
 import { TextField } from "@slotted/react/text-field";
 
+import styles from "@/features/portfolio/contribution-plan/class-table.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface ClassNameInputProps {
@@ -13,6 +14,8 @@ export function ClassNameInput({ value, onChange }: ClassNameInputProps) {
 
   return (
     <TextField
+      className={styles.nameInput}
+      size="sm"
       aria-label={t("contributionPlan.className")}
       autoComplete="off"
       invalid={value.trim() === ""}

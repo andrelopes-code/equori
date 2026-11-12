@@ -50,6 +50,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.leaveTitle": "Descartar as alterações dos alvos?",
   "contributionPlan.keepEditing": "Continuar editando",
   "contributionPlan.outside": "Fora do plano",
+  "contributionPlan.pickerSearch": "Buscar ativos",
   "contributionPlan.chooseClass": "Escolher classe",
   "contributionPlan.emptyBody":
     "Defina uma divisão-alvo uma vez e cada aporte é dividido para aproximar a carteira dela.",

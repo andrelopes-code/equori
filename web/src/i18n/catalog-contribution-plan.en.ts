@@ -46,6 +46,7 @@ export const contributionPlanEn = {
   "contributionPlan.leaveTitle": "Discard the changes to the targets?",
   "contributionPlan.keepEditing": "Keep editing",
   "contributionPlan.outside": "Outside the plan",
+  "contributionPlan.pickerSearch": "Search assets",
   "contributionPlan.chooseClass": "Choose a class",
   "contributionPlan.emptyBody":
     "Set a target split once and each contribution is divided to bring the portfolio closer to it.",

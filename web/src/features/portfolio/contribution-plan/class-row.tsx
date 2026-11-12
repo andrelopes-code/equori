@@ -1,5 +1,3 @@
-import { IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
 import {
   TableCell,
   TableExpander,
@@ -7,16 +5,16 @@ import {
   TableRowHeader,
   useTable,
 } from "@slotted/react/table";
-import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { ClassEditRow } from "@/features/portfolio/contribution-plan/class-edit-row";
 import { ClassNameInput } from "@/features/portfolio/contribution-plan/class-name-input";
 import styles from "@/features/portfolio/contribution-plan/class-table.module.css";
-import { DriftTrack } from "@/features/portfolio/contribution-plan/drift-track";
 import { FigureCells } from "@/features/portfolio/contribution-plan/figure-cells";
 import { MemberRow } from "@/features/portfolio/contribution-plan/member-row";
-import { TargetInput } from "@/features/portfolio/contribution-plan/target-input";
+import { RemoveCell } from "@/features/portfolio/contribution-plan/remove-cell";
+import { TargetField } from "@/features/portfolio/contribution-plan/target-field";
+import { TrackCell } from "@/features/portfolio/contribution-plan/track-cell";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/use-plan-editor";
 import { trackScale } from "@/features/portfolio/contribution-plan/track-scale";
 import { useT } from "@/i18n/i18n-provider";
@@ -51,61 +49,52 @@ export function ClassRow({
     cls.members.flatMap((m) => [m.target_bp, m.share_bp, m.after_share_bp]),
   );
 
+  const disabled = (draft?.classes ?? []).every(
+    (c, i) => i === index || c.locked,
+  );
+
   return (
     <>
-      <TableRow value={key} className={styles.row}>
+      <TableRow
+        value={key}
+        className={edit === undefined ? styles.row : styles.rowEdit}
+      >
         <TableCell>
           {(cls.members.length > 0 || edit !== undefined) && <TableExpander />}
         </TableCell>
 
-        <TableRowHeader text="truncate" className={styles.name}>
+        <TableRowHeader text="truncate">
           {edit === undefined || editor === undefined ? (
             cls.name
           ) : (
-            <>
-              <ClassNameInput
-                value={edit.name}
-                onChange={(name) => {
-                  editor.rename(index, name);
-                }}
-              />
-
-              <IconButton
-                size="sm"
-                variant="ghost"
-                aria-label={t("contributionPlan.removeClass", {
-                  name: cls.name,
-                })}
-                onClick={() => {
-                  editor.removeClass(index);
-                }}
-              >
-                <Icon>
-                  <Glyph name="trash" />
-                </Icon>
-              </IconButton>
-            </>
+            <ClassNameInput
+              value={edit.name}
+              onChange={(name) => {
+                editor.rename(index, name);
+              }}
+            />
           )}
         </TableRowHeader>
 
-        <TableCell>
-          {blank && (
-            <Text tone="danger" size="xs">
-              {t("contributionPlan.nameRequired")}
-            </Text>
-          )}
-
-          {!blank && (
-            <DriftTrack
-              name={cls.name}
-              current={cls.share_bp}
-              after={cls.after_share_bp}
-              target={cls.target_bp}
-              scale={scale}
-              position={index}
-            />
-          )}
-        </TableCell>
+        <TrackCell
+          name={cls.name}
+          current={cls.share_bp}
+          after={cls.after_share_bp}
+          target={cls.target_bp}
+          scale={scale}
+          position={index}
+          blank={blank}
+          slider={
+            edit !== undefined && editor !== undefined
+              ? {
+                  disabled,
+                  onChange: (bp) => {
+                    editor.setTarget(index, bp);
+                  },
+                }
+              : undefined
+          }
+        />
 
         <FigureCells
           target={cls.target_bp}
@@ -114,13 +103,11 @@ export function ClassRow({
           amount={cls.amount}
           targetCell={
             edit !== undefined && editor !== undefined ? (
-              <TargetInput
+              <TargetField
                 name={cls.name}
                 value={cls.target_bp}
                 locked={edit.locked}
-                disabled={(draft?.classes ?? []).every(
-                  (c, i) => i === index || c.locked,
-                )}
+                disabled={disabled}
                 onChange={(bp) => {
                   editor.setTarget(index, bp);
                 }}
@@ -131,6 +118,15 @@ export function ClassRow({
             ) : undefined
           }
         />
+
+        {edit !== undefined && editor !== undefined && (
+          <RemoveCell
+            label={t("contributionPlan.removeClass", { name: cls.name })}
+            onRemove={() => {
+              editor.removeClass(index);
+            }}
+          />
+        )}
       </TableRow>
 
       {open &&

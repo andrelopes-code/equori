@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
+  filterPickerEntries,
   memberKey,
   pickerEntries,
 } from "@/features/portfolio/contribution-plan/picker-entries";
@@ -81,6 +82,65 @@ describe("pickerEntries", () => {
     expect(
       pickerEntries([], instruments).instruments.map((i) => i.code),
     ).toEqual(["PETR4"]);
+  });
+});
+
+describe("filterPickerEntries", () => {
+  const entries = {
+    accounts: [
+      account("a1", { name: "Poupança Itaú", currency: "BRL" }),
+      account("a2", { name: "Reserva", currency: "EUR" }),
+    ],
+    instruments: [
+      { ...instrument("PETR4", "stock"), name: "Petrobras PN" },
+      { ...instrument("BTC", "crypto"), name: "Bitcoin" },
+    ],
+  };
+
+  const cases: {
+    name: string;
+    query: string;
+    ids: string[];
+    codes: string[];
+  }[] = [
+    {
+      name: "keeps all for a blank query",
+      query: "  ",
+      ids: ["a1", "a2"],
+      codes: ["PETR4", "BTC"],
+    },
+    {
+      name: "matches a name ignoring case and accents",
+      query: "POUPANCA",
+      ids: ["a1"],
+      codes: [],
+    },
+    {
+      name: "matches an instrument code",
+      query: "petr",
+      ids: [],
+      codes: ["PETR4"],
+    },
+    {
+      name: "matches the currency of an account",
+      query: "eur",
+      ids: ["a2"],
+      codes: [],
+    },
+    {
+      name: "matches an instrument name",
+      query: "bitco",
+      ids: [],
+      codes: ["BTC"],
+    },
+    { name: "matches nothing", query: "zzz", ids: [], codes: [] },
+  ];
+
+  it.each(cases)("$name", ({ query, ids, codes }) => {
+    const found = filterPickerEntries(entries, query);
+
+    expect(found.accounts.map((a) => a.id)).toEqual(ids);
+    expect(found.instruments.map((i) => i.code)).toEqual(codes);
   });
 });
 

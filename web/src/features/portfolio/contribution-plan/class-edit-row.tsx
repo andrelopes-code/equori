@@ -30,31 +30,31 @@ export function ClassEditRow({ index, editor }: ClassEditRowProps) {
   if (cls === undefined) return null;
 
   return (
-    <TableRow value={`class-${String(index)}-edit`} className={styles.row}>
+    <TableRow value={`class-${String(index)}-edit`} className={styles.rowEdit}>
       <TableCell />
 
-      <TableCell>
-        <Switch
-          checked={cls.split}
-          onCheckedChange={(on) => {
-            editor.setSplit(index, on);
-          }}
-        >
-          {t("contributionPlan.split")}
-        </Switch>
-      </TableCell>
+      <TableCell colSpan={7}>
+        <div className={styles.editActions}>
+          <Switch
+            checked={cls.split}
+            onCheckedChange={(on) => {
+              editor.setSplit(index, on);
+            }}
+          >
+            {t("contributionPlan.split")}
+          </Switch>
 
-      <TableCell>
-        <Button
-          size="sm"
-          variant="outline"
-          tone="secondary"
-          onClick={() => {
-            setPicking(true);
-          }}
-        >
-          {t("contributionPlan.addAsset")}
-        </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            tone="secondary"
+            onClick={() => {
+              setPicking(true);
+            }}
+          >
+            {t("contributionPlan.addAsset")}
+          </Button>
+        </div>
 
         <AssetPickerDialog
           open={picking}
@@ -68,11 +68,6 @@ export function ClassEditRow({ index, editor }: ClassEditRowProps) {
           }}
         />
       </TableCell>
-
-      <TableCell />
-      <TableCell />
-      <TableCell />
-      <TableCell />
     </TableRow>
   );
 }

@@ -4,20 +4,21 @@ import {
   DialogBody,
   DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
+import { TextField } from "@slotted/react/text-field";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
+import { AssetPickerList } from "@/features/portfolio/contribution-plan/asset-picker-list";
 import type { MemberRef } from "@/features/portfolio/contribution-plan/plan-edits";
 import {
-  memberKey,
+  filterPickerEntries,
   pickerEntries,
 } from "@/features/portfolio/contribution-plan/picker-entries";
 import { instrumentsQuery } from "@/features/setup";
@@ -31,8 +32,7 @@ interface AssetPickerDialogProps {
   onClose: () => void;
 }
 
-// Two lists: the accounts and the instruments a member can be. An entry already in the plan is
-// disabled and names its class.
+// Two lists, filtered by one search field: the accounts and the instruments a member can be.
 export function AssetPickerDialog({
   open,
   taken,
@@ -44,71 +44,68 @@ export function AssetPickerDialog({
   const accounts = useQuery(accountsQuery(api));
   const instruments = useQuery(instrumentsQuery(api));
 
-  const entries = pickerEntries(
-    accounts.data ?? [],
-    instruments.data?.items ?? [],
+  const [query, setQuery] = useState("");
+
+  const shown = filterPickerEntries(
+    pickerEntries(accounts.data ?? [], instruments.data?.items ?? []),
+    query,
   );
-  const description = [
-    t("contributionPlan.pickAccounts"),
-    t("contributionPlan.pickInstruments"),
-  ].join(", ");
   const choices = [
     {
       title: t("contributionPlan.pickAccounts"),
-      items: entries.accounts.map((a) => ({
+      items: shown.accounts.map((a) => ({
         name: a.name,
+        code: a.currency,
         ref: { accountId: a.id },
       })),
     },
     {
       title: t("contributionPlan.pickInstruments"),
-      items: entries.instruments.map((i) => ({
+      items: shown.instruments.map((i) => ({
         name: i.name,
+        code: i.code,
         ref: { instrument: i.code },
       })),
     },
   ];
 
+  function handleOpenChange(next: boolean) {
+    if (next) return;
+    setQuery("");
+    onClose();
+  }
+
   return (
-    <Dialog
-      open={open}
-      size="md"
-      onOpenChange={(next) => {
-        if (!next) onClose();
-      }}
-    >
+    <Dialog open={open} size="md" onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("contributionPlan.addAsset")}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+
+          <TextField
+            type="search"
+            autoComplete="off"
+            aria-label={t("contributionPlan.pickerSearch")}
+            placeholder={t("contributionPlan.pickerSearch")}
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+            }}
+          />
         </DialogHeader>
 
         <DialogBody>
           <Stack gap={6}>
             {choices.map((list) => (
-              <Stack key={list.title} gap={2}>
-                <Text weight="semibold">{list.title}</Text>
-
-                {list.items.map((item) => {
-                  const holder = taken.get(memberKey(item.ref));
-
-                  return (
-                    <Button
-                      key={memberKey(item.ref)}
-                      variant="ghost"
-                      tone="secondary"
-                      disabled={holder !== undefined}
-                      onClick={() => {
-                        onPick(item.ref);
-                      }}
-                    >
-                      {item.name}
-                      {holder !== undefined &&
-                        ` ${t("contributionPlan.inClass", { name: holder })}`}
-                    </Button>
-                  );
-                })}
-              </Stack>
+              <AssetPickerList
+                key={list.title}
+                title={list.title}
+                items={list.items}
+                taken={taken}
+                onPick={(ref) => {
+                  setQuery("");
+                  onPick(ref);
+                }}
+              />
             ))}
           </Stack>
         </DialogBody>

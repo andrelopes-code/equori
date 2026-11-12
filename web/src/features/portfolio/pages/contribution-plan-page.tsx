@@ -66,7 +66,19 @@ export function ContributionPlanPage() {
   }
 
   return (
-    <Page width="full">
+    <Page
+      width="full"
+      footer={
+        editor.draft !== undefined && (
+          <ContributionSaveBar
+            saving={editor.saving}
+            disabled={!editor.dirty || nameless === true}
+            onDiscard={editor.discard}
+            onSave={handleSave}
+          />
+        )
+      }
+    >
       <PageHeader size="lg">
         <PageHeaderTitleArea>
           <PageBack render={(props) => <Link {...props} to="/portfolio" />}>
@@ -147,15 +159,6 @@ export function ContributionPlanPage() {
           )}
         </Stack>
       </PageBody>
-
-      {editor.draft !== undefined && (
-        <ContributionSaveBar
-          saving={editor.saving}
-          disabled={!editor.dirty || nameless === true}
-          onDiscard={editor.discard}
-          onSave={handleSave}
-        />
-      )}
 
       {guard.asking && (
         <LeaveDialog

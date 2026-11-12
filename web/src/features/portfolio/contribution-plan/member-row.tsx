@@ -1,12 +1,11 @@
-import { IconButton } from "@slotted/react/button";
-import { Glyph, Icon } from "@slotted/react/icon";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/portfolio/contribution-plan/class-table.module.css";
-import { DriftTrack } from "@/features/portfolio/contribution-plan/drift-track";
 import { FigureCells } from "@/features/portfolio/contribution-plan/figure-cells";
-import { TargetInput } from "@/features/portfolio/contribution-plan/target-input";
+import { RemoveCell } from "@/features/portfolio/contribution-plan/remove-cell";
+import { TargetField } from "@/features/portfolio/contribution-plan/target-field";
+import { TrackCell } from "@/features/portfolio/contribution-plan/track-cell";
 import { quantityOf } from "@/features/portfolio/contribution-plan/shopping-list";
 
 import { useT } from "@/i18n/i18n-provider";
@@ -52,38 +51,30 @@ export function MemberRow({
       : { amount: quantity, currency: member.amount.currency };
 
   return (
-    <TableRow value={rowKey} id={id} className={styles.row}>
+    <TableRow
+      value={rowKey}
+      id={id}
+      className={edit === undefined ? styles.row : styles.rowEdit}
+    >
       <TableCell />
 
-      <TableRowHeader
-        text="truncate"
-        className={[styles.name, styles.member].join(" ")}
-      >
+      <TableRowHeader text="truncate" className={styles.member}>
         {name}
-        {edit !== undefined && (
-          <IconButton
-            size="sm"
-            variant="ghost"
-            aria-label={t("contributionPlan.removeAsset", { name })}
-            onClick={edit.onRemove}
-          >
-            <Icon>
-              <Glyph name="trash" />
-            </Icon>
-          </IconButton>
-        )}
       </TableRowHeader>
 
-      <TableCell>
-        <DriftTrack
-          name={name}
-          current={member.share_bp}
-          after={member.after_share_bp}
-          target={member.target_bp}
-          scale={scale}
-          position={position}
-        />
-      </TableCell>
+      <TrackCell
+        name={name}
+        current={member.share_bp}
+        after={member.after_share_bp}
+        target={member.target_bp}
+        scale={scale}
+        position={position}
+        slider={
+          edit?.split === true
+            ? { disabled: edit.disabled, onChange: edit.onTarget }
+            : undefined
+        }
+      />
 
       <FigureCells
         target={member.target_bp}
@@ -93,7 +84,7 @@ export function MemberRow({
         units={units}
         targetCell={
           edit?.split === true && member.target_bp !== undefined ? (
-            <TargetInput
+            <TargetField
               name={name}
               value={member.target_bp}
               locked={edit.locked}
@@ -104,6 +95,13 @@ export function MemberRow({
           ) : undefined
         }
       />
+
+      {edit !== undefined && (
+        <RemoveCell
+          label={t("contributionPlan.removeAsset", { name })}
+          onRemove={edit.onRemove}
+        />
+      )}
     </TableRow>
   );
 }
