@@ -34,6 +34,7 @@ export function AccountOtherBlock({
       mount="active"
       size="sm"
       variant="framed"
+      className={styles.other}
       onOpenChange={onOpenChange}
     >
       <CollapsibleHeader>
