@@ -72,6 +72,22 @@ func newServer(cfg Config, write bool) *sdk.Server {
 		&sdk.ServerOptions{Instructions: cfg.Instructions},
 	)
 
+	listed := addTools(s, cfg, write)
+
+	for _, p := range cfg.Prompts {
+		addPrompt(s, p)
+	}
+
+	if !write {
+		// X14: a read token reaches no write tool, also by calling it without listing it.
+		s.AddReceivingMiddleware(readOnlyGuard(listed))
+	}
+
+	return s
+}
+
+// addTools registers the tools of cfg that the token reaches and returns their names.
+func addTools(s *sdk.Server, cfg Config, write bool) []string {
 	var listed []string
 	for _, name := range cfg.Names {
 		t, ok := cfg.Registry.Tool(name)
@@ -99,25 +115,21 @@ func newServer(cfg Config, write bool) *sdk.Server {
 		}, callTool(cfg, spec))
 	}
 
-	for _, p := range cfg.Prompts {
-		addPrompt(s, p)
-	}
+	return listed
+}
 
-	if !write {
-		// X14: a read token reaches no write tool, also by calling it without listing it.
-		s.AddReceivingMiddleware(func(next sdk.MethodHandler) sdk.MethodHandler {
-			return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
-				if call, ok := req.(*sdk.CallToolRequest); ok && method == "tools/call" &&
-					!slices.Contains(listed, call.Params.Name) {
-					return toolResult(tool.Result{Content: notAllowed, IsError: true}), nil
-				}
-
-				return next(ctx, method, req)
+// readOnlyGuard rejects a call to a tool absent from listed (X14).
+func readOnlyGuard(listed []string) func(sdk.MethodHandler) sdk.MethodHandler {
+	return func(next sdk.MethodHandler) sdk.MethodHandler {
+		return func(ctx context.Context, method string, req sdk.Request) (sdk.Result, error) {
+			if call, ok := req.(*sdk.CallToolRequest); ok && method == "tools/call" &&
+				!slices.Contains(listed, call.Params.Name) {
+				return toolResult(tool.Result{Content: notAllowed, IsError: true}), nil
 			}
-		})
-	}
 
-	return s
+			return next(ctx, method, req)
+		}
+	}
 }
 
 var notAllowed = json.RawMessage(

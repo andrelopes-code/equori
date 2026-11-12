@@ -210,15 +210,7 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 				return err
 			}
 
-			_, err := tx.Exec(ctx, `
-				INSERT INTO outbox_delivery (event_id, consumer, status, attempts, delivered_at)
-				VALUES ($1, $2, 'delivered', 1, $3)
-				ON CONFLICT (event_id, consumer) DO UPDATE
-				SET status = 'delivered', attempts = outbox_delivery.attempts + 1,
-				    delivered_at = $3, next_attempt_at = NULL, last_error = NULL`,
-				e.ID, s.consumer, d.now())
-
-			return err
+			return d.markDelivered(ctx, tx, s, e)
 		})
 	}
 
@@ -230,6 +222,34 @@ func (d *Dispatcher) deliver(ctx context.Context, s subscription, e Delivered) (
 		return false, ctx.Err()
 	}
 
+	return d.recordFailure(ctx, s, e, handlerErr)
+}
+
+// markDelivered records the delivery of e to the consumer of s inside the handler's transaction.
+func (d *Dispatcher) markDelivered(
+	ctx context.Context,
+	tx pgx.Tx,
+	s subscription,
+	e Delivered,
+) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO outbox_delivery (event_id, consumer, status, attempts, delivered_at)
+		VALUES ($1, $2, 'delivered', 1, $3)
+		ON CONFLICT (event_id, consumer) DO UPDATE
+		SET status = 'delivered', attempts = outbox_delivery.attempts + 1,
+		    delivered_at = $3, next_attempt_at = NULL, last_error = NULL`,
+		e.ID, s.consumer, d.now())
+
+	return err
+}
+
+// recordFailure schedules the retry of e for the consumer of s after handlerErr.
+func (d *Dispatcher) recordFailure(
+	ctx context.Context,
+	s subscription,
+	e Delivered,
+	handlerErr error,
+) (bool, error) {
 	// Attempt n waits 2^(n-1) seconds, capped at 10 minutes.
 	_, err := d.pool.Exec(ctx, `
 		INSERT INTO outbox_delivery (event_id, consumer, status, attempts, next_attempt_at, last_error)

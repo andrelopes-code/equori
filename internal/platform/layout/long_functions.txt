@@ -5,16 +5,6 @@ internal/identity/httpapi/server.go	ToProblem	table of data
 internal/ingestion/httpapi/server.go	Server.Register	table of data
 internal/ingestion/httpapi/server.go	ToProblem	table of data
 internal/ledger/httpapi/server.go	Server.Register	table of data
-internal/marketdata/index/brsgs/brsgs.go	Source.Fetch	pending: split after the 100-column reformatting
-internal/marketdata/index/cpi/cpi.go	readEurostat	pending: split after the 100-column reformatting
-internal/marketdata/price.go	Module.RecordInstrumentPrices	pending: split after the 100-column reformatting
-internal/marketdata/probe.go	Module.ProbeQuote	pending: split after the 100-column reformatting
 internal/marketdata/sources.go	sourceEntries	table of data
-internal/marketdata/toolapi/instrument_args.go	checkInstrumentArgs	pending: split after the 100-column reformatting
 internal/planning/httpapi/server.go	Server.Register	table of data
-internal/platform/backup/backup.go	Dump	pending: split after the 100-column reformatting
-internal/platform/backup/backup.go	Restore	pending: split after the 100-column reformatting
 internal/platform/config/variables.go	Variables	table of data
-internal/platform/llm/aistudio/wire.go	toWire	pending: split after the 100-column reformatting
-internal/platform/outbox/dispatcher.go	Dispatcher.deliver	pending: split after the 100-column reformatting
-internal/platform/tool/mcp/mcp.go	newServer	pending: split after the 100-column reformatting

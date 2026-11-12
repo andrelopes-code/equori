@@ -30,34 +30,13 @@ var (
 func Dump(ctx context.Context, bin, dsn, path string) error {
 	program := filepath.Join(bin, "pg_dump")
 
-	client, err := pgcluster.Major(ctx, program)
-	if err != nil {
+	if err := checkDumpClient(ctx, program, dsn); err != nil {
 		return err
 	}
 
-	server, err := serverMajor(ctx, dsn)
+	f, partial, err := createPartial(path)
 	if err != nil {
 		return err
-	}
-
-	if client < server {
-		return fmt.Errorf("%w: pg_dump %d, server %d", ErrOldProgram, client, server)
-	}
-
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return fmt.Errorf("create backup directory: %w", err)
-	}
-
-	partial := path + ".partial"
-	// A dump killed mid-way leaves its partial file; the next run of the same name replaces it.
-	if err := os.Remove(partial); err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("remove %s: %w", partial, err)
-	}
-
-	//nolint:gosec // G304: the backup path is the owner's configuration.
-	f, err := os.OpenFile(partial, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
-	if err != nil {
-		return fmt.Errorf("create %s: %w", partial, err)
 	}
 
 	var stderr bytes.Buffer
@@ -80,6 +59,46 @@ func Dump(ctx context.Context, bin, dsn, path string) error {
 	}
 
 	return nil
+}
+
+// checkDumpClient rejects a pg_dump older than the server.
+func checkDumpClient(ctx context.Context, program, dsn string) error {
+	client, err := pgcluster.Major(ctx, program)
+	if err != nil {
+		return err
+	}
+
+	server, err := serverMajor(ctx, dsn)
+	if err != nil {
+		return err
+	}
+
+	if client < server {
+		return fmt.Errorf("%w: pg_dump %d, server %d", ErrOldProgram, client, server)
+	}
+
+	return nil
+}
+
+// createPartial creates the backup directory and the exclusive partial file of path.
+func createPartial(path string) (*os.File, string, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return nil, "", fmt.Errorf("create backup directory: %w", err)
+	}
+
+	partial := path + ".partial"
+	// A dump killed mid-way leaves its partial file; the next run of the same name replaces it.
+	if err := os.Remove(partial); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return nil, "", fmt.Errorf("remove %s: %w", partial, err)
+	}
+
+	//nolint:gosec // G304: the backup path is the owner's configuration.
+	f, err := os.OpenFile(partial, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
+	if err != nil {
+		return nil, "", fmt.Errorf("create %s: %w", partial, err)
+	}
+
+	return f, partial, nil
 }
 
 func serverMajor(ctx context.Context, dsn string) (int, error) {
@@ -161,6 +180,22 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 		)
 	}
 
+	if err := recreateDatabase(ctx, dsn); err != nil {
+		return err
+	}
+
+	//nolint:gosec // G204: as above.
+	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--no-owner", "--exit-on-error", "-d", dsn, path).
+		CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("pg_restore: %w: %s", err, out)
+	}
+
+	return nil
+}
+
+// recreateDatabase drops and creates the database of dsn through the maintenance database.
+func recreateDatabase(ctx context.Context, dsn string) error {
 	cfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return fmt.Errorf("parse connection string: %w", err)
@@ -196,13 +231,6 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 		"CREATE DATABASE "+name+" TEMPLATE template0 ENCODING 'UTF8' LOCALE_PROVIDER builtin BUILTIN_LOCALE 'C.UTF-8'",
 	); err != nil {
 		return fmt.Errorf("create database: %w", err)
-	}
-
-	//nolint:gosec // G204: as above.
-	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--no-owner", "--exit-on-error", "-d", dsn, path).
-		CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("pg_restore: %w: %s", err, out)
 	}
 
 	return nil

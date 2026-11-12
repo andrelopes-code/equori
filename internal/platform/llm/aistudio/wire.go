@@ -110,40 +110,50 @@ func toWire(req llm.Request) generateRequest {
 	}
 
 	if len(req.Tools) > 0 {
-		var decls []functionDeclaration
-		for _, t := range req.Tools {
-			decls = append(
-				decls,
-				functionDeclaration{
-					Name:                 t.Name,
-					Description:          t.Description,
-					ParametersJSONSchema: t.Parameters,
-				},
-			)
-		}
-
-		w.Tools = []tool{{FunctionDeclarations: decls}}
-		if req.ToolChoice == llm.ToolChoiceNone {
-			w.ToolConfig = &toolConfig{}
-			w.ToolConfig.FunctionCallingConfig.Mode = "NONE"
-		}
+		w.addTools(req)
 	}
 
 	if req.Schema != nil || req.MaxOutputTokens > 0 || req.Temperature != nil ||
 		req.Thinking != "" {
-		cfg := &generationConfig{MaxOutputTokens: req.MaxOutputTokens, Temperature: req.Temperature}
-		if req.Schema != nil {
-			cfg.ResponseMimeType, cfg.ResponseJSONSchema = "application/json", req.Schema
-		}
-
-		if req.Thinking == "low" {
-			cfg.ThinkingConfig = &thinkingConfig{ThinkingLevel: "LOW"}
-		}
-
-		w.GenerationConfig = cfg
+		w.addGenerationConfig(req)
 	}
 
 	return w
+}
+
+// addTools sets the function declarations and the tool choice of req.
+func (w *generateRequest) addTools(req llm.Request) {
+	var decls []functionDeclaration
+	for _, t := range req.Tools {
+		decls = append(
+			decls,
+			functionDeclaration{
+				Name:                 t.Name,
+				Description:          t.Description,
+				ParametersJSONSchema: t.Parameters,
+			},
+		)
+	}
+
+	w.Tools = []tool{{FunctionDeclarations: decls}}
+	if req.ToolChoice == llm.ToolChoiceNone {
+		w.ToolConfig = &toolConfig{}
+		w.ToolConfig.FunctionCallingConfig.Mode = "NONE"
+	}
+}
+
+// addGenerationConfig sets the generation configuration of req.
+func (w *generateRequest) addGenerationConfig(req llm.Request) {
+	cfg := &generationConfig{MaxOutputTokens: req.MaxOutputTokens, Temperature: req.Temperature}
+	if req.Schema != nil {
+		cfg.ResponseMimeType, cfg.ResponseJSONSchema = "application/json", req.Schema
+	}
+
+	if req.Thinking == "low" {
+		cfg.ThinkingConfig = &thinkingConfig{ThinkingLevel: "LOW"}
+	}
+
+	w.GenerationConfig = cfg
 }
 
 func partToWire(p llm.Part) part {
