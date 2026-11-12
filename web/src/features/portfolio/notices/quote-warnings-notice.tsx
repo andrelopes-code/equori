@@ -5,11 +5,9 @@ import {
   AlertDescription,
 } from "@slotted/react/alert";
 import { ButtonLink } from "@slotted/react/button";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
-import { useApi } from "@/api/api-context";
-import { quoteWarningsQuery } from "@/features/accounts";
+import { useQuoteWarnings } from "@/features/portfolio/notices/use-quote-warnings";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
@@ -25,11 +23,7 @@ export function QuoteWarningsNotice({
 }: QuoteWarningsNoticeProps) {
   const t = useT();
   const [tag] = useAppLocale();
-  const api = useApi();
-  const warnings = useQuery({
-    ...quoteWarningsQuery(api, date, valueIn),
-    enabled: valueIn !== undefined,
-  }).data;
+  const warnings = useQuoteWarnings(date, valueIn);
   const first = warnings?.[0];
 
   if (warnings === undefined || first === undefined) return null;

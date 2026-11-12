@@ -8,9 +8,11 @@ import {
 import { Button, ButtonLink } from "@slotted/react/button";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { Text } from "@slotted/react/typography";
 
 import { useApi } from "@/api/api-context";
 import { pricesQuery } from "@/features/instruments";
+import { useQuoteWarnings } from "@/features/portfolio/notices/use-quote-warnings";
 import { settingsQuery } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -40,6 +42,7 @@ export function PriceMissingNotice({
   const [tag] = useAppLocale();
   const api = useApi();
   const base = useQuery(settingsQuery(api)).data?.base_currency;
+  const quoted = (useQuoteWarnings(date, currency)?.length ?? 0) > 0;
   const pair =
     currency !== undefined && base !== undefined && currency !== base;
   const prices = useQuery({
@@ -52,6 +55,14 @@ export function PriceMissingNotice({
     ),
     enabled: pair && period !== undefined,
   });
+
+  // The page notice about late or missing quotes already holds the action for this cause.
+  if (!pair && quoted)
+    return (
+      <Text size="sm" tone="muted">
+        {t("holdings.missing.own")}
+      </Text>
+    );
 
   if (!pair)
     return (

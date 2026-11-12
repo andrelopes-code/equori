@@ -165,6 +165,7 @@ export function PortfolioReturn({
           <PortfolioProblem
             error={report.error}
             currency={valueIn}
+            date={date}
             period={{ from, to: asked }}
             onFrom={(next) => {
               onChange({ from: next, to: to === date ? undefined : to });
