@@ -3,6 +3,7 @@ export interface CategoriesSearch {
   class?: "income";
   view?: "cash";
   archived?: true;
+  empty?: true;
 }
 
 // Expense, accrual and the current month are the defaults and stay out of the address.
@@ -18,5 +19,6 @@ export function validateCategoriesSearch(
     ...(raw.class === "income" ? { class: "income" as const } : {}),
     ...(raw.view === "cash" ? { view: "cash" as const } : {}),
     ...(raw.archived === true ? { archived: true as const } : {}),
+    ...(raw.empty === true ? { empty: true as const } : {}),
   };
 }

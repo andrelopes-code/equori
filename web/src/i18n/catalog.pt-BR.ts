@@ -846,17 +846,10 @@ export const catalogPtBR: Catalog = {
   "trade.side": "Operação",
   "trade.side.buy": "Compra",
   "trade.side.sell": "Venda",
-  "trade.securityAccount": "Conta do investimento",
-  "trade.securityAccountHelp":
-    "A conta da corretora onde o investimento fica guardado.",
   "trade.cashAccount": "Conta que paga ou recebe",
   "trade.cashAccountHelp":
     "A conta de onde sai o dinheiro da compra, ou para onde vai o dinheiro da venda.",
   "trade.cashAccountPlaceholder": "Escolha a conta de caixa",
-  "trade.noSecurityAccount":
-    "Nenhuma conta guarda um investimento ainda. Crie uma dentro de uma conta de corretora.",
-  "trade.noCashAccount":
-    "A corretora não tem conta aberta em {currency} para pagar ou receber.",
   "trade.quantity": "Quantidade",
   "trade.unitPrice": "Preço unitário",
   "trade.priceStored": "Preço registrado de {date}: {price}",
@@ -869,6 +862,15 @@ export const catalogPtBR: Catalog = {
   "trade.taxesCategory": "Categoria do imposto",
   "trade.taxesCategoryPlaceholder": "Conta de impostos padrão",
   "trade.gross": "Bruto",
+  "trade.brokerage": "Corretora",
+  "trade.held": "Em carteira: {quantity} {code}",
+  "trade.investment": "Investimento",
+  "trade.paidFrom": "Paga com {name}, saldo {balance}",
+  "trade.receivedIn": "Recebido em {name}, saldo {balance}",
+  "trade.noCash": "Esta corretora não tem caixa em {currency}.",
+  "trade.createCash": "Criar caixa",
+  "trade.shortfall": "Faltam {amount} no caixa para esta compra.",
+  "trade.moveMoney": "Mover dinheiro para {name}",
   "trade.cashEffect": "Quanto sai ou entra na conta",
   "trade.position": "Posição na data",
   "trade.averageCost": "Custo médio",
@@ -880,8 +882,7 @@ export const catalogPtBR: Catalog = {
   "trade.required.quantity": "Informe a quantidade.",
   "trade.required.cashAccount":
     "Escolha uma conta de caixa da mesma corretora.",
-  "trade.required.securityAccount": "Escolha uma conta de ativo.",
-  "trade.securityAccountContext": "A conta que guarda o investimento.",
+  "trade.required.securityAccount": "Escolha um investimento.",
   "trade.cashAccountContext":
     "Uma conta da mesma corretora, em {currency}, que paga ou recebe o dinheiro.",
   "income.record": "Registrar rendimento",
@@ -931,6 +932,7 @@ export const catalogPtBR: Catalog = {
   "conflict.overwrite": "Gravar a minha por cima",
   "conflict.restart": "Recomeçar da atual",
   "nav.categories": "Categorias",
+  "categories.showEmpty": "Mostrar categorias sem movimento ({count})",
   "categories.tab.categories": "Categorias",
   "categories.tab.rules": "Regras",
   "categories.tab.payees": "Favorecidos",

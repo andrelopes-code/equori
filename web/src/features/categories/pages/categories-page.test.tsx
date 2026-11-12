@@ -151,6 +151,13 @@ function rowOf(name: string): HTMLElement {
   return row;
 }
 
+// The charts' legends repeat the names of categories, so an absence is checked inside the tree.
+function treeHas(name: string): boolean {
+  const grid = document.querySelector('[data-ui="data-grid"]');
+  if (!(grid instanceof HTMLElement)) throw new Error("no tree");
+  return within(grid).queryByText(name, { selector: "span, p" }) !== null;
+}
+
 // The charts' legends repeat the names of groups and of the held spending, so a card is the
 // stat-card among the elements that carry its label.
 async function figureCard(label: string): Promise<HTMLElement> {
@@ -231,6 +238,73 @@ describe("CategoriesPage", () => {
     ).toBe("from=2026-10-01&to=2026-10-31&class=expense");
   });
 
+  it("hides the categories without movement behind a switch that counts them", async () => {
+    await renderApp("/categories?month=2026-09", {
+      fetch: api([], [], undefined, [], {
+        // Fun recorded nothing in September: its total and its direct value are zero.
+        "2026-09-01": [
+          {
+            account_id: "food",
+            total: money(5000),
+            subtree_total: money(30000),
+          },
+          {
+            account_id: "groceries",
+            total: money(25000),
+            subtree_total: money(25000),
+          },
+        ],
+      }),
+      today: "2026-10-17",
+    });
+    // Until the totals arrive every row reads zero, so the label settles on the count of Fun alone.
+    const show = await screen.findByRole("switch", {
+      name: "Show categories without movement (1)",
+    });
+    await findRow("Groceries");
+    expect(treeHas("Fun")).toBe(false);
+    expect(rowOf("Food")).toBeInTheDocument();
+
+    await userEvent.click(show);
+
+    expect(await findRow("Fun")).toBeInTheDocument();
+    expect(
+      screen.getByRole("switch", {
+        name: "Show categories without movement (1)",
+      }),
+    ).toBeChecked();
+  });
+
+  it("draws no switch for the categories without movement when none is empty", async () => {
+    await renderApp("/categories?class=income", {
+      fetch: api([], [], undefined, [], {}, [
+        { account_id: "salary", total: money(900), subtree_total: money(900) },
+      ]),
+      today: "2026-10-17",
+    });
+    await findRow("Salary");
+
+    expect(
+      screen.queryByRole("switch", { name: /without movement/u }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps the switch drawn when every category of the month is empty", async () => {
+    await renderApp("/categories?class=income", {
+      fetch: api([], [], undefined, [], {}, []),
+      today: "2026-10-17",
+    });
+
+    const show = await screen.findByRole("switch", {
+      name: "Show categories without movement (1)",
+    });
+    expect(treeHas("Salary")).toBe(false);
+
+    await userEvent.click(show);
+
+    expect(await findRow("Salary")).toBeInTheDocument();
+  });
+
   // Owner review 2026-10-22: a render of the page, such as a dialog opening, rendered every row.
   it("renders no row of the tree when a dialog opens over it", async () => {
     await renderApp("/categories", { fetch: api([]), today: "2026-10-17" });
@@ -256,6 +330,12 @@ describe("CategoriesPage", () => {
     await waitFor(() => {
       expect(router.state.location.search).toEqual({ class: "income" });
     });
+    // The fixture answers no income total, so Salary is a row without movement.
+    await userEvent.click(
+      await screen.findByRole("switch", {
+        name: "Show categories without movement (1)",
+      }),
+    );
     expect(
       await screen.findByText("Salary", { selector: "span, p" }),
     ).toBeInTheDocument();

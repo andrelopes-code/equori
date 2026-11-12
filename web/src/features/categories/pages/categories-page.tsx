@@ -34,6 +34,7 @@ import type {
 import type { CategoryAction } from "@/features/categories/category-tree/category-row-menu";
 import { CategoryTree } from "@/features/categories/category-tree/category-tree";
 import type { TreeRow } from "@/features/categories/category-tree/category-tree";
+import { visibleRows } from "@/features/categories/category-tree/category-visible-rows";
 import { MergeDialog } from "@/features/categories/merge-dialog/merge-dialog";
 import {
   comparableBounds,
@@ -84,6 +85,7 @@ export function CategoriesPage() {
   const cls: CategoryClass = search.class ?? "expense";
   const view = search.view ?? "accrual";
   const showArchived = search.archived === true;
+  const showEmpty = search.empty === true;
   const { from, to } = monthBounds(month);
 
   const accounts = useQuery(accountsQuery(api));
@@ -158,6 +160,8 @@ export function CategoriesPage() {
           : { amount: holder, share: classTotal > 0 ? holder / classTotal : 0 },
     };
   }, [entries, totals.data, cls, showArchived]);
+
+  const tree = useMemo(() => visibleRows(rows, showEmpty), [rows, showEmpty]);
 
   const current = useMemo(
     () => summarize(entries, totals.data, cls),
@@ -278,14 +282,26 @@ export function CategoriesPage() {
                 }}
               />
             </Inline>
-            <Switch
-              checked={showArchived}
-              onCheckedChange={(checked) => {
-                setSearch({ archived: checked ? true : undefined });
-              }}
-            >
-              {t("category.showArchived")}
-            </Switch>
+            <Inline gap={4} align="center" wrap="wrap">
+              <Switch
+                checked={showArchived}
+                onCheckedChange={(checked) => {
+                  setSearch({ archived: checked ? true : undefined });
+                }}
+              >
+                {t("category.showArchived")}
+              </Switch>
+              {tree.count > 0 && (
+                <Switch
+                  checked={showEmpty}
+                  onCheckedChange={(checked) => {
+                    setSearch({ empty: checked ? true : undefined });
+                  }}
+                >
+                  {t("categories.showEmpty", { count: tree.count })}
+                </Switch>
+              )}
+            </Inline>
           </Inline>
           <CategoryViewNote view={view} />
           <div className={styles.summary}>
@@ -326,7 +342,7 @@ export function CategoriesPage() {
           <div className={styles.listing}>
             {scale !== null && currency !== undefined && (
               <CategoryTree
-                rows={rows}
+                rows={tree.rows}
                 currency={currency}
                 scale={scale(currency)}
                 loading={accounts.isPending || totals.isPending}
