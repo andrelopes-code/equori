@@ -10,9 +10,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@slotted/react/dialog";
+import type { DialogChangeRequest } from "@slotted/react/dialog";
 import { Inline } from "@slotted/react/inline";
 import { Text } from "@slotted/react/typography";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
@@ -29,7 +30,7 @@ export interface DetailDialogProps {
 }
 
 // A layer for the detail of a block: the summary line and its trigger sit in the page, the body
-// mounts only while the layer is open.
+// mounts when the layer opens and unmounts after its exit ends.
 export function DetailDialog({
   title,
   description,
@@ -40,12 +41,45 @@ export function DetailDialog({
   const t = useT();
 
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  function handleOpenChange(next: boolean, request: DialogChangeRequest) {
+    // Workaround for Slotted issue #96: a press on the backdrop of a dialog stacked on this one
+    // also reaches this dialog; only a press on this dialog's own backdrop closes it.
+    if (!next && request.reason === "outsidePress" && pressedAbove(request)) {
+      request.cancel();
+      return;
+    }
+
+    setOpen(next);
+    if (next) setMounted(true);
+  }
+
+  function handleOpenChangeComplete(settled: boolean) {
+    if (!settled) setMounted(false);
+  }
+
+  function pressedAbove(request: DialogChangeRequest): boolean {
+    const source = request.source;
+    const target = source instanceof Event ? source.target : null;
+    const own = contentRef.current?.closest('[data-ui="dialog"]');
+    const pressed =
+      target instanceof Element ? target.closest('[data-ui="dialog"]') : null;
+
+    return pressed !== null && pressed !== own;
+  }
 
   return (
     <Inline align="center" gap={4} wrap="wrap">
       {summary !== null && <Text size="sm">{summary}</Text>}
 
-      <Dialog open={open} onOpenChange={setOpen} size="full">
+      <Dialog
+        open={open}
+        size="full"
+        onOpenChange={handleOpenChange}
+        onOpenChangeComplete={handleOpenChangeComplete}
+      >
         <DialogTrigger
           render={(props) => (
             <Button {...props} size="sm" variant="outline" tone="secondary">
@@ -54,13 +88,13 @@ export function DetailDialog({
           )}
         />
 
-        <DialogContent className={styles.layer}>
+        <DialogContent ref={contentRef} className={styles.layer}>
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
-          <DialogBody>{open && children}</DialogBody>
+          <DialogBody>{mounted && children}</DialogBody>
 
           <DialogFooter>
             <DialogClose
