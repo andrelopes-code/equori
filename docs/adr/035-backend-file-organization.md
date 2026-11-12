@@ -19,6 +19,7 @@ Every Go file holds one concept and carries the name of that concept. Every func
 | A hand-written non-test Go file has at most 400 lines | `internal/platform/layout`, `TestGoFileSize` |
 | A hand-written non-test function body has at most 50 lines | `internal/platform/layout`, `TestGoFunctionSize` |
 | An allow-list entry is removed when its file or function no longer exceeds the limit | `internal/platform/layout`; a stale entry fails the test |
+| A line holds at most 100 columns (golines, `max-len: 100`, `tab-len: 4`); a `//nolint` directive sits on its own line above the statement | `golangci-lint fmt`; the pre-commit hook |
 | `app` declares every port in `app/ports.go`; above 400 lines the file keeps the repository and clock ports and the other groups move to `app/ports_<group>.go` | review |
 | A package is not named `util`, `helpers`, `misc`, `common`, `types` or `base`; `types.go` exists only in a module root | review |
 
@@ -39,6 +40,10 @@ A function above 50 lines is split into named steps in the same file, below its 
 | Deletion of `Tool.ValidateOutput` | removes an exported method used by a test in package `tool` |
 | A new `app/` for `marketdata` or `domain/` for `reporting` | design change, left open by ADR 033 |
 | A `Deps` struct for `planning.New` | changes an exported signature |
+
+## Formatting
+
+Wrapping lines to 100 columns lengthens function bodies and files. The gate lists were regenerated once after golines ran: 33 files and 105 functions carry the reason `pending: split after the 100-column reformatting`, and 10 functions carry `table of data`. The lists only shrink from that baseline.
 
 ## Consequences
 

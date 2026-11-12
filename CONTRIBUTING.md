@@ -108,6 +108,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - Handlers get the book with `auth.MustBooksID(ctx)` and the member with `auth.MustMemberID(ctx)` (`internal/platform/auth`) and pass them to `app` explicitly. `identity.Authorize` authenticates every `/api/` route and checks the book role its operation declares in `x-book-role` (ADR 029).
 - `*.gen.go` and `*.gen.ts` files are generated; never edit them. A new module adds an entry to `sqlc.yaml`, a directory `internal/<module>/postgres/queries/`, a tag in `api/base.yaml`, `internal/<module>/openapi.yaml`, `httpapi/oapi-codegen.yaml` and a depguard rule in `.golangci.yml`.
 - Every business table has `books_id`; every query on it filters by `books_id` (ADR 003, ADR 029).
+- `golangci-lint fmt` runs gofmt, goimports and golines (`.golangci.yml`): a line holds at most 100 columns, a tab counts as 4. golines breaks a long call, signature or literal one element per line; a comment, a string and a struct tag stay as written. A `//nolint` directive sits on its own line above the statement it covers, never at the end of a wrapped line.
 - Web code follows `docs/contributing/web.md`.
 
 ## Feature design
