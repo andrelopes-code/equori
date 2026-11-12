@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -70,46 +72,111 @@ func (m *Module) ListInstrumentQuotes(
 // quotePair keys the prices of one instrument against one quote instrument.
 type quotePair struct{ instrument, quote money.Currency }
 
+// quotePrices reads the last price of each pair, then the price on each reference date counted
+// back from the date of that last price (IQ4).
 func (m *Module) quotePrices(
 	ctx context.Context,
 	instruments, quotes []string,
 ) (map[quotePair]map[int32]*domain.QuotePoint, error) {
 	today := m.feeds.Clock.Today(ctx)
-	refs := domain.QuoteReferences(today)
 
-	rows, err := m.q.ListQuotePrices(ctx, postgres.ListQuotePricesParams{
+	lasts, err := m.q.ListQuotePrices(ctx, postgres.ListQuotePricesParams{
 		Instruments: instruments,
 		Quotes:      quotes,
-		Dates: []time.Time{
-			today,
-			refs.Week,
-			refs.Month,
-			refs.Quarter,
-			refs.Year,
-			refs.YearToDate,
-		},
+		Dates:       []time.Time{today},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("list quote prices: %w", err)
+		return nil, fmt.Errorf("list last prices: %w", err)
 	}
 
 	out := make(map[quotePair]map[int32]*domain.QuotePoint)
+	ask := postgres.ListQuoteReferencesParams{}
 
-	for _, r := range rows {
-		value, err := platformpg.RateOf(r.Value)
-		if err != nil {
-			return nil, fmt.Errorf("read the price of %s: %w", r.Instrument, err)
+	for _, r := range lasts {
+		if err := addQuotePoint(
+			out,
+			r.Instrument,
+			r.QuoteInstrument,
+			r.Position,
+			r.Date,
+			r.Value,
+		); err != nil {
+			return nil, err
 		}
 
-		pair := quotePair{money.Currency(r.Instrument), money.Currency(r.QuoteInstrument)}
-		if out[pair] == nil {
-			out[pair] = make(map[int32]*domain.QuotePoint)
-		}
+		ask = withReferences(ask, r.Instrument, r.QuoteInstrument, r.Date, today)
+	}
 
-		out[pair][r.Position] = &domain.QuotePoint{Date: r.Date, Value: value}
+	refs, err := m.q.ListQuoteReferences(ctx, ask)
+	if err != nil {
+		return nil, fmt.Errorf("list reference prices: %w", err)
+	}
+
+	for _, r := range refs {
+		if err := addQuotePoint(
+			out,
+			r.Instrument,
+			r.QuoteInstrument,
+			r.Position,
+			r.Date,
+			r.Value,
+		); err != nil {
+			return nil, err
+		}
 	}
 
 	return out, nil
+}
+
+// withReferences appends the reference dates of one pair to ask. The year to date is asked only
+// when the last price lies in the year of today: a price of an earlier year gives none.
+func withReferences(
+	ask postgres.ListQuoteReferencesParams,
+	instrument, quote string,
+	last, today time.Time,
+) postgres.ListQuoteReferencesParams {
+	refs := domain.QuoteReferences(last)
+	days := map[int32]time.Time{
+		posWeek:    refs.Week,
+		posMonth:   refs.Month,
+		posQuarter: refs.Quarter,
+		posYear:    refs.Year,
+	}
+
+	if last.Year() == today.Year() {
+		days[posYearToDate] = refs.YearToDate
+	}
+
+	for position, day := range days {
+		ask.Instruments = append(ask.Instruments, instrument)
+		ask.Quotes = append(ask.Quotes, quote)
+		ask.Positions = append(ask.Positions, position)
+		ask.Days = append(ask.Days, day)
+	}
+
+	return ask
+}
+
+func addQuotePoint(
+	out map[quotePair]map[int32]*domain.QuotePoint,
+	instrument, quote string,
+	position int32,
+	date time.Time,
+	number pgtype.Numeric,
+) error {
+	value, err := platformpg.RateOf(number)
+	if err != nil {
+		return fmt.Errorf("read the price of %s: %w", instrument, err)
+	}
+
+	pair := quotePair{money.Currency(instrument), money.Currency(quote)}
+	if out[pair] == nil {
+		out[pair] = make(map[int32]*domain.QuotePoint)
+	}
+
+	out[pair][position] = &domain.QuotePoint{Date: date, Value: value}
+
+	return nil
 }
 
 // withPrices sets the last price and the references of q; a reference that does not predate the

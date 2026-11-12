@@ -29,8 +29,9 @@ type instrumentQuoteAPI struct {
 	} `json:"references"`
 }
 
-// IQ2 to IQ5: with today at 2026-11-12 the references are 2026-11-05, 2026-10-12, 2026-08-12,
-// 2025-11-12 and 2025-12-31, each the latest price on or before its date.
+// IQ2 to IQ5: the references count back from the date of the last price of each instrument, each
+// the latest price on or before its date. For FULL1 the last price is 2026-11-11, so they are
+// 2026-11-04, 2026-10-11, 2026-08-11, 2025-11-11 and 2025-12-31.
 func TestInstrumentQuotes(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-11-12"))
@@ -38,16 +39,32 @@ func TestInstrumentQuotes(t *testing.T) {
 	defineQuoted(t, h, "SHORT", "BRL")
 	defineQuoted(t, h, "STALE", "BRL")
 	defineQuoted(t, h, "EMPTY", "BRL")
+	defineQuoted(t, h, "CLAMP", "BRL")
+	defineQuoted(t, h, "PRIOR", "BRL")
 	record(t, h, "FULL1", "BRL", "manual",
 		"2025-11-10", "10.00",
 		"2025-12-30", "11.00",
 		"2026-08-11", "12.00",
-		"2026-10-12", "13.00",
+		"2026-10-09", "13.00",
 		"2026-11-04", "14.00",
 		"2026-11-11", "15.00",
 	)
 	record(t, h, "SHORT", "BRL", "manual", "2026-11-01", "5.00", "2026-11-11", "6.00")
 	record(t, h, "STALE", "BRL", "manual", "2025-06-01", "7.00", "2026-10-03", "8.00")
+	record(
+		t,
+		h,
+		"CLAMP",
+		"BRL",
+		"manual",
+		"2026-02-28",
+		"3.00",
+		"2026-03-01",
+		"4.00",
+		"2026-03-31",
+		"5.00",
+	)
+	record(t, h, "PRIOR", "BRL", "manual", "2025-12-10", "8.00", "2025-12-20", "9.00")
 	record(t, h, "USD", "BRL", "csv", "2026-11-11", "5.41")
 	record(t, h, "USD", "BRL", "manual", "2026-11-11", "5.40", "2026-11-04", "5.30")
 
@@ -56,7 +73,7 @@ func TestInstrumentQuotes(t *testing.T) {
 	full := got["FULL1"]
 	assertPoint(t, "FULL1 last", full.Last, "2026-11-11", "15")
 	assertPoint(t, "FULL1 week", full.References.Week, "2026-11-04", "14")
-	assertPoint(t, "FULL1 month", full.References.Month, "2026-10-12", "13")
+	assertPoint(t, "FULL1 month", full.References.Month, "2026-10-09", "13")
 	assertPoint(t, "FULL1 quarter", full.References.Quarter, "2026-08-11", "12")
 	assertPoint(t, "FULL1 year", full.References.Year, "2025-11-10", "10")
 	assertPoint(t, "FULL1 year to date", full.References.YearToDate, "2025-12-30", "11")
@@ -69,13 +86,25 @@ func TestInstrumentQuotes(t *testing.T) {
 	assertPoint(t, "SHORT year", short.References.Year, "", "")
 	assertPoint(t, "SHORT year to date", short.References.YearToDate, "", "")
 
-	// IQ5: a reference that is the last price itself is not a change inside the window.
+	// IQ4: a stale instrument still reads a full window that ends at its last price.
 	stale := got["STALE"]
 	assertPoint(t, "STALE last", stale.Last, "2026-10-03", "8")
-	assertPoint(t, "STALE week", stale.References.Week, "", "")
-	assertPoint(t, "STALE month", stale.References.Month, "", "")
+	assertPoint(t, "STALE week", stale.References.Week, "2025-06-01", "7")
+	assertPoint(t, "STALE month", stale.References.Month, "2025-06-01", "7")
 	assertPoint(t, "STALE quarter", stale.References.Quarter, "2025-06-01", "7")
 	assertPoint(t, "STALE year", stale.References.Year, "2025-06-01", "7")
+	assertPoint(t, "STALE year to date", stale.References.YearToDate, "2025-06-01", "7")
+
+	// IQ4: 31 March minus 1 month is 28 February, not 3 March.
+	clamp := got["CLAMP"]
+	assertPoint(t, "CLAMP last", clamp.Last, "2026-03-31", "5")
+	assertPoint(t, "CLAMP week", clamp.References.Week, "2026-03-01", "4")
+	assertPoint(t, "CLAMP month", clamp.References.Month, "2026-02-28", "3")
+
+	// IQ4: a last price of a previous year gives no year to date.
+	prior := got["PRIOR"]
+	assertPoint(t, "PRIOR week", prior.References.Week, "2025-12-10", "8")
+	assertPoint(t, "PRIOR year to date", prior.References.YearToDate, "", "")
 
 	empty := got["EMPTY"]
 	if empty.Instrument != "EMPTY" || empty.QuoteInstrument != "BRL" || empty.Last != nil {

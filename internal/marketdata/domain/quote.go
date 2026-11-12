@@ -11,15 +11,16 @@ type QuoteDates struct {
 	Week, Month, Quarter, Year, YearToDate time.Time
 }
 
-// QuoteReferences returns the reference dates of the change columns of the catalog. A month shift
-// that lands past the end of the target month clamps to its last day.
-func QuoteReferences(today time.Time) QuoteDates {
+// QuoteReferences returns the reference dates of the change columns of the catalog, counted back
+// from anchor, the date of the last price. A month shift that lands past the end of the target
+// month clamps to its last day.
+func QuoteReferences(anchor time.Time) QuoteDates {
 	return QuoteDates{
-		Week:       today.AddDate(0, 0, -7),
-		Month:      monthsBack(today, 1),
-		Quarter:    monthsBack(today, 3),
-		Year:       monthsBack(today, 12),
-		YearToDate: time.Date(today.Year()-1, time.December, 31, 0, 0, 0, 0, today.Location()),
+		Week:       anchor.AddDate(0, 0, -7),
+		Month:      monthsBack(anchor, 1),
+		Quarter:    monthsBack(anchor, 3),
+		Year:       monthsBack(anchor, 12),
+		YearToDate: time.Date(anchor.Year()-1, time.December, 31, 0, 0, 0, 0, anchor.Location()),
 	}
 }
 

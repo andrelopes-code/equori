@@ -15,20 +15,20 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 | IQ1 | `GET /instrument-quotes?base={currency}` (`listInstrumentQuotes`, `x-book-role: read`) returns `{items}`, one item per instrument that has a quote instrument, in code order. `base` is required: a currency instrument is quoted in it, and the instrument `base` itself has no item. |
 | IQ2 | An item holds `instrument`, `quote_instrument`, `last` and `references`. `last` is `{date, value}` or null when the instrument has no price. `references` holds `week`, `month`, `quarter`, `year` and `year_to_date`, each `{date, value}` or null. |
 | IQ3 | The price of a date is the chosen price of the latest date on or before it: the same order as `PriceOnOrBefore` (date, then source priority, then latest record). |
-| IQ4 | With `today` from `platform/clock`, the reference dates are: `week` = today minus 7 days; `month` = today minus 1 month; `quarter` = today minus 3 months; `year` = today minus 12 months; `year_to_date` = 31 December of the previous year. A month shift that lands past the end of the target month clamps to its last day (31 March minus 1 month is 28 February). |
+| IQ4 | The reference dates count back from the date of the last price of the instrument, so a change always spans the window its column names and ends at the date the price column shows. `week` = that date minus 7 days; `month` = minus 1 month; `quarter` = minus 3 months; `year` = minus 12 months; `year_to_date` = 31 December of the previous year, asked only when the last price lies in the year of `today` (from `platform/clock`). A month shift that lands past the end of the target month clamps to its last day (31 March minus 1 month is 28 February). Amendment of the first version, which counted back from `today`: a stale instrument then read a window shorter than its column name. |
 | IQ5 | `last` is the chosen price on or before today. A reference is null when no price exists on or before its date, or when `last.date` is not after the reference date: a price that predates the window is not a change inside it. |
 | IQ6 | The client computes each change as `changeBp(reference.value, last.value)` of `model/price-stats.ts`: exact decimals, basis points. The server returns prices, never a ratio. |
-| IQ7 | The grid columns are: code, name, subtype, quote, exchange, price, price date, then five change columns named "1W", "1M", "3M", "12M" and "YTD". Each change column is numeric and sortable. A change of null reads "—". |
+| IQ7 | The grid columns are: code, name, subtype, quote, exchange, price, price date, then five change columns. In English they are named "1W", "1M", "3M", "12M" and "YTD"; in pt-BR "Semana", "Mês", "3 meses", "12 meses" and "No ano". Each change column is numeric and sortable. A change of null reads "—". |
 | IQ8 | The price date column is sortable. An instrument without a price sorts after every dated instrument in both directions. |
 | IQ9 | A change is written with `formatSignedBasisPoints` in the tone of its direction (`useAmountTone("result", ...)`). A change is a percentage and is not masked by privacy mode. The price stays masked (`MASK`), as in the current cell. |
 | IQ10 | The price column is not sortable: prices of different quote currencies do not compare. |
-| IQ11 | While the operation loads, price, date and change cells are empty and the grid keeps its rows. A failed read shows the existing "failed to load" text in the price cell of every row, and the grid stays usable. |
+| IQ11 | While the operation loads, the grid shows its loading state. A failed read shows the existing "failed to load" text in the price cell of every row, leaves the date and change cells empty, and the grid stays usable. |
 | IQ12 | `LatestPriceCell` is replaced by cells that read the row. `latestPriceQuery` stays: the terms section uses it. |
 
 ## 3. Derivation
 
-- `internal/marketdata/domain/quote_reference.go`: `QuoteReferences(today time.Time)` returns the five reference dates of IQ4. It has its own test, including the month-end clamp and a leap year.
-- `internal/marketdata/quotes.go`: `Module.ListInstrumentQuotes(ctx, base)` lists the instruments, resolves each quote instrument (`quote_currency`, or `base` for a currency), reads the six prices with one query (`ListQuotePrices`, a `LATERAL` join over the pairs and the six dates) and applies IQ5.
+- `internal/marketdata/domain/quote.go`: `QuoteReferences(anchor time.Time)` returns the five reference dates of IQ4. It has its own test, including the month-end clamp and a leap year.
+- `internal/marketdata/quotes.go`: `Module.ListInstrumentQuotes(ctx, base)` lists the instruments, resolves each quote instrument (`quote_currency`, or `base` for a currency), reads the last price of each pair (`ListQuotePrices`), then the prices on the reference dates counted back from each last date (`ListQuoteReferences`, one `LATERAL` join over the flattened rows), and applies IQ5.
 - `web/src/features/instruments/model/catalog-rows.ts`: `catalogRows(items, base, quotes)` joins the quote of each row and exposes `lastDate` and the five `bp` figures as plain fields, so the grid sorts on them.
 
 ## 4. Cross-cutting questions
@@ -39,7 +39,7 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 | R2 | Does not apply: no regional behavior is added. |
 | R3 | Does not apply: no value set grows with regions. |
 | R4 | Does not apply: no extension point is added. |
-| R5 | Texts added in `catalog-instruments.pt-BR.ts` and `catalog-instruments.en.ts`: the five column names and the failed-read text keep their existing keys when they exist. |
+| R5 | Texts added in `catalog-instruments.pt-BR.ts` and `catalog-instruments.en.ts`: the five column names (`instruments.col.week`, `month`, `quarter`, `year`, `yearToDate`). The failed-read and no-price texts keep their keys. |
 | R6 | Dates through `formatDate`; changes through `formatSignedBasisPoints`; prices through `formatPrice`. |
 | C1 | No amount is stored. Prices stay exact decimals; the change is an integer of basis points. |
 | C2 | Does not apply: no amounts are added or compared across currencies. A change carries no currency. |
@@ -57,14 +57,14 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 | D5 | Does not apply. |
 | S1 | One operation: `listInstrumentQuotes`. Its entry in `tool_exposure_test.go` is `get_market_data`, since the tool answers prices of an instrument; the tool gains no new field. No new `Problem.code`: a missing or malformed `base` is the existing `validation_failed`. |
 | S2 | The list stays desktop-only; the change columns hide first by `priority` on a narrow width. |
-| S3 | `investments.md` of the guide gains one sentence for the change columns and the sort by price date. |
+| S3 | `investments.md` of the guide gains one sentence for the price date and the change columns. The article sat at 2999 of its 3000 bytes, so the commit shortens other sentences and drops three details: "One sentence states the result first", "(when there were flows)" and "on one axis". |
 | S4 | Does not apply: the assistant reads prices through `get_market_data`. |
 | X1 | Does not apply: no scenario of `06-scenarios.md` is added. |
 | X2 | The C3 test runs with a USD quote and a BRL base. |
 
 ## 5. Tests
 
-- `domain/quote_reference_test.go`: the five dates for a plain date, for 31 March (month clamp), for 29 February, for 1 January.
-- `marketdata/quotes_test.go` through `internal/apitest`: an instrument with prices on all six dates; an instrument whose history starts 10 days ago (week set, month, quarter, year and year-to-date null); an instrument whose last price is 40 days old (every reference null); an instrument without a price (`last` null); a currency quoted in `base`; two sources on one date choose the lower priority; the base currency has no item; a missing `base` is 422 `validation_failed`; the `read` role passes and no membership is 401 or 403 as the harness defines.
+- `domain/quote_test.go`: the five dates for a plain date, for 31 March (month clamp), for 29 February, for 1 January.
+- `marketdata/quotes_test.go` through `internal/apitest`: an instrument with prices on all six dates; an instrument whose history starts 10 days ago (week set, month, quarter, year and year-to-date null); an instrument whose last price is 40 days old reads full windows that end at that price; a last price on 31 March reads 28 February for the month; a last price of the previous year has no year to date; an instrument without a price (`last` null); a currency quoted in `base`; two sources on one date choose the lower priority; the base currency has no item; a missing `base` is 422 `validation_failed`; the `read` role passes and no membership is 401 or 403 as the harness defines.
 - `catalog-rows.test.ts`: the join, the null fields for a row without a quote.
 - `instruments-page.test.tsx`: the five columns draw the signed changes in order; a null change draws "—"; sorting by price date ascending and descending puts undated rows last; a failed read keeps the grid; one `GET /instrument-quotes` request is issued for the whole catalog and no `GET /prices`.

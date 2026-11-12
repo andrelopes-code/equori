@@ -425,8 +425,9 @@ type InstrumentQuote struct {
 	Last            *QuotePoint `json:"last"`
 	QuoteInstrument string      `json:"quote_instrument"`
 
-	// References The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
-	// previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+	// References The chosen price on or before 7 days, 1 month, 3 months and 12 months before the date of `last`, and on 31
+	// December of the previous year when `last` lies in the current year. A reference is null when no price exists on
+	// or before its date or when `last` does not lie after it.
 	References QuoteReferences `json:"references"`
 }
 
@@ -609,8 +610,9 @@ type QuotePoint struct {
 	Value Rate `json:"value"`
 }
 
-// QuoteReferences The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
-// previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+// QuoteReferences The chosen price on or before 7 days, 1 month, 3 months and 12 months before the date of `last`, and on 31
+// December of the previous year when `last` lies in the current year. A reference is null when no price exists on
+// or before its date or when `last` does not lie after it.
 type QuoteReferences struct {
 	Month      *QuotePoint `json:"month"`
 	Quarter    *QuotePoint `json:"quarter"`

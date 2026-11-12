@@ -3056,7 +3056,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The last price of each instrument and the prices its changes over a week, a month, a quarter, the year to date and 12 months start from, in code order (IQ1 to IQ5). */
+        /** The last price of each instrument and the prices its changes over a week, a month, a quarter, the year to date and 12 months start from, counted back from the date of the last price, in code order (IQ1 to IQ5). */
         get: operations["listInstrumentQuotes"];
         put?: never;
         post?: never;
@@ -6446,8 +6446,9 @@ export interface components {
             references: components["schemas"]["QuoteReferences"];
         };
         /**
-         * @description The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
-         *     previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+         * @description The chosen price on or before 7 days, 1 month, 3 months and 12 months before the date of `last`, and on 31
+         *     December of the previous year when `last` lies in the current year. A reference is null when no price exists on
+         *     or before its date or when `last` does not lie after it.
          */
         QuoteReferences: {
             week: components["schemas"]["QuotePoint"] | null;

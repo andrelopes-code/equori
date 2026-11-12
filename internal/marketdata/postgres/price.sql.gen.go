@@ -363,6 +363,93 @@ func (q *Queries) ListQuotePrices(ctx context.Context, arg ListQuotePricesParams
 	return items, nil
 }
 
+const listQuoteReferences = `-- name: ListQuoteReferences :many
+SELECT
+    ref.instrument::text AS instrument,
+    ref.quote::text AS quote_instrument,
+    ref.position::int AS position,
+    price.date::date AS date,
+    price.value::numeric AS value
+FROM
+    (
+        SELECT
+            i.instrument,
+            q.quote,
+            p.position,
+            d.day
+        FROM
+            unnest($1::TEXT[]) WITH ORDINALITY AS i (instrument, n)
+            JOIN unnest($2::TEXT[]) WITH ORDINALITY AS q (quote, n) USING (n)
+            JOIN unnest($3::INT[]) WITH ORDINALITY AS p (position, n) USING (n)
+            JOIN unnest($4::date[]) WITH ORDINALITY AS d (DAY, n) USING (n)
+    ) AS ref
+    CROSS JOIN LATERAL (
+        SELECT
+            p.date,
+            p.value
+        FROM
+            marketdata_price p
+        WHERE
+            p.instrument = ref.instrument
+            AND p.quote_instrument = ref.quote
+            AND p.date <= ref.day
+        ORDER BY
+            p.date DESC,
+            p.priority,
+            p.recorded_at DESC
+        LIMIT
+            1
+    ) AS price
+`
+
+type ListQuoteReferencesParams struct {
+	Instruments []string
+	Quotes      []string
+	Positions   []int32
+	Days        []time.Time
+}
+
+type ListQuoteReferencesRow struct {
+	Instrument      string
+	QuoteInstrument string
+	Position        int32
+	Date            time.Time
+	Value           pgtype.Numeric
+}
+
+// The chosen price on or before each day of each row. A row is the instrument, quote, position and
+// day at the same index of the four arrays; the result repeats the position it was asked for.
+func (q *Queries) ListQuoteReferences(ctx context.Context, arg ListQuoteReferencesParams) ([]ListQuoteReferencesRow, error) {
+	rows, err := q.db.Query(ctx, listQuoteReferences,
+		arg.Instruments,
+		arg.Quotes,
+		arg.Positions,
+		arg.Days,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListQuoteReferencesRow
+	for rows.Next() {
+		var i ListQuoteReferencesRow
+		if err := rows.Scan(
+			&i.Instrument,
+			&i.QuoteInstrument,
+			&i.Position,
+			&i.Date,
+			&i.Value,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const priceOnOrBefore = `-- name: PriceOnOrBefore :many
 SELECT
     instrument, quote_instrument, date, value, source, priority, recorded_at
