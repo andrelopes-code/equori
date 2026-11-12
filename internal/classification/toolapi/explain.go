@@ -77,94 +77,131 @@ func explainCategorization(svc *app.Service) tool.Tool {
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in explainCategorizationIn) (explainCategorizationOut, error) {
-		fields := []field{
-			{"transaction_ids", len(in.TransactionIDs) > 0}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
-			{"description_contains", in.DescriptionContains != ""}, {"category_id", in.CategoryID != ""},
-		}
-		name := "view " + string(in.View)
-
-		var err error
-		switch in.View {
-		case "transactions":
-			err = required(name, fields, "transaction_ids")
-		case "statistics":
-			err = required(name, fields, "from", "to")
-		default:
-			err = required(name, fields, "description_contains", "category_id")
-		}
-
-		if err != nil {
+		if err := checkExplainFields(in); err != nil {
 			return explainCategorizationOut{}, err
 		}
 
 		switch in.View {
 		case "transactions":
-			if len(in.TransactionIDs) > 50 {
-				return explainCategorizationOut{}, tool.InvalidArgument("transaction_ids", "must have 1 to 50 ids")
-			}
+			return explainTransactions(ctx, svc, booksID, in)
+		case "statistics":
+			return explainStatistics(ctx, svc, booksID, in)
+		}
 
-			ids := make([]uuid.UUID, len(in.TransactionIDs))
-			for i, s := range in.TransactionIDs {
-				if ids[i], err = optionalID(s, "transaction_ids"); err != nil {
+		return explainRulePreview(ctx, svc, booksID, in)
+	})
+}
+
+// checkExplainFields requires the arguments that the view uses.
+func checkExplainFields(in explainCategorizationIn) error {
+	fields := []field{
+		{"transaction_ids", len(in.TransactionIDs) > 0}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
+		{"description_contains", in.DescriptionContains != ""}, {"category_id", in.CategoryID != ""},
+	}
+	name := "view " + string(in.View)
+
+	var err error
+	switch in.View {
+	case "transactions":
+		err = required(name, fields, "transaction_ids")
+	case "statistics":
+		err = required(name, fields, "from", "to")
+	default:
+		err = required(name, fields, "description_contains", "category_id")
+	}
+
+	return err
+}
+
+// explainTransactions returns the categorization record of each transaction.
+func explainTransactions(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in explainCategorizationIn,
+) (explainCategorizationOut, error) {
+	if len(in.TransactionIDs) > 50 {
+		return explainCategorizationOut{}, tool.InvalidArgument("transaction_ids", "must have 1 to 50 ids")
+	}
+
+	var err error
+
+	ids := make([]uuid.UUID, len(in.TransactionIDs))
+	for i, s := range in.TransactionIDs {
+		if ids[i], err = optionalID(s, "transaction_ids"); err != nil {
+			return explainCategorizationOut{}, err
+		}
+	}
+
+	recs, err := svc.Categorizations(ctx, booksID, ids)
+	if err != nil {
+		return explainCategorizationOut{}, err
+	}
+
+	out := explainCategorizationOut{Items: []categorizationView{}}
+
+	ruleNames := map[uuid.UUID]string{}
+	for _, r := range recs {
+		v := categorizationView{TransactionID: r.TransactionID.String(), Method: r.Method, DecidedAt: r.DecidedAt.Format(time.RFC3339)}
+		if r.RuleID != uuid.Nil {
+			n, ok := ruleNames[r.RuleID]
+			if !ok {
+				rule, err := svc.Rule(ctx, booksID, r.RuleID)
+				if err != nil && !errors.Is(err, app.ErrNotFound) {
 					return explainCategorizationOut{}, err
 				}
+
+				n = rule.Name
+				ruleNames[r.RuleID] = n
 			}
 
-			recs, err := svc.Categorizations(ctx, booksID, ids)
-			if err != nil {
-				return explainCategorizationOut{}, err
-			}
-
-			out := explainCategorizationOut{Items: []categorizationView{}}
-
-			ruleNames := map[uuid.UUID]string{}
-			for _, r := range recs {
-				v := categorizationView{TransactionID: r.TransactionID.String(), Method: r.Method, DecidedAt: r.DecidedAt.Format(time.RFC3339)}
-				if r.RuleID != uuid.Nil {
-					n, ok := ruleNames[r.RuleID]
-					if !ok {
-						rule, err := svc.Rule(ctx, booksID, r.RuleID)
-						if err != nil && !errors.Is(err, app.ErrNotFound) {
-							return explainCategorizationOut{}, err
-						}
-
-						n = rule.Name
-						ruleNames[r.RuleID] = n
-					}
-
-					v.RuleName = n
-				}
-
-				out.Items = append(out.Items, v)
-			}
-
-			return out, nil
-		case "statistics":
-			if in.To.Before(in.From.Time) {
-				return explainCategorizationOut{}, tool.InvalidArgument("to", "must not be before from")
-			}
-
-			st, err := svc.Statistics(ctx, booksID, in.From.Time, in.To.Time)
-
-			return explainCategorizationOut{Statistics: statisticsView{
-				From: in.From, To: in.To, Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
-			}}, err
+			v.RuleName = n
 		}
 
-		category, err := optionalID(in.CategoryID, "category_id")
-		if err != nil {
-			return explainCategorizationOut{}, err
-		}
+		out.Items = append(out.Items, v)
+	}
 
-		rule, err := descriptionRule("preview", in.DescriptionContains, category, uuid.Nil)
-		if err != nil {
-			return explainCategorizationOut{}, err
-		}
+	return out, nil
+}
 
-		p, err := svc.PreviewRule(ctx, booksID, rule)
+// explainStatistics counts the transactions by categorization method in the period.
+func explainStatistics(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in explainCategorizationIn,
+) (explainCategorizationOut, error) {
+	if in.To.Before(in.From.Time) {
+		return explainCategorizationOut{}, tool.InvalidArgument("to", "must not be before from")
+	}
 
-		return explainCategorizationOut{RulePreview: rulePreviewView{
-			DescriptionContains: in.DescriptionContains, WouldCategorize: p.WouldCategorize.Count, Conflicts: p.Conflicts.Count,
-		}}, err
-	})
+	st, err := svc.Statistics(ctx, booksID, in.From.Time, in.To.Time)
+
+	return explainCategorizationOut{Statistics: statisticsView{
+		From: in.From, To: in.To, Total: st.Total, Rule: st.Rule, Source: st.Source, History: st.History, Manual: st.Manual, Uncategorized: st.Uncategorized,
+	}}, err
+}
+
+// explainRulePreview previews a rule that sets a category on a description.
+func explainRulePreview(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in explainCategorizationIn,
+) (explainCategorizationOut, error) {
+	category, err := optionalID(in.CategoryID, "category_id")
+	if err != nil {
+		return explainCategorizationOut{}, err
+	}
+
+	rule, err := descriptionRule("preview", in.DescriptionContains, category, uuid.Nil)
+	if err != nil {
+		return explainCategorizationOut{}, err
+	}
+
+	p, err := svc.PreviewRule(ctx, booksID, rule)
+
+	return explainCategorizationOut{RulePreview: rulePreviewView{
+		DescriptionContains: in.DescriptionContains, WouldCategorize: p.WouldCategorize.Count, Conflicts: p.Conflicts.Count,
+	}}, err
 }

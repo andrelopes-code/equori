@@ -16,6 +16,28 @@ func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, paye
 
 	var changes []tool.Change
 
+	changes = nameChange(changes, in, old, rule, create)
+	changes = patternChange(changes, in, old, rule, create, f.simple)
+	changes = categoryChange(changes, in, p, old, rule, create, f.simple, categories, payees)
+
+	if f.simple && in.PayeeID != "" {
+		changes = append(changes, tool.Change{Field: "payee", After: text(payees[p.payee])})
+	}
+
+	changes = statusChange(changes, in, old, rule, create)
+
+	return changes
+}
+
+// nameChange appends the name field when the call sets it.
+func nameChange(
+	changes []tool.Change,
+	in manageRuleIn,
+	old, rule domain.Rule,
+	create bool,
+) []tool.Change {
+	text := tool.TextValue
+
 	if create || in.Name != "" {
 		c := tool.Change{Field: "name", After: text(rule.Name)}
 		if !create {
@@ -25,9 +47,21 @@ func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, paye
 		changes = append(changes, c)
 	}
 
-	if create || f.simple || len(in.Conditions) > 0 {
+	return changes
+}
+
+// patternChange appends the pattern field when the call sets the conditions.
+func patternChange(
+	changes []tool.Change,
+	in manageRuleIn,
+	old, rule domain.Rule,
+	create, simple bool,
+) []tool.Change {
+	text := tool.TextValue
+
+	if create || simple || len(in.Conditions) > 0 {
 		pattern := text(conditionsText(rule.Conditions))
-		if f.simple {
+		if simple {
 			pattern = text(in.DescriptionContains)
 		}
 
@@ -39,9 +73,23 @@ func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, paye
 		changes = append(changes, c)
 	}
 
-	if create || f.simple || len(in.Actions) > 0 {
+	return changes
+}
+
+// categoryChange appends the category field when the call sets the actions.
+func categoryChange(
+	changes []tool.Change,
+	in manageRuleIn,
+	p ids,
+	old, rule domain.Rule,
+	create, simple bool,
+	categories, payees map[uuid.UUID]string,
+) []tool.Change {
+	text := tool.TextValue
+
+	if create || simple || len(in.Actions) > 0 {
 		category := text(actionsText(rule.Actions, categories, payees))
-		if f.simple {
+		if simple {
 			category = text(categories[p.category])
 		}
 
@@ -53,9 +101,17 @@ func ruleChanges(in manageRuleIn, p ids, old, rule domain.Rule, categories, paye
 		changes = append(changes, c)
 	}
 
-	if f.simple && in.PayeeID != "" {
-		changes = append(changes, tool.Change{Field: "payee", After: text(payees[p.payee])})
-	}
+	return changes
+}
+
+// statusChange appends the status field when the call sets enabled or stop_processing.
+func statusChange(
+	changes []tool.Change,
+	in manageRuleIn,
+	old, rule domain.Rule,
+	create bool,
+) []tool.Change {
+	text := tool.TextValue
 
 	if in.Enabled.Set || in.StopProcessing.Set {
 		c := tool.Change{Field: "status", After: text(ruleStatus(rule))}

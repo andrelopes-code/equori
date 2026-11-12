@@ -38,13 +38,29 @@ func Allocate(total money.Money, parts []Part, categories map[uuid.UUID]Category
 		sign, n = -1, -n
 	}
 
+	shares, left, ok := fixedShares(total, parts, categories, date, n)
+	if !ok || left < 0 {
+		return nil, false
+	}
+
+	return remainderShares(total, parts, shares, left, sign)
+}
+
+// fixedShares returns the percent and fixed share of each part and what is left of n.
+func fixedShares(
+	total money.Money,
+	parts []Part,
+	categories map[uuid.UUID]Category,
+	date time.Time,
+	n int64,
+) ([]int64, int64, bool) {
 	left := n
 
 	shares := make([]int64, len(parts))
 	for i, p := range parts {
 		c, ok := categories[p.CategoryID]
 		if !ok || !c.usable(total.Currency(), date) {
-			return nil, false
+			return nil, 0, false
 		}
 
 		switch {
@@ -53,7 +69,7 @@ func Allocate(total money.Money, parts []Part, categories map[uuid.UUID]Category
 			shares[i] = n/basisPointsAll*int64(p.Percent) + n%basisPointsAll*int64(p.Percent)/basisPointsAll
 		case p.Amount != nil:
 			if p.Amount.Currency() != total.Currency() {
-				return nil, false
+				return nil, 0, false
 			}
 
 			shares[i] = p.Amount.Amount()
@@ -64,10 +80,16 @@ func Allocate(total money.Money, parts []Part, categories map[uuid.UUID]Category
 		left -= shares[i]
 	}
 
-	if left < 0 {
-		return nil, false
-	}
+	return shares, left, true
+}
 
+// remainderShares gives the remainder part what is left and signs each non-zero share.
+func remainderShares(
+	total money.Money,
+	parts []Part,
+	shares []int64,
+	left, sign int64,
+) ([]Allocation, bool) {
 	out := make([]Allocation, 0, len(parts))
 	for i, p := range parts {
 		if p.Remainder {

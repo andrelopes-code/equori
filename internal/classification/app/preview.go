@@ -58,33 +58,8 @@ func (s *Service) PreviewRule(ctx context.Context, booksID int64, r domain.Rule)
 			return RulePreview{}, err
 		}
 
-		facts, err := s.ledger.TransactionFacts(ctx, booksID, ids)
-		if err != nil {
+		if err := s.previewPage(ctx, booksID, ids, c, accounts, &out); err != nil {
 			return RulePreview{}, err
-		}
-
-		byID := make(map[uuid.UUID]TransactionFacts, len(facts))
-		for _, f := range facts {
-			byID[f.ID] = f
-		}
-
-		for _, id := range ids {
-			f, ok := byID[id]
-			if !ok || f.Voided {
-				continue
-			}
-
-			d := domain.Decide(subjectOf(f, accounts), c)
-			if d.Method != domain.MethodRule {
-				continue
-			}
-
-			switch {
-			case f.CategoryState == stateUncategorized:
-				out.WouldCategorize.add(id)
-			case d.TransferTo != uuid.Nil || !sameAllocation(d.Parts, f.Postings):
-				out.Conflicts.add(id)
-			}
 		}
 
 		if next == nil {
@@ -93,6 +68,47 @@ func (s *Service) PreviewRule(ctx context.Context, booksID int64, r domain.Rule)
 
 		after = next
 	}
+}
+
+// previewPage adds the outcomes of one page of candidate transactions to out.
+func (s *Service) previewPage(
+	ctx context.Context,
+	booksID int64,
+	ids []uuid.UUID,
+	c domain.Catalog,
+	accounts map[uuid.UUID]Account,
+	out *RulePreview,
+) error {
+	facts, err := s.ledger.TransactionFacts(ctx, booksID, ids)
+	if err != nil {
+		return err
+	}
+
+	byID := make(map[uuid.UUID]TransactionFacts, len(facts))
+	for _, f := range facts {
+		byID[f.ID] = f
+	}
+
+	for _, id := range ids {
+		f, ok := byID[id]
+		if !ok || f.Voided {
+			continue
+		}
+
+		d := domain.Decide(subjectOf(f, accounts), c)
+		if d.Method != domain.MethodRule {
+			continue
+		}
+
+		switch {
+		case f.CategoryState == stateUncategorized:
+			out.WouldCategorize.add(id)
+		case d.TransferTo != uuid.Nil || !sameAllocation(d.Parts, f.Postings):
+			out.Conflicts.add(id)
+		}
+	}
+
+	return nil
 }
 
 // sameAllocation compares the decided parts with the category postings as multisets of

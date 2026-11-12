@@ -12,7 +12,25 @@ type ids struct {
 }
 
 func parseManage(in manageRuleIn) (ids, error) {
-	fields := []field{
+	fields := manageFields(in)
+	needed := neededFields(in, fields)
+
+	if err := required(string(in.Action), fields, needed...); err != nil {
+		return ids{}, err
+	}
+
+	if in.Action == "create_rule" || in.Action == "change_rule" {
+		if err := checkRuleForm(in); err != nil {
+			return ids{}, err
+		}
+	}
+
+	return parseIDs(in)
+}
+
+// manageFields marks which arguments the call gave.
+func manageFields(in manageRuleIn) []field {
+	return []field{
 		{"rule_id", in.RuleID != ""}, {"suggestion_id", in.SuggestionID != ""}, {"source_category_id", in.SourceCategoryID != ""},
 		{"alias_id", in.AliasID != ""}, {"name", in.Name != ""}, {"description_contains", in.DescriptionContains != ""},
 		{"category_id", in.CategoryID != ""}, {"payee_id", in.PayeeID != ""}, {"pattern", in.Pattern != ""},
@@ -20,7 +38,10 @@ func parseManage(in manageRuleIn) (ids, error) {
 		{"conditions", len(in.Conditions) > 0}, {"actions", len(in.Actions) > 0},
 		{"enabled", in.Enabled.Set}, {"stop_processing", in.StopProcessing.Set},
 	}
+}
 
+// neededFields lists the arguments the action accepts.
+func neededFields(in manageRuleIn, fields []field) []string {
 	needed := map[manageRuleAction][]string{
 		"create_rule": {"name"}, "change_rule": {"rule_id"},
 		"delete_rule": {"rule_id"}, "reorder_rules": {"rule_ids"}, "accept_suggestion": {"suggestion_id", "name"},
@@ -36,16 +57,11 @@ func parseManage(in manageRuleIn) (ids, error) {
 		}
 	}
 
-	if err := required(string(in.Action), fields, needed...); err != nil {
-		return ids{}, err
-	}
+	return needed
+}
 
-	if in.Action == "create_rule" || in.Action == "change_rule" {
-		if err := checkRuleForm(in); err != nil {
-			return ids{}, err
-		}
-	}
-
+// parseIDs parses the identifier arguments.
+func parseIDs(in manageRuleIn) (ids, error) {
 	var p ids
 
 	var err error

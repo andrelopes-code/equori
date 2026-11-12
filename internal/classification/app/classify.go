@@ -89,42 +89,16 @@ func (s *Service) classify(ctx context.Context, booksID int64, ids []uuid.UUID) 
 		return 0, err
 	}
 
-	var subjects []domain.Subject
-
-	var targets []TransactionFacts
-	for _, f := range facts {
-		if f.Voided || f.CategoryState != stateUncategorized {
-			continue
-		}
-
-		subjects = append(subjects, subjectOf(f, accounts))
-		targets = append(targets, f)
-	}
+	subjects, targets := uncategorizedSubjects(facts, accounts)
 
 	decisions, err := s.decideAll(ctx, booksID, c, subjects)
 	if err != nil {
 		return 0, err
 	}
 
-	var cs []Categorization
-
-	n := 0
-	for i, d := range decisions {
-		switch {
-		case d.TransferTo != uuid.Nil:
-			applied, err := s.ledger.Transfer(ctx, booksID, TransferRequest{
-				TransactionID: targets[i].ID, ExpectedVersion: targets[i].Version, AccountID: d.TransferTo, RuleID: d.RuleID,
-			})
-			if err != nil {
-				return n, err
-			}
-
-			if applied {
-				n++
-			}
-		case d.Method != "" || d.PayeeID != uuid.Nil || len(d.AddTags) > 0:
-			cs = append(cs, categorization(targets[i].ID, targets[i].Version, d))
-		}
+	cs, n, err := s.applyTransfers(ctx, booksID, decisions, targets)
+	if err != nil {
+		return n, err
 	}
 
 	if len(cs) == 0 {
@@ -143,6 +117,58 @@ func (s *Service) classify(ctx context.Context, booksID int64, ids []uuid.UUID) 
 	}
 
 	return n, nil
+}
+
+// uncategorizedSubjects keeps the live uncategorized facts and describes each for rules.
+func uncategorizedSubjects(
+	facts []TransactionFacts,
+	accounts map[uuid.UUID]Account,
+) ([]domain.Subject, []TransactionFacts) {
+	var subjects []domain.Subject
+
+	var targets []TransactionFacts
+	for _, f := range facts {
+		if f.Voided || f.CategoryState != stateUncategorized {
+			continue
+		}
+
+		subjects = append(subjects, subjectOf(f, accounts))
+		targets = append(targets, f)
+	}
+
+	return subjects, targets
+}
+
+// applyTransfers applies the transfer decisions and returns the categorizations that remain,
+// with the count of applied transfers.
+func (s *Service) applyTransfers(
+	ctx context.Context,
+	booksID int64,
+	decisions []domain.Decision,
+	targets []TransactionFacts,
+) ([]Categorization, int, error) {
+	var cs []Categorization
+
+	n := 0
+	for i, d := range decisions {
+		switch {
+		case d.TransferTo != uuid.Nil:
+			applied, err := s.ledger.Transfer(ctx, booksID, TransferRequest{
+				TransactionID: targets[i].ID, ExpectedVersion: targets[i].Version, AccountID: d.TransferTo, RuleID: d.RuleID,
+			})
+			if err != nil {
+				return cs, n, err
+			}
+
+			if applied {
+				n++
+			}
+		case d.Method != "" || d.PayeeID != uuid.Nil || len(d.AddTags) > 0:
+			cs = append(cs, categorization(targets[i].ID, targets[i].Version, d))
+		}
+	}
+
+	return cs, n, nil
 }
 
 func categorization(id uuid.UUID, version int, d domain.Decision) Categorization {

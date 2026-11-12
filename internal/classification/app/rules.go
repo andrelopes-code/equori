@@ -92,16 +92,41 @@ func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (
 		return domain.Rule{}, err
 	}
 
+	payeeFields := map[uuid.UUID]string{}
+
+	payees, err := checkConditionRefs(r, accounts, payeeFields)
+	if err != nil {
+		return domain.Rule{}, err
+	}
+
+	payees, err = checkActionRefs(r, accounts, payees, payeeFields)
+	if err != nil {
+		return domain.Rule{}, err
+	}
+
+	if err := s.checkPayees(ctx, booksID, payees, payeeFields); err != nil {
+		return domain.Rule{}, err
+	}
+
+	return r, nil
+}
+
+// checkConditionRefs validates the account references of the conditions and returns the payee
+// references, recording the field of each in payeeFields.
+func checkConditionRefs(
+	r domain.Rule,
+	accounts map[uuid.UUID]Account,
+	payeeFields map[uuid.UUID]string,
+) ([]uuid.UUID, error) {
 	var payees []uuid.UUID
 
-	payeeFields := map[uuid.UUID]string{}
 	for i, c := range r.Conditions {
 		field := fmt.Sprintf("conditions[%d].value", i)
 		for _, id := range c.IDs {
 			switch c.Field {
 			case domain.FieldAccount:
 				if a, ok := accounts[id]; !ok || !a.isBalance() {
-					return domain.Rule{}, invalidRef(field, "must be asset or liability accounts")
+					return nil, invalidRef(field, "must be asset or liability accounts")
 				}
 			case domain.FieldPayee:
 				payees = append(payees, id)
@@ -110,17 +135,28 @@ func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (
 		}
 	}
 
+	return payees, nil
+}
+
+// checkActionRefs validates the references of the actions and returns payees extended with the
+// payee references of the actions, recording the field of each in payeeFields.
+func checkActionRefs(
+	r domain.Rule,
+	accounts map[uuid.UUID]Account,
+	payees []uuid.UUID,
+	payeeFields map[uuid.UUID]string,
+) ([]uuid.UUID, error) {
 	for i, a := range r.Actions {
 		field := fmt.Sprintf("actions[%d]", i)
 		if a.Type == domain.ActionSetCategory {
 			if c, ok := accounts[a.CategoryID]; !ok || !c.isCategory() || c.isUncategorized() {
-				return domain.Rule{}, invalidRef(field+".category_id", "must be an income or expense category")
+				return nil, invalidRef(field+".category_id", "must be an income or expense category")
 			}
 		}
 
 		for j, p := range a.Parts {
 			if c, ok := accounts[p.CategoryID]; !ok || !c.isCategory() || c.isUncategorized() {
-				return domain.Rule{}, invalidRef(fmt.Sprintf("%s.parts[%d].category_id", field, j), "must be an income or expense category")
+				return nil, invalidRef(fmt.Sprintf("%s.parts[%d].category_id", field, j), "must be an income or expense category")
 			}
 		}
 
@@ -128,9 +164,9 @@ func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (
 			t, ok := accounts[a.AccountID]
 			switch {
 			case !ok || !t.isBalance():
-				return domain.Rule{}, invalidRef(field+".account_id", "must be an asset or liability account")
+				return nil, invalidRef(field+".account_id", "must be an asset or liability account")
 			case a.Type == domain.ActionMarkReimbursable && t.Kind != "receivable":
-				return domain.Rule{}, invalidRef(field+".account_id", "must be a receivable account")
+				return nil, invalidRef(field+".account_id", "must be a receivable account")
 			}
 		}
 
@@ -140,18 +176,28 @@ func (s *Service) checkRule(ctx context.Context, booksID int64, r domain.Rule) (
 		}
 	}
 
+	return payees, nil
+}
+
+// checkPayees rejects the first payee reference that the ledger does not know.
+func (s *Service) checkPayees(
+	ctx context.Context,
+	booksID int64,
+	payees []uuid.UUID,
+	payeeFields map[uuid.UUID]string,
+) error {
 	if len(payees) > 0 {
 		missing, err := s.ledger.MissingPayees(ctx, booksID, payees)
 		if err != nil {
-			return domain.Rule{}, err
+			return err
 		}
 
 		if len(missing) > 0 {
-			return domain.Rule{}, invalidRef(payeeFields[missing[0]], "unknown payee")
+			return invalidRef(payeeFields[missing[0]], "unknown payee")
 		}
 	}
 
-	return r, nil
+	return nil
 }
 
 func (s *Service) accounts(ctx context.Context, booksID int64) (map[uuid.UUID]Account, error) {

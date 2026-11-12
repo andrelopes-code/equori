@@ -62,8 +62,33 @@ func Decide(s Subject, c Catalog) Decision {
 		}
 	}
 
-	subj := newSubject(s)
 	total := s.Amount.Neg()
+	categoryDecided := applyRules(&d, s, c, total)
+
+	slices.Sort(d.AddTags)
+
+	d.AddTags = slices.Compact(d.AddTags)
+	if id := s.SourceCategory; !categoryDecided && id != uuid.Nil {
+		if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
+			d.Parts, d.Method, categoryDecided = []Allocation{{CategoryID: id, Amount: total}}, MethodSource, true
+		}
+	}
+
+	if !categoryDecided {
+		if id, ok := c.History[HistoryKey{PayeeID: d.Payee(s), Class: s.Class}]; ok && d.Payee(s) != uuid.Nil {
+			if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
+				d.Parts, d.Method = []Allocation{{CategoryID: id, Amount: total}}, MethodHistory
+			}
+		}
+	}
+
+	return d
+}
+
+// applyRules applies the matching rules of c to d in priority order and reports whether a rule
+// decided the category.
+func applyRules(d *Decision, s Subject, c Catalog, total money.Money) bool {
+	subj := newSubject(s)
 
 	categoryDecided, payeeDecided := false, false
 	for _, r := range c.Rules {
@@ -96,24 +121,7 @@ func Decide(s Subject, c Catalog) Decision {
 		}
 	}
 
-	slices.Sort(d.AddTags)
-
-	d.AddTags = slices.Compact(d.AddTags)
-	if id := s.SourceCategory; !categoryDecided && id != uuid.Nil {
-		if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
-			d.Parts, d.Method, categoryDecided = []Allocation{{CategoryID: id, Amount: total}}, MethodSource, true
-		}
-	}
-
-	if !categoryDecided {
-		if id, ok := c.History[HistoryKey{PayeeID: d.Payee(s), Class: s.Class}]; ok && d.Payee(s) != uuid.Nil {
-			if cat, ok := c.Categories[id]; ok && cat.usable(total.Currency(), s.Date) {
-				d.Parts, d.Method = []Allocation{{CategoryID: id, Amount: total}}, MethodHistory
-			}
-		}
-	}
-
-	return d
+	return categoryDecided
 }
 
 // allocation returns the category postings or the transfer target of r's category action,

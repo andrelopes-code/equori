@@ -54,6 +54,38 @@ func (s *Service) MapSourceCategory(ctx context.Context, booksID int64, id, cate
 // owner's category for it.
 func (s *Service) sourceCategories(ctx context.Context, booksID int64, lines []ImportLine) ([]uuid.UUID, error) {
 	out := make([]uuid.UUID, len(lines))
+
+	order, seen, byAggregator := distinctSourceCategories(lines)
+	if len(order) == 0 {
+		return out, nil
+	}
+
+	counts := sourceCategoryCounts(lines, order, seen)
+	if err := s.repo.CountSourceCategories(ctx, booksID, counts); err != nil {
+		return nil, err
+	}
+
+	mapped, err := s.mappedSourceCategories(ctx, booksID, byAggregator)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, l := range lines {
+		if c := l.SourceCategory; c != nil {
+			out[i] = mapped[LineCategory{Aggregator: c.Aggregator, ExternalID: c.ExternalID}]
+		}
+	}
+
+	return out, nil
+}
+
+// distinctSourceCategories lists the source categories of the lines in first-seen order, with
+// the line count of each and the external IDs per aggregator.
+func distinctSourceCategories(lines []ImportLine) (
+	[]LineCategory,
+	map[LineCategory]int,
+	map[string][]string,
+) {
 	seen := map[LineCategory]int{}
 	byAggregator := map[string][]string{}
 
@@ -73,10 +105,15 @@ func (s *Service) sourceCategories(ctx context.Context, booksID int64, lines []I
 		seen[key]++
 	}
 
-	if len(order) == 0 {
-		return out, nil
-	}
+	return order, seen, byAggregator
+}
 
+// sourceCategoryCounts pairs each source category with its name and line count.
+func sourceCategoryCounts(
+	lines []ImportLine,
+	order []LineCategory,
+	seen map[LineCategory]int,
+) []SourceCategory {
 	names := map[LineCategory]string{}
 	for _, l := range lines {
 		if c := l.SourceCategory; c != nil && c.Name != "" {
@@ -89,10 +126,15 @@ func (s *Service) sourceCategories(ctx context.Context, booksID int64, lines []I
 		counts[i] = SourceCategory{Aggregator: k.Aggregator, ExternalID: k.ExternalID, Name: names[k], Count: seen[k]}
 	}
 
-	if err := s.repo.CountSourceCategories(ctx, booksID, counts); err != nil {
-		return nil, err
-	}
+	return counts
+}
 
+// mappedSourceCategories loads the owner's category per source category.
+func (s *Service) mappedSourceCategories(
+	ctx context.Context,
+	booksID int64,
+	byAggregator map[string][]string,
+) (map[LineCategory]uuid.UUID, error) {
 	mapped := map[LineCategory]uuid.UUID{}
 	for aggregator, ids := range byAggregator {
 		m, err := s.repo.MappedSourceCategories(ctx, booksID, aggregator, ids)
@@ -105,11 +147,5 @@ func (s *Service) sourceCategories(ctx context.Context, booksID int64, lines []I
 		}
 	}
 
-	for i, l := range lines {
-		if c := l.SourceCategory; c != nil {
-			out[i] = mapped[LineCategory{Aggregator: c.Aggregator, ExternalID: c.ExternalID}]
-		}
-	}
-
-	return out, nil
+	return mapped, nil
 }

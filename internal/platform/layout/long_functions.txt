@@ -5,21 +5,6 @@ internal/assistant/app/turn.go	Service.Turn	pending: backend reorganization plan
 internal/assistant/app/usage.go	Service.Usage	pending: backend reorganization plan
 internal/assistant/assistant.go	New	pending: backend reorganization plan
 internal/assistant/httpapi/server.go	toProblem	table of data
-internal/classification/app/classify.go	Service.classify	pending: backend reorganization plan
-internal/classification/app/events.go	Service.HandleEvent	pending: backend reorganization plan
-internal/classification/app/preview.go	Service.PreviewRule	pending: backend reorganization plan
-internal/classification/app/rules.go	Service.checkRule	pending: backend reorganization plan
-internal/classification/app/source_category.go	Service.sourceCategories	pending: backend reorganization plan
-internal/classification/domain/codec.go	ConditionFromDoc	pending: backend reorganization plan
-internal/classification/domain/decide.go	Decide	pending: backend reorganization plan
-internal/classification/domain/rule_check.go	checkCondition	pending: backend reorganization plan
-internal/classification/domain/rule_check.go	checkParts	pending: backend reorganization plan
-internal/classification/domain/split.go	Allocate	pending: backend reorganization plan
-internal/classification/toolapi/explain.go	explainCategorization	pending: backend reorganization plan
-internal/classification/toolapi/manage_rule.go	manageRule	pending: backend reorganization plan
-internal/classification/toolapi/manage_rule_args.go	parseManage	pending: backend reorganization plan
-internal/classification/toolapi/manage_rule_changes.go	ruleChanges	pending: backend reorganization plan
-internal/classification/toolapi/rules.go	listRules	pending: backend reorganization plan
 internal/identity/app/session.go	Service.Login	pending: backend reorganization plan
 internal/identity/app/setup.go	Service.CompleteSetup	pending: backend reorganization plan
 internal/identity/httpapi/server.go	ToProblem	table of data

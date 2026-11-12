@@ -36,63 +36,100 @@ func checkCondition(field string, c Condition) (Condition, error) {
 		return Condition{}, invalid(value, valueCountMessage(want))
 	}
 
-	switch c.Field {
-	case FieldDescription, FieldRawDescription:
-		c.normalized = make([]string, len(c.Text))
-		for i, t := range c.Text {
-			if n := utf8.RuneCountInString(t); n == 0 || n > maxTextValue {
-				return Condition{}, invalid(value, fmt.Sprintf("must have 1 to %d characters", maxTextValue))
-			}
-
-			c.normalized[i] = Normalize(t)
-		}
-
-		if c.Operator == OpRegex {
-			re, err := regexp.Compile(c.Text[0])
-			if err != nil {
-				return Condition{}, invalid(value, "is not a valid RE2 pattern")
-			}
-
-			c.re = re
-		}
-	case FieldAccountKind, FieldSource, FieldWeekday:
-		allowed := map[Field][]string{FieldAccountKind: accountKinds, FieldSource: sources, FieldWeekday: weekdays}[c.Field]
-		for _, t := range c.Text {
-			if !slices.Contains(allowed, t) {
-				return Condition{}, invalid(value, "must be one of "+strings.Join(allowed, ", "))
-			}
-		}
-	case FieldPayee, FieldAccount:
-		if slices.Contains(c.IDs, uuid.Nil) {
-			return Condition{}, invalid(value, "must be an id")
-		}
-	case FieldAmount, FieldAbsoluteAmount:
-		for _, m := range c.Money {
-			if m.Currency() != c.Money[0].Currency() {
-				return Condition{}, invalid(value, "must use one currency")
-			}
-
-			if c.Field == FieldAbsoluteAmount && m.IsNegative() {
-				return Condition{}, invalid(value, "must not be negative")
-			}
-		}
-
-		if c.Operator == OpBetween && c.Money[0].Amount() > c.Money[1].Amount() {
-			return Condition{}, invalid(value, "must list the minimum first")
-		}
-	case FieldDayOfMonth:
-		for _, d := range c.Ints {
-			if d < 1 || d > 31 {
-				return Condition{}, invalid(value, "must be between 1 and 31")
-			}
-		}
-
-		if c.Operator == OpBetween && c.Ints[0] > c.Ints[1] {
-			return Condition{}, invalid(value, "must list the minimum first")
-		}
+	if err := checkValues(&c, value); err != nil {
+		return Condition{}, err
 	}
 
 	return c, nil
+}
+
+// checkValues validates the values of c by field; value is the path of the errors.
+func checkValues(c *Condition, value string) error {
+	switch c.Field {
+	case FieldDescription, FieldRawDescription:
+		return checkTextValues(c, value)
+	case FieldAccountKind, FieldSource, FieldWeekday:
+		return checkEnumValues(*c, value)
+	case FieldPayee, FieldAccount:
+		if slices.Contains(c.IDs, uuid.Nil) {
+			return invalid(value, "must be an id")
+		}
+	case FieldAmount, FieldAbsoluteAmount:
+		return checkMoneyValues(*c, value)
+	case FieldDayOfMonth:
+		return checkDayValues(*c, value)
+	}
+
+	return nil
+}
+
+// checkTextValues normalizes the text values of c and compiles its pattern.
+func checkTextValues(c *Condition, value string) error {
+	c.normalized = make([]string, len(c.Text))
+	for i, t := range c.Text {
+		if n := utf8.RuneCountInString(t); n == 0 || n > maxTextValue {
+			return invalid(value, fmt.Sprintf("must have 1 to %d characters", maxTextValue))
+		}
+
+		c.normalized[i] = Normalize(t)
+	}
+
+	if c.Operator == OpRegex {
+		re, err := regexp.Compile(c.Text[0])
+		if err != nil {
+			return invalid(value, "is not a valid RE2 pattern")
+		}
+
+		c.re = re
+	}
+
+	return nil
+}
+
+// checkEnumValues requires each text value of c to belong to the set of its field.
+func checkEnumValues(c Condition, value string) error {
+	allowed := map[Field][]string{FieldAccountKind: accountKinds, FieldSource: sources, FieldWeekday: weekdays}[c.Field]
+	for _, t := range c.Text {
+		if !slices.Contains(allowed, t) {
+			return invalid(value, "must be one of "+strings.Join(allowed, ", "))
+		}
+	}
+
+	return nil
+}
+
+// checkMoneyValues requires one currency, and a minimum first in a range.
+func checkMoneyValues(c Condition, value string) error {
+	for _, m := range c.Money {
+		if m.Currency() != c.Money[0].Currency() {
+			return invalid(value, "must use one currency")
+		}
+
+		if c.Field == FieldAbsoluteAmount && m.IsNegative() {
+			return invalid(value, "must not be negative")
+		}
+	}
+
+	if c.Operator == OpBetween && c.Money[0].Amount() > c.Money[1].Amount() {
+		return invalid(value, "must list the minimum first")
+	}
+
+	return nil
+}
+
+// checkDayValues requires days from 1 to 31, and a minimum first in a range.
+func checkDayValues(c Condition, value string) error {
+	for _, d := range c.Ints {
+		if d < 1 || d > 31 {
+			return invalid(value, "must be between 1 and 31")
+		}
+	}
+
+	if c.Operator == OpBetween && c.Ints[0] > c.Ints[1] {
+		return invalid(value, "must list the minimum first")
+	}
+
+	return nil
 }
 
 // conditionShape returns the operators of a field and the number of values a condition holds.
@@ -165,56 +202,68 @@ func checkParts(field string, parts []Part) error {
 		return invalid(field, fmt.Sprintf("must have %d to %d parts", minSplitParts, maxSplitParts))
 	}
 
-	remainders, percent := 0, 0
-
-	var currency money.Currency
+	var t partTotals
 	for i, p := range parts {
-		pf := fmt.Sprintf("%s[%d]", field, i)
-		if p.CategoryID == uuid.Nil {
-			return invalid(pf+".category_id", "is required")
-		}
-
-		shares := 0
-		if p.Percent != 0 {
-			shares++
-
-			if p.Percent < 1 || p.Percent >= basisPointsAll {
-				return invalid(pf+".percent", "must be between 1 and 9999 basis points")
-			}
-
-			percent += p.Percent
-		}
-
-		if p.Amount != nil {
-			shares++
-
-			if p.Amount.IsNegative() || p.Amount.IsZero() {
-				return invalid(pf+".amount", "must be positive")
-			}
-
-			if currency != "" && p.Amount.Currency() != currency {
-				return invalid(pf+".amount", "must use one currency")
-			}
-
-			currency = p.Amount.Currency()
-		}
-
-		if p.Remainder {
-			shares++
-			remainders++
-		}
-
-		if shares != 1 {
-			return invalid(pf, "must have exactly one of percent, amount and remainder")
+		if err := checkPart(fmt.Sprintf("%s[%d]", field, i), p, &t); err != nil {
+			return err
 		}
 	}
 
-	if remainders != 1 {
+	if t.remainders != 1 {
 		return invalid(field, "must have exactly one remainder part")
 	}
 
-	if percent >= basisPointsAll {
+	if t.percent >= basisPointsAll {
 		return invalid(field, "percent parts must sum to less than 10000 basis points")
+	}
+
+	return nil
+}
+
+// partTotals accumulates what the parts of a split declare.
+type partTotals struct {
+	remainders, percent int
+	currency            money.Currency
+}
+
+// checkPart validates one part of a split at path pf and adds it to t.
+func checkPart(pf string, p Part, t *partTotals) error {
+	if p.CategoryID == uuid.Nil {
+		return invalid(pf+".category_id", "is required")
+	}
+
+	shares := 0
+	if p.Percent != 0 {
+		shares++
+
+		if p.Percent < 1 || p.Percent >= basisPointsAll {
+			return invalid(pf+".percent", "must be between 1 and 9999 basis points")
+		}
+
+		t.percent += p.Percent
+	}
+
+	if p.Amount != nil {
+		shares++
+
+		if p.Amount.IsNegative() || p.Amount.IsZero() {
+			return invalid(pf+".amount", "must be positive")
+		}
+
+		if t.currency != "" && p.Amount.Currency() != t.currency {
+			return invalid(pf+".amount", "must use one currency")
+		}
+
+		t.currency = p.Amount.Currency()
+	}
+
+	if p.Remainder {
+		shares++
+		t.remainders++
+	}
+
+	if shares != 1 {
+		return invalid(pf, "must have exactly one of percent, amount and remainder")
 	}
 
 	return nil

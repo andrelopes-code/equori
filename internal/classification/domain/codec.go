@@ -88,50 +88,60 @@ func ConditionFromDoc(field string, d ConditionDoc) (Condition, error) {
 		values = list
 	}
 
-	bad := func(want string) (Condition, error) { return Condition{}, invalid(field+".value", "must be "+want) }
 	for _, v := range values {
-		switch c.Field {
-		case FieldPayee, FieldAccount:
-			s, ok := v.(string)
-
-			id, err := uuid.Parse(s)
-			if !ok || err != nil {
-				return bad("an id")
-			}
-
-			c.IDs = append(c.IDs, id)
-		case FieldAmount, FieldAbsoluteAmount:
-			m, ok := moneyValue(v)
-			if !ok {
-				return bad("money")
-			}
-
-			c.Money = append(c.Money, m)
-		case FieldDayOfMonth:
-			n, ok := integer(v)
-			if !ok {
-				return bad("an integer")
-			}
-
-			c.Ints = append(c.Ints, int(n))
-		case FieldInstallment:
-			b, ok := v.(bool)
-			if !ok {
-				return bad("a boolean")
-			}
-
-			c.Bool = b
-		default:
-			s, ok := v.(string)
-			if !ok {
-				return bad("a string")
-			}
-
-			c.Text = append(c.Text, s)
+		if err := readConditionValue(&c, field, v); err != nil {
+			return Condition{}, err
 		}
 	}
 
 	return c, nil
+}
+
+// readConditionValue appends v to the value list of c that c.Field selects.
+func readConditionValue(c *Condition, field string, v any) error {
+	bad := func(want string) error { return invalid(field+".value", "must be "+want) }
+
+	switch c.Field {
+	case FieldPayee, FieldAccount:
+		s, ok := v.(string)
+
+		id, err := uuid.Parse(s)
+		if !ok || err != nil {
+			return bad("an id")
+		}
+
+		c.IDs = append(c.IDs, id)
+	case FieldAmount, FieldAbsoluteAmount:
+		m, ok := moneyValue(v)
+		if !ok {
+			return bad("money")
+		}
+
+		c.Money = append(c.Money, m)
+	case FieldDayOfMonth:
+		n, ok := integer(v)
+		if !ok {
+			return bad("an integer")
+		}
+
+		c.Ints = append(c.Ints, int(n))
+	case FieldInstallment:
+		b, ok := v.(bool)
+		if !ok {
+			return bad("a boolean")
+		}
+
+		c.Bool = b
+	default:
+		s, ok := v.(string)
+		if !ok {
+			return bad("a string")
+		}
+
+		c.Text = append(c.Text, s)
+	}
+
+	return nil
 }
 
 func integer(v any) (int64, bool) {
