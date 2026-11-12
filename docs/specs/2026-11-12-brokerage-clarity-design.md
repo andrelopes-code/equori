@@ -23,7 +23,7 @@ A reader thinks "I have an investment account at Inter and I bought AUVP11". The
 
 ## Non-goals
 
-- N1. The checking account does not replace the cash account of a brokerage. A trade posts its cash leg on a `brokerage` account; the return and the portfolio base (PC4, PC5) read that account.
+- N1. (Replaced by BC13: a trade may be paid from an account of the brokerage's institution.)
 - N2. No migration of existing books. A brokerage without a cash account is handled by BC7.
 - N3. No cash account in a currency other than the base currency (`brokerageAccounts` already refuses it).
 
@@ -108,6 +108,29 @@ Proposed `Problem.code` values, fixed in the plan: `trade_target_required` (neit
 - S4: `record_investment` and the guide change (BC11, BC12).
 - X1: S387 a trade with `brokerage_id` and `instrument` creates the holding and the position. S388 a second trade of the same instrument reuses the holding. S389 a request with both forms or neither returns `trade_target_required`. S390 a brokerage with two cash accounts and no `cash_account_id` returns `brokerage_cash_ambiguous`. S391 a brokerage created through the form's steps has a cash child and its opening balance on that child. S392 an income with `instrument` credits the cash account and the holding's income event.
 - X2: Does not apply to regions. A trade in a brokerage whose currency differs from the base currency (S390 variant) runs with base currency `USD` and a BRL brokerage.
+
+## Amendment: money paid outside the brokerage (owner, 2026-11-12)
+
+The app records only what happens in real life. At some brokerages (Inter) a purchase is paid from the checking account of the same institution, and no transfer exists. A transfer into a Caixa would record an event that never happened.
+
+**BC13 Paying account.** The cash account of a trade or income is the brokerage's own Caixa, or any open asset account in the base currency that has the brokerage's institution and holds no security. `brokerageAccounts` accepts both. The rule `cash.ParentID == security.ParentID` is replaced by this one.
+
+**BC14 Default paying account.** With `cash_account_id` absent the server uses the single candidate: the open Caixa children of the brokerage plus the open asset accounts of its institution that are not in its tree and are not of kind `brokerage`. Zero candidates return `brokerage_cash_missing`; several return `brokerage_cash_ambiguous`. The messages name the two ways out: create a Caixa, or name the account.
+
+**BC15 Return.** Money that enters or leaves the tree is an external flow. A purchase or sale paid outside the tree already is one (`TreeExternalFlows`). An income whose cash account is outside the tree becomes one: its flow is the negated net amount, dated on the income. Without it the return would leave the dividend out. Hand-computed case (S397): buy 10 at 10.00 paid from checking, price 12.00 at the end, net income 5.00 paid into checking: deposits 100.00, withdrawals 5.00, closing value 120.00, gain 120.00 + 5.00 − 100.00 = 25.00.
+
+**BC16 Brokerage creation.** The form asks "Where is the money of this brokerage?" with two choices:
+- "In my account at {institution}" (default when the chosen institution has an open asset account in the base currency that is not a brokerage): no Caixa is created and no opening balance is asked.
+- "In the brokerage itself": the Caixa is created, with the opening balance of BC3 and BC4.
+The field appears after the institution is chosen. Without such an account the form shows only the second choice, as a statement.
+
+**BC17 Purchase form.** "Paid from" (income: "Received in") lists the candidates of BC14 by name and institution. One candidate is a read-only line, several are a select, none is the notice of BC7 with the action "Create cash account". The shortfall notice of BC8 reads the chosen account. The label of the Caixa stays "Cash" (pt-BR "Caixa").
+
+**BC18 Portfolio.** A brokerage whose money is in a checking account has no cash row in the portfolio (PC4): the money belongs to the checking account.
+
+Scenarios: S393 a buy paid from the checking account of the institution creates the holding and one external flow of +cost. S394 an account of another institution is rejected on `cash_account_id`. S395 a brokerage with no Caixa and one same-institution account defaults to it. S396 a brokerage with a Caixa and a same-institution account returns `brokerage_cash_ambiguous`. S397 the return case of BC15.
+
+Cross-cutting: C2 the shortfall compares two base-currency amounts. B2 the roles stay as in BC6. S1 the descriptions of `cash_account_id` change in `TradeInput` and `InvestmentIncomeInput`, and the `record_investment` tool. S3 the guide article `investments` changes. D3 no recorded fact changes.
 
 ## Open points for the plan
 
