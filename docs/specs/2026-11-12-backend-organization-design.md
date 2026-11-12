@@ -64,6 +64,39 @@ Non-goals: behavior change; changes to `api/`, `db/migrations/`, `web/`, request
 - Per task: the package tests with the count script of the brief, equal before and after; `bin/golangci-lint fmt` and `bin/golangci-lint run` on the touched packages; the parity script.
 - Phase E: `go test -count=1 -json ./...` once, `bin/golangci-lint run ./...`, `make gen-check`, `make tidy-check`, `make check`.
 
+## Decisions made during execution
+
+| Question | Decision | Task |
+|---|---|---|
+| Second `readEnvFile` call in `serve` | Removed; `setupWithFile` returns the file `setup` read. Nothing between the two reads writes `equori.env`. | T2 |
+| `//nolint:gosec` (G704) on two HTTP requests of `cmd/demoseed` after the `run` split | Added with the existing justification. | T3 |
+| Order of `UseNotices`, `OnImport`, `UseCredentials` in `server.New` | They run in `linkAdapters`, after `planning.New`. The three setters assign fields; no constructor reads them. | T4 |
+| `ledgerPort` of ingestion | Own file `ledger_port.go` (377 lines); `adapters.go` would pass 400 lines. | T10 |
+| Constants `StatusUpdating` and `recordDateLayout` of `pluggy/client/model.go` | Deleted: no reference in production or test code. | T11 |
+| `pluggytest` location | `aggregator/pluggy/pluggytest` (depth rule of ADR 033). | T11 |
+| `ports.go` of `ledger/app` above 400 lines | BO15: `ports.go` plus `ports_records.go`. | T16 |
+| Directory limit of 40 files in `ledger/app` | Two pairs of small files merged (`installment.go`, `confirm_line.go`). | T16 |
+| A function split enlarges a file above 400 lines | Whole declarations move to a file of the same concept in the same task. | T22, T23 |
+| Error-to-problem mappers (`ToProblem`, `toProblem`) | Listed as tables of data in `long_functions.txt`. | T1 |
+| Planning series detector | Moved to `planning/domain/series.go` (BO11). | T20 |
+
+Structural deviations that remain: a moved line already above 100 columns keeps its wrapping (the parity rule outranks the column rule for verbatim moves); the audit rows for the subscribe loops of `ledger.New`, `classification.New` and `reporting.New`, the duplicate `Commitments` and `Valuations` aliases of `reporting`, the `Holiday` and `Adjustment` move of `marketdata`, the `life` and `stop` creation of `marketdata.New`, and the generic `scan` of `classification/toolapi` were not applied (behavior or exported-name risk). A commit of type `style` (`326a0935`) exists in the history; amending was not allowed.
+
 ## Measurements
 
-Filled in phase E.
+Measured on `main` after T40 (metric BO10).
+
+| Measure | Start | End |
+|---|---|---|
+| Production files above 400 lines | 17 | 0 (`long_files.txt` is empty; largest: `ingestion/app/review.go`, 399) |
+| Function bodies above 50 lines | 197 | 9, all tables of data in `long_functions.txt` |
+| Functions in the repository | 3708 | 4326 |
+| `cmd/equori/main.go` | 474 lines | 52 lines |
+| `internal/server/server.go` | 333 lines | removed; `config.go` 60, `app.go` 92, `modules.go` 329, `adapters.go` 255, `routes.go` 123, `outbox.go` 19, `apidoc.go` 24 |
+| Go tests passing (`go test -count=1 -json ./...`) | 3409 at `eddcbeb5` | 3405, 0 failures |
+
+The difference of 4 passes: the other session removed `TestDownsample` (9 passes) in `285a386c` and added 3 tests (`TestSeedKeepsExistingPrices`, `TestRestoredBackupMatchesTheOriginal`, `TestBuiltScriptsHaveNoCommonJSRequire`); this work added `TestGoFunctionSize` and `TestMainSize`. Tests moved between packages with the code (`TestNormalize` to `pluggy`, `TestDetectSeries` to `planning/domain`).
+
+`Config` types and their files: `assistant/config.go`, `identity/config.go`, `ingestion/config.go`, `instance/config.go`, `instance/app/config.go`, `marketdata/config.go` (`FeedConfig`), `platform/config/config.go`, `platform/tool/mcp/config.go`, `server/config.go`.
+
+Checks: `bin/golangci-lint run ./...` reports only the typecheck error of `internal/server/cluster_copy_test.go:193` (tag `cluster`), present before this work; `make gen-check` and `make tidy-check` pass. `make check` stops at its `lint` step on that same error, so the steps after it did not run through `make check`. `make test-race` passes (exit 0). `make web-check` and `make test-cluster` did not run: the web tree holds uncommitted changes of another session and the `cluster` test package does not compile because of the same typecheck error.
