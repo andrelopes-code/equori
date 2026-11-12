@@ -65,6 +65,12 @@ func (s *Service) CategoryTotals(
 		sign = -1
 	}
 
+	subtree := subtreeTotals(rows, sign)
+
+	return categoryTotals(rows, subtree, sign), nil
+}
+
+func subtreeTotals(rows []CategoryRow, sign int64) map[uuid.UUID]int64 {
 	subtree := make(map[uuid.UUID]int64, len(rows))
 
 	parent := make(map[uuid.UUID]uuid.UUID, len(rows))
@@ -78,6 +84,14 @@ func (s *Service) CategoryTotals(
 		}
 	}
 
+	return subtree
+}
+
+func categoryTotals(
+	rows []CategoryRow,
+	subtree map[uuid.UUID]int64,
+	sign int64,
+) []CategoryTotal {
 	out := make([]CategoryTotal, 0, len(rows))
 	for _, r := range rows {
 		t := CategoryTotal{
@@ -95,5 +109,5 @@ func (s *Service) CategoryTotals(
 		out = append(out, t)
 	}
 
-	return out, nil
+	return out
 }

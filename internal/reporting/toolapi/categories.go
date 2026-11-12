@@ -58,34 +58,9 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 			return getCategoryTotalsOut{}, err
 		}
 
-		names := make(map[uuid.UUID]string, len(totals))
-		for _, t := range totals {
-			names[t.AccountID] = t.Name
-		}
-
-		views := []categoryView{}
-		for _, t := range active(totals) {
-			total, err := money.New(t.Total, money.Currency(t.Instrument))
-			if err != nil {
-				return getCategoryTotalsOut{}, err
-			}
-
-			subtree, err := money.New(t.SubtreeTotal, money.Currency(t.Instrument))
-			if err != nil {
-				return getCategoryTotalsOut{}, err
-			}
-
-			v := categoryView{
-				AccountID:    t.AccountID.String(),
-				Name:         t.Name,
-				Total:        tool.MoneyOf(total),
-				SubtreeTotal: tool.MoneyOf(subtree),
-			}
-			if t.ParentID != uuid.Nil {
-				v.ParentID, v.ParentName = t.ParentID.String(), names[t.ParentID]
-			}
-
-			views = append(views, v)
+		views, err := categoryViews(totals)
+		if err != nil {
+			return getCategoryTotalsOut{}, err
 		}
 
 		out := getCategoryTotalsOut{From: in.From, To: in.To}
@@ -97,6 +72,40 @@ func getCategoryTotals(svc *app.Service) tool.Tool {
 
 		return out, err
 	})
+}
+
+func categoryViews(totals []app.CategoryTotal) ([]categoryView, error) {
+	names := make(map[uuid.UUID]string, len(totals))
+	for _, t := range totals {
+		names[t.AccountID] = t.Name
+	}
+
+	views := []categoryView{}
+	for _, t := range active(totals) {
+		total, err := money.New(t.Total, money.Currency(t.Instrument))
+		if err != nil {
+			return nil, err
+		}
+
+		subtree, err := money.New(t.SubtreeTotal, money.Currency(t.Instrument))
+		if err != nil {
+			return nil, err
+		}
+
+		v := categoryView{
+			AccountID:    t.AccountID.String(),
+			Name:         t.Name,
+			Total:        tool.MoneyOf(total),
+			SubtreeTotal: tool.MoneyOf(subtree),
+		}
+		if t.ParentID != uuid.Nil {
+			v.ParentID, v.ParentName = t.ParentID.String(), names[t.ParentID]
+		}
+
+		views = append(views, v)
+	}
+
+	return views, nil
 }
 
 // active keeps the categories with postings of their own and their ancestors, in order. A

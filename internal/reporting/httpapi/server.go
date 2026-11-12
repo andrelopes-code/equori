@@ -66,51 +66,31 @@ func ToProblem(err error) (problem.Details, bool) {
 func rangeProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidRange):
-		d := problem.New(
-			http.StatusBadRequest,
-			"invalid_request",
+		return invalidField(
 			"from must not be after to, and the range must not exceed 3660 days",
-		)
-		d.Errors = []problem.FieldError{
-			{Field: "to", Message: "must be on or after from and at most 3660 days after it"},
-		}
-
-		return d, true
+			"to",
+			"must be on or after from and at most 3660 days after it",
+		), true
 	case errors.Is(err, app.ErrInvalidCategoryRange):
-		d := problem.New(
-			http.StatusBadRequest,
-			"invalid_request",
+		return invalidField(
 			"from must not be after to, and the period must not exceed 366 days",
-		)
-		d.Errors = []problem.FieldError{
-			{Field: "to", Message: "must be on or after from and at most 365 days after it"},
-		}
-
-		return d, true
+			"to",
+			"must be on or after from and at most 365 days after it",
+		), true
 	case errors.Is(err, app.ErrInvalidMonth):
-		d := problem.New(
-			http.StatusBadRequest,
-			"invalid_request",
+		return invalidField(
 			"month must not be after the current month",
-		)
-		d.Errors = []problem.FieldError{
-			{Field: "month", Message: "must not be after the current month"},
-		}
-
-		return d, true
+			"month",
+			"must not be after the current month",
+		), true
 	case errors.Is(err, app.ErrPriceMissing):
 		return problem.New(http.StatusUnprocessableEntity, "price_missing", err.Error()), true
 	case errors.Is(err, app.ErrInvalidFlowRange):
-		d := problem.New(
-			http.StatusBadRequest,
-			"invalid_request",
+		return invalidField(
 			"from must not be after to, and the range must not exceed 366 days",
-		)
-		d.Errors = []problem.FieldError{
-			{Field: "to", Message: "must be on or after from and at most 365 days after it"},
-		}
-
-		return d, true
+			"to",
+			"must be on or after from and at most 365 days after it",
+		), true
 	case errors.Is(err, errFileRequired):
 		d := problem.New(http.StatusBadRequest, "invalid_request", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: "is required"}}
@@ -119,6 +99,13 @@ func rangeProblem(err error) (problem.Details, bool) {
 	}
 
 	return problem.Details{}, false
+}
+
+func invalidField(detail, field, message string) problem.Details {
+	d := problem.New(http.StatusBadRequest, "invalid_request", detail)
+	d.Errors = []problem.FieldError{{Field: field, Message: message}}
+
+	return d
 }
 
 func archiveProblem(err error) (problem.Details, bool) {

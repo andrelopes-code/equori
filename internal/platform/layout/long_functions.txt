@@ -32,8 +32,3 @@ internal/portfolio/adapters.go	ledgerPort.InvestmentFacts	pending: split after t
 internal/portfolio/app/benchmark.go	Service.compare	pending: split after the 100-column reformatting
 internal/portfolio/httpapi/server.go	Server.listPositions	pending: split after the 100-column reformatting
 internal/portfolio/postgres/repository.go	Repository.Replace	pending: split after the 100-column reformatting
-internal/reporting/app/categories.go	Service.CategoryTotals	pending: split after the 100-column reformatting
-internal/reporting/httpapi/server.go	rangeProblem	pending: split after the 100-column reformatting
-internal/reporting/postgres/archive_build.go	buildArchive	pending: split after the 100-column reformatting
-internal/reporting/postgres/archive_build.go	writeTables	pending: split after the 100-column reformatting
-internal/reporting/toolapi/categories.go	getCategoryTotals	pending: split after the 100-column reformatting

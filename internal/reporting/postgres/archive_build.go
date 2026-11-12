@@ -90,14 +90,7 @@ func buildArchive(
 	at time.Time,
 	appVersion string,
 ) ([]byte, error) {
-	m := archiveManifest{
-		Format:         "equori-export",
-		FormatVersion:  1,
-		ArchiveVersion: app.ArchiveVersion,
-		AppVersion:     appVersion,
-		ExportedAt:     at,
-		Attachments:    []archiveFile{},
-	}
+	m := newArchiveManifest(at, appVersion)
 	if err := tx.QueryRow(ctx, `SELECT max(version_id) FROM goose_db_version WHERE is_applied`).
 		Scan(&m.SchemaVersion); err != nil {
 		return nil, fmt.Errorf("read schema version: %w", err)
@@ -142,6 +135,17 @@ func buildArchive(
 	}
 
 	return buf.Bytes(), nil
+}
+
+func newArchiveManifest(at time.Time, appVersion string) archiveManifest {
+	return archiveManifest{
+		Format:         "equori-export",
+		FormatVersion:  1,
+		ArchiveVersion: app.ArchiveVersion,
+		AppVersion:     appVersion,
+		ExportedAt:     at,
+		Attachments:    []archiveFile{},
+	}
 }
 
 // archiveEntryWriter returns the function that adds an entry to z and fails once buf outgrows
@@ -193,63 +197,92 @@ func writeTables(
 	sources []tableSource,
 ) error {
 	for _, s := range sources {
-		key, err := primaryKey(ctx, tx, s.table)
-		if err != nil {
-			return fmt.Errorf("read key of %s: %w", s.table, err)
-		}
-
-		order := "to_jsonb(t)::text"
-		if len(key) > 0 {
-			order = strings.Join(key, ", ")
-		}
-
-		sql := fmt.Sprintf(
-			`SELECT (%s)::text FROM %s t WHERE %s ORDER BY %s`,
-			s.from,
-			pgx.Identifier{s.table}.Sanitize(),
-			s.where,
-			order,
-		)
-
-		args := []any{}
-		if strings.Contains(s.where, "$1") {
-			args = append(args, booksID)
-		}
-
-		rows, err := tx.Query(ctx, sql, args...)
-		if err != nil {
-			return fmt.Errorf("read %s: %w", s.table, err)
-		}
-
-		lines, err := pgx.CollectRows(rows, pgx.RowTo[string])
-		if err != nil {
-			return fmt.Errorf("read %s: %w", s.table, err)
-		}
-
-		var b bytes.Buffer
-		for _, l := range lines {
-			b.WriteString(l)
-			b.WriteByte('\n')
-		}
-
-		file := "tables/" + s.table + ".jsonl"
-		if err := write(file, b.Bytes()); err != nil {
+		if err := writeTable(ctx, tx, booksID, m, write, s); err != nil {
 			return err
 		}
-
-		sum := sha256.Sum256(b.Bytes())
-		m.Tables = append(
-			m.Tables,
-			archiveTable{
-				Name:   s.table,
-				File:   file,
-				Rows:   len(lines),
-				SHA256: hex.EncodeToString(sum[:]),
-			},
-		)
 	}
 
 	return nil
+}
+
+func writeTable(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	m *archiveManifest,
+	write func(string, []byte) error,
+	s tableSource,
+) error {
+	lines, err := tableLines(ctx, tx, booksID, s)
+	if err != nil {
+		return err
+	}
+
+	var b bytes.Buffer
+	for _, l := range lines {
+		b.WriteString(l)
+		b.WriteByte('\n')
+	}
+
+	file := "tables/" + s.table + ".jsonl"
+	if err := write(file, b.Bytes()); err != nil {
+		return err
+	}
+
+	sum := sha256.Sum256(b.Bytes())
+	m.Tables = append(
+		m.Tables,
+		archiveTable{
+			Name:   s.table,
+			File:   file,
+			Rows:   len(lines),
+			SHA256: hex.EncodeToString(sum[:]),
+		},
+	)
+
+	return nil
+}
+
+func tableLines(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	s tableSource,
+) ([]string, error) {
+	key, err := primaryKey(ctx, tx, s.table)
+	if err != nil {
+		return nil, fmt.Errorf("read key of %s: %w", s.table, err)
+	}
+
+	order := "to_jsonb(t)::text"
+	if len(key) > 0 {
+		order = strings.Join(key, ", ")
+	}
+
+	sql := fmt.Sprintf(
+		`SELECT (%s)::text FROM %s t WHERE %s ORDER BY %s`,
+		s.from,
+		pgx.Identifier{s.table}.Sanitize(),
+		s.where,
+		order,
+	)
+
+	args := []any{}
+	if strings.Contains(s.where, "$1") {
+		args = append(args, booksID)
+	}
+
+	rows, err := tx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", s.table, err)
+	}
+
+	lines, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("read %s: %w", s.table, err)
+	}
+
+	return lines, nil
 }
 
 func writeAttachments(
