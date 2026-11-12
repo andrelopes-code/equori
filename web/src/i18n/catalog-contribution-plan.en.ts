@@ -1,0 +1,65 @@
+// The words of the contribution plan screen, spread into portfolioEn.
+export const contributionPlanEn = {
+  "contributionPlan.title": "Contribution plan",
+  "contributionPlan.subtitle":
+    "Where each contribution goes to bring the portfolio to its target",
+  "contributionPlan.open": "Contribution plan",
+  "contributionPlan.edit": "Edit targets",
+  "contributionPlan.amount": "Contribution",
+  "contributionPlan.total": "Portfolio",
+  "contributionPlan.totalAfter": "After the contribution",
+  "contributionPlan.driftMoves":
+    "This contribution moves the portfolio from {before} to {after} away from the target.",
+  "contributionPlan.driftNow": "The portfolio is {drift} away from the target.",
+  "contributionPlan.points": "{value} pp",
+  "contributionPlan.colClass": "Class",
+  "contributionPlan.colTarget": "Target",
+  "contributionPlan.colCurrent": "Current",
+  "contributionPlan.colAfter": "After",
+  "contributionPlan.colAmount": "Contribute",
+  "contributionPlan.track":
+    "{name}: current {current}, after {after}, target {target}",
+  "contributionPlan.quantity": "≈ {count} units",
+  "contributionPlan.shopping": "Shopping list",
+  "contributionPlan.copy": "Copy list",
+  "contributionPlan.copied": "List copied",
+  "contributionPlan.shoppingEmpty": "No purchase for this amount",
+  "contributionPlan.lock": "Keep {name} fixed",
+  "contributionPlan.addClass": "Add class",
+  "contributionPlan.className": "Class name",
+  "contributionPlan.nameRequired": "Name the class",
+  "contributionPlan.removeClass": "Remove {name}",
+  "contributionPlan.split": "Split among assets",
+  "contributionPlan.addAsset": "Add asset",
+  "contributionPlan.pickAccounts": "Investment accounts",
+  "contributionPlan.pickInstruments": "Assets",
+  "contributionPlan.inClass": "In {name}",
+  "contributionPlan.removeAsset": "Remove {name}",
+  "contributionPlan.moveTo": "Class of {name}",
+  "contributionPlan.save": "Save",
+  "contributionPlan.discard": "Discard",
+  "contributionPlan.leaveTitle": "Discard the changes to the targets?",
+  "contributionPlan.keepEditing": "Keep editing",
+  "contributionPlan.outside": "Outside the plan",
+  "contributionPlan.chooseClass": "Choose a class",
+  "contributionPlan.emptyBody":
+    "Set a target split once and each contribution is divided to bring the portfolio closer to it.",
+  "contributionPlan.startPortfolio": "Start from my portfolio",
+  "contributionPlan.startScratch": "Start from scratch",
+  "contributionPlan.firstPurchase": "Record the first purchase",
+  "contributionPlan.incomplete":
+    "No split while these assets have no value today:",
+  "contributionPlan.missingPrice": "{name}: no price",
+  "contributionPlan.missingRate": "{name}: no exchange rate",
+  "problem.contribution_target_sum": "The class targets must add up to 100%.",
+  "problem.contribution_member_target_sum":
+    "The asset targets of a class must add up to 100%.",
+  "problem.contribution_class_name_duplicate":
+    "Two classes have the same name.",
+  "problem.contribution_member_duplicate":
+    "An asset is in two places of the plan.",
+  "problem.contribution_member_invalid":
+    "An asset of the plan is not an investment.",
+  "problem.contribution_amount_invalid":
+    "Enter a contribution greater than zero.",
+} as const;

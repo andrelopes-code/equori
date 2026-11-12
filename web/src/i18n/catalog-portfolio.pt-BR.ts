@@ -1,6 +1,8 @@
+import { contributionPlanPtBR } from "@/i18n/catalog-contribution-plan.pt-BR";
 import type { portfolioEn } from "@/i18n/catalog-portfolio.en";
 
 export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
+  ...contributionPlanPtBR,
   "palette.taxYear": "Proventos e vendas de um ano",
   "taxYear.title": "Proventos e vendas em {year}",
   "taxYear.range": "De {from} a {to}.",

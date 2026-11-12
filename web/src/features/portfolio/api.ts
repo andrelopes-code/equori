@@ -1,8 +1,9 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, useMutation } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
+import { useApi } from "@/api/api-context";
 import { unwrap } from "@/api/problem";
-import type { paths } from "@/api/schema.gen";
+import type { components, paths } from "@/api/schema.gen";
 import type { AllocationBy } from "@/features/portfolio/model/portfolio-search";
 
 export function allocationQuery(
@@ -99,5 +100,31 @@ export function incomeEventsQuery(api: Client<paths>, year: number) {
     queryKey: ["income-events", year] as const,
     queryFn: async () =>
       unwrap(await api.GET("/income-events", { params: { query: { year } } })),
+  });
+}
+
+export function contributionPlanQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["contribution-plan"] as const,
+    queryFn: async () => unwrap(await api.GET("/contribution-plan")),
+  });
+}
+
+export function useSaveContributionPlan() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["ContributionPlanInput"]) =>
+      unwrap(await api.PUT("/contribution-plan", { body })),
+  });
+}
+
+export function usePreviewContributionPlan() {
+  const api = useApi();
+
+  return useMutation({
+    mutationFn: async (
+      body: components["schemas"]["ContributionPreviewInput"],
+    ) => unwrap(await api.POST("/contribution-plan/preview", { body })),
   });
 }
