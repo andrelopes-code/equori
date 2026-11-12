@@ -1,3 +1,5 @@
+import { Button } from "@slotted/react/button";
+import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -12,6 +14,7 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { ClassRow } from "@/features/portfolio/contribution-plan/class-row";
+import type { PlanEditor } from "@/features/portfolio/contribution-plan/use-plan-editor";
 import { trackScale } from "@/features/portfolio/contribution-plan/track-scale";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -21,13 +24,19 @@ interface ClassTableProps {
   // Undefined while the plan loads.
   view: Plan | undefined;
   pending: boolean;
+  editor?: PlanEditor | undefined;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
 }
 
 const columns = 7;
 
 // One row per class: name, drift track, target, current, after and the amount to contribute.
-export function ClassTable({ view, pending, memberName }: ClassTableProps) {
+export function ClassTable({
+  view,
+  pending,
+  editor,
+  memberName,
+}: ClassTableProps) {
   const t = useT();
   const [expanded, setExpanded] = useState<readonly string[]>([]);
 
@@ -37,57 +46,75 @@ export function ClassTable({ view, pending, memberName }: ClassTableProps) {
   );
 
   return (
-    <Table
-      columns={columns}
-      variant="framed"
-      loading={pending}
-      expanded={expanded}
-      onExpandedChange={setExpanded}
-    >
-      <TableContent aria-label={t("contributionPlan.title")}>
-        <TableHead>
-          <TableRow>
-            <TableColumnHeader>
-              <VisuallyHidden>{t("contributionPlan.colExpand")}</VisuallyHidden>
-            </TableColumnHeader>
-            <TableColumnHeader>
-              {t("contributionPlan.colClass")}
-            </TableColumnHeader>
-            <TableColumnHeader>
-              <VisuallyHidden>{t("contributionPlan.colTrack")}</VisuallyHidden>
-            </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("contributionPlan.colTarget")}
-            </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("contributionPlan.colCurrent")}
-            </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("contributionPlan.colAfter")}
-            </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("contributionPlan.colAmount")}
-            </TableColumnHeader>
-          </TableRow>
-        </TableHead>
+    <Stack gap={3}>
+      <Table
+        columns={columns}
+        variant="framed"
+        loading={pending}
+        expanded={expanded}
+        onExpandedChange={setExpanded}
+      >
+        <TableContent aria-label={t("contributionPlan.title")}>
+          <TableHead>
+            <TableRow>
+              <TableColumnHeader>
+                <VisuallyHidden>
+                  {t("contributionPlan.colExpand")}
+                </VisuallyHidden>
+              </TableColumnHeader>
+              <TableColumnHeader>
+                {t("contributionPlan.colClass")}
+              </TableColumnHeader>
+              <TableColumnHeader>
+                <VisuallyHidden>
+                  {t("contributionPlan.colTrack")}
+                </VisuallyHidden>
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("contributionPlan.colTarget")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("contributionPlan.colCurrent")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("contributionPlan.colAfter")}
+              </TableColumnHeader>
+              <TableColumnHeader numeric>
+                {t("contributionPlan.colAmount")}
+              </TableColumnHeader>
+            </TableRow>
+          </TableHead>
 
-        {view === undefined && <TableLoader skeletonRows={4} />}
+          {view === undefined && <TableLoader skeletonRows={4} />}
 
-        {view !== undefined && (
-          <TableBody>
-            {classes.map((cls, index) => (
-              <ClassRow
-                key={cls.name}
-                index={index}
-                cls={cls}
-                scale={scale}
-                open={expanded.includes(`class-${String(index)}`)}
-                memberName={memberName}
-              />
-            ))}
-          </TableBody>
-        )}
-      </TableContent>
-    </Table>
+          {view !== undefined && (
+            <TableBody>
+              {classes.map((cls, index) => (
+                <ClassRow
+                  key={String(index)}
+                  index={index}
+                  cls={cls}
+                  editor={editor}
+                  scale={scale}
+                  open={expanded.includes(`class-${String(index)}`)}
+                  memberName={memberName}
+                />
+              ))}
+            </TableBody>
+          )}
+        </TableContent>
+      </Table>
+
+      {editor?.draft !== undefined && (
+        <Button
+          size="sm"
+          variant="outline"
+          tone="secondary"
+          onClick={editor.addClass}
+        >
+          {t("contributionPlan.addClass")}
+        </Button>
+      )}
+    </Stack>
   );
 }

@@ -1,5 +1,6 @@
 import { TableCell } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
+import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
 import {
@@ -20,6 +21,8 @@ interface FigureCellsProps {
   amount: Money | undefined;
   // The units the amount buys, for a member with a unit value (CN16).
   units?: Money | undefined;
+  // Replaces the target figure in edit mode.
+  targetCell?: ReactNode;
 }
 
 // The four figures of a row, each on the end edge of its column. The amount is the heaviest text
@@ -31,6 +34,7 @@ export function FigureCells({
   after,
   amount,
   units,
+  targetCell,
 }: FigureCellsProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -40,7 +44,7 @@ export function FigureCells({
   return (
     <>
       <TableCell numeric text="nowrap">
-        <Text tone="muted">{formatShare(tag, target)}</Text>
+        {targetCell ?? <Text tone="muted">{formatShare(tag, target)}</Text>}
       </TableCell>
 
       <TableCell numeric text="nowrap">

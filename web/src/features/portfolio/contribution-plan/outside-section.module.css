@@ -1,0 +1,26 @@
+@layer app {
+  .section {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .row {
+    display: grid;
+    /* The class selector's measure: no token holds it. */
+    grid-template-columns: minmax(0, 1fr) auto 14rem;
+    align-items: center;
+    gap: var(--slotted-space-8);
+    block-size: var(--slotted-space-10);
+  }
+
+  .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .value {
+    text-align: end;
+    white-space: nowrap;
+  }
+}

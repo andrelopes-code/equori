@@ -1,0 +1,18 @@
+@layer app {
+  .target {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--slotted-space-4);
+  }
+
+  /* The measures of a percent field and its slider: no token holds them. */
+  .text {
+    inline-size: 6rem;
+  }
+
+  .slider {
+    inline-size: 8rem;
+  }
+}
