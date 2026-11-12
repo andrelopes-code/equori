@@ -120,9 +120,6 @@ export const portfolioEn = {
   "portfolio.yield.row.realHint": "(1 + return) ÷ (1 + {index}) − 1",
   "portfolio.yield.indexOver": "{index} {rate}",
   "portfolio.yield.points": "{value} pp",
-  "portfolio.return.flows": "Deposits and withdrawals",
-  "portfolio.return.date": "Date",
-  "portfolio.return.amount": "Amount",
   "portfolio.return.noFlows": "No deposits or withdrawals in the period.",
   "portfolio.return.undefined": "The return is undefined in this period.",
   "portfolio.return.undefinedWhy":

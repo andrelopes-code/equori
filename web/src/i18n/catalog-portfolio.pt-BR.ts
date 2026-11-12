@@ -125,9 +125,6 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.yield.row.realHint": "(1 + retorno) ÷ (1 + {index}) − 1",
   "portfolio.yield.indexOver": "{index} {rate}",
   "portfolio.yield.points": "{value} p.p.",
-  "portfolio.return.flows": "Aportes e retiradas",
-  "portfolio.return.date": "Data",
-  "portfolio.return.amount": "Valor",
   "portfolio.return.noFlows": "Nenhum aporte ou retirada no período.",
   "portfolio.return.undefined": "O retorno é indefinido neste período.",
   "portfolio.return.undefinedWhy":
