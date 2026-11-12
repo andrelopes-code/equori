@@ -1,4 +1,9 @@
 @layer app {
+  /* One height for every state of a row: the row that holds the expander button is not taller. */
+  .row {
+    block-size: var(--slotted-space-10);
+  }
+
   .name {
     /* The name column's measure: no token holds it, and a longer name ends in an ellipsis. */
     inline-size: 16rem;

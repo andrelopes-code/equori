@@ -1,4 +1,5 @@
 import { Button } from "@slotted/react/button";
+import { Inline } from "@slotted/react/inline";
 import {
   Section,
   SectionActions,
@@ -42,6 +43,7 @@ export function ShoppingPanel({ view, memberName }: ShoppingPanelProps) {
   const fmt = useMoneyFormat();
   const scale = useScale();
   const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
   const host = useRef<HTMLDivElement>(null);
 
   const entries = shoppingList(view, memberName);
@@ -64,6 +66,7 @@ export function ShoppingPanel({ view, memberName }: ShoppingPanelProps) {
         .join("  "),
     );
 
+    setFailed(false);
     copyText(lines.join("\n"), host.current)
       .then(() => {
         setCopied(true);
@@ -71,7 +74,9 @@ export function ShoppingPanel({ view, memberName }: ShoppingPanelProps) {
           setCopied(false);
         }, confirmationMs);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        setFailed(true);
+      });
   }
 
   return (
@@ -83,17 +88,25 @@ export function ShoppingPanel({ view, memberName }: ShoppingPanelProps) {
           </SectionTitle>
 
           <SectionActions>
-            <Button
-              size="sm"
-              variant="outline"
-              tone="secondary"
-              disabled={fmt.hidden || entries.length === 0}
-              onClick={handleCopy}
-            >
-              {copied
-                ? t("contributionPlan.copied")
-                : t("contributionPlan.copy")}
-            </Button>
+            <Inline gap={4} align="center" wrap="nowrap">
+              {failed && (
+                <Text size="xs" tone="muted">
+                  {t("contributionPlan.copyFailed")}
+                </Text>
+              )}
+
+              <Button
+                size="sm"
+                variant="outline"
+                tone="secondary"
+                disabled={fmt.hidden || entries.length === 0}
+                onClick={handleCopy}
+              >
+                {copied
+                  ? t("contributionPlan.copied")
+                  : t("contributionPlan.copy")}
+              </Button>
+            </Inline>
           </SectionActions>
         </SectionHeader>
 

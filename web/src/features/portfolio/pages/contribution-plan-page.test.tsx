@@ -1,5 +1,6 @@
-import { screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { json } from "@/testing/fake-api";
@@ -156,6 +157,119 @@ describe("Contribution plan page", () => {
       }),
       ["1.000,00", "3.000,00"],
     );
+  });
+
+  it("names the track and expander columns for assistive technology", async () => {
+    await open();
+    await planTable();
+
+    expect(
+      screen.getByRole("columnheader", { name: "Posição frente ao alvo" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: "Ativos" }),
+    ).toBeInTheDocument();
+  });
+
+  it("draws the way back to the portfolio inside the page header", async () => {
+    await open();
+    await planTable();
+
+    const header = document.querySelector<HTMLElement>(
+      "[data-ui='page-header']",
+    );
+    expect(
+      within(header ?? document.body).getByRole("link", {
+        name: catalogPtBR["nav.portfolio"],
+      }),
+    ).toHaveAttribute("href", "/portfolio");
+  });
+
+  it("points the expander at a row of the class's members", async () => {
+    const user = userEvent.setup();
+    const withMembers = {
+      ...saved,
+      amount: undefined,
+      classes: [
+        {
+          ...cls("Ações Brasil", 10000, 300000, 10000),
+          members: [
+            {
+              instrument: "PETR4",
+              value: brl(300000),
+              share_bp: 10000,
+              target_bp: 10000,
+            },
+          ],
+        },
+      ],
+    };
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp("/portfolio/contribution-plan", {
+      fetch: portfolioApi({
+        "GET /api/v1/contribution-plan": () => json(200, withMembers),
+      }),
+    });
+    const table = await planTable();
+
+    await user.click(
+      await within(table).findByRole("button", { expanded: false }),
+    );
+
+    const button = await within(table).findByRole("button", { expanded: true });
+    const id = button.getAttribute("aria-controls") ?? "";
+    expect(document.getElementById(id)).toHaveTextContent("PETR4");
+  });
+
+  it("offers a retry when the plan fails to load", async () => {
+    let failing = true;
+    const fetch = portfolioApi({
+      "GET /api/v1/contribution-plan": () =>
+        failing
+          ? json(500, { type: "about:blank", title: "boom", status: 500 })
+          : json(200, saved),
+    });
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp("/portfolio/contribution-plan", { fetch });
+
+    expect(
+      await screen.findByText(catalogPtBR["contributionPlan.loadFailed"]),
+    ).toBeInTheDocument();
+    failing = false;
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: catalogPtBR["contributionPlan.retry"],
+      }),
+    );
+
+    expect(await planTable()).toBeInTheDocument();
+  });
+
+  it("says so when the list cannot be copied", async () => {
+    vi.stubGlobal("isSecureContext", true);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    try {
+      await open();
+      fireEvent.click(
+        await screen.findByRole("button", { name: "Copiar lista" }),
+      );
+
+      expect(
+        await screen.findByText(catalogPtBR["contributionPlan.copyFailed"]),
+      ).toBeInTheDocument();
+    } finally {
+      Reflect.deleteProperty(navigator, "clipboard");
+      vi.unstubAllGlobals();
+    }
   });
 
   it("draws only the header and the strip for a book without a plan", async () => {

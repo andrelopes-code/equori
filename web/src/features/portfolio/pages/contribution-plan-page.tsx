@@ -11,16 +11,19 @@ import {
 } from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { contributionPlanQuery } from "@/features/portfolio/api";
 import { ClassTable } from "@/features/portfolio/contribution-plan/class-table";
+import { PlanLoadFailed } from "@/features/portfolio/contribution-plan/plan-load-failed";
 import { ContributionStrip } from "@/features/portfolio/contribution-plan/contribution-strip";
 import { ShoppingPanel } from "@/features/portfolio/contribution-plan/shopping-panel";
 import { useContributionPreview } from "@/features/portfolio/contribution-plan/use-contribution-preview";
 import styles from "@/features/portfolio/pages/contribution-plan-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import { PageBack } from "@/ui/navigation/page-back";
 
 // Where this month's money goes, how far the portfolio is from the target (spec, Screen).
 export function ContributionPlanPage() {
@@ -41,6 +44,9 @@ export function ContributionPlanPage() {
     <Page width="full">
       <PageHeader size="lg">
         <PageHeaderTitleArea>
+          <PageBack render={(props) => <Link {...props} to="/portfolio" />}>
+            {t("nav.portfolio")}
+          </PageBack>
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>
@@ -61,6 +67,14 @@ export function ContributionPlanPage() {
 
       <PageBody>
         <Stack gap={6}>
+          {plan.isError && (
+            <PlanLoadFailed
+              onRetry={() => {
+                void plan.refetch();
+              }}
+            />
+          )}
+
           {view !== undefined && (
             <ContributionStrip
               view={view}
@@ -70,7 +84,7 @@ export function ContributionPlanPage() {
             />
           )}
 
-          {hasClasses && (
+          {!plan.isError && hasClasses && (
             <div className={styles.layout}>
               <ClassTable
                 view={view}

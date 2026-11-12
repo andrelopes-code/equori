@@ -10,6 +10,7 @@ type Member = components["schemas"]["ContributionMember"];
 
 interface MemberRowProps {
   rowKey: string;
+  id?: string;
   member: Member;
   name: string;
   scale: number;
@@ -19,6 +20,7 @@ interface MemberRowProps {
 // The same columns as its class, with the share inside the class.
 export function MemberRow({
   rowKey,
+  id,
   member,
   name,
   scale,
@@ -32,7 +34,7 @@ export function MemberRow({
       : { amount: quantity, currency: member.amount.currency };
 
   return (
-    <TableRow value={rowKey}>
+    <TableRow value={rowKey} id={id} className={styles.row}>
       <TableCell />
 
       <TableRowHeader

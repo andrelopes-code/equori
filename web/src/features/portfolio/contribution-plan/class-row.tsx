@@ -3,6 +3,7 @@ import {
   TableExpander,
   TableRow,
   TableRowHeader,
+  useTable,
 } from "@slotted/react/table";
 
 import type { components } from "@/api/schema.gen";
@@ -30,6 +31,7 @@ export function ClassRow({
   open,
   memberName,
 }: ClassRowProps) {
+  const table = useTable();
   const key = `class-${String(index)}`;
   const memberScale = trackScale(
     cls.members.flatMap((m) => [m.target_bp, m.share_bp, m.after_share_bp]),
@@ -37,7 +39,7 @@ export function ClassRow({
 
   return (
     <>
-      <TableRow value={key}>
+      <TableRow value={key} className={styles.row}>
         <TableCell>{cls.members.length > 0 && <TableExpander />}</TableCell>
 
         <TableRowHeader text="truncate" className={styles.name}>
@@ -68,6 +70,7 @@ export function ClassRow({
           <MemberRow
             key={`${key}-${String(at)}`}
             rowKey={`${key}-${String(at)}`}
+            {...(at === 0 ? { id: `${table.id}detail${key}` } : {})}
             member={member}
             name={memberName(member)}
             scale={memberScale}

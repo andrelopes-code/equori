@@ -1,8 +1,15 @@
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
+import {
+  Alert,
+  AlertActions,
+  AlertContent,
+  AlertDescription,
+} from "@slotted/react/alert";
 import type { ComponentProps, ReactNode } from "react";
 
 interface FormNoticeProps {
   children: ReactNode;
+  // The primary action is the default Button; any other is `variant="ghost"`.
+  actions?: ReactNode;
   tone?: ComponentProps<typeof Alert>["tone"];
   className?: string | undefined;
 }
@@ -12,6 +19,7 @@ interface FormNoticeProps {
 // on its own (docs/contributing/web.md, O15).
 export function FormNotice({
   children,
+  actions,
   tone = "danger",
   className,
 }: FormNoticeProps) {
@@ -24,6 +32,8 @@ export function FormNotice({
       <AlertContent>
         <AlertDescription>{children}</AlertDescription>
       </AlertContent>
+
+      {actions !== undefined && <AlertActions>{actions}</AlertActions>}
     </Alert>
   );
 }

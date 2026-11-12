@@ -7,6 +7,7 @@ import {
   TableLoader,
   TableRow,
 } from "@slotted/react/table";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -46,11 +47,15 @@ export function ClassTable({ view, pending, memberName }: ClassTableProps) {
       <TableContent aria-label={t("contributionPlan.title")}>
         <TableHead>
           <TableRow>
-            <TableColumnHeader />
+            <TableColumnHeader>
+              <VisuallyHidden>{t("contributionPlan.colExpand")}</VisuallyHidden>
+            </TableColumnHeader>
             <TableColumnHeader>
               {t("contributionPlan.colClass")}
             </TableColumnHeader>
-            <TableColumnHeader />
+            <TableColumnHeader>
+              <VisuallyHidden>{t("contributionPlan.colTrack")}</VisuallyHidden>
+            </TableColumnHeader>
             <TableColumnHeader numeric>
               {t("contributionPlan.colTarget")}
             </TableColumnHeader>
