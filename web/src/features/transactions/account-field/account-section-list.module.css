@@ -57,10 +57,10 @@
     gap: var(--slotted-space-5);
   }
 
-  /* Below 600 px of section width the cards form a rail that scrolls across; 224 px is the card
+  /* Below 400 px of section width (the phone sheet; the side panel holds 432 px) the cards form a rail that scrolls across; 224 px is the card
      width that keeps the figure at 22 px on one line, and no token holds a card measure. A
      container query takes no token. */
-  @container (inline-size < 600px) {
+  @container (inline-size < 400px) {
     .wall {
       grid-auto-flow: column;
       grid-auto-columns: 224px;

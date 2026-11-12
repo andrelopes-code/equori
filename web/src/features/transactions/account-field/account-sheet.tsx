@@ -80,8 +80,8 @@ export function AccountSheet({
     <Drawer
       open
       side={wide ? "end" : "bottom"}
-      // lg holds an option's kind, its balance and its consequence on one row each.
-      size={wide ? "lg" : "content"}
+      // xl (two columns of wallet cards of at least 224 px) holds a row and a card per option.
+      size={wide ? "xl" : "content"}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -51,7 +51,7 @@ The mock is `/tmp/claude-1000/-home-dreco-dev-equori/53ed5bdb-f86e-443f-a63d-4fa
 
 - Row: a 52 px mark column, name 14 px semibold over a fact line 13 px muted, figure 14 px semibold over a label 12 px muted, end-aligned; minimum height 62 px; the chosen row has the accent border and surface and a check badge on the mark.
 - Marks: square with a logo plate (accounts), circle with the goal ring (reserves), card-shaped 52×33 miniature with the material of the Cards page (cards).
-- Wallet card: aspect ratio 1.586; header with a 22 px logo tile and the name; fact line; figure with the symbol and the cents small and the integer at 22 px; 14-segment meter; two columns in the sheet, a horizontal rail of 224 px cards below 600 px.
+- Wallet card: aspect ratio 1.586; header with a 22 px logo tile and the name; fact line; figure with the symbol and the cents small and the integer at 22 px; 14-segment meter; two columns in the sheet, a horizontal rail of 224 px cards below 400 px of section width.
 - Material: the layers of `account-card.module.css` (light, sheen band, hairlines at 135°, inset keyline).
 
 ## Cross-cutting questions
