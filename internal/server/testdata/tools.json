@@ -3051,7 +3051,7 @@
   },
   {
     "name": "get_portfolio",
-    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -3066,7 +3066,8 @@
             "net_worth",
             "return",
             "income_types",
-            "subtypes"
+            "subtypes",
+            "contribution"
           ]
         },
         "date": {
@@ -3110,6 +3111,10 @@
             "fund",
             "crypto"
           ]
+        },
+        "amount": {
+          "type": "string",
+          "description": "for contribution: amount to contribute as a decimal in the base currency, such as 4000.00; absent returns the saved plan without a split"
         }
       },
       "required": [
@@ -3553,6 +3558,284 @@
           "items": {
             "type": "string"
           }
+        },
+        "contribution": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "description": "complete, or incomplete when missing is not empty"
+            },
+            "amount": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "total": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "total_after": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "drift_bp": {
+              "type": "integer"
+            },
+            "drift_after_bp": {
+              "type": "integer"
+            },
+            "classes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "target_bp": {
+                    "type": "integer"
+                  },
+                  "value": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "share_bp": {
+                    "type": "integer"
+                  },
+                  "after_share_bp": {
+                    "type": "integer"
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "members": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "account_id": {
+                          "type": "string"
+                        },
+                        "instrument": {
+                          "type": "string"
+                        },
+                        "target_bp": {
+                          "type": "integer"
+                        },
+                        "value": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "share_bp": {
+                          "type": "integer"
+                        },
+                        "after_share_bp": {
+                          "type": "integer"
+                        },
+                        "unit_value": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "amount": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "name",
+                  "target_bp",
+                  "value",
+                  "members"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "outside": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string"
+                  },
+                  "instrument": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              },
+              "description": "holdings and accounts that belong to no member"
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "account_id": {
+                    "type": "string"
+                  },
+                  "instrument": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "additionalProperties": false
+              },
+              "description": "holdings and accounts without a price or a rate"
+            }
+          },
+          "description": "for contribution: the saved target split valued today, with the split of amount when given",
+          "required": [
+            "status",
+            "total",
+            "classes",
+            "outside",
+            "missing"
+          ],
+          "additionalProperties": false
         }
       },
       "additionalProperties": false

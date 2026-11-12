@@ -169,6 +169,25 @@ func (s *Service) PreviewContribution(
 	return s.contributionView(ctx, booksID, ab, p, base, true)
 }
 
+// PreviewSavedContribution is PreviewContribution of the stored plan; a book without a plan gets
+// ContributionPlan.
+func (s *Service) PreviewSavedContribution(
+	ctx context.Context,
+	booksID int64,
+	amount money.Money,
+) (ContributionView, error) {
+	p, found, err := s.repo.ContributionPlan(ctx, booksID)
+	if err != nil {
+		return ContributionView{}, fmt.Errorf("read the contribution plan: %w", err)
+	}
+
+	if !found {
+		return s.ContributionPlan(ctx, booksID)
+	}
+
+	return s.PreviewContribution(ctx, booksID, p, amount)
+}
+
 // accountBook is the accounts of a book indexed for the member rules of CN3 and CN6.
 type accountBook struct {
 	accounts []Account

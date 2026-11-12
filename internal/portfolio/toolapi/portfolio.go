@@ -2,7 +2,6 @@ package toolapi
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -12,7 +11,15 @@ import (
 type getPortfolioView string
 
 func (getPortfolioView) Values() []string {
-	return []string{"positions", "allocation", "net_worth", "return", "income_types", "subtypes"}
+	return []string{
+		"positions",
+		"allocation",
+		"net_worth",
+		"return",
+		"income_types",
+		"subtypes",
+		"contribution",
+	}
 }
 
 type getPortfolioBy string
@@ -42,6 +49,7 @@ type getPortfolioIn struct {
 	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return: first date"`
 	To             tool.Date                  `json:"to,omitzero"              jsonschema:"for return: last date"`
 	InstrumentType getPortfolioInstrumentType `json:"instrument_type,omitzero" jsonschema:"for subtypes: instrument type"`
+	Amount         string                     `json:"amount,omitzero"          jsonschema:"for contribution: amount to contribute as a decimal in the base currency, such as 4000.00; absent returns the saved plan without a split"`
 }
 
 type positionView struct {
@@ -123,6 +131,8 @@ type getPortfolioOut struct {
 	Inflation   inflationView  `json:"inflation,omitzero"`
 	IncomeTypes []string       `json:"income_types,omitzero"`
 	Subtypes    []string       `json:"subtypes,omitzero"`
+
+	Contribution contributionView `json:"contribution,omitzero" jsonschema:"for contribution: the saved target split valued today, with the split of amount when given"`
 }
 
 func getPortfolio(
@@ -133,6 +143,7 @@ func getPortfolio(
 	return tool.New(tool.Spec{
 		Name: "get_portfolio",
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
+			"With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
 			"Use it for questions about investments and net worth. " +
 			"Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
@@ -156,7 +167,7 @@ func validatePortfolioIn(in getPortfolioIn) error {
 	fields := []field{
 		{"date", !in.Date.IsZero()}, {"by", in.By != ""}, {"account_id", in.AccountID != ""},
 		{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
-		{"instrument_type", in.InstrumentType != ""},
+		{"instrument_type", in.InstrumentType != ""}, {"amount", in.Amount != ""},
 	}
 	name := "view " + string(in.View)
 
@@ -173,6 +184,8 @@ func validatePortfolioIn(in getPortfolioIn) error {
 		err = required(name, fields, "account_id", "from", "to")
 	case "subtypes":
 		err = required(name, fields, "instrument_type")
+	case "contribution":
+		err = optionalFields(name, fields, "amount")
 	default:
 		err = required(name, fields)
 	}
@@ -206,6 +219,8 @@ func portfolioView(
 		}, nil
 	case "return":
 		return returnView(ctx, svc, booksID, in)
+	case "contribution":
+		return contributionResult(ctx, svc, booksID, in)
 	case "income_types":
 		types, err := svc.IncomeTypes(ctx, booksID)
 		return getPortfolioOut{IncomeTypes: nonNil(types)}, err
@@ -342,17 +357,6 @@ func nonNil(s []string) []string {
 	}
 
 	return s
-}
-
-// optionalFields rejects a field the view does not use; the fields in optional may be absent.
-func optionalFields(name string, fields []field, optional ...string) error {
-	for _, f := range fields {
-		if f.given && !slices.Contains(optional, f.name) {
-			return tool.InvalidArgument(f.name, "is not used by "+name)
-		}
-	}
-
-	return nil
 }
 
 func positions(

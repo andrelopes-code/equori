@@ -204,9 +204,8 @@ var uncoveredFields = map[string][]string{
 		"opened_on",
 	}, // read as date
 	"previewContributionPlan": {
-		"amount",
 		"classes",
-	}, // the tool previews the saved plan; amount arrives in T4
+	}, // the tool previews the saved plan
 	"previewRule": {
 		"actions",
 		"conditions",

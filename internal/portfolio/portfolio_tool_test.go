@@ -329,3 +329,71 @@ func TestGetTaxYearTool(t *testing.T) {
 		t.Errorf("income = %+v", got.Income)
 	}
 }
+
+type toolContribution struct {
+	Contribution struct {
+		Status       string     `json:"status"`
+		Amount       tool.Money `json:"amount"`
+		TotalAfter   tool.Money `json:"total_after"`
+		DriftBP      int        `json:"drift_bp"`
+		DriftAfterBP int        `json:"drift_after_bp"`
+		Classes      []struct {
+			Name   string     `json:"name"`
+			Value  tool.Money `json:"value"`
+			Amount tool.Money `json:"amount"`
+		} `json:"classes"`
+	} `json:"contribution"`
+}
+
+// S400 and S398 through the tool: the saved plan valued, and previewed with an amount.
+func TestGetPortfolioToolContribution(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+
+	var empty toolContribution
+	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "contribution"}, &empty)
+
+	if empty.Contribution.Status != "complete" || len(empty.Contribution.Classes) != 0 {
+		t.Fatalf("book without a plan = %+v", empty)
+	}
+
+	f.save(t, f.plan(150000))
+
+	var saved toolContribution
+	toolOutput(t, f.h, "get_portfolio", map[string]any{"view": "contribution"}, &saved)
+
+	if got := saved.Contribution; got.Status != "complete" || len(got.Classes) != 4 ||
+		got.DriftBP != 1777 || got.DriftAfterBP != 0 || got.Classes[1].Amount != (tool.Money{}) ||
+		got.Classes[1].Value != (tool.Money{Amount: "3000.00", Currency: "BRL"}) {
+		t.Fatalf("saved plan = %+v", saved)
+	}
+
+	var preview toolContribution
+	toolOutput(t, f.h, "get_portfolio", map[string]any{
+		"view":   "contribution",
+		"amount": "4000.00",
+	}, &preview)
+
+	var amounts []tool.Money
+	for _, c := range preview.Contribution.Classes {
+		amounts = append(amounts, c.Amount)
+	}
+
+	want := []tool.Money{
+		{Amount: "0.00", Currency: "BRL"},
+		{Amount: "1000.00", Currency: "BRL"},
+		{Amount: "3000.00", Currency: "BRL"},
+		{Amount: "0.00", Currency: "BRL"},
+	}
+	if !reflect.DeepEqual(amounts, want) || preview.Contribution.DriftAfterBP != 545 ||
+		preview.Contribution.Amount != (tool.Money{Amount: "4000.00", Currency: "BRL"}) {
+		t.Fatalf("preview = %+v, want amounts %+v", preview, want)
+	}
+
+	r := f.h.Tool("get_portfolio", map[string]any{
+		"view": "positions", "amount": "1.00",
+	})
+	if !r.IsError {
+		t.Fatalf("amount accepted by view positions: %s", r.Content)
+	}
+}

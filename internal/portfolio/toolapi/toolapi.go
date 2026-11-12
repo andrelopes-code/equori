@@ -55,3 +55,14 @@ func required(name string, fields []field, needed ...string) error {
 
 	return nil
 }
+
+// optionalFields rejects a field the view does not use; the fields in optional may be absent.
+func optionalFields(name string, fields []field, optional ...string) error {
+	for _, f := range fields {
+		if f.given && !slices.Contains(optional, f.name) {
+			return tool.InvalidArgument(f.name, "is not used by "+name)
+		}
+	}
+
+	return nil
+}

@@ -21,6 +21,7 @@ type memberOut struct {
 	Instrument string    `json:"instrument"`
 	Value      moneyOut  `json:"value"`
 	ShareBP    *int      `json:"share_bp"`
+	UnitValue  *moneyOut `json:"unit_value"`
 	Amount     *moneyOut `json:"amount"`
 }
 
@@ -34,9 +35,15 @@ type classOut struct {
 }
 
 type outsideOut struct {
-	AccountID  string   `json:"account_id"`
-	Instrument string   `json:"instrument"`
-	Value      moneyOut `json:"value"`
+	AccountID  string    `json:"account_id"`
+	Instrument string    `json:"instrument"`
+	Value      *moneyOut `json:"value"`
+}
+
+type missingOut struct {
+	AccountID  string `json:"account_id"`
+	Instrument string `json:"instrument"`
+	Kind       string `json:"kind"`
 }
 
 type contributionOut struct {
@@ -48,6 +55,7 @@ type contributionOut struct {
 	DriftAfterBP *int         `json:"drift_after_bp"`
 	Classes      []classOut   `json:"classes"`
 	Outside      []outsideOut `json:"outside"`
+	Missing      []missingOut `json:"missing"`
 }
 
 type contributionFixture struct {
@@ -263,6 +271,111 @@ func TestS400SplitOf4000(t *testing.T) {
 	}
 }
 
+// S401: a class with member targets splits its amount to bring each member to its target (CN16).
+func TestS401MemberSplit(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       "PETR4",
+		"quote_instrument": "BRL",
+		"date":             "2026-10-30",
+		"value":            "40.00",
+	}, http.StatusCreated, nil)
+
+	body := f.plan(400000)
+	body["classes"].([]any)[1] = contributionClass(
+		"Domestic stocks",
+		2000,
+		instrumentMember("BOVA11", 5000),
+		instrumentMember("PETR4", 5000),
+	)
+
+	got := f.preview(t, body)
+	if !slices.Equal(got.amounts(t), []int64{0, 100000, 300000, 0}) {
+		t.Fatalf("class amounts = %v", got.amounts(t))
+	}
+
+	bova, petr := got.Classes[1].Members[0], got.Classes[1].Members[1]
+	if bova.Instrument != "BOVA11" || bova.Amount == nil || bova.Amount.Amount != 0 ||
+		petr.Instrument != "PETR4" || petr.Amount == nil || petr.Amount.Amount != 100000 {
+		t.Fatalf("members = %+v %+v", bova, petr)
+	}
+
+	if petr.UnitValue == nil || petr.UnitValue.Amount != 4000 || petr.UnitValue.Currency != "BRL" {
+		t.Fatalf("PETR4 unit value = %+v", petr.UnitValue)
+	}
+}
+
+// S402: a holding without a price makes the plan incomplete: no share, drift or amount (CN10).
+func TestS402MissingPrice(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+
+	for _, code := range []string{"KNRI11", "HGLG11"} {
+		f.h.MustDo(
+			http.MethodPost,
+			"/api/v1/instruments",
+			security(code, "reit"),
+			http.StatusCreated,
+			nil,
+		)
+		f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+			"account_id":      f.holdingAccount(code),
+			"cash_account_id": f.cash,
+			"side":            "buy",
+			"date":            "2026-10-10",
+			"quantity":        units(5, code),
+			"unit_price":      "100.00",
+		}, http.StatusCreated, nil)
+	}
+
+	f.h.Dispatch()
+
+	body := f.plan(400000)
+	body["classes"] = []any{
+		contributionClass("Fixed income", 5000, map[string]any{"account_id": f.cdb}),
+		contributionClass(
+			"Real estate funds",
+			5000,
+			instrumentMember("MXRF11"),
+			instrumentMember("KNRI11"),
+		),
+	}
+
+	got := f.preview(t, body)
+	if got.Status != "incomplete" || len(got.Missing) != 1 ||
+		got.Missing[0] != (missingOut{Instrument: "KNRI11", Kind: "price"}) {
+		t.Fatalf("status or missing = %+v", got)
+	}
+
+	if got.DriftBP != nil || got.DriftAfterBP != nil || got.TotalAfter != nil {
+		t.Fatalf("drift or total after = %+v", got)
+	}
+
+	for _, c := range got.Classes {
+		if c.Amount != nil || c.ShareBP != nil {
+			t.Fatalf("class %q has an amount or a share: %+v", c.Name, c)
+		}
+
+		for _, m := range c.Members {
+			if m.Amount != nil || m.ShareBP != nil {
+				t.Fatalf("member %q has an amount or a share: %+v", m.Instrument, m)
+			}
+		}
+	}
+
+	if got.Classes[0].Members[0].Value.Amount != 1000000 ||
+		got.Classes[1].Members[0].Value.Amount != 400000 {
+		t.Fatalf("priced members lost their value: %+v", got.Classes)
+	}
+
+	if !slices.ContainsFunc(got.Outside, func(o outsideOut) bool {
+		return o.Instrument == "HGLG11" && o.Value == nil
+	}) {
+		t.Fatalf("outside = %+v", got.Outside)
+	}
+}
+
 // S403: class targets that do not add up to 10000 are rejected.
 func TestS403TargetSum(t *testing.T) {
 	t.Parallel()
@@ -280,6 +393,62 @@ func TestS403TargetSum(t *testing.T) {
 		"contribution_target_sum",
 		"",
 	)
+}
+
+// S406: a member held in another currency than the base is valued at the rate of today (CN9).
+func TestS406ForeignBase(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.As(apitest.ForeignBase()))
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       "BRL",
+		"quote_instrument": "USD",
+		"date":             "2026-10-30",
+		"value":            "0.20",
+	}, http.StatusCreated, nil)
+
+	cdb := f.h.Account("CDB", "asset", "reserve", map[string]any{"currency": "BRL"})
+	source := f.h.Account("Salary", "income", "", map[string]any{"currency": "BRL"})
+	f.h.Record(
+		"2026-10-01",
+		map[string]any{
+			"account_id": cdb,
+			"amount":     apitest.BRL(500000),
+			"weight":     f.h.Money(100000),
+		},
+		map[string]any{
+			"account_id": source,
+			"amount":     apitest.BRL(-500000),
+			"weight":     f.h.Money(-100000),
+		},
+	)
+	f.h.Dispatch()
+
+	f.h.MustDo(http.MethodPut, contributionPath, map[string]any{
+		"classes": []any{
+			contributionClass("Fixed income", 10000, map[string]any{"account_id": cdb}),
+		},
+	}, http.StatusOK, nil)
+
+	var got contributionOut
+	f.h.MustDo(http.MethodGet, contributionPath, nil, http.StatusOK, &got)
+
+	member := got.Classes[0].Members[0]
+	if got.Status != "complete" || member.Value != (moneyOut{Amount: 100000, Currency: "USD"}) ||
+		got.Total != (moneyOut{Amount: 100000, Currency: "USD"}) {
+		t.Fatalf("plan = %+v", got)
+	}
+}
+
+// S407: the preview reports the drift before and after the contribution (CN15).
+func TestS407DriftBeforeAfter(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+
+	got := f.preview(t, f.plan(400000))
+	if got.DriftBP == nil || *got.DriftBP != 1777 || got.DriftAfterBP == nil ||
+		*got.DriftAfterBP != 545 {
+		t.Fatalf("drift = %+v", got)
+	}
 }
 
 // S404: an instrument in two classes is rejected.
