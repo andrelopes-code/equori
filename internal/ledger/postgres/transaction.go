@@ -80,43 +80,55 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 		return err
 	}
 
-	if in := t.Income; in != nil {
-		return r.q.InsertInvestmentIncome(ctx, InsertInvestmentIncomeParams{
-			TransactionID: t.ID,
-			BooksID:       t.BooksID,
-			AccountID:     in.AccountID,
-			CashAccountID: in.CashAccountID,
-			IncomeType:    string(in.Type),
-			Gross:         in.Gross.Amount(),
-			Withheld:      in.Withheld.Amount(),
-			Currency:      string(in.Gross.Currency()),
-		})
+	if t.Income != nil {
+		return r.insertIncome(ctx, t)
 	}
 
-	if tr := t.Trade; tr != nil {
-		var cost *int64
-		if tr.Cost != nil {
-			c := tr.Cost.Amount()
-			cost = &c
-		}
-
-		return r.q.InsertTrade(ctx, InsertTradeParams{
-			TransactionID: t.ID,
-			BooksID:       t.BooksID,
-			AccountID:     tr.AccountID,
-			CashAccountID: tr.CashAccountID,
-			Side:          string(tr.Side),
-			Quantity:      tr.Quantity.Amount(),
-			UnitPrice:     platformpg.NumericOf(tr.UnitPrice),
-			Gross:         tr.Gross.Amount(),
-			Fees:          tr.Fees.Amount(),
-			Taxes:         tr.Taxes.Amount(),
-			Cost:          cost,
-			Currency:      string(tr.Gross.Currency()),
-		})
+	if t.Trade != nil {
+		return r.insertTrade(ctx, t)
 	}
 
 	return nil
+}
+
+func (r *Repository) insertIncome(ctx context.Context, t domain.Transaction) error {
+	in := t.Income
+
+	return r.q.InsertInvestmentIncome(ctx, InsertInvestmentIncomeParams{
+		TransactionID: t.ID,
+		BooksID:       t.BooksID,
+		AccountID:     in.AccountID,
+		CashAccountID: in.CashAccountID,
+		IncomeType:    string(in.Type),
+		Gross:         in.Gross.Amount(),
+		Withheld:      in.Withheld.Amount(),
+		Currency:      string(in.Gross.Currency()),
+	})
+}
+
+func (r *Repository) insertTrade(ctx context.Context, t domain.Transaction) error {
+	tr := t.Trade
+
+	var cost *int64
+	if tr.Cost != nil {
+		c := tr.Cost.Amount()
+		cost = &c
+	}
+
+	return r.q.InsertTrade(ctx, InsertTradeParams{
+		TransactionID: t.ID,
+		BooksID:       t.BooksID,
+		AccountID:     tr.AccountID,
+		CashAccountID: tr.CashAccountID,
+		Side:          string(tr.Side),
+		Quantity:      tr.Quantity.Amount(),
+		UnitPrice:     platformpg.NumericOf(tr.UnitPrice),
+		Gross:         tr.Gross.Amount(),
+		Fees:          tr.Fees.Amount(),
+		Taxes:         tr.Taxes.Amount(),
+		Cost:          cost,
+		Currency:      string(tr.Gross.Currency()),
+	})
 }
 
 func (r *Repository) ListTransactions(

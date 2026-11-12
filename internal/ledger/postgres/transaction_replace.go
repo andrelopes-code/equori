@@ -96,15 +96,7 @@ func (r *Repository) ReplaceCategoryPostings(
 		return err
 	}
 
-	var removed []uuid.UUID
-	for _, p := range prev.Postings {
-		if !slices.ContainsFunc(
-			next.Postings,
-			func(n domain.Posting) bool { return n.ID == p.ID },
-		) {
-			removed = append(removed, p.ID)
-		}
-	}
+	removed := removedPostingIDs(prev, next)
 
 	if err := r.q.DeletePostingsByID(
 		ctx,
@@ -118,6 +110,38 @@ func (r *Repository) ReplaceCategoryPostings(
 		return err
 	}
 
+	added := addedPostings(next)
+
+	if err := r.insertPostings(ctx, next, added, position); err != nil {
+		return err
+	}
+
+	if err := r.updateTransactionRow(ctx, next); err != nil {
+		return err
+	}
+
+	if err := r.q.DeleteTransactionTags(ctx, prev.ID); err != nil {
+		return err
+	}
+
+	return r.writeTags(ctx, next)
+}
+
+func removedPostingIDs(prev, next domain.Transaction) []uuid.UUID {
+	var removed []uuid.UUID
+	for _, p := range prev.Postings {
+		if !slices.ContainsFunc(
+			next.Postings,
+			func(n domain.Posting) bool { return n.ID == p.ID },
+		) {
+			removed = append(removed, p.ID)
+		}
+	}
+
+	return removed
+}
+
+func addedPostings(next domain.Transaction) []domain.Posting {
 	var added []domain.Posting
 	for _, p := range next.Postings {
 		if p.ID == uuid.Nil {
@@ -125,10 +149,10 @@ func (r *Repository) ReplaceCategoryPostings(
 		}
 	}
 
-	if err := r.insertPostings(ctx, next, added, position); err != nil {
-		return err
-	}
+	return added
+}
 
+func (r *Repository) updateTransactionRow(ctx context.Context, next domain.Transaction) error {
 	//nolint:gosec // version is a small positive counter.
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
 		BooksID:     next.BooksID,
@@ -145,9 +169,5 @@ func (r *Repository) ReplaceCategoryPostings(
 		return referenceError(err)
 	}
 
-	if err := r.q.DeleteTransactionTags(ctx, prev.ID); err != nil {
-		return err
-	}
-
-	return r.writeTags(ctx, next)
+	return nil
 }

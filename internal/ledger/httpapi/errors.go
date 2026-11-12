@@ -81,6 +81,13 @@ func sentinelProblem(err error) (problem.Details, bool) {
 		), true
 	case errors.Is(err, app.ErrPostingNotMovable):
 		return problem.New(http.StatusUnprocessableEntity, "posting_not_movable", err.Error()), true
+	default:
+		return transferSentinelProblem(err)
+	}
+}
+
+func transferSentinelProblem(err error) (problem.Details, bool) {
+	switch {
 	case errors.Is(err, app.ErrDifferenceRemains):
 		return problem.New(http.StatusConflict, "difference_remains", err.Error()), true
 	case errors.Is(err, domain.ErrAlreadyReconciled):

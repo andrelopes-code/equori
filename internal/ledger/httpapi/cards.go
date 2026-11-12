@@ -69,9 +69,25 @@ func (s *Server) createBillingCycleRule(
 
 	b := in
 
+	rec, err := billingRuleFromInput(b)
+	if err != nil {
+		return BillingCycleRule{}, err
+	}
+
+	created, err := s.svc.AddBillingRule(ctx, auth.MustBooksID(ctx), id, rec)
+	if err != nil {
+		return BillingCycleRule{}, err
+	}
+
+	return toBillingRuleAPI(created), nil
+}
+
+func billingRuleFromInput(
+	b CreateBillingCycleRuleJSONRequestBody,
+) (domain.BillingCycleRule, error) {
 	from, err := domain.ParseReferenceMonth(b.EffectiveFrom)
 	if err != nil {
-		return BillingCycleRule{}, &domain.FieldError{
+		return domain.BillingCycleRule{}, &domain.FieldError{
 			Field:   "effective_from",
 			Message: "must be YYYY-MM",
 			Err:     domain.ErrValidation,
@@ -107,12 +123,7 @@ func (s *Server) createBillingCycleRule(
 		rec.Adjustment = string(*b.DueDateAdjustment)
 	}
 
-	created, err := s.svc.AddBillingRule(ctx, auth.MustBooksID(ctx), id, rec)
-	if err != nil {
-		return BillingCycleRule{}, err
-	}
-
-	return toBillingRuleAPI(created), nil
+	return rec, nil
 }
 
 func (s *Server) listCreditLimits(

@@ -115,9 +115,26 @@ func (s *Server) recordTrade(
 ) (Transaction, string, error) {
 	b := in
 
+	o, err := s.tradeOrderFromInput(ctx, b)
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	t, err := s.svc.RecordTrade(ctx, auth.MustBooksID(ctx), o)
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
+}
+
+func (s *Server) tradeOrderFromInput(
+	ctx context.Context,
+	b RecordTradeJSONRequestBody,
+) (domain.TradeOrder, error) {
 	quantity, err := s.svc.AmountOf(ctx, b.Quantity.Amount, money.Currency(b.Quantity.Currency))
 	if err != nil {
-		return Transaction{}, "", &domain.FieldError{
+		return domain.TradeOrder{}, &domain.FieldError{
 			Field:   "quantity",
 			Message: err.Error(),
 			Err:     domain.ErrValidation,
@@ -126,7 +143,7 @@ func (s *Server) recordTrade(
 
 	price, err := money.ParseRate(b.UnitPrice)
 	if err != nil {
-		return Transaction{}, "", &domain.FieldError{
+		return domain.TradeOrder{}, &domain.FieldError{
 			Field:   "unit_price",
 			Message: "must be a positive decimal with at most 12 decimals",
 			Err:     domain.ErrValidation,
@@ -148,7 +165,7 @@ func (s *Server) recordTrade(
 	if b.Fees != nil {
 		fees, err := fromMoneyAPI("fees", *b.Fees)
 		if err != nil {
-			return Transaction{}, "", err
+			return domain.TradeOrder{}, err
 		}
 
 		o.Fees = &fees
@@ -157,18 +174,13 @@ func (s *Server) recordTrade(
 	if b.Taxes != nil {
 		taxes, err := fromMoneyAPI("taxes", *b.Taxes)
 		if err != nil {
-			return Transaction{}, "", err
+			return domain.TradeOrder{}, err
 		}
 
 		o.Taxes = &taxes
 	}
 
-	t, err := s.svc.RecordTrade(ctx, auth.MustBooksID(ctx), o)
-	if err != nil {
-		return Transaction{}, "", err
-	}
-
-	return toTransactionAPI(t), location("/transactions/", t.ID), nil
+	return o, nil
 }
 
 func (s *Server) recordInvestmentIncome(

@@ -35,17 +35,7 @@ internal/ingestion/postgres/record.go	toRecord	pending: split after the 100-colu
 internal/ingestion/postgres/sync.go	Repository.UpdateRecordFacts	pending: split after the 100-column reformatting
 internal/ingestion/toolapi/manage.go	parseImportsAction	pending: split after the 100-column reformatting
 internal/ingestion/toolapi/manage_preview.go	previewMapping	pending: split after the 100-column reformatting
-internal/ledger/httpapi/balances.go	Server.getAccountBalance	pending: split after the 100-column reformatting
-internal/ledger/httpapi/cards.go	Server.createBillingCycleRule	pending: split after the 100-column reformatting
-internal/ledger/httpapi/convert_transaction.go	fromPostingInput	pending: split after the 100-column reformatting
-internal/ledger/httpapi/convert_transaction.go	toTransactionAPI	pending: split after the 100-column reformatting
-internal/ledger/httpapi/currency.go	Server.recordTrade	pending: split after the 100-column reformatting
-internal/ledger/httpapi/errors.go	sentinelProblem	pending: split after the 100-column reformatting
 internal/ledger/httpapi/server.go	Server.Register	table of data
-internal/ledger/httpapi/statements.go	Server.statementDetail	pending: split after the 100-column reformatting
-internal/ledger/postgres/statement.go	Repository.Statements	pending: split after the 100-column reformatting
-internal/ledger/postgres/transaction.go	Repository.InsertTransactionRows	pending: split after the 100-column reformatting
-internal/ledger/postgres/transaction_replace.go	Repository.ReplaceCategoryPostings	pending: split after the 100-column reformatting
 internal/marketdata/index/brsgs/brsgs.go	Source.Fetch	pending: split after the 100-column reformatting
 internal/marketdata/index/cpi/cpi.go	readEurostat	pending: split after the 100-column reformatting
 internal/marketdata/price.go	Module.RecordInstrumentPrices	pending: split after the 100-column reformatting

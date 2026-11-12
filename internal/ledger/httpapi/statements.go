@@ -252,6 +252,16 @@ func (s *Server) statementDetail(
 		out.RoundingDifference = new(true)
 	}
 
+	fillStatementPostings(out.Postings, postings, a)
+
+	return out, nil
+}
+
+func fillStatementPostings(
+	out []StatementPosting,
+	postings []app.StatementPosting,
+	a domain.Account,
+) {
 	for i, p := range postings {
 		sp := StatementPosting{
 			TransactionId: p.TransactionID,
@@ -271,8 +281,6 @@ func (s *Server) statementDetail(
 			}
 		}
 
-		out.Postings[i] = sp
+		out[i] = sp
 	}
-
-	return out, nil
 }

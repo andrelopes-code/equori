@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
@@ -32,39 +34,7 @@ func (s *Server) getAccountBalance(
 	}
 
 	if params.ValueIn != nil {
-		b, c, err := s.svc.ValuedBalance(
-			ctx,
-			auth.MustBooksID(ctx),
-			id,
-			dateOf(params.Date),
-			basis,
-			money.Currency(*params.ValueIn),
-		)
-		if err != nil {
-			return Balance{}, err
-		}
-
-		value, prices := toMoneyAPI(c.Value), make([]Price, len(c.Prices))
-		for i, p := range c.Prices {
-			prices[i] = Price{
-				Instrument: string(
-					p.Instrument,
-				),
-				QuoteInstrument: string(p.Quote),
-				Date:            apiDate(p.Date),
-				Value:           p.Value.Reduced().String(),
-				Source:          p.Source,
-			}
-		}
-
-		return Balance{
-			AccountId: b.AccountID,
-			Date:      apiDate(b.Date),
-			Basis:     BalanceBasis(b.Basis),
-			Balance:   toMoneyAPI(b.Amount),
-			Value:     &value,
-			Prices:    &prices,
-		}, nil
+		return s.valuedBalance(ctx, id, params, basis)
 	}
 
 	b, err := s.svc.BalanceAt(ctx, auth.MustBooksID(ctx), id, dateOf(params.Date), basis)
@@ -77,6 +47,47 @@ func (s *Server) getAccountBalance(
 		Date:      apiDate(b.Date),
 		Basis:     BalanceBasis(b.Basis),
 		Balance:   toMoneyAPI(b.Amount),
+	}, nil
+}
+
+func (s *Server) valuedBalance(
+	ctx context.Context,
+	id uuid.UUID,
+	params GetAccountBalanceParams,
+	basis app.Basis,
+) (Balance, error) {
+	b, c, err := s.svc.ValuedBalance(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		dateOf(params.Date),
+		basis,
+		money.Currency(*params.ValueIn),
+	)
+	if err != nil {
+		return Balance{}, err
+	}
+
+	value, prices := toMoneyAPI(c.Value), make([]Price, len(c.Prices))
+	for i, p := range c.Prices {
+		prices[i] = Price{
+			Instrument: string(
+				p.Instrument,
+			),
+			QuoteInstrument: string(p.Quote),
+			Date:            apiDate(p.Date),
+			Value:           p.Value.Reduced().String(),
+			Source:          p.Source,
+		}
+	}
+
+	return Balance{
+		AccountId: b.AccountID,
+		Date:      apiDate(b.Date),
+		Basis:     BalanceBasis(b.Basis),
+		Balance:   toMoneyAPI(b.Amount),
+		Value:     &value,
+		Prices:    &prices,
 	}, nil
 }
 

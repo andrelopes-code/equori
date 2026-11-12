@@ -71,16 +71,26 @@ func fromPostingInput(
 		SettledOn: optDate(p.SettledOn),
 		Memo:      optString(p.Memo),
 	}
+	if err = fillPostingExtras(field, p, &posting); err != nil {
+		return domain.Posting{}, err
+	}
+
+	return posting, nil
+}
+
+func fillPostingExtras(field func(string) string, p PostingInput, posting *domain.Posting) error {
+	var err error
+
 	if p.Weight != nil {
 		if posting.Weight, err = fromMoneyAPI(field("weight"), *p.Weight); err != nil {
-			return domain.Posting{}, err
+			return err
 		}
 	}
 
 	if p.Original != nil {
 		orig, err := fromMoneyAPI(field("original"), *p.Original)
 		if err != nil {
-			return domain.Posting{}, err
+			return err
 		}
 
 		posting.Original = &orig
@@ -93,7 +103,7 @@ func fromPostingInput(
 	if p.Statement != nil {
 		m, err := domain.ParseReferenceMonth(*p.Statement)
 		if err != nil {
-			return domain.Posting{}, &domain.FieldError{
+			return &domain.FieldError{
 				Field:   field("statement"),
 				Message: "must be YYYY-MM",
 				Err:     domain.ErrValidation,
@@ -107,7 +117,7 @@ func fromPostingInput(
 		posting.CardRole = string(*p.CardRole)
 	}
 
-	return posting, nil
+	return nil
 }
 
 func toTransactionAPI(t domain.Transaction) Transaction {
@@ -140,6 +150,16 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 		)
 	}
 
+	setInvestment(&out, t)
+
+	for _, p := range t.Postings {
+		out.Postings = append(out.Postings, toPostingAPI(p))
+	}
+
+	return out
+}
+
+func setInvestment(out *Transaction, t domain.Transaction) {
 	if in := t.Income; in != nil {
 		out.InvestmentIncome = &InvestmentIncome{
 			AccountId:     in.AccountID,
@@ -166,12 +186,6 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 			out.Trade.Cost = &cost
 		}
 	}
-
-	for _, p := range t.Postings {
-		out.Postings = append(out.Postings, toPostingAPI(p))
-	}
-
-	return out
 }
 
 func toPostingAPI(p domain.Posting) Posting {

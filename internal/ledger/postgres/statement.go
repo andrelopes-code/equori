@@ -55,28 +55,8 @@ func (r *Repository) Statements(
 		return nil, err
 	}
 
-	facts := make(map[uuid.UUID][]domain.StatementFact)
-	for _, f := range factRows {
-		facts[f.StatementID] = append(facts[f.StatementID], domain.StatementFact{
-			BooksID:     f.BooksID,
-			StatementID: f.StatementID,
-			Source:      f.Source,
-			Closing:     f.ClosingDate,
-			Due:         f.DueDate,
-			Total:       f.Total,
-			Minimum:     f.Minimum,
-		})
-	}
-
-	byStatement := make(map[uuid.UUID][]domain.StatementLine)
-	for _, l := range lines {
-		byStatement[l.StatementID.UUID] = append(
-			byStatement[l.StatementID.UUID],
-			domain.StatementLine{
-				Role: deref(l.CardRole), Amount: l.Amount, Date: l.BookedOn, Confirmed: l.Confirmed,
-			},
-		)
-	}
+	facts := statementFactsByID(factRows)
+	byStatement := statementLinesByID(lines)
 
 	out := make([]app.Statement, len(rows))
 	for i, row := range rows {
@@ -99,6 +79,37 @@ func (r *Repository) Statements(
 	}
 
 	return out, nil
+}
+
+func statementFactsByID(factRows []LedgerStatementFact) map[uuid.UUID][]domain.StatementFact {
+	facts := make(map[uuid.UUID][]domain.StatementFact)
+	for _, f := range factRows {
+		facts[f.StatementID] = append(facts[f.StatementID], domain.StatementFact{
+			BooksID:     f.BooksID,
+			StatementID: f.StatementID,
+			Source:      f.Source,
+			Closing:     f.ClosingDate,
+			Due:         f.DueDate,
+			Total:       f.Total,
+			Minimum:     f.Minimum,
+		})
+	}
+
+	return facts
+}
+
+func statementLinesByID(lines []ListStatementLinesRow) map[uuid.UUID][]domain.StatementLine {
+	byStatement := make(map[uuid.UUID][]domain.StatementLine)
+	for _, l := range lines {
+		byStatement[l.StatementID.UUID] = append(
+			byStatement[l.StatementID.UUID],
+			domain.StatementLine{
+				Role: deref(l.CardRole), Amount: l.Amount, Date: l.BookedOn, Confirmed: l.Confirmed,
+			},
+		)
+	}
+
+	return byStatement
 }
 
 func (r *Repository) HasOpeningBalance(
