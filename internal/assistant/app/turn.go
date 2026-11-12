@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -71,41 +70,6 @@ type TurnInput struct {
 	Text, Page     string
 }
 
-type turnKey struct{}
-
-// turnState collects the proposals a turn creates and names its conversation for the write handlers.
-type turnState struct {
-	conversationID uuid.UUID
-	mu             sync.Mutex
-	proposals      []uuid.UUID
-}
-
-func (t *turnState) add(id uuid.UUID) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	t.proposals = append(t.proposals, id)
-}
-
-func (t *turnState) take() []uuid.UUID {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	ids := t.proposals
-	t.proposals = nil
-
-	return ids
-}
-
-// TurnConversation returns the conversation of the turn that owns ctx.
-func TurnConversation(ctx context.Context) uuid.UUID {
-	if t, ok := ctx.Value(turnKey{}).(*turnState); ok {
-		return t.conversationID
-	}
-
-	return uuid.Nil
-}
-
 func truncateRunes(s string, n int) string {
 	if utf8.RuneCountInString(s) <= n {
 		return s
@@ -129,60 +93,21 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 	var proposals []domain.Proposal
 	if in.ConversationID != uuid.Nil {
 		var err error
-		if _, err = s.repo.Conversation(ctx, booksID, memberID, in.ConversationID); err != nil {
-			return err
-		}
-
-		if messages, err = s.repo.Messages(ctx, booksID, in.ConversationID); err != nil {
-			return err
-		}
-
-		if proposals, err = s.repo.Proposals(ctx, booksID, in.ConversationID); err != nil {
+		if messages, proposals, err = s.loadConversation(ctx, booksID, memberID, in.ConversationID); err != nil {
 			return err
 		}
 	}
 
-	use, ok := s.use(chatUseID)
-	if !ok {
-		return errors.New("use assistant.chat is not declared")
+	if err := s.requireChat(ctx, booksID, in.ConversationID, now); err != nil {
+		return err
 	}
 
-	st, err := s.ChatState(ctx, booksID, use)
+	prof, notices, err := s.promptInputs(ctx, booksID)
 	if err != nil {
 		return err
 	}
 
-	if !st.Available {
-		if !st.RetryAt.IsZero() {
-			s.logTurn(ctx, booksID, in.ConversationID, outcomeExhaust, AgentResult{}, now)
-			return &LimitError{RetryAt: st.RetryAt}
-		}
-
-		s.logTurn(ctx, booksID, in.ConversationID, outcomeUnavail, AgentResult{}, now)
-
-		return ErrChatUnavailable
-	}
-
-	prof, err := s.profile(ctx, booksID)
-	if err != nil {
-		return fmt.Errorf("read profile: %w", err)
-	}
-
-	var notices []AccountNotice
-	if s.notices != nil {
-		if notices, err = s.notices(ctx, booksID); err != nil {
-			return fmt.Errorf("read account notices: %w", err)
-		}
-	}
-
-	if in.ConversationID == uuid.Nil {
-		conv.ID = uuid.New()
-		if err := s.repo.CreateConversation(ctx, booksID, memberID, conv); err != nil {
-			return err
-		}
-	}
-
-	userMsg, err := s.repo.AppendMessage(ctx, booksID, domain.Message{ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleUser, Content: text, CreatedAt: now})
+	conv, userMsg, err := s.storeUserMessage(ctx, booksID, memberID, in, conv, text, now)
 	if err != nil {
 		return err
 	}
@@ -195,64 +120,209 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 	runCtx, cancel := context.WithTimeout(context.WithValue(ctx, turnKey{}, state), TurnTimeout)
 	defer cancel()
 
-	req := AgentRequest{
-		System:   Prompt(PromptInput{Today: clock.DateOf(s.now(), clock.Location(ctx)), Locale: prof, Page: in.Page, Notices: notices, Book: book}),
+	req := s.agentRequest(ctx, in, text, prof, notices, book, messages, proposals, now)
+	discard := func() { s.discardProposals(ctx, booksID, state) }
+
+	res, err := s.agent.Run(runCtx, booksID, req, ev.Step, ev.Delta, discard)
+	if err != nil {
+		return s.failTurn(ctx, ev, booksID, conv.ID, state, res, err, now)
+	}
+
+	return s.answerTurn(ctx, ev, booksID, memberID, conv.ID, state, res, now)
+}
+
+// storeUserMessage creates the conversation when the turn starts one and appends the book's text to it.
+func (s *Service) storeUserMessage(
+	ctx context.Context,
+	booksID, memberID int64,
+	in TurnInput,
+	conv domain.Conversation,
+	text string,
+	now time.Time,
+) (domain.Conversation, domain.Message, error) {
+	if in.ConversationID == uuid.Nil {
+		conv.ID = uuid.New()
+		if err := s.repo.CreateConversation(ctx, booksID, memberID, conv); err != nil {
+			return conv, domain.Message{}, err
+		}
+	}
+
+	userMsg, err := s.repo.AppendMessage(ctx, booksID, domain.Message{
+		ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleUser, Content: text, CreatedAt: now,
+	})
+
+	return conv, userMsg, err
+}
+
+// agentRequest builds the prompt, the history and the deadline of the turn.
+func (s *Service) agentRequest(
+	ctx context.Context,
+	in TurnInput,
+	text string,
+	prof locale.Locale,
+	notices []AccountNotice,
+	book []BookRead,
+	messages []domain.Message,
+	proposals []domain.Proposal,
+	now time.Time,
+) AgentRequest {
+	return AgentRequest{
+		System: Prompt(PromptInput{
+			Today:   clock.DateOf(s.now(), clock.Location(ctx)),
+			Locale:  prof,
+			Page:    in.Page,
+			Notices: notices,
+			Book:    book,
+		}),
 		History:  History(messages, proposals, now),
 		Text:     text,
 		Deadline: s.now().Add(TurnTimeout),
 	}
-	discard := func() {
-		if ids := state.take(); len(ids) > 0 {
-			// The caller's context may be done; the discard must still reach the database.
-			if err := s.repo.DiscardProposals(context.WithoutCancel(ctx), booksID, ids, s.now()); err != nil {
-				s.log.WarnContext(ctx, "assistant proposals not discarded", "error", err)
-			}
+}
+
+// loadConversation checks the conversation belongs to the member and reads its messages and proposals.
+func (s *Service) loadConversation(
+	ctx context.Context,
+	booksID, memberID int64,
+	conversationID uuid.UUID,
+) ([]domain.Message, []domain.Proposal, error) {
+	if _, err := s.repo.Conversation(ctx, booksID, memberID, conversationID); err != nil {
+		return nil, nil, err
+	}
+
+	messages, err := s.repo.Messages(ctx, booksID, conversationID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	proposals, err := s.repo.Proposals(ctx, booksID, conversationID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return messages, proposals, nil
+}
+
+// requireChat returns an error, after logging the turn, when the chat is exhausted or unavailable.
+func (s *Service) requireChat(
+	ctx context.Context,
+	booksID int64,
+	conversationID uuid.UUID,
+	now time.Time,
+) error {
+	use, ok := s.use(chatUseID)
+	if !ok {
+		return errors.New("use assistant.chat is not declared")
+	}
+
+	st, err := s.ChatState(ctx, booksID, use)
+	if err != nil {
+		return err
+	}
+
+	if !st.Available {
+		if !st.RetryAt.IsZero() {
+			s.logTurn(ctx, booksID, conversationID, outcomeExhaust, AgentResult{}, now)
+			return &LimitError{RetryAt: st.RetryAt}
+		}
+
+		s.logTurn(ctx, booksID, conversationID, outcomeUnavail, AgentResult{}, now)
+
+		return ErrChatUnavailable
+	}
+
+	return nil
+}
+
+// promptInputs reads the book's locale and the account notices the system prompt names.
+func (s *Service) promptInputs(ctx context.Context, booksID int64) (locale.Locale, []AccountNotice, error) {
+	prof, err := s.profile(ctx, booksID)
+	if err != nil {
+		return prof, nil, fmt.Errorf("read profile: %w", err)
+	}
+
+	var notices []AccountNotice
+	if s.notices != nil {
+		if notices, err = s.notices(ctx, booksID); err != nil {
+			return prof, notices, fmt.Errorf("read account notices: %w", err)
 		}
 	}
 
-	res, err := s.agent.Run(runCtx, booksID, req, ev.Step, ev.Delta, discard)
-	if err != nil {
-		discard()
+	return prof, notices, nil
+}
 
-		outcome := outcomeFailed
-		switch {
-		case ctx.Err() != nil:
-			outcome = outcomeCancel
-		case errors.Is(err, ErrChatUnavailable):
-			outcome = outcomeUnavail
-		default:
-			if _, ok := errors.AsType[*LimitError](err); ok {
-				outcome = outcomeExhaust
-			}
+func (s *Service) discardProposals(ctx context.Context, booksID int64, state *turnState) {
+	if ids := state.take(); len(ids) > 0 {
+		// The caller's context may be done; the discard must still reach the database.
+		if err := s.repo.DiscardProposals(context.WithoutCancel(ctx), booksID, ids, s.now()); err != nil {
+			s.log.WarnContext(ctx, "assistant proposals not discarded", "error", err)
 		}
+	}
+}
 
-		s.logTurn(ctx, booksID, conv.ID, outcome, res, now)
+// failTurn discards the turn's proposals, logs the outcome and stores the unanswered message; a
+// canceled turn reports nothing, any other reports err through ev.Error.
+func (s *Service) failTurn(
+	ctx context.Context,
+	ev TurnEvents,
+	booksID int64,
+	conversationID uuid.UUID,
+	state *turnState,
+	res AgentResult,
+	err error,
+	now time.Time,
+) error {
+	s.discardProposals(ctx, booksID, state)
 
-		stored := domain.OutcomeFailed
-		if outcome == outcomeCancel {
-			stored = domain.OutcomeCanceled
+	outcome := outcomeFailed
+	switch {
+	case ctx.Err() != nil:
+		outcome = outcomeCancel
+	case errors.Is(err, ErrChatUnavailable):
+		outcome = outcomeUnavail
+	default:
+		if _, ok := errors.AsType[*LimitError](err); ok {
+			outcome = outcomeExhaust
 		}
+	}
 
-		// The message records that the book's text got no answer; the client may already be gone.
-		if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), booksID, domain.Message{
-			ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
-		}); err != nil {
-			s.log.ErrorContext(ctx, "assistant unanswered turn not stored", "error", err)
-		}
+	s.logTurn(ctx, booksID, conversationID, outcome, res, now)
 
-		if outcome == outcomeCancel {
-			return nil
-		}
+	stored := domain.OutcomeFailed
+	if outcome == outcomeCancel {
+		stored = domain.OutcomeCanceled
+	}
 
-		if outcome == outcomeFailed && !errors.Is(err, ErrTurnFailed) {
-			err = fmt.Errorf("%w: %w", ErrTurnFailed, err)
-		}
+	// The message records that the book's text got no answer; the client may already be gone.
+	if _, err := s.repo.AppendMessage(context.WithoutCancel(ctx), booksID, domain.Message{
+		ID: uuid.New(), ConversationID: conversationID, Role: domain.RoleAssistant, Outcome: stored, CreatedAt: s.now(),
+	}); err != nil {
+		s.log.ErrorContext(ctx, "assistant unanswered turn not stored", "error", err)
+	}
 
-		ev.Error(err)
-
+	if outcome == outcomeCancel {
 		return nil
 	}
 
+	if outcome == outcomeFailed && !errors.Is(err, ErrTurnFailed) {
+		err = fmt.Errorf("%w: %w", ErrTurnFailed, err)
+	}
+
+	ev.Error(err)
+
+	return nil
+}
+
+// answerTurn stores the answer with its proposals, logs the turn and reports the answer through ev.
+func (s *Service) answerTurn(
+	ctx context.Context,
+	ev TurnEvents,
+	booksID, memberID int64,
+	conversationID uuid.UUID,
+	state *turnState,
+	res AgentResult,
+	now time.Time,
+) error {
 	outcome := domain.OutcomeAnswered
 	if res.StepLimit {
 		outcome = domain.OutcomeStepLimit
@@ -262,11 +332,11 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 	storeCtx := context.WithoutCancel(ctx)
 
 	answer, err := s.repo.AppendMessage(storeCtx, booksID, domain.Message{
-		ID: uuid.New(), ConversationID: conv.ID, Role: domain.RoleAssistant, Outcome: outcome,
+		ID: uuid.New(), ConversationID: conversationID, Role: domain.RoleAssistant, Outcome: outcome,
 		Content: truncateRunes(strings.TrimSpace(res.Text), domain.MaxAnswer), CreatedAt: s.now(),
 	})
 	if err != nil {
-		discard()
+		s.discardProposals(ctx, booksID, state)
 		return s.failAfterStream(ctx, ev, err)
 	}
 
@@ -288,7 +358,7 @@ func (s *Service) Turn(ctx context.Context, booksID, memberID int64, in TurnInpu
 		}
 	}
 
-	s.logTurn(ctx, booksID, conv.ID, string(outcome), res, now)
+	s.logTurn(ctx, booksID, conversationID, string(outcome), res, now)
 	ev.Answer(out)
 
 	return nil

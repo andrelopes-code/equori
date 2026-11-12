@@ -90,27 +90,44 @@ func (s *Service) candidates(ctx context.Context, booksID int64, hasBooks bool, 
 		byID[p.ID.String()] = p
 	}
 
-	var out []Target
-
-	add := func(t Target) {
-		if len(domain.Missing(use.Needs, t.Capabilities)) == 0 {
-			out = append(out, t)
-		}
-	}
 	if len(chain) > 0 {
-		for _, c := range chain {
-			p, ok := byID[c.ProviderID.String()]
-			if !ok {
-				continue
-			}
+		return s.chainTargets(chain, byID, use), nil
+	}
 
-			if t, ok := s.target(p, c.Model, c.Capabilities); ok {
-				add(t)
-			}
+	return s.defaultTargets(providers, use), nil
+}
+
+// targetList collects the targets that have every capability the use needs.
+type targetList struct {
+	use Use
+	out []Target
+}
+
+func (l *targetList) add(t Target) {
+	if len(domain.Missing(l.use.Needs, t.Capabilities)) == 0 {
+		l.out = append(l.out, t)
+	}
+}
+
+func (s *Service) chainTargets(chain []domain.ChainTarget, byID map[string]domain.Provider, use Use) []Target {
+	list := &targetList{use: use}
+
+	for _, c := range chain {
+		p, ok := byID[c.ProviderID.String()]
+		if !ok {
+			continue
 		}
 
-		return out, nil
+		if t, ok := s.target(p, c.Model, c.Capabilities); ok {
+			list.add(t)
+		}
 	}
+
+	return list.out
+}
+
+func (s *Service) defaultTargets(providers []domain.Provider, use Use) []Target {
+	list := &targetList{use: use}
 
 	for _, d := range use.Default {
 		caps := domain.ModelCapabilities(d.Preset, d.Model, nil)
@@ -120,18 +137,21 @@ func (s *Service) candidates(ctx context.Context, booksID int64, hasBooks bool, 
 			}
 
 			if t, ok := s.target(p, d.Model, caps); ok {
-				add(t)
+				list.add(t)
 			}
 		}
 
 		for _, in := range s.instance {
 			if in.Preset == d.Preset {
-				add(Target{ProviderID: in.ID, ProviderName: in.ID, Preset: in.Preset, Instance: true, Model: d.Model, Capabilities: caps})
+				list.add(Target{
+					ProviderID: in.ID, ProviderName: in.ID, Preset: in.Preset, Instance: true,
+					Model: d.Model, Capabilities: caps,
+				})
 			}
 		}
 	}
 
-	return out, nil
+	return list.out
 }
 
 // target opens p's key; a key that does not open leaves the provider out and is logged.

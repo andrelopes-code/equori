@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -198,26 +199,11 @@ func (s *Service) Confirm(ctx context.Context, booksID, memberID int64, id uuid.
 
 	ctx = auth.WithBooksID(ctx, booksID)
 
-	pv, res, err := s.tools.Preview(ctx, p.Tool, p.Arguments)
-	if err != nil {
+	if err := s.checkBasis(ctx, booksID, id, p, now); err != nil {
 		return domain.Proposal{}, err
 	}
 
-	if res.IsError || tool.PreviewDigest(pv) != p.Basis {
-		if err := s.repo.DecideProposal(ctx, booksID, id, domain.ProposalStale, nil, now); err != nil {
-			return domain.Proposal{}, err
-		}
-
-		s.logProposal(ctx, booksID, id, p.Tool, "stale")
-
-		if err := s.block(ctx, booksID, p.ConversationID, id); err != nil {
-			return domain.Proposal{}, err
-		}
-
-		return domain.Proposal{}, ErrProposalStale
-	}
-
-	res, err = s.tools.Call(ctx, p.Tool, p.Arguments)
+	res, err := s.tools.Call(ctx, p.Tool, p.Arguments)
 	if err != nil {
 		return domain.Proposal{}, err
 	}
@@ -239,6 +225,36 @@ func (s *Service) Confirm(ctx context.Context, booksID, memberID int64, id uuid.
 	}
 
 	return p, s.block(ctx, booksID, p.ConversationID, id)
+}
+
+// checkBasis marks p stale and blocks its conversation when the preview no longer matches the basis.
+func (s *Service) checkBasis(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	p domain.Proposal,
+	now time.Time,
+) error {
+	pv, res, err := s.tools.Preview(ctx, p.Tool, p.Arguments)
+	if err != nil {
+		return err
+	}
+
+	if res.IsError || tool.PreviewDigest(pv) != p.Basis {
+		if err := s.repo.DecideProposal(ctx, booksID, id, domain.ProposalStale, nil, now); err != nil {
+			return err
+		}
+
+		s.logProposal(ctx, booksID, id, p.Tool, "stale")
+
+		if err := s.block(ctx, booksID, p.ConversationID, id); err != nil {
+			return err
+		}
+
+		return ErrProposalStale
+	}
+
+	return nil
 }
 
 // Reject closes a pending proposal without executing it.

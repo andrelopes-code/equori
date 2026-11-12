@@ -1,9 +1,4 @@
 cmd/demoseed/purchases.go	seeder.purchases	table of data
-internal/assistant/app/proposal.go	Service.Confirm	pending: backend reorganization plan
-internal/assistant/app/resolve.go	Service.candidates	pending: backend reorganization plan
-internal/assistant/app/turn.go	Service.Turn	pending: backend reorganization plan
-internal/assistant/app/usage.go	Service.Usage	pending: backend reorganization plan
-internal/assistant/assistant.go	New	pending: backend reorganization plan
 internal/assistant/httpapi/server.go	toProblem	table of data
 internal/identity/app/session.go	Service.Login	pending: backend reorganization plan
 internal/identity/app/setup.go	Service.CompleteSetup	pending: backend reorganization plan

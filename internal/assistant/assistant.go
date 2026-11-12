@@ -37,6 +37,44 @@ type Module struct {
 }
 
 func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
+	box, err := newSealer(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	build := llmapi.Factory(cfg.NewProvider)
+	if build == nil {
+		build = llmapi.NewFactory()
+	}
+
+	instance := instanceProviders(cfg)
+	uses := useDeclarations(cfg)
+
+	screens, err := navigationScreens(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// assistant_usage days are instance days, in UTC (BK19).
+	today := func() time.Time { return clock.DateOf(cfg.Clock.Now(), time.UTC) }
+
+	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, today, log)
+
+	return &Module{
+		svc:      svc,
+		resolver: llmapi.NewResolver(svc, cfg.Instance, build, log),
+		http:     httpapi.NewServer(svc, log),
+		screens:  screens,
+		locale:   cfg.Locale,
+		wait:     waitUntil(cfg),
+	}, nil
+}
+
+func (m *Module) Resolver() llm.Resolver { return m.resolver }
+
+func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
+
+func newSealer(cfg Config) (app.Sealer, error) {
 	var box app.Sealer
 	if cfg.SecretKey != "" {
 		var previous []byte
@@ -52,21 +90,28 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		box = b
 	}
 
-	build := llmapi.Factory(cfg.NewProvider)
-	if build == nil {
-		build = llmapi.NewFactory()
-	}
+	return box, nil
+}
 
+func instanceProviders(cfg Config) []app.Instance {
 	instance := make([]app.Instance, 0, len(cfg.Instance))
 	for _, p := range cfg.Instance {
 		instance = append(instance, app.Instance{ID: p.Name(), Preset: instancePreset(p.Name())})
 	}
 
+	return instance
+}
+
+func useDeclarations(cfg Config) []app.Use {
 	uses := make([]app.Use, 0, len(cfg.Uses))
 	for _, u := range cfg.Uses {
 		uses = append(uses, llmapi.ToUse(u))
 	}
 
+	return uses
+}
+
+func navigationScreens(cfg Config) ([]guide.Screen, error) {
 	var screens []guide.Screen
 	if len(cfg.Navigation) > 0 {
 		var err error
@@ -75,11 +120,10 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		}
 	}
 
-	// assistant_usage days are instance days, in UTC (BK19).
-	today := func() time.Time { return clock.DateOf(cfg.Clock.Now(), time.UTC) }
+	return screens, nil
+}
 
-	svc := app.NewService(postgres.NewRepository(pool), box, llmapi.NewModels(build), instance, uses, cfg.Clock.Now, today, log)
-
+func waitUntil(cfg Config) func(ctx context.Context, until time.Time) error {
 	wait := cfg.Wait
 	if wait == nil {
 		wait = func(ctx context.Context, until time.Time) error {
@@ -95,9 +139,5 @@ func New(pool *pgxpool.Pool, cfg Config, log *slog.Logger) (*Module, error) {
 		}
 	}
 
-	return &Module{svc: svc, resolver: llmapi.NewResolver(svc, cfg.Instance, build, log), http: httpapi.NewServer(svc, log), screens: screens, locale: cfg.Locale, wait: wait}, nil
+	return wait
 }
-
-func (m *Module) Resolver() llm.Resolver { return m.resolver }
-
-func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }

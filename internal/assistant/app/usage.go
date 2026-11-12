@@ -78,44 +78,11 @@ func (s *Service) Usage(ctx context.Context, booksID int64) ([]UsageRow, error) 
 		return nil, err
 	}
 
-	type key struct{ provider, model string }
-	rows := map[key]*UsageRow{}
-	var order []key
-	row := func(provider, model string) *UsageRow {
-		k := key{provider, model}
-		if r, ok := rows[k]; ok {
-			return r
-		}
-
-		rows[k] = &UsageRow{Usage: domain.UsageSummary{ProviderID: provider, Model: model}, Limit: domain.Limit{ProviderID: provider, Model: model}}
-		order = append(order, k)
-
-		return rows[k]
-	}
-
 	now := s.now()
-	for _, u := range summaries {
-		if !u.CoolingUntil.After(now) {
-			u.CoolingUntil = time.Time{}
-		}
+	table := newUsageTable(summaries, limits, now)
 
-		row(u.ProviderID, u.Model).Usage = u
-	}
-
-	for _, l := range limits {
-		row(l.ProviderID, l.Model).Limit = l
-	}
-
-	rank := func(id string) int {
-		i := slices.IndexFunc(providers, func(p ProviderView) bool { return p.ID == id })
-		if i < 0 {
-			return len(providers)
-		}
-
-		return i
-	}
-	slices.SortStableFunc(order, func(a, b key) int {
-		if d := rank(a.provider) - rank(b.provider); d != 0 {
+	slices.SortStableFunc(table.order, func(a, b usageKey) int {
+		if d := providerRank(providers, a.provider) - providerRank(providers, b.provider); d != 0 {
 			return d
 		}
 
@@ -130,19 +97,73 @@ func (s *Service) Usage(ctx context.Context, booksID int64) ([]UsageRow, error) 
 		return 0
 	})
 
-	out := make([]UsageRow, 0, len(order))
-	for _, k := range order {
-		i := rank(k.provider)
+	return table.rowsOf(providers), nil
+}
+
+type usageKey struct{ provider, model string }
+
+// usageTable holds the rows of Usage by provider and model, and the order they first appeared in.
+type usageTable struct {
+	rows  map[usageKey]*UsageRow
+	order []usageKey
+}
+
+func newUsageTable(summaries []domain.UsageSummary, limits []domain.Limit, now time.Time) *usageTable {
+	t := &usageTable{rows: map[usageKey]*UsageRow{}}
+
+	for _, u := range summaries {
+		if !u.CoolingUntil.After(now) {
+			u.CoolingUntil = time.Time{}
+		}
+
+		t.row(u.ProviderID, u.Model).Usage = u
+	}
+
+	for _, l := range limits {
+		t.row(l.ProviderID, l.Model).Limit = l
+	}
+
+	return t
+}
+
+func (t *usageTable) row(provider, model string) *UsageRow {
+	k := usageKey{provider, model}
+	if r, ok := t.rows[k]; ok {
+		return r
+	}
+
+	t.rows[k] = &UsageRow{
+		Usage: domain.UsageSummary{ProviderID: provider, Model: model},
+		Limit: domain.Limit{ProviderID: provider, Model: model},
+	}
+	t.order = append(t.order, k)
+
+	return t.rows[k]
+}
+
+func (t *usageTable) rowsOf(providers []ProviderView) []UsageRow {
+	out := make([]UsageRow, 0, len(t.order))
+	for _, k := range t.order {
+		i := providerRank(providers, k.provider)
 		if i == len(providers) {
 			continue // a provider deleted between the reads
 		}
 
-		r := rows[k]
+		r := t.rows[k]
 		r.Provider = providers[i]
 		out = append(out, *r)
 	}
 
-	return out, nil
+	return out
+}
+
+func providerRank(providers []ProviderView, id string) int {
+	i := slices.IndexFunc(providers, func(p ProviderView) bool { return p.ID == id })
+	if i < 0 {
+		return len(providers)
+	}
+
+	return i
 }
 
 // SetLimit declares the daily limits of one of the book's providers, or an instance
