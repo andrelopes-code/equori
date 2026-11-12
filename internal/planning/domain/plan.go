@@ -73,6 +73,37 @@ func PlanRows(in PlanInput) ([]PlanRow, int) {
 		n = AverageMonths(month, in.FirstPosting)
 	}
 
+	t := newPlanTree(in, month, n)
+
+	var rows []PlanRow
+	for _, c := range in.Categories {
+		if b, budgeted := t.budgets[c.ID]; budgeted {
+			rows = append(rows, t.budgetedRow(c, b))
+
+			continue
+		}
+
+		if row, ok := t.openRow(c); ok {
+			rows = append(rows, row)
+		}
+	}
+
+	slices.SortFunc(rows, func(a, b PlanRow) int { return slices.Compare(a.CategoryID[:], b.CategoryID[:]) })
+
+	return rows, n
+}
+
+// planTree holds the lookups PlanRows reads for every category.
+type planTree struct {
+	in       PlanInput
+	month    time.Time
+	n        int
+	parent   map[uuid.UUID]uuid.UUID
+	children map[uuid.UUID][]uuid.UUID
+	budgets  map[uuid.UUID]Budget
+}
+
+func newPlanTree(in PlanInput, month time.Time, n int) planTree {
 	parent := make(map[uuid.UUID]uuid.UUID, len(in.Categories))
 
 	children := make(map[uuid.UUID][]uuid.UUID)
@@ -88,96 +119,102 @@ func PlanRows(in PlanInput) ([]PlanRow, int) {
 		budgets[b.CategoryID] = b
 	}
 
-	ancestors := func(id uuid.UUID, has func(uuid.UUID) bool) bool {
-		seen := map[uuid.UUID]bool{id: true}
-		for p := parent[id]; p != uuid.Nil && !seen[p]; p = parent[p] {
-			if has(p) {
-				return true
-			}
-
-			seen[p] = true
-		}
-
-		return false
+	return planTree{
+		in:       in,
+		month:    month,
+		n:        n,
+		parent:   parent,
+		children: children,
+		budgets:  budgets,
 	}
-	var subtree func(id uuid.UUID, m time.Time, seen map[uuid.UUID]bool) int64
-	subtree = func(id uuid.UUID, m time.Time, seen map[uuid.UUID]bool) int64 {
-		if seen[id] {
-			return 0
+}
+
+func (t planTree) budgetedRow(c PlanCategory, b Budget) PlanRow {
+	planned, _ := b.planned(t.month)
+	row := PlanRow{CategoryID: c.ID, BudgetID: b.ID, Planned: planned}
+
+	row.Counted = !t.ancestors(c.ID, func(p uuid.UUID) bool {
+		pb, ok := t.budgets[p]
+		if !ok {
+			return false
 		}
 
-		seen[id] = true
+		_, inForce := pb.planned(t.month)
 
-		total := in.Own[id][m]
-		for _, c := range children[id] {
-			total += subtree(c, m, seen)
+		return inForce
+	})
+	for _, a := range b.Amounts {
+		if a.EffectiveFrom.After(t.month) {
+			row.NextChange, row.HasNextChange = a.EffectiveFrom, true
+			break
 		}
-
-		return total
-	}
-	history := func(total func(m time.Time) int64) (last, average int64) {
-		last = total(month.AddDate(0, -1, 0))
-		if n == 0 {
-			return last, 0
-		}
-
-		var sum int64
-		for i := 1; i <= n; i++ {
-			sum += total(month.AddDate(0, -i, 0))
-		}
-
-		return last, Divide(sum, n)
 	}
 
-	var rows []PlanRow
-	for _, c := range in.Categories {
-		b, budgeted := budgets[c.ID]
-		if budgeted {
-			planned, _ := b.planned(month)
-			row := PlanRow{CategoryID: c.ID, BudgetID: b.ID, Planned: planned}
+	row.LastMonth, row.Average = t.history(func(m time.Time) int64 {
+		return t.subtree(c.ID, m, map[uuid.UUID]bool{})
+	})
 
-			row.Counted = !ancestors(c.ID, func(p uuid.UUID) bool {
-				pb, ok := budgets[p]
-				if !ok {
-					return false
-				}
+	return row
+}
 
-				_, inForce := pb.planned(month)
-
-				return inForce
-			})
-			for _, a := range b.Amounts {
-				if a.EffectiveFrom.After(month) {
-					row.NextChange, row.HasNextChange = a.EffectiveFrom, true
-					break
-				}
-			}
-
-			row.LastMonth, row.Average = history(func(m time.Time) int64 { return subtree(c.ID, m, map[uuid.UUID]bool{}) })
-			rows = append(rows, row)
-
-			continue
-		}
-
-		if !c.Open || ancestors(c.ID, func(p uuid.UUID) bool { _, ok := budgets[p]; return ok }) {
-			continue
-		}
-
-		var spent int64
-		for i := 1; i <= historyMonths; i++ {
-			spent += in.Own[c.ID][month.AddDate(0, -i, 0)]
-		}
-
-		if spent <= 0 {
-			continue
-		}
-
-		row := PlanRow{CategoryID: c.ID, Counted: true}
-		row.LastMonth, row.Average = history(func(m time.Time) int64 { return in.Own[c.ID][m] })
-		rows = append(rows, row)
+func (t planTree) openRow(c PlanCategory) (PlanRow, bool) {
+	if !c.Open || t.ancestors(c.ID, func(p uuid.UUID) bool { _, ok := t.budgets[p]; return ok }) {
+		return PlanRow{}, false
 	}
 
-	slices.SortFunc(rows, func(a, b PlanRow) int { return slices.Compare(a.CategoryID[:], b.CategoryID[:]) })
+	var spent int64
+	for i := 1; i <= historyMonths; i++ {
+		spent += t.in.Own[c.ID][t.month.AddDate(0, -i, 0)]
+	}
 
-	return rows, n
+	if spent <= 0 {
+		return PlanRow{}, false
+	}
+
+	row := PlanRow{CategoryID: c.ID, Counted: true}
+	row.LastMonth, row.Average = t.history(func(m time.Time) int64 { return t.in.Own[c.ID][m] })
+
+	return row, true
+}
+
+func (t planTree) ancestors(id uuid.UUID, has func(uuid.UUID) bool) bool {
+	seen := map[uuid.UUID]bool{id: true}
+	for p := t.parent[id]; p != uuid.Nil && !seen[p]; p = t.parent[p] {
+		if has(p) {
+			return true
+		}
+
+		seen[p] = true
+	}
+
+	return false
+}
+
+func (t planTree) subtree(id uuid.UUID, m time.Time, seen map[uuid.UUID]bool) int64 {
+	if seen[id] {
+		return 0
+	}
+
+	seen[id] = true
+
+	total := t.in.Own[id][m]
+	for _, c := range t.children[id] {
+		total += t.subtree(c, m, seen)
+	}
+
+	return total
+}
+
+func (t planTree) history(total func(m time.Time) int64) (last, average int64) {
+	last = total(t.month.AddDate(0, -1, 0))
+	if t.n == 0 {
+		return last, 0
+	}
+
+	var sum int64
+	for i := 1; i <= t.n; i++ {
+		sum += total(t.month.AddDate(0, -i, 0))
+	}
+
+	return last, Divide(sum, t.n)
 }

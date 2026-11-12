@@ -53,6 +53,17 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 		out.SavingsTargetBp = &p.Reference.TargetBP
 	}
 
+	setPlanSavings(&out, p, optional)
+	setPlanReference(&out, p, optional)
+
+	for i, r := range p.Rows {
+		out.Rows[i] = toBudgetPlanRowAPI(r, m)
+	}
+
+	return out
+}
+
+func setPlanSavings(out *BudgetPlan, p app.Plan, optional func(*int64) *Money) {
 	if rate, ok := p.SavingsRate(); ok {
 		out.SavingsRateBp = &rate
 	}
@@ -62,28 +73,34 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 		gap, _ := p.SavingsGap()
 		out.SavingsGap = optional(&gap)
 	}
+}
 
+func setPlanReference(out *BudgetPlan, p app.Plan, optional func(*int64) *Money) {
 	if ref, ok := p.ReferenceAmount(); ok {
 		out.Reference = optional(&ref)
 		rest, _ := p.Unassigned()
 		out.Unassigned = optional(&rest)
 	}
+}
 
-	for i, r := range p.Rows {
-		row := BudgetPlanRow{CategoryId: r.CategoryID, Planned: m(r.Planned), LastMonth: m(r.LastMonth), Average: m(r.Average), Counted: r.Counted}
-		if r.BudgetID != uuid.Nil {
-			row.BudgetId = &r.BudgetID
-		}
-
-		if r.HasNextChange {
-			next := r.NextChange.Format(monthLayout)
-			row.NextChange = &next
-		}
-
-		out.Rows[i] = row
+func toBudgetPlanRowAPI(r domain.PlanRow, m func(int64) Money) BudgetPlanRow {
+	row := BudgetPlanRow{
+		CategoryId: r.CategoryID,
+		Planned:    m(r.Planned),
+		LastMonth:  m(r.LastMonth),
+		Average:    m(r.Average),
+		Counted:    r.Counted,
+	}
+	if r.BudgetID != uuid.Nil {
+		row.BudgetId = &r.BudgetID
 	}
 
-	return out
+	if r.HasNextChange {
+		next := r.NextChange.Format(monthLayout)
+		row.NextChange = &next
+	}
+
+	return row
 }
 
 func (s *Server) getBudgetPlan(ctx context.Context, r *http.Request, _ httpserver.None) (BudgetPlan, error) {

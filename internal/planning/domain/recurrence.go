@@ -54,33 +54,9 @@ func (r Rule) Validate() error {
 		return invalid("recurrence.interval", "must be at least 1")
 	}
 
-	selectors := 0
-	if r.DayOfMonth != 0 {
-		selectors++
-
-		if r.DayOfMonth != -1 && (r.DayOfMonth < 1 || r.DayOfMonth > 31) {
-			return invalid("recurrence.day_of_month", "must be between 1 and 31, or -1")
-		}
-	}
-
-	if r.Weekday != nil || r.Ordinal != 0 {
-		selectors++
-
-		if r.Ordinal != -1 && (r.Ordinal < 1 || r.Ordinal > 5) {
-			return invalid("recurrence.ordinal", "must be between 1 and 5, or -1, with a weekday")
-		}
-
-		if r.Weekday == nil {
-			return invalid("recurrence.weekday", "is required with an ordinal")
-		}
-	}
-
-	if r.BusinessDayOrdinal != 0 {
-		selectors++
-
-		if r.BusinessDayOrdinal != -1 && (r.BusinessDayOrdinal < 1 || r.BusinessDayOrdinal > 23) {
-			return invalid("recurrence.business_day_ordinal", "must be between 1 and 23, or -1")
-		}
+	selectors, err := r.validateSelectors()
+	if err != nil {
+		return err
 	}
 
 	if r.Frequency == Monthly && selectors != 1 {
@@ -91,6 +67,43 @@ func (r Rule) Validate() error {
 		return invalid("recurrence", "only a monthly rule takes a day selector")
 	}
 
+	return r.validateBounds()
+}
+
+func (r Rule) validateSelectors() (int, error) {
+	selectors := 0
+	if r.DayOfMonth != 0 {
+		selectors++
+
+		if r.DayOfMonth != -1 && (r.DayOfMonth < 1 || r.DayOfMonth > 31) {
+			return 0, invalid("recurrence.day_of_month", "must be between 1 and 31, or -1")
+		}
+	}
+
+	if r.Weekday != nil || r.Ordinal != 0 {
+		selectors++
+
+		if r.Ordinal != -1 && (r.Ordinal < 1 || r.Ordinal > 5) {
+			return 0, invalid("recurrence.ordinal", "must be between 1 and 5, or -1, with a weekday")
+		}
+
+		if r.Weekday == nil {
+			return 0, invalid("recurrence.weekday", "is required with an ordinal")
+		}
+	}
+
+	if r.BusinessDayOrdinal != 0 {
+		selectors++
+
+		if r.BusinessDayOrdinal != -1 && (r.BusinessDayOrdinal < 1 || r.BusinessDayOrdinal > 23) {
+			return 0, invalid("recurrence.business_day_ordinal", "must be between 1 and 23, or -1")
+		}
+	}
+
+	return selectors, nil
+}
+
+func (r Rule) validateBounds() error {
 	switch r.Adjustment {
 	case "", "none", "following", "preceding", "modified_following":
 	default:
