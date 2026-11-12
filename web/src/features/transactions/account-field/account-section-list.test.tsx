@@ -84,7 +84,7 @@ describe("AccountSectionList", () => {
   });
 
   it("draws the choices of a statement section as cards and keeps rows elsewhere", () => {
-    const { container } = draw(vi.fn(), cardSections);
+    const { container } = draw(vi.fn(), cardSections, true);
 
     const [inStatement, inOther] = screen.getAllByRole("option", {
       name: /Nubank Mastercard/,
@@ -97,7 +97,7 @@ describe("AccountSectionList", () => {
   });
 
   it("moves across the columns of a card section with the arrows", async () => {
-    draw(vi.fn(), cardSections);
+    draw(vi.fn(), cardSections, true);
 
     screen.getAllByRole("option", { name: /Nubank Mastercard/ })[0]?.focus();
     await userEvent.keyboard("{ArrowRight}");
@@ -107,6 +107,66 @@ describe("AccountSectionList", () => {
     await userEvent.keyboard("{ArrowLeft}{ArrowDown}");
 
     expect(screen.getByRole("option", { name: /Itaú Visa/ })).not.toHaveFocus();
+    expect(
+      screen.getAllByRole("option", { name: /Nubank Mastercard/ })[1],
+    ).toHaveFocus();
+  });
+
+  // D3: the block "Other accounts" is closed by default, with its label and count.
+  it("keeps the other accounts in a closed block with their count", () => {
+    draw(vi.fn(), cardSections);
+
+    const toggle = screen.getByRole("button", { name: /^Outras contas/ });
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveTextContent("1");
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+  });
+
+  it("opens the block with its toggle and writes its options", async () => {
+    draw(vi.fn(), cardSections);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /^Outras contas/ }),
+    );
+
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+    expect(screen.getByRole("group", { name: /^Outras contas/ })).toBeVisible();
+  });
+
+  it("opens the block when it holds the chosen account", () => {
+    renderWithProviders(
+      <AccountSectionList
+        sections={cardSections}
+        value="c3"
+        onPick={vi.fn()}
+        scale={() => 2}
+        suggestion={null}
+        label="Pagar com"
+      />,
+      { fetch: fakeApi({}) },
+    );
+
+    expect(
+      screen.getByRole("button", { name: /^Outras contas/ }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("option")).toHaveLength(3);
+  });
+
+  it("joins the options of the block to the arrows only while it is open", async () => {
+    draw(vi.fn(), cardSections);
+
+    screen.getAllByRole("option", { name: /Itaú Visa/ })[0]?.focus();
+    await userEvent.keyboard("{ArrowDown}");
+
+    expect(screen.getByRole("option", { name: /Itaú Visa/ })).toHaveFocus();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /^Outras contas/ }),
+    );
+    screen.getByRole("option", { name: /Itaú Visa/ }).focus();
+    await userEvent.keyboard("{ArrowDown}");
+
     expect(
       screen.getAllByRole("option", { name: /Nubank Mastercard/ })[1],
     ).toHaveFocus();
@@ -129,7 +189,11 @@ const cardSections: Section[] = [
   },
 ];
 
-function draw(onPick: (id: string) => void, shown = sections) {
+function draw(
+  onPick: (id: string) => void,
+  shown = sections,
+  expandOther = false,
+) {
   return renderWithProviders(
     <AccountSectionList
       sections={shown}
@@ -138,6 +202,7 @@ function draw(onPick: (id: string) => void, shown = sections) {
       scale={() => 2}
       suggestion={{ accountId: "a1", count: 7, total: 10, name: "Mercado" }}
       label="Pagar com"
+      expandOther={expandOther}
     />,
     { fetch: fakeApi({}) },
   );

@@ -6,6 +6,13 @@ import type { Operation } from "@/features/transactions/account-field/account-op
 import type { AccountChoice } from "@/features/transactions/account-field/use-account-choices";
 import type { MessageKey } from "@/i18n/catalog.en";
 
+// The sections whose choices are credit cards drawn as wallet cards, two across.
+export const cardSectionIds = new Set<SectionId>([
+  "goesToStatement",
+  "settlesStatement",
+  "cards",
+]);
+
 export type SectionId =
   | "suggested"
   | "leavesBalance"

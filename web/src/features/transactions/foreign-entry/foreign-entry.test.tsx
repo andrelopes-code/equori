@@ -16,6 +16,7 @@ import { optionalName } from "@/testing/optional-name";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
+import { openOtherAccounts } from "@/testing/account-choice";
 
 const path = `/transactions/new?kind=foreign_purchase&account_id=${cardID}`;
 
@@ -87,10 +88,11 @@ describe("foreign purchase entry", () => {
         name: new RegExp(catalogEn["foreignPurchase.card"]),
       }),
     );
-    const radios = await screen.findAllByRole("radio", {
+    await openOtherAccounts();
+    const radios = await screen.findAllByRole("option", {
       name: /Itau|Dollar|Reserva|Wise/,
     });
-    expect(radios.map((radio) => radio.getAttribute("value"))).toEqual([
+    expect(radios.map((radio) => radio.getAttribute("data-key"))).toEqual([
       cardID,
     ]);
   });

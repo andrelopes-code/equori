@@ -78,7 +78,12 @@ export function useAccountChoices({
   date: string;
   categoryId: string | null;
   payeeId: string | null;
-}): { choices: AccountChoice[]; suggestion: SuggestionView | null } {
+}): {
+  choices: AccountChoice[];
+  suggestion: SuggestionView | null;
+  // The balances have not arrived: the figures of the options are not known yet.
+  loading: boolean;
+} {
   const api = useApi();
   const balances = useQuery(balancesQuery(api, date, "booked"));
   const institutions = useQuery(institutionsQuery(api));
@@ -166,5 +171,5 @@ export function useAccountChoices({
     found === null || sourceName === undefined
       ? null
       : { ...found, name: sourceName };
-  return { choices, suggestion };
+  return { choices, suggestion, loading: balances.isPending };
 }

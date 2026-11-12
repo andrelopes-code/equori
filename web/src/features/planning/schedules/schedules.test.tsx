@@ -358,10 +358,10 @@ describe("New schedule", () => {
     });
 
     expect(
-      await within(sheet).findByRole("radio", { name: /^Nubank/ }),
+      await within(sheet).findByRole("option", { name: /^Nubank/ }),
     ).toBeInTheDocument();
     expect(
-      within(sheet).queryByRole("radio", { name: /^Reserva/ }),
+      within(sheet).queryByRole("option", { name: /^Reserva/ }),
     ).not.toBeInTheDocument();
   });
 

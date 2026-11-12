@@ -53,12 +53,12 @@ export function AccountCardOption({
           { amount: choice.freeLimit, currency: account.currency },
           scale,
         );
+  const note = text.fact?.note ?? null;
   const lit = litSegments(choice.creditLimit, choice.freeLimit);
   const ground = accountCardColor(account.color);
   const style = (
     ground === undefined ? undefined : { "--account-card-color": ground }
   ) as CSSProperties | undefined;
-  const note = closedNote(text.fact);
 
   function handlePick() {
     if (!disabled) onPick(account.id);
@@ -98,7 +98,7 @@ export function AccountCardOption({
       <span className={styles.foot}>
         <span className={styles.fact}>
           <span className={styles.ellipsis}>{text.fact?.short}</span>
-          {note !== "" && <span>{note}</span>}
+          {note !== null && <span>{note}</span>}
         </span>
 
         {free !== null && (
@@ -135,13 +135,4 @@ export function AccountCardOption({
       )}
     </div>
   );
-}
-
-// The closing note is what the long form adds after the short one ("Fatura de 17/12 · fechou
-// dia 10"); it sits at the end of the same line.
-function closedNote(fact: { long: string; short: string } | null | undefined) {
-  if (fact === null || fact === undefined) return "";
-  if (!fact.long.startsWith(fact.short)) return "";
-
-  return fact.long.slice(fact.short.length).replace(/^[\s·]+/, "");
 }

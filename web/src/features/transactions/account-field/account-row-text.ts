@@ -8,7 +8,13 @@ export type RowTone = "accent" | "danger" | "warning";
 // The words of one row. The fact has a long form and a short form (R8); a risk replaces the
 // label of the figure (R9).
 export interface RowText {
-  fact: { long: string; short: string; tone: RowTone | undefined } | null;
+  fact: {
+    long: string;
+    short: string;
+    // The closing note of a statement, which the long form writes after the short one.
+    note: string | null;
+    tone: RowTone | undefined;
+  } | null;
   figure: string | null;
   label: { text: string; tone: RowTone | undefined } | null;
 }
@@ -59,26 +65,34 @@ function cardText(choice: AccountChoice, ctx: RowTextContext): RowText {
     const text = t("accountChoice.fact.noLimit", {
       amount: ctx.money(unavailable.missing),
     });
-    return { fact: { long: text, short: text, tone: "danger" }, figure, label };
+    return {
+      fact: { long: text, short: text, note: null, tone: "danger" },
+      figure,
+      label,
+    };
   }
   if (consequence?.kind === "statement") {
     const date = formatDayMonthNumeric(consequence.dueDate, locale);
     const short = t("accountChoice.fact.statement", { date });
     const closed = consequence.closedOn;
+    const day = closed === null ? 0 : Number(closed.slice(8, 10));
     const long =
       closed === null
         ? short
-        : t("accountChoice.fact.statementClosed", {
-            date,
-            day: Number(closed.slice(8, 10)),
-          });
+        : t("accountChoice.fact.statementClosed", { date, day });
+    const note =
+      closed === null ? null : t("accountChoice.fact.closedNote", { day });
     const tone = closed === null ? undefined : "accent";
-    return { fact: { long, short, tone }, figure, label };
+    return { fact: { long, short, note, tone }, figure, label };
   }
   if (consequence?.kind === "settles") {
     const date = formatDayMonthNumeric(consequence.dueDate, locale);
     const text = t("accountChoice.fact.settles", { date });
-    return { fact: { long: text, short: text, tone: "accent" }, figure, label };
+    return {
+      fact: { long: text, short: text, note: null, tone: "accent" },
+      figure,
+      label,
+    };
   }
   return { fact: kindFact(choice, ctx), figure, label };
 }
@@ -90,5 +104,5 @@ function kindFact(choice: AccountChoice, ctx: RowTextContext) {
 
   const word = ctx.t(`kind.${kind}` as MessageKey);
   const text = word.charAt(0).toLocaleUpperCase(ctx.locale) + word.slice(1);
-  return { long: text, short: text, tone: undefined };
+  return { long: text, short: text, note: null, tone: undefined };
 }

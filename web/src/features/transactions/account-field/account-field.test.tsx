@@ -1,10 +1,16 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { components } from "@/api/schema.gen";
+import { AccountField } from "@/features/transactions/account-field/account-field";
 import { catalogEn } from "@/i18n/catalog.en";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
+import { MASK } from "@/privacy/mask";
 import { fakeApi, json } from "@/testing/fake-api";
-import { renderApp } from "@/testing/render-app";
+import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
+import { renderApp, renderWithProviders } from "@/testing/render-app";
 import { foodID, sharedRoutes } from "@/testing/transaction-api";
 
 const itauID = "a1111111-1111-4111-8111-111111111111";
@@ -124,39 +130,40 @@ const routes = {
     }),
 };
 
-const group = () =>
-  screen.getByRole("radiogroup", { name: catalogEn["entry.payWith"] });
+const listbox = () =>
+  screen.getByRole("listbox", { name: catalogEn["entry.payWith"] });
 const option = (name: string) =>
-  within(group()).getByRole("radio", { name: new RegExp(`^${name}`) });
-// The radio-group item around an option's input: its circle, its label and its mark.
-const item = (radio: HTMLElement) => radio.closest('[data-part="item"]');
+  within(listbox()).getByRole("option", { name: new RegExp(`^${name}`) });
 // The text an option shows, with the no-break spaces of a figure read as spaces.
-const text = (radio: HTMLElement) =>
-  (item(radio)?.textContent ?? "").replace(/\u00a0/g, " ");
+const text = (row: HTMLElement) => row.textContent.replace(/\u00a0/g, " ");
 
-// The figure on an option's right, the third part of its row after the mark and the text: its
-// label and value read as one phrase.
-const figure = (radio: HTMLElement) =>
-  Array.from(
-    item(radio)?.querySelector("label")?.firstElementChild?.children[2]
-      ?.children ?? [],
-  )
-    .map((c) => c.textContent.replace(/\u00a0/g, " "))
-    .join(" ");
+// The sections of the list: the heading each group is named by and its options in order.
+const sectionsShown = () =>
+  within(listbox())
+    .getAllByRole("group")
+    .map((g) => ({
+      heading: document.getElementById(g.getAttribute("aria-labelledby") ?? "")
+        ?.textContent,
+      keys: within(g)
+        .getAllByRole("option")
+        .map((o) => o.getAttribute("data-key")),
+    }));
 
 const trigger = () =>
   screen.getByRole("button", {
     name: new RegExp(`^${catalogEn["entry.payWith"]}`),
   });
 
-// The field opens its accounts in a drawer at every width.
+// The field opens its accounts in a drawer at every width; the list shows once the balances
+// have arrived.
 async function openSheet() {
   await userEvent.click(
     await screen.findByRole("button", {
       name: new RegExp(`^${catalogEn["entry.payWith"]}`),
     }),
   );
-  return screen.findByRole("dialog", { name: catalogEn["entry.payWith"] });
+  await screen.findByRole("dialog", { name: catalogEn["entry.payWith"] });
+  return screen.findByRole("listbox", { name: catalogEn["entry.payWith"] });
 }
 
 async function typeAmount(digits: string) {
@@ -166,45 +173,64 @@ async function typeAmount(digits: string) {
   );
 }
 
+async function search(query: string) {
+  await userEvent.type(
+    screen.getByRole("searchbox", { name: catalogEn["accountChoice.search"] }),
+    query,
+  );
+}
+
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
 });
 
 describe("AccountField on a wide screen", () => {
-  it("lists the groups in their fixed order, each sorted by name", async () => {
+  // D1, D3, R5, R6: one section per consequence, the cards after the accounts, the other
+  // kinds in a collapsed block.
+  it("lists the sections of an expense, each sorted by name", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     await openSheet();
+    expect(sectionsShown()).toEqual([
+      { heading: "Leaves the balance now", keys: [itauID] },
+      { heading: "Goes to the statement", keys: [interID, visaID] },
+    ]);
     expect(
-      within(group())
-        .getAllByRole("radio")
-        .map((r) => r.getAttribute("value")),
-    ).toEqual([itauID, interID, visaID, caixinhaID]);
-    expect(
-      within(group())
-        .getAllByText(/^(Accounts|Credit cards|Reserves)$/)
-        .map((h) => h.textContent),
-    ).toEqual(["Accounts", "Credit cards", "Reserves"]);
+      screen.getByRole("button", { name: /^Other accounts/ }),
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("option", { name: /^Caixinha/ })).toBeNull();
   });
 
+  // R9, R3: the figure is the balance or the free limit; the fact is the kind or the statement.
   it("states what each account does with the amount", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     await typeAmount("28640");
     await openSheet();
     await waitFor(() => {
-      expect(figure(option("Caixinha"))).toBe("leaves R$ 6,663.85");
+      expect(text(option("Itau"))).toContain("R$4,312.10");
     });
-    expect(figure(option("Itau"))).toBe("");
-    expect(text(option("Itau"))).toContain("checking · balance R$ 4,312.10");
-    expect(figure(option("Visa"))).toBe("statement 11/05");
-    expect(text(option("Visa"))).toContain(
-      "credit card · free limit R$ 3,157.23",
-    );
-    expect(text(option("Caixinha"))).not.toContain("yield");
-    expect(option("Inter")).toBeDisabled();
-    expect(figure(option("Inter"))).toBe(
-      catalogEn["accountChoice.figure.noFreeLimit"],
-    );
+    expect(text(option("Itau"))).toContain("Checking");
+    expect(text(option("Itau"))).toContain("balance");
+    expect(text(option("Visa"))).toContain("Statement due 11/05");
+    expect(text(option("Visa"))).toContain("R$3,157.23");
+    expect(text(option("Visa"))).toContain("free");
+    expect(option("Inter")).toHaveAttribute("aria-disabled", "true");
+    expect(text(option("Inter"))).toContain("R$276.40 short of the limit");
+  });
+
+  // R2, D3: a reserve is another account; a search opens its block.
+  it("says a reserve leaves the reserve, in the block a search opens", async () => {
+    await renderApp("/transactions/new", { fetch: fakeApi(routes) });
+    await typeAmount("28640");
+    await openSheet();
+    await search("Caix");
+    await waitFor(() => {
+      expect(text(option("Caixinha"))).toContain("leaves the reserve");
+    });
+    expect(text(option("Caixinha"))).toContain("R$6,950.25");
+    expect(
+      screen.getByRole("button", { name: /^Other accounts/ }),
+    ).toHaveAttribute("aria-expanded", "true");
   });
 
   it("shows no consequence the application cannot compute", async () => {
@@ -217,10 +243,10 @@ describe("AccountField on a wide screen", () => {
     await typeAmount("28640");
     await openSheet();
     await waitFor(() => {
-      expect(figure(option("Visa"))).toBe("statement 11/05");
+      expect(text(option("Visa"))).toContain("Statement due 11/05");
     });
-    expect(figure(option("Itau"))).toBe("");
-    expect(text(option("Itau"))).not.toContain("balance R$");
+    expect(text(option("Itau"))).toContain("Checking");
+    expect(text(option("Itau"))).not.toContain("R$");
   });
 
   it("says what the chosen account does, under the field", async () => {
@@ -238,13 +264,14 @@ describe("AccountField on a wide screen", () => {
     expect(trigger().getAttribute("aria-describedby")).toContain(status.id);
     await openSheet();
     await waitFor(() => {
-      expect(option("Visa")).toBeEnabled();
+      expect(option("Visa")).not.toHaveAttribute("aria-disabled");
     });
     await userEvent.click(option("Visa"));
     expect(status.textContent).toBe("Goes on the statement due November 5.");
   });
 
-  it("marks the suggested account where it stands, with the reason", async () => {
+  // D2: the suggested account moves to the first section, with its reason in the heading.
+  it("moves the suggested account to the first section, with the reason", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     const category = await screen.findByRole("combobox", {
       name: catalogEn["category.label"],
@@ -257,41 +284,41 @@ describe("AccountField on a wide screen", () => {
     await userEvent.keyboard("{ArrowDown}{Enter}");
     await openSheet();
     await waitFor(() => {
-      expect(text(option("Visa"))).toContain("suggested");
+      expect(sectionsShown()[0]).toEqual({
+        heading: "Suggested",
+        keys: [visaID],
+      });
     });
-    expect(text(option("Visa"))).toContain(
-      "Used in 8 of the last 10 transactions of Mercado.",
-    );
-    expect(text(option("Itau"))).not.toContain("suggested");
     expect(
-      within(group())
-        .getAllByRole("radio")
-        .map((r) => r.getAttribute("value")),
-    ).toEqual([itauID, interID, visaID, caixinhaID]);
+      within(listbox()).getByText("8 of the last 10 in Mercado"),
+    ).toBeVisible();
+    expect(sectionsShown().slice(1)).toEqual([
+      { heading: "Leaves the balance now", keys: [itauID] },
+      { heading: "Goes to the statement", keys: [interID] },
+    ]);
   });
 
-  it("draws the institution's logo and the goal ring", async () => {
+  it("draws the institution's logo, the goal ring and the meter of a card", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     await openSheet();
     await waitFor(() => {
-      expect(item(option("Itau"))?.querySelector("img")?.src).toMatch(
+      expect(option("Itau").querySelector("img")?.src).toMatch(
         /60701190\.png$/,
       );
     });
-    const ring = item(option("Caixinha"))?.querySelector<HTMLElement>(
-      "[data-ring]",
-    );
-    await waitFor(() => {
-      expect(
-        ring
-          ?.querySelector("circle[stroke-dasharray]")
-          ?.getAttribute("stroke-dasharray"),
-      ).toBe("42.5 100");
+    expect(option("Visa")).toHaveAttribute("data-lit", "5");
+    await search("Caix");
+    const ring = await waitFor(() => {
+      const found =
+        option("Caixinha").querySelector<HTMLElement>("[data-ring]");
+      expect(found).not.toBeNull();
+      return found;
     });
-    expect(item(option("Visa"))?.querySelector("[data-shape]")).toHaveAttribute(
-      "data-shape",
-      "card",
-    );
+    expect(
+      ring
+        ?.querySelector("circle[stroke-dasharray]")
+        ?.getAttribute("stroke-dasharray"),
+    ).toBe("42.5 100");
   });
 });
 
@@ -318,12 +345,14 @@ describe("AccountField on a phone", () => {
       }),
       "vis",
     );
-    expect(
-      within(sheet)
-        .getAllByRole("radio")
-        .map((r) => r.getAttribute("value")),
-    ).toEqual([visaID]);
-    await userEvent.click(within(sheet).getByRole("radio"));
+    await waitFor(() => {
+      expect(
+        within(sheet)
+          .getAllByRole("option")
+          .map((r) => r.getAttribute("data-key")),
+      ).toEqual([visaID]);
+    });
+    await userEvent.click(within(sheet).getByRole("option"));
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).toBeNull();
     });
@@ -333,5 +362,295 @@ describe("AccountField on a phone", () => {
     expect(screen.getByRole("status").textContent).toBe(
       "Goes on the statement due November 5.",
     );
+  });
+
+  it("writes that no account matches a search", async () => {
+    await renderApp("/transactions/new", {
+      fetch: fakeApi(routes),
+      width: 390,
+    });
+    await openSheet();
+    await search("zzz");
+    expect(screen.getByText("No account or card matches “zzz”.")).toBeVisible();
+  });
+});
+
+type Account = components["schemas"]["Account"];
+
+// The twelve accounts of the mock: key, name and kind.
+const mockEntries: [string, string, string][] = [
+  ["rec", "A receber: Rafael", "receivable"],
+  ["ale", "Alelo Refeição", "benefit"],
+  ["car", "Carteira", "cash"],
+  ["itauc", "Conta corrente Itaú", "checking"],
+  ["nubc", "Conta Nubank", "checking"],
+  ["itauv", "Itaú Visa Platinum", "credit_card"],
+  ["numc", "Nubank Mastercard", "credit_card"],
+  ["click", "Itaú Click virtual", "credit_card"],
+  ["cx", "Caixinha reserva de emergência", "reserve"],
+  ["btc", "mb BTCBRL", "brokerage"],
+  ["pou", "Poupança Itaú", "savings"],
+  ["xp", "Saldo em conta XP", "brokerage"],
+];
+const mockID = (key: string) => `m-${key}`;
+const mockAccounts = [
+  ...mockEntries.map(([key, name, kind]) =>
+    kind === "credit_card"
+      ? { id: mockID(key), name, ...card(400000) }
+      : {
+          id: mockID(key),
+          name,
+          class: "asset",
+          kind,
+          currency: "BRL",
+        },
+  ),
+  { id: foodID, name: "Mercado", class: "expense", currency: "BRL" },
+];
+
+// 7 of the last 10 transactions of Mercado were paid with Nubank Mastercard.
+const mockRecent = recent.map((t, i) => ({
+  ...t,
+  postings: [
+    t.postings[0],
+    { ...t.postings[1], account_id: mockID(i < 7 ? "numc" : "itauc") },
+  ],
+}));
+
+const mockRoutes = {
+  ...routes,
+  "GET /api/v1/accounts": () => json(200, { items: mockAccounts }),
+  "GET /api/v1/balances": () =>
+    json(200, {
+      items: mockAccounts
+        .filter((a) => a.class === "asset")
+        .map((a) => ({
+          account_id: a.id,
+          date: "2026-10-17",
+          basis: "booked",
+          balance: money(500000),
+        })),
+    }),
+  "GET /api/v1/institutions": () => json(200, { items: [] }),
+  "GET /api/v1/goals": () => json(200, { items: [] }),
+  "GET /api/v1/transactions": (req: Request) =>
+    json(200, {
+      items:
+        new URL(req.url).searchParams.get("account_id") === foodID
+          ? mockRecent
+          : [],
+    }),
+  ...Object.fromEntries(
+    ["itauv", "numc", "click"].map((key) => [
+      `GET /api/v1/accounts/${mockID(key)}/statement-placement`,
+      routes[`GET /api/v1/accounts/${visaID}/statement-placement`],
+    ]),
+  ),
+};
+
+function renderField(
+  props: Partial<ComponentProps<typeof AccountField>> = {},
+  fetchRoutes: Record<
+    string,
+    (req: Request) => Response | Promise<Response>
+  > = mockRoutes,
+) {
+  const onChange = vi.fn();
+  renderWithProviders(
+    <AccountField
+      accounts={mockAccounts as Account[]}
+      value={null}
+      onChange={onChange}
+      exclude={null}
+      name="pay"
+      title={catalogPtBR["entry.payWith"]}
+      amount={28640}
+      direction="out"
+      date="2026-10-17"
+      categoryId={foodID}
+      payeeId={null}
+      kind="expense"
+      currency="BRL"
+      scale={() => 2}
+      {...props}
+    />,
+    { fetch: fakeApi(fetchRoutes) },
+  );
+  return onChange;
+}
+
+const ptList = () =>
+  screen.findByRole("listbox", { name: catalogPtBR["entry.payWith"] });
+const ptOption = (name: string) =>
+  within(screen.getByRole("listbox")).getByRole("option", {
+    name: new RegExp(`^${name}`),
+  });
+const otherBlock = () =>
+  screen.getByRole("button", {
+    name: new RegExp(`^${catalogPtBR["accountChoice.section.other"]}`),
+  });
+
+async function openMockSheet() {
+  await userEvent.click(screen.getByRole("button"));
+  return ptList();
+}
+
+describe("AccountField with the accounts of the mock", () => {
+  beforeEach(() => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    localStorage.removeItem("equori.locale");
+  });
+
+  // D1 to D3, R6: the first row of the table of sectionsOf, drawn.
+  it("lists the sections of an expense by consequence", async () => {
+    renderField();
+    const list = await openMockSheet();
+    await waitFor(() => {
+      expect(
+        within(list)
+          .getAllByRole("group")
+          .map(
+            (g) =>
+              document.getElementById(g.getAttribute("aria-labelledby") ?? "")
+                ?.textContent,
+          ),
+      ).toEqual(["Sugerida", "Sai do saldo agora", "Vai para a fatura"]);
+    });
+    expect(
+      within(list)
+        .getAllByRole("group")
+        .map((g) =>
+          within(g)
+            .getAllByRole("option")
+            .map((o) => o.getAttribute("data-key")),
+        ),
+    ).toEqual([
+      [mockID("numc")],
+      ["itauc", "nubc", "car", "ale"].map(mockID),
+      ["click", "itauv"].map(mockID),
+    ]);
+    expect(otherBlock()).toHaveAttribute("aria-expanded", "false");
+    expect(otherBlock()).toHaveTextContent("5");
+    expect(
+      screen.queryByRole("option", { name: /^Saldo em conta XP/ }),
+    ).toBeNull();
+    expect(
+      list.compareDocumentPosition(otherBlock()) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("writes the reason of the suggestion in its heading", async () => {
+    renderField();
+    const list = await openMockSheet();
+
+    expect(
+      await within(list).findByText("7 das últimas 10 em Mercado"),
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole("group", { name: "Sugerida" })).getByRole(
+        "option",
+        { name: /^Nubank Mastercard/ },
+      ),
+    ).toBeVisible();
+  });
+
+  it("calls onChange once and closes the sheet on a choice", async () => {
+    const onChange = renderField();
+    await openMockSheet();
+    await waitFor(() => {
+      expect(ptOption("Conta Nubank")).toBeVisible();
+    });
+    await userEvent.click(ptOption("Conta Nubank"));
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(mockID("nubc"));
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).toBeNull();
+    });
+  });
+
+  it("draws Contas and Cartões de crédito in a compact field", async () => {
+    renderField({ compact: true, amount: 0, categoryId: null });
+    const list = await openMockSheet();
+    await waitFor(() => {
+      expect(
+        within(list)
+          .getAllByRole("group")
+          .map(
+            (g) =>
+              document.getElementById(g.getAttribute("aria-labelledby") ?? "")
+                ?.textContent,
+          ),
+      ).toEqual(["Contas", "Cartões de crédito"]);
+    });
+  });
+
+  it("opens the block of other accounts when it holds the chosen account", async () => {
+    renderField({ value: mockID("xp") });
+    await openMockSheet();
+
+    await waitFor(() => {
+      expect(otherBlock()).toHaveAttribute("aria-expanded", "true");
+    });
+    expect(ptOption("Saldo em conta XP")).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  });
+
+  it("opens the block of other accounts while a search matches only them", async () => {
+    renderField();
+    await openMockSheet();
+    await userEvent.type(
+      screen.getByRole("searchbox", {
+        name: catalogPtBR["accountChoice.search"],
+      }),
+      "xp",
+    );
+
+    await waitFor(() => {
+      expect(ptOption("Saldo em conta XP")).toBeVisible();
+    });
+    expect(otherBlock()).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+  });
+
+  it("hides every amount in privacy mode", async () => {
+    hideAmounts();
+    renderField();
+    await openMockSheet();
+    await waitFor(() => {
+      expect(ptOption("Conta Nubank")).toBeVisible();
+    });
+
+    expect(screen.getAllByText(new RegExp(MASK)).length).toBeGreaterThan(0);
+    expectNoAmounts(document.body, []);
+  });
+
+  it("draws placeholders in place of the list while the balances are pending", async () => {
+    renderField(
+      {},
+      {
+        ...mockRoutes,
+        "GET /api/v1/balances": () => new Promise<Response>(() => undefined),
+      },
+    );
+    await userEvent.click(screen.getByRole("button"));
+    const sheet = await screen.findByRole("dialog", {
+      name: catalogPtBR["entry.payWith"],
+    });
+
+    await waitFor(() => {
+      expect(sheet.querySelector('[aria-busy="true"]')).not.toBeNull();
+    });
+    expect(within(sheet).queryAllByRole("option")).toHaveLength(0);
   });
 });

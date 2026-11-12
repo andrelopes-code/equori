@@ -17,6 +17,7 @@ import { optionalName } from "@/testing/optional-name";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderApp } from "@/testing/render-app";
 import { checkingID, savingsID, txID } from "@/testing/transaction-api";
+import { openOtherAccounts } from "@/testing/account-choice";
 
 const path = `/transactions/new?kind=exchange&account_id=${checkingID}`;
 
@@ -31,14 +32,15 @@ async function openAccounts(label: string) {
   await userEvent.click(
     await screen.findByRole("button", { name: new RegExp(label) }),
   );
-  return await screen.findAllByRole("radio", {
+  await openOtherAccounts();
+  return await screen.findAllByRole("option", {
     name: /Itau|Reserva|Wise|Cash|Dollar/,
   });
 }
 
 async function chooseAccount(label: string, id: string) {
   const radios = await openAccounts(label);
-  const radio = radios.find((r) => r.getAttribute("value") === id);
+  const radio = radios.find((r) => r.getAttribute("data-key") === id);
   if (radio === undefined) throw new Error(`no account ${id}`);
   await userEvent.click(radio);
 }
@@ -80,9 +82,9 @@ describe("currency exchange entry", () => {
   it("offers the accounts of another currency when the origin is in the base currency", async () => {
     await renderApp(path, { fetch: api([]) });
     const radios = await openAccounts(catalogEn["exchange.to"]);
-    expect(radios.map((radio) => radio.getAttribute("value")).sort()).toEqual(
-      [eurWalletID, usdWalletID, wiseID].sort(),
-    );
+    expect(
+      radios.map((radio) => radio.getAttribute("data-key")).sort(),
+    ).toEqual([eurWalletID, usdWalletID, wiseID].sort());
   });
 
   it("offers only accounts in the base currency when the origin is in another currency", async () => {
@@ -90,9 +92,9 @@ describe("currency exchange entry", () => {
       fetch: api([]),
     });
     const radios = await openAccounts(catalogEn["exchange.to"]);
-    expect(radios.map((radio) => radio.getAttribute("value")).sort()).toEqual(
-      [checkingID, savingsID].sort(),
-    );
+    expect(
+      radios.map((radio) => radio.getAttribute("data-key")).sort(),
+    ).toEqual([checkingID, savingsID].sort());
   });
 
   // S17: 1,000.00 USD for 5,483.00 BRL plus a fee of 30.00 BRL debits 5,513.00 BRL.

@@ -36,6 +36,16 @@
     text-transform: none;
   }
 
+  .count {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  /* The box of a wallet card while its placeholder stands in: the card's aspect ratio. */
+  .cardShape {
+    aspect-ratio: 1.586;
+  }
+
   .rows {
     display: grid;
     gap: var(--slotted-space-3);

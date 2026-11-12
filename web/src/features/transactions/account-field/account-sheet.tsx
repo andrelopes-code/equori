@@ -13,7 +13,10 @@ import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
-import { AccountOptionList } from "@/features/transactions/account-field/account-option-list";
+import { AccountListPlaceholder } from "@/features/transactions/account-field/account-list-placeholder";
+import type { Operation } from "@/features/transactions/account-field/account-operation";
+import { AccountSectionList } from "@/features/transactions/account-field/account-section-list";
+import { sectionsOf } from "@/features/transactions/account-field/account-sections";
 import type {
   AccountChoice,
   SuggestionView,
@@ -28,7 +31,10 @@ export function AccountSheet({
   context,
   choices,
   value,
-  name,
+  operation,
+  compact,
+  collator,
+  loading,
   suggestion,
   scale,
   onPick,
@@ -39,7 +45,11 @@ export function AccountSheet({
   context: string;
   choices: readonly AccountChoice[];
   value: string | null;
-  name: string;
+  operation: Operation;
+  compact: boolean;
+  collator: Intl.Collator;
+  // The balances are pending: the sheet draws placeholders in place of the options.
+  loading: boolean;
   suggestion: SuggestionView | null;
   scale: (currency: string) => number;
   onPick: (id: string) => void;
@@ -58,6 +68,14 @@ export function AccountSheet({
             (c.institution !== undefined &&
               fold(c.institution).includes(needle)),
         );
+  const sections = sectionsOf({
+    choices: shown,
+    operation,
+    compact,
+    suggestedId: suggestion?.accountId ?? null,
+    collator,
+  });
+
   return (
     <Drawer
       open
@@ -87,19 +105,25 @@ export function AccountSheet({
                 setQuery(event.target.value);
               }}
             />
-            {shown.length === 0 ? (
+            {shown.length === 0 && (
               <Text tone="muted">
                 {t("accountChoice.noMatch", { query: query.trim() })}
               </Text>
-            ) : (
-              <AccountOptionList
-                choices={shown}
+            )}
+
+            {shown.length > 0 && loading && (
+              <AccountListPlaceholder sections={sections} />
+            )}
+
+            {shown.length > 0 && !loading && (
+              <AccountSectionList
+                sections={sections}
                 value={value}
-                name={name}
                 suggestion={suggestion}
                 scale={scale}
                 label={title}
-                onChange={onPick}
+                expandOther={needle !== ""}
+                onPick={onPick}
               />
             )}
           </Stack>

@@ -28,7 +28,6 @@ export function AccountField({
   value,
   onChange,
   exclude,
-  name,
   title,
   amount,
   direction,
@@ -81,11 +80,16 @@ export function AccountField({
     pickable(accounts, value, exclude),
     collator,
   ).flatMap((g) => g.accounts);
-  const { choices: computed, suggestion } = useAccountChoices({
+  const operation = operationOf(kind, direction);
+  const {
+    choices: computed,
+    suggestion,
+    loading,
+  } = useAccountChoices({
     accounts: offered,
     all: accounts,
     amount,
-    operation: operationOf(kind, direction),
+    operation,
     currency,
     date,
     categoryId,
@@ -180,7 +184,10 @@ export function AccountField({
           context={context}
           choices={choices}
           value={value}
-          name={`${name}-sheet`}
+          operation={operation}
+          compact={compact}
+          collator={collator}
+          loading={loading}
           suggestion={suggestion}
           scale={scale}
           onPick={(id) => {

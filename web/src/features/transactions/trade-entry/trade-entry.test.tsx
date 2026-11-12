@@ -20,6 +20,7 @@ import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
+import { openOtherAccounts } from "@/testing/account-choice";
 
 const path = `/transactions/new?kind=trade&account_id=${securityID}`;
 
@@ -82,10 +83,11 @@ describe("trade entry", () => {
         name: new RegExp(catalogEn["trade.cashAccount"]),
       }),
     );
-    const radios = await screen.findAllByRole("radio", { name: /^XP/ });
-    expect(radios.map((radio) => radio.getAttribute("value")).sort()).toEqual(
-      [cashID, secondCashID].sort(),
-    );
+    await openOtherAccounts();
+    const radios = await screen.findAllByRole("option", { name: /^XP/ });
+    expect(
+      radios.map((radio) => radio.getAttribute("data-key")).sort(),
+    ).toEqual([cashID, secondCashID].sort());
   });
 
   it("shows the missing cash notice for a USD brokerage", async () => {
@@ -214,8 +216,9 @@ describe("trade entry", () => {
         name: new RegExp(catalogEn["trade.cashAccount"]),
       }),
     );
-    const radios = await screen.findAllByRole("radio", { name: /^XP/ });
-    expect(radios.map((radio) => radio.getAttribute("value"))).not.toContain(
+    await openOtherAccounts();
+    const radios = await screen.findAllByRole("option", { name: /^XP/ });
+    expect(radios.map((radio) => radio.getAttribute("data-key"))).not.toContain(
       "b0000000-0000-4000-8000-000000000005",
     );
   });

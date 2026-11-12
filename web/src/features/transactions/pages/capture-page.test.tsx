@@ -15,6 +15,7 @@ import {
   sharedRoutes,
   transactionFixture,
 } from "@/testing/transaction-api";
+import { openOtherAccounts } from "@/testing/account-choice";
 
 const money = (amount: number) => ({ amount, currency: "BRL" });
 const uncategorizedID = "99999999-9999-4999-8999-999999999999";
@@ -297,8 +298,9 @@ describe("CapturePage", () => {
     expect(
       within(sheet).getByText(catalogEn["capture.defaultAccountHint"]),
     ).toBeVisible();
+    await openOtherAccounts();
     await userEvent.click(
-      within(sheet).getByRole("radio", { name: /^Reserva/ }),
+      within(sheet).getByRole("option", { name: /^Reserva/ }),
     );
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).toBeNull();
