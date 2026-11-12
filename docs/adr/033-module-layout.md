@@ -11,10 +11,14 @@ Each business module holds its code, its queries and its contract in one directo
 ```
 internal/<module>/
   README.md            purpose, owned table prefix, OpenAPI tag, entry file of each layer
-  <module>.go          public API: Module, DTOs; the only package other modules import
+  <module>.go          public API: Module, New and the few exported methods; the only package other modules import
+  config.go            Config types, only when the module has a Config (ADR 035)
+  types.go             public DTOs, aliases and interfaces of the root (ADR 035)
+  adapters.go          adapters to other modules (ADR 035)
+  <group>.go           one file per group of exported methods (ADR 035)
   openapi.yaml         operations and schemas of the module; `make gen` bundles every module file with api/base.yaml and api/shared.yaml into api/openapi.yaml
   domain/              entities and invariants; stdlib and platform/money only
-  app/                 use cases; declares the ports (Repository, Clock)
+  app/                 use cases; declares the ports in ports.go (Repository, Clock); above 400 lines, other port groups move to ports_<group>.go (ADR 035)
   httpapi/             routes (`Register`) and handlers; api.gen.go (models only) and oapi-codegen.yaml (ADR 034)
   toolapi/             assistant and MCP tools
   postgres/            repository; sqlc output (*.gen.go); queries/*.sql
@@ -30,6 +34,8 @@ Limits of the layout:
 | Hand-written non-test Go files in one directory | 40 |
 | Lines in one hand-written non-test Go file | 400 (ADR 035; offenders listed in internal/platform/layout/long_files.txt) |
 | Files in one `web/src` directory, tests included | 40; `web/src/theme` is exempt |
+
+The root file shape and the `ports_<group>.go` allowance are defined in ADR 035. A deviation from the root shape is stated in the module README.
 
 Tests are not counted in the Go limits: a module root keeps its black-box tests, named by area (`card_*_test.go`). `internal/platform/layout` enforces the limits.
 

@@ -43,11 +43,11 @@ A commit runs format, lint and the generated-code check on its staged files. A p
 `docs/contributing/map.md` locates the files of an endpoint, a screen or a module and lists the steps to add an endpoint.
 
 ```
-cmd/equori/            composition root only: config, wiring, start
+cmd/equori/            composition root only: main.go, config.go (config.Config to server.Config), one file per subcommand
 cmd/demoseed/          demo data for a local instance
 internal/platform/     infrastructure without business rules
 internal/<module>/     one business module: code, queries and tests (ADR 033)
-internal/server/       composition of every module: HTTP handler and outbox dispatcher
+internal/server/       composition of every module: config.go, modules.go, adapters.go, app.go, routes.go, outbox.go, apidoc.go
 internal/apitest/      HTTP test harness over internal/server
 db/migrations/         goose SQL migrations, embedded
 api/                   base.yaml and shared.yaml (header, shared schemas); openapi.yaml is the bundle that `make gen` writes
@@ -75,6 +75,8 @@ internal/instance/
   postgres/repository.go    implements app.Repository
   releases/github.go        implements app.Releases
 ```
+
+A module root holds `<module>.go`, optionally `config.go`, `types.go`, `adapters.go`, `region_defaults.go` and one file per group of exported methods (ADR 035). A hand-written non-test Go file has at most 400 lines and a function body at most 50 lines; `internal/platform/layout/long_files.txt` and `long_functions.txt` list the existing offenders, and `long_functions.txt` accepts tables of data only as new entries.
 
 `app` never imports `httpapi`, `postgres` or `toolapi`. A topic keeps its file name across layers: read `domain/version.go`, then `app/version.go`, then `httpapi/version.go`. `docs/contributing/map.md` lists the files of an endpoint.
 

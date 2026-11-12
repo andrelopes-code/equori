@@ -14,13 +14,26 @@ Start from the `operationId` in `api/openapi.yaml`. Replace `<module>` with the 
 | Handler | `internal/<module>/httpapi/<topic>.go`, or `server.go` | Search `func (s *Server) <operationId>`: lower camel case, the `operationId` of the contract. |
 | Use case | `internal/<module>/app/<topic>.go` | Search the method the handler calls on `s.svc`. |
 | Rule | `internal/<module>/domain/<topic>.go` | Imported by the use case. |
-| Port | `internal/<module>/app/ports.go` | Interface `Repository` and the other ports. |
+| Port | `internal/<module>/app/ports.go` | Interface `Repository` and the other ports. A module whose `ports.go` exceeded 400 lines keeps further groups in `ports_<group>.go` (`internal/ledger/app/`). |
 | Port implementation | `internal/<module>/postgres/<topic>.go` | Search the port method name. |
 | Query | `internal/<module>/postgres/queries/<topic>.sql` | Generated Go: `internal/<module>/postgres/<topic>.sql.gen.go`. |
-| Public API of the module | `internal/<module>/<module>.go` | Other modules call the module only here. |
+| Public API of the module | `internal/<module>/<module>.go`, `types.go`, `<group>.go` | Other modules call the module only here. `config.go` holds the `Config`; `adapters.go` holds the adapters to other modules (ADR 035). |
 | Assistant and MCP tool | `internal/<module>/toolapi/` | Composed in `internal/server/modules.go` (tools) and `internal/server/routes.go` (MCP). |
 | Tool exposure | `internal/server/tool_exposure_test.go` | One entry per `operationId`. |
 | HTTP test | `internal/<module>/*_test.go` and `internal/apitest/` | Search the path or the scenario ID. |
+
+Composition files:
+
+| Concern | Location |
+|---|---|
+| Process start, flags and subcommands | `cmd/equori/main.go`, `cmd/equori/commands.go` and one file per subcommand (`serve.go`, `backup.go`, `restore.go`, `user.go`, `version.go`, `healthcheck.go`) |
+| `config.Config` to `server.Config` | `cmd/equori/config.go` |
+| `server.Config` to each module `Config` | `internal/server/modules.go`; the `Config` type is in `internal/server/config.go` |
+| Adapters between modules | `internal/server/adapters.go` |
+| Application wiring | `internal/server/app.go` |
+| HTTP routes and MCP | `internal/server/routes.go` |
+| Outbox dispatcher | `internal/server/outbox.go` |
+| API reference page | `internal/server/apidoc.go`, `internal/server/reference.html` |
 
 Modules whose layout differs from this table are listed in "Modules" below.
 
