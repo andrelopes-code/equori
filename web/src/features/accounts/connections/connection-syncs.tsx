@@ -1,19 +1,4 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import {
-  Collapsible,
-  CollapsibleHeader,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@slotted/react/collapsible";
-import { Stack } from "@slotted/react/stack";
-import {
-  Table,
-  TableBody,
-  TableColumnHeader,
-  TableContent,
-  TableHead,
-  TableRow,
-} from "@slotted/react/table";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -21,10 +6,9 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { connectionSyncsQuery } from "@/features/accounts/api";
 import { formatInstant } from "@/features/accounts/model/instant";
-import { SyncBatchRow } from "@/features/accounts/connections/sync-batch-row";
-import { SyncRecordsTable } from "@/features/accounts/connections/sync-records-table";
-import { syncRows } from "@/features/accounts/connections/sync-rows";
+import { SyncRunsDetail } from "@/features/accounts/connections/sync-runs-detail";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { DetailDialog } from "@/ui/dialogs/detail-dialog";
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];
@@ -34,8 +18,8 @@ interface ConnectionSyncsProps {
   accounts: Map<string, Account>;
 }
 
-// The last syncs of a connection: one table of what each changed, then the lines a sync listed,
-// with the undo of its decisions.
+// L6: the last sync in one line and the button of the layer that holds the runs, the lines each
+// listed and the undo of its decisions.
 export function ConnectionSyncs({
   connection,
   accounts,
@@ -62,57 +46,15 @@ export function ConnectionSyncs({
   const runs = syncs.data.items;
 
   return (
-    <Collapsible variant="framed" mount="active">
-      <CollapsibleHeader>
-        <CollapsibleTrigger
-          description={t("links.syncLast", {
-            time: formatInstant(runs[0]?.started_at ?? "", locale),
-          })}
-        >
-          {t("links.syncs")}
-        </CollapsibleTrigger>
-      </CollapsibleHeader>
-
-      <CollapsiblePanel>
-        <Stack gap={4}>
-          <Table columns={3} variant="ruled">
-            <TableContent aria-label={t("links.syncs")}>
-              <TableHead>
-                <TableRow>
-                  <TableColumnHeader>{t("links.syncWhen")}</TableColumnHeader>
-                  <TableColumnHeader>
-                    {t("balanceSheet.account")}
-                  </TableColumnHeader>
-                  <TableColumnHeader>
-                    {t("links.syncOutcome")}
-                  </TableColumnHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {runs.flatMap((run) =>
-                  syncRows(run).map((row) => (
-                    <SyncBatchRow key={row.key} row={row} accounts={accounts} />
-                  )),
-                )}
-              </TableBody>
-            </TableContent>
-          </Table>
-
-          {runs
-            .filter((run) => run.records.length > 0)
-            .map((run) => {
-              const time = formatInstant(run.started_at, locale);
-
-              return (
-                <SyncRecordsTable
-                  key={run.sync_id}
-                  records={run.records}
-                  label={t("links.syncRecords", { time })}
-                />
-              );
-            })}
-        </Stack>
-      </CollapsiblePanel>
-    </Collapsible>
+    <DetailDialog
+      title={t("links.syncs")}
+      description={t("links.syncs.layer.description")}
+      summary={t("links.syncLast", {
+        time: formatInstant(runs[0]?.started_at ?? "", locale),
+      })}
+      triggerLabel={t("links.syncs.open")}
+    >
+      <SyncRunsDetail runs={runs} accounts={accounts} />
+    </DetailDialog>
   );
 }

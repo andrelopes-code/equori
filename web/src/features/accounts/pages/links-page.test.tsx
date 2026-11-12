@@ -396,7 +396,9 @@ describe("Account links", () => {
       screen.queryByRole("table", { name: /Lines of the sync of/ }),
     ).toBeNull();
     await userEvent.click(
-      await screen.findByRole("button", { name: /Recent syncs/ }),
+      await screen.findByRole("button", {
+        name: catalogEn["links.syncs.open"],
+      }),
     );
     const syncs = await screen.findByRole("table", { name: "Recent syncs" });
     const row = within(syncs).getByRole("row", { name: /Nubank/ });
@@ -429,7 +431,9 @@ describe("Account links", () => {
     });
 
     await userEvent.click(
-      await screen.findByRole("button", { name: /Recent syncs/ }),
+      await screen.findByRole("button", {
+        name: catalogEn["links.syncs.open"],
+      }),
     );
     await userEvent.click(
       await screen.findByRole("button", { name: "Undo Uber" }),
@@ -438,6 +442,90 @@ describe("Account links", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       catalogEn["problem.no_decision"],
     );
+  });
+
+  it("L6: the card holds the last-sync line and no table until the button is pressed", async () => {
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        [`GET /api/v1/connections/${connectionID}/syncs`]: () =>
+          json(200, syncRuns),
+      }),
+    });
+
+    expect(await screen.findByText(/^Last on /)).toBeVisible();
+    expect(screen.queryByRole("table", { name: "Recent syncs" })).toBeNull();
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["links.syncs.open"],
+      }),
+    );
+
+    expect(
+      await screen.findByRole("table", { name: "Recent syncs" }),
+    ).toBeVisible();
+  });
+
+  it("L6: selecting an older run shows its lines", async () => {
+    const first = syncRuns.items[0];
+    const older = {
+      ...first,
+      sync_id: "f1000000-0000-4000-8000-000000000003",
+      started_at: "2026-10-16T07:00:00Z",
+      batches: [
+        {
+          ...first?.batches[0],
+          id: "e1000000-0000-4000-8000-000000000004",
+          started_at: "2026-10-16T07:00:00Z",
+        },
+      ],
+      records: [
+        {
+          id: "r3",
+          date: "2026-10-15",
+          description: "Mercado",
+          state: "created",
+          amount: { amount: -8000, currency: "BRL" },
+        },
+      ],
+    };
+    await renderApp("/accounts/links", {
+      fetch: api([], {
+        [`GET /api/v1/connections/${connectionID}/syncs`]: () =>
+          json(200, { items: [first, older] }),
+      }),
+    });
+
+    expect(
+      await screen.findByText("Last on 10/17/2026 07:00 AM"),
+    ).toBeVisible();
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["links.syncs.open"],
+      }),
+    );
+    const lines = await screen.findByRole("table", {
+      name: /Lines of the sync of/,
+    });
+    expect(within(lines).getByRole("cell", { name: "Uber" })).toBeVisible();
+
+    const runs = screen.getByRole("table", { name: "Recent syncs" });
+    const body = within(runs).getAllByRole("row").slice(1);
+    expect(body).toHaveLength(2);
+    const [, secondRun] = body;
+    if (secondRun === undefined) {
+      throw new Error("the runs table has no second row");
+    }
+    await userEvent.click(secondRun);
+
+    const selected = await screen.findByRole("table", {
+      name: /Lines of the sync of/,
+    });
+    expect(
+      within(selected).getByRole("cell", { name: "Mercado" }),
+    ).toBeVisible();
+    expect(within(selected).queryByRole("cell", { name: "Uber" })).toBeNull();
   });
 
   it("deletes a connection after saying what stays", async () => {

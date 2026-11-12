@@ -1,5 +1,10 @@
 import { Inline } from "@slotted/react/inline";
-import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
+import {
+  TableCell,
+  TableRow,
+  TableRowHeader,
+  TableSelect,
+} from "@slotted/react/table";
 import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
@@ -26,11 +31,12 @@ const countTones = {
 interface SyncBatchRowProps {
   row: SyncRow;
   accounts: Map<string, Account>;
+  onSelect: (key: string) => void;
 }
 
 // A row of the table of syncs: when it ran, the account it changed and a tag for each kind of
-// change; a sync that changed nothing is one row that says so.
-export function SyncBatchRow({ row, accounts }: SyncBatchRowProps) {
+// change; a sync that changed nothing is one row that says so. A press on the row selects it.
+export function SyncBatchRow({ row, accounts, onSelect }: SyncBatchRowProps) {
   const t = useT();
   const [locale] = useAppLocale();
 
@@ -39,7 +45,13 @@ export function SyncBatchRow({ row, accounts }: SyncBatchRowProps) {
   const counts = row.batch === undefined ? [] : syncCounts(row.batch.counts);
 
   return (
-    <TableRow value={row.key}>
+    <TableRow
+      value={row.key}
+      onAction={() => {
+        onSelect(row.key);
+      }}
+    >
+      <TableSelect />
       <TableRowHeader>{formatInstant(row.startedAt, locale)}</TableRowHeader>
       <TableCell>
         {account === undefined ? (

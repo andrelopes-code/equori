@@ -6,7 +6,7 @@ Import a file on Import statement of the account (for a CSV, the profile sets th
 
 A bank connection follows an account by the institution's identifier, so a rename at the institution keeps its mapping and history. A line that moves money to a set-aside balance becomes a transfer when one balance answers to its name on its date; otherwise it waits for review with no effect on the balance's yield. To settle it, create the transaction and turn it into a transfer to the right balance, or discard it.
 
-A line that moves money between two of your connected accounts becomes a transfer by itself when both banks name you on their lines; the connection page lists it with its undo. When only one names you, or neither, it waits for review with the other account's transaction as its candidate. A line from an account you have not connected waits for review: create it and turn it into a transfer to the right account, or discard it. A line whose other side is someone else never pairs.
+A line that moves money between two of your connected accounts becomes a transfer by itself when both banks name you on their lines; the recent syncs of a connection open in a layer from a button next to the last sync, and the layer lists it with its undo. When only one names you, or neither, it waits for review with the other account's transaction as its candidate. A line from an account you have not connected waits for review: create it and turn it into a transfer to the right account, or discard it. A line whose other side is someone else never pairs.
 
 An account the institution stopped listing is marked on Links and the connection's other accounts keep syncing. Linking its new entry to the same account replaces it, and a line read again creates no second transaction.
 
