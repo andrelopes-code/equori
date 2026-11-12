@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -109,12 +110,66 @@ func TestMainSize(t *testing.T) {
 	}
 }
 
-// TestGoDirectorySize rejects a directory with more than maxGoDirFiles hand-written non-test Go files.
+// TestGoDirectorySize rejects a directory with more than maxGoDirFiles hand-written non-test Go
+// files. A directory listed in long_dirs.txt is allowed up to its own limit.
 func TestGoDirectorySize(t *testing.T) {
-	for dir, count := range countByDir(handWrittenGo(t)) {
-		if count > maxGoDirFiles {
-			t.Errorf("%s holds %d Go files; group them (limit %d)", dir, count, maxGoDirFiles)
-		}
+	for _, problem := range checkDirs(countByDir(handWrittenGo(t)), readLimits(t, "long_dirs.txt")) {
+		t.Error(problem)
+	}
+}
+
+func TestCheckDirs(t *testing.T) {
+	tests := []struct {
+		name   string
+		counts map[string]int
+		limits map[string]int
+		want   []string
+	}{
+		{
+			name:   "directory within the default limit",
+			counts: map[string]int{"a": 40},
+			want:   nil,
+		},
+		{
+			name:   "unlisted directory above the default limit",
+			counts: map[string]int{"a": 41},
+			want: []string{
+				"a holds 41 Go files; group them or list it in long_dirs.txt (limit 40)",
+			},
+		},
+		{
+			name:   "listed directory within its limit",
+			counts: map[string]int{"a": 55},
+			limits: map[string]int{"a": 60},
+			want:   nil,
+		},
+		{
+			name:   "listed directory above its limit",
+			counts: map[string]int{"a": 61},
+			limits: map[string]int{"a": 60},
+			want:   []string{"a holds 61 Go files; group them (limit 60)"},
+		},
+		{
+			name:   "stale entry",
+			counts: map[string]int{"a": 40},
+			limits: map[string]int{"a": 60},
+			want:   []string{"long_dirs.txt: a holds 40 Go files, at most 40; remove the entry"},
+		},
+		{
+			name:   "entry of a directory without files",
+			counts: map[string]int{},
+			limits: map[string]int{"a": 60},
+			want:   []string{"long_dirs.txt: a holds 0 Go files, at most 40; remove the entry"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := checkDirs(tt.counts, tt.limits)
+			if strings.Join(got, "\n") != strings.Join(tt.want, "\n") {
+				t.Errorf("checkDirs = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -191,6 +246,45 @@ func handWrittenGo(t *testing.T) []string {
 	sort.Strings(files)
 
 	return files
+}
+
+// checkDirs returns one message per directory above its limit and per listed directory that
+// holds at most maxGoDirFiles files. The messages are sorted by directory.
+func checkDirs(counts map[string]int, limits map[string]int) []string {
+	dirs := map[string]bool{}
+
+	for dir := range counts {
+		dirs[dir] = true
+	}
+
+	for dir := range limits {
+		dirs[dir] = true
+	}
+
+	var problems []string
+
+	for dir := range dirs {
+		count := counts[dir]
+		limit, listed := limits[dir]
+
+		switch {
+		case !listed && count > maxGoDirFiles:
+			problems = append(problems, fmt.Sprintf(
+				"%s holds %d Go files; group them or list it in long_dirs.txt (limit %d)",
+				dir, count, maxGoDirFiles))
+		case listed && count <= maxGoDirFiles:
+			problems = append(problems, fmt.Sprintf(
+				"long_dirs.txt: %s holds %d Go files, at most %d; remove the entry",
+				dir, count, maxGoDirFiles))
+		case listed && count > limit:
+			problems = append(problems, fmt.Sprintf(
+				"%s holds %d Go files; group them (limit %d)", dir, count, limit))
+		}
+	}
+
+	sort.Strings(problems)
+
+	return problems
 }
 
 func countByDir(files []string) map[string]int {
@@ -283,4 +377,36 @@ func recvName(expr ast.Expr) string {
 	}
 
 	return "?"
+}
+
+// readLimits returns the directory limits of long_dirs.txt: dir, limit and reason, tab separated.
+func readLimits(t *testing.T, name string) map[string]int {
+	t.Helper()
+
+	data, err := os.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	limits := map[string]int{}
+
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		if line == "" {
+			continue
+		}
+
+		cols := strings.Split(line, "\t")
+		if len(cols) != 3 {
+			t.Fatalf("%s: line %q needs dir, limit and reason", name, line)
+		}
+
+		limit, err := strconv.Atoi(cols[1])
+		if err != nil {
+			t.Fatalf("%s: line %q: %v", name, line, err)
+		}
+
+		limits[cols[0]] = limit
+	}
+
+	return limits
 }

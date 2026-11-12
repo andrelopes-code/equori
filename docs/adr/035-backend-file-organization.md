@@ -16,6 +16,7 @@ Every Go file holds one concept and carries the name of that concept. Every func
 | `cmd/equori/config.go` converts `config.Config` to `server.Config`; `internal/server/modules.go` converts `server.Config` to each module `Config` | review |
 | A module root holds `<module>.go`, optionally `config.go`, `types.go`, `adapters.go`, `region_defaults.go` and one file per group of exported methods | review; module README states a deviation |
 | `cmd/equori/main.go` has at most 80 lines | `internal/platform/layout` |
+| A directory holds at most 40 hand-written non-test Go files; a directory above 40 has an entry in `long_dirs.txt` with its limit and reason, and an entry whose directory holds at most 40 files is removed | `internal/platform/layout`, `TestGoDirectorySize` |
 | A hand-written non-test Go file has at most 400 lines | `internal/platform/layout`, `TestGoFileSize` |
 | A hand-written non-test function body has at most 50 lines | `internal/platform/layout`, `TestGoFunctionSize` |
 | An allow-list entry is removed when its file or function no longer exceeds the limit | `internal/platform/layout`; a stale entry fails the test |
