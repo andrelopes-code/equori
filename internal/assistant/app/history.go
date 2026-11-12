@@ -30,6 +30,23 @@ func History(
 	proposals []domain.Proposal,
 	now time.Time,
 ) []HistoryMessage {
+	turns := historyTurns(messages, proposals, now)
+	from := historyStart(turns)
+
+	out := make([]HistoryMessage, 0, 2*(len(turns)-from))
+	for _, t := range turns[from:] {
+		out = append(out, t[0], t[1])
+	}
+
+	return out
+}
+
+// historyTurns pairs each user message with the answer that follows it.
+func historyTurns(
+	messages []domain.Message,
+	proposals []domain.Proposal,
+	now time.Time,
+) [][2]HistoryMessage {
 	var turns [][2]HistoryMessage
 	for i := 0; i+1 < len(messages); i++ {
 		u, a := messages[i], messages[i+1]
@@ -42,18 +59,7 @@ func History(
 			text = NoAnswer
 		}
 
-		for _, p := range proposals {
-			if p.MessageID != a.ID {
-				continue
-			}
-
-			status := string(p.Status)
-			if p.Expired(now) {
-				status = "expired"
-			}
-
-			text += "\n" + historyLine(p, status)
-		}
+		text += proposalLines(a, proposals, now)
 
 		if strings.TrimSpace(text) == "" {
 			continue
@@ -65,6 +71,31 @@ func History(
 		)
 	}
 
+	return turns
+}
+
+// proposalLines is the line of each proposal of answer a, each preceded by a newline.
+func proposalLines(a domain.Message, proposals []domain.Proposal, now time.Time) string {
+	var text string
+
+	for _, p := range proposals {
+		if p.MessageID != a.ID {
+			continue
+		}
+
+		status := string(p.Status)
+		if p.Expired(now) {
+			status = "expired"
+		}
+
+		text += "\n" + historyLine(p, status)
+	}
+
+	return text
+}
+
+// historyStart is the index of the first turn that fits HistoryBytes and HistoryTurns.
+func historyStart(turns [][2]HistoryMessage) int {
 	size, from := 0, len(turns)
 	for from > 0 && len(turns)-from < HistoryTurns {
 		n := len(turns[from-1][0].Text) + len(turns[from-1][1].Text)
@@ -76,12 +107,7 @@ func History(
 		from--
 	}
 
-	out := make([]HistoryMessage, 0, 2*(len(turns)-from))
-	for _, t := range turns[from:] {
-		out = append(out, t[0], t[1])
-	}
-
-	return out
+	return from
 }
 
 // historyLine is `[proposal <id> <tool>[ suggested]: <status>[; id <value>]]`; the id is the one at /id of the
