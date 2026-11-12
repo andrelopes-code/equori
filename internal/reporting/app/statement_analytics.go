@@ -95,46 +95,57 @@ func (s *Service) analyse(ctx context.Context, booksID int64, instrument string,
 
 	out := make([]StatementAnalytics, len(refs))
 	for i, ref := range refs {
-		byCategory := map[uuid.UUID]*CategoryParts{}
-		for _, l := range facts.Lines {
-			if l.CardID != ref.CardID || !l.Statement.Equal(ref.Reference) {
-				continue
-			}
-
-			for category, v := range categories[l.ID] {
-				c := byCategory[category]
-				if c == nil {
-					c = &CategoryParts{CategoryID: category}
-					byCategory[category] = c
-				}
-
-				switch {
-				case l.Credit:
-					c.Credits += v
-				case charges[category]:
-					c.Charges += v
-				case l.Anticipation || l.PlanPurchase != nil && !l.PlanPurchase.After(ref.PreviousClosing):
-					c.Installments += v
-				default:
-					c.Purchases += v
-				}
-			}
-		}
-
-		a := StatementAnalytics{Statement: ref, Instrument: instrument}
-		for _, c := range byCategory {
-			a.Categories = append(a.Categories, *c)
-			a.Purchases += c.Purchases
-			a.Installments += c.Installments
-			a.Charges += c.Charges
-			a.Credits += c.Credits
-		}
-
-		slices.SortFunc(a.Categories, func(x, y CategoryParts) int {
-			return cmp.Or(cmp.Compare(y.Total(), x.Total()), bytes.Compare(x.CategoryID[:], y.CategoryID[:]))
-		})
-		out[i] = a
+		out[i] = analyseStatement(facts, categories, charges, ref, instrument)
 	}
 
 	return out, nil
+}
+
+func analyseStatement(
+	facts CardFacts,
+	categories map[uuid.UUID]Shares,
+	charges map[uuid.UUID]bool,
+	ref StatementRef,
+	instrument string,
+) StatementAnalytics {
+	byCategory := map[uuid.UUID]*CategoryParts{}
+	for _, l := range facts.Lines {
+		if l.CardID != ref.CardID || !l.Statement.Equal(ref.Reference) {
+			continue
+		}
+
+		for category, v := range categories[l.ID] {
+			c := byCategory[category]
+			if c == nil {
+				c = &CategoryParts{CategoryID: category}
+				byCategory[category] = c
+			}
+
+			switch {
+			case l.Credit:
+				c.Credits += v
+			case charges[category]:
+				c.Charges += v
+			case l.Anticipation || l.PlanPurchase != nil && !l.PlanPurchase.After(ref.PreviousClosing):
+				c.Installments += v
+			default:
+				c.Purchases += v
+			}
+		}
+	}
+
+	a := StatementAnalytics{Statement: ref, Instrument: instrument}
+	for _, c := range byCategory {
+		a.Categories = append(a.Categories, *c)
+		a.Purchases += c.Purchases
+		a.Installments += c.Installments
+		a.Charges += c.Charges
+		a.Credits += c.Credits
+	}
+
+	slices.SortFunc(a.Categories, func(x, y CategoryParts) int {
+		return cmp.Or(cmp.Compare(y.Total(), x.Total()), bytes.Compare(x.CategoryID[:], y.CategoryID[:]))
+	})
+
+	return a
 }

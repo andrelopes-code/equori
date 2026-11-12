@@ -53,12 +53,9 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 		now := clk.Now()
 		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
-		month := today
-		if in.Month != "" {
-			var err error
-			if month, err = time.Parse("2006-01", in.Month); err != nil {
-				return getFinancialIndicatorsOut{}, tool.InvalidArgument("month", "must be written YYYY-MM")
-			}
+		month, err := decodeIndicatorMonth(in, today)
+		if err != nil {
+			return getFinancialIndicatorsOut{}, err
 		}
 
 		report, err := svc.Indicators(ctx, booksID, month, today)
@@ -66,46 +63,73 @@ func getFinancialIndicators(svc *app.Service, clk app.Clock) tool.Tool {
 			return getFinancialIndicatorsOut{}, err
 		}
 
-		cur := money.Currency(report.Currency)
-		amount := func(v int64) (tool.Money, error) {
-			m, err := money.New(v, cur)
-			return tool.MoneyOf(m), err
-		}
-
-		out := getFinancialIndicatorsOut{Months: make([]indicatorView, len(report.Months))}
-		for i, m := range report.Months {
-			v := indicatorView{
-				Month: m.Month.Format("2006-01"), SavingsRate: ratioOf(m.SavingsRate),
-				TrailingSavingsRate: ratioOf(m.TrailingSavingsRate), Liquidity: ratioOf(m.Liquidity),
-				CommittedShare: ratioOf(m.CommittedShare), DebtServiceShare: ratioOf(m.DebtServiceShare),
-			}
-			for _, f := range []struct {
-				to *tool.Money
-				v  int64
-			}{
-				{&v.Income, m.Income}, {&v.Expense, m.Expense}, {&v.Committed, m.Committed},
-				{&v.DebtService, m.DebtService}, {&v.LiquidBalance, m.Liquid}, {&v.Liabilities, m.Liabilities},
-			} {
-				if *f.to, err = amount(f.v); err != nil {
-					return getFinancialIndicatorsOut{}, err
-				}
-			}
-
-			if m.HasMeans {
-				if v.MeanIncome, err = amount(m.MeanIncome); err != nil {
-					return getFinancialIndicatorsOut{}, err
-				}
-
-				if v.MeanExpense, err = amount(m.MeanExpense); err != nil {
-					return getFinancialIndicatorsOut{}, err
-				}
-			}
-
-			out.Months[i] = v
-		}
-
-		return out, nil
+		return indicatorViews(report)
 	})
+}
+
+func decodeIndicatorMonth(in getFinancialIndicatorsIn, today time.Time) (time.Time, error) {
+	month := today
+	if in.Month != "" {
+		var err error
+		if month, err = time.Parse("2006-01", in.Month); err != nil {
+			return month, tool.InvalidArgument("month", "must be written YYYY-MM")
+		}
+	}
+
+	return month, nil
+}
+
+func indicatorViews(report app.IndicatorReport) (getFinancialIndicatorsOut, error) {
+	cur := money.Currency(report.Currency)
+	amount := func(v int64) (tool.Money, error) {
+		m, err := money.New(v, cur)
+		return tool.MoneyOf(m), err
+	}
+
+	out := getFinancialIndicatorsOut{Months: make([]indicatorView, len(report.Months))}
+	for i, m := range report.Months {
+		v, err := monthView(m, amount)
+		if err != nil {
+			return getFinancialIndicatorsOut{}, err
+		}
+
+		out.Months[i] = v
+	}
+
+	return out, nil
+}
+
+func monthView(m app.IndicatorMonth, amount func(int64) (tool.Money, error)) (indicatorView, error) {
+	var err error
+
+	v := indicatorView{
+		Month: m.Month.Format("2006-01"), SavingsRate: ratioOf(m.SavingsRate),
+		TrailingSavingsRate: ratioOf(m.TrailingSavingsRate), Liquidity: ratioOf(m.Liquidity),
+		CommittedShare: ratioOf(m.CommittedShare), DebtServiceShare: ratioOf(m.DebtServiceShare),
+	}
+	for _, f := range []struct {
+		to *tool.Money
+		v  int64
+	}{
+		{&v.Income, m.Income}, {&v.Expense, m.Expense}, {&v.Committed, m.Committed},
+		{&v.DebtService, m.DebtService}, {&v.LiquidBalance, m.Liquid}, {&v.Liabilities, m.Liabilities},
+	} {
+		if *f.to, err = amount(f.v); err != nil {
+			return indicatorView{}, err
+		}
+	}
+
+	if m.HasMeans {
+		if v.MeanIncome, err = amount(m.MeanIncome); err != nil {
+			return indicatorView{}, err
+		}
+
+		if v.MeanExpense, err = amount(m.MeanExpense); err != nil {
+			return indicatorView{}, err
+		}
+	}
+
+	return v, nil
 }
 
 func ratioOf(r app.Ratio) ratioView {

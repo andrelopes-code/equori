@@ -25,20 +25,8 @@ func (r *Repository) CardFacts(ctx context.Context, booksID int64, to time.Time)
 	f := app.CardFacts{Categories: map[uuid.UUID]app.Shares{}, Origins: map[uuid.UUID]uuid.UUID{}}
 
 	var txs []uuid.UUID
-	for _, l := range lines {
-		f.Lines = append(f.Lines, app.CardLine{
-			ID: l.ID, TransactionID: l.TransactionID, CardID: l.CardID, StatementID: l.StatementID, Amount: l.Amount,
-			Credit: l.CardRole != nil && *l.CardRole == "credit", Statement: l.ReferenceMonth,
-			Base: l.Base, PlanPurchase: l.PlanPurchaseDate, Anticipation: l.Anticipation,
-		})
-		txs = append(txs, l.TransactionID)
-	}
-
-	for _, p := range payments {
-		f.Payments = append(f.Payments, app.CardPayment{
-			ID: p.ID, TransactionID: p.TransactionID, CardID: p.CardID, Date: p.BookedOn, Amount: p.Amount, Financing: p.Financing,
-		})
-	}
+	f.Lines, txs = cardLines(lines)
+	f.Payments = cardPayments(payments)
 
 	origins, err := r.q.CashOrigins(ctx, CashOriginsParams{BooksID: booksID, TransactionIds: txs})
 	if err != nil {
@@ -64,6 +52,33 @@ func (r *Repository) CardFacts(ctx context.Context, booksID int64, to time.Time)
 	}
 
 	return f, nil
+}
+
+func cardLines(lines []CashCardLinesRow) ([]app.CardLine, []uuid.UUID) {
+	var out []app.CardLine
+
+	var txs []uuid.UUID
+	for _, l := range lines {
+		out = append(out, app.CardLine{
+			ID: l.ID, TransactionID: l.TransactionID, CardID: l.CardID, StatementID: l.StatementID, Amount: l.Amount,
+			Credit: l.CardRole != nil && *l.CardRole == "credit", Statement: l.ReferenceMonth,
+			Base: l.Base, PlanPurchase: l.PlanPurchaseDate, Anticipation: l.Anticipation,
+		})
+		txs = append(txs, l.TransactionID)
+	}
+
+	return out, txs
+}
+
+func cardPayments(payments []CashPaymentsRow) []app.CardPayment {
+	var out []app.CardPayment
+	for _, p := range payments {
+		out = append(out, app.CardPayment{
+			ID: p.ID, TransactionID: p.TransactionID, CardID: p.CardID, Date: p.BookedOn, Amount: p.Amount, Financing: p.Financing,
+		})
+	}
+
+	return out
 }
 
 func (r *Repository) OffCardTotals(ctx context.Context, booksID int64, from, to time.Time) (app.Shares, error) {

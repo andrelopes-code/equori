@@ -14,14 +14,3 @@ internal/ledger/httpapi/server.go	Server.Register	table of data
 internal/marketdata/sources.go	sourceEntries	table of data
 internal/planning/httpapi/server.go	Server.Register	table of data
 internal/platform/config/variables.go	Variables	table of data
-internal/reporting/app/cash_allocation.go	allocate	pending: backend reorganization plan
-internal/reporting/app/import.go	Exports.Import	pending: backend reorganization plan
-internal/reporting/app/indicators.go	Service.Indicators	pending: backend reorganization plan
-internal/reporting/app/statement_analytics.go	Service.analyse	pending: backend reorganization plan
-internal/reporting/httpapi/export.go	Server.restoreArchive	pending: backend reorganization plan
-internal/reporting/httpapi/server.go	ToProblem	pending: backend reorganization plan
-internal/reporting/postgres/archive.go	buildArchive	pending: backend reorganization plan
-internal/reporting/postgres/cash.go	Repository.CardFacts	pending: backend reorganization plan
-internal/reporting/postgres/import.go	Exports.Import	pending: backend reorganization plan
-internal/reporting/toolapi/history.go	getAccountHistory	pending: backend reorganization plan
-internal/reporting/toolapi/indicators.go	getFinancialIndicators	pending: backend reorganization plan

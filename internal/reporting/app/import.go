@@ -100,83 +100,28 @@ func (s *Exports) Import(
 		return ImportResult{}, err
 	}
 
-	var m archiveManifest
-	if err := json.Unmarshal(files["manifest.json"], &m); err != nil || m.Format != "equori-export" || m.FormatVersion != 1 {
-		return ImportResult{}, fmt.Errorf("%w: manifest", ErrArchiveInvalid)
-	}
-
-	// ADR 021, V1: an archive written before archive_version existed is version 1.
-	version := 1
-	if m.ArchiveVersion != nil {
-		version = *m.ArchiveVersion
-	}
-
-	switch {
-	case version < 1:
-		return ImportResult{}, fmt.Errorf("%w: archive version %d", ErrArchiveInvalid, version)
-	case version > ArchiveVersion:
-		return ImportResult{}, &ArchiveTooNewError{Archive: version, Instance: ArchiveVersion}
-	}
-
-	tables := make([]ArchiveTable, 0, len(m.Tables))
-	for _, t := range m.Tables {
-		b, ok := files[t.File]
-		if !ok || !matches(b, t.SHA256) {
-			return ImportResult{}, fmt.Errorf("%w: table %s", ErrArchiveInvalid, t.Name)
-		}
-
-		var rows [][]byte
-		for line := range strings.Lines(string(b)) {
-			row := []byte(strings.TrimSuffix(line, "\n"))
-			if !jsontext.Value(row).IsValid() || len(row) == 0 || row[0] != '{' {
-				return ImportResult{}, fmt.Errorf("%w: a row of %s", ErrArchiveInvalid, t.Name)
-			}
-
-			rows = append(rows, row)
-		}
-
-		if len(rows) != t.Rows {
-			return ImportResult{}, fmt.Errorf("%w: rows of %s", ErrArchiveInvalid, t.Name)
-		}
-
-		tables = append(tables, ArchiveTable{Name: t.Name, Rows: rows})
-	}
-
-	tables, err = migrateArchive(tables, version, archiveSteps)
-	if err != nil {
-		return ImportResult{}, fmt.Errorf("%w: %w", ErrArchiveInvalid, err)
-	}
-
-	allowed, err := s.imports.ImportableTables(ctx)
+	m, version, err := readManifest(files)
 	if err != nil {
 		return ImportResult{}, err
 	}
 
-	for _, t := range tables {
-		if !slices.Contains(allowed, t.Name) {
-			return ImportResult{}, fmt.Errorf("%w: table %s", ErrArchiveInvalid, t.Name)
-		}
+	tables, err := readMigratedTables(files, m, version)
+	if err != nil {
+		return ImportResult{}, err
 	}
 
-	attachments := map[string][]byte{}
-	for _, a := range m.Attachments {
-		b, ok := files[a.File]
-		if !ok || a.File != "attachments/"+a.SHA256 || !matches(b, a.SHA256) {
-			return ImportResult{}, fmt.Errorf("%w: attachment %s", ErrArchiveInvalid, a.File)
-		}
-
-		attachments[a.SHA256] = b
+	if err := s.checkTables(ctx, tables); err != nil {
+		return ImportResult{}, err
 	}
 
-	var bundle []byte
+	attachments, err := readAttachments(files, m)
+	if err != nil {
+		return ImportResult{}, err
+	}
 
-	if m.Credentials != nil {
-		b, ok := files[m.Credentials.File]
-		if m.Credentials.File != CredentialsFile || !ok || !matches(b, m.Credentials.SHA256) {
-			return ImportResult{}, fmt.Errorf("%w: %s", ErrArchiveInvalid, CredentialsFile)
-		}
-
-		bundle = b
+	bundle, err := readCredentialsBundle(files, m)
+	if err != nil {
+		return ImportResult{}, err
 	}
 
 	sealed, err := s.resealCredentials(booksID, bundle, creds)
@@ -189,16 +134,130 @@ func (s *Exports) Import(
 		return ImportResult{}, err
 	}
 
-	for _, rebuild := range s.rebuilds {
-		if err := rebuild(ctx, booksID); err != nil {
-			return ImportResult{}, fmt.Errorf("rebuild after import: %w", err)
-		}
+	if err := s.runRebuilds(ctx, booksID); err != nil {
+		return ImportResult{}, err
 	}
 
 	return ImportResult{
 		ArchiveVersion: version, Tables: counts, CredentialsInArchive: m.Credentials != nil,
 		CredentialsRestored: restored.Integrations, ProviderKeysRestored: restored.Providers,
 	}, nil
+}
+
+func (s *Exports) checkTables(ctx context.Context, tables []ArchiveTable) error {
+	allowed, err := s.imports.ImportableTables(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, t := range tables {
+		if !slices.Contains(allowed, t.Name) {
+			return fmt.Errorf("%w: table %s", ErrArchiveInvalid, t.Name)
+		}
+	}
+
+	return nil
+}
+
+func (s *Exports) runRebuilds(ctx context.Context, booksID int64) error {
+	for _, rebuild := range s.rebuilds {
+		if err := rebuild(ctx, booksID); err != nil {
+			return fmt.Errorf("rebuild after import: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func readManifest(files map[string][]byte) (archiveManifest, int, error) {
+	var m archiveManifest
+	if err := json.Unmarshal(files["manifest.json"], &m); err != nil || m.Format != "equori-export" || m.FormatVersion != 1 {
+		return m, 0, fmt.Errorf("%w: manifest", ErrArchiveInvalid)
+	}
+
+	// ADR 021, V1: an archive written before archive_version existed is version 1.
+	version := 1
+	if m.ArchiveVersion != nil {
+		version = *m.ArchiveVersion
+	}
+
+	switch {
+	case version < 1:
+		return m, 0, fmt.Errorf("%w: archive version %d", ErrArchiveInvalid, version)
+	case version > ArchiveVersion:
+		return m, 0, &ArchiveTooNewError{Archive: version, Instance: ArchiveVersion}
+	}
+
+	return m, version, nil
+}
+
+func readMigratedTables(files map[string][]byte, m archiveManifest, version int) ([]ArchiveTable, error) {
+	tables, err := readTables(files, m)
+	if err != nil {
+		return nil, err
+	}
+
+	tables, err = migrateArchive(tables, version, archiveSteps)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrArchiveInvalid, err)
+	}
+
+	return tables, nil
+}
+
+func readTables(files map[string][]byte, m archiveManifest) ([]ArchiveTable, error) {
+	tables := make([]ArchiveTable, 0, len(m.Tables))
+	for _, t := range m.Tables {
+		b, ok := files[t.File]
+		if !ok || !matches(b, t.SHA256) {
+			return nil, fmt.Errorf("%w: table %s", ErrArchiveInvalid, t.Name)
+		}
+
+		var rows [][]byte
+		for line := range strings.Lines(string(b)) {
+			row := []byte(strings.TrimSuffix(line, "\n"))
+			if !jsontext.Value(row).IsValid() || len(row) == 0 || row[0] != '{' {
+				return nil, fmt.Errorf("%w: a row of %s", ErrArchiveInvalid, t.Name)
+			}
+
+			rows = append(rows, row)
+		}
+
+		if len(rows) != t.Rows {
+			return nil, fmt.Errorf("%w: rows of %s", ErrArchiveInvalid, t.Name)
+		}
+
+		tables = append(tables, ArchiveTable{Name: t.Name, Rows: rows})
+	}
+
+	return tables, nil
+}
+
+func readAttachments(files map[string][]byte, m archiveManifest) (map[string][]byte, error) {
+	attachments := map[string][]byte{}
+	for _, a := range m.Attachments {
+		b, ok := files[a.File]
+		if !ok || a.File != "attachments/"+a.SHA256 || !matches(b, a.SHA256) {
+			return nil, fmt.Errorf("%w: attachment %s", ErrArchiveInvalid, a.File)
+		}
+
+		attachments[a.SHA256] = b
+	}
+
+	return attachments, nil
+}
+
+func readCredentialsBundle(files map[string][]byte, m archiveManifest) ([]byte, error) {
+	if m.Credentials == nil {
+		return nil, nil
+	}
+
+	b, ok := files[m.Credentials.File]
+	if m.Credentials.File != CredentialsFile || !ok || !matches(b, m.Credentials.SHA256) {
+		return nil, fmt.Errorf("%w: %s", ErrArchiveInvalid, CredentialsFile)
+	}
+
+	return b, nil
 }
 
 // resealCredentials opens the credentials entry of the archive with the passphrase and seals each

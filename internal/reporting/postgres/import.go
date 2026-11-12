@@ -1,14 +1,10 @@
 package postgres
 
 import (
-	"bytes"
 	"context"
-	"encoding/hex"
-	"encoding/json/v2"
 	"errors"
 	"fmt"
 	"slices"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -83,18 +79,6 @@ func loadOrder(ctx context.Context, q DBTX, tables []string) ([]string, error) {
 	return out, nil
 }
 
-// columns returns the columns of table an INSERT may write, in table order.
-func columns(ctx context.Context, q DBTX, table string) ([]string, error) {
-	rows, err := q.Query(ctx, `SELECT column_name FROM information_schema.columns
-		WHERE table_schema = current_schema() AND table_name = $1 AND is_generated = 'NEVER' AND is_identity = 'NO'
-		ORDER BY ordinal_position`, table)
-	if err != nil {
-		return nil, err
-	}
-
-	return pgx.CollectRows(rows, pgx.RowTo[string])
-}
-
 func (r *Exports) Import(
 	ctx context.Context,
 	booksID int64,
@@ -111,34 +95,13 @@ func (r *Exports) Import(
 			return err
 		}
 
-		facts, err := FactTables(ctx, tx)
+		facts, order, err := r.importOrder(ctx, tx)
 		if err != nil {
 			return err
 		}
 
-		all, err := r.ImportableTables(ctx)
-		if err != nil {
+		if err := clearFacts(ctx, tx, booksID, order, facts); err != nil {
 			return err
-		}
-
-		order, err := loadOrder(ctx, tx, all)
-		if err != nil {
-			return err
-		}
-
-		// The sign-up rows (system accounts, settings) give way to the archive's.
-		for _, t := range slices.Backward(order) {
-			where := "books_id = $1"
-			switch {
-			case t == "ledger_transaction_version":
-				where = "transaction_id IN (SELECT id FROM ledger_transaction WHERE books_id = $1)"
-			case !slices.Contains(facts, t):
-				continue
-			}
-
-			if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{t}.Sanitize(), where), booksID); err != nil {
-				return fmt.Errorf("clear %s: %w", t, err)
-			}
 		}
 
 		byName := map[string]app.ArchiveTable{}
@@ -146,81 +109,165 @@ func (r *Exports) Import(
 			byName[t.Name] = t
 		}
 
-		for _, t := range order {
-			rows := byName[t].Rows
-			if len(rows) == 0 {
-				continue
-			}
-
-			if t == "ledger_attachment_blob" {
-				if rows, err = withContent(rows, attachments); err != nil {
-					return err
-				}
-			}
-
-			col, err := foreignBook(ctx, tx, t, rows, booksID)
-			if err != nil {
-				return fmt.Errorf("check %s: %w", t, err)
-			}
-
-			if col != "" {
-				return fmt.Errorf("%w: %s.%s", app.ErrImportConflict, t, col)
-			}
-
-			n, err := insert(ctx, tx, t, rows, booksID, slices.Contains(sharedTables, t))
-			if err != nil {
-				return fmt.Errorf("import %s: %w", t, err)
-			}
-
-			counts = append(counts, app.TableCount{Name: t, Rows: n})
+		counts, err = insertTables(ctx, tx, booksID, order, byName, attachments)
+		if err != nil {
+			return err
 		}
 
-		for t, c := range laterReferences {
-			rows := byName[t].Rows
-			if len(rows) == 0 {
-				continue
-			}
-
-			name, col := pgx.Identifier{t}.Sanitize(), pgx.Identifier{c}.Sanitize()
-			if _, err := tx.Exec(ctx, fmt.Sprintf(`UPDATE %s t SET %s = r.%s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
-				WHERE t.books_id = $2 AND t.id = r.id AND r.%s IS NOT NULL`, name, col, col, name, col), jsonArray(rows), booksID); err != nil {
-				return fmt.Errorf("import %s.%s: %w", t, c, err)
-			}
+		if err := setLaterReferences(ctx, tx, booksID, byName); err != nil {
+			return err
 		}
 
-		// Export design C6: a credential of an id with no imported integration matches no row.
-		for id, b := range sealed.Integrations {
-			tag, err := tx.Exec(ctx, `UPDATE ingestion_integration SET credential_ciphertext = $1 WHERE books_id = $2 AND id = $3`, b, booksID, id)
-			if err != nil {
-				return fmt.Errorf("restore credential: %w", err)
-			}
+		restored, err = restoreSecrets(ctx, tx, booksID, sealed)
 
-			restored.Integrations += int(tag.RowsAffected())
-		}
-
-		// Export design T5: a key of an id with no imported provider matches no row.
-		for id, b := range sealed.Providers {
-			tag, err := tx.Exec(ctx, `UPDATE assistant_provider SET sealed_key = $1 WHERE books_id = $2 AND id = $3`, b, booksID, id)
-			if err != nil {
-				return fmt.Errorf("restore provider key: %w", err)
-			}
-
-			restored.Providers += int(tag.RowsAffected())
-		}
-
-		return nil
+		return err
 	})
 
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return nil, app.RestoredCredentials{}, fmt.Errorf("%w: %s", app.ErrImportConflict, pgErr.ConstraintName)
-	}
-
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-		return nil, app.RestoredCredentials{}, fmt.Errorf("%w: %s", app.ErrArchiveInvalid, pgErr.ConstraintName)
+	if mapped := importConflict(err); mapped != nil {
+		return nil, app.RestoredCredentials{}, mapped
 	}
 
 	return counts, restored, err
+}
+
+func (r *Exports) importOrder(ctx context.Context, tx pgx.Tx) ([]string, []string, error) {
+	facts, err := FactTables(ctx, tx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	all, err := r.ImportableTables(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	order, err := loadOrder(ctx, tx, all)
+
+	return facts, order, err
+}
+
+// importConflict maps the unique and foreign key violations of an import; nil for any other error.
+func importConflict(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		return fmt.Errorf("%w: %s", app.ErrImportConflict, pgErr.ConstraintName)
+	}
+
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		return fmt.Errorf("%w: %s", app.ErrArchiveInvalid, pgErr.ConstraintName)
+	}
+
+	return nil
+}
+
+// clearFacts deletes the sign-up rows (system accounts, settings), which give way to the archive's.
+func clearFacts(ctx context.Context, tx pgx.Tx, booksID int64, order, facts []string) error {
+	for _, t := range slices.Backward(order) {
+		where := "books_id = $1"
+		switch {
+		case t == "ledger_transaction_version":
+			where = "transaction_id IN (SELECT id FROM ledger_transaction WHERE books_id = $1)"
+		case !slices.Contains(facts, t):
+			continue
+		}
+
+		if _, err := tx.Exec(ctx, fmt.Sprintf(`DELETE FROM %s WHERE %s`, pgx.Identifier{t}.Sanitize(), where), booksID); err != nil {
+			return fmt.Errorf("clear %s: %w", t, err)
+		}
+	}
+
+	return nil
+}
+
+func insertTables(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	order []string,
+	byName map[string]app.ArchiveTable,
+	attachments map[string][]byte,
+) ([]app.TableCount, error) {
+	var counts []app.TableCount
+
+	for _, t := range order {
+		rows := byName[t].Rows
+		if len(rows) == 0 {
+			continue
+		}
+
+		var err error
+		if t == "ledger_attachment_blob" {
+			if rows, err = withContent(rows, attachments); err != nil {
+				return counts, err
+			}
+		}
+
+		col, err := foreignBook(ctx, tx, t, rows, booksID)
+		if err != nil {
+			return counts, fmt.Errorf("check %s: %w", t, err)
+		}
+
+		if col != "" {
+			return counts, fmt.Errorf("%w: %s.%s", app.ErrImportConflict, t, col)
+		}
+
+		n, err := insert(ctx, tx, t, rows, booksID, slices.Contains(sharedTables, t))
+		if err != nil {
+			return counts, fmt.Errorf("import %s: %w", t, err)
+		}
+
+		counts = append(counts, app.TableCount{Name: t, Rows: n})
+	}
+
+	return counts, nil
+}
+
+func setLaterReferences(ctx context.Context, tx pgx.Tx, booksID int64, byName map[string]app.ArchiveTable) error {
+	for t, c := range laterReferences {
+		rows := byName[t].Rows
+		if len(rows) == 0 {
+			continue
+		}
+
+		name, col := pgx.Identifier{t}.Sanitize(), pgx.Identifier{c}.Sanitize()
+		if _, err := tx.Exec(ctx, fmt.Sprintf(`UPDATE %s t SET %s = r.%s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
+			WHERE t.books_id = $2 AND t.id = r.id AND r.%s IS NOT NULL`, name, col, col, name, col), jsonArray(rows), booksID); err != nil {
+			return fmt.Errorf("import %s.%s: %w", t, c, err)
+		}
+	}
+
+	return nil
+}
+
+func restoreSecrets(
+	ctx context.Context,
+	tx pgx.Tx,
+	booksID int64,
+	sealed app.SealedCredentials,
+) (app.RestoredCredentials, error) {
+	var restored app.RestoredCredentials
+
+	// Export design C6: a credential of an id with no imported integration matches no row.
+	for id, b := range sealed.Integrations {
+		tag, err := tx.Exec(ctx, `UPDATE ingestion_integration SET credential_ciphertext = $1 WHERE books_id = $2 AND id = $3`, b, booksID, id)
+		if err != nil {
+			return restored, fmt.Errorf("restore credential: %w", err)
+		}
+
+		restored.Integrations += int(tag.RowsAffected())
+	}
+
+	// Export design T5: a key of an id with no imported provider matches no row.
+	for id, b := range sealed.Providers {
+		tag, err := tx.Exec(ctx, `UPDATE assistant_provider SET sealed_key = $1 WHERE books_id = $2 AND id = $3`, b, booksID, id)
+		if err != nil {
+			return restored, fmt.Errorf("restore provider key: %w", err)
+		}
+
+		restored.Providers += int(tag.RowsAffected())
+	}
+
+	return restored, nil
 }
 
 // replacedTables hold rows that no archive carries and that a replacement deletes, child
@@ -263,119 +310,4 @@ func clearable(ctx context.Context, tx pgx.Tx, booksID int64, replace string) er
 	_, err := tx.Exec(ctx, `SELECT set_config('equori.unlock_reconciled', 'on', TRUE)`)
 
 	return err
-}
-
-// insert writes rows in one statement; a shared row already present is kept.
-func insert(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID int64, shared bool) (int, error) {
-	cols, err := columns(ctx, tx, table)
-	if err != nil {
-		return 0, err
-	}
-
-	values := make([]string, len(cols))
-	args := []any{jsonArray(rows)}
-
-	for i, c := range cols {
-		switch c {
-		case "books_id":
-			values[i] = "$2::bigint"
-		case laterReferences[table]:
-			values[i] = "NULL"
-		default:
-			values[i] = "r." + pgx.Identifier{c}.Sanitize()
-		}
-
-		cols[i] = pgx.Identifier{c}.Sanitize()
-	}
-
-	if slices.Contains(values, "$2::bigint") {
-		args = append(args, booksID)
-	}
-
-	name := pgx.Identifier{table}.Sanitize()
-
-	sql := fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r`,
-		name, strings.Join(cols, ", "), strings.Join(values, ", "), name)
-	if shared {
-		sql += " ON CONFLICT DO NOTHING"
-	}
-
-	tag, err := tx.Exec(ctx, sql, args...)
-
-	return int(tag.RowsAffected()), err
-}
-
-// foreignBook returns the column of table through which a row of rows names a row of
-// another book, or "" when none does (A179). It reads single-column foreign keys whose
-// referenced table has books_id; a reference to a row of the same import names no row yet.
-func foreignBook(ctx context.Context, tx pgx.Tx, table string, rows [][]byte, booksID int64) (string, error) {
-	keys, err := tx.Query(ctx, `SELECT a.attname::text, c.confrelid::regclass::text, f.attname::text
-		FROM pg_constraint c
-		JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
-		JOIN pg_attribute f ON f.attrelid = c.confrelid AND f.attnum = c.confkey[1]
-		WHERE c.contype = 'f' AND c.conrelid = $1::regclass AND cardinality(c.conkey) = 1
-			AND EXISTS (SELECT 1 FROM pg_attribute b
-				WHERE b.attrelid = c.confrelid AND b.attname = 'books_id' AND NOT b.attisdropped)
-		ORDER BY 1`, pgx.Identifier{table}.Sanitize())
-	if err != nil {
-		return "", err
-	}
-
-	type key struct{ col, ref, refCol string }
-
-	found, err := pgx.CollectRows(keys, func(row pgx.CollectableRow) (key, error) {
-		var k key
-
-		return k, row.Scan(&k.col, &k.ref, &k.refCol)
-	})
-	if err != nil {
-		return "", err
-	}
-
-	for _, k := range found {
-		var names bool
-		if err := tx.QueryRow(ctx, fmt.Sprintf(`SELECT EXISTS (SELECT 1 FROM jsonb_populate_recordset(NULL::%s, $1::jsonb) r
-			JOIN %s x ON x.%s = r.%s WHERE x.books_id <> $2)`,
-			pgx.Identifier{table}.Sanitize(), k.ref, pgx.Identifier{k.refCol}.Sanitize(), pgx.Identifier{k.col}.Sanitize()),
-			jsonArray(rows), booksID).Scan(&names); err != nil {
-			return "", err
-		}
-
-		if names {
-			return k.col, nil
-		}
-	}
-
-	return "", nil
-}
-
-func jsonArray(rows [][]byte) []byte {
-	return append(append([]byte("["), bytes.Join(rows, []byte(","))...), ']')
-}
-
-// withContent puts the bytes of each attachment back into its blob row.
-func withContent(rows [][]byte, attachments map[string][]byte) ([][]byte, error) {
-	out := make([][]byte, len(rows))
-	for i, row := range rows {
-		var blob struct {
-			SHA256 string `json:"sha256"`
-		}
-		if err := json.Unmarshal(row, &blob); err != nil {
-			return nil, fmt.Errorf("%w: blob row", app.ErrArchiveInvalid)
-		}
-
-		content, ok := attachments[strings.TrimPrefix(blob.SHA256, `\x`)]
-		if !ok {
-			return nil, fmt.Errorf("%w: no file for attachment %s", app.ErrArchiveInvalid, blob.SHA256)
-		}
-
-		field, err := json.Marshal(`\x` + hex.EncodeToString(content))
-		if err != nil {
-			return nil, err
-		}
-
-		out[i] = append(append(bytes.TrimSuffix(row, []byte("}")), `,"content":`...), append(field, '}')...)
-	}
-
-	return out, nil
 }

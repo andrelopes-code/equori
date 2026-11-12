@@ -52,33 +52,59 @@ func (s *Service) Indicators(ctx context.Context, booksID int64, month, today ti
 		return IndicatorReport{}, err
 	}
 
-	monthEnd := func(m time.Time) time.Time {
-		if m.Equal(current) {
-			return today
-		}
-
-		return m.AddDate(0, 1, -1)
-	}
 	start := month.AddDate(0, -23, 0)
+	end := indicatorMonthEnd(month, current, today)
 
-	totals, err := s.cashMonthTotals(ctx, booksID, start, monthEnd(month))
+	totals, loans, err := s.indicatorMonthly(ctx, booksID, start, end)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
 
-	loans, err := s.repo.LoanPrincipalByMonth(ctx, booksID, start, monthEnd(month))
+	sets, err := s.indicatorSets(ctx, booksID, base)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
 
-	accounts, err := s.repo.IndicatorAccounts(ctx, booksID)
+	firstMonth, err := s.firstPostingMonth(ctx, booksID)
 	if err != nil {
 		return IndicatorReport{}, err
 	}
 
+	facts, err := s.indicatorFacts(ctx, booksID, indicatorInputs{
+		sets:    sets,
+		base:    base,
+		start:   start,
+		current: current,
+		today:   today,
+		totals:  totals,
+		loans:   loans,
+	})
+	if err != nil {
+		return IndicatorReport{}, err
+	}
+
+	return IndicatorReport{Currency: base, Months: indicatorMonths(facts, firstMonth)}, nil
+}
+
+func (s *Service) indicatorMonthly(
+	ctx context.Context,
+	booksID int64,
+	start, end time.Time,
+) (map[time.Time]Shares, map[time.Time]int64, error) {
+	totals, err := s.cashMonthTotals(ctx, booksID, start, end)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	loans, err := s.repo.LoanPrincipalByMonth(ctx, booksID, start, end)
+
+	return totals, loans, err
+}
+
+func (s *Service) firstPostingMonth(ctx context.Context, booksID int64) (time.Time, error) {
 	first, ok, err := s.repo.FirstPosting(ctx, booksID)
 	if err != nil {
-		return IndicatorReport{}, err
+		return time.Time{}, err
 	}
 
 	var firstMonth time.Time
@@ -86,75 +112,143 @@ func (s *Service) Indicators(ctx context.Context, booksID int64, month, today ti
 		firstMonth = firstOfMonth(first)
 	}
 
-	income, expense, interest, liquid, liability := map[uuid.UUID]bool{}, map[uuid.UUID]bool{}, map[uuid.UUID]bool{}, map[uuid.UUID]bool{}, map[uuid.UUID]bool{}
-	for _, a := range accounts {
-		inBase := a.Instrument == base
-		switch {
-		case a.Class == "income" && inBase:
-			income[a.ID] = true
-		case a.Class == "expense" && inBase:
-			expense[a.ID] = true
-		case a.Class == "asset" && liquidKinds[a.Kind] && !a.ExcludedFromLiquidity:
-			liquid[a.ID] = true
-		case a.Class == "liability":
-			liability[a.ID] = true
-		}
+	return firstMonth, nil
+}
 
-		if a.Interest && inBase {
-			interest[a.ID] = true
-		}
-	}
+// indicatorInputs holds what the 24 months of facts of Indicators derive from.
+type indicatorInputs struct {
+	sets           indicatorSets
+	base           string
+	start, current time.Time
+	today          time.Time
+	totals         map[time.Time]Shares
+	loans          map[time.Time]int64
+}
 
+func (s *Service) indicatorFacts(ctx context.Context, booksID int64, in indicatorInputs) ([]MonthFacts, error) {
 	facts := make([]MonthFacts, 24)
 	for i := range facts {
-		m := start.AddDate(0, i, 0)
-		shares := totals[m]
+		m := in.start.AddDate(0, i, 0)
 
-		f := MonthFacts{Month: m, DebtService: loans[m]}
-		for id, v := range shares {
-			switch {
-			case income[id]:
-				f.Income -= v
-			case expense[id]:
-				f.Expense += v
-			}
-
-			if interest[id] {
-				f.DebtService += v
-			}
-		}
-
+		f := indicatorFlows(in.sets, in.totals[m], m, in.loans[m])
 		if i >= 12 {
-			values, err := s.valuations.ValuedBalances(ctx, booksID, monthEnd(m))
-			if err != nil {
-				return IndicatorReport{}, err
+			end := indicatorMonthEnd(m, in.current, in.today)
+			if err := s.indicatorBalances(ctx, booksID, &f, in.sets, in.base, end); err != nil {
+				return nil, err
 			}
-
-			for id, v := range values {
-				switch {
-				case liquid[id]:
-					f.Liquid += v.Amount()
-				case liability[id]:
-					f.Liabilities -= v.Amount()
-				}
-			}
-
-			c, err := s.commitments.CommittedTotal(ctx, booksID, m)
-			if err != nil {
-				return IndicatorReport{}, err
-			}
-
-			if string(c.Currency()) != base {
-				return IndicatorReport{}, fmt.Errorf("committed of %s in %s, base %s", m.Format("2006-01"), c.Currency(), base)
-			}
-
-			f.Committed = c.Amount()
 		}
 
 		facts[i] = f
 	}
 
-	return IndicatorReport{Currency: base, Months: indicatorMonths(facts, firstMonth)}, nil
+	return facts, nil
+}
+
+func (s *Service) indicatorSets(ctx context.Context, booksID int64, base string) (indicatorSets, error) {
+	accounts, err := s.repo.IndicatorAccounts(ctx, booksID)
+	if err != nil {
+		return indicatorSets{}, err
+	}
+
+	return classifyIndicatorAccounts(accounts, base), nil
+}
+
+type indicatorSets struct {
+	income, expense, interest, liquid, liability map[uuid.UUID]bool
+}
+
+func indicatorMonthEnd(m, current, today time.Time) time.Time {
+	if m.Equal(current) {
+		return today
+	}
+
+	return m.AddDate(0, 1, -1)
+}
+
+func classifyIndicatorAccounts(accounts []IndicatorAccount, base string) indicatorSets {
+	sets := indicatorSets{
+		income:    map[uuid.UUID]bool{},
+		expense:   map[uuid.UUID]bool{},
+		interest:  map[uuid.UUID]bool{},
+		liquid:    map[uuid.UUID]bool{},
+		liability: map[uuid.UUID]bool{},
+	}
+
+	for _, a := range accounts {
+		inBase := a.Instrument == base
+		switch {
+		case a.Class == "income" && inBase:
+			sets.income[a.ID] = true
+		case a.Class == "expense" && inBase:
+			sets.expense[a.ID] = true
+		case a.Class == "asset" && liquidKinds[a.Kind] && !a.ExcludedFromLiquidity:
+			sets.liquid[a.ID] = true
+		case a.Class == "liability":
+			sets.liability[a.ID] = true
+		}
+
+		if a.Interest && inBase {
+			sets.interest[a.ID] = true
+		}
+	}
+
+	return sets
+}
+
+func indicatorFlows(sets indicatorSets, shares Shares, m time.Time, loans int64) MonthFacts {
+	f := MonthFacts{Month: m, DebtService: loans}
+	for id, v := range shares {
+		switch {
+		case sets.income[id]:
+			f.Income -= v
+		case sets.expense[id]:
+			f.Expense += v
+		}
+
+		if sets.interest[id] {
+			f.DebtService += v
+		}
+	}
+
+	return f
+}
+
+func (s *Service) indicatorBalances(
+	ctx context.Context,
+	booksID int64,
+	f *MonthFacts,
+	sets indicatorSets,
+	base string,
+	end time.Time,
+) error {
+	m := f.Month
+
+	values, err := s.valuations.ValuedBalances(ctx, booksID, end)
+	if err != nil {
+		return err
+	}
+
+	for id, v := range values {
+		switch {
+		case sets.liquid[id]:
+			f.Liquid += v.Amount()
+		case sets.liability[id]:
+			f.Liabilities -= v.Amount()
+		}
+	}
+
+	c, err := s.commitments.CommittedTotal(ctx, booksID, m)
+	if err != nil {
+		return err
+	}
+
+	if string(c.Currency()) != base {
+		return fmt.Errorf("committed of %s in %s, base %s", m.Format("2006-01"), c.Currency(), base)
+	}
+
+	f.Committed = c.Amount()
+
+	return nil
 }
 
 func firstOfMonth(t time.Time) time.Time {

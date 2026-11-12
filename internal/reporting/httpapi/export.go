@@ -148,12 +148,33 @@ func (s *Server) writeJSON(w http.ResponseWriter, r *http.Request, status int, v
 }
 
 func (s *Server) restoreArchive(ctx context.Context, body *multipart.Reader) (ArchiveImport, error) {
-	var (
-		archive []byte
-		creds   app.ImportCredentials
-		replace string
-		found   bool
-	)
+	up, err := readUpload(body)
+	if err != nil {
+		return ArchiveImport{}, err
+	}
+
+	if !up.found {
+		return ArchiveImport{}, errFileRequired
+	}
+
+	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), up.archive, up.creds, up.replace)
+	if err != nil {
+		return ArchiveImport{}, err
+	}
+
+	return toArchiveImport(res), nil
+}
+
+// archiveUpload holds the parts of the multipart body of an archive import.
+type archiveUpload struct {
+	archive []byte
+	creds   app.ImportCredentials
+	replace string
+	found   bool
+}
+
+func readUpload(body *multipart.Reader) (archiveUpload, error) {
+	var up archiveUpload
 
 	for {
 		part, err := body.NextPart()
@@ -162,53 +183,58 @@ func (s *Server) restoreArchive(ctx context.Context, body *multipart.Reader) (Ar
 		}
 
 		if err != nil {
-			return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+			return archiveUpload{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
 		}
 
-		switch part.FormName() {
-		case "file":
-			if found {
-				continue
-			}
-
-			if archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
-				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
-			}
-
-			found = true
-		case "passphrase":
-			b, err := io.ReadAll(io.LimitReader(part, maxPassphraseBytes))
-			if err != nil {
-				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
-			}
-
-			creds.Passphrase = string(b)
-		case "skip_credentials":
-			b, err := io.ReadAll(io.LimitReader(part, maxFlagBytes))
-			if err != nil {
-				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
-			}
-
-			creds.Skip = string(b) == "true"
-		case "replace_books_name":
-			b, err := io.ReadAll(io.LimitReader(part, maxNameBytes))
-			if err != nil {
-				return ArchiveImport{}, fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
-			}
-
-			replace = string(b)
+		if err := up.readPart(part); err != nil {
+			return archiveUpload{}, err
 		}
 	}
 
-	if !found {
-		return ArchiveImport{}, errFileRequired
+	return up, nil
+}
+
+func (up *archiveUpload) readPart(part *multipart.Part) error {
+	var err error
+
+	switch part.FormName() {
+	case "file":
+		if up.found {
+			return nil
+		}
+
+		if up.archive, err = io.ReadAll(io.LimitReader(part, app.MaxArchiveBytes+1)); err != nil {
+			return fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+		}
+
+		up.found = true
+	case "passphrase":
+		b, err := io.ReadAll(io.LimitReader(part, maxPassphraseBytes))
+		if err != nil {
+			return fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+		}
+
+		up.creds.Passphrase = string(b)
+	case "skip_credentials":
+		b, err := io.ReadAll(io.LimitReader(part, maxFlagBytes))
+		if err != nil {
+			return fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+		}
+
+		up.creds.Skip = string(b) == "true"
+	case "replace_books_name":
+		b, err := io.ReadAll(io.LimitReader(part, maxNameBytes))
+		if err != nil {
+			return fmt.Errorf("%w: %w", app.ErrArchiveInvalid, err)
+		}
+
+		up.replace = string(b)
 	}
 
-	res, err := s.exports.Import(ctx, auth.MustBooksID(ctx), archive, creds, replace)
-	if err != nil {
-		return ArchiveImport{}, err
-	}
+	return nil
+}
 
+func toArchiveImport(res app.ImportResult) ArchiveImport {
 	counts := res.Tables
 
 	out := ArchiveImport{
@@ -227,5 +253,5 @@ func (s *Server) restoreArchive(ctx context.Context, body *multipart.Reader) (Ar
 		out.Tables[i].Name, out.Tables[i].Rows = c.Name, c.Rows
 	}
 
-	return out, nil
+	return out
 }

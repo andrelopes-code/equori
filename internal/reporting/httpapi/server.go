@@ -47,7 +47,18 @@ func (s *Server) Register(mux *http.ServeMux) {
 
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004).
 func ToProblem(err error) (problem.Details, bool) {
-	var tooNew *app.ArchiveTooNewError
+	if d, ok := rangeProblem(err); ok {
+		return d, true
+	}
+
+	if d, ok := archiveProblem(err); ok {
+		return d, true
+	}
+
+	return queryProblem(err)
+}
+
+func rangeProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrInvalidRange):
 		d := problem.New(http.StatusBadRequest, "invalid_request", "from must not be after to, and the range must not exceed 3660 days")
@@ -76,6 +87,14 @@ func ToProblem(err error) (problem.Details, bool) {
 		d.Errors = []problem.FieldError{{Field: "file", Message: "is required"}}
 
 		return d, true
+	}
+
+	return problem.Details{}, false
+}
+
+func archiveProblem(err error) (problem.Details, bool) {
+	var tooNew *app.ArchiveTooNewError
+	switch {
 	case errors.Is(err, app.ErrArchiveInvalid):
 		d := problem.New(http.StatusUnprocessableEntity, "archive_invalid", err.Error())
 		d.Errors = []problem.FieldError{{Field: "file", Message: err.Error()}}
@@ -115,6 +134,13 @@ func ToProblem(err error) (problem.Details, bool) {
 		return d, true
 	case errors.Is(err, app.ErrImportConflict):
 		return problem.New(http.StatusConflict, "import_conflict", err.Error()), true
+	}
+
+	return problem.Details{}, false
+}
+
+func queryProblem(err error) (problem.Details, bool) {
+	switch {
 	case errors.Is(err, app.ErrExportNotFound):
 		return problem.New(http.StatusNotFound, "not_found", err.Error()), true
 	case errors.Is(err, app.ErrExportPending):

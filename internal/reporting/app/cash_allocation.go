@@ -12,6 +12,20 @@ type payment struct {
 	shares                       Shares
 }
 
+type bucket struct {
+	card, id  uuid.UUID
+	statement time.Time
+	shares    Shares
+}
+
+// allocation holds the statement buckets of one card facts set while payments are applied.
+type allocation struct {
+	buckets    []*bucket
+	bucketOf   map[uuid.UUID]*bucket
+	byTx       map[uuid.UUID][]CardLine
+	categories map[uuid.UUID]Shares
+}
+
 // allocate applies each payment to the oldest statement of its card that is still owed (CV4)
 // and returns the cash payments with the categories of every card line (CV2, CV7).
 func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
@@ -22,16 +36,23 @@ func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
 		}
 	}
 
-	categories := lineCategories(f)
-	type bucket struct {
-		card, id  uuid.UUID
-		statement time.Time
-		shares    Shares
-	}
-	var buckets []*bucket
-	bucketOf := map[uuid.UUID]*bucket{}
+	a := bucketLines(f, financing)
 
-	byTx := map[uuid.UUID][]CardLine{}
+	var out []payment
+	for _, p := range f.Payments {
+		out = append(out, a.pay(f, p)...)
+	}
+
+	return out, a.categories
+}
+
+func bucketLines(f CardFacts, financing map[uuid.UUID]bool) *allocation {
+	a := &allocation{
+		bucketOf:   map[uuid.UUID]*bucket{},
+		byTx:       map[uuid.UUID][]CardLine{},
+		categories: lineCategories(f),
+	}
+
 	for _, l := range f.Lines {
 		if !l.Base {
 			continue
@@ -39,69 +60,82 @@ func allocate(f CardFacts) ([]payment, map[uuid.UUID]Shares) {
 
 		if financing[l.TransactionID] {
 			// CV7: an installment of a financing has no categories until the financing applies.
-			categories[l.ID] = Shares{}
+			a.categories[l.ID] = Shares{}
 		}
 
-		if n := len(buckets); n == 0 || buckets[n-1].card != l.CardID || !buckets[n-1].statement.Equal(l.Statement) {
-			buckets = append(buckets, &bucket{card: l.CardID, id: l.StatementID, statement: l.Statement, shares: Shares{}})
+		if n := len(a.buckets); n == 0 || a.buckets[n-1].card != l.CardID || !a.buckets[n-1].statement.Equal(l.Statement) {
+			a.buckets = append(a.buckets, &bucket{card: l.CardID, id: l.StatementID, statement: l.Statement, shares: Shares{}})
 		}
 
-		bucketOf[l.ID] = buckets[len(buckets)-1]
-		byTx[l.TransactionID] = append(byTx[l.TransactionID], l)
-		add(buckets[len(buckets)-1].shares, categories[l.ID])
+		a.bucketOf[l.ID] = a.buckets[len(a.buckets)-1]
+		a.byTx[l.TransactionID] = append(a.byTx[l.TransactionID], l)
+		add(a.buckets[len(a.buckets)-1].shares, a.categories[l.ID])
 	}
 
+	return a
+}
+
+func (a *allocation) pay(f CardFacts, p CardPayment) []payment {
+	a.carryOver()
+
+	out, moved := a.drain(p)
+
+	if !p.Financing {
+		return out
+	}
+
+	// CV7: the principal moves into the installments beside the financing's interest.
+	rest := clone(f.Categories[p.TransactionID])
+	add(rest, moved)
+
+	for _, l := range spread(a.byTx[p.TransactionID], rest) {
+		add(a.bucketOf[l.id].shares, l.shares)
+		a.categories[l.id] = l.shares
+	}
+
+	return out
+}
+
+// carryOver passes what a statement owing nothing holds to the next statement of its card (CV8).
+func (a *allocation) carryOver() {
+	for i, b := range a.buckets[:max(len(a.buckets)-1, 0)] {
+		if sum(b.shares) <= 0 && a.buckets[i+1].card == b.card {
+			add(a.buckets[i+1].shares, b.shares)
+			b.shares = Shares{}
+		}
+	}
+}
+
+func (a *allocation) drain(p CardPayment) ([]payment, Shares) {
 	var out []payment
-	for _, p := range f.Payments {
-		// A statement owing nothing passes what it holds to the next statement of its card (CV8).
-		for i, b := range buckets[:max(len(buckets)-1, 0)] {
-			if sum(b.shares) <= 0 && buckets[i+1].card == b.card {
-				add(buckets[i+1].shares, b.shares)
-				b.shares = Shares{}
-			}
+
+	left := p.Amount
+
+	moved := Shares{}
+	for _, b := range a.buckets {
+		if left <= 0 {
+			break
 		}
 
-		left := p.Amount
-
-		moved := Shares{}
-		for _, b := range buckets {
-			if left <= 0 {
-				break
-			}
-
-			due := sum(b.shares)
-			if b.card != p.CardID || due <= 0 {
-				continue
-			}
-
-			share := distribute(min(left, due), b.shares)
-			add(b.shares, negate(share))
-
-			left -= min(left, due)
-
-			if p.Financing {
-				add(moved, share)
-				continue
-			}
-
-			out = append(out, payment{date: p.Date, card: p.CardID, statement: b.id, reference: b.statement, transaction: p.TransactionID, shares: share})
-		}
-
-		if !p.Financing {
+		due := sum(b.shares)
+		if b.card != p.CardID || due <= 0 {
 			continue
 		}
 
-		// CV7: the principal moves into the installments beside the financing's interest.
-		rest := clone(f.Categories[p.TransactionID])
-		add(rest, moved)
+		share := distribute(min(left, due), b.shares)
+		add(b.shares, negate(share))
 
-		for _, l := range spread(byTx[p.TransactionID], rest) {
-			add(bucketOf[l.id].shares, l.shares)
-			categories[l.id] = l.shares
+		left -= min(left, due)
+
+		if p.Financing {
+			add(moved, share)
+			continue
 		}
+
+		out = append(out, payment{date: p.Date, card: p.CardID, statement: b.id, reference: b.statement, transaction: p.TransactionID, shares: share})
 	}
 
-	return out, categories
+	return out, moved
 }
 
 type lineShares struct {
