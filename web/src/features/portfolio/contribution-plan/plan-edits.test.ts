@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   addMember,
+  overlayDraft,
   removeClass,
   setClassTarget,
   setMemberTarget,
@@ -90,5 +91,79 @@ describe("plan edits", () => {
         (m) => m.targetBp,
       ),
     ).toEqual([7000, 3000]);
+  });
+});
+
+describe("overlayDraft", () => {
+  const money = (amount: number) => ({ amount, currency: "BRL" });
+  const view = {
+    status: "complete" as const,
+    total: money(1000),
+    classes: [
+      {
+        name: "Old A",
+        target_bp: 5000,
+        value: money(600),
+        share_bp: 6000,
+        members: [
+          {
+            instrument: "PETR4",
+            target_bp: 7000,
+            value: money(400),
+            share_bp: 4000,
+          },
+          { account_id: "a1", value: money(200), share_bp: 2000 },
+        ],
+      },
+    ],
+    outside: [],
+    missing: [],
+  };
+
+  it("takes names, targets and members from the draft and figures from the view", () => {
+    const draft = startEditing({
+      classes: [
+        {
+          name: "New A",
+          targetBp: 3000,
+          members: [
+            { accountId: "a1", targetBp: 1000 },
+            { instrument: "PETR4" },
+          ],
+        },
+        { name: "New B", targetBp: 7000, members: [] },
+      ],
+    });
+
+    expect(overlayDraft(view, draft).classes).toEqual([
+      {
+        name: "New A",
+        target_bp: 3000,
+        value: money(600),
+        share_bp: 6000,
+        members: [
+          {
+            account_id: "a1",
+            target_bp: 1000,
+            value: money(200),
+            share_bp: 2000,
+          },
+          { instrument: "PETR4", value: money(400), share_bp: 4000 },
+        ],
+      },
+      { name: "New B", target_bp: 7000, value: money(0), members: [] },
+    ]);
+  });
+
+  it("reads zero for a member the view lacks", () => {
+    const draft = startEditing({
+      classes: [
+        { name: "Old A", targetBp: 5000, members: [{ instrument: "VALE3" }] },
+      ],
+    });
+
+    expect(overlayDraft(view, draft).classes[0]?.members).toEqual([
+      { instrument: "VALE3", value: money(0) },
+    ]);
   });
 });

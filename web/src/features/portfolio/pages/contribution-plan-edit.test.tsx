@@ -162,6 +162,9 @@ describe("Contribution plan edit mode", () => {
     await edit();
 
     fireEvent.change(await target("Ações Brasil"), { target: { value: "30" } });
+    const amount = await screen.findByRole("textbox", { name: "Aporte" });
+    await userEvent.clear(amount);
+    await userEvent.type(amount, "5000,00");
     await userEvent.click(
       await screen.findByRole("button", { name: "Salvar" }),
     );
@@ -169,7 +172,7 @@ describe("Contribution plan edit mode", () => {
     await waitFor(() => {
       expect(puts).toEqual([
         {
-          amount: brl(400000),
+          amount: brl(500000),
           classes: [
             {
               name: "Renda fixa",
