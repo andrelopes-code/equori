@@ -63,18 +63,62 @@ func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestIte
 
 	out = make([]Suggestion, len(items))
 
-	accounts, _, err := s.ledger.Vocabulary(ctx, booksID)
+	options, err := s.categoryOptionsOf(ctx, booksID)
 	if err != nil {
 		return nil, false, err
 	}
 
-	options := categoryOptions(accounts)
+	keys, descriptions := hintKeys(items)
 
-	usable := map[uuid.UUID]string{}
-	for _, o := range options {
-		usable[o.ID] = o.Class
+	kept, err := s.hints.Hints(ctx, booksID, descriptions)
+	if err != nil {
+		return nil, false, err
 	}
 
+	now := s.clock.Now()
+	known := knownHints(kept, usableClasses(options), now)
+	ask, askKeys := unanswered(items, keys, known, out)
+
+	if len(ask) == 0 {
+		return out, true, nil
+	}
+
+	if s.suggester == nil || len(options) == 0 {
+		return out, s.suggester != nil, nil
+	}
+
+	answers, available, err := s.modelAnswers(ctx, booksID, options, ask, askKeys, now)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if !available {
+		return out, false, nil
+	}
+
+	setModelAnswers(out, keys, answers)
+
+	return out, true, nil
+}
+
+func setModelAnswers(out []Suggestion, keys []hintKey, answers map[hintKey]uuid.UUID) {
+	for i, k := range keys {
+		if id, ok := answers[k]; ok {
+			out[i] = Suggestion{CategoryID: id, FromModel: true}
+		}
+	}
+}
+
+func (s *Service) categoryOptionsOf(ctx context.Context, booksID int64) ([]CategoryOption, error) {
+	accounts, _, err := s.ledger.Vocabulary(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	return categoryOptions(accounts), nil
+}
+
+func hintKeys(items []SuggestItem) ([]hintKey, []string) {
 	keys := make([]hintKey, len(items))
 
 	var descriptions []string
@@ -83,13 +127,51 @@ func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestIte
 		descriptions = append(descriptions, keys[i].description)
 	}
 
-	kept, err := s.hints.Hints(ctx, booksID, descriptions)
+	return keys, descriptions
+}
+
+func usableClasses(options []CategoryOption) map[uuid.UUID]string {
+	usable := map[uuid.UUID]string{}
+	for _, o := range options {
+		usable[o.ID] = o.Class
+	}
+
+	return usable
+}
+
+// modelAnswers asks the model about ask and keeps its answers; available is false when the
+// model could not answer.
+func (s *Service) modelAnswers(
+	ctx context.Context,
+	booksID int64,
+	options []CategoryOption,
+	ask []SuggestItem,
+	askKeys []hintKey,
+	now time.Time,
+) (map[hintKey]uuid.UUID, bool, error) {
+	profile, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return nil, false, fmt.Errorf("read profile: %w", err)
+	}
+
+	chosen, err := s.suggester.Suggest(ctx, profile, options, ask)
+	if errors.Is(err, ErrSuggesterUnavailable) {
+		return nil, false, nil
+	}
+
 	if err != nil {
 		return nil, false, err
 	}
 
-	now := s.clock.Now()
+	answers, err := s.keepAnswers(ctx, booksID, options, askKeys, chosen, now)
+	if err != nil {
+		return nil, false, err
+	}
 
+	return answers, true, nil
+}
+
+func knownHints(kept []Hint, usable map[uuid.UUID]string, now time.Time) map[hintKey]uuid.UUID {
 	known := map[hintKey]uuid.UUID{}
 	for _, h := range kept {
 		k := hintKey{h.Class, h.Description}
@@ -101,6 +183,16 @@ func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestIte
 		}
 	}
 
+	return known
+}
+
+// unanswered sets the known answers in out and returns the items the model is asked about.
+func unanswered(
+	items []SuggestItem,
+	keys []hintKey,
+	known map[hintKey]uuid.UUID,
+	out []Suggestion,
+) ([]SuggestItem, []hintKey) {
 	var ask []SuggestItem
 
 	var askKeys []hintKey
@@ -118,28 +210,17 @@ func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestIte
 		askKeys = append(askKeys, k)
 	}
 
-	if len(ask) == 0 {
-		return out, true, nil
-	}
+	return ask, askKeys
+}
 
-	if s.suggester == nil || len(options) == 0 {
-		return out, s.suggester != nil, nil
-	}
-
-	profile, err := s.profiles.Profile(ctx, booksID)
-	if err != nil {
-		return nil, false, fmt.Errorf("read profile: %w", err)
-	}
-
-	chosen, err := s.suggester.Suggest(ctx, profile, options, ask)
-	if errors.Is(err, ErrSuggesterUnavailable) {
-		return out, false, nil
-	}
-
-	if err != nil {
-		return nil, false, err
-	}
-
+func (s *Service) keepAnswers(
+	ctx context.Context,
+	booksID int64,
+	options []CategoryOption,
+	askKeys []hintKey,
+	chosen []int,
+	now time.Time,
+) (map[hintKey]uuid.UUID, error) {
 	answers := map[hintKey]uuid.UUID{}
 	for j, k := range askKeys {
 		var id uuid.UUID
@@ -149,17 +230,11 @@ func (s *Service) Suggest(ctx context.Context, booksID int64, items []SuggestIte
 
 		answers[k] = id
 		if err := s.hints.SaveHint(ctx, booksID, Hint{Class: k.class, Description: k.description, CategoryID: id, AnsweredAt: now}); err != nil {
-			return nil, false, err
+			return nil, err
 		}
 	}
 
-	for i, k := range keys {
-		if id, ok := answers[k]; ok {
-			out[i] = Suggestion{CategoryID: id, FromModel: true}
-		}
-	}
-
-	return out, true, nil
+	return answers, nil
 }
 
 // categoryOptions are the open categories without a system role, named by their path and

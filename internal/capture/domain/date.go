@@ -33,18 +33,7 @@ func readDate(ws []word, i int, today time.Time, lex Lexicon, order DateOrder) (
 	}
 
 	if n == "dia" && i+1 < len(ws) && ws[i+1].free() && dayNumber.MatchString(ws[i+1].norm) {
-		d := atoi(ws[i+1].norm)
-
-		y, m := today.Year(), int(today.Month())
-		if d > today.Day() {
-			if m--; m == 0 {
-				y, m = y-1, 12
-			}
-		}
-
-		date, ok := dateOf(y, m, d)
-
-		return datePhrase{date: date, valid: ok, words: 2}, true
+		return readDayNumber(ws[i+1].norm, today), true
 	}
 
 	if g := yearFirst.FindStringSubmatch(n); g != nil && order == YMD {
@@ -53,26 +42,7 @@ func readDate(ws []word, i int, today time.Time, lex Lexicon, order DateOrder) (
 	}
 
 	if g := dayMonth.FindStringSubmatch(n); g != nil && (order != YMD || g[3] == "") {
-		d, m := atoi(g[1]), atoi(g[2])
-		if order != DMY {
-			d, m = m, d
-		}
-
-		switch len(g[3]) {
-		case 2:
-			date, ok := dateOf(2000+atoi(g[3]), m, d)
-			return datePhrase{date: date, valid: ok, words: 1}, true
-		case 4:
-			date, ok := dateOf(atoi(g[3]), m, d)
-			return datePhrase{date: date, valid: ok, words: 1}, true
-		}
-
-		date, ok := dateOf(today.Year(), m, d)
-		if ok && date.After(today) {
-			date, ok = dateOf(today.Year()-1, m, d)
-		}
-
-		return datePhrase{date: date, valid: ok, words: 1}, true
+		return readDayMonth(g, today, order), true
 	}
 
 	if g := isoDate.FindStringSubmatch(n); g != nil {
@@ -81,6 +51,44 @@ func readDate(ws []word, i int, today time.Time, lex Lexicon, order DateOrder) (
 	}
 
 	return datePhrase{}, false
+}
+
+func readDayNumber(norm string, today time.Time) datePhrase {
+	d := atoi(norm)
+
+	y, m := today.Year(), int(today.Month())
+	if d > today.Day() {
+		if m--; m == 0 {
+			y, m = y-1, 12
+		}
+	}
+
+	date, ok := dateOf(y, m, d)
+
+	return datePhrase{date: date, valid: ok, words: 2}
+}
+
+func readDayMonth(g []string, today time.Time, order DateOrder) datePhrase {
+	d, m := atoi(g[1]), atoi(g[2])
+	if order != DMY {
+		d, m = m, d
+	}
+
+	switch len(g[3]) {
+	case 2:
+		date, ok := dateOf(2000+atoi(g[3]), m, d)
+		return datePhrase{date: date, valid: ok, words: 1}
+	case 4:
+		date, ok := dateOf(atoi(g[3]), m, d)
+		return datePhrase{date: date, valid: ok, words: 1}
+	}
+
+	date, ok := dateOf(today.Year(), m, d)
+	if ok && date.After(today) {
+		date, ok = dateOf(today.Year()-1, m, d)
+	}
+
+	return datePhrase{date: date, valid: ok, words: 1}
 }
 
 // dateOf returns the date and false when the month or the day does not exist.

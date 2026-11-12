@@ -35,31 +35,10 @@ func readInstallments(ws []word, i int, lex Lexicon, conv Conventions) (installm
 		return installmentPhrase{valid: true, words: 2}, true
 	}
 
-	j := i
+	j, parcelled := skipInstallmentLead(at, lex, i)
 
-	parcelled := false
-	if k := slices.Index(lex.InstallmentLeads, at(j)); k >= 0 && at(j) != "" {
-		connective := lex.InstallmentLeads[len(lex.InstallmentLeads)-1]
-
-		j++
-		if at(j-1) != connective {
-			parcelled = true
-
-			if at(j) == connective {
-				j++
-			}
-		}
-	}
-
-	n, size := 0, 0
-	switch {
-	case timesWord.MatchString(at(j)):
-		n, size = atoi(timesWord.FindStringSubmatch(at(j))[1]), 1
-	case countNumber.MatchString(at(j)) && slices.Contains(lex.CountWords, at(j+1)):
-		n, size = atoi(at(j)), 2
-	case countNumber.MatchString(at(j)) && parcelled:
-		n, size = atoi(at(j)), 1
-	default:
+	n, size, ok := readInstallmentCount(at, lex, j, parcelled)
+	if !ok {
 		return installmentPhrase{}, false
 	}
 
@@ -76,4 +55,44 @@ func readInstallments(ws []word, i int, lex Lexicon, conv Conventions) (installm
 	}
 
 	return p, true
+}
+
+// skipInstallmentLead returns the index after the lead words and whether a lead named the
+// installments.
+func skipInstallmentLead(at func(int) string, lex Lexicon, i int) (int, bool) {
+	j := i
+
+	parcelled := false
+	if k := slices.Index(lex.InstallmentLeads, at(j)); k >= 0 && at(j) != "" {
+		connective := lex.InstallmentLeads[len(lex.InstallmentLeads)-1]
+
+		j++
+		if at(j-1) != connective {
+			parcelled = true
+
+			if at(j) == connective {
+				j++
+			}
+		}
+	}
+
+	return j, parcelled
+}
+
+func readInstallmentCount(
+	at func(int) string,
+	lex Lexicon,
+	j int,
+	parcelled bool,
+) (int, int, bool) {
+	switch {
+	case timesWord.MatchString(at(j)):
+		return atoi(timesWord.FindStringSubmatch(at(j))[1]), 1, true
+	case countNumber.MatchString(at(j)) && slices.Contains(lex.CountWords, at(j+1)):
+		return atoi(at(j)), 2, true
+	case countNumber.MatchString(at(j)) && parcelled:
+		return atoi(at(j)), 1, true
+	default:
+		return 0, 0, false
+	}
 }

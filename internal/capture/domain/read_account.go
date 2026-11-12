@@ -13,57 +13,77 @@ func (r *lineReader) readAccounts(mentions []mention, transfer, income bool, m m
 
 	switch len(mentions) {
 	case 0:
-		if transfer {
-			r.line.Kind = KindTransfer
-			r.useDefault()
-			r.issue(IssueMissingDestination, FieldToAccount)
-
+		if !r.readNoMention(transfer, m, methodConflict) {
 			return
 		}
-
-		r.byMethod(m, methodConflict)
 	case 1:
-		one := mentions[0]
-		switch {
-		case one.destination:
-			r.line.Kind = KindTransfer
-			r.useDefault()
-			r.line.ToAccountID = r.resolve(one.accounts, "", FieldToAccount)
-		case transfer:
-			r.line.Kind = KindTransfer
-			r.setAccount(r.resolve(one.accounts, "", FieldAccount), SourceText)
-			r.issue(IssueMissingDestination, FieldToAccount)
-		default:
-			if methodConflict {
-				m = ""
-			}
-
-			r.setAccount(r.resolve(one.accounts, m, FieldAccount), SourceText)
-		}
+		r.readOneMention(mentions[0], transfer, m, methodConflict)
 	case 2:
-		r.line.Kind = KindTransfer
-
-		from, to := mentions[0], mentions[1]
-		switch {
-		case from.destination && !to.destination:
-			from, to = to, from
-		case !from.destination && to.destination:
-		case !from.destination && !to.destination && to.source && !from.source:
-			from, to = to, from
-		case !from.destination && !to.destination && from.source && !to.source:
-		default:
-			r.issue(IssueAmbiguousTransfer, FieldToAccount)
+		if !r.readTwoMentions(mentions[0], mentions[1]) {
 			return
 		}
-
-		r.setAccount(r.resolve(from.accounts, "", FieldAccount), SourceText)
-		r.line.ToAccountID = r.resolve(to.accounts, "", FieldToAccount)
 	default:
 		r.issue(IssueTooManyAccounts, FieldAccount)
 		return
 	}
 
 	r.checkTransfer()
+}
+
+// readNoMention reports false when the line is complete without the transfer check.
+func (r *lineReader) readNoMention(transfer bool, m method, methodConflict bool) bool {
+	if transfer {
+		r.line.Kind = KindTransfer
+		r.useDefault()
+		r.issue(IssueMissingDestination, FieldToAccount)
+
+		return false
+	}
+
+	r.byMethod(m, methodConflict)
+
+	return true
+}
+
+func (r *lineReader) readOneMention(one mention, transfer bool, m method, methodConflict bool) {
+	switch {
+	case one.destination:
+		r.line.Kind = KindTransfer
+		r.useDefault()
+		r.line.ToAccountID = r.resolve(one.accounts, "", FieldToAccount)
+	case transfer:
+		r.line.Kind = KindTransfer
+		r.setAccount(r.resolve(one.accounts, "", FieldAccount), SourceText)
+		r.issue(IssueMissingDestination, FieldToAccount)
+	default:
+		if methodConflict {
+			m = ""
+		}
+
+		r.setAccount(r.resolve(one.accounts, m, FieldAccount), SourceText)
+	}
+}
+
+// readTwoMentions reports false when the transfer is ambiguous.
+func (r *lineReader) readTwoMentions(from, to mention) bool {
+	r.line.Kind = KindTransfer
+
+	switch {
+	case from.destination && !to.destination:
+		from, to = to, from
+	case !from.destination && to.destination:
+	case !from.destination && !to.destination && to.source && !from.source:
+		from, to = to, from
+	case !from.destination && !to.destination && from.source && !to.source:
+	default:
+		r.issue(IssueAmbiguousTransfer, FieldToAccount)
+		return false
+	}
+
+	r.setAccount(r.resolve(from.accounts, "", FieldAccount), SourceText)
+	r.line.ToAccountID = r.resolve(to.accounts, "", FieldToAccount)
+
+	return true
 }
 
 // setAccount sets the source account; an unresolved account has no source.

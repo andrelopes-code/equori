@@ -132,6 +132,30 @@ type amountPhrase struct {
 
 // readAmount reads the amount phrase that starts at free word i.
 func readAmount(ws []word, i int, lex Lexicon, conv Conventions) (amountPhrase, bool) {
+	p, s, ok := readAmountHead(ws, i, lex)
+	if !ok {
+		return amountPhrase{}, false
+	}
+
+	factor := int64(1)
+	if rest, f, ok := lex.cutSuffixFactor(s); ok {
+		s, factor, p.explicit = rest, f, true
+	}
+
+	v, ok := parseNumber(s, conv)
+	if !ok {
+		return amountPhrase{}, false
+	}
+
+	factor = p.readTail(ws, i, lex, factor)
+	p.value = v.times(factor)
+
+	return p, true
+}
+
+// readAmountHead reads the sign and symbol of the phrase at free word i and returns the
+// number text that follows them.
+func readAmountHead(ws []word, i int, lex Lexicon) (amountPhrase, string, bool) {
 	var p amountPhrase
 	s := ws[i].norm
 	p.words = 1
@@ -152,23 +176,19 @@ func readAmount(ws []word, i int, lex Lexicon, conv Conventions) (amountPhrase, 
 
 	if s == "" {
 		if !p.explicit || i+1 >= len(ws) || !ws[i+1].free() {
-			return amountPhrase{}, false
+			return amountPhrase{}, "", false
 		}
 
 		s = ws[i+1].norm
 		p.words = 2
 	}
 
-	factor := int64(1)
-	if rest, f, ok := lex.cutSuffixFactor(s); ok {
-		s, factor, p.explicit = rest, f, true
-	}
+	return p, s, true
+}
 
-	v, ok := parseNumber(s, conv)
-	if !ok {
-		return amountPhrase{}, false
-	}
-
+// readTail reads the multiplier word and the currency word after the number and returns the
+// factor.
+func (p *amountPhrase) readTail(ws []word, i int, lex Lexicon, factor int64) int64 {
 	if j := i + p.words; factor == 1 && j < len(ws) && ws[j].free() {
 		if f, ok := lex.wordFactor(ws[j].norm); ok {
 			factor, p.explicit = f, true
@@ -183,9 +203,7 @@ func readAmount(ws []word, i int, lex Lexicon, conv Conventions) (amountPhrase, 
 		}
 	}
 
-	p.value = v.times(factor)
-
-	return p, true
+	return factor
 }
 
 func cutSign(s string) (string, int) {

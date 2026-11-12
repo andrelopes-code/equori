@@ -87,54 +87,96 @@ func NewService(l Ledger, c Classifier, h HintRepository, p Profiles, sg Suggest
 // Preview reads text into drafts (A106–A113). It records nothing.
 // Preview reads text into lines; a zero reference reads it against today (A128).
 func (s *Service) Preview(ctx context.Context, booksID int64, text string, defaultAccount uuid.UUID, reference time.Time) ([]Line, error) {
+	if nonBlankLines(domain.SplitLines(text)) > MaxLines {
+		return nil, ErrTooManyLines
+	}
+
+	v, payees, err := s.previewVocabulary(ctx, booksID, defaultAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	day, err := s.previewDay(ctx, reference)
+	if err != nil {
+		return nil, err
+	}
+
+	read := domain.Read(text, v, day, defaultAccount)
+	lines, entries, at := previewEntries(read, payeeNames(payees))
+
+	if len(entries) == 0 {
+		return lines, nil
+	}
+
+	decisions, err := s.classifier.Decide(ctx, booksID, entries)
+	if err != nil {
+		return nil, err
+	}
+
+	applyDecisions(lines, entries, at, decisions)
+
+	return lines, nil
+}
+
+func nonBlankLines(pieces []string) int {
 	blank := 0
 
-	pieces := domain.SplitLines(text)
 	for _, p := range pieces {
 		if strings.TrimSpace(p) == "" {
 			blank++
 		}
 	}
 
-	if len(pieces)-blank > MaxLines {
-		return nil, ErrTooManyLines
-	}
+	return len(pieces) - blank
+}
 
+func (s *Service) previewVocabulary(
+	ctx context.Context,
+	booksID int64,
+	defaultAccount uuid.UUID,
+) (domain.Vocabulary, []Payee, error) {
 	accounts, payees, err := s.ledger.Vocabulary(ctx, booksID)
 	if err != nil {
-		return nil, err
+		return domain.Vocabulary{}, nil, err
 	}
 
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
 	if err != nil {
-		return nil, err
+		return domain.Vocabulary{}, nil, err
 	}
 
 	profile, err := s.profiles.Profile(ctx, booksID)
 	if err != nil {
-		return nil, err
+		return domain.Vocabulary{}, nil, err
 	}
 
 	v := vocabulary(accounts, base, profile)
 	if defaultAccount != uuid.Nil && !slices.ContainsFunc(v.Accounts, func(a domain.Account) bool { return a.ID == defaultAccount }) {
-		return nil, ErrDefaultAccount
+		return domain.Vocabulary{}, nil, ErrDefaultAccount
 	}
 
+	return v, payees, nil
+}
+
+func (s *Service) previewDay(ctx context.Context, reference time.Time) (time.Time, error) {
 	y, m, d := s.ledger.Today(ctx).Date()
 
 	day := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 	if !reference.IsZero() {
 		// A day ahead is accepted: the device that wrote the text may sit east of the instance's zone.
 		if reference.After(day.AddDate(0, 0, 1)) {
-			return nil, ErrReferenceDate
+			return time.Time{}, ErrReferenceDate
 		}
 
 		day = reference
 	}
 
-	read := domain.Read(text, v, day, defaultAccount)
+	return day, nil
+}
+
+func previewEntries(read []domain.Line, names map[string]uuid.UUID) ([]Line, []Entry, []int) {
 	lines := make([]Line, len(read))
-	names := payeeNames(payees)
+
 	var entries []Entry
 
 	var at []int
@@ -147,15 +189,10 @@ func (s *Service) Preview(ctx context.Context, booksID int64, text string, defau
 		}
 	}
 
-	if len(entries) == 0 {
-		return lines, nil
-	}
+	return lines, entries, at
+}
 
-	decisions, err := s.classifier.Decide(ctx, booksID, entries)
-	if err != nil {
-		return nil, err
-	}
-
+func applyDecisions(lines []Line, entries []Entry, at []int, decisions []Decision) {
 	for k, d := range decisions {
 		l := &lines[at[k]]
 
@@ -174,8 +211,6 @@ func (s *Service) Preview(ctx context.Context, booksID int64, text string, defau
 			}
 		}
 	}
-
-	return lines, nil
 }
 
 // vocabulary keeps the accounts a line may name: open balance accounts without children,
