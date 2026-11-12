@@ -90,6 +90,23 @@ export function validateTransactionSearch(
   };
 }
 
+// The presets of the new-entry route: the account that pays, the account that receives and the
+// brokerage of a trade.
+export function validateNewTransactionSearch(raw: Record<string, unknown>): {
+  account_id?: string;
+  to_account_id?: string;
+  brokerage_id?: string;
+} {
+  const account_id = uuid(raw.account_id);
+  const to_account_id = uuid(raw.to_account_id);
+  const brokerage_id = uuid(raw.brokerage_id);
+  return {
+    ...(account_id === undefined ? {} : { account_id }),
+    ...(to_account_id === undefined ? {} : { to_account_id }),
+    ...(brokerage_id === undefined ? {} : { brokerage_id }),
+  };
+}
+
 // A patch value that fails validation (empty text, undefined) removes the filter.
 export function patchSearch(
   search: TransactionSearch,

@@ -49,6 +49,7 @@ import { TradeForm } from "@/features/transactions/trade-entry/trade-form";
 import { useIncomeEntry } from "@/features/transactions/income-entry/use-income-entry";
 import { useExchangeEntry } from "@/features/transactions/exchange-entry/use-exchange-entry";
 import { useForeignEntry } from "@/features/transactions/foreign-entry/use-foreign-entry";
+import { useDestinationPreset } from "@/features/transactions/pages/use-destination-preset";
 import { useTradeEntry } from "@/features/transactions/trade-entry/use-trade-entry";
 import { fieldOf } from "@/features/transactions/entry-model/field-of";
 import { TransactionForm } from "@/features/transactions/transaction-form/transaction-form";
@@ -69,7 +70,9 @@ export function NewTransactionPage() {
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
-  const { account_id, kind } = useSearch({ from: "/_authed/transactions/new" });
+  const { account_id, to_account_id, brokerage_id, kind } = useSearch({
+    from: "/_authed/transactions/new",
+  });
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const tags = useQuery(tagsQuery(api));
@@ -79,12 +82,16 @@ export function NewTransactionPage() {
   const wide = useMediaQuery(wideQuery);
   const compact = useMediaQuery(compactQuery);
 
-  const [draft, setDraft] = useState<EntryDraft>(
-    () => readDraft(draftKey) ?? emptyDraft(today, account_id ?? null),
-  );
+  const [draft, setDraft] = useState<EntryDraft>(() => {
+    const start = readDraft(draftKey) ?? emptyDraft(today, account_id ?? null);
+    return kind === "transfer" ? { ...start, kind } : start;
+  });
   // The kinds the server builds from their own fields; the posting form holds the others.
-  const [investment, setInvestment] = useState<BuiltKind | null>(kind ?? null);
-  const trade = useTradeEntry(account_id ?? null);
+  const [investment, setInvestment] = useState<BuiltKind | null>(
+    isBuiltKind(kind) ? kind : null,
+  );
+  useDestinationPreset(to_account_id, accounts.data, setDraft);
+  const trade = useTradeEntry(account_id ?? null, brokerage_id ?? null);
   const income = useIncomeEntry(account_id ?? null);
   const foreign = useForeignEntry(account_id ?? null);
   const exchange = useExchangeEntry(account_id ?? null);

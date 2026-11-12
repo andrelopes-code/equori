@@ -6,6 +6,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { chooseAccount } from "@/testing/account-choice";
 import { chooseEntryKind } from "@/testing/entry-kind";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { brokerID, cashID, investmentApi } from "@/testing/investment-api";
 import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import {
@@ -236,6 +237,47 @@ describe("NewTransactionPage", () => {
         },
       ]);
     });
+  });
+
+  it("opens the transfer form with the destination from the route", async () => {
+    await renderApp(`/transactions/new?kind=transfer&to_account_id=${cashID}`, {
+      fetch: investmentApi([]),
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: new RegExp(catalogEn["entry.to"]) }),
+      ).toHaveTextContent("XP cash");
+    });
+  });
+
+  it("leaves the destination empty for a closed or unknown account", async () => {
+    const closedCashID = "b0000000-0000-4000-8000-000000000005";
+    const unknownID = "b0000000-0000-4000-8000-0000000000ff";
+    for (const id of [closedCashID, unknownID]) {
+      sessionStorage.clear();
+      const view = await renderApp(
+        `/transactions/new?kind=transfer&to_account_id=${id}`,
+        { fetch: investmentApi([]) },
+      );
+      const to = await screen.findByRole("button", {
+        name: new RegExp(catalogEn["entry.to"]),
+      });
+      await screen.findByRole("button", { name: catalogEn["entry.save"] });
+      expect(to).not.toHaveTextContent("XP");
+      view.unmount();
+    }
+  });
+
+  it("stores the brokerage of the route in the trade draft", async () => {
+    await renderApp(`/transactions/new?kind=trade&brokerage_id=${brokerID}`, {
+      fetch: investmentApi([]),
+    });
+    await screen.findByRole("button", {
+      name: new RegExp(catalogEn["trade.securityAccount"]),
+    });
+    expect(
+      JSON.parse(sessionStorage.getItem("equori.draft.new-trade") ?? "{}"),
+    ).toMatchObject({ brokerageId: brokerID });
   });
 
   it("names the missing fields before sending anything", async () => {

@@ -7,6 +7,7 @@ export {
 } from "@/features/transactions/api";
 export { bulkLimit, chunks } from "@/features/transactions/model/categorize";
 export {
+  validateNewTransactionSearch,
   validateTransactionSearch,
   validateTransactionsPageSearch,
 } from "@/features/transactions/model/search";

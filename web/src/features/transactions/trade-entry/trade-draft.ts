@@ -1,6 +1,8 @@
 export interface TradeDraft {
   side: "buy" | "sell";
   accountId: string | null;
+  // The brokerage a link presets; the trade form reads it once it chooses by brokerage.
+  brokerageId?: string;
   cashAccountId: string | null;
   date: string;
   // Units of the instrument, in its scale.

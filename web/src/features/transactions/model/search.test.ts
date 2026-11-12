@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   patchSearch,
+  validateNewTransactionSearch,
   validateTransactionSearch,
 } from "@/features/transactions/model/search";
 
@@ -88,5 +89,22 @@ describe("patchSearch", () => {
     });
     expect(patchSearch(base, { q: undefined })).toEqual({ tag: "viagem" });
     expect(patchSearch(base, { tag: " " })).toEqual({ q: "mercado" });
+  });
+});
+
+describe("validateNewTransactionSearch", () => {
+  it("keeps the uuid-shaped presets and drops any other value", () => {
+    const id = "0b0e5f56-6a2a-4f0b-9d5c-3f7f2f0d6a11";
+    expect(
+      validateNewTransactionSearch({
+        account_id: id,
+        to_account_id: id,
+        brokerage_id: id,
+        q: "mercado",
+      }),
+    ).toEqual({ account_id: id, to_account_id: id, brokerage_id: id });
+    expect(
+      validateNewTransactionSearch({ to_account_id: "x", brokerage_id: 7 }),
+    ).toEqual({});
   });
 });

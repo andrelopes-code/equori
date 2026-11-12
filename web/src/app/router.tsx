@@ -112,7 +112,7 @@ import {
   TransactionsPage,
   isBuiltKind,
   validateCaptureSearch,
-  validateTransactionSearch,
+  validateNewTransactionSearch,
   validateTransactionsPageSearch,
 } from "@/features/transactions";
 import type { BuiltKind } from "@/features/transactions";
@@ -510,13 +510,19 @@ const newTransactionRoute = createRoute({
   staticData: { phone: true },
   getParentRoute: () => authedRoute,
   path: "transactions/new",
-  validateSearch: (search): { account_id?: string; kind?: BuiltKind } => {
-    const { account_id } = validateTransactionSearch(search);
-    return {
-      ...(account_id === undefined ? {} : { account_id }),
-      ...(isBuiltKind(search.kind) ? { kind: search.kind } : {}),
-    };
-  },
+  validateSearch: (
+    search,
+  ): {
+    account_id?: string;
+    to_account_id?: string;
+    brokerage_id?: string;
+    kind?: BuiltKind | "transfer";
+  } => ({
+    ...validateNewTransactionSearch(search),
+    ...(isBuiltKind(search.kind) || search.kind === "transfer"
+      ? { kind: search.kind }
+      : {}),
+  }),
   component: NewTransactionPage,
 });
 

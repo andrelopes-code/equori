@@ -52,7 +52,10 @@ export interface TradeView {
 // The state of the trade form: the draft, what the server's reads add to it (price, position,
 // accounts of the brokerage) and the write. The server stays the source of what is stored; the
 // figures here are a preview of A68.
-export function useTradeEntry(accountId: string | null) {
+export function useTradeEntry(
+  accountId: string | null,
+  brokerageId: string | null = null,
+) {
   const t = useT();
   const api = useApi();
   const today = useToday();
@@ -66,7 +69,11 @@ export function useTradeEntry(accountId: string | null) {
   const [draft, setDraft] = useState<TradeDraft>(() => {
     const stored = readStored(draftKey);
     const start = isTradeDraft(stored) ? stored : emptyTrade(today);
-    return accountId === null ? start : { ...start, accountId };
+    return {
+      ...start,
+      ...(accountId === null ? {} : { accountId }),
+      ...(brokerageId === null ? {} : { brokerageId }),
+    };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
