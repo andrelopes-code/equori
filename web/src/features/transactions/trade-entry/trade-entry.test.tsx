@@ -105,6 +105,49 @@ describe("trade entry", () => {
     expect(sent).toHaveLength(0);
   });
 
+  it("offers to create the cash account of a brokerage in the base currency", async () => {
+    const beta = "b0000000-0000-4000-8000-0000000000b1";
+    await renderApp(`/transactions/new?kind=trade&brokerage_id=${beta}`, {
+      fetch: api([], {
+        extraAccounts: [
+          {
+            id: beta,
+            name: "Beta",
+            class: "asset",
+            kind: "brokerage",
+            currency: "BRL",
+          },
+          {
+            id: "b0000000-0000-4000-8000-0000000000b2",
+            name: "Beta MXRF11",
+            class: "asset",
+            currency: "MXRF11",
+            parent_id: beta,
+          },
+        ],
+      }),
+    });
+    expect(
+      await screen.findByText("This brokerage has no cash account in BRL."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: catalogEn["trade.createCash"] }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers no cash account creation for a brokerage in another currency", async () => {
+    await renderApp(
+      `/transactions/new?kind=trade&brokerage_id=${usdBrokerID}`,
+      {
+        fetch: api([], { extraAccounts: usdBrokerage }),
+      },
+    );
+    await screen.findByText("This brokerage has no cash account in BRL.");
+    expect(
+      screen.queryByRole("button", { name: catalogEn["trade.createCash"] }),
+    ).not.toBeInTheDocument();
+  });
+
   it("lists only the investments the brokerage holds for a sale", async () => {
     await renderApp(path, {
       fetch: api([], { held: { quantity: 150, cost: 151240 } }),
