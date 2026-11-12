@@ -207,7 +207,7 @@ export const instrumentsEn = {
   "instrument.chart.averageCost": "Average cost",
   "instrument.figures.label": "Summary of the range",
   "instrument.figures.change": "Change over the range",
-  "instrument.figures.changeNote": "from {from} to {to}",
+  "instrument.figures.changeNote": "from\u00a0{from} to\u00a0{to}",
   "instrument.figures.high": "High of the range",
   "instrument.figures.low": "Low of the range",
   "instrument.figures.points": "Quotes in the range",

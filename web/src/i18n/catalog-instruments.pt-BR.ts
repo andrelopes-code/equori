@@ -209,7 +209,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.chart.averageCost": "Custo médio",
   "instrument.figures.label": "Resumo do intervalo",
   "instrument.figures.change": "Variação no intervalo",
-  "instrument.figures.changeNote": "de {from} a {to}",
+  "instrument.figures.changeNote": "de\u00a0{from} a\u00a0{to}",
   "instrument.figures.high": "Máxima do intervalo",
   "instrument.figures.low": "Mínima do intervalo",
   "instrument.figures.points": "Cotações no intervalo",
