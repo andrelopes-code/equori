@@ -20,20 +20,30 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
+import styles from "@/features/instruments/price-table/price-table.module.css";
+
 type Price = components["schemas"]["Price"];
+
+interface PriceTableProps {
+  prices: readonly Price[];
+  loading: boolean;
+  // Keeps the rows of one source; the change of each row still reads the full series.
+  source?: string | null;
+}
 
 // The chosen price of each date, newest first, with its change against the older row and its source. The rows are the points of the answer.
 export function PriceTable({
   prices,
   loading,
-}: {
-  prices: readonly Price[];
-  loading: boolean;
-}) {
+  source = null,
+}: PriceTableProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
-  const rows = [...prices].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = [...prices].sort((a, b) => b.date.localeCompare(a.date));
+  const rows = sorted
+    .map((price, i) => ({ price, older: sorted[i + 1] }))
+    .filter(({ price }) => source === null || price.source === source);
   const value = (p: Price) =>
     fmt.hidden ? MASK : formatPrice(p.value, locale);
   const change = (p: Price, older: Price | undefined) => {
@@ -44,8 +54,11 @@ export function PriceTable({
   };
 
   return (
-    <Table columns={4} variant="framed">
-      <TableContent aria-label={t("instrument.prices.caption")}>
+    <Table columns={4} variant="framed" stickyHeader>
+      <TableContent
+        aria-label={t("instrument.prices.caption")}
+        scrollProps={{ className: styles.scroll }}
+      >
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("instrument.col.date")}</TableColumnHeader>
@@ -65,11 +78,11 @@ export function PriceTable({
             {rows.length === 0 && (
               <TableEmpty>{t("instrument.prices.empty")}</TableEmpty>
             )}
-            {rows.map((p, i) => (
+            {rows.map(({ price: p, older }) => (
               <TableRow key={p.date} value={p.date}>
                 <TableRowHeader>{formatDate(p.date, locale)}</TableRowHeader>
                 <TableCell numeric>{value(p)}</TableCell>
-                <TableCell numeric>{change(p, rows[i + 1])}</TableCell>
+                <TableCell numeric>{change(p, older)}</TableCell>
                 <TableCell>{sourceLabel(t, p.source)}</TableCell>
               </TableRow>
             ))}

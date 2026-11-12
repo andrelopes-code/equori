@@ -1,30 +1,39 @@
-import {
-  Collapsible,
-  CollapsibleHeader,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@slotted/react/collapsible";
-
 import type { components } from "@/api/schema.gen";
-import { PriceTable } from "@/features/instruments/price-table/price-table";
-import { useT } from "@/i18n/i18n-provider";
+import { sourceLabel } from "@/features/instruments/model/instrument-labels";
+import { priceStats } from "@/features/instruments/model/price-stats";
+import { PriceLayer } from "@/features/instruments/price-table/price-layer";
+import { formatDate } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { DetailDialog } from "@/ui/dialogs/detail-dialog";
 
 type Price = components["schemas"]["Price"];
 
-// The audit detail of the chart: the price of each date with its source, behind one trigger.
-export function PriceDetails({ prices }: { prices: readonly Price[] }) {
+interface PriceDetailsProps {
+  prices: readonly Price[];
+}
+
+// L1: the summary line of the prices and the button of the layer that lists each date.
+export function PriceDetails({ prices }: PriceDetailsProps) {
   const t = useT();
+  const [locale] = useAppLocale();
+
+  const stats = priceStats(prices);
+
+  if (stats === null) return null;
 
   return (
-    <Collapsible mount="lazy">
-      <CollapsibleHeader>
-        <CollapsibleTrigger>
-          {t("instrument.prices.caption")}
-        </CollapsibleTrigger>
-      </CollapsibleHeader>
-      <CollapsiblePanel>
-        <PriceTable prices={prices} loading={false} />
-      </CollapsiblePanel>
-    </Collapsible>
+    <DetailDialog
+      title={t("instrument.prices.caption")}
+      description={t("instrument.prices.layer.description")}
+      summary={t("instrument.prices.summary", {
+        count: stats.count,
+        from: formatDate(stats.first.date, locale),
+        to: formatDate(stats.last.date, locale),
+        source: sourceLabel(t, stats.last.source),
+      })}
+      triggerLabel={t("instrument.prices.open")}
+    >
+      <PriceLayer prices={prices} stats={stats} />
+    </DetailDialog>
   );
 }

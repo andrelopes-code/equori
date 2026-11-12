@@ -16,6 +16,23 @@ const rowTexts = (table: HTMLElement) =>
         .join("|"),
     );
 
+const twoPrices = [
+  {
+    instrument: "PETR4",
+    quote_instrument: "BRL",
+    date: "2026-10-14",
+    value: "38.10",
+    source: "b3_cotahist",
+  },
+  {
+    instrument: "PETR4",
+    quote_instrument: "BRL",
+    date: "2026-10-16",
+    value: "38.45",
+    source: "manual",
+  },
+];
+
 describe("Instrument page", () => {
   it("shows the instrument and its prices of the last 90 days with the source of each", async () => {
     const queries: URLSearchParams[] = [];
@@ -48,7 +65,7 @@ describe("Instrument page", () => {
     ).toBeInTheDocument();
     await userEvent.setup().click(
       await screen.findByRole("button", {
-        name: catalogEn["instrument.prices.caption"],
+        name: catalogEn["instrument.prices.open"],
       }),
     );
     const table = await screen.findByRole("table", {
@@ -72,6 +89,86 @@ describe("Instrument page", () => {
       quote_instrument: "BRL",
       from: "2026-07-20",
       to: "2026-10-17",
+    });
+  });
+
+  // L1, DL1, DL2
+  it("L1: the page holds the summary line and no price table until the button is pressed", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () => json(200, { items: twoPrices }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+
+    expect(
+      await screen.findByText(
+        "Prices: 2, from 10/14/2026 to 10/16/2026. Latest source: Manual.",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("table", {
+        name: catalogEn["instrument.prices.caption"],
+      }),
+    ).toBeNull();
+  });
+
+  it("L1: the layer opens with the figure strip", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () => json(200, { items: twoPrices }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    await userEvent.setup().click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.prices.open"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const card = (label: string) =>
+      within(dialog).getByText(label).closest("[data-ui='stat-card']");
+
+    expect(card(catalogEn["instrument.prices.points"])).toHaveTextContent(
+      "Prices2",
+    );
+    expect(card(catalogEn["instrument.prices.first"])).toHaveTextContent(
+      "First date10/14/2026R$38.10",
+    );
+    expect(card(catalogEn["instrument.prices.last"])).toHaveTextContent(
+      "Last date10/16/2026R$38.45",
+    );
+    expect(card(catalogEn["instrument.prices.high"])).toHaveTextContent(
+      "HighestR$38.4510/16/2026",
+    );
+    expect(card(catalogEn["instrument.prices.low"])).toHaveTextContent(
+      "LowestR$38.1010/14/2026",
+    );
+  });
+
+  it("L1: the filter keeps the change of the full series", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () => json(200, { items: twoPrices }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", {
+        name: catalogEn["instrument.prices.open"],
+      }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["instrument.prices.filter"],
+      }),
+    );
+    await user.click(await screen.findByRole("option", { name: "Manual" }));
+
+    await waitFor(() => {
+      expect(
+        rowTexts(
+          within(dialog).getByRole("table", {
+            name: catalogEn["instrument.prices.caption"],
+          }),
+        ).slice(1),
+      ).toEqual(["10/16/2026|38.45|+0.92%|Manual"]);
     });
   });
 

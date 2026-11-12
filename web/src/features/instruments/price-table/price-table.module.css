@@ -1,0 +1,6 @@
+@layer app {
+  /* The table scrolls under its sticky header inside the layer; no token holds the height. */
+  .scroll {
+    max-block-size: 28rem;
+  }
+}
