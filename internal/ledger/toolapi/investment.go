@@ -31,7 +31,7 @@ type recordInvestmentIn struct {
 	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"for income: type from get_portfolio with view income_types"`
 	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"for income: income category from list_accounts"`
 
-	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; the default one when absent"`
+	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; an empty description is shown as a title derived from the kind and the investment"`
 	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
 	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"for income: expense category of the tax withheld; the taxes account when absent"`
 }

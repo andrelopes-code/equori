@@ -6884,7 +6884,7 @@
         },
         "description": {
           "type": "string",
-          "description": "description of the transaction; the default one when absent"
+          "description": "description of the transaction; an empty description is shown as a title derived from the kind and the investment"
         },
         "taxes_category_id": {
           "type": "string",
