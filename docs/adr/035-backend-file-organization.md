@@ -43,7 +43,7 @@ A function above 50 lines is split into named steps in the same file, below its 
 
 ## Formatting
 
-Wrapping lines to 100 columns lengthens function bodies and files. The gate lists were regenerated once after golines ran: 33 files and 105 functions carry the reason `pending: split after the 100-column reformatting`, and 10 functions carry `table of data`. The lists only shrink from that baseline.
+Wrapping lines to 100 columns lengthens function bodies and files. The gate lists were regenerated once after golines ran: 32 files and 105 functions carry the reason `pending: split after the 100-column reformatting`, and 1 file and 10 functions carry `table of data`. The lists only shrink from that baseline.
 
 ## Consequences
 
