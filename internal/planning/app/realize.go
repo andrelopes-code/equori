@@ -33,60 +33,23 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 		return err
 	}
 
-	facts, err := s.ledger.TransactionFacts(ctx, e.BooksID, []uuid.UUID{e.TransactionID})
+	t, current, hasCurrent, err := s.loadChange(ctx, repo, e)
 	if err != nil {
 		return err
 	}
 
-	t := domain.Transaction{ID: e.TransactionID, Voided: true}
-	if len(facts) == 1 {
-		t = facts[0]
-	}
-
-	current, err := repo.OccurrenceByTransaction(ctx, e.BooksID, e.TransactionID)
-
-	hasCurrent := err == nil
-	if err != nil && !errors.Is(err, ErrNotFound) {
-		return err
-	}
-
 	if hasCurrent && current.RealizedBy == realizedManual {
-		if !t.Voided {
-			return nil
-		}
-
-		_, err = repo.Release(ctx, e.BooksID, current.ID, false)
-
-		return err
+		return releaseManual(ctx, repo, e.BooksID, current, t)
 	}
 
 	var best domain.Candidate
 
 	found := false
 	if !t.Voided {
-		byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
-
-		ids := make([]uuid.UUID, len(schedules))
-		for i, sch := range schedules {
-			byID[sch.ID], ids[i] = sch, sch.ID
-		}
-
-		os, err := repo.ExpectedOccurrences(ctx, e.BooksID, ids,
-			t.Date.AddDate(0, 0, -domain.MaxWindowDays), t.Date.AddDate(0, 0, domain.MaxWindowDays))
+		best, found, err = findBest(ctx, repo, e, schedules, t, current, hasCurrent)
 		if err != nil {
 			return err
 		}
-
-		cs := make([]domain.Candidate, 0, len(os)+1)
-		if hasCurrent {
-			cs = append(cs, domain.Candidate{Occurrence: current, Schedule: byID[current.ScheduleID]})
-		}
-
-		for _, o := range os {
-			cs = append(cs, domain.Candidate{Occurrence: o, Schedule: byID[o.ScheduleID]})
-		}
-
-		best, found = domain.Match(t, cs)
 	}
 
 	if hasCurrent {
@@ -106,6 +69,88 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 	_, err = repo.Realize(ctx, e.BooksID, best.Occurrence.ID, t.ID, realizedAuto)
 
 	return err
+}
+
+// loadChange reads the transaction of the event, a voided stub when the facts hold none, and
+// the occurrence it realizes, when there is one.
+func (s *Service) loadChange(
+	ctx context.Context,
+	repo Repository,
+	e TransactionChanged,
+) (domain.Transaction, domain.Occurrence, bool, error) {
+	facts, err := s.ledger.TransactionFacts(ctx, e.BooksID, []uuid.UUID{e.TransactionID})
+	if err != nil {
+		return domain.Transaction{}, domain.Occurrence{}, false, err
+	}
+
+	t := domain.Transaction{ID: e.TransactionID, Voided: true}
+	if len(facts) == 1 {
+		t = facts[0]
+	}
+
+	current, err := repo.OccurrenceByTransaction(ctx, e.BooksID, e.TransactionID)
+
+	hasCurrent := err == nil
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return domain.Transaction{}, domain.Occurrence{}, false, err
+	}
+
+	return t, current, hasCurrent, nil
+}
+
+// releaseManual keeps an occurrence realized by hand unless its transaction is voided.
+func releaseManual(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	current domain.Occurrence,
+	t domain.Transaction,
+) error {
+	if !t.Voided {
+		return nil
+	}
+
+	_, err := repo.Release(ctx, booksID, current.ID, false)
+
+	return err
+}
+
+// findBest returns the candidate occurrence that t realizes best: the current one and the
+// expected ones within the match window.
+func findBest(
+	ctx context.Context,
+	repo Repository,
+	e TransactionChanged,
+	schedules []domain.Schedule,
+	t domain.Transaction,
+	current domain.Occurrence,
+	hasCurrent bool,
+) (domain.Candidate, bool, error) {
+	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
+
+	ids := make([]uuid.UUID, len(schedules))
+	for i, sch := range schedules {
+		byID[sch.ID], ids[i] = sch, sch.ID
+	}
+
+	os, err := repo.ExpectedOccurrences(ctx, e.BooksID, ids,
+		t.Date.AddDate(0, 0, -domain.MaxWindowDays), t.Date.AddDate(0, 0, domain.MaxWindowDays))
+	if err != nil {
+		return domain.Candidate{}, false, err
+	}
+
+	cs := make([]domain.Candidate, 0, len(os)+1)
+	if hasCurrent {
+		cs = append(cs, domain.Candidate{Occurrence: current, Schedule: byID[current.ScheduleID]})
+	}
+
+	for _, o := range os {
+		cs = append(cs, domain.Candidate{Occurrence: o, Schedule: byID[o.ScheduleID]})
+	}
+
+	best, found := domain.Match(t, cs)
+
+	return best, found, nil
 }
 
 // Realize links a chosen transaction to an expected occurrence; re-evaluation never

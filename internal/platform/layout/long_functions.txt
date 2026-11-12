@@ -66,16 +66,6 @@ internal/marketdata/probe.go	Module.ProbeQuote	pending: backend reorganization p
 internal/marketdata/sources.go	sourceEntries	table of data
 internal/marketdata/toolapi/instrument.go	manageInstrument	pending: backend reorganization plan
 internal/marketdata/toolapi/market.go	getMarketData	pending: backend reorganization plan
-internal/planning/app/budgets.go	Service.BudgetProgress	pending: backend reorganization plan
-internal/planning/app/changes.go	Service.ChangeTerms	pending: backend reorganization plan
-internal/planning/app/plan.go	Service.BudgetPlan	pending: backend reorganization plan
-internal/planning/app/plan_save.go	Service.SaveBudgetPlan	pending: backend reorganization plan
-internal/planning/app/plan.go	Service.planOccurrences	pending: backend reorganization plan
-internal/planning/app/realize.go	Service.reevaluate	pending: backend reorganization plan
-internal/planning/app/schedules.go	Service.CreateSchedule	pending: backend reorganization plan
-internal/planning/app/schedules.go	Service.checkAccounts	pending: backend reorganization plan
-internal/planning/app/views.go	Service.Committed	pending: backend reorganization plan
-internal/planning/app/views.go	Service.Project	pending: backend reorganization plan
 internal/planning/domain/plan.go	PlanRows	pending: backend reorganization plan
 internal/planning/domain/recurrence.go	Rule.Validate	pending: backend reorganization plan
 internal/planning/httpapi/plan.go	toBudgetPlanAPI	pending: backend reorganization plan

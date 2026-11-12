@@ -52,73 +52,20 @@ func (s *Service) Project(ctx context.Context, booksID int64, accountID uuid.UUI
 		return Projection{}, err
 	}
 
-	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
-	for _, sch := range schedules {
-		byID[sch.ID] = sch
-	}
-
 	os, err := s.repo.Occurrences(ctx, booksID, beginning, to, uuid.Nil)
 	if err != nil {
 		return Projection{}, err
 	}
 
-	var points []Point
-	for _, o := range os {
-		sch, ok := byID[o.ScheduleID]
-		if !ok || o.State != domain.Expected {
-			continue
-		}
+	points := projectionPoints(os, indexSchedules(schedules), accountID, today)
+	sortPoints(points)
 
-		amount := o.Amount
-		if sch.AccountID == accountID && sch.Kind.Outflow() {
-			amount = -amount
-		}
-
-		date := o.ExpectedOn
-		if date.Before(today) {
-			date = today
-		}
-
-		points = append(points, Point{Date: date, OccurrenceID: o.ID, ScheduleID: o.ScheduleID, Amount: amount})
-	}
-
-	slices.SortStableFunc(points, func(a, b Point) int {
-		if c := a.Date.Compare(b.Date); c != 0 {
-			return c
-		}
-
-		switch {
-		case a.Amount < b.Amount:
-			return -1
-		case a.Amount > b.Amount:
-			return 1
-		}
-
-		return 0
-	})
-
-	openingBalance, err := s.ledger.Balance(ctx, booksID, accountID, today)
-	if errors.Is(err, ErrMixedInstruments) {
-		return Projection{}, &CurrencyError{Field: "id"}
-	}
-
+	opening, closing, err := s.openingClosing(ctx, booksID, accountID, today, to)
 	if err != nil {
 		return Projection{}, err
 	}
 
-	closingBalance, err := s.ledger.Balance(ctx, booksID, accountID, to)
-	if err != nil {
-		return Projection{}, err
-	}
-
-	opening, closing := openingBalance.Amount(), closingBalance.Amount()
-
-	running := opening
-	for j := range points {
-		running += points[j].Amount
-		points[j].Balance = running
-		closing += points[j].Amount
-	}
+	closing = runBalances(points, opening, closing)
 
 	return Projection{AccountID: accountID, From: today, To: to, Opening: opening, Closing: closing, Currency: facts[i].Instrument, Points: points}, nil
 }
@@ -149,27 +96,16 @@ func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time)
 		return Committed{}, err
 	}
 
-	for _, a := range facts {
-		if a.Kind != "credit_card" || a.Instrument != base {
-			continue
-		}
-
-		c, err := s.ledger.Commitment(ctx, booksID, a.ID, month)
-		if err != nil {
-			return Committed{}, err
-		}
-
-		out.Installments += c
-	}
-
-	schedules, err := s.repo.Schedules(ctx, booksID)
+	installments, err := s.cardInstallments(ctx, booksID, month, base, facts)
 	if err != nil {
 		return Committed{}, err
 	}
 
-	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
-	for _, sch := range schedules {
-		byID[sch.ID] = sch
+	out.Installments = installments
+
+	schedules, err := s.repo.Schedules(ctx, booksID)
+	if err != nil {
+		return Committed{}, err
 	}
 
 	os, err := s.repo.Occurrences(ctx, booksID, month, month.AddDate(0, 1, -1), uuid.Nil)
@@ -177,6 +113,134 @@ func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time)
 		return Committed{}, err
 	}
 
+	if err := s.committedOccurrences(ctx, &out, os, indexSchedules(schedules)); err != nil {
+		return Committed{}, err
+	}
+
+	out.Total = out.Installments + out.Occurrences
+
+	return out, nil
+}
+
+// projectionPoints turns the expected occurrences of the schedules into points; a past date
+// counts as today.
+func projectionPoints(
+	os []domain.Occurrence,
+	byID map[uuid.UUID]domain.Schedule,
+	accountID uuid.UUID,
+	today time.Time,
+) []Point {
+	var points []Point
+	for _, o := range os {
+		sch, ok := byID[o.ScheduleID]
+		if !ok || o.State != domain.Expected {
+			continue
+		}
+
+		amount := o.Amount
+		if sch.AccountID == accountID && sch.Kind.Outflow() {
+			amount = -amount
+		}
+
+		date := o.ExpectedOn
+		if date.Before(today) {
+			date = today
+		}
+
+		points = append(points, Point{Date: date, OccurrenceID: o.ID, ScheduleID: o.ScheduleID, Amount: amount})
+	}
+
+	return points
+}
+
+// sortPoints orders the points by date, then by amount.
+func sortPoints(points []Point) {
+	slices.SortStableFunc(points, func(a, b Point) int {
+		if c := a.Date.Compare(b.Date); c != 0 {
+			return c
+		}
+
+		switch {
+		case a.Amount < b.Amount:
+			return -1
+		case a.Amount > b.Amount:
+			return 1
+		}
+
+		return 0
+	})
+}
+
+// openingClosing returns the balance of the account on today and on to.
+func (s *Service) openingClosing(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	today, to time.Time,
+) (int64, int64, error) {
+	openingBalance, err := s.ledger.Balance(ctx, booksID, accountID, today)
+	if errors.Is(err, ErrMixedInstruments) {
+		return 0, 0, &CurrencyError{Field: "id"}
+	}
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	closingBalance, err := s.ledger.Balance(ctx, booksID, accountID, to)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return openingBalance.Amount(), closingBalance.Amount(), nil
+}
+
+// runBalances sets the running balance of each point from opening and returns the closing
+// balance after every point.
+func runBalances(points []Point, opening, closing int64) int64 {
+	running := opening
+	for j := range points {
+		running += points[j].Amount
+		points[j].Balance = running
+		closing += points[j].Amount
+	}
+
+	return closing
+}
+
+// cardInstallments adds the commitments of month of the credit cards in the base currency.
+func (s *Service) cardInstallments(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+	base money.Currency,
+	facts []Account,
+) (int64, error) {
+	var total int64
+	for _, a := range facts {
+		if a.Kind != "credit_card" || a.Instrument != base {
+			continue
+		}
+
+		c, err := s.ledger.Commitment(ctx, booksID, a.ID, month)
+		if err != nil {
+			return 0, err
+		}
+
+		total += c
+	}
+
+	return total, nil
+}
+
+// committedOccurrences adds to out the expected occurrences of the committed kinds, valued in
+// the base currency at today's prices (A72).
+func (s *Service) committedOccurrences(
+	ctx context.Context,
+	out *Committed,
+	os []domain.Occurrence,
+	byID map[uuid.UUID]domain.Schedule,
+) error {
 	today := s.clk.Today(ctx)
 	for _, o := range os {
 		sch := byID[o.ScheduleID]
@@ -185,16 +249,16 @@ func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time)
 		}
 
 		amount := o.Amount
-		if sch.Currency != base {
+		if sch.Currency != out.Currency {
 			// P8 amendment A72: valued in the base currency at today's prices.
 			m, err := money.New(o.Amount, sch.Currency)
 			if err != nil {
-				return Committed{}, err
+				return err
 			}
 
-			v, used, err := s.prices.Convert(ctx, m, base, today)
+			v, used, err := s.prices.Convert(ctx, m, out.Currency, today)
 			if err != nil {
-				return Committed{}, err
+				return err
 			}
 
 			amount, out.Prices = v.Amount(), append(out.Prices, used...)
@@ -203,7 +267,5 @@ func (s *Service) Committed(ctx context.Context, booksID int64, month time.Time)
 		out.Occurrences += amount
 	}
 
-	out.Total = out.Installments + out.Occurrences
-
-	return out, nil
+	return nil
 }

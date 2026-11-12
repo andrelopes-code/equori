@@ -147,15 +147,52 @@ func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUI
 		sign = -1
 	}
 
-	// One ledger query per request: the months of a rollover budget at once, or the month alone.
-	var totals map[time.Time]int64
-	if b.Rollover && len(b.Amounts) > 0 && !b.Amounts[0].EffectiveFrom.After(month) {
-		if totals, err = s.ledger.CategoryMonthlyTotals(ctx, booksID, b.CategoryID, b.Amounts[0].EffectiveFrom, month.AddDate(0, 1, 0)); err != nil {
-			return domain.Progress{}, "", err
-		}
+	totals, err := s.monthlyTotals(ctx, booksID, b, month)
+	if err != nil {
+		return domain.Progress{}, "", err
 	}
 
-	spent := func(m time.Time) (int64, error) {
+	spent := s.spentFunc(ctx, booksID, b, month, sign, totals)
+
+	p, ok, err := b.Progress(month, spent)
+	if err != nil {
+		return domain.Progress{}, "", err
+	}
+
+	if !ok {
+		return domain.Progress{}, "", &domain.FieldError{Field: "month", Message: "precedes the first amount of the budget", Err: domain.ErrValidation}
+	}
+
+	return p, b.Currency, nil
+}
+
+// monthlyTotals runs one ledger query per request: the months of a rollover budget at once.
+// It returns nil when the budget reports the month alone.
+func (s *Service) monthlyTotals(
+	ctx context.Context,
+	booksID int64,
+	b domain.Budget,
+	month time.Time,
+) (map[time.Time]int64, error) {
+	if !b.Rollover || len(b.Amounts) == 0 || b.Amounts[0].EffectiveFrom.After(month) {
+		return nil, nil
+	}
+
+	return s.ledger.CategoryMonthlyTotals(
+		ctx, booksID, b.CategoryID, b.Amounts[0].EffectiveFrom, month.AddDate(0, 1, 0),
+	)
+}
+
+// spentFunc returns the spending of a month: from totals when set, else the ledger total of month.
+func (s *Service) spentFunc(
+	ctx context.Context,
+	booksID int64,
+	b domain.Budget,
+	month time.Time,
+	sign int64,
+	totals map[time.Time]int64,
+) func(time.Time) (int64, error) {
+	return func(m time.Time) (int64, error) {
 		if totals != nil {
 			return sign * totals[m], nil
 		}
@@ -168,17 +205,6 @@ func (s *Service) BudgetProgress(ctx context.Context, booksID int64, id uuid.UUI
 
 		return sign * total, err
 	}
-
-	p, ok, err := b.Progress(month, spent)
-	if err != nil {
-		return domain.Progress{}, "", err
-	}
-
-	if !ok {
-		return domain.Progress{}, "", &domain.FieldError{Field: "month", Message: "precedes the first amount of the budget", Err: domain.ErrValidation}
-	}
-
-	return p, b.Currency, nil
 }
 
 // HandleCategoriesMerged moves the budget and the schedules of from to into; when into has a

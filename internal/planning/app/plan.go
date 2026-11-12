@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,48 +30,123 @@ func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time
 		return Plan{}, err
 	}
 
-	var categories []domain.PlanCategory
-	var flowAccounts []uuid.UUID
+	accounts, err := s.classifyAccounts(ctx, booksID, month, facts, &out)
+	if err != nil {
+		return Plan{}, err
+	}
 
-	expense := make(map[uuid.UUID]bool)
+	totals, err := s.loadLedgerTotals(ctx, booksID, month, accounts.flow)
+	if err != nil {
+		return Plan{}, err
+	}
+
+	budgets, err := s.expenseBudgets(ctx, booksID, accounts.expense)
+	if err != nil {
+		return Plan{}, err
+	}
+
+	out.Rows, out.AverageMonths = planRows(month, accounts, totals, budgets)
+	out.Planned = sumPlanned(out.Rows)
+	applyIncomeHistory(&out, totals.income, month)
+
+	if err := s.planOccurrences(ctx, booksID, &out); err != nil {
+		return Plan{}, err
+	}
+
+	if err := s.resolveReference(ctx, booksID, &out); err != nil {
+		return Plan{}, err
+	}
+
+	return out, nil
+}
+
+// planAccounts holds the accounts of the book that the plan reads.
+type planAccounts struct {
+	categories []domain.PlanCategory
+	flow       []uuid.UUID
+	expense    map[uuid.UUID]bool
+}
+
+// classifyAccounts splits the accounts into expense categories and income and expense flow
+// accounts, and adds the prior installments of the base-currency credit cards to out.
+func (s *Service) classifyAccounts(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+	facts []Account,
+	out *Plan,
+) (planAccounts, error) {
+	var accounts planAccounts
+
+	accounts.expense = make(map[uuid.UUID]bool)
 	for _, a := range facts {
 		switch {
 		case a.Class == "expense":
-			categories = append(categories, domain.PlanCategory{ID: a.ID, ParentID: a.ParentID, Open: !a.Closed})
-			expense[a.ID] = true
-			flowAccounts = append(flowAccounts, a.ID)
+			accounts.categories = append(
+				accounts.categories,
+				domain.PlanCategory{ID: a.ID, ParentID: a.ParentID, Open: !a.Closed},
+			)
+			accounts.expense[a.ID] = true
+			accounts.flow = append(accounts.flow, a.ID)
 		case a.Class == "income":
-			flowAccounts = append(flowAccounts, a.ID)
-		case a.Kind == "credit_card" && a.Instrument == base:
+			accounts.flow = append(accounts.flow, a.ID)
+		case a.Kind == "credit_card" && a.Instrument == out.Currency:
 			c, err := s.ledger.PriorInstallments(ctx, booksID, a.ID, month)
 			if err != nil {
-				return Plan{}, err
+				return planAccounts{}, err
 			}
 
 			out.Installments += c
 		}
 	}
 
+	return accounts, nil
+}
+
+// ledgerTotals holds the ledger reads of the plan.
+type ledgerTotals struct {
+	own, income map[uuid.UUID]map[time.Time]int64
+	first       time.Time
+	hasPostings bool
+}
+
+// loadLedgerTotals reads the own postings of the three months before month and of month, by
+// category, and the first posting of the flow accounts.
+func (s *Service) loadLedgerTotals(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+	flowAccounts []uuid.UUID,
+) (ledgerTotals, error) {
 	from, to := month.AddDate(0, -3, 0), month.AddDate(0, 1, 0)
 
 	own, err := s.ledger.OwnCategoryMonthlyTotals(ctx, booksID, "expense", from, to)
 	if err != nil {
-		return Plan{}, err
+		return ledgerTotals{}, err
 	}
 
 	income, err := s.ledger.OwnCategoryMonthlyTotals(ctx, booksID, "income", from, to)
 	if err != nil {
-		return Plan{}, err
+		return ledgerTotals{}, err
 	}
 
 	first, hasPostings, err := s.ledger.FirstPosting(ctx, booksID, flowAccounts)
 	if err != nil {
-		return Plan{}, err
+		return ledgerTotals{}, err
 	}
 
+	return ledgerTotals{own: own, income: income, first: first, hasPostings: hasPostings}, nil
+}
+
+// expenseBudgets returns the budgets of the expense categories.
+func (s *Service) expenseBudgets(
+	ctx context.Context,
+	booksID int64,
+	expense map[uuid.UUID]bool,
+) ([]domain.Budget, error) {
 	budgets, err := s.repo.Budgets(ctx, booksID)
 	if err != nil {
-		return Plan{}, err
+		return nil, err
 	}
 
 	var expenseBudgets []domain.Budget
@@ -80,16 +156,41 @@ func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time
 		}
 	}
 
-	out.Rows, out.AverageMonths = domain.PlanRows(domain.PlanInput{
-		Month: month, Categories: categories, Budgets: expenseBudgets, Own: own, FirstPosting: first, HasPostings: hasPostings,
-	})
-	for _, r := range out.Rows {
+	return expenseBudgets, nil
+}
+
+// sumPlanned adds the planned amount of the rows that count.
+func sumPlanned(rows []domain.PlanRow) int64 {
+	var planned int64
+	for _, r := range rows {
 		if r.Counted {
-			out.Planned += r.Planned
+			planned += r.Planned
 		}
 	}
 
-	// Income postings are negative; the plan reads earnings as positive.
+	return planned
+}
+
+// planRows computes the rows of the plan and the number of months its averages span.
+func planRows(
+	month time.Time,
+	accounts planAccounts,
+	totals ledgerTotals,
+	budgets []domain.Budget,
+) ([]domain.PlanRow, int) {
+	return domain.PlanRows(domain.PlanInput{
+		Month:        month,
+		Categories:   accounts.categories,
+		Budgets:      budgets,
+		Own:          totals.own,
+		FirstPosting: totals.first,
+		HasPostings:  totals.hasPostings,
+	})
+}
+
+// applyIncomeHistory sets out.Received and the average income of the months the average spans.
+// Income postings are negative; the plan reads earnings as positive.
+func applyIncomeHistory(out *Plan, income map[uuid.UUID]map[time.Time]int64, month time.Time) {
 	var history int64
 	for _, byMonth := range income {
 		out.Received -= byMonth[month]
@@ -102,14 +203,13 @@ func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time
 		average := domain.Divide(history, out.AverageMonths)
 		out.Average = &average
 	}
+}
 
-	if err := s.planOccurrences(ctx, booksID, &out); err != nil {
-		return Plan{}, err
-	}
-
+// resolveReference sets out.Reference to the stored one, or to the source the plan data implies.
+func (s *Service) resolveReference(ctx context.Context, booksID int64, out *Plan) error {
 	ref, stored, err := s.repo.BudgetReference(ctx, booksID)
 	if err != nil {
-		return Plan{}, err
+		return err
 	}
 
 	if !stored {
@@ -125,7 +225,7 @@ func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time
 
 	out.Reference = ref
 
-	return out, nil
+	return nil
 }
 
 // planOccurrences adds the month's income and savings occurrences that are expected or
@@ -136,12 +236,9 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 		return err
 	}
 
-	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
-	for _, sch := range schedules {
-		byID[sch.ID] = sch
-		if sch.Kind == domain.Income && out.Expected == nil {
-			out.Expected = new(int64)
-		}
+	byID := indexSchedules(schedules)
+	if slices.ContainsFunc(schedules, func(sch domain.Schedule) bool { return sch.Kind == domain.Income }) {
+		out.Expected = new(int64)
 	}
 
 	os, err := s.repo.Occurrences(ctx, booksID, out.Month, out.Month.AddDate(0, 1, -1), uuid.Nil)
@@ -168,19 +265,9 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 			base = actual
 		}
 
-		amount := base
-		if sch.Currency != out.Currency {
-			m, err := money.New(base, sch.Currency)
-			if err != nil {
-				return err
-			}
-
-			v, used, err := s.prices.Convert(ctx, m, out.Currency, today)
-			if err != nil {
-				return err
-			}
-
-			amount, out.Prices = v.Amount(), append(out.Prices, used...)
+		amount, err := s.occurrenceAmount(ctx, out, sch, base, today)
+		if err != nil {
+			return err
 		}
 
 		if sch.Kind == domain.Savings {
@@ -188,19 +275,62 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 			continue
 		}
 
-		*out.Expected += amount
-
-		i, ok := items[sch.ID]
-		if !ok {
-			i = len(out.ExpectedItems)
-			items[sch.ID] = i
-			out.ExpectedItems = append(out.ExpectedItems, PlanIncome{ScheduleID: sch.ID, Description: sch.Description})
-		}
-
-		out.ExpectedItems[i].Amount += amount
+		addIncomeItem(out, items, sch, amount)
 	}
 
 	return nil
+}
+
+// indexSchedules keys the schedules by id.
+func indexSchedules(schedules []domain.Schedule) map[uuid.UUID]domain.Schedule {
+	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
+	for _, sch := range schedules {
+		byID[sch.ID] = sch
+	}
+
+	return byID
+}
+
+// occurrenceAmount values base in the base currency at today's prices and records the prices
+// used in out.
+func (s *Service) occurrenceAmount(
+	ctx context.Context,
+	out *Plan,
+	sch domain.Schedule,
+	base int64,
+	today time.Time,
+) (int64, error) {
+	if sch.Currency == out.Currency {
+		return base, nil
+	}
+
+	m, err := money.New(base, sch.Currency)
+	if err != nil {
+		return 0, err
+	}
+
+	v, used, err := s.prices.Convert(ctx, m, out.Currency, today)
+	if err != nil {
+		return 0, err
+	}
+
+	out.Prices = append(out.Prices, used...)
+
+	return v.Amount(), nil
+}
+
+// addIncomeItem adds amount to the expected income total and to the item of its schedule.
+func addIncomeItem(out *Plan, items map[uuid.UUID]int, sch domain.Schedule, amount int64) {
+	*out.Expected += amount
+
+	i, ok := items[sch.ID]
+	if !ok {
+		i = len(out.ExpectedItems)
+		items[sch.ID] = i
+		out.ExpectedItems = append(out.ExpectedItems, PlanIncome{ScheduleID: sch.ID, Description: sch.Description})
+	}
+
+	out.ExpectedItems[i].Amount += amount
 }
 
 // receivedIncome returns, by occurrence id, the amount each realized income occurrence moved,

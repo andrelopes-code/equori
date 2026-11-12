@@ -64,20 +64,64 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 	}
 
 	if in.Calendar == "" {
-		p, err := s.profiles.Profile(ctx, booksID)
+		calendar, err := s.defaultCalendar(ctx, booksID)
 		if err != nil {
-			return domain.Schedule{}, fmt.Errorf("read profile: %w", err)
+			return domain.Schedule{}, err
 		}
 
-		in.Calendar = s.cal.DefaultCalendar(p.Region)
+		in.Calendar = calendar
 	}
 
-	if _, err := s.cal.Holidays(ctx, in.Calendar, s.clk.Today(ctx).Year()); errors.Is(err, ErrUnknownCalendar) {
-		return domain.Schedule{}, &domain.FieldError{Field: "calendar", Message: "is not a known calendar", Err: domain.ErrValidation}
+	if err := s.checkCalendar(ctx, in.Calendar); err != nil {
+		return domain.Schedule{}, err
+	}
+
+	sch := newSchedule(in)
+	if err := sch.Validate(); err != nil {
+		return domain.Schedule{}, err
+	}
+
+	if err := s.checkAccounts(ctx, booksID, sch); err != nil {
+		return domain.Schedule{}, err
+	}
+
+	// Nothing is generated yet: occurrences start at the rule's first date, which a preceding
+	// adjustment may move before its start (A127).
+	sch.GeneratedUntil = time.Time{}
+	// The creation date bounds the skipped past (A127), so it follows the application clock.
+	sch.CreatedAt = s.clk.Now()
+
+	created, err := s.persistSchedule(ctx, booksID, sch, in.PaidBy)
+	if err != nil {
+		return domain.Schedule{}, err
+	}
+
+	return s.repo.Schedule(ctx, booksID, created.ID)
+}
+
+// defaultCalendar returns the calendar of the owner's region.
+func (s *Service) defaultCalendar(ctx context.Context, booksID int64) (string, error) {
+	p, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return "", fmt.Errorf("read profile: %w", err)
+	}
+
+	return s.cal.DefaultCalendar(p.Region), nil
+}
+
+// checkCalendar refuses a calendar the holiday source does not know.
+func (s *Service) checkCalendar(ctx context.Context, calendar string) error {
+	if _, err := s.cal.Holidays(ctx, calendar, s.clk.Today(ctx).Year()); errors.Is(err, ErrUnknownCalendar) {
+		return &domain.FieldError{Field: "calendar", Message: "is not a known calendar", Err: domain.ErrValidation}
 	} else if err != nil {
-		return domain.Schedule{}, fmt.Errorf("check calendar: %w", err)
+		return fmt.Errorf("check calendar: %w", err)
 	}
 
+	return nil
+}
+
+// newSchedule builds the schedule of in, with the defaults of the matching settings.
+func newSchedule(in ScheduleInput) domain.Schedule {
 	sch := domain.Schedule{Calendar: in.Calendar,
 		Kind: in.Kind, AccountID: in.AccountID, CounterpartID: in.CounterpartID, PayeeID: in.PayeeID,
 		Description: in.Description, Currency: in.Amount.Currency(),
@@ -97,19 +141,16 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 		sch.WindowDays = *in.WindowDays
 	}
 
-	if err := sch.Validate(); err != nil {
-		return domain.Schedule{}, err
-	}
+	return sch
+}
 
-	if err := s.checkAccounts(ctx, booksID, sch); err != nil {
-		return domain.Schedule{}, err
-	}
-
-	// Nothing is generated yet: occurrences start at the rule's first date, which a preceding
-	// adjustment may move before its start (A127).
-	sch.GeneratedUntil = time.Time{}
-	// The creation date bounds the skipped past (A127), so it follows the application clock.
-	sch.CreatedAt = s.clk.Now()
+// persistSchedule inserts sch and generates its occurrences in one transaction.
+func (s *Service) persistSchedule(
+	ctx context.Context,
+	booksID int64,
+	sch domain.Schedule,
+	paidBy uuid.UUID,
+) (domain.Schedule, error) {
 	var created domain.Schedule
 
 	err := s.repo.InTx(ctx, func(repo Repository) error {
@@ -118,13 +159,10 @@ func (s *Service) CreateSchedule(ctx context.Context, booksID int64, in Schedule
 			return err
 		}
 
-		return s.generate(ctx, repo, booksID, created, in.PaidBy)
+		return s.generate(ctx, repo, booksID, created, paidBy)
 	})
-	if err != nil {
-		return domain.Schedule{}, err
-	}
 
-	return s.repo.Schedule(ctx, booksID, created.ID)
+	return created, err
 }
 
 // Update renames a schedule, ended or not, moves its start earlier and changes its matching
@@ -182,21 +220,38 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 		accounts[a.ID] = a
 	}
 
-	balance := func(a Account) bool { return a.Class == "asset" || a.Class == "liability" }
+	account, err := checkAccountSide(accounts, sch)
+	if err != nil {
+		return err
+	}
 
+	if err := checkCounterpart(accounts, sch, account); err != nil {
+		return err
+	}
+
+	return s.checkPayee(ctx, booksID, sch)
+}
+
+// checkAccountSide checks the account of the schedule and returns it.
+func checkAccountSide(accounts map[uuid.UUID]Account, sch domain.Schedule) (Account, error) {
 	account, ok := accounts[sch.AccountID]
-	if !ok || !balance(account) {
-		return &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book", Err: domain.ErrValidation}
+	if !ok || !isBalance(account) {
+		return Account{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book", Err: domain.ErrValidation}
 	}
 
 	if _, err := money.ParseCurrency(string(account.Instrument)); err != nil {
-		return &CurrencyError{Field: "account_id"}
+		return Account{}, &CurrencyError{Field: "account_id"}
 	}
 
 	if sch.Currency != account.Instrument {
-		return &domain.FieldError{Field: "amount.currency", Message: "must be the currency of account_id " + string(account.Instrument), Err: domain.ErrValidation}
+		return Account{}, &domain.FieldError{Field: "amount.currency", Message: "must be the currency of account_id " + string(account.Instrument), Err: domain.ErrValidation}
 	}
 
+	return account, nil
+}
+
+// checkCounterpart checks that the counterpart fits the kind and the instrument of account.
+func checkCounterpart(accounts map[uuid.UUID]Account, sch domain.Schedule, account Account) error {
 	counterpart, ok := accounts[sch.CounterpartID]
 
 	var fits bool
@@ -206,7 +261,7 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 	case domain.Income:
 		fits = counterpart.Class == "income"
 	case domain.Transfer, domain.Savings:
-		fits = balance(counterpart) && counterpart.ID != sch.AccountID
+		fits = isBalance(counterpart) && counterpart.ID != sch.AccountID
 	}
 
 	if !ok || !fits {
@@ -217,6 +272,11 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 		return &CurrencyError{Field: "counterpart_id"}
 	}
 
+	return nil
+}
+
+// checkPayee checks that the payee of the schedule, when set, belongs to the book.
+func (s *Service) checkPayee(ctx context.Context, booksID int64, sch domain.Schedule) error {
 	if sch.PayeeID != uuid.Nil {
 		missing, err := s.ledger.MissingPayees(ctx, booksID, []uuid.UUID{sch.PayeeID})
 		if err != nil {
@@ -231,116 +291,12 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 	return nil
 }
 
+func isBalance(a Account) bool { return a.Class == "asset" || a.Class == "liability" }
+
 func (s *Service) Schedule(ctx context.Context, booksID int64, id uuid.UUID) (domain.Schedule, error) {
 	return s.repo.Schedule(ctx, booksID, id)
 }
 
 func (s *Service) ListSchedules(ctx context.Context, booksID int64, p page.Request[IDKey]) ([]domain.Schedule, *IDKey, error) {
 	return s.repo.ListSchedules(ctx, booksID, p)
-}
-
-// maxRangeDays bounds an occurrence range (P7 Global Constraints).
-const maxRangeDays = 366
-
-// OccurrenceView is an occurrence with the state the API reads.
-type OccurrenceView struct {
-	domain.Occurrence
-	Shown    domain.State
-	Currency money.Currency
-	// Actual is what the realized transaction moved on the schedule account, in minor units of
-	// Currency; nil unless the occurrence is realized and its transaction is known.
-	Actual *int64
-}
-
-// Occurrences lists the occurrences with expected date in [from, to]; state filters by the
-// state read, overdue included.
-func (s *Service) Occurrences(ctx context.Context, booksID int64, from, to time.Time, scheduleID uuid.UUID, state domain.State) ([]OccurrenceView, error) {
-	if to.Before(from) || to.Sub(from) > maxRangeDays*24*time.Hour {
-		return nil, &domain.FieldError{Field: "to", Message: "must be on or after from, at most 366 days later", Err: domain.ErrValidation}
-	}
-
-	os, err := s.repo.Occurrences(ctx, booksID, from, to, scheduleID)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.occurrenceViews(ctx, booksID, os, state)
-}
-
-// OccurrencesOfTransaction returns the occurrences the transaction realized, whatever their date.
-func (s *Service) OccurrencesOfTransaction(ctx context.Context, booksID int64, txID uuid.UUID) ([]OccurrenceView, error) {
-	os, err := s.repo.OccurrencesOfTransaction(ctx, booksID, txID)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.occurrenceViews(ctx, booksID, os, "")
-}
-
-func (s *Service) occurrenceViews(ctx context.Context, booksID int64, os []domain.Occurrence, state domain.State) ([]OccurrenceView, error) {
-	schedules, err := s.repo.Schedules(ctx, booksID)
-	if err != nil {
-		return nil, err
-	}
-
-	byID := make(map[uuid.UUID]domain.Schedule, len(schedules))
-	for _, sch := range schedules {
-		byID[sch.ID] = sch
-	}
-
-	today := s.clk.Today(ctx)
-
-	out := make([]OccurrenceView, 0, len(os))
-	for _, o := range os {
-		sch := byID[o.ScheduleID]
-
-		v := OccurrenceView{Occurrence: o, Shown: o.Shown(today, sch.GraceDays), Currency: sch.Currency}
-		if state == "" || v.Shown == state {
-			out = append(out, v)
-		}
-	}
-
-	if err := s.fillActuals(ctx, booksID, out, byID); err != nil {
-		return nil, err
-	}
-
-	return out, nil
-}
-
-// fillActuals sets Actual on the realized views with one TransactionFacts call; a view whose
-// transaction is missing from the facts keeps Actual nil.
-func (s *Service) fillActuals(ctx context.Context, booksID int64, views []OccurrenceView, schedules map[uuid.UUID]domain.Schedule) error {
-	var ids []uuid.UUID
-	for _, v := range views {
-		if v.State == domain.Realized {
-			ids = append(ids, v.TransactionID)
-		}
-	}
-
-	if len(ids) == 0 {
-		return nil
-	}
-
-	facts, err := s.ledger.TransactionFacts(ctx, booksID, ids)
-	if err != nil {
-		return err
-	}
-
-	byID := make(map[uuid.UUID]domain.Transaction, len(facts))
-	for _, t := range facts {
-		byID[t.ID] = t
-	}
-
-	for i, v := range views {
-		t, ok := byID[v.TransactionID]
-		if v.State != domain.Realized || !ok {
-			continue
-		}
-
-		if amount, found := domain.ActualAmount(t, schedules[v.ScheduleID]); found {
-			views[i].Actual = &amount
-		}
-	}
-
-	return nil
 }

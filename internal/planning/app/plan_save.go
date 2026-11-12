@@ -34,12 +34,8 @@ func (s *Service) SaveBudgetPlan(
 	amounts []PlanAmount,
 ) (Plan, error) {
 	month = domain.MonthOf(month)
-	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
-		return Plan{}, &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
-	}
-
-	if targetBP != nil && (*targetBP < 0 || *targetBP > basisPoints) {
-		return Plan{}, &domain.FieldError{Field: "savings_target_bp", Message: "must be from 0 to 10000", Err: domain.ErrValidation}
+	if err := s.checkPlanArguments(ctx, month, targetBP); err != nil {
+		return Plan{}, err
 	}
 
 	base, err := s.ledger.BaseCurrency(ctx, booksID)
@@ -47,6 +43,43 @@ func (s *Service) SaveBudgetPlan(
 		return Plan{}, err
 	}
 
+	ref, err := buildReference(source, fixed, targetBP, base)
+	if err != nil {
+		return Plan{}, err
+	}
+
+	if err := s.checkPlanAmounts(ctx, booksID, amounts, base); err != nil {
+		return Plan{}, err
+	}
+
+	if err := s.persistPlan(ctx, booksID, month, ref, base, amounts); err != nil {
+		return Plan{}, err
+	}
+
+	return s.BudgetPlan(ctx, booksID, month)
+}
+
+// checkPlanArguments validates the month and the savings target of a plan save.
+func (s *Service) checkPlanArguments(ctx context.Context, month time.Time, targetBP *int) error {
+	if month.Before(domain.MonthOf(s.clk.Today(ctx))) || month.After(s.horizon(ctx)) {
+		return &domain.FieldError{Field: "month", Message: "must be from the current month to today + 12 months", Err: domain.ErrValidation}
+	}
+
+	if targetBP != nil && (*targetBP < 0 || *targetBP > basisPoints) {
+		return &domain.FieldError{Field: "savings_target_bp", Message: "must be from 0 to 10000", Err: domain.ErrValidation}
+	}
+
+	return nil
+}
+
+// buildReference returns the reference choice of a plan save; fixed is read only with
+// SourceFixed.
+func buildReference(
+	source domain.ReferenceSource,
+	fixed *money.Money,
+	targetBP *int,
+	base money.Currency,
+) (domain.Reference, error) {
 	ref := domain.Reference{Source: source}
 	if targetBP != nil {
 		ref.TargetBP, ref.HasTarget = *targetBP, true
@@ -54,7 +87,7 @@ func (s *Service) SaveBudgetPlan(
 
 	if source == domain.SourceFixed {
 		if fixed == nil {
-			return Plan{}, &domain.FieldError{Field: "fixed", Message: "is required with the fixed source", Err: domain.ErrValidation}
+			return domain.Reference{}, &domain.FieldError{Field: "fixed", Message: "is required with the fixed source", Err: domain.ErrValidation}
 		}
 
 		if err := checkBudgetAmount(*fixed, base); err != nil {
@@ -62,15 +95,25 @@ func (s *Service) SaveBudgetPlan(
 				fe.Field = "fixed" + strings.TrimPrefix(fe.Field, "amount")
 			}
 
-			return Plan{}, err
+			return domain.Reference{}, err
 		}
 
 		ref.Fixed, ref.HasFixed = fixed.Amount(), true
 	}
 
+	return ref, nil
+}
+
+// checkPlanAmounts validates each listed category and amount of a plan save.
+func (s *Service) checkPlanAmounts(
+	ctx context.Context,
+	booksID int64,
+	amounts []PlanAmount,
+	base money.Currency,
+) error {
 	facts, err := s.ledger.AccountFacts(ctx, booksID)
 	if err != nil {
-		return Plan{}, err
+		return err
 	}
 
 	byID := make(map[uuid.UUID]Account, len(facts))
@@ -80,7 +123,7 @@ func (s *Service) SaveBudgetPlan(
 
 	stored, err := s.repo.Budgets(ctx, booksID)
 	if err != nil {
-		return Plan{}, err
+		return err
 	}
 
 	budgeted := make(map[uuid.UUID]bool, len(stored))
@@ -93,11 +136,11 @@ func (s *Service) SaveBudgetPlan(
 		prefix := fmt.Sprintf("amounts[%d].", i)
 		// A closed category keeps its row in the plan while it has a budget.
 		if c, ok := byID[a.CategoryID]; !ok || c.Class != "expense" || (c.Closed && !budgeted[a.CategoryID]) {
-			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "must be an expense category of the book, open or with a budget", Err: domain.ErrValidation}
+			return &domain.FieldError{Field: prefix + "category_id", Message: "must be an expense category of the book, open or with a budget", Err: domain.ErrValidation}
 		}
 
 		if seen[a.CategoryID] {
-			return Plan{}, &domain.FieldError{Field: prefix + "category_id", Message: "is listed twice", Err: domain.ErrValidation}
+			return &domain.FieldError{Field: prefix + "category_id", Message: "is listed twice", Err: domain.ErrValidation}
 		}
 
 		seen[a.CategoryID] = true
@@ -106,11 +149,23 @@ func (s *Service) SaveBudgetPlan(
 				fe.Field = prefix + fe.Field
 			}
 
-			return Plan{}, err
+			return err
 		}
 	}
 
-	err = s.repo.InTx(ctx, func(repo Repository) error {
+	return nil
+}
+
+// persistPlan sets the amounts and the reference in one transaction.
+func (s *Service) persistPlan(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+	ref domain.Reference,
+	base money.Currency,
+	amounts []PlanAmount,
+) error {
+	return s.repo.InTx(ctx, func(repo Repository) error {
 		budgets, err := repo.Budgets(ctx, booksID)
 		if err != nil {
 			return err
@@ -149,9 +204,4 @@ func (s *Service) SaveBudgetPlan(
 
 		return repo.SaveBudgetReference(ctx, booksID, ref, base)
 	})
-	if err != nil {
-		return Plan{}, err
-	}
-
-	return s.BudgetPlan(ctx, booksID, month)
 }
