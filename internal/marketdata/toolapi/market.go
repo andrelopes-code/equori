@@ -162,145 +162,224 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
 	}, func(ctx context.Context, _ int64, in getMarketDataIn) (getMarketDataOut, error) {
-		fields := []field{
-			{"code", in.Code != ""}, {"quote", in.Quote != ""}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
-			{"calendar", in.Calendar != ""}, {"year", in.Year != 0}, {"index", in.Index != ""},
-			{"query", in.Query != ""},
-		}
-		name := "view " + string(in.View)
+		return readMarketData(ctx, svc, cals, in)
+	})
+}
 
-		var err error
-		switch in.View {
-		case "instrument":
-			err = required(name, fields, "code")
-		case "prices":
-			err = required(name, fields, "code", "quote", "from", "to")
-		case "catalog":
-			err = required(name, fields, "query")
-		case "holidays":
-			err = required(name, fields, "calendar", "year")
-		case "index_rates":
-			err = required(name, fields, "index", "from", "to")
-		case "index_expectations":
-			err = required(name, fields, "index")
-		default:
-			err = required(name, fields)
+func readMarketData(
+	ctx context.Context,
+	svc Service,
+	cals Calendars,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	if err := checkMarketDataArgs(in); err != nil {
+		return getMarketDataOut{}, err
+	}
+
+	switch in.View {
+	case "instruments":
+		return marketInstruments(ctx, svc)
+	case "instrument":
+		return marketInstrument(ctx, svc, in)
+	case "prices":
+		return marketPrices(ctx, svc, in)
+	case "catalog":
+		return marketCatalog(ctx, svc, in)
+	case "indexes":
+		return marketIndexes(ctx, svc)
+	case "index_rates":
+		return marketIndexRates(ctx, svc, in)
+	case "index_expectations":
+		return marketIndexExpectations(ctx, svc, in)
+	case "calendars":
+		out := getMarketDataOut{Calendars: []calendarView{}}
+		for _, c := range cals.List() {
+			out.Calendars = append(out.Calendars, calendarView(c))
 		}
 
+		return out, nil
+	}
+
+	rows, err := cals.Holidays(ctx, in.Calendar, in.Year)
+
+	out := getMarketDataOut{Holidays: []holidayView{}}
+	for _, h := range rows {
+		out.Holidays = append(out.Holidays, holidayView{Date: tool.DateOf(h.Date), Name: h.Name, Source: h.Source})
+	}
+
+	return out, err
+}
+
+func checkMarketDataArgs(in getMarketDataIn) error {
+	fields := []field{
+		{"code", in.Code != ""}, {"quote", in.Quote != ""}, {"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
+		{"calendar", in.Calendar != ""}, {"year", in.Year != 0}, {"index", in.Index != ""},
+		{"query", in.Query != ""},
+	}
+	name := "view " + string(in.View)
+
+	var err error
+	switch in.View {
+	case "instrument":
+		err = required(name, fields, "code")
+	case "prices":
+		err = required(name, fields, "code", "quote", "from", "to")
+	case "catalog":
+		err = required(name, fields, "query")
+	case "holidays":
+		err = required(name, fields, "calendar", "year")
+	case "index_rates":
+		err = required(name, fields, "index", "from", "to")
+	case "index_expectations":
+		err = required(name, fields, "index")
+	default:
+		err = required(name, fields)
+	}
+
+	return err
+}
+
+func marketInstruments(ctx context.Context, svc Service) (getMarketDataOut, error) {
+	rows, err := svc.ListInstruments(ctx, "")
+
+	out := getMarketDataOut{Instruments: []instrumentView{}}
+	for _, r := range rows {
+		out.Instruments = append(out.Instruments, toInstrumentView(r))
+	}
+
+	return out, err
+}
+
+func marketInstrument(
+	ctx context.Context,
+	svc Service,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	r, err := svc.Instrument(ctx, in.Code)
+	if err != nil {
+		return getMarketDataOut{}, err
+	}
+
+	v := toInstrumentView(r)
+	if t, err := svc.Terms(ctx, in.Code); err == nil {
+		v.Terms, err = toTermsView(t, r.QuoteCurrency)
 		if err != nil {
 			return getMarketDataOut{}, err
 		}
+	} else if !errors.Is(err, domain.ErrNoTerms) {
+		return getMarketDataOut{}, err
+	}
 
-		switch in.View {
-		case "instruments":
-			rows, err := svc.ListInstruments(ctx, "")
+	cov, err := svc.Coverage(ctx, r)
+	if err != nil {
+		return getMarketDataOut{}, err
+	}
 
-			out := getMarketDataOut{Instruments: []instrumentView{}}
-			for _, r := range rows {
-				out.Instruments = append(out.Instruments, toInstrumentView(r))
-			}
+	v.Coverage = toCoverageView(cov)
 
-			return out, err
-		case "instrument":
-			r, err := svc.Instrument(ctx, in.Code)
-			if err != nil {
-				return getMarketDataOut{}, err
-			}
+	return getMarketDataOut{Instrument: v}, nil
+}
 
-			v := toInstrumentView(r)
-			if t, err := svc.Terms(ctx, in.Code); err == nil {
-				v.Terms, err = toTermsView(t, r.QuoteCurrency)
-				if err != nil {
-					return getMarketDataOut{}, err
-				}
-			} else if !errors.Is(err, domain.ErrNoTerms) {
-				return getMarketDataOut{}, err
-			}
+func marketPrices(
+	ctx context.Context,
+	svc Service,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	if in.To.Before(in.From.Time) || in.To.Sub(in.From.Time) > domain.MaxPriceRange*24*time.Hour {
+		return getMarketDataOut{}, tool.InvalidArgument(
+			"to",
+			fmt.Sprintf("must be between from and %d days after from", domain.MaxPriceRange),
+		)
+	}
 
-			cov, err := svc.Coverage(ctx, r)
-			if err != nil {
-				return getMarketDataOut{}, err
-			}
+	rows, err := svc.ListPrices(
+		ctx,
+		money.Currency(in.Code),
+		money.Currency(in.Quote),
+		in.From.Time,
+		in.To.Time,
+	)
 
-			v.Coverage = toCoverageView(cov)
+	out := getMarketDataOut{Prices: []priceView{}}
+	for _, p := range rows {
+		out.Prices = append(out.Prices, priceView{
+			Date:  tool.DateOf(p.Date),
+			Value: p.Value.Reduced().String(),
+		})
+	}
 
-			return getMarketDataOut{Instrument: v}, nil
-		case "prices":
-			if in.To.Before(in.From.Time) || in.To.Sub(in.From.Time) > domain.MaxPriceRange*24*time.Hour {
-				return getMarketDataOut{}, tool.InvalidArgument("to", fmt.Sprintf("must be between from and %d days after from", domain.MaxPriceRange))
-			}
+	return out, err
+}
 
-			rows, err := svc.ListPrices(ctx, money.Currency(in.Code), money.Currency(in.Quote), in.From.Time, in.To.Time)
+func marketCatalog(
+	ctx context.Context,
+	svc Service,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	res, err := svc.SearchCatalog(ctx, in.Query)
+	if err != nil {
+		return getMarketDataOut{}, err
+	}
 
-			out := getMarketDataOut{Prices: []priceView{}}
-			for _, p := range rows {
-				out.Prices = append(out.Prices, priceView{Date: tool.DateOf(p.Date), Value: p.Value.Reduced().String()})
-			}
+	out := getMarketDataOut{Catalog: []listingView{}, Unavailable: res.Unavailable}
+	for _, l := range res.Items {
+		out.Catalog = append(out.Catalog, listingView{
+			Code: string(l.Code), Name: l.Name, Type: l.Type, Exchange: l.Exchange,
+			QuoteCurrency: string(l.QuoteCurrency), Source: l.Source, Defined: l.Defined,
+		})
+	}
 
-			return out, err
-		case "catalog":
-			res, err := svc.SearchCatalog(ctx, in.Query)
-			if err != nil {
-				return getMarketDataOut{}, err
-			}
+	return out, nil
+}
 
-			out := getMarketDataOut{Catalog: []listingView{}, Unavailable: res.Unavailable}
-			for _, l := range res.Items {
-				out.Catalog = append(out.Catalog, listingView{
-					Code: string(l.Code), Name: l.Name, Type: l.Type, Exchange: l.Exchange,
-					QuoteCurrency: string(l.QuoteCurrency), Source: l.Source, Defined: l.Defined,
-				})
-			}
+func marketIndexes(ctx context.Context, svc Service) (getMarketDataOut, error) {
+	rows, err := svc.Indexes(ctx)
 
-			return out, nil
-		case "indexes":
-			rows, err := svc.Indexes(ctx)
+	out := getMarketDataOut{Indexes: []indexView{}}
+	for _, x := range rows {
+		out.Indexes = append(out.Indexes, indexView{
+			ID:       x.ID,
+			Period:   x.Period,
+			First:    tool.DateOf(x.First),
+			Last:     tool.DateOf(x.Last),
+			Expected: x.Expected,
+		})
+	}
 
-			out := getMarketDataOut{Indexes: []indexView{}}
-			for _, x := range rows {
-				out.Indexes = append(out.Indexes, indexView{ID: x.ID, Period: x.Period, First: tool.DateOf(x.First), Last: tool.DateOf(x.Last), Expected: x.Expected})
-			}
+	return out, err
+}
 
-			return out, err
-		case "index_rates":
-			rows, err := svc.IndexRates(ctx, in.Index, in.From.Time, in.To.Time)
+func marketIndexRates(
+	ctx context.Context,
+	svc Service,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	rows, err := svc.IndexRates(ctx, in.Index, in.From.Time, in.To.Time)
 
-			out := getMarketDataOut{IndexRates: []indexRateView{}}
-			for _, r := range rows {
-				out.IndexRates = append(out.IndexRates, indexRateView{Date: tool.DateOf(r.Date), Rate: r.Rate})
-			}
+	out := getMarketDataOut{IndexRates: []indexRateView{}}
+	for _, r := range rows {
+		out.IndexRates = append(out.IndexRates, indexRateView{Date: tool.DateOf(r.Date), Rate: r.Rate})
+	}
 
-			return out, err
-		case "index_expectations":
-			x, err := svc.Expectations(ctx, in.Index)
-			if err != nil {
-				return getMarketDataOut{}, err
-			}
+	return out, err
+}
 
-			v := indexExpectationsView{SurveyDate: tool.DateOf(x.SurveyDate), Points: []indexRateView{}}
-			for _, p := range x.Points {
-				v.Points = append(v.Points, indexRateView{Date: tool.DateOf(p.Date), Rate: p.Rate})
-			}
+func marketIndexExpectations(
+	ctx context.Context,
+	svc Service,
+	in getMarketDataIn,
+) (getMarketDataOut, error) {
+	x, err := svc.Expectations(ctx, in.Index)
+	if err != nil {
+		return getMarketDataOut{}, err
+	}
 
-			return getMarketDataOut{IndexExpectations: v}, nil
-		case "calendars":
-			out := getMarketDataOut{Calendars: []calendarView{}}
-			for _, c := range cals.List() {
-				out.Calendars = append(out.Calendars, calendarView(c))
-			}
+	v := indexExpectationsView{SurveyDate: tool.DateOf(x.SurveyDate), Points: []indexRateView{}}
+	for _, p := range x.Points {
+		v.Points = append(v.Points, indexRateView{Date: tool.DateOf(p.Date), Rate: p.Rate})
+	}
 
-			return out, nil
-		}
-
-		rows, err := cals.Holidays(ctx, in.Calendar, in.Year)
-
-		out := getMarketDataOut{Holidays: []holidayView{}}
-		for _, h := range rows {
-			out.Holidays = append(out.Holidays, holidayView{Date: tool.DateOf(h.Date), Name: h.Name, Source: h.Source})
-		}
-
-		return out, err
-	})
+	return getMarketDataOut{IndexExpectations: v}, nil
 }
 
 func toTermsView(t domain.Terms, quote money.Currency) (termsView, error) {

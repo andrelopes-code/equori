@@ -43,9 +43,6 @@ internal/ingestion/toolapi/imports.go	connections	pending: backend reorganizatio
 internal/ingestion/toolapi/imports.go	getImports	pending: backend reorganization plan
 internal/ingestion/toolapi/manage.go	manageImports	pending: backend reorganization plan
 internal/ledger/httpapi/server.go	Server.Register	table of data
-internal/marketdata/accrual.go	Module.accrue	pending: backend reorganization plan
-internal/marketdata/coverage.go	Module.Coverage	pending: backend reorganization plan
-internal/marketdata/domain/accrual.go	Accrue	pending: backend reorganization plan
 internal/marketdata/expectation/brfocus/brfocus.go	Source.Fetch	pending: backend reorganization plan
 internal/marketdata/feed/b3consolidated/b3consolidated.go	parse	pending: backend reorganization plan
 internal/marketdata/feed/b3cotahist/b3cotahist.go	readZIP	pending: backend reorganization plan
@@ -54,12 +51,8 @@ internal/marketdata/feed/ecb/ecb.go	Source.Fetch	pending: backend reorganization
 internal/marketdata/feed/ecb/ecb.go	Source.fetchHistory	pending: backend reorganization plan
 internal/marketdata/feed/tesourodireto/tesourodireto.go	readFile	pending: backend reorganization plan
 internal/marketdata/feed/yahoochart/yahoochart.go	parse	pending: backend reorganization plan
-internal/marketdata/feed_settings.go	Module.Feeds	pending: backend reorganization plan
 internal/marketdata/index/cpi/cpi.go	readBLS	pending: backend reorganization plan
-internal/marketdata/probe.go	Module.ProbeQuote	pending: backend reorganization plan
 internal/marketdata/sources.go	sourceEntries	table of data
-internal/marketdata/toolapi/instrument.go	manageInstrument	pending: backend reorganization plan
-internal/marketdata/toolapi/market.go	getMarketData	pending: backend reorganization plan
 internal/planning/httpapi/server.go	Server.Register	table of data
 internal/platform/config/variables.go	Variables	table of data
 internal/reporting/app/cash_allocation.go	allocate	pending: backend reorganization plan

@@ -36,12 +36,7 @@ func (m *Module) Coverage(ctx context.Context, in Instrument) (domain.Coverage, 
 		cov.First, cov.Last = &all.First, &all.Last
 	}
 
-	lags := make(map[string]int)
-	official := make(map[string]bool)
-
-	for _, e := range sourceEntries() {
-		lags[e.id], official[e.id] = e.lag, e.official
-	}
+	lags, official := sourceTraits()
 
 	lag := -1
 
@@ -62,6 +57,18 @@ func (m *Module) Coverage(ctx context.Context, in Instrument) (domain.Coverage, 
 	cov.Stale = cov.Last != nil && lag >= 0 && overdue(*cov.Last, lag, m.feeds.Clock.Today(ctx))
 
 	return cov, nil
+}
+
+// sourceTraits maps each source id to its lag in days and to whether it is official.
+func sourceTraits() (map[string]int, map[string]bool) {
+	lags := make(map[string]int)
+	official := make(map[string]bool)
+
+	for _, e := range sourceEntries() {
+		lags[e.id], official[e.id] = e.lag, e.official
+	}
+
+	return lags, official
 }
 
 // storedSources reads, per source, the first and last stored date and the history request of code.

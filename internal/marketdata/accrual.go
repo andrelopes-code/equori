@@ -58,21 +58,9 @@ func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeT
 		return err
 	}
 
-	var rates []domain.IndexRate
-	if row.IndexID != nil {
-		stored, err := m.q.ListIndexRates(ctx, postgres.ListIndexRatesParams{IndexID: *row.IndexID, FromDate: row.IssuedOn})
-		if err != nil {
-			return err
-		}
-
-		for _, r := range stored {
-			v, err := r.Rate.Value()
-			if err != nil {
-				return fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
-			}
-
-			rates = append(rates, domain.IndexRate{Date: r.Date, Rate: fmt.Sprint(v)})
-		}
+	rates, err := m.accrualRates(ctx, row)
+	if err != nil {
+		return err
 	}
 
 	terms := toTerms(row)
@@ -82,17 +70,52 @@ func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeT
 		return err
 	}
 
+	prices, err := accrualPrices(in, accrued)
+	if err != nil {
+		return err
+	}
+
+	return m.upsert(ctx, prices)
+}
+
+// accrualRates reads the stored rates of the index of row since its issue date.
+func (m *Module) accrualRates(
+	ctx context.Context,
+	row postgres.MarketdataFixedIncomeTerm,
+) ([]domain.IndexRate, error) {
+	var rates []domain.IndexRate
+	if row.IndexID != nil {
+		stored, err := m.q.ListIndexRates(ctx, postgres.ListIndexRatesParams{IndexID: *row.IndexID, FromDate: row.IssuedOn})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, r := range stored {
+			v, err := r.Rate.Value()
+			if err != nil {
+				return nil, fmt.Errorf("rate of %s: %w", r.Date.Format(time.DateOnly), err)
+			}
+
+			rates = append(rates, domain.IndexRate{Date: r.Date, Rate: fmt.Sprint(v)})
+		}
+	}
+
+	return rates, nil
+}
+
+// accrualPrices converts the accrued prices of in to stored prices.
+func accrualPrices(in Instrument, accrued []domain.DatedPrice) ([]Price, error) {
 	prices := make([]Price, len(accrued))
 	for i, a := range accrued {
 		value, err := money.ParseRate(trimDecimal(a.Value))
 		if err != nil {
-			return fmt.Errorf("price of %s on %s: %w", code, a.Date.Format(time.DateOnly), err)
+			return nil, fmt.Errorf("price of %s on %s: %w", in.Code, a.Date.Format(time.DateOnly), err)
 		}
 
 		prices[i] = Price{Instrument: in.Code, Quote: in.QuoteCurrency, Date: a.Date, Value: value, Source: sourceAccrual}
 	}
 
-	return m.upsert(ctx, prices)
+	return prices, nil
 }
 
 // trimDecimal drops the trailing zeros of a decimal so a large price still fits a Rate.

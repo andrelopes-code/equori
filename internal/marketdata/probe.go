@@ -40,20 +40,9 @@ func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeRes
 
 	out := domain.ProbeResult{Quotes: []domain.ProbeQuote{}, Available: []string{}}
 
-	var (
-		wg      sync.WaitGroup
-		sources []feed.Source
-	)
+	var wg sync.WaitGroup
 
-	for _, src := range m.feeds.Sources {
-		switch {
-		case len(src.Codes(feedInstruments([]Instrument{in}))) == 0:
-		case !on[src.ID()]:
-			out.Available = append(out.Available, src.ID())
-		default:
-			sources = append(sources, src)
-		}
-	}
+	sources := m.probeSources(in, on, &out)
 
 	out.Quotes = make([]domain.ProbeQuote, len(sources))
 	to := m.feeds.Clock.Today(ctx)
@@ -72,6 +61,24 @@ func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeRes
 	wg.Wait()
 
 	return out, nil
+}
+
+// probeSources returns the enabled sources that would quote in and lists the disabled ones in
+// out.Available.
+func (m *Module) probeSources(in Instrument, on map[string]bool, out *domain.ProbeResult) []feed.Source {
+	var sources []feed.Source
+
+	for _, src := range m.feeds.Sources {
+		switch {
+		case len(src.Codes(feedInstruments([]Instrument{in}))) == 0:
+		case !on[src.ID()]:
+			out.Available = append(out.Available, src.ID())
+		default:
+			sources = append(sources, src)
+		}
+	}
+
+	return sources
 }
 
 // latestQuote keeps the quote of code with the latest date, also when Fetch failed after it read

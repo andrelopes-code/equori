@@ -63,7 +63,44 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 	lags := feedLags()
 	feedIns := feedInstruments(instruments)
 
+	fs := feedState{on: on, suggested: suggested, lags: lags}
+
 	out := make([]Feed, 0, len(m.feeds.Sources)+len(m.feeds.Indexes))
+
+	out, err = m.priceFeeds(ctx, out, fs, feedIns, pending)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err = m.indexFeeds(ctx, out, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err = m.expectationFeeds(ctx, out, fs)
+	if err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+// feedState holds what every feed row of Feeds shares: the enabled ids, the ids suggested for the
+// region and the lag of each source.
+type feedState struct {
+	on        map[string]bool
+	suggested []string
+	lags      map[string]int
+}
+
+// priceFeeds appends the price sources to out.
+func (m *Module) priceFeeds(
+	ctx context.Context,
+	out []Feed,
+	fs feedState,
+	feedIns []feed.Instrument,
+	pending map[string]int,
+) ([]Feed, error) {
 	for _, src := range m.feeds.Sources {
 		latest, err := m.q.LatestSourceDate(ctx, postgres.LatestSourceDateParams{Source: src.ID()})
 		if err != nil {
@@ -75,7 +112,7 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest
 		}
 
-		f := m.feed(ctx, src.ID(), domain.FeedPrice, index.PeriodDay, last, on, suggested, lags)
+		f := m.feed(ctx, src.ID(), domain.FeedPrice, index.PeriodDay, last, fs.on, fs.suggested, fs.lags)
 		f.Covers = len(src.Codes(feedIns))
 		f.HistoryPending = pending[src.ID()]
 		_, f.SymbolOverride = src.(feed.SymbolOverride)
@@ -83,6 +120,11 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		out = append(out, f)
 	}
 
+	return out, nil
+}
+
+// indexFeeds appends the index sources to out.
+func (m *Module) indexFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
 	for _, src := range m.feeds.Indexes {
 		latest, err := m.q.LatestIndexRate(ctx, src.Index())
 		if err != nil {
@@ -94,9 +136,14 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest.Latest
 		}
 
-		out = append(out, m.feed(ctx, src.ID(), domain.FeedIndex, src.Period(), last, on, suggested, lags))
+		out = append(out, m.feed(ctx, src.ID(), domain.FeedIndex, src.Period(), last, fs.on, fs.suggested, fs.lags))
 	}
 
+	return out, nil
+}
+
+// expectationFeeds appends the expectation sources to out.
+func (m *Module) expectationFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
 	for _, src := range m.feeds.Expectations {
 		latest, err := m.q.LatestSurvey(ctx, src.ID())
 		if err != nil {
@@ -108,7 +155,7 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 			last = &latest.Latest
 		}
 
-		out = append(out, m.feed(ctx, src.ID(), domain.FeedExpectation, index.PeriodDay, last, on, suggested, lags))
+		out = append(out, m.feed(ctx, src.ID(), domain.FeedExpectation, index.PeriodDay, last, fs.on, fs.suggested, fs.lags))
 	}
 
 	return out, nil

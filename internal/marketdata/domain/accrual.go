@@ -91,29 +91,13 @@ func Accrue(
 	face.Quo(face, scale)
 
 	var out []DatedPrice
-	index := newFloat().SetInt64(1)
-	businessDays := 0
+	state := accrualState{index: newFloat().SetInt64(1)}
 
-	next := 0
 	for _, d := range pricedDays(t, byDay, parsed, end) {
 		if byDay {
-			for next < len(parsed) && !parsed[next].date.After(d) {
-				if parsed[next].date.After(t.IssuedOn) {
-					index.Mul(index, newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[next].rate, percent)))
-
-					businessDays++
-				}
-
-				next++
-			}
+			state.advanceDaily(t, parsed, percent, d)
 		} else {
-			for next < len(parsed) && monthEnd(parsed[next].date).Before(d.AddDate(0, 0, 1)) {
-				if !parsed[next].date.Before(t.IssuedOn) {
-					index.Mul(index, newFloat().Add(newFloat().SetInt64(1), parsed[next].rate))
-				}
-
-				next++
-			}
+			state.advanceMonthly(t, parsed, d)
 		}
 
 		if d.Before(from) {
@@ -122,15 +106,47 @@ func Accrue(
 
 		days := int(d.Sub(t.IssuedOn).Hours() / 24)
 		if t.DayCount == DayCountBus252 {
-			days = businessDays
+			days = state.businessDays
 		}
 
-		price := newFloat().Mul(face, index)
+		price := newFloat().Mul(face, state.index)
 		price.Mul(price, power(dayRoot, days))
 		out = append(out, DatedPrice{Date: d, Value: price.Text('f', priceDecimals)})
 	}
 
 	return out, nil
+}
+
+// accrualState is the running index of an accrual: the product of the rates applied so far, the
+// count of business days they cover and the position in the sorted rates.
+type accrualState struct {
+	index        *big.Float
+	businessDays int
+	next         int
+}
+
+// advanceDaily applies the rates of the business days up to d.
+func (s *accrualState) advanceDaily(t Terms, parsed []parsedRate, percent *big.Float, d time.Time) {
+	for s.next < len(parsed) && !parsed[s.next].date.After(d) {
+		if parsed[s.next].date.After(t.IssuedOn) {
+			s.index.Mul(s.index, newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[s.next].rate, percent)))
+
+			s.businessDays++
+		}
+
+		s.next++
+	}
+}
+
+// advanceMonthly applies the rates of the months that ended before the day after d.
+func (s *accrualState) advanceMonthly(t Terms, parsed []parsedRate, d time.Time) {
+	for s.next < len(parsed) && monthEnd(parsed[s.next].date).Before(d.AddDate(0, 0, 1)) {
+		if !parsed[s.next].date.Before(t.IssuedOn) {
+			s.index.Mul(s.index, newFloat().Add(newFloat().SetInt64(1), parsed[s.next].rate))
+		}
+
+		s.next++
+	}
 }
 
 type parsedRate struct {
