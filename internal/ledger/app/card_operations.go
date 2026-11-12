@@ -77,35 +77,7 @@ func (s *Service) installmentPurchase(
 		return domain.Transaction{}, uuid.Nil, err
 	}
 
-	first, err := s.firstStatement(ctx, r, booksID, card.ID, in)
-	if err != nil {
-		return domain.Transaction{}, uuid.Nil, err
-	}
-
-	postings, err := s.installmentPostings(
-		ctx,
-		r,
-		booksID,
-		card,
-		in,
-		planID,
-		first,
-		interest,
-		parts,
-	)
-	if err != nil {
-		return domain.Transaction{}, uuid.Nil, err
-	}
-
-	created, err := s.insert(ctx, r, domain.Transaction{
-		BooksID:     booksID,
-		Date:        in.Date,
-		Description: in.Description,
-		PayeeID:     in.PayeeID,
-		Tags:        in.Tags,
-		Postings:    postings,
-		Origin:      in.Origin,
-	})
+	created, err := s.insertPurchase(ctx, r, booksID, planID, card, in, interest, parts)
 	if err != nil {
 		return domain.Transaction{}, uuid.Nil, err
 	}
@@ -365,4 +337,45 @@ func (s *Service) PriorInstallments(
 	}
 
 	return money.New(total, a.Instrument)
+}
+
+func (s *Service) insertPurchase(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	planID uuid.UUID,
+	card domain.Account,
+	in InstallmentPurchaseInput,
+	interest money.Money,
+	parts []money.Money,
+) (domain.Transaction, error) {
+	first, err := s.firstStatement(ctx, r, booksID, card.ID, in)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	postings, err := s.installmentPostings(
+		ctx,
+		r,
+		booksID,
+		card,
+		in,
+		planID,
+		first,
+		interest,
+		parts,
+	)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return s.insert(ctx, r, domain.Transaction{
+		BooksID:     booksID,
+		Date:        in.Date,
+		Description: in.Description,
+		PayeeID:     in.PayeeID,
+		Tags:        in.Tags,
+		Postings:    postings,
+		Origin:      in.Origin,
+	})
 }

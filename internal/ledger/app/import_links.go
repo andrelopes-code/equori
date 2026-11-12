@@ -287,47 +287,13 @@ func (s *Service) ClearMatchedBatch(ctx context.Context, booksID int64, ms []Mat
 
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		for i, m := range ms {
-			links, err := r.LockAccountPostingLinks(ctx, booksID, m.TransactionID, m.AccountID)
+			conflict, err := s.clearMatched(ctx, r, booksID, m)
 			if err != nil {
 				return err
 			}
 
-			if slices.ContainsFunc(
-				links,
-				func(l PostingLink) bool { return l.RecordID == m.RecordID },
-			) {
-				continue
-			}
-
-			free := slices.IndexFunc(
-				links,
-				func(l PostingLink) bool { return l.RecordID == uuid.Nil },
-			)
-			if free < 0 || links[free].Voided {
+			if conflict {
 				conflicts = append(conflicts, i)
-				continue
-			}
-
-			if err := r.LinkExternalRecord(
-				ctx,
-				booksID,
-				links[free].PostingID,
-				m.RecordID,
-			); err != nil {
-				return err
-			}
-
-			if m.KeepPending {
-				continue
-			}
-
-			if err := r.ClearPendingPostings(
-				ctx,
-				booksID,
-				m.TransactionID,
-				m.AccountID,
-			); err != nil {
-				return err
 			}
 		}
 
@@ -357,4 +323,53 @@ func (s *Service) dueStatementID(
 	}
 
 	return s.ensureStatement(ctx, r, booksID, accountID, ref, rules)
+}
+
+// clearMatched links the record to the free posting link of the match and reports a conflict
+// when no free link exists.
+func (s *Service) clearMatched(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	m Match,
+) (conflict bool, err error) {
+	links, err := r.LockAccountPostingLinks(ctx, booksID, m.TransactionID, m.AccountID)
+	if err != nil {
+		return false, err
+	}
+
+	if slices.ContainsFunc(
+		links,
+		func(l PostingLink) bool { return l.RecordID == m.RecordID },
+	) {
+		return false, nil
+	}
+
+	free := slices.IndexFunc(
+		links,
+		func(l PostingLink) bool { return l.RecordID == uuid.Nil },
+	)
+	if free < 0 || links[free].Voided {
+		return true, nil
+	}
+
+	if err := r.LinkExternalRecord(
+		ctx,
+		booksID,
+		links[free].PostingID,
+		m.RecordID,
+	); err != nil {
+		return false, err
+	}
+
+	if m.KeepPending {
+		return false, nil
+	}
+
+	return false, r.ClearPendingPostings(
+		ctx,
+		booksID,
+		m.TransactionID,
+		m.AccountID,
+	)
 }

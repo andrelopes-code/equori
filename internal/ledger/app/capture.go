@@ -50,30 +50,9 @@ func (s *Service) CaptureVocabulary(
 			continue
 		}
 
-		c := CaptureAccount{
-			ID:       a.ID,
-			ParentID: a.ParentID,
-			Name:     a.Name,
-			Class:    string(a.Class),
-			Kind:     string(a.Kind),
-			SystemRole: string(
-				a.SystemRole,
-			),
-			Instrument:  a.Instrument,
-			ClosedOn:    a.ClosedOn,
-			Institution: institutions[a.InstitutionID],
-		}
-		if a.Kind == domain.KindCreditCard {
-			cards, err := s.repo.Cards(ctx, booksID, a.ID)
-			if err != nil {
-				return nil, nil, err
-			}
-
-			for _, card := range cards {
-				if card.Active {
-					c.CardsLastFour = append(c.CardsLastFour, card.LastFour)
-				}
-			}
+		c, err := s.captureAccount(ctx, booksID, a, institutions)
+		if err != nil {
+			return nil, nil, err
 		}
 
 		out = append(out, c)
@@ -132,4 +111,39 @@ func (s *Service) allPayees(ctx context.Context, booksID int64) ([]CapturePayee,
 
 		req.After = next
 	}
+}
+
+func (s *Service) captureAccount(
+	ctx context.Context,
+	booksID int64,
+	a domain.Account,
+	institutions map[uuid.UUID]string,
+) (CaptureAccount, error) {
+	c := CaptureAccount{
+		ID:       a.ID,
+		ParentID: a.ParentID,
+		Name:     a.Name,
+		Class:    string(a.Class),
+		Kind:     string(a.Kind),
+		SystemRole: string(
+			a.SystemRole,
+		),
+		Instrument:  a.Instrument,
+		ClosedOn:    a.ClosedOn,
+		Institution: institutions[a.InstitutionID],
+	}
+	if a.Kind == domain.KindCreditCard {
+		cards, err := s.repo.Cards(ctx, booksID, a.ID)
+		if err != nil {
+			return CaptureAccount{}, err
+		}
+
+		for _, card := range cards {
+			if card.Active {
+				c.CardsLastFour = append(c.CardsLastFour, card.LastFour)
+			}
+		}
+	}
+
+	return c, nil
 }

@@ -107,17 +107,7 @@ func (s *Service) refundWonDispute(
 	resolvedOn time.Time,
 	statement *domain.ReferenceMonth,
 ) error {
-	pu, err := s.lockPurchase(ctx, r, booksID, d.TransactionID)
-	if err != nil {
-		return err
-	}
-
-	done, err := r.RefundedTotal(ctx, booksID, pu.tx.ID)
-	if err != nil {
-		return err
-	}
-
-	remaining, err := money.New(pu.charged-done, pu.card.Instrument)
+	pu, remaining, err := s.unrefunded(ctx, r, booksID, d.TransactionID)
 	if err != nil {
 		return err
 	}
@@ -158,4 +148,29 @@ func (s *Service) refundWonDispute(
 	}
 
 	return nil
+}
+
+// unrefunded locks the purchase and returns what its card charges still have to refund.
+func (s *Service) unrefunded(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	transactionID uuid.UUID,
+) (purchase, money.Money, error) {
+	pu, err := s.lockPurchase(ctx, r, booksID, transactionID)
+	if err != nil {
+		return purchase{}, money.Money{}, err
+	}
+
+	done, err := r.RefundedTotal(ctx, booksID, pu.tx.ID)
+	if err != nil {
+		return purchase{}, money.Money{}, err
+	}
+
+	remaining, err := money.New(pu.charged-done, pu.card.Instrument)
+	if err != nil {
+		return purchase{}, money.Money{}, err
+	}
+
+	return pu, remaining, nil
 }

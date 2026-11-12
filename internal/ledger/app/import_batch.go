@@ -65,12 +65,7 @@ func (s *Service) loadImportBatch(
 		return importBatch{}, err
 	}
 
-	leaf := map[uuid.UUID]error{}
-	for _, id := range lineAccounts {
-		if a, ok := accounts[id]; ok {
-			leaf[id] = checkLeafBalance(ctx, r, a)
-		}
-	}
+	leaf := leafBalances(ctx, r, lineAccounts, accounts)
 
 	return importBatch{
 		existing: existing,
@@ -158,20 +153,7 @@ func (s *Service) insertImported(
 		return uuid.Nil, err
 	}
 
-	event := newTransactionEvent(t, b.accounts)
-	if rec.Decision != nil && rec.Decision.Cause.Method != "" {
-		event.Cause = &rec.Decision.Cause
-	}
-
-	if err := r.Publish(
-		ctx,
-		outbox.Event{
-			Type:        EventTransactionRecorded,
-			BooksID:     booksID,
-			AggregateID: t.ID.String(),
-			Payload:     event,
-		},
-	); err != nil {
+	if err := publishImported(ctx, r, booksID, b, rec, t); err != nil {
 		return uuid.Nil, err
 	}
 
@@ -185,4 +167,44 @@ func withoutTransfer(rec ImportedRecord) ImportedRecord {
 	rec.Decision = &undecided
 
 	return rec
+}
+
+func publishImported(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	b importBatch,
+	rec ImportedRecord,
+	t domain.Transaction,
+) error {
+	event := newTransactionEvent(t, b.accounts)
+	if rec.Decision != nil && rec.Decision.Cause.Method != "" {
+		event.Cause = &rec.Decision.Cause
+	}
+
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionRecorded,
+			BooksID:     booksID,
+			AggregateID: t.ID.String(),
+			Payload:     event,
+		},
+	)
+}
+
+func leafBalances(
+	ctx context.Context,
+	r Repository,
+	lineAccounts []uuid.UUID,
+	accounts map[uuid.UUID]domain.Account,
+) map[uuid.UUID]error {
+	leaf := map[uuid.UUID]error{}
+	for _, id := range lineAccounts {
+		if a, ok := accounts[id]; ok {
+			leaf[id] = checkLeafBalance(ctx, r, a)
+		}
+	}
+
+	return leaf
 }

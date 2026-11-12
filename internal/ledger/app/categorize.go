@@ -96,16 +96,8 @@ func (s *Service) categorize(
 		return nil, err
 	}
 
-	if c.PayeeID != nil && *c.PayeeID != uuid.Nil {
-		if _, err := r.Payee(ctx, booksID, *c.PayeeID); errors.Is(err, ErrNotFound) {
-			return &domain.FieldError{
-				Field:   "payee_id",
-				Message: "unknown payee",
-				Err:     domain.ErrValidation,
-			}, nil
-		} else if err != nil {
-			return nil, err
-		}
+	if itemErr, err = checkPayee(ctx, r, booksID, c.PayeeID); itemErr != nil || err != nil {
+		return itemErr, err
 	}
 
 	accounts, err := s.categorizationAccounts(ctx, r, booksID, prev, c)
@@ -136,20 +128,7 @@ func (s *Service) categorize(
 		return nil, err
 	}
 
-	event := newTransactionEvent(next, accounts, prev)
-	if c.Cause.Method != "" {
-		event.Cause = &c.Cause
-	}
-
-	return nil, r.Publish(
-		ctx,
-		outbox.Event{
-			Type:        EventTransactionCategorized,
-			BooksID:     booksID,
-			AggregateID: next.ID.String(),
-			Payload:     event,
-		},
-	)
+	return nil, publishCategorized(ctx, r, booksID, c.Cause, prev, next, accounts)
 }
 
 // categorizationAccounts loads the accounts of the postings of prev and of the categorization.
@@ -242,4 +221,50 @@ func (s *Service) CategorizeMany(
 	}
 
 	return s.Categorize(ctx, booksID, cs)
+}
+
+func checkPayee(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	payeeID *uuid.UUID,
+) (itemErr, err error) {
+	if payeeID != nil && *payeeID != uuid.Nil {
+		if _, err := r.Payee(ctx, booksID, *payeeID); errors.Is(err, ErrNotFound) {
+			return &domain.FieldError{
+				Field:   "payee_id",
+				Message: "unknown payee",
+				Err:     domain.ErrValidation,
+			}, nil
+		} else if err != nil {
+			return nil, err
+		}
+	}
+
+	return nil, nil
+}
+
+func publishCategorized(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	cause Cause,
+	prev domain.Transaction,
+	next domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+) error {
+	event := newTransactionEvent(next, accounts, prev)
+	if cause.Method != "" {
+		event.Cause = &cause
+	}
+
+	return r.Publish(
+		ctx,
+		outbox.Event{
+			Type:        EventTransactionCategorized,
+			BooksID:     booksID,
+			AggregateID: next.ID.String(),
+			Payload:     event,
+		},
+	)
 }

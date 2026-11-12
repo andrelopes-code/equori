@@ -31,37 +31,9 @@ func (s *Service) bill(ctx context.Context, r Repository, t *domain.Transaction)
 			rulesByCard[p.AccountID] = rules
 		}
 
-		ref, err := s.statementOf(ctx, r, t, p, rules)
-		if errors.Is(err, domain.ErrNoBillingRule) {
-			return &domain.FieldError{
-				Field:   fmt.Sprintf("postings[%d].account_id", i),
-				Message: "card has no billing cycle rule for the date",
-				Err:     domain.ErrValidation,
-			}
-		}
-
-		if err != nil {
+		if err := s.billPosting(ctx, r, t, i, rules); err != nil {
 			return err
 		}
-
-		id, err := s.ensureStatement(ctx, r, t.BooksID, p.AccountID, ref, rules)
-		if errors.Is(err, domain.ErrNoBillingRule) {
-			return &domain.FieldError{
-				Field:   fmt.Sprintf("postings[%d].statement", i),
-				Message: "no billing cycle rule covers the statement",
-				Err:     domain.ErrValidation,
-			}
-		}
-
-		if err != nil {
-			return err
-		}
-
-		if p.Statement == nil || p.StatementBasis == "" {
-			p.StatementBasis = domain.BasisDate
-		}
-
-		p.Statement, p.StatementID = &ref, id
 	}
 
 	return nil
@@ -284,4 +256,48 @@ func (s *Service) statementDates(
 	}
 
 	return StatementDates{Closing: s.shiftClosing(ctx, dates.Closing, rule), Due: due}, nil
+}
+
+func (s *Service) billPosting(
+	ctx context.Context,
+	r Repository,
+	t *domain.Transaction,
+	i int,
+	rules domain.Rules,
+) error {
+	p := &t.Postings[i]
+
+	ref, err := s.statementOf(ctx, r, t, p, rules)
+	if errors.Is(err, domain.ErrNoBillingRule) {
+		return &domain.FieldError{
+			Field:   fmt.Sprintf("postings[%d].account_id", i),
+			Message: "card has no billing cycle rule for the date",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	id, err := s.ensureStatement(ctx, r, t.BooksID, p.AccountID, ref, rules)
+	if errors.Is(err, domain.ErrNoBillingRule) {
+		return &domain.FieldError{
+			Field:   fmt.Sprintf("postings[%d].statement", i),
+			Message: "no billing cycle rule covers the statement",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if p.Statement == nil || p.StatementBasis == "" {
+		p.StatementBasis = domain.BasisDate
+	}
+
+	p.Statement, p.StatementID = &ref, id
+
+	return nil
 }

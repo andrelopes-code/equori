@@ -212,42 +212,9 @@ func (s *Service) ReopenAccount(
 			}
 		}
 
-		for {
-			a.ClosedOn = nil
+		reopened, err = reopenChain(ctx, r, booksID, id, a)
 
-			updated, err := r.UpdateAccount(ctx, a)
-			if err != nil {
-				return err
-			}
-
-			if updated.ID == id {
-				reopened = updated
-			}
-
-			if err := r.Publish(
-				ctx,
-				outbox.Event{
-					Type:        EventAccountReopened,
-					BooksID:     booksID,
-					AggregateID: a.ID.String(),
-					Payload:     accountEvent{a.ID},
-				},
-			); err != nil {
-				return err
-			}
-
-			if a.ParentID == uuid.Nil {
-				return nil
-			}
-
-			if a, err = r.Account(ctx, booksID, a.ParentID); err != nil {
-				return err
-			}
-
-			if a.ClosedOn == nil {
-				return nil
-			}
-		}
+		return err
 	})
 
 	return reopened, err
@@ -272,17 +239,8 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 	}
 
 	if parent.IsBalance() {
-		totals, err := r.AccountTotals(ctx, a.BooksID, parent.ID)
-		if err != nil {
+		if err := checkParentEmpty(ctx, r, a, parent); err != nil {
 			return err
-		}
-
-		if totals.Total != 0 || totals.LastBookedOn.After(earliestDate) {
-			return &domain.FieldError{
-				Field:   "parent_id",
-				Message: "a balance account with postings cannot become a parent",
-				Err:     domain.ErrValidation,
-			}
 		}
 	}
 
@@ -295,18 +253,8 @@ func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Accoun
 	}
 
 	if a.ID != uuid.Nil {
-		for ancestor := parent; ancestor.ParentID != uuid.Nil; {
-			if ancestor.ParentID == a.ID {
-				return &domain.FieldError{
-					Field:   "parent_id",
-					Message: "must not be a descendant of the account",
-					Err:     domain.ErrValidation,
-				}
-			}
-
-			if ancestor, err = r.Account(ctx, a.BooksID, ancestor.ParentID); err != nil {
-				return err
-			}
+		if err := checkNotDescendant(ctx, r, a, parent); err != nil {
+			return err
 		}
 	}
 
@@ -328,4 +276,98 @@ func subtreeOf(root domain.Account, all []domain.Account) []domain.Account {
 	}
 
 	return out
+}
+
+func reopenChain(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+	a domain.Account,
+) (domain.Account, error) {
+	var reopened domain.Account
+
+	for {
+		a.ClosedOn = nil
+
+		updated, err := r.UpdateAccount(ctx, a)
+		if err != nil {
+			return reopened, err
+		}
+
+		if updated.ID == id {
+			reopened = updated
+		}
+
+		if err := r.Publish(
+			ctx,
+			outbox.Event{
+				Type:        EventAccountReopened,
+				BooksID:     booksID,
+				AggregateID: a.ID.String(),
+				Payload:     accountEvent{a.ID},
+			},
+		); err != nil {
+			return reopened, err
+		}
+
+		if a.ParentID == uuid.Nil {
+			return reopened, nil
+		}
+
+		if a, err = r.Account(ctx, booksID, a.ParentID); err != nil {
+			return reopened, err
+		}
+
+		if a.ClosedOn == nil {
+			return reopened, nil
+		}
+	}
+}
+
+func checkParentEmpty(
+	ctx context.Context,
+	r Repository,
+	a domain.Account,
+	parent domain.Account,
+) error {
+	totals, err := r.AccountTotals(ctx, a.BooksID, parent.ID)
+	if err != nil {
+		return err
+	}
+
+	if totals.Total != 0 || totals.LastBookedOn.After(earliestDate) {
+		return &domain.FieldError{
+			Field:   "parent_id",
+			Message: "a balance account with postings cannot become a parent",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	return nil
+}
+
+func checkNotDescendant(
+	ctx context.Context,
+	r Repository,
+	a domain.Account,
+	parent domain.Account,
+) error {
+	var err error
+
+	for ancestor := parent; ancestor.ParentID != uuid.Nil; {
+		if ancestor.ParentID == a.ID {
+			return &domain.FieldError{
+				Field:   "parent_id",
+				Message: "must not be a descendant of the account",
+				Err:     domain.ErrValidation,
+			}
+		}
+
+		if ancestor, err = r.Account(ctx, a.BooksID, ancestor.ParentID); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

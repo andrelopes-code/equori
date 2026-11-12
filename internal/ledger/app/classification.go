@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
+
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -76,37 +78,7 @@ func (s *Service) TransactionFacts(
 			continue
 		}
 
-		t := ts[i]
-
-		f := TransactionFacts{
-			ID:             t.ID,
-			Version:        t.Version,
-			Date:           t.Date,
-			Description:    t.Description,
-			RawDescription: t.Description,
-			PayeeID:        t.PayeeID,
-			Origin:         string(t.Origin),
-			Voided:         t.VoidedAt != nil,
-			CategoryState:  string(t.CategoryState(accounts)),
-			Postings:       make([]FactPosting, len(t.Postings)),
-		}
-		if d, ok := raw[t.ID]; ok {
-			f.RawDescription = d
-		}
-
-		for j, p := range t.Postings {
-			a := accounts[p.AccountID]
-			f.Postings[j] = FactPosting{
-				AccountID:   p.AccountID,
-				Class:       string(a.Class),
-				Kind:        string(a.Kind),
-				SystemRole:  string(a.SystemRole),
-				Amount:      p.Amount,
-				Installment: p.Installment != nil,
-			}
-		}
-
-		out = append(out, f)
+		out = append(out, transactionFact(ts[i], raw, accounts))
 	}
 
 	return out, nil
@@ -180,4 +152,40 @@ func (s *Service) LatestPayeeCategories(
 	payees []uuid.UUID,
 ) (map[PayeeClass]uuid.UUID, error) {
 	return s.repo.LatestPayeeCategories(ctx, booksID, payees)
+}
+
+func transactionFact(
+	t domain.Transaction,
+	raw map[uuid.UUID]string,
+	accounts map[uuid.UUID]domain.Account,
+) TransactionFacts {
+	f := TransactionFacts{
+		ID:             t.ID,
+		Version:        t.Version,
+		Date:           t.Date,
+		Description:    t.Description,
+		RawDescription: t.Description,
+		PayeeID:        t.PayeeID,
+		Origin:         string(t.Origin),
+		Voided:         t.VoidedAt != nil,
+		CategoryState:  string(t.CategoryState(accounts)),
+		Postings:       make([]FactPosting, len(t.Postings)),
+	}
+	if d, ok := raw[t.ID]; ok {
+		f.RawDescription = d
+	}
+
+	for j, p := range t.Postings {
+		a := accounts[p.AccountID]
+		f.Postings[j] = FactPosting{
+			AccountID:   p.AccountID,
+			Class:       string(a.Class),
+			Kind:        string(a.Kind),
+			SystemRole:  string(a.SystemRole),
+			Amount:      p.Amount,
+			Installment: p.Installment != nil,
+		}
+	}
+
+	return f
 }
