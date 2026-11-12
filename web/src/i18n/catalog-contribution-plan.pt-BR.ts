@@ -69,4 +69,9 @@ export const contributionPlanPtBR: Record<
   "problem.contribution_member_invalid":
     "Um ativo do plano não é um investimento.",
   "problem.contribution_amount_invalid": "Informe um aporte maior que zero.",
+  "contributionPlan.legendCurrent": "Atual",
+  "contributionPlan.legendContribution": "Este aporte",
+  "contributionPlan.legendTarget": "Alvo",
+  "contributionPlan.leaveBody":
+    "Os alvos editados nesta tela não foram salvos.",
 };

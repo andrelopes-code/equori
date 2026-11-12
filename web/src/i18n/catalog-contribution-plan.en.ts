@@ -67,4 +67,9 @@ export const contributionPlanEn = {
     "An asset of the plan is not an investment.",
   "problem.contribution_amount_invalid":
     "Enter a contribution greater than zero.",
+  "contributionPlan.legendCurrent": "Current",
+  "contributionPlan.legendContribution": "This contribution",
+  "contributionPlan.legendTarget": "Target",
+  "contributionPlan.leaveBody":
+    "The targets edited on this screen are not saved.",
 } as const;

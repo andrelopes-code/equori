@@ -20,6 +20,7 @@ import { ClassTable } from "@/features/portfolio/contribution-plan/class-table";
 import { PlanLoadFailed } from "@/features/portfolio/contribution-plan/plan-load-failed";
 import { ContributionStrip } from "@/features/portfolio/contribution-plan/contribution-strip";
 import { ShoppingPanel } from "@/features/portfolio/contribution-plan/shopping-panel";
+import { TrackLegend } from "@/features/portfolio/contribution-plan/track-legend";
 import { useContributionPreview } from "@/features/portfolio/contribution-plan/use-contribution-preview";
 import styles from "@/features/portfolio/pages/contribution-plan-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -86,11 +87,15 @@ export function ContributionPlanPage() {
 
           {!plan.isError && hasClasses && (
             <div className={styles.layout}>
-              <ClassTable
-                view={view}
-                pending={pending}
-                memberName={memberName}
-              />
+              <Stack gap={3}>
+                <ClassTable
+                  view={view}
+                  pending={pending}
+                  memberName={memberName}
+                />
+
+                {view !== undefined && <TrackLegend />}
+              </Stack>
 
               {view !== undefined && (
                 <ShoppingPanel view={view} memberName={memberName} />
