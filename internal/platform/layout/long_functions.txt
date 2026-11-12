@@ -42,17 +42,7 @@ internal/marketdata/price.go	Module.RecordInstrumentPrices	pending: split after 
 internal/marketdata/probe.go	Module.ProbeQuote	pending: split after the 100-column reformatting
 internal/marketdata/sources.go	sourceEntries	table of data
 internal/marketdata/toolapi/instrument_args.go	checkInstrumentArgs	pending: split after the 100-column reformatting
-internal/planning/app/changes.go	Service.Reopen	pending: split after the 100-column reformatting
-internal/planning/app/generate.go	Service.fill	pending: split after the 100-column reformatting
-internal/planning/app/plan.go	Service.planOccurrences	pending: split after the 100-column reformatting
-internal/planning/app/plan_save.go	Service.checkPlanAmounts	pending: split after the 100-column reformatting
-internal/planning/app/realize.go	Service.Realize	pending: split after the 100-column reformatting
-internal/planning/app/start.go	Service.moveStart	pending: split after the 100-column reformatting
-internal/planning/app/views.go	Service.Project	pending: split after the 100-column reformatting
-internal/planning/httpapi/plan.go	toBudgetPlanAPI	pending: split after the 100-column reformatting
 internal/planning/httpapi/server.go	Server.Register	table of data
-internal/planning/toolapi/budget_goal.go	checkBudgetGoalFields	pending: split after the 100-column reformatting
-internal/planning/toolapi/manage_schedule_prepare.go	checkScheduleFields	pending: split after the 100-column reformatting
 internal/platform/backup/backup.go	Dump	pending: split after the 100-column reformatting
 internal/platform/backup/backup.go	Restore	pending: split after the 100-column reformatting
 internal/platform/config/variables.go	Variables	table of data

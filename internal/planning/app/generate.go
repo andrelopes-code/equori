@@ -134,6 +134,17 @@ func (s *Service) fill(
 		}
 	}
 
+	return s.skipUnrealized(ctx, repo, booksID, sch, first, keepFrom)
+}
+
+// skipUnrealized skips the expected occurrences of sch from first to the day before keepFrom.
+func (s *Service) skipUnrealized(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	sch domain.Schedule,
+	first, keepFrom time.Time,
+) error {
 	open, err := repo.ExpectedOccurrences(
 		ctx,
 		booksID,

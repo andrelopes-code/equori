@@ -123,24 +123,9 @@ func (s *Service) checkPlanAmounts(
 	amounts []PlanAmount,
 	base money.Currency,
 ) error {
-	facts, err := s.ledger.AccountFacts(ctx, booksID)
+	byID, budgeted, err := s.planCategories(ctx, booksID)
 	if err != nil {
 		return err
-	}
-
-	byID := make(map[uuid.UUID]Account, len(facts))
-	for _, a := range facts {
-		byID[a.ID] = a
-	}
-
-	stored, err := s.repo.Budgets(ctx, booksID)
-	if err != nil {
-		return err
-	}
-
-	budgeted := make(map[uuid.UUID]bool, len(stored))
-	for _, b := range stored {
-		budgeted[b.CategoryID] = true
 	}
 
 	seen := make(map[uuid.UUID]bool, len(amounts))
@@ -175,6 +160,34 @@ func (s *Service) checkPlanAmounts(
 	}
 
 	return nil
+}
+
+// planCategories returns the accounts of the book by id and the categories that have a budget.
+func (s *Service) planCategories(
+	ctx context.Context,
+	booksID int64,
+) (map[uuid.UUID]Account, map[uuid.UUID]bool, error) {
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	byID := make(map[uuid.UUID]Account, len(facts))
+	for _, a := range facts {
+		byID[a.ID] = a
+	}
+
+	stored, err := s.repo.Budgets(ctx, booksID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	budgeted := make(map[uuid.UUID]bool, len(stored))
+	for _, b := range stored {
+		budgeted[b.CategoryID] = true
+	}
+
+	return byID, budgeted, nil
 }
 
 // persistPlan sets the amounts and the reference in one transaction.

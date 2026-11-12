@@ -38,26 +38,10 @@ func (s *Service) Project(
 	to time.Time,
 ) (Projection, error) {
 	today := s.clk.Today(ctx)
-	if !to.After(today) || to.After(s.horizon(ctx)) {
-		return Projection{}, &domain.FieldError{
-			Field:   "to",
-			Message: "must be after today and at most today + 12 months",
-			Err:     domain.ErrValidation,
-		}
-	}
 
-	facts, err := s.ledger.AccountFacts(ctx, booksID)
+	account, err := s.projectionAccount(ctx, booksID, accountID, to, today)
 	if err != nil {
 		return Projection{}, err
-	}
-
-	i := slices.IndexFunc(facts, func(a Account) bool { return a.ID == accountID })
-	if i < 0 || (facts[i].Class != "asset" && facts[i].Class != "liability") {
-		return Projection{}, &domain.FieldError{
-			Field:   "id",
-			Message: "must be a balance account of the book",
-			Err:     domain.ErrValidation,
-		}
 	}
 
 	schedules, err := s.repo.SchedulesTouching(ctx, booksID, []uuid.UUID{accountID})
@@ -86,9 +70,41 @@ func (s *Service) Project(
 		To:        to,
 		Opening:   opening,
 		Closing:   closing,
-		Currency:  facts[i].Instrument,
+		Currency:  account.Instrument,
 		Points:    points,
 	}, nil
+}
+
+// projectionAccount checks the end date and returns the balance account to project.
+func (s *Service) projectionAccount(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	to, today time.Time,
+) (Account, error) {
+	if !to.After(today) || to.After(s.horizon(ctx)) {
+		return Account{}, &domain.FieldError{
+			Field:   "to",
+			Message: "must be after today and at most today + 12 months",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
+	if err != nil {
+		return Account{}, err
+	}
+
+	i := slices.IndexFunc(facts, func(a Account) bool { return a.ID == accountID })
+	if i < 0 || (facts[i].Class != "asset" && facts[i].Class != "liability") {
+		return Account{}, &domain.FieldError{
+			Field:   "id",
+			Message: "must be a balance account of the book",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	return facts[i], nil
 }
 
 type Committed struct {

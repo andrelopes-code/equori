@@ -258,6 +258,17 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 		return err
 	}
 
+	return s.addOccurrences(ctx, out, os, byID, received)
+}
+
+// addOccurrences adds the income and savings occurrences of os to the plan.
+func (s *Service) addOccurrences(
+	ctx context.Context,
+	out *Plan,
+	os []domain.Occurrence,
+	byID map[uuid.UUID]domain.Schedule,
+	received map[uuid.UUID]int64,
+) error {
 	today := s.clk.Today(ctx)
 
 	items := make(map[uuid.UUID]int)
@@ -342,50 +353,4 @@ func addIncomeItem(out *Plan, items map[uuid.UUID]int, sch domain.Schedule, amou
 	}
 
 	out.ExpectedItems[i].Amount += amount
-}
-
-// receivedIncome returns, by occurrence id, the amount each realized income occurrence moved,
-// read with one TransactionFacts call; an occurrence whose transaction is missing from the
-// facts has no entry.
-func (s *Service) receivedIncome(
-	ctx context.Context,
-	booksID int64,
-	occurrences []domain.Occurrence,
-	schedules map[uuid.UUID]domain.Schedule,
-) (map[uuid.UUID]int64, error) {
-	var ids []uuid.UUID
-	for _, o := range occurrences {
-		if o.State == domain.Realized && schedules[o.ScheduleID].Kind == domain.Income {
-			ids = append(ids, o.TransactionID)
-		}
-	}
-
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	facts, err := s.ledger.TransactionFacts(ctx, booksID, ids)
-	if err != nil {
-		return nil, err
-	}
-
-	byID := make(map[uuid.UUID]domain.Transaction, len(facts))
-	for _, t := range facts {
-		byID[t.ID] = t
-	}
-
-	out := make(map[uuid.UUID]int64, len(ids))
-
-	for _, o := range occurrences {
-		t, ok := byID[o.TransactionID]
-		if o.State != domain.Realized || !ok || schedules[o.ScheduleID].Kind != domain.Income {
-			continue
-		}
-
-		if amount, found := domain.ActualAmount(t, schedules[o.ScheduleID]); found {
-			out[o.ID] = amount
-		}
-	}
-
-	return out, nil
 }

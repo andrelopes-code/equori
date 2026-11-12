@@ -48,18 +48,22 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	}
 
 	if len(p.ExpectedItems) > 0 {
-		items := make([]BudgetPlanIncome, len(p.ExpectedItems))
-		for i, x := range p.ExpectedItems {
-			items[i] = BudgetPlanIncome{
-				ScheduleId:  x.ScheduleID,
-				Description: x.Description,
-				Amount:      m(x.Amount),
-			}
-		}
-
+		items := planIncomeAPI(p.ExpectedItems, m)
 		out.ExpectedItems = &items
 	}
 
+	setPlanSettings(&out, p)
+	setPlanSavings(&out, p, optional)
+	setPlanReference(&out, p, optional)
+
+	for i, r := range p.Rows {
+		out.Rows[i] = toBudgetPlanRowAPI(r, m)
+	}
+
+	return out
+}
+
+func setPlanSettings(out *BudgetPlan, p app.Plan) {
 	if p.AverageMonths > 0 {
 		out.AverageMonths = &p.AverageMonths
 	}
@@ -67,12 +71,16 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	if p.Reference.HasTarget {
 		out.SavingsTargetBp = &p.Reference.TargetBP
 	}
+}
 
-	setPlanSavings(&out, p, optional)
-	setPlanReference(&out, p, optional)
-
-	for i, r := range p.Rows {
-		out.Rows[i] = toBudgetPlanRowAPI(r, m)
+func planIncomeAPI(items []app.PlanIncome, m func(int64) Money) []BudgetPlanIncome {
+	out := make([]BudgetPlanIncome, len(items))
+	for i, x := range items {
+		out[i] = BudgetPlanIncome{
+			ScheduleId:  x.ScheduleID,
+			Description: x.Description,
+			Amount:      m(x.Amount),
+		}
 	}
 
 	return out

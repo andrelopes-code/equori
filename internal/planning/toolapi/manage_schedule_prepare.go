@@ -51,8 +51,97 @@ func prepareSchedule(
 }
 
 func checkScheduleFields(in manageScheduleIn) error {
+	return requiredByAction(in, scheduleFields(in))
+}
+
+// requiredByAction checks the fields an action requires and rejects the ones it ignores.
+func requiredByAction(in manageScheduleIn, fields []field) error {
+	name := string(in.Action)
+
+	var err error
+	switch in.Action {
+	case "create":
+		err = required(
+			name,
+			fields,
+			[]string{
+				"kind",
+				"description",
+				"account_id",
+				"counterpart_id",
+				"amount",
+				"frequency",
+				"start",
+			},
+			"payee_id",
+			"interval",
+			"day_of_month",
+			"until",
+			"paid_by_transaction_id",
+			"match_tolerance_bp",
+			"grace_days",
+			"match_window_days",
+		)
+	case "update":
+		err = checkUpdateFields(in, fields)
+	case "change_terms":
+		err = checkChangeTermsFields(in, fields)
+	case "pause":
+		err = required(name, fields, []string{"schedule_id", "from", "to"})
+	case "end":
+		err = required(name, fields, []string{"schedule_id", "from"})
+	}
+
+	return err
+}
+
+func checkUpdateFields(in manageScheduleIn, fields []field) error {
+	name := string(in.Action)
+
+	err := required(name, fields, []string{"schedule_id"},
+		"description", "starts_on", "match_tolerance_bp", "grace_days", "match_window_days")
+	if err == nil && !hasUpdateField(in) {
+		err = tool.InvalidArgument(
+			"description",
+			"one of description, starts_on, match_tolerance_bp, grace_days or match_window_days is required for update",
+		)
+	}
+
+	return err
+}
+
+func checkChangeTermsFields(in manageScheduleIn, fields []field) error {
+	name := string(in.Action)
+
+	err := required(
+		name,
+		fields,
+		[]string{"schedule_id", "from"},
+		"amount",
+		"frequency",
+		"interval",
+		"day_of_month",
+	)
+	switch {
+	case err != nil:
+	case in.Amount == "" && in.Frequency == "":
+		err = tool.InvalidArgument(
+			"amount",
+			"is required for change_terms unless frequency is given",
+		)
+	case in.Frequency == "" && in.Interval != 0:
+		err = tool.InvalidArgument("interval", "requires frequency")
+	case in.Frequency == "" && in.DayOfMonth != 0:
+		err = tool.InvalidArgument("day_of_month", "requires frequency")
+	}
+
+	return err
+}
+
+func scheduleFields(in manageScheduleIn) []field {
 	given := func(s string) bool { return s != "" }
-	fields := []field{
+
+	return []field{
 		{
 			"schedule_id",
 			given(in.ScheduleID),
@@ -88,70 +177,6 @@ func checkScheduleFields(in manageScheduleIn) error {
 		{"grace_days", in.GraceDays.Set},
 		{"match_window_days", in.MatchWindowDays.Set},
 	}
-	name := string(in.Action)
-
-	var err error
-	switch in.Action {
-	case "create":
-		err = required(
-			name,
-			fields,
-			[]string{
-				"kind",
-				"description",
-				"account_id",
-				"counterpart_id",
-				"amount",
-				"frequency",
-				"start",
-			},
-			"payee_id",
-			"interval",
-			"day_of_month",
-			"until",
-			"paid_by_transaction_id",
-			"match_tolerance_bp",
-			"grace_days",
-			"match_window_days",
-		)
-	case "update":
-		err = required(name, fields, []string{"schedule_id"},
-			"description", "starts_on", "match_tolerance_bp", "grace_days", "match_window_days")
-		if err == nil && !hasUpdateField(in) {
-			err = tool.InvalidArgument(
-				"description",
-				"one of description, starts_on, match_tolerance_bp, grace_days or match_window_days is required for update",
-			)
-		}
-	case "change_terms":
-		err = required(
-			name,
-			fields,
-			[]string{"schedule_id", "from"},
-			"amount",
-			"frequency",
-			"interval",
-			"day_of_month",
-		)
-		switch {
-		case err != nil:
-		case in.Amount == "" && in.Frequency == "":
-			err = tool.InvalidArgument(
-				"amount",
-				"is required for change_terms unless frequency is given",
-			)
-		case in.Frequency == "" && in.Interval != 0:
-			err = tool.InvalidArgument("interval", "requires frequency")
-		case in.Frequency == "" && in.DayOfMonth != 0:
-			err = tool.InvalidArgument("day_of_month", "requires frequency")
-		}
-	case "pause":
-		err = required(name, fields, []string{"schedule_id", "from", "to"})
-	case "end":
-		err = required(name, fields, []string{"schedule_id", "from"})
-	}
-
-	return err
 }
 
 func decodeScheduleArguments(

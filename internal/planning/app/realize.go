@@ -176,30 +176,7 @@ func (s *Service) Realize(
 			return err
 		}
 
-		facts, err := s.ledger.TransactionFacts(ctx, booksID, []uuid.UUID{txID})
-		if err != nil {
-			return err
-		}
-
-		if len(facts) == 0 || facts[0].Voided {
-			return &domain.FieldError{
-				Field:   "transaction_id",
-				Message: "is not a transaction of the book in force",
-				Err:     domain.ErrValidation,
-			}
-		}
-
-		if _, ok := facts[0].On(sch.AccountID); !ok {
-			return &domain.FieldError{
-				Field:   "transaction_id",
-				Message: "has no posting on the schedule's account",
-				Err:     domain.ErrValidation,
-			}
-		}
-
-		if _, err := repo.OccurrenceByTransaction(ctx, booksID, txID); err == nil {
-			return ErrTransactionInUse
-		} else if !errors.Is(err, ErrNotFound) {
+		if err := s.checkRealizable(ctx, repo, booksID, sch, txID); err != nil {
 			return err
 		}
 
@@ -214,6 +191,45 @@ func (s *Service) Realize(
 	})
 
 	return out, err
+}
+
+// checkRealizable validates that txID is a transaction in force on the account of sch that no
+// occurrence has realized.
+func (s *Service) checkRealizable(
+	ctx context.Context,
+	repo Repository,
+	booksID int64,
+	sch domain.Schedule,
+	txID uuid.UUID,
+) error {
+	facts, err := s.ledger.TransactionFacts(ctx, booksID, []uuid.UUID{txID})
+	if err != nil {
+		return err
+	}
+
+	if len(facts) == 0 || facts[0].Voided {
+		return &domain.FieldError{
+			Field:   "transaction_id",
+			Message: "is not a transaction of the book in force",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	if _, ok := facts[0].On(sch.AccountID); !ok {
+		return &domain.FieldError{
+			Field:   "transaction_id",
+			Message: "has no posting on the schedule's account",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	if _, err := repo.OccurrenceByTransaction(ctx, booksID, txID); err == nil {
+		return ErrTransactionInUse
+	} else if !errors.Is(err, ErrNotFound) {
+		return err
+	}
+
+	return nil
 }
 
 // Unrealize releases a realized occurrence; its transaction no longer realizes it automatically
