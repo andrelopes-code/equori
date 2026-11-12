@@ -364,6 +364,7 @@ func TestRegistryBookRole(t *testing.T) {
 	}
 
 	bg := context.Background()
+
 	tests := []struct {
 		name string
 		ctx  context.Context

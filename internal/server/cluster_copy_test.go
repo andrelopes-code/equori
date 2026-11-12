@@ -16,11 +16,13 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/backup"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 	"github.com/andrelopes-code/equori/internal/server"
@@ -189,8 +191,10 @@ type restoredInstance struct {
 func restoredServer(t *testing.T, h *apitest.Harness, target *pgxpool.Pool) restoredInstance {
 	t.Helper()
 
-	var cfg server.Config
-	apitest.Today("2026-11-20")(&cfg)
+	clk := clock.New(func() time.Time {
+		return time.Date(2026, time.November, 20, 12, 0, 0, 0, time.UTC)
+	})
+	cfg := server.Config{Clock: &clk}
 
 	app, err := server.New(target, cfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {

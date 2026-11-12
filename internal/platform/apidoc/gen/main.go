@@ -36,7 +36,7 @@ func run() error {
 	fragments := make([]string, 0, len(sources))
 
 	for _, path := range sources {
-		text, err := os.ReadFile(path)
+		text, err := os.ReadFile(path) //nolint:gosec // G304: the path comes from the generator's own fragment list
 		if err != nil {
 			return fmt.Errorf("read fragment: %w", err)
 		}
@@ -49,7 +49,7 @@ func run() error {
 		return err
 	}
 
-	if err := os.WriteFile(outputPath, []byte(out), 0o644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(out), 0o644); err != nil { //nolint:gosec // G306: the bundle is a public source file, committed to the repository
 		return fmt.Errorf("write bundle: %w", err)
 	}
 
