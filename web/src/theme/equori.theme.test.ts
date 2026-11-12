@@ -254,11 +254,7 @@ const overlayItems: readonly (readonly [string, string, readonly string[]])[] =
     [
       "framed data-grid",
       '[data-ui="data-grid"][data-variant="framed"]',
-      [
-        "--slotted-data-grid-surface",
-        "--slotted-data-grid-border-color",
-        "--slotted-data-grid-header-surface",
-      ],
+      ["--slotted-data-grid-surface", "--slotted-data-grid-border-color"],
     ],
   ];
 
@@ -286,3 +282,71 @@ test("the overlay rules name no scheme, so they hold in the light and the dark s
   assert.ok(rule);
   assert.equal(rule[0].includes("data-slotted-scheme"), false);
 });
+
+// A pinned header covers the rows that scroll under it, so it cannot be a translucent wash: it is
+// the panel's raised step with the same wash on top, which lands where the header of a table that
+// does not pin lands.
+const pinned: readonly (readonly [string, string, string])[] = [
+  [
+    "a table's pinned header and column",
+    '[data-ui="table"]',
+    "--slotted-table-sticky-surface",
+  ],
+  [
+    "a framed data-grid's header",
+    '[data-ui="data-grid"][data-variant="framed"]',
+    "--slotted-data-grid-header-surface",
+  ],
+];
+
+for (const [name, selector, token] of pinned) {
+  test(`${name} is opaque inside a dialog or a drawer`, () => {
+    const escaped = selector.replace(/[[\]().*+?^${}|]/g, "\\$&");
+    const block = new RegExp(
+      `:is\\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\\) ${escaped} \\{([^}]*)\\}`,
+    ).exec(css);
+    assert.ok(block, `no overlay rule for ${name}`);
+    assert.match(
+      block[1] ?? "",
+      new RegExp(
+        `${token}: color-mix\\(in oklab, var\\(--slotted-text\\) 9%, var\\(--slotted-surface-raised\\)\\)`,
+      ),
+    );
+  });
+}
+
+// The glass paints a pinned header cell and a pinned column straight on the element, so the
+// overlay's value is written on those elements too, or the table's own value would lose to them.
+const pinnedCells: readonly (readonly [string, string, string])[] = [
+  [
+    "a pinned column header",
+    '[data-ui="table"][data-sticky-header] [data-part="column-header"]',
+    "background-color",
+  ],
+  [
+    "a pinned group header",
+    '[data-ui="table"] [data-part="group-row"][data-sticky] > [data-part="group-header"]',
+    "background-color",
+  ],
+  [
+    "a pinned column",
+    '[data-ui="table"] [data-sticky]',
+    "--slotted-table-sticky-surface",
+  ],
+];
+
+for (const [name, selector, property] of pinnedCells) {
+  test(`${name} is opaque inside a dialog or a drawer`, () => {
+    const escaped = selector.replace(/[[\]().*+?^${}|>]/g, "\\$&");
+    const block = new RegExp(
+      `:is\\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\\) ${escaped.replace(/\\>/g, ">")}[^{]*\\{([^}]*)\\}`,
+    ).exec(css);
+    assert.ok(block, `no overlay rule for ${name}`);
+    assert.match(
+      block[1] ?? "",
+      new RegExp(
+        `${property}: color-mix\\(in oklab, var\\(--slotted-text\\) 9%, var\\(--slotted-surface-raised\\)\\)`,
+      ),
+    );
+  });
+}

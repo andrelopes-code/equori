@@ -5,6 +5,8 @@
 // about 1.1:1 and 1.5:1 of it. A frame is a large area and takes a lighter wash than the account
 // picker's rows (8% and 22%), which are small and need more to read against the panel.
 
+const family = (name: string) => `[data-ui="${name}"]`;
+
 const dialogContent =
   '[data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"]))';
 
@@ -16,15 +18,23 @@ const overlays = `:is(${dialogContent}, ${overlayDrawer})`;
 const wash = "color-mix(in oklab, var(--slotted-text) 3%, transparent)";
 const ring = "color-mix(in oklab, var(--slotted-text) 14%, transparent)";
 
+// A pinned header covers the rows that scroll under it, so it is opaque: the raised step of the
+// panel with a wash on top. 9% lands where the header of a table that does not pin lands (the
+// frame's wash and the header's, over the panel), which the page measures.
+const pinned =
+  "color-mix(in oklab, var(--slotted-text) 9%, var(--slotted-surface-raised))";
+
 // One block per family keeps each selector's declarations together for the generated CSS.
 const block = (
   selector: string,
   washed: readonly string[],
   ringed: readonly string[],
+  opaque: readonly string[] = [],
 ) =>
   `${overlays} ${selector} {\n${[
     ...washed.map((token) => `  ${token}: ${wash};`),
     ...ringed.map((token) => `  ${token}: ${ring};`),
+    ...opaque.map((token) => `  ${token}: ${pinned};`),
   ].join("\n")}\n}`;
 
 export const overlayItemRules: readonly string[] = [
@@ -43,6 +53,7 @@ export const overlayItemRules: readonly string[] = [
     '[data-ui="table"]',
     ["--slotted-table-surface", "--slotted-table-header-surface"],
     ["--slotted-table-border-color"],
+    ["--slotted-table-sticky-surface"],
   ),
   block(
     '[data-ui="list"][data-variant="framed"]',
@@ -51,7 +62,13 @@ export const overlayItemRules: readonly string[] = [
   ),
   block(
     '[data-ui="data-grid"][data-variant="framed"]',
-    ["--slotted-data-grid-surface", "--slotted-data-grid-header-surface"],
+    ["--slotted-data-grid-surface"],
     ["--slotted-data-grid-border-color"],
+    ["--slotted-data-grid-header-surface"],
   ),
+  // The glass paints a pinned header cell and a pinned column straight on the element; the value
+  // of the table above would lose to it.
+  `${overlays} ${family("table")}[data-sticky-header] [data-part="column-header"] {\n  background-color: ${pinned};\n}`,
+  `${overlays} ${family("table")} [data-part="group-row"][data-sticky] > [data-part="group-header"] {\n  background-color: ${pinned};\n}`,
+  `${overlays} ${family("table")} [data-sticky] {\n  --slotted-table-sticky-surface: ${pinned};\n}`,
 ];
