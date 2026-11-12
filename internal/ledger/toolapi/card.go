@@ -140,7 +140,17 @@ func planCard(
 }
 
 func checkCardFields(in manageCardIn) error {
-	given := map[string]bool{
+	required, optional := cardFieldNames(in)
+
+	return checkFields(
+		string(in.Action),
+		cardFieldsGiven(in),
+		append([]string{"account_id"}, required...),
+		optional...)
+}
+
+func cardFieldsGiven(in manageCardIn) map[string]bool {
+	return map[string]bool{
 		"account_id":              true,
 		"card_id":                 in.CardID != "",
 		"holder":                  in.Holder != "",
@@ -159,8 +169,9 @@ func checkCardFields(in manageCardIn) error {
 		"calendar":                in.Calendar != "",
 		"foreign_charge_bp":       in.ForeignChargeBP.Set,
 	}
+}
 
-	var required, optional []string
+func cardFieldNames(in manageCardIn) (required, optional []string) {
 	switch in.Action {
 	case "add_card":
 		required, optional = []string{
@@ -195,9 +206,5 @@ func checkCardFields(in manageCardIn) error {
 		}
 	}
 
-	return checkFields(
-		string(in.Action),
-		given,
-		append([]string{"account_id"}, required...),
-		optional...)
+	return required, optional
 }

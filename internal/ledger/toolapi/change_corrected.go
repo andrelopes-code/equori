@@ -166,6 +166,19 @@ func correctionChanges(
 ) ([]tool.Change, error) {
 	cur, next := p.current, p.next
 
+	out := headerChanges(cur, next)
+
+	payee, err := payeeChanges(ctx, svc, booksID, cur, next)
+	if err != nil {
+		return nil, err
+	}
+
+	out = append(out, payee...)
+
+	return append(out, tagAndPostingChanges(cur, next, accounts)...), nil
+}
+
+func headerChanges(cur, next domain.Transaction) []tool.Change {
 	var out []tool.Change
 	if !cur.Date.Equal(next.Date) {
 		out = append(
@@ -189,22 +202,38 @@ func correctionChanges(
 		)
 	}
 
-	if cur.PayeeID != next.PayeeID {
-		names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{cur.PayeeID, next.PayeeID})
-		if err != nil {
-			return nil, err
-		}
+	return out
+}
 
-		out = append(
-			out,
-			tool.Change{
-				Field:  "payee",
-				Before: tool.TextValue(names[cur.PayeeID]),
-				After:  tool.TextValue(names[next.PayeeID]),
-			},
-		)
+func payeeChanges(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	cur, next domain.Transaction,
+) ([]tool.Change, error) {
+	if cur.PayeeID == next.PayeeID {
+		return nil, nil
 	}
 
+	names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{cur.PayeeID, next.PayeeID})
+	if err != nil {
+		return nil, err
+	}
+
+	return []tool.Change{
+		{
+			Field:  "payee",
+			Before: tool.TextValue(names[cur.PayeeID]),
+			After:  tool.TextValue(names[next.PayeeID]),
+		},
+	}, nil
+}
+
+func tagAndPostingChanges(
+	cur, next domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+) []tool.Change {
+	var out []tool.Change
 	if a, b := strings.Join(cur.Tags, ", "), strings.Join(next.Tags, ", "); a != b {
 		out = append(
 			out,
@@ -242,5 +271,5 @@ func correctionChanges(
 		}
 	}
 
-	return out, nil
+	return out
 }

@@ -164,6 +164,16 @@ func sellTrade(
 
 	trade.Cost = &cost
 
+	postings := sellPostings(o, accts, proceeds, taxes, cost, result)
+
+	return postings, trade, nil
+}
+
+func sellPostings(
+	o TradeOrder,
+	accts TradeAccounts,
+	proceeds, taxes, cost, result money.Money,
+) []Posting {
 	postings := []Posting{{AccountID: o.CashAccountID, Amount: proceeds, Weight: proceeds}}
 	if !taxes.IsZero() {
 		postings = append(postings, Posting{AccountID: accts.Taxes, Amount: taxes, Weight: taxes})
@@ -186,7 +196,7 @@ func sellTrade(
 		)
 	}
 
-	return postings, trade, nil
+	return postings
 }
 
 // soldCost is the cost basis of the quantity a sale gives up.

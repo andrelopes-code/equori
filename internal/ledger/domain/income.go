@@ -49,22 +49,9 @@ func BuildIncome(o IncomeOrder) ([]Posting, Income, error) {
 		return nil, Income{}, invalid("gross", "must be positive")
 	}
 
-	withheld, err := money.New(0, o.Gross.Currency())
+	withheld, err := withheldOf(o)
 	if err != nil {
-		return nil, Income{}, invalid("gross", "must be a currency amount")
-	}
-
-	switch {
-	case o.Withheld != nil:
-		withheld = *o.Withheld
-	case o.DefaultWithholdingBP > 0:
-		if withheld, err = money.Fraction(
-			o.Gross,
-			int64(o.DefaultWithholdingBP),
-			10000,
-		); err != nil {
-			return nil, Income{}, err
-		}
+		return nil, Income{}, err
 	}
 
 	net, err := o.Gross.Sub(withheld)
@@ -95,4 +82,26 @@ func BuildIncome(o IncomeOrder) ([]Posting, Income, error) {
 		Gross:         o.Gross,
 		Withheld:      withheld,
 	}, nil
+}
+
+func withheldOf(o IncomeOrder) (money.Money, error) {
+	withheld, err := money.New(0, o.Gross.Currency())
+	if err != nil {
+		return money.Money{}, invalid("gross", "must be a currency amount")
+	}
+
+	switch {
+	case o.Withheld != nil:
+		withheld = *o.Withheld
+	case o.DefaultWithholdingBP > 0:
+		if withheld, err = money.Fraction(
+			o.Gross,
+			int64(o.DefaultWithholdingBP),
+			10000,
+		); err != nil {
+			return money.Money{}, err
+		}
+	}
+
+	return withheld, nil
 }

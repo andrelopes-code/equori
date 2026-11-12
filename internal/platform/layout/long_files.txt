@@ -13,7 +13,6 @@ internal/ingestion/ledger_port.go	pending: split after the 100-column reformatti
 internal/ingestion/postgres/record.go	pending: split after the 100-column reformatting
 internal/ingestion/postgres/sync.go	pending: split after the 100-column reformatting
 internal/ledger/postgres/mapping.go	pending: split after the 100-column reformatting
-internal/ledger/toolapi/details.go	pending: split after the 100-column reformatting
 internal/marketdata/toolapi/market.go	pending: split after the 100-column reformatting
 internal/planning/app/changes.go	pending: split after the 100-column reformatting
 internal/planning/postgres/schedule.go	pending: split after the 100-column reformatting

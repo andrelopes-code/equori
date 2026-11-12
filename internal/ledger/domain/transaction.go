@@ -137,13 +137,7 @@ func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting
 	postings := make([]Posting, len(t.Postings))
 	var sum int64
 
-	hasCategory := false
-	for _, p := range t.Postings {
-		if a, ok := accounts[p.AccountID]; ok &&
-			(a.Class == ClassIncome || a.Class == ClassExpense) {
-			hasCategory = true
-		}
-	}
+	hasCategory := hasCategoryPosting(t, accounts)
 
 	for i, p := range t.Postings {
 		checked, err := checkPosting(i, p, t, accounts)
@@ -174,6 +168,17 @@ func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting
 	}
 
 	return postings, nil
+}
+
+func hasCategoryPosting(t Transaction, accounts map[uuid.UUID]Account) bool {
+	for _, p := range t.Postings {
+		if a, ok := accounts[p.AccountID]; ok &&
+			(a.Class == ClassIncome || a.Class == ClassExpense) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func checkLinks(t Transaction) error {

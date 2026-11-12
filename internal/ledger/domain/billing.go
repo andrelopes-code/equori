@@ -74,15 +74,8 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 		r.ClosingMode = ClosingDay
 	}
 
-	switch {
-	case r.ClosingMode != ClosingDay && r.ClosingMode != ClosingBeforeDue:
-		return BillingCycleRule{}, invalid("closing_mode", "must be day or before_due")
-	case r.ClosingMode == ClosingDay && (r.ClosingDay < 1 || r.ClosingDay > 31):
-		return BillingCycleRule{}, invalid("closing_day", "must be between 1 and 31")
-	case r.ClosingMode == ClosingBeforeDue && (r.ClosingDaysBeforeDue < 1 || r.ClosingDaysBeforeDue > 28):
-		return BillingCycleRule{}, invalid("closing_days_before_due", "must be between 1 and 28")
-	case r.DueDay < 1 || r.DueDay > 31:
-		return BillingCycleRule{}, invalid("due_day", "must be between 1 and 31")
+	if err := checkClosing(r); err != nil {
+		return BillingCycleRule{}, err
 	}
 
 	if r.ClosingMode == ClosingBeforeDue {
@@ -91,6 +84,25 @@ func NewBillingCycleRule(r BillingCycleRule) (BillingCycleRule, error) {
 		r.ClosingDaysBeforeDue = 0
 	}
 
+	return normalizeAdjustments(r)
+}
+
+func checkClosing(r BillingCycleRule) error {
+	switch {
+	case r.ClosingMode != ClosingDay && r.ClosingMode != ClosingBeforeDue:
+		return invalid("closing_mode", "must be day or before_due")
+	case r.ClosingMode == ClosingDay && (r.ClosingDay < 1 || r.ClosingDay > 31):
+		return invalid("closing_day", "must be between 1 and 31")
+	case r.ClosingMode == ClosingBeforeDue && (r.ClosingDaysBeforeDue < 1 || r.ClosingDaysBeforeDue > 28):
+		return invalid("closing_days_before_due", "must be between 1 and 28")
+	case r.DueDay < 1 || r.DueDay > 31:
+		return invalid("due_day", "must be between 1 and 31")
+	}
+
+	return nil
+}
+
+func normalizeAdjustments(r BillingCycleRule) (BillingCycleRule, error) {
 	if r.ClosingAdjustment == "" {
 		r.ClosingAdjustment = "none"
 	}

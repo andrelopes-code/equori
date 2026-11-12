@@ -152,12 +152,38 @@ func categoryPostings(
 		return nil, invalid("parts", fmt.Sprintf("must have 1 to %d parts", maxCategoryParts))
 	}
 
+	instrument, total, err := replacedTotal(replaced)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]Posting, len(parts))
+
+	var sum int64
+	for i, part := range parts {
+		posting, err := categoryPosting(t, part, i, instrument, accounts)
+		if err != nil {
+			return nil, err
+		}
+
+		sum += part.Amount.Amount()
+		out[i] = posting
+	}
+
+	if sum != total {
+		return nil, invalid("parts", fmt.Sprintf("must sum to %d", total))
+	}
+
+	return out, nil
+}
+
+func replacedTotal(replaced []Posting) (money.Currency, int64, error) {
 	instrument := replaced[0].Amount.Currency()
 
 	var total int64
 	for _, p := range replaced {
 		if p.Amount.Currency() != instrument || p.Weight != p.Amount {
-			return nil, invalid(
+			return "", 0, invalid(
 				"parts",
 				"category postings in several currencies cannot be categorized",
 			)
@@ -166,48 +192,46 @@ func categoryPostings(
 		total += p.Amount.Amount()
 	}
 
-	out := make([]Posting, len(parts))
+	return instrument, total, nil
+}
 
-	var sum int64
-	for i, part := range parts {
-		field := func(name string) string { return fmt.Sprintf("parts[%d].%s", i, name) }
+func categoryPosting(
+	t Transaction,
+	part CategoryPart,
+	i int,
+	instrument money.Currency,
+	accounts map[uuid.UUID]Account,
+) (Posting, error) {
+	field := func(name string) string { return fmt.Sprintf("parts[%d].%s", i, name) }
 
-		a, ok := accounts[part.AccountID]
-		switch {
-		case !ok || a.BooksID != t.BooksID:
-			return nil, &FieldError{
-				Field:   field("account_id"),
-				Message: "unknown account",
-				Err:     ErrUnknownAccount,
-			}
-		case !a.IsCategory():
-			return nil, invalid(field("account_id"), "must be an income or expense account")
-		case !a.IsOpenOn(t.Date):
-			return nil, &FieldError{
-				Field:   field("account_id"),
-				Message: "account is not open on the transaction date",
-				Err:     ErrAccountClosed,
-			}
-		case a.Instrument != instrument || part.Amount.Currency() != instrument:
-			return nil, invalid(field("amount"), "must be in the currency "+string(instrument))
-		case part.Amount.IsZero():
-			return nil, invalid(field("amount"), "must not be zero")
+	a, ok := accounts[part.AccountID]
+	switch {
+	case !ok || a.BooksID != t.BooksID:
+		return Posting{}, &FieldError{
+			Field:   field("account_id"),
+			Message: "unknown account",
+			Err:     ErrUnknownAccount,
 		}
-
-		sum += part.Amount.Amount()
-		out[i] = Posting{
-			AccountID: a.ID,
-			Amount:    part.Amount,
-			Weight:    part.Amount,
-			Status:    defaultPostStatus,
+	case !a.IsCategory():
+		return Posting{}, invalid(field("account_id"), "must be an income or expense account")
+	case !a.IsOpenOn(t.Date):
+		return Posting{}, &FieldError{
+			Field:   field("account_id"),
+			Message: "account is not open on the transaction date",
+			Err:     ErrAccountClosed,
 		}
+	case a.Instrument != instrument || part.Amount.Currency() != instrument:
+		return Posting{}, invalid(field("amount"), "must be in the currency "+string(instrument))
+	case part.Amount.IsZero():
+		return Posting{}, invalid(field("amount"), "must not be zero")
 	}
 
-	if sum != total {
-		return nil, invalid("parts", fmt.Sprintf("must sum to %d", total))
-	}
-
-	return out, nil
+	return Posting{
+		AccountID: a.ID,
+		Amount:    part.Amount,
+		Weight:    part.Amount,
+		Status:    defaultPostStatus,
+	}, nil
 }
 
 // CategoriesChanged reports whether the category postings of prev and next differ as

@@ -217,9 +217,18 @@ func transactionOutOf(t domain.Transaction, src transactionSources) (getTransact
 		out.Transaction.ReferencedBy = append(out.Transaction.ReferencedBy, v)
 	}
 
-	for _, v := range src.versions {
-		out.History = append(
-			out.History,
+	out.History = append(out.History, historyEntries(src.versions)...)
+	out.Attachments = append(out.Attachments, attachmentViews(src.attachments)...)
+	out.Disputes = append(out.Disputes, disputeViews(src.disputes)...)
+
+	return out, nil
+}
+
+func historyEntries(versions []app.Version) []historyEntry {
+	var out []historyEntry
+	for _, v := range versions {
+		out = append(
+			out,
 			historyEntry{
 				Version:    v.Version,
 				Reason:     v.Reason,
@@ -228,14 +237,21 @@ func transactionOutOf(t domain.Transaction, src transactionSources) (getTransact
 		)
 	}
 
-	for _, a := range src.attachments {
-		out.Attachments = append(
-			out.Attachments,
-			attachmentView{FileName: a.FileName, Size: a.Size},
-		)
+	return out
+}
+
+func attachmentViews(attachments []app.Attachment) []attachmentView {
+	var out []attachmentView
+	for _, a := range attachments {
+		out = append(out, attachmentView{FileName: a.FileName, Size: a.Size})
 	}
 
-	for _, d := range src.disputes {
+	return out
+}
+
+func disputeViews(disputes []app.Dispute) []disputeView {
+	var out []disputeView
+	for _, d := range disputes {
 		v := disputeView{
 			DisputeID: d.ID.String(),
 			OpenedOn:  tool.DateOf(d.OpenedOn),
@@ -245,10 +261,10 @@ func transactionOutOf(t domain.Transaction, src transactionSources) (getTransact
 			v.ResolvedOn = tool.DateOf(*d.ResolvedOn)
 		}
 
-		out.Disputes = append(out.Disputes, v)
+		out = append(out, v)
 	}
 
-	return out, nil
+	return out
 }
 
 func linkOf(

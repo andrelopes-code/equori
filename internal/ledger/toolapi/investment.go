@@ -282,21 +282,44 @@ func (s investmentStep) trade(
 	ctx context.Context,
 	pv tool.Preview,
 ) (tool.Preview, func() (recordInvestmentOut, error), error) {
+	o, err := s.tradeOrder(ctx)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "quantity", After: tool.TextValue(o.Quantity.Decimal())},
+		tool.Change{Field: "price", After: tool.TextValue(o.UnitPrice.String())},
+	)
+
+	appendAmountChange(&pv, o.Fees)
+	appendAmountChange(&pv, o.Taxes)
+
+	s.appendCashAndDate(&pv)
+
+	return pv, func() (recordInvestmentOut, error) {
+		t, err := s.svc.RecordTrade(ctx, s.booksID, o)
+		return recordInvestmentOut{TransactionID: t.ID.String()}, err
+	}, nil
+}
+
+func (s investmentStep) tradeOrder(ctx context.Context) (domain.TradeOrder, error) {
 	in := s.in
 
 	secUnit, err := s.svc.AmountOf(ctx, 0, s.target.instrument)
 	if err != nil {
-		return pv, nil, err
+		return domain.TradeOrder{}, err
 	}
 
 	quantity, err := tool.ParsePositive("quantity", in.Quantity, secUnit)
 	if err != nil {
-		return pv, nil, err
+		return domain.TradeOrder{}, err
 	}
 
 	price, err := money.ParseRate(in.UnitPrice)
 	if err != nil {
-		return pv, nil, tool.InvalidArgument(
+		return domain.TradeOrder{}, tool.InvalidArgument(
 			"unit_price",
 			"must be a positive decimal with at most 12 decimals",
 		)
@@ -304,15 +327,15 @@ func (s investmentStep) trade(
 
 	fees, err := s.optional("fees", in.Fees)
 	if err != nil {
-		return pv, nil, err
+		return domain.TradeOrder{}, err
 	}
 
 	taxes, err := s.optional("taxes", in.Taxes)
 	if err != nil {
-		return pv, nil, err
+		return domain.TradeOrder{}, err
 	}
 
-	o := domain.TradeOrder{
+	return domain.TradeOrder{
 		AccountID:       s.ids.account,
 		CashAccountID:   s.ids.cash,
 		BrokerageID:     s.ids.brokerage,
@@ -325,21 +348,6 @@ func (s investmentStep) trade(
 		Taxes:           taxes,
 		TaxesCategoryID: s.ids.taxesCategory,
 		Description:     in.Description,
-	}
-	pv.Changes = append(
-		pv.Changes,
-		tool.Change{Field: "quantity", After: tool.TextValue(quantity.Decimal())},
-		tool.Change{Field: "price", After: tool.TextValue(price.String())},
-	)
-
-	appendAmountChange(&pv, fees)
-	appendAmountChange(&pv, taxes)
-
-	s.appendCashAndDate(&pv)
-
-	return pv, func() (recordInvestmentOut, error) {
-		t, err := s.svc.RecordTrade(ctx, s.booksID, o)
-		return recordInvestmentOut{TransactionID: t.ID.String()}, err
 	}, nil
 }
 

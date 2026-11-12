@@ -73,17 +73,8 @@ func planSettle(
 ) (tool.Preview, func() (settleStatementOut, error), error) {
 	pv := tool.Preview{Action: "settle_statement"}
 
-	id, err := requiredID(in.StatementID, "statement_id")
+	id, fromID, err := settleIDs(in)
 	if err != nil {
-		return pv, nil, err
-	}
-
-	fromID, err := optionalID(in.FromAccountID, "from_account_id")
-	if err != nil {
-		return pv, nil, err
-	}
-
-	if err = checkSettleFields(in); err != nil {
 		return pv, nil, err
 	}
 
@@ -92,17 +83,7 @@ func planSettle(
 		return pv, nil, err
 	}
 
-	unit, err := svc.AmountOf(ctx, 0, card.Instrument)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	due, err := minorMoney(unit, v.Summary.AmountDue)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	unpaid, err := minorMoney(unit, v.Summary.Unpaid)
+	unit, due, unpaid, err := settleAmounts(ctx, svc, card.Instrument, v)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -128,6 +109,48 @@ func planSettle(
 	}
 
 	return step.plan(ctx, pv)
+}
+
+func settleIDs(in settleStatementIn) (id, fromID uuid.UUID, err error) {
+	id, err = requiredID(in.StatementID, "statement_id")
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	fromID, err = optionalID(in.FromAccountID, "from_account_id")
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	if err = checkSettleFields(in); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+
+	return id, fromID, nil
+}
+
+func settleAmounts(
+	ctx context.Context,
+	svc *app.Service,
+	instrument money.Currency,
+	v app.StatementView,
+) (unit money.Money, due, unpaid tool.Money, err error) {
+	unit, err = svc.AmountOf(ctx, 0, instrument)
+	if err != nil {
+		return money.Money{}, tool.Money{}, tool.Money{}, err
+	}
+
+	due, err = minorMoney(unit, v.Summary.AmountDue)
+	if err != nil {
+		return money.Money{}, tool.Money{}, tool.Money{}, err
+	}
+
+	unpaid, err = minorMoney(unit, v.Summary.Unpaid)
+	if err != nil {
+		return money.Money{}, tool.Money{}, tool.Money{}, err
+	}
+
+	return unit, due, unpaid, nil
 }
 
 func checkSettleFields(in settleStatementIn) error {
