@@ -111,13 +111,8 @@ func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.Inco
 			return err
 		}
 
-		category, err := loadAccount(ctx, r, booksID, o.CategoryID, "category_id")
-		if err != nil {
+		if err := checkIncomeCategory(ctx, r, booksID, o.CategoryID); err != nil {
 			return err
-		}
-
-		if category.Class != domain.ClassIncome {
-			return fieldErr("category_id", "must be an income category", domain.ErrValidation)
 		}
 
 		accts, err := s.tradeAccounts(ctx, r, booksID, o.WithheldCategoryID, "withheld_category_id")
@@ -126,13 +121,8 @@ func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.Inco
 		}
 
 		o.WithheldCategoryID = accts.Taxes
-		if o.Withheld == nil {
-			profile, err := s.profiles.Profile(ctx, booksID)
-			if err != nil {
-				return fmt.Errorf("read profile: %w", err)
-			}
-
-			o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
+		if err := s.defaultWithholding(ctx, booksID, &o); err != nil {
+			return err
 		}
 
 		postings, income, err := domain.BuildIncome(o)
@@ -148,6 +138,36 @@ func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.Inco
 	})
 
 	return created, err
+}
+
+// checkIncomeCategory requires id to name an income category.
+func checkIncomeCategory(ctx context.Context, r Repository, booksID int64, id uuid.UUID) error {
+	category, err := loadAccount(ctx, r, booksID, id, "category_id")
+	if err != nil {
+		return err
+	}
+
+	if category.Class != domain.ClassIncome {
+		return fieldErr("category_id", "must be an income category", domain.ErrValidation)
+	}
+
+	return nil
+}
+
+// defaultWithholding sets the regional withholding of o when the request names none.
+func (s *Service) defaultWithholding(ctx context.Context, booksID int64, o *domain.IncomeOrder) error {
+	if o.Withheld != nil {
+		return nil
+	}
+
+	profile, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return fmt.Errorf("read profile: %w", err)
+	}
+
+	o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
+
+	return nil
 }
 
 // brokerageAccounts checks a security account and a cash account of the same brokerage
