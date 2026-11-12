@@ -16,7 +16,8 @@ interface InstrumentFieldProps {
   onChange: (code: string | null) => void;
 }
 
-// The investment of a trade or an income, searchable by name and by code.
+// The investment of a trade or an income, searchable by name and by code. The chosen value and
+// each option read "CODE · name", so the code stays visible after the choice.
 export function InstrumentField({
   value,
   heldCodes,
@@ -33,7 +34,7 @@ export function InstrumentField({
             i.type !== "currency" &&
             (heldCodes === null || heldCodes.includes(i.code)),
         )
-        .map((i) => ({ id: i.code, label: i.name, description: i.code })),
+        .map((i) => ({ id: i.code, label: instrumentLabel(i) })),
     [instruments.data, heldCodes],
   );
 
@@ -51,4 +52,11 @@ export function InstrumentField({
       }}
     />
   );
+}
+
+// The catalog names some instruments by their code; the code is not repeated for those.
+function instrumentLabel(instrument: { code: string; name: string }): string {
+  return instrument.name === instrument.code
+    ? instrument.code
+    : `${instrument.code} · ${instrument.name}`;
 }

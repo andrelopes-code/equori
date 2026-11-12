@@ -28,6 +28,17 @@ describe("InstrumentField", () => {
     expect(shown.join()).not.toContain("Real");
   });
 
+  it("writes the code beside the name in every option", async () => {
+    const shown = await options(null);
+
+    expect(shown.some((text) => /^HGLG11 · CSHG Logística$/.test(text))).toBe(
+      true,
+    );
+    for (const text of shown) {
+      expect(text).toMatch(/^[A-Z0-9.]+( · .+)?$/);
+    }
+  });
+
   it("offers only the held codes of a sale", async () => {
     const shown = await options(["PETR4"]);
 

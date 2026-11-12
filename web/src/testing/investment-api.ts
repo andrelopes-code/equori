@@ -130,7 +130,7 @@ export function investmentApi(
           { code: "BRL", type: "currency", scale: 2, name: "Real" },
           { code: "MXRF11", type: "reit", scale: 0, name: "MXRF11" },
           { code: "PETR4", type: "stock", scale: 0, name: "PETR4" },
-          { code: "HGLG11", type: "reit", scale: 0, name: "HGLG11" },
+          { code: "HGLG11", type: "reit", scale: 0, name: "CSHG Logística" },
         ],
       }),
     "GET /api/v1/prices": (req) => {
