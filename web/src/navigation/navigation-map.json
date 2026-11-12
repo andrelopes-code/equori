@@ -317,6 +317,16 @@
     ]
   },
   {
+    "path": "/portfolio/contribution-plan",
+    "topics": ["contribution_plan"],
+    "screen": "Contribution plan",
+    "tasks": [
+      "see where a contribution goes to bring the portfolio to the target split",
+      "edit the target of each class and of each asset, with locks",
+      "start a plan from the portfolio or from scratch"
+    ]
+  },
+  {
     "path": "/portfolio/year",
     "topics": ["investments"],
     "screen": "Tax year of investments",

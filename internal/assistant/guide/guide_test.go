@@ -13,8 +13,8 @@ import (
 func TestArticlesExist(t *testing.T) {
 	t.Parallel()
 
-	if n := len(guide.Topics()); n != 19 {
-		t.Fatalf("topics = %d, want 19", n)
+	if n := len(guide.Topics()); n != 20 {
+		t.Fatalf("topics = %d, want 20", n)
 	}
 
 	for _, topic := range guide.Topics() {
