@@ -1,0 +1,85 @@
+@layer app {
+  .track {
+    position: relative;
+    /* A track's least measure: no token holds it, and a shorter track stops telling shares apart. */
+    min-inline-size: 16rem;
+    block-size: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-border-subtle);
+  }
+
+  .solid,
+  .change {
+    position: absolute;
+    inset-block: 0;
+  }
+
+  .solid {
+    inset-inline-start: 0;
+    border-radius: var(--slotted-radius-sm);
+    background: var(--drift-color);
+  }
+
+  .change {
+    background: color-mix(in oklab, var(--drift-color) 45%, transparent);
+  }
+
+  .target {
+    position: absolute;
+    inset-block: calc(var(--slotted-space-2) * -1);
+    inline-size: var(--slotted-border-width-thick);
+    margin-inline-start: calc(var(--slotted-border-width-thick) / -2);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-text);
+  }
+
+  .slot1 {
+    --drift-color: var(--slotted-data-1);
+  }
+
+  .slot2 {
+    --drift-color: var(--slotted-data-2);
+  }
+
+  .slot3 {
+    --drift-color: var(--slotted-data-3);
+  }
+
+  .slot4 {
+    --drift-color: var(--slotted-data-4);
+  }
+
+  .slot5 {
+    --drift-color: var(--slotted-data-5);
+  }
+
+  .slot6 {
+    --drift-color: var(--slotted-data-6);
+  }
+
+  .slot7 {
+    --drift-color: var(--slotted-data-7);
+  }
+
+  .slot8 {
+    --drift-color: var(--slotted-data-8);
+  }
+
+  @media (forced-colors: active) {
+    .track {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .solid {
+      background: Highlight;
+    }
+
+    .change {
+      background: GrayText;
+    }
+
+    .target {
+      background: CanvasText;
+    }
+  }
+}

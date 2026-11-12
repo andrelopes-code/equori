@@ -19,6 +19,7 @@ import { instrumentsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { DateInput } from "@/ui/form-fields/date-input";
+import { routeTo } from "@/ui/navigation/route-to";
 
 interface PortfolioHeaderProps {
   date: string;
@@ -89,6 +90,13 @@ export function PortfolioHeader({
                 render={(props) => <Link {...props} to="/portfolio/year" />}
               >
                 {t("holdings.year")}
+              </ButtonLink>
+              <ButtonLink
+                variant="outline"
+                tone="secondary"
+                render={routeTo({ to: "/portfolio/contribution-plan" })}
+              >
+                {t("contributionPlan.open")}
               </ButtonLink>
             </Inline>
           </PageHeaderActions>

@@ -1,0 +1,15 @@
+@layer app {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+    align-items: start;
+  }
+
+  @media (min-width: 80rem) {
+    .layout {
+      /* The side panel's measure: no token holds it. */
+      grid-template-columns: minmax(0, 1fr) 24rem;
+    }
+  }
+}

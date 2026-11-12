@@ -43,11 +43,11 @@ export function shoppingList(
   );
 }
 
-function positive(money: Money | undefined): money is Money {
+export function positive(money: Money | undefined): money is Money {
   return money !== undefined && money.amount > 0;
 }
 
-function quantityOf(
+export function quantityOf(
   amount: Money,
   unit: Money | undefined,
 ): number | undefined {
