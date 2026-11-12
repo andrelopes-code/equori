@@ -1,0 +1,158 @@
+@layer app {
+  /* One option: a mark column, the account over its fact, the figure over its label. The height
+     is fixed so a list of rows keeps its rhythm in every state: 62 px holds two lines of 14 and
+     13 px at 1.3 with the block padding, and no token holds a row measure. The row is a
+     container so the fact picks its form by the row's own width (R8). */
+  .row {
+    --row-line: 1.3;
+
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--slotted-space-5);
+    container-type: inline-size;
+    inline-size: 100%;
+    block-size: 62px;
+    padding-block: var(--slotted-space-4);
+    padding-inline: var(--slotted-space-5) var(--slotted-space-6);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-raised);
+    color: var(--slotted-text);
+    cursor: pointer;
+    font-family: var(--slotted-font-family-sans);
+    font-size: var(--slotted-font-size-md);
+    font-variant-numeric: tabular-nums;
+    line-height: var(--row-line);
+    text-align: start;
+  }
+
+  .row:hover {
+    border-color: var(--slotted-border-strong);
+  }
+
+  .row:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* The chosen row says so by its edge and ground, and by the badge on its mark; the inset line
+     thickens the edge without moving the content. */
+  .row[aria-selected="true"] {
+    border-color: var(--slotted-tone-accent-text);
+    background: var(--slotted-tone-accent-surface);
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      var(--slotted-tone-accent-text);
+  }
+
+  .row[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  .row[aria-disabled="true"] .name,
+  .row[aria-disabled="true"] .value {
+    color: var(--slotted-disabled-foreground);
+  }
+
+  .mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    inline-size: 52px;
+    block-size: 40px;
+  }
+
+  /* The badge sits on the mark's lower end corner: 18 px, a size no token holds. */
+  .check {
+    position: absolute;
+    inset-block-end: -5px;
+    inset-inline-end: -2px;
+    display: grid;
+    place-items: center;
+    inline-size: 18px;
+    block-size: 18px;
+    border: var(--slotted-border-width-medium) solid var(--slotted-surface);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-text);
+    color: var(--slotted-surface);
+  }
+
+  .text,
+  .figure {
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+  }
+
+  .name,
+  .fact,
+  .label,
+  .value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .name {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .fact,
+  .label {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+  }
+
+  .label {
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  .figure {
+    justify-items: end;
+    text-align: end;
+  }
+
+  .value {
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  /* A tone is told by words and weight; the colour only adds to them (D7). */
+  .fact[data-tone="accent"] {
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .fact[data-tone="danger"],
+  .label[data-tone="danger"] {
+    color: var(--slotted-tone-danger-text);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .label[data-tone="warning"] {
+    color: var(--slotted-tone-warning-text);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .short {
+    display: none;
+  }
+
+  /* R8: the closing note goes first when the row is narrower than 380 px. A container query
+     takes no token. */
+  @container (inline-size < 380px) {
+    .long:not(:only-child) {
+      display: none;
+    }
+
+    .short {
+      display: inline;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .row[aria-selected="true"] {
+      outline: var(--slotted-border-width-medium) solid Highlight;
+    }
+  }
+}
