@@ -68,16 +68,9 @@ type item struct {
 }
 
 func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, error) {
-	q := url.Values{
-		"formato":     {"json"},
-		"dataInicial": {from.Format(dateLayout)},
-		"dataFinal":   {to.Format(dateLayout)},
-	}
-	u := fmt.Sprintf("%s/dados/serie/bcdata.sgs.%d/dados?%s", s.base, s.series, q.Encode())
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	req, err := s.newRequest(ctx, from, to)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", s.id, err)
+		return nil, err
 	}
 
 	resp, err := s.hc.Do(req)
@@ -99,6 +92,26 @@ func (s Source) Fetch(ctx context.Context, from, to time.Time) ([]index.Rate, er
 		return nil, fmt.Errorf("%s: %w", s.id, err)
 	}
 
+	return s.parseRates(body)
+}
+
+func (s Source) newRequest(ctx context.Context, from, to time.Time) (*http.Request, error) {
+	q := url.Values{
+		"formato":     {"json"},
+		"dataInicial": {from.Format(dateLayout)},
+		"dataFinal":   {to.Format(dateLayout)},
+	}
+	u := fmt.Sprintf("%s/dados/serie/bcdata.sgs.%d/dados?%s", s.base, s.series, q.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", s.id, err)
+	}
+
+	return req, nil
+}
+
+func (s Source) parseRates(body []byte) ([]index.Rate, error) {
 	var items []item
 	if err := json.Unmarshal(body, &items); err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)

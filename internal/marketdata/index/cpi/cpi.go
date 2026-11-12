@@ -147,16 +147,22 @@ func readEurostat(ctx context.Context, s Source, from, to time.Time) ([]level, e
 		return nil, err
 	}
 
-	var doc struct {
-		Value     map[string]jsontext.Value `json:"value"`
-		Dimension struct {
-			Time struct {
-				Category struct {
-					Index map[string]int `json:"index"`
-				} `json:"category"`
-			} `json:"time"`
-		} `json:"dimension"`
-	}
+	return eurostatLevels(s, body)
+}
+
+type eurostatDoc struct {
+	Value     map[string]jsontext.Value `json:"value"`
+	Dimension struct {
+		Time struct {
+			Category struct {
+				Index map[string]int `json:"index"`
+			} `json:"category"`
+		} `json:"time"`
+	} `json:"dimension"`
+}
+
+func eurostatLevels(s Source, body []byte) ([]level, error) {
+	var doc eurostatDoc
 	if err := json.Unmarshal(body, &doc); err != nil {
 		return nil, fmt.Errorf("%s: decode: %w", s.id, err)
 	}

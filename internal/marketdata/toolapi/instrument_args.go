@@ -18,37 +18,7 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		return tool.InvalidArgument("code", "is required")
 	}
 
-	fields := []field{
-		{
-			"name",
-			in.Name != "",
-		},
-		{"type", in.Type != ""},
-		{"quote_currency", in.QuoteCurrency != ""},
-		{"scale", in.Scale != 0},
-		{"date", !in.Date.IsZero()},
-		{"price", in.Price != ""},
-		{
-			"issued_on",
-			!in.IssuedOn.IsZero(),
-		},
-		{"matures_on", !in.MaturesOn.IsZero()},
-		{"face_value", in.FaceValue != ""},
-		{
-			"index_id",
-			in.IndexID != "",
-		},
-		{"percent_of_index_bp", in.PercentOfIndexBP != 0},
-		{"spread_bp", in.SpreadBP != 0},
-		{"from", !in.From.IsZero()},
-		{
-			"exchange",
-			in.Exchange != "",
-		},
-		{"subtype", in.Subtype != ""},
-		{"symbols", in.Symbols != nil},
-		{"day_count", in.DayCount != ""},
-	}
+	fields := presentFields(in)
 
 	name := string(in.Action)
 	switch in.Action {
@@ -225,4 +195,39 @@ func (in manageInstrumentIn) terms(
 	}
 
 	return t, nil
+}
+
+// presentFields reports which fields of in carry a value.
+func presentFields(in manageInstrumentIn) []field {
+	return []field{
+		{
+			"name",
+			in.Name != "",
+		},
+		{"type", in.Type != ""},
+		{"quote_currency", in.QuoteCurrency != ""},
+		{"scale", in.Scale != 0},
+		{"date", !in.Date.IsZero()},
+		{"price", in.Price != ""},
+		{
+			"issued_on",
+			!in.IssuedOn.IsZero(),
+		},
+		{"matures_on", !in.MaturesOn.IsZero()},
+		{"face_value", in.FaceValue != ""},
+		{
+			"index_id",
+			in.IndexID != "",
+		},
+		{"percent_of_index_bp", in.PercentOfIndexBP != 0},
+		{"spread_bp", in.SpreadBP != 0},
+		{"from", !in.From.IsZero()},
+		{
+			"exchange",
+			in.Exchange != "",
+		},
+		{"subtype", in.Subtype != ""},
+		{"symbols", in.Symbols != nil},
+		{"day_count", in.DayCount != ""},
+	}
 }

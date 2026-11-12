@@ -63,8 +63,32 @@ func (m *Module) RecordInstrumentPrices(
 		return domain.PriceCounts{}, err
 	}
 
+	ps, err := instrumentPrices(code, quote, points)
+	if err != nil {
+		return domain.PriceCounts{}, err
+	}
+
+	if err := m.validatePrice(ctx, ps[0], map[money.Currency]Instrument{}); err != nil {
+		return domain.PriceCounts{}, err
+	}
+
+	counts, err := m.priceCounts(ctx, ps)
+	if err != nil || dryRun {
+		return counts, err
+	}
+
+	return counts, m.upsert(ctx, ps)
+}
+
+// instrumentPrices builds the csv prices of one instrument and rejects an empty series, a
+// value that cannot be stored and a repeated date.
+func instrumentPrices(
+	code string,
+	quote money.Currency,
+	points []domain.PricePoint,
+) ([]Price, error) {
 	if len(points) == 0 {
-		return domain.PriceCounts{}, &domain.FieldError{
+		return nil, &domain.FieldError{
 			Field:   "prices",
 			Message: "must not be empty",
 		}
@@ -75,14 +99,14 @@ func (m *Module) RecordInstrumentPrices(
 
 	for i, pt := range points {
 		if !domain.StorableRate(pt.Value) {
-			return domain.PriceCounts{}, &domain.FieldError{
+			return nil, &domain.FieldError{
 				Field:   fmt.Sprintf("prices[%d]", i),
 				Message: rateMessage,
 			}
 		}
 
 		if j, ok := firstOf[pt.Date]; ok {
-			return domain.PriceCounts{}, &domain.FieldError{
+			return nil, &domain.FieldError{
 				Field: fmt.Sprintf(
 					"prices[%d]",
 					i,
@@ -101,16 +125,7 @@ func (m *Module) RecordInstrumentPrices(
 		}
 	}
 
-	if err := m.validatePrice(ctx, ps[0], map[money.Currency]Instrument{}); err != nil {
-		return domain.PriceCounts{}, err
-	}
-
-	counts, err := m.priceCounts(ctx, ps)
-	if err != nil || dryRun {
-		return counts, err
-	}
-
-	return counts, m.upsert(ctx, ps)
+	return ps, nil
 }
 
 // priceCounts reads the prices of the dates of ps before any write (D17).

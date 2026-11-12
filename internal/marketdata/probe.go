@@ -16,26 +16,7 @@ const probeDays = 10
 // ProbeQuote asks every enabled source that would quote in for its latest quote of the last 10
 // days, and names the disabled sources that would quote it. Nothing is stored (A222 MQ27).
 func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeResult, error) {
-	if !slices.Contains(domain.SecurityTypes, in.Type) {
-		return domain.ProbeResult{}, &domain.FieldError{
-			Field:   "type",
-			Message: "must be a security type",
-		}
-	}
-
-	if err := m.checkSymbolSources(in.Symbols); err != nil {
-		return domain.ProbeResult{}, err
-	}
-
-	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
-	if errors.Is(err, ErrUnknownInstrument) || (err == nil && quote.Type != domain.TypeCurrency) {
-		return domain.ProbeResult{}, &domain.FieldError{
-			Field:   "quote_currency",
-			Message: "must be a currency",
-		}
-	}
-
-	if err != nil {
+	if err := m.checkProbe(ctx, in); err != nil {
 		return domain.ProbeResult{}, err
 	}
 
@@ -72,6 +53,30 @@ func (m *Module) ProbeQuote(ctx context.Context, in Instrument) (domain.ProbeRes
 	wg.Wait()
 
 	return out, nil
+}
+
+// checkProbe validates the instrument of a probe request.
+func (m *Module) checkProbe(ctx context.Context, in Instrument) error {
+	if !slices.Contains(domain.SecurityTypes, in.Type) {
+		return &domain.FieldError{
+			Field:   "type",
+			Message: "must be a security type",
+		}
+	}
+
+	if err := m.checkSymbolSources(in.Symbols); err != nil {
+		return err
+	}
+
+	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
+	if errors.Is(err, ErrUnknownInstrument) || (err == nil && quote.Type != domain.TypeCurrency) {
+		return &domain.FieldError{
+			Field:   "quote_currency",
+			Message: "must be a currency",
+		}
+	}
+
+	return err
 }
 
 // probeSources returns the enabled sources that would quote in and lists the disabled ones in
