@@ -19,6 +19,7 @@ import { AssetPickerList } from "@/features/portfolio/contribution-plan/editor/a
 import type { MemberRef } from "@/features/portfolio/contribution-plan/model/plan-edits";
 import {
   filterPickerEntries,
+  instrumentPickerItem,
   pickerEntries,
 } from "@/features/portfolio/contribution-plan/editor/picker-entries";
 import { instrumentsQuery } from "@/features/setup";
@@ -61,11 +62,7 @@ export function AssetPickerDialog({
     },
     {
       title: t("contributionPlan.pickInstruments"),
-      items: shown.instruments.map((i) => ({
-        name: i.name,
-        code: i.code,
-        ref: { instrument: i.code },
-      })),
+      items: shown.instruments.map(instrumentPickerItem),
     },
   ];
 

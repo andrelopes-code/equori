@@ -14,6 +14,13 @@
   }
 
   .name {
+    display: flex;
+    min-inline-size: 0;
+    gap: var(--slotted-space-4);
+  }
+
+  .label {
+    min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

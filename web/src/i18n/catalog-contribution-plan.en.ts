@@ -47,6 +47,7 @@ export const contributionPlanEn = {
   "contributionPlan.leaveTitle": "Discard the changes to the targets?",
   "contributionPlan.keepEditing": "Keep editing",
   "contributionPlan.outside": "Outside the plan",
+  "contributionPlan.noPrice": "No price",
   "contributionPlan.pickerSearch": "Search assets",
   "contributionPlan.chooseClass": "Choose a class",
   "contributionPlan.emptyBody":

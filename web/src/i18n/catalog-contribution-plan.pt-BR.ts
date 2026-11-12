@@ -51,6 +51,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.leaveTitle": "Descartar as alterações dos alvos?",
   "contributionPlan.keepEditing": "Continuar editando",
   "contributionPlan.outside": "Fora do plano",
+  "contributionPlan.noPrice": "Sem cotação",
   "contributionPlan.pickerSearch": "Buscar ativos",
   "contributionPlan.chooseClass": "Escolher classe",
   "contributionPlan.emptyBody":

@@ -294,6 +294,59 @@ describe("Contribution plan page", () => {
     });
   });
 
+  it("C2: states the missing price of a position outside the plan in words", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    const fetch = portfolioApi({
+      "GET /api/v1/contribution-plan": () =>
+        json(200, { ...saved, outside: [{ instrument: "PETR4" }] }),
+      "POST /api/v1/contribution-plan/preview": () =>
+        json(200, { ...preview, outside: [{ instrument: "PETR4" }] }),
+    });
+    await renderApp("/portfolio/contribution-plan", { fetch });
+
+    await waitFor(() => {
+      expect(
+        within(outsideSection()).getByText(
+          catalogPtBR["contributionPlan.noPrice"],
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("names an instrument outside the plan and shows its code at the end", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    const fetch = portfolioApi({
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: [
+            { code: "BTCBRL", type: "crypto", scale: 8, name: "Bitcoin" },
+          ],
+        }),
+      "GET /api/v1/contribution-plan": () =>
+        json(200, {
+          ...saved,
+          outside: [{ instrument: "BTCBRL", value: brl(100000) }],
+        }),
+      "POST /api/v1/contribution-plan/preview": () =>
+        json(200, {
+          ...preview,
+          outside: [{ instrument: "BTCBRL", value: brl(100000) }],
+        }),
+    });
+    await renderApp("/portfolio/contribution-plan", { fetch });
+
+    await waitFor(() => {
+      expect(within(outsideSection()).getByText("Bitcoin")).toBeInTheDocument();
+      expect(within(outsideSection()).getByText("BTCBRL")).toBeInTheDocument();
+    });
+  });
+
   it("keys each position outside the plan by its reference, not by its name", async () => {
     localStorage.setItem(
       "equori.locale",
@@ -328,3 +381,9 @@ describe("Contribution plan page", () => {
     }
   });
 });
+
+function outsideSection() {
+  return screen.getByRole("region", {
+    name: catalogPtBR["contributionPlan.outside"],
+  });
+}

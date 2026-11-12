@@ -33,6 +33,15 @@ export function pickerEntries(
   };
 }
 
+// The entry of the picker for an instrument: its name, its code at the end, its member reference.
+export function instrumentPickerItem(instrument: Instrument) {
+  return {
+    name: instrument.name,
+    code: instrument.code,
+    ref: { instrument: instrument.code },
+  };
+}
+
 // Keeps the entries whose name or code holds the query, ignoring case and accents. The code of an
 // account is its instrument.
 export function filterPickerEntries(
