@@ -51,7 +51,12 @@ type TradeAccounts struct {
 // BuildTrade returns the postings of a trade in currency cash: cash, taxes, security,
 // result. A sale removes cost at average cost, half to even, and the whole cost basis
 // when it sells the whole quantity (P8 amendment A68).
-func BuildTrade(o TradeOrder, cash money.Currency, h Holding, accts TradeAccounts) ([]Posting, Trade, error) {
+func BuildTrade(
+	o TradeOrder,
+	cash money.Currency,
+	h Holding,
+	accts TradeAccounts,
+) ([]Posting, Trade, error) {
 	zero, err := money.New(0, cash)
 	if err != nil {
 		return nil, Trade{}, err
@@ -66,17 +71,8 @@ func BuildTrade(o TradeOrder, cash money.Currency, h Holding, accts TradeAccount
 		taxes = *o.Taxes
 	}
 
-	switch {
-	case o.Side != SideBuy && o.Side != SideSell:
-		return nil, Trade{}, invalid("side", "must be buy or sell")
-	case o.Quantity.IsZero() || o.Quantity.IsNegative():
-		return nil, Trade{}, invalid("quantity", "must be positive")
-	case fees.Currency() != cash || fees.IsNegative():
-		return nil, Trade{}, invalid("fees", "must be a non-negative amount in "+string(cash))
-	case taxes.Currency() != cash || taxes.IsNegative():
-		return nil, Trade{}, invalid("taxes", "must be a non-negative amount in "+string(cash))
-	case o.Side == SideBuy && !taxes.IsZero():
-		return nil, Trade{}, invalid("taxes", "are withheld on sales only")
+	if err := checkTradeOrder(o, cash, fees, taxes); err != nil {
+		return nil, Trade{}, err
 	}
 
 	gross, err := money.Convert(o.Quantity, cash, money.Leg{Rate: o.UnitPrice})
@@ -87,30 +83,52 @@ func BuildTrade(o TradeOrder, cash money.Currency, h Holding, accts TradeAccount
 	trade := Trade{AccountID: o.AccountID, CashAccountID: o.CashAccountID, Side: o.Side, Quantity: o.Quantity, UnitPrice: o.UnitPrice, Gross: gross, Fees: fees, Taxes: taxes}
 
 	if o.Side == SideBuy {
-		cost, err := gross.Add(fees)
-		if err != nil {
-			return nil, Trade{}, err
-		}
-
-		return []Posting{
-			{AccountID: o.CashAccountID, Amount: cost.Neg(), Weight: cost.Neg()},
-			{AccountID: o.AccountID, Amount: o.Quantity, Weight: cost},
-		}, trade, nil
+		return buyTrade(o, trade)
 	}
 
-	if h.Quantity.Amount() < o.Quantity.Amount() {
-		return nil, Trade{}, invalid("quantity", "must not exceed the "+h.Quantity.String()+" held on the trade date")
+	return sellTrade(o, h, accts, trade)
+}
+
+func checkTradeOrder(o TradeOrder, cash money.Currency, fees, taxes money.Money) error {
+	switch {
+	case o.Side != SideBuy && o.Side != SideSell:
+		return invalid("side", "must be buy or sell")
+	case o.Quantity.IsZero() || o.Quantity.IsNegative():
+		return invalid("quantity", "must be positive")
+	case fees.Currency() != cash || fees.IsNegative():
+		return invalid("fees", "must be a non-negative amount in "+string(cash))
+	case taxes.Currency() != cash || taxes.IsNegative():
+		return invalid("taxes", "must be a non-negative amount in "+string(cash))
+	case o.Side == SideBuy && !taxes.IsZero():
+		return invalid("taxes", "are withheld on sales only")
 	}
 
-	cost := h.CostBasis
-	if o.Quantity.Amount() < h.Quantity.Amount() {
-		if cost, err = money.Fraction(h.CostBasis, o.Quantity.Amount(), h.Quantity.Amount()); err != nil {
-			return nil, Trade{}, err
-		}
+	return nil
+}
+
+func buyTrade(o TradeOrder, trade Trade) ([]Posting, Trade, error) {
+	cost, err := trade.Gross.Add(trade.Fees)
+	if err != nil {
+		return nil, Trade{}, err
 	}
 
-	if cost.IsZero() || cost.IsNegative() {
-		return nil, Trade{}, invalid("quantity", "the held quantity has no cost basis")
+	return []Posting{
+		{AccountID: o.CashAccountID, Amount: cost.Neg(), Weight: cost.Neg()},
+		{AccountID: o.AccountID, Amount: o.Quantity, Weight: cost},
+	}, trade, nil
+}
+
+func sellTrade(
+	o TradeOrder,
+	h Holding,
+	accts TradeAccounts,
+	trade Trade,
+) ([]Posting, Trade, error) {
+	gross, fees, taxes := trade.Gross, trade.Fees, trade.Taxes
+
+	cost, err := soldCost(o, h)
+	if err != nil {
+		return nil, Trade{}, err
 	}
 
 	net, err := gross.Sub(fees)
@@ -148,4 +166,24 @@ func BuildTrade(o TradeOrder, cash money.Currency, h Holding, accts TradeAccount
 	}
 
 	return postings, trade, nil
+}
+
+// soldCost is the cost basis of the quantity a sale gives up.
+func soldCost(o TradeOrder, h Holding) (cost money.Money, err error) {
+	if h.Quantity.Amount() < o.Quantity.Amount() {
+		return money.Money{}, invalid("quantity", "must not exceed the "+h.Quantity.String()+" held on the trade date")
+	}
+
+	cost = h.CostBasis
+	if o.Quantity.Amount() < h.Quantity.Amount() {
+		if cost, err = money.Fraction(h.CostBasis, o.Quantity.Amount(), h.Quantity.Amount()); err != nil {
+			return money.Money{}, err
+		}
+	}
+
+	if cost.IsZero() || cost.IsNegative() {
+		return money.Money{}, invalid("quantity", "the held quantity has no cost basis")
+	}
+
+	return cost, nil
 }

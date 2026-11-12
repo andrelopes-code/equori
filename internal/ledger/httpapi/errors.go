@@ -46,6 +46,10 @@ func ToProblem(err error) (problem.Details, bool) {
 		return d, true
 	}
 
+	return sentinelProblem(err)
+}
+
+func sentinelProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true

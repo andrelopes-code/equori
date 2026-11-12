@@ -13,7 +13,11 @@ import (
 // after its card posting was reconciled (P12 A147 rule 3). The posting on accountID and every
 // reconciled posting must be card postings, else ErrReconciled; the postings keep their status.
 // changed is false when date already holds.
-func (t Transaction) MoveReconciledDate(accountID uuid.UUID, date time.Time, accounts map[uuid.UUID]Account) (next Transaction, changed bool, err error) {
+func (t Transaction) MoveReconciledDate(
+	accountID uuid.UUID,
+	date time.Time,
+	accounts map[uuid.UUID]Account,
+) (next Transaction, changed bool, err error) {
 	if t.VoidedAt != nil {
 		return Transaction{}, false, ErrVoided
 	}
@@ -62,7 +66,11 @@ func (t Transaction) KeepsReconciledStatements(next Transaction) bool {
 // accountID takes amount and the transaction takes date; the other postings scale to the new
 // amount, the last one taking the remainder, so the transaction stays balanced. changed is
 // false when amount and date already hold.
-func (t Transaction) ToLine(accountID uuid.UUID, amount int64, date time.Time) (next Transaction, changed bool, err error) {
+func (t Transaction) ToLine(
+	accountID uuid.UUID,
+	amount int64,
+	date time.Time,
+) (next Transaction, changed bool, err error) {
 	at := -1
 	for i, p := range t.Postings {
 		if p.AccountID == accountID {
@@ -86,7 +94,23 @@ func (t Transaction) ToLine(accountID uuid.UUID, amount int64, date time.Time) (
 
 	next = t
 	next.Date = date
-	next.Postings = make([]Posting, len(t.Postings))
+
+	if next.Postings, err = scaleLinePostings(t, at, amount, date); err != nil {
+		return Transaction{}, false, err
+	}
+
+	return next, true, nil
+}
+
+// scaleLinePostings gives the posting at index at the new amount and scales the others to balance it.
+func scaleLinePostings(
+	t Transaction,
+	at int,
+	amount int64,
+	date time.Time,
+) (postings []Posting, err error) {
+	old := t.Postings[at].Amount
+	postings = make([]Posting, len(t.Postings))
 
 	last := len(t.Postings) - 1
 	if last == at {
@@ -103,7 +127,7 @@ func (t Transaction) ToLine(accountID uuid.UUID, amount int64, date time.Time) (
 		}
 
 		if p.Amount.Currency() != old.Currency() {
-			return Transaction{}, false, invalid("postings", "a transaction in several currencies cannot take a line's amount")
+			return nil, invalid("postings", "a transaction in several currencies cannot take a line's amount")
 		}
 
 		scaled := amount
@@ -117,13 +141,13 @@ func (t Transaction) ToLine(accountID uuid.UUID, amount int64, date time.Time) (
 		}
 
 		if p.Amount, err = money.New(scaled, old.Currency()); err != nil {
-			return Transaction{}, false, err
+			return nil, err
 		}
 
-		next.Postings[i] = p
+		postings[i] = p
 	}
 
-	return next, true, nil
+	return postings, nil
 }
 
 // LinePart is one line of a group (A169): the amount of its posting and whether the institution
@@ -136,30 +160,19 @@ type LinePart struct {
 // SplitToLines returns t with the first posting on accountID replaced by one posting per part, in
 // order, and the date set to date (A169). The parts sum to the replaced amount, so the other
 // postings keep theirs. A statement the date chose is derived again (A136).
-func (t Transaction) SplitToLines(accountID uuid.UUID, date time.Time, parts []LinePart) (Transaction, error) {
+func (t Transaction) SplitToLines(
+	accountID uuid.UUID,
+	date time.Time,
+	parts []LinePart,
+) (Transaction, error) {
 	at := slices.IndexFunc(t.Postings, func(p Posting) bool { return p.AccountID == accountID })
 	if at < 0 {
 		return Transaction{}, invalid("account_id", "has no posting in the transaction")
 	}
 
-	if len(parts) < 2 {
-		return Transaction{}, invalid("parts", "a group has at least two lines")
-	}
-
 	old := t.Postings[at].Amount
-
-	var sum int64
-
-	for _, part := range parts {
-		if part.Amount == 0 || (part.Amount < 0) != (old.Amount() < 0) {
-			return Transaction{}, invalid("parts", "each must be nonzero and carry the sign of the posting")
-		}
-
-		sum += part.Amount
-	}
-
-	if sum != old.Amount() {
-		return Transaction{}, invalid("parts", "must sum to the amount of the posting they replace")
+	if err := checkLineParts(parts, old); err != nil {
+		return Transaction{}, err
 	}
 
 	next := t
@@ -197,4 +210,26 @@ func (t Transaction) SplitToLines(accountID uuid.UUID, date time.Time, parts []L
 	}
 
 	return next, nil
+}
+
+func checkLineParts(parts []LinePart, old money.Money) error {
+	if len(parts) < 2 {
+		return invalid("parts", "a group has at least two lines")
+	}
+
+	var sum int64
+
+	for _, part := range parts {
+		if part.Amount == 0 || (part.Amount < 0) != (old.Amount() < 0) {
+			return invalid("parts", "each must be nonzero and carry the sign of the posting")
+		}
+
+		sum += part.Amount
+	}
+
+	if sum != old.Amount() {
+		return invalid("parts", "must sum to the amount of the posting they replace")
+	}
+
+	return nil
 }

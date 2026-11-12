@@ -67,6 +67,32 @@ type Transaction struct {
 // it with defaults applied. accounts must contain every account of the book that a
 // posting may reference; a missing id is reported as ErrUnknownAccount.
 func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction, error) {
+	t, err := checkTransactionHeader(t)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	postings, err := normalizePostings(t, accounts)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	t.Postings = postings
+
+	tags, err := normalizeTags(t.Tags)
+	if err != nil {
+		return Transaction{}, err
+	}
+
+	t.Tags = tags
+	if err := checkLinks(t); err != nil {
+		return Transaction{}, err
+	}
+
+	return t, nil
+}
+
+func checkTransactionHeader(t Transaction) (Transaction, error) {
 	if t.Date.IsZero() {
 		return Transaction{}, invalid("date", "is required")
 	}
@@ -92,12 +118,16 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 		t.Version = initialVersion
 	}
 
+	return t, nil
+}
+
+func normalizePostings(t Transaction, accounts map[uuid.UUID]Account) ([]Posting, error) {
 	if len(t.Postings) < 2 {
-		return Transaction{}, &FieldError{Field: "postings", Message: "at least two postings are required", Err: ErrTooFewPostings}
+		return nil, &FieldError{Field: "postings", Message: "at least two postings are required", Err: ErrTooFewPostings}
 	}
 
 	if len(t.Postings) > MaxPostings {
-		return Transaction{}, invalid("postings", fmt.Sprintf("must have at most %d postings", MaxPostings))
+		return nil, invalid("postings", fmt.Sprintf("must have at most %d postings", MaxPostings))
 	}
 
 	postings := make([]Posting, len(t.Postings))
@@ -113,11 +143,11 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 	for i, p := range t.Postings {
 		checked, err := checkPosting(i, p, t, accounts)
 		if err != nil {
-			return Transaction{}, err
+			return nil, err
 		}
 
 		if checked, err = checkCardPosting(i, checked, accounts[checked.AccountID], hasCategory); err != nil {
-			return Transaction{}, err
+			return nil, err
 		}
 
 		postings[i] = checked
@@ -126,36 +156,36 @@ func NewTransaction(t Transaction, accounts map[uuid.UUID]Account) (Transaction,
 	}
 
 	if sum != 0 {
-		return Transaction{}, &FieldError{Field: "postings", Message: fmt.Sprintf("weights sum to %d instead of zero", sum), Err: ErrUnbalanced}
+		return nil, &FieldError{Field: "postings", Message: fmt.Sprintf("weights sum to %d instead of zero", sum), Err: ErrUnbalanced}
 	}
 
-	t.Postings = postings
+	return postings, nil
+}
 
-	tags, err := normalizeTags(t.Tags)
-	if err != nil {
-		return Transaction{}, err
-	}
-
-	t.Tags = tags
+func checkLinks(t Transaction) error {
 	for i, l := range t.Links {
 		if !slices.Contains(linkTypes, l.Type) {
-			return Transaction{}, invalid(fmt.Sprintf("links[%d].type", i), "is not a known link type")
+			return invalid(fmt.Sprintf("links[%d].type", i), "is not a known link type")
 		}
 
 		if l.Target == uuid.Nil || l.Target == t.ID {
-			return Transaction{}, invalid(fmt.Sprintf("links[%d].target", i), "must reference another transaction")
+			return invalid(fmt.Sprintf("links[%d].target", i), "must reference another transaction")
 		}
 
 		if l.Amount < 0 || (l.Amount != 0 && l.Type != LinkReimbursementOf) {
-			return Transaction{}, invalid(fmt.Sprintf("links[%d].amount", i), "must be positive and only on a reimbursement_of link")
+			return invalid(fmt.Sprintf("links[%d].amount", i), "must be positive and only on a reimbursement_of link")
 		}
 	}
 
-	return t, nil
+	return nil
 }
 
 // Correct returns version n+1 of t built from next (DM4).
-func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map[uuid.UUID]Account) (Transaction, error) {
+func (t Transaction) Correct(
+	next Transaction,
+	expectedVersion int,
+	accounts map[uuid.UUID]Account,
+) (Transaction, error) {
 	if err := t.checkMutable(); err != nil {
 		return Transaction{}, err
 	}
@@ -169,7 +199,10 @@ func (t Transaction) Correct(next Transaction, expectedVersion int, accounts map
 
 // correctTo validates next as the version after t, keeping t's links, record links,
 // statement basis and origin where next names none.
-func (t Transaction) correctTo(next Transaction, accounts map[uuid.UUID]Account) (Transaction, error) {
+func (t Transaction) correctTo(
+	next Transaction,
+	accounts map[uuid.UUID]Account,
+) (Transaction, error) {
 	next.ID = t.ID
 	next.BooksID = t.BooksID
 	next.Version = t.Version + 1

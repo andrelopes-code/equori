@@ -36,7 +36,12 @@ type Posting struct {
 	ExternalRecordID uuid.UUID
 }
 
-func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Account) (Posting, error) {
+func checkPosting(
+	i int,
+	p Posting,
+	t Transaction,
+	accounts map[uuid.UUID]Account,
+) (Posting, error) {
 	field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
 
 	a, ok := accounts[p.AccountID]
@@ -56,6 +61,20 @@ func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Accoun
 		return Posting{}, invalid(field("amount"), "must not be zero")
 	}
 
+	p, err := checkPostingWeight(p, a, t, field)
+	if err != nil {
+		return Posting{}, err
+	}
+
+	return checkPostingDetails(p, a, t, field)
+}
+
+func checkPostingWeight(
+	p Posting,
+	a Account,
+	t Transaction,
+	field func(string) string,
+) (Posting, error) {
 	if a.Instrument == t.BalancingCurrency {
 		if p.Weight == (money.Money{}) {
 			p.Weight = p.Amount
@@ -71,6 +90,15 @@ func checkPosting(i int, p Posting, t Transaction, accounts map[uuid.UUID]Accoun
 		}
 	}
 
+	return p, nil
+}
+
+func checkPostingDetails(
+	p Posting,
+	a Account,
+	t Transaction,
+	field func(string) string,
+) (Posting, error) {
 	switch p.Status {
 	case "":
 		p.Status = defaultPostStatus

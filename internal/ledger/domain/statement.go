@@ -87,32 +87,7 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 		return slices.ContainsFunc(s.Lines, func(l StatementLine) bool { return l.Confirmed })
 	})
 
-	var opening int64
-	for i, s := range in {
-		sum := StatementSummary{Reference: s.Reference, Opening: opening, Feed: feed}
-		for _, l := range s.Lines {
-			if feed {
-				if l.Confirmed {
-					sum.ConfirmedAmount -= l.Amount
-				} else {
-					sum.AwaitingAmount -= l.Amount
-				}
-			}
-
-			switch l.Role {
-			case RoleCharge:
-				sum.Charges -= l.Amount
-			case RoleCredit:
-				sum.Credits += l.Amount
-			case RolePayment:
-				sum.Payments += l.Amount
-			}
-		}
-
-		sum.AmountDue = sum.Opening + sum.Charges - sum.Credits - sum.Payments
-		out[i] = sum
-		opening = sum.AmountDue
-	}
+	totalStatements(in, out, feed)
 
 	if len(out) > 0 {
 		// The first statement's payments settled nothing equori holds.
@@ -147,11 +122,46 @@ func Summarize(in []StatementInput, today time.Time) []StatementSummary {
 	return out
 }
 
+// totalStatements fills out with the opening, the totals by role and the amount due of each statement.
+func totalStatements(in []StatementInput, out []StatementSummary, feed bool) {
+	var opening int64
+	for i, s := range in {
+		sum := StatementSummary{Reference: s.Reference, Opening: opening, Feed: feed}
+		for _, l := range s.Lines {
+			if feed {
+				if l.Confirmed {
+					sum.ConfirmedAmount -= l.Amount
+				} else {
+					sum.AwaitingAmount -= l.Amount
+				}
+			}
+
+			switch l.Role {
+			case RoleCharge:
+				sum.Charges -= l.Amount
+			case RoleCredit:
+				sum.Credits += l.Amount
+			case RolePayment:
+				sum.Payments += l.Amount
+			}
+		}
+
+		sum.AmountDue = sum.Opening + sum.Charges - sum.Credits - sum.Payments
+		out[i] = sum
+		opening = sum.AmountDue
+	}
+}
+
 // settle covers sum's amount due with the inflows of the next statement dated after closing
 // and on or before today, oldest first, and returns how much of its credits and payments it
 // used. An inflow dated on or before closing, such as the reversal of a cancelled installment,
 // nets against the next statement instead (A96).
-func settle(sum *StatementSummary, closing time.Time, next []StatementLine, today time.Time) (credits, payments int64) {
+func settle(
+	sum *StatementSummary,
+	closing time.Time,
+	next []StatementLine,
+	today time.Time,
+) (credits, payments int64) {
 	inflows := slices.SortedStableFunc(slices.Values(next), func(a, b StatementLine) int { return a.Date.Compare(b.Date) })
 
 	left := max(sum.AmountDue, 0)

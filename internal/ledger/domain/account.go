@@ -153,22 +153,8 @@ func NewAccount(a Account) (Account, error) {
 		return Account{}, invalid("name", "must have 1 to 120 characters")
 	}
 
-	kinds, ok := kindsByClass[a.Class]
-	if !ok {
-		return Account{}, invalid("class", "must be asset, liability, equity, income or expense")
-	}
-
-	switch {
-	case a.IsBalance() && a.Kind == "":
-		return Account{}, invalid("kind", "is required for asset and liability accounts")
-	case !a.IsBalance() && a.Kind != "":
-		return Account{}, invalid("kind", "is only allowed on asset and liability accounts")
-	case a.IsBalance() && !slices.Contains(kinds, a.Kind):
-		return Account{}, invalid("kind", "is not allowed for class "+string(a.Class))
-	}
-
-	if a.HoldsSecurity() && (a.Class != ClassAsset || a.Kind != KindBrokerage || a.ParentID == uuid.Nil) {
-		return Account{}, invalid("currency", "a security is held only by a brokerage account that is a child of a brokerage account")
+	if err := checkAccountKind(a); err != nil {
+		return Account{}, err
 	}
 
 	if a.OpenedOn.IsZero() {
@@ -199,6 +185,28 @@ func NewAccount(a Account) (Account, error) {
 	}
 
 	return a, nil
+}
+
+func checkAccountKind(a Account) error {
+	kinds, ok := kindsByClass[a.Class]
+	if !ok {
+		return invalid("class", "must be asset, liability, equity, income or expense")
+	}
+
+	switch {
+	case a.IsBalance() && a.Kind == "":
+		return invalid("kind", "is required for asset and liability accounts")
+	case !a.IsBalance() && a.Kind != "":
+		return invalid("kind", "is only allowed on asset and liability accounts")
+	case a.IsBalance() && !slices.Contains(kinds, a.Kind):
+		return invalid("kind", "is not allowed for class "+string(a.Class))
+	}
+
+	if a.HoldsSecurity() && (a.Class != ClassAsset || a.Kind != KindBrokerage || a.ParentID == uuid.Nil) {
+		return invalid("currency", "a security is held only by a brokerage account that is a child of a brokerage account")
+	}
+
+	return nil
 }
 
 // HoldsSecurity reports whether the instrument is not a currency (P8 amendment A63).

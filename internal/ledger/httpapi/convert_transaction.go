@@ -11,7 +11,11 @@ import (
 // amountOf builds an amount of any instrument; the module resolves security scales.
 type amountOf func(ctx context.Context, units int64, code money.Currency) (money.Money, error)
 
-func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amountOf) (domain.Transaction, error) {
+func fromTransactionInput(
+	ctx context.Context,
+	in TransactionInput,
+	amounts amountOf,
+) (domain.Transaction, error) {
 	t := domain.Transaction{
 		Date: dateOf(in.Date), Description: optString(in.Description), PayeeID: optUUID(in.PayeeId),
 	}
@@ -33,52 +37,66 @@ func fromTransactionInput(ctx context.Context, in TransactionInput, amounts amou
 	}
 
 	for i, p := range in.Postings {
-		field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
-
-		amount, err := amounts(ctx, p.Amount.Amount, money.Currency(p.Amount.Currency))
+		posting, err := fromPostingInput(ctx, i, p, amounts)
 		if err != nil {
-			return domain.Transaction{}, &domain.FieldError{Field: field("amount"), Message: err.Error(), Err: domain.ErrValidation}
-		}
-
-		posting := domain.Posting{
-			AccountID: p.AccountId, Amount: amount, SettledOn: optDate(p.SettledOn), Memo: optString(p.Memo),
-		}
-		if p.Weight != nil {
-			if posting.Weight, err = fromMoneyAPI(field("weight"), *p.Weight); err != nil {
-				return domain.Transaction{}, err
-			}
-		}
-
-		if p.Original != nil {
-			orig, err := fromMoneyAPI(field("original"), *p.Original)
-			if err != nil {
-				return domain.Transaction{}, err
-			}
-
-			posting.Original = &orig
-		}
-
-		if p.Status != nil {
-			posting.Status = domain.PostingStatus(*p.Status)
-		}
-
-		if p.Statement != nil {
-			m, err := domain.ParseReferenceMonth(*p.Statement)
-			if err != nil {
-				return domain.Transaction{}, &domain.FieldError{Field: field("statement"), Message: "must be YYYY-MM", Err: domain.ErrValidation}
-			}
-
-			posting.Statement, posting.StatementBasis = &m, domain.BasisOwner
-		}
-
-		if p.CardRole != nil {
-			posting.CardRole = string(*p.CardRole)
+			return domain.Transaction{}, err
 		}
 
 		t.Postings = append(t.Postings, posting)
 	}
 
 	return t, nil
+}
+
+func fromPostingInput(
+	ctx context.Context,
+	i int,
+	p PostingInput,
+	amounts amountOf,
+) (domain.Posting, error) {
+	field := func(name string) string { return fmt.Sprintf("postings[%d].%s", i, name) }
+
+	amount, err := amounts(ctx, p.Amount.Amount, money.Currency(p.Amount.Currency))
+	if err != nil {
+		return domain.Posting{}, &domain.FieldError{Field: field("amount"), Message: err.Error(), Err: domain.ErrValidation}
+	}
+
+	posting := domain.Posting{
+		AccountID: p.AccountId, Amount: amount, SettledOn: optDate(p.SettledOn), Memo: optString(p.Memo),
+	}
+	if p.Weight != nil {
+		if posting.Weight, err = fromMoneyAPI(field("weight"), *p.Weight); err != nil {
+			return domain.Posting{}, err
+		}
+	}
+
+	if p.Original != nil {
+		orig, err := fromMoneyAPI(field("original"), *p.Original)
+		if err != nil {
+			return domain.Posting{}, err
+		}
+
+		posting.Original = &orig
+	}
+
+	if p.Status != nil {
+		posting.Status = domain.PostingStatus(*p.Status)
+	}
+
+	if p.Statement != nil {
+		m, err := domain.ParseReferenceMonth(*p.Statement)
+		if err != nil {
+			return domain.Posting{}, &domain.FieldError{Field: field("statement"), Message: "must be YYYY-MM", Err: domain.ErrValidation}
+		}
+
+		posting.Statement, posting.StatementBasis = &m, domain.BasisOwner
+	}
+
+	if p.CardRole != nil {
+		posting.CardRole = string(*p.CardRole)
+	}
+
+	return posting, nil
 }
 
 func toTransactionAPI(t domain.Transaction) Transaction {
@@ -111,31 +129,35 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 	}
 
 	for _, p := range t.Postings {
-		ap := Posting{
-			Id: p.ID, AccountId: p.AccountID, Amount: toMoneyAPI(p.Amount), Weight: toMoneyAPI(p.Weight),
-			Status: PostingStatus(p.Status), SettledOn: apiOptDate(p.SettledOn), Memo: apiOptString(p.Memo),
-		}
-		if p.Original != nil {
-			o := toMoneyAPI(*p.Original)
-			ap.Original = &o
-		}
-
-		if p.Statement != nil {
-			ref := p.Statement.String()
-			ap.Statement = &ref
-		}
-
-		if p.CardRole != "" {
-			role := PostingCardRole(p.CardRole)
-			ap.CardRole = &role
-		}
-
-		if p.Installment != nil {
-			ap.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}
-		}
-
-		out.Postings = append(out.Postings, ap)
+		out.Postings = append(out.Postings, toPostingAPI(p))
 	}
 
 	return out
+}
+
+func toPostingAPI(p domain.Posting) Posting {
+	ap := Posting{
+		Id: p.ID, AccountId: p.AccountID, Amount: toMoneyAPI(p.Amount), Weight: toMoneyAPI(p.Weight),
+		Status: PostingStatus(p.Status), SettledOn: apiOptDate(p.SettledOn), Memo: apiOptString(p.Memo),
+	}
+	if p.Original != nil {
+		o := toMoneyAPI(*p.Original)
+		ap.Original = &o
+	}
+
+	if p.Statement != nil {
+		ref := p.Statement.String()
+		ap.Statement = &ref
+	}
+
+	if p.CardRole != "" {
+		role := PostingCardRole(p.CardRole)
+		ap.CardRole = &role
+	}
+
+	if p.Installment != nil {
+		ap.Installment = &Installment{PlanId: p.Installment.PlanID, Number: p.Installment.Number, Count: p.Installment.Count}
+	}
+
+	return ap
 }

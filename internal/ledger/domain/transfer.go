@@ -12,7 +12,12 @@ import (
 // replaced by one posting on the balance-sheet account a, for their sum (P5b amendment A28). The new posting
 // confirms link when it is set. A card credit becomes a payment and is billed again, so it
 // must not be reconciled. accounts must hold the accounts of t and a.
-func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, accounts map[uuid.UUID]Account) (Transaction, error) {
+func (t Transaction) Transfer(
+	expectedVersion int,
+	a Account,
+	link uuid.UUID,
+	accounts map[uuid.UUID]Account,
+) (Transaction, error) {
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}
@@ -21,37 +26,13 @@ func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, ac
 		return Transaction{}, ErrVersionConflict
 	}
 
-	var kept []Posting
-	var instrument money.Currency
-
-	var total int64
-	for _, p := range t.Postings {
-		if !accounts[p.AccountID].IsReplaceable() {
-			kept = append(kept, p)
-			continue
-		}
-
-		if p.Weight != p.Amount || (instrument != "" && p.Amount.Currency() != instrument) {
-			return Transaction{}, invalid("account_id", "category postings in several currencies cannot be transferred")
-		}
-
-		instrument = p.Amount.Currency()
-		total += p.Amount.Amount()
+	kept, total, instrument, err := replaceablePostings(t, accounts)
+	if err != nil {
+		return Transaction{}, err
 	}
 
-	if instrument == "" {
-		return Transaction{}, ErrNotCategorizable
-	}
-
-	switch {
-	case a.ID == uuid.Nil || a.BooksID != t.BooksID:
-		return Transaction{}, &FieldError{Field: "account_id", Message: "unknown account", Err: ErrUnknownAccount}
-	case !a.IsBalance():
-		return Transaction{}, invalid("account_id", "must be an asset or liability account")
-	case !a.IsOpenOn(t.Date):
-		return Transaction{}, &FieldError{Field: "account_id", Message: "account is not open on the transaction date", Err: ErrAccountClosed}
-	case a.Instrument != instrument:
-		return Transaction{}, invalid("account_id", "must be in the currency "+string(instrument))
+	if err := checkTransferAccount(a, t, instrument); err != nil {
+		return Transaction{}, err
 	}
 
 	amount, err := money.New(total, instrument)
@@ -82,11 +63,57 @@ func (t Transaction) Transfer(expectedVersion int, a Account, link uuid.UUID, ac
 	return NewTransaction(next, accounts)
 }
 
+// replaceablePostings splits the postings into the ones a transfer keeps and the total of the ones it replaces.
+func replaceablePostings(
+	t Transaction,
+	accounts map[uuid.UUID]Account,
+) (kept []Posting, total int64, instrument money.Currency, err error) {
+	for _, p := range t.Postings {
+		if !accounts[p.AccountID].IsReplaceable() {
+			kept = append(kept, p)
+			continue
+		}
+
+		if p.Weight != p.Amount || (instrument != "" && p.Amount.Currency() != instrument) {
+			return nil, 0, "", invalid("account_id", "category postings in several currencies cannot be transferred")
+		}
+
+		instrument = p.Amount.Currency()
+		total += p.Amount.Amount()
+	}
+
+	if instrument == "" {
+		return nil, 0, "", ErrNotCategorizable
+	}
+
+	return kept, total, instrument, nil
+}
+
+func checkTransferAccount(a Account, t Transaction, instrument money.Currency) error {
+	switch {
+	case a.ID == uuid.Nil || a.BooksID != t.BooksID:
+		return &FieldError{Field: "account_id", Message: "unknown account", Err: ErrUnknownAccount}
+	case !a.IsBalance():
+		return invalid("account_id", "must be an asset or liability account")
+	case !a.IsOpenOn(t.Date):
+		return &FieldError{Field: "account_id", Message: "account is not open on the transaction date", Err: ErrAccountClosed}
+	case a.Instrument != instrument:
+		return invalid("account_id", "must be in the currency "+string(instrument))
+	}
+
+	return nil
+}
+
 // Unpair returns the next version of t without the posting that link confirms and with the
 // category and transit postings of before in its place (A220 rule 2). ErrVoided, then
 // ErrVersionConflict when t is not at expectedVersion, ErrReconciled when that posting is
 // reconciled, ErrValidation when no posting carries link or before holds a card credit.
-func (t Transaction) Unpair(expectedVersion int, link uuid.UUID, before Transaction, accounts map[uuid.UUID]Account) (Transaction, error) {
+func (t Transaction) Unpair(
+	expectedVersion int,
+	link uuid.UUID,
+	before Transaction,
+	accounts map[uuid.UUID]Account,
+) (Transaction, error) {
 	if t.VoidedAt != nil {
 		return Transaction{}, ErrVoided
 	}

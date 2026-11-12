@@ -18,7 +18,11 @@ func (r *Repository) CountTransactions(ctx context.Context, booksID int64) (int6
 	return r.q.CountTransactions(ctx, booksID)
 }
 
-func (r *Repository) Transaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error) {
+func (r *Repository) Transaction(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Transaction, error) {
 	row, err := r.q.GetTransaction(ctx, GetTransactionParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
@@ -27,7 +31,11 @@ func (r *Repository) Transaction(ctx context.Context, booksID int64, id uuid.UUI
 	return r.complete(ctx, booksID, row)
 }
 
-func (r *Repository) LockTransaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error) {
+func (r *Repository) LockTransaction(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Transaction, error) {
 	row, err := r.q.GetTransactionForUpdate(ctx, GetTransactionForUpdateParams{BooksID: booksID, ID: id})
 	if err != nil {
 		return domain.Transaction{}, notFound(err)
@@ -36,7 +44,10 @@ func (r *Repository) LockTransaction(ctx context.Context, booksID int64, id uuid
 	return r.complete(ctx, booksID, row)
 }
 
-func (r *Repository) InsertTransaction(ctx context.Context, t domain.Transaction) (domain.Transaction, error) {
+func (r *Repository) InsertTransaction(
+	ctx context.Context,
+	t domain.Transaction,
+) (domain.Transaction, error) {
 	if err := r.InsertTransactionRows(ctx, t); err != nil {
 		return domain.Transaction{}, err
 	}
@@ -81,7 +92,10 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 	return nil
 }
 
-func (r *Repository) ListTransactions(ctx context.Context, q app.TransactionQuery) ([]domain.Transaction, error) {
+func (r *Repository) ListTransactions(
+	ctx context.Context,
+	q app.TransactionQuery,
+) ([]domain.Transaction, error) {
 	params := ListTransactionsParams{
 		BooksID: q.BooksID, AccountID: nullUUID(q.AccountID), PayeeID: nullUUID(q.PayeeID), Tag: nullString(q.Tag),
 		Q: nullString(q.Q), FromDate: q.From, ToDate: q.To, AmountMin: q.AmountMin, AmountMax: q.AmountMax, Uncategorized: q.Uncategorized, RowLimit: int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
@@ -99,7 +113,11 @@ func (r *Repository) ListTransactions(ctx context.Context, q app.TransactionQuer
 	return r.completeAll(ctx, q.BooksID, rows)
 }
 
-func (r *Repository) Versions(ctx context.Context, booksID int64, id uuid.UUID) ([]app.Version, error) {
+func (r *Repository) Versions(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+) ([]app.Version, error) {
 	rows, err := r.q.ListVersions(ctx, ListVersionsParams{BooksID: booksID, TransactionID: id})
 	if err != nil {
 		return nil, err
@@ -127,103 +145,11 @@ func (r *Repository) VoidTransaction(ctx context.Context, t domain.Transaction) 
 	return r.q.VoidTransaction(ctx, VoidTransactionParams{BooksID: t.BooksID, ID: t.ID, VoidedAt: t.VoidedAt, VoidReason: nullString(t.VoidReason)})
 }
 
-func (r *Repository) complete(ctx context.Context, booksID int64, row LedgerTransaction) (domain.Transaction, error) {
-	ts, err := r.completeAll(ctx, booksID, []LedgerTransaction{row})
-	if err != nil {
-		return domain.Transaction{}, err
-	}
-
-	return ts[0], nil
-}
-
-// completeAll loads postings, tags and links of rows in three queries.
-func (r *Repository) completeAll(ctx context.Context, booksID int64, rows []LedgerTransaction) ([]domain.Transaction, error) {
-	ids := make([]uuid.UUID, len(rows))
-	byID := make(map[uuid.UUID]*domain.Transaction, len(rows))
-
-	out := make([]domain.Transaction, len(rows))
-	for i, row := range rows {
-		ids[i] = row.ID
-		out[i] = toTransaction(row)
-		byID[row.ID] = &out[i]
-	}
-
-	postings, err := r.q.ListPostings(ctx, ListPostingsParams{BooksID: booksID, TransactionIds: ids})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, p := range postings {
-		posting, err := r.toPosting(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-
-		t := byID[p.TransactionID]
-		t.Postings = append(t.Postings, posting)
-	}
-
-	tags, err := r.q.ListTransactionTags(ctx, ListTransactionTagsParams{BooksID: booksID, TransactionIds: ids})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, tag := range tags {
-		t := byID[tag.TransactionID]
-		t.Tags = append(t.Tags, tag.Name)
-	}
-
-	links, err := r.q.ListLinksFrom(ctx, ListLinksFromParams{BooksID: booksID, TransactionIds: ids})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, l := range links {
-		t := byID[l.FromTransactionID]
-		t.Links = append(t.Links, domain.Link{Type: domain.LinkType(l.LinkType), Target: l.ToTransactionID, Amount: storedAmount(l.Amount)})
-	}
-
-	trades, err := r.q.ListTrades(ctx, ListTradesParams{BooksID: booksID, TransactionIds: ids})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, row := range trades {
-		trade, err := r.toTrade(ctx, row, byID[row.TransactionID])
-		if err != nil {
-			return nil, err
-		}
-
-		byID[row.TransactionID].Trade = &trade
-	}
-
-	incomes, err := r.q.ListInvestmentIncome(ctx, ListInvestmentIncomeParams{BooksID: booksID, TransactionIds: ids})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, row := range incomes {
-		cur := money.Currency(row.Currency)
-
-		gross, err := money.New(row.Gross, cur)
-		if err != nil {
-			return nil, err
-		}
-
-		withheld, err := money.New(row.Withheld, cur)
-		if err != nil {
-			return nil, err
-		}
-
-		byID[row.TransactionID].Income = &domain.Income{
-			AccountID: row.AccountID, CashAccountID: row.CashAccountID, Type: domain.IncomeType(row.IncomeType), Gross: gross, Withheld: withheld,
-		}
-	}
-
-	return out, nil
-}
-
-func (r *Repository) toTrade(ctx context.Context, row LedgerTrade, t *domain.Transaction) (domain.Trade, error) {
+func (r *Repository) toTrade(
+	ctx context.Context,
+	row LedgerTrade,
+	t *domain.Transaction,
+) (domain.Trade, error) {
 	var instrument money.Currency
 	for _, p := range t.Postings {
 		if p.AccountID == row.AccountID {
@@ -285,7 +211,12 @@ func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) er
 }
 
 // insertPostings writes ps of t at positions from first on.
-func (r *Repository) insertPostings(ctx context.Context, t domain.Transaction, ps []domain.Posting, first int16) error {
+func (r *Repository) insertPostings(
+	ctx context.Context,
+	t domain.Transaction,
+	ps []domain.Posting,
+	first int16,
+) error {
 	postings := make([]InsertPostingsParams, len(ps))
 	for i, p := range ps {
 		postings[i] = InsertPostingsParams{

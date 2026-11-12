@@ -48,21 +48,7 @@ internal/ingestion/postgres/sync.go	Repository.SyncRuns	pending: backend reorgan
 internal/ingestion/toolapi/imports.go	connections	pending: backend reorganization plan
 internal/ingestion/toolapi/imports.go	getImports	pending: backend reorganization plan
 internal/ingestion/toolapi/manage.go	manageImports	pending: backend reorganization plan
-internal/ledger/domain/account.go	NewAccount	pending: backend reorganization plan
-internal/ledger/domain/line.go	Transaction.SplitToLines	pending: backend reorganization plan
-internal/ledger/domain/line.go	Transaction.ToLine	pending: backend reorganization plan
-internal/ledger/domain/reimburse.go	Transaction.Reimburse	pending: backend reorganization plan
-internal/ledger/domain/statement.go	Summarize	pending: backend reorganization plan
-internal/ledger/domain/trade.go	BuildTrade	pending: backend reorganization plan
-internal/ledger/domain/transaction.go	NewTransaction	pending: backend reorganization plan
-internal/ledger/domain/posting.go	checkPosting	pending: backend reorganization plan
-internal/ledger/domain/transfer.go	Transaction.Transfer	pending: backend reorganization plan
-internal/ledger/httpapi/convert_transaction.go	fromTransactionInput	pending: backend reorganization plan
-internal/ledger/httpapi/convert_transaction.go	toTransactionAPI	pending: backend reorganization plan
-internal/ledger/httpapi/errors.go	ToProblem	pending: backend reorganization plan
 internal/ledger/httpapi/server.go	Server.Register	table of data
-internal/ledger/postgres/mapping.go	snapshot.transaction	pending: backend reorganization plan
-internal/ledger/postgres/transaction.go	Repository.completeAll	pending: backend reorganization plan
 internal/marketdata/accrual.go	Module.accrue	pending: backend reorganization plan
 internal/marketdata/coverage.go	Module.Coverage	pending: backend reorganization plan
 internal/marketdata/domain/accrual.go	Accrue	pending: backend reorganization plan

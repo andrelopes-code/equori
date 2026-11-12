@@ -232,7 +232,10 @@ func toSnapshot(t domain.Transaction) snapshot {
 	return s
 }
 
-func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.Transaction, error) {
+func (s snapshot) transaction(
+	ctx context.Context,
+	ins app.Instruments,
+) (domain.Transaction, error) {
 	d, err := time.Parse(time.DateOnly, s.Date)
 	if err != nil {
 		return domain.Transaction{}, err
@@ -247,51 +250,64 @@ func (s snapshot) transaction(ctx context.Context, ins app.Instruments) (domain.
 	}
 
 	for _, sp := range s.Postings {
-		amount, err := app.AmountOf(ctx, ins, sp.Amount, money.Currency(sp.Currency))
+		p, err := sp.posting(ctx, ins, t.BalancingCurrency)
 		if err != nil {
 			return domain.Transaction{}, err
-		}
-
-		weight, err := money.New(sp.Weight, t.BalancingCurrency)
-		if err != nil {
-			return domain.Transaction{}, err
-		}
-
-		p := domain.Posting{
-			AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo,
-			StatementID: sp.StatementID, StatementBasis: sp.StatementBasis, CardRole: sp.CardRole, Installment: sp.Installment,
-		}
-		if sp.Statement != "" {
-			m, err := domain.ParseReferenceMonth(sp.Statement)
-			if err != nil {
-				return domain.Transaction{}, err
-			}
-
-			p.Statement = &m
-		}
-
-		if sp.SettledOn != "" {
-			settled, err := time.Parse(time.DateOnly, sp.SettledOn)
-			if err != nil {
-				return domain.Transaction{}, err
-			}
-
-			p.SettledOn = &settled
-		}
-
-		if sp.OriginalAmount != nil && sp.OriginalInstrument != nil {
-			orig, err := money.New(*sp.OriginalAmount, money.Currency(*sp.OriginalInstrument))
-			if err != nil {
-				return domain.Transaction{}, err
-			}
-
-			p.Original = &orig
 		}
 
 		t.Postings = append(t.Postings, p)
 	}
 
 	return t, nil
+}
+
+func (sp snapshotPosting) posting(
+	ctx context.Context,
+	ins app.Instruments,
+	balancing money.Currency,
+) (domain.Posting, error) {
+	amount, err := app.AmountOf(ctx, ins, sp.Amount, money.Currency(sp.Currency))
+	if err != nil {
+		return domain.Posting{}, err
+	}
+
+	weight, err := money.New(sp.Weight, balancing)
+	if err != nil {
+		return domain.Posting{}, err
+	}
+
+	p := domain.Posting{
+		AccountID: sp.AccountID, Amount: amount, Weight: weight, Status: domain.PostingStatus(sp.Status), Memo: sp.Memo,
+		StatementID: sp.StatementID, StatementBasis: sp.StatementBasis, CardRole: sp.CardRole, Installment: sp.Installment,
+	}
+	if sp.Statement != "" {
+		m, err := domain.ParseReferenceMonth(sp.Statement)
+		if err != nil {
+			return domain.Posting{}, err
+		}
+
+		p.Statement = &m
+	}
+
+	if sp.SettledOn != "" {
+		settled, err := time.Parse(time.DateOnly, sp.SettledOn)
+		if err != nil {
+			return domain.Posting{}, err
+		}
+
+		p.SettledOn = &settled
+	}
+
+	if sp.OriginalAmount != nil && sp.OriginalInstrument != nil {
+		orig, err := money.New(*sp.OriginalAmount, money.Currency(*sp.OriginalInstrument))
+		if err != nil {
+			return domain.Posting{}, err
+		}
+
+		p.Original = &orig
+	}
+
+	return p, nil
 }
 
 func toBillingRule(row LedgerBillingCycleRule) domain.BillingCycleRule {
