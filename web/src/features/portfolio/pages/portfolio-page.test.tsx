@@ -269,6 +269,21 @@ describe("Portfolio page", () => {
     ).toBeInTheDocument();
   });
 
+  it("BC9: offers to create a brokerage when the book has none", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () => json(200, { items: [] }),
+      "GET /api/v1/accounts": () => json(200, { items: [] }),
+    });
+    await renderApp("/portfolio", { fetch });
+
+    expect(
+      await screen.findByRole("link", { name: catalogEn["brokerage.create"] }),
+    ).toHaveAttribute("href", "/accounts/new?kind=brokerage");
+    expect(
+      screen.queryByRole("link", { name: catalogEn["holdings.trade"] }),
+    ).not.toBeInTheDocument();
+  });
+
   it("PC4: counts brokerage cash it cannot value as unpriced and keeps the rest", async () => {
     const fetch = portfolioApi({
       [`GET /api/v1/accounts/${cashID}/balance`]: () =>

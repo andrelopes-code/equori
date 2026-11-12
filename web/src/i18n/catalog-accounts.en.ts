@@ -79,6 +79,9 @@ export const accountsEn = {
   "accountSetup.step.limit": "Credit limit",
   "accountSetup.step.card": "Card",
   "brokerage.cashName": "Cash",
+  "brokerage.create": "Create a brokerage",
+  "brokerage.cashLeafNotice":
+    "This account is a cash account. Investments are created by recording a buy.",
   "accountSetup.step.cash": "Creating the cash account",
   "accountSetup.step.opening": "Opening balance",
   "accountSetup.failed":
@@ -372,7 +375,8 @@ export const accountsEn = {
   "positions.result": "Gain or loss now",
   "positions.priceOf": "Price of {date}",
   "positions.noPrice": "No price",
-  "positions.empty": "This brokerage holds no investment.",
+  "positions.empty": "This brokerage has no investments yet.",
+  "positions.recordBuy": "Record a buy",
   "positions.total": "Total of the priced positions",
   "sync.source": "Source",
   "sync.freshness": "Freshness",

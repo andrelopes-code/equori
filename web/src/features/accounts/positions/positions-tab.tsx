@@ -18,6 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { positionsQuery } from "@/features/accounts/api";
+import { PositionsEmpty } from "@/features/accounts/positions/positions-empty";
 import { averageCostText } from "@/features/accounts/positions/position-figures";
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
@@ -31,9 +32,11 @@ type Account = components["schemas"]["Account"];
 // The securities the brokerage holds, each at its cost and at the stored price (B05); a
 // position without a price says so instead of a number.
 export function PositionsTab({
+  brokerageID,
   descendants,
   scale,
 }: {
+  brokerageID: string;
   descendants: Account[];
   scale: (code: string) => number;
 }) {
@@ -88,7 +91,9 @@ export function PositionsTab({
           <>
             <TableBody>
               {rows.length === 0 && (
-                <TableEmpty>{t("positions.empty")}</TableEmpty>
+                <TableEmpty>
+                  <PositionsEmpty brokerageID={brokerageID} />
+                </TableEmpty>
               )}
               {rows.map((p) => {
                 const result =

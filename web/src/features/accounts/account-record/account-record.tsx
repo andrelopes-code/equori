@@ -10,6 +10,7 @@ import { AccountDialogs } from "@/features/accounts/account-dialogs/account-dial
 import type { AccountDialog } from "@/features/accounts/account-dialogs/account-dialogs";
 import { AccountFigures } from "@/features/accounts/account-record/account-figures";
 import { AccountHeader } from "@/features/accounts/account-record/account-header";
+import { CashLeafNotice } from "@/features/accounts/account-record/cash-leaf-notice";
 import { lineage } from "@/features/accounts/account-record/account-lineage";
 import { withRange } from "@/features/accounts/model/account-search";
 import type {
@@ -141,6 +142,9 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
       <PageBody>
         <Stack gap={6}>
           <AccountSetupMessage accountId={account.id} />
+
+          <CashLeafNotice account={account} />
+
           {!compact && overview}
           <div aria-busy={accountTabs.refreshing || undefined}>
             <AccountTabPanel

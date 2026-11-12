@@ -59,7 +59,11 @@ export function AccountTabPanel({
       return <ScheduledTab account={account} scale={scale} />;
     case "positions":
       return descendants === undefined ? null : (
-        <PositionsTab descendants={descendants} scale={scale} />
+        <PositionsTab
+          brokerageID={account.id}
+          descendants={descendants}
+          scale={scale}
+        />
       );
     case "sync":
       return linked === undefined ? null : (

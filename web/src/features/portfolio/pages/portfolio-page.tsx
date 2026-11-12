@@ -1,18 +1,12 @@
-import { ButtonLink } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
-import {
-  ResultState,
-  ResultStateContent,
-  ResultStateDescription,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import { HoldingsSection } from "@/features/portfolio/holdings/holdings-section";
 import { PortfolioHeader } from "@/features/portfolio/summary/portfolio-header";
+import { PortfolioEmpty } from "@/features/portfolio/notices/portfolio-empty";
 import { PortfolioProblem } from "@/features/portfolio/notices/portfolio-problem";
 import { PortfolioReturn } from "@/features/portfolio/return/portfolio-return";
 import type { SearchPatch } from "@/features/portfolio/model/portfolio-search";
@@ -21,12 +15,10 @@ import { QuoteWarningsNotice } from "@/features/portfolio/notices/quote-warnings
 import { useHoldings } from "@/features/portfolio/holdings/use-holdings";
 import { WhereMoneySection } from "@/features/portfolio/allocation/where-money-section";
 import { institutionsQuery, settingsQuery } from "@/features/setup";
-import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
 // PC1: how much there is and what it made, how it performed, where it is, then every row.
 export function PortfolioPage() {
-  const t = useT();
   const today = useToday();
   const api = useApi();
   const search = useSearch({ from: "/_authed/portfolio" });
@@ -43,6 +35,9 @@ export function PortfolioPage() {
   );
   const names = new Map((institutions.data ?? []).map((i) => [i.id, i.name]));
   const empty = !pending && holdings.length === 0;
+  const hasBrokerage = (accounts.data ?? []).some(
+    (a) => a.kind === "brokerage" && a.parent_id === undefined,
+  );
 
   function change(patch: SearchPatch) {
     const next = Object.fromEntries(
@@ -78,25 +73,7 @@ export function PortfolioPage() {
           )}
 
           {empty && !positions.isError && (
-            <ResultState status="empty" reach="section">
-              <ResultStateContent>
-                <ResultStateTitle>{t("portfolio.empty")}</ResultStateTitle>
-                <ResultStateDescription>
-                  {t("portfolio.emptyHint")}
-                </ResultStateDescription>
-              </ResultStateContent>
-              <ButtonLink
-                render={(props) => (
-                  <Link
-                    {...props}
-                    to="/transactions/new"
-                    search={{ kind: "trade" }}
-                  />
-                )}
-              >
-                {t("holdings.trade")}
-              </ButtonLink>
-            </ResultState>
+            <PortfolioEmpty hasBrokerage={hasBrokerage} />
           )}
 
           {!empty && !positions.isError && (
