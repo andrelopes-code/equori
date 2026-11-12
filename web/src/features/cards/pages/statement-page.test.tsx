@@ -15,7 +15,6 @@ import {
 } from "@/testing/account-api";
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { chooseAccount } from "@/testing/account-choice";
-import { moneyValue } from "@/testing/money-value";
 import { renderApp } from "@/testing/render-app";
 
 type Route = (req: Request) => Response | Promise<Response>;
@@ -110,6 +109,10 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
   );
 }
 
+function term(label: string) {
+  return screen.getByText(label).closest("dl");
+}
+
 async function action(key: keyof typeof catalogEn) {
   await userEvent.click(
     await screen.findByRole("button", { name: catalogEn[key] }),
@@ -128,13 +131,16 @@ describe("StatementPage", () => {
 
   it("reads the statement's figures and how its total is made", async () => {
     await renderApp(path, { fetch: api() });
-    const figures = await screen.findByRole("region", {
-      name: catalogEn["statement.figures"],
-    });
-    // The previous balance and the payments are both R$ 900,00.
-    expect(
-      await within(figures).findAllByText(moneyValue("R$900.00")),
-    ).toHaveLength(2);
+    const total = await screen.findByText(catalogEn["statement.total"]);
+    // The previous balance and the payments are both R$ 900,00; the purchases and the total are
+    // both R$ 1.800,00.
+    expect(term(catalogEn["statement.opening"])).toHaveTextContent("R$900.00");
+    expect(term(catalogEn["statement.charges"])).toHaveTextContent(
+      "R$1,800.00",
+    );
+    expect(term(catalogEn["statement.payments"])).toHaveTextContent("R$900.00");
+    expect(total.closest("dl")).toHaveTextContent("R$1,800.00");
+    expect(screen.queryByText(catalogEn["statement.credits"])).toBeNull();
     expect(
       screen.queryByText(/previous .* purchases .* credits .* payments/),
     ).not.toBeInTheDocument();
@@ -148,20 +154,11 @@ describe("StatementPage", () => {
       }),
     });
 
-    const figures = await screen.findByRole("region", {
-      name: catalogEn["statement.figures"],
-    });
-    const unpaid = await within(figures).findByRole("group", {
-      name: catalogEn["statement.unpaid"],
-    });
+    const line = await screen.findByText(
+      `${catalogEn["statement.unpaid"]}: R$1,800.00. ${words("statement.overdueSince", { date: "10/25/2026" })}`,
+    );
 
-    expect(unpaid).toHaveAttribute("data-attention", "danger");
-    expect(
-      within(unpaid).getByText(
-        words("statement.overdueSince", { date: "10/25/2026" }),
-      ),
-    ).toBeInTheDocument();
-    expect(figures.querySelectorAll("[data-attention]")).toHaveLength(1);
+    expect(line).toHaveAttribute("data-tone", "danger");
   });
 
   it("compares the total with what the institution reported", async () => {

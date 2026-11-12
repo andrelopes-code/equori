@@ -2,6 +2,7 @@ import type { components } from "@/api/schema.gen";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FigureCard } from "@/ui/display/figure-card";
+import { FigureGrid } from "@/ui/display/figure-grid";
 
 type Statement = components["schemas"]["StatementDetail"];
 
@@ -19,12 +20,14 @@ export function AwaitingFigure({ statement, scale }: AwaitingFigureProps) {
   if (awaiting.amount === 0) return null;
 
   return (
-    <FigureCard
-      label={t("statement.awaiting")}
-      value={{ money: awaiting, scale: scale(awaiting.currency) }}
-      note={t("statement.confirmedNote", {
-        confirmed: fmt.money(confirmed, scale(confirmed.currency)),
-      })}
-    />
+    <FigureGrid label={t("statement.figures")}>
+      <FigureCard
+        label={t("statement.awaiting")}
+        value={{ money: awaiting, scale: scale(awaiting.currency) }}
+        note={t("statement.confirmedNote", {
+          confirmed: fmt.money(confirmed, scale(confirmed.currency)),
+        })}
+      />
+    </FigureGrid>
   );
 }

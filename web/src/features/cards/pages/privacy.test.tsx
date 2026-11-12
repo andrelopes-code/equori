@@ -95,7 +95,7 @@ describe("cards with the amounts hidden", () => {
       `/cards/${cardID}/statements/${closedStatementID}`,
       { fetch: api() },
     );
-    await screen.findByRole("region", { name: "Statement figures" });
+    await screen.findByText("Total");
     await settle();
     expectNoAmounts(container, ["900.00", "1,500.00", "300.00"]);
   });

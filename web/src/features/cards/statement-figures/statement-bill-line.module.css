@@ -1,0 +1,26 @@
+@layer app {
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--slotted-space-4) var(--slotted-space-5);
+  }
+
+  /* A definition list holds one term: the label above its figure, the width of the figure. */
+  .term {
+    display: flex;
+    flex-direction: column;
+    gap: var(--slotted-space-1);
+    margin: 0;
+  }
+
+  .figure {
+    margin: 0;
+  }
+
+  /* The sign stands on the baseline of the figures it joins: it has the figures' size and
+     line height, and no label above it. */
+  .operator {
+    align-self: flex-end;
+  }
+}
