@@ -4,7 +4,7 @@ export const instrumentsEn = {
   "nav.instruments": "Prices",
   "settings.ledger.instruments": "Open prices",
   "instruments.subtitle":
-    "Currencies and investments with the latest price of each.",
+    "Latest price and price change of each currency and investment; income is not included.",
   "instruments.define": "Add a currency or investment",
   "instruments.caption": "Currencies and investments by type",
   "instruments.empty": "No currency or investment yet",
@@ -27,6 +27,11 @@ export const instrumentsEn = {
   "instruments.col.exchange": "Exchange",
   "instruments.col.price": "Latest price",
   "instruments.col.priceDate": "Price date",
+  "instruments.col.week": "1W",
+  "instruments.col.month": "1M",
+  "instruments.col.quarter": "3M",
+  "instruments.col.year": "12M",
+  "instruments.col.yearToDate": "YTD",
   "instruments.noPrice": "No price",
   "instruments.price.loadFailed": "Price unavailable",
   "instruments.define.description":

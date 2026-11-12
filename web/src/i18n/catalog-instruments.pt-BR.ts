@@ -4,7 +4,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "nav.instruments": "Cotações",
   "settings.ledger.instruments": "Ver cotações",
   "instruments.subtitle":
-    "Moedas e investimentos com o último preço de cada um.",
+    "Último preço e variação do preço de cada moeda e investimento; proventos não entram.",
   "instruments.define": "Cadastrar moeda ou investimento",
   "instruments.caption": "Moedas e investimentos por tipo",
   "instruments.empty": "Nenhuma moeda ou investimento ainda",
@@ -27,6 +27,11 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.col.exchange": "Bolsa",
   "instruments.col.price": "Último preço",
   "instruments.col.priceDate": "Data do preço",
+  "instruments.col.week": "Semana",
+  "instruments.col.month": "Mês",
+  "instruments.col.quarter": "3 meses",
+  "instruments.col.year": "12 meses",
+  "instruments.col.yearToDate": "No ano",
   "instruments.noPrice": "Sem preço",
   "instruments.price.loadFailed": "Preço indisponível",
   "instruments.define.description":

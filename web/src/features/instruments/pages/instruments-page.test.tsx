@@ -4,9 +4,12 @@ import { describe, expect, it } from "vitest";
 
 import { formatPrice } from "@/features/instruments/model/rate";
 import { catalogEn } from "@/i18n/catalog.en";
-import { formatDate } from "@/i18n/format";
+import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
 import { json, problem } from "@/testing/fake-api";
-import { instrumentsApi as api } from "@/testing/instruments-api";
+import {
+  instrumentsApi as api,
+  quoteFixtures,
+} from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
 
 const gridRows = (grid: HTMLElement) =>
@@ -23,20 +26,44 @@ const gridRows = (grid: HTMLElement) =>
           .join("|") || row.textContent,
     );
 
+const bp = (value: number) => formatSignedBasisPoints(value, "en-US");
+
+const codesOf = (grid: HTMLElement, codes: readonly string[]) =>
+  gridRows(grid)
+    .map((row) => row.split("|")[0] ?? "")
+    .filter((code) => codes.includes(code));
+
+const withoutPrice = (code: string) =>
+  quoteFixtures.map((q) =>
+    q.instrument === code
+      ? {
+          ...q,
+          last: null,
+          references: {
+            week: null,
+            month: null,
+            quarter: null,
+            year: null,
+            year_to_date: null,
+          },
+        }
+      : q,
+  );
+
 describe("Instrument catalog", () => {
-  it("lists the instruments by type with the latest price and its date", async () => {
+  it("lists the instruments by type with the latest price, its date and the changes", async () => {
     await renderApp("/instruments", { fetch: api() });
     const grid = await screen.findByRole("grid", {
       name: catalogEn["instruments.caption"],
     });
     await within(grid).findByText("38.45");
     expect(gridRows(grid)).toEqual([
-      "Code|Name|Subtype|Quote currency|Exchange|Latest price|Price date",
+      "Code|Name|Subtype|Quote currency|Exchange|Latest price|Price date|1W|1M|3M|12M|YTD",
       "Fixed income · 1",
-      `CDB1|CDB Bank One|cdb|BRL||${catalogEn["instruments.noPrice"]}|`,
+      `CDB1|CDB Bank One|cdb|BRL||${catalogEn["instruments.noPrice"]}||—|—|—|—|—`,
       "Stocks · 2",
-      "PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026",
-      "VALE3|Vale ON||BRL|B3SA|61.20|10/10/2026",
+      `PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}`,
+      "VALE3|Vale ON||BRL|B3SA|61.20|10/10/2026|—|—|—|" + bp(2000) + "|—",
       "Currencies · 2",
     ]);
   });
@@ -55,19 +82,114 @@ describe("Instrument catalog", () => {
     expect(await within(grid).findByText("5.4830")).toBeInTheDocument();
   });
 
-  it("asks for the price of each security on screen, and of no closed currency", async () => {
+  it("IQ1: reads the quotes of every instrument in one request and no price series", async () => {
     const asked: string[] = [];
     const fetch = api({
+      "GET /api/v1/instrument-quotes": (req) => {
+        asked.push(new URL(req.url).search);
+        return json(200, { items: quoteFixtures });
+      },
       "GET /api/v1/prices": (req) => {
-        asked.push(new URL(req.url).searchParams.get("instrument") ?? "");
+        asked.push(new URL(req.url).pathname);
         return json(200, { items: [] });
       },
     });
     await renderApp("/instruments", { fetch });
-    await screen.findByRole("grid", { name: catalogEn["instruments.caption"] });
-    await waitFor(() => {
-      expect(new Set(asked)).toEqual(new Set(["PETR4", "VALE3", "CDB1"]));
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
     });
+    await within(grid).findByText("38.45");
+
+    expect(asked).toEqual(["?base=BRL"]);
+  });
+
+  it("IQ8: sorts by the date of the last price, oldest first and then newest first", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("38.45");
+    const user = userEvent.setup();
+    const header = within(grid).getByRole("columnheader", {
+      name: new RegExp(catalogEn["instruments.col.priceDate"]),
+    });
+
+    await user.click(header);
+    await waitFor(() => {
+      expect(codesOf(grid, ["PETR4", "VALE3"])).toEqual(["VALE3", "PETR4"]);
+    });
+
+    await user.click(header);
+    await waitFor(() => {
+      expect(codesOf(grid, ["PETR4", "VALE3"])).toEqual(["PETR4", "VALE3"]);
+    });
+  });
+
+  it("IQ8: a row without a price sorts after the dated rows in both directions", async () => {
+    const fetch = api({
+      "GET /api/v1/instrument-quotes": () =>
+        json(200, { items: withoutPrice("PETR4") }),
+    });
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("61.20");
+    const user = userEvent.setup();
+    const header = within(grid).getByRole("columnheader", {
+      name: new RegExp(catalogEn["instruments.col.priceDate"]),
+    });
+
+    await user.click(header);
+    await waitFor(() => {
+      expect(codesOf(grid, ["PETR4", "VALE3"])).toEqual(["VALE3", "PETR4"]);
+    });
+
+    await user.click(header);
+    await waitFor(() => {
+      expect(codesOf(grid, ["PETR4", "VALE3"])).toEqual(["VALE3", "PETR4"]);
+    });
+  });
+
+  it("IQ7: sorts by the change over 12 months", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("38.45");
+    const user = userEvent.setup();
+    const header = within(grid).getByRole("columnheader", {
+      name: new RegExp(catalogEn["instruments.col.year"]),
+    });
+
+    await user.click(header);
+    await waitFor(() => {
+      expect(codesOf(grid, ["PETR4", "VALE3"])).toEqual(["VALE3", "PETR4"]);
+    });
+
+    await user.click(header);
+    await waitFor(() => {
+      expect(codesOf(grid, ["PETR4", "VALE3"])).toEqual(["PETR4", "VALE3"]);
+    });
+  });
+
+  it("IQ11: a failed read keeps the grid and states that the price is unavailable", async () => {
+    const fetch = api({
+      "GET /api/v1/instrument-quotes": () => problem(500, "internal"),
+    });
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+
+    expect(
+      (
+        await within(grid).findAllByText(
+          catalogEn["instruments.price.loadFailed"],
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(within(grid).getByText("Petrobras PN")).toBeInTheDocument();
   });
 
   it("opens the instrument from its row", async () => {
@@ -101,7 +223,7 @@ describe("Instrument catalog", () => {
     await waitFor(() => {
       expect(gridRows(grid).slice(1)).toEqual([
         "Stocks · 1",
-        "PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026",
+        `PETR4|Petrobras PN||BRL|B3SA|38.45|10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}`,
       ]);
     });
   });

@@ -24,6 +24,7 @@ import { DefineInstrumentDialog } from "@/features/instruments/define-instrument
 import { catalogRows } from "@/features/instruments/model/catalog-rows";
 import { PriceImportDialog } from "@/features/instruments/price-import/price-import-dialog";
 import { InstrumentsGrid } from "@/features/instruments/catalog/instruments-grid";
+import { instrumentQuotesQuery } from "@/features/instruments/api";
 import { instrumentsQuery, settingsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/navigation/header-action";
@@ -39,9 +40,14 @@ export function InstrumentsPage() {
     () => instruments.data?.items ?? [],
     [instruments.data],
   );
+  const quotes = useQuery({
+    ...instrumentQuotesQuery(api, base ?? ""),
+    enabled: base !== undefined,
+  });
   const rows = useMemo(
-    () => (base === undefined ? [] : catalogRows(items, base)),
-    [items, base],
+    () =>
+      base === undefined ? [] : catalogRows(items, base, quotes.data ?? []),
+    [items, base, quotes.data],
   );
   const [defining, setDefining] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -98,7 +104,10 @@ export function InstrumentsPage() {
         ) : (
           <InstrumentsGrid
             rows={rows}
-            loading={instruments.isPending || base === undefined}
+            loading={
+              instruments.isPending || base === undefined || quotes.isPending
+            }
+            quotesFailed={quotes.isError}
           />
         )}
       </PageBody>

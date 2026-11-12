@@ -49,6 +49,51 @@ export const priceFixtures = [
   price("USD", "2026-10-16", "5.4830", "bcb_ptax"),
 ];
 
+const point = (date: string, value: string) => ({ date, value });
+
+const noReferences = {
+  week: null,
+  month: null,
+  quarter: null,
+  year: null,
+  year_to_date: null,
+};
+
+// The references count back from the date of the last price (IQ4). VALE3 holds a one-year-old
+// history only, so its other windows have no reference price.
+export const quoteFixtures = [
+  {
+    instrument: "PETR4",
+    quote_instrument: "BRL",
+    last: point("2026-10-16", "38.45"),
+    references: {
+      week: point("2026-10-09", "36"),
+      month: point("2026-09-16", "40"),
+      quarter: null,
+      year: point("2025-10-16", "30.76"),
+      year_to_date: point("2025-12-30", "35"),
+    },
+  },
+  {
+    instrument: "VALE3",
+    quote_instrument: "BRL",
+    last: point("2026-10-10", "61.20"),
+    references: { ...noReferences, year: point("2025-10-10", "51") },
+  },
+  {
+    instrument: "CDB1",
+    quote_instrument: "BRL",
+    last: null,
+    references: noReferences,
+  },
+  {
+    instrument: "USD",
+    quote_instrument: "BRL",
+    last: point("2026-10-16", "5.4830"),
+    references: { ...noReferences, week: point("2026-10-09", "5.3") },
+  },
+];
+
 // S123: a CDB of 1,000.00 at 110% of the CDI issued on 2026-01-02.
 export const cdbTerms = {
   issued_on: "2026-01-02",
@@ -99,6 +144,8 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
           items:
             subtypes[new URL(req.url).searchParams.get("type") ?? ""] ?? [],
         }),
+      "GET /api/v1/instrument-quotes": () =>
+        json(200, { items: quoteFixtures }),
       "GET /api/v1/prices": (req) => {
         const query = new URL(req.url).searchParams;
         const from = query.get("from") ?? "";

@@ -1,154 +1,45 @@
-import type { GridColumn, GridQuery } from "@slotted/core/grid";
+import type { GridQuery } from "@slotted/core/grid";
 import { emptyQuery, withFilter, withSearch } from "@slotted/core/grid";
 import { DataGrid } from "@slotted/react/data-grid";
 import { FilterBar } from "@slotted/react/filter-bar";
-import type { FilterBarField } from "@slotted/react/filter-bar";
 import { Text } from "@slotted/react/typography";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
+import { ChangeCell } from "@/features/instruments/catalog/change-cell";
+import { PriceCell } from "@/features/instruments/catalog/price-cell";
+import { PriceDateCell } from "@/features/instruments/catalog/price-date-cell";
+import { useCatalogColumns } from "@/features/instruments/catalog/use-catalog-columns";
 import type { CatalogRow } from "@/features/instruments/model/catalog-rows";
-import {
-  subtypeLabel,
-  typeLabel,
-} from "@/features/instruments/model/instrument-labels";
-import { LatestPriceCell } from "@/features/instruments/catalog/latest-price-cell";
+import { typeLabel } from "@/features/instruments/model/instrument-labels";
 import styles from "@/features/instruments/pages/instruments-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { AppLink } from "@/ui/navigation/app-link";
+
+interface InstrumentsGridProps {
+  rows: readonly CatalogRow[];
+  loading: boolean;
+  // The read of the quotes failed: the price cells say so and the grid stays usable (IQ11).
+  quotesFailed: boolean;
+}
 
 const initialQuery: GridQuery = {
   ...emptyQuery(),
   group: ["type"],
 };
 
-const distinct = (rows: readonly CatalogRow[], key: keyof CatalogRow) =>
-  [...new Set(rows.map((r) => r[key]).filter((v) => v !== ""))].sort();
-
 // The instruments grouped by type, searched by code or name and filtered by type, subtype or
-// quote currency. The grid windows its rows and each visible row asks for its own latest price.
+// quote currency. Every row carries its latest price and its changes, read once for the catalog.
 export function InstrumentsGrid({
   rows,
   loading,
-}: {
-  rows: readonly CatalogRow[];
-  loading: boolean;
-}) {
+  quotesFailed,
+}: InstrumentsGridProps) {
   const t = useT();
   const navigate = useNavigate();
+  const { columns, fields, types } = useCatalogColumns(rows);
   const [query, setQuery] = useState<GridQuery>(initialQuery);
   const [opened, setOpened] = useState<readonly string[] | undefined>();
-  const types = useMemo(() => distinct(rows, "type"), [rows]);
-  const subtypes = useMemo(() => distinct(rows, "subtype"), [rows]);
-  const quotes = useMemo(() => distinct(rows, "quoteCurrency"), [rows]);
-  const typeOptions = useMemo(
-    () => types.map((value) => ({ value, label: typeLabel(t, value) })),
-    [types, t],
-  );
-  const subtypeOptions = useMemo(
-    () => subtypes.map((value) => ({ value, label: subtypeLabel(t, value) })),
-    [subtypes, t],
-  );
-  const quoteOptions = useMemo(
-    () => quotes.map((value) => ({ value, label: value })),
-    [quotes],
-  );
-  const columns = useMemo<GridColumn<CatalogRow>[]>(
-    () => [
-      {
-        id: "code",
-        label: t("instruments.col.code"),
-        accessor: "code",
-        rowHeader: true,
-        searchable: true,
-        width: 120,
-      },
-      {
-        id: "name",
-        label: t("instruments.col.name"),
-        accessor: "name",
-        searchable: true,
-        flex: 1,
-        minWidth: 200,
-        priority: 3,
-      },
-      {
-        id: "type",
-        label: t("instruments.col.type"),
-        accessor: "type",
-        kind: "set",
-        options: typeOptions,
-        width: 150,
-        priority: 6,
-      },
-      {
-        id: "subtype",
-        label: t("instruments.col.subtype"),
-        accessor: "subtype",
-        kind: "set",
-        options: subtypeOptions,
-        width: 130,
-        priority: 5,
-      },
-      {
-        id: "quoteCurrency",
-        label: t("instruments.col.quote"),
-        accessor: "quoteCurrency",
-        kind: "set",
-        options: quoteOptions,
-        width: 170,
-        priority: 4,
-      },
-      {
-        id: "exchange",
-        label: t("instruments.col.exchange"),
-        accessor: "exchange",
-        width: 110,
-        priority: 7,
-      },
-      {
-        id: "price",
-        label: t("instruments.col.price"),
-        accessor: () => "",
-        numeric: true,
-        sortable: false,
-        width: 150,
-        priority: 1,
-      },
-      {
-        id: "priceDate",
-        label: t("instruments.col.priceDate"),
-        accessor: () => "",
-        sortable: false,
-        width: 150,
-        priority: 2,
-      },
-    ],
-    [t, typeOptions, subtypeOptions, quoteOptions],
-  );
-  const fields = useMemo<FilterBarField[]>(
-    () => [
-      {
-        key: "type",
-        kind: "set",
-        label: t("instruments.col.type"),
-        options: typeOptions,
-      },
-      {
-        key: "subtype",
-        kind: "set",
-        label: t("instruments.col.subtype"),
-        options: subtypeOptions,
-      },
-      {
-        key: "quoteCurrency",
-        kind: "set",
-        label: t("instruments.col.quote"),
-        options: quoteOptions,
-      },
-    ],
-    [t, typeOptions, subtypeOptions, quoteOptions],
-  );
   const cellRenderers = useMemo(
     () => ({
       code: ({ row }: { row: CatalogRow }) => (
@@ -161,13 +52,20 @@ export function InstrumentsGrid({
         </AppLink>
       ),
       price: ({ row }: { row: CatalogRow }) => (
-        <LatestPriceCell row={row} part="price" />
+        <PriceCell row={row} failed={quotesFailed} />
       ),
-      priceDate: ({ row }: { row: CatalogRow }) => (
-        <LatestPriceCell row={row} part="date" />
+      priceDate: ({ row }: { row: CatalogRow }) => <PriceDateCell row={row} />,
+      week: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.week} />,
+      month: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.month} />,
+      quarter: ({ row }: { row: CatalogRow }) => (
+        <ChangeCell bp={row.quarter} />
+      ),
+      year: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.year} />,
+      yearToDate: ({ row }: { row: CatalogRow }) => (
+        <ChangeCell bp={row.yearToDate} />
       ),
     }),
-    [],
+    [quotesFailed],
   );
   // PC20: every group opens except the currencies, which only a reader who wants them opens.
   const expandedGroups = useMemo(
@@ -185,6 +83,7 @@ export function InstrumentsGrid({
     },
     [t],
   );
+
   return (
     <div className={styles.region}>
       <FilterBar
@@ -202,6 +101,7 @@ export function InstrumentsGrid({
         total={rows.length}
         messages={{ search: t("instruments.search") }}
       />
+
       <div className={styles.listing}>
         <DataGrid
           aria-label={t("instruments.caption")}

@@ -23,6 +23,7 @@ export const instrumentKeys = {
     ["instruments", "series", instrument, quote, from, to] as const,
   latest: (instrument: string, quote: string, today: string) =>
     ["instruments", "latest", instrument, quote, today] as const,
+  quotes: (base: string) => ["instruments", "quotes", base] as const,
 };
 
 type InstrumentType = components["schemas"]["InstrumentType"];
@@ -105,6 +106,19 @@ export function latestPriceQuery(
     queryKey: instrumentKeys.latest(instrument, quote, today),
     queryFn: async () =>
       latestPrice(await fetchPrices(api, instrument, quote, from, to)) ?? null,
+  });
+}
+
+// The last price and the prices the changes start from, of every instrument (IQ1).
+export function instrumentQuotesQuery(api: Client<paths>, base: string) {
+  return queryOptions({
+    queryKey: instrumentKeys.quotes(base),
+    queryFn: async () =>
+      (
+        await unwrap(
+          await api.GET("/instrument-quotes", { params: { query: { base } } }),
+        )
+      ).items,
   });
 }
 
