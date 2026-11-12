@@ -71,7 +71,6 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.symbol.hint":
     "Vazio usa o símbolo derivado do código e da bolsa.",
   "instruments.symbol.invalid": "Use apenas letras, dígitos e . = ^ _ -",
-  "instrument.facts": "Cadastro",
   "instrument.edit": "Editar cadastro",
   "instrument.remove": "Remover",
   "instrument.remove.title": "Remover {code}?",
@@ -237,6 +236,12 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "Preço acumulado de {price}: {percent} sobre o valor de face.",
   "instrument.quote.title": "Cotação",
   "instrument.data.title": "Dados e fontes",
+  "instrument.data.open": "Ver fontes",
+  "instrument.data.summary":
+    "Cotações: {count}, de {from} a {to}. Fontes: {sources}.",
+  "instrument.data.scale": "Casas decimais da quantidade: {scale}",
+  "instrument.data.layer.description":
+    "De onde vêm as cotações, até onde chegam e o que fazer quando faltam.",
   "instrument.sources.caption": "Fontes que cotam este item",
   "instrument.sources.source": "Fonte",
   "instrument.sources.state": "Estado",

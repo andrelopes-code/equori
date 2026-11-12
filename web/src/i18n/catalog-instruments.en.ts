@@ -71,7 +71,6 @@ export const instrumentsEn = {
   "instruments.symbol.hint":
     "Empty uses the symbol derived from the code and the exchange.",
   "instruments.symbol.invalid": "Use only letters, digits and . = ^ _ -",
-  "instrument.facts": "Details",
   "instrument.edit": "Edit details",
   "instrument.remove": "Remove",
   "instrument.remove.title": "Remove {code}?",
@@ -234,6 +233,12 @@ export const instrumentsEn = {
   "terms.accrued": "Accrued price of {price}: {percent} over the face value.",
   "instrument.quote.title": "Quote",
   "instrument.data.title": "Data and sources",
+  "instrument.data.open": "View sources",
+  "instrument.data.summary":
+    "Quotes: {count}, from {from} to {to}. Sources: {sources}.",
+  "instrument.data.scale": "Quantity decimals: {scale}",
+  "instrument.data.layer.description":
+    "Where the quotes come from, how far they reach and what to do when they fall short.",
   "instrument.sources.caption": "Sources that quote this item",
   "instrument.sources.source": "Source",
   "instrument.sources.state": "State",

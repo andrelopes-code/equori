@@ -43,7 +43,7 @@ export function DetailDialog({
 
   return (
     <Inline align="center" gap={4} wrap="wrap">
-      <Text size="sm">{summary}</Text>
+      {summary !== null && <Text size="sm">{summary}</Text>}
 
       <Dialog open={open} onOpenChange={setOpen} size="full">
         <DialogTrigger

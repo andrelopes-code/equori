@@ -15,10 +15,12 @@ import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { instrumentQuery, termsQuery } from "@/features/instruments/api";
-import { InstrumentFacts } from "@/features/instruments/facts/instrument-facts";
 import { InstrumentPagePlaceholder } from "@/features/instruments/pages/instrument-page-placeholder";
 import { InstrumentPositions } from "@/features/instruments/positions/instrument-positions";
-import { typeLabel } from "@/features/instruments/model/instrument-labels";
+import {
+  subtypeLabel,
+  typeLabel,
+} from "@/features/instruments/model/instrument-labels";
 import { InstrumentData } from "@/features/instruments/data/instrument-data";
 import { InstrumentPrices } from "@/features/instruments/quote/instrument-prices";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument/edit-instrument-dialog";
@@ -69,7 +71,15 @@ export function InstrumentPage() {
     return <InstrumentPagePlaceholder />;
   const i = instrument.data;
   const quote = quoteOf(i, base);
-  const subheading = `${i.code} · ${typeLabel(t, i.type)}`;
+  const subheading = [
+    i.code,
+    typeLabel(t, i.type),
+    i.subtype === undefined ? null : subtypeLabel(t, i.subtype),
+    i.exchange,
+    i.quote_currency,
+  ]
+    .filter((part) => part !== null && part !== undefined && part !== "")
+    .join(" · ");
   return (
     <Page width="full">
       <PageHeader size="lg">
@@ -139,8 +149,6 @@ export function InstrumentPage() {
               setRecording(true);
             }}
           />
-
-          <InstrumentFacts instrument={i} />
         </Stack>
       </PageBody>
       {recording && quote !== null && (

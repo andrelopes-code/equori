@@ -183,14 +183,20 @@ describe("Instrument page", () => {
     expect(document.querySelector('[data-ui="chart"]')).toBeNull();
   });
 
-  it("shows the facts of the instrument", async () => {
-    await renderApp("/instruments/PETR4", { fetch: api({}) });
-    const scale = await screen.findByText(catalogEn["instruments.field.scale"]);
+  it("L2: the subheading states the facts and the layer holds the quantity decimals", async () => {
+    await renderApp("/instruments/PETR4", { fetch: api(petrWithCoverage()) });
+    await screen.findByRole("button", {
+      name: catalogEn["instrument.data.open"],
+    });
 
-    expect(scale.nextElementSibling?.textContent).toBe("0");
-    expect(
-      screen.queryByText(catalogEn["instruments.col.subtype"]),
-    ).not.toBeInTheDocument();
+    expect(screen.getByText("PETR4 · Stocks · B3SA · BRL")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Details" })).toBeNull();
+    expect(screen.queryByText("Quantity decimals: 0")).toBeNull();
+
+    await openData();
+
+    expect(screen.getByText("Quantity decimals: 0")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Details" })).toBeNull();
   });
 
   // MQ31
@@ -291,6 +297,7 @@ describe("Instrument page", () => {
         sources: [source({ first: "2026-10-14", last: "2026-10-16" })],
       });
       await renderApp("/instruments/PETR4", { fetch });
+      await openData();
 
       expect(
         await screen.findByText(
@@ -312,6 +319,7 @@ describe("Instrument page", () => {
         sent,
       );
       await renderApp("/instruments/PETR4", { fetch });
+      await openData();
       const user = userEvent.setup();
 
       expect(await screen.findByText("No quote")).toBeInTheDocument();
@@ -320,7 +328,7 @@ describe("Instrument page", () => {
           name: catalogEn["instruments.history.load"],
         }),
       );
-      const dialog = await screen.findByRole("dialog");
+      const dialog = await topDialog();
       await user.click(
         within(dialog).getByRole("button", {
           name: catalogEn["instruments.history.send"],
@@ -338,6 +346,7 @@ describe("Instrument page", () => {
         sources: [source({ history: { ...failed, error: null } })],
       });
       await renderApp("/instruments/PETR4", { fetch });
+      await openData();
 
       expect(
         await screen.findByText("Loading history since 10/17/2006"),
@@ -351,6 +360,7 @@ describe("Instrument page", () => {
         sent,
       );
       await renderApp("/instruments/PETR4", { fetch });
+      await openData();
 
       expect(
         await screen.findByText(
@@ -375,6 +385,7 @@ describe("Instrument page", () => {
         sources: [source({ history: failed })],
       });
       await renderApp("/instruments/PETR4", { fetch });
+      await openData();
 
       const alert = (
         await screen.findByText(/^History since 10\/17\/2006 failed/)
@@ -422,6 +433,7 @@ describe("Instrument page", () => {
         sources: [source({ enabled: false, last: "2026-10-12" })],
       });
       await renderApp("/instruments/PETR4", { fetch });
+      await openData();
 
       expect(
         await screen.findByText("Last quote 5 days ago"),
@@ -515,12 +527,13 @@ describe("Instrument page", () => {
     });
     await renderApp("/instruments/PETR4", { fetch });
     const user = userEvent.setup();
+    await openData();
     await user.click(
       await screen.findByRole("button", {
         name: catalogEn["prices.import.one"],
       }),
     );
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await topDialog();
     await user.type(
       within(dialog).getByRole("textbox", {
         name: catalogEn["prices.import.paste.label"],
@@ -821,3 +834,44 @@ describe("Remove instrument", () => {
     ).toBeNull();
   });
 });
+
+async function openData() {
+  await userEvent.setup().click(
+    await screen.findByRole("button", {
+      name: catalogEn["instrument.data.open"],
+    }),
+  );
+}
+
+function petrWithCoverage() {
+  return {
+    "GET /api/v1/instruments/PETR4": () =>
+      json(200, {
+        code: "PETR4",
+        type: "stock",
+        scale: 0,
+        name: "Petrobras PN",
+        quote_currency: "BRL",
+        exchange: "B3SA",
+        coverage: {
+          first: "2026-10-14",
+          last: "2026-10-16",
+          count: 2,
+          stale: false,
+          sources: [],
+        },
+      }),
+  };
+}
+
+// The dialog opened from the data layer sits above the layer, which stays in the document.
+async function topDialog() {
+  await waitFor(() => {
+    expect(screen.getAllByRole("dialog")).toHaveLength(2);
+  });
+
+  const top = screen.getAllByRole("dialog").at(-1);
+  if (top === undefined) throw new Error("no dialog is open");
+
+  return top;
+}
