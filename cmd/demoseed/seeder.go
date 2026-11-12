@@ -116,8 +116,12 @@ func (s *seeder) do(method, path string, body, out any) {
 	}
 
 	s.calls++
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		s.fail("%s %s: status %d: %s", method, path, resp.StatusCode, truncate(raw))
+	s.readResult(method, path, resp.StatusCode, raw, out)
+}
+
+func (s *seeder) readResult(method, path string, status int, raw []byte, out any) {
+	if status < 200 || status > 299 {
+		s.fail("%s %s: status %d: %s", method, path, status, truncate(raw))
 		return
 	}
 

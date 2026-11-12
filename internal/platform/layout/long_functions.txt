@@ -1,11 +1,4 @@
-cmd/demoseed/cashflow.go	seeder.extrasEmployer	pending: split after the 100-column reformatting
-cmd/demoseed/invest.go	seeder.buildInvestments	pending: split after the 100-column reformatting
-cmd/demoseed/planning.go	schedules	pending: split after the 100-column reformatting
-cmd/demoseed/purchases.go	seeder.lisbon	pending: split after the 100-column reformatting
-cmd/demoseed/purchases.go	seeder.purchases	table of data
-cmd/demoseed/reconcile.go	seeder.importCSV	pending: split after the 100-column reformatting
-cmd/demoseed/seeder.go	seeder.do	pending: split after the 100-column reformatting
-cmd/demoseed/transfers.go	seeder.transfers	pending: split after the 100-column reformatting
+cmd/demoseed/purchases_data.go	seeder.purchases	table of data
 internal/assistant/app/history.go	History	pending: split after the 100-column reformatting
 internal/assistant/app/turn.go	Service.Turn	pending: split after the 100-column reformatting
 internal/assistant/httpapi/server.go	toProblem	table of data

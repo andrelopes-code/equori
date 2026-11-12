@@ -15,6 +15,12 @@ func nubankTop(balance int64) int64 {
 
 // transfers are the monthly contributions to investments, the lump sums from the 13th salary and PLR, and the income tax refund.
 func (s *seeder) transfers() {
+	s.monthlyTransfers()
+	s.lumpTransfers()
+	s.taxRefunds()
+}
+
+func (s *seeder) monthlyTransfers() {
 	for _, m := range months(s.start, s.today) {
 		d := s.businessDay(m, 6)
 		s.at(d, func() {
@@ -46,7 +52,9 @@ func (s *seeder) transfers() {
 			)
 		})
 	}
+}
 
+func (s *seeder) lumpTransfers() {
 	lump := func(date, desc string, cents int64) {
 		d := day(date)
 		s.at(d, func() {
@@ -64,7 +72,9 @@ func (s *seeder) transfers() {
 	lump("2025-12-22", "TED para XP Investimentos, parte do 13º", 150000)
 	lump("2025-03-17", "TED para XP Investimentos, parte da PLR", 600000)
 	lump("2026-03-16", "TED para XP Investimentos, parte da PLR", 600000)
+}
 
+func (s *seeder) taxRefunds() {
 	for _, r := range []struct {
 		date  string
 		cents int64

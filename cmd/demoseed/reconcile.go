@@ -237,6 +237,11 @@ var itauExtraLines = []struct {
 
 // importCSV saves the CSV profiles of two accounts and imports an Itaú checking export of the last three weeks: recorded lines match, two new lines wait for a category.
 func (s *seeder) importCSV() {
+	s.putCSVProfiles()
+	s.uploadItauStatement()
+}
+
+func (s *seeder) putCSVProfiles() {
 	s.do(http.MethodPut, "/accounts/"+s.id("itau.checking")+"/csv-profile", map[string]any{
 		"delimiter":          "semicolon",
 		"header_rows":        1,
@@ -257,6 +262,9 @@ func (s *seeder) importCSV() {
 		"amount_column":      "Valor",
 		"amount_sign":        "inverted",
 	}, nil)
+}
+
+func (s *seeder) uploadItauStatement() {
 	var b strings.Builder
 	b.WriteString("Data;Lançamento;Valor;Documento\n")
 
