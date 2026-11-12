@@ -1,6 +1,3 @@
-internal/assistant/app/turn.go	pending: split after the 100-column reformatting
-internal/classification/httpapi/rules.go	pending: split after the 100-column reformatting
-internal/identity/postgres/second_factor.go	pending: split after the 100-column reformatting
 internal/marketdata/toolapi/market.go	pending: split after the 100-column reformatting
 internal/platform/config/variables.go	table of data
 internal/platform/pgcluster/platform_windows.go	pending: split after the 100-column reformatting

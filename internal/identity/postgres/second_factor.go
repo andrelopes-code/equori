@@ -175,26 +175,6 @@ func (r *Repository) RemovePasskey(ctx context.Context, memberID int64, id uuid.
 	})
 }
 
-func (r *Repository) ReplaceRecoveryCodes(
-	ctx context.Context,
-	memberID int64,
-	hashes [][]byte,
-	at time.Time,
-) error {
-	return r.withMemberLock(ctx, memberID, func(q *Queries) error {
-		has, err := q.HasSecondFactor(ctx, memberID)
-		if err != nil {
-			return err
-		}
-
-		if !has {
-			return app.ErrSecondFactorMissing
-		}
-
-		return storeRecoveryCodes(ctx, q, memberID, hashes, at)
-	})
-}
-
 func (r *Repository) SavePasskeyChallenge(
 	ctx context.Context,
 	memberID int64,
@@ -234,39 +214,6 @@ func (r *Repository) UseTOTPStep(ctx context.Context, memberID, step int64) (boo
 	return n > 0, err
 }
 
-func (r *Repository) UseRecoveryCode(
-	ctx context.Context,
-	memberID int64,
-	hash []byte,
-) (int, bool, error) {
-	var left int
-
-	used := false
-
-	err := pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
-		q := r.q.WithTx(tx)
-
-		n, err := q.UseRecoveryCode(ctx, UseRecoveryCodeParams{MemberID: memberID, CodeHash: hash})
-		if err != nil {
-			return err
-		}
-
-		count, err := q.CountRecoveryCodes(ctx, memberID)
-		if err != nil {
-			return err
-		}
-
-		used, left = n > 0, int(count)
-
-		return nil
-	})
-	if err != nil {
-		return 0, false, err
-	}
-
-	return left, used, nil
-}
-
 func (r *Repository) UsePasskey(
 	ctx context.Context,
 	memberID int64,
@@ -280,67 +227,6 @@ func (r *Repository) UsePasskey(
 	)
 
 	return n > 0, err
-}
-
-func (r *Repository) CreateLoginChallenge(ctx context.Context, c domain.LoginChallenge) error {
-	return r.q.CreateLoginChallenge(ctx, CreateLoginChallengeParams{
-		TokenHash: c.TokenHash,
-		MemberID:  c.MemberID,
-		Challenge: c.Challenge,
-		ExpiresAt: c.ExpiresAt,
-	})
-}
-
-func (r *Repository) LoginChallenge(
-	ctx context.Context,
-	tokenHash []byte,
-	now time.Time,
-) (domain.LoginChallenge, error) {
-	row, err := r.q.GetLoginChallenge(
-		ctx,
-		GetLoginChallengeParams{TokenHash: tokenHash, ExpiresAt: now},
-	)
-	if err != nil {
-		return domain.LoginChallenge{}, notFound(err)
-	}
-
-	return domain.LoginChallenge{
-		TokenHash: row.TokenHash,
-		MemberID:  row.MemberID,
-		Challenge: row.Challenge,
-		ExpiresAt: row.ExpiresAt,
-	}, nil
-}
-
-func (r *Repository) CountLoginAttempt(
-	ctx context.Context,
-	tokenHash []byte,
-	now time.Time,
-	limit int32,
-) (int32, bool, error) {
-	attempts, err := r.q.CountLoginAttempt(
-		ctx,
-		CountLoginAttemptParams{TokenHash: tokenHash, Now: now, MaxAttempts: limit},
-	)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, false, nil
-	}
-
-	if err != nil {
-		return 0, false, err
-	}
-
-	return attempts, true, nil
-}
-
-func (r *Repository) DeleteLoginChallenge(ctx context.Context, tokenHash []byte) (bool, error) {
-	n, err := r.q.DeleteLoginChallenge(ctx, tokenHash)
-
-	return n > 0, err
-}
-
-func (r *Repository) DeleteExpiredLoginChallenges(ctx context.Context, now time.Time) error {
-	return r.q.DeleteExpiredLoginChallenges(ctx, now)
 }
 
 func (r *Repository) ResetSecondFactor(ctx context.Context, memberID int64) error {
@@ -420,65 +306,6 @@ func (r *Repository) withMemberLock(
 
 		return apply(q)
 	})
-}
-
-// applyFirstFactor stores the recovery codes and ends the other sessions of a member whose first factor this is.
-func applyFirstFactor(
-	ctx context.Context,
-	q *Queries,
-	memberID int64,
-	first bool,
-	f app.FirstFactor,
-) error {
-	if !first {
-		return nil
-	}
-
-	if err := storeRecoveryCodes(ctx, q, memberID, f.Hashes, f.At); err != nil {
-		return err
-	}
-
-	return q.DeleteOtherSessions(
-		ctx,
-		DeleteOtherSessionsParams{MemberID: memberID, TokenHash: f.KeepSession},
-	)
-}
-
-func storeRecoveryCodes(
-	ctx context.Context,
-	q *Queries,
-	memberID int64,
-	hashes [][]byte,
-	at time.Time,
-) error {
-	if err := q.DeleteRecoveryCodes(ctx, memberID); err != nil {
-		return err
-	}
-
-	for _, hash := range hashes {
-		if err := q.InsertRecoveryCode(
-			ctx,
-			InsertRecoveryCodeParams{MemberID: memberID, CodeHash: hash, CreatedAt: at},
-		); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// dropCodesWithoutFactor deletes the recovery codes when the member has no factor left.
-func dropCodesWithoutFactor(ctx context.Context, q *Queries, memberID int64) error {
-	has, err := q.HasSecondFactor(ctx, memberID)
-	if err != nil {
-		return err
-	}
-
-	if has {
-		return nil
-	}
-
-	return q.DeleteRecoveryCodes(ctx, memberID)
 }
 
 func toPasskey(row IdentityPasskey) domain.Passkey {

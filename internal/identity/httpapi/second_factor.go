@@ -224,6 +224,15 @@ func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	s.logSecondFactorLogin(ctx, result)
+
+	w.Header().Add("Set-Cookie", s.cookie(result.Session.Token, result.Session.ExpiresAt))
+	w.Header().Add("Set-Cookie", s.loginCookie("", time.Unix(0, 0)))
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// logSecondFactorLogin logs the login that completed the second factor.
+func (s *Server) logSecondFactorLogin(ctx context.Context, result app.SecondFactorLogin) {
 	attrs := []any{
 		"member_id",
 		result.Session.MemberID,
@@ -240,10 +249,6 @@ func (s *Server) completeSecondFactor(w http.ResponseWriter, r *http.Request) {
 		ctx,
 		"login succeeded",
 		append(attrs, "request_id", httpserver.RequestID(ctx))...)
-
-	w.Header().Add("Set-Cookie", s.cookie(result.Session.Token, result.Session.ExpiresAt))
-	w.Header().Add("Set-Cookie", s.loginCookie("", time.Unix(0, 0)))
-	w.WriteHeader(http.StatusNoContent)
 }
 
 // writePendingLogin answers 202 with the second factor challenge and the pending login cookie.

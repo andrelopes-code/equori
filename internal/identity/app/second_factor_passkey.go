@@ -87,46 +87,11 @@ func (s *Service) CreatePasskey(
 ) (domain.Passkey, []string, error) {
 	now := s.now()
 
-	challenge, err := s.repo.TakePasskeyChallenge(ctx, memberID, now)
-	switch {
-	case errors.Is(err, ErrNotFound):
-		return domain.Passkey{}, nil, ErrPasskeyInvalid
-	case err != nil:
-		return domain.Passkey{}, nil, fmt.Errorf(
-			"take passkey challenge of member %d: %w",
-			memberID,
-			err,
-		)
-	}
-
-	rpID, ok := domain.RPID(origin)
-	if !ok {
-		return domain.Passkey{}, nil, ErrPasskeyInvalid
-	}
-
-	reg, err := domain.VerifyRegistration(
-		in.ClientDataJSON,
-		in.AuthenticatorData,
-		in.PublicKey,
-		in.Algorithm,
-		challenge,
-		origin,
-	)
+	passkey, err := s.verifyPasskey(ctx, memberID, origin, in, now)
 	if err != nil {
-		return domain.Passkey{}, nil, ErrPasskeyInvalid
+		return domain.Passkey{}, nil, err
 	}
 
-	passkey := domain.Passkey{
-		ID:           uuid.New(),
-		MemberID:     memberID,
-		CredentialID: reg.CredentialID,
-		PublicKey:    reg.PublicKey,
-		Algorithm:    reg.Algorithm,
-		SignCount:    reg.SignCount,
-		RPID:         rpID,
-		Name:         in.Name,
-		CreatedAt:    now,
-	}
 	codes, hashes := domain.NewRecoveryCodes()
 
 	first, err := s.repo.AddPasskey(ctx, passkey, FirstFactor{
@@ -143,6 +108,57 @@ func (s *Service) CreatePasskey(
 	}
 
 	return passkey, codes, nil
+}
+
+// verifyPasskey consumes the challenge of the member, verifies the creation ceremony and returns the
+// passkey to store.
+func (s *Service) verifyPasskey(
+	ctx context.Context,
+	memberID int64,
+	origin string,
+	in PasskeyInput,
+	now time.Time,
+) (domain.Passkey, error) {
+	challenge, err := s.repo.TakePasskeyChallenge(ctx, memberID, now)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return domain.Passkey{}, ErrPasskeyInvalid
+	case err != nil:
+		return domain.Passkey{}, fmt.Errorf(
+			"take passkey challenge of member %d: %w",
+			memberID,
+			err,
+		)
+	}
+
+	rpID, ok := domain.RPID(origin)
+	if !ok {
+		return domain.Passkey{}, ErrPasskeyInvalid
+	}
+
+	reg, err := domain.VerifyRegistration(
+		in.ClientDataJSON,
+		in.AuthenticatorData,
+		in.PublicKey,
+		in.Algorithm,
+		challenge,
+		origin,
+	)
+	if err != nil {
+		return domain.Passkey{}, ErrPasskeyInvalid
+	}
+
+	return domain.Passkey{
+		ID:           uuid.New(),
+		MemberID:     memberID,
+		CredentialID: reg.CredentialID,
+		PublicKey:    reg.PublicKey,
+		Algorithm:    reg.Algorithm,
+		SignCount:    reg.SignCount,
+		RPID:         rpID,
+		Name:         in.Name,
+		CreatedAt:    now,
+	}, nil
 }
 
 // RemovePasskey deletes the passkey after the password check.

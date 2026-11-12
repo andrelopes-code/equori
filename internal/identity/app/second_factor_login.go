@@ -81,17 +81,7 @@ func (s *Service) CompleteSecondFactor(
 	}
 
 	if !ok {
-		if attempts >= secondFactorAttempts {
-			if _, err := s.repo.DeleteLoginChallenge(ctx, hash); err != nil {
-				return result, fmt.Errorf(
-					"delete pending login of member %d: %w",
-					pending.MemberID,
-					err,
-				)
-			}
-		}
-
-		return result, ErrSecondFactorInvalid
+		return result, s.rejectSecondFactor(ctx, hash, pending.MemberID, attempts)
 	}
 
 	session, err := s.finishSecondFactor(ctx, hash, pending.MemberID, now)
@@ -100,6 +90,22 @@ func (s *Service) CompleteSecondFactor(
 	}
 
 	return SecondFactorLogin{Session: session, Method: method, RecoveryCodesLeft: left}, nil
+}
+
+// rejectSecondFactor returns ErrSecondFactorInvalid; the last allowed attempt also deletes the pending login.
+func (s *Service) rejectSecondFactor(
+	ctx context.Context,
+	hash []byte,
+	memberID int64,
+	attempts int32,
+) error {
+	if attempts >= secondFactorAttempts {
+		if _, err := s.repo.DeleteLoginChallenge(ctx, hash); err != nil {
+			return fmt.Errorf("delete pending login of member %d: %w", memberID, err)
+		}
+	}
+
+	return ErrSecondFactorInvalid
 }
 
 // startPendingLogin stores a pending login of the member and returns its token and methods.
