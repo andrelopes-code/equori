@@ -81,8 +81,10 @@ func TestUsageA1A3(t *testing.T) {
 	}
 
 	u := got[0]
-	if u.ProviderID != "aistudio" || !u.Instance || u.Model != "gemini-3.5-flash-lite" || u.TodayRequests != 2 ||
-		u.TodayErrors != 1 || u.TodayTokens != 42 ||
+	if u.ProviderID != "aistudio" || !u.Instance || u.Model != "gemini-3.5-flash-lite" ||
+		u.TodayRequests != 2 ||
+		u.TodayErrors != 1 ||
+		u.TodayTokens != 42 ||
 		u.PeriodRequests != 2 ||
 		u.PeriodTokens != 42 ||
 		u.PeriodDays != 30 ||

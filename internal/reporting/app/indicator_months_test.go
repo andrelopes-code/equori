@@ -143,8 +143,10 @@ func TestIndicatorMonths(t *testing.T) {
 			facts: facts("2024-11", 24, nil),
 			check: func(t *testing.T, m IndicatorMonth) {
 				short := because(ReasonInsufficientHistory)
-				if m.SavingsRate != because(ReasonNoIncome) || m.TrailingSavingsRate != short || m.Liquidity != short ||
-					m.CommittedShare != short || m.DebtServiceShare != short ||
+				if m.SavingsRate != because(ReasonNoIncome) || m.TrailingSavingsRate != short ||
+					m.Liquidity != short ||
+					m.CommittedShare != short ||
+					m.DebtServiceShare != short ||
 					m.HasMeans ||
 					m.MeanIncome != 0 {
 					t.Errorf("month = %+v", m)

@@ -119,7 +119,8 @@ func groupable(tx domain.Transaction) bool {
 		func(p domain.Posting) bool { return p.Status == domain.StatusReconciled },
 	)
 
-	return tx.VoidedAt == nil && tx.Version == 1 && tx.Origin == domain.OriginImport && !reconciled &&
+	return tx.VoidedAt == nil && tx.Version == 1 && tx.Origin == domain.OriginImport &&
+		!reconciled &&
 		!tx.HasInstallments() &&
 		tx.Trade == nil &&
 		tx.Income == nil

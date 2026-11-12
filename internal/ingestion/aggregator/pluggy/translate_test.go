@@ -57,7 +57,9 @@ func TestNormalize(t *testing.T) {
 			t.Fatal(ok, err)
 		}
 
-		if r.ExternalID != "t1" || r.Amount != -850 || r.Date.Format(time.DateOnly) != "2026-10-07" || r.Description != "PAG*PADARIA" ||
+		if r.ExternalID != "t1" || r.Amount != -850 ||
+			r.Date.Format(time.DateOnly) != "2026-10-07" ||
+			r.Description != "PAG*PADARIA" ||
 			r.Pending ||
 			r.BalanceAfter == nil ||
 			*r.BalanceAfter != 123456 ||

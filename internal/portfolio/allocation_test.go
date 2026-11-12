@@ -69,8 +69,10 @@ func TestS128Allocation(t *testing.T) {
 
 	// Checking 500.00 and XP cash 400.00 are currency; 10 shares at 10.50 are 105.00 of reit.
 	byType := f.allocation(t, "type")
-	if byType.Total["amount"] != float64(100500) || byType.Total["currency"] != "BRL" || len(byType.Groups) != 2 ||
-		byType.Groups[0].Key != "currency" || byType.Groups[0].Value["amount"] != float64(90000) ||
+	if byType.Total["amount"] != float64(100500) || byType.Total["currency"] != "BRL" ||
+		len(byType.Groups) != 2 ||
+		byType.Groups[0].Key != "currency" ||
+		byType.Groups[0].Value["amount"] != float64(90000) ||
 		byType.Groups[0].ShareBP != 8955 ||
 		byType.Groups[1].Key != "reit" ||
 		byType.Groups[1].Value["amount"] != float64(10500) ||

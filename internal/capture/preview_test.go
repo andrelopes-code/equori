@@ -180,7 +180,9 @@ func TestPreviewScenarios(t *testing.T) {
 
 	t.Run("S99", func(t *testing.T) {
 		l := b.one(t, "ontem mercado 230 nubank checking", "")
-		if l.Kind != "expense" || amount(l) != 23000 || l.Amount.Currency != "BRL" || l.Date != "2026-10-20" || l.AccountID != b.checking ||
+		if l.Kind != "expense" || amount(l) != 23000 || l.Amount.Currency != "BRL" ||
+			l.Date != "2026-10-20" ||
+			l.AccountID != b.checking ||
 			l.AccountSource != "text" ||
 			l.Description != "Mercado" ||
 			l.CategoryID != b.supermarket ||

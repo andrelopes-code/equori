@@ -306,7 +306,8 @@ func TestTransactionEventPayloads(t *testing.T) {
 		t.Fatalf("recorded = %+v", recorded)
 	}
 
-	if len(categorized) != 1 || categorized[0].Version != 2 || categorized[0].CategoryState != "categorized" ||
+	if len(categorized) != 1 || categorized[0].Version != 2 ||
+		categorized[0].CategoryState != "categorized" ||
 		categorized[0].Cause == nil ||
 		categorized[0].Cause.Method != "manual" ||
 		categorized[0].Cause.RuleID != "" ||

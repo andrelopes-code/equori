@@ -28,8 +28,11 @@ func TestS84RefundBeforePayment(t *testing.T) {
 		t.Fatalf("2026-11 = %+v", s)
 	}
 
-	if s := ss["2026-12"]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 || s.Prior != 7290 ||
-		s.Payments != 196185 || s.Early != 100000 || s.AmountDue != 78465 ||
+	if s := ss["2026-12"]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 ||
+		s.Prior != 7290 ||
+		s.Payments != 196185 ||
+		s.Early != 100000 ||
+		s.AmountDue != 78465 ||
 		s.Billed != 178465 ||
 		s.Status != "paid" {
 		t.Fatalf("2026-12 = %+v", s)

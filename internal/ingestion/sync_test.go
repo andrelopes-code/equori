@@ -168,8 +168,13 @@ func TestSyncBankAccount(t *testing.T) {
 	}
 
 	b := bs[0]
-	if b.Source != "aggregator" || b.ExternalAccountID != externalAccount(f.conn, pluggy.SubtypeChecking).ID || b.PeriodFrom != "2026-10-01" || b.PeriodTo != "2026-11-12" ||
-		b.Counts.Received != 3 || b.Counts.Matched != 1 || b.Counts.Created != 2 ||
+	if b.Source != "aggregator" ||
+		b.ExternalAccountID != externalAccount(f.conn, pluggy.SubtypeChecking).ID ||
+		b.PeriodFrom != "2026-10-01" ||
+		b.PeriodTo != "2026-11-12" ||
+		b.Counts.Received != 3 ||
+		b.Counts.Matched != 1 ||
+		b.Counts.Created != 2 ||
 		b.Counts.Ignored != 0 ||
 		b.Balance.Status != "recorded" ||
 		b.Balance.Date != "2026-11-12" ||

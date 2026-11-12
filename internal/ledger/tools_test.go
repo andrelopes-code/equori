@@ -279,7 +279,8 @@ func TestGetBalancesTool(t *testing.T) {
 	toolOutput(t, h, "get_balances", map[string]any{"limit": 1}, &page1)
 	toolOutput(t, h, "get_balances", map[string]any{"limit": 1, "cursor": page1.NextCursor}, &page2)
 
-	if len(page1.Balances) != 1 || page1.Balances[0].AccountName != "Checking" || page1.Balances[0].Balance.Amount != "-13.00" ||
+	if len(page1.Balances) != 1 || page1.Balances[0].AccountName != "Checking" ||
+		page1.Balances[0].Balance.Amount != "-13.00" ||
 		len(page2.Balances) != 1 ||
 		page2.Balances[0].AccountName != "Savings" ||
 		page2.NextCursor != "" {

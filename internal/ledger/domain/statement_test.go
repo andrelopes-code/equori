@@ -148,7 +148,8 @@ func TestSummarizeAmounts(t *testing.T) {
 
 	got := Summarize([]StatementInput{input("2026-11",
 		charge("2026-10-14", 23000), charge("2026-10-20", 33334), credit("2026-10-21", 5000), payment("2026-10-28", 10000))}, day("2026-11-05"))[0]
-	if got.Charges != 56334 || got.Credits != 5000 || got.Payments != 10000 || got.AmountDue != 41334 ||
+	if got.Charges != 56334 || got.Credits != 5000 || got.Payments != 10000 ||
+		got.AmountDue != 41334 ||
 		got.EarlyPayments != 10000 ||
 		got.BilledAmount != 51334 ||
 		got.Unpaid != 41334 {
@@ -200,8 +201,12 @@ func TestSummarizeBalanceAtClosing(t *testing.T) {
 		t.Fatalf("2026-09 = %+v", s)
 	}
 
-	if s := got[1]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 || s.PriorCredits != 7290 ||
-		s.Payments != 196185 || s.EarlyPayments != 100000 || s.AmountDue != 78465 || s.BilledAmount != 178465 ||
+	if s := got[1]; s.Opening != 103475 || s.Charges != 228132 || s.Credits != 56957 ||
+		s.PriorCredits != 7290 ||
+		s.Payments != 196185 ||
+		s.EarlyPayments != 100000 ||
+		s.AmountDue != 78465 ||
+		s.BilledAmount != 178465 ||
 		s.Settled != 78465 ||
 		s.Unpaid != 0 ||
 		s.Status != StatusPaid {

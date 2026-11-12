@@ -73,7 +73,8 @@ func TestS80StatementFactsFromBill(t *testing.T) {
 	f.sync()
 
 	s := f.statement(card, "2026-11")
-	if s.ClosingDate != "2026-11-02" || s.DueDate != "2026-11-10" || s.Institution == nil || s.Institution.Source != "aggregator" ||
+	if s.ClosingDate != "2026-11-02" || s.DueDate != "2026-11-10" || s.Institution == nil ||
+		s.Institution.Source != "aggregator" ||
 		s.Institution.Total.Amount != 23000 ||
 		s.Difference == nil ||
 		s.Difference.Amount != 0 ||

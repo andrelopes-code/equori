@@ -280,8 +280,10 @@ func TestConnectItemAndMapAccounts(t *testing.T) {
 	var conn connectionView
 	r.Decode(t, &conn)
 
-	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID || conn.ExternalID != nubankItem ||
-		conn.Name != "Nubank" || conn.ProviderStatus != "UPDATED" ||
+	if r.Header.Get("Location") != "/api/v1/connections/"+conn.ID || conn.IntegrationID != in.ID ||
+		conn.ExternalID != nubankItem ||
+		conn.Name != "Nubank" ||
+		conn.ProviderStatus != "UPDATED" ||
 		conn.State != "ok" ||
 		conn.Portal != "Meu Pluggy" ||
 		conn.LastItemUpdateAt != "2026-11-12T06:00:00Z" ||
