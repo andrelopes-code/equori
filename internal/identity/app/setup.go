@@ -90,55 +90,79 @@ func (s *Service) CompleteSetup(ctx context.Context, in SetupRequest) (Session, 
 		return Session{}, domain.Member{}, ErrSetupComplete
 	}
 
+	if !s.setupTokenValid(in.Token) {
+		return Session{}, domain.Member{}, ErrSetupTokenInvalid
+	}
+
+	u, books, err := s.firstMember(ctx, in)
+	if err != nil {
+		return Session{}, domain.Member{}, err
+	}
+
+	created, booksID, err := s.repo.CreateFirstMember(ctx, u, books)
+	if err != nil {
+		return Session{}, domain.Member{}, err
+	}
+
+	session, err := s.finishSetup(ctx, in, created.ID, booksID)
+	if err != nil {
+		return Session{}, domain.Member{}, err
+	}
+
+	return session, created, nil
+}
+
+func (s *Service) setupTokenValid(token string) bool {
 	s.setup.mu.Lock()
 	stored := s.setup.token
 	s.setup.mu.Unlock()
 
-	if stored == "" || subtle.ConstantTimeCompare([]byte(in.Token), []byte(stored)) != 1 {
-		return Session{}, domain.Member{}, ErrSetupTokenInvalid
-	}
+	return stored != "" && subtle.ConstantTimeCompare([]byte(token), []byte(stored)) == 1
+}
 
+// firstMember validates the request and builds the first member and its books.
+func (s *Service) firstMember(ctx context.Context, in SetupRequest) (domain.Member, FirstBooks, error) {
 	base, err := s.baseCurrency(in.Locale.Region, in.BaseCurrency)
 	if err != nil {
-		return Session{}, domain.Member{}, err
+		return domain.Member{}, FirstBooks{}, err
 	}
 
 	name, err := setupBooksName(in)
 	if err != nil {
-		return Session{}, domain.Member{}, err
+		return domain.Member{}, FirstBooks{}, err
 	}
 
 	zone, err := s.setupTimeZone(in)
 	if err != nil {
-		return Session{}, domain.Member{}, err
+		return domain.Member{}, FirstBooks{}, err
 	}
 
 	u, err := s.newMember(ctx, in.Email, in.Password, domain.RoleAdmin, in.Locale.Language)
 	if err != nil {
-		return Session{}, domain.Member{}, err
+		return domain.Member{}, FirstBooks{}, err
 	}
 
 	if err := validateBooks(in.Locale.Region, base); err != nil {
-		return Session{}, domain.Member{}, err
+		return domain.Member{}, FirstBooks{}, err
 	}
 
-	created, booksID, err := s.repo.CreateFirstMember(ctx, u, FirstBooks{
+	return u, FirstBooks{
 		Name:     name,
 		Region:   in.Locale.Region,
 		Base:     base,
 		TimeZone: zone,
-	})
-	if err != nil {
-		return Session{}, domain.Member{}, err
-	}
+	}, nil
+}
 
+// finishSetup clears the setup token, runs the setup hooks and signs the first member in.
+func (s *Service) finishSetup(ctx context.Context, in SetupRequest, memberID, booksID int64) (Session, error) {
 	s.setup.mu.Lock()
 	s.setup.token = ""
 	s.setup.mu.Unlock()
 
 	if s.setup.hooks.UpdateCheck != nil {
 		if err := s.setup.hooks.UpdateCheck(ctx, in.UpdateCheck); err != nil {
-			return Session{}, domain.Member{}, fmt.Errorf("store update check: %w", err)
+			return Session{}, fmt.Errorf("store update check: %w", err)
 		}
 	}
 
@@ -146,12 +170,7 @@ func (s *Service) CompleteSetup(ctx context.Context, in SetupRequest) (Session, 
 		s.setup.hooks.Done()
 	}
 
-	session, err := s.startSession(ctx, created.ID, booksID, s.now())
-	if err != nil {
-		return Session{}, domain.Member{}, err
-	}
-
-	return session, created, nil
+	return s.startSession(ctx, memberID, booksID, s.now())
 }
 
 // baseCurrency returns base, or the default of region when base is empty; a region without a

@@ -41,16 +41,9 @@ func (s *Service) Login(ctx context.Context, email, plain, origin string) (Sessi
 		return Session{}, nil, ErrTooManyAttempts
 	}
 
-	user, err := s.repo.MemberByEmail(ctx, email)
-	switch {
-	case errors.Is(err, ErrNotFound):
-		if _, err := s.verify(ctx, plain, s.dummyHash); err != nil {
-			return Session{}, nil, err
-		}
-
-		return Session{}, nil, ErrInvalidCredentials
-	case err != nil:
-		return Session{}, nil, fmt.Errorf("load member: %w", err)
+	user, err := s.loginMember(ctx, email, plain)
+	if err != nil {
+		return Session{}, nil, err
 	}
 
 	ok, err := s.verify(ctx, plain, user.PasswordHash)
@@ -62,13 +55,40 @@ func (s *Service) Login(ctx context.Context, email, plain, origin string) (Sessi
 		return Session{}, nil, ErrInvalidCredentials
 	}
 
-	factor, err := s.repo.HasSecondFactor(ctx, user.ID)
+	return s.openLogin(ctx, user.ID, email, origin, now)
+}
+
+// loginMember returns the member of the email; an unknown email costs one password verification.
+func (s *Service) loginMember(ctx context.Context, email, plain string) (domain.Member, error) {
+	user, err := s.repo.MemberByEmail(ctx, email)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		if _, err := s.verify(ctx, plain, s.dummyHash); err != nil {
+			return domain.Member{}, err
+		}
+
+		return domain.Member{}, ErrInvalidCredentials
+	case err != nil:
+		return domain.Member{}, fmt.Errorf("load member: %w", err)
+	}
+
+	return user, nil
+}
+
+// openLogin starts the pending login of a member with a second factor, else its session.
+func (s *Service) openLogin(
+	ctx context.Context,
+	memberID int64,
+	email, origin string,
+	now time.Time,
+) (Session, *PendingLogin, error) {
+	factor, err := s.repo.HasSecondFactor(ctx, memberID)
 	if err != nil {
-		return Session{}, nil, fmt.Errorf("check second factor of member %d: %w", user.ID, err)
+		return Session{}, nil, fmt.Errorf("check second factor of member %d: %w", memberID, err)
 	}
 
 	if factor {
-		pending, err := s.startPendingLogin(ctx, user.ID, origin, now)
+		pending, err := s.startPendingLogin(ctx, memberID, origin, now)
 
 		return Session{}, pending, err
 	}
@@ -79,16 +99,16 @@ func (s *Service) Login(ctx context.Context, email, plain, origin string) (Sessi
 		return Session{}, nil, fmt.Errorf("delete expired sessions: %w", err)
 	}
 
-	booksID, err := s.repo.LoginBooks(ctx, user.ID)
+	booksID, err := s.repo.LoginBooks(ctx, memberID)
 	if errors.Is(err, ErrNotFound) {
 		return Session{}, nil, ErrInvalidCredentials
 	}
 
 	if err != nil {
-		return Session{}, nil, fmt.Errorf("load login books of member %d: %w", user.ID, err)
+		return Session{}, nil, fmt.Errorf("load login books of member %d: %w", memberID, err)
 	}
 
-	session, err := s.finishLogin(ctx, user.ID, booksID, now)
+	session, err := s.finishLogin(ctx, memberID, booksID, now)
 
 	return session, nil, err
 }
