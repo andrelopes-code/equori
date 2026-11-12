@@ -2,10 +2,12 @@ package toolapi
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
+	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/clock"
 	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -83,7 +85,7 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 
 		return m(*v)
 	}
-	out := planView{Source: string(p.Reference.Source), AverageMonths: p.AverageMonths, Rows: make([]planRowView, len(p.Rows))}
+	out := planView{Source: string(p.Reference.Source), AverageMonths: p.AverageMonths}
 
 	var err error
 	if out.ExpectedIncome, err = optional(p.Expected); err != nil {
@@ -115,6 +117,15 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 		}
 	}
 
+	if out.Rows, err = planRowViews(p, accounts); err != nil {
+		return planView{}, err
+	}
+
+	return out, nil
+}
+
+func planRowViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planRowView, error) {
+	rows := make([]planRowView, len(p.Rows))
 	for i, r := range p.Rows {
 		v := planRowView{CategoryID: r.CategoryID.String(), CategoryName: accountName(accounts, r.CategoryID), Counted: r.Counted}
 		if r.HasNextChange {
@@ -125,15 +136,16 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 			amount int64
 			into   *tool.Money
 		}{{r.Planned, &v.Planned}, {r.LastMonth, &v.LastMonth}, {r.Average, &v.Average}} {
-			if *f.into, err = m(f.amount); err != nil {
-				return planView{}, err
+			var err error
+			if *f.into, err = moneyOf(f.amount, p.Currency); err != nil {
+				return nil, err
 			}
 		}
 
-		out.Rows[i] = v
+		rows[i] = v
 	}
 
-	return out, nil
+	return rows, nil
 }
 
 func toGoalView(g app.GoalView) (goalView, error) {
@@ -171,91 +183,143 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 
 		out := getBudgetsAndGoalsOut{Month: month.Format(monthLayout), Budgets: []budgetView{}, Goals: []goalView{}}
 		if in.Kind == "plan" {
-			p, err := svc.BudgetPlan(ctx, booksID, month)
-			if err != nil {
-				return out, err
-			}
-
-			accounts, err := l.Accounts(ctx, booksID)
-			if err != nil {
-				return out, err
-			}
-
-			out.Plan, err = toPlanView(p, accounts)
+			err := fillPlan(ctx, svc, l, booksID, month, &out)
 
 			return out, err
 		}
 
 		if in.Kind != "goals" {
-			accounts, err := l.Accounts(ctx, booksID)
-			if err != nil {
+			if err := fillBudgets(ctx, svc, l, booksID, month, &out); err != nil {
 				return out, err
-			}
-
-			r := page.Request[app.IDKey]{Limit: page.MaxLimit}
-			for {
-				bs, next, err := svc.ListBudgets(ctx, booksID, r)
-				if err != nil {
-					return out, err
-				}
-
-				for _, b := range bs {
-					// A budget that starts after the month has no progress to report.
-					if len(b.Amounts) == 0 || b.Amounts[0].EffectiveFrom.After(month) {
-						continue
-					}
-
-					p, currency, err := svc.BudgetProgress(ctx, booksID, b.ID, month)
-					if err != nil {
-						return out, err
-					}
-
-					v := budgetView{BudgetID: b.ID.String(), CategoryName: accountName(accounts, b.CategoryID), Rollover: b.Rollover}
-					for _, f := range []struct {
-						amount int64
-						into   *tool.Money
-					}{{p.Planned, &v.Planned}, {p.Carried, &v.Carried}, {p.Spent, &v.Spent}, {p.Available, &v.Available}} {
-						if *f.into, err = moneyOf(f.amount, currency); err != nil {
-							return out, err
-						}
-					}
-
-					out.Budgets = append(out.Budgets, v)
-				}
-
-				if next == nil {
-					break
-				}
-
-				r.After = next
 			}
 		}
 
 		if in.Kind != "budgets" {
-			r := page.Request[app.IDKey]{Limit: page.MaxLimit}
-			for {
-				gs, next, err := svc.ListGoals(ctx, booksID, r)
-				if err != nil {
-					return out, err
-				}
-
-				for _, g := range gs {
-					v, err := toGoalView(g)
-					if err != nil {
-						return out, err
-					}
-
-					out.Goals = append(out.Goals, v)
-				}
-
-				if next == nil {
-					break
-				}
-
-				r.After = next
+			if err := fillGoals(ctx, svc, booksID, &out); err != nil {
+				return out, err
 			}
 		}
 
 		return out, nil
 	})
+}
+
+func fillPlan(
+	ctx context.Context,
+	svc *app.Service,
+	l Ledger,
+	booksID int64,
+	month time.Time,
+	out *getBudgetsAndGoalsOut,
+) error {
+	p, err := svc.BudgetPlan(ctx, booksID, month)
+	if err != nil {
+		return err
+	}
+
+	accounts, err := l.Accounts(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	out.Plan, err = toPlanView(p, accounts)
+
+	return err
+}
+
+func fillBudgets(
+	ctx context.Context,
+	svc *app.Service,
+	l Ledger,
+	booksID int64,
+	month time.Time,
+	out *getBudgetsAndGoalsOut,
+) error {
+	accounts, err := l.Accounts(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	r := page.Request[app.IDKey]{Limit: page.MaxLimit}
+	for {
+		bs, next, err := svc.ListBudgets(ctx, booksID, r)
+		if err != nil {
+			return err
+		}
+
+		for _, b := range bs {
+			// A budget that starts after the month has no progress to report.
+			if len(b.Amounts) == 0 || b.Amounts[0].EffectiveFrom.After(month) {
+				continue
+			}
+
+			v, err := toBudgetView(ctx, svc, booksID, b, month, accounts)
+			if err != nil {
+				return err
+			}
+
+			out.Budgets = append(out.Budgets, v)
+		}
+
+		if next == nil {
+			break
+		}
+
+		r.After = next
+	}
+
+	return nil
+}
+
+func toBudgetView(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	b domain.Budget,
+	month time.Time,
+	accounts map[uuid.UUID]Account,
+) (budgetView, error) {
+	p, currency, err := svc.BudgetProgress(ctx, booksID, b.ID, month)
+	if err != nil {
+		return budgetView{}, err
+	}
+
+	v := budgetView{BudgetID: b.ID.String(), CategoryName: accountName(accounts, b.CategoryID), Rollover: b.Rollover}
+	for _, f := range []struct {
+		amount int64
+		into   *tool.Money
+	}{{p.Planned, &v.Planned}, {p.Carried, &v.Carried}, {p.Spent, &v.Spent}, {p.Available, &v.Available}} {
+		if *f.into, err = moneyOf(f.amount, currency); err != nil {
+			return budgetView{}, err
+		}
+	}
+
+	return v, nil
+}
+
+func fillGoals(ctx context.Context, svc *app.Service, booksID int64, out *getBudgetsAndGoalsOut) error {
+	r := page.Request[app.IDKey]{Limit: page.MaxLimit}
+	for {
+		gs, next, err := svc.ListGoals(ctx, booksID, r)
+		if err != nil {
+			return err
+		}
+
+		for _, g := range gs {
+			v, err := toGoalView(g)
+			if err != nil {
+				return err
+			}
+
+			out.Goals = append(out.Goals, v)
+		}
+
+		if next == nil {
+			break
+		}
+
+		r.After = next
+	}
+
+	return nil
 }

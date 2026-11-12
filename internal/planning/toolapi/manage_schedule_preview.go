@@ -4,13 +4,96 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 var unitWords = map[domain.Frequency][2]string{
 	domain.Daily: {"daily", "days"}, domain.Weekly: {"weekly", "weeks"}, domain.Monthly: {"monthly", "months"}, domain.Yearly: {"yearly", "years"},
+}
+
+func previewSchedule(in manageScheduleIn, p schedulePlan) (tool.Preview, error) {
+	pv := tool.Preview{Action: "manage_schedule." + string(in.Action)}
+	switch in.Action {
+	case "create":
+		previewScheduleCreate(&pv, in, p)
+
+		return pv, nil
+	case "update":
+		pv.Target, pv.Changes = "Schedule "+p.schedule.Description, updateChanges(p.schedule, in)
+	case "change_terms":
+		if err := previewTermsChange(&pv, in, p); err != nil {
+			return tool.Preview{}, err
+		}
+	case "pause", "end":
+		previewScheduleStop(&pv, in, p)
+	}
+
+	return pv, nil
+}
+
+func previewScheduleCreate(pv *tool.Preview, in manageScheduleIn, p schedulePlan) {
+	pv.Target = "Schedule " + in.Description
+
+	counterpart := "category"
+	if in.Kind == "transfer" || in.Kind == "savings" {
+		counterpart = "account"
+	}
+
+	pv.Changes = []tool.Change{
+		{Field: "schedule", After: tool.TextValue(in.Description)},
+		{Field: "amount", After: tool.MoneyValue(*p.amount)},
+		{Field: "terms", After: tool.TextValue(describeTerms(*p.rule, in.Start.Time))},
+		{Field: "account", After: tool.TextValue(p.account.Name)},
+		{Field: counterpart, After: tool.TextValue(p.counterpart.Name)},
+		{Field: "date", After: tool.DateValue(in.Start.Time)},
+	}
+	if p.paidBy != uuid.Nil {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "transaction",
+			After: tool.TextValue(p.paidByFact.Description + " " + p.paidByFact.Date.Format(time.DateOnly))})
+	}
+}
+
+func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) error {
+	last := p.schedule.Terms[len(p.schedule.Terms)-1]
+
+	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(time.DateOnly)+"|"+fmt.Sprint(last.Amount)
+	if p.amount != nil {
+		before, err := money.New(last.Amount, p.schedule.Currency)
+		if err != nil {
+			return err
+		}
+
+		pv.Changes = append(pv.Changes, tool.Change{Field: "amount", Before: tool.MoneyValue(before), After: tool.MoneyValue(*p.amount)})
+	}
+
+	if p.rule != nil {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "terms",
+			Before: tool.TextValue(describeTerms(last.Rule, last.EffectiveFrom)), After: tool.TextValue(describeTerms(*p.rule, in.From.Time))})
+	}
+
+	pv.Changes = append(pv.Changes, tool.Change{Field: "date", After: tool.DateValue(in.From.Time)})
+
+	return nil
+}
+
+func previewScheduleStop(pv *tool.Preview, in manageScheduleIn, p schedulePlan) {
+	last := p.schedule.Terms[len(p.schedule.Terms)-1]
+	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(time.DateOnly)+"|"+fmt.Sprint(last.Amount)
+
+	after := "ends on " + in.From.Format(time.DateOnly)
+	if in.Action == "pause" {
+		after = "paused from " + in.From.Format(time.DateOnly) + " to " + in.To.Format(time.DateOnly)
+	}
+
+	pv.Changes = []tool.Change{
+		{Field: "schedule", Before: tool.TextValue(p.schedule.Description), After: tool.TextValue(after)},
+		{Field: "date", After: tool.DateValue(in.From.Time)},
+	}
 }
 
 func describeTerms(r domain.Rule, from time.Time) string {

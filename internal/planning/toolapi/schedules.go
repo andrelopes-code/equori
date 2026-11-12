@@ -165,33 +165,8 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			"Do not use it for budgets or goals: get_budgets_and_goals does.",
 		Effect: tool.ReadOnly, Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in listSchedulesIn) (listSchedulesOut, error) {
-		scheduleID, err := optionalID(in.ScheduleID, "schedule_id")
+		q, err := decodeScheduleQuery(ctx, clk, in)
 		if err != nil {
-			return listSchedulesOut{}, err
-		}
-
-		today := clk.Today(ctx)
-
-		month, err := parseMonth("month", in.Month, time.Time{})
-		if err != nil {
-			return listSchedulesOut{}, err
-		}
-
-		from, to := today, today.AddDate(0, 0, 31)
-		if !in.From.IsZero() {
-			from = in.From.Time
-			to = from.AddDate(0, 0, 31)
-		}
-
-		if !in.To.IsZero() {
-			to = in.To.Time
-		}
-
-		if to.Before(from) || to.After(from.AddDate(0, 0, 366)) {
-			return listSchedulesOut{}, tool.InvalidArgument("to", "must be between from and 366 days after from")
-		}
-
-		if _, err := tool.Limit(in.Limit); err != nil {
 			return listSchedulesOut{}, err
 		}
 
@@ -200,87 +175,179 @@ func listSchedules(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			return listSchedulesOut{}, err
 		}
 
-		var schedules []domain.Schedule
-		if scheduleID != uuid.Nil {
-			s, err := svc.Schedule(ctx, booksID, scheduleID)
-			if err != nil {
-				return listSchedulesOut{}, err
-			}
-
-			schedules = []domain.Schedule{s}
-		} else if schedules, err = allSchedules(ctx, svc, booksID); err != nil {
-			return listSchedulesOut{}, err
-		}
-
-		next, err := nextExpected(ctx, svc, booksID, today)
+		schedules, err := loadSchedules(ctx, svc, booksID, q.scheduleID)
 		if err != nil {
 			return listSchedulesOut{}, err
 		}
 
-		descriptions := make(map[uuid.UUID]string, len(schedules))
+		next, err := nextExpected(ctx, svc, booksID, q.today)
+		if err != nil {
+			return listSchedulesOut{}, err
+		}
 
 		out := listSchedulesOut{Schedules: []scheduleView{}, Occurrences: []occurrenceView{}}
-		for _, s := range schedules {
-			descriptions[s.ID] = s.Description
 
-			v, err := toScheduleView(s, accounts, today, next, scheduleID != uuid.Nil)
-			if err != nil {
-				return listSchedulesOut{}, err
-			}
-
-			// The schedules come with the first page of occurrences only.
-			if in.Cursor == "" {
-				out.Schedules = append(out.Schedules, v)
-			}
-		}
-
-		os, err := svc.Occurrences(ctx, booksID, from, to, scheduleID, domain.State(in.State))
+		descriptions, err := fillSchedules(accounts, schedules, next, in, q, &out)
 		if err != nil {
 			return listSchedulesOut{}, err
 		}
 
-		page, nextCursor, err := tool.PageOf(os, func(o app.OccurrenceView) string { return o.ID.String() }, in.PageArgs)
-		if err != nil {
+		if err = fillOccurrences(ctx, svc, booksID, in, q, descriptions, &out); err != nil {
 			return listSchedulesOut{}, err
-		}
-
-		out.NextCursor = nextCursor
-		for _, o := range page {
-			amount, err := moneyOf(o.Amount, o.Currency)
-			if err != nil {
-				return listSchedulesOut{}, err
-			}
-
-			v := occurrenceView{
-				OccurrenceID: o.ID.String(), ScheduleID: o.ScheduleID.String(), Description: descriptions[o.ScheduleID],
-				ExpectedOn: tool.DateOf(o.ExpectedOn), ExpectedAmount: amount, State: string(o.Shown),
-			}
-			if o.TransactionID != uuid.Nil {
-				v.TransactionID = o.TransactionID.String()
-			}
-
-			out.Occurrences = append(out.Occurrences, v)
 		}
 
 		if in.Month != "" {
-			c, err := svc.Committed(ctx, booksID, month)
-			if err != nil {
+			if out.Committed, err = committedViewOf(ctx, svc, booksID, q.month); err != nil {
 				return listSchedulesOut{}, err
 			}
-
-			v := committedView{Month: month.Format(monthLayout)}
-			for _, f := range []struct {
-				amount int64
-				into   *tool.Money
-			}{{c.Installments, &v.Installments}, {c.Occurrences, &v.Occurrences}, {c.Total, &v.Total}} {
-				if *f.into, err = moneyOf(f.amount, c.Currency); err != nil {
-					return listSchedulesOut{}, err
-				}
-			}
-
-			out.Committed = v
 		}
 
 		return out, nil
 	})
+}
+
+func fillSchedules(
+	accounts map[uuid.UUID]Account,
+	schedules []domain.Schedule,
+	next map[uuid.UUID]time.Time,
+	in listSchedulesIn,
+	q scheduleQuery,
+	out *listSchedulesOut,
+) (map[uuid.UUID]string, error) {
+	descriptions := make(map[uuid.UUID]string, len(schedules))
+
+	for _, s := range schedules {
+		descriptions[s.ID] = s.Description
+
+		v, err := toScheduleView(s, accounts, q.today, next, q.scheduleID != uuid.Nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// The schedules come with the first page of occurrences only.
+		if in.Cursor == "" {
+			out.Schedules = append(out.Schedules, v)
+		}
+	}
+
+	return descriptions, nil
+}
+
+// scheduleQuery holds the arguments of a list_schedules call after validation.
+type scheduleQuery struct {
+	scheduleID uuid.UUID
+	today      time.Time
+	month      time.Time
+	from, to   time.Time
+}
+
+func decodeScheduleQuery(ctx context.Context, clk clock.Clock, in listSchedulesIn) (scheduleQuery, error) {
+	scheduleID, err := optionalID(in.ScheduleID, "schedule_id")
+	if err != nil {
+		return scheduleQuery{}, err
+	}
+
+	today := clk.Today(ctx)
+
+	month, err := parseMonth("month", in.Month, time.Time{})
+	if err != nil {
+		return scheduleQuery{}, err
+	}
+
+	from, to := today, today.AddDate(0, 0, 31)
+	if !in.From.IsZero() {
+		from = in.From.Time
+		to = from.AddDate(0, 0, 31)
+	}
+
+	if !in.To.IsZero() {
+		to = in.To.Time
+	}
+
+	if to.Before(from) || to.After(from.AddDate(0, 0, 366)) {
+		return scheduleQuery{}, tool.InvalidArgument("to", "must be between from and 366 days after from")
+	}
+
+	if _, err := tool.Limit(in.Limit); err != nil {
+		return scheduleQuery{}, err
+	}
+
+	return scheduleQuery{scheduleID: scheduleID, today: today, month: month, from: from, to: to}, nil
+}
+
+func loadSchedules(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	scheduleID uuid.UUID,
+) ([]domain.Schedule, error) {
+	if scheduleID == uuid.Nil {
+		return allSchedules(ctx, svc, booksID)
+	}
+
+	s, err := svc.Schedule(ctx, booksID, scheduleID)
+	if err != nil {
+		return nil, err
+	}
+
+	return []domain.Schedule{s}, nil
+}
+
+func fillOccurrences(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listSchedulesIn,
+	q scheduleQuery,
+	descriptions map[uuid.UUID]string,
+	out *listSchedulesOut,
+) error {
+	os, err := svc.Occurrences(ctx, booksID, q.from, q.to, q.scheduleID, domain.State(in.State))
+	if err != nil {
+		return err
+	}
+
+	page, nextCursor, err := tool.PageOf(os, func(o app.OccurrenceView) string { return o.ID.String() }, in.PageArgs)
+	if err != nil {
+		return err
+	}
+
+	out.NextCursor = nextCursor
+	for _, o := range page {
+		amount, err := moneyOf(o.Amount, o.Currency)
+		if err != nil {
+			return err
+		}
+
+		v := occurrenceView{
+			OccurrenceID: o.ID.String(), ScheduleID: o.ScheduleID.String(), Description: descriptions[o.ScheduleID],
+			ExpectedOn: tool.DateOf(o.ExpectedOn), ExpectedAmount: amount, State: string(o.Shown),
+		}
+		if o.TransactionID != uuid.Nil {
+			v.TransactionID = o.TransactionID.String()
+		}
+
+		out.Occurrences = append(out.Occurrences, v)
+	}
+
+	return nil
+}
+
+func committedViewOf(ctx context.Context, svc *app.Service, booksID int64, month time.Time) (committedView, error) {
+	c, err := svc.Committed(ctx, booksID, month)
+	if err != nil {
+		return committedView{}, err
+	}
+
+	v := committedView{Month: month.Format(monthLayout)}
+	for _, f := range []struct {
+		amount int64
+		into   *tool.Money
+	}{{c.Installments, &v.Installments}, {c.Occurrences, &v.Occurrences}, {c.Total, &v.Total}} {
+		if *f.into, err = moneyOf(f.amount, c.Currency); err != nil {
+			return committedView{}, err
+		}
+	}
+
+	return v, nil
 }

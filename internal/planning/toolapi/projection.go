@@ -53,14 +53,9 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 			return projectBalanceOut{}, err
 		}
 
-		schedules, err := allSchedules(ctx, svc, booksID)
+		descriptions, err := scheduleDescriptions(ctx, svc, booksID)
 		if err != nil {
 			return projectBalanceOut{}, err
-		}
-
-		descriptions := make(map[uuid.UUID]string, len(schedules))
-		for _, s := range schedules {
-			descriptions[s.ID] = s.Description
 		}
 
 		out := projectBalanceOut{AccountName: accountName(accounts, id), From: tool.DateOf(p.From), To: tool.DateOf(p.To), Points: []projectionPoint{}}
@@ -72,19 +67,43 @@ func projectBalance(svc *app.Service, l Ledger) tool.Tool {
 			return out, err
 		}
 
-		for _, pt := range p.Points {
-			v := projectionPoint{Date: tool.DateOf(pt.Date), Description: descriptions[pt.ScheduleID]}
-			if v.Amount, err = moneyOf(pt.Amount, p.Currency); err != nil {
-				return out, err
-			}
-
-			if v.Balance, err = moneyOf(pt.Balance, p.Currency); err != nil {
-				return out, err
-			}
-
-			out.Points = append(out.Points, v)
+		if err = fillProjectionPoints(&out, p, descriptions); err != nil {
+			return out, err
 		}
 
 		return out, nil
 	})
+}
+
+func scheduleDescriptions(ctx context.Context, svc *app.Service, booksID int64) (map[uuid.UUID]string, error) {
+	schedules, err := allSchedules(ctx, svc, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	descriptions := make(map[uuid.UUID]string, len(schedules))
+	for _, s := range schedules {
+		descriptions[s.ID] = s.Description
+	}
+
+	return descriptions, nil
+}
+
+func fillProjectionPoints(out *projectBalanceOut, p app.Projection, descriptions map[uuid.UUID]string) error {
+	for _, pt := range p.Points {
+		var err error
+
+		v := projectionPoint{Date: tool.DateOf(pt.Date), Description: descriptions[pt.ScheduleID]}
+		if v.Amount, err = moneyOf(pt.Amount, p.Currency); err != nil {
+			return err
+		}
+
+		if v.Balance, err = moneyOf(pt.Balance, p.Currency); err != nil {
+			return err
+		}
+
+		out.Points = append(out.Points, v)
+	}
+
+	return nil
 }

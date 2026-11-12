@@ -12,6 +12,39 @@ import (
 )
 
 func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID int64, in manageScheduleIn) (schedulePlan, error) {
+	if err := checkScheduleFields(in); err != nil {
+		return schedulePlan{}, err
+	}
+
+	p, err := decodeScheduleArguments(ctx, svc, booksID, in)
+	if err != nil {
+		return schedulePlan{}, err
+	}
+
+	unit := money.Money{}
+	switch in.Action {
+	case "create":
+		if unit, err = prepareScheduleCreate(ctx, l, booksID, in, &p); err != nil {
+			return schedulePlan{}, err
+		}
+	case "change_terms":
+		if unit, err = prepareTermsChange(in, &p); err != nil {
+			return schedulePlan{}, err
+		}
+	case "pause":
+		if err = checkPause(in, p); err != nil {
+			return schedulePlan{}, err
+		}
+	}
+
+	if err = finishSchedulePlan(in, &p, unit); err != nil {
+		return schedulePlan{}, err
+	}
+
+	return p, nil
+}
+
+func checkScheduleFields(in manageScheduleIn) error {
 	given := func(s string) bool { return s != "" }
 	fields := []field{
 		{"schedule_id", given(in.ScheduleID)}, {"kind", given(string(in.Kind))}, {"description", given(in.Description)},
@@ -54,13 +87,21 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 		err = required(name, fields, []string{"schedule_id", "from"})
 	}
 
-	if err != nil {
-		return schedulePlan{}, err
-	}
+	return err
+}
 
-	var p schedulePlan
+func decodeScheduleArguments(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in manageScheduleIn,
+) (schedulePlan, error) {
+	var (
+		p          schedulePlan
+		scheduleID uuid.UUID
+		err        error
+	)
 
-	var scheduleID uuid.UUID
 	for _, id := range []struct {
 		s, field string
 		into     *uuid.UUID
@@ -80,87 +121,106 @@ func prepareSchedule(ctx context.Context, svc *app.Service, l Ledger, booksID in
 		}
 	}
 
-	unit := money.Money{}
-	switch in.Action {
-	case "create":
-		accounts, err := l.Accounts(ctx, booksID)
-		if err != nil {
-			return schedulePlan{}, err
-		}
+	return p, nil
+}
 
-		var ok bool
-		if p.account, ok = accounts[p.accountID]; !ok {
-			return schedulePlan{}, validationError("account_id", "must be a balance account of the book")
-		}
+func prepareScheduleCreate(
+	ctx context.Context,
+	l Ledger,
+	booksID int64,
+	in manageScheduleIn,
+	p *schedulePlan,
+) (money.Money, error) {
+	accounts, err := l.Accounts(ctx, booksID)
+	if err != nil {
+		return money.Money{}, err
+	}
 
-		if p.counterpart, ok = accounts[p.counterID]; !ok {
-			return schedulePlan{}, validationError("counterpart_id", "does not fit kind "+string(in.Kind))
-		}
+	var ok bool
+	if p.account, ok = accounts[p.accountID]; !ok {
+		return money.Money{}, validationError("account_id", "must be a balance account of the book")
+	}
 
-		unit, err = unitOf(p.account.Instrument)
-		if err != nil {
-			return schedulePlan{}, err
-		}
+	if p.counterpart, ok = accounts[p.counterID]; !ok {
+		return money.Money{}, validationError("counterpart_id", "does not fit kind "+string(in.Kind))
+	}
 
-		rule := domain.Rule{
-			Frequency: domain.Frequency(in.Frequency), Interval: max(in.Interval, 1), DayOfMonth: in.DayOfMonth,
-			Adjustment: "none", Start: in.Start.Time,
-		}
-		if !in.Until.IsZero() {
-			rule.Until = &in.Until.Time
-		}
+	unit, err := unitOf(p.account.Instrument)
+	if err != nil {
+		return money.Money{}, err
+	}
 
-		p.rule = &rule
+	rule := domain.Rule{
+		Frequency: domain.Frequency(in.Frequency), Interval: max(in.Interval, 1), DayOfMonth: in.DayOfMonth,
+		Adjustment: "none", Start: in.Start.Time,
+	}
+	if !in.Until.IsZero() {
+		rule.Until = &in.Until.Time
+	}
 
-		if p.paidBy != uuid.Nil {
-			if err := checkPaidBy(ctx, l, booksID, &p); err != nil {
-				return schedulePlan{}, err
-			}
-		}
-	case "change_terms":
-		if unit, err = unitOf(p.schedule.Currency); err != nil {
-			return schedulePlan{}, err
-		}
+	p.rule = &rule
 
-		if in.Frequency != "" {
-			last := p.schedule.Terms[len(p.schedule.Terms)-1].Rule
-			p.rule = &domain.Rule{
-				Frequency: domain.Frequency(in.Frequency), Interval: max(in.Interval, 1), DayOfMonth: in.DayOfMonth,
-				Adjustment: last.Adjustment, Start: last.Start, Until: last.Until,
-			}
-		}
-	case "pause":
-		if in.To.Before(in.From.Time) {
-			return schedulePlan{}, validationError("to", "must not be before from")
-		}
-
-		for _, q := range p.schedule.Pauses {
-			if !in.From.After(q.To) && !in.To.Before(q.From) {
-				return schedulePlan{}, app.ErrPauseOverlap
-			}
+	if p.paidBy != uuid.Nil {
+		if err := checkPaidBy(ctx, l, booksID, p); err != nil {
+			return money.Money{}, err
 		}
 	}
 
+	return unit, nil
+}
+
+func prepareTermsChange(in manageScheduleIn, p *schedulePlan) (money.Money, error) {
+	unit, err := unitOf(p.schedule.Currency)
+	if err != nil {
+		return money.Money{}, err
+	}
+
+	if in.Frequency != "" {
+		last := p.schedule.Terms[len(p.schedule.Terms)-1].Rule
+		p.rule = &domain.Rule{
+			Frequency: domain.Frequency(in.Frequency), Interval: max(in.Interval, 1), DayOfMonth: in.DayOfMonth,
+			Adjustment: last.Adjustment, Start: last.Start, Until: last.Until,
+		}
+	}
+
+	return unit, nil
+}
+
+func checkPause(in manageScheduleIn, p schedulePlan) error {
+	if in.To.Before(in.From.Time) {
+		return validationError("to", "must not be before from")
+	}
+
+	for _, q := range p.schedule.Pauses {
+		if !in.From.After(q.To) && !in.To.Before(q.From) {
+			return app.ErrPauseOverlap
+		}
+	}
+
+	return nil
+}
+
+func finishSchedulePlan(in manageScheduleIn, p *schedulePlan, unit money.Money) error {
 	if (in.Action == "change_terms" || in.Action == "pause" || in.Action == "end") && p.schedule.EndsOn != nil && !in.From.Before(*p.schedule.EndsOn) {
-		return schedulePlan{}, app.ErrScheduleEnded
+		return app.ErrScheduleEnded
 	}
 
 	if p.rule != nil {
 		if err := p.rule.Validate(); err != nil {
-			return schedulePlan{}, err
+			return err
 		}
 	}
 
 	if in.Amount != "" {
 		m, err := tool.ParsePositive("amount", in.Amount, unit)
 		if err != nil {
-			return schedulePlan{}, err
+			return err
 		}
 
 		p.amount = &m
 	}
 
-	return p, nil
+	return nil
 }
 
 // checkPaidBy reads the paying transaction and requires an occurrence on the rule's start.

@@ -80,90 +80,122 @@ func manageOccurrence(svc *app.Service) tool.Tool {
 			return tool.Preview{}, err
 		}
 
-		o, err := svc.Occurrence(ctx, booksID, p.occurrence)
-		if err != nil {
-			return tool.Preview{}, err
-		}
-
-		sch, err := svc.Schedule(ctx, booksID, o.ScheduleID)
-		if err != nil {
-			return tool.Preview{}, err
-		}
-
-		wantState := domain.Expected
-
-		switch in.Action {
-		case "unrealize":
-			wantState = domain.Realized
-		case "reopen":
-			wantState = domain.Skipped
-		}
-
-		if o.State != wantState {
-			return tool.Preview{}, app.ErrOccurrenceClosed
-		}
-
-		name := sch.Description + " expected " + o.ExpectedOn.Format(time.DateOnly)
-		pv := tool.Preview{Action: "manage_occurrence." + string(in.Action), Target: "Occurrence " + name, Basis: string(o.State)}
-		pv.Changes = []tool.Change{{Field: "occurrence", After: tool.TextValue(name)}}
-
-		status := func(after string) tool.Change {
-			return tool.Change{Field: "status", Before: tool.TextValue(string(o.Shown)), After: tool.TextValue(after)}
-		}
-		switch in.Action {
-		case "realize":
-			pv.Changes = append(pv.Changes, status("realized"), tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
-		case "skip":
-			pv.Changes = append(pv.Changes, status("skipped"))
-			if in.Reason != "" {
-				pv.Changes = append(pv.Changes, tool.Change{Field: "reason", After: tool.TextValue(in.Reason)})
-			}
-		case "move":
-			if sch.EndsOn != nil && !in.Date.Before(*sch.EndsOn) {
-				return tool.Preview{}, app.ErrScheduleEnded
-			}
-
-			if sch.Paused(in.Date.Time) {
-				return tool.Preview{}, validationError("date", "falls inside a pause of the schedule")
-			}
-
-			pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(o.ExpectedOn), After: tool.DateValue(in.Date.Time)})
-		case "unrealize":
-			pv.Changes = append(pv.Changes, status("expected"), tool.Change{Field: "transaction", Before: tool.TextValue(o.TransactionID.String())})
-		case "reopen":
-			pv.Changes = append(pv.Changes, status("expected"))
-		}
-
-		return pv, nil
+		return previewOccurrence(ctx, svc, booksID, in, p)
 	}, func(ctx context.Context, booksID int64, in manageOccurrenceIn) (manageOccurrenceOut, error) {
 		p, err := prepareOccurrence(in)
 		if err != nil {
 			return manageOccurrenceOut{}, err
 		}
 
-		var o app.OccurrenceView
-		switch in.Action {
-		case "realize":
-			o, err = svc.Realize(ctx, booksID, p.occurrence, p.transaction)
-		case "skip":
-			o, err = svc.Skip(ctx, booksID, p.occurrence, in.Reason)
-		case "move":
-			o, err = svc.Move(ctx, booksID, p.occurrence, in.Date.Time)
-		case "reopen":
-			o, err = svc.Reopen(ctx, booksID, p.occurrence)
-		default:
-			o, err = svc.Unrealize(ctx, booksID, p.occurrence)
-		}
-
-		if err != nil {
-			return manageOccurrenceOut{}, err
-		}
-
-		out := manageOccurrenceOut{OccurrenceID: o.ID.String(), State: string(o.Shown), ExpectedOn: tool.DateOf(o.ExpectedOn)}
-		if o.TransactionID != uuid.Nil {
-			out.TransactionID = o.TransactionID.String()
-		}
-
-		return out, nil
+		return runOccurrence(ctx, svc, booksID, in, p)
 	})
+}
+
+func previewOccurrence(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in manageOccurrenceIn,
+	p occurrencePlan,
+) (tool.Preview, error) {
+	o, err := svc.Occurrence(ctx, booksID, p.occurrence)
+	if err != nil {
+		return tool.Preview{}, err
+	}
+
+	sch, err := svc.Schedule(ctx, booksID, o.ScheduleID)
+	if err != nil {
+		return tool.Preview{}, err
+	}
+
+	wantState := domain.Expected
+
+	switch in.Action {
+	case "unrealize":
+		wantState = domain.Realized
+	case "reopen":
+		wantState = domain.Skipped
+	}
+
+	if o.State != wantState {
+		return tool.Preview{}, app.ErrOccurrenceClosed
+	}
+
+	name := sch.Description + " expected " + o.ExpectedOn.Format(time.DateOnly)
+	pv := tool.Preview{Action: "manage_occurrence." + string(in.Action), Target: "Occurrence " + name, Basis: string(o.State)}
+	pv.Changes = []tool.Change{{Field: "occurrence", After: tool.TextValue(name)}}
+
+	if err := occurrenceChanges(&pv, in, o, sch); err != nil {
+		return tool.Preview{}, err
+	}
+
+	return pv, nil
+}
+
+func occurrenceChanges(pv *tool.Preview, in manageOccurrenceIn, o app.OccurrenceView, sch domain.Schedule) error {
+	status := func(after string) tool.Change {
+		return tool.Change{Field: "status", Before: tool.TextValue(string(o.Shown)), After: tool.TextValue(after)}
+	}
+	switch in.Action {
+	case "realize":
+		pv.Changes = append(pv.Changes, status("realized"), tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
+	case "skip":
+		pv.Changes = append(pv.Changes, status("skipped"))
+		if in.Reason != "" {
+			pv.Changes = append(pv.Changes, tool.Change{Field: "reason", After: tool.TextValue(in.Reason)})
+		}
+	case "move":
+		if sch.EndsOn != nil && !in.Date.Before(*sch.EndsOn) {
+			return app.ErrScheduleEnded
+		}
+
+		if sch.Paused(in.Date.Time) {
+			return validationError("date", "falls inside a pause of the schedule")
+		}
+
+		pv.Changes = append(pv.Changes, tool.Change{Field: "date", Before: tool.DateValue(o.ExpectedOn), After: tool.DateValue(in.Date.Time)})
+	case "unrealize":
+		pv.Changes = append(pv.Changes, status("expected"), tool.Change{Field: "transaction", Before: tool.TextValue(o.TransactionID.String())})
+	case "reopen":
+		pv.Changes = append(pv.Changes, status("expected"))
+	}
+
+	return nil
+}
+
+func runOccurrence(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in manageOccurrenceIn,
+	p occurrencePlan,
+) (manageOccurrenceOut, error) {
+	var (
+		o   app.OccurrenceView
+		err error
+	)
+
+	switch in.Action {
+	case "realize":
+		o, err = svc.Realize(ctx, booksID, p.occurrence, p.transaction)
+	case "skip":
+		o, err = svc.Skip(ctx, booksID, p.occurrence, in.Reason)
+	case "move":
+		o, err = svc.Move(ctx, booksID, p.occurrence, in.Date.Time)
+	case "reopen":
+		o, err = svc.Reopen(ctx, booksID, p.occurrence)
+	default:
+		o, err = svc.Unrealize(ctx, booksID, p.occurrence)
+	}
+
+	if err != nil {
+		return manageOccurrenceOut{}, err
+	}
+
+	out := manageOccurrenceOut{OccurrenceID: o.ID.String(), State: string(o.Shown), ExpectedOn: tool.DateOf(o.ExpectedOn)}
+	if o.TransactionID != uuid.Nil {
+		out.TransactionID = o.TransactionID.String()
+	}
+
+	return out, nil
 }

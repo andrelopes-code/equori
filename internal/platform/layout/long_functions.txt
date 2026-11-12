@@ -80,16 +80,6 @@ internal/planning/domain/plan.go	PlanRows	pending: backend reorganization plan
 internal/planning/domain/recurrence.go	Rule.Validate	pending: backend reorganization plan
 internal/planning/httpapi/plan.go	toBudgetPlanAPI	pending: backend reorganization plan
 internal/planning/httpapi/server.go	Server.Register	table of data
-internal/planning/toolapi/budget_goal.go	manageBudgetOrGoal	pending: backend reorganization plan
-internal/planning/toolapi/budget_goal.go	prepareBudgetOrGoal	pending: backend reorganization plan
-internal/planning/toolapi/budgets.go	getBudgetsAndGoals	pending: backend reorganization plan
-internal/planning/toolapi/budgets.go	toPlanView	pending: backend reorganization plan
-internal/planning/toolapi/manage_schedule.go	manageSchedule	pending: backend reorganization plan
-internal/planning/toolapi/manage_schedule_prepare.go	prepareSchedule	pending: backend reorganization plan
-internal/planning/toolapi/occurrence.go	manageOccurrence	pending: backend reorganization plan
-internal/planning/toolapi/projection.go	projectBalance	pending: backend reorganization plan
-internal/planning/toolapi/recurring.go	findRecurring	pending: backend reorganization plan
-internal/planning/toolapi/schedules.go	listSchedules	pending: backend reorganization plan
 internal/platform/config/variables.go	Variables	table of data
 internal/portfolio/app/benchmark.go	Service.benchmark	pending: backend reorganization plan
 internal/portfolio/app/benchmark_window.go	period.comparedWindow	pending: backend reorganization plan

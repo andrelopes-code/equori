@@ -55,21 +55,12 @@ func findRecurring(svc *app.Service, l Ledger) tool.Tool {
 			"schedule_id names the schedule that already covers a series.",
 		Effect: tool.ReadOnly, Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in findRecurringIn) (findRecurringOut, error) {
-		payeeID, err := optionalID(in.PayeeID, "payee_id")
+		filter, err := decodeRecurringFilter(in)
 		if err != nil {
 			return findRecurringOut{}, err
 		}
 
-		accountID, err := optionalID(in.AccountID, "account_id")
-		if err != nil {
-			return findRecurringOut{}, err
-		}
-
-		if utf8.RuneCountInString(in.Text) > maxRecurringText {
-			return findRecurringOut{}, tool.InvalidArgument("text", "is longer than 100 characters")
-		}
-
-		series, err := svc.Recurring(ctx, booksID, app.RecurringFilter{PayeeID: payeeID, AccountID: accountID})
+		series, err := svc.Recurring(ctx, booksID, filter)
 		if err != nil {
 			return findRecurringOut{}, err
 		}
@@ -84,29 +75,60 @@ func findRecurring(svc *app.Service, l Ledger) tool.Tool {
 			return findRecurringOut{}, err
 		}
 
-		text := textfold.String(in.Text)
-		out := findRecurringOut{Series: []seriesView{}}
-
-		for _, s := range series {
-			if len(out.Series) == maxRecurringSeries {
-				break
-			}
-
-			name := payees[s.PayeeID]
-			if !strings.Contains(textfold.String(name), text) && !strings.Contains(textfold.String(s.Key), text) {
-				continue
-			}
-
-			v, err := toSeriesView(s, name, accounts)
-			if err != nil {
-				return findRecurringOut{}, err
-			}
-
-			out.Series = append(out.Series, v)
+		views, err := seriesViews(series, payees, accounts, textfold.String(in.Text))
+		if err != nil {
+			return findRecurringOut{}, err
 		}
 
-		return out, nil
+		return findRecurringOut{Series: views}, nil
 	})
+}
+
+func decodeRecurringFilter(in findRecurringIn) (app.RecurringFilter, error) {
+	payeeID, err := optionalID(in.PayeeID, "payee_id")
+	if err != nil {
+		return app.RecurringFilter{}, err
+	}
+
+	accountID, err := optionalID(in.AccountID, "account_id")
+	if err != nil {
+		return app.RecurringFilter{}, err
+	}
+
+	if utf8.RuneCountInString(in.Text) > maxRecurringText {
+		return app.RecurringFilter{}, tool.InvalidArgument("text", "is longer than 100 characters")
+	}
+
+	return app.RecurringFilter{PayeeID: payeeID, AccountID: accountID}, nil
+}
+
+func seriesViews(
+	series []domain.Series,
+	payees map[uuid.UUID]string,
+	accounts map[uuid.UUID]Account,
+	text string,
+) ([]seriesView, error) {
+	views := []seriesView{}
+
+	for _, s := range series {
+		if len(views) == maxRecurringSeries {
+			break
+		}
+
+		name := payees[s.PayeeID]
+		if !strings.Contains(textfold.String(name), text) && !strings.Contains(textfold.String(s.Key), text) {
+			continue
+		}
+
+		v, err := toSeriesView(s, name, accounts)
+		if err != nil {
+			return nil, err
+		}
+
+		views = append(views, v)
+	}
+
+	return views, nil
 }
 
 func toSeriesView(s domain.Series, payee string, accounts map[uuid.UUID]Account) (seriesView, error) {
