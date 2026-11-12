@@ -2,6 +2,7 @@ package apitest_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -294,6 +295,97 @@ func TestTradeWithInstrumentRoles(t *testing.T) {
 	if got := s.holdings(t, "AUVP11"); len(got) != 1 {
 		t.Fatalf("holdings = %+v, want the one of the write and owner trades", got)
 	}
+}
+
+// S397: an income paid outside the tree is an external flow of the return (BC15).
+func TestS397_ReturnWithMoneyPaidOutside(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		incomeInto  func(s brokerageSetup, checking string) string
+		wantClosing int64
+		wantFlows   []flowOut
+	}{
+		{
+			name:        "income paid into checking",
+			incomeInto:  func(_ brokerageSetup, checking string) string { return checking },
+			wantClosing: 12000,
+			wantFlows:   []flowOut{{"2026-10-05", 10000}, {"2026-12-05", -500}},
+		},
+		{
+			name:        "income paid into the cash account of the tree",
+			incomeInto:  func(s brokerageSetup, _ string) string { return s.cash },
+			wantClosing: 12500,
+			wantFlows:   []flowOut{{"2026-10-05", 10000}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			s, checking := newOutsideSetup(t)
+			s.cash = s.child("Cash", "BRL")
+
+			buy := s.buy("2026-10-05", 10)
+			buy["cash_account_id"] = checking
+			s.h.MustDo(http.MethodPost, tradesPath, buy, http.StatusCreated, nil)
+			for date, value := range map[string]string{"2026-10-05": "10", "2026-12-05": "12"} {
+				s.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+					"instrument": "AUVP11", "quote_instrument": "BRL",
+					"date": date, "value": value,
+				}, http.StatusCreated, nil)
+			}
+
+			dividends := s.h.Account("Dividends", "income", "", nil)
+			s.h.MustDo(http.MethodPost, "/api/v1/investment-income", map[string]any{
+				"brokerage_id": s.brokerage, "instrument": "AUVP11", "income_type": "dividend",
+				"date": "2026-12-05", "gross": s.h.Money(500), "category_id": dividends,
+				"cash_account_id": tt.incomeInto(s, checking),
+			}, http.StatusCreated, nil)
+			s.h.Dispatch()
+
+			var got struct {
+				Flows []struct {
+					Date   string `json:"date"`
+					Amount struct {
+						Amount int64 `json:"amount"`
+					} `json:"amount"`
+				} `json:"flows"`
+				Opening struct {
+					Amount int64 `json:"amount"`
+				} `json:"opening"`
+				Closing struct {
+					Amount int64 `json:"amount"`
+				} `json:"closing"`
+			}
+			s.h.MustDo(http.MethodGet, "/api/v1/reports/return?account_id="+s.brokerage+
+				"&from=2026-10-05&to=2026-12-05&value_in=BRL", nil, http.StatusOK, &got)
+
+			var flows []flowOut
+
+			gain := got.Closing.Amount - got.Opening.Amount
+
+			for _, f := range got.Flows {
+				flows = append(flows, flowOut{f.Date, f.Amount.Amount})
+				gain -= f.Amount.Amount
+			}
+
+			if got.Closing.Amount != tt.wantClosing || !slices.Equal(flows, tt.wantFlows) {
+				t.Fatalf("closing = %d, flows = %+v, want %d, %+v",
+					got.Closing.Amount, flows, tt.wantClosing, tt.wantFlows)
+			}
+
+			if gain != 2500 {
+				t.Fatalf("gain = %d, want 2500", gain)
+			}
+		})
+	}
+}
+
+type flowOut struct {
+	Date   string
+	Amount int64
 }
 
 func newBrokerageSetup(t *testing.T, profile apitest.Profile) brokerageSetup {

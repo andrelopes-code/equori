@@ -515,20 +515,36 @@ WHERE
     t.books_id = $1
     AND t.voided_at IS NULL
     AND t.date BETWEEN $2 AND $3
-    AND EXISTS (
-        SELECT
-            1
-        FROM
-            ledger_posting p
-        WHERE
-            p.transaction_id = t.id
-            AND NOT p.voided
-            AND p.account_id IN (
-                SELECT
-                    id
-                FROM
-                    tree
-            )
+    AND (
+        EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_posting p
+            WHERE
+                p.transaction_id = t.id
+                AND NOT p.voided
+                AND p.account_id IN (
+                    SELECT
+                        id
+                    FROM
+                        tree
+                )
+        )
+        OR EXISTS (
+            SELECT
+                1
+            FROM
+                ledger_investment_income i
+            WHERE
+                i.transaction_id = t.id
+                AND i.account_id IN (
+                    SELECT
+                        id
+                    FROM
+                        tree
+                )
+        )
     )
 GROUP BY
     t.id,
@@ -555,7 +571,8 @@ type TreeExternalFlowsRow struct {
 // Investments design 4.3: the money that entered (positive) or left (negative) the accounts and
 // their sub-accounts, taken as one tree, in each transaction of [from, to] that also touches a
 // balance account outside it, as the negated weights of the outside postings, in the
-// transaction's balancing currency. A transfer between two roots is internal.
+// transaction's balancing currency. A transfer between two roots is internal. An income of the
+// tree paid to an account outside it has no posting on the tree and counts as touching it (BC15).
 func (q *Queries) TreeExternalFlows(ctx context.Context, arg TreeExternalFlowsParams) ([]TreeExternalFlowsRow, error) {
 	rows, err := q.db.Query(ctx, treeExternalFlows,
 		arg.BooksID,
