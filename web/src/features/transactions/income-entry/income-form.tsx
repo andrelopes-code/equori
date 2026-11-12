@@ -3,7 +3,8 @@ import { TextField } from "@slotted/react/text-field";
 
 import { CategoryPicker } from "@/features/categories";
 import { catalogLabel } from "@/features/setup";
-import { BrokerageAccountFields } from "@/features/transactions/brokerage-account/brokerage-account-fields";
+import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
+import { MissingCashNotice } from "@/features/transactions/brokerage-account/missing-cash-notice";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
 import type { IncomeDraft } from "@/features/transactions/income-entry/income-draft";
@@ -67,24 +68,33 @@ export function IncomeForm({
         investments
       />
 
-      <BrokerageAccountFields
-        securities={view.securities}
-        security={view.security}
-        cashChoices={view.cashChoices}
-        cashAccountId={view.cashAccountId}
+      <BrokerageFields
+        brokerages={view.brokerages}
+        brokerage={view.brokerage}
+        instrument={view.instrument}
+        heldCodes={view.heldCodes}
+        cash={view.cash}
+        cashAccount={view.cashAccount}
+        balance={view.balance}
         base={base}
-        ready={view.ready}
         date={draft.date}
         money="in"
         errors={errors}
         scale={scale}
-        onSecurity={(id) => {
-          set({ accountId: id });
+        onBrokerage={(id) => {
+          set({ brokerageId: id, instrument: null, cashAccountId: null });
+        }}
+        onInstrument={(code) => {
+          set({ instrument: code });
         }}
         onCash={(id) => {
           set({ cashAccountId: id });
         }}
       />
+
+      {view.brokerage !== undefined && !view.baseCash && base !== undefined && (
+        <MissingCashNotice brokerage={view.brokerage} base={base} />
+      )}
 
       <Field width="medium" required invalid={errors.income_type !== undefined}>
         <FieldTitle label={t("income.type")} help={t("income.typeHelp")} />

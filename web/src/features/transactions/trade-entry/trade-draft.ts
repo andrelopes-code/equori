@@ -1,8 +1,8 @@
 export interface TradeDraft {
   side: "buy" | "sell";
-  accountId: string | null;
-  // The brokerage a link presets; the trade form reads it once it chooses by brokerage.
-  brokerageId?: string;
+  brokerageId: string | null;
+  // The code of the investment; the server finds or creates its holding account (BC6).
+  instrument: string | null;
   cashAccountId: string | null;
   date: string;
   // Units of the instrument, in its scale.
@@ -18,11 +18,12 @@ export interface TradeDraft {
 
 export function emptyTrade(
   date: string,
-  accountId: string | null = null,
+  brokerageId: string | null = null,
 ): TradeDraft {
   return {
     side: "buy",
-    accountId,
+    brokerageId,
+    instrument: null,
     cashAccountId: null,
     date,
     quantity: 0,
@@ -43,6 +44,8 @@ export function isTradeDraft(value: unknown): value is TradeDraft {
     typeof draft.quantity === "number" &&
     typeof draft.fees === "number" &&
     typeof draft.taxes === "number" &&
-    typeof draft.description === "string"
+    typeof draft.description === "string" &&
+    "brokerageId" in draft &&
+    "instrument" in draft
   );
 }

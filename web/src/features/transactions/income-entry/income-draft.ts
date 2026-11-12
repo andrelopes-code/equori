@@ -1,5 +1,6 @@
 export interface IncomeDraft {
-  accountId: string | null;
+  brokerageId: string | null;
+  instrument: string | null;
   cashAccountId: string | null;
   date: string;
   incomeType: string | null;
@@ -13,10 +14,11 @@ export interface IncomeDraft {
 
 export function emptyIncome(
   date: string,
-  accountId: string | null = null,
+  brokerageId: string | null = null,
 ): IncomeDraft {
   return {
-    accountId,
+    brokerageId,
+    instrument: null,
     cashAccountId: null,
     date,
     incomeType: null,
@@ -36,6 +38,8 @@ export function isIncomeDraft(value: unknown): value is IncomeDraft {
     typeof draft.gross === "number" &&
     typeof draft.withheld === "number" &&
     typeof draft.description === "string" &&
-    "incomeType" in draft
+    "incomeType" in draft &&
+    "brokerageId" in draft &&
+    "instrument" in draft
   );
 }

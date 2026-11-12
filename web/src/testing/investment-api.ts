@@ -13,6 +13,8 @@ export const securityID = "b0000000-0000-4000-8000-000000000003";
 const otherSecurityID = "b0000000-0000-4000-8000-000000000004";
 const closedCashID = "b0000000-0000-4000-8000-000000000005";
 export const taxID = "b0000000-0000-4000-8000-000000000006";
+export const usdBrokerID = "b0000000-0000-4000-8000-000000000008";
+export const secondCashID = "b0000000-0000-4000-8000-000000000009";
 
 export const accounts = [
   ...baseAccounts,
@@ -56,6 +58,33 @@ export const accounts = [
   { id: dividendsID, name: "Dividends", class: "income", currency: "BRL" },
 ];
 
+// A brokerage in USD with no cash account in the base currency.
+export const usdBrokerage = [
+  {
+    id: usdBrokerID,
+    name: "Alpha",
+    class: "asset",
+    kind: "brokerage",
+    currency: "USD",
+  },
+  {
+    id: "b0000000-0000-4000-8000-00000000000a",
+    name: "Alpha USD",
+    class: "asset",
+    currency: "USD",
+    parent_id: usdBrokerID,
+  },
+];
+
+// A second open cash account of the XP brokerage.
+export const secondCash = {
+  id: secondCashID,
+  name: "XP reserve",
+  class: "asset",
+  currency: "BRL",
+  parent_id: brokerID,
+};
+
 export const brl = (amount: number) => ({ amount, currency: "BRL" });
 
 export function investmentApi(
@@ -63,6 +92,8 @@ export function investmentApi(
   options: {
     price?: string;
     held?: { quantity: number; cost: number };
+    extraAccounts?: unknown[];
+    cashBalance?: number;
     answer?: () => Response;
     incomeTypes?: string[];
     incomeAnswer?: () => Response;
@@ -70,13 +101,22 @@ export function investmentApi(
 ) {
   return fakeApi({
     ...sharedRoutes,
-    "GET /api/v1/accounts": () => json(200, { items: accounts }),
+    "GET /api/v1/accounts": () =>
+      json(200, { items: [...accounts, ...(options.extraAccounts ?? [])] }),
+    [`GET /api/v1/accounts/${cashID}/balance`]: (req) =>
+      json(200, {
+        account_id: cashID,
+        date: new URL(req.url).searchParams.get("date"),
+        basis: "booked",
+        balance: brl(options.cashBalance ?? 100000000),
+      }),
     "GET /api/v1/instruments": () =>
       json(200, {
         items: [
           { code: "BRL", type: "currency", scale: 2, name: "Real" },
           { code: "MXRF11", type: "reit", scale: 0, name: "MXRF11" },
           { code: "PETR4", type: "stock", scale: 0, name: "PETR4" },
+          { code: "HGLG11", type: "reit", scale: 0, name: "HGLG11" },
         ],
       }),
     "GET /api/v1/prices": (req) => {

@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { accountsQuery, positionsQuery } from "@/features/accounts";
+import {
+  accountsQuery,
+  balanceQuery,
+  positionsQuery,
+} from "@/features/accounts";
 import { parseRate, pricesQuery } from "@/features/instruments";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useRecordTrade } from "@/features/transactions/api";
@@ -18,7 +22,8 @@ import {
   isTradeDraft,
 } from "@/features/transactions/trade-entry/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
-import { useBrokerageAccounts } from "@/features/transactions/brokerage-account/use-brokerage-accounts";
+import { shortfall } from "@/features/transactions/brokerage-account/cash-state";
+import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
 import {
   cashEffect,
   estimatedResult,
@@ -36,10 +41,17 @@ const draftKey = "new-trade";
 
 export interface TradeView {
   base: string | undefined;
-  security: Account | undefined;
-  securities: Account[];
-  cashChoices: Account[];
-  cashAccountId: string | null;
+  brokerages: Account[];
+  brokerage: Account | undefined;
+  instrument: string | null;
+  // The codes the brokerage holds, for a sale; null for a purchase.
+  heldCodes: string[] | null;
+  cash: Account[];
+  cashAccount: Account | undefined;
+  baseCash: boolean;
+  // Minor units of the base currency.
+  balance: number | undefined;
+  shortfall: number | null;
   price: string;
   storedPrice: string | undefined;
   held: Position | undefined;
@@ -71,8 +83,7 @@ export function useTradeEntry(
     const start = isTradeDraft(stored) ? stored : emptyTrade(today);
     return {
       ...start,
-      ...(accountId === null ? {} : { accountId }),
-      ...(brokerageId === null ? {} : { brokerageId }),
+      brokerageId: brokerageId ?? start.brokerageId,
     };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,24 +92,41 @@ export function useTradeEntry(
     writeDraft(draftKey, draft);
   }, [draft]);
 
-  const { securities, security, cashChoices, cashAccountId } =
-    useBrokerageAccounts(draft.accountId, draft.cashAccountId);
+  // A route that names a holding account stands for its brokerage and its investment.
+  const holding = accounts.data?.find((a) => a.id === accountId);
+  const preset =
+    holding?.parent_id === undefined
+      ? null
+      : { brokerageId: holding.parent_id, instrument: holding.currency };
+  const chosen =
+    draft.brokerageId === null && draft.instrument === null && preset !== null
+      ? preset
+      : draft;
+  const instrument = chosen.instrument;
+  const sell = draft.side === "sell";
+  const state = useBrokerages(chosen.brokerageId, instrument);
+  const cashAccount =
+    state.cash.find((a) => a.id === draft.cashAccountId) ?? state.cashAccount;
+  const balanceRead = useQuery({
+    ...balanceQuery(api, cashAccount?.id ?? "", draft.date, "booked"),
+    enabled: cashAccount !== undefined,
+  });
+  const balance = balanceRead.data?.balance.amount;
 
-  const instrument = security?.currency;
   const prices = useQuery({
     ...pricesQuery(api, instrument ?? "", base ?? "", draft.date, draft.date),
-    enabled: instrument !== undefined && base !== undefined,
+    enabled: instrument !== null && base !== undefined,
   });
   const positions = useQuery(positionsQuery(api, draft.date));
   const storedPrice = prices.data?.[0]?.value;
   const price = draft.unitPrice ?? storedPrice ?? "";
   const rate = parseRate(price);
   const held = positions.data?.find(
-    (p) => p.account_id === security?.id && p.instrument === instrument,
+    (p) => p.account_id === state.held?.id && p.instrument === instrument,
   );
 
   const quantityScale =
-    scale === null || instrument === undefined ? null : scale(instrument);
+    scale === null || instrument === null ? null : scale(instrument);
   const baseScale = scale === null || base === undefined ? null : scale(base);
   const priced =
     rate !== null &&
@@ -132,18 +160,24 @@ export function useTradeEntry(
           })
       : null;
 
+  const cashEffectValue =
+    gross === null ? null : cashEffect(draft.side, gross, draft.fees, taxes);
   const view: TradeView = {
     base,
-    security,
-    securities,
-    cashChoices,
-    cashAccountId,
+    brokerages: state.brokerages,
+    brokerage: state.brokerage,
+    instrument,
+    heldCodes: sell ? state.holdings.map((a) => a.currency) : null,
+    cash: state.cash,
+    cashAccount,
+    baseCash: state.baseCash,
+    balance,
+    shortfall: shortfall(cashEffectValue, balance),
     price,
     storedPrice,
     held,
     gross,
-    cashEffect:
-      gross === null ? null : cashEffect(draft.side, gross, draft.fees, taxes),
+    cashEffect: cashEffectValue,
     result:
       gross === null || cost === null
         ? null
@@ -156,17 +190,20 @@ export function useTradeEntry(
     components["schemas"]["Transaction"] | null
   > => {
     const problems: Record<string, string> = {};
-    if (security === undefined)
-      problems.account_id = t("trade.required.securityAccount");
-    if (cashAccountId === null)
+    if (state.brokerage === undefined)
+      problems.brokerage_id = t("entry.required.account");
+    if (instrument === null)
+      problems.instrument = t("trade.required.securityAccount");
+    if (cashAccount === undefined)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
     if (rate === null) problems.unit_price = t("trade.required.price");
     if (limit !== null) problems.quantity = limit;
     if (
       Object.keys(problems).length > 0 ||
-      security === undefined ||
-      cashAccountId === null ||
+      state.brokerage === undefined ||
+      instrument === null ||
+      cashAccount === undefined ||
       rate === null ||
       base === undefined
     ) {
@@ -179,11 +216,12 @@ export function useTradeEntry(
     const description = draft.description.trim();
     try {
       const created = await record.mutateAsync({
-        account_id: security.id,
-        cash_account_id: cashAccountId,
+        brokerage_id: state.brokerage.id,
+        instrument,
+        cash_account_id: cashAccount.id,
         side: draft.side,
         date: draft.date,
-        quantity: { amount: draft.quantity, currency: security.currency },
+        quantity: { amount: draft.quantity, currency: instrument },
         unit_price: rate,
         ...(draft.fees > 0
           ? { fees: { amount: draft.fees, currency: base } }
@@ -204,9 +242,10 @@ export function useTradeEntry(
   };
 
   const reset = () => {
-    // The next trade keeps the account, the side and the date.
+    // The next trade keeps the brokerage, the investment, the side and the date.
     setDraft({
-      ...emptyTrade(draft.date, draft.accountId),
+      ...emptyTrade(draft.date, state.brokerage?.id ?? null),
+      instrument,
       side: draft.side,
       cashAccountId: draft.cashAccountId,
     });

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
+import { accountsQuery, balanceQuery } from "@/features/accounts";
 import { settingsQuery, useScale } from "@/features/setup";
 import {
   incomeTypesQuery,
@@ -19,7 +20,7 @@ import {
   isIncomeDraft,
 } from "@/features/transactions/income-entry/income-draft";
 import type { IncomeDraft } from "@/features/transactions/income-entry/income-draft";
-import { useBrokerageAccounts } from "@/features/transactions/brokerage-account/use-brokerage-accounts";
+import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
@@ -40,7 +41,7 @@ export function useIncomeEntry(accountId: string | null) {
   const [draft, setDraft] = useState<IncomeDraft>(() => {
     const stored = readStored(draftKey);
     const start = isIncomeDraft(stored) ? stored : emptyIncome(today);
-    return accountId === null ? start : { ...start, accountId };
+    return start;
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
@@ -48,13 +49,39 @@ export function useIncomeEntry(accountId: string | null) {
     writeDraft(draftKey, draft);
   }, [draft]);
 
-  const brokerage = useBrokerageAccounts(draft.accountId, draft.cashAccountId);
-  const { security, cashAccountId } = brokerage;
+  // A route that names a holding account stands for its brokerage and its investment.
+  const holding = useQuery(accountsQuery(api)).data?.find(
+    (a) => a.id === accountId,
+  );
+  const preset =
+    holding?.parent_id === undefined
+      ? null
+      : { brokerageId: holding.parent_id, instrument: holding.currency };
+  const chosen =
+    draft.brokerageId === null && draft.instrument === null && preset !== null
+      ? preset
+      : draft;
+  const state = useBrokerages(chosen.brokerageId, chosen.instrument);
+  const { brokerage } = state;
+  const instrument = chosen.instrument;
+  const cashAccount =
+    state.cash.find((a) => a.id === draft.cashAccountId) ?? state.cashAccount;
+  const balance = useQuery({
+    ...balanceQuery(api, cashAccount?.id ?? "", draft.date, "booked"),
+    enabled: cashAccount !== undefined,
+  }).data?.balance.amount;
   const withheldTooHigh = draft.withheld > 0 && draft.withheld >= draft.gross;
   const net =
     draft.gross > 0 && !withheldTooHigh ? draft.gross - draft.withheld : null;
   const view = {
-    ...brokerage,
+    brokerages: state.brokerages,
+    brokerage,
+    instrument,
+    heldCodes: state.holdings.map((a) => a.currency),
+    cash: state.cash,
+    cashAccount,
+    baseCash: state.baseCash,
+    balance,
     base,
     types: types.data ?? [],
     net,
@@ -65,9 +92,11 @@ export function useIncomeEntry(accountId: string | null) {
     components["schemas"]["Transaction"] | null
   > => {
     const problems: Record<string, string> = {};
-    if (security === undefined)
-      problems.account_id = t("trade.required.securityAccount");
-    if (cashAccountId === null)
+    if (brokerage === undefined)
+      problems.brokerage_id = t("entry.required.account");
+    if (instrument === null)
+      problems.instrument = t("trade.required.securityAccount");
+    if (cashAccount === undefined)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.incomeType === null)
       problems.income_type = t("income.required.type");
@@ -77,8 +106,9 @@ export function useIncomeEntry(accountId: string | null) {
       problems.category_id = t("entry.required.category");
     if (
       Object.keys(problems).length > 0 ||
-      security === undefined ||
-      cashAccountId === null ||
+      brokerage === undefined ||
+      instrument === null ||
+      cashAccount === undefined ||
       draft.incomeType === null ||
       draft.categoryId === null ||
       base === undefined
@@ -92,8 +122,9 @@ export function useIncomeEntry(accountId: string | null) {
     const description = draft.description.trim();
     try {
       const created = await record.mutateAsync({
-        account_id: security.id,
-        cash_account_id: cashAccountId,
+        brokerage_id: brokerage.id,
+        instrument,
+        cash_account_id: cashAccount.id,
         income_type: draft.incomeType,
         date: draft.date,
         gross: { amount: draft.gross, currency: base },
@@ -114,9 +145,10 @@ export function useIncomeEntry(accountId: string | null) {
   };
 
   const reset = () => {
-    // The next income keeps the account, the type and the date.
+    // The next income keeps the brokerage, the investment, the type and the date.
     setDraft({
-      ...emptyIncome(draft.date, draft.accountId),
+      ...emptyIncome(draft.date, brokerage?.id ?? null),
+      instrument,
       cashAccountId: draft.cashAccountId,
       incomeType: draft.incomeType,
       categoryId: draft.categoryId,

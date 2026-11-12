@@ -7,9 +7,14 @@ import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
 import {
+  brokerID,
   cashID,
   investmentApi as api,
+  secondCash,
+  secondCashID,
   securityID,
+  usdBrokerID,
+  usdBrokerage,
 } from "@/testing/investment-api";
 import { moneyValue } from "@/testing/money-value";
 import { optionalName } from "@/testing/optional-name";
@@ -31,14 +36,19 @@ beforeEach(() => {
 });
 
 describe("trade entry", () => {
-  it("opens from the security account with the account chosen", async () => {
+  // BC5, BC6: an old holding account id in the route still preselects its brokerage and investment.
+  it("preselects the brokerage and the investment of a holding account in the route", async () => {
     await renderApp(path, { fetch: api([]) });
-    const trigger = await screen.findByRole("button", {
-      name: new RegExp(catalogEn["trade.securityAccount"]),
+    const brokerage = await screen.findByRole("button", {
+      name: new RegExp(catalogEn["trade.brokerage"]),
     });
-    expect(trigger).toHaveTextContent("XP MXRF11");
+    expect(brokerage).toHaveTextContent("XP");
     expect(
-      // The menu of the other kinds names the chosen one.
+      await screen.findByRole("combobox", {
+        name: catalogEn["trade.investment"],
+      }),
+    ).toHaveValue("MXRF11");
+    expect(
       screen.getByRole("button", { name: catalogEn["entry.kind.trade"] }),
     ).toBeInTheDocument();
   });
@@ -48,24 +58,123 @@ describe("trade entry", () => {
     await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.trade"]);
     expect(
       await screen.findByRole("button", {
-        name: new RegExp(catalogEn["trade.securityAccount"]),
+        name: new RegExp(catalogEn["trade.brokerage"]),
       }),
     ).toBeInTheDocument();
   });
 
-  it("offers only open cash accounts of the same brokerage in the base currency", async () => {
-    await renderApp(path, { fetch: api([]) });
+  it("draws the only cash account as a line with its balance and no select", async () => {
+    await renderApp(path, { fetch: api([], { cashBalance: 250000 }) });
+    expect(
+      await screen.findByText(/Paid from XP cash, balance/),
+    ).toHaveTextContent(/2,500\.00/);
+    expect(
+      screen.queryByRole("button", {
+        name: new RegExp(catalogEn["trade.cashAccount"]),
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("draws a select when the brokerage has two cash accounts", async () => {
+    await renderApp(path, { fetch: api([], { extraAccounts: [secondCash] }) });
     await userEvent.click(
       await screen.findByRole("button", {
         name: new RegExp(catalogEn["trade.cashAccount"]),
       }),
     );
-    const radios = await screen.findAllByRole("radio", {
-      name: /^XP|^Itau|^Reserva/,
+    const radios = await screen.findAllByRole("radio", { name: /^XP/ });
+    expect(radios.map((radio) => radio.getAttribute("value")).sort()).toEqual(
+      [cashID, secondCashID].sort(),
+    );
+  });
+
+  it("shows the missing cash notice for a USD brokerage", async () => {
+    const sent: unknown[] = [];
+    await renderApp(
+      `/transactions/new?kind=trade&brokerage_id=${usdBrokerID}`,
+      {
+        fetch: api(sent, { extraAccounts: usdBrokerage }),
+      },
+    );
+    expect(
+      await screen.findByText("This brokerage has no cash account in BRL."),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    expect(sent).toHaveLength(0);
+  });
+
+  it("lists only the investments the brokerage holds for a sale", async () => {
+    await renderApp(path, {
+      fetch: api([], { held: { quantity: 150, cost: 151240 } }),
     });
-    expect(radios.map((radio) => radio.getAttribute("value"))).toEqual([
-      cashID,
+    await userEvent.click(
+      await screen.findByRole("radio", { name: catalogEn["trade.side.sell"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["trade.investment"],
+      }),
+    );
+    const options = await screen.findAllByRole("option");
+    expect(options.map((o) => o.textContent)).toEqual([
+      expect.stringContaining("MXRF11"),
+      expect.stringContaining("PETR4"),
     ]);
+  });
+
+  it("shows the quantity the brokerage holds under the investment of a purchase", async () => {
+    await renderApp(path, {
+      fetch: api([], { held: { quantity: 10, cost: 10000 } }),
+    });
+    expect(await screen.findByText("Held: 10 MXRF11")).toBeInTheDocument();
+  });
+
+  it("offers every investment of the catalog for a purchase", async () => {
+    await renderApp(`/transactions/new?kind=trade&brokerage_id=${brokerID}`, {
+      fetch: api([]),
+    });
+    await userEvent.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["trade.investment"],
+      }),
+    );
+    const options = await screen.findAllByRole("option");
+    expect(options).toHaveLength(3);
+  });
+
+  it("shows the shortfall with a link to move money and keeps the save enabled", async () => {
+    await renderApp(path, { fetch: api([], { cashBalance: 100000 }) });
+    await type(catalogEn["trade.quantity"], "150");
+    await type(catalogEn["trade.unitPrice"], "10.05");
+    expect(
+      await screen.findByText(
+        /The cash balance is .* short of this purchase\./,
+      ),
+    ).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Move money into XP cash" });
+    expect(link).toHaveAttribute(
+      "href",
+      expect.stringContaining(`to_account_id=${cashID}`),
+    );
+    expect(link.getAttribute("href")).toContain("kind=transfer");
+    expect(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    ).toBeEnabled();
+  });
+
+  it("offers only open cash accounts of the same brokerage in the base currency", async () => {
+    await renderApp(path, { fetch: api([], { extraAccounts: [secondCash] }) });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: new RegExp(catalogEn["trade.cashAccount"]),
+      }),
+    );
+    const radios = await screen.findAllByRole("radio", { name: /^XP/ });
+    expect(radios.map((radio) => radio.getAttribute("value"))).not.toContain(
+      "b0000000-0000-4000-8000-000000000005",
+    );
   });
 
   // S21, purchase: 150 MXRF11 at 10.05 and 4.90 in fees cost 1,512.40.
@@ -85,7 +194,8 @@ describe("trade entry", () => {
     await waitFor(() => {
       expect(sent).toEqual([
         {
-          account_id: securityID,
+          brokerage_id: brokerID,
+          instrument: "MXRF11",
           cash_account_id: cashID,
           side: "buy",
           date: "2026-10-17",

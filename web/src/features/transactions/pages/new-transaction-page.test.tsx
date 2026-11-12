@@ -273,7 +273,7 @@ describe("NewTransactionPage", () => {
       fetch: investmentApi([]),
     });
     await screen.findByRole("button", {
-      name: new RegExp(catalogEn["trade.securityAccount"]),
+      name: new RegExp(catalogEn["trade.brokerage"]),
     });
     expect(
       JSON.parse(sessionStorage.getItem("equori.draft.new-trade") ?? "{}"),

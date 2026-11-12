@@ -10,6 +10,7 @@ import {
   cashID,
   dividendsID,
   investmentApi as api,
+  brokerID,
   securityID,
   taxID,
 } from "@/testing/investment-api";
@@ -18,6 +19,7 @@ import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { txID } from "@/testing/transaction-api";
 
+const instrumentCode = "MXRF11";
 const path = `/transactions/new?kind=investment_income&account_id=${securityID}`;
 
 async function type(label: string | RegExp, text: string) {
@@ -91,7 +93,8 @@ describe("investment income entry", () => {
     await waitFor(() => {
       expect(sent).toEqual([
         {
-          account_id: securityID,
+          brokerage_id: brokerID,
+          instrument: instrumentCode,
           cash_account_id: cashID,
           income_type: "dividend",
           date: "2026-10-17",
@@ -125,7 +128,8 @@ describe("investment income entry", () => {
     await waitFor(() => {
       expect(sent).toEqual([
         {
-          account_id: securityID,
+          brokerage_id: brokerID,
+          instrument: instrumentCode,
           cash_account_id: cashID,
           income_type: "jcp",
           date: "2026-10-17",
