@@ -12,6 +12,7 @@ import (
 
 func toParts(p app.StatementParts, instrument string) StatementParts {
 	m := func(v int64) Money { return Money{Amount: v, Currency: instrument} }
+
 	return StatementParts{
 		Purchases:    m(p.Purchases),
 		Installments: m(p.Installments),

@@ -42,6 +42,7 @@ func (s *Service) create(
 			continue
 		case ok:
 			rec := created[rejected.Index]
+
 			return fileError(
 				fmt.Sprintf(
 					"line dated %s for %d: %v",

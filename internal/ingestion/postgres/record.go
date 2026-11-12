@@ -114,11 +114,8 @@ func factsOf(rec domain.ExternalRecord) facts {
 		institution:  optional(rec.InstitutionID),
 	}
 	if i := rec.Installment; i != nil {
-		n, c := int32(
-			i.Number,
-		), int32(
-			i.Count,
-		) //nolint:gosec // at most 420 installments (ledger rule)
+		//nolint:gosec // at most 420 installments (ledger rule)
+		n, c := int32(i.Number), int32(i.Count)
 		f.number, f.count = &n, &c
 	}
 
@@ -388,12 +385,13 @@ func (r *Repository) Records(
 	state domain.RecordState,
 	p page.Request[app.RecordKey],
 ) ([]domain.ExternalRecord, *app.RecordKey, error) {
+	//nolint:gosec // limit is at most page.MaxLimit
 	params := ListBatchRecordsParams{
 		BooksID:  booksID,
 		BatchID:  batchID,
 		State:    optional(string(state)),
 		RowLimit: int32(p.Limit + 1),
-	} //nolint:gosec // limit is at most page.MaxLimit
+	}
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}

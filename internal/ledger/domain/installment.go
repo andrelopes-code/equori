@@ -75,8 +75,11 @@ func Allocate(total int64, shares []int64) []int64 {
 
 // mulDiv returns a*b/c rounded toward zero without overflowing for |a|, |b|, |c| ≤ 2^53.
 func mulDiv(a, b, c int64) int64 {
-	hi, lo := bits.Mul64(uint64(a), uint64(b)) //nolint:gosec // callers pass non-negative amounts.
-	q, _ := bits.Div64(hi, lo, uint64(c))      //nolint:gosec // c is a positive sum of amounts.
+	//nolint:gosec // callers pass non-negative amounts.
+	hi, lo := bits.Mul64(uint64(a), uint64(b))
+	//nolint:gosec // c is a positive sum of amounts.
+	q, _ := bits.Div64(hi, lo, uint64(c))
 
-	return int64(q) //nolint:gosec // q ≤ a because b ≤ c.
+	//nolint:gosec // q ≤ a because b ≤ c.
+	return int64(q)
 }

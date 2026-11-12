@@ -53,7 +53,8 @@ func intPtr(v int) *int32 {
 		return nil
 	}
 
-	n := int32(v) //nolint:gosec // rule fields are validated to small ranges (A48)
+	//nolint:gosec // rule fields are validated to small ranges (A48)
+	n := int32(v)
 
 	return &n
 }
@@ -74,7 +75,8 @@ func keyset(p page.Request[app.IDKey]) (uuid.NullUUID, int32) {
 		after = nullUUID(p.After.ID)
 	}
 
-	return after, int32(p.Limit + 1) //nolint:gosec // limit is at most page.MaxLimit
+	//nolint:gosec // limit is at most page.MaxLimit
+	return after, int32(p.Limit + 1)
 }
 
 // trim cuts rows to the page and returns the key of its last row when another page follows.

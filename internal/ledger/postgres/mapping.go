@@ -39,11 +39,9 @@ func pageOf[R, T, K any](rows []R, limit int, item func(R) T, key func(R) K) ([]
 }
 
 // rowLimit is the LIMIT of a keyset query: one row more than the page, to detect a next page.
-func rowLimit(
-	limit int,
-) int32 {
-	return int32(limit + 1)
-} //nolint:gosec // limit is at most page.MaxLimit
+//
+//nolint:gosec // limit is at most page.MaxLimit
+func rowLimit(limit int) int32 { return int32(limit + 1) }
 
 func nullString(s string) *string {
 	if s == "" {
@@ -144,7 +142,8 @@ func nullColor(c int) *int16 {
 		return nil
 	}
 
-	v := int16(c) //nolint:gosec // NewAccount keeps the colour in 1..8.
+	//nolint:gosec // NewAccount keeps the colour in 1..8.
+	v := int16(c)
 
 	return &v
 }
@@ -444,7 +443,8 @@ func installmentNumber(i *domain.InstallmentRef) *int16 {
 		return nil
 	}
 
-	n := int16(i.Number) //nolint:gosec // at most 420 installments.
+	//nolint:gosec // at most 420 installments.
+	n := int16(i.Number)
 
 	return &n
 }
@@ -454,7 +454,8 @@ func installmentCount(i *domain.InstallmentRef) *int16 {
 		return nil
 	}
 
-	n := int16(i.Count) //nolint:gosec // at most 420 installments.
+	//nolint:gosec // at most 420 installments.
+	n := int16(i.Count)
 
 	return &n
 }

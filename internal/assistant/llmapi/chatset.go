@@ -127,6 +127,7 @@ func splitProposal(args json.RawMessage) (json.RawMessage, app.ProposalMeta, err
 				"must be an object with suggested, reason, refs and summary",
 			),
 		)
+
 		return nil, app.ProposalMeta{}, &llm.ToolError{Content: content}
 	}
 

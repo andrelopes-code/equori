@@ -32,6 +32,7 @@ func (r *Repository) ReimbursementCandidates(
 	ctx context.Context,
 	q app.CandidateQuery,
 ) ([]app.CandidateRow, error) {
+	//nolint:gosec // the limit is a small constant.
 	rows, err := r.q.ListReimbursementCandidates(ctx, ListReimbursementCandidatesParams{
 		Instrument: string(
 			q.Instrument,
@@ -41,7 +42,7 @@ func (r *Repository) ReimbursementCandidates(
 		FromDate:      q.From,
 		ToDate:        q.To,
 		Amount:        q.Amount,
-		MaxRows:       int32(q.MaxRows), //nolint:gosec // the limit is a small constant.
+		MaxRows:       int32(q.MaxRows),
 	})
 	if err != nil {
 		return nil, err
@@ -67,7 +68,8 @@ func (r *Repository) ReimbursementSources(
 		TransactionID: q.ExcludeID,
 		FromDate:      q.From,
 		ToDate:        q.To,
-		MaxRows:       int32(q.MaxRows), //nolint:gosec // the limit is a small constant.
+		//nolint:gosec // the limit is a small constant.
+		MaxRows: int32(q.MaxRows),
 	})
 	if err != nil {
 		return nil, err

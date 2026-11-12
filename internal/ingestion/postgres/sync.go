@@ -329,7 +329,8 @@ func (r *Repository) SyncRuns(
 	heads, err := r.q.ListConnectionSyncs(ctx, ListConnectionSyncsParams{
 		BooksID:      booksID,
 		ConnectionID: connectionID,
-		RowLimit:     int32(limit), //nolint:gosec // limit is domain.SyncRunsListed
+		//nolint:gosec // limit is domain.SyncRunsListed
+		RowLimit: int32(limit),
 	})
 	if err != nil || len(heads) == 0 {
 		return nil, err

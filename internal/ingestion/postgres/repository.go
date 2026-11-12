@@ -97,10 +97,8 @@ func (r *Repository) ListBatches(
 	booksID int64,
 	p page.Request[app.BatchKey],
 ) ([]domain.Batch, *app.BatchKey, error) {
-	params := ListBatchesParams{
-		BooksID:  booksID,
-		RowLimit: int32(p.Limit + 1),
-	} //nolint:gosec // limit is at most page.MaxLimit
+	//nolint:gosec // limit is at most page.MaxLimit
+	params := ListBatchesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)}
 	if p.After != nil {
 		params.AfterStarted, params.AfterID = &p.After.StartedAt, uuid.NullUUID{
 			UUID:  p.After.ID,

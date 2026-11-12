@@ -59,6 +59,7 @@ func (r *Repository) InsertTransaction(
 }
 
 func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transaction) error {
+	//nolint:gosec // version is a small positive counter.
 	_, err := r.q.InsertTransaction(ctx, InsertTransactionParams{
 		ID:          t.ID,
 		BooksID:     t.BooksID,
@@ -69,7 +70,7 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 			t.BalancingCurrency,
 		),
 		Origin:  string(t.Origin),
-		Version: int32(t.Version), //nolint:gosec // version is a small positive counter.
+		Version: int32(t.Version),
 	})
 	if err != nil {
 		return referenceError(err)
@@ -122,6 +123,7 @@ func (r *Repository) ListTransactions(
 	ctx context.Context,
 	q app.TransactionQuery,
 ) ([]domain.Transaction, error) {
+	//nolint:gosec // limit is at most page.MaxLimit + 1.
 	params := ListTransactionsParams{
 		BooksID:   q.BooksID,
 		AccountID: nullUUID(q.AccountID),
@@ -135,7 +137,7 @@ func (r *Repository) ListTransactions(
 		AmountMin:     q.AmountMin,
 		AmountMax:     q.AmountMax,
 		Uncategorized: q.Uncategorized,
-		RowLimit:      int32(q.Limit), //nolint:gosec // limit is at most page.MaxLimit + 1.
+		RowLimit:      int32(q.Limit),
 	}
 	if q.After != nil {
 		params.AfterDate = &q.After.Date
@@ -285,16 +287,15 @@ func (r *Repository) insertPostings(
 	postings := make([]InsertPostingsParams, len(ps))
 	for i, p := range ps {
 		postings[i] = InsertPostingsParams{
+			//nolint:gosec // at most 500 postings (domain.MaxPostings).
 			BooksID:       t.BooksID,
 			TransactionID: t.ID,
 			AccountID:     p.AccountID,
-			Position: first + int16(
-				i,
-			), //nolint:gosec // at most 500 postings (domain.MaxPostings).
-			Amount:    p.Amount.Amount(),
-			Weight:    p.Weight.Amount(),
-			BookedOn:  t.Date,
-			SettledOn: p.SettledOn,
+			Position:      first + int16(i),
+			Amount:        p.Amount.Amount(),
+			Weight:        p.Weight.Amount(),
+			BookedOn:      t.Date,
+			SettledOn:     p.SettledOn,
 			Status: string(
 				p.Status,
 			),

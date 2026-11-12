@@ -42,10 +42,8 @@ func compose(t *testing.T, stdin []byte, args ...string) []byte {
 		"-T",
 		service,
 	}
-	cmd := exec.CommandContext(
-		t.Context(),
-		"docker",
-		append(base, args...)...) //nolint:gosec // fixed binary; arguments built by the test
+	//nolint:gosec // fixed binary; arguments built by the test
+	cmd := exec.CommandContext(t.Context(), "docker", append(base, args...)...)
 	cmd.Stdin = bytes.NewReader(stdin)
 	var stdout, stderr bytes.Buffer
 

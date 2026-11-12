@@ -158,17 +158,11 @@ func run() error {
 		return err
 	}
 
-	if err := os.WriteFile(
-		"internal/platform/money/currency.gen.go",
-		src,
-		0o644,
-	); err != nil { //nolint:gosec // repository files are world-readable
+	//nolint:gosec // repository files are world-readable
+	if err := os.WriteFile("internal/platform/money/currency.gen.go", src, 0o644); err != nil {
 		return err
 	}
 
-	return os.WriteFile(
-		"internal/platform/money/iso4217.lock.json",
-		append(enc, '\n'),
-		0o644,
-	) //nolint:gosec // repository files are world-readable
+	//nolint:gosec // repository files are world-readable
+	return os.WriteFile("internal/platform/money/iso4217.lock.json", append(enc, '\n'), 0o644)
 }

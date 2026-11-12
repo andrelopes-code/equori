@@ -49,6 +49,7 @@ func (p ledgerPort) translate(err error) error {
 
 func (p ledgerPort) posting(l app.Line) (ledger.ImportedPosting, error) {
 	amount, err := money.New(l.Amount, l.Currency)
+
 	return ledger.ImportedPosting{
 		AccountID:   l.AccountID,
 		Date:        l.Date,

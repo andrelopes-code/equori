@@ -3,7 +3,9 @@ package domain
 import (
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha1" //nolint:gosec // G505: RFC 6238 specifies HMAC-SHA-1 for the authenticator apps (HA33).
+
+	//nolint:gosec // G505: RFC 6238 specifies HMAC-SHA-1 for the authenticator apps (HA33).
+	"crypto/sha1"
 	"crypto/subtle"
 	"encoding/base32"
 	"encoding/binary"
@@ -46,11 +48,8 @@ func TOTPStepAt(t time.Time) int64 { return t.Unix() / int64(TOTPStep/time.Secon
 // TOTPCode returns the 6-digit code of secret at step (RFC 4226 over HMAC-SHA-1).
 func TOTPCode(secret []byte, step int64) string {
 	mac := hmac.New(sha1.New, secret)
-	_ = binary.Write(
-		mac,
-		binary.BigEndian,
-		uint64(step),
-	) //nolint:gosec // G115: steps are positive.
+	//nolint:gosec // G115: steps are positive.
+	_ = binary.Write(mac, binary.BigEndian, uint64(step))
 	sum := mac.Sum(nil)
 
 	offset := sum[len(sum)-1] & 0x0f

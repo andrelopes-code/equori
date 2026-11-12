@@ -77,6 +77,7 @@ type cardSetup struct {
 
 func newCardSetup(t *testing.T, today string) cardSetup {
 	h := apitest.New(t, apitest.Today(today))
+
 	return cardSetup{
 		h:        h,
 		card:     h.Card("Itaú Visa", 3, 10, "next"),

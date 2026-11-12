@@ -115,12 +115,11 @@ func (r *Repository) ListRules(
 	booksID int64,
 	p page.Request[app.RuleKey],
 ) ([]domain.Rule, *app.RuleKey, error) {
-	params := ListRulesParams{
-		BooksID:  booksID,
-		RowLimit: int32(p.Limit + 1),
-	} //nolint:gosec // limit is at most page.MaxLimit
+	//nolint:gosec // limit is at most page.MaxLimit
+	params := ListRulesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)}
 	if p.After != nil {
-		priority := int32(p.After.Priority) //nolint:gosec // priorities are small positive integers
+		//nolint:gosec // priorities are small positive integers
+		priority := int32(p.After.Priority)
 		params.AfterPriority = &priority
 	}
 
@@ -231,10 +230,11 @@ func (r *Repository) SetPriorities(ctx context.Context, booksID int64, ids []uui
 	}
 
 	for i, id := range ids {
+		//nolint:gosec // at most 500 rules
 		if err := r.q.SetRulePriority(
 			ctx,
 			SetRulePriorityParams{BooksID: booksID, ID: id, Priority: int32(i + 1)},
-		); err != nil { //nolint:gosec // at most 500 rules
+		); err != nil {
 			return err
 		}
 	}
@@ -272,10 +272,8 @@ func (r *Repository) ListAliases(
 	booksID int64,
 	p page.Request[app.AliasKey],
 ) ([]domain.Alias, *app.AliasKey, error) {
-	params := ListAliasesParams{
-		BooksID:  booksID,
-		RowLimit: int32(p.Limit + 1),
-	} //nolint:gosec // limit is at most page.MaxLimit
+	//nolint:gosec // limit is at most page.MaxLimit
+	params := ListAliasesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)}
 	if p.After != nil {
 		params.AfterID = uuid.NullUUID{UUID: p.After.ID, Valid: true}
 	}

@@ -60,9 +60,10 @@ func (r *Repository) Categorization(
 
 func (r *Repository) UpsertCategorization(ctx context.Context, rec app.Record) (bool, error) {
 	n, err := r.q.UpsertCategorization(ctx, UpsertCategorizationParams{
-		TransactionID:      rec.TransactionID,
-		BooksID:            rec.BooksID,
-		TransactionVersion: int32(rec.Version), //nolint:gosec // a small positive counter
+		TransactionID: rec.TransactionID,
+		BooksID:       rec.BooksID,
+		//nolint:gosec // a small positive counter
+		TransactionVersion: int32(rec.Version),
 		TransactionDate:    rec.Date,
 		Method:             nullString(rec.Method),
 		RuleID:             nullUUID(rec.RuleID),
@@ -78,10 +79,11 @@ func (r *Repository) UpsertCategorization(ctx context.Context, rec app.Record) (
 }
 
 func (r *Repository) MarkVoided(ctx context.Context, rec app.Record) error {
+	//nolint:gosec // a small positive counter
 	return r.q.MarkCategorizationVoided(ctx, MarkCategorizationVoidedParams{
 		TransactionID:      rec.TransactionID,
 		BooksID:            rec.BooksID,
-		TransactionVersion: int32(rec.Version), //nolint:gosec // a small positive counter
+		TransactionVersion: int32(rec.Version),
 		TransactionDate:    rec.Date,
 		DecidedAt:          rec.DecidedAt,
 	})
@@ -94,9 +96,8 @@ func (r *Repository) DeleteCategorization(
 	version int,
 ) error {
 	return r.q.DeleteCategorization(ctx, DeleteCategorizationParams{
-		BooksID:            booksID,
-		TransactionID:      transactionID,
-		TransactionVersion: int32(version), //nolint:gosec // a small positive counter
+		//nolint:gosec // a small positive counter
+		BooksID: booksID, TransactionID: transactionID, TransactionVersion: int32(version),
 	})
 }
 
@@ -106,10 +107,8 @@ func (r *Repository) PendingCategorizations(
 	after *app.PendingKey,
 	limit int,
 ) ([]uuid.UUID, *app.PendingKey, error) {
-	params := PendingCategorizationsParams{
-		BooksID:  booksID,
-		RowLimit: int32(limit),
-	} //nolint:gosec // a fixed page size
+	//nolint:gosec // a fixed page size
+	params := PendingCategorizationsParams{BooksID: booksID, RowLimit: int32(limit)}
 	if after != nil {
 		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
 	}
@@ -200,12 +199,13 @@ func (r *Repository) PreviewCandidates(
 	after *app.PendingKey,
 	limit int,
 ) ([]uuid.UUID, *app.PendingKey, error) {
+	//nolint:gosec // a fixed page size
 	params := PreviewCandidatesParams{
 		BooksID:  booksID,
 		FromDate: from,
 		ToDate:   to,
 		RowLimit: int32(limit),
-	} //nolint:gosec // a fixed page size
+	}
 	if after != nil {
 		params.AfterDate, params.AfterID = &after.Date, nullUUID(after.ID)
 	}

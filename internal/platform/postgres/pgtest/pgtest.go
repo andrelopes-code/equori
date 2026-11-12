@@ -71,11 +71,8 @@ func buildTemplate() (string, error) {
 		return "", err
 	}
 
-	defer admin.Exec(
-		ctx,
-		"SELECT pg_advisory_unlock(hashtextextended($1, 0))",
-		name,
-	) //nolint:errcheck // the session ends next
+	//nolint:errcheck // the session ends next
+	defer admin.Exec(ctx, "SELECT pg_advisory_unlock(hashtextextended($1, 0))", name)
 
 	var ready bool
 	if err := admin.QueryRow(ctx, "SELECT EXISTS (SELECT 1 FROM pg_database WHERE datname = $1 AND datistemplate)", name).

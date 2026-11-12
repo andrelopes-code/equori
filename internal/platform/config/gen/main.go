@@ -70,19 +70,14 @@ func run() error {
 		"env.example":                         envExample(vars),
 	}
 
-	if err := os.MkdirAll(
-		"docs/install",
-		0o755,
-	); err != nil { //nolint:gosec // repository directories are world-readable
+	//nolint:gosec // repository directories are world-readable
+	if err := os.MkdirAll("docs/install", 0o755); err != nil {
 		return err
 	}
 
 	for path, content := range files {
-		if err := os.WriteFile(
-			path,
-			[]byte(content),
-			0o644,
-		); err != nil { //nolint:gosec // repository files are world-readable
+		//nolint:gosec // repository files are world-readable
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 			return err
 		}
 	}

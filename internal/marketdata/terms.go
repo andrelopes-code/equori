@@ -36,6 +36,7 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 
 	err = pgx.BeginFunc(ctx, m.pool, func(tx pgx.Tx) error {
 		q := m.q.WithTx(tx)
+		//nolint:gosec // G115: the contract bounds both to int32
 		if err := q.PutTerms(ctx, postgres.PutTermsParams{
 			InstrumentCode: code,
 			IssuedOn:       t.IssuedOn,
@@ -46,7 +47,7 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 			),
 			SpreadBp:  int32(t.SpreadBP),
 			DayCount:  t.DayCount,
-			FaceValue: t.FaceValue, //nolint:gosec // G115: the contract bounds both to int32
+			FaceValue: t.FaceValue,
 		}); err != nil {
 			return fmt.Errorf("put terms: %w", err)
 		}

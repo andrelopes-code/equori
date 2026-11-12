@@ -172,12 +172,9 @@ func (r *Repository) ReplaceChain(
 
 		for i, t := range targets {
 			err := q.InsertChainTarget(ctx, InsertChainTargetParams{
-				BooksID:      booksID,
-				UseID:        useID,
-				Position:     int32(i), //nolint:gosec // a chain has few targets
-				ProviderID:   t.ProviderID,
-				Model:        t.Model,
-				Capabilities: t.Capabilities,
+				//nolint:gosec // a chain has few targets
+				BooksID: booksID, UseID: useID, Position: int32(i),
+				ProviderID: t.ProviderID, Model: t.Model, Capabilities: t.Capabilities,
 			})
 			if pgErr, ok := errors.AsType[*pgconn.PgError](err); ok && pgErr.Code == "23503" {
 				return domain.ErrProviderNotFound

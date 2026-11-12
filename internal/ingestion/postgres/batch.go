@@ -30,26 +30,21 @@ func (r *Repository) InsertBatch(ctx context.Context, b domain.Batch) (domain.Ba
 func (r *Repository) CompleteBatch(ctx context.Context, b domain.Batch) (domain.Batch, error) {
 	c := b.Counts
 
+	//nolint:gosec // line counts of a 10 MiB file
 	params := CompleteBatchParams{
-		BooksID:  b.BooksID,
-		ID:       b.ID,
-		Received: int32(c.Received),
-		Ignored:  int32(c.Ignored),
-		Matched:  int32(c.Matched), //nolint:gosec // line counts of a 10 MiB file
-		Created: int32(
-			c.Created,
-		),
-		NeedsReview: int32(c.NeedsReview),
-		Discarded:   int32(c.Discarded), //nolint:gosec // line counts of a 10 MiB file
-		Updated: int32(
-			c.Updated,
-		),
-		Withdrawn: int32(c.Withdrawn), //nolint:gosec // line counts of one account window
-		ReIdentified: int32(
-			c.ReIdentified,
-		),
-		Paired:    int32(c.Paired),
-		ReadEmpty: b.ReadEmpty, //nolint:gosec // line counts of one account window
+		BooksID:      b.BooksID,
+		ID:           b.ID,
+		Received:     int32(c.Received),
+		Ignored:      int32(c.Ignored),
+		Matched:      int32(c.Matched),
+		Created:      int32(c.Created),
+		NeedsReview:  int32(c.NeedsReview),
+		Discarded:    int32(c.Discarded),
+		Updated:      int32(c.Updated),
+		Withdrawn:    int32(c.Withdrawn),
+		ReIdentified: int32(c.ReIdentified),
+		Paired:       int32(c.Paired),
+		ReadEmpty:    b.ReadEmpty,
 		BalanceStatus: string(
 			b.Balance.Status,
 		),

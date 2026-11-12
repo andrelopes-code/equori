@@ -91,6 +91,7 @@ func (r *Repository) Holding(
 		ctx,
 		HoldingParams{BooksID: booksID, AccountID: accountID, OnDate: date},
 	)
+
 	return row.Quantity, row.CostBasis, err
 }
 

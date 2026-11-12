@@ -87,11 +87,8 @@ func installService() error {
 
 // writeDefaultEnv keeps the service on loopback (W-S2); a file the owner wrote stays as it is.
 func writeDefaultEnv(path string) error {
-	f, err := os.OpenFile(
-		path,
-		os.O_CREATE|os.O_EXCL|os.O_WRONLY,
-		0o600,
-	) //nolint:gosec // G304: the data directory is the owner's configuration.
+	//nolint:gosec // G304: the data directory is the owner's configuration.
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if errors.Is(err, fs.ErrExist) {
 		return nil
 	}

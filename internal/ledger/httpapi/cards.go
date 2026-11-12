@@ -170,6 +170,7 @@ func (s *Server) createCreditLimit(
 
 func toCardAPI(c domain.Card) Card {
 	virtual := c.Virtual
+
 	return Card{
 		Id:              c.ID,
 		Holder:          c.Holder,

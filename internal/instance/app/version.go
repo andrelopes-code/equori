@@ -73,6 +73,7 @@ func (s *Service) CheckVersion(ctx context.Context) error {
 			"error",
 			err,
 		)
+
 		return err
 	}
 

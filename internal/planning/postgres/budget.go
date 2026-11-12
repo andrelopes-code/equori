@@ -248,7 +248,8 @@ func (r *Repository) SaveBudgetReference(
 
 	var target *int32
 	if ref.HasTarget {
-		bp := int32(ref.TargetBP) //nolint:gosec // SaveBudgetPlan keeps it within 0 to 10000
+		//nolint:gosec // SaveBudgetPlan keeps it within 0 to 10000
+		bp := int32(ref.TargetBP)
 		target = &bp
 	}
 

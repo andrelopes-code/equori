@@ -220,15 +220,14 @@ func (m *Module) insertInstrument(ctx context.Context, in Instrument) error {
 	quoteCode := string(in.QuoteCurrency)
 
 	n, err := q.InsertInstrument(ctx, postgres.InsertInstrumentParams{
-		Code: string(
-			in.Code,
-		),
+		Code:           string(in.Code),
 		InstrumentType: in.Type,
-		Scale:          int16(in.Scale), //nolint:gosec // G115: Validate bounds the scale to 0–12
-		Name:           in.Name,
-		QuoteCurrency:  &quoteCode,
-		Exchange:       optional(in.Exchange),
-		Subtype:        optional(in.Subtype),
+		//nolint:gosec // G115: Validate bounds the scale to 0–12
+		Scale:         int16(in.Scale),
+		Name:          in.Name,
+		QuoteCurrency: &quoteCode,
+		Exchange:      optional(in.Exchange),
+		Subtype:       optional(in.Subtype),
 	})
 	if err != nil {
 		return fmt.Errorf("insert instrument: %w", err)

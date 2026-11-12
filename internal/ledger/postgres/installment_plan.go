@@ -18,10 +18,11 @@ func (r *Repository) InsertPlan(ctx context.Context, p domain.InstallmentPlan) e
 		AccountID:           p.AccountID,
 		OriginTransactionID: p.OriginTransactionID,
 		PlanKind:            p.Kind,
-		InstallmentCount:    int16(p.Count), //nolint:gosec // at most 420 installments.
-		Principal:           p.Principal.Amount(),
-		Interest:            p.Interest.Amount(),
-		FirstStatementID:    p.FirstStatementID,
+		//nolint:gosec // at most 420 installments.
+		InstallmentCount: int16(p.Count),
+		Principal:        p.Principal.Amount(),
+		Interest:         p.Interest.Amount(),
+		FirstStatementID: p.FirstStatementID,
 	})
 }
 

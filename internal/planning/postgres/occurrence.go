@@ -26,10 +26,8 @@ func (r *Repository) InsertOccurrences(
 
 	arg := InsertOccurrencesParams{BooksID: booksID, ScheduleID: scheduleID}
 	for _, p := range ps {
-		arg.Sequences = append(
-			arg.Sequences,
-			int32(p.Sequence),
-		) //nolint:gosec // sequences stay far below 2^31
+		//nolint:gosec // sequences stay far below 2^31
+		arg.Sequences = append(arg.Sequences, int32(p.Sequence))
 		arg.Dates = append(arg.Dates, p.Date.Format(time.DateOnly))
 		arg.Amounts = append(arg.Amounts, p.Amount)
 	}

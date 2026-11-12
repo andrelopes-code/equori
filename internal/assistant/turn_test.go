@@ -98,6 +98,7 @@ func eventNames(events []sseEvent) []string {
 
 func turnHarness(t *testing.T, p *llmtest.Provider, opts ...apitest.Option) *apitest.Harness {
 	t.Helper()
+
 	return apitest.New(
 		t,
 		append([]apitest.Option{apitest.LLM(p), apitest.Today("2026-10-23")}, opts...)...)
@@ -536,7 +537,8 @@ func TestTurnClientDisconnect(t *testing.T) {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := h.Client.Do(req) //nolint:gosec // the harness's own server
+	//nolint:gosec // the harness's own server
+	resp, err := h.Client.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}

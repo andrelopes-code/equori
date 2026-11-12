@@ -15,6 +15,7 @@ func (r *Repository) InsertAttachment(
 	a app.Attachment,
 	content []byte,
 ) (app.Attachment, error) {
+	//nolint:gosec // content is at most app.MaxAttachmentBytes
 	err := r.q.UpsertAttachmentBlob(
 		ctx,
 		UpsertAttachmentBlobParams{
@@ -23,7 +24,7 @@ func (r *Repository) InsertAttachment(
 			Size:    int32(len(content)),
 			Content: content,
 		},
-	) //nolint:gosec // content is at most app.MaxAttachmentBytes
+	)
 	if err != nil {
 		return app.Attachment{}, err
 	}

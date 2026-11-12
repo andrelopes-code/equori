@@ -48,8 +48,10 @@ func (g Goal) Measure(current int64) GoalProgress {
 	default:
 		// current < target, so the quotient is below 10000; 128 bits hold current × 10000.
 		hi, lo := bits.Mul64(uint64(current), 10000)
-		q, _ := bits.Div64(hi, lo, uint64(g.Target)) //nolint:gosec // 0 < current < target here
-		p.ProgressBP = int(q)                        //nolint:gosec // q < 10000
+		//nolint:gosec // 0 < current < target here
+		q, _ := bits.Div64(hi, lo, uint64(g.Target))
+		//nolint:gosec // q < 10000
+		p.ProgressBP = int(q)
 	}
 
 	return p

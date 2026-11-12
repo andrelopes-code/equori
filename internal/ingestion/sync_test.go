@@ -598,6 +598,7 @@ func (f syncFixture) recordOpeningBalance(account string, amount int64) {
 				apitest.Posting(account, amount),
 				apitest.Posting(a.ID, -amount),
 			)
+
 			return
 		}
 	}

@@ -197,6 +197,7 @@ func (r *Repository) RejectProposal(
 		ctx,
 		RejectProposalParams{Now: &now, BooksID: booksID, MemberID: memberID, ID: id},
 	)
+
 	return n > 0, err
 }
 

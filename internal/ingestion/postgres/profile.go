@@ -84,11 +84,12 @@ func (r *Repository) Profile(
 }
 
 func (r *Repository) SaveProfile(ctx context.Context, p domain.Profile) (domain.Profile, error) {
+	//nolint:gosec // at most 10
 	row, err := r.q.UpsertProfile(ctx, UpsertProfileParams{
 		BooksID:      p.BooksID,
 		AccountID:    p.AccountID,
 		Delimiter:    p.Delimiter,
-		HeaderRows:   int32(p.HeaderRows), //nolint:gosec // at most 10
+		HeaderRows:   int32(p.HeaderRows),
 		DateColumn:   p.DateColumn,
 		DateLayout:   string(p.DateLayout),
 		AmountColumn: optional(p.AmountColumn),
@@ -102,7 +103,7 @@ func (r *Repository) SaveProfile(ctx context.Context, p domain.Profile) (domain.
 		AmountSign:        string(p.AmountSign),
 		Encoding:          p.Encoding,
 		GroupSeparator:    p.GroupSeparator,
-		FooterRows:        int32(p.FooterRows), //nolint:gosec // at most 10
+		FooterRows:        int32(p.FooterRows),
 		SignColumn:        optional(p.SignColumn),
 		DebitMarker:       optional(p.DebitMarker),
 	})

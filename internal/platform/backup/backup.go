@@ -54,23 +54,15 @@ func Dump(ctx context.Context, bin, dsn, path string) error {
 		return fmt.Errorf("remove %s: %w", partial, err)
 	}
 
-	f, err := os.OpenFile(
-		partial,
-		os.O_CREATE|os.O_EXCL|os.O_WRONLY,
-		0o600,
-	) //nolint:gosec // G304: the backup path is the owner's configuration.
+	//nolint:gosec // G304: the backup path is the owner's configuration.
+	f, err := os.OpenFile(partial, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("create %s: %w", partial, err)
 	}
 
 	var stderr bytes.Buffer
-	cmd := exec.CommandContext(
-		ctx,
-		program,
-		"-Fc",
-		"-d",
-		dsn,
-	) //nolint:gosec // G204: the programs directory is the owner's configuration.
+	//nolint:gosec // G204: the programs directory is the owner's configuration.
+	cmd := exec.CommandContext(ctx, program, "-Fc", "-d", dsn)
 	cmd.Stdout, cmd.Stderr = f, &stderr
 
 	err = cmd.Run()
@@ -109,10 +101,9 @@ func serverMajor(ctx context.Context, dsn string) (int, error) {
 
 // DumpVersion reads the highest goose version from the dump's copy of goose_db_version.
 func DumpVersion(ctx context.Context, bin, path string) (int64, error) {
+	//nolint:gosec // G204: as above.
 	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--data-only", "--table=goose_db_version", "-f", "-", path).
 		Output()
-
-		//nolint:gosec // G204: as above.
 	if err != nil {
 		return 0, fmt.Errorf("read goose_db_version of %s: %w", path, err)
 	}
@@ -207,10 +198,9 @@ func Restore(ctx context.Context, bin, dsn, path string, latest int64) error {
 		return fmt.Errorf("create database: %w", err)
 	}
 
+	//nolint:gosec // G204: as above.
 	out, err := exec.CommandContext(ctx, filepath.Join(bin, "pg_restore"), "--no-owner", "--exit-on-error", "-d", dsn, path).
 		CombinedOutput()
-
-		//nolint:gosec // G204: as above.
 	if err != nil {
 		return fmt.Errorf("pg_restore: %w: %s", err, out)
 	}

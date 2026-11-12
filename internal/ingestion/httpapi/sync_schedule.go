@@ -18,7 +18,8 @@ func (s *Server) getSyncSchedule(
 		return SyncSchedule{}, err
 	}
 
-	return SyncSchedule{Minutes: int32(minutes)}, nil //nolint:gosec // stored values are 1..1440
+	//nolint:gosec // stored values are 1..1440
+	return SyncSchedule{Minutes: int32(minutes)}, nil
 }
 
 func (s *Server) setSyncSchedule(
@@ -29,5 +30,6 @@ func (s *Server) setSyncSchedule(
 		return SyncSchedule{}, err
 	}
 
-	return SyncSchedule{Minutes: int32(minutes)}, nil //nolint:gosec // stored values are 1..1440
+	//nolint:gosec // stored values are 1..1440
+	return SyncSchedule{Minutes: int32(minutes)}, nil
 }

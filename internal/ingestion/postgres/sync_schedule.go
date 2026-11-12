@@ -21,8 +21,6 @@ func (r *Repository) SyncInterval(ctx context.Context) (int, bool, error) {
 }
 
 func (r *Repository) SetSyncInterval(ctx context.Context, minutes int) error {
-	return r.q.SetSyncInterval(
-		ctx,
-		int32(minutes),
-	) //nolint:gosec // the contract bounds minutes to 1..1440
+	//nolint:gosec // the contract bounds minutes to 1..1440
+	return r.q.SetSyncInterval(ctx, int32(minutes))
 }

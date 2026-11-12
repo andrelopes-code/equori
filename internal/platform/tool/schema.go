@@ -42,7 +42,8 @@ type inferred struct {
 func schemaFor[T any]() inferred {
 	t := reflect.TypeFor[T]()
 	if v, ok := schemas.Load(t); ok {
-		return v.(inferred) //nolint:forcetypeassert // schemas holds inferred values only.
+		//nolint:forcetypeassert // schemas holds inferred values only.
+		return v.(inferred)
 	}
 
 	i := inferSchema[T](t)

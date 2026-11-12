@@ -40,10 +40,8 @@ func (r *Repository) ReplaceTransaction(
 	}
 
 	if err := r.q.InsertVersion(ctx, InsertVersionParams{
-		TransactionID: prev.ID,
-		Version:       int32(prev.Version),
-		Snapshot:      snapshot,
-		Reason:        reason, //nolint:gosec // version is a small positive counter.
+		//nolint:gosec // version is a small positive counter.
+		TransactionID: prev.ID, Version: int32(prev.Version), Snapshot: snapshot, Reason: reason,
 	}); err != nil {
 		return err
 	}
@@ -60,6 +58,7 @@ func (r *Repository) ReplaceTransaction(
 		return err
 	}
 
+	//nolint:gosec // version is a small positive counter.
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
 		BooksID:     next.BooksID,
 		ID:          next.ID,
@@ -70,7 +69,7 @@ func (r *Repository) ReplaceTransaction(
 			next.BalancingCurrency,
 		),
 		Origin:  string(next.Origin),
-		Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
+		Version: int32(next.Version),
 	}); err != nil {
 		return referenceError(err)
 	}
@@ -91,10 +90,8 @@ func (r *Repository) ReplaceCategoryPostings(
 	}
 
 	if err := r.q.InsertVersion(ctx, InsertVersionParams{
-		TransactionID: prev.ID,
-		Version:       int32(prev.Version),
-		Snapshot:      snapshot,
-		Reason:        reason, //nolint:gosec // version is a small positive counter.
+		//nolint:gosec // version is a small positive counter.
+		TransactionID: prev.ID, Version: int32(prev.Version), Snapshot: snapshot, Reason: reason,
 	}); err != nil {
 		return err
 	}
@@ -132,6 +129,7 @@ func (r *Repository) ReplaceCategoryPostings(
 		return err
 	}
 
+	//nolint:gosec // version is a small positive counter.
 	if err := r.q.UpdateTransaction(ctx, UpdateTransactionParams{
 		BooksID:     next.BooksID,
 		ID:          next.ID,
@@ -142,7 +140,7 @@ func (r *Repository) ReplaceCategoryPostings(
 			next.BalancingCurrency,
 		),
 		Origin:  string(next.Origin),
-		Version: int32(next.Version), //nolint:gosec // version is a small positive counter.
+		Version: int32(next.Version),
 	}); err != nil {
 		return referenceError(err)
 	}

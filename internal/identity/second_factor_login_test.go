@@ -655,7 +655,8 @@ func parallelAnswer(ctx context.Context, baseURL string, c *http.Client, code st
 	req.Header.Set("Origin", baseURL)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.Do(req) //nolint:gosec // tests address the harness's own httptest server
+	//nolint:gosec // tests address the harness's own httptest server
+	resp, err := c.Do(req)
 	if err != nil {
 		return err.Error()
 	}

@@ -139,6 +139,7 @@ func (r Rule) allocation(total money.Money, c Catalog, s Subject) ([]Allocation,
 				c.Categories,
 				s.Date,
 			)
+
 			return parts, uuid.Nil, ok
 		case ActionSplit:
 			parts, ok := Allocate(total, a.Parts, c.Categories, s.Date)

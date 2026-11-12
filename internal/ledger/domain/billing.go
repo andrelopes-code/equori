@@ -160,6 +160,7 @@ type StatementDates struct {
 func DatesFor(m ReferenceMonth, r BillingCycleRule) StatementDates {
 	if r.ClosingMode == ClosingBeforeDue {
 		due := m.dayIn(r.DueDay)
+
 		return StatementDates{
 			Reference:     m,
 			Closing:       due.AddDate(0, 0, -r.ClosingDaysBeforeDue),

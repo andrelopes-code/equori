@@ -170,6 +170,7 @@ func planResolveDifference(
 			st.Open.AssertionID,
 			domain.Resolution(in.Resolution),
 		)
+
 		return assertionOut(a.ID.String(), res), err
 	}, nil
 }
@@ -201,6 +202,7 @@ func planUnlock(
 
 func assertionOut(accountID string, res app.AssertionResult) reconcileAccountOut {
 	d := tool.MoneyOf(res.Difference)
+
 	return reconcileAccountOut{
 		AccountID:  accountID,
 		Difference: d,

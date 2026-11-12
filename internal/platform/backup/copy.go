@@ -31,7 +31,8 @@ func Encrypt(src, dir, password string) (string, error) {
 		return "", fmt.Errorf("encrypt copy: %w", err)
 	}
 
-	in, err := os.Open(src) //nolint:gosec // G304: the backup path is the owner's configuration.
+	//nolint:gosec // G304: the backup path is the owner's configuration.
+	in, err := os.Open(src)
 	if err != nil {
 		return "", fmt.Errorf("open %s: %w", src, err)
 	}
@@ -41,11 +42,8 @@ func Encrypt(src, dir, password string) (string, error) {
 	path := filepath.Join(dir, name)
 	partial := path + ".partial"
 
-	out, err := os.OpenFile(
-		partial,
-		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
-		0o644,
-	) //nolint:gosec // G302, G304: a copy is read by the host user of the folder; the folder is the owner's configuration.
+	//nolint:gosec // G302, G304: a copy is read by the host user of the folder; the folder is the owner's configuration.
+	out, err := os.OpenFile(partial, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
 	if errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
 		return "", fmt.Errorf("%w: %w", ErrFolderNotWritable, err)
 	}
@@ -60,7 +58,8 @@ func Encrypt(src, dir, password string) (string, error) {
 	}
 
 	// The umask can narrow the mode given to OpenFile.
-	if err := os.Chmod(partial, 0o644); err != nil { //nolint:gosec // G302: as above.
+	//nolint:gosec // G302: as above.
+	if err := os.Chmod(partial, 0o644); err != nil {
 		_ = os.Remove(partial)
 		return "", fmt.Errorf("set mode of %s: %w", partial, err)
 	}
@@ -80,7 +79,8 @@ func Decrypt(src, dst, password string) error {
 		return fmt.Errorf("decrypt copy: %w", err)
 	}
 
-	in, err := os.Open(src) //nolint:gosec // G304: the copy path is the operator's argument.
+	//nolint:gosec // G304: the copy path is the operator's argument.
+	in, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("open %s: %w", src, err)
 	}
@@ -97,11 +97,8 @@ func Decrypt(src, dst, password string) error {
 		return fmt.Errorf("decrypt %s: %w", src, err)
 	}
 
-	out, err := os.OpenFile(
-		dst,
-		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
-		0o600,
-	) //nolint:gosec // G304: the destination is chosen by the caller.
+	//nolint:gosec // G304: the destination is chosen by the caller.
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 	if err != nil {
 		return fmt.Errorf("create %s: %w", dst, err)
 	}
@@ -121,7 +118,8 @@ func Decrypt(src, dst, password string) error {
 
 // IsCopy reports whether the file starts with the age header "age-encryption.org/v1".
 func IsCopy(path string) (bool, error) {
-	f, err := os.Open(path) //nolint:gosec // G304: the path is the operator's argument.
+	//nolint:gosec // G304: the path is the operator's argument.
+	f, err := os.Open(path)
 	if err != nil {
 		return false, fmt.Errorf("open %s: %w", path, err)
 	}

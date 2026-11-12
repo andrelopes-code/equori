@@ -127,9 +127,8 @@ func (r *Repository) AddPasskey(
 			MemberID:     p.MemberID,
 			CredentialID: p.CredentialID,
 			PublicKey:    p.PublicKey,
-			Algorithm: int32(
-				p.Algorithm,
-			), //nolint:gosec // G115: the column admits -7, -8 and -257.
+			//nolint:gosec // G115: the column admits -7, -8 and -257.
+			Algorithm: int32(p.Algorithm),
 			SignCount: int64(p.SignCount),
 			RpID:      p.RPID,
 			Name:      p.Name,
@@ -489,9 +488,8 @@ func toPasskey(row IdentityPasskey) domain.Passkey {
 		CredentialID: row.CredentialID,
 		PublicKey:    row.PublicKey,
 		Algorithm:    int(row.Algorithm),
-		SignCount: uint32(
-			row.SignCount,
-		), //nolint:gosec // G115: the value was stored from a uint32.
+		//nolint:gosec // G115: the value was stored from a uint32.
+		SignCount:  uint32(row.SignCount),
 		RPID:       row.RpID,
 		Name:       row.Name,
 		CreatedAt:  row.CreatedAt,

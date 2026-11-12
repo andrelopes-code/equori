@@ -60,6 +60,7 @@ func (c organizeCall) planCreateAccount(
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		created, err := c.svc.CreateAccount(ctx, c.booksID, a)
+
 		return manageAccountsAndPayeesOut{
 			Action: c.action,
 			ID:     created.ID.String(),
@@ -173,6 +174,7 @@ func (c organizeCall) planUpdateAccount(
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		updated, err := c.svc.UpdateAccount(ctx, c.booksID, a.ID, patch)
+
 		return manageAccountsAndPayeesOut{
 			Action: c.action,
 			ID:     a.ID.String(),
@@ -384,6 +386,7 @@ func (c organizeCall) planMergeCategory(
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		merged, err := c.svc.MergeCategories(ctx, c.booksID, from.ID, into.ID)
+
 		return manageAccountsAndPayeesOut{
 			Action: c.action,
 			ID:     merged.ID.String(),

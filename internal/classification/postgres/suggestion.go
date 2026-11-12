@@ -50,11 +50,12 @@ func (r *Repository) CorrectedExamples(
 	categoryID uuid.UUID,
 	limit int,
 ) ([]uuid.UUID, error) {
+	//nolint:gosec // a small fixed limit
 	return r.q.CorrectedExamples(ctx, CorrectedExamplesParams{
 		BooksID:    booksID,
 		MatchKey:   &matchKey,
 		CategoryID: nullUUID(categoryID),
-		RowLimit:   int32(limit), //nolint:gosec // a small fixed limit
+		RowLimit:   int32(limit),
 	})
 }
 
@@ -78,11 +79,12 @@ func (r *Repository) ListSuggestions(
 	state string,
 	p page.Request[app.SuggestionKey],
 ) ([]app.Suggestion, *app.SuggestionKey, error) {
+	//nolint:gosec // limit is at most page.MaxLimit
 	params := ListSuggestionsParams{
 		BooksID:  booksID,
 		State:    nullString(state),
 		RowLimit: int32(p.Limit + 1),
-	} //nolint:gosec // limit is at most page.MaxLimit
+	}
 	if p.After != nil {
 		params.AfterID = nullUUID(p.After.ID)
 	}

@@ -189,6 +189,7 @@ func (r *Registry) internal(ctx context.Context, name string, err error) (Result
 		slog.String("tool", name),
 		slog.Any("err", err),
 	)
+
 	return failure(
 		Error{Code: "internal_error", Detail: "the tool failed; the error is in the server log"},
 	)

@@ -74,17 +74,9 @@ func checkMajor(ctx context.Context, bin string) (int, error) {
 
 func spawn(dir, bin, pgdata, socket string, lock *os.File) (*Cluster, error) {
 	// Not CommandContext: the server outlives the start context and stops in Stop, after HTTP.
-	cmd := exec.Command(
-		filepath.Join(bin, "postgres"),
-		"-D",
-		pgdata,
-		"-k",
-		socket, //nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
-		"-c",
-		"listen_addresses=",
-		"-c",
-		"max_connections="+maxConnections,
-	)
+	//nolint:gosec,noctx // G204: the programs directory is the owner's configuration.
+	cmd := exec.Command(filepath.Join(bin, "postgres"), "-D", pgdata, "-k", socket,
+		"-c", "listen_addresses=", "-c", "max_connections="+maxConnections)
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 
 	p, err := newProc(cmd)

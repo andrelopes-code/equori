@@ -78,12 +78,8 @@ func Fits(t Transaction, c Candidate) bool {
 	}
 
 	// |A − E| × 10000 ≤ E × tolerance, in 128 bits: amounts reach 2^53.
-	return !greater(
-		uint64(diff),
-		10000,
-		uint64(o.Amount),
-		uint64(s.ToleranceBP),
-	) //nolint:gosec // diff, amount and tolerance are non-negative here
+	//nolint:gosec // diff, amount and tolerance are non-negative here
+	return !greater(uint64(diff), 10000, uint64(o.Amount), uint64(s.ToleranceBP))
 }
 
 // Match returns the fitting candidate closest to the transaction date, then the lower sequence.

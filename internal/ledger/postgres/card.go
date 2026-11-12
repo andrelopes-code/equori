@@ -10,6 +10,7 @@ import (
 )
 
 func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card, error) {
+	//nolint:gosec // G115: NewCard bounds the rate to 0–10000
 	row, err := r.q.InsertCard(
 		ctx,
 		InsertCardParams{
@@ -20,7 +21,7 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 			Virtual:         c.Virtual,
 			ForeignChargeBp: int32(c.ForeignChargeBP),
 		},
-	) //nolint:gosec // G115: NewCard bounds the rate to 0–10000
+	)
 	if err != nil {
 		return domain.Card{}, referenceError(err)
 	}

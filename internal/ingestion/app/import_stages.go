@@ -219,6 +219,7 @@ func (s *Service) linkMatches(ctx context.Context, p *importPlan) error {
 			rec.State, rec.TransactionID, rec.Candidates = domain.StateNeedsReview, uuid.Nil, []uuid.UUID{
 				p.matches[i].TransactionID,
 			}
+
 			continue
 		}
 

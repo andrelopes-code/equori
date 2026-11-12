@@ -51,6 +51,7 @@ func mustImport(
 
 func counts(b batchView) string {
 	c := b.Counts
+
 	return fmt.Sprintf(
 		"received %d ignored %d matched %d created %d review %d",
 		c.Received,

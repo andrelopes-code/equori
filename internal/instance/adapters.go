@@ -34,7 +34,8 @@ func connections(
 // newSealer returns a nil interface, not a nil *secret.Box, without a secret key.
 func newSealer(cfg Config) (app.Sealer, error) {
 	if cfg.SecretKey == "" {
-		return nil, nil //nolint:nilnil // no key means no sealer; the service checks for nil.
+		//nolint:nilnil // no key means no sealer; the service checks for nil.
+		return nil, nil
 	}
 
 	var previous []byte

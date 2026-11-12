@@ -74,11 +74,8 @@ func (r *Repository) Conversations(
 	after *app.ConversationKey,
 	limit int,
 ) ([]domain.Conversation, error) {
-	arg := ListConversationsParams{
-		BooksID:  booksID,
-		MemberID: memberID,
-		RowLimit: int32(limit),
-	} //nolint:gosec // the caller bounds limit
+	//nolint:gosec // the caller bounds limit
+	arg := ListConversationsParams{BooksID: booksID, MemberID: memberID, RowLimit: int32(limit)}
 	if after != nil {
 		arg.AfterUpdatedAt = &after.UpdatedAt
 		arg.AfterID = uuid.NullUUID{UUID: after.ID, Valid: true}

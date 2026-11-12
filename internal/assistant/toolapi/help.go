@@ -47,6 +47,7 @@ func getHelp(screens []guide.Screen) tool.Tool {
 						out.Screens,
 						helpScreen{Path: s.Path, Screen: s.Screen, Tasks: s.Tasks},
 					)
+
 					break
 				}
 			}

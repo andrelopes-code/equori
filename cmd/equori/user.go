@@ -204,7 +204,8 @@ func userSettings(language, region, currency string) (locale.Locale, money.Curre
 }
 
 func readPassword() (string, error) {
-	fd := int(os.Stdin.Fd()) //nolint:gosec // file descriptors fit in int.
+	//nolint:gosec // file descriptors fit in int.
+	fd := int(os.Stdin.Fd())
 	if term.IsTerminal(fd) {
 		fmt.Fprint(os.Stderr, "Password: ")
 

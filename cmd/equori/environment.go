@@ -62,7 +62,8 @@ func startWarnings(
 func readEnvFile(getenv func(string) string) (map[string]string, error) {
 	path := config.EnvFilePath(getenv)
 	if path == "" {
-		return nil, nil //nolint:nilnil // no file in external mode or without a data directory.
+		//nolint:nilnil // no file in external mode or without a data directory.
+		return nil, nil
 	}
 
 	return config.ReadEnvFile(path)

@@ -153,6 +153,7 @@ func (a aggregator) integrate(c *http.Client, name, clientID, secret string) int
 
 func (a aggregator) connect(c *http.Client, integrationID, itemID string) apitest.Response {
 	a.h.T().Helper()
+
 	return a.h.Call(
 		c,
 		http.MethodPost,
@@ -195,6 +196,7 @@ func (a aggregator) mapAccount(
 	body map[string]any,
 ) apitest.Response {
 	a.h.T().Helper()
+
 	return a.h.Call(
 		c,
 		http.MethodPut,

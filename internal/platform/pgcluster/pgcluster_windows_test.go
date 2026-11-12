@@ -63,11 +63,8 @@ func TestStartEndsTheServerWithItsParent(t *testing.T) {
 		t.Fatal("the helper printed no postmaster PID")
 	}
 
-	h, err := windows.OpenProcess(
-		windows.SYNCHRONIZE,
-		false,
-		uint32(pid),
-	) //nolint:gosec // G115: Windows PIDs fit in uint32.
+	//nolint:gosec // G115: Windows PIDs fit in uint32.
+	h, err := windows.OpenProcess(windows.SYNCHRONIZE, false, uint32(pid))
 	if err != nil {
 		t.Fatal(err)
 	}

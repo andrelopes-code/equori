@@ -257,6 +257,7 @@ func TestAssertionOnParentIs422(t *testing.T) {
 				"validation_failed",
 				"account_id",
 			)
+
 			return
 		}
 	}
@@ -572,6 +573,7 @@ func TestUnlockKeepsEarlierReconciliations(t *testing.T) {
 
 func reconcileStatement(c cardSetup, reference string, amountDue int64) apitest.Response {
 	id := statements(c.h.T(), c.h, c.card)[reference].ID
+
 	return c.h.Do(
 		http.MethodPost,
 		"/api/v1/statements/"+id+"/reconcile",

@@ -396,6 +396,7 @@ func TestTagNameSchema(t *testing.T) {
 			f.booksID,
 			name,
 		)
+
 		return err
 	}
 	requireViolation(t, insert("a b"), checkViolation, "")

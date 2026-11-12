@@ -26,6 +26,7 @@ func (r *Repository) TransactionByExternalRecord(
 			ExternalRecordID: nullUUID(recordID),
 		},
 	)
+
 	return id, notFound(err)
 }
 

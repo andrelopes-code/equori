@@ -111,7 +111,9 @@ func Distribution(variable, mode string) Option {
 }
 
 // SecretKey is the integration key Pluggy sets (32 bytes).
-const SecretKey = "equori-test-secret-key-32-bytes!" //nolint:gosec // G101: a fixed key for test databases only
+//
+//nolint:gosec // G101: a fixed key for test databases only
+const SecretKey = "equori-test-secret-key-32-bytes!"
 
 // Aggregator sends the requests of aggregator id to url and enables integrations with SecretKey.
 func Aggregator(id, url string) Option {

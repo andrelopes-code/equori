@@ -363,6 +363,7 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 				`SELECT id FROM ledger_account WHERE id = $1 FOR UPDATE`,
 				f.mxrf11,
 			)
+
 			return err
 		},
 		func() error {

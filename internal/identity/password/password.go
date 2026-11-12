@@ -79,14 +79,8 @@ func Verify(password, encoded string) (bool, error) {
 		return false, ErrMalformedHash
 	}
 
-	got := argon2.IDKey(
-		[]byte(password),
-		salt,
-		time,
-		memory,
-		threads,
-		uint32(len(want)),
-	) //nolint:gosec // len(want) is a decoded hash length, far below 2^32.
+	//nolint:gosec // len(want) is a decoded hash length, far below 2^32.
+	got := argon2.IDKey([]byte(password), salt, time, memory, threads, uint32(len(want)))
 
 	return subtle.ConstantTimeCompare(got, want) == 1, nil
 }

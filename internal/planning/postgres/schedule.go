@@ -20,6 +20,7 @@ func (r *Repository) InsertSchedule(
 	booksID int64,
 	s domain.Schedule,
 ) (domain.Schedule, error) {
+	//nolint:gosec // validated to 0-10000 and 0-31
 	row, err := r.q.InsertSchedule(ctx, InsertScheduleParams{
 		BooksID:       booksID,
 		Kind:          string(s.Kind),
@@ -34,7 +35,7 @@ func (r *Repository) InsertSchedule(
 		GraceDays:       int32(s.GraceDays),
 		MatchWindowDays: int32(s.WindowDays),
 		GeneratedUntil:  s.GeneratedUntil,
-		Calendar:        s.Calendar, //nolint:gosec // validated to 0-10000 and 0-31
+		Calendar:        s.Calendar,
 		CreatedAt:       s.CreatedAt,
 	})
 	if err != nil {
@@ -63,7 +64,8 @@ func (r *Repository) insertTerms(
 
 	var weekday *int32
 	if rule.Weekday != nil {
-		w := int32(*rule.Weekday) //nolint:gosec // a weekday is 0-6
+		//nolint:gosec // a weekday is 0-6
+		w := int32(*rule.Weekday)
 		weekday = &w
 	}
 
@@ -72,12 +74,13 @@ func (r *Repository) insertTerms(
 		ScheduleID:    scheduleID,
 		EffectiveFrom: t.EffectiveFrom,
 		Frequency:     string(rule.Frequency),
+		//nolint:gosec // interval is at most 120 (contract)
 		Interval: int32(
 			rule.Interval,
 		),
 		DayOfMonth: intPtr(rule.DayOfMonth),
 		Weekday:    weekday,
-		Ordinal:    intPtr(rule.Ordinal), //nolint:gosec // interval is at most 120 (contract)
+		Ordinal:    intPtr(rule.Ordinal),
 		BusinessDayOrdinal: intPtr(
 			rule.BusinessDayOrdinal,
 		),
@@ -242,13 +245,9 @@ func (r *Repository) UpdateScheduleMatching(
 	tolerance, grace, window int,
 ) (domain.Schedule, error) {
 	row, err := r.q.UpdateScheduleMatching(ctx, UpdateScheduleMatchingParams{
-		BooksID: booksID,
-		ID:      id,
-		MatchToleranceBp: int32(
-			tolerance,
-		),
-		GraceDays:       int32(grace),
-		MatchWindowDays: int32(window), //nolint:gosec // validated to 0-10000 and 0-31
+		BooksID: booksID, ID: id,
+		//nolint:gosec // validated to 0-10000 and 0-31
+		MatchToleranceBp: int32(tolerance), GraceDays: int32(grace), MatchWindowDays: int32(window),
 	})
 
 	return r.one(ctx, row, err)
@@ -358,6 +357,7 @@ func (r *Repository) MoveScheduleStart(
 			)
 		},
 		func() error {
+			//nolint:gosec // a count of dates of one rule
 			return r.q.ShiftTermsFirstSequence(
 				ctx,
 				ShiftTermsFirstSequenceParams{
@@ -365,7 +365,7 @@ func (r *Repository) MoveScheduleStart(
 					ScheduleID: id,
 					Shift:      int32(shift),
 				},
-			) //nolint:gosec // a count of dates of one rule
+			)
 		},
 		func() error {
 			return r.q.LiftOccurrenceSequences(
@@ -374,6 +374,7 @@ func (r *Repository) MoveScheduleStart(
 			)
 		},
 		func() error {
+			//nolint:gosec // a count of dates of one rule
 			return r.q.LowerOccurrenceSequences(
 				ctx,
 				LowerOccurrenceSequencesParams{
@@ -381,7 +382,7 @@ func (r *Repository) MoveScheduleStart(
 					ScheduleID: id,
 					Shift:      int32(shift),
 				},
-			) //nolint:gosec // a count of dates of one rule
+			)
 		},
 	}
 	for _, step := range steps {

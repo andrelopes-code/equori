@@ -126,7 +126,8 @@ func (r *Repository) SetLimit(ctx context.Context, booksID int64, l domain.Limit
 
 	var requests *int32
 	if l.RequestsPerDay != nil {
-		n := int32(*l.RequestsPerDay) //nolint:gosec // domain.NewLimit keeps it within int32
+		//nolint:gosec // domain.NewLimit keeps it within int32
+		n := int32(*l.RequestsPerDay)
 		requests = &n
 	}
 

@@ -76,10 +76,8 @@ func prepareDataDir(dir string, accounts []string) error {
 // privateDir creates the socket directory inside the data directory, whose entries it inherits,
 // so every account the data directory grants reaches the socket; then it checks it (W-M4).
 func privateDir(path string) error {
-	if err := os.MkdirAll(
-		path,
-		0o700,
-	); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
+	//nolint:gosec // G703: the data directory is the owner's configuration.
+	if err := os.MkdirAll(path, 0o700); err != nil {
 		return fmt.Errorf("create %s: %w", path, err)
 	}
 
@@ -87,10 +85,8 @@ func privateDir(path string) error {
 }
 
 func createPrivate(path string, extra []*windows.SID) (bool, error) {
-	if err := os.MkdirAll(
-		filepath.Dir(path),
-		0o700,
-	); err != nil { //nolint:gosec // G703: the data directory is the owner's configuration.
+	//nolint:gosec // G703: the data directory is the owner's configuration.
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return false, fmt.Errorf("create %s: %w", filepath.Dir(path), err)
 	}
 
@@ -217,10 +213,8 @@ func checkDACL(path string) error {
 			)
 		}
 
-		sid := (*windows.SID)(
-			unsafe.Pointer(&ace.SidStart),
-		).String()
 		//nolint:gosec // G103: an ACE holds its SID from SidStart (ACCESS_ALLOWED_ACE layout).
+		sid := (*windows.SID)(unsafe.Pointer(&ace.SidStart)).String()
 		if !allowedSID(sid) {
 			return fmt.Errorf(
 				"%s grants access to %s; managed mode accepts SYSTEM, Administrators, service SIDs and accounts only",
@@ -273,14 +267,9 @@ func newProc(cmd *exec.Cmd) (*proc, error) {
 			LimitFlags: windows.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
 		},
 	}
-	if _, err := windows.SetInformationJobObject(
-		job,
-		windows.JobObjectExtendedLimitInformation,
-		uintptr(
-			unsafe.Pointer(&info),
-		),
-		uint32(unsafe.Sizeof(info)),
-	); err != nil { //nolint:gosec // G103: the API takes the structure by address.
+	//nolint:gosec // G103: the API takes the structure by address.
+	if _, err := windows.SetInformationJobObject(job, windows.JobObjectExtendedLimitInformation,
+		uintptr(unsafe.Pointer(&info)), uint32(unsafe.Sizeof(info))); err != nil {
 		_ = tok.Close()
 		_ = windows.CloseHandle(job)
 
@@ -321,19 +310,18 @@ func restrictedToken() (windows.Token, error) {
 	const disableMaxPrivilege = 0x1
 	var restricted windows.Token
 
+	//nolint:gosec // G103: the API takes the arrays by address.
 	r, _, err := procCreateRestrictedToken.Call(
 		uintptr(tok),
 		disableMaxPrivilege,
 		uintptr(len(disable)),
-		uintptr(
-			unsafe.Pointer(&disable[0]),
-		),
+		uintptr(unsafe.Pointer(&disable[0])),
 		0,
 		0,
 		0,
 		0,
 		uintptr(unsafe.Pointer(&restricted)),
-	) //nolint:gosec // G103: the API takes the arrays by address.
+	)
 	if r == 0 {
 		return 0, fmt.Errorf("create a restricted token: %w", err)
 	}
@@ -364,9 +352,8 @@ func addUserToDefaultDACL(tok windows.Token) error {
 		return fmt.Errorf("read the default DACL of the token: %w", err)
 	}
 
-	old := (*struct{ DefaultDacl *windows.ACL })(
-		unsafe.Pointer(&buf[0]),
-	).DefaultDacl //nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
+	//nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
+	old := (*struct{ DefaultDacl *windows.ACL })(unsafe.Pointer(&buf[0])).DefaultDacl
 
 	user, err := tok.GetTokenUser()
 	if err != nil {
@@ -390,12 +377,13 @@ func addUserToDefaultDACL(tok windows.Token) error {
 	}
 
 	dacl := struct{ DefaultDacl *windows.ACL }{acl}
+	//nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
 	if err := windows.SetTokenInformation(
 		tok,
 		windows.TokenDefaultDacl,
 		(*byte)(unsafe.Pointer(&dacl)),
 		uint32(unsafe.Sizeof(dacl)),
-	); err != nil { //nolint:gosec // G103: TOKEN_DEFAULT_DACL layout.
+	); err != nil {
 		return fmt.Errorf("write the default DACL of the token: %w", err)
 	}
 
@@ -405,11 +393,12 @@ func addUserToDefaultDACL(tok windows.Token) error {
 // started puts postgres in the Job Object, so it ends when equori ends (W-M6); its backends,
 // started later, inherit the job.
 func (p *proc) started(cmd *exec.Cmd) error {
+	//nolint:gosec // G115: Windows PIDs fit in uint32.
 	h, err := windows.OpenProcess(
 		windows.PROCESS_SET_QUOTA|windows.PROCESS_TERMINATE,
 		false,
 		uint32(cmd.Process.Pid),
-	) //nolint:gosec // G115: Windows PIDs fit in uint32.
+	)
 	if err != nil {
 		return fmt.Errorf("open postgres: %w", err)
 	}
@@ -431,10 +420,9 @@ func (p *proc) stop(c *Cluster, immediate bool) error {
 		mode = "immediate"
 	}
 
+	//nolint:gosec,noctx // G204: the programs directory is the owner's configuration; the stop outlives any request context.
 	out, err := exec.Command(filepath.Join(c.bin, "pg_ctl"), "stop", "-D", filepath.Join(c.dir, "pg"), "-m", mode, "-w", "-t", "60").
 		CombinedOutput()
-
-		//nolint:gosec,noctx // G204: the programs directory is the owner's configuration; the stop outlives any request context.
 	if err == nil {
 		return nil
 	}

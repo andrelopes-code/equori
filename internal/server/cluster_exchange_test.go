@@ -52,11 +52,12 @@ func TestExchangeDump(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	//nolint:gosec // G306: the CI reads it back as another user.
 	if err := os.WriteFile(
 		filepath.Join(dir, runtime.GOOS+".snapshot"),
 		[]byte(strings.Join(want, "\n")+"\n"),
 		0o644,
-	); err != nil { //nolint:gosec // G306: the CI reads it back as another user.
+	); err != nil {
 		t.Fatal(err)
 	}
 }

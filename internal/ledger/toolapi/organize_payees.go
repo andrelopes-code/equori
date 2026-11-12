@@ -23,6 +23,7 @@ func (c organizeCall) planCreatePayeeOrInstitution(
 	return func() (manageAccountsAndPayeesOut, error) {
 		if c.in.Action == "create_payee" {
 			p, err := c.svc.CreatePayee(ctx, c.booksID, c.in.Name)
+
 			return manageAccountsAndPayeesOut{
 				Action: c.action,
 				ID:     p.ID.String(),
@@ -53,6 +54,7 @@ func (c organizeCall) planRenamePayee(ctx context.Context, pv *tool.Preview) (or
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		renamed, err := c.svc.RenamePayee(ctx, c.booksID, p.ID, c.in.Name)
+
 		return manageAccountsAndPayeesOut{
 			Action: c.action,
 			ID:     p.ID.String(),
@@ -110,6 +112,7 @@ func (c organizeCall) planMergePayee(ctx context.Context, pv *tool.Preview) (org
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		merged, err := c.svc.MergePayees(ctx, c.booksID, from.ID, into.ID)
+
 		return manageAccountsAndPayeesOut{
 			Action: c.action,
 			ID:     merged.ID.String(),

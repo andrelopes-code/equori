@@ -27,7 +27,8 @@ func (r *Repository) CountSourceCategories(
 			Aggregator: c.Aggregator,
 			ExternalID: c.ExternalID,
 			Name:       c.Name,
-			Seen:       int32(c.Count), //nolint:gosec // lines of one sync
+			//nolint:gosec // lines of one sync
+			Seen: int32(c.Count),
 		}); err != nil {
 			return err
 		}
@@ -67,10 +68,8 @@ func (r *Repository) ListSourceCategories(
 	booksID int64,
 	p page.Request[app.NameKey],
 ) ([]app.SourceCategory, *app.NameKey, error) {
-	params := ListSourceCategoriesParams{
-		BooksID:  booksID,
-		RowLimit: int32(p.Limit + 1),
-	} //nolint:gosec // limit is at most page.MaxLimit
+	//nolint:gosec // limit is at most page.MaxLimit
+	params := ListSourceCategoriesParams{BooksID: booksID, RowLimit: int32(p.Limit + 1)}
 	if p.After != nil {
 		params.AfterName, params.AfterID = &p.After.Name, uuid.NullUUID{
 			UUID:  p.After.ID,

@@ -103,7 +103,8 @@ func (r *Repository) StoredCredentials(
 
 // namePage returns the row limit, with one extra row, and the cursor of a list by name.
 func namePage(p page.Request[app.NameKey]) (int32, *string, uuid.NullUUID) {
-	limit := int32(p.Limit + 1) //nolint:gosec // limit is at most page.MaxLimit
+	//nolint:gosec // limit is at most page.MaxLimit
+	limit := int32(p.Limit + 1)
 	if p.After == nil {
 		return limit, nil, uuid.NullUUID{}
 	}
@@ -121,6 +122,7 @@ func (r *Repository) UpdateCredentials(
 		ctx,
 		UpdateCredentialsParams{BooksID: booksID, ID: id, CredentialCiphertext: sealed},
 	)
+
 	return toIntegration(row), notFound(err)
 }
 

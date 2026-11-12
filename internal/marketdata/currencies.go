@@ -17,13 +17,8 @@ func (m *Module) ReconcileCurrencies(ctx context.Context) error {
 
 	names := make([]string, len(all))
 	for i, c := range all {
-		codes[i], scales[i], names[i] = string(
-			c,
-		), int16(
-			c.MinorUnits(),
-		), money.Name(
-			c,
-		) //nolint:gosec // minor units are 0 to 4
+		//nolint:gosec // minor units are 0 to 4
+		codes[i], scales[i], names[i] = string(c), int16(c.MinorUnits()), money.Name(c)
 	}
 
 	err := m.q.InsertMissingCurrencies(

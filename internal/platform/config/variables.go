@@ -219,7 +219,8 @@ func Variables() []Variable {
 			Description:   "Image version of compose.yaml. A release sets its own version as the default; in a clone the default is dev, which compose builds.",
 			DescriptionPT: "Versão da imagem do compose.yaml. Uma versão publicada define a própria versão como padrão; num clone o padrão é dev, que o compose constrói.",
 		},
-		{ //nolint:gosec // G101: an example of the reference, not a credential.
+		//nolint:gosec // G101: an example of the reference, not a credential.
+		{
 			Name:          "EQUORI_DATABASE_URL",
 			Reader:        Binary,
 			Kind:          KindURL,
@@ -342,7 +343,8 @@ func Variables() []Variable {
 			Description:   "Service of compose.dev.yaml in which the backup test runs pg_dump (make test).",
 			DescriptionPT: "Serviço do compose.dev.yaml em que o teste de backup executa o pg_dump (make test).",
 		},
-		{ //nolint:gosec // G101: an example of the reference, not a credential.
+		//nolint:gosec // G101: an example of the reference, not a credential.
+		{
 			Name:          "EQUORI_TEST_DATABASE_URL",
 			Reader:        Tooling,
 			Kind:          KindURL,

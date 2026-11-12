@@ -93,6 +93,7 @@ func TestClusterBackupRestoresAcrossForms(t *testing.T) {
 // maintenance database, not the database pgtest created.
 func dsnOf(pool *pgxpool.Pool) string {
 	cc := pool.Config().ConnConfig
+
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		cc.Host,

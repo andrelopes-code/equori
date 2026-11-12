@@ -93,11 +93,12 @@ func TestClusterS214FailedBackupStopsMigration(t *testing.T) {
 	pool, cfg := externalAt(t, 5)
 
 	bin := t.TempDir()
+	//nolint:gosec // G306: the script must be executable.
 	if err := os.WriteFile(
 		filepath.Join(bin, "postgres"),
 		[]byte("#!/bin/sh\nexit 0\n"),
 		0o755,
-	); err != nil { //nolint:gosec // G306: the script must be executable.
+	); err != nil {
 		t.Fatal(err)
 	}
 
@@ -254,7 +255,8 @@ func stdinHolds(t *testing.T, text string) {
 		t.Fatal(err)
 	}
 
-	f, err := os.Open(path) //nolint:gosec // G304: a file the test wrote.
+	//nolint:gosec // G304: a file the test wrote.
+	f, err := os.Open(path)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -208,6 +208,7 @@ func previewSuggestion(
 		pv.Changes = []tool.Change{
 			{Field: "status", Before: text(s.State), After: text(app.SuggestionDismissed)},
 		}
+
 		return nil
 	}
 

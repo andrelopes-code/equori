@@ -224,6 +224,7 @@ func previewMapping(
 				After:  tool.TextValue(string(domain.MappingIgnored)),
 			},
 		}
+
 		return p, nil
 	}
 

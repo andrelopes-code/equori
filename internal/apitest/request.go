@@ -61,7 +61,8 @@ func (h *Harness) Send(c *http.Client, req *http.Request) Response {
 func (h *Harness) send(c *http.Client, req *http.Request) Response {
 	h.t.Helper()
 
-	resp, err := c.Do(req) //nolint:gosec // tests address the harness's own httptest server
+	//nolint:gosec // tests address the harness's own httptest server
+	resp, err := c.Do(req)
 	if err != nil {
 		h.t.Fatal(err)
 	}

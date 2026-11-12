@@ -50,9 +50,8 @@ func newSeeder(ctx context.Context, base string, c *http.Client) *seeder {
 		base: strings.TrimRight(base, "/"),
 		http: c,
 		ids:  map[string]string{},
-		rng: rand.New(
-			rand.NewPCG(20241001, 7),
-		), //nolint:gosec // a fixed seed makes the generated history reproducible.
+		//nolint:gosec // a fixed seed makes the generated history reproducible.
+		rng:     rand.New(rand.NewPCG(20241001, 7)),
 		bal:     map[string]int64{},
 		px:      map[string][]float64{},
 		pending: map[string][]ofxLine{},
@@ -91,12 +90,8 @@ func (s *seeder) do(method, path string, body, out any) {
 		reader = bytes.NewReader(b)
 	}
 
-	req, err := http.NewRequestWithContext(
-		s.ctx,
-		method,
-		s.base+"/api/v1"+path,
-		reader,
-	) //nolint:gosec // the address is the operator's own instance.
+	//nolint:gosec // the address is the operator's own instance.
+	req, err := http.NewRequestWithContext(s.ctx, method, s.base+"/api/v1"+path, reader)
 	if err != nil {
 		s.fail("build %s %s: %w", method, path, err)
 		return
@@ -106,7 +101,8 @@ func (s *seeder) do(method, path string, body, out any) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := s.http.Do(req) //nolint:gosec // the address is the operator's own instance.
+	//nolint:gosec // the address is the operator's own instance.
+	resp, err := s.http.Do(req)
 	if err != nil {
 		s.fail("%s %s: %w", method, path, err)
 		return

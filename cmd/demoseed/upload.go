@@ -30,12 +30,8 @@ func (s *seeder) upload(path string, fields map[string]string, name string, cont
 	_, _ = part.Write(content)
 	_ = w.Close()
 
-	req, err := http.NewRequestWithContext(
-		s.ctx,
-		http.MethodPost,
-		s.base+"/api/v1"+path,
-		&body,
-	) //nolint:gosec // the address is the operator's own instance.
+	//nolint:gosec // the address is the operator's own instance.
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodPost, s.base+"/api/v1"+path, &body)
 	if err != nil {
 		s.fail("build upload %s: %w", path, err)
 		return
@@ -43,7 +39,8 @@ func (s *seeder) upload(path string, fields map[string]string, name string, cont
 
 	req.Header.Set("Content-Type", w.FormDataContentType())
 
-	resp, err := s.http.Do(req) //nolint:gosec // the address is the operator's own instance.
+	//nolint:gosec // the address is the operator's own instance.
+	resp, err := s.http.Do(req)
 	if err != nil {
 		s.fail("upload %s: %w", path, err)
 		return

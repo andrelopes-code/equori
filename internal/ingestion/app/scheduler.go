@@ -37,6 +37,7 @@ func (s *Service) Tick(ctx context.Context) ([]SyncFailure, error) {
 				failures,
 				SyncFailure{BooksID: ref.BooksID, ConnectionID: ref.ID, Err: err},
 			)
+
 			continue
 		}
 

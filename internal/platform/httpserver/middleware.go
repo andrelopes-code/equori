@@ -111,7 +111,8 @@ func recoverPanic(next http.Handler, log *slog.Logger) http.Handler {
 			}
 
 			// http.ErrAbortHandler is the stdlib signal to abort the response silently.
-			if v == http.ErrAbortHandler { //nolint:errorlint // recover() value, not a wrapped error.
+			//nolint:errorlint // recover() value, not a wrapped error.
+			if v == http.ErrAbortHandler {
 				panic(v)
 			}
 
