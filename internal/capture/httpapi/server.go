@@ -126,6 +126,21 @@ func toLine(l app.Line) CaptureLine {
 		out.Segments[i] = CaptureSegment{Text: s.Text, Role: CaptureSegmentRole(s.Role)}
 	}
 
+	setLineOptions(&out, l)
+
+	for i, is := range l.Issues {
+		out.Issues[i] = CaptureIssue{
+			Code:    CaptureIssueCode(is.Code),
+			Field:   CaptureIssueField(is.Field),
+			Choices: toChoices(is.Choices, l.Line),
+		}
+	}
+
+	return out
+}
+
+// setLineOptions sets the fields of out that exist only when l holds a value for them.
+func setLineOptions(out *CaptureLine, l app.Line) {
 	if l.Amount != 0 {
 		out.Amount = &Money{Amount: l.Amount, Currency: string(l.Currency)}
 	}
@@ -143,16 +158,6 @@ func toLine(l app.Line) CaptureLine {
 		source := CaptureLineCategorySource(l.CategorySource)
 		out.CategorySource = &source
 	}
-
-	for i, is := range l.Issues {
-		out.Issues[i] = CaptureIssue{
-			Code:    CaptureIssueCode(is.Code),
-			Field:   CaptureIssueField(is.Field),
-			Choices: toChoices(is.Choices, l.Line),
-		}
-	}
-
-	return out
 }
 
 func toChoices(cs []domain.Choice, l domain.Line) []CaptureChoice {

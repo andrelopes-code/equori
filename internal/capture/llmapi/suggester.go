@@ -44,6 +44,25 @@ func (s *Suggester) Suggest(
 	options []app.CategoryOption,
 	items []app.SuggestItem,
 ) ([]int, error) {
+	prompt := suggestPrompt(options, items)
+	zero := 0.0
+
+	resp, err := s.client.Generate(ctx, llm.Request{
+		System:   systemPrompt(l),
+		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: prompt}}}},
+		Schema:   schema, MaxOutputTokens: 64 + 24*len(items), Temperature: &zero,
+	})
+	if err != nil {
+		// Quota, cooldown, a missing provider or an answer that breaks the schema: the screen
+		// keeps the drafts uncategorized; the router has logged the attempt (ADR 009 M7).
+		return nil, fmt.Errorf("%w: %w", app.ErrSuggesterUnavailable, err)
+	}
+
+	return parseSuggestions(resp.Text(), options, items)
+}
+
+// suggestPrompt lists the categories and the descriptions, each numbered from 1.
+func suggestPrompt(options []app.CategoryOption, items []app.SuggestItem) string {
 	var b strings.Builder
 	b.WriteString("Categories:\n")
 
@@ -63,26 +82,22 @@ func (s *Suggester) Suggest(
 		)
 	}
 
-	zero := 0.0
+	return b.String()
+}
 
-	resp, err := s.client.Generate(ctx, llm.Request{
-		System:   systemPrompt(l),
-		Messages: []llm.Message{{Role: llm.RoleUser, Parts: []llm.Part{{Text: b.String()}}}},
-		Schema:   schema, MaxOutputTokens: 64 + 24*len(items), Temperature: &zero,
-	})
-	if err != nil {
-		// Quota, cooldown, a missing provider or an answer that breaks the schema: the screen
-		// keeps the drafts uncategorized; the router has logged the attempt (ADR 009 M7).
-		return nil, fmt.Errorf("%w: %w", app.ErrSuggesterUnavailable, err)
-	}
-
+// parseSuggestions maps each item to the 0-based index of its category, or -1 without a valid answer.
+func parseSuggestions(
+	text string,
+	options []app.CategoryOption,
+	items []app.SuggestItem,
+) ([]int, error) {
 	var answer struct {
 		Items []struct {
 			Description int `json:"description"`
 			Category    int `json:"category"`
 		} `json:"items"`
 	}
-	if err := json.Unmarshal([]byte(resp.Text()), &answer); err != nil {
+	if err := json.Unmarshal([]byte(text), &answer); err != nil {
 		return nil, fmt.Errorf("%w: decode answer: %w", app.ErrSuggesterUnavailable, err)
 	}
 
