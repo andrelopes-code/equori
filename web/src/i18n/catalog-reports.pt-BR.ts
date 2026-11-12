@@ -94,6 +94,9 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.netWorth.months.summary": "{count} meses, de {from} a {to}.",
   "report.netWorth.months.layer.description":
     "O patrimônio líquido no fim de cada mês, com a variação em relação ao mês anterior.",
+  "report.netWorth.empty.title": "Nenhum mês pôde ser avaliado",
+  "report.netWorth.empty.description":
+    "Falta um preço ou um saldo no período. Registre-o para ver o patrimônio.",
   "report.netWorth.change": "Variação do patrimônio",
   "report.netWorth.changeNote": "De {start} a {end}, no fim de cada dia",
   "report.netWorth.resultOfPeriod": "Receitas menos despesas",

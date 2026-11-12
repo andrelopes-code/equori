@@ -335,6 +335,10 @@ describe("Reports net worth", () => {
       screen.queryByRole("table", { name: catalogEn["report.netWorth.title"] }),
     ).not.toBeInTheDocument();
 
+    expect(
+      screen.queryByText(catalogEn["report.netWorth.empty.title"]),
+    ).not.toBeInTheDocument();
+
     const table = await netWorthTable();
 
     expect(rowTexts(table)).toHaveLength(7);
@@ -346,15 +350,38 @@ describe("Reports net worth", () => {
     });
     await renderApp("/reports?months=6", { fetch });
 
-    // The chart is drawn once no month is pending.
-    await screen.findByRole("group", {
-      name: catalogEn["report.netWorth.title"],
-    });
+    // The empty state is drawn once no month is pending.
+    await screen.findByText(catalogEn["report.netWorth.empty.title"]);
 
     expect(
       screen.queryByRole("button", {
         name: catalogEn["report.netWorth.months.open"],
       }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("Q6: draws one empty state when no month can be valued", async () => {
+    const { fetch } = api({
+      "GET /api/v1/reports/net-worth": () => problem(422, "price_missing"),
+    });
+    await renderApp("/reports?months=6", { fetch });
+
+    expect(
+      await screen.findByText(catalogEn["report.netWorth.empty.title"]),
+    ).toBeVisible();
+    expect(
+      screen.getByText(catalogEn["report.netWorth.empty.description"]),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("group", { name: catalogEn["report.netWorth.title"] }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: catalogEn["report.netWorth.months.open"],
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogEn["report.netWorth.change"]),
     ).not.toBeInTheDocument();
   });
 

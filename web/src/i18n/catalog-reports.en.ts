@@ -91,6 +91,9 @@ export const reportsEn = {
   "report.netWorth.months.summary": "{count} months, from {from} to {to}.",
   "report.netWorth.months.layer.description":
     "The net worth at the end of each month, with the change from the month before.",
+  "report.netWorth.empty.title": "No month could be valued",
+  "report.netWorth.empty.description":
+    "A price or a balance is missing for the period. Record it to see the net worth.",
   "report.netWorth.change": "Change in net worth",
   "report.netWorth.changeNote": "From {start} to {end}, at the end of each day",
   "report.netWorth.resultOfPeriod": "Income minus expenses",
