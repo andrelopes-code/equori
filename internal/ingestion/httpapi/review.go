@@ -37,18 +37,7 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 	}
 
 	if len(r.Scores) > 0 {
-		scored := make([]ScoredCandidate, len(r.Scores))
-		for i, s := range r.Scores {
-			scored[i] = ScoredCandidate{
-				TransactionId: s.TransactionID,
-				Score:         s.Score,
-				Amount:        ScoredCandidateAmount(s.Amount),
-				Date: ScoredCandidateDate(
-					s.Date,
-				),
-				Counterparty: ScoredCandidateCounterparty(s.Counterparty),
-			}
-		}
+		scored := toScoredAPI(r.Scores)
 
 		out.ScoredCandidates = &scored
 	}
@@ -67,6 +56,23 @@ func toRecordAPI(r domain.ExternalRecord, currency string) ExternalRecord {
 	}
 
 	return out
+}
+
+func toScoredAPI(scores []domain.Scored) []ScoredCandidate {
+	scored := make([]ScoredCandidate, len(scores))
+	for i, s := range scores {
+		scored[i] = ScoredCandidate{
+			TransactionId: s.TransactionID,
+			Score:         s.Score,
+			Amount:        ScoredCandidateAmount(s.Amount),
+			Date: ScoredCandidateDate(
+				s.Date,
+			),
+			Counterparty: ScoredCandidateCounterparty(s.Counterparty),
+		}
+	}
+
+	return scored
 }
 
 func (s *Server) listBatchRecords(

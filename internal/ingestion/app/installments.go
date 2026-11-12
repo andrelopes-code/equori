@@ -22,15 +22,8 @@ func (s *Service) installments(
 		return nil
 	}
 
-	byID := make(map[uuid.UUID]*domain.ExternalRecord, len(records))
-	for _, rec := range records {
-		byID[rec.ID] = rec
-	}
-
-	keys := make([][]byte, len(lines))
-	for i, l := range lines {
-		keys[i] = domain.PlanKey(batch.AccountID, l.Installment, l.Line.Description)
-	}
+	byID := recordsByID(records)
+	keys := planKeys(batch.AccountID, lines)
 
 	plans, err := s.repo.InstallmentPlans(ctx, batch.BooksID, keys)
 	if err != nil {
@@ -42,18 +35,7 @@ func (s *Service) installments(
 		var txID uuid.UUID
 
 		planID, known := plans[string(keys[i])]
-		if known {
-			txID, err = s.ledger.LinkInstallment(
-				ctx,
-				batch.BooksID,
-				l.RecordID,
-				planID,
-				l.Installment.Number,
-				l.Line,
-			)
-		} else {
-			txID, planID, err = s.ledger.RecordInstallment(ctx, batch.BooksID, l)
-		}
+		txID, planID, err = s.placeInstallment(ctx, batch.BooksID, l, planID, known)
 
 		switch {
 		case errors.Is(err, ErrInstallmentRefused):
@@ -79,4 +61,45 @@ func (s *Service) installments(
 	}
 
 	return nil
+}
+
+func recordsByID(records []*domain.ExternalRecord) map[uuid.UUID]*domain.ExternalRecord {
+	byID := make(map[uuid.UUID]*domain.ExternalRecord, len(records))
+	for _, rec := range records {
+		byID[rec.ID] = rec
+	}
+
+	return byID
+}
+
+func planKeys(accountID uuid.UUID, lines []InstallmentLine) [][]byte {
+	keys := make([][]byte, len(lines))
+	for i, l := range lines {
+		keys[i] = domain.PlanKey(accountID, l.Installment, l.Line.Description)
+	}
+
+	return keys
+}
+
+func (s *Service) placeInstallment(
+	ctx context.Context,
+	booksID int64,
+	l InstallmentLine,
+	planID uuid.UUID,
+	known bool,
+) (uuid.UUID, uuid.UUID, error) {
+	if known {
+		txID, err := s.ledger.LinkInstallment(
+			ctx,
+			booksID,
+			l.RecordID,
+			planID,
+			l.Installment.Number,
+			l.Line,
+		)
+
+		return txID, planID, err
+	}
+
+	return s.ledger.RecordInstallment(ctx, booksID, l)
 }

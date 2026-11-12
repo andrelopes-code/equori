@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -85,10 +87,19 @@ func (s *Server) saveCsvProfile(
 		return CsvProfile{}, err
 	}
 
+	p := csvProfile(auth.MustBooksID(ctx), id, b)
+
+	saved, err := s.svc.SaveProfile(ctx, p)
+	if err != nil {
+		return CsvProfile{}, err
+	}
+
+	return toProfileAPI(saved), nil
+}
+
+func csvProfile(booksID int64, id uuid.UUID, b SaveCsvProfileJSONRequestBody) domain.Profile {
 	p := domain.Profile{
-		BooksID: auth.MustBooksID(
-			ctx,
-		),
+		BooksID:    booksID,
 		AccountID:  id,
 		HeaderRows: 1,
 		DateColumn: b.DateColumn,
@@ -134,12 +145,7 @@ func (s *Server) saveCsvProfile(
 		p.AmountSign = domain.AmountSign(*b.AmountSign)
 	}
 
-	saved, err := s.svc.SaveProfile(ctx, p)
-	if err != nil {
-		return CsvProfile{}, err
-	}
-
-	return toProfileAPI(saved), nil
+	return p
 }
 
 func (s *Server) suggestCsvColumns(

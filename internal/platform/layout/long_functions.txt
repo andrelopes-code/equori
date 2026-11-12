@@ -19,22 +19,8 @@ internal/identity/app/second_factor_passkey.go	Service.CreatePasskey	pending: sp
 internal/identity/httpapi/second_factor.go	Server.completeSecondFactor	pending: split after the 100-column reformatting
 internal/identity/httpapi/server.go	Server.Register	table of data
 internal/identity/httpapi/server.go	ToProblem	table of data
-internal/ingestion/aggregator/aggregatortest/aggregatortest.go	Run	pending: split after the 100-column reformatting
-internal/ingestion/app/import_plan.go	importPlan.route	pending: split after the 100-column reformatting
-internal/ingestion/app/import_write.go	Service.followLine	pending: split after the 100-column reformatting
-internal/ingestion/app/importer.go	Service.Import	pending: split after the 100-column reformatting
-internal/ingestion/app/installments.go	Service.installments	pending: split after the 100-column reformatting
-internal/ingestion/app/review.go	Service.resolveMatch	pending: split after the 100-column reformatting
-internal/ingestion/app/sync.go	Service.importAccountRead	pending: split after the 100-column reformatting
-internal/ingestion/domain/reserve_name.go	reserveCandidates	pending: split after the 100-column reformatting
-internal/ingestion/httpapi/profile.go	Server.saveCsvProfile	pending: split after the 100-column reformatting
-internal/ingestion/httpapi/review.go	toRecordAPI	pending: split after the 100-column reformatting
 internal/ingestion/httpapi/server.go	Server.Register	table of data
 internal/ingestion/httpapi/server.go	ToProblem	table of data
-internal/ingestion/postgres/record.go	toRecord	pending: split after the 100-column reformatting
-internal/ingestion/postgres/sync.go	Repository.UpdateRecordFacts	pending: split after the 100-column reformatting
-internal/ingestion/toolapi/manage.go	parseImportsAction	pending: split after the 100-column reformatting
-internal/ingestion/toolapi/manage_preview.go	previewMapping	pending: split after the 100-column reformatting
 internal/ledger/httpapi/server.go	Server.Register	table of data
 internal/marketdata/index/brsgs/brsgs.go	Source.Fetch	pending: split after the 100-column reformatting
 internal/marketdata/index/cpi/cpi.go	readEurostat	pending: split after the 100-column reformatting

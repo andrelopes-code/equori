@@ -54,6 +54,13 @@ type Backend interface {
 func Run(t *testing.T, backend func(t *testing.T) Backend) {
 	t.Helper()
 
+	runAccounts(t, backend)
+	runOrdinaryLines(t, backend)
+	runReserves(t, backend)
+	runParties(t, backend)
+}
+
+func runAccounts(t *testing.T, backend func(t *testing.T) Backend) {
 	t.Run("lists unique non-empty identifiers", func(t *testing.T) {
 		seen := map[string]bool{}
 		for _, a := range accounts(t, backend(t)) {
@@ -82,6 +89,9 @@ func Run(t *testing.T, backend func(t *testing.T) Backend) {
 			t.Fatalf("read = %v, want ErrAccountGone alone", err)
 		}
 	})
+}
+
+func runOrdinaryLines(t *testing.T, backend func(t *testing.T) Backend) {
 	t.Run("an ordinary line is no reserve move", func(t *testing.T) {
 		b := backend(t)
 		b.AddLine("ordinary")
@@ -103,8 +113,6 @@ func Run(t *testing.T, backend func(t *testing.T) Backend) {
 			t.Fatalf("Counterparty = %+v, want nil", got.Counterparty)
 		}
 	})
-	runReserves(t, backend)
-	runParties(t, backend)
 }
 
 func runParties(t *testing.T, backend func(t *testing.T) Backend) {

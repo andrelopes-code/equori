@@ -97,6 +97,14 @@ func reserveCandidates(r NormalizedRecord, reserves []ExternalAccount) []Externa
 		return candidates
 	}
 
+	return appendFormerNames(candidates, reserves, key)
+}
+
+func appendFormerNames(
+	candidates []ExternalAccount,
+	reserves []ExternalAccount,
+	key string,
+) []ExternalAccount {
 	for _, x := range reserves {
 		if textfold.Key(x.Name) != key &&
 			slices.ContainsFunc(

@@ -205,15 +205,10 @@ func previewMapping(
 		return tool.Preview{}, err
 	}
 
-	i := slices.IndexFunc(
-		c.Accounts,
-		func(e domain.ExternalAccount) bool { return e.ID == a.external },
-	)
-	if i < 0 {
-		return tool.Preview{}, app.ErrNotFound
+	ext, err := connectionAccount(c, a.external)
+	if err != nil {
+		return tool.Preview{}, err
 	}
-
-	ext := c.Accounts[i]
 
 	p.Target = "Bank account " + ext.Name + " of connection " + c.Name
 	if in.Ignore {
@@ -241,22 +236,45 @@ func previewMapping(
 		}
 	}
 
+	p.Changes = accountChanges(ext, named, to, m.SyncFrom)
+
+	return p, nil
+}
+
+func connectionAccount(c domain.Connection, id uuid.UUID) (domain.ExternalAccount, error) {
+	i := slices.IndexFunc(
+		c.Accounts,
+		func(e domain.ExternalAccount) bool { return e.ID == id },
+	)
+	if i < 0 {
+		return domain.ExternalAccount{}, app.ErrNotFound
+	}
+
+	return c.Accounts[i], nil
+}
+
+func accountChanges(
+	ext domain.ExternalAccount,
+	named map[uuid.UUID]string,
+	to string,
+	syncFrom *time.Time,
+) []tool.Change {
 	change := tool.Change{Field: "account", After: tool.TextValue(to)}
 	if ext.AccountID != nil {
 		change.Before = tool.TextValue(named[*ext.AccountID])
 	}
 
-	p.Changes = []tool.Change{change}
-	if m.SyncFrom != nil {
-		change := tool.Change{Field: "date", After: tool.DateValue(*m.SyncFrom)}
+	changes := []tool.Change{change}
+	if syncFrom != nil {
+		change := tool.Change{Field: "date", After: tool.DateValue(*syncFrom)}
 		if ext.SyncFrom != nil {
 			change.Before = tool.DateValue(*ext.SyncFrom)
 		}
 
-		p.Changes = append(p.Changes, change)
+		changes = append(changes, change)
 	}
 
-	return p, nil
+	return changes
 }
 
 func integrationInUse(

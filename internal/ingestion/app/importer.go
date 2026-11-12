@@ -94,21 +94,35 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	}
 
 	if st.Balance != nil {
-		batch.Balance = domain.FileBalance{
-			Status: domain.BalanceRecorded,
-			Date:   &st.Balance.Date,
-			Amount: st.Balance.Amount,
-		}
-
-		err := s.ledger.AssertBalance(ctx, f.BooksID, f.AccountID, *st.Balance, currency)
-		if errors.Is(err, ErrBalanceRejected) {
-			batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
-		} else if err != nil {
+		if err := s.recordFileBalance(ctx, f, &batch, st, currency); err != nil {
 			return domain.Batch{}, err
 		}
 	}
 
 	return s.repo.CompleteBatch(ctx, batch)
+}
+
+func (s *Service) recordFileBalance(
+	ctx context.Context,
+	f ImportFile,
+	batch *domain.Batch,
+	st domain.Statement,
+	currency money.Currency,
+) error {
+	batch.Balance = domain.FileBalance{
+		Status: domain.BalanceRecorded,
+		Date:   &st.Balance.Date,
+		Amount: st.Balance.Amount,
+	}
+
+	err := s.ledger.AssertBalance(ctx, f.BooksID, f.AccountID, *st.Balance, currency)
+	if errors.Is(err, ErrBalanceRejected) {
+		batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func validateFile(f ImportFile) error {

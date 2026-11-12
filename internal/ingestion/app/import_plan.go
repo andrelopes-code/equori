@@ -132,7 +132,7 @@ func (p *importPlan) route(
 	held map[int]bool,
 ) {
 	for i, a := range assigned {
-		rec, line := p.scoring[i].rec, p.scoring[i].line
+		rec := p.scoring[i].rec
 		if repeated[i] {
 			// A142: the source reports a recorded payment under a second id.
 			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewRepeated
@@ -154,38 +154,44 @@ func (p *importPlan) route(
 			continue
 		}
 
-		switch {
-		case a.Zone == domain.ZoneNew && p.scoring[i].reserveReview:
-			// A213: a line no reserve resolves books nothing a balance could turn into yield.
-			rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReserve
-		case a.Zone == domain.ZoneNew:
-			p.creates, p.created = append(
-				p.creates,
-				NewLine{RecordID: rec.ID, Line: line},
-			), append(
-				p.created,
-				rec,
-			)
-		case a.Zone == domain.ZoneLink:
-			p.matches = append(
-				p.matches,
-				Match{
-					RecordID:      rec.ID,
-					TransactionID: a.TransactionID,
-					AccountID:     rec.AccountID,
-					Pending:       line.Pending,
-				},
-			)
-			p.matched = append(p.matched, rec)
-		default:
-			rec.State, rec.ReviewReason, rec.Scores = domain.StateNeedsReview, string(
-				a.Zone,
-			), a.Candidates
+		p.routeZone(i, a)
+	}
+}
 
-			rec.Candidates = make([]uuid.UUID, len(a.Candidates))
-			for j, c := range a.Candidates {
-				rec.Candidates[j] = c.TransactionID
-			}
+func (p *importPlan) routeZone(i int, a domain.Assignment) {
+	rec, line := p.scoring[i].rec, p.scoring[i].line
+
+	switch {
+	case a.Zone == domain.ZoneNew && p.scoring[i].reserveReview:
+		// A213: a line no reserve resolves books nothing a balance could turn into yield.
+		rec.State, rec.ReviewReason = domain.StateNeedsReview, domain.ReviewReserve
+	case a.Zone == domain.ZoneNew:
+		p.creates, p.created = append(
+			p.creates,
+			NewLine{RecordID: rec.ID, Line: line},
+		), append(
+			p.created,
+			rec,
+		)
+	case a.Zone == domain.ZoneLink:
+		p.matches = append(
+			p.matches,
+			Match{
+				RecordID:      rec.ID,
+				TransactionID: a.TransactionID,
+				AccountID:     rec.AccountID,
+				Pending:       line.Pending,
+			},
+		)
+		p.matched = append(p.matched, rec)
+	default:
+		rec.State, rec.ReviewReason, rec.Scores = domain.StateNeedsReview, string(
+			a.Zone,
+		), a.Candidates
+
+		rec.Candidates = make([]uuid.UUID, len(a.Candidates))
+		for j, c := range a.Candidates {
+			rec.Candidates[j] = c.TransactionID
 		}
 	}
 }

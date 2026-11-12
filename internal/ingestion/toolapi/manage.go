@@ -68,26 +68,7 @@ type importsAction struct {
 }
 
 func parseImportsAction(in manageImportsIn) (importsAction, error) {
-	fields := []field{
-		{
-			"connection_id",
-			in.ConnectionID != "",
-		},
-		{"external_account_id", in.ExternalAccountID != ""},
-		{
-			"account_id",
-			in.AccountID != "",
-		},
-		{"ignore", in.Ignore},
-		{"sync_from", !in.SyncFrom.IsZero()},
-		{
-			"record_id",
-			in.RecordID != "",
-		},
-		{"resolution", in.Resolution != ""},
-		{"transaction_id", in.TransactionID != ""},
-		{"integration_id", in.IntegrationID != ""},
-	}
+	fields := importFields(in)
 	name := string(in.Action)
 
 	var err error
@@ -130,6 +111,29 @@ func parseImportsAction(in manageImportsIn) (importsAction, error) {
 	}
 
 	return a, nil
+}
+
+func importFields(in manageImportsIn) []field {
+	return []field{
+		{
+			"connection_id",
+			in.ConnectionID != "",
+		},
+		{"external_account_id", in.ExternalAccountID != ""},
+		{
+			"account_id",
+			in.AccountID != "",
+		},
+		{"ignore", in.Ignore},
+		{"sync_from", !in.SyncFrom.IsZero()},
+		{
+			"record_id",
+			in.RecordID != "",
+		},
+		{"resolution", in.Resolution != ""},
+		{"transaction_id", in.TransactionID != ""},
+		{"integration_id", in.IntegrationID != ""},
+	}
 }
 
 func (a importsAction) mapping(in manageImportsIn) domain.Mapping {

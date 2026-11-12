@@ -6,12 +6,6 @@ cmd/demoseed/spending.go	pending: split after the 100-column reformatting
 internal/assistant/app/turn.go	pending: split after the 100-column reformatting
 internal/classification/httpapi/rules.go	pending: split after the 100-column reformatting
 internal/identity/postgres/second_factor.go	pending: split after the 100-column reformatting
-internal/ingestion/app/ports.go	pending: split after the 100-column reformatting
-internal/ingestion/app/review.go	pending: split after the 100-column reformatting
-internal/ingestion/app/sync.go	pending: split after the 100-column reformatting
-internal/ingestion/ledger_port.go	pending: split after the 100-column reformatting
-internal/ingestion/postgres/record.go	pending: split after the 100-column reformatting
-internal/ingestion/postgres/sync.go	pending: split after the 100-column reformatting
 internal/marketdata/toolapi/market.go	pending: split after the 100-column reformatting
 internal/platform/config/variables.go	table of data
 internal/platform/pgcluster/platform_windows.go	pending: split after the 100-column reformatting

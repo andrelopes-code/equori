@@ -238,19 +238,7 @@ func (s *Service) followLine(
 	)
 	if errors.Is(err, ErrReconciled) && r.Amount == rec.Amount {
 		// Only the date changed: a card posting keeps its statement (A147 rule 3).
-		if err = s.ledger.MoveReconciledDate(
-			ctx,
-			rec.BooksID,
-			rec.TransactionID,
-			rec.AccountID,
-			r.Date,
-		); err == nil {
-			rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{
-				Amount: rec.Amount,
-				On:     rec.Date,
-			}, batchID
-			rec.Date, rec.ReviewReason = r.Date, ""
-
+		if err = s.moveDate(ctx, batchID, rec, r.Date); err == nil {
 			return "", true, nil
 		}
 	}
@@ -272,6 +260,26 @@ func (s *Service) followLine(
 	rec.Amount, rec.Date, rec.ReviewReason = r.Amount, r.Date, ""
 
 	return "", true, nil
+}
+
+func (s *Service) moveDate(
+	ctx context.Context,
+	batchID uuid.UUID,
+	rec *domain.ExternalRecord,
+	date time.Time,
+) error {
+	err := s.ledger.MoveReconciledDate(ctx, rec.BooksID, rec.TransactionID, rec.AccountID, date)
+	if err != nil {
+		return err
+	}
+
+	rec.Decision, rec.Undo, rec.SummaryBatchID = domain.DecisionFollowed, domain.Undo{
+		Amount: rec.Amount,
+		On:     rec.Date,
+	}, batchID
+	rec.Date, rec.ReviewReason = date, ""
+
+	return nil
 }
 
 // keptNote describes a line the ledger keeps at other values (A102).
