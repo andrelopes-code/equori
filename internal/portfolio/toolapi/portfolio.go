@@ -126,92 +126,135 @@ func getPortfolio(svc *app.Service, names AccountNames, today func(context.Conte
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in getPortfolioIn) (getPortfolioOut, error) {
-		fields := []field{
-			{"date", !in.Date.IsZero()}, {"by", in.By != ""}, {"account_id", in.AccountID != ""},
-			{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()}, {"instrument_type", in.InstrumentType != ""},
-		}
-		name := "view " + string(in.View)
-
 		date := in.Date.Time
 		if date.IsZero() {
 			date = today(ctx)
 		}
 
-		var err error
-		switch in.View {
-		case "positions", "net_worth":
-			err = optionalFields(name, fields, "date")
-		case "allocation":
-			err = optionalFields(name, fields, "date", "by")
-			if err == nil && in.By == "" {
-				err = tool.InvalidArgument("by", "is required for view allocation")
-			}
-		case "return":
-			err = required(name, fields, "account_id", "from", "to")
-		case "subtypes":
-			err = required(name, fields, "instrument_type")
-		default:
-			err = required(name, fields)
+		if err := validatePortfolioIn(in); err != nil {
+			return getPortfolioOut{}, err
 		}
 
+		return portfolioView(ctx, svc, names, booksID, date, in)
+	})
+}
+
+func validatePortfolioIn(in getPortfolioIn) error {
+	fields := []field{
+		{"date", !in.Date.IsZero()}, {"by", in.By != ""}, {"account_id", in.AccountID != ""},
+		{"from", !in.From.IsZero()}, {"to", !in.To.IsZero()},
+		{"instrument_type", in.InstrumentType != ""},
+	}
+	name := "view " + string(in.View)
+
+	var err error
+	switch in.View {
+	case "positions", "net_worth":
+		err = optionalFields(name, fields, "date")
+	case "allocation":
+		err = optionalFields(name, fields, "date", "by")
+		if err == nil && in.By == "" {
+			err = tool.InvalidArgument("by", "is required for view allocation")
+		}
+	case "return":
+		err = required(name, fields, "account_id", "from", "to")
+	case "subtypes":
+		err = required(name, fields, "instrument_type")
+	default:
+		err = required(name, fields)
+	}
+
+	return err
+}
+
+func portfolioView(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	date time.Time,
+	in getPortfolioIn,
+) (getPortfolioOut, error) {
+	switch in.View {
+	case "positions":
+		return positions(ctx, svc, names, booksID, date)
+	case "allocation":
+		return allocationView(ctx, svc, booksID, date, in)
+	case "net_worth":
+		r, err := svc.NetWorth(ctx, booksID, date, "")
 		if err != nil {
 			return getPortfolioOut{}, err
 		}
 
-		switch in.View {
-		case "positions":
-			return positions(ctx, svc, names, booksID, date)
-		case "allocation":
-			r, err := svc.Allocation(ctx, booksID, date, string(in.By), "")
-			if err != nil {
-				return getPortfolioOut{}, err
-			}
+		return getPortfolioOut{
+			Assets:      tool.MoneyOf(r.Assets),
+			Liabilities: tool.MoneyOf(r.Liabilities),
+			Net:         tool.MoneyOf(r.Net),
+		}, nil
+	case "return":
+		return returnView(ctx, svc, booksID, in)
+	case "income_types":
+		types, err := svc.IncomeTypes(ctx, booksID)
+		return getPortfolioOut{IncomeTypes: nonNil(types)}, err
+	}
 
-			out := getPortfolioOut{Total: tool.MoneyOf(r.Total), Groups: []groupView{}}
-			for _, g := range r.Groups {
-				out.Groups = append(out.Groups, groupView{Key: g.Key, Value: tool.MoneyOf(g.Value), ShareBP: g.ShareBP})
-			}
+	subtypes, err := svc.Subtypes(ctx, booksID, string(in.InstrumentType))
 
-			return out, nil
-		case "net_worth":
-			r, err := svc.NetWorth(ctx, booksID, date, "")
-			if err != nil {
-				return getPortfolioOut{}, err
-			}
+	return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
+}
 
-			return getPortfolioOut{Assets: tool.MoneyOf(r.Assets), Liabilities: tool.MoneyOf(r.Liabilities), Net: tool.MoneyOf(r.Net)}, nil
-		case "return":
-			id, err := optionalID(in.AccountID, "account_id")
-			if err != nil {
-				return getPortfolioOut{}, err
-			}
+func allocationView(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	date time.Time,
+	in getPortfolioIn,
+) (getPortfolioOut, error) {
+	r, err := svc.Allocation(ctx, booksID, date, string(in.By), "")
+	if err != nil {
+		return getPortfolioOut{}, err
+	}
 
-			r, err := svc.Return(ctx, booksID, id, in.From.Time, in.To.Time, "", "")
-			if err != nil {
-				return getPortfolioOut{}, err
-			}
+	out := getPortfolioOut{Total: tool.MoneyOf(r.Total), Groups: []groupView{}}
+	for _, g := range r.Groups {
+		out.Groups = append(out.Groups, groupView{
+			Key:     g.Key,
+			Value:   tool.MoneyOf(g.Value),
+			ShareBP: g.ShareBP,
+		})
+	}
 
-			return getPortfolioOut{
-				AnnualBP:  r.AnnualBP,
-				Opening:   tool.MoneyOf(r.Opening),
-				Closing:   tool.MoneyOf(r.Closing),
-				PeriodBP:  valueOf(r.PeriodBP),
-				Benchmark: benchmarkOf(r.Benchmark),
-				Inflation: inflationOf(r.Inflation),
-				Profile:   r.Profile,
-				Index:     r.Index,
-				Reason:    r.UnavailableReason,
-				Excluded:  excludedViewOf(r.Excluded),
-			}, nil
-		case "income_types":
-			types, err := svc.IncomeTypes(ctx, booksID)
-			return getPortfolioOut{IncomeTypes: nonNil(types)}, err
-		}
+	return out, nil
+}
 
-		subtypes, err := svc.Subtypes(ctx, booksID, string(in.InstrumentType))
+func returnView(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getPortfolioIn,
+) (getPortfolioOut, error) {
+	id, err := optionalID(in.AccountID, "account_id")
+	if err != nil {
+		return getPortfolioOut{}, err
+	}
 
-		return getPortfolioOut{Subtypes: nonNil(subtypes)}, err
-	})
+	r, err := svc.Return(ctx, booksID, id, in.From.Time, in.To.Time, "", "")
+	if err != nil {
+		return getPortfolioOut{}, err
+	}
+
+	return getPortfolioOut{
+		AnnualBP:  r.AnnualBP,
+		Opening:   tool.MoneyOf(r.Opening),
+		Closing:   tool.MoneyOf(r.Closing),
+		PeriodBP:  valueOf(r.PeriodBP),
+		Benchmark: benchmarkOf(r.Benchmark),
+		Inflation: inflationOf(r.Inflation),
+		Profile:   r.Profile,
+		Index:     r.Index,
+		Reason:    r.UnavailableReason,
+		Excluded:  excludedViewOf(r.Excluded),
+	}, nil
 }
 
 func excludedViewOf(e *app.Excluded) excludedView {

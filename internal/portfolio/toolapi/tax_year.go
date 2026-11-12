@@ -3,6 +3,8 @@ package toolapi
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
 )
@@ -65,36 +67,74 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 
 		out := getTaxYearOut{From: tool.DateOf(from), To: tool.DateOf(to.AddDate(0, 0, -1))}
 		if in.View != "income" {
-			rs, err := svc.RealizedResults(ctx, booksID, in.Year)
-			if err != nil {
+			if out.Sales, err = taxYearSales(ctx, svc, booksID, in.Year, named); err != nil {
 				return getTaxYearOut{}, err
-			}
-
-			out.Sales = []saleView{}
-			for _, r := range rs {
-				out.Sales = append(out.Sales, saleView{
-					AccountName: named[r.AccountID], Instrument: string(r.Instrument), Date: tool.DateOf(r.Date),
-					Quantity: tool.MoneyOf(r.QuantityAmount), Cost: tool.MoneyOf(r.CostAmount), Proceeds: tool.MoneyOf(r.Proceeds),
-					Result: tool.MoneyOf(r.ResultAmount), TaxClass: r.TaxClass,
-				})
 			}
 		}
 
 		if in.View != "sales" {
-			es, err := svc.IncomeEvents(ctx, booksID, in.Year)
-			if err != nil {
+			if out.Income, err = taxYearIncome(ctx, svc, booksID, in.Year, named); err != nil {
 				return getTaxYearOut{}, err
-			}
-
-			out.Income = []incomeView{}
-			for _, e := range es {
-				out.Income = append(out.Income, incomeView{
-					AccountName: named[e.AccountID], Instrument: string(e.Instrument), Date: tool.DateOf(e.Date),
-					IncomeType: e.Type, TaxTreatment: e.TaxTreatment, Gross: tool.MoneyOf(e.GrossAmount), Withheld: tool.MoneyOf(e.WithheldAmount),
-				})
 			}
 		}
 
 		return out, nil
 	})
+}
+
+func taxYearSales(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	year int,
+	named map[uuid.UUID]string,
+) ([]saleView, error) {
+	rs, err := svc.RealizedResults(ctx, booksID, year)
+	if err != nil {
+		return nil, err
+	}
+
+	sales := []saleView{}
+	for _, r := range rs {
+		sales = append(sales, saleView{
+			AccountName: named[r.AccountID],
+			Instrument:  string(r.Instrument),
+			Date:        tool.DateOf(r.Date),
+			Quantity:    tool.MoneyOf(r.QuantityAmount),
+			Cost:        tool.MoneyOf(r.CostAmount),
+			Proceeds:    tool.MoneyOf(r.Proceeds),
+			Result:      tool.MoneyOf(r.ResultAmount),
+			TaxClass:    r.TaxClass,
+		})
+	}
+
+	return sales, nil
+}
+
+func taxYearIncome(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	year int,
+	named map[uuid.UUID]string,
+) ([]incomeView, error) {
+	es, err := svc.IncomeEvents(ctx, booksID, year)
+	if err != nil {
+		return nil, err
+	}
+
+	income := []incomeView{}
+	for _, e := range es {
+		income = append(income, incomeView{
+			AccountName:  named[e.AccountID],
+			Instrument:   string(e.Instrument),
+			Date:         tool.DateOf(e.Date),
+			IncomeType:   e.Type,
+			TaxTreatment: e.TaxTreatment,
+			Gross:        tool.MoneyOf(e.GrossAmount),
+			Withheld:     tool.MoneyOf(e.WithheldAmount),
+		})
+	}
+
+	return income, nil
 }

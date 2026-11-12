@@ -91,9 +91,17 @@ func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 		securities[s.AccountID] = s
 	}
 
-	var out Rebuilt
+	return Rebuilt{
+		Days:    positionDays(f.Postings, securities),
+		Results: realizedResults(f, securities, j),
+		Incomes: incomeEvents(f, securities, j),
+	}
+}
 
-	postings := slices.Clone(f.Postings)
+func positionDays(all []Posting, securities map[uuid.UUID]Security) []PositionDay {
+	var days []PositionDay
+
+	postings := slices.Clone(all)
 	slices.SortStableFunc(postings, func(a, b Posting) int {
 		if c := bytes.Compare(a.AccountID[:], b.AccountID[:]); c != 0 {
 			return c
@@ -103,22 +111,28 @@ func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 	})
 
 	for _, p := range postings {
-		n := len(out.Days)
-		if n > 0 && out.Days[n-1].AccountID == p.AccountID && out.Days[n-1].Date.Equal(p.Date) {
-			out.Days[n-1].Quantity += p.Quantity
-			out.Days[n-1].CostBasis += p.Weight
+		n := len(days)
+		if n > 0 && days[n-1].AccountID == p.AccountID && days[n-1].Date.Equal(p.Date) {
+			days[n-1].Quantity += p.Quantity
+			days[n-1].CostBasis += p.Weight
 
 			continue
 		}
 
 		day := PositionDay{AccountID: p.AccountID, Instrument: securities[p.AccountID].Instrument, Date: p.Date, Quantity: p.Quantity, CostBasis: p.Weight}
-		if n > 0 && out.Days[n-1].AccountID == p.AccountID {
-			day.Quantity += out.Days[n-1].Quantity
-			day.CostBasis += out.Days[n-1].CostBasis
+		if n > 0 && days[n-1].AccountID == p.AccountID {
+			day.Quantity += days[n-1].Quantity
+			day.CostBasis += days[n-1].CostBasis
 		}
 
-		out.Days = append(out.Days, day)
+		days = append(days, day)
 	}
+
+	return days
+}
+
+func realizedResults(f Facts, securities map[uuid.UUID]Security, j Jurisdiction) []RealizedResult {
+	var results []RealizedResult
 
 	for _, t := range f.Trades {
 		if t.Side != "sell" {
@@ -133,12 +147,18 @@ func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 			taxClass = j.TaxClass(s.Type, s.Subtype, s.Exchange)
 		}
 
-		out.Results = append(out.Results, RealizedResult{
+		results = append(results, RealizedResult{
 			TransactionID: t.TransactionID, AccountID: t.AccountID, Instrument: s.Instrument,
 			Date: t.Date, Month: time.Date(t.Date.Year(), t.Date.Month(), 1, 0, 0, 0, 0, time.UTC),
 			Quantity: t.Quantity, Cost: t.Cost, Proceeds: proceeds, Result: proceeds - t.Cost, TaxClass: taxClass, Currency: f.Currency,
 		})
 	}
+
+	return results
+}
+
+func incomeEvents(f Facts, securities map[uuid.UUID]Security, j Jurisdiction) []IncomeEvent {
+	var events []IncomeEvent
 
 	for _, in := range f.Incomes {
 		var treatment string
@@ -147,11 +167,11 @@ func Rebuild(f Facts, j Jurisdiction) Rebuilt {
 			treatment = j.Treatment(in.Type, j.TaxClass(s.Type, s.Subtype, s.Exchange))
 		}
 
-		out.Incomes = append(out.Incomes, IncomeEvent{
+		events = append(events, IncomeEvent{
 			TransactionID: in.TransactionID, AccountID: in.AccountID, Instrument: securities[in.AccountID].Instrument, Date: in.Date,
 			Type: in.Type, TaxTreatment: treatment, Gross: in.Gross, Withheld: in.Withheld, Currency: f.Currency,
 		})
 	}
 
-	return out
+	return events
 }

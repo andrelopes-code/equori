@@ -36,6 +36,11 @@ func (p period) comparedWindow(start int64, ends []domain.Subperiod, dates []tim
 		return w, true
 	}
 
+	return p.recordedWindow(w, since, rates)
+}
+
+// recordedWindow narrows w to the credits of a tree whose yield is recorded.
+func (p period) recordedWindow(w window, since time.Time, rates []IndexRate) (window, bool) {
 	credits := p.creditDates()
 	if len(credits) == 0 {
 		p.unavailable(ReasonNoYieldRecorded)

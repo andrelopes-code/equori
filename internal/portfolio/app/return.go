@@ -114,13 +114,9 @@ func (s *Service) returnOf(ctx context.Context, booksID int64, accountIDs []uuid
 		return ReturnReport{}, ErrInvalidReturnRange
 	}
 
-	if in == "" {
-		base, err := s.ledger.BaseCurrency(ctx, booksID)
-		if err != nil {
-			return ReturnReport{}, err
-		}
-
-		in = base
+	in, err := s.returnCurrency(ctx, booksID, in)
+	if err != nil {
+		return ReturnReport{}, err
 	}
 
 	start := from.AddDate(0, 0, -1)
@@ -143,14 +139,10 @@ func (s *Service) returnOf(ctx context.Context, booksID int64, accountIDs []uuid
 	report := ReturnReport{Opening: opening, Closing: closing}
 
 	cash := []domain.CashFlow{{Date: start, Amount: -opening.Amount()}, {Date: to, Amount: closing.Amount()}}
-	for _, f := range flows {
-		value, err := s.valueIn(ctx, f.Value, in, f.Date)
-		if err != nil {
-			return ReturnReport{}, err
-		}
 
-		report.Flows = append(report.Flows, ReturnFlow{Date: f.Date, Amount: value})
-		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -value.Amount()})
+	cash, err = s.addFlows(ctx, &report, cash, flows, in)
+	if err != nil {
+		return ReturnReport{}, err
 	}
 
 	bp, ok := domain.AnnualReturnBP(cash)
@@ -161,6 +153,39 @@ func (s *Service) returnOf(ctx context.Context, booksID int64, accountIDs []uuid
 	report.AnnualBP = bp
 
 	return report, nil
+}
+
+func (s *Service) returnCurrency(
+	ctx context.Context,
+	booksID int64,
+	in money.Currency,
+) (money.Currency, error) {
+	if in != "" {
+		return in, nil
+	}
+
+	return s.ledger.BaseCurrency(ctx, booksID)
+}
+
+// addFlows values each flow in in, appends it to the report and returns cash with its flows.
+func (s *Service) addFlows(
+	ctx context.Context,
+	report *ReturnReport,
+	cash []domain.CashFlow,
+	flows []Flow,
+	in money.Currency,
+) ([]domain.CashFlow, error) {
+	for _, f := range flows {
+		value, err := s.valueIn(ctx, f.Value, in, f.Date)
+		if err != nil {
+			return nil, err
+		}
+
+		report.Flows = append(report.Flows, ReturnFlow{Date: f.Date, Amount: value})
+		cash = append(cash, domain.CashFlow{Date: f.Date, Amount: -value.Amount()})
+	}
+
+	return cash, nil
 }
 
 // valued sums the value of each account tree in currency in.

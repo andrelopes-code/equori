@@ -130,13 +130,9 @@ func (s *Service) compare(ctx context.Context, booksID int64, ids []uuid.UUID, f
 // benchmark sets the comparison with the index on p.report, over the rates of the index dated in
 // the window on days the tree held money (R14, R18, R20).
 func (s *Service) benchmark(ctx context.Context, p period, index string, rates []IndexRate, held func(time.Time) bool, w window) error {
-	inPeriod := func(r IndexRate) bool { return !r.Date.Before(p.from) && !r.Date.After(p.to) }
-	all := countFunc(rates, inPeriod)
+	all := countFunc(rates, p.contains)
 
-	var firstDay time.Time
-	if i := slices.IndexFunc(rates, inPeriod); i >= 0 {
-		firstDay = rates[i].Date
-	}
+	firstDay := p.firstRateDay(rates)
 
 	rates = slices.DeleteFunc(rates, func(r IndexRate) bool {
 		return r.Date.Before(w.ratesFrom) || r.Date.After(w.ratesTo) || !held(r.Date)
@@ -148,17 +144,14 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 		return nil
 	}
 
-	fractions := make([]float64, len(rates))
-	for i, r := range rates {
-		fractions[i] = r.Rate
-	}
+	fractions := rateFractions(rates)
 
 	b := Benchmark{
 		Index:     index,
 		From:      rates[0].Date,
 		Until:     rates[len(rates)-1].Date,
 		Days:      len(rates),
-		Skipped:   all - countFunc(rates, inPeriod),
+		Skipped:   all - countFunc(rates, p.contains),
 		Restarted: w.restarted,
 
 		StartedLate: !firstDay.IsZero() && rates[0].Date.After(firstDay),
@@ -182,7 +175,45 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 	}
 
 	precise := p.countCredits(&b, w)
+	p.setReturn(&b, start, ends, fractions, basis, precise)
 
+	p.report.Benchmark = &b
+
+	return nil
+}
+
+// firstRateDay is the date of the first rate dated in the period; zero when there is none.
+func (p period) firstRateDay(rates []IndexRate) time.Time {
+	if i := slices.IndexFunc(rates, p.contains); i >= 0 {
+		return rates[i].Date
+	}
+
+	return time.Time{}
+}
+
+func rateFractions(rates []IndexRate) []float64 {
+	fractions := make([]float64, len(rates))
+	for i, r := range rates {
+		fractions[i] = r.Rate
+	}
+
+	return fractions
+}
+
+// contains reports whether the rate is dated in the period.
+func (p period) contains(r IndexRate) bool {
+	return !r.Date.Before(p.from) && !r.Date.After(p.to)
+}
+
+// setReturn sets on b the return of the comparison window and its figures against the index.
+func (p period) setReturn(
+	b *Benchmark,
+	start int64,
+	ends []domain.Subperiod,
+	fractions []float64,
+	basis int,
+	precise bool,
+) {
 	if f, ok := p.factor(start, ends); !ok {
 		p.unavailable(ReasonPercentUndefined)
 	} else {
@@ -207,10 +238,6 @@ func (s *Service) benchmark(ctx context.Context, p period, index string, rates [
 			p.unavailable(ReasonTooFewDays)
 		}
 	}
-
-	p.report.Benchmark = &b
-
-	return nil
 }
 
 // countCredits sets on b the credits of (A, B] and the error bound of its percent (R22); it

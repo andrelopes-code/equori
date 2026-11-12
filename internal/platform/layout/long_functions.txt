@@ -5,12 +5,6 @@ internal/assistant/app/turn.go	Service.Turn	pending: backend reorganization plan
 internal/assistant/app/usage.go	Service.Usage	pending: backend reorganization plan
 internal/assistant/assistant.go	New	pending: backend reorganization plan
 internal/assistant/httpapi/server.go	toProblem	table of data
-internal/capture/app/service.go	Service.Preview	pending: backend reorganization plan
-internal/capture/app/suggest.go	Service.Suggest	pending: backend reorganization plan
-internal/capture/domain/amount.go	readAmount	pending: backend reorganization plan
-internal/capture/domain/date.go	readDate	pending: backend reorganization plan
-internal/capture/domain/installments.go	readInstallments	pending: backend reorganization plan
-internal/capture/domain/read_account.go	lineReader.readAccounts	pending: backend reorganization plan
 internal/classification/app/classify.go	Service.classify	pending: backend reorganization plan
 internal/classification/app/events.go	Service.HandleEvent	pending: backend reorganization plan
 internal/classification/app/preview.go	Service.PreviewRule	pending: backend reorganization plan
@@ -66,19 +60,8 @@ internal/marketdata/probe.go	Module.ProbeQuote	pending: backend reorganization p
 internal/marketdata/sources.go	sourceEntries	table of data
 internal/marketdata/toolapi/instrument.go	manageInstrument	pending: backend reorganization plan
 internal/marketdata/toolapi/market.go	getMarketData	pending: backend reorganization plan
-internal/planning/domain/plan.go	PlanRows	pending: backend reorganization plan
-internal/planning/domain/recurrence.go	Rule.Validate	pending: backend reorganization plan
-internal/planning/httpapi/plan.go	toBudgetPlanAPI	pending: backend reorganization plan
 internal/planning/httpapi/server.go	Server.Register	table of data
 internal/platform/config/variables.go	Variables	table of data
-internal/portfolio/app/benchmark.go	Service.benchmark	pending: backend reorganization plan
-internal/portfolio/app/benchmark_window.go	period.comparedWindow	pending: backend reorganization plan
-internal/portfolio/app/return.go	Service.returnOf	pending: backend reorganization plan
-internal/portfolio/app/service.go	Service.Positions	pending: backend reorganization plan
-internal/portfolio/domain/rebuild.go	Rebuild	pending: backend reorganization plan
-internal/portfolio/httpapi/server.go	Server.getReturn	pending: backend reorganization plan
-internal/portfolio/toolapi/portfolio.go	getPortfolio	pending: backend reorganization plan
-internal/portfolio/toolapi/tax_year.go	getTaxYear	pending: backend reorganization plan
 internal/reporting/app/cash_allocation.go	allocate	pending: backend reorganization plan
 internal/reporting/app/import.go	Exports.Import	pending: backend reorganization plan
 internal/reporting/app/indicators.go	Service.Indicators	pending: backend reorganization plan

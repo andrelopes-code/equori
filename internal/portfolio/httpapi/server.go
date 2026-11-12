@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -178,102 +177,6 @@ func (s *Server) listInstrumentSubtypes(ctx context.Context, r *http.Request, _ 
 	}
 
 	return SubtypeList{Items: subtypes}, nil
-}
-
-func (s *Server) getReturn(ctx context.Context, r *http.Request, _ httpserver.None) (ReturnReport, error) {
-	params, err := httpserver.Query[GetReturnParams](r)
-	if err != nil {
-		return ReturnReport{}, err
-	}
-
-	var in money.Currency
-	if params.ValueIn != nil {
-		in = money.Currency(*params.ValueIn)
-	}
-
-	var account uuid.UUID
-	if params.AccountId != nil {
-		account = *params.AccountId
-	}
-
-	var index string
-	if params.Index != nil {
-		index = *params.Index
-	}
-
-	res, err := s.svc.Return(ctx, auth.MustBooksID(ctx), account, params.From.Time, params.To.Time, in, index)
-	if err != nil {
-		return ReturnReport{}, err
-	}
-
-	out := ReturnReport{
-		AnnualBp: res.AnnualBP,
-		Opening:  toMoney(res.Opening),
-		Closing:  toMoney(res.Closing),
-		Flows:    make([]ReturnFlow, len(res.Flows)),
-		Profile:  ReturnReportProfile(res.Profile),
-		PeriodBp: res.PeriodBP,
-	}
-	for i, f := range res.Flows {
-		out.Flows[i] = ReturnFlow{Date: date(f.Date), Amount: toMoney(f.Amount)}
-	}
-
-	if b := res.Benchmark; b != nil {
-		out.Benchmark = &ReturnBenchmark{
-			Index:     b.Index,
-			From:      date(b.From),
-			Until:     date(b.Until),
-			Days:      b.Days,
-			Skipped:   b.Skipped,
-			Credits:   b.Credits,
-			Restarted: b.Restarted,
-
-			StartedLate: b.StartedLate,
-
-			ReturnBp:  b.ReturnBP,
-			ExcessBp:  b.ExcessBP,
-			IndexBp:   b.IndexBP,
-			PercentBp: b.PercentBP,
-
-			AnnualBp:      b.AnnualBP,
-			IndexAnnualBp: b.IndexAnnualBP,
-
-			PercentErrorBp: b.PercentErrorBP,
-		}
-	}
-
-	if res.Index != "" {
-		out.Index = &res.Index
-	}
-
-	if res.UnavailableReason != "" {
-		out.UnavailableReason = &res.UnavailableReason
-	}
-
-	if e := res.Excluded; e != nil {
-		out.Excluded = &ReturnExcluded{Income: excludedOf(e.Income), Expense: excludedOf(e.Expense)}
-	}
-
-	if i := res.Inflation; i != nil {
-		out.Inflation = &ReturnInflation{
-			Index:    i.Index,
-			From:     date(i.From),
-			Until:    date(i.Until),
-			IndexBp:  i.IndexBP,
-			ReturnBp: i.ReturnBP,
-			RealBp:   i.RealBP,
-		}
-	}
-
-	return out, nil
-}
-
-func excludedOf(t *app.ExcludedTotal) *ReturnExcludedPart {
-	if t == nil {
-		return nil
-	}
-
-	return &ReturnExcludedPart{Amount: toMoney(t.Amount), Categories: t.Categories}
 }
 
 func (s *Server) getAllocation(ctx context.Context, r *http.Request, _ httpserver.None) (Allocation, error) {

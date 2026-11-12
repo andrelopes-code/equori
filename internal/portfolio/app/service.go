@@ -185,46 +185,63 @@ func (s *Service) Positions(ctx context.Context, booksID int64, date time.Time, 
 
 	out := make([]Position, 0, len(rows))
 	for _, row := range rows {
-		p := Position{AccountID: row.AccountID, Instrument: row.Instrument}
-		if p.Quantity, err = s.amount(ctx, row.Quantity, row.Instrument); err != nil {
+		p, err := s.position(ctx, row, base, date, in)
+		if err != nil {
 			return nil, err
-		}
-
-		if p.CostBasis, err = money.New(row.CostBasis, base); err != nil {
-			return nil, err
-		}
-
-		if row.Quantity > 0 && row.CostBasis > 0 {
-			avg, err := money.Quotient(p.CostBasis, p.Quantity, averageCostDecimals)
-			if err != nil {
-				return nil, err
-			}
-
-			p.AverageCost = &avg
-		}
-
-		value, prices, err := s.md.Convert(ctx, p.Quantity, base, date)
-		switch {
-		case errors.Is(err, ErrPriceMissing):
-		case err != nil:
-			return nil, err
-		default:
-			if value.Currency() != in && in != "" {
-				var more []Price
-				if value, more, err = s.md.Convert(ctx, value, in, date); err != nil {
-					return nil, fmt.Errorf("value the position of %s: %w", row.AccountID, err)
-				}
-
-				prices = append(prices, more...)
-			}
-
-			p.MarketValue, p.Prices = &value, prices
 		}
 
 		out = append(out, p)
 	}
 
 	return out, nil
+}
+
+func (s *Service) position(
+	ctx context.Context,
+	row domain.PositionDay,
+	base money.Currency,
+	date time.Time,
+	in money.Currency,
+) (Position, error) {
+	var err error
+
+	p := Position{AccountID: row.AccountID, Instrument: row.Instrument}
+	if p.Quantity, err = s.amount(ctx, row.Quantity, row.Instrument); err != nil {
+		return Position{}, err
+	}
+
+	if p.CostBasis, err = money.New(row.CostBasis, base); err != nil {
+		return Position{}, err
+	}
+
+	if row.Quantity > 0 && row.CostBasis > 0 {
+		avg, err := money.Quotient(p.CostBasis, p.Quantity, averageCostDecimals)
+		if err != nil {
+			return Position{}, err
+		}
+
+		p.AverageCost = &avg
+	}
+
+	value, prices, err := s.md.Convert(ctx, p.Quantity, base, date)
+	switch {
+	case errors.Is(err, ErrPriceMissing):
+	case err != nil:
+		return Position{}, err
+	default:
+		if value.Currency() != in && in != "" {
+			var more []Price
+			if value, more, err = s.md.Convert(ctx, value, in, date); err != nil {
+				return Position{}, fmt.Errorf("value the position of %s: %w", row.AccountID, err)
+			}
+
+			prices = append(prices, more...)
+		}
+
+		p.MarketValue, p.Prices = &value, prices
+	}
+
+	return p, nil
 }
 
 type Result struct {
