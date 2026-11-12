@@ -97,7 +97,8 @@ describe("Instrument page", () => {
     expect(
       document.querySelector('[data-ui="chart"] [data-part="title"]'),
     ).toBeNull();
-    expect(Object.fromEntries(queries[0] ?? [])).toEqual({
+    // The yearly table reads the range max too, so the 90 days are one of the requests.
+    expect(queries.map((q) => Object.fromEntries(q))).toContainEqual({
       instrument: "PETR4",
       quote_instrument: "BRL",
       from: "2026-07-20",

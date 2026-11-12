@@ -18,6 +18,7 @@ import {
 import { QuoteHero } from "@/features/instruments/quote/quote-hero";
 import { quoteReading } from "@/features/instruments/quote/quote-reading";
 import { RangeFigures } from "@/features/instruments/quote/range-figures";
+import { YearlyChanges } from "@/features/instruments/quote/yearly-changes";
 import { useInstrumentPositions } from "@/features/instruments/model/use-instrument-positions";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -99,6 +100,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
         <RangeFigures stats={stats} quote={quote} loading={series.isPending} />
       )}
       {prices.length > 0 && <PriceDetails prices={prices} />}
+      <YearlyChanges code={instrument.code} quote={quote} first={first} />
     </Stack>
   );
 }
