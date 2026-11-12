@@ -293,4 +293,38 @@ describe("Contribution plan page", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("keys each position outside the plan by its reference, not by its name", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const fetch = portfolioApi({
+      "GET /api/v1/contribution-plan": () =>
+        json(200, {
+          ...saved,
+          outside: [
+            { account_id: "unknown-a", value: brl(100000) },
+            { account_id: "unknown-b", value: brl(200000) },
+          ],
+        }),
+      "POST /api/v1/contribution-plan/preview": () => json(200, preview),
+    });
+    try {
+      await renderApp("/portfolio/contribution-plan", { fetch });
+
+      await waitFor(() => {
+        expect(
+          screen.getAllByText(catalogPtBR["contributionPlan.chooseClass"]),
+        ).toHaveLength(2);
+      });
+
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      error.mockRestore();
+    }
+  });
 });

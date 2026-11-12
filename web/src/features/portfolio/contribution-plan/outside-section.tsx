@@ -45,7 +45,10 @@ export function OutsideSection({
         const name = memberName(entry);
 
         return (
-          <div key={name} className={styles.row}>
+          <div
+            key={entry.account_id ?? entry.instrument}
+            className={styles.row}
+          >
             <Text className={styles.name}>{name}</Text>
 
             <Text className={styles.value}>
