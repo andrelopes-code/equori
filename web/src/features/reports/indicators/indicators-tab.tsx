@@ -77,7 +77,7 @@ export function IndicatorsTab({ month, onMonth }: IndicatorsTabProps) {
         <RateChart report={report} incomplete={incomplete} />
       </Grid>
 
-      <IndicatorAudit report={report} />
+      <IndicatorAudit report={report} incomplete={incomplete} />
     </Stack>
   );
 }

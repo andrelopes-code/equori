@@ -10,15 +10,23 @@ import { indicatorReport } from "@/testing/indicator-report";
 import { renderWithProviders } from "@/testing/render-app";
 import { reportApiRoutes } from "@/testing/report-api";
 
+const openLabel = catalogEn["report.indicators.audit.open"];
+
 describe("IndicatorAudit", () => {
-  it("holds the month by month table closed until it is opened", async () => {
+  it("L5: holds the table absent until the layer is opened", async () => {
     renderAudit();
 
     expect(
-      await screen.findByRole("button", {
-        name: "Month by month and definitions",
-      }),
-    ).toHaveAttribute("aria-expanded", "false");
+      await screen.findByRole("button", { name: openLabel }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(
+      screen.getByText("12 months, from Nov 2025 to Oct 2026."),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: openLabel }));
+
+    expect(rowAt(1).getAllByText("Nov 2025").length).toBeGreaterThan(0);
   });
 
   it("writes one row per month with every figure of the payload", async () => {
@@ -40,6 +48,21 @@ describe("IndicatorAudit", () => {
       "R$5,000.00",
     ])
       expect(last.getAllByText(text).length).toBeGreaterThan(0);
+  });
+
+  it("L5: the position rows come first in the layer", async () => {
+    await openAudit();
+
+    const layer = within(screen.getByRole("dialog"));
+    const title = layer.getByText(catalogEn["report.indicators.board.title"]);
+    const table = layer.getByRole("table");
+
+    expect(
+      layer.getAllByText(catalogEn["report.indicators.board.title"]),
+    ).toHaveLength(1);
+    expect(
+      title.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("writes a gap for a month before the first record", async () => {
@@ -70,7 +93,7 @@ describe("IndicatorAudit", () => {
 
 function renderAudit(last: Partial<IndicatorMonth> = {}) {
   return renderWithProviders(
-    <IndicatorAudit report={indicatorReport({ last })} />,
+    <IndicatorAudit report={indicatorReport({ last })} incomplete={false} />,
     { fetch: fakeApi({ ...reportApiRoutes() }) },
   );
 }
@@ -78,11 +101,7 @@ function renderAudit(last: Partial<IndicatorMonth> = {}) {
 async function openAudit(last: Partial<IndicatorMonth> = {}) {
   renderAudit(last);
 
-  await userEvent.click(
-    await screen.findByRole("button", {
-      name: "Month by month and definitions",
-    }),
-  );
+  await userEvent.click(await screen.findByRole("button", { name: openLabel }));
 }
 
 function rowAt(index: number) {

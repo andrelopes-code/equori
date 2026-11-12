@@ -1,0 +1,6 @@
+@layer app {
+  /* The position rows reflow by their own width, as on the page. */
+  .rows {
+    container-type: inline-size;
+  }
+}

@@ -77,6 +77,11 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
   "report.indicators.audit.reason.insufficient_history": "Histórico curto",
   "report.indicators.audit.caption": "Valores de cada mês",
   "report.indicators.audit.basis": "Base de caixa.",
+  "report.indicators.audit.open": "Ver mês a mês e definições",
+  "report.indicators.audit.summary": "{months} meses, de {from} a {to}.",
+  "report.indicators.audit.definitions": "Definições",
+  "report.indicators.audit.layer.description":
+    "Os números de cada mês por trás dos indicadores, com suas definições.",
   "report.valueIn": "Avaliar em",
   "report.none": "—",
   "report.month": "Mês",

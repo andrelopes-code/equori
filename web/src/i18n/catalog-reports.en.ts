@@ -74,6 +74,11 @@ export const reportsEn = {
   "report.indicators.audit.reason.insufficient_history": "Short history",
   "report.indicators.audit.caption": "Figures of each month",
   "report.indicators.audit.basis": "Cash basis.",
+  "report.indicators.audit.open": "View month by month and definitions",
+  "report.indicators.audit.summary": "{months} months, from {from} to {to}.",
+  "report.indicators.audit.definitions": "Definitions",
+  "report.indicators.audit.layer.description":
+    "The figures of every month behind the indicators, with their definitions.",
   "report.valueIn": "Value in",
   "report.none": "—",
   "report.month": "Month",

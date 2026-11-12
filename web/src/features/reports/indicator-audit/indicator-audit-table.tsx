@@ -17,6 +17,8 @@ import type { MessageKey } from "@/i18n/catalog.en";
 import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
+import styles from "@/features/reports/indicator-audit/indicator-audit-table.module.css";
+
 export interface IndicatorAuditTableProps {
   report: Indicators;
 }
@@ -71,8 +73,8 @@ export function IndicatorAuditTable({ report }: IndicatorAuditTableProps) {
   };
 
   return (
-    <Table columns={columns.length} variant="framed">
-      <TableContent>
+    <Table columns={columns.length} variant="framed" stickyHeader>
+      <TableContent scrollProps={{ className: styles.scroll }}>
         <TableCaption>{t("report.indicators.audit.caption")}</TableCaption>
 
         <TableHead>
