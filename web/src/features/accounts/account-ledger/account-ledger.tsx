@@ -39,6 +39,7 @@ import {
 } from "@/features/accounts/account-ledger/running-balance";
 import type { LedgerRow } from "@/features/accounts/account-ledger/running-balance";
 import { payeesQuery } from "@/features/setup";
+import { transactionTitle } from "@/features/transactions";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayHeader, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -94,6 +95,10 @@ export function AccountLedger({
   });
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
+  const accountsById = useMemo(
+    () => new Map((accounts.data ?? []).map((a) => [a.id, a])),
+    [accounts.data],
+  );
   const names = useMemo(
     () => new Map((accounts.data ?? []).map((a) => [a.id, a.name])),
     [accounts.data],
@@ -125,9 +130,11 @@ export function AccountLedger({
   const columns = leaf ? 5 : 4;
   const titleOf = (row: LedgerRow) => {
     const tx = row.transaction;
+    const payee =
+      tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id);
     return (
-      (tx.payee_id === undefined ? undefined : payeeNames.get(tx.payee_id)) ??
-      (tx.description === "" ? t("ledger.untitled") : tx.description)
+      transactionTitle(tx, t, { payee, accounts: accountsById }) ||
+      t("ledger.untitled")
     );
   };
   const dayLabel = (day: string) =>
@@ -245,13 +252,7 @@ export function AccountLedger({
                       </TableGroupRow>
                       {dayRows.map((row) => {
                         const tx = row.transaction;
-                        const title =
-                          (tx.payee_id === undefined
-                            ? undefined
-                            : payeeNames.get(tx.payee_id)) ??
-                          (tx.description === ""
-                            ? t("ledger.untitled")
-                            : tx.description);
+                        const title = titleOf(row);
                         const balance = balances?.get(row.id);
                         return (
                           <TableRow

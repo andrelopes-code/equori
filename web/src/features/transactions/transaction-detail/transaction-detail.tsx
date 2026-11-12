@@ -45,6 +45,7 @@ import { RepaymentDialog } from "@/features/transactions/reimbursement/repayment
 import { ReimbursementSuggestion } from "@/features/transactions/reimbursement/reimbursement-suggestion";
 import { TransactionFacts } from "@/features/transactions/transaction-facts/transaction-facts";
 import { transactionRow } from "@/features/transactions/model/transaction-row";
+import { transactionTitle } from "@/features/transactions/model/transaction-title";
 import { TransferDialog } from "@/features/transactions/transaction-dialogs/transfer-dialog";
 import { useTransactionData } from "@/features/transactions/transaction-detail/use-transaction-data";
 import { VoidDialog } from "@/features/transactions/transaction-dialogs/void-dialog";
@@ -166,6 +167,8 @@ export function TransactionDetail({
   const tx = ready.transaction;
   const payees = new Map(ready.payees.map((p) => [p.id, p.name]));
   const row = transactionRow(tx, accounts, payees);
+  const title =
+    transactionTitle(tx, t, { payee: row.payee, accounts }) || row.title;
   const voided = tx.voided_at !== undefined;
   const pending = tx.postings.some((p) => p.status === "pending");
   const amount = fmt.money(row.money, ready.scale(row.money.currency));
@@ -184,7 +187,7 @@ export function TransactionDetail({
           <PageHeaderTitleRow>
             <PageHeaderTitle>
               <PageHeaderHeading>
-                {row.title || t("transactions.untitled")}
+                {title || t("transactions.untitled")}
               </PageHeaderHeading>
               <PageHeaderSubheading>
                 {[amount, formatDate(tx.date, locale), row.accounts]

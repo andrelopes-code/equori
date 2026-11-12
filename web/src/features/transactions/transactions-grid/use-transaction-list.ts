@@ -10,8 +10,10 @@ import {
   transactionsInfiniteQuery,
 } from "@/features/transactions/api";
 import type { TransactionSearch } from "@/features/transactions/model/search";
+import { transactionTitle } from "@/features/transactions/model/transaction-title";
 import { transactionRow } from "@/features/transactions/model/transaction-row";
 import type { TransactionRow } from "@/features/transactions/model/transaction-row";
+import { useT } from "@/i18n/i18n-provider";
 
 type Transaction = components["schemas"]["Transaction"];
 
@@ -58,6 +60,7 @@ export function useTransactionList(search: TransactionSearch): TransactionList {
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const scale = useScale();
+  const t = useT();
   // One call per page of the list; a failed call leaves its rows without a mark.
   const decided = useQueries({
     queries: (list.data?.pages ?? [])
@@ -76,13 +79,26 @@ export function useTransactionList(search: TransactionSearch): TransactionList {
     const accountsById = new Map(accounts.data.map((a) => [a.id, a]));
     const payeeNames = new Map((payees.data ?? []).map((p) => [p.id, p.name]));
     return list.data.pages.flatMap((page) =>
-      page.items.map((tx) => ({
-        ...transactionRow(tx, accountsById, payeeNames, search.account_id),
-        transaction: tx,
-        categorization: decided.get(tx.id),
-      })),
+      page.items.map((tx) => {
+        const row = transactionRow(
+          tx,
+          accountsById,
+          payeeNames,
+          search.account_id,
+        );
+        const title = transactionTitle(tx, t, {
+          payee: row.payee,
+          accounts: accountsById,
+        });
+        return {
+          ...row,
+          title: title || row.title,
+          transaction: tx,
+          categorization: decided.get(tx.id),
+        };
+      }),
     );
-  }, [list.data, accounts.data, payees.data, search.account_id, decided]);
+  }, [list.data, accounts.data, payees.data, search.account_id, decided, t]);
 
   const failed = [list, accounts, payees].find((q) => q.isError);
   const ready =

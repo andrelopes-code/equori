@@ -7,8 +7,10 @@ import { fakeApi, json, problem } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { planningApi, rent, rentOctober } from "@/testing/planning-api";
 import {
+  checkingID,
   foodID,
   leisureID,
+  savingsID,
   sharedRoutes,
   transactionFixture,
   txID,
@@ -178,6 +180,34 @@ describe("transaction detail", () => {
     expect(screen.getByText("Wrong amount")).toBeInTheDocument();
     expect(
       await screen.findByText(catalogEn["attachments.none"]),
+    ).toBeInTheDocument();
+  });
+
+  it("titles a purchase with an empty description by its instrument", async () => {
+    const money = { amount: 10, currency: "BRL" };
+    const purchase = transactionFixture({
+      description: "",
+      payee_id: undefined,
+      trade: {
+        account_id: savingsID,
+        cash_account_id: checkingID,
+        side: "buy",
+        quantity: { amount: 10, currency: "AUVP11" },
+        unit_price: "10",
+        gross: money,
+        fees: money,
+        taxes: money,
+      },
+    });
+    await renderApp(`/transactions/${txID}`, {
+      fetch: api([], () => json(200, purchase)),
+    });
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Purchase of AUVP11",
+      }),
     ).toBeInTheDocument();
   });
 

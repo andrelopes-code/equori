@@ -1,12 +1,14 @@
 import { Link as SlottedLink } from "@slotted/react/link";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
+import { accountsQuery } from "@/features/accounts";
 import { transactionQuery } from "@/features/transactions/api";
+import { transactionTitle } from "@/features/transactions/model/transaction-title";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -38,6 +40,8 @@ export function LinksSection({ transaction }: { transaction: Transaction }) {
   const [locale] = useAppLocale();
   const api = useApi();
   const navigate = useNavigate();
+  const accounts = useQuery(accountsQuery(api));
+  const accountsById = new Map((accounts.data ?? []).map((a) => [a.id, a]));
   const entries = [
     ...transaction.links.map((l) => ({
       id: l.target,
@@ -58,7 +62,7 @@ export function LinksSection({ transaction }: { transaction: Transaction }) {
         const name =
           other === undefined
             ? t("links.loading")
-            : `${other.description || t("transactions.untitled")} · ${formatDate(other.date, locale)}`;
+            : `${transactionTitle(other, t, { accounts: accountsById }) || t("transactions.untitled")} · ${formatDate(other.date, locale)}`;
         return (
           <Text key={`${entry.words}-${entry.id}`}>
             {t(entry.words)}{" "}

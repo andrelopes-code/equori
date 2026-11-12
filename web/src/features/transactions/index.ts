@@ -6,6 +6,7 @@ export {
   uncategorizedCountQuery,
 } from "@/features/transactions/api";
 export { bulkLimit, chunks } from "@/features/transactions/model/categorize";
+export { transactionTitle } from "@/features/transactions/model/transaction-title";
 export {
   validateNewTransactionSearch,
   validateTransactionSearch,
