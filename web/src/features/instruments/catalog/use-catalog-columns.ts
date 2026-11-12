@@ -11,11 +11,16 @@ import { useT } from "@/i18n/i18n-provider";
 
 // The change columns of IQ7, each with the key of its label and the row field it sorts by.
 const changeColumns = [
-  { id: "week", label: "instruments.col.week", priority: 4 },
-  { id: "month", label: "instruments.col.month", priority: 3 },
-  { id: "quarter", label: "instruments.col.quarter", priority: 4 },
-  { id: "year", label: "instruments.col.year", priority: 3 },
-  { id: "yearToDate", label: "instruments.col.yearToDate", priority: 5 },
+  { id: "week", label: "instruments.col.week", priority: 4, width: 84 },
+  { id: "month", label: "instruments.col.month", priority: 3, width: 84 },
+  { id: "quarter", label: "instruments.col.quarter", priority: 4, width: 84 },
+  { id: "year", label: "instruments.col.year", priority: 3, width: 84 },
+  {
+    id: "yearToDate",
+    label: "instruments.col.yearToDate",
+    priority: 5,
+    width: 100,
+  },
 ] as const;
 
 // The grid columns and the filter fields of the catalog, and the types the rows hold.
@@ -44,7 +49,7 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         accessor: "code",
         rowHeader: true,
         searchable: true,
-        width: 120,
+        width: 100,
       },
       {
         id: "name",
@@ -52,7 +57,7 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         accessor: "name",
         searchable: true,
         flex: 1,
-        minWidth: 200,
+        minWidth: 160,
         priority: 3,
       },
       {
@@ -65,38 +70,13 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         priority: 6,
       },
       {
-        id: "subtype",
-        label: t("instruments.col.subtype"),
-        accessor: "subtype",
-        kind: "set",
-        options: subtypeOptions,
-        width: 130,
-        priority: 5,
-      },
-      {
-        id: "quoteCurrency",
-        label: t("instruments.col.quote"),
-        accessor: "quoteCurrency",
-        kind: "set",
-        options: quoteOptions,
-        width: 170,
-        priority: 4,
-      },
-      {
-        id: "exchange",
-        label: t("instruments.col.exchange"),
-        accessor: "exchange",
-        width: 110,
-        priority: 7,
-      },
-      {
         // Prices of different quote currencies do not compare (IQ10).
         id: "price",
         label: t("instruments.col.price"),
         accessor: () => "",
         numeric: true,
         sortable: false,
-        width: 130,
+        width: 120,
         priority: 1,
       },
       {
@@ -106,21 +86,47 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         accessor: (row) => (row.lastDate === "" ? null : row.lastDate),
         kind: "date",
         sortable: true,
-        width: 130,
+        width: 164,
         priority: 2,
       },
       ...changeColumns.map(
-        ({ id, label, priority }): GridColumn<CatalogRow> => ({
+        ({ id, label, priority, width }): GridColumn<CatalogRow> => ({
           id,
           label: t(label),
           accessor: id,
           kind: "number",
           numeric: true,
           sortable: true,
-          width: 100,
+          width,
           priority,
         }),
       ),
+      // The static columns come last: on a narrow screen they scroll out, not the figures.
+      {
+        id: "quoteCurrency",
+        label: t("instruments.col.quote"),
+        accessor: "quoteCurrency",
+        kind: "set",
+        options: quoteOptions,
+        width: 160,
+        priority: 4,
+      },
+      {
+        id: "subtype",
+        label: t("instruments.col.subtype"),
+        accessor: "subtype",
+        kind: "set",
+        options: subtypeOptions,
+        width: 100,
+        priority: 5,
+      },
+      {
+        id: "exchange",
+        label: t("instruments.col.exchange"),
+        accessor: "exchange",
+        width: 80,
+        priority: 7,
+      },
     ],
     [t, typeOptions, subtypeOptions, quoteOptions],
   );

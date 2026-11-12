@@ -5,7 +5,7 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 ## 1. Scope
 
 - The list reads one operation, `listInstrumentQuotes`, instead of one `listPrices` read per visible row (`latestPriceQuery`). The 150 requests of a full catalog become one.
-- The figure is the change of the price. Income paid by the instrument is not included, as in `2026-11-12-yearly-price-change-design.md`.
+- The figure is the change of the price. Income paid by the instrument is not included, as in `2026-11-12-yearly-price-change-design.md`. The prices are the closes not adjusted for splits (MQ18 of `2026-11-09-market-quotes-design.md`), so a split reads as a fall. The page subtitle states both.
 - Out of scope: total return with income, a comparison against an index, a position column, a high and low of the year, a "best and worst of the week" strip.
 
 ## 2. Decisions
@@ -18,7 +18,7 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 | IQ4 | The reference dates count back from the date of the last price of the instrument, so a change always spans the window its column names and ends at the date the price column shows. `week` = that date minus 7 days; `month` = minus 1 month; `quarter` = minus 3 months; `year` = minus 12 months; `year_to_date` = 31 December of the previous year, asked only when the last price lies in the year of `today` (from `platform/clock`). A month shift that lands past the end of the target month clamps to its last day (31 March minus 1 month is 28 February). Amendment of the first version, which counted back from `today`: a stale instrument then read a window shorter than its column name. |
 | IQ5 | `last` is the chosen price on or before today. A reference is null when no price exists on or before its date, or when `last.date` is not after the reference date: a price that predates the window is not a change inside it. |
 | IQ6 | The client computes each change as `changeBp(reference.value, last.value)` of `model/price-stats.ts`: exact decimals, basis points. The server returns prices, never a ratio. |
-| IQ7 | The grid columns are: code, name, subtype, quote, exchange, price, price date, then five change columns. In English they are named "1W", "1M", "3M", "12M" and "YTD"; in pt-BR "Semana", "Mês", "3 meses", "12 meses" and "No ano". Each change column is numeric and sortable. A change of null reads "—". |
+| IQ7 | The grid columns are: code, name, price, price date, five change columns, then quote, subtype and exchange. The figures come first so that a narrow screen scrolls the static columns out, not the changes. Each header fits its column without an ellipsis. In English they are named "1W", "1M", "3M", "12M" and "YTD"; in pt-BR "7D", "1M", "3M", "12M" and "No ano". Each change column is numeric and sortable. A change of null reads "—". |
 | IQ8 | The price date column is sortable. An instrument without a price sorts after every dated instrument in both directions. |
 | IQ9 | A change is written with `formatSignedBasisPoints` in the tone of its direction (`useAmountTone("result", ...)`). A change is a percentage and is not masked by privacy mode. The price stays masked (`MASK`), as in the current cell. |
 | IQ10 | The price column is not sortable: prices of different quote currencies do not compare. |

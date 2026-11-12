@@ -4,7 +4,7 @@ export const instrumentsEn = {
   "nav.instruments": "Prices",
   "settings.ledger.instruments": "Open prices",
   "instruments.subtitle":
-    "Latest price and price change of each currency and investment; income is not included.",
+    "Latest price and price change of each currency and investment; income and splits are not adjusted.",
   "instruments.define": "Add a currency or investment",
   "instruments.caption": "Currencies and investments by type",
   "instruments.empty": "No currency or investment yet",
