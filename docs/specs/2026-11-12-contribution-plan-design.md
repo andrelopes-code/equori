@@ -68,7 +68,7 @@ The value of a class is the sum of its members. The current share of a class is 
 
 **CN9 Rounding.** Each `a_i` is rounded down to a minor unit. The remaining units, fewer than the number of funded entries, go one each to the funded entries in decreasing order of the discarded fraction, ties by position in the plan. The split always adds up to `C`.
 
-**CN10 Missing valuation.** When a member has a holding without a price at today, or a value that needs a rate absent at today, the response carries `status: incomplete` and the list of those members with the missing item (price or rate, with the instrument or the currency pair). It carries no amount. The screen states which members lack a price or a rate and links to the instrument page.
+**CN10 Missing valuation.** When a member has a holding without a price at today, or a value that needs a rate absent at today, the response carries `status: incomplete` and the list of those members with the missing item (price or rate, with the instrument or the currency pair). It carries no current share, no drift and no amount: a class value without one of its members is not its value. The screen states which members lack a price or a rate and links to the instrument page.
 
 **CN11 Contribution amount.** The stored amount is positive and in the base currency. When the base currency changes, the stored amount is not returned and the field starts empty. A preview with an amount that is not positive returns `contribution_amount_invalid`.
 
@@ -109,7 +109,7 @@ Migration `db/migrations/<next>_contribution_plan.sql`:
 
 The sum rules of CN2 and CN4 are checked in `domain`, not in SQL.
 
-An account deleted while it is a member is removed from its class by the same transaction that deletes the account; an instrument removed from the catalog follows the instrument removal design (`docs/specs/2026-11-11-instrument-removal-design.md`) and leaves its member in place with value zero.
+The foreign keys of `account_id` (to `ledger_account (books_id, id)`) and of `instrument` (to `marketdata_instrument (code)`) cascade on delete: an account or an instrument that leaves the book leaves the plan with it.
 
 ## Screen
 
@@ -165,7 +165,7 @@ A section under the table lists the positions of CN6 with their value and a clas
 
 - No plan: one panel with the purpose in one sentence and two actions: "Start from my portfolio" (CN12, primary) and "Start from scratch" (one class named by the investor, target 100%). Both open edit mode with the draft.
 - No position and no plan: the panel adds a link to record the first purchase.
-- Incomplete (CN10): one `FormNotice` above the table names the members without price or rate, each a link to its instrument page. The table keeps target and current shares; the after and amount cells write "—".
+- Incomplete (CN10): one `FormNotice` above the table names the members without price or rate, each a link to its instrument page. The table keeps the target shares; the current, after and amount cells write "—".
 
 ### Layout rules
 
