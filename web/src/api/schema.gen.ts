@@ -5813,7 +5813,7 @@ export interface components {
             account_id?: string;
             /**
              * Format: uuid
-             * @description A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+             * @description A cash account of the brokerage or an open asset account of its institution, in the base currency. Absent when brokerage_id and instrument name the target.
              */
             cash_account_id?: string;
             side: components["schemas"]["TradeSide"];
@@ -5859,7 +5859,7 @@ export interface components {
             account_id?: string;
             /**
              * Format: uuid
-             * @description A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+             * @description A cash account of the brokerage or an open asset account of its institution, in the base currency. Absent when brokerage_id and instrument name the target.
              */
             cash_account_id?: string;
             income_type: components["schemas"]["IncomeType"];

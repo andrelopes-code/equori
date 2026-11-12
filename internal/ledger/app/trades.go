@@ -277,10 +277,15 @@ func (s *Service) brokerageAccounts(
 		return domain.Account{}, domain.Account{}, err
 	}
 
-	if cash.HoldsSecurity() || cash.ParentID != security.ParentID {
+	ok, err := payingAccount(ctx, r, security, cash)
+	if err != nil {
+		return domain.Account{}, domain.Account{}, err
+	}
+
+	if !ok {
 		return domain.Account{}, domain.Account{}, fieldErr(
 			"cash_account_id",
-			"must be a cash account of the brokerage holding account_id",
+			"must be a cash account of the brokerage or an account of its institution",
 			domain.ErrValidation,
 		)
 	}

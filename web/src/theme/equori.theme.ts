@@ -1,6 +1,8 @@
 import { extendTheme } from "@slotted/theme";
 import defaultTheme from "@slotted/themes/default";
 
+import { overlayItemRules } from "./overlay-items.ts";
+
 // A total closes its table with one rule in the softened rule colour; the double rule of a
 // ledger sheet read as a heavy line (owner review item 17).
 const summaryRule = `
@@ -430,6 +432,7 @@ export default extendTheme(
       tagInsetRule,
       listHeightRule,
       stickyHeaderRule,
+      ...overlayItemRules,
       stickyColumnRule,
       collapsibleCornerRule,
       dangerButtonRule,

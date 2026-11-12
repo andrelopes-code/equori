@@ -6,7 +6,8 @@
   /* The sheet is a translucent panel at the surface step; the surface-raised step is 1.06:1 from
      it and the subtle border 1.3:1, so a row drawn from them melts into the panel. The ground and
      the edge are the text colour at 8% and 22%, which keeps a step of about 1.2:1 and 1.8:1
-     from the panel in both schemes. No token holds a step that size. */
+     from the panel in both schemes. No token holds a step that size; theme/overlay-items.ts
+     gives the families inside an overlay the same recipe. */
   .row {
     --row-line: 1.3;
     --row-ground: color-mix(in oklab, var(--slotted-text) 8%, transparent);

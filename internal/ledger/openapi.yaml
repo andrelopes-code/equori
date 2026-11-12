@@ -3251,7 +3251,7 @@ schemas:
       cash_account_id:
         type: string
         format: uuid
-        description: A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+        description: A cash account of the brokerage or an open asset account of its institution, in the base currency. Absent when brokerage_id and instrument name the target.
       side:
         $ref: "#/components/schemas/TradeSide"
       date:
@@ -3318,7 +3318,7 @@ schemas:
       cash_account_id:
         type: string
         format: uuid
-        description: A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+        description: A cash account of the brokerage or an open asset account of its institution, in the base currency. Absent when brokerage_id and instrument name the target.
       income_type:
         $ref: "#/components/schemas/IncomeType"
       date:

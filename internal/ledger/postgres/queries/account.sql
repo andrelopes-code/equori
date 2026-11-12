@@ -129,6 +129,20 @@ ORDER BY
     created_at,
     id;
 
+-- name: ListInstitutionAccounts :many
+SELECT
+    *
+FROM
+    ledger_account
+WHERE
+    books_id = $1
+    AND institution_id = $2
+    AND account_class = 'asset'
+    AND closed_on IS NULL
+ORDER BY
+    created_at,
+    id;
+
 -- name: AccountTotals :one
 SELECT
     coalesce(sum(p.amount), 0)::bigint AS total,

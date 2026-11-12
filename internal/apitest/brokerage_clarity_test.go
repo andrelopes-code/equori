@@ -177,6 +177,63 @@ func TestS392IncomeWithInstrumentCreditsTheCashAccount(t *testing.T) {
 	}
 }
 
+func TestS393BuyPaidFromTheCheckingAccountOfTheInstitution(t *testing.T) {
+	t.Parallel()
+	s, checking := newOutsideSetup(t)
+
+	body := s.buy("2026-10-05", 10)
+	body["cash_account_id"] = checking
+
+	var tx tradeResult
+	s.h.MustDo(http.MethodPost, tradesPath, body, http.StatusCreated, &tx)
+
+	if got := tx.amountOn(checking); got != -10000 {
+		t.Fatalf("checking posting = %d, want -10000: %+v", got, tx.Postings)
+	}
+
+	if got := s.holdings(t, "AUVP11"); len(got) != 1 {
+		t.Fatalf("holdings = %+v, want one", got)
+	}
+}
+
+func TestS394AccountOfAnotherInstitutionIsRejected(t *testing.T) {
+	t.Parallel()
+	s, _ := newOutsideSetup(t)
+	other := s.h.Account("Other checking", "asset", "checking", map[string]any{
+		"institution_id": namedInstitution(t, s.h, "Other bank"),
+	})
+
+	body := s.buy("2026-10-05", 10)
+	body["cash_account_id"] = other
+	s.h.ExpectProblem(s.h.Do(http.MethodPost, tradesPath, body),
+		http.StatusUnprocessableEntity, "validation_failed", "cash_account_id")
+}
+
+func TestS395BrokerageWithoutCashDefaultsToTheInstitutionAccount(t *testing.T) {
+	t.Parallel()
+	s, checking := newOutsideSetup(t)
+
+	var tx tradeResult
+	s.h.MustDo(http.MethodPost, tradesPath, s.buy("2026-10-05", 10), http.StatusCreated, &tx)
+
+	if got := tx.amountOn(checking); got != -10000 {
+		t.Fatalf("checking posting = %d, want -10000: %+v", got, tx.Postings)
+	}
+}
+
+func TestS396CashAndInstitutionAccountAreAmbiguous(t *testing.T) {
+	t.Parallel()
+	s, checking := newOutsideSetup(t)
+	s.child("Cash", string(s.h.Profile.Base))
+
+	s.h.ExpectProblem(s.h.Do(http.MethodPost, tradesPath, s.buy("2026-10-05", 10)),
+		http.StatusUnprocessableEntity, "brokerage_cash_ambiguous", "")
+
+	body := s.buy("2026-10-05", 10)
+	body["cash_account_id"] = checking
+	s.h.MustDo(http.MethodPost, tradesPath, body, http.StatusCreated, nil)
+}
+
 func TestBrokerageWithoutCashAccount(t *testing.T) {
 	t.Parallel()
 
@@ -258,6 +315,31 @@ func newBrokerageSetup(t *testing.T, profile apitest.Profile) brokerageSetup {
 	return s
 }
 
+// newOutsideSetup returns a brokerage without a cash account and a checking account of its
+// institution.
+func newOutsideSetup(t *testing.T) (brokerageSetup, string) {
+	t.Helper()
+
+	h := apitest.New(t, apitest.As(apitest.Brazil()))
+	h.MustDo(http.MethodPost, "/api/v1/instruments", security("AUVP11"), http.StatusCreated, nil)
+
+	s := brokerageSetup{h: h, institution: institutionID(t, h)}
+	s.brokerage = h.Account(
+		"Inter",
+		"asset",
+		"brokerage",
+		map[string]any{"institution_id": s.institution},
+	)
+	checking := h.Account(
+		"Checking",
+		"asset",
+		"checking",
+		map[string]any{"institution_id": s.institution},
+	)
+
+	return s, checking
+}
+
 func (s brokerageSetup) child(name, currency string) string {
 	return s.h.Account(name, "asset", "brokerage", map[string]any{
 		"parent_id": s.brokerage, "currency": currency, "institution_id": s.institution,
@@ -326,13 +408,38 @@ func security(code string) map[string]any {
 func institutionID(t *testing.T, h *apitest.Harness) string {
 	t.Helper()
 
+	return namedInstitution(t, h, "XP")
+}
+
+type tradeResult struct {
+	Postings []struct {
+		AccountID string `json:"account_id"`
+		Amount    struct {
+			Amount int64 `json:"amount"`
+		} `json:"amount"`
+	} `json:"postings"`
+}
+
+func (r tradeResult) amountOn(accountID string) int64 {
+	for _, p := range r.Postings {
+		if p.AccountID == accountID {
+			return p.Amount.Amount
+		}
+	}
+
+	return 0
+}
+
+func namedInstitution(t *testing.T, h *apitest.Harness, name string) string {
+	t.Helper()
+
 	var out struct {
 		ID string `json:"id"`
 	}
 	h.MustDo(
 		http.MethodPost,
 		"/api/v1/institutions",
-		map[string]string{"name": "XP"},
+		map[string]string{"name": name},
 		http.StatusCreated,
 		&out,
 	)

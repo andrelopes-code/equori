@@ -59,6 +59,12 @@ type accountStore interface {
 	AccountHasChildren(ctx context.Context, booksID int64, id uuid.UUID) (bool, error)
 	// ChildAccounts returns the children of the account, oldest first.
 	ChildAccounts(ctx context.Context, booksID int64, parentID uuid.UUID) ([]domain.Account, error)
+	// InstitutionAccounts returns the open asset accounts of the institution, oldest first.
+	InstitutionAccounts(
+		ctx context.Context,
+		booksID int64,
+		institutionID uuid.UUID,
+	) ([]domain.Account, error)
 	AccountTotals(ctx context.Context, booksID int64, id uuid.UUID) (AccountTotals, error)
 	// TransactionsWithAccount returns the non-voided transactions with a posting on the account.
 	TransactionsWithAccount(

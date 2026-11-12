@@ -248,6 +248,56 @@ func TestConcurrentFirstBuysCreateOneHolding(t *testing.T) {
 	}
 }
 
+func TestResolveTargetDefaultsToTheInstitutionAccount(t *testing.T) {
+	t.Parallel()
+	f := newTargetFixture(t, pgtest.New(t), false)
+	inst := f.institution(t, "Inter")
+	broker := f.createAccount(
+		t,
+		domain.Account{Name: "Inter", Instrument: "BRL", InstitutionID: inst},
+	)
+	checking := f.createAccount(t, domain.Account{
+		Name: "Checking", Instrument: "BRL", Kind: domain.KindChecking, InstitutionID: inst,
+	})
+	target := app.Target{BrokerageID: broker.ID, Instrument: holdingCode, Create: true}
+
+	_, cashID, err := f.svc.ResolveTarget(t.Context(), f.booksID, "BRL", target)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cashID != checking.ID {
+		t.Fatalf("cash = %s, want %s", cashID, checking.ID)
+	}
+}
+
+func TestBrokerageAccountsRejectsAnotherInstitution(t *testing.T) {
+	t.Parallel()
+	f := newTargetFixture(t, pgtest.New(t), false)
+	inst := f.institution(t, "Inter")
+	broker := f.createAccount(
+		t,
+		domain.Account{Name: "Inter", Instrument: "BRL", InstitutionID: inst},
+	)
+	holding := f.createAccount(t, domain.Account{
+		Name: "AUVP11", Instrument: holdingCode, ParentID: broker.ID, InstitutionID: inst,
+	})
+	other := f.createAccount(t, domain.Account{
+		Name: "Other", Instrument: "BRL", Kind: domain.KindChecking,
+		InstitutionID: f.institution(t, "Other bank"),
+	})
+
+	err := f.svc.BrokerageAccounts(t.Context(), f.booksID, holding.ID, other.ID, "BRL")
+
+	requireTargetError(
+		t,
+		err,
+		domain.ErrValidation,
+		"cash_account_id",
+		"account of its institution",
+	)
+}
+
 // warmPool opens n connections first, so concurrent calls overlap instead of queuing on dials.
 func warmPool(t *testing.T, pool *pgxpool.Pool, n int) {
 	t.Helper()
@@ -313,7 +363,10 @@ func (f targetFixture) createHolding(t *testing.T, name string) domain.Account {
 func (f targetFixture) createAccount(t *testing.T, a domain.Account) domain.Account {
 	t.Helper()
 
-	a.Class, a.Kind = domain.ClassAsset, domain.KindBrokerage
+	a.Class = domain.ClassAsset
+	if a.Kind == "" {
+		a.Kind = domain.KindBrokerage
+	}
 
 	got, err := f.svc.CreateAccount(t.Context(), f.booksID, a)
 	if err != nil {
@@ -321,6 +374,17 @@ func (f targetFixture) createAccount(t *testing.T, a domain.Account) domain.Acco
 	}
 
 	return got
+}
+
+func (f targetFixture) institution(t *testing.T, name string) uuid.UUID {
+	t.Helper()
+
+	got, err := f.svc.CreateInstitution(t.Context(), f.booksID, app.Institution{Name: name})
+	if err != nil {
+		t.Fatalf("create institution %q: %v", name, err)
+	}
+
+	return got.ID
 }
 
 func (f targetFixture) closeAccount(t *testing.T, id uuid.UUID) {

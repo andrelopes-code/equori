@@ -1652,7 +1652,7 @@ type InvestmentIncomeInput struct {
 	// BrokerageId The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
 	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
 
-	// CashAccountId A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+	// CashAccountId A cash account of the brokerage or an open asset account of its institution, in the base currency. Absent when brokerage_id and instrument name the target.
 	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
 
 	// CategoryId Income category of the gross amount.
@@ -2115,7 +2115,7 @@ type TradeInput struct {
 	// BrokerageId The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
 	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
 
-	// CashAccountId A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+	// CashAccountId A cash account of the brokerage or an open asset account of its institution, in the base currency. Absent when brokerage_id and instrument name the target.
 	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
 	Date          openapi_types.Date  `json:"date"`
 	Description   *string             `json:"description,omitempty"`

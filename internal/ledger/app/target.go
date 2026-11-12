@@ -16,10 +16,14 @@ var (
 		"name account_id, or brokerage_id with instrument, not both",
 	)
 	ErrBrokerageCashMissing = errors.New(
-		"the brokerage has no open cash account in the base currency; create a cash account named Cash in it",
+		"the brokerage has no open cash account in the base currency; " +
+			"create a cash account named Cash in the brokerage, " +
+			"or name an account of its institution in cash_account_id",
 	)
 	ErrBrokerageCashAmbiguous = errors.New(
-		"the brokerage has several cash accounts; name one in cash_account_id",
+		"the brokerage has several cash accounts; " +
+			"create a cash account named Cash in the brokerage, " +
+			"or name an account of its institution in cash_account_id",
 	)
 	ErrHoldingNotFound = errors.New("the brokerage holds no such investment")
 )
@@ -45,40 +49,66 @@ func (s *Service) resolveTarget(
 		return uuid.Nil, uuid.Nil, err
 	}
 
-	brokerageID := o.BrokerageID
+	var brokerage domain.Account
+
 	accountID = o.AccountID
 
 	if o.AccountID == uuid.Nil {
-		brokerage, err := s.lockBrokerage(ctx, r, booksID, o.BrokerageID)
+		brokerage, accountID, err = s.pairTarget(ctx, r, booksID, o)
 		if err != nil {
 			return uuid.Nil, uuid.Nil, err
 		}
+	}
 
-		holding, err := s.findOrCreateHolding(ctx, r, brokerage, o)
+	if o.CashAccountID != uuid.Nil {
+		return accountID, o.CashAccountID, nil
+	}
+
+	if brokerage.ID == uuid.Nil {
+		brokerage, err = parentOf(ctx, r, booksID, accountID)
 		if err != nil {
 			return uuid.Nil, uuid.Nil, err
 		}
-
-		brokerageID, accountID = brokerage.ID, holding.ID
 	}
 
-	cashID = o.CashAccountID
-	if cashID != uuid.Nil {
-		return accountID, cashID, nil
-	}
-
-	if brokerageID == uuid.Nil {
-		security, err := loadAccount(ctx, r, booksID, accountID, "account_id")
-		if err != nil {
-			return uuid.Nil, uuid.Nil, err
-		}
-
-		brokerageID = security.ParentID
-	}
-
-	cashID, err = defaultCash(ctx, r, booksID, brokerageID, base)
+	cashID, err = defaultCash(ctx, r, brokerage, base)
 
 	return accountID, cashID, err
+}
+
+// pairTarget returns the locked brokerage and its holding of the instrument.
+func (s *Service) pairTarget(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o target,
+) (brokerage domain.Account, holdingID uuid.UUID, err error) {
+	brokerage, err = s.lockBrokerage(ctx, r, booksID, o.BrokerageID)
+	if err != nil {
+		return domain.Account{}, uuid.Nil, err
+	}
+
+	holding, err := s.findOrCreateHolding(ctx, r, brokerage, o)
+	if err != nil {
+		return domain.Account{}, uuid.Nil, err
+	}
+
+	return brokerage, holding.ID, nil
+}
+
+// parentOf returns the parent of the account; the zero Account when it has none.
+func parentOf(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id uuid.UUID,
+) (domain.Account, error) {
+	child, err := loadAccount(ctx, r, booksID, id, "account_id")
+	if err != nil || child.ParentID == uuid.Nil {
+		return domain.Account{}, err
+	}
+
+	return loadAccount(ctx, r, booksID, child.ParentID, "account_id")
 }
 
 // checkTargetForm requires exactly one of account_id and the pair.
@@ -200,15 +230,16 @@ func onInstrument(err error) error {
 	return err
 }
 
-// defaultCash returns the single open cash account of the brokerage in the base currency.
+// defaultCash returns the single paying account of the brokerage (BC14): its open cash
+// accounts in the base currency and the open asset accounts of its institution outside its
+// tree that are not brokerage accounts.
 func defaultCash(
 	ctx context.Context,
 	r Repository,
-	booksID int64,
-	brokerageID uuid.UUID,
+	brokerage domain.Account,
 	base money.Currency,
 ) (uuid.UUID, error) {
-	children, err := r.ChildAccounts(ctx, booksID, brokerageID)
+	children, err := r.ChildAccounts(ctx, brokerage.BooksID, brokerage.ID)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -221,6 +252,13 @@ func defaultCash(
 		}
 	}
 
+	outside, err := institutionCash(ctx, r, brokerage, base)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	found = append(found, outside...)
+
 	switch len(found) {
 	case 0:
 		return uuid.Nil, ErrBrokerageCashMissing
@@ -229,4 +267,55 @@ func defaultCash(
 	}
 
 	return uuid.Nil, ErrBrokerageCashAmbiguous
+}
+
+func institutionCash(
+	ctx context.Context,
+	r Repository,
+	brokerage domain.Account,
+	base money.Currency,
+) ([]uuid.UUID, error) {
+	if brokerage.InstitutionID == uuid.Nil {
+		return nil, nil
+	}
+
+	accounts, err := r.InstitutionAccounts(ctx, brokerage.BooksID, brokerage.InstitutionID)
+	if err != nil {
+		return nil, err
+	}
+
+	var found []uuid.UUID
+
+	for _, a := range accounts {
+		if a.Instrument == base && a.Kind != domain.KindBrokerage && a.ID != brokerage.ID &&
+			a.ParentID != brokerage.ID {
+			found = append(found, a.ID)
+		}
+	}
+
+	return found, nil
+}
+
+// payingAccount reports whether cash is an open asset account that holds no security and is
+// a cash account of the brokerage of security or an account of the institution of that
+// brokerage (BC13).
+func payingAccount(
+	ctx context.Context,
+	r Repository,
+	security, cash domain.Account,
+) (bool, error) {
+	if cash.HoldsSecurity() || cash.Class != domain.ClassAsset || cash.ClosedOn != nil {
+		return false, nil
+	}
+
+	if cash.ParentID == security.ParentID {
+		return true, nil
+	}
+
+	brokerage, err := loadAccount(ctx, r, security.BooksID, security.ParentID, "account_id")
+	if err != nil {
+		return false, err
+	}
+
+	return brokerage.InstitutionID != uuid.Nil && cash.InstitutionID == brokerage.InstitutionID, nil
 }

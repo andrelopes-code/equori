@@ -220,3 +220,64 @@ test("a section under the pointer or holding the focus shows its bar and keeps t
   );
   assert.doesNotMatch(rule, /legend-color/);
 });
+
+// A dialog and a drawer sit at the raised step, and the families draw their grounds from the same
+// step, so a table or a card inside one melted into the panel (1.00:1 in the light scheme). Inside
+// an overlay a family reads a wash and a ring of the text colour, in every scheme.
+const overlayItems: readonly (readonly [string, string, readonly string[]])[] =
+  [
+    [
+      "card",
+      '[data-ui="card"]',
+      ["--slotted-card-background", "--slotted-card-border-color"],
+    ],
+    [
+      "stat-card",
+      '[data-ui="stat-card"]',
+      ["--slotted-stat-card-background", "--slotted-stat-card-border-color"],
+    ],
+    ["section", '[data-ui="section"]', ["--slotted-section-surface"]],
+    [
+      "table",
+      '[data-ui="table"]',
+      [
+        "--slotted-table-surface",
+        "--slotted-table-border-color",
+        "--slotted-table-header-surface",
+      ],
+    ],
+    [
+      "framed data-grid",
+      '[data-ui="data-grid"][data-variant="framed"]',
+      [
+        "--slotted-data-grid-surface",
+        "--slotted-data-grid-border-color",
+        "--slotted-data-grid-header-surface",
+      ],
+    ],
+  ];
+
+for (const [name, selector, tokens] of overlayItems) {
+  test(`a ${name} inside a dialog or a drawer reads a wash and a ring of the text`, () => {
+    const escaped = selector.replace(/[[\]().*+?^${}|]/g, "\\$&");
+    const block = new RegExp(
+      `:is\\([^{]*data-part="content"[^{]*data-mode="overlay"[^{]*\\) ${escaped} \\{([^}]*)\\}`,
+    ).exec(css);
+    assert.ok(block, `no overlay rule for ${name}`);
+    for (const token of tokens) {
+      assert.match(
+        block[1] ?? "",
+        new RegExp(
+          `${token}: color-mix\\(in oklab, var\\(--slotted-text\\) (8|22)%, transparent\\)`,
+        ),
+      );
+    }
+  });
+}
+
+test("the overlay rules name no scheme, so they hold in the light and the dark scheme", () => {
+  const rule =
+    /:is\([^{]*data-part="content"[^{]*\) \[data-ui="table"\] \{/.exec(css);
+  assert.ok(rule);
+  assert.equal(rule[0].includes("data-slotted-scheme"), false);
+});

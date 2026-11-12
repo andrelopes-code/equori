@@ -20,7 +20,7 @@ type recordInvestmentIn struct {
 	BrokerageID   string               `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment, from list_accounts; with instrument, instead of account_id"`
 	Instrument    string               `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4; its line in the Brokerage is created by the first buy"`
 	AccountID     string               `json:"account_id,omitzero"      jsonschema:"Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"`
-	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the same Brokerage; the single open Cash in the base currency when absent"`
+	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
 	Date          tool.Date            `json:"date"                     jsonschema:"trade or payment date"`
 	Quantity      string               `json:"quantity,omitzero"        jsonschema:"for buy and sell: positive quantity of the security"`
 	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"for buy and sell: decimal price of one unit in the cash account's currency"`

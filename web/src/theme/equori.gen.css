@@ -1944,6 +1944,32 @@
       --slotted-table-header-surface: var(--slotted-ground, var(--slotted-surface-sunken));
     }
 
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="card"] {
+      --slotted-card-background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-card-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    }
+
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="stat-card"] {
+      --slotted-stat-card-background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-stat-card-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    }
+
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="section"] {
+      --slotted-section-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+    }
+
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"] {
+      --slotted-table-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-table-header-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-table-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    }
+
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="data-grid"][data-variant="framed"] {
+      --slotted-data-grid-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-data-grid-header-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-data-grid-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    }
+
     [data-ui="table"] {
       --slotted-table-sticky-surface: var(--slotted-ground, var(--slotted-surface-sunken));
     }

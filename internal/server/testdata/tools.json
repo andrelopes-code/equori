@@ -6843,7 +6843,7 @@
         },
         "cash_account_id": {
           "type": "string",
-          "description": "Cash of the same Brokerage; the single open Cash in the base currency when absent"
+          "description": "Cash of the Brokerage or an open account of its institution; the single candidate when absent"
         },
         "date": {
           "type": "string",

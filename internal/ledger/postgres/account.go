@@ -167,6 +167,22 @@ func (r *Repository) ChildAccounts(
 	return mapAll(rows, toAccount), nil
 }
 
+func (r *Repository) InstitutionAccounts(
+	ctx context.Context,
+	booksID int64,
+	institutionID uuid.UUID,
+) ([]domain.Account, error) {
+	rows, err := r.q.ListInstitutionAccounts(
+		ctx,
+		ListInstitutionAccountsParams{BooksID: booksID, InstitutionID: nullUUID(institutionID)},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapAll(rows, toAccount), nil
+}
+
 func (r *Repository) AccountTotals(
 	ctx context.Context,
 	booksID int64,

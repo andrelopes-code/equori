@@ -29,3 +29,17 @@ func (s *Service) ResolveTarget(
 
 	return accountID, cashID, err
 }
+
+// BrokerageAccounts runs brokerageAccounts in its own transaction, as RecordTrade does.
+func (s *Service) BrokerageAccounts(
+	ctx context.Context,
+	booksID int64,
+	securityID, cashID uuid.UUID,
+	base money.Currency,
+) error {
+	return s.repo.InTx(ctx, func(r Repository) error {
+		_, _, err := s.brokerageAccounts(ctx, r, booksID, securityID, cashID, base)
+
+		return err
+	})
+}

@@ -149,17 +149,18 @@ func TestTradeValidation(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)
 	h := f.h
+	otherInstitution := createInstitution(t, h, "Other bank")
 	other := h.Account(
 		"Other broker",
 		"asset",
 		"brokerage",
-		map[string]any{"institution_id": f.institution},
+		map[string]any{"institution_id": otherInstitution},
 	)
 	otherCash := h.Account(
 		"Other cash",
 		"asset",
 		"brokerage",
-		map[string]any{"institution_id": f.institution, "parent_id": other},
+		map[string]any{"institution_id": otherInstitution, "parent_id": other},
 	)
 	order := func(k string, v any) map[string]any {
 		body := map[string]any{
