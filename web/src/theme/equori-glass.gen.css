@@ -1945,34 +1945,34 @@
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="card"] {
-      --slotted-card-background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-card-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+      --slotted-card-background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-card-border-color: color-mix(in oklab, var(--slotted-text) 14%, transparent);
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="stat-card"] {
-      --slotted-stat-card-background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-stat-card-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+      --slotted-stat-card-background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-stat-card-border-color: color-mix(in oklab, var(--slotted-text) 14%, transparent);
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="section"] {
-      --slotted-section-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-section-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="table"] {
-      --slotted-table-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-table-header-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-table-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+      --slotted-table-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-table-header-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-table-border-color: color-mix(in oklab, var(--slotted-text) 14%, transparent);
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="list"][data-variant="framed"] {
-      --slotted-list-background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-list-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+      --slotted-list-background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-list-border-color: color-mix(in oklab, var(--slotted-text) 14%, transparent);
     }
 
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="data-grid"][data-variant="framed"] {
-      --slotted-data-grid-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-data-grid-header-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
-      --slotted-data-grid-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+      --slotted-data-grid-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-data-grid-header-surface: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+      --slotted-data-grid-border-color: color-mix(in oklab, var(--slotted-text) 14%, transparent);
     }
 
     [data-ui="table"] {

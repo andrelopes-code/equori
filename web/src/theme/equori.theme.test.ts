@@ -273,7 +273,7 @@ for (const [name, selector, tokens] of overlayItems) {
       assert.match(
         block[1] ?? "",
         new RegExp(
-          `${token}: color-mix\\(in oklab, var\\(--slotted-text\\) (8|22)%, transparent\\)`,
+          `${token}: color-mix\\(in oklab, var\\(--slotted-text\\) (3|14)%, transparent\\)`,
         ),
       );
     }
