@@ -45,6 +45,7 @@ export interface AccountChoice {
   progress: number | undefined;
   balance: number | undefined;
   freeLimit: number | undefined;
+  creditLimit: number | undefined;
   consequence: Consequence | null;
   unavailable: Unavailable | null;
 }
@@ -128,6 +129,7 @@ export function useAccountChoices({
     const balance =
       held?.currency === account.currency ? held.amount : undefined;
     const free = account.card?.available_limit;
+    const limit = account.card?.credit_limit;
     return {
       account,
       group: groupOf(account),
@@ -137,6 +139,8 @@ export function useAccountChoices({
       progress: progressOf.get(account.id),
       balance,
       freeLimit: free?.currency === account.currency ? free.amount : undefined,
+      creditLimit:
+        limit?.currency === account.currency ? limit.amount : undefined,
       consequence: consequenceOf({
         account,
         amount,

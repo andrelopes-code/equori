@@ -130,6 +130,7 @@ function choiceOf([id, name, kind]: [
     progress: undefined,
     balance: undefined,
     freeLimit: undefined,
+    creditLimit: undefined,
     consequence: null,
     unavailable: null,
   };

@@ -52,7 +52,7 @@ export function sectionsOf(input: SectionsInput): Section[] {
     .filter(([, choices]) => choices.length > 0)
     .map(([id, choices]) => ({
       id,
-      heading: `accountChoice.section.${id}` as MessageKey,
+      heading: `accountChoice.section.${id}`,
       choices,
     }));
 }
