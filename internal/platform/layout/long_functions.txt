@@ -45,11 +45,11 @@ internal/ledger/app/classification.go	Service.TransactionFacts	pending: split af
 internal/ledger/app/disputes.go	Service.refundWonDispute	pending: split after the 100-column reformatting
 internal/ledger/app/import_links.go	Service.ClearMatchedBatch	pending: split after the 100-column reformatting
 internal/ledger/app/import_links.go	Service.UpdateImportedPosting	pending: split after the 100-column reformatting
-internal/ledger/app/imports.go	Service.insertImported	pending: split after the 100-column reformatting
-internal/ledger/app/imports.go	Service.loadImportBatch	pending: split after the 100-column reformatting
+internal/ledger/app/import_batch.go	Service.insertImported	pending: split after the 100-column reformatting
+internal/ledger/app/import_batch.go	Service.loadImportBatch	pending: split after the 100-column reformatting
 internal/ledger/app/imports.go	importedTransaction	pending: split after the 100-column reformatting
 internal/ledger/app/installment.go	Service.RecordImportedInstallment	pending: split after the 100-column reformatting
-internal/ledger/app/installment.go	Service.confirmInstallment	pending: split after the 100-column reformatting
+internal/ledger/app/installment_link.go	Service.confirmInstallment	pending: split after the 100-column reformatting
 internal/ledger/app/reimbursement_candidates.go	Service.ReimbursementSources	pending: split after the 100-column reformatting
 internal/ledger/app/statements.go	Service.FinanceStatement	pending: split after the 100-column reformatting
 internal/ledger/app/tag.go	Service.MergeTag	pending: split after the 100-column reformatting

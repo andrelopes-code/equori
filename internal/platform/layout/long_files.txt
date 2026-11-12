@@ -12,16 +12,6 @@ internal/ingestion/app/sync.go	pending: split after the 100-column reformatting
 internal/ingestion/ledger_port.go	pending: split after the 100-column reformatting
 internal/ingestion/postgres/record.go	pending: split after the 100-column reformatting
 internal/ingestion/postgres/sync.go	pending: split after the 100-column reformatting
-internal/ledger/app/account.go	pending: split after the 100-column reformatting
-internal/ledger/app/assertion.go	pending: split after the 100-column reformatting
-internal/ledger/app/cards.go	pending: split after the 100-column reformatting
-internal/ledger/app/categorize.go	pending: split after the 100-column reformatting
-internal/ledger/app/currency.go	pending: split after the 100-column reformatting
-internal/ledger/app/imports.go	pending: split after the 100-column reformatting
-internal/ledger/app/installment.go	pending: split after the 100-column reformatting
-internal/ledger/app/ports.go	pending: split after the 100-column reformatting
-internal/ledger/app/statement_facts.go	pending: split after the 100-column reformatting
-internal/ledger/app/transaction.go	pending: split after the 100-column reformatting
 internal/ledger/postgres/mapping.go	pending: split after the 100-column reformatting
 internal/ledger/toolapi/details.go	pending: split after the 100-column reformatting
 internal/marketdata/toolapi/market.go	pending: split after the 100-column reformatting
