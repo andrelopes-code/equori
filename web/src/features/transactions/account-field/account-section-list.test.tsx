@@ -2,11 +2,20 @@ import { cleanup, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { components } from "@/api/schema.gen";
 import { AccountSectionList } from "@/features/transactions/account-field/account-section-list";
 import type { Section } from "@/features/transactions/account-field/account-sections";
 import type { AccountChoice } from "@/features/transactions/account-field/use-account-choices";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
+
+const card = {
+  id: "c1",
+  name: "Nubank Mastercard",
+  class: "liability",
+  kind: "credit_card",
+  currency: "BRL",
+} as Account;
 
 const sections: Section[] = [
   {
@@ -20,6 +29,8 @@ const sections: Section[] = [
     choices: [choiceOf("a2", "Carteira"), choiceOf("a3", "Itaú")],
   },
 ];
+
+type Account = components["schemas"]["Account"];
 
 describe("AccountSectionList", () => {
   beforeEach(() => {
@@ -71,12 +82,57 @@ describe("AccountSectionList", () => {
 
     expect(onPick).toHaveBeenCalledExactlyOnceWith("a2");
   });
+
+  it("draws the choices of a statement section as cards and keeps rows elsewhere", () => {
+    const { container } = draw(vi.fn(), cardSections);
+
+    const [inStatement, inOther] = screen.getAllByRole("option", {
+      name: /Nubank Mastercard/,
+    });
+
+    expect(inStatement).toHaveAttribute("data-lit", "4");
+    expect(inOther).not.toHaveAttribute("data-lit");
+    expect(container.querySelectorAll("[data-segment]")).toHaveLength(28);
+    expect(inOther).toHaveTextContent("R$ 22.337,01");
+  });
+
+  it("moves across the columns of a card section with the arrows", async () => {
+    draw(vi.fn(), cardSections);
+
+    screen.getAllByRole("option", { name: /Nubank Mastercard/ })[0]?.focus();
+    await userEvent.keyboard("{ArrowRight}");
+
+    expect(screen.getByRole("option", { name: /Itaú Visa/ })).toHaveFocus();
+
+    await userEvent.keyboard("{ArrowLeft}{ArrowDown}");
+
+    expect(screen.getByRole("option", { name: /Itaú Visa/ })).not.toHaveFocus();
+    expect(
+      screen.getAllByRole("option", { name: /Nubank Mastercard/ })[1],
+    ).toHaveFocus();
+  });
 });
 
-function draw(onPick: (id: string) => void) {
+const cardSections: Section[] = [
+  {
+    id: "goesToStatement",
+    heading: "accountChoice.section.goesToStatement",
+    choices: [
+      cardChoice(card, "Nubank Mastercard"),
+      cardChoice({ ...card, id: "c2" }, "Itaú Visa"),
+    ],
+  },
+  {
+    id: "other",
+    heading: "accountChoice.section.other",
+    choices: [cardChoice({ ...card, id: "c3" }, "Nubank Mastercard")],
+  },
+];
+
+function draw(onPick: (id: string) => void, shown = sections) {
   return renderWithProviders(
     <AccountSectionList
-      sections={sections}
+      sections={shown}
       value="a2"
       onPick={onPick}
       scale={() => 2}
@@ -106,5 +162,16 @@ function choiceOf(id: string, name: string): AccountChoice {
     creditLimit: undefined,
     consequence: null,
     unavailable: null,
+  };
+}
+
+function cardChoice(account: Account, name: string): AccountChoice {
+  return {
+    ...choiceOf(account.id, name),
+    account: { ...account, name },
+    group: "cards",
+    balance: undefined,
+    creditLimit: 3000000,
+    freeLimit: 2233701,
   };
 }

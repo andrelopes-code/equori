@@ -1,12 +1,23 @@
 import { useId } from "react";
 
+import { AccountCardOption } from "@/features/transactions/account-field/account-card-option";
 import { AccountRow } from "@/features/transactions/account-field/account-row";
-import type { Section } from "@/features/transactions/account-field/account-sections";
+import type {
+  Section,
+  SectionId,
+} from "@/features/transactions/account-field/account-sections";
 import type { SuggestionView } from "@/features/transactions/account-field/use-account-choices";
 import { useSectionNavigation } from "@/features/transactions/account-field/use-section-navigation";
 import { useT } from "@/i18n/i18n-provider";
 
 import styles from "@/features/transactions/account-field/account-section-list.module.css";
+
+// The sections whose choices are credit cards drawn as wallet cards, two across.
+const cardSections = new Set<SectionId>([
+  "goesToStatement",
+  "settlesStatement",
+  "cards",
+]);
 
 interface AccountSectionListProps {
   sections: Section[];
@@ -23,6 +34,7 @@ interface AccountSectionListProps {
 // is one value for every group, so rows and a two-column grid of cards cannot share one list.
 // Workaround for Slotted issue #95: the option edge, the gap between options and the chosen
 // edge have no token. Workaround for Slotted issue #94: a group has no column count of its own.
+// The sections of cards draw AccountCardOption, two across, and the others AccountRow.
 // The list is the application's own: role listbox over groups of role option rows, one tab
 // stop moved by the arrow keys (section-navigation.ts), Enter and Space to choose.
 export function AccountSectionList({
@@ -38,7 +50,7 @@ export function AccountSectionList({
   const { listRef, tabStop, handleFocus, handleKeyDown } = useSectionNavigation(
     sections.map((section) => ({
       ids: section.choices.map((choice) => choice.account.id),
-      columns: 1,
+      columns: cardSections.has(section.id) ? 2 : 1,
     })),
     value,
   );
@@ -72,17 +84,25 @@ export function AccountSectionList({
             )}
           </div>
 
-          <div className={styles.rows}>
-            {section.choices.map((choice) => (
-              <AccountRow
-                key={choice.account.id}
-                choice={choice}
-                chosen={choice.account.id === value}
-                tabStop={choice.account.id === tabStop}
-                scale={scale(choice.account.currency)}
-                onPick={onPick}
-              />
-            ))}
+          <div
+            className={cardSections.has(section.id) ? styles.wall : styles.rows}
+          >
+            {section.choices.map((choice) => {
+              const Option = cardSections.has(section.id)
+                ? AccountCardOption
+                : AccountRow;
+
+              return (
+                <Option
+                  key={choice.account.id}
+                  choice={choice}
+                  chosen={choice.account.id === value}
+                  tabStop={choice.account.id === tabStop}
+                  scale={scale(choice.account.currency)}
+                  onPick={onPick}
+                />
+              );
+            })}
           </div>
         </div>
       ))}
