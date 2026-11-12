@@ -44,7 +44,7 @@ A function above 50 lines is split into named steps in the same file, below its 
 
 ## Formatting
 
-Wrapping lines to 100 columns lengthens function bodies and files. The gate lists were regenerated once after golines ran: 32 files and 105 functions carry the reason `pending: split after the 100-column reformatting`, and 1 file and 10 functions carry `table of data`. The lists only shrink from that baseline.
+Wrapping lines to 100 columns lengthens function bodies and files. The gate lists were regenerated once after golines ran (32 files and 105 functions pending); tasks T41 to T51 split them, so the lists now hold only tables of data. `long_dirs.txt` lists `internal/ledger/app` with a limit of 60 files. golines does not enforce one parameter per line for a signature that fits in 100 columns, and it leaves comments, strings and struct tags as written.
 
 ## Consequences
 

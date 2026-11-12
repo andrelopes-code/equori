@@ -84,19 +84,21 @@ Structural deviations that remain: a moved line already above 100 columns keeps 
 
 ## Measurements
 
-Measured on `main` after T40 (metric BO10).
+Measured on `main` at the end of the second round (metric BO10).
 
 | Measure | Start | End |
 |---|---|---|
-| Production files above 400 lines | 17 | 0 (`long_files.txt` is empty; largest: `ingestion/app/review.go`, 399) |
-| Function bodies above 50 lines | 197 | 9, all tables of data in `long_functions.txt` |
-| Functions in the repository | 3708 | 4326 |
+| Production files above 400 lines | 17 | 1, `platform/config/variables.go` (table of data, listed) |
+| Function bodies above 50 lines | 197 | 10, all tables of data in `long_functions.txt` |
+| Lines above 100 columns (production, tab as 4) | 4874 | 890 (strings, struct tags, comments) |
+| One-line signatures with 6 or more parameters | 286 | 8 |
 | `cmd/equori/main.go` | 474 lines | 52 lines |
-| `internal/server/server.go` | 333 lines | removed; `config.go` 60, `app.go` 92, `modules.go` 329, `adapters.go` 255, `routes.go` 123, `outbox.go` 19, `apidoc.go` 24 |
-| Go tests passing (`go test -count=1 -json ./...`) | 3409 at `eddcbeb5` | 3405, 0 failures |
+| `internal/server/server.go` | 333 lines | removed; `config.go`, `app.go`, `modules.go`, `adapters.go`, `routes.go`, `outbox.go`, `apidoc.go` |
+| Go tests passing (`go test -count=1 -json ./...`) | 3409 at `eddcbeb5` | 3439, 0 failures |
+| Directories above 40 files | 0 | 1, `internal/ledger/app` (limit 60 in `long_dirs.txt`) |
 
-The difference of 4 passes: the other session removed `TestDownsample` (9 passes) in `285a386c` and added 3 tests (`TestSeedKeepsExistingPrices`, `TestRestoredBackupMatchesTheOriginal`, `TestBuiltScriptsHaveNoCommonJSRequire`); this work added `TestGoFunctionSize` and `TestMainSize`. Tests moved between packages with the code (`TestNormalize` to `pluggy`, `TestDetectSeries` to `planning/domain`).
+Second round: the golines formatter (ADR 035, Formatting) wrapped every line at 100 columns, which lengthened function bodies and files. The size gate lists were regenerated once (32 files and 105 functions pending) and emptied by tasks T41 to T51. The wrapped code also moved every trailing `//nolint` directive to its own line above the statement, and `wsl_v5` blank lines were added where wrapped statements crossed its thresholds.
 
 `Config` types and their files: `assistant/config.go`, `identity/config.go`, `ingestion/config.go`, `instance/config.go`, `instance/app/config.go`, `marketdata/config.go` (`FeedConfig`), `platform/config/config.go`, `platform/tool/mcp/config.go`, `server/config.go`.
 
-Checks: `bin/golangci-lint run ./...` reports only the typecheck error of `internal/server/cluster_copy_test.go:193` (tag `cluster`), present before this work; `make gen-check` and `make tidy-check` pass. `make check` stops at its `lint` step on that same error, so the steps after it did not run through `make check`. `make test-race` passes (exit 0). `make web-check` and `make test-cluster` did not run: the web tree holds uncommitted changes of another session and the `cluster` test package does not compile because of the same typecheck error.
+Checks at the end: `go test -count=1 ./...` 3439 passes, 0 failures; `make test-race` passes; `make test-cluster` passes (the typecheck error of `cluster_copy_test.go` was fixed in `f02e3166`); `make gen-check` and `make tidy-check` pass; `bin/golangci-lint run ./...` reports only two `depguard` findings in `internal/ledger/app/target_test.go`, a test that another session added in `488d5b21`; `make web-check` stops at `prettier --check` on `web/src/features/transactions/pages/new-transaction-page.tsx`, a file another session has modified and not committed. `make check` therefore stops at `lint`; its other steps ran separately and pass except `web-check` for the reason above.
