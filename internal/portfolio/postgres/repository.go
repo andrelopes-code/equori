@@ -51,6 +51,14 @@ func (r *Repository) Replace(
 		return err
 	}
 
+	return r.insertRebuilt(ctx, booksID, rb)
+}
+
+func (r *Repository) insertRebuilt(
+	ctx context.Context,
+	booksID int64,
+	rb domain.Rebuilt,
+) error {
 	for _, d := range rb.Days {
 		if err := r.q.InsertPositionDay(ctx, InsertPositionDayParams{
 			BooksID:    booksID,

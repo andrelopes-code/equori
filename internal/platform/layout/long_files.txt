@@ -4,4 +4,3 @@ internal/identity/postgres/second_factor.go	pending: split after the 100-column 
 internal/marketdata/toolapi/market.go	pending: split after the 100-column reformatting
 internal/platform/config/variables.go	table of data
 internal/platform/pgcluster/platform_windows.go	pending: split after the 100-column reformatting
-internal/portfolio/httpapi/server.go	pending: split after the 100-column reformatting

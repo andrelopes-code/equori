@@ -28,7 +28,3 @@ internal/platform/config/variables.go	Variables	table of data
 internal/platform/llm/aistudio/wire.go	toWire	pending: split after the 100-column reformatting
 internal/platform/outbox/dispatcher.go	Dispatcher.deliver	pending: split after the 100-column reformatting
 internal/platform/tool/mcp/mcp.go	newServer	pending: split after the 100-column reformatting
-internal/portfolio/adapters.go	ledgerPort.InvestmentFacts	pending: split after the 100-column reformatting
-internal/portfolio/app/benchmark.go	Service.compare	pending: split after the 100-column reformatting
-internal/portfolio/httpapi/server.go	Server.listPositions	pending: split after the 100-column reformatting
-internal/portfolio/postgres/repository.go	Repository.Replace	pending: split after the 100-column reformatting

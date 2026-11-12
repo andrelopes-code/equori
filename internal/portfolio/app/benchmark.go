@@ -92,15 +92,7 @@ func (s *Service) compare(
 	index string,
 	report *ReturnReport,
 ) error {
-	p := period{
-		booksID: booksID,
-		ids:     ids,
-		from:    from,
-		to:      to,
-		report:  report,
-		values:  map[time.Time]int64{},
-		flows:   report.Flows,
-	}
+	p := newPeriod(booksID, ids, from, to, report)
 
 	profile, recorded, err := s.profileOf(ctx, booksID, ids, report.Opening.Currency())
 	if err != nil {
@@ -147,6 +139,23 @@ func (s *Service) compare(
 	}
 
 	return s.inflation(ctx, p, heldDays(from, start, ends, dates, false), w)
+}
+
+func newPeriod(
+	booksID int64,
+	ids []uuid.UUID,
+	from, to time.Time,
+	report *ReturnReport,
+) period {
+	return period{
+		booksID: booksID,
+		ids:     ids,
+		from:    from,
+		to:      to,
+		report:  report,
+		values:  map[time.Time]int64{},
+		flows:   report.Flows,
+	}
 }
 
 // benchmark sets the comparison with the index on p.report, over the rates of the index dated in
