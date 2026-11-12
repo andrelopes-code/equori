@@ -867,7 +867,8 @@ export const catalogPtBR: Catalog = {
   "trade.investment": "Investimento",
   "trade.paidFrom": "Paga com {name}, saldo {balance}",
   "trade.receivedIn": "Recebido em {name}, saldo {balance}",
-  "trade.noCash": "Esta corretora não tem caixa em {currency}.",
+  "trade.noCash":
+    "Nenhuma conta para pagar em {currency}. Crie um caixa na corretora.",
   "trade.createCash": "Criar caixa",
   "trade.shortfall": "Faltam {amount} no caixa para esta compra.",
   "trade.moveMoney": "Mover dinheiro para {name}",

@@ -83,8 +83,8 @@ export function TradeForm({
         instrument={view.instrument}
         held={sell ? undefined : view.held}
         heldCodes={view.heldCodes}
-        cash={view.cash}
-        cashAccount={view.cashAccount}
+        payers={view.payers}
+        payer={view.payer}
         balance={view.balance}
         base={base}
         date={draft.date}
@@ -182,9 +182,9 @@ export function TradeForm({
         onChange={set}
       />
 
-      {view.shortfall !== null && view.cashAccount !== undefined && (
+      {view.shortfall !== null && view.payer !== undefined && (
         <ShortfallNotice
-          cash={view.cashAccount}
+          payer={view.payer}
           amount={view.shortfall}
           scale={baseScale}
         />

@@ -11,15 +11,16 @@ type Account = components["schemas"]["Account"];
 export interface BrokerageState {
   brokerages: Account[];
   brokerage?: Account;
-  // The open accounts of the brokerage in the base currency that hold no security.
-  cash: Account[];
-  // The cash account when the brokerage has exactly one.
-  cashAccount?: Account;
+  // The accounts that may pay or receive a trade (BC13, BC14): the open Caixa children of the
+  // brokerage and the open asset accounts of its institution outside its tree, in the base currency.
+  payers: Account[];
+  // The paying account when there is exactly one.
+  payer?: Account;
   // The open accounts of the brokerage that hold a security.
   holdings: Account[];
   // The holding of the chosen instrument.
   held?: Account;
-  // False when a brokerage is chosen and has no cash account in the base currency.
+  // False when a brokerage is chosen and has no paying account.
   baseCash: boolean;
 }
 
@@ -81,18 +82,31 @@ export function brokerageState(
   const cash = children.filter(
     (a) => a.class === "asset" && a.currency === base && !isSecurity(a),
   );
+  const institutional = accounts.filter(
+    (a) =>
+      brokerage?.institution_id !== undefined &&
+      a.institution_id === brokerage.institution_id &&
+      a.id !== brokerage.id &&
+      a.parent_id !== brokerage.id &&
+      a.kind !== "brokerage" &&
+      a.class === "asset" &&
+      a.closed_on === undefined &&
+      a.currency === base &&
+      !isSecurity(a),
+  );
+  const payers = [...cash, ...institutional];
   const holdings = children.filter(isSecurity);
 
   return {
     brokerages,
     ...(brokerage === undefined ? {} : { brokerage }),
-    cash,
-    ...(cash.length === 1 && cash[0] !== undefined
-      ? { cashAccount: cash[0] }
+    payers,
+    ...(payers.length === 1 && payers[0] !== undefined
+      ? { payer: payers[0] }
       : {}),
     holdings,
     ...heldOf(holdings, instrument),
-    baseCash: brokerage === undefined || cash.length > 0,
+    baseCash: brokerage === undefined || payers.length > 0,
   };
 }
 

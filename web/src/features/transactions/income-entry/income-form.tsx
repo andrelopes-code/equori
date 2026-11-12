@@ -73,8 +73,8 @@ export function IncomeForm({
         brokerage={view.brokerage}
         instrument={view.instrument}
         heldCodes={view.heldCodes}
-        cash={view.cash}
-        cashAccount={view.cashAccount}
+        payers={view.payers}
+        payer={view.payer}
         balance={view.balance}
         base={base}
         date={draft.date}

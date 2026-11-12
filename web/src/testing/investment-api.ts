@@ -94,6 +94,8 @@ export function investmentApi(
     held?: { quantity: number; cost: number };
     extraAccounts?: unknown[];
     cashBalance?: number;
+    // Booked balances of other accounts by id, in minor units of BRL.
+    balances?: Record<string, number>;
     answer?: () => Response;
     incomeTypes?: string[];
     incomeAnswer?: () => Response;
@@ -110,6 +112,18 @@ export function investmentApi(
         basis: "booked",
         balance: brl(options.cashBalance ?? 100000000),
       }),
+    ...Object.fromEntries(
+      Object.entries(options.balances ?? {}).map(([id, amount]) => [
+        `GET /api/v1/accounts/${id}/balance`,
+        (req: Request) =>
+          json(200, {
+            account_id: id,
+            date: new URL(req.url).searchParams.get("date"),
+            basis: "booked",
+            balance: brl(amount),
+          }),
+      ]),
+    ),
     "GET /api/v1/instruments": () =>
       json(200, {
         items: [

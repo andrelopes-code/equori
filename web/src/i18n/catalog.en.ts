@@ -862,7 +862,8 @@ export const catalogEn = {
   "trade.investment": "Investment",
   "trade.paidFrom": "Paid from {name}, balance {balance}",
   "trade.receivedIn": "Received in {name}, balance {balance}",
-  "trade.noCash": "This brokerage has no cash account in {currency}.",
+  "trade.noCash":
+    "No account to pay from in {currency}. Create a cash account in the brokerage.",
   "trade.createCash": "Create cash account",
   "trade.shortfall": "The cash balance is {amount} short of this purchase.",
   "trade.moveMoney": "Move money into {name}",

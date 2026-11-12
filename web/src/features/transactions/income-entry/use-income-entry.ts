@@ -64,11 +64,11 @@ export function useIncomeEntry(accountId: string | null) {
   const state = useBrokerages(chosen.brokerageId, chosen.instrument);
   const { brokerage } = state;
   const instrument = chosen.instrument;
-  const cashAccount =
-    state.cash.find((a) => a.id === draft.cashAccountId) ?? state.cashAccount;
+  const payer =
+    state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
   const balance = useQuery({
-    ...balanceQuery(api, cashAccount?.id ?? "", draft.date, "booked"),
-    enabled: cashAccount !== undefined,
+    ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
+    enabled: payer !== undefined,
   }).data?.balance.amount;
   const withheldTooHigh = draft.withheld > 0 && draft.withheld >= draft.gross;
   const net =
@@ -78,8 +78,8 @@ export function useIncomeEntry(accountId: string | null) {
     brokerage,
     instrument,
     heldCodes: state.holdings.map((a) => a.currency),
-    cash: state.cash,
-    cashAccount,
+    payers: state.payers,
+    payer,
     baseCash: state.baseCash,
     balance,
     base,
@@ -96,7 +96,7 @@ export function useIncomeEntry(accountId: string | null) {
       problems.brokerage_id = t("entry.required.account");
     if (instrument === null)
       problems.instrument = t("trade.required.securityAccount");
-    if (cashAccount === undefined)
+    if (payer === undefined)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.incomeType === null)
       problems.income_type = t("income.required.type");
@@ -108,7 +108,7 @@ export function useIncomeEntry(accountId: string | null) {
       Object.keys(problems).length > 0 ||
       brokerage === undefined ||
       instrument === null ||
-      cashAccount === undefined ||
+      payer === undefined ||
       draft.incomeType === null ||
       draft.categoryId === null ||
       base === undefined
@@ -124,7 +124,7 @@ export function useIncomeEntry(accountId: string | null) {
       const created = await record.mutateAsync({
         brokerage_id: brokerage.id,
         instrument,
-        cash_account_id: cashAccount.id,
+        cash_account_id: payer.id,
         income_type: draft.incomeType,
         date: draft.date,
         gross: { amount: draft.gross, currency: base },

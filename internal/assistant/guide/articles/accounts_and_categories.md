@@ -1,6 +1,6 @@
 An **Account** has an **Account class**: asset and liability accounts hold money you have or owe; income and expense accounts are your categories; equity accounts hold opening balances and adjustments. Asset and liability accounts also have an **Account kind**, such as checking, savings, cash, reserve, brokerage, receivable, loan or credit card.
 
-A brokerage is an account kind with one Cash account and one Investment line per security; the articles on investments describe how to create it and record a buy (topic investments).
+A brokerage is an account kind with one Investment line per security. Its money is in a Cash account inside it or in an account of the same institution; the articles on investments describe how to create it and record a buy (topic investments).
 
 A **Category** is an income or expense account. Categories form a tree: a **Parent account** sums its children, so Food can hold Supermarket and Restaurant. An **Institution** is the bank or broker that keeps an account.
 

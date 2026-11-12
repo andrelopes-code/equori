@@ -18,8 +18,8 @@ interface BrokerageFieldsProps {
   held?: Position | undefined;
   // The codes the brokerage holds, for a sale; null for a purchase and an income.
   heldCodes: readonly string[] | null;
-  cash: readonly Account[];
-  cashAccount: Account | undefined;
+  payers: readonly Account[];
+  payer: Account | undefined;
   // Minor units of the base currency; undefined until the balance loads.
   balance: number | undefined;
   base: string | undefined;
@@ -41,8 +41,8 @@ export function BrokerageFields({
   instrument,
   held,
   heldCodes,
-  cash,
-  cashAccount,
+  payers,
+  payer,
   balance,
   base,
   date,
@@ -106,11 +106,11 @@ export function BrokerageFields({
         )}
       </Field>
 
-      {cash.length === 1 && cashAccount !== undefined && (
+      {payers.length === 1 && payer !== undefined && (
         <Field>
           <FieldDescription>
             {t(line, {
-              name: cashAccount.name,
+              name: payer.name,
               balance:
                 balance === undefined
                   ? ""
@@ -120,7 +120,7 @@ export function BrokerageFields({
         </Field>
       )}
 
-      {cash.length > 1 && (
+      {payers.length > 1 && (
         <Field required invalid={errors.cash_account_id !== undefined}>
           <FieldTitle
             label={t("trade.cashAccount")}
@@ -131,8 +131,8 @@ export function BrokerageFields({
             name="cash"
             title={t("trade.cashAccount")}
             context={t("trade.cashAccountContext", { currency })}
-            accounts={cash}
-            value={cashAccount?.id ?? null}
+            accounts={payers}
+            value={payer?.id ?? null}
             exclude={null}
             amount={0}
             direction={money}

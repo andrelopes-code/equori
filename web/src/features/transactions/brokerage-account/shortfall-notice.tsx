@@ -14,14 +14,18 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 type Account = components["schemas"]["Account"];
 
 interface ShortfallNoticeProps {
-  cash: Account;
+  payer: Account;
   // Minor units of the base currency.
   amount: number;
   scale: number;
 }
 
 // BC8: the cash balance does not cover the purchase. The save stays enabled; the server decides.
-export function ShortfallNotice({ cash, amount, scale }: ShortfallNoticeProps) {
+export function ShortfallNotice({
+  payer,
+  amount,
+  scale,
+}: ShortfallNoticeProps) {
   const t = useT();
   const fmt = useMoneyFormat();
 
@@ -30,7 +34,7 @@ export function ShortfallNotice({ cash, amount, scale }: ShortfallNoticeProps) {
       <AlertContent>
         <AlertDescription>
           {t("trade.shortfall", {
-            amount: fmt.money({ amount, currency: cash.currency }, scale),
+            amount: fmt.money({ amount, currency: payer.currency }, scale),
           })}
         </AlertDescription>
       </AlertContent>
@@ -43,11 +47,11 @@ export function ShortfallNotice({ cash, amount, scale }: ShortfallNoticeProps) {
             <Link
               {...props}
               to="/transactions/new"
-              search={{ kind: "transfer", to_account_id: cash.id }}
+              search={{ kind: "transfer", to_account_id: payer.id }}
             />
           )}
         >
-          {t("trade.moveMoney", { name: cash.name })}
+          {t("trade.moveMoney", { name: payer.name })}
         </ButtonLink>
       </AlertActions>
     </Alert>

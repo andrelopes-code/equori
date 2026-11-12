@@ -23,6 +23,26 @@ const accounts = [
   account("bank", { kind: "checking" }),
 ];
 
+const institutional = [
+  account("inter", { kind: "brokerage", institution_id: "i1" }),
+  account("inter-sec", { currency: "MXRF11", parent_id: "inter" }),
+  account("inter-cash", { kind: "brokerage", parent_id: "inter" }),
+  account("inter-bank", { kind: "checking", institution_id: "i1" }),
+  account("inter-usd", {
+    kind: "checking",
+    currency: "USD",
+    institution_id: "i1",
+  }),
+  account("inter-old", {
+    kind: "checking",
+    institution_id: "i1",
+    closed_on: "2026-01-01",
+  }),
+  account("inter-other", { kind: "brokerage", institution_id: "i1" }),
+  account("inter-card", { class: "liability", institution_id: "i1" }),
+  account("other-bank", { kind: "checking", institution_id: "i2" }),
+];
+
 describe("brokerageState", () => {
   it("lists the brokerage roots that have a child", () => {
     const state = brokerageState(accounts, types, "BRL", null, null);
@@ -34,8 +54,8 @@ describe("brokerageState", () => {
   it("separates the cash accounts from the holdings and finds the held one", () => {
     const state = brokerageState(accounts, types, "BRL", "xp", "MXRF11");
 
-    expect(state.cash.map((a) => a.id)).toEqual(["cash"]);
-    expect(state.cashAccount?.id).toBe("cash");
+    expect(state.payers.map((a) => a.id)).toEqual(["cash"]);
+    expect(state.payer?.id).toBe("cash");
     expect(state.holdings.map((a) => a.id)).toEqual(["mxrf"]);
     expect(state.held?.id).toBe("mxrf");
     expect(state.baseCash).toBe(true);
@@ -44,7 +64,28 @@ describe("brokerageState", () => {
   it("reports a brokerage without cash in the base currency", () => {
     const state = brokerageState(accounts, types, "USD", "xp", null);
 
-    expect(state.cash).toEqual([]);
+    expect(state.payers).toEqual([]);
     expect(state.baseCash).toBe(false);
+  });
+
+  // BC13, BC14: the Caixa plus the open base-currency asset accounts of the institution.
+  it("adds the open accounts of the institution outside the tree to the payers", () => {
+    const state = brokerageState(institutional, types, "BRL", "inter", null);
+
+    expect(state.payers.map((a) => a.id)).toEqual(["inter-cash", "inter-bank"]);
+    expect(state.payer).toBeUndefined();
+  });
+
+  it("takes the account of the institution as the only payer without a Caixa", () => {
+    const state = brokerageState(
+      institutional.filter((a) => a.id !== "inter-cash"),
+      types,
+      "BRL",
+      "inter",
+      null,
+    );
+
+    expect(state.payer?.id).toBe("inter-bank");
+    expect(state.baseCash).toBe(true);
   });
 });

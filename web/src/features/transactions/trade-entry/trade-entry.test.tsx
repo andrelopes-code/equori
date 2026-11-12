@@ -24,6 +24,13 @@ import { openOtherAccounts } from "@/testing/account-choice";
 
 const path = `/transactions/new?kind=trade&account_id=${securityID}`;
 
+const interID = "c0000000-0000-4000-8000-000000000001";
+const interSecurityID = "c0000000-0000-4000-8000-000000000002";
+const interCheckingID = "c0000000-0000-4000-8000-000000000003";
+const interCashID = "c0000000-0000-4000-8000-000000000004";
+const otherBankID = "c0000000-0000-4000-8000-000000000005";
+const interPath = `/transactions/new?kind=trade&account_id=${interSecurityID}`;
+
 async function type(label: string | RegExp, text: string) {
   await userEvent.type(
     await screen.findByRole("textbox", { name: label }),
@@ -99,7 +106,9 @@ describe("trade entry", () => {
       },
     );
     expect(
-      await screen.findByText("This brokerage has no cash account in BRL."),
+      await screen.findByText(
+        "No account to pay from in BRL. Create a cash account in the brokerage.",
+      ),
     ).toBeInTheDocument();
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
@@ -130,7 +139,9 @@ describe("trade entry", () => {
       }),
     });
     expect(
-      await screen.findByText("This brokerage has no cash account in BRL."),
+      await screen.findByText(
+        "No account to pay from in BRL. Create a cash account in the brokerage.",
+      ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: catalogEn["trade.createCash"] }),
@@ -144,7 +155,9 @@ describe("trade entry", () => {
         fetch: api([], { extraAccounts: usdBrokerage }),
       },
     );
-    await screen.findByText("This brokerage has no cash account in BRL.");
+    await screen.findByText(
+      "No account to pay from in BRL. Create a cash account in the brokerage.",
+    );
     expect(
       screen.queryByRole("button", { name: catalogEn["trade.createCash"] }),
     ).not.toBeInTheDocument();
@@ -207,6 +220,87 @@ describe("trade entry", () => {
     expect(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     ).toBeEnabled();
+  });
+
+  // BC13, BC14, BC17: a brokerage with no Caixa is paid from an account of its institution.
+  it("pays from the checking account of the institution when the brokerage has no cash account", async () => {
+    const sent: unknown[] = [];
+    await renderApp(interPath, {
+      fetch: api(sent, {
+        extraAccounts: interAccounts(),
+        balances: { [interCheckingID]: 500000 },
+      }),
+    });
+    expect(
+      await screen.findByText(/Paid from Banco Inter, balance/),
+    ).toHaveTextContent(/5,000\.00/);
+    expect(
+      screen.queryByText(/No account to pay from/),
+    ).not.toBeInTheDocument();
+    await type(catalogEn["trade.quantity"], "10");
+    await type(catalogEn["trade.unitPrice"], "10");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        expect.objectContaining({
+          brokerage_id: interID,
+          cash_account_id: interCheckingID,
+        }),
+      ]);
+    });
+  });
+
+  it("draws a select with the cash account and the checking account of the institution", async () => {
+    await renderApp(interPath, {
+      fetch: api([], { extraAccounts: [...interAccounts(), interCash()] }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: new RegExp(catalogEn["trade.cashAccount"]),
+      }),
+    );
+    await openOtherAccounts();
+    const keys = (await screen.findAllByRole("option")).map((option) =>
+      option.getAttribute("data-key"),
+    );
+    expect(keys).toContain(interCashID);
+    expect(keys).toContain(interCheckingID);
+  });
+
+  it("does not offer an account of another institution", async () => {
+    await renderApp(interPath, {
+      fetch: api([], { extraAccounts: [...interAccounts(), interCash()] }),
+    });
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: new RegExp(catalogEn["trade.cashAccount"]),
+      }),
+    );
+    await openOtherAccounts();
+    const keys = (await screen.findAllByRole("option")).map((option) =>
+      option.getAttribute("data-key"),
+    );
+    expect(keys).not.toContain(otherBankID);
+  });
+
+  it("shows the shortfall against the checking account with a transfer link to it", async () => {
+    await renderApp(interPath, {
+      fetch: api([], {
+        extraAccounts: interAccounts(),
+        balances: { [interCheckingID]: 10000 },
+      }),
+    });
+    await type(catalogEn["trade.quantity"], "150");
+    await type(catalogEn["trade.unitPrice"], "10.05");
+    const link = await screen.findByRole("link", {
+      name: "Move money into Banco Inter",
+    });
+    expect(link.getAttribute("href")).toContain(
+      `to_account_id=${interCheckingID}`,
+    );
+    expect(link.getAttribute("href")).toContain("kind=transfer");
   });
 
   it("offers only open cash accounts of the same brokerage in the base currency", async () => {
@@ -358,3 +452,52 @@ describe("trade entry", () => {
     ).toHaveAttribute("aria-invalid", "true");
   });
 });
+
+// A brokerage of the institution "inter" with no Caixa, its checking account and an account of
+// another institution.
+function interAccounts() {
+  return [
+    {
+      id: interID,
+      name: "Inter Invest",
+      class: "asset",
+      kind: "brokerage",
+      currency: "BRL",
+      institution_id: "inter",
+    },
+    {
+      id: interSecurityID,
+      name: "Inter MXRF11",
+      class: "asset",
+      currency: "MXRF11",
+      parent_id: interID,
+    },
+    {
+      id: interCheckingID,
+      name: "Banco Inter",
+      class: "asset",
+      kind: "checking",
+      currency: "BRL",
+      institution_id: "inter",
+    },
+    {
+      id: otherBankID,
+      name: "Other bank",
+      class: "asset",
+      kind: "checking",
+      currency: "BRL",
+      institution_id: "other",
+    },
+  ];
+}
+
+function interCash() {
+  return {
+    id: interCashID,
+    name: "Inter cash",
+    class: "asset",
+    kind: "brokerage",
+    currency: "BRL",
+    parent_id: interID,
+  };
+}

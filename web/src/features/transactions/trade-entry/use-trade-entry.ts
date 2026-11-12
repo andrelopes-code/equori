@@ -46,8 +46,8 @@ export interface TradeView {
   instrument: string | null;
   // The codes the brokerage holds, for a sale; null for a purchase.
   heldCodes: string[] | null;
-  cash: Account[];
-  cashAccount: Account | undefined;
+  payers: Account[];
+  payer: Account | undefined;
   baseCash: boolean;
   // Minor units of the base currency.
   balance: number | undefined;
@@ -105,11 +105,11 @@ export function useTradeEntry(
   const instrument = chosen.instrument;
   const sell = draft.side === "sell";
   const state = useBrokerages(chosen.brokerageId, instrument);
-  const cashAccount =
-    state.cash.find((a) => a.id === draft.cashAccountId) ?? state.cashAccount;
+  const payer =
+    state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
   const balanceRead = useQuery({
-    ...balanceQuery(api, cashAccount?.id ?? "", draft.date, "booked"),
-    enabled: cashAccount !== undefined,
+    ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
+    enabled: payer !== undefined,
   });
   const balance = balanceRead.data?.balance.amount;
 
@@ -168,8 +168,8 @@ export function useTradeEntry(
     brokerage: state.brokerage,
     instrument,
     heldCodes: sell ? state.holdings.map((a) => a.currency) : null,
-    cash: state.cash,
-    cashAccount,
+    payers: state.payers,
+    payer,
     baseCash: state.baseCash,
     balance,
     shortfall: shortfall(cashEffectValue, balance),
@@ -194,7 +194,7 @@ export function useTradeEntry(
       problems.brokerage_id = t("entry.required.account");
     if (instrument === null)
       problems.instrument = t("trade.required.securityAccount");
-    if (cashAccount === undefined)
+    if (payer === undefined)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
     if (rate === null) problems.unit_price = t("trade.required.price");
@@ -203,7 +203,7 @@ export function useTradeEntry(
       Object.keys(problems).length > 0 ||
       state.brokerage === undefined ||
       instrument === null ||
-      cashAccount === undefined ||
+      payer === undefined ||
       rate === null ||
       base === undefined
     ) {
@@ -218,7 +218,7 @@ export function useTradeEntry(
       const created = await record.mutateAsync({
         brokerage_id: state.brokerage.id,
         instrument,
-        cash_account_id: cashAccount.id,
+        cash_account_id: payer.id,
         side: draft.side,
         date: draft.date,
         quantity: { amount: draft.quantity, currency: instrument },
