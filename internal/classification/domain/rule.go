@@ -152,32 +152,51 @@ func NewRule(r Rule) (Rule, error) {
 		return Rule{}, invalid("name", fmt.Sprintf("must have 1 to %d characters", maxNameLength))
 	}
 
-	if len(r.Conditions) == 0 || len(r.Conditions) > maxConditions {
-		return Rule{}, invalid(
+	conditions, err := checkConditionList(r.Conditions)
+	if err != nil {
+		return Rule{}, err
+	}
+
+	r.Conditions = conditions
+	if err := checkActionList(r.Actions); err != nil {
+		return Rule{}, err
+	}
+
+	return r, nil
+}
+
+// checkConditionList validates the number of conditions and each condition.
+func checkConditionList(in []Condition) ([]Condition, error) {
+	if len(in) == 0 || len(in) > maxConditions {
+		return nil, invalid(
 			"conditions",
 			fmt.Sprintf("must have 1 to %d conditions", maxConditions),
 		)
 	}
 
-	conditions := make([]Condition, len(r.Conditions))
-	for i, c := range r.Conditions {
+	conditions := make([]Condition, len(in))
+	for i, c := range in {
 		checked, err := checkCondition(fmt.Sprintf("conditions[%d]", i), c)
 		if err != nil {
-			return Rule{}, err
+			return nil, err
 		}
 
 		conditions[i] = checked
 	}
 
-	r.Conditions = conditions
-	if len(r.Actions) == 0 || len(r.Actions) > maxActions {
-		return Rule{}, invalid("actions", fmt.Sprintf("must have 1 to %d actions", maxActions))
+	return conditions, nil
+}
+
+// checkActionList validates the number of actions and each action; it replaces each action by its checked form.
+func checkActionList(actions []Action) error {
+	if len(actions) == 0 || len(actions) > maxActions {
+		return invalid("actions", fmt.Sprintf("must have 1 to %d actions", maxActions))
 	}
 
 	seen := map[ActionType]bool{}
 
 	deciders := 0
-	for i, a := range r.Actions {
+	for i, a := range actions {
 		field := fmt.Sprintf("actions[%d]", i)
 
 		if slices.Contains(categoryActions, a.Type) {
@@ -185,7 +204,7 @@ func NewRule(r Rule) (Rule, error) {
 		}
 
 		if seen[a.Type] || deciders > 1 {
-			return Rule{}, invalid(
+			return invalid(
 				field+".type",
 				"repeats an action or combines two of set_category, split, transfer and mark_reimbursable",
 			)
@@ -195,11 +214,11 @@ func NewRule(r Rule) (Rule, error) {
 
 		checked, err := checkAction(field, a)
 		if err != nil {
-			return Rule{}, err
+			return err
 		}
 
-		r.Actions[i] = checked
+		actions[i] = checked
 	}
 
-	return r, nil
+	return nil
 }

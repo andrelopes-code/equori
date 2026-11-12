@@ -293,8 +293,6 @@ func previewAlias(
 	payees map[uuid.UUID]string,
 	pv *tool.Preview,
 ) error {
-	text := tool.TextValue
-
 	var err error
 
 	var old domain.Alias
@@ -305,11 +303,7 @@ func previewAlias(
 	}
 
 	if in.Action == "delete_alias" {
-		pv.Target, pv.Destructive = "Alias "+old.Pattern, true
-		pv.Changes = []tool.Change{
-			{Field: "pattern", Before: text(old.Pattern)},
-			{Field: "payee", Before: text(payees[old.PayeeID])},
-		}
+		previewAliasDelete(pv, old, payees)
 
 		return nil
 	}
@@ -325,6 +319,32 @@ func previewAlias(
 			Err:     domain.ErrValidation,
 		}
 	}
+
+	previewAliasChange(pv, in, p, payees, old)
+
+	return nil
+}
+
+// previewAliasDelete describes the alias that delete_alias removes.
+func previewAliasDelete(pv *tool.Preview, old domain.Alias, payees map[uuid.UUID]string) {
+	text := tool.TextValue
+
+	pv.Target, pv.Destructive = "Alias "+old.Pattern, true
+	pv.Changes = []tool.Change{
+		{Field: "pattern", Before: text(old.Pattern)},
+		{Field: "payee", Before: text(payees[old.PayeeID])},
+	}
+}
+
+// previewAliasChange describes the alias that create_alias or change_alias writes; old is the stored alias.
+func previewAliasChange(
+	pv *tool.Preview,
+	in manageRuleIn,
+	p ids,
+	payees map[uuid.UUID]string,
+	old domain.Alias,
+) {
+	text := tool.TextValue
 
 	pv.Target = "Alias " + in.Pattern
 
@@ -342,6 +362,4 @@ func previewAlias(
 			payees[old.PayeeID],
 		)
 	}
-
-	return nil
 }
