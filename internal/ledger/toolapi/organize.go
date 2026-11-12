@@ -13,7 +13,21 @@ import (
 type manageAccountsAndPayeesAction string
 
 func (manageAccountsAndPayeesAction) Values() []string {
-	return []string{"create_account", "update_account", "close_account", "reopen_account", "merge_category", "create_payee", "rename_payee", "merge_payee", "create_institution", "delete_institution", "rename_tag", "merge_tag", "delete_tag"}
+	return []string{
+		"create_account",
+		"update_account",
+		"close_account",
+		"reopen_account",
+		"merge_category",
+		"create_payee",
+		"rename_payee",
+		"merge_payee",
+		"create_institution",
+		"delete_institution",
+		"rename_tag",
+		"merge_tag",
+		"delete_tag",
+	}
 }
 
 type manageAccountsAndPayeesClass string
@@ -25,7 +39,19 @@ func (manageAccountsAndPayeesClass) Values() []string {
 type manageAccountsAndPayeesKind string
 
 func (manageAccountsAndPayeesKind) Values() []string {
-	return []string{"checking", "savings", "cash", "wallet", "benefit", "reserve", "brokerage", "receivable", "loan", "credit_card", "other"}
+	return []string{
+		"checking",
+		"savings",
+		"cash",
+		"wallet",
+		"benefit",
+		"reserve",
+		"brokerage",
+		"receivable",
+		"loan",
+		"credit_card",
+		"other",
+	}
 }
 
 type manageAccountsAndPayeesYield string
@@ -33,22 +59,22 @@ type manageAccountsAndPayeesYield string
 func (manageAccountsAndPayeesYield) Values() []string { return []string{"none", "auto"} }
 
 type manageAccountsAndPayeesIn struct {
-	Action        manageAccountsAndPayeesAction `json:"action" jsonschema:"operation to propose"`
-	AccountID     string                        `json:"account_id,omitzero" jsonschema:"account or category to change or merge, from list_accounts"`
-	Name          string                        `json:"name,omitzero" jsonschema:"name of the new or renamed account, category, payee, institution or tag"`
-	Class         manageAccountsAndPayeesClass  `json:"class,omitzero" jsonschema:"for create_account: class of the new account; income and expense create categories"`
-	Kind          manageAccountsAndPayeesKind   `json:"kind,omitzero" jsonschema:"for create_account of an asset or liability: kind of account"`
-	Currency      string                        `json:"currency,omitzero" jsonschema:"for create_account: currency or instrument code; the base currency when absent"`
-	ParentID      string                        `json:"parent_id,omitzero" jsonschema:"for create_account and update_account: parent account or category"`
+	Action        manageAccountsAndPayeesAction `json:"action"                  jsonschema:"operation to propose"`
+	AccountID     string                        `json:"account_id,omitzero"     jsonschema:"account or category to change or merge, from list_accounts"`
+	Name          string                        `json:"name,omitzero"           jsonschema:"name of the new or renamed account, category, payee, institution or tag"`
+	Class         manageAccountsAndPayeesClass  `json:"class,omitzero"          jsonschema:"for create_account: class of the new account; income and expense create categories"`
+	Kind          manageAccountsAndPayeesKind   `json:"kind,omitzero"           jsonschema:"for create_account of an asset or liability: kind of account"`
+	Currency      string                        `json:"currency,omitzero"       jsonschema:"for create_account: ISO currency code; the base currency when absent; never an Investment code, which the first buy creates"`
+	ParentID      string                        `json:"parent_id,omitzero"      jsonschema:"for create_account and update_account: parent account or category"`
 	InstitutionID string                        `json:"institution_id,omitzero" jsonschema:"for create_account, update_account and delete_institution: institution from list_payees_and_tags"`
-	Date          tool.Date                     `json:"date,omitzero" jsonschema:"for close_account: closing date; today when absent"`
-	IntoID        string                        `json:"into_id,omitzero" jsonschema:"for merge_category and merge_payee: category or payee that remains"`
-	PayeeID       string                        `json:"payee_id,omitzero" jsonschema:"for rename_payee and merge_payee: payee to change, from list_payees_and_tags"`
-	Tag           string                        `json:"tag,omitzero" jsonschema:"for rename_tag, merge_tag and delete_tag: tag to change, from list_payees_and_tags"`
-	IntoTag       string                        `json:"into_tag,omitzero" jsonschema:"for merge_tag: tag that remains"`
+	Date          tool.Date                     `json:"date,omitzero"           jsonschema:"for close_account: closing date; today when absent"`
+	IntoID        string                        `json:"into_id,omitzero"        jsonschema:"for merge_category and merge_payee: category or payee that remains"`
+	PayeeID       string                        `json:"payee_id,omitzero"       jsonschema:"for rename_payee and merge_payee: payee to change, from list_payees_and_tags"`
+	Tag           string                        `json:"tag,omitzero"            jsonschema:"for rename_tag, merge_tag and delete_tag: tag to change, from list_payees_and_tags"`
+	IntoTag       string                        `json:"into_tag,omitzero"       jsonschema:"for merge_tag: tag that remains"`
 
-	OpenedOn              tool.Date                    `json:"opened_on,omitzero" jsonschema:"for create_account: opening date; for update_account: an earlier opening date"`
-	YieldMode             manageAccountsAndPayeesYield `json:"yield_mode,omitzero" jsonschema:"for create_account and update_account: auto books the yield of the account"`
+	OpenedOn              tool.Date                    `json:"opened_on,omitzero"               jsonschema:"for create_account: opening date; for update_account: an earlier opening date"`
+	YieldMode             manageAccountsAndPayeesYield `json:"yield_mode,omitzero"              jsonschema:"for create_account and update_account: auto books the yield of the account"`
 	ExcludedFromLiquidity tool.OptionalBool            `json:"excluded_from_liquidity,omitzero" jsonschema:"for update_account: leave the account out of the liquidity indicator"`
 }
 
@@ -159,10 +185,21 @@ func newOrganizeCall(
 
 func givenFields(in manageAccountsAndPayeesIn) map[string]bool {
 	return map[string]bool{
-		"account_id": in.AccountID != "", "name": in.Name != "", "class": in.Class != "", "kind": in.Kind != "", "currency": in.Currency != "",
-		"parent_id": in.ParentID != "", "institution_id": in.InstitutionID != "", "date": !in.Date.IsZero(), "into_id": in.IntoID != "", "payee_id": in.PayeeID != "",
-		"tag": in.Tag != "", "into_tag": in.IntoTag != "",
-		"opened_on": !in.OpenedOn.IsZero(), "yield_mode": in.YieldMode != "", "excluded_from_liquidity": in.ExcludedFromLiquidity.Set,
+		"account_id":              in.AccountID != "",
+		"name":                    in.Name != "",
+		"class":                   in.Class != "",
+		"kind":                    in.Kind != "",
+		"currency":                in.Currency != "",
+		"parent_id":               in.ParentID != "",
+		"institution_id":          in.InstitutionID != "",
+		"date":                    !in.Date.IsZero(),
+		"into_id":                 in.IntoID != "",
+		"payee_id":                in.PayeeID != "",
+		"tag":                     in.Tag != "",
+		"into_tag":                in.IntoTag != "",
+		"opened_on":               !in.OpenedOn.IsZero(),
+		"yield_mode":              in.YieldMode != "",
+		"excluded_from_liquidity": in.ExcludedFromLiquidity.Set,
 	}
 }
 
@@ -198,7 +235,12 @@ func (c organizeCall) check(required []string, optional ...string) error {
 }
 
 // checkFields requires the fields an action needs and rejects the ones it does not read.
-func checkFields(action string, given map[string]bool, required []string, optional ...string) error {
+func checkFields(
+	action string,
+	given map[string]bool,
+	required []string,
+	optional ...string,
+) error {
 	for _, f := range required {
 		if !given[f] {
 			return tool.InvalidArgument(f, "is required for "+action)
@@ -208,10 +250,17 @@ func checkFields(action string, given map[string]bool, required []string, option
 	return unusedFields(action, given, append(required, optional...)...)
 }
 
-func institutionName(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (string, error) {
-	all, err := allPages(func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
-		return svc.ListInstitutions(ctx, booksID, p)
-	})
+func institutionName(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (string, error) {
+	all, err := allPages(
+		func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
+			return svc.ListInstitutions(ctx, booksID, p)
+		},
+	)
 	if err != nil {
 		return "", err
 	}
@@ -225,7 +274,12 @@ func institutionName(ctx context.Context, svc *app.Service, booksID int64, id uu
 	return "", app.ErrNotFound
 }
 
-func payeeByID(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (app.Payee, error) {
+func payeeByID(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (app.Payee, error) {
 	all, err := allPages(func(p page.Request[app.PayeeKey]) ([]app.Payee, *app.PayeeKey, error) {
 		return svc.ListPayees(ctx, booksID, p)
 	})
@@ -243,7 +297,12 @@ func payeeByID(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUI
 }
 
 // accountName returns the name of an optional account reference; the zero ID has no name.
-func accountName(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (string, error) {
+func accountName(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (string, error) {
 	if id == uuid.Nil {
 		return "", nil
 	}

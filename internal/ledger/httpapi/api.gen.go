@@ -1646,11 +1646,14 @@ type InvestmentIncome struct {
 
 // InvestmentIncomeInput defines model for InvestmentIncomeInput.
 type InvestmentIncomeInput struct {
-	// AccountId The account holding the security that pays.
-	AccountId openapi_types.UUID `json:"account_id"`
+	// AccountId The account holding the security that pays. Absent when brokerage_id and instrument name the target.
+	AccountId *openapi_types.UUID `json:"account_id,omitempty"`
 
-	// CashAccountId A cash account of the same brokerage, in the base currency.
-	CashAccountId openapi_types.UUID `json:"cash_account_id"`
+	// BrokerageId The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
+	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
+
+	// CashAccountId A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
 
 	// CategoryId Income category of the gross amount.
 	CategoryId  openapi_types.UUID `json:"category_id"`
@@ -1658,6 +1661,9 @@ type InvestmentIncomeInput struct {
 	Description *string            `json:"description,omitempty"`
 	Gross       Money              `json:"gross"`
 	IncomeType  IncomeType         `json:"income_type"`
+
+	// Instrument The investment's code; its holding account is created on the first purchase.
+	Instrument *string `json:"instrument,omitempty"`
 
 	// Withheld Default 0, and 15 % of gross for jcp.
 	Withheld *Money `json:"withheld,omitempty"`
@@ -1817,7 +1823,8 @@ type Problem struct {
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
-	// backup_off, backup_failed, password_too_short, institution_in_use.
+	// backup_off, backup_failed, password_too_short, institution_in_use,
+	// trade_target_required, brokerage_cash_missing, brokerage_cash_ambiguous, holding_not_found.
 	Code   string        `json:"code"`
 	Detail *string       `json:"detail,omitempty"`
 	Errors *[]FieldError `json:"errors,omitempty"`
@@ -2102,17 +2109,23 @@ type Trade struct {
 
 // TradeInput defines model for TradeInput.
 type TradeInput struct {
-	// AccountId The account holding the security.
-	AccountId openapi_types.UUID `json:"account_id"`
+	// AccountId The account holding the security. Absent when brokerage_id and instrument name the target.
+	AccountId *openapi_types.UUID `json:"account_id,omitempty"`
 
-	// CashAccountId A cash account of the same brokerage, in the base currency.
-	CashAccountId openapi_types.UUID `json:"cash_account_id"`
-	Date          openapi_types.Date `json:"date"`
-	Description   *string            `json:"description,omitempty"`
-	Fees          *Money             `json:"fees,omitempty"`
-	Quantity      Money              `json:"quantity"`
-	Side          TradeSide          `json:"side"`
-	Taxes         *Money             `json:"taxes,omitempty"`
+	// BrokerageId The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
+	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
+
+	// CashAccountId A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
+	Date          openapi_types.Date  `json:"date"`
+	Description   *string             `json:"description,omitempty"`
+	Fees          *Money              `json:"fees,omitempty"`
+
+	// Instrument The investment's code; its holding account is created on the first purchase.
+	Instrument *string   `json:"instrument,omitempty"`
+	Quantity   Money     `json:"quantity"`
+	Side       TradeSide `json:"side"`
+	Taxes      *Money    `json:"taxes,omitempty"`
 
 	// TaxesCategoryId Default the system account taxes.
 	TaxesCategoryId *openapi_types.UUID `json:"taxes_category_id,omitempty"`

@@ -1063,3 +1063,7 @@ The scenarios of `docs/specs/2026-11-09-transfer-pairing-design.md`, section 6.1
 ### S385–S386 Instrument removal (A223)
 
 The scenarios of `docs/specs/2026-11-11-instrument-removal-design.md`: removing the security MXRF11 deletes it with its prices and leaves KNRI11 and its price; defining MXRF11 again starts without prices; an unknown code is 404 `not_found` and a currency is 422 `validation_failed` on `code` (S385); a security that an account holds is refused with 409 `instrument_in_use` and keeps its prices (S386).
+
+### S387–S392 Brokerage clarity (BC6)
+
+The scenarios of `docs/specs/2026-11-12-brokerage-clarity-design.md`, rules BC6 and X1: a trade with `brokerage_id` and `instrument` creates the holding and the position (S387); a second trade of the same instrument reuses the holding (S388); a request with both forms or neither is 422 `trade_target_required` (S389); a brokerage with two cash accounts and no `cash_account_id` is 422 `brokerage_cash_ambiguous`, and a brokerage with no cash account in the base currency is 422 `brokerage_cash_missing` (S390); a brokerage created through the form's steps has a cash child that holds its opening balance (S391); an income with `instrument` credits the cash account (S392).

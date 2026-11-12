@@ -16,21 +16,23 @@ type recordInvestmentKind string
 func (recordInvestmentKind) Values() []string { return []string{"buy", "sell", "income"} }
 
 type recordInvestmentIn struct {
-	Kind          recordInvestmentKind `json:"kind" jsonschema:"operation to propose"`
-	AccountID     string               `json:"account_id" jsonschema:"security account inside a brokerage, from list_accounts"`
-	CashAccountID string               `json:"cash_account_id" jsonschema:"cash account of the same brokerage"`
-	Date          tool.Date            `json:"date" jsonschema:"trade or payment date"`
-	Quantity      string               `json:"quantity,omitzero" jsonschema:"for buy and sell: positive quantity of the security"`
-	UnitPrice     string               `json:"unit_price,omitzero" jsonschema:"for buy and sell: decimal price of one unit in the cash account's currency"`
-	Fees          string               `json:"fees,omitzero" jsonschema:"for buy and sell: positive fees charged"`
-	Taxes         string               `json:"taxes,omitzero" jsonschema:"for buy and sell: positive taxes charged"`
-	Gross         string               `json:"gross,omitzero" jsonschema:"for income: positive gross amount paid"`
-	Withheld      string               `json:"withheld,omitzero" jsonschema:"for income: positive tax withheld at source"`
-	IncomeType    string               `json:"income_type,omitzero" jsonschema:"for income: type from get_portfolio with view income_types"`
-	CategoryID    string               `json:"category_id,omitzero" jsonschema:"for income: income category from list_accounts"`
+	Kind          recordInvestmentKind `json:"kind"                     jsonschema:"operation to propose"`
+	BrokerageID   string               `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment, from list_accounts; with instrument, instead of account_id"`
+	Instrument    string               `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4; its line in the Brokerage is created by the first buy"`
+	AccountID     string               `json:"account_id,omitzero"      jsonschema:"Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"`
+	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the same Brokerage; the single open Cash in the base currency when absent"`
+	Date          tool.Date            `json:"date"                     jsonschema:"trade or payment date"`
+	Quantity      string               `json:"quantity,omitzero"        jsonschema:"for buy and sell: positive quantity of the security"`
+	UnitPrice     string               `json:"unit_price,omitzero"      jsonschema:"for buy and sell: decimal price of one unit in the cash account's currency"`
+	Fees          string               `json:"fees,omitzero"            jsonschema:"for buy and sell: positive fees charged"`
+	Taxes         string               `json:"taxes,omitzero"           jsonschema:"for buy and sell: positive taxes charged"`
+	Gross         string               `json:"gross,omitzero"           jsonschema:"for income: positive gross amount paid"`
+	Withheld      string               `json:"withheld,omitzero"        jsonschema:"for income: positive tax withheld at source"`
+	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"for income: type from get_portfolio with view income_types"`
+	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"for income: income category from list_accounts"`
 
-	Description        string `json:"description,omitzero" jsonschema:"description of the transaction; the default one when absent"`
-	TaxesCategoryID    string `json:"taxes_category_id,omitzero" jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
+	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; the default one when absent"`
+	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
 	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"for income: expense category of the tax withheld; the taxes account when absent"`
 }
 
@@ -41,7 +43,10 @@ type recordInvestmentOut struct {
 func recordInvestment(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "record_investment",
-		Description: "Proposes an investment transaction in a brokerage: buy or sell a security for cash of the same brokerage at average cost, or record income paid on a security. " +
+		Description: "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage at average cost, or record income paid on an Investment. " +
+			"Name the Investment by brokerage_id and instrument, or by account_id. " +
+			"A first buy creates the Investment line; a sale or income needs an existing one. " +
+			"A Brokerage without a Cash account in the base currency is refused: create a Cash account in it first with manage_accounts_and_payees. " +
 			"Use it when the user reports a trade, a dividend or other investment income. " +
 			"Do not use it to define a new security: manage_instrument does. " +
 			"The user confirms first.",
@@ -59,7 +64,12 @@ func recordInvestment(svc *app.Service) tool.Tool {
 	})
 }
 
-func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in recordInvestmentIn) (tool.Preview, func() (recordInvestmentOut, error), error) {
+func planInvestment(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in recordInvestmentIn,
+) (tool.Preview, func() (recordInvestmentOut, error), error) {
 	pv := tool.Preview{Action: "record_investment"}
 
 	ids, err := parseInvestmentIDs(in)
@@ -71,27 +81,17 @@ func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in rec
 		return pv, nil, err
 	}
 
-	security, err := svc.Account(ctx, booksID, ids.account)
+	target, err := resolveInvestmentTarget(ctx, svc, booksID, in, ids)
 	if err != nil {
 		return pv, nil, err
 	}
 
-	cash, err := svc.Account(ctx, booksID, ids.cash)
-	if err != nil {
-		return pv, nil, err
+	pv.Target = target.name
+	pv.Changes = []tool.Change{
+		{Field: "instrument", After: tool.TextValue(string(target.instrument))},
 	}
 
-	cashUnit, err := svc.AmountOf(ctx, 0, cash.Instrument)
-	if err != nil {
-		return pv, nil, err
-	}
-
-	pv.Target = security.Name
-	pv.Changes = []tool.Change{{Field: "instrument", After: tool.TextValue(string(security.Instrument))}}
-
-	step := investmentStep{
-		svc: svc, booksID: booksID, in: in, ids: ids, security: security, cash: cash, cashUnit: cashUnit,
-	}
+	step := investmentStep{svc: svc, booksID: booksID, in: in, ids: ids, target: target}
 	if in.Kind == "income" {
 		return step.income(ctx, pv)
 	}
@@ -100,18 +100,22 @@ func planInvestment(ctx context.Context, svc *app.Service, booksID int64, in rec
 }
 
 type investmentIDs struct {
-	account, cash, category, taxesCategory, withheldCategory uuid.UUID
+	account, brokerage, cash, category, taxesCategory, withheldCategory uuid.UUID
 }
 
 func parseInvestmentIDs(in recordInvestmentIn) (investmentIDs, error) {
 	var ids investmentIDs
 
 	var err error
-	if ids.account, err = requiredID(in.AccountID, "account_id"); err != nil {
+	if ids.account, err = optionalID(in.AccountID, "account_id"); err != nil {
 		return ids, err
 	}
 
-	if ids.cash, err = requiredID(in.CashAccountID, "cash_account_id"); err != nil {
+	if ids.brokerage, err = optionalID(in.BrokerageID, "brokerage_id"); err != nil {
+		return ids, err
+	}
+
+	if ids.cash, err = optionalID(in.CashAccountID, "cash_account_id"); err != nil {
 		return ids, err
 	}
 
@@ -131,28 +135,107 @@ func parseInvestmentIDs(in recordInvestmentIn) (investmentIDs, error) {
 func checkInvestmentFields(in recordInvestmentIn) error {
 	action := string(in.Kind)
 	given := map[string]bool{
-		"account_id": true, "cash_account_id": true, "date": !in.Date.IsZero(), "quantity": in.Quantity != "", "unit_price": in.UnitPrice != "",
-		"fees": in.Fees != "", "taxes": in.Taxes != "", "gross": in.Gross != "", "withheld": in.Withheld != "", "income_type": in.IncomeType != "", "category_id": in.CategoryID != "",
-		"description": in.Description != "", "taxes_category_id": in.TaxesCategoryID != "", "withheld_category_id": in.WithheldCategoryID != "",
+		"account_id":           in.AccountID != "",
+		"brokerage_id":         in.BrokerageID != "",
+		"instrument":           in.Instrument != "",
+		"cash_account_id":      in.CashAccountID != "",
+		"date":                 !in.Date.IsZero(),
+		"quantity":             in.Quantity != "",
+		"unit_price":           in.UnitPrice != "",
+		"fees":                 in.Fees != "",
+		"taxes":                in.Taxes != "",
+		"gross":                in.Gross != "",
+		"withheld":             in.Withheld != "",
+		"income_type":          in.IncomeType != "",
+		"category_id":          in.CategoryID != "",
+		"description":          in.Description != "",
+		"taxes_category_id":    in.TaxesCategoryID != "",
+		"withheld_category_id": in.WithheldCategoryID != "",
 	}
+	target := []string{"account_id", "brokerage_id", "instrument", "cash_account_id"}
 
-	base := []string{"account_id", "cash_account_id", "date"}
 	if in.Kind == "income" {
-		return checkFields(action, given, append(base, "gross", "income_type", "category_id"), "withheld", "description", "withheld_category_id")
+		return checkFields(action, given, []string{"date", "gross", "income_type", "category_id"},
+			append(target, "withheld", "description", "withheld_category_id")...)
 	}
 
-	return checkFields(action, given, append(base, "quantity", "unit_price"), "fees", "taxes", "description", "taxes_category_id")
+	return checkFields(action, given, []string{"date", "quantity", "unit_price"},
+		append(target, "fees", "taxes", "description", "taxes_category_id")...)
+}
+
+// investmentTarget is the Investment and the Cash of an order, in either form of BC6.
+type investmentTarget struct {
+	name       string
+	instrument money.Currency
+	cashUnit   money.Money
+	cashName   string
+}
+
+// resolveInvestmentTarget names the account form or the pair form; the service resolves the
+// Investment line and the default Cash at run time.
+func resolveInvestmentTarget(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in recordInvestmentIn,
+	ids investmentIDs,
+) (investmentTarget, error) {
+	pair := ids.brokerage != uuid.Nil && in.Instrument != ""
+	if (ids.account != uuid.Nil) == pair ||
+		(!pair && (ids.brokerage != uuid.Nil || in.Instrument != "")) {
+		return investmentTarget{}, app.ErrTradeTargetRequired
+	}
+
+	var t investmentTarget
+
+	if pair {
+		brokerage, err := svc.Account(ctx, booksID, ids.brokerage)
+		if err != nil {
+			return t, err
+		}
+
+		t.name, t.instrument = brokerage.Name, money.Currency(in.Instrument)
+	} else {
+		security, err := svc.Account(ctx, booksID, ids.account)
+		if err != nil {
+			return t, err
+		}
+
+		t.name, t.instrument = security.Name, security.Instrument
+	}
+
+	unit := money.Currency("")
+
+	if ids.cash != uuid.Nil {
+		cash, err := svc.Account(ctx, booksID, ids.cash)
+		if err != nil {
+			return t, err
+		}
+
+		unit, t.cashName = cash.Instrument, cash.Name
+	} else {
+		settings, err := svc.Settings(ctx, booksID)
+		if err != nil {
+			return t, err
+		}
+
+		unit = settings.BaseCurrency
+	}
+
+	var err error
+
+	t.cashUnit, err = svc.AmountOf(ctx, 0, unit)
+
+	return t, err
 }
 
 // investmentStep holds the resolved inputs that the income and trade steps share.
 type investmentStep struct {
-	svc      *app.Service
-	booksID  int64
-	in       recordInvestmentIn
-	ids      investmentIDs
-	security domain.Account
-	cash     domain.Account
-	cashUnit money.Money
+	svc     *app.Service
+	booksID int64
+	in      recordInvestmentIn
+	ids     investmentIDs
+	target  investmentTarget
 }
 
 func (s investmentStep) income(
@@ -161,7 +244,7 @@ func (s investmentStep) income(
 ) (tool.Preview, func() (recordInvestmentOut, error), error) {
 	in := s.in
 
-	gross, err := tool.ParsePositive("gross", in.Gross, s.cashUnit)
+	gross, err := tool.ParsePositive("gross", in.Gross, s.target.cashUnit)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -172,14 +255,22 @@ func (s investmentStep) income(
 	}
 
 	o := domain.IncomeOrder{
-		AccountID: s.security.ID, CashAccountID: s.cash.ID, CategoryID: s.ids.category, Type: domain.IncomeType(in.IncomeType),
-		Date: in.Date.Time, Gross: gross, Withheld: withheld,
-		WithheldCategoryID: s.ids.withheldCategory, Description: in.Description,
+		AccountID:          s.ids.account,
+		CashAccountID:      s.ids.cash,
+		BrokerageID:        s.ids.brokerage,
+		Instrument:         money.Currency(in.Instrument),
+		CategoryID:         s.ids.category,
+		Type:               domain.IncomeType(in.IncomeType),
+		Date:               in.Date.Time,
+		Gross:              gross,
+		Withheld:           withheld,
+		WithheldCategoryID: s.ids.withheldCategory,
+		Description:        in.Description,
 	}
 	appendAmountChange(&pv, &gross)
 	appendAmountChange(&pv, withheld)
 
-	pv.Changes = append(pv.Changes, tool.Change{Field: "account", After: tool.TextValue(s.cash.Name)}, tool.Change{Field: "date", After: tool.DateValue(in.Date.Time)})
+	s.appendCashAndDate(&pv)
 
 	return pv, func() (recordInvestmentOut, error) {
 		t, err := s.svc.RecordIncome(ctx, s.booksID, o)
@@ -193,7 +284,7 @@ func (s investmentStep) trade(
 ) (tool.Preview, func() (recordInvestmentOut, error), error) {
 	in := s.in
 
-	secUnit, err := s.svc.AmountOf(ctx, 0, s.security.Instrument)
+	secUnit, err := s.svc.AmountOf(ctx, 0, s.target.instrument)
 	if err != nil {
 		return pv, nil, err
 	}
@@ -205,7 +296,10 @@ func (s investmentStep) trade(
 
 	price, err := money.ParseRate(in.UnitPrice)
 	if err != nil {
-		return pv, nil, tool.InvalidArgument("unit_price", "must be a positive decimal with at most 12 decimals")
+		return pv, nil, tool.InvalidArgument(
+			"unit_price",
+			"must be a positive decimal with at most 12 decimals",
+		)
 	}
 
 	fees, err := s.optional("fees", in.Fees)
@@ -219,16 +313,29 @@ func (s investmentStep) trade(
 	}
 
 	o := domain.TradeOrder{
-		AccountID: s.security.ID, CashAccountID: s.cash.ID, Side: domain.Side(in.Kind), Date: in.Date.Time,
-		Quantity: quantity, UnitPrice: price, Fees: fees, Taxes: taxes,
-		TaxesCategoryID: s.ids.taxesCategory, Description: in.Description,
+		AccountID:       s.ids.account,
+		CashAccountID:   s.ids.cash,
+		BrokerageID:     s.ids.brokerage,
+		Instrument:      money.Currency(in.Instrument),
+		Side:            domain.Side(in.Kind),
+		Date:            in.Date.Time,
+		Quantity:        quantity,
+		UnitPrice:       price,
+		Fees:            fees,
+		Taxes:           taxes,
+		TaxesCategoryID: s.ids.taxesCategory,
+		Description:     in.Description,
 	}
-	pv.Changes = append(pv.Changes, tool.Change{Field: "quantity", After: tool.TextValue(quantity.Decimal())}, tool.Change{Field: "price", After: tool.TextValue(price.String())})
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "quantity", After: tool.TextValue(quantity.Decimal())},
+		tool.Change{Field: "price", After: tool.TextValue(price.String())},
+	)
 
 	appendAmountChange(&pv, fees)
 	appendAmountChange(&pv, taxes)
 
-	pv.Changes = append(pv.Changes, tool.Change{Field: "account", After: tool.TextValue(s.cash.Name)}, tool.Change{Field: "date", After: tool.DateValue(in.Date.Time)})
+	s.appendCashAndDate(&pv)
 
 	return pv, func() (recordInvestmentOut, error) {
 		t, err := s.svc.RecordTrade(ctx, s.booksID, o)
@@ -236,12 +343,26 @@ func (s investmentStep) trade(
 	}, nil
 }
 
+func (s investmentStep) appendCashAndDate(pv *tool.Preview) {
+	if s.target.cashName != "" {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "account", After: tool.TextValue(s.target.cashName)},
+		)
+	}
+
+	pv.Changes = append(
+		pv.Changes,
+		tool.Change{Field: "date", After: tool.DateValue(s.in.Date.Time)},
+	)
+}
+
 func (s investmentStep) optional(field, text string) (*money.Money, error) {
 	if text == "" {
 		return nil, nil
 	}
 
-	m, err := tool.ParsePositive(field, text, s.cashUnit)
+	m, err := tool.ParsePositive(field, text, s.target.cashUnit)
 
 	return &m, err
 }

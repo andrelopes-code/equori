@@ -4030,7 +4030,8 @@ export interface components {
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
              *     confirmation_mismatch, books_has_members, last_books,
-             *     backup_off, backup_failed, password_too_short, institution_in_use.
+             *     backup_off, backup_failed, password_too_short, institution_in_use,
+             *     trade_target_required, brokerage_cash_missing, brokerage_cash_ambiguous, holding_not_found.
              */
             code: string;
             request_id?: string;
@@ -5800,14 +5801,21 @@ export interface components {
         TradeInput: {
             /**
              * Format: uuid
-             * @description The account holding the security.
+             * @description The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
              */
-            account_id: string;
+            brokerage_id?: string;
+            /** @description The investment's code; its holding account is created on the first purchase. */
+            instrument?: string;
             /**
              * Format: uuid
-             * @description A cash account of the same brokerage, in the base currency.
+             * @description The account holding the security. Absent when brokerage_id and instrument name the target.
              */
-            cash_account_id: string;
+            account_id?: string;
+            /**
+             * Format: uuid
+             * @description A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+             */
+            cash_account_id?: string;
             side: components["schemas"]["TradeSide"];
             /** Format: date */
             date: string;
@@ -5839,14 +5847,21 @@ export interface components {
         InvestmentIncomeInput: {
             /**
              * Format: uuid
-             * @description The account holding the security that pays.
+             * @description The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
              */
-            account_id: string;
+            brokerage_id?: string;
+            /** @description The investment's code; its holding account is created on the first purchase. */
+            instrument?: string;
             /**
              * Format: uuid
-             * @description A cash account of the same brokerage, in the base currency.
+             * @description The account holding the security that pays. Absent when brokerage_id and instrument name the target.
              */
-            cash_account_id: string;
+            account_id?: string;
+            /**
+             * Format: uuid
+             * @description A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
+             */
+            cash_account_id?: string;
             income_type: components["schemas"]["IncomeType"];
             /** Format: date */
             date: string;

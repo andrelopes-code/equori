@@ -54,15 +54,31 @@ func sentinelProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
 	case errors.Is(err, domain.ErrVersionConflict):
-		return problem.New(http.StatusConflict, "version_conflict", "the transaction changed since the expected version; reload it"), true
+		return problem.New(
+			http.StatusConflict,
+			"version_conflict",
+			"the transaction changed since the expected version; reload it",
+		), true
 	case errors.Is(err, domain.ErrVoided):
-		return problem.New(http.StatusConflict, "transaction_voided", "the transaction is voided"), true
+		return problem.New(
+			http.StatusConflict,
+			"transaction_voided",
+			"the transaction is voided",
+		), true
 	case errors.Is(err, app.ErrPairingAmbiguous):
-		return problem.New(http.StatusConflict, "pairing_ambiguous", "several imported transactions can pair with this one; name one in pair_with"), true
+		return problem.New(
+			http.StatusConflict,
+			"pairing_ambiguous",
+			"several imported transactions can pair with this one; name one in pair_with",
+		), true
 	case errors.Is(err, domain.ErrNotCategorizable):
 		return problem.New(http.StatusUnprocessableEntity, "not_categorizable", err.Error()), true
 	case errors.Is(err, domain.ErrReconciled):
-		return problem.New(http.StatusConflict, "posting_reconciled", "the transaction has reconciled postings"), true
+		return problem.New(
+			http.StatusConflict,
+			"posting_reconciled",
+			"the transaction has reconciled postings",
+		), true
 	case errors.Is(err, app.ErrPostingNotMovable):
 		return problem.New(http.StatusUnprocessableEntity, "posting_not_movable", err.Error()), true
 	case errors.Is(err, app.ErrDifferenceRemains):
@@ -88,12 +104,40 @@ func sentinelProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, app.ErrDisputeOpen):
 		return problem.New(http.StatusConflict, "dispute_open", err.Error()), true
 	case errors.Is(err, app.ErrInstitutionInUse):
-		return problem.New(http.StatusConflict, "institution_in_use", "an open account uses the institution; move or close the account first"), true
+		return problem.New(
+			http.StatusConflict,
+			"institution_in_use",
+			"an open account uses the institution; move or close the account first",
+		), true
 	case errors.Is(err, app.ErrDisputeResolved):
 		return problem.New(http.StatusConflict, "dispute_resolved", err.Error()), true
 	case errors.Is(err, app.ErrNotInlineable):
-		return problem.New(http.StatusUnprocessableEntity, "attachment_not_inlineable", err.Error()), true
+		return problem.New(
+			http.StatusUnprocessableEntity,
+			"attachment_not_inlineable",
+			err.Error(),
+		), true
+	default:
+		return tradeTargetProblem(err)
+	}
+}
+
+// tradeTargetProblem maps the errors of the holding and cash resolution of a trade (BC6).
+func tradeTargetProblem(err error) (problem.Details, bool) {
+	var code string
+
+	switch {
+	case errors.Is(err, app.ErrTradeTargetRequired):
+		code = "trade_target_required"
+	case errors.Is(err, app.ErrBrokerageCashMissing):
+		code = "brokerage_cash_missing"
+	case errors.Is(err, app.ErrBrokerageCashAmbiguous):
+		code = "brokerage_cash_ambiguous"
+	case errors.Is(err, app.ErrHoldingNotFound):
+		code = "holding_not_found"
 	default:
 		return problem.Details{}, false
 	}
+
+	return problem.New(http.StatusUnprocessableEntity, code, err.Error()), true
 }

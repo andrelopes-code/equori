@@ -6981,7 +6981,8 @@ components:
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
             last_owner, already_member, invitation_not_found, invitation_email_mismatch,
             confirmation_mismatch, books_has_members, last_books,
-            backup_off, backup_failed, password_too_short, institution_in_use.
+            backup_off, backup_failed, password_too_short, institution_in_use,
+            trade_target_required, brokerage_cash_missing, brokerage_cash_ambiguous, holding_not_found.
         request_id:
           type: string
         retry_at:
@@ -10462,16 +10463,24 @@ components:
     TradeInput:
       type: object
       additionalProperties: false
-      required: [account_id, cash_account_id, side, date, quantity, unit_price]
+      required: [side, date, quantity, unit_price]
       properties:
+        brokerage_id:
+          type: string
+          format: uuid
+          description: The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
+        instrument:
+          type: string
+          pattern: "^[A-Z0-9.]{2,20}$"
+          description: The investment's code; its holding account is created on the first purchase.
         account_id:
           type: string
           format: uuid
-          description: The account holding the security.
+          description: The account holding the security. Absent when brokerage_id and instrument name the target.
         cash_account_id:
           type: string
           format: uuid
-          description: A cash account of the same brokerage, in the base currency.
+          description: A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
         side:
           $ref: "#/components/schemas/TradeSide"
         date:
@@ -10521,16 +10530,24 @@ components:
     InvestmentIncomeInput:
       type: object
       additionalProperties: false
-      required: [account_id, cash_account_id, income_type, date, gross, category_id]
+      required: [income_type, date, gross, category_id]
       properties:
+        brokerage_id:
+          type: string
+          format: uuid
+          description: The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
+        instrument:
+          type: string
+          pattern: "^[A-Z0-9.]{2,20}$"
+          description: The investment's code; its holding account is created on the first purchase.
         account_id:
           type: string
           format: uuid
-          description: The account holding the security that pays.
+          description: The account holding the security that pays. Absent when brokerage_id and instrument name the target.
         cash_account_id:
           type: string
           format: uuid
-          description: A cash account of the same brokerage, in the base currency.
+          description: A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
         income_type:
           $ref: "#/components/schemas/IncomeType"
         date:

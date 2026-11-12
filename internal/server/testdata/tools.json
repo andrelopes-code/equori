@@ -5302,7 +5302,7 @@
         },
         "currency": {
           "type": "string",
-          "description": "for create_account: currency or instrument code; the base currency when absent"
+          "description": "for create_account: ISO currency code; the base currency when absent; never an Investment code, which the first buy creates"
         },
         "parent_id": {
           "type": "string",
@@ -6814,7 +6814,7 @@
   },
   {
     "name": "record_investment",
-    "description": "Proposes an investment transaction in a brokerage: buy or sell a security for cash of the same brokerage at average cost, or record income paid on a security. Use it when the user reports a trade, a dividend or other investment income. Do not use it to define a new security: manage_instrument does. The user confirms first.",
+    "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage at average cost, or record income paid on an Investment. Name the Investment by brokerage_id and instrument, or by account_id. A first buy creates the Investment line; a sale or income needs an existing one. A Brokerage without a Cash account in the base currency is refused: create a Cash account in it first with manage_accounts_and_payees. Use it when the user reports a trade, a dividend or other investment income. Do not use it to define a new security: manage_instrument does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -6829,13 +6829,21 @@
             "income"
           ]
         },
+        "brokerage_id": {
+          "type": "string",
+          "description": "Brokerage that holds the Investment, from list_accounts; with instrument, instead of account_id"
+        },
+        "instrument": {
+          "type": "string",
+          "description": "code of the Investment, such as PETR4; its line in the Brokerage is created by the first buy"
+        },
         "account_id": {
           "type": "string",
-          "description": "security account inside a brokerage, from list_accounts"
+          "description": "Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"
         },
         "cash_account_id": {
           "type": "string",
-          "description": "cash account of the same brokerage"
+          "description": "Cash of the same Brokerage; the single open Cash in the base currency when absent"
         },
         "date": {
           "type": "string",
@@ -6889,8 +6897,6 @@
       },
       "required": [
         "kind",
-        "account_id",
-        "cash_account_id",
         "date"
       ],
       "additionalProperties": false

@@ -3234,16 +3234,24 @@ schemas:
   TradeInput:
     type: object
     additionalProperties: false
-    required: [account_id, cash_account_id, side, date, quantity, unit_price]
+    required: [side, date, quantity, unit_price]
     properties:
+      brokerage_id:
+        type: string
+        format: uuid
+        description: The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
+      instrument:
+        type: string
+        pattern: "^[A-Z0-9.]{2,20}$"
+        description: The investment's code; its holding account is created on the first purchase.
       account_id:
         type: string
         format: uuid
-        description: The account holding the security.
+        description: The account holding the security. Absent when brokerage_id and instrument name the target.
       cash_account_id:
         type: string
         format: uuid
-        description: A cash account of the same brokerage, in the base currency.
+        description: A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
       side:
         $ref: "#/components/schemas/TradeSide"
       date:
@@ -3293,16 +3301,24 @@ schemas:
   InvestmentIncomeInput:
     type: object
     additionalProperties: false
-    required: [account_id, cash_account_id, income_type, date, gross, category_id]
+    required: [income_type, date, gross, category_id]
     properties:
+      brokerage_id:
+        type: string
+        format: uuid
+        description: The brokerage that holds or will hold the investment. Exactly one of account_id or the pair brokerage_id and instrument.
+      instrument:
+        type: string
+        pattern: "^[A-Z0-9.]{2,20}$"
+        description: The investment's code; its holding account is created on the first purchase.
       account_id:
         type: string
         format: uuid
-        description: The account holding the security that pays.
+        description: The account holding the security that pays. Absent when brokerage_id and instrument name the target.
       cash_account_id:
         type: string
         format: uuid
-        description: A cash account of the same brokerage, in the base currency.
+        description: A cash account of the same brokerage, in the base currency. Absent when brokerage_id and instrument name the target.
       income_type:
         $ref: "#/components/schemas/IncomeType"
       date:
