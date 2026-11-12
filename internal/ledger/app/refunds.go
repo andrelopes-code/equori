@@ -170,90 +170,26 @@ func (s *Service) CancelPlan(ctx context.Context, booksID int64, planID uuid.UUI
 			return err
 		}
 
-		anticipated, err := r.AnticipatedReferences(ctx, booksID, pu.tx.ID)
+		st, err := s.loadCancelState(ctx, r, booksID, pu, installments)
 		if err != nil {
 			return err
 		}
 
-		charges, err := r.AnticipationCharges(ctx, booksID, pu.tx.ID)
+		postings, credited, err := cancelPostings(pu, st.open, date, creditStatement)
 		if err != nil {
 			return err
-		}
-
-		discount, err := r.AnticipationDiscount(ctx, booksID, pu.tx.ID)
-		if err != nil {
-			return err
-		}
-
-		var postings []domain.Posting
-		var total, billed, credited int64
-
-		open := charges
-		for _, in := range installments {
-			total -= in.Amount
-			if _, ok := anticipated[in.Reference]; !ok {
-				open = append(open, in)
-			}
-		}
-
-		for _, in := range open {
-			credited -= in.Amount
-			if !in.Closing.After(date) {
-				billed -= in.Amount
-				continue
-			}
-
-			ref := in.Reference
-
-			m, err := money.New(-in.Amount, pu.card.Instrument)
-			if err != nil {
-				return err
-			}
-
-			postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: &ref})
-		}
-
-		if billed > 0 {
-			m, err := money.New(billed, pu.card.Instrument)
-			if err != nil {
-				return err
-			}
-
-			postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: creditStatement})
 		}
 
 		if err := s.checkCeiling(ctx, r, pu, credited); err != nil {
 			return err
 		}
 
-		reversals, err := pu.reverseCategories(total)
+		reversals, err := s.cancelReversals(ctx, r, booksID, pu, st)
 		if err != nil {
 			return err
 		}
 
-		if discount > 0 {
-			discounts, err := r.SystemAccount(ctx, booksID, domain.RoleDiscounts)
-			if err != nil {
-				return err
-			}
-
-			m, err := money.New(discount, pu.card.Instrument)
-			if err != nil {
-				return err
-			}
-
-			reversals = append(reversals, domain.Posting{AccountID: discounts.ID, Amount: m})
-		}
-
-		w, err := s.writerFor(ctx, booksID)
-		if err != nil {
-			return err
-		}
-
-		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Cancellation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
-			Postings: append(postings, reversals...), Links: []domain.Link{{Type: domain.LinkCancellationOf, Target: pu.tx.ID}},
-		})
+		created, err = s.insertCancellation(ctx, r, booksID, pu, date, append(postings, reversals...))
 
 		return err
 	})
@@ -261,92 +197,109 @@ func (s *Service) CancelPlan(ctx context.Context, booksID int64, planID uuid.UUI
 	return created, err
 }
 
-// AnticipatePlan moves installments from..to to the target statement for amount; the
-// difference to their sum is a discount (M26, S15).
-func (s *Service) AnticipatePlan(ctx context.Context, booksID int64, planID uuid.UUID, date time.Time, from, to int, target domain.ReferenceMonth, amount money.Money) (domain.Transaction, error) {
-	var created domain.Transaction
-	err := s.repo.InTx(ctx, func(r Repository) error {
-		plan, pu, installments, err := s.lockPlan(ctx, r, booksID, planID)
+// cancelState holds what the cancellation of a plan reverses: the installments still open,
+// their total and the discount the anticipations granted.
+type cancelState struct {
+	open     []PlanInstallment
+	total    int64
+	discount int64
+}
+
+func (s *Service) loadCancelState(ctx context.Context, r Repository, booksID int64, pu purchase, installments []PlanInstallment) (cancelState, error) {
+	anticipated, err := r.AnticipatedReferences(ctx, booksID, pu.tx.ID)
+	if err != nil {
+		return cancelState{}, err
+	}
+
+	charges, err := r.AnticipationCharges(ctx, booksID, pu.tx.ID)
+	if err != nil {
+		return cancelState{}, err
+	}
+
+	discount, err := r.AnticipationDiscount(ctx, booksID, pu.tx.ID)
+	if err != nil {
+		return cancelState{}, err
+	}
+
+	st := cancelState{open: charges, discount: discount}
+	for _, in := range installments {
+		st.total -= in.Amount
+		if _, ok := anticipated[in.Reference]; !ok {
+			st.open = append(st.open, in)
+		}
+	}
+
+	return st, nil
+}
+
+// cancelPostings returns the card postings that reverse or credit the open installments and
+// the amount they credit.
+func cancelPostings(pu purchase, open []PlanInstallment, date time.Time, creditStatement *domain.ReferenceMonth) ([]domain.Posting, int64, error) {
+	var postings []domain.Posting
+	var billed, credited int64
+
+	for _, in := range open {
+		credited -= in.Amount
+		if !in.Closing.After(date) {
+			billed -= in.Amount
+			continue
+		}
+
+		ref := in.Reference
+
+		m, err := money.New(-in.Amount, pu.card.Instrument)
 		if err != nil {
-			return err
+			return nil, 0, err
 		}
 
-		if from < 1 || to < from || to > plan.Count {
-			return validationError("from_installment", fmt.Sprintf("installments must be within 1..%d", plan.Count))
-		}
+		postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: &ref})
+	}
 
-		cancelled, _, err := r.PlanState(ctx, booksID, pu.tx.ID)
+	if billed > 0 {
+		m, err := money.New(billed, pu.card.Instrument)
 		if err != nil {
-			return err
+			return nil, 0, err
 		}
 
-		if cancelled {
-			return validationError("from_installment", "the plan is cancelled")
-		}
+		postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: creditStatement})
+	}
 
-		anticipated, err := r.AnticipatedReferences(ctx, booksID, pu.tx.ID)
+	return postings, credited, nil
+}
+
+// cancelReversals returns the postings that reverse the categories of the purchase and the
+// discount of its anticipations.
+func (s *Service) cancelReversals(ctx context.Context, r Repository, booksID int64, pu purchase, st cancelState) ([]domain.Posting, error) {
+	reversals, err := pu.reverseCategories(st.total)
+	if err != nil {
+		return nil, err
+	}
+
+	if st.discount > 0 {
+		discounts, err := r.SystemAccount(ctx, booksID, domain.RoleDiscounts)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		var postings []domain.Posting
-
-		var sum int64
-		for _, in := range installments {
-			if in.Number < from || in.Number > to {
-				continue
-			}
-
-			if !in.Closing.After(date) {
-				return validationError("from_installment", fmt.Sprintf("installment %d is already billed", in.Number))
-			}
-
-			if _, ok := anticipated[in.Reference]; ok {
-				return validationError("from_installment", fmt.Sprintf("installment %d is already anticipated", in.Number))
-			}
-
-			ref := in.Reference
-
-			m, err := money.New(-in.Amount, pu.card.Instrument)
-			if err != nil {
-				return err
-			}
-
-			sum -= in.Amount
-			postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: m, CardRole: domain.RoleCredit, Statement: &ref})
-		}
-
-		if amount.Currency() != pu.card.Instrument || amount.Amount() <= 0 || amount.Amount() > sum {
-			return validationError("amount", fmt.Sprintf("must be positive and at most the installments' sum %d", sum))
-		}
-
-		postings = append(postings, domain.Posting{AccountID: pu.card.ID, Amount: amount.Neg(), CardRole: domain.RoleCharge, Statement: &target})
-		if discount := sum - amount.Amount(); discount > 0 {
-			discounts, err := r.SystemAccount(ctx, booksID, domain.RoleDiscounts)
-			if err != nil {
-				return err
-			}
-
-			m, err := money.New(-discount, pu.card.Instrument)
-			if err != nil {
-				return err
-			}
-
-			postings = append(postings, domain.Posting{AccountID: discounts.ID, Amount: m})
-		}
-
-		w, err := s.writerFor(ctx, booksID)
+		m, err := money.New(st.discount, pu.card.Instrument)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Anticipation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
-			Postings: postings, Links: []domain.Link{{Type: domain.LinkAnticipationOf, Target: pu.tx.ID}},
-		})
+		reversals = append(reversals, domain.Posting{AccountID: discounts.ID, Amount: m})
+	}
 
-		return err
+	return reversals, nil
+}
+
+func (s *Service) insertCancellation(ctx context.Context, r Repository, booksID int64, pu purchase, date time.Time, postings []domain.Posting) (domain.Transaction, error) {
+	w, err := s.writerFor(ctx, booksID)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return s.insert(ctx, r, domain.Transaction{
+		BooksID: booksID, Date: date, Description: fmt.Sprintf(w.Cancellation, pu.tx.Description), PayeeID: pu.tx.PayeeID,
+		Postings: postings, Links: []domain.Link{{Type: domain.LinkCancellationOf, Target: pu.tx.ID}},
 	})
-
-	return created, err
 }

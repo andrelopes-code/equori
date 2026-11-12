@@ -32,22 +32,8 @@ func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.Trade
 			return fieldErr("quantity", "must be an amount of "+string(security.Instrument), domain.ErrValidation)
 		}
 
-		// Two sales of one account serialize on its row, so each reads the holding the other left.
-		if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
-			return err
-		}
-
-		quantity, basis, err := r.Holding(ctx, booksID, security.ID, o.Date)
+		h, err := s.lockHolding(ctx, r, booksID, security, base, o.Date)
 		if err != nil {
-			return err
-		}
-
-		var h domain.Holding
-		if h.Quantity, err = s.AmountOf(ctx, quantity, security.Instrument); err != nil {
-			return err
-		}
-
-		if h.CostBasis, err = money.New(basis, base); err != nil {
 			return err
 		}
 
@@ -69,6 +55,30 @@ func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.Trade
 	})
 
 	return created, err
+}
+
+// lockHolding locks the security account and returns the holding it has on date.
+func (s *Service) lockHolding(ctx context.Context, r Repository, booksID int64, security domain.Account, base money.Currency, date time.Time) (domain.Holding, error) {
+	// Two sales of one account serialize on its row, so each reads the holding the other left.
+	if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
+		return domain.Holding{}, err
+	}
+
+	quantity, basis, err := r.Holding(ctx, booksID, security.ID, date)
+	if err != nil {
+		return domain.Holding{}, err
+	}
+
+	var h domain.Holding
+	if h.Quantity, err = s.AmountOf(ctx, quantity, security.Instrument); err != nil {
+		return domain.Holding{}, err
+	}
+
+	if h.CostBasis, err = money.New(basis, base); err != nil {
+		return domain.Holding{}, err
+	}
+
+	return h, nil
 }
 
 // RecordIncome records M18: income paid on a security into cash of the same brokerage

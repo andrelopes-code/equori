@@ -126,9 +126,27 @@ func statementFact(booksID int64, statementID uuid.UUID, source string, card dom
 // dateByFacts gives every statement of the card the dates of its effective facts, or the
 // rule's, and bills again the postings billed by a date that the new dates move (A86).
 func (s *Service) dateByFacts(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, rules domain.Rules) error {
-	stored, err := r.Statements(ctx, booksID, cardID)
+	fd, err := s.redateStatements(ctx, r, booksID, cardID, rules)
 	if err != nil {
 		return err
+	}
+
+	return s.moveRedatedPostings(ctx, r, booksID, cardID, rules, fd)
+}
+
+// factDates holds the closing date of each statement before and after the facts apply, and
+// the reference of each statement id.
+type factDates struct {
+	before map[domain.ReferenceMonth]time.Time
+	after  map[domain.ReferenceMonth]time.Time
+	refOf  map[uuid.UUID]domain.ReferenceMonth
+}
+
+// redateStatements stores the effective dates of every statement of the card.
+func (s *Service) redateStatements(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, rules domain.Rules) (factDates, error) {
+	stored, err := r.Statements(ctx, booksID, cardID)
+	if err != nil {
+		return factDates{}, err
 	}
 
 	before := make(map[domain.ReferenceMonth]time.Time, len(stored))
@@ -141,7 +159,7 @@ func (s *Service) dateByFacts(ctx context.Context, r Repository, booksID int64, 
 
 		closing, due, err := s.effectiveDates(ctx, st, rules)
 		if err != nil {
-			return err
+			return factDates{}, err
 		}
 
 		after[ref] = closing
@@ -150,22 +168,27 @@ func (s *Service) dateByFacts(ctx context.Context, r Repository, booksID int64, 
 		}
 
 		if err := r.UpdateStatementDates(ctx, st.ID, closing, due); err != nil {
-			return err
+			return factDates{}, err
 		}
 	}
 
+	return factDates{before: before, after: after, refOf: refOf}, nil
+}
+
+// moveRedatedPostings bills again the postings whose statement the new dates move.
+func (s *Service) moveRedatedPostings(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, rules domain.Rules, fd factDates) error {
 	postings, err := r.RedatablePostings(ctx, booksID, cardID)
 	if err != nil {
 		return err
 	}
 
 	for _, p := range postings {
-		was, err := domain.StatementOn(p.Date, before, rules, s.projectedClosing(ctx))
-		if err != nil || was != refOf[p.StatementID] {
+		was, err := domain.StatementOn(p.Date, fd.before, rules, s.projectedClosing(ctx))
+		if err != nil || was != fd.refOf[p.StatementID] {
 			continue
 		}
 
-		now, err := domain.StatementOn(p.Date, after, rules, s.projectedClosing(ctx))
+		now, err := domain.StatementOn(p.Date, fd.after, rules, s.projectedClosing(ctx))
 		if err != nil || now == was {
 			continue
 		}
@@ -288,48 +311,61 @@ func (s *Service) RecordCardOpening(ctx context.Context, booksID int64, cardID u
 			return err
 		}
 
-		ref, err := s.statementDue(ctx, r, booksID, cardID, due)
+		ref, closing, err := s.openingStatement(ctx, r, booksID, cardID, due)
 		if err != nil {
 			return err
 		}
 
-		rules, err := r.BillingRules(ctx, booksID, cardID)
-		if err != nil {
-			return err
-		}
-
-		if _, err := s.ensureStatement(ctx, r, booksID, cardID, ref, rules); err != nil {
-			return err
-		}
-
-		closing, err := r.StatementClosings(ctx, booksID, cardID)
-		if err != nil {
-			return err
-		}
-
-		opening, err := r.SystemAccount(ctx, booksID, domain.RoleOpeningBalances)
-		if err != nil {
-			return err
-		}
-
-		date := closing[ref].AddDate(0, 0, -1)
-		if date.Before(card.OpenedOn) {
-			date = card.OpenedOn
-		}
-
-		w, err := s.writerFor(ctx, booksID)
-		if err != nil {
-			return err
-		}
-
-		_, err = s.insert(ctx, r, domain.Transaction{
-			BooksID: booksID, Date: date, Description: fmt.Sprintf(w.CardOpeningBalance, card.Name), Origin: domain.OriginSystem,
-			Postings: []domain.Posting{
-				{AccountID: cardID, Amount: total.Neg(), Statement: &ref},
-				{AccountID: opening.ID, Amount: total},
-			},
-		})
-
-		return err
+		return s.insertCardOpening(ctx, r, booksID, cardID, card, ref, closing, total)
 	})
+}
+
+// openingStatement ensures the statement of the bill due on due and returns its reference
+// and the closing dates of the card.
+func (s *Service) openingStatement(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, due time.Time) (domain.ReferenceMonth, map[domain.ReferenceMonth]time.Time, error) {
+	ref, err := s.statementDue(ctx, r, booksID, cardID, due)
+	if err != nil {
+		return domain.ReferenceMonth{}, nil, err
+	}
+
+	rules, err := r.BillingRules(ctx, booksID, cardID)
+	if err != nil {
+		return domain.ReferenceMonth{}, nil, err
+	}
+
+	if _, err := s.ensureStatement(ctx, r, booksID, cardID, ref, rules); err != nil {
+		return domain.ReferenceMonth{}, nil, err
+	}
+
+	closing, err := r.StatementClosings(ctx, booksID, cardID)
+
+	return ref, closing, err
+}
+
+// insertCardOpening records the opening balance of card on the day before the closing of ref.
+func (s *Service) insertCardOpening(ctx context.Context, r Repository, booksID int64, cardID uuid.UUID, card domain.Account, ref domain.ReferenceMonth, closing map[domain.ReferenceMonth]time.Time, total money.Money) error {
+	opening, err := r.SystemAccount(ctx, booksID, domain.RoleOpeningBalances)
+	if err != nil {
+		return err
+	}
+
+	date := closing[ref].AddDate(0, 0, -1)
+	if date.Before(card.OpenedOn) {
+		date = card.OpenedOn
+	}
+
+	w, err := s.writerFor(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.insert(ctx, r, domain.Transaction{
+		BooksID: booksID, Date: date, Description: fmt.Sprintf(w.CardOpeningBalance, card.Name), Origin: domain.OriginSystem,
+		Postings: []domain.Posting{
+			{AccountID: cardID, Amount: total.Neg(), Statement: &ref},
+			{AccountID: opening.ID, Amount: total},
+		},
+	})
+
+	return err
 }

@@ -42,25 +42,9 @@ func (s *Service) Reimburse(ctx context.Context, booksID int64, req Reimbursemen
 }
 
 func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest) (domain.Transaction, error) {
-	ids := []uuid.UUID{req.TransactionID}
-	for _, a := range req.Allocations {
-		if !slices.Contains(ids, a.OriginalID) {
-			ids = append(ids, a.OriginalID)
-		}
-	}
-
-	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
-	locked := make(map[uuid.UUID]domain.Transaction, len(ids))
-
-	var all []domain.Transaction
-	for _, id := range ids {
-		t, err := r.LockTransaction(ctx, booksID, id)
-		if err != nil {
-			return domain.Transaction{}, err
-		}
-
-		locked[id] = t
-		all = append(all, t)
+	locked, all, err := s.lockReimbursed(ctx, r, booksID, req)
+	if err != nil {
+		return domain.Transaction{}, err
 	}
 
 	uncategorized, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedIncome)
@@ -80,25 +64,9 @@ func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, re
 
 	prev := locked[req.TransactionID]
 
-	allocations := make([]domain.Allocation, len(req.Allocations))
-	for i, a := range req.Allocations {
-		if err := checkAllocationCurrency(prev, accounts, i, a); err != nil {
-			return domain.Transaction{}, err
-		}
-
-		original := locked[a.OriginalID]
-		if a.CategoryID != uuid.Nil && a.OriginalID != req.TransactionID {
-			if original, err = s.recategorizeOriginal(ctx, r, original, accounts, a.CategoryID, req.Cause); err != nil {
-				return domain.Transaction{}, err
-			}
-		}
-
-		held, err := r.ReimbursedTotal(ctx, booksID, a.OriginalID, req.TransactionID)
-		if err != nil {
-			return domain.Transaction{}, err
-		}
-
-		allocations[i] = domain.Allocation{Original: original, Amount: a.Amount.Amount(), HeldByOthers: held}
+	allocations, err := s.allocations(ctx, r, booksID, req, locked, accounts)
+	if err != nil {
+		return domain.Transaction{}, err
 	}
 
 	next, err := prev.Reimburse(req.ExpectedVersion, allocations, uncategorized, accounts)
@@ -116,6 +84,62 @@ func (s *Service) reimburse(ctx context.Context, r Repository, booksID int64, re
 	}
 
 	return next, s.publishCategorized(ctx, r, next, prev, accounts, req.Cause)
+}
+
+// lockReimbursed locks the reimbursement and its originals in id order.
+func (s *Service) lockReimbursed(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest) (map[uuid.UUID]domain.Transaction, []domain.Transaction, error) {
+	ids := []uuid.UUID{req.TransactionID}
+	for _, a := range req.Allocations {
+		if !slices.Contains(ids, a.OriginalID) {
+			ids = append(ids, a.OriginalID)
+		}
+	}
+
+	slices.SortFunc(ids, func(a, b uuid.UUID) int { return bytes.Compare(a[:], b[:]) })
+	locked := make(map[uuid.UUID]domain.Transaction, len(ids))
+
+	var all []domain.Transaction
+	for _, id := range ids {
+		t, err := r.LockTransaction(ctx, booksID, id)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		locked[id] = t
+		all = append(all, t)
+	}
+
+	return locked, all, nil
+}
+
+// allocations builds the domain allocations of req, recategorizing the originals it names.
+func (s *Service) allocations(ctx context.Context, r Repository, booksID int64, req ReimbursementRequest, locked map[uuid.UUID]domain.Transaction, accounts map[uuid.UUID]domain.Account) ([]domain.Allocation, error) {
+	var err error
+
+	prev := locked[req.TransactionID]
+
+	allocations := make([]domain.Allocation, len(req.Allocations))
+	for i, a := range req.Allocations {
+		if err := checkAllocationCurrency(prev, accounts, i, a); err != nil {
+			return nil, err
+		}
+
+		original := locked[a.OriginalID]
+		if a.CategoryID != uuid.Nil && a.OriginalID != req.TransactionID {
+			if original, err = s.recategorizeOriginal(ctx, r, original, accounts, a.CategoryID, req.Cause); err != nil {
+				return nil, err
+			}
+		}
+
+		held, err := r.ReimbursedTotal(ctx, booksID, a.OriginalID, req.TransactionID)
+		if err != nil {
+			return nil, err
+		}
+
+		allocations[i] = domain.Allocation{Original: original, Amount: a.Amount.Amount(), HeldByOthers: held}
+	}
+
+	return allocations, nil
 }
 
 // checkAllocationCurrency requires the amount in the currency of the category side of t.

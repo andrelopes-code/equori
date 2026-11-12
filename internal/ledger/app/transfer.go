@@ -90,6 +90,12 @@ func (s *Service) transfer(ctx context.Context, r Repository, booksID int64, req
 		return TransferResult{Kept: t.ID}, s.saveTransfer(ctx, r, t, plain, accounts, req.Cause)
 	}
 
+	return s.pairWithCandidate(ctx, r, booksID, req, t, target, accounts, candidate)
+}
+
+// pairWithCandidate pairs t with the opposite transfer candidate, or keeps the candidate
+// when it holds a reconciled posting.
+func (s *Service) pairWithCandidate(ctx context.Context, r Repository, booksID int64, req TransferRequest, t domain.Transaction, target domain.Account, accounts map[uuid.UUID]domain.Account, candidate uuid.UUID) (TransferResult, error) {
 	other, err := r.LockTransaction(ctx, booksID, candidate)
 	if err != nil {
 		return TransferResult{}, err

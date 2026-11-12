@@ -94,6 +94,21 @@ func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id
 		return nil, nil, err
 	}
 
+	out, remaining, allocated, err := candidateList(rows, byID, instrument)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if allocated {
+		return out, nil, nil
+	}
+
+	return out, suggestedCombination(rows, remaining, inflow), nil
+}
+
+// candidateList builds the candidates of rows, their remaining amounts and whether any row
+// already holds an allocation.
+func candidateList(rows []CandidateRow, byID map[uuid.UUID]domain.Transaction, instrument money.Currency) ([]ReimbursementCandidate, []int64, bool, error) {
 	out := make([]ReimbursementCandidate, 0, len(rows))
 	remaining := make([]int64, len(rows))
 
@@ -101,12 +116,12 @@ func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id
 	for i, row := range rows {
 		rest, err := money.New(row.Remaining, instrument)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, false, err
 		}
 
 		held, err := money.New(row.Allocated, instrument)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, false, err
 		}
 
 		out = append(out, ReimbursementCandidate{Transaction: byID[row.ID], Remaining: rest, Allocated: held})
@@ -114,10 +129,11 @@ func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id
 		allocated = allocated || row.Allocated > 0
 	}
 
-	if allocated {
-		return out, nil, nil
-	}
+	return out, remaining, allocated, nil
+}
 
+// suggestedCombination returns the ids of the single combination of rows that adds up to inflow.
+func suggestedCombination(rows []CandidateRow, remaining []int64, inflow int64) []uuid.UUID {
 	var suggestion []uuid.UUID
 	if picked, ok := domain.ExactSubset(remaining, inflow); ok {
 		for _, i := range picked {
@@ -125,7 +141,7 @@ func (s *Service) ReimbursementCandidates(ctx context.Context, booksID int64, id
 		}
 	}
 
-	return out, suggestion, nil
+	return suggestion
 }
 
 // transactionsByID loads the transactions whose ids ids yields.

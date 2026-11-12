@@ -163,8 +163,6 @@ func (s *Service) insert(ctx context.Context, r Repository, t domain.Transaction
 
 // correctIn is CorrectTransaction inside the database transaction of r.
 func (s *Service) correctIn(ctx context.Context, r Repository, booksID int64, id uuid.UUID, expectedVersion int, next domain.Transaction, reason string) (domain.Transaction, error) {
-	var corrected domain.Transaction
-
 	prev, err := r.LockTransaction(ctx, booksID, id)
 	if err != nil {
 		return domain.Transaction{}, err
@@ -192,8 +190,19 @@ func (s *Service) correctIn(ctx context.Context, r Repository, booksID int64, id
 		return domain.Transaction{}, err
 	}
 
+	if err := s.applyCorrection(ctx, r, prev, next, expectedVersion, accounts, reason); err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return s.publishCorrected(ctx, r, booksID, id, prev, accounts)
+}
+
+// applyCorrection stores next as the version after prev.
+func (s *Service) applyCorrection(ctx context.Context, r Repository, prev, next domain.Transaction, expectedVersion int, accounts map[uuid.UUID]domain.Account, reason string) error {
+	var err error
 	if prev.HasInstallments() {
 		// The postings keep their rows: the plan and the statements stay as they are.
+		var corrected domain.Transaction
 		if corrected, err = prev.CorrectDetails(next, expectedVersion); err == nil {
 			err = r.ReplaceCategoryPostings(ctx, prev, corrected, reason)
 		}
@@ -201,12 +210,14 @@ func (s *Service) correctIn(ctx context.Context, r Repository, booksID int64, id
 		_, err = s.correct(ctx, r, prev, next, expectedVersion, accounts, reason)
 	}
 
-	if err != nil {
-		return domain.Transaction{}, err
-	}
+	return err
+}
 
+// publishCorrected reloads the stored transaction and publishes its correction.
+func (s *Service) publishCorrected(ctx context.Context, r Repository, booksID int64, id uuid.UUID, prev domain.Transaction, accounts map[uuid.UUID]domain.Account) (domain.Transaction, error) {
 	// The stored postings carry the ids the database assigned.
-	if corrected, err = r.Transaction(ctx, booksID, id); err != nil {
+	corrected, err := r.Transaction(ctx, booksID, id)
+	if err != nil {
 		return domain.Transaction{}, err
 	}
 
