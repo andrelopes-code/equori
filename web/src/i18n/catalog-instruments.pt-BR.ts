@@ -239,6 +239,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.data.open": "Ver fontes",
   "instrument.data.summary":
     "Cotações: {count}, de {from} a {to}. Fontes: {sources}.",
+  "instrument.data.summaryNoSources": "Cotações: {count}, de {from} a {to}.",
   "instrument.data.scale": "Casas decimais da quantidade: {scale}",
   "instrument.data.layer.description":
     "De onde vêm as cotações, até onde chegam e o que fazer quando faltam.",

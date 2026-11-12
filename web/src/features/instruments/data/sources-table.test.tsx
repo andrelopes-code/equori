@@ -65,6 +65,28 @@ describe("Sources of an instrument", () => {
       }),
     ).toBeInTheDocument();
   });
+
+  it("L2: writes the count with the grouping of the locale and no sources clause when none is enabled", async () => {
+    const petr = instrumentFixtures.find((i) => i.code === "PETR4");
+    const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        json(200, {
+          ...petr,
+          coverage: {
+            first: "2026-09-24",
+            last: "2026-10-16",
+            count: 4965,
+            stale: false,
+            sources: [],
+          },
+        }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+
+    expect(
+      await screen.findByText("Quotes: 4,965, from 09/24/2026 to 10/16/2026."),
+    ).toBeVisible();
+  });
 });
 
 function twoSources() {

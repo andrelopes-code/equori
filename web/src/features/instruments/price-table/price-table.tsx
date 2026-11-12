@@ -10,6 +10,7 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
+import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { sourceLabel } from "@/features/instruments/model/instrument-labels";
@@ -19,8 +20,11 @@ import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import type { AmountTextTone } from "@/ui/money/amount-tone";
+import { useAmountTone } from "@/ui/money/amount-tone";
 
 import styles from "@/features/instruments/price-table/price-table.module.css";
+import layer from "@/ui/dialogs/detail-dialog.module.css";
 
 type Price = components["schemas"]["Price"];
 
@@ -40,12 +44,20 @@ export function PriceTable({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
+  const amountTone = useAmountTone();
   const sorted = [...prices].sort((a, b) => b.date.localeCompare(a.date));
   const rows = sorted
     .map((price, i) => ({ price, older: sorted[i + 1] }))
     .filter(({ price }) => source === null || price.source === source);
   const value = (p: Price) =>
     fmt.hidden ? MASK : formatPrice(p.value, locale);
+  const tone = (p: Price, older: Price | undefined): AmountTextTone => {
+    const bp = older === undefined ? null : changeBp(older.value, p.value);
+
+    if (bp === null || bp === 0) return "inherit";
+
+    return amountTone("result", bp < 0 ? "out" : "in");
+  };
   const change = (p: Price, older: Price | undefined) => {
     const bp = older === undefined ? null : changeBp(older.value, p.value);
     if (bp === null) return "—";
@@ -54,7 +66,7 @@ export function PriceTable({
   };
 
   return (
-    <Table columns={4} variant="framed" stickyHeader>
+    <Table columns={4} variant="framed" stickyHeader className={layer.table}>
       <TableContent
         aria-label={t("instrument.prices.caption")}
         scrollProps={{ className: styles.scroll }}
@@ -82,7 +94,11 @@ export function PriceTable({
               <TableRow key={p.date} value={p.date}>
                 <TableRowHeader>{formatDate(p.date, locale)}</TableRowHeader>
                 <TableCell numeric>{value(p)}</TableCell>
-                <TableCell numeric>{change(p, older)}</TableCell>
+                <TableCell numeric>
+                  <Text size="sm" numeric="tabular" tone={tone(p, older)}>
+                    {change(p, older)}
+                  </Text>
+                </TableCell>
                 <TableCell>{sourceLabel(t, p.source)}</TableCell>
               </TableRow>
             ))}

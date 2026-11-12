@@ -16,6 +16,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 import styles from "@/features/reports/net-worth/net-worth-table.module.css";
+import layer from "@/ui/dialogs/detail-dialog.module.css";
 
 interface NetWorthTableProps {
   rows: ReturnType<typeof netWorthRows>;
@@ -40,7 +41,7 @@ export function NetWorthTable({
   const none = t("report.none");
 
   return (
-    <Table columns={6} variant="framed" stickyHeader>
+    <Table columns={6} variant="framed" stickyHeader className={layer.table}>
       <TableContent scrollProps={{ className: styles.scroll }}>
         <TableCaption>{title}</TableCaption>
         <TableHead>

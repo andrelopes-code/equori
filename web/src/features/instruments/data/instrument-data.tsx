@@ -4,7 +4,7 @@ import { Heading } from "@slotted/react/typography";
 import type { components } from "@/api/schema.gen";
 import { InstrumentDataLayer } from "@/features/instruments/data/instrument-data-layer";
 import { sourceLabel } from "@/features/instruments/model/instrument-labels";
-import { formatDate } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { DetailDialog } from "@/ui/dialogs/detail-dialog";
 
@@ -33,15 +33,20 @@ export function InstrumentData({
   const named = sources
     .filter((s) => s.enabled)
     .map((s) => sourceLabel(t, s.id));
+  const range = {
+    count: numberFormatter(locale).format(count),
+    from: first ? formatDate(first, locale) : "",
+    to: last ? formatDate(last, locale) : "",
+  };
   const summary =
     count === 0 || !first || !last
       ? null
-      : t("instrument.data.summary", {
-          count,
-          from: formatDate(first, locale),
-          to: formatDate(last, locale),
-          sources: named.join(", "),
-        });
+      : t(
+          named.length === 0
+            ? "instrument.data.summaryNoSources"
+            : "instrument.data.summary",
+          { ...range, sources: named.join(", ") },
+        );
 
   return (
     <Stack gap={3}>

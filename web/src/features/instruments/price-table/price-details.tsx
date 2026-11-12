@@ -2,7 +2,7 @@ import type { components } from "@/api/schema.gen";
 import { sourceLabel } from "@/features/instruments/model/instrument-labels";
 import { priceStats } from "@/features/instruments/model/price-stats";
 import { PriceLayer } from "@/features/instruments/price-table/price-layer";
-import { formatDate } from "@/i18n/format";
+import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { DetailDialog } from "@/ui/dialogs/detail-dialog";
 
@@ -26,7 +26,7 @@ export function PriceDetails({ prices }: PriceDetailsProps) {
       title={t("instrument.prices.caption")}
       description={t("instrument.prices.layer.description")}
       summary={t("instrument.prices.summary", {
-        count: stats.count,
+        count: numberFormatter(locale).format(stats.count),
         from: formatDate(stats.first.date, locale),
         to: formatDate(stats.last.date, locale),
         source: sourceLabel(t, stats.last.source),

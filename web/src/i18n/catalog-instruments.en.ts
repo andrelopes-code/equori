@@ -236,6 +236,7 @@ export const instrumentsEn = {
   "instrument.data.open": "View sources",
   "instrument.data.summary":
     "Quotes: {count}, from {from} to {to}. Sources: {sources}.",
+  "instrument.data.summaryNoSources": "Quotes: {count}, from {from} to {to}.",
   "instrument.data.scale": "Quantity decimals: {scale}",
   "instrument.data.layer.description":
     "Where the quotes come from, how far they reach and what to do when they fall short.",

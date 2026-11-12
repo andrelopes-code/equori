@@ -18,6 +18,7 @@ import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 import styles from "@/features/reports/indicator-audit/indicator-audit-table.module.css";
+import layer from "@/ui/dialogs/detail-dialog.module.css";
 
 export interface IndicatorAuditTableProps {
   report: Indicators;
@@ -73,7 +74,12 @@ export function IndicatorAuditTable({ report }: IndicatorAuditTableProps) {
   };
 
   return (
-    <Table columns={columns.length} variant="framed" stickyHeader>
+    <Table
+      columns={columns.length}
+      variant="framed"
+      stickyHeader
+      className={layer.table}
+    >
       <TableContent scrollProps={{ className: styles.scroll }}>
         <TableCaption>{t("report.indicators.audit.caption")}</TableCaption>
 

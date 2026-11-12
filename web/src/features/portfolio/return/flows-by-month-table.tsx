@@ -19,6 +19,7 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 import styles from "@/features/portfolio/return/flows-by-month-table.module.css";
+import layer from "@/ui/dialogs/detail-dialog.module.css";
 
 type ReturnFlow = components["schemas"]["ReturnFlow"];
 
@@ -53,7 +54,7 @@ export function FlowsByMonthTable({ flows, currency }: FlowsByMonthTableProps) {
   }
 
   return (
-    <Table columns={3} variant="framed" stickyHeader>
+    <Table columns={3} variant="framed" stickyHeader className={layer.table}>
       <TableContent scrollProps={{ className: styles.scroll }}>
         <TableCaption>{t("holdings.method.flowsByMonth")}</TableCaption>
         <TableHead>

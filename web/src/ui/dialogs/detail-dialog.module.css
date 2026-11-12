@@ -1,9 +1,26 @@
 @layer app {
-  /* The layer keeps 48 px of the viewport free in both axes (DL3); no space token holds it. */
+  /*
+   * The layer keeps 48 px of the viewport free on each side and is at most 1200 px wide (DL3);
+   * no space token holds either value.
+   */
   .layer {
     box-sizing: border-box;
-    max-inline-size: calc(100dvw - 48px);
-    max-block-size: calc(100dvh - 48px);
+    max-inline-size: min(1200px, calc(100dvw - 96px));
+    max-block-size: calc(100dvh - 96px);
+  }
+
+  /*
+   * A sticky table header takes the page ground, which is darker than the layer it sits in. In a
+   * layer it takes the layer's own surface; the glass fill keeps the theme's alpha.
+   */
+  .table {
+    --slotted-table-header-surface: var(--slotted-surface-raised);
+    --slotted-table-sticky-surface: var(--slotted-surface-raised);
+    --glass-fill-sticky: color-mix(
+      in oklab,
+      var(--slotted-surface-raised) var(--glass-alpha-sticky, 72%),
+      transparent
+    );
   }
 
   /* The figure strip: full width, above the main content. */

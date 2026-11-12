@@ -5,7 +5,6 @@ import type { components } from "@/api/schema.gen";
 import { InstrumentCoverage } from "@/features/instruments/coverage/instrument-coverage";
 import { SourcesTable } from "@/features/instruments/data/sources-table";
 import { useT } from "@/i18n/i18n-provider";
-import styles from "@/ui/dialogs/detail-dialog.module.css";
 
 type Instrument = components["schemas"]["Instrument"];
 type Coverage = components["schemas"]["InstrumentCoverage"];
@@ -17,7 +16,8 @@ interface InstrumentDataLayerProps {
   onRecord: () => void;
 }
 
-// The body of the data layer (L2): the coverage with its actions, the sources and the scale.
+// The body of the data layer (L2): the coverage with its actions, the sources and, as a note
+// under them, the scale.
 export function InstrumentDataLayer({
   instrument,
   coverage,
@@ -35,19 +35,13 @@ export function InstrumentDataLayer({
         onRecord={onRecord}
       />
 
-      <div className={styles.split}>
-        <div className={styles.main}>
-          {coverage.sources.length > 0 && (
-            <SourcesTable sources={coverage.sources} />
-          )}
-        </div>
+      {coverage.sources.length > 0 && (
+        <SourcesTable sources={coverage.sources} />
+      )}
 
-        <div className={styles.aside}>
-          <Text size="sm" tone="muted">
-            {t("instrument.data.scale", { scale: instrument.scale })}
-          </Text>
-        </div>
-      </div>
+      <Text size="sm" tone="muted">
+        {t("instrument.data.scale", { scale: instrument.scale })}
+      </Text>
     </Stack>
   );
 }
