@@ -6,6 +6,7 @@ import {
   toDraft,
   toInput,
 } from "@/features/portfolio/contribution-plan/plan-draft";
+import type { PlanDraft } from "@/features/portfolio/contribution-plan/plan-draft";
 import * as edits from "@/features/portfolio/contribution-plan/plan-edits";
 import type {
   EditDraft,
@@ -41,6 +42,9 @@ export function usePlanEditor(plan: Plan | undefined) {
     error: save.error,
     start: () => {
       change((d) => d);
+    },
+    startFrom: (from: PlanDraft) => {
+      setDraft(edits.startEditing(from));
     },
     discard: () => {
       setDraft(undefined);

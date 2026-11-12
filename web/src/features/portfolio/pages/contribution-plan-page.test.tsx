@@ -293,32 +293,4 @@ describe("Contribution plan page", () => {
       ).toBeInTheDocument();
     });
   });
-
-  it("draws only the header and the strip for a book without a plan", async () => {
-    localStorage.setItem(
-      "equori.locale",
-      JSON.stringify({ language: "pt", region: "BR" }),
-    );
-    const fetch = portfolioApi({
-      "GET /api/v1/contribution-plan": () =>
-        json(200, {
-          status: "complete",
-          total: brl(0),
-          classes: [],
-          outside: [],
-          missing: [],
-        }),
-    });
-    await renderApp("/portfolio/contribution-plan", { fetch });
-
-    expect(
-      await screen.findByRole("heading", {
-        name: catalogPtBR["contributionPlan.title"],
-      }),
-    ).toBeInTheDocument();
-    expect(
-      await screen.findByRole("textbox", { name: "Aporte" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
-  });
 });

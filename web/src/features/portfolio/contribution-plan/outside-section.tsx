@@ -1,15 +1,15 @@
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import type { MemberRef } from "@/features/portfolio/contribution-plan/plan-edits";
 import styles from "@/features/portfolio/contribution-plan/outside-section.module.css";
+import type { MemberRef } from "@/features/portfolio/contribution-plan/plan-edits";
+import { memberRefOf } from "@/features/portfolio/contribution-plan/plan-from-portfolio";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 type Plan = components["schemas"]["ContributionPlan"];
-type Outside = components["schemas"]["ContributionOutside"];
 
 interface OutsideSectionProps {
   view: Plan;
@@ -33,17 +33,6 @@ export function OutsideSection({
     value: String(i),
     label: cls.name,
   }));
-
-  function refOf(entry: Outside): MemberRef {
-    return {
-      ...(entry.account_id === undefined
-        ? {}
-        : { accountId: entry.account_id }),
-      ...(entry.instrument === undefined
-        ? {}
-        : { instrument: entry.instrument }),
-    };
-  }
 
   return (
     <section
@@ -71,7 +60,7 @@ export function OutsideSection({
               value={null}
               multiple={false}
               onChange={(next) => {
-                onChoose(Number(next), refOf(entry));
+                onChoose(Number(next), memberRefOf(entry));
               }}
             />
           </div>

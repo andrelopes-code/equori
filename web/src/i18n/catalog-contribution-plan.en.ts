@@ -24,6 +24,7 @@ export const contributionPlanEn = {
   "contributionPlan.copy": "Copy list",
   "contributionPlan.colTrack": "Position against the target",
   "contributionPlan.colExpand": "Assets",
+  "contributionPlan.colActions": "Actions",
   "contributionPlan.copyFailed": "The list could not be copied.",
   "contributionPlan.loadFailed": "The contribution plan could not be loaded.",
   "contributionPlan.retry": "Try again",

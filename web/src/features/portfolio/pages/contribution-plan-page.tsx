@@ -18,8 +18,10 @@ import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { contributionPlanQuery } from "@/features/portfolio/api";
 import { ClassTable } from "@/features/portfolio/contribution-plan/class-table";
+import { ContributionEmpty } from "@/features/portfolio/contribution-plan/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/contribution-save-bar";
 import { ContributionStrip } from "@/features/portfolio/contribution-plan/contribution-strip";
+import { IncompleteNotice } from "@/features/portfolio/contribution-plan/incomplete-notice";
 import { LeaveDialog } from "@/features/portfolio/contribution-plan/leave-dialog";
 import { OutsideSection } from "@/features/portfolio/contribution-plan/outside-section";
 import { PlanLoadFailed } from "@/features/portfolio/contribution-plan/plan-load-failed";
@@ -54,7 +56,7 @@ export function ContributionPlanPage() {
     view !== undefined && editor.draft !== undefined
       ? overlayDraft(view, editor.draft)
       : view;
-  const hasClasses = shown === undefined || shown.classes.length > 0;
+  const empty = shown?.classes.length === 0 && editor.draft === undefined;
   const nameless = editor.draft?.classes.some((c) => c.name.trim() === "");
 
   function handleSave() {
@@ -95,7 +97,7 @@ export function ContributionPlanPage() {
             </PageHeaderTitle>
 
             <PageHeaderActions>
-              {editor.draft === undefined && (
+              {editor.draft === undefined && !empty && (
                 <Button
                   disabled={plan.data === undefined}
                   onClick={editor.start}
@@ -122,7 +124,13 @@ export function ContributionPlanPage() {
             <FormNotice>{errorText(editor.error, t)}</FormNotice>
           )}
 
-          {shown !== undefined && (
+          {shown !== undefined && <IncompleteNotice view={shown} />}
+
+          {shown !== undefined && empty && (
+            <ContributionEmpty view={shown} onStart={editor.startFrom} />
+          )}
+
+          {shown !== undefined && !empty && (
             <ContributionStrip
               view={shown}
               amount={amount}
@@ -131,7 +139,7 @@ export function ContributionPlanPage() {
             />
           )}
 
-          {!plan.isError && hasClasses && (
+          {!plan.isError && !empty && (
             <div className={styles.layout}>
               <Stack gap={3}>
                 <ClassTable
@@ -150,7 +158,7 @@ export function ContributionPlanPage() {
             </div>
           )}
 
-          {shown !== undefined && (
+          {shown !== undefined && !empty && (
             <OutsideSection
               view={shown}
               memberName={memberName}

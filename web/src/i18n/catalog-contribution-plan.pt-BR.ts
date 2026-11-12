@@ -28,6 +28,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.copy": "Copiar lista",
   "contributionPlan.colTrack": "Posição frente ao alvo",
   "contributionPlan.colExpand": "Ativos",
+  "contributionPlan.colActions": "Ações",
   "contributionPlan.copyFailed": "Não foi possível copiar a lista.",
   "contributionPlan.loadFailed": "Não foi possível carregar o plano de aporte.",
   "contributionPlan.retry": "Tentar de novo",

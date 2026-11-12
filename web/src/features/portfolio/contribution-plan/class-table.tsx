@@ -89,7 +89,11 @@ export function ClassTable({
                 {t("contributionPlan.colAmount")}
               </TableColumnHeader>
               {editing && (
-                <TableColumnHeader sticky="end" className={styles.colActions} />
+                <TableColumnHeader sticky="end" className={styles.colActions}>
+                  <VisuallyHidden>
+                    {t("contributionPlan.colActions")}
+                  </VisuallyHidden>
+                </TableColumnHeader>
               )}
             </TableRow>
           </TableHead>

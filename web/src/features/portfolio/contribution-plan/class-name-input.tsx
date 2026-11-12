@@ -16,6 +16,7 @@ export function ClassNameInput({ value, onChange }: ClassNameInputProps) {
     <TextField
       className={styles.nameInput}
       size="sm"
+      autoFocus={value.trim() === ""}
       aria-label={t("contributionPlan.className")}
       autoComplete="off"
       invalid={value.trim() === ""}
