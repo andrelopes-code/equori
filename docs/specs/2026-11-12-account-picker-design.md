@@ -79,7 +79,7 @@ The mock is `/tmp/claude-1000/-home-dreco-dev-equori/53ed5bdb-f86e-443f-a63d-4fa
 | D4 | Does not apply. |
 | D5 | Does not apply. |
 | S1 | Does not apply: no operation in `api/openapi.yaml`. |
-| S2 | The sheet adapts below 600 px (bottom sheet, card rail). Whether the entry routes are phone routes follows ADR 027 and is checked in task 7. |
+| S2 | The sheet adapts below 600 px (bottom sheet, card rail). `/transactions/new` is a phone route (ADR 027, S3), so the sheet is verified at 390 px. |
 | S3 | The guide articles `transactions_and_postings.md` and `transfers.md` in `internal/assistant/guide/articles/` change in the same commit as the screen (task 7). |
 | S4 | Does not apply. |
 | X1 | Does not apply: no acceptance scenario of `docs/domain/06-scenarios.md`. |
