@@ -220,6 +220,7 @@ export function NewAccountScreen({
                     setDraft({ ...draft, kind: null });
                   }}
                   accounts={accounts}
+                  base={base}
                   currencies={currencies}
                   scale={scale}
                   errors={errors}

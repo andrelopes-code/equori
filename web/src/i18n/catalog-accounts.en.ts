@@ -148,6 +148,11 @@ export const accountsEn = {
   "accountForm.openingGroup": "Opening balance",
   "accountForm.opening": "Balance on the opening day",
   "accountForm.cashOpening": "Cash already in the brokerage",
+  "accountForm.cashMode.label": "Where is the money of this brokerage?",
+  "accountForm.cashMode.institution": "In my account at {institution}",
+  "accountForm.cashMode.own": "In the brokerage itself",
+  "accountForm.cashMode.ownOnly":
+    "No account at {institution} to pay from; the money stays in the brokerage.",
   "accountForm.openingOwed": "Owed on the opening day",
   "accountForm.openingCard": "Owed on the open statement",
   "accountForm.openingHint":

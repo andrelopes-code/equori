@@ -146,6 +146,11 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "Pintada atrás das iniciais da conta quando a instituição não tem logo.",
   "accountForm.openingGroup": "Saldo inicial",
   "accountForm.cashOpening": "Dinheiro que já está na corretora",
+  "accountForm.cashMode.label": "Onde está o dinheiro desta corretora?",
+  "accountForm.cashMode.institution": "Na minha conta no {institution}",
+  "accountForm.cashMode.own": "Na própria corretora",
+  "accountForm.cashMode.ownOnly":
+    "Não há conta no {institution} para pagar; o dinheiro fica na corretora.",
   "accountForm.opening": "Saldo no dia de abertura",
   "accountForm.openingOwed": "Devido no dia de abertura",
   "accountForm.openingCard": "Devido na fatura aberta",

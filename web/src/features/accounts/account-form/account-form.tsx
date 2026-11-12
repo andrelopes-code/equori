@@ -3,6 +3,8 @@ import { AccountDetailsSection } from "@/features/accounts/account-form/account-
 import type { AccountDraft } from "@/features/accounts/model/account-draft";
 import { AccountIdentitySection } from "@/features/accounts/account-form/account-identity-section";
 import { classOf } from "@/features/accounts/model/account-kinds";
+import { CashModeField } from "@/features/accounts/account-form/cash-mode-field";
+import { defaultCashMode } from "@/features/accounts/model/cash-mode";
 import { AccountOpeningSection } from "@/features/accounts/account-form/account-opening-section";
 import { CardSetupSection } from "@/features/accounts/card-setup/card-setup-section";
 import { parentCandidates } from "@/features/accounts/account-form/parent-candidates";
@@ -15,6 +17,9 @@ interface AccountFormProps {
   onChange: (next: AccountDraft) => void;
   onChangeKind?: () => void;
   accounts: readonly Account[];
+  // The base currency, which an account of the institution must hold to pay for a brokerage;
+  // only the create form reads it.
+  base?: string;
   editingId?: string;
   currencies: readonly string[];
   scale: (code: string) => number;
@@ -29,6 +34,7 @@ export function AccountForm({
   onChange,
   onChangeKind,
   accounts,
+  base,
   editingId,
   currencies,
   scale,
@@ -37,8 +43,24 @@ export function AccountForm({
   const kind = draft.kind ?? "checking";
   const parents = parentCandidates(accounts, classOf(kind), editingId);
 
+  const showOpening =
+    mode === "create" &&
+    (kind !== "brokerage" || draft.cashMode !== "institution");
+
+  // BC16: the choice follows the institution's accounts until the reader makes one.
   const patch = (next: Partial<AccountDraft>) => {
-    onChange({ ...draft, ...next });
+    const institutionChanged =
+      base !== undefined &&
+      ("institutionId" in next || "pendingInstitution" in next);
+    const institutionId =
+      "institutionId" in next ? next.institutionId : draft.institutionId;
+    onChange({
+      ...draft,
+      ...next,
+      ...(institutionChanged && {
+        cashMode: defaultCashMode(accounts, institutionId, base),
+      }),
+    });
   };
 
   return (
@@ -63,7 +85,18 @@ export function AccountForm({
         errors={errors}
       />
 
-      {mode === "create" && (
+      {mode === "create" && base !== undefined && (
+        <CashModeField
+          draft={draft}
+          accounts={accounts}
+          base={base}
+          onChange={(cashMode) => {
+            patch({ cashMode });
+          }}
+        />
+      )}
+
+      {showOpening && (
         <AccountOpeningSection
           kind={kind}
           value={draft.opening}

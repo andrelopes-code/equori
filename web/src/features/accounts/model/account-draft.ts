@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import type { Kind } from "@/features/accounts/model/account-kinds";
+import type { CashMode } from "@/features/accounts/model/cash-mode";
 import type { PendingInstitution } from "@/features/accounts/institutions/institution-field";
 import type { MessageKey } from "@/i18n/catalog.en";
 
@@ -41,6 +42,8 @@ export interface AccountDraft {
   color: number | null;
   // Minor units, at least zero: what an asset holds or what a liability owes on opening.
   opening: number;
+  // BC16: where a brokerage's money is; read for kind brokerage only.
+  cashMode: CashMode;
   card: CardSetupDraft;
 }
 
@@ -74,6 +77,7 @@ export function emptyAccountDraft(
     excludedFromLiquidity: false,
     color: null,
     opening: 0,
+    cashMode: "own",
     card: emptyCardSetup(),
   };
 }
@@ -171,6 +175,7 @@ export function draftFromAccount(account: Account): AccountDraft {
     excludedFromLiquidity: account.excluded_from_liquidity === true,
     color: account.color ?? null,
     opening: 0,
+    cashMode: "own",
     card: emptyCardSetup(),
   };
 }

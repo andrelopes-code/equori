@@ -270,4 +270,18 @@ describe("createAccountSteps", () => {
     });
     expect(steps.map((s) => s.key)).toEqual(["cash"]);
   });
+
+  // BC16: money paid from an account of the institution has no cash account and no opening.
+  it("creates no cash account and no opening balance when the money stays in the institution", () => {
+    const steps = createAccountSteps(
+      draft({
+        kind: "brokerage",
+        name: "Inter",
+        opening: 50000,
+        cashMode: "institution",
+      }),
+      { openingBalances: opening, cashName: "Cash" },
+    );
+    expect(steps).toEqual([]);
+  });
 });

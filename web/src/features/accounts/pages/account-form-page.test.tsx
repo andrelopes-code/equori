@@ -160,6 +160,89 @@ describe("New account", () => {
     ).toBeInTheDocument();
   });
 
+  // BC16: the form asks where the money is once an institution is chosen, for a brokerage only.
+  it("asks where the money of a brokerage is after the institution is chosen", async () => {
+    await renderApp("/accounts/new?kind=brokerage", { fetch: api([]) });
+    await screen.findByRole("textbox", { name: catalogEn["accountForm.name"] });
+    const label = catalogEn["accountForm.cashMode.label"];
+    expect(screen.queryByRole("group", { name: label })).toBeNull();
+
+    const institution = screen.getByRole("combobox", {
+      name: new RegExp(catalogEn["accountForm.institution"]),
+    });
+    await userEvent.click(institution);
+    await userEvent.type(institution, "Nubank");
+    await userEvent.click(
+      await screen.findByRole("option", { name: /^Nubank/ }),
+    );
+
+    const group = await screen.findByRole("group", { name: label });
+    expect(
+      within(group).getByRole("radio", {
+        name: words("accountForm.cashMode.institution", {
+          institution: "Nubank",
+        }),
+      }),
+    ).toBeChecked();
+    expect(
+      screen.queryByText(catalogEn["accountForm.cashOpening"]),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      within(group).getByRole("radio", {
+        name: catalogEn["accountForm.cashMode.own"],
+      }),
+    );
+    expect(
+      await screen.findByText(catalogEn["accountForm.cashOpening"]),
+    ).toBeInTheDocument();
+  });
+
+  it("states that the money stays in the brokerage when the institution has no account to pay from", async () => {
+    await renderApp("/accounts/new?kind=brokerage", { fetch: api([]) });
+    await screen.findByRole("textbox", { name: catalogEn["accountForm.name"] });
+    const institution = screen.getByRole("combobox", {
+      name: new RegExp(catalogEn["accountForm.institution"]),
+    });
+    await userEvent.click(institution);
+    await userEvent.type(institution, "Itaú");
+    await userEvent.click(
+      // The institution of the book, not the catalogue entries that share the prefix.
+      (await screen.findAllByRole("option", { name: /^Itaú/ })).find((o) =>
+        o.textContent.endsWith("Itaú341"),
+      ) ?? institution,
+    );
+
+    expect(
+      await screen.findByText(
+        words("accountForm.cashMode.ownOnly", { institution: "Itaú" }),
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: /^In my account/ })).toBeNull();
+    expect(
+      screen.getByText(catalogEn["accountForm.cashOpening"]),
+    ).toBeInTheDocument();
+  });
+
+  it("does not ask where the money is for another kind", async () => {
+    await renderApp("/accounts/new?kind=checking", { fetch: api([]) });
+    await screen.findByRole("textbox", { name: catalogEn["accountForm.name"] });
+    const institution = screen.getByRole("combobox", {
+      name: new RegExp(catalogEn["accountForm.institution"]),
+    });
+    await userEvent.click(institution);
+    await userEvent.type(institution, "Nubank");
+    await userEvent.click(
+      await screen.findByRole("option", { name: /^Nubank/ }),
+    );
+
+    expect(
+      screen.queryByRole("group", {
+        name: catalogEn["accountForm.cashMode.label"],
+      }),
+    ).toBeNull();
+  });
+
   it("opens on the card's billing cycle when the kind is given", async () => {
     await renderApp("/accounts/new?kind=credit_card", { fetch: api([]) });
     expect(

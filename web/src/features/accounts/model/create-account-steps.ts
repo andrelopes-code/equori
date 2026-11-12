@@ -74,6 +74,8 @@ export function createAccountSteps(
   let cashId: string | undefined;
   const isCard = draft.kind === "credit_card";
   const isBrokerage = draft.kind === "brokerage";
+  // BC16: money paid from an account of the institution needs neither a Caixa nor an opening.
+  const hasCash = !isBrokerage || draft.cashMode !== "institution";
   const liability = draft.kind !== null && classOf(draft.kind) === "liability";
   if (isCard) {
     const card = draft.card;
@@ -122,7 +124,7 @@ export function createAccountSteps(
       });
     }
   }
-  if (draft.kind === "brokerage") {
+  if (isBrokerage && hasCash) {
     steps.push({
       key: "cash",
       run: async (api, id) => {
@@ -149,7 +151,7 @@ export function createAccountSteps(
       },
     });
   }
-  if (draft.opening > 0) {
+  if (draft.opening > 0 && hasCash) {
     steps.push({
       key: "opening",
       run: async (api, id) => {
