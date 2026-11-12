@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
-import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 import { foodID, sharedRoutes } from "@/testing/transaction-api";
 
@@ -193,14 +192,14 @@ describe("AccountField on a wide screen", () => {
     await typeAmount("28640");
     await openSheet();
     await waitFor(() => {
-      expect(figure(option("Itau"))).toBe("leaves R$ 4,025.70");
+      expect(figure(option("Caixinha"))).toBe("leaves R$ 6,663.85");
     });
+    expect(figure(option("Itau"))).toBe("");
     expect(text(option("Itau"))).toContain("checking · balance R$ 4,312.10");
     expect(figure(option("Visa"))).toBe("statement 11/05");
     expect(text(option("Visa"))).toContain(
       "credit card · free limit R$ 3,157.23",
     );
-    expect(figure(option("Caixinha"))).toBe("leaves R$ 6,663.85");
     expect(text(option("Caixinha"))).not.toContain("yield");
     expect(option("Inter")).toBeDisabled();
     expect(figure(option("Inter"))).toBe(
@@ -233,10 +232,9 @@ describe("AccountField on a wide screen", () => {
       name: "",
     });
     await waitFor(() => {
-      expect(status.textContent.replace(/\u00a0/g, " ")).toBe(
-        "The account balance becomes R$ 4,025.70.",
-      );
+      expect(trigger()).toHaveTextContent("Itau");
     });
+    expect(status.textContent).toBe("");
     expect(trigger().getAttribute("aria-describedby")).toContain(status.id);
     await openSheet();
     await waitFor(() => {
@@ -249,7 +247,7 @@ describe("AccountField on a wide screen", () => {
   it("marks the suggested account where it stands, with the reason", async () => {
     await renderApp("/transactions/new", { fetch: fakeApi(routes) });
     const category = await screen.findByRole("combobox", {
-      name: optionalName(catalogEn["category.label"]),
+      name: catalogEn["category.label"],
     });
     await userEvent.click(category);
     await userEvent.type(category, "Mercado");

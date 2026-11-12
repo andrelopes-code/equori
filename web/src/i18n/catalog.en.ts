@@ -1095,6 +1095,7 @@ export const catalogEn = {
   "accountChoice.sentence.reserve": "The reserve balance becomes {value}.",
   "accountChoice.sentence.statement": "Goes on the statement due {value}.",
   "accountChoice.sentence.limit": "The free limit becomes {value}.",
+  "accountChoice.sentence.settles": "Pays the statement due {value}.",
   "weekday.monday": "Monday",
   "weekday.tuesday": "Tuesday",
   "weekday.wednesday": "Wednesday",

@@ -6,6 +6,7 @@ import type { components } from "@/api/schema.gen";
 import { AccountMark } from "@/features/accounts";
 import styles from "@/features/transactions/account-field/account-field.module.css";
 import { AccountDetail } from "@/features/transactions/account-field/account-detail";
+import { operationOf } from "@/features/transactions/account-field/account-operation";
 import {
   groupAccounts,
   pickable,
@@ -84,14 +85,15 @@ export function AccountField({
     accounts: offered,
     all: accounts,
     amount,
-    direction,
+    operation: operationOf(kind, direction),
+    currency,
     date,
     categoryId,
     payeeId,
   });
-  // Without an amount an option has no consequence to state.
+  // Without an amount an option has no consequence to state and no reason to be unavailable.
   const choices = compact
-    ? computed.map((c) => ({ ...c, consequence: null }))
+    ? computed.map((c) => ({ ...c, consequence: null, unavailable: null }))
     : computed;
   const chosen = choices.find((c) => c.account.id === value);
   const describedBy = [compact ? undefined : sentenceId, field?.describedBy]

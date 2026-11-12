@@ -1100,6 +1100,7 @@ export const catalogPtBR: Catalog = {
   "accountChoice.sentence.reserve": "O saldo da reserva fica em {value}.",
   "accountChoice.sentence.statement": "Entra na fatura que vence {value}.",
   "accountChoice.sentence.limit": "O limite livre fica em {value}.",
+  "accountChoice.sentence.settles": "Quita a fatura que vence {value}.",
   "weekday.monday": "segunda-feira",
   "weekday.tuesday": "terça-feira",
   "weekday.wednesday": "quarta-feira",

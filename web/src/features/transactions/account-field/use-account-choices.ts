@@ -13,9 +13,13 @@ import { goalsQuery } from "@/features/planning";
 import { institutionsQuery, payeesQuery } from "@/features/setup";
 import {
   consequenceOf,
-  unavailableReason,
+  unavailableOf,
 } from "@/features/transactions/account-field/account-consequence";
-import type { Consequence } from "@/features/transactions/account-field/account-consequence";
+import type {
+  Consequence,
+  Unavailable,
+} from "@/features/transactions/account-field/account-consequence";
+import type { Operation } from "@/features/transactions/account-field/account-operation";
 import { groupOf } from "@/features/transactions/model/account-groups";
 import type { AccountGroup } from "@/features/transactions/model/account-groups";
 import {
@@ -42,7 +46,7 @@ export interface AccountChoice {
   balance: number | undefined;
   freeLimit: number | undefined;
   consequence: Consequence | null;
-  unavailable: "noFreeLimit" | null;
+  unavailable: Unavailable | null;
 }
 
 export interface SuggestionView {
@@ -56,7 +60,8 @@ export function useAccountChoices({
   accounts,
   all,
   amount,
-  direction,
+  operation,
+  currency,
   date,
   categoryId,
   payeeId,
@@ -66,7 +71,9 @@ export function useAccountChoices({
   // Every account of the user, which names the category of a suggestion.
   all: readonly Account[];
   amount: number;
-  direction: "out" | "in";
+  operation: Operation;
+  // The entry's currency.
+  currency: string;
   date: string;
   categoryId: string | null;
   payeeId: string | null;
@@ -133,12 +140,13 @@ export function useAccountChoices({
       consequence: consequenceOf({
         account,
         amount,
-        direction,
+        operation,
+        currency,
         date,
         balance,
         placement: placementOf.get(account.id) ?? undefined,
       }),
-      unavailable: unavailableReason(account, amount, direction),
+      unavailable: unavailableOf(account, amount, operation, currency),
     };
   });
 

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { components } from "@/api/schema.gen";
 import type { Consequence } from "@/features/transactions/account-field/account-consequence";
 import styles from "@/features/transactions/account-field/consequence-sentence.module.css";
+import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDayMonthLong } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { MoneyFigure } from "@/ui/money/money-figure";
@@ -25,41 +26,56 @@ export function ConsequenceSentence({
 }) {
   const t = useT();
   const [locale] = useAppLocale();
-  const warning = consequence?.kind === "balance" && consequence.warning;
+  const warning =
+    consequence?.kind === "overdraw" || consequence?.kind === "reserve";
   const key = (value: ReactNode) => (
     <strong className={styles.key} data-warning={warning || undefined}>
       {value}
     </strong>
   );
-  const sentence =
+  const figure =
     account === undefined || consequence === null
       ? null
-      : consequence.kind === "statement"
-        ? withValue(
-            t("accountChoice.sentence.statement"),
-            "{value}",
-            key(formatDayMonthLong(consequence.dueDate, locale)),
-          )
-        : withValue(
-            t(
-              consequence.kind === "limit"
-                ? "accountChoice.sentence.limit"
-                : consequence.reserve
-                  ? "accountChoice.sentence.reserve"
-                  : "accountChoice.sentence.balance",
-            ),
-            "{value}",
-            key(
-              <MoneyFigure
-                amount={consequence.after}
-                currency={account.currency}
-                scale={scale}
-              />,
-            ),
-          );
+      : valueOf(consequence, account, scale, locale);
+  const sentence =
+    consequence === null || figure === null
+      ? null
+      : withValue(t(sentenceKey(consequence)), "{value}", key(figure));
   return (
     <p id={id} role="status" className={styles.sentence}>
       {sentence}
     </p>
+  );
+}
+
+function sentenceKey(consequence: Consequence): MessageKey {
+  switch (consequence.kind) {
+    case "overdraw":
+      return "accountChoice.sentence.balance";
+    case "reserve":
+      return "accountChoice.sentence.reserve";
+    case "statement":
+      return "accountChoice.sentence.statement";
+    case "settles":
+      return "accountChoice.sentence.settles";
+  }
+}
+
+function valueOf(
+  consequence: Consequence,
+  account: Account,
+  scale: number,
+  locale: string,
+): ReactNode {
+  if (consequence.kind === "statement" || consequence.kind === "settles") {
+    return formatDayMonthLong(consequence.dueDate, locale);
+  }
+
+  return (
+    <MoneyFigure
+      amount={consequence.after}
+      currency={account.currency}
+      scale={scale}
+    />
   );
 }

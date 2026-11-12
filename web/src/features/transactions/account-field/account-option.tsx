@@ -31,24 +31,21 @@ export function AccountOption({
 
   const warning =
     unavailable !== null ||
-    (consequence?.kind === "balance" && consequence.warning);
+    consequence?.kind === "overdraw" ||
+    consequence?.kind === "reserve";
   // The figure on the right: a small label over the value it qualifies.
   const figure =
     unavailable !== null
       ? { label: null, value: t("accountChoice.figure.noFreeLimit") }
       : consequence === null
         ? null
-        : consequence.kind === "statement"
+        : consequence.kind === "statement" || consequence.kind === "settles"
           ? {
               label: t("accountChoice.figure.statement"),
               value: formatDayMonthNumeric(consequence.dueDate, locale),
             }
           : {
-              label: t(
-                consequence.kind === "balance"
-                  ? "accountChoice.figure.after"
-                  : "accountChoice.figure.limit",
-              ),
+              label: t("accountChoice.figure.after"),
               value: money(consequence.after),
             };
 

@@ -3,11 +3,205 @@ import { describe, expect, it } from "vitest";
 import type { components } from "@/api/schema.gen";
 import {
   consequenceOf,
-  unavailableReason,
+  unavailableOf,
 } from "@/features/transactions/account-field/account-consequence";
-import type { ConsequenceInput } from "@/features/transactions/account-field/account-consequence";
+import type {
+  Consequence,
+  ConsequenceInput,
+  Unavailable,
+} from "@/features/transactions/account-field/account-consequence";
+import type { Operation } from "@/features/transactions/account-field/account-operation";
 
 type Account = components["schemas"]["Account"];
+type Placement = components["schemas"]["StatementPlacement"];
+
+const checking = account("checking");
+const savings = account("savings");
+const loan = account("loan");
+const card = account("credit_card", {
+  card: {
+    credit_limit: { amount: 500000, currency: "BRL" },
+    available_limit: { amount: 15000, currency: "BRL" },
+  },
+});
+const usd = account("checking", { currency: "USD" });
+
+const placementOf = (
+  dueDate: string,
+  previousClosing: string,
+  previousDue: string,
+): Placement => ({
+  reference: "2026-12",
+  closing_date: "2026-12-03",
+  due_date: dueDate,
+  previous_closing_date: previousClosing,
+  previous_due_date: previousDue,
+});
+const openStatement = placementOf("2026-12-10", "2026-10-03", "2026-10-10");
+const closedStatement = placementOf("2026-12-17", "2026-11-10", "2026-11-17");
+
+const base: Omit<ConsequenceInput, "account" | "operation"> = {
+  amount: 28640,
+  currency: "BRL",
+  date: "2026-11-12",
+  balance: undefined,
+  placement: undefined,
+};
+
+describe("consequenceOf", () => {
+  it.each<[string, ConsequenceInput, Consequence | null]>([
+    [
+      "ordinary expense",
+      { ...base, account: checking, operation: "expense", balance: 100000 },
+      null,
+    ],
+    [
+      "overdraw",
+      { ...base, account: checking, operation: "expense", balance: 1989 },
+      { kind: "overdraw", after: -26651 },
+    ],
+    [
+      "reserve out",
+      { ...base, account: savings, operation: "expense", balance: 3597198 },
+      { kind: "reserve", after: 3568558 },
+    ],
+    [
+      "transfer from reserve",
+      {
+        ...base,
+        account: savings,
+        operation: "transfer-out",
+        balance: 100000,
+        amount: 50000,
+      },
+      { kind: "reserve", after: 50000 },
+    ],
+    [
+      "income",
+      {
+        ...base,
+        account: checking,
+        operation: "income",
+        balance: 1989,
+        amount: 450000,
+      },
+      null,
+    ],
+    [
+      "transfer destination",
+      {
+        ...base,
+        account: checking,
+        operation: "transfer-in",
+        balance: 1989,
+        amount: 150000,
+      },
+      null,
+    ],
+    [
+      "no amount",
+      {
+        ...base,
+        account: checking,
+        operation: "expense",
+        balance: 1989,
+        amount: 0,
+      },
+      null,
+    ],
+    [
+      "unknown balance",
+      { ...base, account: checking, operation: "expense" },
+      null,
+    ],
+    [
+      "liability",
+      { ...base, account: loan, operation: "expense", balance: 0 },
+      null,
+    ],
+    [
+      "card purchase",
+      {
+        ...base,
+        account: card,
+        operation: "expense",
+        placement: openStatement,
+      },
+      { kind: "statement", dueDate: "2026-12-10", closedOn: null },
+    ],
+    [
+      "card after closing",
+      {
+        ...base,
+        account: card,
+        operation: "expense",
+        placement: closedStatement,
+      },
+      { kind: "statement", dueDate: "2026-12-17", closedOn: "2026-11-10" },
+    ],
+    [
+      "card paid by transfer",
+      {
+        ...base,
+        account: card,
+        operation: "transfer-in",
+        placement: openStatement,
+      },
+      { kind: "settles", dueDate: "2026-12-10" },
+    ],
+    [
+      "card income",
+      {
+        ...base,
+        account: card,
+        operation: "income",
+        placement: openStatement,
+      },
+      null,
+    ],
+    [
+      "card without placement",
+      { ...base, account: card, operation: "expense" },
+      null,
+    ],
+    [
+      "other currency",
+      { ...base, account: usd, operation: "expense", balance: 1000 },
+      null,
+    ],
+  ])("%s", (_, input, want) => {
+    expect(consequenceOf(input)).toEqual(want);
+  });
+});
+
+describe("unavailableOf", () => {
+  it.each<[string, Account, number, Operation, string, Unavailable | null]>([
+    [
+      "free limit below the amount",
+      card,
+      28640,
+      "expense",
+      "BRL",
+      { reason: "noFreeLimit", missing: 13640 },
+    ],
+    ["free limit equal to the amount", card, 15000, "expense", "BRL", null],
+    ["no amount", card, 0, "expense", "BRL", null],
+    [
+      "transfer source",
+      card,
+      28640,
+      "transfer-out",
+      "BRL",
+      { reason: "noFreeLimit", missing: 13640 },
+    ],
+    ["money coming in", card, 28640, "transfer-in", "BRL", null],
+    ["income", card, 28640, "income", "BRL", null],
+    ["not a card", checking, 28640, "expense", "BRL", null],
+    ["other currency", card, 28640, "expense", "USD", null],
+  ])("%s", (_, a, amount, operation, currency, want) => {
+    expect(unavailableOf(a, amount, operation, currency)).toEqual(want);
+  });
+});
 
 function account(
   kind: NonNullable<Account["kind"]>,
@@ -27,121 +221,3 @@ function account(
     ...extra,
   };
 }
-
-const card = (available?: number) =>
-  account(
-    "credit_card",
-    available === undefined
-      ? {}
-      : {
-          card: {
-            credit_limit: { amount: 500000, currency: "BRL" },
-            available_limit: { amount: available, currency: "BRL" },
-          },
-        },
-  );
-
-const placement = {
-  reference: "2026-11",
-  closing_date: "2026-10-29",
-  due_date: "2026-11-05",
-  previous_closing_date: "2026-10-18",
-  previous_due_date: "2026-10-25",
-};
-
-const base: Omit<ConsequenceInput, "account"> = {
-  amount: 28640,
-  direction: "out",
-  date: "2026-10-15",
-  balance: undefined,
-  placement: undefined,
-};
-
-describe("consequenceOf", () => {
-  it.each<[string, ConsequenceInput, ReturnType<typeof consequenceOf>]>([
-    [
-      "checking: balance minus the expense",
-      { ...base, account: account("checking"), balance: 431210 },
-      { kind: "balance", after: 402570, warning: false, reserve: false },
-    ],
-    [
-      "checking: a negative balance is a warning",
-      { ...base, account: account("checking"), balance: 10000 },
-      { kind: "balance", after: -18640, warning: true, reserve: false },
-    ],
-    [
-      "checking: income adds to the balance",
-      {
-        ...base,
-        account: account("checking"),
-        balance: 431210,
-        direction: "in",
-      },
-      { kind: "balance", after: 459850, warning: false, reserve: false },
-    ],
-    [
-      "checking: no balance, no consequence",
-      { ...base, account: account("checking") },
-      null,
-    ],
-    [
-      "reserve: paying from it is a warning",
-      { ...base, account: account("reserve"), balance: 695025 },
-      { kind: "balance", after: 666385, warning: true, reserve: true },
-    ],
-    [
-      "reserve: money coming in is not a warning",
-      {
-        ...base,
-        account: account("reserve"),
-        balance: 695025,
-        direction: "in",
-      },
-      { kind: "balance", after: 723665, warning: false, reserve: false },
-    ],
-    [
-      "loan: a liability has no balance consequence",
-      { ...base, account: account("payable"), balance: -100000 },
-      null,
-    ],
-    [
-      "card: the statement the purchase is billed on",
-      { ...base, account: card(315723), placement },
-      { kind: "statement", dueDate: "2026-11-05", closedOn: null },
-    ],
-    [
-      "card: after a closing and before that statement is due",
-      { ...base, account: card(), placement, date: "2026-10-20" },
-      { kind: "statement", dueDate: "2026-11-05", closedOn: "2026-10-18" },
-    ],
-    [
-      "card: on the previous due date the note still applies",
-      { ...base, account: card(), placement, date: "2026-10-25" },
-      { kind: "statement", dueDate: "2026-11-05", closedOn: "2026-10-18" },
-    ],
-    [
-      "card: without a placement, the free limit left",
-      { ...base, account: card(315723) },
-      { kind: "limit", after: 287083 },
-    ],
-    [
-      "card: without placement or limit, no consequence",
-      { ...base, account: card() },
-      null,
-    ],
-  ])("%s", (_, input, want) => {
-    expect(consequenceOf(input)).toEqual(want);
-  });
-});
-
-describe("unavailableReason", () => {
-  it.each<[string, Account, number, "out" | "in", "noFreeLimit" | null]>([
-    ["free limit below the amount", card(20000), 28640, "out", "noFreeLimit"],
-    ["free limit equal to the amount", card(28640), 28640, "out", null],
-    ["money coming in", card(0), 28640, "in", null],
-    ["no limit recorded", card(), 28640, "out", null],
-    ["not a card", account("checking"), 28640, "out", null],
-  ])("%s", (_, a, amount, direction, want) => {
-    expect(unavailableReason(a, amount, direction)).toBe(want);
-  });
-});
