@@ -3,7 +3,7 @@ import type { accountsEn } from "@/i18n/catalog-accounts.en";
 export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kind.group.accounts": "Contas",
   "kind.group.cards": "Cartões",
-  "kind.group.reserves": "Reservas e investimentos",
+  "kind.group.reserves": "Reservas",
   "kind.group.investments": "Investimentos",
   "kind.group.debts": "Dívidas e valores a receber",
   "kind.hint.checking": "Conta bancária que paga e recebe no dia a dia.",

@@ -2,7 +2,7 @@
 export const accountsEn = {
   "kind.group.accounts": "Accounts",
   "kind.group.cards": "Cards",
-  "kind.group.reserves": "Reserves and investments",
+  "kind.group.reserves": "Reserves",
   "kind.group.investments": "Investments",
   "kind.group.debts": "Debts and receivables",
   "kind.hint.checking": "A bank account that pays and receives day to day.",
