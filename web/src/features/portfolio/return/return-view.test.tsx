@@ -67,7 +67,9 @@ function renderView(report: ReturnReport, subject: ReturnSubject) {
 }
 
 function method(): HTMLElement {
-  return screen.getByRole("button", { name: catalogEn["holdings.method"] });
+  return screen.getByRole("button", {
+    name: catalogEn["holdings.method.open"],
+  });
 }
 
 describe("ReturnView", () => {
@@ -112,7 +114,8 @@ describe("ReturnView", () => {
   it("RC6: keeps the details closed and holds the groups in them", () => {
     renderView(market, "portfolio");
 
-    expect(method()).toHaveAttribute("aria-expanded", "false");
+    expect(method()).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("group", {
         name: catalogEn["portfolio.yield.group.index"].replace(

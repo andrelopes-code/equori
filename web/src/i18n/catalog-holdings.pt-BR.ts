@@ -27,6 +27,19 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.method.personal": "Sua taxa pessoal ao ano",
   "holdings.method.difference":
     "O retorno do período ignora quando você aportou ou retirou, por isso pode ser comparado a um índice. A sua taxa pessoal considera essas datas e mostra quanto o seu próprio dinheiro rendeu.",
+  "holdings.method.layer.description":
+    "Como o retorno foi calculado: os saldos, as taxas e os fluxos do período.",
+  "holdings.method.open": "Ver detalhes e método",
+  "holdings.method.summary":
+    "Fechamento {closing}. Período {period}. Anual {annual}.",
+  "holdings.method.summaryNoPeriod": "Fechamento {closing}. Anual {annual}.",
+  "holdings.method.reconciliation": "Conciliação",
+  "holdings.method.deposits": "Aportes",
+  "holdings.method.withdrawals": "Retiradas",
+  "holdings.method.result": "Resultado",
+  "holdings.method.excluded": "{count} fluxos em outra moeda ficaram de fora.",
+  "holdings.method.rates": "Taxas",
+  "holdings.method.flowsByMonth": "Fluxos por mês",
   "holdings.income.net": "Recebido",
   "holdings.income.net.note": "Líquido do imposto retido",
   "holdings.income.withheld": "Imposto retido",

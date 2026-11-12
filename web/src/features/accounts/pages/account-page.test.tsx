@@ -65,12 +65,14 @@ function findTab(name: keyof typeof catalogEn) {
   return screen.findByRole("tab", { name: new RegExp(`^${catalogEn[name]}`) });
 }
 
-async function openDetails(section: HTMLElement) {
+async function openDetails(section: HTMLElement): Promise<HTMLElement> {
   await userEvent.click(
     await within(section).findByRole("button", {
-      name: catalogEn["holdings.method"],
+      name: catalogEn["holdings.method.open"],
     }),
   );
+
+  return screen.findByRole("dialog");
 }
 
 const reportRoute: Record<string, Route> = {
@@ -134,8 +136,8 @@ describe("AccountPage", () => {
         /^Fixed income: compared day by day with CDI\./,
       ),
     ).toBeInTheDocument();
-    await openDetails(section);
-    const cdi = await within(section).findByRole("group", {
+    const details = await openDetails(section);
+    const cdi = await within(details).findByRole("group", {
       name: "Compared with CDI",
     });
     expect(
@@ -151,7 +153,7 @@ describe("AccountPage", () => {
       within(cdi).getByText("Restarted after a flow between credits"),
     ).toBeInTheDocument();
     expect(within(cdi).getByText("14.55% (14.90% a year)")).toBeInTheDocument();
-    const ipca = within(section).getByRole("group", { name: "Net of IPCA" });
+    const ipca = within(details).getByRole("group", { name: "Net of IPCA" });
     expect(
       within(ipca).getByText(
         "11/01/2025 to 09/30/2026 · months with a published IPCA",
@@ -209,8 +211,8 @@ describe("AccountPage", () => {
     const section = await screen.findByRole("region", {
       name: catalogEn["portfolio.yield.figure"],
     });
-    await openDetails(section);
-    const group = await within(section).findByRole("group", {
+    const details = await openDetails(section);
+    const group = await within(details).findByRole("group", {
       name: "Compared with CDI",
     });
 
@@ -263,7 +265,7 @@ describe("AccountPage", () => {
     expect(
       await within(section).findByText("Only one yield credit recorded"),
     ).toBeInTheDocument();
-    await openDetails(section);
+    const details = await openDetails(section);
     expect(
       within(section).getByText(
         "R$1,500.00 in other income / R$320.50 in other expenses in this account were treated as money in or out, not yield (Salary, Taxes).",
@@ -275,10 +277,10 @@ describe("AccountPage", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      within(section).getByRole("group", { name: "Net of IPCA" }),
+      within(details).getByRole("group", { name: "Net of IPCA" }),
     ).toBeInTheDocument();
     expect(
-      within(section).queryByRole("group", { name: "Compared with CDI" }),
+      screen.queryByRole("group", { name: "Compared with CDI" }),
     ).not.toBeInTheDocument();
   });
 
@@ -301,8 +303,8 @@ describe("AccountPage", () => {
     const section = await screen.findByRole("region", {
       name: catalogEn["portfolio.yield.figure"],
     });
-    await openDetails(section);
-    const period = await within(section).findByRole("group", {
+    const details = await openDetails(section);
+    const period = await within(details).findByRole("group", {
       name: "In the period",
     });
 

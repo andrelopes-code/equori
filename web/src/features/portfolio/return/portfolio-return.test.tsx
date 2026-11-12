@@ -14,24 +14,21 @@ import {
 } from "@/testing/portfolio-api";
 import { renderApp } from "@/testing/render-app";
 
-const flows = () =>
-  screen.findByRole("table", { name: catalogEn["portfolio.return.flows"] });
+const monthTable = (dialog: HTMLElement) =>
+  within(dialog).findByRole("table", {
+    name: catalogEn["holdings.method.flowsByMonth"],
+  });
 
 const performance = () =>
   screen.findByRole("region", { name: catalogEn["holdings.return"] });
 
 const openMethod = async (): Promise<HTMLElement> => {
   const trigger = await screen.findByRole("button", {
-    name: catalogEn["holdings.method"],
+    name: catalogEn["holdings.method.open"],
   });
   await userEvent.setup().click(trigger);
 
-  const panel = document.getElementById(
-    trigger.getAttribute("aria-controls") ?? "",
-  );
-  if (panel === null) throw new Error("the details have no panel");
-
-  return panel;
+  return screen.findByRole("dialog");
 };
 
 describe("Portfolio return", () => {
@@ -67,7 +64,11 @@ describe("Portfolio return", () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     await performance();
 
-    expect(await screen.findByText(catalogEn["holdings.method"])).toBeVisible();
+    expect(
+      await screen.findByRole("button", {
+        name: catalogEn["holdings.method.open"],
+      }),
+    ).toBeVisible();
     expect(
       screen.queryByText(catalogEn["portfolio.return.closing"]),
     ).toBeNull();
@@ -125,8 +126,8 @@ describe("Portfolio return", () => {
     });
     await renderApp("/portfolio", { fetch });
     const section = await performance();
-    await openMethod();
-    const group = await within(section).findByRole("group", {
+    const dialog = await openMethod();
+    const group = await within(dialog).findByRole("group", {
       name: catalogEn["portfolio.yield.group.index"].replace("{index}", "CDI"),
     });
 
@@ -156,14 +157,14 @@ describe("Portfolio return", () => {
     ).toBeInTheDocument();
     expect(within(section).getByText("−10.33 pp")).toBeInTheDocument();
 
-    await openMethod();
-    const inflation = await within(section).findByRole("group", {
+    const dialog = await openMethod();
+    const inflation = await within(dialog).findByRole("group", {
       name: "Net of IPCA",
     });
 
     expect(within(inflation).getByText("−0.89%")).toBeInTheDocument();
     expect(
-      within(section).queryByText(
+      screen.queryByText(
         catalogEn["portfolio.yield.row.percent"].replace("{index}", "CDI"),
       ),
     ).not.toBeInTheDocument();
@@ -178,7 +179,7 @@ describe("Portfolio return", () => {
     const panel = await openMethod();
 
     expect(await within(panel).findByText(/R\$2,050\.00/)).toBeInTheDocument();
-    const table = await flows();
+    const table = await monthTable(panel);
     expect(
       within(table)
         .getAllByRole("row")
@@ -187,7 +188,96 @@ describe("Portfolio return", () => {
             .map((c) => c.textContent)
             .join("|"),
         ),
-    ).toEqual(["Date|Amount", "04/30/2026|R$1,000.00"]);
+    ).toEqual([
+      "Month|Deposits|Withdrawals",
+      `Apr 2026|R$1,000.00|${catalogEn["report.none"]}`,
+    ]);
+  });
+
+  // Fixture: plainReturn closes at 105000 units (R$1,050.00) with annual_bp 500; period_bp 480 is
+  // 4.80%.
+  it("L3: summarizes the closing value and both rates beside the button", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () =>
+        json(200, { ...plainReturn, period_bp: 480 }),
+    });
+    await renderApp("/portfolio", { fetch });
+    await performance();
+
+    expect(
+      await screen.findByText(
+        "Closing R$1,050.00. Period 4.80%. Annual 5.00%.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("L3: summarizes the closing value and the annual rate of a report without a period return", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    await performance();
+
+    expect(
+      await screen.findByText("Closing R$1,050.00. Annual 5.00%."),
+    ).toBeInTheDocument();
+  });
+
+  // Fixture: contributionReturn opens at 100000, closes at 205000 and holds one flow of +100000, so
+  // the result is 205000 - 100000 - 100000 = 5000.
+  it("L3: reconciles the opening, deposits, withdrawals, result and closing in that order", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () => json(200, contributionReturn),
+    });
+    await renderApp("/portfolio", { fetch });
+    await performance();
+    const dialog = await openMethod();
+    const strip = await within(dialog).findByRole("group", {
+      name: catalogEn["holdings.method.reconciliation"],
+    });
+
+    expect(
+      within(strip)
+        .getAllByRole("group")
+        .map((figure) => [
+          figure.getAttribute("aria-label"),
+          figure.textContent.replace(
+            figure.getAttribute("aria-label") ?? "",
+            "",
+          ),
+        ]),
+    ).toEqual([
+      [catalogEn["portfolio.return.opening"], "R$1,000.00"],
+      [catalogEn["holdings.method.deposits"], "R$1,000.00"],
+      [catalogEn["holdings.method.withdrawals"], "R$0.00"],
+      [catalogEn["holdings.method.result"], "R$50.00"],
+      [catalogEn["portfolio.return.closing"], "R$2,050.00"],
+    ]);
+    expect(
+      within(dialog).queryByText(
+        catalogEn["holdings.method.excluded"].replace("{count}", "1"),
+      ),
+    ).not.toBeInTheDocument();
+  });
+
+  it("L3: counts a flow in another currency as left out of the reconciliation", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () =>
+        json(200, {
+          ...contributionReturn,
+          flows: [
+            ...contributionReturn.flows,
+            { date: "2026-05-02", amount: { amount: 999, currency: "USD" } },
+          ],
+        }),
+    });
+    await renderApp("/portfolio", { fetch });
+    await performance();
+    const dialog = await openMethod();
+
+    expect(
+      await within(dialog).findByText(
+        catalogEn["holdings.method.excluded"].replace("{count}", "1"),
+      ),
+    ).toBeInTheDocument();
+    expect(await within(dialog).findByText("R$50.00")).toBeInTheDocument();
   });
 
   it("PC10: chooses the period with one control and writes it to the address", async () => {
@@ -464,14 +554,14 @@ describe("Portfolio return", () => {
           inflation: undefined,
         }),
     });
-    const { container } = await renderApp("/portfolio", { fetch });
-    const section = await performance();
-    await openMethod();
+    await renderApp("/portfolio", { fetch });
+    await performance();
+    const dialog = await openMethod();
 
-    await within(section).findByText(
+    await within(dialog).findByText(
       catalogEn["portfolio.yield.group.index"].replace("{index}", "SOFR"),
     );
-    expect(container.textContent).not.toMatch(/CDI|IPCA/);
+    expect(document.body.textContent).not.toMatch(/CDI|IPCA/);
   });
 
   it("names no index for a region without one", async () => {
@@ -518,12 +608,12 @@ describe("Portfolio return", () => {
       "GET /api/v1/reports/return": () => json(200, contributionReturn),
     });
     try {
-      const { container } = await renderApp("/portfolio", { fetch });
+      await renderApp("/portfolio", { fetch });
       await screen.findByText("3.33%");
       await openMethod();
       await screen.findAllByText(catalogEn["holdings.method.personal"]);
-      expect(container.textContent).not.toContain("2,050.00");
-      expect(container.textContent).not.toContain("1,000.00");
+      expect(document.body.textContent).not.toContain("2,050.00");
+      expect(document.body.textContent).not.toContain("1,000.00");
     } finally {
       localStorage.removeItem("equori.privacy");
     }

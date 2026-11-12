@@ -25,6 +25,19 @@ export const holdingsEn = {
   "holdings.method.personal": "Your personal rate a year",
   "holdings.method.difference":
     "The return of the period ignores when you put money in or took it out, so it compares with an index. Your personal rate counts those dates, so it states what your own money earned.",
+  "holdings.method.layer.description":
+    "How the return was computed: the balances, the rates and the flows of the period.",
+  "holdings.method.open": "View details and method",
+  "holdings.method.summary":
+    "Closing {closing}. Period {period}. Annual {annual}.",
+  "holdings.method.summaryNoPeriod": "Closing {closing}. Annual {annual}.",
+  "holdings.method.reconciliation": "Reconciliation",
+  "holdings.method.deposits": "Deposits",
+  "holdings.method.withdrawals": "Withdrawals",
+  "holdings.method.result": "Result",
+  "holdings.method.excluded": "{count} flows in another currency are left out.",
+  "holdings.method.rates": "Rates",
+  "holdings.method.flowsByMonth": "Flows by month",
   "holdings.income.net": "Received",
   "holdings.income.net.note": "Net of the tax withheld",
   "holdings.income.withheld": "Tax withheld",
