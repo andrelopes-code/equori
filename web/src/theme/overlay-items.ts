@@ -44,6 +44,11 @@ export const overlayItemRules: readonly string[] = [
     ["--slotted-table-border-color"],
   ),
   block(
+    '[data-ui="list"][data-variant="framed"]',
+    ["--slotted-list-background"],
+    ["--slotted-list-border-color"],
+  ),
+  block(
     '[data-ui="data-grid"][data-variant="framed"]',
     ["--slotted-data-grid-surface", "--slotted-data-grid-header-surface"],
     ["--slotted-data-grid-border-color"],

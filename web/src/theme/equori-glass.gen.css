@@ -1964,6 +1964,11 @@
       --slotted-table-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
     }
 
+    :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="list"][data-variant="framed"] {
+      --slotted-list-background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+      --slotted-list-border-color: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    }
+
     :is([data-ui="dialog"] > [data-part="viewport"] > [data-part="content"]:not(:has(> [data-ui="command-palette"])), [data-ui="drawer"][data-mode="overlay"] > [data-part="panel"]) [data-ui="data-grid"][data-variant="framed"] {
       --slotted-data-grid-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);
       --slotted-data-grid-header-surface: color-mix(in oklab, var(--slotted-text) 8%, transparent);

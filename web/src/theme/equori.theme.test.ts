@@ -247,6 +247,11 @@ const overlayItems: readonly (readonly [string, string, readonly string[]])[] =
       ],
     ],
     [
+      "framed list",
+      '[data-ui="list"][data-variant="framed"]',
+      ["--slotted-list-background", "--slotted-list-border-color"],
+    ],
+    [
       "framed data-grid",
       '[data-ui="data-grid"][data-variant="framed"]',
       [
