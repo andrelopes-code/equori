@@ -95,6 +95,15 @@ func (r *Repository) AccountHasChildren(ctx context.Context, booksID int64, id u
 	return r.q.AccountHasChildren(ctx, AccountHasChildrenParams{BooksID: booksID, ParentID: nullUUID(id)})
 }
 
+func (r *Repository) ChildAccounts(ctx context.Context, booksID int64, parentID uuid.UUID) ([]domain.Account, error) {
+	rows, err := r.q.ListChildAccounts(ctx, ListChildAccountsParams{BooksID: booksID, ParentID: nullUUID(parentID)})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapAll(rows, toAccount), nil
+}
+
 func (r *Repository) AccountTotals(ctx context.Context, booksID int64, id uuid.UUID) (app.AccountTotals, error) {
 	row, err := r.q.AccountTotals(ctx, AccountTotalsParams{BooksID: booksID, AccountID: id})
 	if err != nil {

@@ -23,6 +23,14 @@ func (s *Service) RecordTrade(ctx context.Context, booksID int64, o domain.Trade
 			return err
 		}
 
+		o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
+			AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
+			Instrument: o.Instrument, Create: o.Side == domain.SideBuy,
+		})
+		if err != nil {
+			return err
+		}
+
 		security, cash, err := s.brokerageAccounts(ctx, r, booksID, o.AccountID, o.CashAccountID, base)
 		if err != nil {
 			return err
@@ -87,6 +95,14 @@ func (s *Service) RecordIncome(ctx context.Context, booksID int64, o domain.Inco
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		base, err := baseCurrency(ctx, r, booksID)
+		if err != nil {
+			return err
+		}
+
+		o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
+			AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
+			Instrument: o.Instrument, Create: true,
+		})
 		if err != nil {
 			return err
 		}

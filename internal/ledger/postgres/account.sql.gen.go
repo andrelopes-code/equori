@@ -458,6 +458,63 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]L
 	return items, nil
 }
 
+const listChildAccounts = `-- name: ListChildAccounts :many
+SELECT
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+FROM
+    ledger_account
+WHERE
+    books_id = $1
+    AND parent_id = $2
+ORDER BY
+    created_at,
+    id
+`
+
+type ListChildAccountsParams struct {
+	BooksID  int64
+	ParentID uuid.NullUUID
+}
+
+func (q *Queries) ListChildAccounts(ctx context.Context, arg ListChildAccountsParams) ([]LedgerAccount, error) {
+	rows, err := q.db.Query(ctx, listChildAccounts, arg.BooksID, arg.ParentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerAccount
+	for rows.Next() {
+		var i LedgerAccount
+		if err := rows.Scan(
+			&i.ID,
+			&i.BooksID,
+			&i.Name,
+			&i.AccountClass,
+			&i.Kind,
+			&i.Instrument,
+			&i.ParentID,
+			&i.InstitutionID,
+			&i.CounterpartyPayeeID,
+			&i.OpenedOn,
+			&i.ClosedOn,
+			&i.YieldMode,
+			&i.SystemRole,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Color,
+			&i.Icon,
+			&i.ExcludedFromLiquidity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setSystemAccountsInstrument = `-- name: SetSystemAccountsInstrument :exec
 UPDATE ledger_account
 SET

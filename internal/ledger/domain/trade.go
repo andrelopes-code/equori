@@ -18,12 +18,15 @@ const (
 // TradeOrder is a purchase or sale of a security for cash of the same brokerage (M17).
 type TradeOrder struct {
 	AccountID, CashAccountID, TaxesCategoryID uuid.UUID
-	Side                                      Side
-	Date                                      time.Time
-	Quantity                                  money.Money
-	UnitPrice                                 money.Rate
-	Fees, Taxes                               *money.Money
-	Description                               string
+	// BrokerageID and Instrument name the holding of a purchase when AccountID is empty (BC6).
+	BrokerageID uuid.UUID
+	Instrument  money.Currency
+	Side        Side
+	Date        time.Time
+	Quantity    money.Money
+	UnitPrice   money.Rate
+	Fees, Taxes *money.Money
+	Description string
 }
 
 // Trade is the D1 detail stored with a trade transaction (P8 amendment A68). Cost is

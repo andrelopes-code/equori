@@ -20,10 +20,13 @@ const (
 // IncomeOrder is investment income paid on a security into cash of the same brokerage (M18).
 type IncomeOrder struct {
 	AccountID, CashAccountID, CategoryID, WithheldCategoryID uuid.UUID
-	Type                                                     IncomeType
-	Date                                                     time.Time
-	Gross                                                    money.Money
-	Withheld                                                 *money.Money
+	// BrokerageID and Instrument name the holding when AccountID is empty (BC6).
+	BrokerageID uuid.UUID
+	Instrument  money.Currency
+	Type        IncomeType
+	Date        time.Time
+	Gross       money.Money
+	Withheld    *money.Money
 	// DefaultWithholdingBP is the withholding, in basis points of Gross, applied when Withheld is nil.
 	DefaultWithholdingBP int
 	Description          string

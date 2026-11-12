@@ -117,6 +117,18 @@ SELECT
             AND parent_id = $2
     );
 
+-- name: ListChildAccounts :many
+SELECT
+    *
+FROM
+    ledger_account
+WHERE
+    books_id = $1
+    AND parent_id = $2
+ORDER BY
+    created_at,
+    id;
+
 -- name: AccountTotals :one
 SELECT
     coalesce(sum(p.amount), 0)::bigint AS total,
