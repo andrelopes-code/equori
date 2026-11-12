@@ -67,33 +67,8 @@ func (s *Service) UpdateAccount(ctx context.Context, booksID int64, id uuid.UUID
 			return err
 		}
 
-		if p.Name != nil {
-			a.Name = *p.Name
-		}
-
-		if p.ParentID != nil {
-			a.ParentID = *p.ParentID
-		}
-
-		if p.InstitutionID != nil {
-			a.InstitutionID = *p.InstitutionID
-		}
-
-		if p.YieldMode != nil {
-			a.YieldMode = *p.YieldMode
-		}
-
-		if p.ExcludedFromLiquidity != nil {
-			a.ExcludedFromLiquidity = *p.ExcludedFromLiquidity
-		}
-
-		// A210: a later opening date could strand postings before it.
-		if p.OpenedOn != nil && p.OpenedOn.After(a.OpenedOn) {
-			return validationError("opened_on", "can only move earlier")
-		}
-
-		if p.OpenedOn != nil {
-			a.OpenedOn = *p.OpenedOn
+		if err := applyAccountPatch(&a, p); err != nil {
+			return err
 		}
 
 		if err := s.describeInstrument(ctx, &a); err != nil {
@@ -114,6 +89,40 @@ func (s *Service) UpdateAccount(ctx context.Context, booksID int64, id uuid.UUID
 	})
 
 	return updated, err
+}
+
+// applyAccountPatch copies the set fields of p onto a.
+func applyAccountPatch(a *domain.Account, p AccountPatch) error {
+	if p.Name != nil {
+		a.Name = *p.Name
+	}
+
+	if p.ParentID != nil {
+		a.ParentID = *p.ParentID
+	}
+
+	if p.InstitutionID != nil {
+		a.InstitutionID = *p.InstitutionID
+	}
+
+	if p.YieldMode != nil {
+		a.YieldMode = *p.YieldMode
+	}
+
+	if p.ExcludedFromLiquidity != nil {
+		a.ExcludedFromLiquidity = *p.ExcludedFromLiquidity
+	}
+
+	// A210: a later opening date could strand postings before it.
+	if p.OpenedOn != nil && p.OpenedOn.After(a.OpenedOn) {
+		return validationError("opened_on", "can only move earlier")
+	}
+
+	if p.OpenedOn != nil {
+		a.OpenedOn = *p.OpenedOn
+	}
+
+	return nil
 }
 
 // SetAppearance sets or, with zero values, clears the colour and the icon of an account (A83).
@@ -162,49 +171,82 @@ func (s *Service) CloseAccount(ctx context.Context, booksID int64, id uuid.UUID,
 
 		subtree := subtreeOf(root, all)
 
-		var closing []domain.Account
-		for _, a := range subtree {
-			if a.SystemRole != "" {
-				return ErrSystemAccount
-			}
-
-			if a.ClosedOn != nil && a.ID != root.ID {
-				continue
-			}
-
-			totals, err := r.AccountTotals(ctx, booksID, a.ID)
-			if err != nil {
-				return err
-			}
-
-			if a.Class != domain.ClassIncome && a.Class != domain.ClassExpense && totals.Total != 0 {
-				return ErrNonZeroBalance
-			}
-
-			if totals.LastBookedOn.After(closedOn) {
-				return ErrPostingsAfterClose
-			}
-
-			a.ClosedOn = &closedOn
-			if a, err = domain.NewAccount(a); err != nil {
-				return err
-			}
-
-			closing = append(closing, a)
+		closing, err := closeableAccounts(ctx, r, booksID, root, subtree, closedOn)
+		if err != nil {
+			return err
 		}
 
-		for _, a := range closing {
-			if _, err := r.UpdateAccount(ctx, a); err != nil {
-				return err
-			}
-
-			if err := r.Publish(ctx, outbox.Event{Type: EventAccountClosed, BooksID: booksID, AggregateID: a.ID.String(), Payload: accountEvent{a.ID}}); err != nil {
-				return err
-			}
+		if err := saveClosedAccounts(ctx, r, booksID, closing); err != nil {
+			return err
 		}
 
 		return nil
 	})
+}
+
+// closeableAccounts returns the accounts of subtree to close, each with ClosedOn set.
+func closeableAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	root domain.Account,
+	subtree []domain.Account,
+	closedOn time.Time,
+) ([]domain.Account, error) {
+	var closing []domain.Account
+	for _, a := range subtree {
+		if a.SystemRole != "" {
+			return nil, ErrSystemAccount
+		}
+
+		if a.ClosedOn != nil && a.ID != root.ID {
+			continue
+		}
+
+		totals, err := r.AccountTotals(ctx, booksID, a.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		if a.Class != domain.ClassIncome && a.Class != domain.ClassExpense && totals.Total != 0 {
+			return nil, ErrNonZeroBalance
+		}
+
+		if totals.LastBookedOn.After(closedOn) {
+			return nil, ErrPostingsAfterClose
+		}
+
+		a.ClosedOn = &closedOn
+		if a, err = domain.NewAccount(a); err != nil {
+			return nil, err
+		}
+
+		closing = append(closing, a)
+	}
+
+	return closing, nil
+}
+
+// saveClosedAccounts persists each closed account and publishes its event.
+func saveClosedAccounts(ctx context.Context, r Repository, booksID int64, closing []domain.Account) error {
+	for _, a := range closing {
+		if _, err := r.UpdateAccount(ctx, a); err != nil {
+			return err
+		}
+
+		event := outbox.Event{
+			Type:        EventAccountClosed,
+			BooksID:     booksID,
+			AggregateID: a.ID.String(),
+			Payload:     accountEvent{a.ID},
+		}
+
+		if err := r.Publish(ctx, event); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ReopenAccount reopens the account and its closed ancestors, so an open account never has a

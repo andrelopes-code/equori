@@ -3,9 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
-	"maps"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -125,90 +122,25 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, booksID int64, in F
 func (s *Service) Exchange(ctx context.Context, booksID int64, in Exchange) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, booksID)
+		from, to, base, err := loadExchangeAccounts(ctx, r, booksID, in)
 		if err != nil {
 			return err
 		}
 
-		from, err := loadAccount(ctx, r, booksID, in.FromAccountID, "from_account_id")
+		fee, err := exchangeFee(in, base)
 		if err != nil {
 			return err
 		}
 
-		to, err := loadAccount(ctx, r, booksID, in.ToAccountID, "to_account_id")
+		postings, err := exchangePostings(in, from, to, base, fee)
 		if err != nil {
 			return err
-		}
-
-		switch {
-		case !from.IsBalance() || from.HoldsSecurity():
-			return fieldErr("from_account_id", "must be a balance account in a currency", domain.ErrValidation)
-		case !to.IsBalance() || to.HoldsSecurity():
-			return fieldErr("to_account_id", "must be a balance account in a currency", domain.ErrValidation)
-		case from.Instrument == to.Instrument:
-			return fieldErr("to_account_id", "must be in another currency than from_account_id", domain.ErrValidation)
-		case from.Instrument != base && to.Instrument != base:
-			return fieldErr("to_account_id", "one of the accounts must be in the base currency "+string(base), domain.ErrCurrencyUnsupported)
-		case in.FromAmount.Currency() != from.Instrument || in.FromAmount.IsZero() || in.FromAmount.IsNegative():
-			return fieldErr("from_amount", "must be a positive amount in "+string(from.Instrument), domain.ErrValidation)
-		case in.ToAmount.Currency() != to.Instrument || in.ToAmount.IsZero() || in.ToAmount.IsNegative():
-			return fieldErr("to_amount", "must be a positive amount in "+string(to.Instrument), domain.ErrValidation)
-		}
-
-		fee, err := money.New(0, base)
-		if err != nil {
-			return err
-		}
-
-		if in.Fee != nil {
-			if in.Fee.Currency() != base || in.Fee.IsNegative() {
-				return fieldErr("fee", "must be a non-negative amount in "+string(base), domain.ErrValidation)
-			}
-
-			fee = *in.Fee
-		}
-
-		var postings []domain.Posting
-		if from.Instrument == base {
-			debit, err := in.FromAmount.Add(fee)
-			if err != nil {
-				return err
-			}
-
-			postings = []domain.Posting{
-				{AccountID: from.ID, Amount: debit.Neg()},
-				{AccountID: to.ID, Amount: in.ToAmount, Weight: in.FromAmount},
-			}
-		} else {
-			credit, err := in.ToAmount.Sub(fee)
-			if err != nil {
-				return err
-			}
-
-			if credit.IsZero() || credit.IsNegative() {
-				return fieldErr("fee", "must be less than to_amount", domain.ErrValidation)
-			}
-
-			postings = []domain.Posting{
-				{AccountID: from.ID, Amount: in.FromAmount.Neg(), Weight: in.ToAmount.Neg()},
-				{AccountID: to.ID, Amount: credit},
-			}
 		}
 
 		if !fee.IsZero() {
-			feeCategory := in.FeeCategoryID
-			if feeCategory == uuid.Nil {
-				fees, err := r.SystemAccount(ctx, booksID, domain.RoleFees)
-				if err != nil {
-					return err
-				}
-
-				feeCategory = fees.ID
-			} else if err := s.expenseCategory(ctx, r, booksID, feeCategory, "fee_category_id"); err != nil {
+			if postings, err = s.withExchangeFee(ctx, r, booksID, in, postings, fee); err != nil {
 				return err
 			}
-
-			postings = []domain.Posting{postings[0], {AccountID: feeCategory, Amount: fee}, postings[1]}
 		}
 
 		created, err = s.insert(ctx, r, domain.Transaction{BooksID: booksID, Date: in.Date, Description: in.Description, BalancingCurrency: base, Postings: postings})
@@ -219,129 +151,159 @@ func (s *Service) Exchange(ctx context.Context, booksID int64, in Exchange) (dom
 	return created, err
 }
 
-// ValuedBalance is BalanceAt valued in currency in with stored prices (P8 amendment
-// A65); a parent whose sub-accounts hold several instruments sums their values.
-func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis, in money.Currency) (Balance, Conversion, error) {
-	if basis == "" {
-		basis = BasisBooked
-	}
-
-	if _, err := money.ParseCurrency(string(in)); err != nil {
-		return Balance{}, Conversion{}, fieldErr("value_in", "must be a supported currency", domain.ErrValidation)
-	}
-
-	if _, err := s.repo.Account(ctx, booksID, accountID); err != nil {
-		return Balance{}, Conversion{}, err
-	}
-
-	totals, err := s.repo.TreeBalancesByInstrument(ctx, booksID, accountID, date, basis)
+// loadExchangeAccounts loads the two accounts of an exchange and checks their currencies and
+// amounts.
+func loadExchangeAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	in Exchange,
+) (from, to domain.Account, base money.Currency, err error) {
+	base, err = baseCurrency(ctx, r, booksID)
 	if err != nil {
-		return Balance{}, Conversion{}, err
+		return from, to, base, err
 	}
 
-	value, err := money.New(0, in)
+	from, err = loadAccount(ctx, r, booksID, in.FromAccountID, "from_account_id")
 	if err != nil {
-		return Balance{}, Conversion{}, err
+		return from, to, base, err
 	}
 
-	out := Conversion{Value: value}
-
-	var amount money.Money
-	for _, code := range slices.Sorted(maps.Keys(totals)) {
-		if amount, err = s.AmountOf(ctx, totals[code], code); err != nil {
-			return Balance{}, Conversion{}, err
-		}
-
-		c := Conversion{Value: amount}
-		if code != in {
-			if amount.IsZero() {
-				continue
-			}
-
-			c, err = s.prices.Convert(ctx, amount, in, date)
-			if errors.Is(err, ErrPriceMissing) {
-				return Balance{}, Conversion{}, fieldErr("value_in", err.Error(), ErrPriceMissing)
-			}
-
-			if err != nil {
-				return Balance{}, Conversion{}, err
-			}
-		}
-
-		if out.Value, err = out.Value.Add(c.Value); err != nil {
-			return Balance{}, Conversion{}, fmt.Errorf("sum valued balances: %w", err)
-		}
-
-		out.Prices = append(out.Prices, c.Prices...)
-		if !amount.IsZero() {
-			out.Parts = append(out.Parts, ValuedPart{Instrument: code, Quantity: amount, Value: c.Value})
-		}
+	to, err = loadAccount(ctx, r, booksID, in.ToAccountID, "to_account_id")
+	if err != nil {
+		return from, to, base, err
 	}
 
-	b := Balance{AccountID: accountID, Date: date, Basis: basis, Amount: out.Value}
-	if len(totals) == 1 {
-		b.Amount = amount
+	if err = checkExchangeAccounts(in, from, to, base); err != nil {
+		return from, to, base, err
 	}
 
-	return b, out, nil
+	return from, to, base, nil
 }
 
-// ExternalFlows is the money that entered (positive) or left (negative) the accounts and their
-// sub-accounts, taken as one tree, between from and to, one item per transaction (investments
-// design 4.3).
-func (s *Service) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
-	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
-		return nil, err
-	}
-
-	return s.repo.TreeExternalFlows(ctx, booksID, accountIDs, from, to)
-}
-
-// FirstPosting is the booked date of the earliest posting of the accounts and their
-// sub-accounts; false when they have none.
-func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
-	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
-		return time.Time{}, false, err
-	}
-
-	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
-}
-
-// RecordedItem is an amount of a tree on a date: a flow or a credit is in the instrument of the
-// tree accounts, an income or an expense in the balancing currency of its transaction. Label is
-// the account name of an income or an expense; Postings is the number of tree postings of a
-// credit.
-type RecordedItem struct {
-	Date     time.Time
-	Value    money.Money
-	Label    string
-	Postings int
-}
-
-// RecordedYield is what the ledger records of a tree over a range (return comparison amendment
-// A208 R19): Flows are the changes of the balance of the tree that are not yield, Credits the yield
-// credited to it, Income and Expense the other income and expense postings of those transactions.
-type RecordedYield struct {
-	Flows, Credits, Income, Expense []RecordedItem
-}
-
-// RecordedYield reads the recorded yield of the accounts and their sub-accounts in [from, to].
-func (s *Service) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (RecordedYield, error) {
-	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
-		return RecordedYield{}, err
-	}
-
-	return s.repo.TreeRecordedYield(ctx, booksID, accountIDs, from, to)
-}
-
-func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
-	for _, id := range accountIDs {
-		if _, err := s.repo.Account(ctx, booksID, id); err != nil {
-			return err
-		}
+// checkExchangeAccounts checks the kinds, the currencies and the amounts of an exchange.
+func checkExchangeAccounts(in Exchange, from, to domain.Account, base money.Currency) error {
+	switch {
+	case !from.IsBalance() || from.HoldsSecurity():
+		return fieldErr(
+			"from_account_id",
+			"must be a balance account in a currency",
+			domain.ErrValidation,
+		)
+	case !to.IsBalance() || to.HoldsSecurity():
+		return fieldErr(
+			"to_account_id",
+			"must be a balance account in a currency",
+			domain.ErrValidation,
+		)
+	case from.Instrument == to.Instrument:
+		return fieldErr(
+			"to_account_id",
+			"must be in another currency than from_account_id",
+			domain.ErrValidation,
+		)
+	case from.Instrument != base && to.Instrument != base:
+		return fieldErr(
+			"to_account_id",
+			"one of the accounts must be in the base currency "+string(base),
+			domain.ErrCurrencyUnsupported,
+		)
+	case in.FromAmount.Currency() != from.Instrument || in.FromAmount.IsZero() || in.FromAmount.IsNegative():
+		return fieldErr(
+			"from_amount",
+			"must be a positive amount in "+string(from.Instrument),
+			domain.ErrValidation,
+		)
+	case in.ToAmount.Currency() != to.Instrument || in.ToAmount.IsZero() || in.ToAmount.IsNegative():
+		return fieldErr(
+			"to_amount",
+			"must be a positive amount in "+string(to.Instrument),
+			domain.ErrValidation,
+		)
 	}
 
 	return nil
+}
+
+// exchangeFee returns the fee of an exchange, zero when none is given.
+func exchangeFee(in Exchange, base money.Currency) (money.Money, error) {
+	fee, err := money.New(0, base)
+	if err != nil {
+		return money.Money{}, err
+	}
+
+	if in.Fee != nil {
+		if in.Fee.Currency() != base || in.Fee.IsNegative() {
+			return money.Money{}, fieldErr("fee", "must be a non-negative amount in "+string(base), domain.ErrValidation)
+		}
+
+		fee = *in.Fee
+	}
+
+	return fee, nil
+}
+
+// exchangePostings returns the two postings of an exchange, the fee debited in the base currency.
+func exchangePostings(
+	in Exchange,
+	from, to domain.Account,
+	base money.Currency,
+	fee money.Money,
+) ([]domain.Posting, error) {
+	var postings []domain.Posting
+	if from.Instrument == base {
+		debit, err := in.FromAmount.Add(fee)
+		if err != nil {
+			return nil, err
+		}
+
+		postings = []domain.Posting{
+			{AccountID: from.ID, Amount: debit.Neg()},
+			{AccountID: to.ID, Amount: in.ToAmount, Weight: in.FromAmount},
+		}
+	} else {
+		credit, err := in.ToAmount.Sub(fee)
+		if err != nil {
+			return nil, err
+		}
+
+		if credit.IsZero() || credit.IsNegative() {
+			return nil, fieldErr("fee", "must be less than to_amount", domain.ErrValidation)
+		}
+
+		postings = []domain.Posting{
+			{AccountID: from.ID, Amount: in.FromAmount.Neg(), Weight: in.ToAmount.Neg()},
+			{AccountID: to.ID, Amount: credit},
+		}
+	}
+
+	return postings, nil
+}
+
+// withExchangeFee inserts the fee posting between the two postings of the exchange.
+func (s *Service) withExchangeFee(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	in Exchange,
+	postings []domain.Posting,
+	fee money.Money,
+) ([]domain.Posting, error) {
+	feeCategory := in.FeeCategoryID
+	if feeCategory == uuid.Nil {
+		fees, err := r.SystemAccount(ctx, booksID, domain.RoleFees)
+		if err != nil {
+			return nil, err
+		}
+
+		feeCategory = fees.ID
+	} else if err := s.expenseCategory(ctx, r, booksID, feeCategory, "fee_category_id"); err != nil {
+		return nil, err
+	}
+
+	postings = []domain.Posting{postings[0], {AccountID: feeCategory, Amount: fee}, postings[1]}
+
+	return postings, nil
 }
 
 func baseCurrency(ctx context.Context, r Repository, booksID int64) (money.Currency, error) {

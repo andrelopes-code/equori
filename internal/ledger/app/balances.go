@@ -2,6 +2,10 @@ package app
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -146,4 +150,129 @@ func (s *Service) CategoryMonthlyTotals(ctx context.Context, booksID int64, cate
 	}
 
 	return out, nil
+}
+
+// ValuedBalance is BalanceAt valued in currency in with stored prices (P8 amendment
+// A65); a parent whose sub-accounts hold several instruments sums their values.
+func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uuid.UUID, date time.Time, basis Basis, in money.Currency) (Balance, Conversion, error) {
+	if basis == "" {
+		basis = BasisBooked
+	}
+
+	if _, err := money.ParseCurrency(string(in)); err != nil {
+		return Balance{}, Conversion{}, fieldErr("value_in", "must be a supported currency", domain.ErrValidation)
+	}
+
+	if _, err := s.repo.Account(ctx, booksID, accountID); err != nil {
+		return Balance{}, Conversion{}, err
+	}
+
+	totals, err := s.repo.TreeBalancesByInstrument(ctx, booksID, accountID, date, basis)
+	if err != nil {
+		return Balance{}, Conversion{}, err
+	}
+
+	value, err := money.New(0, in)
+	if err != nil {
+		return Balance{}, Conversion{}, err
+	}
+
+	out := Conversion{Value: value}
+
+	var amount money.Money
+	for _, code := range slices.Sorted(maps.Keys(totals)) {
+		if amount, err = s.AmountOf(ctx, totals[code], code); err != nil {
+			return Balance{}, Conversion{}, err
+		}
+
+		c := Conversion{Value: amount}
+		if code != in {
+			if amount.IsZero() {
+				continue
+			}
+
+			c, err = s.prices.Convert(ctx, amount, in, date)
+			if errors.Is(err, ErrPriceMissing) {
+				return Balance{}, Conversion{}, fieldErr("value_in", err.Error(), ErrPriceMissing)
+			}
+
+			if err != nil {
+				return Balance{}, Conversion{}, err
+			}
+		}
+
+		if out.Value, err = out.Value.Add(c.Value); err != nil {
+			return Balance{}, Conversion{}, fmt.Errorf("sum valued balances: %w", err)
+		}
+
+		out.Prices = append(out.Prices, c.Prices...)
+		if !amount.IsZero() {
+			out.Parts = append(out.Parts, ValuedPart{Instrument: code, Quantity: amount, Value: c.Value})
+		}
+	}
+
+	b := Balance{AccountID: accountID, Date: date, Basis: basis, Amount: out.Value}
+	if len(totals) == 1 {
+		b.Amount = amount
+	}
+
+	return b, out, nil
+}
+
+// ExternalFlows is the money that entered (positive) or left (negative) the accounts and their
+// sub-accounts, taken as one tree, between from and to, one item per transaction (investments
+// design 4.3).
+func (s *Service) ExternalFlows(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) ([]ExternalFlow, error) {
+	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
+		return nil, err
+	}
+
+	return s.repo.TreeExternalFlows(ctx, booksID, accountIDs, from, to)
+}
+
+// FirstPosting is the booked date of the earliest posting of the accounts and their
+// sub-accounts; false when they have none.
+func (s *Service) FirstPosting(ctx context.Context, booksID int64, accountIDs []uuid.UUID) (time.Time, bool, error) {
+	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
+		return time.Time{}, false, err
+	}
+
+	return s.repo.TreeFirstPosting(ctx, booksID, accountIDs)
+}
+
+// RecordedItem is an amount of a tree on a date: a flow or a credit is in the instrument of the
+// tree accounts, an income or an expense in the balancing currency of its transaction. Label is
+// the account name of an income or an expense; Postings is the number of tree postings of a
+// credit.
+type RecordedItem struct {
+	Date     time.Time
+	Value    money.Money
+	Label    string
+	Postings int
+}
+
+// RecordedYield is what the ledger records of a tree over a range (return comparison amendment
+// A208 R19): Flows are the changes of the balance of the tree that are not yield, Credits the yield
+// credited to it, Income and Expense the other income and expense postings of those transactions.
+type RecordedYield struct {
+	Flows, Credits, Income, Expense []RecordedItem
+}
+
+// RecordedYield reads the recorded yield of the accounts and their sub-accounts in [from, to].
+func (s *Service) RecordedYield(ctx context.Context, booksID int64, accountIDs []uuid.UUID, from, to time.Time) (RecordedYield, error) {
+	if err := s.ownAccounts(ctx, booksID, accountIDs); err != nil {
+		return RecordedYield{}, err
+	}
+
+	return s.repo.TreeRecordedYield(ctx, booksID, accountIDs, from, to)
+}
+
+func (s *Service) ownAccounts(ctx context.Context, booksID int64, accountIDs []uuid.UUID) error {
+	for _, id := range accountIDs {
+		if _, err := s.repo.Account(ctx, booksID, id); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

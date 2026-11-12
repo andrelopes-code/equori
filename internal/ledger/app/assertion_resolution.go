@@ -24,52 +24,13 @@ func (s *Service) ResolveAssertion(ctx context.Context, booksID int64, id uuid.U
 
 	var res AssertionResult
 	err = s.repo.InTx(ctx, func(r Repository) error {
-		a, err := s.lockLeafBalance(ctx, r, booksID, found.AccountID)
+		a, err := s.loadOpenAssertion(ctx, r, booksID, id, found.AccountID, &res)
 		if err != nil {
 			return err
 		}
 
-		// Reread under the account lock: every reconciliation of the account holds it.
-		if res.Assertion, err = r.BalanceAssertion(ctx, booksID, id); err != nil {
+		if err := s.resolveDifference(ctx, r, booksID, a, resolution, &res); err != nil {
 			return err
-		}
-
-		if res.Assertion.Reconciled {
-			return domain.ErrAlreadyReconciled
-		}
-
-		last, err := r.LastReconciledOn(ctx, booksID, a.ID)
-		if err != nil {
-			return err
-		}
-
-		if err := domain.CheckAssertionDate(res.Assertion.Date, last); err != nil {
-			return err
-		}
-
-		settled, err := r.BalanceAt(ctx, booksID, a.ID, res.Assertion.Date, BasisSettled)
-		if err != nil {
-			return err
-		}
-
-		if res.Difference, err = money.New(res.Assertion.Amount-settled, a.Instrument); err != nil {
-			return err
-		}
-
-		if !res.Difference.IsZero() {
-			if resolution == domain.ResolutionTransactionsAdded {
-				return fmt.Errorf("%w: %s", ErrDifferenceRemains, res.Difference)
-			}
-
-			if resolution == domain.ResolutionYield {
-				res.ResolutionTransactionID, err = s.resolveAsYield(ctx, r, a, res.Assertion.Date, res.Difference)
-			} else {
-				res.ResolutionTransactionID, err = s.recordAdjustment(ctx, r, a, res.Assertion.Date, res.Difference)
-			}
-
-			if err != nil {
-				return err
-			}
 		}
 
 		res.Resolution, res.Assertion.Reconciled = resolution, true
@@ -81,6 +42,79 @@ func (s *Service) ResolveAssertion(ctx context.Context, booksID int64, id uuid.U
 	})
 
 	return res, err
+}
+
+// loadOpenAssertion locks the account of the assertion and loads the assertion into res. It
+// rejects a reconciled assertion and a date before the last reconciliation.
+func (s *Service) loadOpenAssertion(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id, accountID uuid.UUID,
+	res *AssertionResult,
+) (domain.Account, error) {
+	a, err := s.lockLeafBalance(ctx, r, booksID, accountID)
+	if err != nil {
+		return domain.Account{}, err
+	}
+
+	// Reread under the account lock: every reconciliation of the account holds it.
+	if res.Assertion, err = r.BalanceAssertion(ctx, booksID, id); err != nil {
+		return domain.Account{}, err
+	}
+
+	if res.Assertion.Reconciled {
+		return domain.Account{}, domain.ErrAlreadyReconciled
+	}
+
+	last, err := r.LastReconciledOn(ctx, booksID, a.ID)
+	if err != nil {
+		return domain.Account{}, err
+	}
+
+	if err := domain.CheckAssertionDate(res.Assertion.Date, last); err != nil {
+		return domain.Account{}, err
+	}
+
+	return a, nil
+}
+
+// resolveDifference computes the difference between the assertion and the settled balance, then
+// records the resolution that closes it.
+func (s *Service) resolveDifference(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	a domain.Account,
+	resolution domain.Resolution,
+	res *AssertionResult,
+) error {
+	settled, err := r.BalanceAt(ctx, booksID, a.ID, res.Assertion.Date, BasisSettled)
+	if err != nil {
+		return err
+	}
+
+	if res.Difference, err = money.New(res.Assertion.Amount-settled, a.Instrument); err != nil {
+		return err
+	}
+
+	if !res.Difference.IsZero() {
+		if resolution == domain.ResolutionTransactionsAdded {
+			return fmt.Errorf("%w: %s", ErrDifferenceRemains, res.Difference)
+		}
+
+		if resolution == domain.ResolutionYield {
+			res.ResolutionTransactionID, err = s.resolveAsYield(ctx, r, a, res.Assertion.Date, res.Difference)
+		} else {
+			res.ResolutionTransactionID, err = s.recordAdjustment(ctx, r, a, res.Assertion.Date, res.Difference)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // yieldStart is the first day of the yield period (A10): the day after the previous

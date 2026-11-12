@@ -93,16 +93,7 @@ func (s *Service) categorize(ctx context.Context, r Repository, booksID int64, c
 		}
 	}
 
-	ids := postingAccounts(prev)
-	for _, p := range c.Parts {
-		ids = append(ids, p.AccountID)
-	}
-
-	if c.WholeTo != uuid.Nil {
-		ids = append(ids, c.WholeTo)
-	}
-
-	accounts, err := r.Accounts(ctx, booksID, ids)
+	accounts, err := s.categorizationAccounts(ctx, r, booksID, prev, c)
 	if err != nil {
 		return nil, err
 	}
@@ -130,6 +121,26 @@ func (s *Service) categorize(ctx context.Context, r Repository, booksID int64, c
 	return nil, r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
 }
 
+// categorizationAccounts loads the accounts of the postings of prev and of the categorization.
+func (s *Service) categorizationAccounts(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	prev domain.Transaction,
+	c Categorization,
+) (map[uuid.UUID]domain.Account, error) {
+	ids := postingAccounts(prev)
+	for _, p := range c.Parts {
+		ids = append(ids, p.AccountID)
+	}
+
+	if c.WholeTo != uuid.Nil {
+		ids = append(ids, c.WholeTo)
+	}
+
+	return r.Accounts(ctx, booksID, ids)
+}
+
 func postingAccounts(ts ...domain.Transaction) []uuid.UUID {
 	var ids []uuid.UUID
 	for _, t := range ts {
@@ -152,23 +163,8 @@ type CategoriesMerged struct {
 func (s *Service) MergeCategories(ctx context.Context, booksID int64, from, into uuid.UUID) (domain.Account, error) {
 	var dest domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		src, err := r.Account(ctx, booksID, from)
+		src, all, err := s.loadMerge(ctx, r, booksID, from, into, &dest)
 		if err != nil {
-			return err
-		}
-
-		if dest, err = r.Account(ctx, booksID, into); errors.Is(err, ErrNotFound) {
-			return &domain.FieldError{Field: "into", Message: "unknown account", Err: domain.ErrUnknownAccount}
-		} else if err != nil {
-			return err
-		}
-
-		all, err := r.AllAccounts(ctx, booksID)
-		if err != nil {
-			return err
-		}
-
-		if err := checkMerge(src, dest, all); err != nil {
 			return err
 		}
 
@@ -183,15 +179,8 @@ func (s *Service) MergeCategories(ctx context.Context, booksID int64, from, into
 			}
 		}
 
-		for _, child := range subtreeOf(src, all)[1:] {
-			if child.ParentID != src.ID {
-				continue
-			}
-
-			child.ParentID = dest.ID
-			if _, err := r.UpdateAccount(ctx, child); err != nil {
-				return err
-			}
+		if err := reparentChildren(ctx, r, src, dest, all); err != nil {
+			return err
 		}
 
 		today := s.clock.Today(ctx)
@@ -209,6 +198,53 @@ func (s *Service) MergeCategories(ctx context.Context, booksID int64, from, into
 	})
 
 	return dest, err
+}
+
+// loadMerge loads the source into src and the destination into dest, then checks the merge.
+func (s *Service) loadMerge(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	from, into uuid.UUID,
+	dest *domain.Account,
+) (domain.Account, []domain.Account, error) {
+	src, err := r.Account(ctx, booksID, from)
+	if err != nil {
+		return domain.Account{}, nil, err
+	}
+
+	if *dest, err = r.Account(ctx, booksID, into); errors.Is(err, ErrNotFound) {
+		return domain.Account{}, nil, &domain.FieldError{Field: "into", Message: "unknown account", Err: domain.ErrUnknownAccount}
+	} else if err != nil {
+		return domain.Account{}, nil, err
+	}
+
+	all, err := r.AllAccounts(ctx, booksID)
+	if err != nil {
+		return domain.Account{}, nil, err
+	}
+
+	if err := checkMerge(src, *dest, all); err != nil {
+		return domain.Account{}, nil, err
+	}
+
+	return src, all, nil
+}
+
+// reparentChildren moves the direct children of src under dest.
+func reparentChildren(ctx context.Context, r Repository, src, dest domain.Account, all []domain.Account) error {
+	for _, child := range subtreeOf(src, all)[1:] {
+		if child.ParentID != src.ID {
+			continue
+		}
+
+		child.ParentID = dest.ID
+		if _, err := r.UpdateAccount(ctx, child); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func checkMerge(src, dest domain.Account, all []domain.Account) error {

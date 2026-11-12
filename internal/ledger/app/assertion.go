@@ -84,31 +84,9 @@ func (s *Service) AssertSynced(ctx context.Context, booksID int64, accountID uui
 			}
 		}
 
-		var repeated bool
-		for _, found := range assertions {
-			if found.Source != SourceAggregator || !found.Date.Equal(date) || found.Amount != amount.Amount() {
-				continue
-			}
-
-			newest := !repeated
-			repeated = true
-
-			if found.Reconciled {
-				if newest {
-					res.Assertion = found
-				}
-
-				continue
-			}
-
-			decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceAggregator, reserve, &found)
-			if err != nil {
-				return err
-			}
-
-			if newest {
-				res = decided
-			}
+		repeated, err := s.decideRepeated(ctx, r, a, date, amount, reserve, assertions, &res)
+		if err != nil {
+			return err
 		}
 
 		if repeated {
@@ -121,6 +99,48 @@ func (s *Service) AssertSynced(ctx context.Context, booksID int64, accountID uui
 	})
 
 	return res, err
+}
+
+// decideRepeated decides each aggregator assertion already stored for date and amount. res takes
+// the newest one. It reports whether any exists.
+func (s *Service) decideRepeated(
+	ctx context.Context,
+	r Repository,
+	a domain.Account,
+	date time.Time,
+	amount money.Money,
+	reserve bool,
+	assertions []BalanceAssertion,
+	res *AssertionResult,
+) (bool, error) {
+	var repeated bool
+	for _, found := range assertions {
+		if found.Source != SourceAggregator || !found.Date.Equal(date) || found.Amount != amount.Amount() {
+			continue
+		}
+
+		newest := !repeated
+		repeated = true
+
+		if found.Reconciled {
+			if newest {
+				res.Assertion = found
+			}
+
+			continue
+		}
+
+		decided, err := s.decideAssertion(ctx, r, a, date, amount, SourceAggregator, reserve, &found)
+		if err != nil {
+			return false, err
+		}
+
+		if newest {
+			*res = decided
+		}
+	}
+
+	return repeated, nil
 }
 
 func (s *Service) BalanceAssertions(ctx context.Context, booksID int64, accountID uuid.UUID, p page.Request[AssertionKey]) ([]BalanceAssertion, *AssertionKey, error) {
@@ -210,21 +230,7 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 		return res, err
 	}
 
-	var outcome domain.AssertionOutcome
-	switch {
-	case reserve:
-		days := 0
-		if prev != nil {
-			days = int(date.Sub(*prev) / (24 * time.Hour))
-		}
-
-		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode, s.defaults.ReserveYieldPercent(a.Instrument))
-	case source == SourceAggregator:
-		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
-		outcome = domain.DecideAssertion(amount.Amount(), settled, domain.YieldNone)
-	default:
-		outcome = domain.DecideAssertion(amount.Amount(), settled, a.YieldMode)
-	}
+	outcome := s.assertionOutcome(a, amount, source, reserve, prev, date, settled)
 
 	if outcome.Resolution == domain.ResolutionYield && start == nil {
 		outcome = domain.AssertionOutcome{Difference: outcome.Difference}
@@ -246,9 +252,57 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 		return res, nil
 	}
 
+	if err := s.resolveOutcome(ctx, r, a, date, start, outcome, &res); err != nil {
+		return res, err
+	}
+
+	return res, nil
+}
+
+// assertionOutcome decides the resolution of a stated balance against the settled one.
+func (s *Service) assertionOutcome(
+	a domain.Account,
+	amount money.Money,
+	source string,
+	reserve bool,
+	prev *time.Time,
+	date time.Time,
+	settled int64,
+) domain.AssertionOutcome {
+	var outcome domain.AssertionOutcome
+	switch {
+	case reserve:
+		days := 0
+		if prev != nil {
+			days = int(date.Sub(*prev) / (24 * time.Hour))
+		}
+
+		outcome = domain.DecideSyncedReserve(amount.Amount(), settled, days, a.YieldMode, s.defaults.ReserveYieldPercent(a.Instrument))
+	case source == SourceAggregator:
+		// P6 A42: yield arrives as feed lines; a line the feed lacks today is not yield.
+		outcome = domain.DecideAssertion(amount.Amount(), settled, domain.YieldNone)
+	default:
+		outcome = domain.DecideAssertion(amount.Amount(), settled, a.YieldMode)
+	}
+
+	return outcome
+}
+
+// resolveOutcome records the yield of outcome when it has one, then reconciles the assertion.
+func (s *Service) resolveOutcome(
+	ctx context.Context,
+	r Repository,
+	a domain.Account,
+	date time.Time,
+	start *time.Time,
+	outcome domain.AssertionOutcome,
+	res *AssertionResult,
+) error {
+	var err error
+
 	if outcome.Resolution == domain.ResolutionYield {
 		if res.ResolutionTransactionID, err = s.recordYield(ctx, r, a, *start, date, outcome.Yield); err != nil {
-			return res, err
+			return err
 		}
 	}
 
@@ -257,12 +311,12 @@ func (s *Service) decideAssertion(ctx context.Context, r Repository, a domain.Ac
 		BooksID: a.BooksID, AccountID: a.ID, Date: date, AssertionID: res.Assertion.ID,
 		Difference: outcome.Difference, Resolution: outcome.Resolution, ResolutionTransactionID: res.ResolutionTransactionID,
 	}); err != nil {
-		return res, err
+		return err
 	}
 
 	res.Assertion.Reconciled = true
 
-	return res, nil
+	return nil
 }
 
 // lockLeafBalance serializes the reconciliations of one account.
