@@ -102,12 +102,57 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID
 		return s.resolveGroup(ctx, booksID, rec, b, action, txID)
 	}
 
+	if err := s.keepStoredCandidates(ctx, &rec, currencyOf(b)); err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	if err := s.applyAction(ctx, booksID, &rec, currencyOf(b), action, txID); err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	rec.Candidates = nil
+	if err := s.repo.ResolveRecord(ctx, rec); err != nil {
+		return domain.ExternalRecord{}, domain.Batch{}, err
+	}
+
+	return rec, b, nil
+}
+
+func (s *Service) applyAction(
+	ctx context.Context,
+	booksID int64,
+	rec *domain.ExternalRecord,
+	currency money.Currency,
+	action string,
+	txID uuid.UUID,
+) error {
+	switch action {
+	case ActionMatch:
+		if err := s.resolveMatch(ctx, booksID, rec, txID); err != nil {
+			return err
+		}
+	case ActionCreate:
+		if err := s.resolveCreate(ctx, booksID, rec, currency); err != nil {
+			return err
+		}
+	case ActionDiscard:
+		rec.State = domain.StateDiscarded
+	}
+
+	return nil
+}
+
+func (s *Service) keepStoredCandidates(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	currency money.Currency,
+) error {
 	// The candidates stored at import stay accepted, so a choice the ledger now refuses (a voided
 	// or reconciled entry) is refused by its own rule. A review transfer keeps only the
 	// counterparts at read time (A219 rule 2).
 	stored := rec.Candidates
-	if err := s.refreshCandidates(ctx, &rec, currencyOf(b)); err != nil {
-		return domain.ExternalRecord{}, domain.Batch{}, err
+	if err := s.refreshCandidates(ctx, rec, currency); err != nil {
+		return err
 	}
 
 	if rec.ReviewReason != domain.ReviewTransfer {
@@ -118,67 +163,75 @@ func (s *Service) Resolve(ctx context.Context, booksID int64, recordID uuid.UUID
 		}
 	}
 
-	switch action {
-	case ActionMatch:
-		if !slices.Contains(rec.Candidates, txID) {
-			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
-		}
+	return nil
+}
 
-		if rec.ReviewReason == domain.ReviewTransfer {
-			if _, err := s.ledger.PairLine(ctx, booksID, txID, rec.AccountID, rec.ID); errors.Is(err, ErrNotPairable) {
-				return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "transaction_id", Message: "cannot become the transfer of the line"}
-			} else if err != nil {
-				return domain.ExternalRecord{}, domain.Batch{}, err
-			}
+func (s *Service) resolveMatch(
+	ctx context.Context,
+	booksID int64,
+	rec *domain.ExternalRecord,
+	txID uuid.UUID,
+) error {
+	if !slices.Contains(rec.Candidates, txID) {
+		return &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
+	}
 
-			rec.State, rec.TransactionID = domain.StateMatched, txID
-
-			break
-		}
-
-		// A101: the institution's amount and date win; the owner's classification stays.
-		if err := s.ledger.ConfirmLine(ctx, booksID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
-			return domain.ExternalRecord{}, domain.Batch{}, err
-		}
-
-		conflicts, err := s.ledger.ClearMatched(ctx, booksID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
-		if err != nil {
-			return domain.ExternalRecord{}, domain.Batch{}, err
-		}
-
-		if len(conflicts) > 0 {
-			return domain.ExternalRecord{}, domain.Batch{}, ErrAlreadyMatched
-		}
-
-		// A136: the line's bill places the posting, as an automatic match does.
-		if err := s.billMatched(ctx, &rec, false); err != nil {
-			return domain.ExternalRecord{}, domain.Batch{}, err
+	if rec.ReviewReason == domain.ReviewTransfer {
+		if _, err := s.ledger.PairLine(ctx, booksID, txID, rec.AccountID, rec.ID); errors.Is(err, ErrNotPairable) {
+			return &domain.FieldError{Field: "transaction_id", Message: "cannot become the transfer of the line"}
+		} else if err != nil {
+			return err
 		}
 
 		rec.State, rec.TransactionID = domain.StateMatched, txID
-	case ActionCreate:
-		line := Line{AccountID: rec.AccountID, Currency: currencyOf(b), Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
 
-		ids, err := s.ledger.RecordImported(ctx, booksID, []NewLine{{RecordID: rec.ID, Line: line}})
-		if errors.Is(err, ErrLineRejected) {
-			return domain.ExternalRecord{}, domain.Batch{}, &domain.FieldError{Field: "action", Message: err.Error()}
-		}
-
-		if err != nil {
-			return domain.ExternalRecord{}, domain.Batch{}, err
-		}
-
-		rec.State, rec.TransactionID = domain.StateCreated, ids[0]
-	case ActionDiscard:
-		rec.State = domain.StateDiscarded
+		return nil
 	}
 
-	rec.Candidates = nil
-	if err := s.repo.ResolveRecord(ctx, rec); err != nil {
-		return domain.ExternalRecord{}, domain.Batch{}, err
+	// A101: the institution's amount and date win; the owner's classification stays.
+	if err := s.ledger.ConfirmLine(ctx, booksID, txID, rec.AccountID, rec.Amount, rec.Date); err != nil {
+		return err
 	}
 
-	return rec, b, nil
+	conflicts, err := s.ledger.ClearMatched(ctx, booksID, []Match{{RecordID: rec.ID, TransactionID: txID, AccountID: rec.AccountID}})
+	if err != nil {
+		return err
+	}
+
+	if len(conflicts) > 0 {
+		return ErrAlreadyMatched
+	}
+
+	// A136: the line's bill places the posting, as an automatic match does.
+	if err := s.billMatched(ctx, rec, false); err != nil {
+		return err
+	}
+
+	rec.State, rec.TransactionID = domain.StateMatched, txID
+
+	return nil
+}
+
+func (s *Service) resolveCreate(
+	ctx context.Context,
+	booksID int64,
+	rec *domain.ExternalRecord,
+	currency money.Currency,
+) error {
+	line := Line{AccountID: rec.AccountID, Currency: currency, Date: rec.Date, Amount: rec.Amount, Description: truncate(rec.Description)}
+
+	ids, err := s.ledger.RecordImported(ctx, booksID, []NewLine{{RecordID: rec.ID, Line: line}})
+	if errors.Is(err, ErrLineRejected) {
+		return &domain.FieldError{Field: "action", Message: err.Error()}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	rec.State, rec.TransactionID = domain.StateCreated, ids[0]
+
+	return nil
 }
 
 // Resolution is one item of ResolveMany.

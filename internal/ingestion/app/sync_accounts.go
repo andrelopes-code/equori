@@ -39,39 +39,12 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 		previous = &d
 	}
 
-	for _, a := range listed {
-		if stored, ok := known[a.ExternalID]; ok {
-			digest, listed := holderDigest(a)
-			if listed && !bytes.Equal(digest, stored.HolderDigest) {
-				if err := s.repo.SetExternalAccountHolder(ctx, c.BooksID, stored.ID, digest); err != nil {
-					return err
-				}
-
-				changed = true
-			}
-
-			if a.Name == stored.Name || a.Name == "" {
-				continue
-			}
-
-			if err := s.repo.RenameExternalAccount(ctx, c.BooksID, stored.ID, a.Name, previous, today); err != nil {
-				return err
-			}
-
-			changed = true
-
-			continue
-		}
-
-		withHolderDigest(&a)
-
-		a.BooksID, a.ConnectionID, a.NameFrom, a.NameOn = c.BooksID, c.ID, previous, &today
-		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
-			return err
-		}
-
-		changed = true
+	storedChanged, err := s.storeListed(ctx, c, listed, known, previous, today)
+	if err != nil {
+		return err
 	}
+
+	changed = changed || storedChanged
 
 	if !changed {
 		return nil
@@ -85,6 +58,72 @@ func (s *Service) addMissingAccounts(ctx context.Context, agg Aggregator, c *dom
 	c.Accounts = reloaded.Accounts
 
 	return nil
+}
+
+// storeListed updates the stored accounts the listing reports and inserts the others, pending.
+func (s *Service) storeListed(
+	ctx context.Context,
+	c *domain.Connection,
+	listed []domain.ExternalAccount,
+	known map[string]domain.ExternalAccount,
+	previous *time.Time,
+	today time.Time,
+) (bool, error) {
+	changed := false
+
+	for _, a := range listed {
+		if stored, ok := known[a.ExternalID]; ok {
+			updated, err := s.updateStored(ctx, c, stored, a, previous, today)
+			if err != nil {
+				return false, err
+			}
+
+			changed = changed || updated
+
+			continue
+		}
+
+		withHolderDigest(&a)
+
+		a.BooksID, a.ConnectionID, a.NameFrom, a.NameOn = c.BooksID, c.ID, previous, &today
+		if err := s.repo.InsertMissingExternalAccount(ctx, a); err != nil {
+			return false, err
+		}
+
+		changed = true
+	}
+
+	return changed, nil
+}
+
+// updateStored stores the holder and the name the listing reports for a stored account.
+func (s *Service) updateStored(
+	ctx context.Context,
+	c *domain.Connection,
+	stored, a domain.ExternalAccount,
+	previous *time.Time,
+	today time.Time,
+) (bool, error) {
+	changed := false
+
+	digest, listed := holderDigest(a)
+	if listed && !bytes.Equal(digest, stored.HolderDigest) {
+		if err := s.repo.SetExternalAccountHolder(ctx, c.BooksID, stored.ID, digest); err != nil {
+			return false, err
+		}
+
+		changed = true
+	}
+
+	if a.Name == stored.Name || a.Name == "" {
+		return changed, nil
+	}
+
+	if err := s.repo.RenameExternalAccount(ctx, c.BooksID, stored.ID, a.Name, previous, today); err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // syncAccount reads one mapped account for its window, widened by one day on each side

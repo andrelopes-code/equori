@@ -53,15 +53,8 @@ type ImportFile struct {
 // existing transaction or created, and the file balance is asserted (chapter 3, F4). A file
 // that cannot be read leaves no batch.
 func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error) {
-	switch {
-	case f.Source != domain.SourceOFX && f.Source != domain.SourceCSV:
-		return domain.Batch{}, &domain.FieldError{Field: "format", Message: "must be ofx or csv"}
-	case f.FileName == "" || utf8.RuneCountInString(f.FileName) > 255:
-		return domain.Batch{}, fileError("must have a file name of 1 to 255 characters")
-	case len(f.Content) == 0:
-		return domain.Batch{}, fileError("must not be empty")
-	case len(f.Content) > MaxFileBytes:
-		return domain.Batch{}, fileError("must be at most 10 MiB")
+	if err := validateFile(f); err != nil {
+		return domain.Batch{}, err
 	}
 
 	target, err := s.ledger.ImportTarget(ctx, f.BooksID, f.AccountID)
@@ -106,6 +99,21 @@ func (s *Service) Import(ctx context.Context, f ImportFile) (domain.Batch, error
 	}
 
 	return s.repo.CompleteBatch(ctx, batch)
+}
+
+func validateFile(f ImportFile) error {
+	switch {
+	case f.Source != domain.SourceOFX && f.Source != domain.SourceCSV:
+		return &domain.FieldError{Field: "format", Message: "must be ofx or csv"}
+	case f.FileName == "" || utf8.RuneCountInString(f.FileName) > 255:
+		return fileError("must have a file name of 1 to 255 characters")
+	case len(f.Content) == 0:
+		return fileError("must not be empty")
+	case len(f.Content) > MaxFileBytes:
+		return fileError("must be at most 10 MiB")
+	}
+
+	return nil
 }
 
 func (s *Service) read(ctx context.Context, f ImportFile, currency money.Currency) (domain.Statement, error) {

@@ -36,13 +36,8 @@ func (s *Service) CreateConnection(ctx context.Context, booksID int64, integrati
 		return domain.Connection{}, err
 	}
 
-	c, err := agg.Item(ctx, i.ID, creds, itemID)
-	switch {
-	case errors.Is(err, ErrAggregatorUnauthorized):
-		return domain.Connection{}, &UnauthorizedError{Field: "integration_id"}
-	case errors.Is(err, ErrItemNotFound):
-		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is not an item of this integration's application"}
-	case err != nil:
+	c, err := s.fetchItem(ctx, agg, i.ID, creds, itemID)
+	if err != nil {
 		return domain.Connection{}, err
 	}
 
@@ -142,13 +137,7 @@ func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, e
 		return domain.ExternalAccount{}, err
 	}
 
-	var ext *domain.ExternalAccount
-	for i := range c.Accounts {
-		if c.Accounts[i].ID == externalAccountID {
-			ext = &c.Accounts[i]
-		}
-	}
-
+	ext := findExternal(c.Accounts, externalAccountID)
 	if ext == nil {
 		return domain.ExternalAccount{}, ErrNotFound
 	}
@@ -157,16 +146,9 @@ func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, e
 		return domain.ExternalAccount{}, err
 	}
 
-	var target domain.ImportTarget
-	if !m.Ignored {
-		target, err = s.ledger.ImportTarget(ctx, booksID, *m.AccountID)
-		if errors.Is(err, ErrNotFound) {
-			return domain.ExternalAccount{}, &domain.FieldError{Field: "account_id", Message: "unknown account"}
-		}
-
-		if err != nil {
-			return domain.ExternalAccount{}, err
-		}
+	target, err := s.mappingTarget(ctx, booksID, m)
+	if err != nil {
+		return domain.ExternalAccount{}, err
 	}
 
 	mapped, err := ext.Apply(m, target)
@@ -191,4 +173,58 @@ func (s *Service) MapAccount(ctx context.Context, booksID int64, connectionID, e
 	}
 
 	return s.repo.SaveMapping(ctx, mapped)
+}
+
+func findExternal(accounts []domain.ExternalAccount, id uuid.UUID) *domain.ExternalAccount {
+	var ext *domain.ExternalAccount
+	for i := range accounts {
+		if accounts[i].ID == id {
+			ext = &accounts[i]
+		}
+	}
+
+	return ext
+}
+
+func (s *Service) mappingTarget(
+	ctx context.Context,
+	booksID int64,
+	m domain.Mapping,
+) (domain.ImportTarget, error) {
+	var target domain.ImportTarget
+
+	if !m.Ignored {
+		var err error
+
+		target, err = s.ledger.ImportTarget(ctx, booksID, *m.AccountID)
+		if errors.Is(err, ErrNotFound) {
+			return domain.ImportTarget{}, &domain.FieldError{Field: "account_id", Message: "unknown account"}
+		}
+
+		if err != nil {
+			return domain.ImportTarget{}, err
+		}
+	}
+
+	return target, nil
+}
+
+func (s *Service) fetchItem(
+	ctx context.Context,
+	agg Aggregator,
+	integrationID uuid.UUID,
+	creds domain.Credentials,
+	itemID string,
+) (domain.Connection, error) {
+	c, err := agg.Item(ctx, integrationID, creds, itemID)
+	switch {
+	case errors.Is(err, ErrAggregatorUnauthorized):
+		return domain.Connection{}, &UnauthorizedError{Field: "integration_id"}
+	case errors.Is(err, ErrItemNotFound):
+		return domain.Connection{}, &domain.FieldError{Field: "external_id", Message: "is not an item of this integration's application"}
+	case err != nil:
+		return domain.Connection{}, err
+	}
+
+	return c, nil
 }

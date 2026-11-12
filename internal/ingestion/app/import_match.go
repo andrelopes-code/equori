@@ -44,32 +44,8 @@ func (s *Service) repeats(
 	lines []scoredLine,
 	assigned []domain.Assignment,
 ) (map[int]bool, error) {
-	var (
-		fresh, recorded []domain.RepeatLine
-		at              []int
-		from, to        time.Time
-	)
-	for i, a := range assigned {
-		l := domain.RepeatLine{
-			ExternalID: lines[i].rec.ExternalID,
-			Date:       lines[i].line.Date,
-			Amount:     lines[i].line.Amount,
-			Kind:       lines[i].line.Kind,
-		}
-		switch {
-		case a.Zone == domain.ZoneLink:
-			recorded = append(recorded, l)
-		case a.Zone == domain.ZoneNew && l.Amount > 0:
-			fresh, at = append(fresh, l), append(at, i)
-			if from.IsZero() || l.Date.Before(from) {
-				from = l.Date
-			}
-
-			if l.Date.After(to) {
-				to = l.Date
-			}
-		}
-	}
+	scan := scanRepeats(lines, assigned)
+	fresh, recorded, at, from, to := scan.fresh, scan.recorded, scan.at, scan.from, scan.to
 
 	if len(fresh) == 0 {
 		return nil, nil
@@ -103,6 +79,43 @@ func (s *Service) repeats(
 	}
 
 	return out, nil
+}
+
+type repeatScan struct {
+	fresh, recorded []domain.RepeatLine
+	at              []int
+	from, to        time.Time
+}
+
+func scanRepeats(lines []scoredLine, assigned []domain.Assignment) repeatScan {
+	var (
+		fresh, recorded []domain.RepeatLine
+		at              []int
+		from, to        time.Time
+	)
+	for i, a := range assigned {
+		l := domain.RepeatLine{
+			ExternalID: lines[i].rec.ExternalID,
+			Date:       lines[i].line.Date,
+			Amount:     lines[i].line.Amount,
+			Kind:       lines[i].line.Kind,
+		}
+		switch {
+		case a.Zone == domain.ZoneLink:
+			recorded = append(recorded, l)
+		case a.Zone == domain.ZoneNew && l.Amount > 0:
+			fresh, at = append(fresh, l), append(at, i)
+			if from.IsZero() || l.Date.Before(from) {
+				from = l.Date
+			}
+
+			if l.Date.After(to) {
+				to = l.Date
+			}
+		}
+	}
+
+	return repeatScan{fresh: fresh, recorded: recorded, at: at, from: from, to: to}
 }
 
 // scoredLine is a line that matching decides: link, review or create.

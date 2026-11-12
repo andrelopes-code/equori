@@ -81,20 +81,15 @@ func (s *Service) update(ctx context.Context, sync bool, batchID uuid.UUID, rec 
 
 	applied := rec.LineKind
 	if settled || retype {
-		posted, err := s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, r.Pending, r.DueDate, r.Kind)
-		changed = posted
-
-		switch {
-		case errors.Is(err, ErrReconciled):
-			notes = append(notes, "the aggregator reports the line "+strings.ToLower(domain.ExternalStatusOf(r))+billNote(r.DueDate)+"; the posting is reconciled and keeps its status and statement")
-			rec.ReviewReason = domain.ReviewChanged
-			retype = false
-		case errors.Is(err, ErrNotRetypable):
-			notes = append(notes, "the aggregator reports the line as a card payment; the transaction changed since its import and keeps its categories")
-			rec.ReviewReason = domain.ReviewChanged
-			retype = false
-		case err != nil && !errors.Is(err, ErrNotFound):
+		note, posted, kept, err := s.updatePosting(ctx, rec, r, retype)
+		if err != nil {
 			return false, false, err
+		}
+
+		changed, retype = posted, kept
+
+		if note != "" {
+			notes = append(notes, note)
 		}
 	}
 
@@ -111,6 +106,45 @@ func (s *Service) update(ctx context.Context, sync bool, batchID uuid.UUID, rec 
 		}
 	}
 
+	return true, recordUpdated(rec, r, batchID, notes, applied, retype, changed), nil
+}
+
+// updatePosting sends a settled or retyped line to its posting. It returns the note of a
+// change the ledger refused, whether the ledger took the change, and whether the retype stays.
+func (s *Service) updatePosting(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	r domain.NormalizedRecord,
+	retype bool,
+) (note string, posted, kept bool, err error) {
+	posted, err = s.ledger.UpdateImportedPosting(ctx, rec.BooksID, rec.ID, r.Pending, r.DueDate, r.Kind)
+
+	switch {
+	case errors.Is(err, ErrReconciled):
+		note = "the aggregator reports the line " + strings.ToLower(domain.ExternalStatusOf(r)) + billNote(r.DueDate) + "; the posting is reconciled and keeps its status and statement"
+		rec.ReviewReason = domain.ReviewChanged
+		retype = false
+	case errors.Is(err, ErrNotRetypable):
+		note = "the aggregator reports the line as a card payment; the transaction changed since its import and keeps its categories"
+		rec.ReviewReason = domain.ReviewChanged
+		retype = false
+	case err != nil && !errors.Is(err, ErrNotFound):
+		return "", false, false, err
+	}
+
+	return note, posted, retype, nil
+}
+
+// recordUpdated stores the reported facts and the unapplied change on the record and reports
+// whether the change is new.
+func recordUpdated(
+	rec *domain.ExternalRecord,
+	r domain.NormalizedRecord,
+	batchID uuid.UUID,
+	notes []string,
+	applied string,
+	retype, changed bool,
+) bool {
 	previous := rec.UnappliedChange
 
 	withFacts(rec, r)
@@ -131,7 +165,7 @@ func (s *Service) update(ctx context.Context, sync bool, batchID uuid.UUID, rec 
 		rec.Decision, rec.Undo, rec.SummaryBatchID = "", domain.Undo{}, batchID
 	}
 
-	return true, changed, nil
+	return changed
 }
 
 // followLine corrects the transaction of a linked line to the line's new amount and date

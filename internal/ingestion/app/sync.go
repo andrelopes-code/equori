@@ -95,6 +95,24 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 
 	syncID := uuid.Must(uuid.NewV7())
 
+	batches, err := s.syncMapped(ctx, agg, c, creds, syncID)
+	if err != nil {
+		return batches, err
+	}
+
+	now := s.now()
+	c.LastSyncedAt, c.LastItemUpdateAt = &now, updatedAt
+
+	return batches, nil
+}
+
+func (s *Service) syncMapped(
+	ctx context.Context,
+	agg Aggregator,
+	c *domain.Connection,
+	creds domain.Credentials,
+	syncID uuid.UUID,
+) ([]domain.Batch, error) {
 	var batches []domain.Batch
 	// Reserved balances sync after the other accounts, so that the transfers the lines of a
 	// bank account book come before the reserve assertion (A74).
@@ -128,13 +146,17 @@ func (s *Service) syncItem(ctx context.Context, c *domain.Connection, force bool
 		batches = append(batches, b)
 	}
 
-	now := s.now()
-	c.LastSyncedAt, c.LastItemUpdateAt = &now, updatedAt
-
 	return batches, nil
 }
 
-func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Connection, ext domain.ExternalAccount, creds domain.Credentials, syncID uuid.UUID) (domain.Batch, error) {
+func (s *Service) syncAccount(
+	ctx context.Context,
+	agg Aggregator,
+	c domain.Connection,
+	ext domain.ExternalAccount,
+	creds domain.Credentials,
+	syncID uuid.UUID,
+) (domain.Batch, error) {
 	accountID := *ext.AccountID
 
 	target, err := s.ledger.ImportTarget(ctx, c.BooksID, accountID)
@@ -157,6 +179,54 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 	}
 	defer unlock()
 
+	ar, err := s.readAccount(ctx, agg, c, ext, creds, target, from, to)
+	if err != nil {
+		return domain.Batch{}, err
+	}
+
+	batch, err := s.importAccountRead(ctx, c, ext, target, ar, to, syncID)
+	if err != nil {
+		return domain.Batch{}, err
+	}
+
+	if b := ar.read.Balance; b != nil && !b.Date.After(today) {
+		if err := s.assertAccountBalance(ctx, c, &ext, &batch, target, b); err != nil {
+			return domain.Batch{}, err
+		}
+	}
+
+	if batch, err = s.repo.CompleteBatch(ctx, batch); err != nil {
+		return domain.Batch{}, err
+	}
+
+	ext.LastSyncedOn = &today
+	ext.LastReadAt = &ar.readStart
+
+	if deep {
+		ext.LastDeepReadOn = &today
+	}
+
+	return batch, s.repo.MarkAccountSynced(ctx, ext)
+}
+
+// accountRead is what one account read returns, narrowed to the sync window.
+type accountRead struct {
+	read      domain.AccountRead
+	from      time.Time
+	opening   *domain.Bill
+	firstDue  time.Time
+	readStart time.Time
+}
+
+func (s *Service) readAccount(
+	ctx context.Context,
+	agg Aggregator,
+	c domain.Connection,
+	ext domain.ExternalAccount,
+	creds domain.Credentials,
+	target domain.ImportTarget,
+	from, to time.Time,
+) (accountRead, error) {
 	// A93: a card's first sync reads back to the cycle that holds sync_from.
 	first := target.Kind == cardKind && ext.LastSyncedOn == nil
 
@@ -165,23 +235,21 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		readFrom = from.AddDate(0, 0, -cycleLookback)
 	}
 
-	var createdFrom *time.Time
-
-	if ext.LastReadAt != nil {
-		since := ext.LastReadAt.Add(-domain.CreatedMargin)
-		createdFrom = &since
-	}
+	createdFrom := createdSince(ext)
 
 	readStart := s.now()
 
-	read, err := agg.ReadAccount(ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID, readFrom.AddDate(0, 0, -1), to.AddDate(0, 0, 1), createdFrom, target.Currency.MinorUnits())
+	read, err := agg.ReadAccount(
+		ctx, c.IntegrationID, creds, c.ExternalID, ext.ExternalID,
+		readFrom.AddDate(0, 0, -1), to.AddDate(0, 0, 1), createdFrom, target.Currency.MinorUnits(),
+	)
 	if errors.Is(err, ErrAccountGone) && ext.Subtype == domain.SubtypeReservedBalance {
 		// A reserved balance the item stopped reporting syncs without a balance (D2).
 		read, err = domain.AccountRead{}, nil
 	}
 
 	if err != nil {
-		return domain.Batch{}, fmt.Errorf("account %s: %w", ext.ID, err)
+		return accountRead{}, fmt.Errorf("account %s: %w", ext.ID, err)
 	}
 
 	read = withoutSuperseded(withCreated(read, *ext.SyncFrom))
@@ -205,6 +273,22 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		}
 	}
 
+	return accountRead{
+		read: read, from: from, opening: opening, firstDue: firstDue, readStart: readStart,
+	}, nil
+}
+
+func (s *Service) importAccountRead(
+	ctx context.Context,
+	c domain.Connection,
+	ext domain.ExternalAccount,
+	target domain.ImportTarget,
+	ar accountRead,
+	to time.Time,
+	syncID uuid.UUID,
+) (domain.Batch, error) {
+	accountID, read, from := *ext.AccountID, ar.read, ar.from
+
 	batch, err := s.repo.InsertBatch(ctx, domain.Batch{
 		BooksID: c.BooksID, AccountID: accountID, Source: domain.SourceAggregator, ExternalAccountID: &ext.ID, SyncID: syncID,
 		Currency: string(target.Currency), PeriodFrom: &from, PeriodTo: &to, Balance: domain.FileBalance{Status: domain.BalanceNone},
@@ -223,7 +307,7 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 
 	// A85: the bills date their statements before the lines are billed by date.
 	for _, b := range read.Bills {
-		if b.Due.Before(firstDue) {
+		if b.Due.Before(ar.firstDue) {
 			continue
 		}
 
@@ -232,8 +316,8 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		}
 	}
 
-	if opening != nil {
-		if err := s.ledger.RecordCardOpening(ctx, c.BooksID, accountID, *opening, target.Currency); err != nil {
+	if ar.opening != nil {
+		if err := s.ledger.RecordCardOpening(ctx, c.BooksID, accountID, *ar.opening, target.Currency); err != nil {
 			return domain.Batch{}, fmt.Errorf("account %s opening: %w", ext.ID, err)
 		}
 	}
@@ -248,50 +332,48 @@ func (s *Service) syncAccount(ctx context.Context, agg Aggregator, c domain.Conn
 		}
 	}
 
-	if b := read.Balance; b != nil && !b.Date.After(today) {
-		// The ledger decides an open assertion of this balance again on every sync (A77).
-		if ext.Balance == nil || *ext.Balance != *b {
-			batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &b.Date, Amount: b.Amount}
-		}
+	return batch, nil
+}
 
-		assert := s.ledger.AssertSyncedBalance
-		if ext.Subtype == domain.SubtypeReservedBalance {
-			open, err := s.repo.OpenReserveReviews(ctx, c.BooksID, c.ID)
-			if err != nil {
-				return domain.Batch{}, err
-			}
-
-			// A213: while a line may be this reserve's movement, its difference is not yield.
-			if open == 0 {
-				assert = s.ledger.AssertSyncedReserve
-			}
-		}
-
-		err := assert(ctx, c.BooksID, accountID, *b, target.Currency)
-		switch {
-		case errors.Is(err, ErrBalanceRejected):
-			if batch.Balance.Status == domain.BalanceRecorded {
-				batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
-			}
-		case err != nil:
-			return domain.Batch{}, err
-		}
-
-		ext.Balance = b
+func (s *Service) assertAccountBalance(
+	ctx context.Context,
+	c domain.Connection,
+	ext *domain.ExternalAccount,
+	batch *domain.Batch,
+	target domain.ImportTarget,
+	b *domain.Balance,
+) error {
+	// The ledger decides an open assertion of this balance again on every sync (A77).
+	if ext.Balance == nil || *ext.Balance != *b {
+		batch.Balance = domain.FileBalance{Status: domain.BalanceRecorded, Date: &b.Date, Amount: b.Amount}
 	}
 
-	if batch, err = s.repo.CompleteBatch(ctx, batch); err != nil {
-		return domain.Batch{}, err
+	assert := s.ledger.AssertSyncedBalance
+	if ext.Subtype == domain.SubtypeReservedBalance {
+		open, err := s.repo.OpenReserveReviews(ctx, c.BooksID, c.ID)
+		if err != nil {
+			return err
+		}
+
+		// A213: while a line may be this reserve's movement, its difference is not yield.
+		if open == 0 {
+			assert = s.ledger.AssertSyncedReserve
+		}
 	}
 
-	ext.LastSyncedOn = &today
-	ext.LastReadAt = &readStart
-
-	if deep {
-		ext.LastDeepReadOn = &today
+	err := assert(ctx, c.BooksID, *ext.AccountID, *b, target.Currency)
+	switch {
+	case errors.Is(err, ErrBalanceRejected):
+		if batch.Balance.Status == domain.BalanceRecorded {
+			batch.Balance.Status, batch.Balance.Reason = domain.BalanceSkipped, err.Error()
+		}
+	case err != nil:
+		return err
 	}
 
-	return batch, s.repo.MarkAccountSynced(ctx, ext)
+	ext.Balance = b
+
+	return nil
 }
 
 func reserveRank(ext domain.ExternalAccount) int {
@@ -300,4 +382,15 @@ func reserveRank(ext domain.ExternalAccount) int {
 	}
 
 	return 0
+}
+
+func createdSince(ext domain.ExternalAccount) *time.Time {
+	var createdFrom *time.Time
+
+	if ext.LastReadAt != nil {
+		since := ext.LastReadAt.Add(-domain.CreatedMargin)
+		createdFrom = &since
+	}
+
+	return createdFrom
 }

@@ -87,6 +87,10 @@ func (s *Service) importRecords(
 
 	p.route(assigned, repeated, grouped, held)
 
+	return s.applyPlan(ctx, p)
+}
+
+func (s *Service) applyPlan(ctx context.Context, p *importPlan) error {
 	if err := s.linkMatches(ctx, p); err != nil {
 		return err
 	}
@@ -95,7 +99,7 @@ func (s *Service) importRecords(
 		return err
 	}
 
-	if err := s.create(ctx, batch.BooksID, p.sync, p.creates, p.created); err != nil {
+	if err := s.create(ctx, p.batch.BooksID, p.sync, p.creates, p.created); err != nil {
 		return err
 	}
 

@@ -42,23 +42,7 @@ func (s *Service) UndoDecision(ctx context.Context, booksID int64, recordID uuid
 
 	decided, left := rec.Decision, rec.State
 
-	var line *domain.ExternalRecord
-
-	switch decided {
-	case domain.DecisionLinked:
-		err = s.undoLinked(ctx, &rec, b)
-	case domain.DecisionWithdrawn:
-		err = s.undoWithdrawn(ctx, &rec, b)
-	case domain.DecisionFollowed:
-		err = s.undoFollowed(ctx, &rec)
-	case domain.DecisionReidentified:
-		line, err = s.undoReidentified(ctx, &rec)
-	case domain.DecisionPaired:
-		err = s.undoPaired(ctx, &rec, b)
-	default:
-		err = ErrNoDecision
-	}
-
+	line, err := s.undoDecision(ctx, &rec, b)
 	if err != nil {
 		return domain.ExternalRecord{}, domain.Batch{}, err
 	}
@@ -72,6 +56,34 @@ func (s *Service) UndoDecision(ctx context.Context, booksID int64, recordID uuid
 	b, err = s.repo.Batch(ctx, booksID, rec.BatchID)
 
 	return rec, b, err
+}
+
+func (s *Service) undoDecision(
+	ctx context.Context,
+	rec *domain.ExternalRecord,
+	b domain.Batch,
+) (*domain.ExternalRecord, error) {
+	var (
+		line *domain.ExternalRecord
+		err  error
+	)
+
+	switch rec.Decision {
+	case domain.DecisionLinked:
+		err = s.undoLinked(ctx, rec, b)
+	case domain.DecisionWithdrawn:
+		err = s.undoWithdrawn(ctx, rec, b)
+	case domain.DecisionFollowed:
+		err = s.undoFollowed(ctx, rec)
+	case domain.DecisionReidentified:
+		line, err = s.undoReidentified(ctx, rec)
+	case domain.DecisionPaired:
+		err = s.undoPaired(ctx, rec, b)
+	default:
+		err = ErrNoDecision
+	}
+
+	return line, err
 }
 
 // undoLinked releases the posting and returns the record to review as a probable match.
