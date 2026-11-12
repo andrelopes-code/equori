@@ -15,6 +15,8 @@ type Ledger interface {
 	AccountFacts(ctx context.Context, booksID int64) ([]Account, error)
 	InvestmentFacts(ctx context.Context, booksID int64, brokerageID uuid.UUID) (domain.Facts, error)
 	BaseCurrency(ctx context.Context, booksID int64) (money.Currency, error)
+	// Today is the current date of the book time zone (CN5).
+	Today(ctx context.Context) time.Time
 	// ValuedBalance values the account and its sub-accounts at the end of date in currency in; the
 	// error wraps ErrNotFound for an unknown account and ErrPriceMissing for a missing price.
 	ValuedBalance(

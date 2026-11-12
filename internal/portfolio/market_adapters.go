@@ -28,6 +28,10 @@ func (p marketPort) InstrumentOf(
 	code money.Currency,
 ) (app.InstrumentInfo, error) {
 	in, err := p.md.Instrument(ctx, string(code))
+	if errors.Is(err, marketdata.ErrUnknownInstrument) {
+		return app.InstrumentInfo{}, fmt.Errorf("%w: %w", app.ErrUnknownInstrument, err)
+	}
+
 	return app.InstrumentInfo{Type: in.Type, QuoteCurrency: in.QuoteCurrency}, err
 }
 

@@ -68,6 +68,8 @@ func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Curr
 	return p.l.BaseCurrency(ctx, booksID)
 }
 
+func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx) }
+
 func (p ledgerPort) InvestmentFacts(
 	ctx context.Context,
 	booksID int64,

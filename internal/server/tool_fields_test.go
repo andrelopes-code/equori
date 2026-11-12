@@ -203,6 +203,10 @@ var uncoveredFields = map[string][]string{
 	"openDispute": {
 		"opened_on",
 	}, // read as date
+	"previewContributionPlan": {
+		"amount",
+		"classes",
+	}, // the tool previews the saved plan; amount arrives in T4
 	"previewRule": {
 		"actions",
 		"conditions",

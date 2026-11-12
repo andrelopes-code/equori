@@ -9,6 +9,42 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for ContributionMissingKind.
+const (
+	ContributionMissingKindPrice ContributionMissingKind = "price"
+	ContributionMissingKindRate  ContributionMissingKind = "rate"
+)
+
+// Valid indicates whether the value is a known member of the ContributionMissingKind enum.
+func (e ContributionMissingKind) Valid() bool {
+	switch e {
+	case ContributionMissingKindPrice:
+		return true
+	case ContributionMissingKindRate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContributionPlanStatus.
+const (
+	Complete   ContributionPlanStatus = "complete"
+	Incomplete ContributionPlanStatus = "incomplete"
+)
+
+// Valid indicates whether the value is a known member of the ContributionPlanStatus enum.
+func (e ContributionPlanStatus) Valid() bool {
+	switch e {
+	case Complete:
+		return true
+	case Incomplete:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstrumentType.
 const (
 	InstrumentTypeCrypto            InstrumentType = "crypto"
@@ -95,6 +131,88 @@ type AllocationGroup struct {
 	Key     string `json:"key"`
 	ShareBp int    `json:"share_bp"`
 	Value   Money  `json:"value"`
+}
+
+// ContributionClass defines model for ContributionClass.
+type ContributionClass struct {
+	AfterShareBp *int                 `json:"after_share_bp,omitempty"`
+	Amount       *Money               `json:"amount,omitempty"`
+	Members      []ContributionMember `json:"members"`
+	Name         string               `json:"name"`
+	ShareBp      *int                 `json:"share_bp,omitempty"`
+	TargetBp     int                  `json:"target_bp"`
+	Value        Money                `json:"value"`
+}
+
+// ContributionClassInput defines model for ContributionClassInput.
+type ContributionClassInput struct {
+	Members  []ContributionMemberInput `json:"members"`
+	Name     string                    `json:"name"`
+	TargetBp int                       `json:"target_bp"`
+}
+
+// ContributionMember defines model for ContributionMember.
+type ContributionMember struct {
+	AccountId    *openapi_types.UUID `json:"account_id,omitempty"`
+	AfterShareBp *int                `json:"after_share_bp,omitempty"`
+	Amount       *Money              `json:"amount,omitempty"`
+	Instrument   *string             `json:"instrument,omitempty"`
+	ShareBp      *int                `json:"share_bp,omitempty"`
+	TargetBp     *int                `json:"target_bp,omitempty"`
+	UnitValue    *Money              `json:"unit_value,omitempty"`
+	Value        Money               `json:"value"`
+}
+
+// ContributionMemberInput defines model for ContributionMemberInput.
+type ContributionMemberInput struct {
+	AccountId  *openapi_types.UUID `json:"account_id,omitempty"`
+	Instrument *string             `json:"instrument,omitempty"`
+	TargetBp   *int                `json:"target_bp,omitempty"`
+}
+
+// ContributionMissing defines model for ContributionMissing.
+type ContributionMissing struct {
+	AccountId  *openapi_types.UUID     `json:"account_id,omitempty"`
+	Instrument string                  `json:"instrument"`
+	Kind       ContributionMissingKind `json:"kind"`
+}
+
+// ContributionMissingKind defines model for ContributionMissing.Kind.
+type ContributionMissingKind string
+
+// ContributionOutside defines model for ContributionOutside.
+type ContributionOutside struct {
+	AccountId  *openapi_types.UUID `json:"account_id,omitempty"`
+	Instrument *string             `json:"instrument,omitempty"`
+	Value      *Money              `json:"value,omitempty"`
+}
+
+// ContributionPlan defines model for ContributionPlan.
+type ContributionPlan struct {
+	Amount       *Money                 `json:"amount,omitempty"`
+	Classes      []ContributionClass    `json:"classes"`
+	DriftAfterBp *int                   `json:"drift_after_bp,omitempty"`
+	DriftBp      *int                   `json:"drift_bp,omitempty"`
+	Missing      []ContributionMissing  `json:"missing"`
+	Outside      []ContributionOutside  `json:"outside"`
+	Status       ContributionPlanStatus `json:"status"`
+	Total        Money                  `json:"total"`
+	TotalAfter   *Money                 `json:"total_after,omitempty"`
+}
+
+// ContributionPlanStatus defines model for ContributionPlan.Status.
+type ContributionPlanStatus string
+
+// ContributionPlanInput defines model for ContributionPlanInput.
+type ContributionPlanInput struct {
+	Amount  *Money                   `json:"amount,omitempty"`
+	Classes []ContributionClassInput `json:"classes"`
+}
+
+// ContributionPreviewInput defines model for ContributionPreviewInput.
+type ContributionPreviewInput struct {
+	Amount  Money                    `json:"amount"`
+	Classes []ContributionClassInput `json:"classes"`
 }
 
 // FieldError defines model for FieldError.
@@ -226,6 +344,8 @@ type Problem struct {
 	// csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
+	// contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate,
+	// contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
@@ -438,3 +558,9 @@ type GetReturnParams struct {
 	ValueIn   *string             `form:"value_in,omitempty" json:"value_in,omitempty"`
 	Index     *string             `form:"index,omitempty" json:"index,omitempty"`
 }
+
+// SaveContributionPlanJSONRequestBody defines body for SaveContributionPlan for application/json ContentType.
+type SaveContributionPlanJSONRequestBody = ContributionPlanInput
+
+// PreviewContributionPlanJSONRequestBody defines body for PreviewContributionPlan for application/json ContentType.
+type PreviewContributionPlanJSONRequestBody = ContributionPreviewInput

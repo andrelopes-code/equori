@@ -6467,6 +6467,83 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /contribution-plan:
+    get:
+      tags: [portfolio]
+      operationId: getContributionPlan
+      x-book-role: read
+      summary: The contribution plan of the book with the current value, share and drift of each class (contribution plan design, CN5 to CN10).
+      description: A book without a plan returns no class. status is incomplete when a member has no price or rate at today (CN10); the response then carries no share and no drift.
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionPlan"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    put:
+      tags: [portfolio]
+      operationId: saveContributionPlan
+      x-book-role: write
+      summary: Replaces the contribution plan and returns it as getContributionPlan does.
+      description: 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid or contribution_amount_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContributionPlanInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionPlan"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /contribution-plan/preview:
+    post:
+      tags: [portfolio]
+      operationId: previewContributionPlan
+      x-book-role: read
+      summary: The split of an amount over the plan in the request, with the drift before and after, without storing either (CN13).
+      description: The amount is positive and in the base currency, else 422 contribution_amount_invalid. The plan rules are those of saveContributionPlan.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContributionPreviewInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContributionPlan"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /instrument-subtypes:
     get:
       tags: [portfolio]
@@ -7009,6 +7086,8 @@ components:
             csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
             budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
             investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
+            contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate,
+            contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid,
             setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
             last_owner, already_member, invitation_not_found, invitation_email_mismatch,
             confirmation_mismatch, books_has_members, last_books,
@@ -12728,6 +12807,148 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IncomeEvent"
+    ContributionPlan:
+      type: object
+      required: [status, total, classes, outside, missing]
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+        status:
+          type: string
+          enum: [complete, incomplete]
+        total:
+          $ref: "#/components/schemas/Money"
+        total_after:
+          $ref: "#/components/schemas/Money"
+        drift_bp:
+          type: integer
+        drift_after_bp:
+          type: integer
+        classes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionClass"
+        outside:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionOutside"
+        missing:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionMissing"
+    ContributionClass:
+      type: object
+      required: [name, target_bp, value, members]
+      properties:
+        name:
+          type: string
+        target_bp:
+          type: integer
+        value:
+          $ref: "#/components/schemas/Money"
+        share_bp:
+          type: integer
+        after_share_bp:
+          type: integer
+        amount:
+          $ref: "#/components/schemas/Money"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionMember"
+    ContributionMember:
+      type: object
+      required: [value]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        target_bp:
+          type: integer
+        value:
+          $ref: "#/components/schemas/Money"
+        share_bp:
+          type: integer
+        after_share_bp:
+          type: integer
+        unit_value:
+          $ref: "#/components/schemas/Money"
+        amount:
+          $ref: "#/components/schemas/Money"
+    ContributionOutside:
+      type: object
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        value:
+          $ref: "#/components/schemas/Money"
+    ContributionMissing:
+      type: object
+      required: [instrument, kind]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        kind:
+          type: string
+          enum: [price, rate]
+    ContributionPlanInput:
+      type: object
+      required: [classes]
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+        classes:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ContributionClassInput"
+    ContributionClassInput:
+      type: object
+      required: [name, target_bp, members]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 60
+        target_bp:
+          type: integer
+          minimum: 0
+          maximum: 10000
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContributionMemberInput"
+    ContributionMemberInput:
+      type: object
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        instrument:
+          type: string
+        target_bp:
+          type: integer
+          minimum: 0
+          maximum: 10000
+    ContributionPreviewInput:
+      type: object
+      required: [classes, amount]
+      properties:
+        amount:
+          $ref: "#/components/schemas/Money"
+        classes:
+          type: array
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ContributionClassInput"
     BalanceSeries:
       type: object
       required: [items]

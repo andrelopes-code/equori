@@ -3756,6 +3756,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/contribution-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The contribution plan of the book with the current value, share and drift of each class (contribution plan design, CN5 to CN10).
+         * @description A book without a plan returns no class. status is incomplete when a member has no price or rate at today (CN10); the response then carries no share and no drift.
+         */
+        get: operations["getContributionPlan"];
+        /**
+         * Replaces the contribution plan and returns it as getContributionPlan does.
+         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid or contribution_amount_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11).
+         */
+        put: operations["saveContributionPlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contribution-plan/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The split of an amount over the plan in the request, with the drift before and after, without storing either (CN13).
+         * @description The amount is positive and in the base currency, else 422 contribution_amount_invalid. The plan rules are those of saveContributionPlan.
+         */
+        post: operations["previewContributionPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instrument-subtypes": {
         parameters: {
             query?: never;
@@ -4044,6 +4088,8 @@ export interface components {
              *     csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
              *     budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
              *     investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
+             *     contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate,
+             *     contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid,
              *     setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
              *     confirmation_mismatch, books_has_members, last_books,
@@ -6994,6 +7040,70 @@ export interface components {
              */
             to: string;
             items: components["schemas"]["IncomeEvent"][];
+        };
+        ContributionPlan: {
+            amount?: components["schemas"]["Money"];
+            /** @enum {string} */
+            status: "complete" | "incomplete";
+            total: components["schemas"]["Money"];
+            total_after?: components["schemas"]["Money"];
+            drift_bp?: number;
+            drift_after_bp?: number;
+            classes: components["schemas"]["ContributionClass"][];
+            outside: components["schemas"]["ContributionOutside"][];
+            missing: components["schemas"]["ContributionMissing"][];
+        };
+        ContributionClass: {
+            name: string;
+            target_bp: number;
+            value: components["schemas"]["Money"];
+            share_bp?: number;
+            after_share_bp?: number;
+            amount?: components["schemas"]["Money"];
+            members: components["schemas"]["ContributionMember"][];
+        };
+        ContributionMember: {
+            /** Format: uuid */
+            account_id?: string;
+            instrument?: string;
+            target_bp?: number;
+            value: components["schemas"]["Money"];
+            share_bp?: number;
+            after_share_bp?: number;
+            unit_value?: components["schemas"]["Money"];
+            amount?: components["schemas"]["Money"];
+        };
+        ContributionOutside: {
+            /** Format: uuid */
+            account_id?: string;
+            instrument?: string;
+            value?: components["schemas"]["Money"];
+        };
+        ContributionMissing: {
+            /** Format: uuid */
+            account_id?: string;
+            instrument: string;
+            /** @enum {string} */
+            kind: "price" | "rate";
+        };
+        ContributionPlanInput: {
+            amount?: components["schemas"]["Money"];
+            classes: components["schemas"]["ContributionClassInput"][];
+        };
+        ContributionClassInput: {
+            name: string;
+            target_bp: number;
+            members: components["schemas"]["ContributionMemberInput"][];
+        };
+        ContributionMemberInput: {
+            /** Format: uuid */
+            account_id?: string;
+            instrument?: string;
+            target_bp?: number;
+        };
+        ContributionPreviewInput: {
+            amount: components["schemas"]["Money"];
+            classes: components["schemas"]["ContributionClassInput"][];
         };
         BalanceSeries: {
             items: components["schemas"]["BalancePoint"][];
@@ -13824,6 +13934,86 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getContributionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionPlan"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    saveContributionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContributionPlanInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionPlan"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    previewContributionPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContributionPreviewInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContributionPlan"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            403: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

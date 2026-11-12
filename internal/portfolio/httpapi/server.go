@@ -44,6 +44,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.getNetWorth))
 	mux.HandleFunc("GET "+BaseURL+"/reports/net-worth/days",
 		httpserver.Handle(s.errs, http.StatusOK, s.getNetWorthDays))
+	mux.HandleFunc("GET "+BaseURL+"/contribution-plan",
+		httpserver.Handle(s.errs, http.StatusOK, s.getContributionPlan))
+	mux.HandleFunc("PUT "+BaseURL+"/contribution-plan",
+		httpserver.Handle(s.errs, http.StatusOK, s.saveContributionPlan))
+	mux.HandleFunc("POST "+BaseURL+"/contribution-plan/preview",
+		httpserver.Handle(s.errs, http.StatusOK, s.previewContributionPlan))
 	mux.HandleFunc("GET "+BaseURL+"/instrument-subtypes",
 		httpserver.Handle(s.errs, http.StatusOK, s.listInstrumentSubtypes))
 }

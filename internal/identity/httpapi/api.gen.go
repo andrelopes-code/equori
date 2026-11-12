@@ -320,6 +320,8 @@ type Problem struct {
 	// csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
 	// budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
+	// contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate,
+	// contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid,
 	// setup_token_invalid, setup_complete, book_role_required, books_not_found, member_not_found,
 	// last_owner, already_member, invitation_not_found, invitation_email_mismatch,
 	// confirmation_mismatch, books_has_members, last_books,
