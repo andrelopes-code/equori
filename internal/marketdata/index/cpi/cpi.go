@@ -182,14 +182,10 @@ func readEurostat(ctx context.Context, s Source, from, to time.Time) ([]level, e
 // the public API of the Bureau of Labor Statistics, version 1, which takes no key and at most
 // ten years per request.
 func readBLS(ctx context.Context, s Source, from, to time.Time) ([]level, error) {
-	payload := fmt.Sprintf(`{"seriesid":["CUUR0000SA0"],"startyear":"%d","endyear":"%d"}`, from.Year(), to.Year())
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/publicAPI/v1/timeseries/data/", bytes.NewBufferString(payload))
+	req, err := blsRequest(ctx, s, from, to)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", s.id, err)
+		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/json")
 
 	body, err := do(s, req)
 	if err != nil {
@@ -235,4 +231,24 @@ func readBLS(ctx context.Context, s Source, from, to time.Time) ([]level, error)
 	}
 
 	return out, nil
+}
+
+func blsRequest(ctx context.Context, s Source, from, to time.Time) (*http.Request, error) {
+	payload := fmt.Sprintf(
+		`{"seriesid":["CUUR0000SA0"],"startyear":"%d","endyear":"%d"}`, from.Year(), to.Year(),
+	)
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodPost,
+		s.base+"/publicAPI/v1/timeseries/data/",
+		bytes.NewBufferString(payload),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", s.id, err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	return req, nil
 }

@@ -171,21 +171,9 @@ func readQuotes(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed
 	cr.FieldsPerRecord = -1
 	cr.LazyQuotes = true
 
-	header, err := cr.Read()
+	cols, err := readColumns(cr)
 	if err != nil {
-		return nil, fmt.Errorf("read header: %w", err)
-	}
-
-	col := func(name string) int { return slices.Index(header, name) }
-
-	iCode := col("CNPJ_FUNDO_CLASSE")
-	if iCode < 0 {
-		iCode = col("CNPJ_FUNDO")
-	}
-
-	iSub, iDate, iValue := col("ID_SUBCLASSE"), col("DT_COMPTC"), col("VL_QUOTA")
-	if slices.Contains([]int{iCode, iDate, iValue}, -1) {
-		return nil, fmt.Errorf("read header: columns missing in %q", header)
+		return nil, err
 	}
 
 	var out []feed.Quote
@@ -200,35 +188,81 @@ func readQuotes(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed
 			return out, fmt.Errorf("read line %d: %w", n, err)
 		}
 
-		if len(row) <= max(iCode, iSub, iDate, iValue) {
-			return out, fmt.Errorf("read line %d: %d fields", n, len(row))
-		}
-
-		if iSub >= 0 && row[iSub] != "" {
-			continue
-		}
-
-		code := money.Currency(codeReplacer.Replace(row[iCode]))
-		if !slices.Contains(codes, code) {
-			continue
-		}
-
-		date, err := time.Parse(time.DateOnly, row[iDate])
+		q, ok, err := readRow(row, n, cols, codes, from, to)
 		if err != nil {
-			return out, fmt.Errorf("read line %d: %w", n, err)
+			return out, err
 		}
 
-		if date.Before(from) || date.After(to) || strings.Trim(row[iValue], "0.") == "" {
-			continue
+		if ok {
+			out = append(out, q)
 		}
-
-		value, err := money.ParseRate(row[iValue])
-		if err != nil {
-			return out, fmt.Errorf("read line %d: %w", n, err)
-		}
-
-		out = append(out, feed.Quote{Instrument: code, Quote: "BRL", Date: date, Value: value})
 	}
+}
+
+// readRow returns the quote of row; ok is false for a row without a quote to keep.
+func readRow(
+	row []string,
+	n int,
+	cols columns,
+	codes []money.Currency,
+	from, to time.Time,
+) (feed.Quote, bool, error) {
+	iCode, iSub, iDate, iValue := cols.code, cols.sub, cols.date, cols.value
+
+	if len(row) <= max(iCode, iSub, iDate, iValue) {
+		return feed.Quote{}, false, fmt.Errorf("read line %d: %d fields", n, len(row))
+	}
+
+	if iSub >= 0 && row[iSub] != "" {
+		return feed.Quote{}, false, nil
+	}
+
+	code := money.Currency(codeReplacer.Replace(row[iCode]))
+	if !slices.Contains(codes, code) {
+		return feed.Quote{}, false, nil
+	}
+
+	date, err := time.Parse(time.DateOnly, row[iDate])
+	if err != nil {
+		return feed.Quote{}, false, fmt.Errorf("read line %d: %w", n, err)
+	}
+
+	if date.Before(from) || date.After(to) || strings.Trim(row[iValue], "0.") == "" {
+		return feed.Quote{}, false, nil
+	}
+
+	value, err := money.ParseRate(row[iValue])
+	if err != nil {
+		return feed.Quote{}, false, fmt.Errorf("read line %d: %w", n, err)
+	}
+
+	return feed.Quote{Instrument: code, Quote: "BRL", Date: date, Value: value}, true, nil
+}
+
+// columns holds the index of each column the parser reads; sub is -1 when the file has none.
+type columns struct {
+	code, sub, date, value int
+}
+
+func readColumns(cr *csv.Reader) (columns, error) {
+	header, err := cr.Read()
+	if err != nil {
+		return columns{}, fmt.Errorf("read header: %w", err)
+	}
+
+	col := func(name string) int { return slices.Index(header, name) }
+
+	iCode := col("CNPJ_FUNDO_CLASSE")
+	if iCode < 0 {
+		iCode = col("CNPJ_FUNDO")
+	}
+
+	iSub, iDate, iValue := col("ID_SUBCLASSE"), col("DT_COMPTC"), col("VL_QUOTA")
+	if slices.Contains([]int{iCode, iDate, iValue}, -1) {
+		return columns{}, fmt.Errorf("read header: columns missing in %q", header)
+	}
+
+	return columns{code: iCode, sub: iSub, date: iDate, value: iValue}, nil
 }
 
 func joinCodes(codes []money.Currency) string {

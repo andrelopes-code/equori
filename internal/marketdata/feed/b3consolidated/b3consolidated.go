@@ -174,21 +174,52 @@ func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, []fe
 
 	header := strings.Split(lines[1], ";")
 
-	cols := make(map[string]int, len(header))
-	for i, name := range header {
-		cols[name] = i
+	cols, err := readColumns(header)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	dateCol, okDate := cols["RptDt"]
-	tickerCol, okTicker := cols["TckrSymb"]
+	return readRecords(lines[2:], len(header), cols, day, want)
+}
 
-	priceCol, okPrice := cols["LastPric"]
-	segmentCol, okSegment := cols["SgmtNm"]
+// columns holds the index of each column the parser reads.
+type columns struct {
+	date, ticker, price, segment int
+	hasSegment                   bool
+}
+
+func readColumns(header []string) (columns, error) {
+	index := make(map[string]int, len(header))
+	for i, name := range header {
+		index[name] = i
+	}
+
+	dateCol, okDate := index["RptDt"]
+	tickerCol, okTicker := index["TckrSymb"]
+
+	priceCol, okPrice := index["LastPric"]
+	segmentCol, okSegment := index["SgmtNm"]
 
 	if !okDate || !okTicker || !okPrice {
-		return nil, nil, errors.New("line 2: the header lacks RptDt, TckrSymb or LastPric")
+		return columns{}, errors.New("line 2: the header lacks RptDt, TckrSymb or LastPric")
 	}
 
+	return columns{
+		date:       dateCol,
+		ticker:     tickerCol,
+		price:      priceCol,
+		segment:    segmentCol,
+		hasSegment: okSegment,
+	}, nil
+}
+
+func readRecords(
+	lines []string,
+	fields int,
+	cols columns,
+	day time.Time,
+	want map[string]bool,
+) ([]feed.Quote, []feed.Listing, error) {
 	date := day.Format(time.DateOnly)
 	seen := make(map[string]bool)
 
@@ -197,26 +228,26 @@ func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, []fe
 		listings []feed.Listing
 	)
 
-	for i, line := range lines[2:] {
+	for i, line := range lines {
 		n := i + 3
 
 		rec := strings.Split(line, ";")
-		if len(rec) != len(header) {
-			return nil, nil, fmt.Errorf("line %d: %d fields, want %d", n, len(rec), len(header))
+		if len(rec) != fields {
+			return nil, nil, fmt.Errorf("line %d: %d fields, want %d", n, len(rec), fields)
 		}
 
-		if rec[dateCol] != date {
+		if rec[cols.date] != date {
 			return nil, nil, fmt.Errorf("line %d: not a record of %s", n, date)
 		}
 
-		ticker := rec[tickerCol]
+		ticker := rec[cols.ticker]
 
-		if okSegment && rec[segmentCol] == "CASH" && rec[priceCol] != "" {
-			listings = append(listings, feed.Listing{Code: money.Currency(ticker), Exchange: "BVMF", QuoteCurrency: "BRL"})
+		if l, ok := cashListing(rec, cols); ok {
+			listings = append(listings, l)
 		}
 
 		// An instrument without a trade on the day, such as an untraded option, has no last price.
-		if !want[ticker] || rec[priceCol] == "" {
+		if !want[ticker] || rec[cols.price] == "" {
 			continue
 		}
 
@@ -225,14 +256,41 @@ func parse(body string, day time.Time, want map[string]bool) ([]feed.Quote, []fe
 		}
 
 		seen[ticker] = true
-		// The file writes a decimal comma and no thousands separator.
-		value, err := money.ParseRate(strings.Replace(rec[priceCol], ",", ".", 1))
+
+		q, err := lastQuote(rec[cols.price], ticker, day)
 		if err != nil {
 			return nil, nil, fmt.Errorf("line %d: %w", n, err)
 		}
 
-		out = append(out, feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: day, Value: value})
+		out = append(out, q)
 	}
 
 	return out, listings, nil
+}
+
+func cashListing(rec []string, cols columns) (feed.Listing, bool) {
+	if !cols.hasSegment || rec[cols.segment] != "CASH" || rec[cols.price] == "" {
+		return feed.Listing{}, false
+	}
+
+	return feed.Listing{
+		Code:          money.Currency(rec[cols.ticker]),
+		Exchange:      "BVMF",
+		QuoteCurrency: "BRL",
+	}, true
+}
+
+func lastQuote(price, ticker string, day time.Time) (feed.Quote, error) {
+	// The file writes a decimal comma and no thousands separator.
+	value, err := money.ParseRate(strings.Replace(price, ",", ".", 1))
+	if err != nil {
+		return feed.Quote{}, err
+	}
+
+	return feed.Quote{
+		Instrument: money.Currency(ticker),
+		Quote:      "BRL",
+		Date:       day,
+		Value:      value,
+	}, nil
 }

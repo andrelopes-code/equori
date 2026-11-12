@@ -43,15 +43,6 @@ internal/ingestion/toolapi/imports.go	connections	pending: backend reorganizatio
 internal/ingestion/toolapi/imports.go	getImports	pending: backend reorganization plan
 internal/ingestion/toolapi/manage.go	manageImports	pending: backend reorganization plan
 internal/ledger/httpapi/server.go	Server.Register	table of data
-internal/marketdata/expectation/brfocus/brfocus.go	Source.Fetch	pending: backend reorganization plan
-internal/marketdata/feed/b3consolidated/b3consolidated.go	parse	pending: backend reorganization plan
-internal/marketdata/feed/b3cotahist/b3cotahist.go	readZIP	pending: backend reorganization plan
-internal/marketdata/feed/cvmfunds/cvmfunds.go	readQuotes	pending: backend reorganization plan
-internal/marketdata/feed/ecb/ecb.go	Source.Fetch	pending: backend reorganization plan
-internal/marketdata/feed/ecb/ecb.go	Source.fetchHistory	pending: backend reorganization plan
-internal/marketdata/feed/tesourodireto/tesourodireto.go	readFile	pending: backend reorganization plan
-internal/marketdata/feed/yahoochart/yahoochart.go	parse	pending: backend reorganization plan
-internal/marketdata/index/cpi/cpi.go	readBLS	pending: backend reorganization plan
 internal/marketdata/sources.go	sourceEntries	table of data
 internal/planning/httpapi/server.go	Server.Register	table of data
 internal/platform/config/variables.go	Variables	table of data

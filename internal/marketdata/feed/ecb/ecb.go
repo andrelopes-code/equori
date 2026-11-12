@@ -85,6 +85,41 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 		return nil, fmt.Errorf("read ECB rates: %w", err)
 	}
 
+	if earliest := earliestDay(env); earliest != "" && from.Format(time.DateOnly) < earliest {
+		return s.fetchHistory(ctx, codes, from, to)
+	}
+
+	out, err := dailyQuotes(env, codes, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	s.seen.Remember(key, lastModified)
+
+	return out, nil
+}
+
+func (s Source) fetchHistory(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
+	url := s.url[:strings.LastIndex(s.url, "/")+1] + histFile
+
+	body, err := feed.Get(ctx, s.client, url)
+	if err != nil {
+		return nil, fmt.Errorf("fetch ECB history: %w", err)
+	}
+
+	rows, err := readHistory(body)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rows) == 0 {
+		return nil, nil
+	}
+
+	return historyQuotes(rows, codes, from, to)
+}
+
+func earliestDay(env envelope) string {
 	earliest := ""
 	for _, d := range env.Days {
 		if earliest == "" || d.Time < earliest {
@@ -92,10 +127,10 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 		}
 	}
 
-	if earliest != "" && from.Format(time.DateOnly) < earliest {
-		return s.fetchHistory(ctx, codes, from, to)
-	}
+	return earliest
+}
 
+func dailyQuotes(env envelope, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
 	var out []feed.Quote
 	for _, d := range env.Days {
 		date, err := time.Parse(time.DateOnly, d.Time)
@@ -117,23 +152,19 @@ func (s Source) Fetch(ctx context.Context, codes []money.Currency, from, to time
 				return nil, fmt.Errorf("read ECB %s rate on %s: %w", r.Currency, d.Time, err)
 			}
 
-			out = append(out, feed.Quote{Instrument: "EUR", Quote: money.Currency(r.Currency), Date: date, Value: rate})
+			out = append(out, feed.Quote{
+				Instrument: "EUR",
+				Quote:      money.Currency(r.Currency),
+				Date:       date,
+				Value:      rate,
+			})
 		}
 	}
-
-	s.seen.Remember(key, lastModified)
 
 	return out, nil
 }
 
-func (s Source) fetchHistory(ctx context.Context, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
-	url := s.url[:strings.LastIndex(s.url, "/")+1] + histFile
-
-	body, err := feed.Get(ctx, s.client, url)
-	if err != nil {
-		return nil, fmt.Errorf("fetch ECB history: %w", err)
-	}
-
+func readHistory(body []byte) ([][]string, error) {
 	zr, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
 		return nil, fmt.Errorf("read ECB history: %w", err)
@@ -157,10 +188,10 @@ func (s Source) fetchHistory(ctx context.Context, codes []money.Currency, from, 
 		return nil, fmt.Errorf("read ECB history: %w", err)
 	}
 
-	if len(rows) == 0 {
-		return nil, nil
-	}
+	return rows, nil
+}
 
+func historyQuotes(rows [][]string, codes []money.Currency, from, to time.Time) ([]feed.Quote, error) {
 	var out []feed.Quote
 	for _, row := range rows[1:] {
 		date, err := time.Parse(time.DateOnly, row[0])
@@ -183,7 +214,12 @@ func (s Source) fetchHistory(ctx context.Context, codes []money.Currency, from, 
 				return nil, fmt.Errorf("read ECB %s rate on %s: %w", code, row[0], err)
 			}
 
-			out = append(out, feed.Quote{Instrument: "EUR", Quote: money.Currency(code), Date: date, Value: rate})
+			out = append(out, feed.Quote{
+				Instrument: "EUR",
+				Quote:      money.Currency(code),
+				Date:       date,
+				Value:      rate,
+			})
 		}
 	}
 

@@ -124,22 +124,19 @@ func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Lis
 }
 
 // readFile returns the quotes of codes in [from, to] and the titles of the latest Data Base.
-func readFile(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed.Quote, []feed.Listing, error) {
+func readFile(
+	r io.Reader,
+	codes []money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, []feed.Listing, error) {
 	cr := csv.NewReader(r)
 	cr.Comma = ';'
 	cr.FieldsPerRecord = -1
 	cr.LazyQuotes = true
 
-	header, err := cr.Read()
+	cols, err := readColumns(cr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("read Tesouro header: %w", err)
-	}
-
-	col := func(name string) int { return slices.Index(header, name) }
-	iType, iMaturity, iBase, iPrice := col("Tipo Titulo"), col("Data Vencimento"), col("Data Base"), col("PU Venda Manha")
-
-	if slices.Contains([]int{iType, iMaturity, iBase, iPrice}, -1) {
-		return nil, nil, fmt.Errorf("read Tesouro header: columns missing in %q", header)
+		return nil, nil, err
 	}
 
 	var (
@@ -157,51 +154,92 @@ func readFile(r io.Reader, codes []money.Currency, from, to time.Time) ([]feed.Q
 			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
 		}
 
-		prefix, ok := prefixes[row[iType]]
-		if !ok {
-			continue
-		}
-
-		maturity, err := time.Parse("02/01/2006", row[iMaturity])
+		q, ok, err := readRow(row, n, cols, codes, from, to, &titles)
 		if err != nil {
-			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
+			return nil, nil, err
 		}
 
-		code := money.Currency(prefix + "." + maturity.Format("20060102"))
-
-		base, baseErr := time.Parse("02/01/2006", row[iBase])
-		if baseErr == nil {
-			titles.add(base, feed.Listing{
-				Code:          code,
-				Name:          row[iType] + " " + maturity.Format("2006"),
-				Type:          "fixed_income",
-				QuoteCurrency: "BRL",
-			})
+		if ok {
+			out = append(out, q)
 		}
-
-		if !slices.Contains(codes, code) {
-			continue
-		}
-
-		if baseErr != nil {
-			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, baseErr)
-		}
-
-		if base.Before(from) || base.After(to) {
-			continue
-		}
-
-		if row[iPrice] == "0,00" {
-			continue
-		}
-
-		value, err := money.ParseRate(strings.Replace(row[iPrice], ",", ".", 1))
-		if err != nil {
-			return nil, nil, fmt.Errorf("read Tesouro line %d: %w", n, err)
-		}
-
-		out = append(out, feed.Quote{Instrument: code, Quote: "BRL", Date: base, Value: value})
 	}
+}
+
+// columns holds the index of each column the parser reads.
+type columns struct {
+	kind, maturity, base, price int
+}
+
+func readColumns(cr *csv.Reader) (columns, error) {
+	header, err := cr.Read()
+	if err != nil {
+		return columns{}, fmt.Errorf("read Tesouro header: %w", err)
+	}
+
+	col := func(name string) int { return slices.Index(header, name) }
+	iType, iMaturity, iBase, iPrice := col("Tipo Titulo"), col("Data Vencimento"), col("Data Base"), col("PU Venda Manha")
+
+	if slices.Contains([]int{iType, iMaturity, iBase, iPrice}, -1) {
+		return columns{}, fmt.Errorf("read Tesouro header: columns missing in %q", header)
+	}
+
+	return columns{kind: iType, maturity: iMaturity, base: iBase, price: iPrice}, nil
+}
+
+// readRow records the title of row in titles and returns its quote; ok is false for a row
+// without a quote to keep.
+func readRow(
+	row []string,
+	n int,
+	cols columns,
+	codes []money.Currency,
+	from, to time.Time,
+	titles *latestTitles,
+) (feed.Quote, bool, error) {
+	prefix, ok := prefixes[row[cols.kind]]
+	if !ok {
+		return feed.Quote{}, false, nil
+	}
+
+	maturity, err := time.Parse("02/01/2006", row[cols.maturity])
+	if err != nil {
+		return feed.Quote{}, false, fmt.Errorf("read Tesouro line %d: %w", n, err)
+	}
+
+	code := money.Currency(prefix + "." + maturity.Format("20060102"))
+
+	base, baseErr := time.Parse("02/01/2006", row[cols.base])
+	if baseErr == nil {
+		titles.add(base, feed.Listing{
+			Code:          code,
+			Name:          row[cols.kind] + " " + maturity.Format("2006"),
+			Type:          "fixed_income",
+			QuoteCurrency: "BRL",
+		})
+	}
+
+	if !slices.Contains(codes, code) {
+		return feed.Quote{}, false, nil
+	}
+
+	if baseErr != nil {
+		return feed.Quote{}, false, fmt.Errorf("read Tesouro line %d: %w", n, baseErr)
+	}
+
+	if base.Before(from) || base.After(to) {
+		return feed.Quote{}, false, nil
+	}
+
+	if row[cols.price] == "0,00" {
+		return feed.Quote{}, false, nil
+	}
+
+	value, err := money.ParseRate(strings.Replace(row[cols.price], ",", ".", 1))
+	if err != nil {
+		return feed.Quote{}, false, fmt.Errorf("read Tesouro line %d: %w", n, err)
+	}
+
+	return feed.Quote{Instrument: code, Quote: "BRL", Date: base, Value: value}, true, nil
 }
 
 // latestTitles collects the titles of the latest Data Base seen.

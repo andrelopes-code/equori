@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -197,7 +198,13 @@ func tickerSet(codes []money.Currency) map[string]bool {
 // readZIP reads the records of the only file of zr. A day file (strict) holds only records of
 // from; a year file keeps the records dated in [from, to]. It returns the latest date of those
 // records.
-func readZIP(zr *zip.Reader, name string, tickers map[string]bool, from, to time.Time, strict bool) ([]feed.Quote, time.Time, error) {
+func readZIP(
+	zr *zip.Reader,
+	name string,
+	tickers map[string]bool,
+	from, to time.Time,
+	strict bool,
+) ([]feed.Quote, time.Time, error) {
 	if len(zr.File) != 1 {
 		return nil, time.Time{}, fmt.Errorf("open %s: %d files in the ZIP", name, len(zr.File))
 	}
@@ -209,6 +216,16 @@ func readZIP(zr *zip.Reader, name string, tickers map[string]bool, from, to time
 
 	defer func() { _ = f.Close() }()
 
+	return scanRecords(f, name, tickers, from, to, strict)
+}
+
+func scanRecords(
+	f io.Reader,
+	name string,
+	tickers map[string]bool,
+	from, to time.Time,
+	strict bool,
+) ([]feed.Quote, time.Time, error) {
 	var (
 		out    []feed.Quote
 		latest time.Time
@@ -223,7 +240,9 @@ func readZIP(zr *zip.Reader, name string, tickers map[string]bool, from, to time
 
 		date, err := time.Parse("20060102", safeSlice(rec, dateFrom, dateTo))
 		if len(rec) != recordLength || (strict && !date.Equal(from)) || err != nil {
-			return nil, time.Time{}, fmt.Errorf("read %s line %d: not a record of %s", name, line, from.Format("20060102"))
+			return nil, time.Time{}, fmt.Errorf(
+				"read %s line %d: not a record of %s", name, line, from.Format("20060102"),
+			)
 		}
 
 		if date.Before(from) || date.After(to) {
@@ -239,19 +258,9 @@ func readZIP(zr *zip.Reader, name string, tickers map[string]bool, from, to time
 			continue
 		}
 
-		cents, err := strconv.ParseInt(rec[closeFrom:closeTo], 10, 64)
+		q, err := closingQuote(rec, ticker, date, strict)
 		if err != nil {
 			return nil, time.Time{}, fmt.Errorf("read %s line %d: %w", name, line, err)
-		}
-
-		value, err := money.NewRate(cents, 2)
-		if err != nil {
-			return nil, time.Time{}, fmt.Errorf("read %s line %d: %w", name, line, err)
-		}
-
-		q := feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: date, Value: value}
-		if !strict {
-			q.Source = "b3_cotahist"
 		}
 
 		out = append(out, q)
@@ -262,6 +271,25 @@ func readZIP(zr *zip.Reader, name string, tickers map[string]bool, from, to time
 	}
 
 	return out, latest, nil
+}
+
+func closingQuote(rec, ticker string, date time.Time, strict bool) (feed.Quote, error) {
+	cents, err := strconv.ParseInt(rec[closeFrom:closeTo], 10, 64)
+	if err != nil {
+		return feed.Quote{}, err
+	}
+
+	value, err := money.NewRate(cents, 2)
+	if err != nil {
+		return feed.Quote{}, err
+	}
+
+	q := feed.Quote{Instrument: money.Currency(ticker), Quote: "BRL", Date: date, Value: value}
+	if !strict {
+		q.Source = "b3_cotahist"
+	}
+
+	return q, nil
 }
 
 func safeSlice(s string, from, to int) string {

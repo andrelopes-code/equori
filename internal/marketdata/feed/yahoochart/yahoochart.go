@@ -303,14 +303,24 @@ func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.
 		return nil, fmt.Errorf("load exchange time zone %q: %w", result.Meta.ExchangeTimezoneName, err)
 	}
 
+	return closeQuotes(result.Indicators.Quote[0].Close, result.Timestamp, loc, code, quote, from, to)
+}
+
+func closeQuotes(
+	closes []*float64,
+	timestamps []int64,
+	loc *time.Location,
+	code, quote money.Currency,
+	from, to time.Time,
+) ([]feed.Quote, error) {
 	var out []feed.Quote
 
-	for i, closing := range result.Indicators.Quote[0].Close {
-		if i >= len(result.Timestamp) || closing == nil || *closing <= 0 {
+	for i, closing := range closes {
+		if i >= len(timestamps) || closing == nil || *closing <= 0 {
 			continue
 		}
 
-		local := time.Unix(result.Timestamp[i], 0).In(loc)
+		local := time.Unix(timestamps[i], 0).In(loc)
 
 		date := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
 		if date.Before(from) || date.After(to) {
