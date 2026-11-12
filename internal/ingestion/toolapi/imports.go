@@ -8,7 +8,6 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
-	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -124,77 +123,85 @@ func getImports(svc *app.Service, names AccountNames) tool.Tool {
 			"Do not use it for the transactions themselves: search_transactions does.",
 		Effect: tool.ReadOnly,
 	}, func(ctx context.Context, booksID int64, in getImportsIn) (getImportsOut, error) {
-		fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}, {"connection_id", in.ConnectionID != ""}}
-
-		named, err := names(ctx, booksID)
-		if err != nil {
-			return getImportsOut{}, err
-		}
-
-		switch in.View {
-		case "records":
-			// state is optional for records.
-			if err := required("records", []field{fields[0], fields[2], fields[3]}, "batch_id"); err != nil {
-				return getImportsOut{}, err
-			}
-
-			return records(ctx, svc, booksID, in, named)
-		case "unconfirmed":
-			if err := required("unconfirmed", fields, "account_id"); err != nil {
-				return getImportsOut{}, err
-			}
-
-			return unconfirmed(ctx, svc, booksID, in, named)
-		case "syncs":
-			if err := required("syncs", fields, "connection_id"); err != nil {
-				return getImportsOut{}, err
-			}
-
-			return syncs(ctx, svc, booksID, in, named)
-		case "connections":
-			if err := required("connections", fields); err != nil {
-				return getImportsOut{}, err
-			}
-
-			return connections(ctx, svc, booksID, in, named)
-		}
-
-		if err := required("batches", fields); err != nil {
-			return getImportsOut{}, err
-		}
-
-		p, err := pageRequest[app.BatchKey](in.PageArgs)
-		if err != nil {
-			return getImportsOut{}, err
-		}
-
-		batches, next, err := svc.ListBatches(ctx, booksID, p)
-		if err != nil {
-			return getImportsOut{}, err
-		}
-
-		out := getImportsOut{Batches: []batchView{}}
-		for _, b := range batches {
-			out.Batches = append(out.Batches, toBatchView(b, named))
-		}
-
-		out.NextCursor, err = nextCursor(next)
-
-		return out, err
+		return getImportsAction(ctx, svc, names, booksID, in)
 	})
 }
 
-func toBatchView(b domain.Batch, named map[uuid.UUID]string) batchView {
-	c := b.Counts
+func getImportsAction(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	in getImportsIn,
+) (getImportsOut, error) {
+	fields := []field{{"batch_id", in.BatchID != ""}, {"state", in.State != ""}, {"account_id", in.AccountID != ""}, {"connection_id", in.ConnectionID != ""}}
 
-	return batchView{
-		BatchID: b.ID.String(), AccountName: named[b.AccountID], Source: string(b.Source), FileName: b.FileName,
-		StartedAt: b.StartedAt.UTC().Format(time.RFC3339),
-		Counts: countsView{
-			Received: c.Received, Ignored: c.Ignored, Matched: c.Matched, Created: c.Created,
-			NeedsReview: c.NeedsReview, Discarded: c.Discarded, Updated: c.Updated, Withdrawn: c.Withdrawn, ReIdentified: c.ReIdentified, Paired: c.Paired,
-		},
+	named, err := names(ctx, booksID)
+	if err != nil {
+		return getImportsOut{}, err
 	}
+
+	switch in.View {
+	case "records":
+		// state is optional for records.
+		if err := required("records", []field{fields[0], fields[2], fields[3]}, "batch_id"); err != nil {
+			return getImportsOut{}, err
+		}
+
+		return records(ctx, svc, booksID, in, named)
+	case "unconfirmed":
+		if err := required("unconfirmed", fields, "account_id"); err != nil {
+			return getImportsOut{}, err
+		}
+
+		return unconfirmed(ctx, svc, booksID, in, named)
+	case "syncs":
+		if err := required("syncs", fields, "connection_id"); err != nil {
+			return getImportsOut{}, err
+		}
+
+		return syncs(ctx, svc, booksID, in, named)
+	case "connections":
+		if err := required("connections", fields); err != nil {
+			return getImportsOut{}, err
+		}
+
+		return connections(ctx, svc, booksID, in, named)
+	}
+
+	return listBatches(ctx, svc, booksID, in, fields, named)
+}
+
+func listBatches(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in getImportsIn,
+	fields []field,
+	named map[uuid.UUID]string,
+) (getImportsOut, error) {
+	if err := required("batches", fields); err != nil {
+		return getImportsOut{}, err
+	}
+
+	p, err := pageRequest[app.BatchKey](in.PageArgs)
+	if err != nil {
+		return getImportsOut{}, err
+	}
+
+	batches, next, err := svc.ListBatches(ctx, booksID, p)
+	if err != nil {
+		return getImportsOut{}, err
+	}
+
+	out := getImportsOut{Batches: []batchView{}}
+	for _, b := range batches {
+		out.Batches = append(out.Batches, toBatchView(b, named))
+	}
+
+	out.NextCursor, err = nextCursor(next)
+
+	return out, err
 }
 
 func records(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
@@ -226,23 +233,6 @@ func records(ctx context.Context, svc *app.Service, booksID int64, in getImports
 	out.NextCursor, err = nextCursor(next)
 
 	return out, err
-}
-
-func toRecordView(r domain.ExternalRecord, currency string) (recordView, error) {
-	amount, err := moneyOf(r.Amount, currency)
-	if err != nil {
-		return recordView{}, err
-	}
-
-	v := recordView{
-		RecordID: r.ID.String(), Date: tool.DateOf(r.Date), Description: r.Description, Amount: amount,
-		State: string(r.State), ReviewReason: r.ReviewReason, Decision: string(r.Decision),
-	}
-	for _, c := range r.Candidates {
-		v.Candidates = append(v.Candidates, c.String())
-	}
-
-	return v, nil
 }
 
 func syncs(ctx context.Context, svc *app.Service, booksID int64, in getImportsIn, named map[uuid.UUID]string) (getImportsOut, error) {
@@ -325,45 +315,16 @@ func connections(ctx context.Context, svc *app.Service, booksID int64, in getImp
 
 	out := getImportsOut{Connections: []connectionView{}, Integrations: []integrationView{}}
 	for _, c := range cs {
-		v := connectionView{ConnectionID: c.ID.String(), Name: c.Name, State: string(c.State), LastError: c.LastError, Accounts: []externalAccountView{}}
-		if c.LastSyncedAt != nil {
-			v.LastSyncedAt = c.LastSyncedAt.UTC().Format(time.RFC3339)
-		}
-
-		for _, a := range c.Accounts {
-			ev := externalAccountView{ExternalAccountID: a.ID.String(), Name: a.Name, State: string(a.State())}
-			if a.AccountID != nil {
-				ev.AccountName = named[*a.AccountID]
-			}
-
-			v.Accounts = append(v.Accounts, ev)
-		}
-
-		out.Connections = append(out.Connections, v)
+		out.Connections = append(out.Connections, toConnectionView(c, named))
 	}
 
 	if out.NextCursor, err = nextCursor(next); err != nil {
 		return getImportsOut{}, err
 	}
 
-	aggregators := map[string]string{}
-	for _, a := range svc.Aggregators() {
-		aggregators[a.ID()] = a.Name()
-	}
-
-	// shortcut: integrations are listed up to one page of tool.MaxLimit; a household has a handful.
-	is, _, err := svc.ListIntegrations(ctx, booksID, page.Request[app.NameKey]{Limit: tool.MaxLimit})
+	out.Integrations, err = integrationViews(ctx, svc, booksID, out.Integrations)
 	if err != nil {
 		return getImportsOut{}, err
-	}
-
-	for _, i := range is {
-		name := aggregators[string(i.Aggregator)]
-		if name == "" {
-			name = string(i.Aggregator)
-		}
-
-		out.Integrations = append(out.Integrations, integrationView{IntegrationID: i.ID.String(), Name: i.Name, Aggregator: name})
 	}
 
 	return out, nil

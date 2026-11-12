@@ -241,6 +241,25 @@ func (r *Repository) SyncRuns(ctx context.Context, booksID int64, connectionID u
 		runs[i] = domain.SyncRun{ID: h.SyncID, StartedAt: h.StartedAt}
 	}
 
+	batchIDs, err := r.attachBatches(ctx, booksID, syncIDs, index, runs)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.attachRecords(ctx, booksID, batchIDs, runs); err != nil {
+		return nil, err
+	}
+
+	return runs, nil
+}
+
+func (r *Repository) attachBatches(
+	ctx context.Context,
+	booksID int64,
+	syncIDs []uuid.UUID,
+	index map[uuid.UUID]int,
+	runs []domain.SyncRun,
+) ([]uuid.UUID, error) {
 	batchRows, err := r.q.ListSyncBatches(ctx, ListSyncBatchesParams{BooksID: booksID, SyncIds: syncIDs})
 	if err != nil {
 		return nil, err
@@ -253,6 +272,15 @@ func (r *Repository) SyncRuns(ctx context.Context, booksID int64, connectionID u
 		batchIDs = append(batchIDs, b.ID)
 	}
 
+	return batchIDs, nil
+}
+
+func (r *Repository) attachRecords(
+	ctx context.Context,
+	booksID int64,
+	batchIDs []uuid.UUID,
+	runs []domain.SyncRun,
+) error {
 	owner := make(map[uuid.UUID]int, len(batchIDs))
 	for i, run := range runs {
 		for _, b := range run.Batches {
@@ -262,17 +290,17 @@ func (r *Repository) SyncRuns(ctx context.Context, booksID int64, connectionID u
 
 	recRows, err := r.q.ListSummaryRecords(ctx, ListSummaryRecordsParams{BooksID: booksID, BatchIds: batchIDs})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, row := range recRows {
 		rec, err := toRecord(row)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		runs[owner[rec.SummaryBatchID]].Records = append(runs[owner[rec.SummaryBatchID]].Records, rec)
 	}
 
-	return runs, nil
+	return nil
 }

@@ -100,47 +100,66 @@ func (r *Repository) ClaimRecords(ctx context.Context, recs []domain.ExternalRec
 	}
 
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		q := r.q.WithTx(tx)
-		var existing [][]byte
-		var batchErr error
-		q.InsertRecords(ctx, params).QueryRow(func(i int, row IngestionExternalRecord, err error) {
-			switch {
-			case batchErr != nil:
-			case errors.Is(err, pgx.ErrNoRows):
-				out[i].Existed, existing = true, append(existing, recs[i].DedupKey)
-			case err != nil:
-				batchErr = err
-			default:
-				out[i].Record, batchErr = toRecord(row)
-			}
-		})
-
-		if batchErr != nil || len(existing) == 0 {
-			return batchErr
-		}
-
-		rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{BooksID: recs[0].BooksID, Keys: existing})
-		if err != nil {
-			return err
-		}
-
-		byKey := make(map[string]IngestionExternalRecord, len(rows))
-		for _, row := range rows {
-			byKey[string(row.DedupKey)] = row
-		}
-
-		for i := range out {
-			if out[i].Existed {
-				if out[i].Record, err = toRecord(byKey[string(recs[i].DedupKey)]); err != nil {
-					return err
-				}
-			}
-		}
-
-		return nil
+		return claimInTx(ctx, r.q.WithTx(tx), recs, params, out)
 	})
 
 	return out, err
+}
+
+func claimInTx(
+	ctx context.Context,
+	q *Queries,
+	recs []domain.ExternalRecord,
+	params []InsertRecordsParams,
+	out []app.Claim,
+) error {
+	var existing [][]byte
+	var batchErr error
+	q.InsertRecords(ctx, params).QueryRow(func(i int, row IngestionExternalRecord, err error) {
+		switch {
+		case batchErr != nil:
+		case errors.Is(err, pgx.ErrNoRows):
+			out[i].Existed, existing = true, append(existing, recs[i].DedupKey)
+		case err != nil:
+			batchErr = err
+		default:
+			out[i].Record, batchErr = toRecord(row)
+		}
+	})
+
+	if batchErr != nil || len(existing) == 0 {
+		return batchErr
+	}
+
+	return fillExisting(ctx, q, recs, existing, out)
+}
+
+func fillExisting(
+	ctx context.Context,
+	q *Queries,
+	recs []domain.ExternalRecord,
+	existing [][]byte,
+	out []app.Claim,
+) error {
+	rows, err := q.ListRecordsByKeys(ctx, ListRecordsByKeysParams{BooksID: recs[0].BooksID, Keys: existing})
+	if err != nil {
+		return err
+	}
+
+	byKey := make(map[string]IngestionExternalRecord, len(rows))
+	for _, row := range rows {
+		byKey[string(row.DedupKey)] = row
+	}
+
+	for i := range out {
+		if out[i].Existed {
+			if out[i].Record, err = toRecord(byKey[string(recs[i].DedupKey)]); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func insertParams(rec domain.ExternalRecord) (InsertRecordsParams, error) {

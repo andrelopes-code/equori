@@ -143,35 +143,51 @@ func NewProfile(p Profile) (Profile, error) {
 		p.Encoding = "auto"
 	}
 
-	switch {
-	case p.Delimiter != "," && p.Delimiter != ";" && p.Delimiter != "\t" && p.Delimiter != "|":
-		return Profile{}, invalid("delimiter", `must be ",", ";", tab or "|"`)
-	case p.HeaderRows < 0 || p.HeaderRows > 10:
-		return Profile{}, invalid("header_rows", "must be between 0 and 10")
-	case p.DateLayout.GoLayout() == "":
-		return Profile{}, invalid("date_layout", `must hold DD, MM and YYYY or YY once each, joined by "/", ".", "-" or " "`)
-	case p.DecimalSeparator != "," && p.DecimalSeparator != ".":
-		return Profile{}, invalid("decimal_separator", `must be "," or "."`)
-	case !slices.Contains(groupSeparators, p.GroupSeparator) || p.GroupSeparator == p.DecimalSeparator && p.GroupSeparator != "":
-		return Profile{}, invalid("group_separator", `must be "," , ".", a space, a no-break space, "'" or empty, and differ from decimal_separator`)
-	case !encodingName.MatchString(p.Encoding):
-		return Profile{}, invalid("encoding", "must match ^[a-z0-9_-]{2,40}$")
-	case p.AmountSign != SignAsIs && p.AmountSign != SignInverted:
-		return Profile{}, invalid("amount_sign", "must be as_is or inverted")
-	case (p.DebitColumn == "") != (p.CreditColumn == ""):
-		return Profile{}, invalid("credit_column", "debit_column and credit_column go together")
-	case (p.AmountColumn == "") == (p.DebitColumn == ""):
-		return Profile{}, invalid("amount_column", "set amount_column, or debit_column and credit_column")
-	case p.FooterRows < 0 || p.FooterRows > 10:
-		return Profile{}, invalid("footer_rows", "must be between 0 and 10")
-	case p.SignColumn != "" && p.DebitMarker == "":
-		return Profile{}, invalid("debit_marker", "is required with sign_column")
-	case p.DebitMarker != "" && p.AmountColumn == "":
-		return Profile{}, invalid("debit_marker", "needs amount_column")
-	case utf8.RuneCountInString(p.DebitMarker) > 40:
-		return Profile{}, invalid("debit_marker", "must be at most 40 characters")
+	if err := validateProfileShape(p); err != nil {
+		return Profile{}, err
 	}
 
+	if err := validateProfileColumns(p); err != nil {
+		return Profile{}, err
+	}
+
+	return p, nil
+}
+
+func validateProfileShape(p Profile) error {
+	switch {
+	case p.Delimiter != "," && p.Delimiter != ";" && p.Delimiter != "\t" && p.Delimiter != "|":
+		return invalid("delimiter", `must be ",", ";", tab or "|"`)
+	case p.HeaderRows < 0 || p.HeaderRows > 10:
+		return invalid("header_rows", "must be between 0 and 10")
+	case p.DateLayout.GoLayout() == "":
+		return invalid("date_layout", `must hold DD, MM and YYYY or YY once each, joined by "/", ".", "-" or " "`)
+	case p.DecimalSeparator != "," && p.DecimalSeparator != ".":
+		return invalid("decimal_separator", `must be "," or "."`)
+	case !slices.Contains(groupSeparators, p.GroupSeparator) || p.GroupSeparator == p.DecimalSeparator && p.GroupSeparator != "":
+		return invalid("group_separator", `must be "," , ".", a space, a no-break space, "'" or empty, and differ from decimal_separator`)
+	case !encodingName.MatchString(p.Encoding):
+		return invalid("encoding", "must match ^[a-z0-9_-]{2,40}$")
+	case p.AmountSign != SignAsIs && p.AmountSign != SignInverted:
+		return invalid("amount_sign", "must be as_is or inverted")
+	case (p.DebitColumn == "") != (p.CreditColumn == ""):
+		return invalid("credit_column", "debit_column and credit_column go together")
+	case (p.AmountColumn == "") == (p.DebitColumn == ""):
+		return invalid("amount_column", "set amount_column, or debit_column and credit_column")
+	case p.FooterRows < 0 || p.FooterRows > 10:
+		return invalid("footer_rows", "must be between 0 and 10")
+	case p.SignColumn != "" && p.DebitMarker == "":
+		return invalid("debit_marker", "is required with sign_column")
+	case p.DebitMarker != "" && p.AmountColumn == "":
+		return invalid("debit_marker", "needs amount_column")
+	case utf8.RuneCountInString(p.DebitMarker) > 40:
+		return invalid("debit_marker", "must be at most 40 characters")
+	}
+
+	return nil
+}
+
+func validateProfileColumns(p Profile) error {
 	columns := map[string]string{
 		"date_column": p.DateColumn, "description_column": p.DescriptionColumn, "amount_column": p.AmountColumn,
 		"debit_column": p.DebitColumn, "credit_column": p.CreditColumn, "id_column": p.IDColumn, "sign_column": p.SignColumn,
@@ -182,7 +198,7 @@ func NewProfile(p Profile) (Profile, error) {
 		required := field == "date_column" || field == "description_column"
 		if c == "" {
 			if required {
-				return Profile{}, invalid(field, "is required")
+				return invalid(field, "is required")
 			}
 
 			continue
@@ -190,10 +206,10 @@ func NewProfile(p Profile) (Profile, error) {
 
 		if p.HeaderRows == 0 {
 			if n, err := strconv.Atoi(c); err != nil || n < 1 {
-				return Profile{}, invalid(field, "must be a column position from 1 when the file has no header row")
+				return invalid(field, "must be a column position from 1 when the file has no header row")
 			}
 		}
 	}
 
-	return p, nil
+	return nil
 }

@@ -3,13 +3,11 @@ package toolapi
 import (
 	"context"
 	"slices"
-	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ingestion/app"
 	"github.com/andrelopes-code/equori/internal/ingestion/domain"
-	"github.com/andrelopes-code/equori/internal/platform/page"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -133,236 +131,114 @@ func manageImports(svc *app.Service, names AccountNames) tool.Tool {
 			"The user confirms first.",
 		Effect: tool.Destructive,
 	}, func(ctx context.Context, booksID int64, in manageImportsIn) (tool.Preview, error) {
-		a, err := parseImportsAction(in)
-		if err != nil {
-			return tool.Preview{}, err
-		}
-
-		p := tool.Preview{Action: "manage_imports." + string(in.Action)}
-		switch in.Action {
-		case "sync", "delete_connection":
-			c, err := svc.Connection(ctx, booksID, a.connection)
-			if err != nil {
-				return tool.Preview{}, err
-			}
-
-			p.Target = "Connection " + c.Name
-			if in.Action == "sync" {
-				p.Changes = []tool.Change{{Field: "connection", After: tool.TextValue(c.Name)}}
-			} else {
-				p.Changes, p.Destructive = []tool.Change{{Field: "connection", Before: tool.TextValue(c.Name)}}, true
-			}
-		case "map_account":
-			return previewMapping(ctx, svc, names, booksID, a, in, p)
-		case "resolve_record":
-			rec, err := svc.Record(ctx, booksID, a.record)
-			if err != nil {
-				return tool.Preview{}, err
-			}
-
-			if rec.State != domain.StateNeedsReview {
-				return tool.Preview{}, app.ErrRecordResolved
-			}
-
-			p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
-
-			p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(rec.State)), After: tool.TextValue(string(resolvedState[in.Resolution]))}}
-			if in.Resolution == app.ActionMatch {
-				if !slices.Contains(rec.Candidates, a.transaction) {
-					return tool.Preview{}, &domain.FieldError{Field: "transaction_id", Message: "must be one of the record's candidates"}
-				}
-
-				p.Changes = append(p.Changes, tool.Change{Field: "transaction", After: tool.TextValue(in.TransactionID)})
-			}
-		case "reopen_record":
-			rec, err := svc.Record(ctx, booksID, a.record)
-			if err != nil {
-				return tool.Preview{}, err
-			}
-
-			if rec.State != domain.StateDiscarded {
-				return tool.Preview{}, app.ErrRecordNotDiscarded
-			}
-
-			p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
-			p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(rec.State)), After: tool.TextValue(string(domain.StateNeedsReview))}}
-		case "undo_decision":
-			rec, err := svc.Record(ctx, booksID, a.record)
-			if err != nil {
-				return tool.Preview{}, err
-			}
-
-			if rec.Decision == "" {
-				return tool.Preview{}, app.ErrNoDecision
-			}
-
-			p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
-			p.Changes = []tool.Change{{Field: "decision", Before: tool.TextValue(string(rec.Decision))}}
-		case "delete_integration":
-			i, err := svc.Integration(ctx, booksID, a.integration)
-			if err != nil {
-				return tool.Preview{}, err
-			}
-
-			if inUse, err := integrationInUse(ctx, svc, booksID, a.integration); err != nil {
-				return tool.Preview{}, err
-			} else if inUse {
-				return tool.Preview{}, app.ErrIntegrationInUse
-			}
-
-			p.Target, p.Destructive = "Integration "+i.Name, true
-			p.Changes = []tool.Change{{Field: "name", Before: tool.TextValue(i.Name)}}
-		}
-
-		return p, nil
+		return previewImportsAction(ctx, svc, names, booksID, in)
 	}, func(ctx context.Context, booksID int64, in manageImportsIn) (manageImportsOut, error) {
-		a, err := parseImportsAction(in)
+		return applyImportsAction(ctx, svc, names, booksID, in)
+	})
+}
+
+func applyImportsAction(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	in manageImportsIn,
+) (manageImportsOut, error) {
+	a, err := parseImportsAction(in)
+	if err != nil {
+		return manageImportsOut{}, err
+	}
+
+	switch in.Action {
+	case "sync":
+		return applySync(ctx, svc, names, booksID, a)
+	case "map_account":
+		return applyMapAccount(ctx, svc, names, booksID, a, in)
+	case "resolve_record":
+		rec, _, err := svc.Resolve(ctx, booksID, a.record, string(in.Resolution), a.transaction)
 		if err != nil {
 			return manageImportsOut{}, err
 		}
 
-		switch in.Action {
-		case "sync":
-			c, batches, err := svc.SyncConnection(ctx, booksID, a.connection)
-			if err != nil {
-				return manageImportsOut{}, err
-			}
-
-			named, err := names(ctx, booksID)
-			if err != nil {
-				return manageImportsOut{}, err
-			}
-
-			out := manageImportsOut{ConnectionID: c.ID.String(), State: string(c.State), Batches: []batchView{}}
-			for _, b := range batches {
-				out.Batches = append(out.Batches, toBatchView(b, named))
-			}
-
-			return out, nil
-		case "map_account":
-			ext, err := svc.MapAccount(ctx, booksID, a.connection, a.external, a.mapping(in))
-			if err != nil {
-				return manageImportsOut{}, err
-			}
-
-			out := manageImportsOut{ExternalAccountID: ext.ID.String(), State: string(ext.State())}
-			if ext.AccountID != nil {
-				named, err := names(ctx, booksID)
-				if err != nil {
-					return manageImportsOut{}, err
-				}
-
-				out.AccountName = named[*ext.AccountID]
-			}
-
-			return out, nil
-		case "resolve_record":
-			rec, _, err := svc.Resolve(ctx, booksID, a.record, string(in.Resolution), a.transaction)
-			if err != nil {
-				return manageImportsOut{}, err
-			}
-
-			out := manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}
-			if rec.TransactionID != uuid.Nil {
-				out.TransactionID = rec.TransactionID.String()
-			}
-
-			return out, nil
-		case "reopen_record":
-			rec, _, err := svc.Reopen(ctx, booksID, a.record)
-			if err != nil {
-				return manageImportsOut{}, err
-			}
-
-			return manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}, nil
-		case "undo_decision":
-			rec, _, err := svc.UndoDecision(ctx, booksID, a.record)
-			if err != nil {
-				return manageImportsOut{}, err
-			}
-
-			out := manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}
-			if rec.TransactionID != uuid.Nil {
-				out.TransactionID = rec.TransactionID.String()
-			}
-
-			return out, nil
-		case "delete_connection":
-			return manageImportsOut{Deleted: true}, svc.DeleteConnection(ctx, booksID, a.connection)
+		out := manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}
+		if rec.TransactionID != uuid.Nil {
+			out.TransactionID = rec.TransactionID.String()
 		}
 
-		return manageImportsOut{Deleted: true}, svc.DeleteIntegration(ctx, booksID, a.integration)
-	})
+		return out, nil
+	case "reopen_record":
+		rec, _, err := svc.Reopen(ctx, booksID, a.record)
+		if err != nil {
+			return manageImportsOut{}, err
+		}
+
+		return manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}, nil
+	case "undo_decision":
+		rec, _, err := svc.UndoDecision(ctx, booksID, a.record)
+		if err != nil {
+			return manageImportsOut{}, err
+		}
+
+		out := manageImportsOut{RecordID: rec.ID.String(), State: string(rec.State)}
+		if rec.TransactionID != uuid.Nil {
+			out.TransactionID = rec.TransactionID.String()
+		}
+
+		return out, nil
+	case "delete_connection":
+		return manageImportsOut{Deleted: true}, svc.DeleteConnection(ctx, booksID, a.connection)
+	}
+
+	return manageImportsOut{Deleted: true}, svc.DeleteIntegration(ctx, booksID, a.integration)
 }
 
-func previewMapping(ctx context.Context, svc *app.Service, names AccountNames, booksID int64, a importsAction, in manageImportsIn, p tool.Preview) (tool.Preview, error) {
-	m := a.mapping(in)
-	if err := m.Validate(); err != nil {
-		return tool.Preview{}, err
-	}
-
-	c, err := svc.Connection(ctx, booksID, a.connection)
+func applySync(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	a importsAction,
+) (manageImportsOut, error) {
+	c, batches, err := svc.SyncConnection(ctx, booksID, a.connection)
 	if err != nil {
-		return tool.Preview{}, err
-	}
-
-	i := slices.IndexFunc(c.Accounts, func(e domain.ExternalAccount) bool { return e.ID == a.external })
-	if i < 0 {
-		return tool.Preview{}, app.ErrNotFound
-	}
-
-	ext := c.Accounts[i]
-
-	p.Target = "Bank account " + ext.Name + " of connection " + c.Name
-	if in.Ignore {
-		p.Changes = []tool.Change{{Field: "status", Before: tool.TextValue(string(ext.State())), After: tool.TextValue(string(domain.MappingIgnored))}}
-		return p, nil
+		return manageImportsOut{}, err
 	}
 
 	named, err := names(ctx, booksID)
 	if err != nil {
-		return tool.Preview{}, err
+		return manageImportsOut{}, err
 	}
 
-	to, ok := named[a.account]
-	if !ok {
-		return tool.Preview{}, &domain.FieldError{Field: "account_id", Message: "must be a balance account of the book"}
+	out := manageImportsOut{ConnectionID: c.ID.String(), State: string(c.State), Batches: []batchView{}}
+	for _, b := range batches {
+		out.Batches = append(out.Batches, toBatchView(b, named))
 	}
 
-	change := tool.Change{Field: "account", After: tool.TextValue(to)}
-	if ext.AccountID != nil {
-		change.Before = tool.TextValue(named[*ext.AccountID])
-	}
-
-	p.Changes = []tool.Change{change}
-	if m.SyncFrom != nil {
-		change := tool.Change{Field: "date", After: tool.DateValue(*m.SyncFrom)}
-		if ext.SyncFrom != nil {
-			change.Before = tool.DateValue(*ext.SyncFrom)
-		}
-
-		p.Changes = append(p.Changes, change)
-	}
-
-	return p, nil
+	return out, nil
 }
 
-func integrationInUse(ctx context.Context, svc *app.Service, booksID int64, id uuid.UUID) (bool, error) {
-	r := page.Request[app.NameKey]{Limit: page.MaxLimit}
-	for {
-		cs, next, err := svc.ListConnections(ctx, booksID, r)
-		if err != nil {
-			return false, err
-		}
-
-		if slices.ContainsFunc(cs, func(c domain.Connection) bool { return c.IntegrationID == id }) {
-			return true, nil
-		}
-
-		if next == nil {
-			return false, nil
-		}
-
-		r.After = next
+func applyMapAccount(
+	ctx context.Context,
+	svc *app.Service,
+	names AccountNames,
+	booksID int64,
+	a importsAction,
+	in manageImportsIn,
+) (manageImportsOut, error) {
+	ext, err := svc.MapAccount(ctx, booksID, a.connection, a.external, a.mapping(in))
+	if err != nil {
+		return manageImportsOut{}, err
 	}
+
+	out := manageImportsOut{ExternalAccountID: ext.ID.String(), State: string(ext.State())}
+	if ext.AccountID != nil {
+		named, err := names(ctx, booksID)
+		if err != nil {
+			return manageImportsOut{}, err
+		}
+
+		out.AccountName = named[*ext.AccountID]
+	}
+
+	return out, nil
 }
