@@ -3,12 +3,16 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json } from "@/testing/fake-api";
-import { money } from "@/testing/account-api";
+import { checkingID, money } from "@/testing/account-api";
 import {
   instrumentsApi as api,
   positionFixtures,
 } from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
+
+// A second account holding PETR4 (the first one is "Corretora / PETR4").
+const [petrPosition] = positionFixtures;
+const twoAccounts = [petrPosition, { ...petrPosition, account_id: checkingID }];
 
 const card = (figures: HTMLElement, label: string) =>
   within(figures).getByText(label).closest("[data-ui='stat-card']");
@@ -23,7 +27,7 @@ describe("Position of an instrument", () => {
     await waitFor(() => {
       expect(
         card(figures, catalogEn["positions.marketValue"]),
-      ).toHaveTextContent("R$3,845.00in 1 account");
+      ).toHaveTextContent("R$3,845.00Corretora / PETR4");
     });
     expect(card(figures, catalogEn["positions.costBasis"])).toHaveTextContent(
       "R$3,500.00average cost R$35.00",
@@ -36,13 +40,54 @@ describe("Position of an instrument", () => {
     );
   });
 
-  it("writes the result of each account in its row", async () => {
+  it("draws no table when one account holds the instrument", async () => {
     await renderApp("/instruments/PETR4", { fetch: api() });
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["instrument.position.figures"],
+    });
+
+    await waitFor(() => {
+      expect(
+        card(figures, catalogEn["positions.marketValue"]),
+      ).toHaveTextContent("Corretora / PETR4");
+    });
+    expect(
+      screen.queryByRole("table", {
+        name: catalogEn["instrument.positions.caption"],
+      }),
+    ).toBeNull();
+  });
+
+  it("writes the result of each account in its row", async () => {
+    const fetch = api({
+      "GET /api/v1/positions": () => json(200, { items: twoAccounts }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
     const table = await screen.findByRole("table", {
       name: catalogEn["instrument.positions.caption"],
     });
 
-    expect(await within(table).findByText("+R$345.00 (+9.86%)")).toBeVisible();
+    expect(
+      await within(table).findAllByText("+R$345.00 (+9.86%)"),
+    ).toHaveLength(2);
+    expect(within(table).getByText("Corretora / PETR4")).toBeVisible();
+    expect(within(table).getByText("Nubank")).toBeVisible();
+  });
+
+  it("keeps the count of accounts in the first card when two hold it", async () => {
+    const fetch = api({
+      "GET /api/v1/positions": () => json(200, { items: twoAccounts }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["instrument.position.figures"],
+    });
+
+    await waitFor(() => {
+      expect(
+        card(figures, catalogEn["positions.marketValue"]),
+      ).toHaveTextContent("R$7,690.00in 2 accounts");
+    });
   });
 
   // C3: the cost is in the cost currency, the value in the base currency.

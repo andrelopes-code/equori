@@ -62,15 +62,22 @@ export function InstrumentPositions({
     );
   const money = (m: components["schemas"]["Money"]) =>
     fmt.money(m, scale?.(m.currency) ?? 0);
-  const account = (p: Position) => {
+  const label = (p: Position) => {
     const a = byID.get(p.account_id);
     if (a === undefined) return null;
     const parent =
       a.parent_id === undefined ? undefined : byID.get(a.parent_id);
-    return (
-      <AccountLink account={a}>
-        {parent === undefined ? a.name : `${parent.name} / ${a.name}`}
-      </AccountLink>
+
+    return {
+      account: a,
+      text: parent === undefined ? a.name : `${parent.name} / ${a.name}`,
+    };
+  };
+  const account = (p: Position) => {
+    const l = label(p);
+
+    return l === null ? null : (
+      <AccountLink account={l.account}>{l.text}</AccountLink>
     );
   };
   const marketValue = (p: Position) =>
@@ -96,67 +103,79 @@ export function InstrumentPositions({
   };
   if (!pending && rows.length === 0) return null;
 
+  // CA5: a table of one row is a sentence; the first card names the account.
+  const onlyAccount = rows.length === 1 && quote !== null;
+  const accountName = onlyAccount
+    ? label(rows[0] as Position)?.text
+    : undefined;
+
   return (
     <Stack gap={3}>
       <Heading level={2} size="md">
         {t("instrument.positions.title")}
       </Heading>
-      {quote !== null && <PositionFigures rows={rows} quote={quote} />}
-      <Table columns={6} variant="framed">
-        <TableContent>
-          <TableCaption>{t("instrument.positions.caption")}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>
-                {t("instrument.positions.account")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("positions.quantity")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("positions.averageCost")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("positions.costBasis")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("positions.marketValue")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric>
-                {t("instrument.position.result")}
-              </TableColumnHeader>
-            </TableRow>
-          </TableHead>
-          {pending ? (
-            <TableLoader skeletonRows={2} />
-          ) : (
-            <TableBody>
-              {rows.length === 0 && (
-                <TableEmpty>{t("instrument.positions.empty")}</TableEmpty>
-              )}
-              {rows.map((p) => (
-                <TableRow key={p.account_id} value={p.account_id}>
-                  <TableRowHeader text="truncate">{account(p)}</TableRowHeader>
-                  <TableCell numeric>
-                    {fmt.number(p.quantity, scale(p.quantity.currency))}
-                  </TableCell>
-                  <TableCell numeric>
-                    {averageCostText(
-                      fmt,
-                      p.average_cost,
-                      p.cost_basis.currency,
-                      scale(p.cost_basis.currency),
-                    )}
-                  </TableCell>
-                  <TableCell numeric>{money(p.cost_basis)}</TableCell>
-                  <TableCell numeric>{marketValue(p)}</TableCell>
-                  <TableCell numeric>{result(p) ?? "—"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          )}
-        </TableContent>
-      </Table>
+      {quote !== null && (
+        <PositionFigures rows={rows} quote={quote} accountName={accountName} />
+      )}
+      {!onlyAccount && (
+        <Table columns={6} variant="framed">
+          <TableContent>
+            <TableCaption>{t("instrument.positions.caption")}</TableCaption>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>
+                  {t("instrument.positions.account")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("positions.quantity")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("positions.averageCost")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("positions.costBasis")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("positions.marketValue")}
+                </TableColumnHeader>
+                <TableColumnHeader numeric>
+                  {t("instrument.position.result")}
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+            {pending ? (
+              <TableLoader skeletonRows={2} />
+            ) : (
+              <TableBody>
+                {rows.length === 0 && (
+                  <TableEmpty>{t("instrument.positions.empty")}</TableEmpty>
+                )}
+                {rows.map((p) => (
+                  <TableRow key={p.account_id} value={p.account_id}>
+                    <TableRowHeader text="truncate">
+                      {account(p)}
+                    </TableRowHeader>
+                    <TableCell numeric>
+                      {fmt.number(p.quantity, scale(p.quantity.currency))}
+                    </TableCell>
+                    <TableCell numeric>
+                      {averageCostText(
+                        fmt,
+                        p.average_cost,
+                        p.cost_basis.currency,
+                        scale(p.cost_basis.currency),
+                      )}
+                    </TableCell>
+                    <TableCell numeric>{money(p.cost_basis)}</TableCell>
+                    <TableCell numeric>{marketValue(p)}</TableCell>
+                    <TableCell numeric>{result(p) ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            )}
+          </TableContent>
+        </Table>
+      )}
     </Stack>
   );
 }

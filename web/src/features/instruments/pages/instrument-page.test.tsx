@@ -4,7 +4,11 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
-import { instrumentsApi as api } from "@/testing/instruments-api";
+import { checkingID } from "@/testing/account-api";
+import {
+  instrumentsApi as api,
+  positionFixtures,
+} from "@/testing/instruments-api";
 import { renderApp } from "@/testing/render-app";
 
 const rowTexts = (table: HTMLElement) =>
@@ -15,6 +19,15 @@ const rowTexts = (table: HTMLElement) =>
         .map((cell) => cell.textContent)
         .join("|"),
     );
+
+// Two accounts hold PETR4: "Corretora / PETR4" and "Nubank".
+const twoAccountPositions = () =>
+  json(200, {
+    items: [
+      positionFixtures[0],
+      { ...positionFixtures[0], account_id: checkingID },
+    ],
+  });
 
 const twoPrices = [
   {
@@ -698,13 +711,15 @@ describe("Instrument page", () => {
   });
 
   it("lists the positions that hold the instrument, linked to their accounts", async () => {
-    await renderApp("/instruments/PETR4", { fetch: api() });
+    const fetch = api({ "GET /api/v1/positions": twoAccountPositions });
+    await renderApp("/instruments/PETR4", { fetch });
     const table = await screen.findByRole("table", {
       name: catalogEn["instrument.positions.caption"],
     });
     await within(table).findByRole("link", { name: /PETR4/ });
     expect(rowTexts(table).slice(1)).toEqual([
       "Corretora / PETR4|100|R$35.00|R$3,500.00|R$3,845.00|+R$345.00 (+9.86%)",
+      "Nubank|100|R$35.00|R$3,500.00|R$3,845.00|+R$345.00 (+9.86%)",
     ]);
     expect(within(table).getByRole("link", { name: /PETR4/ })).toHaveAttribute(
       "href",
@@ -713,7 +728,9 @@ describe("Instrument page", () => {
   });
 
   it("PC19: states the position after the quote and nothing for an instrument not held", async () => {
-    const { unmount } = await renderApp("/instruments/PETR4", { fetch: api() });
+    const { unmount } = await renderApp("/instruments/PETR4", {
+      fetch: api({ "GET /api/v1/positions": twoAccountPositions }),
+    });
     const table = await screen.findByRole("table", {
       name: catalogEn["instrument.positions.caption"],
     });

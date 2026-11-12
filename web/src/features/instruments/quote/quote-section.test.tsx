@@ -19,6 +19,7 @@ describe("Quote section", () => {
     expect(hero).toHaveTextContent("R$38.45");
     expect(hero).toHaveTextContent("+0.92%");
     expect(hero).toHaveTextContent("against the quote of 10/14/2026");
+    expect(within(hero).getAllByText(/38\.45/)).toHaveLength(1);
   });
 
   it("keeps the comparison line when there is nothing to compare", async () => {
@@ -45,11 +46,12 @@ describe("Quote section", () => {
 
     await within(figures).findByText("R$38.10");
 
+    // Fixture: 38.10 on 2026-10-14 and 38.45 on 2026-10-16, so the change is +0.92%.
     const change = await card(catalogEn["instrument.figures.change"]);
-    expect(change).toHaveTextContent("R$38.45");
-    expect(change).toHaveTextContent("up +0.92%from 10/14/2026 to 10/16/2026");
-    expect(change).toHaveAttribute("data-size", "lg");
-    expect(change).toHaveClass(/change/);
+    expect(change).toHaveTextContent("+0.92%from 10/14/2026 to 10/16/2026");
+    expect(change).not.toHaveTextContent("R$38.45");
+    expect(change).toHaveAttribute("data-size", "sm");
+    expect(change).not.toHaveClass(/change/);
     expect(figures.querySelector("[data-ui='stat-card']")).toBe(change);
     expect(await card(catalogEn["instrument.figures.high"])).toHaveTextContent(
       "R$38.4510/16/2026",
@@ -60,6 +62,26 @@ describe("Quote section", () => {
     expect(
       await card(catalogEn["instrument.figures.points"]),
     ).toHaveTextContent(`2${catalogEn["instrument.figures.pointsNote"]}`);
+  });
+
+  it("writes a dash as the change of a range of one quote", async () => {
+    const fetch = api({
+      "GET /api/v1/prices": () =>
+        json(200, { items: [petr("2026-10-16", "38.45")] }),
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["instrument.figures.label"],
+    });
+    const change = (
+      await within(figures).findByText(catalogEn["instrument.figures.change"])
+    ).closest("[data-ui='stat-card']");
+
+    await within(figures).findAllByText("R$38.45");
+
+    expect(change).toHaveTextContent("—");
+    expect(change).not.toHaveTextContent("%");
+    expect(change).not.toHaveTextContent("R$38.45");
   });
 
   it("states that an instrument with no quote has none", async () => {

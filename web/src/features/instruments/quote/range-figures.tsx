@@ -20,7 +20,7 @@ export function RangeFigures({ stats, quote, loading }: RangeFiguresProps) {
 
   return (
     <FigureGrid label={t("instrument.figures.label")}>
-      <RangeChange stats={stats} quote={quote} loading={loading} />
+      <RangeChange stats={stats} loading={loading} />
       <FigureCard
         label={t("instrument.figures.high")}
         loading={loading}

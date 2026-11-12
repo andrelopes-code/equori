@@ -12,10 +12,17 @@ type Position = components["schemas"]["Position"];
 interface PositionFiguresProps {
   rows: readonly Position[];
   quote: string;
+  // CA5: the name of the only account that holds the instrument; it replaces the count in the
+  // first card, because the page draws no table of one row.
+  accountName?: string | undefined;
 }
 
 // IP8: what the book holds of the instrument, summed over its accounts, and the unrealized result.
-export function PositionFigures({ rows, quote }: PositionFiguresProps) {
+export function PositionFigures({
+  rows,
+  quote,
+  accountName,
+}: PositionFiguresProps) {
   const t = useT();
   const fmt = useMoneyFormat();
   const scale = useScale();
@@ -42,7 +49,8 @@ export function PositionFigures({ rows, quote }: PositionFiguresProps) {
             : { money: marketValue, scale: scale(marketValue.currency) }
         }
         note={
-          marketValue === null ? t("instrument.position.noPrice") : accounts
+          accountName ??
+          (marketValue === null ? t("instrument.position.noPrice") : accounts)
         }
       />
       <FigureCard

@@ -1,66 +1,63 @@
 import {
   StatCard,
   StatCardComparison,
-  StatCardDelta,
   StatCardFigure,
   StatCardHeader,
   StatCardLabel,
   StatCardMessage,
   StatCardValue,
 } from "@slotted/react/stat-card";
+import { Text } from "@slotted/react/typography";
 
 import type { PriceStats } from "@/features/instruments/model/price-stats";
-import { usePriceFormat } from "@/features/instruments/model/use-price-format";
-import styles from "@/features/instruments/quote/range-change.module.css";
-import { formatDate } from "@/i18n/format";
+import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { directionOf, useAmountTone } from "@/ui/money/amount-tone";
 
 interface RangeChangeProps {
   stats: PriceStats | null;
-  quote: string;
   loading: boolean;
 }
 
-// The change of the range is the figure the eye looks for first: the price it ends at, the
-// change in the tone of its direction, and the dates it spans. It spans two columns of the grid.
-export function RangeChange({ stats, quote, loading }: RangeChangeProps) {
+// CA3: the price of the last quote is the hero's; this card writes the signed change of the range
+// and the two dates it spans. StatCardValue takes no tone, so the change is a Text in the tone of
+// its direction, the same tone helper the price table uses.
+export function RangeChange({ stats, loading }: RangeChangeProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const format = usePriceFormat(quote);
+  const amountTone = useAmountTone();
   const change = stats?.changeBp ?? null;
+  const tone = amountTone("result", directionOf(change ?? 0));
+  const note = stats === null ? "" : rangeNote(stats, locale, t);
 
   return (
     <StatCard
-      size="lg"
-      goodWhen="up"
-      formatOptions={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
-      className={styles.change}
+      size="sm"
+      layout="stacked"
       loading={loading}
       status={!loading && stats === null ? "empty" : "ready"}
-      {...(change === null ? {} : { delta: change / 10000 })}
     >
       <StatCardHeader>
         <StatCardLabel>{t("instrument.figures.change")}</StatCardLabel>
       </StatCardHeader>
       <StatCardFigure>
-        <StatCardValue
-          value={stats === null ? undefined : format.text(stats.last.value)}
-        />
-        {change !== null && <StatCardDelta />}
+        <StatCardValue>
+          <Text size="xl" tone={tone}>
+            {change === null ? "—" : formatSignedBasisPoints(change, locale)}
+          </Text>
+        </StatCardValue>
       </StatCardFigure>
-      <StatCardComparison>{note(stats, locale, t)}</StatCardComparison>
-      <StatCardMessage>{note(stats, locale, t)}</StatCardMessage>
+      <StatCardComparison>{note}</StatCardComparison>
+      <StatCardMessage>{note}</StatCardMessage>
     </StatCard>
   );
 }
 
-function note(
-  stats: PriceStats | null,
+function rangeNote(
+  stats: PriceStats,
   locale: string,
   t: ReturnType<typeof useT>,
 ): string {
-  if (stats === null) return "";
-
   return t("instrument.figures.changeNote", {
     from: formatDate(stats.first.date, locale),
     to: formatDate(stats.last.date, locale),
