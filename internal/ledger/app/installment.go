@@ -185,32 +185,7 @@ func (s *Service) confirmInstallment(ctx context.Context, r Repository, booksID 
 		return r.SettleImportedPosting(ctx, booksID, in.PostingID, status, uuid.Nil)
 	}
 
-	next, err := withConfirmedInstallment(prev, k, recordID, number, c.Amount, *target, status)
-	if err != nil {
-		return err
-	}
-
-	accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
-	if err != nil {
-		return err
-	}
-
-	if next, err = domain.NewTransaction(next, accounts); err != nil {
-		return err
-	}
-
-	if err := s.bill(ctx, r, &next); err != nil {
-		return err
-	}
-
-	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonConfirmed); err != nil {
-		return err
-	}
-
-	event := newTransactionEvent(next, accounts, prev)
-	event.PreviousDate = prev.Date.Format(time.DateOnly)
-
-	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
+	return s.rewriteInstallment(ctx, r, booksID, prev, k, recordID, number, c.Amount, *target, status)
 }
 
 const reasonConfirmed = "installment confirmed"
@@ -254,27 +229,11 @@ func withConfirmedInstallment(prev domain.Transaction, k int, recordID uuid.UUID
 		return next, nil
 	}
 
-	for i := range next.Postings {
-		p := &next.Postings[i]
-		if p.CardRole != "" {
-			continue
-		}
-
-		if p.Status == domain.StatusReconciled {
-			return domain.Transaction{}, ErrInstallmentUnavailable
-		}
-
-		changed, err := money.New(p.Amount.Amount()+delta, p.Amount.Currency())
-		if err != nil {
-			return domain.Transaction{}, err
-		}
-
-		p.ID, p.Amount, p.Weight = uuid.Nil, changed, money.Money{}
-
-		return next, nil
+	if err := absorbInstallmentDelta(next.Postings, delta); err != nil {
+		return domain.Transaction{}, err
 	}
 
-	return domain.Transaction{}, ErrInstallmentUnavailable
+	return next, nil
 }
 
 // PlanInstallmentState is one installment posting of a plan.
@@ -341,4 +300,71 @@ func (s *Service) InstallmentPlan(ctx context.Context, booksID int64, id uuid.UU
 	}
 
 	return view, nil
+}
+
+// rewriteInstallment replaces the installment k of prev by the confirmed record and publishes
+// the corrected transaction.
+func (s *Service) rewriteInstallment(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	prev domain.Transaction,
+	k int,
+	recordID uuid.UUID,
+	number int,
+	amount money.Money,
+	ref domain.ReferenceMonth,
+	status domain.PostingStatus,
+) error {
+	next, err := withConfirmedInstallment(prev, k, recordID, number, amount, ref, status)
+	if err != nil {
+		return err
+	}
+
+	accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
+	if err != nil {
+		return err
+	}
+
+	if next, err = domain.NewTransaction(next, accounts); err != nil {
+		return err
+	}
+
+	if err := s.bill(ctx, r, &next); err != nil {
+		return err
+	}
+
+	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonConfirmed); err != nil {
+		return err
+	}
+
+	event := newTransactionEvent(next, accounts, prev)
+	event.PreviousDate = prev.Date.Format(time.DateOnly)
+
+	return r.Publish(ctx, outbox.Event{Type: EventTransactionCorrected, BooksID: booksID, AggregateID: next.ID.String(), Payload: event})
+}
+
+// absorbInstallmentDelta adds delta to the first category posting of postings.
+func absorbInstallmentDelta(postings []domain.Posting, delta int64) error {
+	for i := range postings {
+		p := &postings[i]
+		if p.CardRole != "" {
+			continue
+		}
+
+		if p.Status == domain.StatusReconciled {
+			return ErrInstallmentUnavailable
+		}
+
+		changed, err := money.New(p.Amount.Amount()+delta, p.Amount.Currency())
+		if err != nil {
+			return err
+		}
+
+		p.ID, p.Amount, p.Weight = uuid.Nil, changed, money.Money{}
+
+		return nil
+	}
+
+	return ErrInstallmentUnavailable
 }

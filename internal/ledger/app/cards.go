@@ -152,6 +152,23 @@ func (s *Service) regionForeignChargeBP(ctx context.Context, booksID int64) (int
 	return s.defaults.ForeignChargeBP(p.Region), nil
 }
 
+// cardForeignChargeBP reads the rate from the first active card of the account; an account
+// without an active card takes the default of the owner's region.
+func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID) (int, error) {
+	cards, err := r.Cards(ctx, booksID, accountID)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, c := range cards {
+		if c.Active {
+			return c.ForeignChargeBP, nil
+		}
+	}
+
+	return s.regionForeignChargeBP(ctx, booksID)
+}
+
 func (s *Service) Cards(ctx context.Context, booksID int64, accountID uuid.UUID) ([]domain.Card, error) {
 	if _, err := s.card(ctx, booksID, accountID); err != nil {
 		return nil, err

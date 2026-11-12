@@ -172,9 +172,29 @@ func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uu
 		return Balance{}, Conversion{}, err
 	}
 
-	value, err := money.New(0, in)
+	out, amount, err := s.valueTotals(ctx, totals, in, date)
 	if err != nil {
 		return Balance{}, Conversion{}, err
+	}
+
+	b := Balance{AccountID: accountID, Date: date, Basis: basis, Amount: out.Value}
+	if len(totals) == 1 {
+		b.Amount = amount
+	}
+
+	return b, out, nil
+}
+
+// valueTotals sums the totals of each instrument valued in currency in at date.
+func (s *Service) valueTotals(
+	ctx context.Context,
+	totals map[money.Currency]int64,
+	in money.Currency,
+	date time.Time,
+) (Conversion, money.Money, error) {
+	value, err := money.New(0, in)
+	if err != nil {
+		return Conversion{}, money.Money{}, err
 	}
 
 	out := Conversion{Value: value}
@@ -182,7 +202,7 @@ func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uu
 	var amount money.Money
 	for _, code := range slices.Sorted(maps.Keys(totals)) {
 		if amount, err = s.AmountOf(ctx, totals[code], code); err != nil {
-			return Balance{}, Conversion{}, err
+			return Conversion{}, money.Money{}, err
 		}
 
 		c := Conversion{Value: amount}
@@ -193,16 +213,16 @@ func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uu
 
 			c, err = s.prices.Convert(ctx, amount, in, date)
 			if errors.Is(err, ErrPriceMissing) {
-				return Balance{}, Conversion{}, fieldErr("value_in", err.Error(), ErrPriceMissing)
+				return Conversion{}, money.Money{}, fieldErr("value_in", err.Error(), ErrPriceMissing)
 			}
 
 			if err != nil {
-				return Balance{}, Conversion{}, err
+				return Conversion{}, money.Money{}, err
 			}
 		}
 
 		if out.Value, err = out.Value.Add(c.Value); err != nil {
-			return Balance{}, Conversion{}, fmt.Errorf("sum valued balances: %w", err)
+			return Conversion{}, money.Money{}, fmt.Errorf("sum valued balances: %w", err)
 		}
 
 		out.Prices = append(out.Prices, c.Prices...)
@@ -211,12 +231,7 @@ func (s *Service) ValuedBalance(ctx context.Context, booksID int64, accountID uu
 		}
 	}
 
-	b := Balance{AccountID: accountID, Date: date, Basis: basis, Amount: out.Value}
-	if len(totals) == 1 {
-		b.Amount = amount
-	}
-
-	return b, out, nil
+	return out, amount, nil
 }
 
 // ExternalFlows is the money that entered (positive) or left (negative) the accounts and their

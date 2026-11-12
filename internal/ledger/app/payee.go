@@ -50,25 +50,9 @@ func (s *Service) RenamePayee(ctx context.Context, booksID int64, id uuid.UUID, 
 func (s *Service) MergePayees(ctx context.Context, booksID int64, from, into uuid.UUID) (Payee, error) {
 	var dest Payee
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		src, err := r.Payee(ctx, booksID, from)
-		if err != nil {
+		var err error
+		if dest, err = s.mergeDestination(ctx, r, booksID, from, into); err != nil {
 			return err
-		}
-
-		invalid := func(message string) error {
-			return &domain.FieldError{Field: "into", Message: message, Err: domain.ErrValidation}
-		}
-		if dest, err = r.Payee(ctx, booksID, into); errors.Is(err, ErrNotFound) {
-			return invalid("unknown payee")
-		} else if err != nil {
-			return err
-		}
-
-		switch {
-		case src.ID == dest.ID:
-			return invalid("must differ from the payee")
-		case src.MergedInto != uuid.Nil || dest.MergedInto != uuid.Nil:
-			return invalid("both payees must not be merged already")
 		}
 
 		ids, err := r.TransactionsWithPayee(ctx, booksID, from)
@@ -77,28 +61,7 @@ func (s *Service) MergePayees(ctx context.Context, booksID int64, from, into uui
 		}
 
 		for _, id := range ids {
-			prev, err := r.LockTransaction(ctx, booksID, id)
-			if err != nil {
-				return err
-			}
-
-			next := prev
-			next.PayeeID = into
-			next.Version++
-
-			accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
-			if err != nil {
-				return err
-			}
-
-			if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonMerged); err != nil {
-				return err
-			}
-
-			event := newTransactionEvent(next, accounts, prev)
-
-			event.Cause = &Cause{Method: CauseMerge}
-			if err := r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: booksID, AggregateID: next.ID.String(), Payload: event}); err != nil {
+			if err := s.movePayeeTransaction(ctx, r, booksID, id, into); err != nil {
 				return err
 			}
 		}
@@ -111,4 +74,72 @@ func (s *Service) MergePayees(ctx context.Context, booksID int64, from, into uui
 	})
 
 	return dest, err
+}
+
+// mergeDestination loads and checks the payees of a merge and returns the destination.
+func (s *Service) mergeDestination(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	from, into uuid.UUID,
+) (Payee, error) {
+	src, err := r.Payee(ctx, booksID, from)
+	if err != nil {
+		return Payee{}, err
+	}
+
+	invalid := func(message string) error {
+		return &domain.FieldError{Field: "into", Message: message, Err: domain.ErrValidation}
+	}
+	var dest Payee
+
+	if dest, err = r.Payee(ctx, booksID, into); errors.Is(err, ErrNotFound) {
+		return Payee{}, invalid("unknown payee")
+	} else if err != nil {
+		return Payee{}, err
+	}
+
+	switch {
+	case src.ID == dest.ID:
+		return Payee{}, invalid("must differ from the payee")
+	case src.MergedInto != uuid.Nil || dest.MergedInto != uuid.Nil:
+		return Payee{}, invalid("both payees must not be merged already")
+	}
+
+	return dest, nil
+}
+
+// movePayeeTransaction writes a new version of the transaction id with the payee into.
+func (s *Service) movePayeeTransaction(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	id, into uuid.UUID,
+) error {
+	prev, err := r.LockTransaction(ctx, booksID, id)
+	if err != nil {
+		return err
+	}
+
+	next := prev
+	next.PayeeID = into
+	next.Version++
+
+	accounts, err := r.Accounts(ctx, booksID, postingAccounts(prev))
+	if err != nil {
+		return err
+	}
+
+	if err := r.ReplaceCategoryPostings(ctx, prev, next, reasonMerged); err != nil {
+		return err
+	}
+
+	event := newTransactionEvent(next, accounts, prev)
+
+	event.Cause = &Cause{Method: CauseMerge}
+	if err := r.Publish(ctx, outbox.Event{Type: EventTransactionCategorized, BooksID: booksID, AggregateID: next.ID.String(), Payload: event}); err != nil {
+		return err
+	}
+
+	return nil
 }

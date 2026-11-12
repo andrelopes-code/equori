@@ -38,37 +38,14 @@ func fieldErr(field, message string, err error) error {
 func (s *Service) RecordForeignPurchase(ctx context.Context, booksID int64, in ForeignPurchase) (domain.Transaction, error) {
 	var created domain.Transaction
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, booksID)
+		base, account, err := s.checkForeignPurchase(ctx, r, booksID, in)
 		if err != nil {
 			return err
 		}
 
-		account, err := loadAccount(ctx, r, booksID, in.AccountID, "account_id")
+		bp, err := s.foreignChargeBP(ctx, r, booksID, in)
 		if err != nil {
 			return err
-		}
-
-		if !account.IsBalance() || account.Instrument != base {
-			return fieldErr("account_id", "must be a balance account in the base currency "+string(base), domain.ErrCurrencyUnsupported)
-		}
-
-		if err := s.expenseCategory(ctx, r, booksID, in.CategoryID, "category_id"); err != nil {
-			return err
-		}
-
-		if _, err := money.ParseCurrency(string(in.Original.Currency())); err != nil || in.Original.Currency() == base || in.Original.IsZero() || in.Original.IsNegative() {
-			return fieldErr("original", "must be a positive amount of a currency other than "+string(base), domain.ErrValidation)
-		}
-
-		var bp int
-		if in.ForeignChargeRateBP != nil {
-			bp = *in.ForeignChargeRateBP
-		} else if bp, err = s.cardForeignChargeBP(ctx, r, booksID, in.AccountID); err != nil {
-			return err
-		}
-
-		if bp < 0 || bp > 10000 {
-			return fieldErr("foreign_charge_rate_bp", "must be between 0 and 10000", domain.ErrValidation)
 		}
 
 		amount, err := money.Convert(in.Original, base, money.Leg{Rate: in.Rate})
@@ -81,25 +58,9 @@ func (s *Service) RecordForeignPurchase(ctx context.Context, booksID int64, in F
 			return err
 		}
 
-		original, negOriginal := in.Original, in.Original.Neg()
-		postings := []domain.Posting{{AccountID: in.CategoryID, Amount: amount, Original: &original}}
-
-		charges := []domain.Posting{{AccountID: in.AccountID, Amount: amount.Neg(), Original: &negOriginal, Statement: in.Statement}}
-		if !charge.IsZero() {
-			chargeCategory := in.ForeignChargeCategoryID
-			if chargeCategory == uuid.Nil {
-				taxes, err := r.SystemAccount(ctx, booksID, domain.RoleTaxes)
-				if err != nil {
-					return err
-				}
-
-				chargeCategory = taxes.ID
-			} else if err := s.expenseCategory(ctx, r, booksID, chargeCategory, "foreign_charge_category_id"); err != nil {
-				return err
-			}
-
-			postings = append(postings, domain.Posting{AccountID: chargeCategory, Amount: charge})
-			charges = append(charges, domain.Posting{AccountID: in.AccountID, Amount: charge.Neg(), Statement: in.Statement})
+		postings, charges, err := s.foreignPurchasePostings(ctx, r, booksID, in, amount, charge)
+		if err != nil {
+			return err
 		}
 
 		if account.Kind != domain.KindCreditCard && in.Statement != nil {
@@ -333,19 +294,91 @@ func (s *Service) expenseCategory(ctx context.Context, r Repository, booksID int
 	return nil
 }
 
-// cardForeignChargeBP reads the rate from the first active card of the account; an account
-// without an active card takes the default of the owner's region.
-func (s *Service) cardForeignChargeBP(ctx context.Context, r Repository, booksID int64, accountID uuid.UUID) (int, error) {
-	cards, err := r.Cards(ctx, booksID, accountID)
+// checkForeignPurchase validates the account, the category and the original amount of in.
+func (s *Service) checkForeignPurchase(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	in ForeignPurchase,
+) (money.Currency, domain.Account, error) {
+	base, err := baseCurrency(ctx, r, booksID)
 	if err != nil {
+		return "", domain.Account{}, err
+	}
+
+	account, err := loadAccount(ctx, r, booksID, in.AccountID, "account_id")
+	if err != nil {
+		return "", domain.Account{}, err
+	}
+
+	if !account.IsBalance() || account.Instrument != base {
+		return "", domain.Account{}, fieldErr("account_id", "must be a balance account in the base currency "+string(base), domain.ErrCurrencyUnsupported)
+	}
+
+	if err := s.expenseCategory(ctx, r, booksID, in.CategoryID, "category_id"); err != nil {
+		return "", domain.Account{}, err
+	}
+
+	if _, err := money.ParseCurrency(string(in.Original.Currency())); err != nil || in.Original.Currency() == base || in.Original.IsZero() || in.Original.IsNegative() {
+		return "", domain.Account{}, fieldErr("original", "must be a positive amount of a currency other than "+string(base), domain.ErrValidation)
+	}
+
+	return base, account, nil
+}
+
+// foreignChargeBP returns the foreign charge rate of in, in basis points.
+func (s *Service) foreignChargeBP(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	in ForeignPurchase,
+) (int, error) {
+	var (
+		bp  int
+		err error
+	)
+
+	if in.ForeignChargeRateBP != nil {
+		bp = *in.ForeignChargeRateBP
+	} else if bp, err = s.cardForeignChargeBP(ctx, r, booksID, in.AccountID); err != nil {
 		return 0, err
 	}
 
-	for _, c := range cards {
-		if c.Active {
-			return c.ForeignChargeBP, nil
-		}
+	if bp < 0 || bp > 10000 {
+		return 0, fieldErr("foreign_charge_rate_bp", "must be between 0 and 10000", domain.ErrValidation)
 	}
 
-	return s.regionForeignChargeBP(ctx, booksID)
+	return bp, nil
+}
+
+// foreignPurchasePostings builds the category postings and the card postings of in.
+func (s *Service) foreignPurchasePostings(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	in ForeignPurchase,
+	amount, charge money.Money,
+) ([]domain.Posting, []domain.Posting, error) {
+	original, negOriginal := in.Original, in.Original.Neg()
+	postings := []domain.Posting{{AccountID: in.CategoryID, Amount: amount, Original: &original}}
+
+	charges := []domain.Posting{{AccountID: in.AccountID, Amount: amount.Neg(), Original: &negOriginal, Statement: in.Statement}}
+	if !charge.IsZero() {
+		chargeCategory := in.ForeignChargeCategoryID
+		if chargeCategory == uuid.Nil {
+			taxes, err := r.SystemAccount(ctx, booksID, domain.RoleTaxes)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			chargeCategory = taxes.ID
+		} else if err := s.expenseCategory(ctx, r, booksID, chargeCategory, "foreign_charge_category_id"); err != nil {
+			return nil, nil, err
+		}
+
+		postings = append(postings, domain.Posting{AccountID: chargeCategory, Amount: charge})
+		charges = append(charges, domain.Posting{AccountID: in.AccountID, Amount: charge.Neg(), Statement: in.Statement})
+	}
+
+	return postings, charges, nil
 }

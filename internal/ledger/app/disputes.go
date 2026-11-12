@@ -66,42 +66,8 @@ func (s *Service) ResolveDispute(ctx context.Context, booksID int64, id uuid.UUI
 
 		d.ResolvedOn, d.Outcome = &resolvedOn, outcome
 		if outcome == OutcomeWon {
-			pu, err := s.lockPurchase(ctx, r, booksID, d.TransactionID)
-			if err != nil {
+			if err := s.refundWonDispute(ctx, r, booksID, &d, resolvedOn, statement); err != nil {
 				return err
-			}
-
-			done, err := r.RefundedTotal(ctx, booksID, pu.tx.ID)
-			if err != nil {
-				return err
-			}
-
-			remaining, err := money.New(pu.charged-done, pu.card.Instrument)
-			if err != nil {
-				return err
-			}
-
-			if remaining.Amount() > 0 {
-				reversals, err := pu.reverseCategories(remaining.Amount())
-				if err != nil {
-					return err
-				}
-
-				w, err := s.writerFor(ctx, booksID)
-				if err != nil {
-					return err
-				}
-
-				refund, err := s.insert(ctx, r, domain.Transaction{
-					BooksID: booksID, Date: resolvedOn, Description: fmt.Sprintf(w.Chargeback, pu.tx.Description), PayeeID: pu.tx.PayeeID,
-					Postings: append([]domain.Posting{{AccountID: pu.card.ID, Amount: remaining, CardRole: domain.RoleCredit, Statement: statement}}, reversals...),
-					Links:    []domain.Link{{Type: domain.LinkChargebackOf, Target: pu.tx.ID}},
-				})
-				if err != nil {
-					return err
-				}
-
-				d.RefundTransactionID = refund.ID
 			}
 		}
 
@@ -111,4 +77,54 @@ func (s *Service) ResolveDispute(ctx context.Context, booksID int64, id uuid.UUI
 	})
 
 	return resolved, err
+}
+
+// refundWonDispute credits the charged amount of the purchase not yet refunded.
+func (s *Service) refundWonDispute(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	d *Dispute,
+	resolvedOn time.Time,
+	statement *domain.ReferenceMonth,
+) error {
+	pu, err := s.lockPurchase(ctx, r, booksID, d.TransactionID)
+	if err != nil {
+		return err
+	}
+
+	done, err := r.RefundedTotal(ctx, booksID, pu.tx.ID)
+	if err != nil {
+		return err
+	}
+
+	remaining, err := money.New(pu.charged-done, pu.card.Instrument)
+	if err != nil {
+		return err
+	}
+
+	if remaining.Amount() > 0 {
+		reversals, err := pu.reverseCategories(remaining.Amount())
+		if err != nil {
+			return err
+		}
+
+		w, err := s.writerFor(ctx, booksID)
+		if err != nil {
+			return err
+		}
+
+		refund, err := s.insert(ctx, r, domain.Transaction{
+			BooksID: booksID, Date: resolvedOn, Description: fmt.Sprintf(w.Chargeback, pu.tx.Description), PayeeID: pu.tx.PayeeID,
+			Postings: append([]domain.Posting{{AccountID: pu.card.ID, Amount: remaining, CardRole: domain.RoleCredit, Statement: statement}}, reversals...),
+			Links:    []domain.Link{{Type: domain.LinkChargebackOf, Target: pu.tx.ID}},
+		})
+		if err != nil {
+			return err
+		}
+
+		d.RefundTransactionID = refund.ID
+	}
+
+	return nil
 }

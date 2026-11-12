@@ -93,71 +93,18 @@ func (s *Service) RecordImportedBatch(ctx context.Context, booksID int64, recs [
 	}
 
 	err := s.repo.InTx(ctx, func(r Repository) error {
-		recordIDs := make([]uuid.UUID, len(recs))
-		lineAccounts := make([]uuid.UUID, 0, 1)
-
-		var categories []uuid.UUID
-		for i, rec := range recs {
-			recordIDs[i] = rec.RecordID
-			if !slices.Contains(lineAccounts, rec.Posting.AccountID) {
-				lineAccounts = append(lineAccounts, rec.Posting.AccountID)
-			}
-
-			if rec.Decision != nil {
-				for _, p := range rec.Decision.Parts {
-					categories = append(categories, p.AccountID)
-				}
-
-				if rec.Decision.TransferTo != uuid.Nil {
-					categories = append(categories, rec.Decision.TransferTo)
-				}
-			}
-		}
-
-		existing, err := r.TransactionsByExternalRecords(ctx, booksID, recordIDs)
+		b, err := s.loadImportBatch(ctx, r, booksID, recs)
 		if err != nil {
 			return err
-		}
-
-		settings, err := r.Settings(ctx, booksID)
-		if err != nil {
-			return err
-		}
-
-		expense, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedExpense)
-		if err != nil {
-			return err
-		}
-
-		income, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedIncome)
-		if err != nil {
-			return err
-		}
-
-		transit, err := r.SystemAccount(ctx, booksID, domain.RoleTransfersInTransit)
-		if err != nil {
-			return err
-		}
-
-		accounts, err := r.Accounts(ctx, booksID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}))
-		if err != nil {
-			return err
-		}
-
-		leaf := map[uuid.UUID]error{}
-		for _, id := range lineAccounts {
-			if a, ok := accounts[id]; ok {
-				leaf[id] = checkLeafBalance(ctx, r, a)
-			}
 		}
 
 		for i, rec := range recs {
-			if id, ok := existing[rec.RecordID]; ok {
+			if id, ok := b.existing[rec.RecordID]; ok {
 				ids[i] = id
 				continue
 			}
 
-			if err := leaf[rec.Posting.AccountID]; err != nil {
+			if err := b.leaf[rec.Posting.AccountID]; err != nil {
 				return &LineError{Index: i, Err: err}
 			}
 
@@ -173,59 +120,16 @@ func (s *Service) RecordImportedBatch(ctx context.Context, booksID int64, recs [
 				}
 
 				if !transfer {
-					undecided := *d
-					undecided.TransferTo = uuid.Nil
-					rec.Decision = &undecided
+					rec = withoutTransfer(rec)
 				}
 			}
 
-			payment := rec.Posting.Kind == LineKindPayment && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard
-			if payment && (rec.Decision == nil || rec.Decision.TransferTo == uuid.Nil) {
-				rec = cardPayment(rec, transit)
-			}
-
-			draft := importedTransaction(booksID, settings.BaseCurrency, rec, expense, income)
-			if payment {
-				draft.Postings[0].CardRole = domain.RolePayment
-			}
-
-			// A payment is billed by its date: a source may list it on the bill it pays (A89).
-			if rec.Posting.DueDate != nil && accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard && !payment {
-				ref, err := s.statementDue(ctx, r, booksID, rec.Posting.AccountID, *rec.Posting.DueDate)
-				if err != nil {
-					return err
-				}
-
-				draft.Postings[0].Statement, draft.Postings[0].StatementBasis = &ref, domain.BasisInstitution
-			}
-
-			t, err := domain.NewTransaction(draft, accounts)
+			id, err := s.insertImported(ctx, r, booksID, b, i, rec)
 			if err != nil {
-				return &LineError{Index: i, Err: err}
-			}
-
-			if err := s.bill(ctx, r, &t); err != nil {
-				if errors.Is(err, domain.ErrValidation) {
-					return &LineError{Index: i, Err: err}
-				}
-
 				return err
 			}
 
-			if err := r.InsertTransactionRows(ctx, t); err != nil {
-				return err
-			}
-
-			event := newTransactionEvent(t, accounts)
-			if rec.Decision != nil && rec.Decision.Cause.Method != "" {
-				event.Cause = &rec.Decision.Cause
-			}
-
-			if err := r.Publish(ctx, outbox.Event{Type: EventTransactionRecorded, BooksID: booksID, AggregateID: t.ID.String(), Payload: event}); err != nil {
-				return err
-			}
-
-			ids[i] = t.ID
+			ids[i] = id
 		}
 
 		return nil
@@ -330,4 +234,165 @@ func (s *Service) statementDue(ctx context.Context, r Repository, booksID int64,
 	}
 
 	return ref, err
+}
+
+// importBatch holds what a batch import loads once for all its lines.
+type importBatch struct {
+	existing map[uuid.UUID]uuid.UUID
+	settings Settings
+	expense  domain.Account
+	income   domain.Account
+	transit  domain.Account
+	accounts map[uuid.UUID]domain.Account
+	leaf     map[uuid.UUID]error
+}
+
+// loadImportBatch loads the transactions, settings and accounts that the lines of recs touch.
+func (s *Service) loadImportBatch(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	recs []ImportedRecord,
+) (importBatch, error) {
+	recordIDs, lineAccounts, categories := importTargets(recs)
+
+	existing, err := r.TransactionsByExternalRecords(ctx, booksID, recordIDs)
+	if err != nil {
+		return importBatch{}, err
+	}
+
+	settings, err := r.Settings(ctx, booksID)
+	if err != nil {
+		return importBatch{}, err
+	}
+
+	expense, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedExpense)
+	if err != nil {
+		return importBatch{}, err
+	}
+
+	income, err := r.SystemAccount(ctx, booksID, domain.RoleUncategorizedIncome)
+	if err != nil {
+		return importBatch{}, err
+	}
+
+	transit, err := r.SystemAccount(ctx, booksID, domain.RoleTransfersInTransit)
+	if err != nil {
+		return importBatch{}, err
+	}
+
+	accounts, err := r.Accounts(ctx, booksID, slices.Concat(lineAccounts, categories, []uuid.UUID{expense.ID, income.ID, transit.ID}))
+	if err != nil {
+		return importBatch{}, err
+	}
+
+	leaf := map[uuid.UUID]error{}
+	for _, id := range lineAccounts {
+		if a, ok := accounts[id]; ok {
+			leaf[id] = checkLeafBalance(ctx, r, a)
+		}
+	}
+
+	return importBatch{
+		existing: existing,
+		settings: settings,
+		expense:  expense,
+		income:   income,
+		transit:  transit,
+		accounts: accounts,
+		leaf:     leaf,
+	}, nil
+}
+
+// importTargets collects the record ids, the line accounts and the decided categories of recs.
+func importTargets(recs []ImportedRecord) ([]uuid.UUID, []uuid.UUID, []uuid.UUID) {
+	recordIDs := make([]uuid.UUID, len(recs))
+	lineAccounts := make([]uuid.UUID, 0, 1)
+
+	var categories []uuid.UUID
+	for i, rec := range recs {
+		recordIDs[i] = rec.RecordID
+		if !slices.Contains(lineAccounts, rec.Posting.AccountID) {
+			lineAccounts = append(lineAccounts, rec.Posting.AccountID)
+		}
+
+		if rec.Decision != nil {
+			for _, p := range rec.Decision.Parts {
+				categories = append(categories, p.AccountID)
+			}
+
+			if rec.Decision.TransferTo != uuid.Nil {
+				categories = append(categories, rec.Decision.TransferTo)
+			}
+		}
+	}
+
+	return recordIDs, lineAccounts, categories
+}
+
+// insertImported books the line rec of a batch and returns the id of its transaction.
+func (s *Service) insertImported(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	b importBatch,
+	i int,
+	rec ImportedRecord,
+) (uuid.UUID, error) {
+	payment := rec.Posting.Kind == LineKindPayment && b.accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard
+	if payment && (rec.Decision == nil || rec.Decision.TransferTo == uuid.Nil) {
+		rec = cardPayment(rec, b.transit)
+	}
+
+	draft := importedTransaction(booksID, b.settings.BaseCurrency, rec, b.expense, b.income)
+	if payment {
+		draft.Postings[0].CardRole = domain.RolePayment
+	}
+
+	// A payment is billed by its date: a source may list it on the bill it pays (A89).
+	if rec.Posting.DueDate != nil && b.accounts[rec.Posting.AccountID].Kind == domain.KindCreditCard && !payment {
+		ref, err := s.statementDue(ctx, r, booksID, rec.Posting.AccountID, *rec.Posting.DueDate)
+		if err != nil {
+			return uuid.Nil, err
+		}
+
+		draft.Postings[0].Statement, draft.Postings[0].StatementBasis = &ref, domain.BasisInstitution
+	}
+
+	t, err := domain.NewTransaction(draft, b.accounts)
+	if err != nil {
+		return uuid.Nil, &LineError{Index: i, Err: err}
+	}
+
+	if err := s.bill(ctx, r, &t); err != nil {
+		if errors.Is(err, domain.ErrValidation) {
+			return uuid.Nil, &LineError{Index: i, Err: err}
+		}
+
+		return uuid.Nil, err
+	}
+
+	if err := r.InsertTransactionRows(ctx, t); err != nil {
+		return uuid.Nil, err
+	}
+
+	event := newTransactionEvent(t, b.accounts)
+	if rec.Decision != nil && rec.Decision.Cause.Method != "" {
+		event.Cause = &rec.Decision.Cause
+	}
+
+	if err := r.Publish(ctx, outbox.Event{Type: EventTransactionRecorded, BooksID: booksID, AggregateID: t.ID.String(), Payload: event}); err != nil {
+		return uuid.Nil, err
+	}
+
+	return t.ID, nil
+}
+
+// withoutTransfer returns rec with its decision stripped of the transfer target.
+func withoutTransfer(rec ImportedRecord) ImportedRecord {
+	undecided := *rec.Decision
+	undecided.TransferTo = uuid.Nil
+	rec.Decision = &undecided
+
+	return rec
 }

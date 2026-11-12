@@ -140,20 +140,30 @@ func (s *Service) UnpairImported(ctx context.Context, booksID int64, txID, recor
 			return err
 		}
 
-		if err := s.bill(ctx, r, &next); err != nil {
-			return err
-		}
+		return s.replaceUnpaired(ctx, r, t, next, accounts)
+	})
+}
 
-		if err := r.ReplaceCategoryPostings(ctx, t, next, reasonUnpaired); err != nil {
-			return err
-		}
+// replaceUnpaired stores the unpaired version next of t and publishes the correction.
+func (s *Service) replaceUnpaired(
+	ctx context.Context,
+	r Repository,
+	t, next domain.Transaction,
+	accounts map[uuid.UUID]domain.Account,
+) error {
+	if err := s.bill(ctx, r, &next); err != nil {
+		return err
+	}
 
-		event := newTransactionEvent(next, accounts, t)
-		event.PreviousDate = t.Date.Format(time.DateOnly)
-		event.CategoriesChanged = true
+	if err := r.ReplaceCategoryPostings(ctx, t, next, reasonUnpaired); err != nil {
+		return err
+	}
 
-		return r.Publish(ctx, outbox.Event{
-			Type: EventTransactionCorrected, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event,
-		})
+	event := newTransactionEvent(next, accounts, t)
+	event.PreviousDate = t.Date.Format(time.DateOnly)
+	event.CategoriesChanged = true
+
+	return r.Publish(ctx, outbox.Event{
+		Type: EventTransactionCorrected, BooksID: next.BooksID, AggregateID: next.ID.String(), Payload: event,
 	})
 }

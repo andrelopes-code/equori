@@ -48,16 +48,6 @@ internal/ingestion/postgres/sync.go	Repository.SyncRuns	pending: backend reorgan
 internal/ingestion/toolapi/imports.go	connections	pending: backend reorganization plan
 internal/ingestion/toolapi/imports.go	getImports	pending: backend reorganization plan
 internal/ingestion/toolapi/manage.go	manageImports	pending: backend reorganization plan
-internal/ledger/app/payee.go	Service.MergePayees	pending: backend reorganization plan
-internal/ledger/app/currency.go	Service.RecordForeignPurchase	pending: backend reorganization plan
-internal/ledger/app/balances.go	Service.ValuedBalance	pending: backend reorganization plan
-internal/ledger/app/disputes.go	Service.ResolveDispute	pending: backend reorganization plan
-internal/ledger/app/group.go	Service.ConfirmGroup	pending: backend reorganization plan
-internal/ledger/app/imports.go	Service.RecordImportedBatch	pending: backend reorganization plan
-internal/ledger/app/import_links.go	Service.UpdateImportedPosting	pending: backend reorganization plan
-internal/ledger/app/installment.go	Service.confirmInstallment	pending: backend reorganization plan
-internal/ledger/app/installment.go	withConfirmedInstallment	pending: backend reorganization plan
-internal/ledger/app/pairing.go	Service.UnpairImported	pending: backend reorganization plan
 internal/ledger/app/refunds.go	Service.AnticipatePlan	pending: backend reorganization plan
 internal/ledger/app/refunds.go	Service.CancelPlan	pending: backend reorganization plan
 internal/ledger/app/reimburse.go	Service.reimburse	pending: backend reorganization plan

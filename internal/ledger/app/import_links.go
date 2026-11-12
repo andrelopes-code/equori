@@ -132,17 +132,7 @@ func (s *Service) UpdateImportedPosting(ctx context.Context, booksID int64, reco
 
 		var statementID uuid.UUID
 		if billed {
-			ref, err := s.statementDue(ctx, r, booksID, p.AccountID, *u.DueDate)
-			if err != nil {
-				return err
-			}
-
-			rules, err := r.BillingRules(ctx, booksID, p.AccountID)
-			if err != nil {
-				return err
-			}
-
-			if statementID, err = s.ensureStatement(ctx, r, booksID, p.AccountID, ref, rules); err != nil {
+			if statementID, err = s.dueStatementID(ctx, r, booksID, p.AccountID, *u.DueDate); err != nil {
 				return err
 			}
 		}
@@ -274,4 +264,26 @@ func (s *Service) ClearMatchedBatch(ctx context.Context, booksID int64, ms []Mat
 	})
 
 	return conflicts, err
+}
+
+// dueStatementID returns the statement of the account that the due date falls in,
+// created when absent.
+func (s *Service) dueStatementID(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accountID uuid.UUID,
+	due time.Time,
+) (uuid.UUID, error) {
+	ref, err := s.statementDue(ctx, r, booksID, accountID, due)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	rules, err := r.BillingRules(ctx, booksID, accountID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return s.ensureStatement(ctx, r, booksID, accountID, ref, rules)
 }

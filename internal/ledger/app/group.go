@@ -46,14 +46,7 @@ func (s *Service) ConfirmGroup(
 		return fmt.Errorf("%w: a group has at least two lines", domain.ErrValidation)
 	}
 
-	parts = slices.Clone(parts)
-	slices.SortFunc(parts, func(a, b GroupPart) int {
-		if c := a.Date.Compare(b.Date); c != 0 {
-			return c
-		}
-
-		return bytes.Compare(a.RecordID[:], b.RecordID[:])
-	})
+	parts = sortedParts(parts)
 
 	return s.repo.InTx(ctx, func(r Repository) error {
 		prev, err := r.LockTransaction(ctx, booksID, txID)
@@ -77,12 +70,7 @@ func (s *Service) ConfirmGroup(
 			return err
 		}
 
-		lineParts := make([]domain.LinePart, len(parts))
-		for i, p := range parts {
-			lineParts[i] = domain.LinePart{Amount: p.Amount, Pending: p.Pending}
-		}
-
-		next, err := prev.SplitToLines(accountID, parts[0].Date, lineParts)
+		next, err := prev.SplitToLines(accountID, parts[0].Date, groupLineParts(parts))
 		if err != nil {
 			return err
 		}
@@ -195,4 +183,27 @@ func linkParts(
 	}
 
 	return nil
+}
+
+// sortedParts returns a copy of parts ordered by date, then by record.
+func sortedParts(parts []GroupPart) []GroupPart {
+	parts = slices.Clone(parts)
+	slices.SortFunc(parts, func(a, b GroupPart) int {
+		if c := a.Date.Compare(b.Date); c != 0 {
+			return c
+		}
+
+		return bytes.Compare(a.RecordID[:], b.RecordID[:])
+	})
+
+	return parts
+}
+
+func groupLineParts(parts []GroupPart) []domain.LinePart {
+	lineParts := make([]domain.LinePart, len(parts))
+	for i, p := range parts {
+		lineParts[i] = domain.LinePart{Amount: p.Amount, Pending: p.Pending}
+	}
+
+	return lineParts
 }
