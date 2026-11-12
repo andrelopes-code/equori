@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -27,6 +28,11 @@ describe("Own or rent calculator", () => {
     expect(await result(catalogEn["calc.own.total"])).toContain("52,500.00");
     expect(await result(catalogEn["calc.own.rentYear"])).toContain("48,000.00");
     expect(await result(catalogEn["calc.own.rentLower"])).toContain("4,500.00");
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("button", { name: catalogEn["calc.method.open"] }),
+      );
     expect(
       screen.getByText(catalogEn["calc.own-or-rent.formula1"]),
     ).toBeInTheDocument();

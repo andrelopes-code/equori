@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -71,6 +72,12 @@ describe("Cost of credit calculator", () => {
     expect(screen.queryByText(catalogEn["calc.credit.cet"])).toBeNull();
     unmount();
     await open("BR");
+    await result(catalogEn["calc.credit.annual"]);
+    await userEvent
+      .setup()
+      .click(
+        screen.getByRole("button", { name: catalogEn["calc.method.open"] }),
+      );
     expect(
       await screen.findByText(catalogEn["calc.credit.cet"]),
     ).toBeInTheDocument();

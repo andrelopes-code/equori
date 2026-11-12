@@ -16,6 +16,9 @@ export const calculatorsEn = {
   "calc.method.assumptions": "Assumptions",
   "calc.method.limits": "Limits",
   "calc.method.sources": "Sources",
+  "calc.method.open": "View the method",
+  "calc.method.layer.description":
+    "How the result is calculated, from the inputs to the sources.",
   "calc.filled": "From your data: {origin}",
   "calc.refill": "Fill again",
   "calc.percent": "%",

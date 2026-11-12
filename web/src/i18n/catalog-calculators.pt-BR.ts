@@ -18,6 +18,9 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.method.assumptions": "Premissas",
   "calc.method.limits": "Limites",
   "calc.method.sources": "Fontes",
+  "calc.method.open": "Ver o método",
+  "calc.method.layer.description":
+    "Como o resultado é calculado, das entradas às fontes.",
   "calc.filled": "Dos seus dados: {origin}",
   "calc.refill": "Preencher de novo",
   "calc.percent": "%",
