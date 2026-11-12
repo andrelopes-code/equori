@@ -1,0 +1,61 @@
+package httpapi
+
+import (
+	"context"
+	"net/http"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
+
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+)
+
+func (s *Server) listInstrumentQuotes(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (InstrumentQuoteList, error) {
+	p, err := httpserver.Query[ListInstrumentQuotesParams](r)
+	if err != nil {
+		return InstrumentQuoteList{}, err
+	}
+
+	quotes, err := s.svc.ListInstrumentQuotes(ctx, money.Currency(p.Base))
+	if err != nil {
+		return InstrumentQuoteList{}, err
+	}
+
+	items := make([]InstrumentQuote, len(quotes))
+	for i, q := range quotes {
+		items[i] = toInstrumentQuoteAPI(q)
+	}
+
+	return InstrumentQuoteList{Items: items}, nil
+}
+
+func toInstrumentQuoteAPI(q domain.InstrumentQuote) InstrumentQuote {
+	return InstrumentQuote{
+		Instrument:      string(q.Instrument),
+		QuoteInstrument: string(q.Quote),
+		Last:            toQuotePointAPI(q.Last),
+		References: QuoteReferences{
+			Week:       toQuotePointAPI(q.References.Week),
+			Month:      toQuotePointAPI(q.References.Month),
+			Quarter:    toQuotePointAPI(q.References.Quarter),
+			Year:       toQuotePointAPI(q.References.Year),
+			YearToDate: toQuotePointAPI(q.References.YearToDate),
+		},
+	}
+}
+
+func toQuotePointAPI(p *domain.QuotePoint) *QuotePoint {
+	if p == nil {
+		return nil
+	}
+
+	return &QuotePoint{
+		Date:  openapi_types.Date{Time: p.Date},
+		Value: p.Value.Reduced().String(),
+	}
+}

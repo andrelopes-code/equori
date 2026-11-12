@@ -246,6 +246,32 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /instrument-quotes:
+    get:
+      tags: [marketdata]
+      operationId: listInstrumentQuotes
+      x-book-role: read
+      summary: The last price of each instrument and the prices its changes over a week, a month, a quarter, the year to date and 12 months start from, in code order (IQ1 to IQ5).
+      parameters:
+        - name: base
+          in: query
+          required: true
+          description: The currency a currency instrument is quoted in; the instrument itself has no item.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstrumentQuoteList"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /instruments:
     get:
       tags: [marketdata]
@@ -1129,6 +1155,68 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/Price"
+  InstrumentQuoteList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/InstrumentQuote"
+  InstrumentQuote:
+    type: object
+    additionalProperties: false
+    required: [instrument, quote_instrument, last, references]
+    properties:
+      instrument:
+        type: string
+      quote_instrument:
+        type: string
+      last:
+        allOf:
+          - $ref: "#/components/schemas/QuotePoint"
+        nullable: true
+        description: The chosen price on or before today; null when the instrument has none.
+      references:
+        $ref: "#/components/schemas/QuoteReferences"
+  QuoteReferences:
+    type: object
+    additionalProperties: false
+    description: |
+      The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
+      previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+    required: [week, month, quarter, year, year_to_date]
+    properties:
+      week:
+        allOf:
+          - $ref: "#/components/schemas/QuotePoint"
+        nullable: true
+      month:
+        allOf:
+          - $ref: "#/components/schemas/QuotePoint"
+        nullable: true
+      quarter:
+        allOf:
+          - $ref: "#/components/schemas/QuotePoint"
+        nullable: true
+      year:
+        allOf:
+          - $ref: "#/components/schemas/QuotePoint"
+        nullable: true
+      year_to_date:
+        allOf:
+          - $ref: "#/components/schemas/QuotePoint"
+        nullable: true
+  QuotePoint:
+    type: object
+    additionalProperties: false
+    required: [date, value]
+    properties:
+      date:
+        type: string
+        format: date
+      value:
+        $ref: "#/components/schemas/Rate"
   PriceImport:
     type: object
     required: [recorded]

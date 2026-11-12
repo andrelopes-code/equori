@@ -3049,6 +3049,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instrument-quotes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The last price of each instrument and the prices its changes over a week, a month, a quarter, the year to date and 12 months start from, in code order (IQ1 to IQ5). */
+        get: operations["listInstrumentQuotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/instruments": {
         parameters: {
             query?: never;
@@ -6417,6 +6434,32 @@ export interface components {
         };
         PriceList: {
             items: components["schemas"]["Price"][];
+        };
+        InstrumentQuoteList: {
+            items: components["schemas"]["InstrumentQuote"][];
+        };
+        InstrumentQuote: {
+            instrument: string;
+            quote_instrument: string;
+            /** @description The chosen price on or before today; null when the instrument has none. */
+            last: components["schemas"]["QuotePoint"] | null;
+            references: components["schemas"]["QuoteReferences"];
+        };
+        /**
+         * @description The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
+         *     previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+         */
+        QuoteReferences: {
+            week: components["schemas"]["QuotePoint"] | null;
+            month: components["schemas"]["QuotePoint"] | null;
+            quarter: components["schemas"]["QuotePoint"] | null;
+            year: components["schemas"]["QuotePoint"] | null;
+            year_to_date: components["schemas"]["QuotePoint"] | null;
+        };
+        QuotePoint: {
+            /** Format: date */
+            date: string;
+            value: components["schemas"]["Rate"];
         };
         PriceImport: {
             recorded: number;
@@ -12436,6 +12479,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProbeResult"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listInstrumentQuotes: {
+        parameters: {
+            query: {
+                /** @description The currency a currency instrument is quoted in; the instrument itself has no item. */
+                base: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentQuoteList"];
                 };
             };
             400: components["responses"]["Problem"];

@@ -45,6 +45,7 @@ type Service interface {
 		instrument, quote money.Currency,
 		from, to time.Time,
 	) ([]domain.Price, error)
+	ListInstrumentQuotes(ctx context.Context, base money.Currency) ([]domain.InstrumentQuote, error)
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
@@ -119,6 +120,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/instruments/{code}/history", s.requestInstrumentHistory)
 	mux.HandleFunc("POST "+BaseURL+"/instruments/{code}/prices",
 		httpserver.Handle(s.errs, http.StatusOK, s.recordInstrumentPrices))
+	mux.HandleFunc("GET "+BaseURL+"/instrument-quotes",
+		httpserver.Handle(s.errs, http.StatusOK, s.listInstrumentQuotes))
 	mux.HandleFunc("GET "+BaseURL+"/prices",
 		httpserver.Handle(s.errs, http.StatusOK, s.listPrices))
 	mux.HandleFunc("POST "+BaseURL+"/prices",

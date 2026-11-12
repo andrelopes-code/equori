@@ -284,6 +284,85 @@ func (q *Queries) ListPricesOnDates(ctx context.Context, arg ListPricesOnDatesPa
 	return items, nil
 }
 
+const listQuotePrices = `-- name: ListQuotePrices :many
+SELECT
+    pair.instrument::text AS instrument,
+    pair.quote::text AS quote_instrument,
+    ref.position::int AS position,
+    price.date::date AS date,
+    price.value::numeric AS value
+FROM
+    (
+        SELECT
+            i.instrument,
+            q.quote
+        FROM
+            unnest($1::TEXT[]) WITH ORDINALITY AS i (instrument, n)
+            JOIN unnest($2::TEXT[]) WITH ORDINALITY AS q (quote, n) USING (n)
+    ) AS pair
+    CROSS JOIN unnest($3::date[]) WITH ORDINALITY AS ref (DAY, position)
+    CROSS JOIN LATERAL (
+        SELECT
+            p.date,
+            p.value
+        FROM
+            marketdata_price p
+        WHERE
+            p.instrument = pair.instrument
+            AND p.quote_instrument = pair.quote
+            AND p.date <= ref.day
+        ORDER BY
+            p.date DESC,
+            p.priority,
+            p.recorded_at DESC
+        LIMIT
+            1
+    ) AS price
+`
+
+type ListQuotePricesParams struct {
+	Instruments []string
+	Quotes      []string
+	Dates       []time.Time
+}
+
+type ListQuotePricesRow struct {
+	Instrument      string
+	QuoteInstrument string
+	Position        int32
+	Date            time.Time
+	Value           pgtype.Numeric
+}
+
+// The chosen price on or before each reference date of each instrument and quote pair (IQ3). The
+// pairs are the arrays @instruments and @quotes read by position; the result names a date by its
+// position in @dates, counted from 1. A pair with no price on or before a date gives no row.
+func (q *Queries) ListQuotePrices(ctx context.Context, arg ListQuotePricesParams) ([]ListQuotePricesRow, error) {
+	rows, err := q.db.Query(ctx, listQuotePrices, arg.Instruments, arg.Quotes, arg.Dates)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListQuotePricesRow
+	for rows.Next() {
+		var i ListQuotePricesRow
+		if err := rows.Scan(
+			&i.Instrument,
+			&i.QuoteInstrument,
+			&i.Position,
+			&i.Date,
+			&i.Value,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const priceOnOrBefore = `-- name: PriceOnOrBefore :many
 SELECT
     instrument, quote_instrument, date, value, source, priority, recorded_at

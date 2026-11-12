@@ -166,3 +166,41 @@ WHERE
 ORDER BY
     date,
     source;
+
+-- name: ListQuotePrices :many
+-- The chosen price on or before each reference date of each instrument and quote pair (IQ3). The
+-- pairs are the arrays @instruments and @quotes read by position; the result names a date by its
+-- position in @dates, counted from 1. A pair with no price on or before a date gives no row.
+SELECT
+    pair.instrument::text AS instrument,
+    pair.quote::text AS quote_instrument,
+    ref.position::int AS position,
+    price.date::date AS date,
+    price.value::numeric AS value
+FROM
+    (
+        SELECT
+            i.instrument,
+            q.quote
+        FROM
+            unnest(@instruments::TEXT[]) WITH ORDINALITY AS i (instrument, n)
+            JOIN unnest(@quotes::TEXT[]) WITH ORDINALITY AS q (quote, n) USING (n)
+    ) AS pair
+    CROSS JOIN unnest(@dates::date[]) WITH ORDINALITY AS ref (DAY, position)
+    CROSS JOIN LATERAL (
+        SELECT
+            p.date,
+            p.value
+        FROM
+            marketdata_price p
+        WHERE
+            p.instrument = pair.instrument
+            AND p.quote_instrument = pair.quote
+            AND p.date <= ref.day
+        ORDER BY
+            p.date DESC,
+            p.priority,
+            p.recorded_at DESC
+        LIMIT
+            1
+    ) AS price;

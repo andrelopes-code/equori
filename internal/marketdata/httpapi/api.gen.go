@@ -417,6 +417,24 @@ type InstrumentPricesResult struct {
 	Unchanged int `json:"unchanged"`
 }
 
+// InstrumentQuote defines model for InstrumentQuote.
+type InstrumentQuote struct {
+	Instrument string `json:"instrument"`
+
+	// Last The chosen price on or before today; null when the instrument has none.
+	Last            *QuotePoint `json:"last"`
+	QuoteInstrument string      `json:"quote_instrument"`
+
+	// References The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
+	// previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+	References QuoteReferences `json:"references"`
+}
+
+// InstrumentQuoteList defines model for InstrumentQuoteList.
+type InstrumentQuoteList struct {
+	Items []InstrumentQuote `json:"items"`
+}
+
 // InstrumentSourceCoverage defines model for InstrumentSourceCoverage.
 type InstrumentSourceCoverage struct {
 	Enabled  bool                `json:"enabled"`
@@ -581,6 +599,26 @@ type Problem struct {
 	Type    string     `json:"type"`
 }
 
+// QuotePoint defines model for QuotePoint.
+type QuotePoint struct {
+	Date openapi_types.Date `json:"date"`
+
+	// Value Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	Value Rate `json:"value"`
+}
+
+// QuoteReferences The chosen price on or before 7 days, 1 month, 3 months and 12 months before today and on 31 December of the
+// previous year. A reference is null when no price exists on or before its date or when `last` does not lie after it.
+type QuoteReferences struct {
+	Month      *QuotePoint `json:"month"`
+	Quarter    *QuotePoint `json:"quarter"`
+	Week       *QuotePoint `json:"week"`
+	Year       *QuotePoint `json:"year"`
+	YearToDate *QuotePoint `json:"year_to_date"`
+}
+
 // Rate Positive exact decimal with at most 12 decimals (ADR 005).
 //
 // Example: 5.4830
@@ -601,6 +639,12 @@ type ListHolidaysParams struct {
 type ListIndexRatesParams struct {
 	From openapi_types.Date `form:"from" json:"from"`
 	To   openapi_types.Date `form:"to" json:"to"`
+}
+
+// ListInstrumentQuotesParams defines parameters for ListInstrumentQuotes.
+type ListInstrumentQuotesParams struct {
+	// Base The currency a currency instrument is quoted in; the instrument itself has no item.
+	Base string `form:"base" json:"base"`
 }
 
 // ListInstrumentsParams defines parameters for ListInstruments.
