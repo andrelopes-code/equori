@@ -71,7 +71,7 @@ func orderEntries(
 
 		if len(members) == 0 || members[0].TargetBP == nil {
 			entries = append(entries, domain.Entry{
-				IdealBP: c.TargetBP,
+				Weight:  int64(c.TargetBP) * 10000,
 				Value:   c.Value.Amount(),
 				Planned: c.Amount.Amount(),
 			})
@@ -82,7 +82,7 @@ func orderEntries(
 
 		for j, m := range c.Members {
 			e := domain.Entry{
-				IdealBP: c.TargetBP * *members[j].TargetBP / 10000,
+				Weight:  int64(c.TargetBP) * int64(*members[j].TargetBP),
 				Value:   m.Value.Amount(),
 				Planned: m.Amount.Amount(),
 				Scale:   val.scales[i][j],

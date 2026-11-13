@@ -4,7 +4,10 @@ import "math/big"
 
 // Entry is one receiver of the split as the execution reads it (CN17, CN18).
 type Entry struct {
-	IdealBP int   // ideal of the whole plan, group × member / 10000
+	// Weight is the ideal of the entry in the whole plan on any scale shared by all entries; only
+	// ratios and sign matter.
+	Weight int64
+
 	Value   int64 // value today, base minor units
 	Planned int64 // planned amount from Split
 	Unit    int64 // value of one whole unit, base minor units; 0 = cash-like
@@ -93,10 +96,10 @@ func lowestEligible(entries []Entry, orders []Order, leftover int64) int {
 // cross-multiplies in big.Int because the products can pass 64 bits.
 func lowerRatio(a Entry, oa Order, b Entry, ob Order) bool {
 	left := new(big.Int).Add(big.NewInt(a.Value), big.NewInt(oa.Cost))
-	left.Mul(left, big.NewInt(int64(b.IdealBP)))
+	left.Mul(left, big.NewInt(b.Weight))
 
 	right := new(big.Int).Add(big.NewInt(b.Value), big.NewInt(ob.Cost))
-	right.Mul(right, big.NewInt(int64(a.IdealBP)))
+	right.Mul(right, big.NewInt(a.Weight))
 
 	return left.Cmp(right) < 0
 }
@@ -104,7 +107,7 @@ func lowerRatio(a Entry, oa Order, b Entry, ob Order) bool {
 // eligible reports CN18 eligibility. A step whose cost rounds to zero is not eligible: it would
 // repeat without consuming the leftover.
 func (o Order) eligible(e Entry, leftover int64) bool {
-	if e.IdealBP <= 0 {
+	if e.Weight <= 0 {
 		return false
 	}
 

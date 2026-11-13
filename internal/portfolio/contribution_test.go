@@ -389,6 +389,46 @@ func TestS409LeftoverThatNoStepFits(t *testing.T) {
 	}
 }
 
+// A member of a group with an ideal of 1 bp keeps a positive weight in the leftover (CN18). PETR4
+// is priced at 30.50 and takes the whole split of 1,000.00: q = floor(100000 / 3050) = 32 units,
+// cost 32 × 3050 = 97600, leftover 100000 - 97600 = 2400. One more PETR4 unit costs 3050 and one
+// more BOVA11 unit costs 10000, both above 2400. One MXRF11 unit costs 1000, and its ideal is
+// 1 bp × 5000 bp, positive although 1 × 5000 / 10000 truncates to 0. MXRF11 takes two steps,
+// 2400 - 2 × 1000 = 400, and a third step costs 1000.
+func TestLeftoverReachesMemberOfSmallGroup(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       "PETR4",
+		"quote_instrument": "BRL",
+		"date":             "2026-10-30",
+		"value":            "30.50",
+	}, http.StatusCreated, nil)
+
+	got := f.preview(t, map[string]any{
+		"amount": apitest.BRL(100000),
+		"classes": []any{
+			contributionClass(
+				"Domestic stocks",
+				1,
+				instrumentMember("BOVA11", 5000),
+				instrumentMember("MXRF11", 5000),
+			),
+			contributionClass("Foreign stocks", 9999, instrumentMember("PETR4", 10000)),
+		},
+	})
+	mxrf := got.Classes[0].Members[1]
+
+	if mxrf.Quantity == nil || mxrf.Quantity.Amount != 2 || mxrf.Cost == nil ||
+		mxrf.Cost.Amount != 2000 {
+		t.Fatalf("MXRF11 order = %+v %+v", mxrf.Quantity, mxrf.Cost)
+	}
+
+	if got.Leftover == nil || got.Leftover.Amount != 400 {
+		t.Fatalf("leftover = %+v", got.Leftover)
+	}
+}
+
 // S402: a holding without a price makes the plan incomplete: no share, drift or amount (CN10).
 func TestS402MissingPrice(t *testing.T) {
 	t.Parallel()
