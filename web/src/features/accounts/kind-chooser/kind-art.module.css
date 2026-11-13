@@ -9,6 +9,8 @@
     --face-rim: color-mix(in oklab, var(--ink) 30%, transparent);
     --half: color-mix(in oklab, var(--solid) 45%, var(--face));
     --stage: color-mix(in oklab, var(--ink) 5%, var(--slotted-surface));
+    /* The light mix stands when no scheme attribute is set (a test, a page before the boot). */
+    --solid: color-mix(in oklab, var(--ink) 88%, var(--slotted-text));
 
     display: block;
     flex: none;
