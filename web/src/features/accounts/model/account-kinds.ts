@@ -112,3 +112,12 @@ export const kindTitle: Record<Kind, MessageKey> = {
   loan: "kind.title.loan",
   payable: "kind.title.payable",
 };
+
+// BC2: a brokerage is a line of its own; only an edited one that has a parent asks for one.
+export function asksParent(
+  kind: Kind,
+  mode: "create" | "edit",
+  parentId: string | null,
+): boolean {
+  return kind !== "brokerage" || (mode === "edit" && parentId !== null);
+}

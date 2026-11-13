@@ -10,6 +10,7 @@ import type { components } from "@/api/schema.gen";
 import { AccountCurrencyField } from "@/features/accounts/account-form/account-currency-field";
 import type { AccountDraft } from "@/features/accounts/model/account-draft";
 import {
+  asksParent,
   liquidCapable,
   yieldCapable,
 } from "@/features/accounts/model/account-kinds";
@@ -47,9 +48,7 @@ export function AccountDetailsSection({
   const t = useT();
 
   const parentName = parents.find((a) => a.id === draft.parentId)?.name;
-  // BC2: a brokerage is a line of its own; only an edited one that has a parent shows the field.
-  const showParent =
-    kind !== "brokerage" || (mode === "edit" && draft.parentId !== null);
+  const showParent = asksParent(kind, mode, draft.parentId);
 
   return (
     <FormSection legend={t("accountForm.details")}>

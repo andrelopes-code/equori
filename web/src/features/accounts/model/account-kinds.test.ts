@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  asksParent,
   classOf,
   compatibleKinds,
   kindGroups,
@@ -45,5 +46,16 @@ describe("account kinds", () => {
 
   it("lets only savings and reserves yield automatically", () => {
     expect(kinds.filter(yieldCapable)).toEqual(["savings", "reserve"]);
+  });
+});
+
+describe("asksParent", () => {
+  it.each([
+    ["checking", "create", null, true],
+    ["brokerage", "create", null, false],
+    ["brokerage", "edit", "p", true],
+    ["brokerage", "edit", null, false],
+  ] as const)("(%s, %s, %s) is %s", (kind, mode, parentId, expected) => {
+    expect(asksParent(kind, mode, parentId)).toBe(expected);
   });
 });
