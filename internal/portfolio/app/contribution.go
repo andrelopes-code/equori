@@ -37,6 +37,7 @@ type ContributionView struct {
 	TotalAfter   *money.Money // preview with Complete only
 	DriftBP      *int         // nil when incomplete or total not positive
 	DriftAfterBP *int         // preview with Complete only
+	Leftover     *money.Money // preview with an amount and Complete only (CN18)
 	Classes      []ContributionClass
 	Outside      []ContributionOutside
 	Missing      []ContributionMissing
@@ -49,6 +50,7 @@ type ContributionClass struct {
 	ShareBP      *int
 	AfterShareBP *int
 	Amount       *money.Money
+	Cost         *money.Money // cash-like class: the amount of its order (CN17)
 	Members      []ContributionMember
 }
 
@@ -61,6 +63,8 @@ type ContributionMember struct {
 	AfterShareBP *int // inside its class
 	UnitValue    *money.Money
 	Amount       *money.Money // set for every member of a class with member targets
+	Quantity     *money.Money // instrument member with a unit value, at the instrument scale (CN17)
+	Cost         *money.Money // set with Amount, in the base currency (CN17)
 }
 
 type ContributionOutside struct {

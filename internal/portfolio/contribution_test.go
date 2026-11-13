@@ -23,6 +23,8 @@ type memberOut struct {
 	ShareBP    *int      `json:"share_bp"`
 	UnitValue  *moneyOut `json:"unit_value"`
 	Amount     *moneyOut `json:"amount"`
+	Quantity   *moneyOut `json:"quantity"`
+	Cost       *moneyOut `json:"cost"`
 }
 
 type classOut struct {
@@ -31,6 +33,7 @@ type classOut struct {
 	Value    moneyOut    `json:"value"`
 	ShareBP  *int        `json:"share_bp"`
 	Amount   *moneyOut   `json:"amount"`
+	Cost     *moneyOut   `json:"cost"`
 	Members  []memberOut `json:"members"`
 }
 
@@ -53,6 +56,7 @@ type contributionOut struct {
 	TotalAfter   *moneyOut    `json:"total_after"`
 	DriftBP      *int         `json:"drift_bp"`
 	DriftAfterBP *int         `json:"drift_after_bp"`
+	Leftover     *moneyOut    `json:"leftover"`
 	Classes      []classOut   `json:"classes"`
 	Outside      []outsideOut `json:"outside"`
 	Missing      []missingOut `json:"missing"`
@@ -303,6 +307,85 @@ func TestS401MemberSplit(t *testing.T) {
 
 	if petr.UnitValue == nil || petr.UnitValue.Amount != 4000 || petr.UnitValue.Currency != "BRL" {
 		t.Fatalf("PETR4 unit value = %+v", petr.UnitValue)
+	}
+}
+
+// S408: the S401 preview turns the split into orders: PETR4 at 40.00 takes 25 units for 1,000.00
+// and nothing is left over (CN17, CN18).
+func TestS408OrdersOfTheMemberSplit(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       "PETR4",
+		"quote_instrument": "BRL",
+		"date":             "2026-10-30",
+		"value":            "40.00",
+	}, http.StatusCreated, nil)
+
+	body := f.plan(400000)
+	body["classes"].([]any)[1] = contributionClass(
+		"Domestic stocks",
+		2000,
+		instrumentMember("BOVA11", 5000),
+		instrumentMember("PETR4", 5000),
+	)
+
+	got := f.preview(t, body)
+	petr := got.Classes[1].Members[1]
+
+	if petr.Quantity == nil || *petr.Quantity != (moneyOut{Amount: 25, Currency: "PETR4"}) {
+		t.Fatalf("PETR4 quantity = %+v", petr.Quantity)
+	}
+
+	if petr.Cost == nil || *petr.Cost != (moneyOut{Amount: 100000, Currency: "BRL"}) {
+		t.Fatalf("PETR4 cost = %+v", petr.Cost)
+	}
+
+	if got.Leftover == nil || got.Leftover.Amount != 0 {
+		t.Fatalf("leftover = %+v", got.Leftover)
+	}
+
+	if cdb := got.Classes[0]; cdb.Cost == nil || cdb.Cost.Amount != 0 {
+		t.Fatalf("Fixed income cost = %+v", cdb.Cost)
+	}
+}
+
+// S409: a step that does not fit the leftover leaves it in the view (CN18). IVVB11 holds 10 units
+// at 100.00 (1,000.00) and PETR4 is priced at 30.01, so the split of 1,000.00 over two classes of
+// 50% each gives 1,000.00 to PETR4 and 0 to IVVB11. PETR4: q = floor(100000 / 3001) = 33 units,
+// cost 33 × 3001 = 99033, leftover 100000 - 99033 = 967. One more PETR4 unit costs 3001 and one
+// IVVB11 unit costs 10000, both above 967, and no entry is cash-like, so 967 stays.
+func TestS409LeftoverThatNoStepFits(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+	f.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       "PETR4",
+		"quote_instrument": "BRL",
+		"date":             "2026-10-30",
+		"value":            "30.01",
+	}, http.StatusCreated, nil)
+
+	got := f.preview(t, map[string]any{
+		"amount": apitest.BRL(100000),
+		"classes": []any{
+			contributionClass("Domestic stocks", 5000, instrumentMember("PETR4", 10000)),
+			contributionClass("Foreign stocks", 5000, instrumentMember("IVVB11", 10000)),
+		},
+	})
+	petr, ivvb := got.Classes[0].Members[0], got.Classes[1].Members[0]
+
+	if petr.Quantity == nil || petr.Quantity.Amount != 33 || petr.Cost == nil ||
+		petr.Cost.Amount != 99033 {
+		t.Fatalf("PETR4 order = %+v %+v", petr.Quantity, petr.Cost)
+	}
+
+	if ivvb.Quantity == nil || ivvb.Quantity.Amount != 0 || ivvb.Cost == nil ||
+		ivvb.Cost.Amount != 0 {
+		t.Fatalf("IVVB11 order = %+v %+v", ivvb.Quantity, ivvb.Cost)
+	}
+
+	if got.Leftover == nil || got.Leftover.Amount != 967 {
+		t.Fatalf("leftover = %+v", got.Leftover)
 	}
 }
 

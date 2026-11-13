@@ -137,6 +137,7 @@ type AllocationGroup struct {
 type ContributionClass struct {
 	AfterShareBp *int                 `json:"after_share_bp,omitempty"`
 	Amount       *Money               `json:"amount,omitempty"`
+	Cost         *Money               `json:"cost,omitempty"`
 	Members      []ContributionMember `json:"members"`
 	Name         string               `json:"name"`
 	ShareBp      *int                 `json:"share_bp,omitempty"`
@@ -156,7 +157,9 @@ type ContributionMember struct {
 	AccountId    *openapi_types.UUID `json:"account_id,omitempty"`
 	AfterShareBp *int                `json:"after_share_bp,omitempty"`
 	Amount       *Money              `json:"amount,omitempty"`
+	Cost         *Money              `json:"cost,omitempty"`
 	Instrument   *string             `json:"instrument,omitempty"`
+	Quantity     *Money              `json:"quantity,omitempty"`
 	ShareBp      *int                `json:"share_bp,omitempty"`
 	TargetBp     *int                `json:"target_bp,omitempty"`
 	UnitValue    *Money              `json:"unit_value,omitempty"`
@@ -193,6 +196,7 @@ type ContributionPlan struct {
 	Classes      []ContributionClass    `json:"classes"`
 	DriftAfterBp *int                   `json:"drift_after_bp,omitempty"`
 	DriftBp      *int                   `json:"drift_bp,omitempty"`
+	Leftover     *Money                 `json:"leftover,omitempty"`
 	Missing      []ContributionMissing  `json:"missing"`
 	Outside      []ContributionOutside  `json:"outside"`
 	Status       ContributionPlanStatus `json:"status"`

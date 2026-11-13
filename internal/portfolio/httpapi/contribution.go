@@ -118,6 +118,7 @@ func contributionPlan(v app.ContributionView) ContributionPlan {
 		TotalAfter:   optionalMoney(v.TotalAfter),
 		DriftBp:      v.DriftBP,
 		DriftAfterBp: v.DriftAfterBP,
+		Leftover:     optionalMoney(v.Leftover),
 		Classes:      make([]ContributionClass, len(v.Classes)),
 		Outside:      make([]ContributionOutside, len(v.Outside)),
 		Missing:      make([]ContributionMissing, len(v.Missing)),
@@ -157,6 +158,7 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 		ShareBp:      c.ShareBP,
 		AfterShareBp: c.AfterShareBP,
 		Amount:       optionalMoney(c.Amount),
+		Cost:         optionalMoney(c.Cost),
 		Members:      make([]ContributionMember, len(c.Members)),
 	}
 
@@ -170,6 +172,8 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 			AfterShareBp: m.AfterShareBP,
 			UnitValue:    optionalMoney(m.UnitValue),
 			Amount:       optionalMoney(m.Amount),
+			Quantity:     optionalMoney(m.Quantity),
+			Cost:         optionalMoney(m.Cost),
 		}
 	}
 

@@ -78,6 +78,17 @@ func TestExecute(t *testing.T) {
 			leftover: 0,
 		},
 		{
+			// Unit 50 at scale 8 is worth 0.0000005 minor units: step 1 costs ceil(0.0000005) = 1,
+			// step 2 costs ceil(0.000001) - 1 = 0 and is never taken (CN18 amendment).
+			name: "a unit worth less than one minor unit never receives a zero-cost step",
+			entries: []Entry{
+				{IdealBP: 10000, Planned: 0, Unit: 50, Scale: 8},
+			},
+			amount:   100,
+			orders:   []Order{{Quantity: 1, Cost: 1}},
+			leftover: 99,
+		},
+		{
 			name: "cash-like entry ends the reassignment",
 			entries: []Entry{
 				{IdealBP: 5000, Planned: 100000, Unit: 15000},

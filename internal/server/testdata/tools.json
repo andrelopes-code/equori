@@ -3627,6 +3627,25 @@
             "drift_after_bp": {
               "type": "integer"
             },
+            "leftover": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "description": "amount no order can take, in the base currency; present with an amount input and status complete",
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
             "classes": {
               "type": "array",
               "items": {
@@ -3674,6 +3693,25 @@
                         "description": "currency or instrument code"
                       }
                     },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "cost": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "description": "order cost of a class whose members have no targets",
                     "required": [
                       "amount",
                       "currency"
@@ -3748,6 +3786,44 @@
                               "description": "currency or instrument code"
                             }
                           },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "quantity": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "description": "units to buy, an estimate at the prices of today",
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "cost": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "string",
+                              "description": "decimal amount in the instrument's scale, such as -1234.56"
+                            },
+                            "currency": {
+                              "type": "string",
+                              "description": "currency or instrument code"
+                            }
+                          },
+                          "description": "cost of the order in the base currency, never above amount",
                           "required": [
                             "amount",
                             "currency"

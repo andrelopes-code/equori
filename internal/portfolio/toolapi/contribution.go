@@ -20,6 +20,7 @@ type contributionView struct {
 	TotalAfter   tool.Money             `json:"total_after,omitzero"`
 	DriftBP      int                    `json:"drift_bp,omitzero"`
 	DriftAfterBP int                    `json:"drift_after_bp,omitzero"`
+	Leftover     tool.Money             `json:"leftover,omitzero"       jsonschema:"amount no order can take, in the base currency; present with an amount input and status complete"`
 	Classes      []contributionClassOut `json:"classes"`
 	Outside      []contributionOutside  `json:"outside"                 jsonschema:"holdings and accounts that belong to no member"`
 	Missing      []contributionMissing  `json:"missing"                 jsonschema:"holdings and accounts without a price or a rate"`
@@ -32,6 +33,7 @@ type contributionClassOut struct {
 	ShareBP      int                     `json:"share_bp,omitzero"`
 	AfterShareBP int                     `json:"after_share_bp,omitzero"`
 	Amount       tool.Money              `json:"amount,omitzero"`
+	Cost         tool.Money              `json:"cost,omitzero"           jsonschema:"order cost of a class whose members have no targets"`
 	Members      []contributionMemberOut `json:"members"`
 }
 
@@ -44,6 +46,8 @@ type contributionMemberOut struct {
 	AfterShareBP int        `json:"after_share_bp,omitzero"`
 	UnitValue    tool.Money `json:"unit_value,omitzero"`
 	Amount       tool.Money `json:"amount,omitzero"`
+	Quantity     tool.Money `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
+	Cost         tool.Money `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
 }
 
 type contributionOutside struct {
@@ -99,6 +103,7 @@ func contributionViewOf(v app.ContributionView) contributionView {
 		TotalAfter:   optionalMoney(v.TotalAfter),
 		DriftBP:      valueOf(v.DriftBP),
 		DriftAfterBP: valueOf(v.DriftAfterBP),
+		Leftover:     optionalMoney(v.Leftover),
 		Classes:      []contributionClassOut{},
 		Outside:      []contributionOutside{},
 		Missing:      []contributionMissing{},
@@ -138,6 +143,7 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 		ShareBP:      valueOf(c.ShareBP),
 		AfterShareBP: valueOf(c.AfterShareBP),
 		Amount:       optionalMoney(c.Amount),
+		Cost:         optionalMoney(c.Cost),
 		Members:      []contributionMemberOut{},
 	}
 
@@ -151,6 +157,8 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 			AfterShareBP: valueOf(m.AfterShareBP),
 			UnitValue:    optionalMoney(m.UnitValue),
 			Amount:       optionalMoney(m.Amount),
+			Quantity:     optionalMoney(m.Quantity),
+			Cost:         optionalMoney(m.Cost),
 		})
 	}
 

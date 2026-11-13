@@ -51,6 +51,7 @@ func (s *Service) contributionView(
 type valuation struct {
 	values  [][]money.Money
 	units   [][]*money.Money
+	scales  [][]int
 	outside []ContributionOutside
 	missing []ContributionMissing
 }
@@ -58,6 +59,7 @@ type valuation struct {
 type memberValue struct {
 	value   money.Money
 	unit    *money.Money
+	scale   int
 	missing *ContributionMissing
 }
 
@@ -76,6 +78,7 @@ func (v valuer) valuate(ctx context.Context, p domain.Plan) (valuation, error) {
 	for _, c := range p.Classes {
 		values := make([]money.Money, len(c.Members))
 		units := make([]*money.Money, len(c.Members))
+		scales := make([]int, len(c.Members))
 
 		for j, m := range c.Members {
 			mv, err := v.member(ctx, m)
@@ -83,13 +86,14 @@ func (v valuer) valuate(ctx context.Context, p domain.Plan) (valuation, error) {
 				return valuation{}, err
 			}
 
-			values[j], units[j] = mv.value, mv.unit
+			values[j], units[j], scales[j] = mv.value, mv.unit, mv.scale
 			if mv.missing != nil {
 				val.missing = append(val.missing, *mv.missing)
 			}
 		}
 
 		val.values, val.units = append(val.values, values), append(val.units, units)
+		val.scales = append(val.scales, scales)
 	}
 
 	var err error
@@ -129,7 +133,7 @@ func (v valuer) member(ctx context.Context, m domain.PlanMember) (memberValue, e
 		return memberValue{}, err
 	}
 
-	mv.unit, err = v.unitValue(ctx, m.Instrument)
+	mv.unit, mv.scale, err = v.unitValue(ctx, m.Instrument)
 
 	return mv, err
 }
@@ -168,11 +172,15 @@ func (v valuer) sum(
 	return memberValue{value: total}, nil
 }
 
-// unitValue is the price of one whole unit of code in the base currency (CN16); nil without one.
-func (v valuer) unitValue(ctx context.Context, code money.Currency) (*money.Money, error) {
+// unitValue is the price of one whole unit of code in the base currency (CN16), nil without one,
+// and the scale of code.
+func (v valuer) unitValue(
+	ctx context.Context,
+	code money.Currency,
+) (*money.Money, int, error) {
 	scale, err := v.s.md.Scale(ctx, code)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	units := int64(1)
@@ -182,15 +190,15 @@ func (v valuer) unitValue(ctx context.Context, code money.Currency) (*money.Mone
 
 	q, err := money.NewOf(units, code, scale)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	value, missing, err := v.toBase(ctx, q)
 	if err != nil || missing {
-		return nil, err
+		return nil, scale, err
 	}
 
-	return &value, nil
+	return &value, scale, nil
 }
 
 // toBase converts q to the base currency; missing is true when no price path exists.

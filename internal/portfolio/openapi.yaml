@@ -730,6 +730,8 @@ schemas:
         type: integer
       drift_after_bp:
         type: integer
+      leftover:
+        $ref: "#/components/schemas/Money"
       classes:
         type: array
         items:
@@ -758,6 +760,8 @@ schemas:
         type: integer
       amount:
         $ref: "#/components/schemas/Money"
+      cost:
+        $ref: "#/components/schemas/Money"
       members:
         type: array
         items:
@@ -782,6 +786,10 @@ schemas:
       unit_value:
         $ref: "#/components/schemas/Money"
       amount:
+        $ref: "#/components/schemas/Money"
+      quantity:
+        $ref: "#/components/schemas/Money"
+      cost:
         $ref: "#/components/schemas/Money"
   ContributionOutside:
     type: object

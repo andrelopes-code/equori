@@ -12824,6 +12824,8 @@ components:
           type: integer
         drift_after_bp:
           type: integer
+        leftover:
+          $ref: "#/components/schemas/Money"
         classes:
           type: array
           items:
@@ -12852,6 +12854,8 @@ components:
           type: integer
         amount:
           $ref: "#/components/schemas/Money"
+        cost:
+          $ref: "#/components/schemas/Money"
         members:
           type: array
           items:
@@ -12876,6 +12880,10 @@ components:
         unit_value:
           $ref: "#/components/schemas/Money"
         amount:
+          $ref: "#/components/schemas/Money"
+        quantity:
+          $ref: "#/components/schemas/Money"
+        cost:
           $ref: "#/components/schemas/Money"
     ContributionOutside:
       type: object

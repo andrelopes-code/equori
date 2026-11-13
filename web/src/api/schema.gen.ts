@@ -7049,6 +7049,7 @@ export interface components {
             total_after?: components["schemas"]["Money"];
             drift_bp?: number;
             drift_after_bp?: number;
+            leftover?: components["schemas"]["Money"];
             classes: components["schemas"]["ContributionClass"][];
             outside: components["schemas"]["ContributionOutside"][];
             missing: components["schemas"]["ContributionMissing"][];
@@ -7060,6 +7061,7 @@ export interface components {
             share_bp?: number;
             after_share_bp?: number;
             amount?: components["schemas"]["Money"];
+            cost?: components["schemas"]["Money"];
             members: components["schemas"]["ContributionMember"][];
         };
         ContributionMember: {
@@ -7072,6 +7074,8 @@ export interface components {
             after_share_bp?: number;
             unit_value?: components["schemas"]["Money"];
             amount?: components["schemas"]["Money"];
+            quantity?: components["schemas"]["Money"];
+            cost?: components["schemas"]["Money"];
         };
         ContributionOutside: {
             /** Format: uuid */

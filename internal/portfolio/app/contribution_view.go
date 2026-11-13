@@ -41,6 +41,7 @@ func assemble(
 
 		if split {
 			a.split(&view, p)
+			a.orders(&view, p, val)
 		}
 	}
 
