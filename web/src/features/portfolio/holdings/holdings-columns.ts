@@ -72,6 +72,13 @@ export function holdingsColumns({
       minWidth: 260,
     },
     {
+      id: "trend",
+      label: t("holdings.col.trend"),
+      accessor: () => null,
+      sortable: false,
+      width: 160,
+    },
+    {
       id: "quantity",
       label: t("positions.quantity"),
       accessor: (h) => h.position?.quantity.amount ?? null,

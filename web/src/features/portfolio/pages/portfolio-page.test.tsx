@@ -157,20 +157,69 @@ describe("Portfolio page", () => {
     expect(gridRows(grid)).toEqual([
       [
         catalogEn["positions.instrument"],
+        catalogEn["holdings.col.trend"],
         catalogEn["positions.marketValue"],
         catalogEn["positions.result"],
         catalogEn["portfolio.share"],
       ].join("|"),
       `${catalogEn["instruments.type.cash"]} · 1|R$400.00||73.93%`,
-      "XP cash|R$400.00||73.93%",
+      "XP cash||R$400.00||73.93%",
       "REITs · 2|R$105.00|+R$5.00|19.40%",
-      "MXRF11|R$105.00|+R$5.00+5.00%|19.40%",
-      `MXRF11|${catalogEn["positions.noPrice"]}||`,
+      "MXRF11||R$105.00|+R$5.00+5.00%|19.40%",
+      `MXRF11||${catalogEn["positions.noPrice"]}||`,
       "Stocks · 2|R$36.00|+R$5.00|6.67%",
-      "PETR4|R$20.00|+R$5.00+33.33%|3.69%",
-      "PETR4|R$16.00||2.98%",
-      "|R$541.00|+R$10.00|100.00%",
+      "PETR4||R$20.00|+R$5.00+33.33%|3.69%",
+      "PETR4||R$16.00||2.98%",
+      "||R$541.00|+R$10.00|100.00%",
     ]);
+  });
+
+  it("PC7: draws the price of each priced position over the last 3 months", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/positions": () =>
+        json(200, {
+          items: [
+            {
+              account_id: cashID,
+              instrument: "MXRF11",
+              quantity: { amount: 10, currency: "MXRF11" },
+              cost_basis: brl(1000),
+              average_cost: "10.0000",
+              market_value: brl(1200),
+              prices: [
+                {
+                  instrument: "MXRF11",
+                  quote_instrument: "BRL",
+                  date: "2026-10-03",
+                  value: "120",
+                  source: "manual",
+                },
+              ],
+            },
+          ],
+          quote_warnings: [],
+        }),
+      "GET /api/v1/prices": () =>
+        json(200, {
+          items: ["100", "110", "120"].map((value, i) => ({
+            instrument: "MXRF11",
+            quote_instrument: "BRL",
+            date: `2026-10-0${String(i + 1)}`,
+            value,
+            source: "manual",
+          })),
+        }),
+    });
+    await renderApp("/portfolio", { fetch });
+    const grid = await list();
+
+    expect(
+      (
+        await within(grid).findAllByRole("img", {
+          name: /^MXRF11, price over the last 3 months/,
+        })
+      ).length,
+    ).toBeGreaterThan(0);
   });
 
   it("PC7: says the reason of an empty gain when cost and value differ in currency", async () => {

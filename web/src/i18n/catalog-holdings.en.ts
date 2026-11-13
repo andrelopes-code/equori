@@ -80,6 +80,8 @@ export const holdingsEn = {
     "Largest first. Quantity, average cost and other details are under Columns.",
   "holdings.columns": "Columns",
   "holdings.col.price": "Price",
+  "holdings.col.trend": "Last 3 months",
+  "holdings.trendOf": "{name}, price over the last 3 months",
   "holdings.trade": "Record a buy or sale",
   "holdings.prices": "Record prices",
   "instruments.type.cash": "Brokerage cash",
