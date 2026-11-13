@@ -5,16 +5,24 @@
     gap: var(--slotted-space-8);
   }
 
-  /* A sub-account steps in by one space step per level behind its parent (BD-05's reading). */
-  .indent {
-    padding-inline-start: calc(var(--depth, 0) * var(--slotted-space-6));
-  }
-
   /* A column that takes only its content's width: in a table of automatic layout the one
      column without it, the account's name, takes the room the page leaves (1% is the table
      algorithm's way to say "as narrow as the content"). */
   .fit {
     inline-size: 1%;
+    white-space: nowrap;
+  }
+
+  /* The status and the balance columns have one width in every group, so the values of the
+     groups end on one vertical line. The status holds a date or a difference in one line; the
+     balance holds the trend, the amount and a line of yield. No token holds a measure. */
+  .statusColumn {
+    inline-size: 11rem;
+    white-space: nowrap;
+  }
+
+  .balanceColumn {
+    inline-size: 17rem;
     white-space: nowrap;
   }
 
