@@ -71,6 +71,7 @@ func seed(s *seeder, cfg config) error {
 	s.buildInvestments(start)
 	s.openBalances(start)
 	s.postPrices()
+	s.loadPrices()
 	s.buildSchedules()
 	s.buildBudgets()
 	s.saveSavingsTarget()

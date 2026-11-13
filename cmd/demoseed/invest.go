@@ -4,8 +4,16 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
+	"strconv"
 	"time"
 )
+
+// quote is the price of a security on one date.
+type quote struct {
+	date  string
+	value float64
+}
 
 // buildInvestments defines the instruments and the accounts that hold them, then generates their monthly price series.
 func (s *seeder) buildInvestments(start string) {
@@ -113,8 +121,54 @@ func (s *seeder) series(sec security) {
 	s.px[sec.code] = pts
 }
 
-// priceOn interpolates the series of a security at date d.
+// loadPrices reads back the chosen price of every security since the start of the history, so that a trade is priced like the instance prices it: with the real quotes when the feeds hold them.
+func (s *seeder) loadPrices() {
+	for _, sec := range securities {
+		var list struct {
+			Items []struct {
+				Date  string `json:"date"`
+				Value string `json:"value"`
+			} `json:"items"`
+		}
+
+		s.do(
+			http.MethodGet,
+			"/prices?instrument="+sec.code+"&quote_instrument=BRL&from="+iso(
+				s.start,
+			)+"&to="+iso(
+				s.today,
+			),
+			nil,
+			&list,
+		)
+
+		quotes := make([]quote, 0, len(list.Items))
+
+		for _, it := range list.Items {
+			value, err := strconv.ParseFloat(it.Value, 64)
+			if err != nil {
+				s.fail("price of %s on %s: %v", sec.code, it.Date, err)
+				return
+			}
+
+			quotes = append(quotes, quote{date: it.Date, value: value})
+		}
+
+		s.quotes[sec.code] = quotes
+	}
+}
+
+// priceOn returns the last price of a security on or before date d, or the interpolated synthetic series when the instance holds none.
 func (s *seeder) priceOn(code string, d time.Time) float64 {
+	if q := s.quotes[code]; len(q) > 0 {
+		i := sort.Search(len(q), func(i int) bool { return q[i].date > iso(d) })
+		if i > 0 {
+			i--
+		}
+
+		return q[i].value
+	}
+
 	pts := s.px[code]
 	i := (d.Year()-s.start.Year())*12 + int(d.Month()-s.start.Month())
 	frac := float64(d.Day()-1) / float64(d.AddDate(0, 1, -d.Day()+1).AddDate(0, 0, -1).Day())

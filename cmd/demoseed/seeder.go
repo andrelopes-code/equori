@@ -28,7 +28,8 @@ type seeder struct {
 	today   time.Time
 	bal     map[string]int64 // running balance by account id, to fund accounts before they overdraw
 	px      map[string][]float64
-	hold    map[string]int64 // units held by security code
+	quotes  map[string][]quote // prices read back from the instance, by security code
+	hold    map[string]int64   // units held by security code
 	snap    map[string]map[string]int64
 	entries []entry
 	events  []event
@@ -54,6 +55,7 @@ func newSeeder(ctx context.Context, base string, c *http.Client) *seeder {
 		rng:     rand.New(rand.NewPCG(20241001, 7)),
 		bal:     map[string]int64{},
 		px:      map[string][]float64{},
+		quotes:  map[string][]quote{},
 		pending: map[string][]ofxLine{},
 		hold:    map[string]int64{},
 		snap:    map[string]map[string]int64{},
