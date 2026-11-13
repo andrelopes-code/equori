@@ -1,103 +1,83 @@
 import { List } from "@slotted/react/list";
-import {
-  ListItem,
-  ListItemBody,
-  ListItemDescription,
-  ListItemEnd,
-  ListItemLabel,
-  ListItemLink,
-  ListItemStart,
-} from "@slotted/react/list-item";
+import { Section, SectionBody } from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
-import { AccountAvatar } from "@/features/accounts/account-mark/account-avatar";
-import { accountRoute } from "@/features/accounts/model/account-route";
-import { AccountRowStatus } from "@/features/accounts/account-mark/account-row-status";
+import { institutionNote } from "@/features/accounts/balance-sheet/institution-note";
+import { SheetAccountListItem } from "@/features/accounts/balance-sheet/sheet-account-list-item";
+import { SheetGroupHeader } from "@/features/accounts/balance-sheet/sheet-group-header";
 import type { SheetGroupProps } from "@/features/accounts/balance-sheet/sheet-group-props";
-import styles from "@/features/accounts/balance-sheet/balance-group-list.module.css";
-import { AccountYield } from "@/features/portfolio";
+import { sheetLines } from "@/features/accounts/balance-sheet/sheet-lines";
+import { SheetPositionsListItem } from "@/features/accounts/balance-sheet/sheet-positions-list-item";
+import { SheetShareBar } from "@/features/accounts/balance-sheet/sheet-share-bar";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money/money-figure";
-import { routeTo } from "@/ui/navigation/route-to";
 
-// Below 600 px a group is a list of rows that open the account (LP-01): mark, name and
-// institution, balance and status at the end, the yield a year under the balance, on the line
-// of the institution. An institution that repeats the name is left out.
+// Below 600 px a group is a list of rows that open the account (LP-01), with the hierarchy
+// drawn as on a desktop. A parent stays open; only the positions fold (AL12).
 export function BalanceGroupList({
   section,
   label,
-  date,
+  view,
   institutions,
+  showInstitution,
+  date,
   scale,
+  onTogglePositions,
 }: SheetGroupProps) {
-  const { rows, total, excluded } = section;
   const t = useT();
+  const lines = sheetLines(section.rows, {
+    closed: new Set(),
+    positionsOpen: view.positionsOpen,
+  });
+  const names = new Map(
+    section.rows.map((row) => [row.account.id, row.account.name]),
+  );
+
   return (
-    <Stack gap={2}>
-      <Stack gap={0}>
-        <Text size="md" weight="semibold">
-          {label}
-        </Text>
-        <Text size="sm" tone="muted">
-          <MoneyFigure
-            amount={total.amount}
-            currency={total.currency}
-            scale={scale(total.currency)}
-          />
-          {excluded > 0 &&
-            ` · ${t("balanceSheet.excluded", { count: excluded })}`}
-        </Text>
-      </Stack>
-      <List aria-label={label} variant="framed">
-        {rows.map((row) => {
-          const amount = row.hasChildren ? row.subtree : row.balance;
-          const institution =
-            row.account.institution_id === undefined
-              ? undefined
-              : institutions.get(row.account.institution_id)?.name;
-          return (
-            <ListItem key={row.account.id} className={styles.row}>
-              <ListItemLink render={routeTo(accountRoute(row.account))}>
-                <ListItemStart>
-                  <AccountAvatar account={row.account} size="sm" />
-                </ListItemStart>
-                <ListItemBody>
-                  <ListItemLabel>
-                    {row.depth > 0 ? `↳ ${row.account.name}` : row.account.name}
-                  </ListItemLabel>
-                  <ListItemDescription>
-                    <span className={styles.meta}>
-                      {institution !== undefined &&
-                        institution.toLowerCase() !==
-                          row.account.name.toLowerCase() && (
-                          <span>{institution}</span>
-                        )}
-                      {!row.hasChildren && (
-                        <AccountRowStatus account={row.account} scale={scale} />
-                      )}
-                    </span>
-                  </ListItemDescription>
-                </ListItemBody>
-                <ListItemEnd>
-                  <Stack gap={0} align="end">
-                    <MoneyFigure
-                      amount={amount.amount}
-                      currency={amount.currency}
-                      scale={scale(amount.currency)}
-                    />
-                    <AccountYield
-                      accountId={row.account.id}
-                      date={date}
-                      compact
-                    />
-                  </Stack>
-                </ListItemEnd>
-              </ListItemLink>
-            </ListItem>
-          );
-        })}
-      </List>
-    </Stack>
+    <Section>
+      <SheetGroupHeader
+        label={label}
+        total={section.total}
+        scale={scale(section.total.currency)}
+        share={section.share}
+        shareOf={section.shareOf}
+      />
+      <SectionBody>
+        <Stack gap={3}>
+          {section.share !== undefined && (
+            <SheetShareBar share={section.share} />
+          )}
+          <List aria-label={label} variant="framed">
+            {lines.map((line) =>
+              line.type === "positions" ? (
+                <SheetPositionsListItem
+                  key={`${line.parentId}:positions`}
+                  line={line}
+                  parentName={names.get(line.parentId) ?? ""}
+                  onToggle={onTogglePositions}
+                />
+              ) : (
+                <SheetAccountListItem
+                  key={line.row.account.id}
+                  line={line}
+                  institution={
+                    showInstitution && line.row.depth === 0
+                      ? institutionNote(line.row.account, institutions)
+                      : undefined
+                  }
+                  date={date}
+                  scale={scale}
+                />
+              ),
+            )}
+          </List>
+          {section.excluded > 0 && (
+            <Text size="sm" tone="muted">
+              {t("balanceSheet.excluded", { count: section.excluded })}
+            </Text>
+          )}
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

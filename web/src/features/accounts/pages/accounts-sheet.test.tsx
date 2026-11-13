@@ -161,6 +161,57 @@ describe("AccountsPage list", () => {
   });
 });
 
+describe("AccountsPage list on a phone (AL12)", () => {
+  it("folds the positions into one row and lists the children of a parent", async () => {
+    await renderApp("/accounts", {
+      fetch: fakeApi(accountRoutes()),
+      width: 390,
+    });
+    const reserves = await screen.findByRole("list", {
+      name: catalogEn["home.group.reserves"],
+    });
+    const toggle = await within(reserves).findByRole("button", {
+      name: "Show the positions of Corretora",
+    });
+    expect(
+      within(reserves).queryByRole("link", { name: /PETR4/ }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(toggle);
+
+    expect(
+      within(reserves).getByRole("link", { name: /PETR4/ }),
+    ).toBeInTheDocument();
+    const available = await screen.findByRole("list", {
+      name: catalogEn["home.group.available"],
+    });
+    expect(
+      within(available).getByRole("link", { name: /Dinheiro/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers the grouping and the order as selects", async () => {
+    await renderApp("/accounts", {
+      fetch: fakeApi(accountRoutes()),
+      width: 390,
+    });
+
+    expect(
+      await screen.findByRole("combobox", {
+        name: catalogEn["balanceSheet.groupBy"],
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("combobox", { name: catalogEn["balanceSheet.order"] }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("radio", {
+        name: catalogEn["balanceSheet.groupInstitution"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 async function available() {
   return screen.findByRole("table", {
     name: catalogEn["home.group.available"],

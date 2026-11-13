@@ -41,7 +41,7 @@ import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { BalanceSheetFigures } from "@/features/accounts/balance-sheet/balance-sheet-figures";
 import { arrangeSheet } from "@/features/accounts/balance-sheet/sheet-layout";
 import { sectionLabel } from "@/features/accounts/balance-sheet/sheet-section-label";
-import { SheetSegments } from "@/features/accounts/balance-sheet/sheet-segments";
+import { SheetControls } from "@/features/accounts/balance-sheet/sheet-controls";
 import { useDifferingAccounts } from "@/features/accounts/balance-sheet/use-differing-accounts";
 import { useSheetView } from "@/features/accounts/balance-sheet/use-sheet-view";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
@@ -256,7 +256,7 @@ export function AccountsPage() {
             />
             {/* The date and the basis the whole sheet is read at, with the closed accounts. */}
             <div className={styles.bar}>
-              <SheetSegments
+              <SheetControls
                 group={group}
                 order={order}
                 onGroupChange={(value) => {

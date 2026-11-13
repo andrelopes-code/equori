@@ -16,3 +16,19 @@ export function railClass(
     .filter((name) => name !== undefined)
     .join(" ");
 }
+
+// The same for the row of a list on a phone.
+export function listRailClass(
+  child: boolean,
+  first: boolean,
+  last: boolean,
+): string {
+  return [
+    styles.row,
+    child ? styles.child : undefined,
+    first ? styles.first : undefined,
+    last ? styles.last : undefined,
+  ]
+    .filter((name) => name !== undefined)
+    .join(" ");
+}

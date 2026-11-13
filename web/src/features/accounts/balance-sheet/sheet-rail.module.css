@@ -25,6 +25,29 @@
     position: relative;
   }
 
+  /* The row of a list on a phone: the same rail, from the padding the row sets itself. A parent
+     has no toggle there, so the mark of a level stands at the padding. */
+  .row {
+    --pad-block: var(--slotted-space-3);
+    --pad-inline: var(--slotted-space-6);
+    --slotted-list-item-padding-block: var(--pad-block);
+    --slotted-list-item-padding-inline: var(--pad-inline);
+    --slotted-list-item-gap: var(--slotted-space-5);
+    --mark: calc(var(--slotted-target-min) * 1.5);
+    --rail: calc(var(--pad-inline) + var(--mark) / 2);
+    --branch: var(--slotted-space-6);
+    --rail-color: color-mix(in oklab, var(--slotted-text) 26%, transparent);
+    --line: var(--slotted-border-width-thin);
+
+    position: relative;
+  }
+
+  .row.child {
+    padding-inline-start: calc(
+      var(--rail) + var(--branch) + var(--slotted-space-3)
+    );
+  }
+
   .container {
     background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
   }

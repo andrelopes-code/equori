@@ -1,14 +1,14 @@
 @layer app {
-  /* The mark and the text of a row stand one step apart. */
-  .row {
-    --slotted-list-item-gap: var(--slotted-space-5);
+  /* A name keeps one line; the whole name is in the document. */
+  .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  /* The institution and the reconciliation status share one line and wrap as a unit. */
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--slotted-space-2);
+  /* A reason in place of a yield can be a sentence; the end of the row takes at most this
+     measure and the text keeps one line. No token holds a measure. */
+  .yield {
+    max-inline-size: 9rem;
   }
 }

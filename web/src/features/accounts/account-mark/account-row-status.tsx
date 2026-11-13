@@ -7,8 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { reconciliationQuery } from "@/features/accounts/api";
-import { formatDate } from "@/i18n/format";
+import { formatDate, formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
@@ -21,14 +22,18 @@ export function AccountRowStatus({
   account,
   scale,
   quiet = false,
+  compact = false,
 }: {
   account: Account;
   scale: (code: string) => number;
   quiet?: boolean;
+  // A phone row: a date of the year in course drops the year, so the line keeps one line.
+  compact?: boolean;
 }) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
+  const today = useToday();
   const status = useQuery({
     ...reconciliationQuery(useApi(), account.id),
     enabled: account.kind !== "credit_card",
@@ -56,7 +61,12 @@ export function AccountRowStatus({
           <Glyph name="check" />
         </Icon>
         <Text size="xs" tone="success">
-          {t("reconciliation.tag.on", { date: formatDate(last, locale) })}
+          {t("reconciliation.tag.on", {
+            date:
+              compact && last.slice(0, 4) === today.slice(0, 4)
+                ? formatDayMonthNumeric(last, locale)
+                : formatDate(last, locale),
+          })}
         </Text>
       </Inline>
     );
