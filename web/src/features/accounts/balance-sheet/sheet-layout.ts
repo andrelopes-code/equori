@@ -1,5 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import {
+  isAssetGroup,
   sides,
   sheetRows,
   type Order,
@@ -28,9 +29,10 @@ export interface SheetSection {
   institutionId?: string;
   total: Money;
   excluded: number;
-  // The total over the assets (by type) or over the net worth (by institution); a ratio.
+  // What the group holds over everything held, a ratio from zero to one: the total of a group
+  // by type, the assets of an institution. A debt is never in a share, so a share cannot pass
+  // 100 % when the debts of another group are larger than the net worth (AL4).
   share: number | undefined;
-  shareOf: "assets" | "net" | undefined;
   rows: SheetRow[];
 }
 
@@ -60,28 +62,34 @@ function byType(input: ArrangeInput): SheetSection[] {
     total: group.total,
     excluded: group.excluded,
     share: assets > 0 ? Math.abs(group.total.amount) / assets : undefined,
-    shareOf: "assets",
     rows: rowsOf(group.items, input),
   }));
 }
 
 function byInstitution(input: ArrangeInput): SheetSection[] {
-  const { net } = sides(input.groups);
-  const buckets = new Map<string, Item[]>();
-  for (const item of input.groups.flatMap((group) => group.items)) {
-    const key = item.account.institution_id ?? noInstitution;
-    buckets.set(key, [...(buckets.get(key) ?? []), item]);
+  const { assets } = sides(input.groups);
+  const buckets = new Map<string, { items: Item[]; assets: number }>();
+  for (const group of input.groups) {
+    for (const item of group.items) {
+      const key = item.account.institution_id ?? noInstitution;
+      const bucket = buckets.get(key) ?? { items: [], assets: 0 };
+      bucket.items.push(item);
+      if (isAssetGroup(group.group) && item.balance.currency === input.base) {
+        bucket.assets += item.balance.amount;
+      }
+      buckets.set(key, bucket);
+    }
   }
-  const sections = [...buckets].map(([key, items]): SheetSection => {
-    const { total, excluded } = totals(items, input.base);
+  const sections = [...buckets].map(([key, bucket]): SheetSection => {
+    const { total, excluded } = totals(bucket.items, input.base);
     return {
       key,
       ...(key === noInstitution ? {} : { institutionId: key }),
       total,
       excluded,
-      share: net > 0 ? total.amount / net : undefined,
-      shareOf: "net",
-      rows: rowsOf(items, input),
+      share:
+        assets > 0 && bucket.assets > 0 ? bucket.assets / assets : undefined,
+      rows: rowsOf(bucket.items, input),
     };
   });
   const collator = new Intl.Collator(input.locale, { sensitivity: "base" });
@@ -120,7 +128,6 @@ function flat(input: ArrangeInput): SheetSection[] {
       total,
       excluded,
       share: undefined,
-      shareOf: undefined,
       rows: sheetRows({ items: listed }, input.locale, {
         order: input.order,
         base: input.base,

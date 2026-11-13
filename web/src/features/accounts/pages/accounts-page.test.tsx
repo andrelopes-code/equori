@@ -181,7 +181,7 @@ describe("AccountsPage", () => {
     });
     // Wise USD among the available accounts, PETR4 among the reserves.
     expect(
-      screen.getAllByText(words("balanceSheet.excluded", { count: "1" })),
+      screen.getAllByText(catalogEn["balanceSheet.excludedOne"]),
     ).toHaveLength(2);
   });
 

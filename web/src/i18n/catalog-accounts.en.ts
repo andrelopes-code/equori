@@ -240,6 +240,8 @@ export const accountsEn = {
   "balanceSheet.groupTotal": "Total",
   "balanceSheet.excluded":
     "{count} accounts in another currency are not in the total",
+  "balanceSheet.excludedOne":
+    "1 account in another currency is not in the total",
   "balanceSheet.trendOf": "Balance of {name}, last 90 days",
   "balanceSheet.groupBy": "Group by",
   "balanceSheet.groupKind": "Type",
@@ -250,7 +252,6 @@ export const accountsEn = {
   "balanceSheet.orderName": "Name",
   "balanceSheet.orderAttention": "Needs attention",
   "balanceSheet.shareOfAssets": "{percent} of what you own",
-  "balanceSheet.shareOfNet": "{percent} of net worth",
   "balanceSheet.noInstitution": "No institution",
   "balanceSheet.allAccounts": "All accounts",
   "balanceSheet.sumOfSubAccounts": "sum of sub-accounts",

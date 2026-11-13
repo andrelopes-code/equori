@@ -51,7 +51,6 @@ export function BalanceGroupTable({
         total={section.total}
         scale={scale(section.total.currency)}
         share={section.share}
-        shareOf={section.shareOf}
       />
       <SectionBody>
         <Stack gap={3}>
@@ -109,7 +108,9 @@ export function BalanceGroupTable({
           </Table>
           {section.excluded > 0 && (
             <Text size="sm" tone="muted">
-              {t("balanceSheet.excluded", { count: section.excluded })}
+              {section.excluded === 1
+                ? t("balanceSheet.excludedOne")
+                : t("balanceSheet.excluded", { count: section.excluded })}
             </Text>
           )}
         </Stack>

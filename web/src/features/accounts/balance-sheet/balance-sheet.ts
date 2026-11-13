@@ -48,6 +48,10 @@ interface Node {
 }
 
 const assetGroups = new Set(["available", "reserves"]);
+
+export function isAssetGroup(group: string): boolean {
+  return assetGroups.has(group);
+}
 const noAccounts: ReadonlySet<string> = new Set();
 
 // Liabilities are kept as the positive amount owed; their balances are negative in the ledger.
@@ -55,7 +59,7 @@ export function sides(groups: readonly BalanceGroup[]): Sides {
   let assets = 0;
   let liabilities = 0;
   for (const group of groups) {
-    if (assetGroups.has(group.group)) assets += group.total.amount;
+    if (isAssetGroup(group.group)) assets += group.total.amount;
     else liabilities -= group.total.amount;
   }
   return { assets, liabilities, net: assets - liabilities };

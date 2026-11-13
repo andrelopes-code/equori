@@ -132,6 +132,24 @@ describe("AccountsPage list", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("writes the share of the assets on an institution that holds some, and none on one that only owes", async () => {
+    await renderApp("/accounts?group=institution", {
+      fetch: fakeApi(accountRoutes()),
+    });
+    await screen.findByRole("table", { name: "Nubank" });
+
+    // Assets in the base currency: 524055 + 1000000 + 15000 = 1539055; Nubank holds 1524055.
+    const nubank = screen
+      .getByRole("heading", { name: "Nubank" })
+      .closest("section");
+    expect(nubank).toHaveTextContent("99% of what you own");
+    // The card of Itaú is a debt: it lowers no share.
+    const itau = screen
+      .getByRole("heading", { name: "Itaú" })
+      .closest("section");
+    expect(itau).not.toHaveTextContent("of what you own");
+  });
+
   it("lists the accounts in one table and leaves out a parent with no balance of its own", async () => {
     await renderApp("/accounts?group=none", {
       fetch: fakeApi(accountRoutes()),

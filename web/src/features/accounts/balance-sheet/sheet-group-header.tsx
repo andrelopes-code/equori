@@ -19,7 +19,6 @@ interface SheetGroupHeaderProps {
   total: Money;
   scale: number;
   share: number | undefined;
-  shareOf: "assets" | "net" | undefined;
 }
 
 // The header of a group: its title, its share of the whole under it, its total at the end.
@@ -28,7 +27,6 @@ export function SheetGroupHeader({
   total,
   scale,
   share,
-  shareOf,
 }: SheetGroupHeaderProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -44,14 +42,9 @@ export function SheetGroupHeader({
     <SectionHeader>
       <SectionTitle>
         <SectionHeading>{label}</SectionHeading>
-        {percent !== undefined && shareOf !== undefined && (
+        {percent !== undefined && (
           <SectionDescription>
-            {t(
-              shareOf === "assets"
-                ? "balanceSheet.shareOfAssets"
-                : "balanceSheet.shareOfNet",
-              { percent },
-            )}
+            {t("balanceSheet.shareOfAssets", { percent })}
           </SectionDescription>
         )}
       </SectionTitle>

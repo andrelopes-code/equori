@@ -19,12 +19,10 @@ describe("arrangeSheet by type", () => {
   it("keeps the groups of the balance sheet with their share of the assets", () => {
     const sections = arrange("kind", "balance");
 
-    expect(
-      sections.map((s) => [s.key, s.total.amount, s.share, s.shareOf]),
-    ).toEqual([
-      ["available", 105000, 105000 / 405000, "assets"],
-      ["reserves", 300000, 300000 / 405000, "assets"],
-      ["cards", -20000, 20000 / 405000, "assets"],
+    expect(sections.map((s) => [s.key, s.total.amount, s.share])).toEqual([
+      ["available", 105000, 105000 / 405000],
+      ["reserves", 300000, 300000 / 405000],
+      ["cards", -20000, 20000 / 405000],
     ]);
   });
 
@@ -50,15 +48,76 @@ describe("arrangeSheet by type", () => {
 });
 
 describe("arrangeSheet by institution", () => {
-  it("adds up each institution's own balances and shares the net worth", () => {
+  it("adds up each institution's own balances and shares the assets", () => {
     const sections = arrange("institution", "balance");
 
-    expect(
-      sections.map((s) => [s.key, s.total.amount, s.share, s.shareOf]),
-    ).toEqual([
-      ["inst-b", 300000, 300000 / 385000, "net"],
-      ["inst-a", 80000, 80000 / 385000, "net"],
-      ["none", 5000, 5000 / 385000, "net"],
+    // Debts do not count in a share: the card of inst-a lowers its total, not its share.
+    expect(sections.map((s) => [s.key, s.total.amount, s.share])).toEqual([
+      ["inst-b", 300000, 300000 / 405000],
+      ["inst-a", 80000, 100000 / 405000],
+      ["none", 5000, 5000 / 405000],
+    ]);
+  });
+
+  it("keeps every share between zero and one when debts outweigh the net worth", () => {
+    // Holds 1059118, owes nothing; holds 7305 and owes 156029; holds 9647. The net worth,
+    // 920041, is below what the first one holds, so a share of it would pass 100 %.
+    const sections = arrangeSheet({
+      groups: groupBalances(
+        [
+          account("big", "reserve", "BRL", { institution_id: "inst-a" }),
+          account("small", "checking", "BRL", { institution_id: "inst-b" }),
+          account("card", "credit_card", "BRL", { institution_id: "inst-b" }),
+          account("third", "checking"),
+        ],
+        [
+          balance("big", 1059118),
+          balance("small", 7305),
+          balance("card", -156029),
+          balance("third", 9647),
+        ],
+        "BRL",
+      ),
+      by: "institution",
+      order: "balance",
+      locale: "en-US",
+      base: "BRL",
+      institutions,
+      differing: new Set(),
+    });
+
+    expect(sections.map((s) => [s.key, s.share])).toEqual([
+      ["inst-a", 1059118 / 1076070],
+      ["inst-b", 7305 / 1076070],
+      ["none", 9647 / 1076070],
+    ]);
+    for (const section of sections) {
+      expect(section.share).toBeGreaterThanOrEqual(0);
+      expect(section.share).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("gives an institution that only owes no share", () => {
+    const sections = arrangeSheet({
+      groups: groupBalances(
+        [
+          account("cash", "cash"),
+          account("card", "credit_card", "BRL", { institution_id: "inst-a" }),
+        ],
+        [balance("cash", 1000), balance("card", -300)],
+        "BRL",
+      ),
+      by: "institution",
+      order: "balance",
+      locale: "en-US",
+      base: "BRL",
+      institutions,
+      differing: new Set(),
+    });
+
+    expect(sections.map((s) => [s.key, s.share])).toEqual([
+      ["inst-a", undefined],
+      ["none", 1],
     ]);
   });
 
