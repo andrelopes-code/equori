@@ -1861,6 +1861,15 @@
       margin-block-start: 0;
     }
 
+    [data-ui="section"] > [data-part="header"]:has(> [data-part="title"] > [data-part="description"]) {
+      grid-template-rows: 1fr auto auto;
+    }
+
+    [data-ui="section"] > [data-part="header"]:has(> [data-part="title"] > [data-part="description"]) > [data-part="actions"] {
+      grid-row: 1 / span 3;
+      align-self: center;
+    }
+
     [data-ui="card"] > [data-part="header"]:has(> :nth-child(2 of :not([data-part="actions"]))) > [data-part="actions"] {
       grid-row: 1 / span 2;
     }

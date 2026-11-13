@@ -86,6 +86,21 @@ const sectionDescriptionRule = `
 }
 `;
 
+// Workaround for Slotted issue #100: the actions of a section stand in the row of the heading, so
+// their height sets the distance to the description (15 px with none, 39 px beside 64 px). The
+// actions span the three rows and the first row, empty, is the flexible one that takes their
+// height: the title and its description keep one distance beside any actions.
+const sectionActionsRule = `
+[data-ui="section"] > [data-part="header"]:has(> [data-part="title"] > [data-part="description"]) {
+  grid-template-rows: 1fr auto auto;
+}
+
+[data-ui="section"] > [data-part="header"]:has(> [data-part="title"] > [data-part="description"]) > [data-part="actions"] {
+  grid-row: 1 / span 3;
+  align-self: center;
+}
+`;
+
 // Workaround for Slotted issue #99: the actions of a card header occupy its first row, and a
 // control taller than the title stretches that row, which pushes the description away. The
 // actions span the rows of the header's text, so its height is shared and adds nothing.
@@ -450,6 +465,7 @@ export default extendTheme(
       questionChoicesRule,
       sectionRule,
       sectionDescriptionRule,
+      sectionActionsRule,
       cardActionsRule,
       resultStateRule,
       paletteScrimRule,

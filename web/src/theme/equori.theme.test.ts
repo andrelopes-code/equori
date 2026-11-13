@@ -216,6 +216,21 @@ test("a section sets its description tight under the title and the body clear of
   );
 });
 
+test("section actions of a titled description do not size the rows of the title", () => {
+  const header =
+    '\\[data-ui="section"\\] > \\[data-part="header"\\]:has\\(> \\[data-part="title"\\] > \\[data-part="description"\\]\\)';
+  assert.match(
+    css,
+    new RegExp(`${header}\\s*\\{[^}]*grid-template-rows: 1fr auto auto`),
+  );
+  assert.match(
+    css,
+    new RegExp(
+      `${header} > \\[data-part="actions"\\]\\s*\\{[^}]*grid-row: 1 / span 3[^}]*align-self: center`,
+    ),
+  );
+});
+
 test("card actions span the header's text rows, so a tall control does not push the description down", () => {
   assert.match(
     css,
