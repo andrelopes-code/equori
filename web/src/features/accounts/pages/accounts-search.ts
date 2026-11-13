@@ -1,15 +1,15 @@
 import type { Basis } from "@/features/accounts/api";
-
-// The values written in the address; Type and Balance, the defaults, are left out (AL1).
-export type SheetGroupBy = "institution" | "none";
-export type SheetOrder = "name" | "attention";
+import type {
+  GroupBy,
+  Order,
+} from "@/features/accounts/balance-sheet/sheet-layout";
 
 export interface AccountsSearch {
   date?: string;
   basis?: Basis;
   closed?: true;
-  group?: SheetGroupBy;
-  order?: SheetOrder;
+  group?: GroupBy;
+  order?: Order;
 }
 
 function isDate(value: unknown): value is string {
@@ -29,10 +29,14 @@ export function validateAccountsSearch(
     ...(isDate(raw.date) ? { date: raw.date } : {}),
     ...(raw.basis === "settled" ? { basis: "settled" as const } : {}),
     ...(raw.closed === true ? { closed: true as const } : {}),
-    ...(raw.group === "institution" || raw.group === "none"
+    ...(raw.group === "kind" ||
+    raw.group === "institution" ||
+    raw.group === "none"
       ? { group: raw.group }
       : {}),
-    ...(raw.order === "name" || raw.order === "attention"
+    ...(raw.order === "balance" ||
+    raw.order === "name" ||
+    raw.order === "attention"
       ? { order: raw.order }
       : {}),
   };

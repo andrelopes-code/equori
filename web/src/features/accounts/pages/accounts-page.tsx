@@ -39,10 +39,15 @@ import { groupBalances } from "@/features/accounts/balance-sheet/balance-groups"
 import { sides } from "@/features/accounts/balance-sheet/balance-sheet";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { BalanceSheetFigures } from "@/features/accounts/balance-sheet/balance-sheet-figures";
-import { arrangeSheet } from "@/features/accounts/balance-sheet/sheet-layout";
+import {
+  arrangeSheet,
+  type GroupBy,
+  type Order,
+} from "@/features/accounts/balance-sheet/sheet-layout";
 import { sectionLabel } from "@/features/accounts/balance-sheet/sheet-section-label";
 import { SheetControls } from "@/features/accounts/balance-sheet/sheet-controls";
 import { useDifferingAccounts } from "@/features/accounts/balance-sheet/use-differing-accounts";
+import { useSheetPreference } from "@/features/accounts/balance-sheet/use-sheet-preference";
 import { useSheetView } from "@/features/accounts/balance-sheet/use-sheet-view";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
@@ -69,8 +74,9 @@ export function AccountsPage() {
   const search = useSearch({ from: "/_authed/accounts/" });
   const date = search.date ?? today;
   const basis = search.basis ?? "booked";
-  const group = search.group ?? "kind";
-  const order = search.order ?? "balance";
+  const [preference, remember] = useSheetPreference();
+  const group = search.group ?? preference.group;
+  const order = search.order ?? preference.order;
   const beforeDate = shiftDate(date, -30);
   const shown = useDeferredValue({
     date,
@@ -141,8 +147,8 @@ export function AccountsPage() {
     date?: string | undefined;
     basis?: "settled" | undefined;
     closed?: true | undefined;
-    group?: "institution" | "none" | undefined;
-    order?: "name" | "attention" | undefined;
+    group?: GroupBy | undefined;
+    order?: Order | undefined;
   }) => {
     void navigate({
       to: "/accounts",
@@ -260,10 +266,12 @@ export function AccountsPage() {
                 group={group}
                 order={order}
                 onGroupChange={(value) => {
-                  setSearch({ group: value === "kind" ? undefined : value });
+                  setSearch({ group: value });
+                  remember({ group: value, order });
                 }}
                 onOrderChange={(value) => {
-                  setSearch({ order: value === "balance" ? undefined : value });
+                  setSearch({ order: value });
+                  remember({ group, order: value });
                 }}
               />
               <Inline gap={6} wrap="wrap" align="center">

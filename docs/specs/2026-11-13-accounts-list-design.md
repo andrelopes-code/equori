@@ -12,7 +12,7 @@ The accounts list shows each account once, in the groups of the balance sheet, w
 
 | ID | Decision |
 |---|---|
-| AL1 | Two controls sit in the bar of the page: Group by (Type, Institution, None) and Order (Balance, Name, Needs attention). Their values are the search parameters `group` (`institution`, `none`) and `order` (`name`, `attention`) of `/accounts`. The defaults, Type and Balance, are not written to the address. |
+| AL1 | Two controls sit in the bar of the page: Group by (Type, Institution, None) and Order (Balance, Name, Needs attention). Their values are the search parameters `group` (`kind`, `institution`, `none`) and `order` (`balance`, `name`, `attention`) of `/accounts`. A choice made from a control is written to the address, whatever its value, because the remembered preference (AL16) can differ from the built-in default. |
 | AL2 | Group by Type draws the four groups of the balance sheet in their fixed order. Group by Institution draws one group per institution, then a last group for accounts without one. Group by None draws one group, "All accounts". |
 | AL3 | An account belongs to one group. A group total adds the own balances of its accounts in the base currency; an account in another currency is not added and is counted in the note of the group, as today. |
 | AL4 | A group shows its share: for Type, the total over the assets (`{percent} of what you have`); for Institution, the total over the net worth (`{percent} of net worth`). A share needs a denominator above zero; otherwise the group shows none. A bar of the share's width sits under the group's title. The share replaces the composition strip of the mock (AL13). |
@@ -27,6 +27,7 @@ The accounts list shows each account once, in the groups of the balance sheet, w
 | AL13 | Indicators weighed and dropped, each with its reason. A sentence on the change of net worth in 30 days: the three figures already show the change of each side and of the net worth over the same 30 days. A composition strip over the assets: the share bar of each group (AL4) carries the same shares. An attention panel: the overview's Attention widget already ranks the open differences, and Needs attention (AL5) brings them to the top of this list. A count of accounts never reconciled: it is not an action, since a cash account or a position has no statement to agree with; each such row says it in its own status. |
 | AL14 | Own elements: the rail, the container row, the positions row and the share bar. Slotted `Table` has no hierarchy or collapsible row, `Collapsible` and `Tree` draw no columns, and no family draws a static value within a range (`progress-indicator` announces a task). One finding is opened in `andrelopes-code/slotted` for each in the task that builds the element. |
 | AL15 | The header of a group is a Slotted `Section` (O17): the title, the share as its description, the total in its actions. The table takes its name from the title through `aria-label`. |
+| AL16 | The browser remembers the last choice of grouping and order under the key `equori.accounts.sheet`, as `{"group", "order"}`. It holds no identifier, so the key carries no book. The list reads it once per visit; a search parameter in the address wins over it; a value the code does not know reads as the built-in default (Type, Balance); a browser that refuses storage keeps the choice for the visit. The fold state of parents and positions is not remembered. |
 
 ## 3. Derivation
 
@@ -53,7 +54,7 @@ The accounts list shows each account once, in the groups of the balance sheet, w
 | T2 | Does not apply: no business-day count. |
 | B1 | Does not apply: no table. |
 | B2 | Does not apply: no operation. |
-| B3 | Does not apply: no setting; the choice is a search parameter. |
+| B3 | One setting at the level of the browser: the last grouping and order (AL16). It is a convenience, not a fact of the book. |
 | D1 | Does not apply: no table. |
 | D2 | Does not apply: no schema change. |
 | D3 | Does not apply: no recorded fact changes. |

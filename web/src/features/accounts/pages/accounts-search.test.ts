@@ -19,8 +19,12 @@ describe("validateAccountsSearch", () => {
       { group: "none", order: "name" },
       { group: "none", order: "name" },
     ],
-    // The defaults, Type and Balance, are not kept in the address (AL1).
-    [{ group: "kind", order: "balance" }, {}],
+    // The address keeps a choice that equals the built-in default: the reader's remembered
+    // preference can differ from it (AL1, AL16).
+    [
+      { group: "kind", order: "balance" },
+      { group: "kind", order: "balance" },
+    ],
     [{ group: "bank", order: "size" }, {}],
   ])("reads %j as %j", (raw, want) => {
     expect(validateAccountsSearch(raw)).toEqual(want);

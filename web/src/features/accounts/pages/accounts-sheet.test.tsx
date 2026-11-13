@@ -1,11 +1,15 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { accountRoutes, stockID } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
+
+beforeEach(() => {
+  localStorage.clear();
+});
 
 // The hierarchy, the grouping and the order of the list (AL1 to AL9 of
 // docs/specs/2026-11-13-accounts-list-design.md).
@@ -158,6 +162,79 @@ describe("AccountsPage list", () => {
     expect(
       await screen.findByRole("table", { name: "Nubank" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("AccountsPage remembers the grouping and the order (AL16)", () => {
+  const key = "equori.accounts.sheet";
+
+  it("opens the list as the reader left it", async () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ group: "institution", order: "name" }),
+    );
+
+    await renderApp("/accounts", { fetch: fakeApi(accountRoutes()) });
+
+    expect(
+      await screen.findByRole("table", { name: "Nubank" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", { name: catalogEn["home.group.available"] }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("lets the address win over the remembered choice", async () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ group: "institution", order: "balance" }),
+    );
+
+    await renderApp("/accounts?group=kind", {
+      fetch: fakeApi(accountRoutes()),
+    });
+
+    expect(await available()).toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", { name: "Nubank" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("remembers a choice made from the controls", async () => {
+    await renderApp("/accounts", { fetch: fakeApi(accountRoutes()) });
+    await available();
+
+    await userEvent.click(
+      screen.getByRole("radio", {
+        name: catalogEn["balanceSheet.groupInstitution"],
+      }),
+    );
+    await screen.findByRole("table", { name: "Nubank" });
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["balanceSheet.orderName"] }),
+    );
+
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem(key) ?? "{}")).toEqual({
+        group: "institution",
+        order: "name",
+      });
+    });
+  });
+
+  it("goes back to the type grouping when the reader chooses it again", async () => {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ group: "institution", order: "balance" }),
+    );
+    await renderApp("/accounts", { fetch: fakeApi(accountRoutes()) });
+    await screen.findByRole("table", { name: "Nubank" });
+
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["balanceSheet.groupKind"] }),
+    );
+
+    expect(await available()).toBeInTheDocument();
   });
 });
 
