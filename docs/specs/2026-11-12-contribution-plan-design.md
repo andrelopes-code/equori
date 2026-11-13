@@ -152,6 +152,8 @@ The second section draws one row per group, then the members of an expanded grou
 
 A key at the section header draws a solid sample, a hatched sample and the marker with the words "hoje", "com este aporte" and "ideal", in the same marks as the bars. Member bars use the shares inside their group and say "do grupo" after the percentages.
 
+Owner review of 2026-11-13 (X3 capture): with a large contribution a group above the ideal today can fall below it after the contribution and receive money, so a status built on today alone ("acima do ideal") contradicts "recebe R$ …". With an amount, the status compares the share after the contribution with the ideal and writes both shares: "abaixo do ideal (hoje 74%, depois 16%, ideal 20%)"; without an amount it keeps today only. The verdict names at most two receivers; with more it reads "Aplique R$ 50.000,00 em 5 compras, listadas abaixo." so it never fills the line.
+
 ### Edit mode
 
 Owner review of 2026-11-13: plain sentences that change while the owner drags a control are not an interface, and any content that changes height above the rows moves them under the pointer. Edit mode draws the composition and the effect of the contribution as pictures of fixed height.
