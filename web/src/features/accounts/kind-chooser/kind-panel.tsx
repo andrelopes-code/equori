@@ -35,10 +35,11 @@ export function KindPanel({ kind, count }: KindPanelProps) {
         <Text size="sm" tone="muted" wrap="nowrap">
           {t(`kindPanel.${classOf(kind)}`)}
         </Text>
-        <Text size="sm" tone="muted" wrap="nowrap">
-          {t(kindHint[kind])}
-        </Text>
       </div>
+
+      <Text size="sm" tone="muted" wrap="nowrap">
+        {t(kindHint[kind])}
+      </Text>
 
       <KindPanelSteps kind={kind} />
 

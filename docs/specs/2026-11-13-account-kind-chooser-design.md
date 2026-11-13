@@ -33,7 +33,7 @@ Facts from `web/src/features/accounts/account-form/kind-chooser.tsx` and the dem
 
 **KC5 Motion.** On a choice, the scene of the chosen tile travels to the panel's stage through a View Transition of type `kind` (0.5 s, `cubic-bezier(.16, 1, .3, 1)`). The `view-transition-name` exists only under `:root:active-view-transition-type(kind)` (O11). Without `document.startViewTransition`, or under `prefers-reduced-motion: reduce`, the panel changes with no motion. Hovering a tile lifts its drawing by 4 px under `prefers-reduced-motion: no-preference`.
 
-**KC6 Count.** The count of a kind is the number of accounts with that `kind` and no `closed_on`. For `brokerage`, only accounts without `parent_id` count: the cash line and the positions are children of the brokerage (BC2). Written as "1 account" or "{count} accounts", the number through `numberFormatter`.
+**KC6 Count.** The count of a kind is the number of accounts with that `kind` and no `closed_on`. For `brokerage`, only accounts without `parent_id` count: the cash line and the positions are children of the brokerage (BC2). Written as "1 account" or "{count} accounts", and as "1 card" or "{count} cards" for `credit_card`, the number through `numberFormatter`.
 
 **KC7 Panel.** The panel shows, from top to bottom: the scene at the panel's width; the kind's title; the side line; the kind's `kind.hint` text; "The form asks for" with the numbered steps of section 4, steps that only this kind has marked in the accent; "Once created" with three facts of section 4, values end-aligned. With no kind chosen, the panel shows the scene of `checking` in neutral ink, "Choose a kind beside" and "This panel shows what the form asks for."
 
@@ -92,6 +92,8 @@ The drawings come from the mock approved on 2026-11-13. Each kind has two drawin
 | `kindPanel.noCards`             | None yet                                          | Nenhum ainda                             |
 | `kindPanel.countOne`            | 1 account                                         | 1 conta                                  |
 | `kindPanel.countMany`           | {count} accounts                                  | {count} contas                           |
+| `kindPanel.countOneCard`        | 1 card                                            | 1 cartão                                 |
+| `kindPanel.countManyCard`       | {count} cards                                     | {count} cartões                          |
 | `kindPanel.stepIdentity`        | Name and institution                              | Nome e instituição                       |
 | `kindPanel.stepDetails`         | Currency, opening date, parent account and colour | Moeda, data de abertura, conta-mãe e cor |
 | `kindPanel.stepDetailsNoParent` | Currency, opening date and colour                 | Moeda, data de abertura e cor            |

@@ -116,7 +116,7 @@ describe("kindFacts", () => {
       (k) => k.startsWith("kindPanel.") || k.startsWith("kindChooser."),
     );
 
-    expect(keys).toHaveLength(27);
+    expect(keys).toHaveLength(29);
     for (const key of keys) {
       expect(accountsPtBR[key as keyof typeof accountsPtBR]).toBeTruthy();
     }

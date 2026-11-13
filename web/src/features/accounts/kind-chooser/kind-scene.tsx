@@ -54,8 +54,12 @@ export function KindScene({ kind, tone, heroName }: KindSceneProps) {
         );
       })}
 
-      <g className={styles.hero} transform="translate(123.2 17.2) scale(2.2)">
-        <KindShapes shapes={panelArt[kind]} />
+      {/* A CSS transform replaces the transform attribute of its element: the hover lift moves
+          the inner group, the outer one keeps the placement. */}
+      <g transform="translate(123.2 17.2) scale(2.2)">
+        <g className={styles.hero}>
+          <KindShapes shapes={panelArt[kind]} />
+        </g>
       </g>
     </svg>
   );

@@ -26,7 +26,7 @@ export function KindPanelFacts({ kind, count }: KindPanelFactsProps) {
   const [tag] = useAppLocale();
   const facts = kindFacts(kind);
   const countText =
-    count === 0 ? t(facts.noneLabel) : kindCountText(t, tag, count);
+    count === 0 ? t(facts.noneLabel) : kindCountText(t, tag, count, kind);
   const rows = [
     { label: t("kindPanel.opensIn"), value: t(facts.opensIn), muted: false },
     {

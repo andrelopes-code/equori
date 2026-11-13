@@ -3,7 +3,7 @@
     position: sticky;
     inset-block-start: 0;
     display: grid;
-    gap: var(--slotted-space-4);
+    gap: var(--slotted-space-6);
     padding: var(--slotted-space-5);
     border: var(--slotted-border-width) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);

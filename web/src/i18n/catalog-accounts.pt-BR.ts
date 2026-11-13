@@ -141,6 +141,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kindPanel.noCards": "Nenhum ainda",
   "kindPanel.countOne": "1 conta",
   "kindPanel.countMany": "{count} contas",
+  "kindPanel.countOneCard": "1 cartão",
+  "kindPanel.countManyCard": "{count} cartões",
   "kindPanel.stepIdentity": "Nome e instituição",
   "kindPanel.stepDetails": "Moeda, data de abertura, conta-mãe e cor",
   "kindPanel.stepDetailsNoParent": "Moeda, data de abertura e cor",

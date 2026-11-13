@@ -50,12 +50,24 @@ describe("KindScene", () => {
 
   it("places the panel drawing at translate(123.2 17.2) scale(2.2)", () => {
     const { container } = render(<KindScene kind="checking" />);
-    const hero = container.querySelector("g[transform]");
+    const place = container.querySelector("g[transform]");
 
-    expect(hero?.getAttribute("transform")).toBe(
+    expect(place?.getAttribute("transform")).toBe(
       "translate(123.2 17.2) scale(2.2)",
     );
-    expect(hero?.children).toHaveLength(7);
+    expect(place?.children).toHaveLength(1);
+    expect(place?.firstElementChild?.children).toHaveLength(7);
+  });
+
+  // A CSS transform on the element that holds the transform attribute replaces it: the hover lift
+  // moves an inner group, never the placed one.
+  it("lifts a group inside the placed one", () => {
+    const { container } = render(<KindScene kind="checking" />);
+    const groups = container.querySelectorAll("g[transform]");
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.firstElementChild?.tagName).toBe("g");
+    expect(groups[0]?.firstElementChild?.getAttribute("transform")).toBeNull();
   });
 
   it.each([

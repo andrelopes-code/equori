@@ -56,7 +56,7 @@ export function KindTile({
         </Text>
         {count > 0 && (
           <Text size="sm" tone="muted" numeric="tabular" wrap="nowrap">
-            {kindCountText(t, tag, count)}
+            {kindCountText(t, tag, count, kind)}
           </Text>
         )}
       </span>

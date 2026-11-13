@@ -142,6 +142,8 @@ export const accountsEn = {
   "kindPanel.noCards": "None yet",
   "kindPanel.countOne": "1 account",
   "kindPanel.countMany": "{count} accounts",
+  "kindPanel.countOneCard": "1 card",
+  "kindPanel.countManyCard": "{count} cards",
   "kindPanel.stepIdentity": "Name and institution",
   "kindPanel.stepDetails": "Currency, opening date, parent account and colour",
   "kindPanel.stepDetailsNoParent": "Currency, opening date and colour",
