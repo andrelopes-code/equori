@@ -104,4 +104,11 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.outsideOne": "{count} investimento fora do plano",
   "contributionPlan.outsideMany": "{count} investimentos fora do plano",
   "contributionPlan.outsideWithTotal": "{summary} · {total}",
+  "contributionPlan.barIdeal": "Ideal",
+  "contributionPlan.barToday": "Hoje",
+  "contributionPlan.barContribution": "Este aporte",
+  "contributionPlan.barNoAmount": "informe o valor do aporte",
+  "contributionPlan.barNameMissing": "dê um nome a cada grupo",
+  "contributionPlan.handle": "Divisão entre {left} e {right}",
+  "contributionPlan.handleValue": "{left} {leftShare}, {right} {rightShare}",
 };

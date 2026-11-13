@@ -1,0 +1,248 @@
+@layer app {
+  /* Heights the design fixes and no token names: the ideal bar 40 px, the two thin bars 12 px, the
+     amount line 16 px. They never depend on content, so nothing under the editor moves. */
+  .editor {
+    --bar-tall: 2.5rem;
+    --bar-thin: 0.75rem;
+    --amount-line: 1rem;
+
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr);
+    column-gap: var(--slotted-space-5);
+    row-gap: var(--slotted-space-4);
+    align-items: start;
+  }
+
+  .rowLabel {
+    display: flex;
+    align-items: center;
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--bar-thin);
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .tallRow {
+    block-size: var(--bar-tall);
+  }
+
+  .thinRow {
+    block-size: var(--bar-thin);
+  }
+
+  .idealBar {
+    position: relative;
+    inline-size: 100%;
+    min-inline-size: 0;
+    block-size: var(--bar-tall);
+  }
+
+  .thinBar {
+    position: relative;
+    block-size: var(--bar-thin);
+  }
+
+  .segments {
+    display: flex;
+    inline-size: 100%;
+    block-size: 100%;
+    overflow: hidden;
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-surface-sunken);
+  }
+
+  /* A segment grows in proportion to its basis points, from a zero basis: the widths are exact
+     shares of the bar. The edge on the end side separates it from the next one. */
+  .segment {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 0 1 0%;
+    min-inline-size: 0;
+    overflow: hidden;
+    background: var(--segment-color);
+    color: var(--segment-ink);
+    box-shadow: inset calc(-1 * var(--slotted-border-width-thin)) 0 0
+      var(--slotted-surface);
+  }
+
+  .room {
+    flex: 1 1 0;
+    min-inline-size: 0;
+    margin-inline: var(--slotted-space-4);
+    overflow: hidden;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* The off-screen copy a label is measured on; it takes no room and is never read. */
+  .measure {
+    position: absolute;
+    visibility: hidden;
+    pointer-events: none;
+    white-space: nowrap;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .trackMessage {
+    align-self: center;
+    margin-inline: var(--slotted-space-4);
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--bar-thin);
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .contribution {
+    display: grid;
+    row-gap: var(--slotted-space-2);
+    min-inline-size: 0;
+  }
+
+  .labelLine {
+    display: flex;
+    block-size: var(--amount-line);
+    overflow: hidden;
+  }
+
+  .labelCell {
+    position: relative;
+    display: flex;
+    flex: 0 1 0%;
+    min-inline-size: 0;
+    justify-content: center;
+    font-size: var(--slotted-font-size-xs);
+    line-height: var(--amount-line);
+    color: var(--slotted-text-muted);
+  }
+
+  .amountRoom {
+    min-inline-size: 0;
+    margin-inline: var(--slotted-space-2);
+    overflow: hidden;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .labelCell .measure {
+    font-size: var(--slotted-font-size-xs);
+  }
+
+  /* The handle is a 24 px wide hit area over the whole bar; the grip is the part that is drawn. */
+  .handle {
+    position: absolute;
+    inset-block: 0;
+    inline-size: var(--slotted-target-min);
+    margin-inline-start: calc(var(--slotted-target-min) / -2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+    touch-action: none;
+    outline: none;
+  }
+
+  .handle[aria-disabled="true"] {
+    cursor: default;
+  }
+
+  .grip {
+    inline-size: var(--slotted-space-2);
+    block-size: var(--slotted-target-min);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface);
+    box-shadow: 0 0 0 var(--slotted-border-width-thin)
+      var(--slotted-border-strong);
+  }
+
+  .handle:hover .grip,
+  .handle:focus-visible .grip {
+    inline-size: var(--slotted-space-4);
+  }
+
+  .handle[aria-disabled="true"] .grip {
+    background: var(--slotted-disabled-background);
+    box-shadow: 0 0 0 var(--slotted-border-width-thin)
+      var(--slotted-disabled-border);
+  }
+
+  .handle:focus-visible .grip {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .slot1 {
+    --segment-color: var(--slotted-data-1);
+    --segment-ink: var(--slotted-data-1-on);
+  }
+
+  .slot2 {
+    --segment-color: var(--slotted-data-2);
+    --segment-ink: var(--slotted-data-2-on);
+  }
+
+  .slot3 {
+    --segment-color: var(--slotted-data-3);
+    --segment-ink: var(--slotted-data-3-on);
+  }
+
+  .slot4 {
+    --segment-color: var(--slotted-data-4);
+    --segment-ink: var(--slotted-data-4-on);
+  }
+
+  .slot5 {
+    --segment-color: var(--slotted-data-5);
+    --segment-ink: var(--slotted-data-5-on);
+  }
+
+  .slot6 {
+    --segment-color: var(--slotted-data-6);
+    --segment-ink: var(--slotted-data-6-on);
+  }
+
+  .slot7 {
+    --segment-color: var(--slotted-data-7);
+    --segment-ink: var(--slotted-data-7-on);
+  }
+
+  .slot8 {
+    --segment-color: var(--slotted-data-8);
+    --segment-ink: var(--slotted-data-8-on);
+  }
+
+  @media (forced-colors: active) {
+    .segments {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .segment {
+      background: Canvas;
+      color: CanvasText;
+      box-shadow: inset calc(-1 * var(--slotted-border-width-thin)) 0 0
+        CanvasText;
+    }
+
+    .grip {
+      background: Canvas;
+      box-shadow: 0 0 0 var(--slotted-border-width-thin) CanvasText;
+    }
+
+    .handle:focus-visible .grip {
+      outline-color: Highlight;
+    }
+
+    .handle[aria-disabled="true"] .grip {
+      box-shadow: 0 0 0 var(--slotted-border-width-thin) GrayText;
+    }
+
+    .rowLabel,
+    .trackMessage,
+    .labelCell {
+      color: CanvasText;
+    }
+  }
+}

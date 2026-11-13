@@ -102,4 +102,11 @@ export const contributionPlanEn = {
   "contributionPlan.outsideOne": "{count} investment outside the plan",
   "contributionPlan.outsideMany": "{count} investments outside the plan",
   "contributionPlan.outsideWithTotal": "{summary} · {total}",
+  "contributionPlan.barIdeal": "Target",
+  "contributionPlan.barToday": "Today",
+  "contributionPlan.barContribution": "This contribution",
+  "contributionPlan.barNoAmount": "type the contribution",
+  "contributionPlan.barNameMissing": "name every group",
+  "contributionPlan.handle": "Boundary between {left} and {right}",
+  "contributionPlan.handleValue": "{left} {leftShare}, {right} {rightShare}",
 } as const;
