@@ -19,6 +19,8 @@ interface KindPanelFactsProps {
 }
 
 // Section 4 and KC6: where the account opens, whether it counts toward liquidity, how many exist.
+// Workaround for Slotted issue #102: DescriptionList starts each value after the term column and
+// has no way to end-align it, so the rows are drawn by kind-panel.module.css.
 export function KindPanelFacts({ kind, count }: KindPanelFactsProps) {
   const t = useT();
   const [tag] = useAppLocale();
