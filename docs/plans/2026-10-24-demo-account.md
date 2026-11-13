@@ -24,7 +24,7 @@ Mariana Costa Ribeiro, 34, product analyst in São Paulo, CLT employee, renting,
 | Benefit | VR/VA credited monthly to a `benefit` account |
 | Housing | rent R$ 3.450,00 (+ annual adjustment), condominium R$ 780,00, electricity, water, gas, internet, mobile |
 | Institutions | Itaú (salary account, Visa card, savings), Nubank (checking, Mastercard, reserve box), XP (brokerage), wallet cash |
-| Investments | emergency fund in Tesouro Selic and CDB 100% CDI, equities (ITUB4, WEGE3, PETR4, BBAS3), FIIs (HGLG11, KNRI11, MXRF11), ETF IVVB11, Tesouro IPCA+, small crypto |
+| Investments | began 60 months before today with R$ 600 a month, R$ 1.100 now; five groups with ideals (fixed income 30 %, domestic equities 28 %, foreign ETFs 22 %, real estate funds 15 %, gold and crypto ETFs 5 %), priced from the quotes of the instance; contribution plan of R$ 1.100; dividends reinvested, three small trims |
 | Savings rate | 15 to 20 % of net income, as monthly transfers to the brokerage and the reserve, plus lump sums from the 13th salary and PLR |
 | Debt | one 12x installment purchase of electronics, one 10x trip, an anticipated installment |
 
