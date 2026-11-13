@@ -528,7 +528,7 @@ describe("overview page", () => {
       },
     };
 
-    it("counts what needs a decision and links each count", async () => {
+    it("ranks what needs a decision and links each source", async () => {
       await renderApp("/", {
         fetch: api({
           "GET /api/v1/transactions": uncategorized([{}, {}, {}]),
@@ -542,17 +542,19 @@ describe("overview page", () => {
       });
       const region = await screen.findByRole("article", { name: "Attention" });
       await waitFor(() => {
-        expect(within(region).getAllByRole("listitem")).toHaveLength(4);
+        expect(within(region).getAllByRole("listitem")).toHaveLength(3);
       });
       const rows = within(region)
         .getAllByRole("listitem")
         .map((row) => row.textContent);
-      expect(rows[0]).toMatch(/Uncategorized transactions.*3/);
+      expect(rows[0]).toMatch(/Connections that need action.*1/);
       expect(rows[1]).toMatch(
-        /Transactions the bank did not report.*Nubank.*2/,
+        /Transactions to review.*5.*Uncategorized\s*3.*Nubank\s*2/,
       );
-      expect(rows[2]).toMatch(/Connections that need action.*1/);
-      expect(rows[3]).toMatch(/Reserva de emergência.*15\.00/);
+      expect(rows[2]).toMatch(
+        /Open reconciliation difference.*Reserva de emergência.*15\.00/,
+      );
+      expect(region).toHaveTextContent("3 items");
       expect(
         within(region)
           .getAllByRole("link")
@@ -605,13 +607,13 @@ describe("overview page", () => {
       });
       const region = await screen.findByRole("article", { name: "Attention" });
       const link = await within(region).findByRole("link", {
-        name: /Transactions the bank did not report/,
+        name: /Itaú Visa/,
       });
       expect(link.getAttribute("href")).toBe(`/cards/${cardID}/statements/s1`);
     });
 
     // S247, S248
-    it("notices a statement due soon and the budgets over their amount", async () => {
+    it("notices a statement due soon and each budget over its amount", async () => {
       const unpaid = statement(closedStatementID, "2026-10", "closed", {
         due_date: "2026-11-12",
         unpaid: money(50000),
@@ -639,18 +641,40 @@ describe("overview page", () => {
         .map((row) => row.textContent);
       expect(rows[0]).toMatch(
         new RegExp(
-          `Card statement to pay.*Itaú Visa: due on ${formatDate("2026-11-12", "en")}.*500\\.00`,
+          `Statement Itaú Visa.*Due in 2 days · ${formatDate("2026-11-12", "en")}.*500\\.00`,
         ),
       );
-      expect(rows[1]).toMatch(/Budgets over their amount.*1/);
+      expect(rows[1]).toMatch(/over its amount.*\+.*%/);
       expect(
         within(region)
           .getAllByRole("link")
           .map((link) => link.getAttribute("href")),
       ).toEqual([
         `/cards/${cardID}/statements/${closedStatementID}`,
-        "/planning",
+        `/planning/budgets/${foodBudget.id}?month=2026-11`,
       ]);
+    });
+
+    it("draws a statement past its due date as a block with a Pay link", async () => {
+      const unpaid = statement(closedStatementID, "2026-10", "closed", {
+        due_date: "2026-11-07",
+        unpaid: money(50000),
+      });
+      await renderApp("/", {
+        today: "2026-11-10",
+        fetch: api({
+          "GET /api/v1/transactions": uncategorized([]),
+          [`GET /api/v1/accounts/${cardID}/statements`]: () =>
+            json(200, { items: [unpaid] }),
+        }),
+      });
+      const region = await screen.findByRole("article", { name: "Attention" });
+      const pay = await within(region).findByRole("link", { name: "Pay" });
+      expect(pay.getAttribute("href")).toBe(
+        `/cards/${cardID}/statements/${closedStatementID}`,
+      );
+      expect(region).toHaveTextContent("Overdue by 3 days");
+      expect(region).toHaveTextContent("500.00");
     });
 
     it("says that nothing needs attention", async () => {
@@ -695,13 +719,13 @@ describe("overview page", () => {
       });
       const region = await screen.findByRole("article", { name: "Attention" });
       await waitFor(() => {
-        expect(within(region).getAllByRole("listitem")).toHaveLength(2);
+        expect(within(region).getAllByRole("listitem")).toHaveLength(1);
       });
       expect(
         within(region).queryByRole("button", { name: "Try again" }),
       ).toBeNull();
       expect(region).toHaveTextContent(
-        /Transactions the bank did not report.*Itaú checking.*1/,
+        /Transactions to review.*2.*Uncategorized\s*1.*Itaú checking\s*1/,
       );
     });
 
@@ -842,7 +866,7 @@ describe("overview page", () => {
       expectNoAmounts(container, ["1,340.55", "1,005.00", "975.00"]);
     });
 
-    it("keeps the attention list to four rows and counts the rest", async () => {
+    it("joins every unconfirmed count in one review row and keeps no row limit", async () => {
       await renderApp("/", {
         fetch: api({
           "GET /api/v1/transactions": (req) =>
@@ -867,9 +891,10 @@ describe("overview page", () => {
       });
       const region = await screen.findByRole("article", { name: "Attention" });
       await waitFor(() => {
-        expect(within(region).getAllByRole("listitem")).toHaveLength(5);
+        expect(within(region).getAllByRole("listitem")).toHaveLength(3);
       });
-      expect(region).toHaveTextContent("1 more");
+      expect(region).toHaveTextContent(/Transactions to review.*6/);
+      expect(region).not.toHaveTextContent("more");
     });
   });
 });

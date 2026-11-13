@@ -10,30 +10,63 @@ type ConnectionState = components["schemas"]["Connection"]["state"];
 // A statement due within this many days, or past due, is noticed.
 export const statementNoticeDays = 3;
 
-export interface AttentionItem {
-  kind:
-    | "uncategorized"
-    | "unconfirmed"
-    | "connections"
-    | "statement_due"
-    | "budget_over"
-    | "difference";
-  count: number;
-  account?: Account;
-  // The open difference of a reconciliation.
-  difference?: Money;
-  // The account's unconfirmed entries, on its difference item (A133).
-  unconfirmed?: number;
-  // The card statement of the account's earliest unconfirmed entry.
-  statementId?: string;
-  // The unpaid statement of a statement_due item.
-  statement?: Statement;
-  overdue?: boolean;
-}
+// A budget over its amount by up to this share of its room is of the lowest weight (AT3).
+export const budgetMarginPercent = 10;
 
-export function attentionItems(input: {
+export type AttentionWeight = "critical" | "high" | "normal" | "low";
+
+export type ReviewSegment =
+  | { kind: "uncategorized"; count: number }
+  | {
+      kind: "account";
+      account: Account;
+      count: number;
+      // The card statement of the account's earliest unconfirmed entry.
+      statementId?: string;
+    };
+
+export type AttentionItem =
+  | {
+      kind: "statement";
+      weight: "critical" | "high";
+      account: Account;
+      statement: Statement;
+      // Days past the due date when critical, days left when high.
+      days: number;
+    }
+  | { kind: "connections"; weight: "high"; count: number }
+  | {
+      kind: "budget";
+      weight: "normal" | "low";
+      id: string;
+      name: string;
+      // Percent of the room, rounded; 100 when the budget has no room.
+      share: number;
+      overrun: Money;
+      room: Money;
+      spent: Money;
+    }
+  | {
+      kind: "review";
+      weight: "normal";
+      total: number;
+      // The uncategorized count is a lower bound.
+      more: boolean;
+      segments: ReviewSegment[];
+    }
+  | {
+      kind: "difference";
+      weight: "normal";
+      account: Account;
+      difference: Money;
+      // The account's unconfirmed entries, on its difference item (A133).
+      unconfirmed?: number;
+    };
+
+interface AttentionInput {
   today: string;
   uncategorized: number;
+  uncategorizedMore?: boolean;
   unconfirmed: readonly {
     account: Account;
     count: number;
@@ -42,66 +75,166 @@ export function attentionItems(input: {
   connections: readonly { state: ConnectionState }[];
   differences: readonly { account: Account; difference: Money | undefined }[];
   statements: readonly { account: Account; unpaid: readonly Statement[] }[];
-  budgets: readonly { progress: Figures }[];
-}): AttentionItem[] {
-  const stuck = input.connections.filter((c) => c.state !== "ok").length;
-  const open = (d: { difference: Money | undefined }) =>
-    d.difference !== undefined && d.difference.amount !== 0;
-  const differing = new Set(
-    input.differences.filter(open).map((d) => d.account.id),
-  );
-  const noticeUntil = plusDays(input.today, statementNoticeDays);
-  const overBudget = input.budgets.filter(
-    (b) => budgetState(b.progress) === "over",
-  ).length;
-  const count = new Map(input.unconfirmed.map((u) => [u.account.id, u.count]));
+  budgets: readonly { id: string; name: string; progress: Figures }[];
+}
+
+export type StatementItem = Extract<AttentionItem, { kind: "statement" }>;
+export type BudgetItem = Extract<AttentionItem, { kind: "budget" }>;
+export type ReviewItem = Extract<AttentionItem, { kind: "review" }>;
+export type DifferenceItem = Extract<AttentionItem, { kind: "difference" }>;
+
+// Items come ranked: by weight, then by kind (AT2).
+export function attentionItems(input: AttentionInput): AttentionItem[] {
+  const budgets = budgetItems(input.budgets);
+
   return [
+    ...statementItems(input),
+    ...connectionItems(input.connections),
+    ...budgets.filter((b) => b.weight === "normal"),
+    ...reviewItems(input),
+    ...differenceItems(input),
+    ...budgets.filter((b) => b.weight === "low"),
+  ];
+}
+
+// The count of the header leaves out the items of the lowest weight (AT5).
+export function attentionCount(items: readonly AttentionItem[]): number {
+  return items.filter((item) => item.weight !== "low").length;
+}
+
+function statementItems(input: AttentionInput): AttentionItem[] {
+  const noticeUntil = plusDays(input.today, statementNoticeDays);
+
+  return input.statements
+    .flatMap((s) =>
+      s.unpaid
+        .filter((statement) => statement.due_date <= noticeUntil)
+        .map((statement) => ({ account: s.account, statement })),
+    )
+    .sort(
+      (a, b) =>
+        a.statement.due_date.localeCompare(b.statement.due_date) ||
+        a.statement.id.localeCompare(b.statement.id),
+    )
+    .map(({ account, statement }) => {
+      const late = statement.due_date < input.today;
+
+      return {
+        kind: "statement" as const,
+        weight: late ? ("critical" as const) : ("high" as const),
+        account,
+        statement,
+        days: late
+          ? daysBetween(statement.due_date, input.today)
+          : daysBetween(input.today, statement.due_date),
+      };
+    });
+}
+
+function connectionItems(
+  connections: AttentionInput["connections"],
+): AttentionItem[] {
+  const stuck = connections.filter((c) => c.state !== "ok").length;
+
+  return stuck > 0
+    ? [{ kind: "connections", weight: "high", count: stuck }]
+    : [];
+}
+
+function budgetItems(budgets: AttentionInput["budgets"]): BudgetItem[] {
+  return budgets
+    .filter((b) => budgetState(b.progress) === "over")
+    .map((b) => {
+      const { planned, carried, spent, available } = b.progress;
+      const room = planned.amount + carried.amount;
+      const overrun = -available.amount;
+      const share = room <= 0 ? 100 : Math.round((overrun * 100) / room);
+
+      return {
+        kind: "budget" as const,
+        weight:
+          share <= budgetMarginPercent ? ("low" as const) : ("normal" as const),
+        id: b.id,
+        name: b.name,
+        share,
+        overrun: { ...available, amount: overrun },
+        room: { ...planned, amount: room },
+        spent,
+      };
+    })
+    .sort((a, b) => b.share - a.share || a.id.localeCompare(b.id));
+}
+
+function reviewItems(input: AttentionInput): AttentionItem[] {
+  const differing = differingAccounts(input.differences);
+  const segments: ReviewSegment[] = [
     ...(input.uncategorized > 0
       ? [{ kind: "uncategorized" as const, count: input.uncategorized }]
       : []),
     ...input.unconfirmed
       .filter((u) => u.count > 0 && !differing.has(u.account.id))
       .map((u) => ({
-        kind: "unconfirmed" as const,
-        count: u.count,
+        kind: "account" as const,
         account: u.account,
+        count: u.count,
         ...(u.statementId === undefined ? {} : { statementId: u.statementId }),
       })),
-    ...(stuck > 0 ? [{ kind: "connections" as const, count: stuck }] : []),
-    ...input.statements.flatMap((s) =>
-      s.unpaid
-        .filter((statement) => statement.due_date <= noticeUntil)
-        .map((statement) => ({
-          kind: "statement_due" as const,
-          count: 1,
-          account: s.account,
-          statement,
-          overdue: statement.due_date < input.today,
-        })),
-    ),
-    ...(overBudget > 0
-      ? [{ kind: "budget_over" as const, count: overBudget }]
-      : []),
-    ...input.differences.flatMap((d) =>
-      d.difference === undefined || !open(d)
-        ? []
-        : [
-            {
-              kind: "difference" as const,
-              count: 1,
-              account: d.account,
-              difference: d.difference,
-              ...((count.get(d.account.id) ?? 0) > 0
-                ? { unconfirmed: count.get(d.account.id) ?? 0 }
-                : {}),
-            },
-          ],
-    ),
-  ];
+  ].sort((a, b) => b.count - a.count);
+  const total = segments.reduce((sum, s) => sum + s.count, 0);
+
+  return total === 0
+    ? []
+    : [
+        {
+          kind: "review",
+          weight: "normal",
+          total,
+          more: input.uncategorizedMore === true,
+          segments,
+        },
+      ];
+}
+
+function differenceItems(input: AttentionInput): AttentionItem[] {
+  const count = new Map(input.unconfirmed.map((u) => [u.account.id, u.count]));
+
+  return input.differences.flatMap((d) => {
+    if (d.difference === undefined || d.difference.amount === 0) return [];
+    const unconfirmed = count.get(d.account.id) ?? 0;
+
+    return [
+      {
+        kind: "difference" as const,
+        weight: "normal" as const,
+        account: d.account,
+        difference: d.difference,
+        ...(unconfirmed > 0 ? { unconfirmed } : {}),
+      },
+    ];
+  });
+}
+
+function differingAccounts(
+  differences: AttentionInput["differences"],
+): Set<string> {
+  return new Set(
+    differences
+      .filter((d) => d.difference !== undefined && d.difference.amount !== 0)
+      .map((d) => d.account.id),
+  );
+}
+
+function daysBetween(from: string, to: string): number {
+  const day = 24 * 60 * 60 * 1000;
+
+  return Math.round(
+    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / day,
+  );
 }
 
 function plusDays(day: string, n: number): string {
   const date = new Date(`${day}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + n);
+
   return date.toISOString().slice(0, 10);
 }

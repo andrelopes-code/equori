@@ -84,7 +84,7 @@ export function OverviewPage() {
       "attention",
       t("overview.attention.title"),
       4,
-      4,
+      8,
       false,
     ),
     spending: placement("spending", t("overview.spending.title"), 4, 5),
@@ -157,11 +157,7 @@ export function OverviewPage() {
                       false,
                     )}
                   />,
-                  <AttentionBlock
-                    key="attention"
-                    limit={4}
-                    {...at.attention}
-                  />,
+                  <AttentionBlock key="attention" {...at.attention} />,
                   <SpendingChart
                     key="spending"
                     month={month}

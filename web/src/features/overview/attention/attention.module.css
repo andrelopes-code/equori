@@ -1,0 +1,83 @@
+@layer app {
+  /* The hero: the one block the list lets dominate. The ring reads the danger edge at 45 % since a
+     full-strength ring around a large area competes with the figure. */
+  .hero {
+    display: grid;
+    gap: var(--slotted-space-4);
+    padding: var(--slotted-space-5) var(--slotted-space-6);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-tone-danger-surface);
+    box-shadow:
+      inset 0 0 0 var(--slotted-border-width-thin)
+        color-mix(in oklab, var(--slotted-tone-danger-border) 45%, transparent),
+      var(--slotted-shadow-sm);
+  }
+
+  .top,
+  .middle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+  }
+
+  .name {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .amount {
+    font-size: var(--slotted-font-size-3xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-3xl);
+    white-space: nowrap;
+  }
+
+  .days {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    min-block-size: var(--slotted-space-6);
+  }
+
+  /* One cell per late day. The transparent border shows under forced colors, which drop the
+     ground. */
+  .ruler {
+    display: inline-flex;
+    gap: var(--slotted-space-2);
+  }
+
+  .day {
+    inline-size: var(--slotted-space-8);
+    block-size: var(--slotted-space-3);
+    border: var(--slotted-border-width-thin) solid transparent;
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .since {
+    margin-inline-start: var(--slotted-space-4);
+  }
+
+  .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+  }
+
+  .review {
+    display: grid;
+    min-inline-size: 0;
+    gap: var(--slotted-space-4);
+    margin-block-start: var(--slotted-space-4);
+  }
+
+  .budget {
+    display: grid;
+    gap: var(--slotted-space-3);
+    margin-block-start: var(--slotted-space-4);
+  }
+}

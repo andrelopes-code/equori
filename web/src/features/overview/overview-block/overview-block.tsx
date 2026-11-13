@@ -42,6 +42,7 @@ export function OverviewBlock({
   placement,
   link,
   help,
+  meta,
   loading,
   error,
   onRetry,
@@ -53,6 +54,8 @@ export function OverviewBlock({
   link?: { label: string; options: NavigateOptions } | undefined;
   // What the block's figure is, in plain words, behind a control beside its title.
   help?: ReactNode;
+  // A short figure beside the title, drawn when the block has no link.
+  meta?: ReactNode;
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
@@ -81,7 +84,9 @@ export function OverviewBlock({
       onRetry={onRetry}
       footer={footer}
       actions={
-        link !== undefined && (
+        link === undefined ? (
+          meta
+        ) : (
           // The visible word stays short so a narrow widget keeps its title on one line.
           <OverviewLink options={link.options} label={link.label}>
             {t("overview.open")}
