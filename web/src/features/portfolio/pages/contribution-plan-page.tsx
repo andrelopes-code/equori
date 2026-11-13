@@ -136,6 +136,7 @@ export function ContributionPlanPage() {
               editing={editor.draft !== undefined}
               memberName={memberName}
               onAmount={setAmount}
+              onEdit={editor.start}
             />
           )}
 
@@ -144,6 +145,7 @@ export function ContributionPlanPage() {
               view={shown}
               pending={pending}
               memberName={memberName}
+              onEdit={editor.start}
             />
           )}
 

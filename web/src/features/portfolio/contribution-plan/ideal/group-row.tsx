@@ -5,7 +5,11 @@ import styles from "@/features/portfolio/contribution-plan/ideal/ideal-grid.modu
 import { MemberRow } from "@/features/portfolio/contribution-plan/ideal/member-row";
 import { NameCell } from "@/features/portfolio/contribution-plan/ideal/name-cell";
 import { ShareBar } from "@/features/portfolio/contribution-plan/ideal/share-bar";
-import { positive } from "@/features/portfolio/contribution-plan/model/shopping-list";
+import {
+  groupCost,
+  positive,
+  unitsWaitForSplit,
+} from "@/features/portfolio/contribution-plan/model/shopping-list";
 
 type Group = components["schemas"]["ContributionClass"];
 
@@ -17,6 +21,7 @@ interface GroupRowProps {
   waiting: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onToggle: () => void;
+  onSplit: () => void;
 }
 
 // A group and, while it is open, its members.
@@ -28,6 +33,7 @@ export function GroupRow({
   waiting,
   memberName,
   onToggle,
+  onSplit,
 }: GroupRowProps) {
   const key = `group-${String(index)}`;
   const today = group.share_bp ?? 0;
@@ -55,9 +61,10 @@ export function GroupRow({
         <EntryStatus today={today} ideal={group.target_bp} member={false} />
 
         <EntryOutcome
-          amount={group.amount}
+          amount={groupCost(group)}
           hasAmount={hasAmount}
           waiting={waiting}
+          {...(unitsWaitForSplit(group) ? { onSplit } : {})}
         />
       </div>
 

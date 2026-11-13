@@ -28,6 +28,7 @@ interface MonthSectionProps {
   editing: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onAmount: (minor: number) => void;
+  onEdit: () => void;
 }
 
 // Where this month's money goes: the amount, the portfolio before and after it, the verdict
@@ -39,6 +40,7 @@ export function MonthSection({
   editing,
   memberName,
   onAmount,
+  onEdit,
 }: MonthSectionProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -98,7 +100,9 @@ export function MonthSection({
 
           {!editing && !incomplete && <Text>{verdict}</Text>}
 
-          {!editing && <PurchaseList view={view} memberName={memberName} />}
+          {!editing && (
+            <PurchaseList view={view} memberName={memberName} onEdit={onEdit} />
+          )}
         </Stack>
       </SectionBody>
     </Section>

@@ -44,7 +44,7 @@ export function MemberRow({
       <EntryStatus today={today} ideal={member.target_bp} member />
 
       <EntryOutcome
-        amount={member.amount}
+        amount={member.cost ?? member.amount}
         hasAmount={hasAmount}
         waiting={waiting}
       />

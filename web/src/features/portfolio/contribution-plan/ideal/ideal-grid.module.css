@@ -36,9 +36,11 @@
     white-space: nowrap;
   }
 
+  /* Two lines at most: the link to the split above the amount. */
   .outcome {
     display: flex;
-    align-items: center;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
   }
 }

@@ -1,3 +1,4 @@
+import { Link } from "@slotted/react/link";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -15,14 +16,17 @@ interface EntryOutcomeProps {
   hasAmount: boolean;
   // Whether a missing price stops the split (CN10).
   waiting: boolean;
+  // Set for a group whose units wait for a split among its assets: the link enters edit mode.
+  onSplit?: () => void;
 }
 
-// The outcome column of a row: what it receives, that it receives nothing, or nothing without an
-// amount.
+// The outcome column of a row: what it costs this month, that it receives nothing, or nothing
+// without an amount.
 export function EntryOutcome({
   amount,
   hasAmount,
   waiting,
+  onSplit,
 }: EntryOutcomeProps) {
   const t = useT();
   const fmt = useMoneyFormat();
@@ -33,6 +37,20 @@ export function EntryOutcome({
       {waiting && (
         <Text size="sm" tone="muted">
           {t("contributionPlan.outcomeWaits")}
+        </Text>
+      )}
+
+      {!waiting && hasAmount && positive(amount) && onSplit !== undefined && (
+        <Text size="sm">
+          <Link
+            href="#"
+            onClick={(event) => {
+              event.preventDefault();
+              onSplit();
+            }}
+          >
+            {t("contributionPlan.splitToSee")}
+          </Link>
         </Text>
       )}
 

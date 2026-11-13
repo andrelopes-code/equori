@@ -83,7 +83,7 @@ export function MemberEditRow({
 
       <TodayShare bp={member.share_bp ?? 0} />
 
-      <ReceivedAmount amount={member.amount} />
+      <ReceivedAmount amount={member.cost ?? member.amount} />
 
       <div className={styles.actions}>
         <RowMenu name={name}>

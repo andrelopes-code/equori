@@ -52,4 +52,16 @@ describe("compositionGroups", () => {
       { key: "group-2", name: "C", colour: 2, targetBp: 1000, locked: false },
     ]);
   });
+
+  it("takes the cost of the order as the amount of a group", () => {
+    const draft = startEditing({
+      classes: [{ name: "A", targetBp: 5000, members: [] }],
+    });
+    const costed = {
+      ...view,
+      classes: [{ ...view.classes[0], cost: brl(4967) }],
+    } as Plan;
+
+    expect(compositionGroups(costed, draft)[0]?.amount).toEqual(brl(4967));
+  });
 });

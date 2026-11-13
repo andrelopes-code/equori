@@ -45,7 +45,7 @@ export function monthVerdict(view: Plan, deps: VerdictDeps): string {
     list: list(
       entries.map((e) =>
         t("contributionPlan.verdictItem", {
-          amount: money(e.amount),
+          amount: money(e.cost),
           name: e.name,
         }),
       ),

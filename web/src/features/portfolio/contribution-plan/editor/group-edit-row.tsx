@@ -12,6 +12,7 @@ import { TodayShare } from "@/features/portfolio/contribution-plan/editor/today-
 import { TargetSlider } from "@/features/portfolio/contribution-plan/editor/target-slider";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
+import { groupCost } from "@/features/portfolio/contribution-plan/model/shopping-list";
 import { GroupDot } from "@/features/portfolio/contribution-plan/month/group-dot";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -84,7 +85,7 @@ export function GroupEditRow({
 
         <TodayShare bp={group.share_bp ?? 0} />
 
-        <ReceivedAmount amount={group.amount} />
+        <ReceivedAmount amount={groupCost(group)} />
 
         <div className={styles.actions}>
           <RowMenu name={edit.name}>
