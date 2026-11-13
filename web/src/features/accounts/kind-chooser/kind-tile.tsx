@@ -43,7 +43,7 @@ export function KindTile({
         onKeyDown(event, kind);
       }}
     >
-      <KindScene kind={kind} />
+      <KindScene kind={kind} interactive />
 
       <span className={styles.meta}>
         <Text

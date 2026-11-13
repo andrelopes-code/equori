@@ -45,8 +45,16 @@
     border-radius: 0;
   }
 
+  /* The tile rises with its stage (KC5): half the height of the chosen tile's step. */
   .tile:hover {
     border-color: var(--slotted-border-strong);
+    box-shadow: var(--slotted-shadow-sm);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tile:hover:not([aria-checked="true"]) {
+      transform: translateY(-1px);
+    }
   }
 
   .tile:focus-visible {

@@ -97,6 +97,12 @@ describe("KindPanel", () => {
     expect(container.querySelector("svg[data-tone='neutral']")).not.toBeNull();
     expect(container.querySelector("svg[data-hero-name]")).toBeNull();
   });
+
+  it("draws a scene that does not answer the pointer", () => {
+    const { container } = inEnglish(<KindPanel kind="reserve" count={1} />);
+
+    expect(container.querySelector("svg[data-interactive]")).toBeNull();
+  });
 });
 
 function inEnglish(ui: ReactNode) {

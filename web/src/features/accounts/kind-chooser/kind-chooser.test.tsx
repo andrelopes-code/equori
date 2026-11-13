@@ -31,6 +31,15 @@ describe("KindChooser", () => {
     ).toEqual(kindOrder.map((kind) => catalogEn[`kind.title.${kind}`]));
   });
 
+  // KC5: the scene of a tile answers the pointer and the focus; the panel's scene does not.
+  it("draws every tile's scene as interactive", () => {
+    inEnglish({ value: null });
+
+    for (const radio of screen.getAllByRole("radio")) {
+      expect(radio.querySelector("svg[data-interactive]")).not.toBeNull();
+    }
+  });
+
   it("checks no radio and tabs only to the first when no kind is chosen", () => {
     inEnglish({ value: null });
 
