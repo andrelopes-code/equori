@@ -13,16 +13,20 @@
     white-space: nowrap;
   }
 
-  /* The status and the balance columns have one width in every group, so the values of the
+  /* The status, balance and yield columns have one width in every group, so the values of the
      groups end on one vertical line. The status holds a date or a difference in one line; the
      balance holds the trend, the amount and a line of yield. No token holds a measure. */
   .statusColumn {
-    inline-size: 11rem;
+    inline-size: 10rem;
     white-space: nowrap;
   }
 
+  .yieldColumn {
+    inline-size: 13rem;
+  }
+
   .balanceColumn {
-    inline-size: 17rem;
+    inline-size: 15rem;
     white-space: nowrap;
   }
 

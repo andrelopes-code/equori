@@ -47,7 +47,9 @@ export function SheetAccountListItem({
   const child = row.depth > 0;
   const amount = parent ? row.subtree : row.balance;
   const caption = [
-    account.kind === undefined ? undefined : t(kindTitle[account.kind]),
+    account.kind === undefined || row.position
+      ? undefined
+      : t(kindTitle[account.kind]),
     institution,
   ]
     .filter((part) => part !== undefined)
@@ -64,7 +66,7 @@ export function SheetAccountListItem({
           {caption !== "" && (
             <ListItemDescription>{caption}</ListItemDescription>
           )}
-          {!parent && (
+          {!parent && !row.position && (
             <ListItemDescription>
               <AccountRowStatus account={account} scale={scale} quiet compact />
             </ListItemDescription>

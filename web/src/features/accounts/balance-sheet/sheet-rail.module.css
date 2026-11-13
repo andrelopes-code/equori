@@ -1,11 +1,15 @@
 @layer app {
+  /* Workaround for Slotted issue #103: Table has no parent row that folds its children and no
+     connector between levels, so the indent, the toggle slot and the rail are drawn here. */
+
   /* The marks of a level stand in one column. A parent's mark (md, one and a half targets) comes
      after the toggle slot; a child's (sm) after the branch of the rail. The rail runs at the
      centre of the parent's mark. No token holds the 1.5: it is the avatar's own step. */
   .cell {
-    /* The family pads its cell from --slotted-table-cell-padding-block and -inline, and falls
-       back to the control padding when they are unset. The cell sets the block padding, and the
-       rail reads the inline one the way the family does, so both are known here. */
+    /* Workaround for Slotted issue #105: the family pads its cell from
+       --slotted-table-cell-padding-block and -inline and falls back to the control padding when
+       they are unset, so the padding in use cannot be read. The cell sets the block padding, and
+       the rail reads the inline one through the same fallback, so both are known here. */
     --pad-block: var(--slotted-space-3);
     --slotted-table-cell-padding-block: var(--pad-block);
     --pad-inline: var(

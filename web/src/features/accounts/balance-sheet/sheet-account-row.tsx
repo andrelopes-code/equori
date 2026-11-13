@@ -47,8 +47,11 @@ export function SheetAccountRow({
   const parent = row.hasChildren;
   const child = row.depth > 0;
   const amount = parent ? row.subtree : row.balance;
+  // A position is a quantity under its parent: the kind of its parent says nothing new.
   const caption = [
-    account.kind === undefined ? undefined : t(kindTitle[account.kind]),
+    account.kind === undefined || row.position
+      ? undefined
+      : t(kindTitle[account.kind]),
     institution,
   ]
     .filter((part) => part !== undefined)
@@ -108,7 +111,9 @@ export function SheetAccountRow({
       </TableRowHeader>
 
       <TableCell text="nowrap">
-        {!parent && <AccountRowStatus account={account} scale={scale} quiet />}
+        {!parent && !row.position && (
+          <AccountRowStatus account={account} scale={scale} quiet />
+        )}
       </TableCell>
 
       <TableCell numeric text="nowrap">
@@ -140,7 +145,7 @@ export function SheetAccountRow({
       </TableCell>
 
       {yieldColumn && (
-        <TableCell numeric text="nowrap">
+        <TableCell numeric>
           <AccountYield accountId={account.id} date={date} />
         </TableCell>
       )}
