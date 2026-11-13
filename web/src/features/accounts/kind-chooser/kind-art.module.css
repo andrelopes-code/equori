@@ -136,7 +136,7 @@
     border-radius: var(--slotted-radius-md);
   }
 
-  /* KC5: the stage answers the pointer, the keyboard focus and the choice of the tile that holds
+  /* KC5: the stage answers the pointer over the tile that holds
      it. The rings swell outward from the centre one after the other, the outer ones further, and
      take more ink; the
      drawing rises and grows, and its back layer rises further than its front, so the layers part
@@ -178,45 +178,32 @@
       transition: transform 700ms var(--pose-ease) 40ms;
     }
 
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive] {
+    :hover > .scene[data-interactive] {
       --kind-glow: 10%;
     }
 
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive]
-      .e1 {
+    :hover > .scene[data-interactive] .e1 {
       transform: scale(1.06);
     }
 
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive]
-      .e2 {
+    :hover > .scene[data-interactive] .e2 {
       transform: scale(1.08);
     }
 
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive]
-      .e3 {
+    :hover > .scene[data-interactive] .e3 {
       transform: scale(1.1);
     }
 
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive]
-      .e4 {
+    :hover > .scene[data-interactive] .e4 {
       transform: scale(1.12);
     }
 
     /* In drawing units: the group is scaled by 1.9 in the stage. */
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive]
-      .hero {
+    :hover > .scene[data-interactive] .hero {
       transform: translateY(-3px) scale(1.06);
     }
 
-    :is(:hover, :focus-visible, [aria-checked="true"])
-      > .scene[data-interactive]
-      :is(.g2, .g2s) {
+    :hover > .scene[data-interactive] :is(.g2, .g2s) {
       transform: translate(1px, -2.4px);
     }
   }
