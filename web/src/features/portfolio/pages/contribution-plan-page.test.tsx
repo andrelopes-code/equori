@@ -194,6 +194,31 @@ describe("Contribution plan page", () => {
     expect(screen.getByRole("button", { name: "Copiar lista" })).toBeEnabled();
   });
 
+  it("hides the purchase list while a group has no name", async () => {
+    await open();
+    await screen.findByRole("table", {
+      name: catalogPtBR["contributionPlan.shopping"],
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogPtBR["contributionPlan.edit"],
+      }),
+    );
+    await userEvent.clear(await screen.findByDisplayValue("Ações exterior"));
+
+    expect(
+      await screen.findByText(
+        catalogPtBR["contributionPlan.verdictNameMissing"],
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", {
+        name: catalogPtBR["contributionPlan.shopping"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("hides every amount and disables the copy in privacy mode", async () => {
     hideAmounts();
     await open();
