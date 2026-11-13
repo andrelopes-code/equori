@@ -82,7 +82,7 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
     const [fiis, petr4] = within(list).getAllByRole("row");
 
     expect(text(fiis ?? list)).toContain("FIIs");
-    expect(within(fiis ?? list).getByRole("link")).toHaveTextContent(
+    expect(within(fiis ?? list).getByRole("button")).toHaveTextContent(
       "divida entre ativos para ver as cotas",
     );
     expect(within(fiis ?? list).getByText("R$ 1.000,00")).toBeInTheDocument();
@@ -107,17 +107,29 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
     expect(text(row("FIIs"))).toContain("recebe R$ 1.000,00");
   });
 
-  it("enters edit mode from the link of a group without member targets", async () => {
-    await open();
-    const user = userEvent.setup();
-    const links = await screen.findAllByRole("link", {
-      name: "divida entre ativos para ver as cotas",
-    });
+  it.each([
+    { from: 0, where: "the purchase list" },
+    { from: 1, where: "the portfolio against the ideal" },
+  ])(
+    "opens the assets of the group from the action in $where",
+    async ({ from }) => {
+      await open();
+      const user = userEvent.setup();
+      const actions = await screen.findAllByRole("button", {
+        name: "divida entre ativos para ver as cotas",
+      });
 
-    await user.click(links[0] ?? document.body);
+      await user.click(actions[from] ?? document.body);
 
-    expect(
-      await screen.findByRole("button", { name: "Salvar" }),
-    ).toBeInTheDocument();
-  });
+      expect(
+        await screen.findByRole("button", { name: "Salvar" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Ativos (1)", expanded: true }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Adicionar ativo" }),
+      ).toBeVisible();
+    },
+  );
 });

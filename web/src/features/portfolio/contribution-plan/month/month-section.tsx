@@ -28,7 +28,8 @@ interface MonthSectionProps {
   editing: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onAmount: (minor: number) => void;
-  onEdit: () => void;
+  // Enters edit mode with the assets of a group open.
+  onSplit: (group: number) => void;
 }
 
 // Where this month's money goes: the amount, the portfolio before and after it, the verdict
@@ -40,7 +41,7 @@ export function MonthSection({
   editing,
   memberName,
   onAmount,
-  onEdit,
+  onSplit,
 }: MonthSectionProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -101,7 +102,11 @@ export function MonthSection({
           {!editing && !incomplete && <Text>{verdict}</Text>}
 
           {!editing && (
-            <PurchaseList view={view} memberName={memberName} onEdit={onEdit} />
+            <PurchaseList
+              view={view}
+              memberName={memberName}
+              onSplit={onSplit}
+            />
           )}
         </Stack>
       </SectionBody>

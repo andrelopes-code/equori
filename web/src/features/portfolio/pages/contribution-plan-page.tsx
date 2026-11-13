@@ -12,6 +12,7 @@ import {
 import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
@@ -40,6 +41,7 @@ export function ContributionPlanPage() {
   const api = useApi();
   const plan = useQuery(contributionPlanQuery(api));
   const accounts = useQuery(accountsQuery(api));
+  const [initialPanel, setInitialPanel] = useState<number | null>(null);
   const editor = usePlanEditor(plan.data);
   const guard = useLeaveGuard(editor.dirty);
   const { amount, setAmount, view, pending } = useContributionPreview(
@@ -56,6 +58,16 @@ export function ContributionPlanPage() {
       : view;
   const empty = shown?.classes.length === 0 && editor.draft === undefined;
   const nameless = editor.draft?.classes.some((c) => c.name.trim() === "");
+
+  function handleEdit() {
+    setInitialPanel(null);
+    editor.start();
+  }
+
+  function handleSplit(group: number) {
+    setInitialPanel(group);
+    editor.start();
+  }
 
   function handleSave() {
     const money =
@@ -96,10 +108,7 @@ export function ContributionPlanPage() {
 
             <PageHeaderActions>
               {editor.draft === undefined && !empty && (
-                <Button
-                  disabled={plan.data === undefined}
-                  onClick={editor.start}
-                >
+                <Button disabled={plan.data === undefined} onClick={handleEdit}>
                   {t("contributionPlan.edit")}
                 </Button>
               )}
@@ -136,7 +145,7 @@ export function ContributionPlanPage() {
               editing={editor.draft !== undefined}
               memberName={memberName}
               onAmount={setAmount}
-              onEdit={editor.start}
+              onSplit={handleSplit}
             />
           )}
 
@@ -145,7 +154,7 @@ export function ContributionPlanPage() {
               view={shown}
               pending={pending}
               memberName={memberName}
-              onEdit={editor.start}
+              onSplit={handleSplit}
             />
           )}
 
@@ -156,6 +165,7 @@ export function ContributionPlanPage() {
               editor={editor}
               amount={amount}
               pending={pending}
+              initialPanel={initialPanel}
               memberName={memberName}
             />
           )}

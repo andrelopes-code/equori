@@ -89,8 +89,42 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* The assets panel of an open group: its rows take the columns of the list as a subgrid. */
+  .panel {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
+  /* The end of the panel: the split switch with its line, and the add button. One height per
+     state: 3.5rem holds the switch and its line, 2.75rem holds the empty line. */
+  .footer,
+  .footerEmpty {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    padding-inline-start: calc(
+      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
+    );
+    white-space: nowrap;
+  }
+
+  .footer {
+    block-size: 3.5rem;
+  }
+
+  .footerEmpty {
+    block-size: 2.75rem;
+  }
+
   .actions {
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+    gap: var(--slotted-space-2);
   }
 }

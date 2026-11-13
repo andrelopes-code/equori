@@ -89,8 +89,17 @@ async function edit(fetch = api()) {
   );
 }
 
-const menuOf = (name: string) =>
-  screen.findByRole("button", { name: `Ações de ${name}` });
+const groupRow = async (name: string) =>
+  within(
+    (await screen.findByDisplayValue(name)).closest<HTMLElement>(
+      '[role="listitem"]',
+    ) ?? document.body,
+  );
+
+const openAssets = async (name: string) => {
+  const row = await groupRow(name);
+  await userEvent.click(row.getByRole("button", { name: /^Ativos \(/ }));
+};
 
 const target = (name: string) =>
   screen.findByRole("textbox", { name: `Ideal: ${name}` });
@@ -242,38 +251,100 @@ describe("Contribution plan edit mode", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("offers the split, the picker and the removal in the menu of a group", async () => {
+  it("shows the actions of each group in place, without a menu", async () => {
     await edit();
 
-    await userEvent.click(await menuOf("Renda fixa"));
+    const row = await groupRow("Renda fixa");
 
     expect(
-      await screen.findByRole("menuitemcheckbox", {
-        name: "Dividir entre ativos",
+      screen.queryByRole("button", { name: /^Ações de / }),
+    ).not.toBeInTheDocument();
+    expect(row.getByRole("button", { name: "Ativos (1)" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(row.getByRole("button", { name: "Remover grupo" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Adicionar ativo" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens the assets panel of a group with the split switch and its line", async () => {
+    await edit();
+
+    await openAssets("Renda fixa");
+
+    expect(
+      await screen.findByRole("button", { name: "Adicionar ativo" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("switch", {
+        name: "Dividir o ideal do grupo entre os ativos",
       }),
     ).not.toBeChecked();
     expect(
-      screen.getByRole("menuitem", { name: "Adicionar ativo" }),
+      screen.getByText(
+        "Ligado, cada ativo tem seu próprio ideal dentro do grupo.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByText("CDB Inter")).toBeVisible();
+
+    await openAssets("Renda fixa");
+
+    expect(
+      screen.queryByRole("button", { name: "Adicionar ativo" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps one assets panel open at a time and says an empty group has no asset", async () => {
+    await edit();
+
+    await openAssets("Renda fixa");
+    await openAssets("Ações Brasil");
+
+    expect(
+      screen.getByText(
+        "Nenhum ativo neste grupo. Adicione os ativos que você compra para ele.",
+      ),
     ).toBeVisible();
     expect(
-      screen.getByRole("menuitem", { name: "Remover grupo" }),
-    ).toBeVisible();
+      screen.getAllByRole("button", { name: "Adicionar ativo" }),
+    ).toHaveLength(1);
+    expect(screen.queryByText("CDB Inter")).not.toBeInTheDocument();
+    expect(
+      (await groupRow("Renda fixa")).getByRole("button", {
+        name: "Ativos (1)",
+      }),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 
   it("gives a member its own percent field when the group is split", async () => {
     await edit();
+    await openAssets("Renda fixa");
     expect(
       screen.queryByRole("textbox", { name: "Ideal: CDB Inter" }),
     ).not.toBeInTheDocument();
 
-    await userEvent.click(await menuOf("Renda fixa"));
     await userEvent.click(
-      await screen.findByRole("menuitemcheckbox", {
-        name: "Dividir entre ativos",
+      await screen.findByRole("switch", {
+        name: "Dividir o ideal do grupo entre os ativos",
       }),
     );
 
     expect(await target("CDB Inter")).toHaveValue("100,0");
+  });
+
+  it("removes an asset from its panel", async () => {
+    await edit();
+    await openAssets("Renda fixa");
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Remover ativo" }),
+    );
+
+    await waitFor(() => {
+      expect(previews.at(-1)?.classes[0]?.members).toEqual([]);
+    });
   });
 
   it("spreads a class change over the others and previews the draft", async () => {
@@ -305,9 +376,8 @@ describe("Contribution plan edit mode", () => {
   it("gives the target of a removed class to the others", async () => {
     await edit();
 
-    await userEvent.click(await menuOf("FIIs"));
     await userEvent.click(
-      await screen.findByRole("menuitem", { name: "Remover grupo" }),
+      (await groupRow("FIIs")).getByRole("button", { name: "Remover grupo" }),
     );
 
     await waitFor(() => {
@@ -317,9 +387,9 @@ describe("Contribution plan edit mode", () => {
 
   it("disables an entry of the picker that is already in the plan", async () => {
     await edit();
-    await userEvent.click(await menuOf("Renda fixa"));
+    await openAssets("Renda fixa");
     await userEvent.click(
-      await screen.findByRole("menuitem", { name: "Adicionar ativo" }),
+      await screen.findByRole("button", { name: "Adicionar ativo" }),
     );
 
     expect(
@@ -330,9 +400,9 @@ describe("Contribution plan edit mode", () => {
 
   it("filters the picker by the search field", async () => {
     await edit();
-    await userEvent.click(await menuOf("Renda fixa"));
+    await openAssets("Renda fixa");
     await userEvent.click(
-      await screen.findByRole("menuitem", { name: "Adicionar ativo" }),
+      await screen.findByRole("button", { name: "Adicionar ativo" }),
     );
 
     await userEvent.type(

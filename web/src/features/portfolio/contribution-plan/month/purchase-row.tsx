@@ -1,5 +1,5 @@
+import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
-import { Link } from "@slotted/react/link";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 
@@ -15,13 +15,13 @@ const separator = "·";
 
 interface PurchaseRowProps {
   entry: ShoppingEntry;
-  // Enters edit mode, where a group splits its target among its assets.
-  onEdit: () => void;
+  // Enters edit mode with the assets of the entry's group open.
+  onSplit: (group: number) => void;
 }
 
 // A purchase: the name, then the units (or the link to split) in muted text and the cost, which
 // ends on the vertical line of the other rows.
-export function PurchaseRow({ entry, onEdit }: PurchaseRowProps) {
+export function PurchaseRow({ entry, onSplit }: PurchaseRowProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -48,17 +48,15 @@ export function PurchaseRow({ entry, onEdit }: PurchaseRowProps) {
       <TableCell numeric text="nowrap">
         <Inline gap={3} align="center" justify="end" wrap="nowrap">
           {entry.splitToSee === true && (
-            <Text size="sm">
-              <Link
-                href="#"
-                onClick={(event) => {
-                  event.preventDefault();
-                  onEdit();
-                }}
-              >
-                {t("contributionPlan.splitToSee")}
-              </Link>
-            </Text>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                onSplit(entry.group);
+              }}
+            >
+              {t("contributionPlan.splitToSee")}
+            </Button>
           )}
 
           {units !== undefined && (

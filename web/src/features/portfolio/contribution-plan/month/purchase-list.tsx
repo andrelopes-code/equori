@@ -21,13 +21,13 @@ type Money = components["schemas"]["Money"];
 interface PurchaseListProps {
   view: Plan;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
-  // Enters edit mode, where a group splits its target among its assets.
-  onEdit: () => void;
+  // Enters edit mode with the assets of a group open.
+  onSplit: (group: number) => void;
 }
 
 // One row per receiving entry, largest cost first, the leftover and the plain-text copy of the
 // list.
-export function PurchaseList({ view, memberName, onEdit }: PurchaseListProps) {
+export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -68,7 +68,7 @@ export function PurchaseList({ view, memberName, onEdit }: PurchaseListProps) {
         <TableContent aria-label={t("contributionPlan.shopping")}>
           <TableBody>
             {entries.map((entry) => (
-              <PurchaseRow key={entry.name} entry={entry} onEdit={onEdit} />
+              <PurchaseRow key={entry.name} entry={entry} onSplit={onSplit} />
             ))}
           </TableBody>
         </TableContent>

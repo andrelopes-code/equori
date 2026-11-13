@@ -1,4 +1,3 @@
-import { MenuItem } from "@slotted/react/menu";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -6,7 +5,7 @@ import styles from "@/features/portfolio/contribution-plan/editor/edit-list.modu
 import { LockToggle } from "@/features/portfolio/contribution-plan/editor/lock-toggle";
 import { PercentField } from "@/features/portfolio/contribution-plan/editor/percent-field";
 import { ReceivedAmount } from "@/features/portfolio/contribution-plan/editor/received-amount";
-import { RowMenu } from "@/features/portfolio/contribution-plan/editor/row-menu";
+import { RemoveButton } from "@/features/portfolio/contribution-plan/editor/remove-button";
 import { TodayShare } from "@/features/portfolio/contribution-plan/editor/today-share";
 import { TargetSlider } from "@/features/portfolio/contribution-plan/editor/target-slider";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
@@ -86,16 +85,12 @@ export function MemberEditRow({
       <ReceivedAmount amount={member.cost ?? member.amount} />
 
       <div className={styles.actions}>
-        <RowMenu name={name}>
-          <MenuItem
-            tone="danger"
-            onSelect={() => {
-              editor.removeMember(index, at);
-            }}
-          >
-            {t("contributionPlan.removeMember")}
-          </MenuItem>
-        </RowMenu>
+        <RemoveButton
+          label={t("contributionPlan.removeMember")}
+          onRemove={() => {
+            editor.removeMember(index, at);
+          }}
+        />
       </div>
     </div>
   );

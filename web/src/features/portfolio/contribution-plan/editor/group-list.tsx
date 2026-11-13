@@ -18,18 +18,40 @@ interface GroupListProps {
   draft: EditDraft;
   editor: PlanEditor;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
+  // The group whose assets panel opens first.
+  initialPanel: number | null;
 }
 
 // One row per group of the draft, each followed by its assets. One asset picker serves every row.
-export function GroupList({ view, draft, editor, memberName }: GroupListProps) {
+export function GroupList({
+  view,
+  draft,
+  editor,
+  memberName,
+  initialPanel,
+}: GroupListProps) {
   const t = useT();
   const [picking, setPicking] = useState<number | null>(null);
+  const [open, setOpen] = useState<number | null>(initialPanel);
 
   const taken = new Map(
     draft.classes.flatMap((c) =>
       c.members.map((m) => [memberKey(m), c.name] as const),
     ),
   );
+
+  function handleToggle(index: number) {
+    setOpen((now) => (now === index ? null : index));
+  }
+
+  function handleRemove(index: number) {
+    editor.removeClass(index);
+    setOpen((now) => {
+      if (now === null || now < index) return now;
+
+      return now === index ? null : now - 1;
+    });
+  }
 
   return (
     <div
@@ -51,7 +73,14 @@ export function GroupList({ view, draft, editor, memberName }: GroupListProps) {
             edit={edit}
             disabled={draft.classes.every((c, i) => i === index || c.locked)}
             editor={editor}
+            open={open === index}
             memberName={memberName}
+            onToggle={() => {
+              handleToggle(index);
+            }}
+            onRemove={() => {
+              handleRemove(index);
+            }}
             onAddAsset={() => {
               setPicking(index);
             }}

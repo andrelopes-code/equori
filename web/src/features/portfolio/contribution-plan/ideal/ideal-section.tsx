@@ -25,8 +25,8 @@ interface IdealSectionProps {
   view: Plan | undefined;
   pending: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
-  // Enters edit mode, where a group splits its target among its assets.
-  onEdit: () => void;
+  // Enters edit mode with the assets of a group open.
+  onSplit: (group: number) => void;
 }
 
 // One row per group, then the members of an open group (spec, Screen, Portfolio against the
@@ -35,7 +35,7 @@ export function IdealSection({
   view,
   pending,
   memberName,
-  onEdit,
+  onSplit,
 }: IdealSectionProps) {
   const t = useT();
   const [open, setOpen] = useState<readonly number[]>([]);
@@ -95,7 +95,7 @@ export function IdealSection({
                   onToggle={() => {
                     handleToggle(index);
                   }}
-                  onSplit={onEdit}
+                  onSplit={onSplit}
                 />
               ))}
             </div>

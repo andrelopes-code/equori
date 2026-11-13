@@ -23,7 +23,6 @@ export const contributionPlanEn = {
   "contributionPlan.lock": "Keep {name} fixed",
   "contributionPlan.addClass": "Add group",
   "contributionPlan.className": "Group name",
-  "contributionPlan.split": "Split among assets",
   "contributionPlan.addAsset": "Add asset",
   "contributionPlan.pickAccounts": "Investment accounts",
   "contributionPlan.pickInstruments": "Assets",
@@ -127,7 +126,12 @@ export const contributionPlanEn = {
   "contributionPlan.helpLabel": "How to edit",
   "contributionPlan.decrease": "Decrease {name}",
   "contributionPlan.increase": "Increase {name}",
-  "contributionPlan.rowMenu": "Actions for {name}",
+  "contributionPlan.assetsButton": "Assets ({count})",
+  "contributionPlan.splitLong": "Split the group's target among its assets",
+  "contributionPlan.splitHint":
+    "When on, each asset has its own target inside the group.",
+  "contributionPlan.noAssets":
+    "No asset in this group. Add the assets you buy for it.",
   "contributionPlan.removeGroup": "Remove group",
   "contributionPlan.removeMember": "Remove asset",
 } as const;

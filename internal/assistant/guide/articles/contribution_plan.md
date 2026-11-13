@@ -6,7 +6,7 @@ The screen has three parts. This month holds the contribution amount, the portfo
 
 The split only buys. Each group receives the amount that raises its share toward the target, a group above its target receives nothing, and no **Position** is sold. Without an amount, the screen asks for one and shows no purchase.
 
-Edit groups and targets turns the rows into editors. A target moves by typing a percent or by the slider, and the other groups absorb the difference in proportion to their targets. A lock keeps a group or an asset at its target while the others move. Divide among assets gives each asset of a group a target inside the group. Save stores the plan. Discard drops the change. A group without a name blocks the split and the save.
+Edit groups and targets turns the rows into editors. A target moves by typing a percent or by the slider, and the other groups absorb the difference in proportion to their targets. A lock keeps a group or an asset at its target while the others move. The Assets (N) button of a group row expands the assets of the group with Add asset and the switch Split the group's target among its assets, which gives each asset a target inside the group. The Remove group button at the end of the row deletes the group. Save stores the plan. Discard drops the change. A group without a name blocks the split and the save.
 
 A position that no group holds is listed under Outside the plan, with a selector to put it in a group.
 

@@ -27,7 +27,6 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.lock": "Manter {name} fixo",
   "contributionPlan.addClass": "Adicionar grupo",
   "contributionPlan.className": "Nome do grupo",
-  "contributionPlan.split": "Dividir entre ativos",
   "contributionPlan.addAsset": "Adicionar ativo",
   "contributionPlan.pickAccounts": "Contas de investimento",
   "contributionPlan.pickInstruments": "Ativos",
@@ -128,7 +127,12 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.helpLabel": "Como editar",
   "contributionPlan.decrease": "Diminuir {name}",
   "contributionPlan.increase": "Aumentar {name}",
-  "contributionPlan.rowMenu": "Ações de {name}",
+  "contributionPlan.assetsButton": "Ativos ({count})",
+  "contributionPlan.splitLong": "Dividir o ideal do grupo entre os ativos",
+  "contributionPlan.splitHint":
+    "Ligado, cada ativo tem seu próprio ideal dentro do grupo.",
+  "contributionPlan.noAssets":
+    "Nenhum ativo neste grupo. Adicione os ativos que você compra para ele.",
   "contributionPlan.removeGroup": "Remover grupo",
   "contributionPlan.removeMember": "Remover ativo",
 };

@@ -28,6 +28,8 @@ interface EditSectionProps {
   // The contribution amount in minor units; zero or less draws the bar without a split.
   amount: number;
   pending: boolean;
+  // The group whose assets panel opens first.
+  initialPanel: number | null;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
 }
 
@@ -39,6 +41,7 @@ export function EditSection({
   editor,
   amount,
   pending,
+  initialPanel,
   memberName,
 }: EditSectionProps) {
   const t = useT();
@@ -71,6 +74,7 @@ export function EditSection({
             draft={draft}
             editor={editor}
             memberName={memberName}
+            initialPanel={initialPanel}
           />
 
           <div>

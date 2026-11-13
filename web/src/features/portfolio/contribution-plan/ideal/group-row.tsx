@@ -21,7 +21,7 @@ interface GroupRowProps {
   waiting: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onToggle: () => void;
-  onSplit: () => void;
+  onSplit: (group: number) => void;
 }
 
 // A group and, while it is open, its members.
@@ -69,7 +69,13 @@ export function GroupRow({
           amount={groupCost(group)}
           hasAmount={hasAmount}
           waiting={waiting}
-          {...(unitsWaitForSplit(group) ? { onSplit } : {})}
+          {...(unitsWaitForSplit(group)
+            ? {
+                onSplit: () => {
+                  onSplit(index);
+                },
+              }
+            : {})}
         />
       </div>
 

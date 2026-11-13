@@ -1,4 +1,4 @@
-import { Link } from "@slotted/react/link";
+import { Button } from "@slotted/react/button";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -16,7 +16,7 @@ interface EntryOutcomeProps {
   hasAmount: boolean;
   // Whether a missing price stops the split (CN10).
   waiting: boolean;
-  // Set for a group whose units wait for a split among its assets: the link enters edit mode.
+  // Set for a group whose units wait for a split among its assets: the action enters edit mode.
   onSplit?: () => void;
 }
 
@@ -41,17 +41,9 @@ export function EntryOutcome({
       )}
 
       {!waiting && hasAmount && positive(amount) && onSplit !== undefined && (
-        <Text size="sm">
-          <Link
-            href="#"
-            onClick={(event) => {
-              event.preventDefault();
-              onSplit();
-            }}
-          >
-            {t("contributionPlan.splitToSee")}
-          </Link>
-        </Text>
+        <Button size="sm" variant="ghost" onClick={onSplit}>
+          {t("contributionPlan.splitToSee")}
+        </Button>
       )}
 
       {!waiting && hasAmount && positive(amount) && (

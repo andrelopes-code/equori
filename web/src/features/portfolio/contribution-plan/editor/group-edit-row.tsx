@@ -1,20 +1,17 @@
-import { MenuCheckboxItem, MenuItem, MenuSeparator } from "@slotted/react/menu";
-
 import type { components } from "@/api/schema.gen";
 import { ClassNameInput } from "@/features/portfolio/contribution-plan/editor/class-name-input";
 import styles from "@/features/portfolio/contribution-plan/editor/edit-list.module.css";
 import { LockToggle } from "@/features/portfolio/contribution-plan/editor/lock-toggle";
-import { MemberEditRow } from "@/features/portfolio/contribution-plan/editor/member-edit-row";
+import { GroupActions } from "@/features/portfolio/contribution-plan/editor/group-actions";
+import { GroupAssetsPanel } from "@/features/portfolio/contribution-plan/editor/group-assets-panel";
 import { PercentField } from "@/features/portfolio/contribution-plan/editor/percent-field";
 import { ReceivedAmount } from "@/features/portfolio/contribution-plan/editor/received-amount";
-import { RowMenu } from "@/features/portfolio/contribution-plan/editor/row-menu";
 import { TodayShare } from "@/features/portfolio/contribution-plan/editor/today-share";
 import { TargetSlider } from "@/features/portfolio/contribution-plan/editor/target-slider";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import type { EditClass } from "@/features/portfolio/contribution-plan/model/plan-edits";
 import { groupCost } from "@/features/portfolio/contribution-plan/model/shopping-list";
 import { GroupDot } from "@/features/portfolio/contribution-plan/month/group-dot";
-import { useT } from "@/i18n/i18n-provider";
 
 type Group = components["schemas"]["ContributionClass"];
 
@@ -27,7 +24,11 @@ interface GroupEditRowProps {
   // True when every other group is locked.
   disabled: boolean;
   editor: PlanEditor;
+  // Whether the assets panel of this group is open.
+  open: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
+  onToggle: () => void;
+  onRemove: () => void;
   onAddAsset: () => void;
 }
 
@@ -38,10 +39,13 @@ export function GroupEditRow({
   edit,
   disabled,
   editor,
+  open,
   memberName,
+  onToggle,
+  onRemove,
   onAddAsset,
 }: GroupEditRowProps) {
-  const t = useT();
+  const panel = `group-assets-${String(index)}`;
 
   return (
     <>
@@ -87,46 +91,26 @@ export function GroupEditRow({
 
         <ReceivedAmount amount={groupCost(group)} />
 
-        <div className={styles.actions}>
-          <RowMenu name={edit.name}>
-            <MenuCheckboxItem
-              checked={edit.split}
-              onCheckedChange={(on) => {
-                editor.setSplit(index, on);
-              }}
-            >
-              {t("contributionPlan.split")}
-            </MenuCheckboxItem>
-
-            <MenuItem onSelect={onAddAsset}>
-              {t("contributionPlan.addAsset")}
-            </MenuItem>
-
-            <MenuSeparator />
-
-            <MenuItem
-              tone="danger"
-              onSelect={() => {
-                editor.removeClass(index);
-              }}
-            >
-              {t("contributionPlan.removeGroup")}
-            </MenuItem>
-          </RowMenu>
-        </div>
+        <GroupActions
+          count={group.members.length}
+          open={open}
+          controls={panel}
+          onToggle={onToggle}
+          onRemove={onRemove}
+        />
       </div>
 
-      {group.members.map((member, at) => (
-        <MemberEditRow
-          key={`group-${String(index)}-${String(at)}`}
+      {open && (
+        <GroupAssetsPanel
+          id={panel}
           index={index}
-          at={at}
-          member={member}
-          name={memberName(member)}
+          group={group}
           edit={edit}
           editor={editor}
+          memberName={memberName}
+          onAddAsset={onAddAsset}
         />
-      ))}
+      )}
     </>
   );
 }
