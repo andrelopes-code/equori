@@ -12,6 +12,42 @@
     padding: 0;
   }
 
+  /* The header takes the columns of the rows as a subgrid; the percent column holds the buttons
+     around the field, so its name is centred over the field. */
+  .head {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: end;
+    block-size: 1.5rem;
+    white-space: nowrap;
+  }
+
+  .head > * {
+    min-inline-size: 0;
+  }
+
+  /* The name column starts with the colour swatch; the header starts at the name input. */
+  .headName {
+    grid-column: 1;
+    padding-inline-start: calc(var(--slotted-space-4) + 0.5625rem);
+  }
+
+  .headTarget {
+    grid-column: 3;
+    text-align: center;
+  }
+
+  .headToday {
+    grid-column: 5;
+    text-align: end;
+  }
+
+  .headAmount {
+    grid-column: 6;
+    text-align: end;
+  }
+
   /* One height for every row of every state. */
   .row {
     display: grid;

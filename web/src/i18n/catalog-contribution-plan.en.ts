@@ -7,6 +7,8 @@ export const contributionPlanEn = {
   "contributionPlan.edit": "Edit groups and targets",
   "contributionPlan.amount": "Contribution",
   "contributionPlan.colTarget": "Target",
+  "contributionPlan.colGroup": "Group",
+  "contributionPlan.colGets": "Gets",
   "contributionPlan.quantity": "≈ {count} units",
   "contributionPlan.shopping": "Shopping list",
   "contributionPlan.copy": "Copy list",

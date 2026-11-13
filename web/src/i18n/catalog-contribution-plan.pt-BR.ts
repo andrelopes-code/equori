@@ -11,6 +11,8 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.edit": "Editar grupos e ideais",
   "contributionPlan.amount": "Aporte",
   "contributionPlan.colTarget": "Ideal",
+  "contributionPlan.colGroup": "Grupo",
+  "contributionPlan.colGets": "Recebe",
   "contributionPlan.quantity": "≈ {count} un.",
   "contributionPlan.shopping": "Lista de compras",
   "contributionPlan.copy": "Copiar lista",

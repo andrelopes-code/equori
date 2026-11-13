@@ -4,6 +4,7 @@ import type { components } from "@/api/schema.gen";
 import { AssetPickerDialog } from "@/features/portfolio/contribution-plan/editor/asset-picker-dialog";
 import styles from "@/features/portfolio/contribution-plan/editor/edit-list.module.css";
 import { GroupEditRow } from "@/features/portfolio/contribution-plan/editor/group-edit-row";
+import { GroupListHead } from "@/features/portfolio/contribution-plan/editor/group-list-head";
 import { memberKey } from "@/features/portfolio/contribution-plan/editor/picker-entries";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import type { EditDraft } from "@/features/portfolio/contribution-plan/model/plan-edits";
@@ -36,6 +37,8 @@ export function GroupList({ view, draft, editor, memberName }: GroupListProps) {
       aria-label={t("contributionPlan.ideal")}
       className={styles.list}
     >
+      <GroupListHead />
+
       {draft.classes.map((edit, index) => {
         const group = view.classes[index];
         if (group === undefined) return null;

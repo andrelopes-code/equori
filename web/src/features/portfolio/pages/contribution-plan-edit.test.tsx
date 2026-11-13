@@ -135,6 +135,32 @@ describe("Contribution plan edit mode", () => {
     expect(screen.queryByText("hoje")).not.toBeInTheDocument();
   });
 
+  it("names the columns of the group list in edit mode only", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp("/portfolio/contribution-plan", { fetch: api() });
+    await screen.findByText("hoje");
+    expect(screen.queryByText("Grupo")).not.toBeInTheDocument();
+    expect(screen.queryByText("Recebe")).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogPtBR["contributionPlan.edit"],
+      }),
+    );
+    const list = within(
+      await screen.findByRole("list", {
+        name: catalogPtBR["contributionPlan.ideal"],
+      }),
+    );
+
+    expect(
+      ["Grupo", "Ideal", "Hoje", "Recebe"].map((text) => list.getByText(text)),
+    ).toHaveLength(4);
+  });
+
   it("keeps only the amount row in the month card while editing", async () => {
     await edit();
 
