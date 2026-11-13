@@ -102,6 +102,29 @@ describe("Contribution plan edit mode", () => {
     localStorage.removeItem("equori.locale");
   });
 
+  it("draws the bar key only outside edit mode and explains the rule instead", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp("/portfolio/contribution-plan", { fetch: api() });
+    expect(await screen.findByText("hoje")).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogPtBR["contributionPlan.editHint"]),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogPtBR["contributionPlan.edit"],
+      }),
+    );
+
+    expect(
+      await screen.findByText(catalogPtBR["contributionPlan.editHint"]),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("hoje")).not.toBeInTheDocument();
+  });
+
   it("spreads a class change over the others and previews the draft", async () => {
     await edit();
 

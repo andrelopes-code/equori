@@ -17,8 +17,13 @@ const steps = [
   "contributionPlan.howStep3",
 ] as const;
 
-// What the screen does in one sentence, and the three steps behind a collapsed "How it works".
-export function PlanIntro() {
+interface PlanIntroProps {
+  // The three steps start open (a book without a plan).
+  open?: boolean;
+}
+
+// What the screen does in one sentence, and the three steps behind "How it works".
+export function PlanIntro({ open = false }: PlanIntroProps) {
   const t = useT();
 
   return (
@@ -27,7 +32,7 @@ export function PlanIntro() {
         {t("contributionPlan.intro")}
       </Text>
 
-      <Accordion variant="plain" size="sm">
+      <Accordion variant="plain" size="sm" defaultValue={open ? ["how"] : []}>
         <Collapsible value="how">
           <CollapsibleHeader>
             <CollapsibleTrigger>{t("contributionPlan.how")}</CollapsibleTrigger>

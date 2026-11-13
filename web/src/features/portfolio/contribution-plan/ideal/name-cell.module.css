@@ -15,8 +15,9 @@
     inline-size: var(--slotted-space-9);
   }
 
-  .member {
-    padding-inline-start: var(--slotted-space-9);
+  /* The inset of the text inside a small text field; no token holds it. */
+  .inset {
+    padding-inline-start: 0.5625rem;
   }
 
   .label {

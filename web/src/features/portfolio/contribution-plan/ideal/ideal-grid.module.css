@@ -29,10 +29,6 @@
     min-inline-size: 0;
   }
 
-  .member {
-    background: var(--slotted-surface-sunken);
-  }
-
   .editRow {
     display: flex;
     grid-column: 1 / -1;

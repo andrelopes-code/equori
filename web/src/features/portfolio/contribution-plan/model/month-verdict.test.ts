@@ -134,4 +134,10 @@ describe("monthVerdict", () => {
 
     expect(monthVerdict(view, deps)).toBe("Nenhuma compra para este valor");
   });
+
+  it("asks for a name while a group has none, before any other sentence", () => {
+    expect(monthVerdict(demo, { ...deps, nameMissing: true })).toBe(
+      "Dê um nome a cada grupo para ver a divisão.",
+    );
+  });
 });

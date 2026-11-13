@@ -20,7 +20,6 @@ import { contributionPlanQuery } from "@/features/portfolio/api";
 import { IdealSection } from "@/features/portfolio/contribution-plan/ideal/ideal-section";
 import { ContributionEmpty } from "@/features/portfolio/contribution-plan/states/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/editor/contribution-save-bar";
-import { IncompleteNotice } from "@/features/portfolio/contribution-plan/states/incomplete-notice";
 import { MonthSection } from "@/features/portfolio/contribution-plan/month/month-section";
 import { PlanIntro } from "@/features/portfolio/contribution-plan/intro/plan-intro";
 import { LeaveDialog } from "@/features/portfolio/contribution-plan/editor/leave-dialog";
@@ -110,7 +109,7 @@ export function ContributionPlanPage() {
 
       <PageBody>
         <Stack gap={6}>
-          <PlanIntro />
+          <PlanIntro key={String(empty)} open={empty} />
 
           {plan.isError && (
             <PlanLoadFailed
@@ -124,8 +123,6 @@ export function ContributionPlanPage() {
             <FormNotice>{errorText(editor.error, t)}</FormNotice>
           )}
 
-          {shown !== undefined && <IncompleteNotice view={shown} />}
-
           {shown !== undefined && empty && (
             <ContributionEmpty view={shown} onStart={editor.startFrom} />
           )}
@@ -135,6 +132,7 @@ export function ContributionPlanPage() {
               view={shown}
               amount={amount}
               pending={pending}
+              nameless={nameless === true}
               memberName={memberName}
               onAmount={setAmount}
             />

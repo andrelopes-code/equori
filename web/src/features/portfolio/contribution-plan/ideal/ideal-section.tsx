@@ -9,6 +9,7 @@ import {
 } from "@slotted/react/section";
 import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
@@ -63,13 +64,21 @@ export function IdealSection({
           <SectionHeading>{t("contributionPlan.ideal")}</SectionHeading>
         </SectionTitle>
 
-        <SectionActions>
-          <BarKey withAfter={withAfter} />
-        </SectionActions>
+        {editor.draft === undefined && (
+          <SectionActions>
+            <BarKey withAfter={withAfter} />
+          </SectionActions>
+        )}
       </SectionHeader>
 
       <SectionBody>
         <Stack gap={3}>
+          {editor.draft !== undefined && (
+            <Text size="sm" tone="muted">
+              {t("contributionPlan.editHint")}
+            </Text>
+          )}
+
           <NameRequiredMessage shown={nameless === true} />
 
           {view === undefined && (

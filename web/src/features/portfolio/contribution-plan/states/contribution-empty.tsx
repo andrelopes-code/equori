@@ -1,10 +1,5 @@
 import { Button, ButtonLink } from "@slotted/react/button";
-import {
-  ResultState,
-  ResultStateActions,
-  ResultStateContent,
-  ResultStateTitle,
-} from "@slotted/react/result-state";
+import { Inline } from "@slotted/react/inline";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -27,7 +22,7 @@ interface ContributionEmptyProps {
 }
 
 // A book without a plan: the two ways to start one (CN12), and the first purchase when the book
-// holds no position either.
+// holds no position either. The page draws the explanation above.
 export function ContributionEmpty({ view, onStart }: ContributionEmptyProps) {
   const t = useT();
   const api = useApi();
@@ -55,36 +50,30 @@ export function ContributionEmpty({ view, onStart }: ContributionEmptyProps) {
   }
 
   return (
-    <ResultState status="empty" reach="section">
-      <ResultStateContent>
-        <ResultStateTitle>{t("contributionPlan.emptyBody")}</ResultStateTitle>
-      </ResultStateContent>
+    <Inline gap={3} align="center" wrap="wrap">
+      <Button
+        disabled={!held || instruments.data === undefined}
+        onClick={handlePortfolio}
+      >
+        {t("contributionPlan.startPortfolio")}
+      </Button>
 
-      <ResultStateActions>
-        <Button
-          disabled={!held || instruments.data === undefined}
-          onClick={handlePortfolio}
+      <Button variant="outline" tone="secondary" onClick={handleScratch}>
+        {t("contributionPlan.startScratch")}
+      </Button>
+
+      {!held && (
+        <ButtonLink
+          variant="ghost"
+          tone="secondary"
+          render={routeTo({
+            to: "/transactions/new",
+            search: { kind: "trade" },
+          })}
         >
-          {t("contributionPlan.startPortfolio")}
-        </Button>
-
-        <Button variant="outline" tone="secondary" onClick={handleScratch}>
-          {t("contributionPlan.startScratch")}
-        </Button>
-
-        {!held && (
-          <ButtonLink
-            variant="ghost"
-            tone="secondary"
-            render={routeTo({
-              to: "/transactions/new",
-              search: { kind: "trade" },
-            })}
-          >
-            {t("contributionPlan.firstPurchase")}
-          </ButtonLink>
-        )}
-      </ResultStateActions>
-    </ResultState>
+          {t("contributionPlan.firstPurchase")}
+        </ButtonLink>
+      )}
+    </Inline>
   );
 }

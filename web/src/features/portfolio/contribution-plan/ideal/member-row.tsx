@@ -49,12 +49,8 @@ export function MemberRow({
   const target = edit?.split === true ? member.target_bp : undefined;
 
   return (
-    <div
-      role="listitem"
-      id={id}
-      className={[styles.row, styles.member].join(" ")}
-    >
-      <NameCell name={name} position={position} member />
+    <div role="listitem" id={id} className={styles.row}>
+      <NameCell name={name} position={position} inset={edit !== undefined} />
 
       {edit !== undefined && target !== undefined ? (
         <TargetSlider

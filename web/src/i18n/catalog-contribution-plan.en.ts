@@ -35,15 +35,9 @@ export const contributionPlanEn = {
   "contributionPlan.noPrice": "no price",
   "contributionPlan.pickerSearch": "Search assets",
   "contributionPlan.chooseClass": "Choose a group",
-  "contributionPlan.emptyBody":
-    "Set the target of each group once and each contribution is divided to bring the portfolio closer to it.",
   "contributionPlan.startPortfolio": "Start from my portfolio",
   "contributionPlan.startScratch": "Start from scratch",
   "contributionPlan.firstPurchase": "Record the first purchase",
-  "contributionPlan.incomplete":
-    "No split while these assets have no value today:",
-  "contributionPlan.missingPrice": "{name}: no price",
-  "contributionPlan.missingRate": "{name}: no exchange rate",
   "problem.contribution_target_sum": "The group targets must add up to 100%.",
   "problem.contribution_member_target_sum":
     "The asset targets of a group must add up to 100%.",
@@ -76,6 +70,9 @@ export const contributionPlanEn = {
     "{name} has no price; without it the contribution is not split.",
   "contributionPlan.verdictMissingRate":
     "{name} has no exchange rate; without it the contribution is not split.",
+  "contributionPlan.verdictNameMissing": "Name every group to see the split.",
+  "contributionPlan.editHint":
+    "Drag or type the target of each group. The others adjust to add up to 100%. The lock keeps a group fixed.",
   "contributionPlan.ideal": "Portfolio against the target",
   "contributionPlan.keyToday": "today",
   "contributionPlan.keyAfter": "with this contribution",

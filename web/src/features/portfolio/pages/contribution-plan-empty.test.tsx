@@ -165,6 +165,42 @@ describe("Contribution plan without a plan", () => {
     ).toHaveLength(1);
   });
 
+  it("explains the screen with the three steps open above the two actions", async () => {
+    await open(withPositions);
+
+    expect(
+      await screen.findByRole("button", {
+        name: catalogPtBR["contributionPlan.how"],
+        expanded: true,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogPtBR["contributionPlan.intro"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(catalogPtBR["contributionPlan.howStep1"]),
+    ).toBeVisible();
+  });
+
+  it("says in the verdict that a blank group name blocks the split", async () => {
+    await open(withPositions);
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogPtBR["contributionPlan.startScratch"],
+      }),
+    );
+
+    expect(
+      await screen.findByText(
+        catalogPtBR["contributionPlan.verdictNameMissing"],
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(catalogPtBR["contributionPlan.verdictNoAmount"]),
+    ).not.toBeInTheDocument();
+  });
+
   it("links to the first purchase when the book holds no position", async () => {
     await open(noPlan);
 
@@ -188,19 +224,20 @@ describe("Contribution plan with a missing valuation", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("S402 CN10: lists each missing entry as a link to its instrument and waits for the price in words, never a dash", async () => {
+  it("S402 CN10: names each missing entry once in the verdict, as a link to its instrument, and waits for the price in words, never a dash", async () => {
     await open(incomplete);
 
-    const price = await screen.findByRole("link", {
-      name: "KNRI11: sem cotação",
-    });
+    const price = await screen.findByRole("link", { name: "KNRI11" });
     expect(price).toHaveAttribute("href", "/instruments/KNRI11");
-    expect(
-      screen.getByRole("link", { name: "USD: sem câmbio" }),
-    ).toHaveAttribute("href", "/instruments/USD");
-    expect(
-      screen.getByText(catalogPtBR["contributionPlan.incomplete"]),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "USD" })).toHaveAttribute(
+      "href",
+      "/instruments/USD",
+    );
+    expect(price.closest("p, span, div")).toHaveTextContent(
+      "KNRI11 está sem cotação; sem ela o aporte não é dividido. USD está sem câmbio; sem ele o aporte não é dividido.",
+    );
+    expect(screen.queryByText(/Sem divisão enquanto/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/sem cotação/)).toBeInTheDocument();
 
     const list = await screen.findByRole("list", {
       name: catalogPtBR["contributionPlan.ideal"],

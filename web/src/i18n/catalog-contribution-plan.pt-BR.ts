@@ -39,15 +39,9 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.noPrice": "sem cotação",
   "contributionPlan.pickerSearch": "Buscar ativos",
   "contributionPlan.chooseClass": "Escolher grupo",
-  "contributionPlan.emptyBody":
-    "Defina uma vez o ideal de cada grupo e cada aporte é dividido para aproximar a carteira dele.",
   "contributionPlan.startPortfolio": "Partir da minha carteira",
   "contributionPlan.startScratch": "Começar do zero",
   "contributionPlan.firstPurchase": "Registrar a primeira compra",
-  "contributionPlan.incomplete":
-    "Sem divisão enquanto estes ativos não têm valor hoje:",
-  "contributionPlan.missingPrice": "{name}: sem cotação",
-  "contributionPlan.missingRate": "{name}: sem câmbio",
   "problem.contribution_target_sum": "Os ideais dos grupos devem somar 100%.",
   "problem.contribution_member_target_sum":
     "Os ideais dos ativos de um grupo devem somar 100%.",
@@ -78,6 +72,10 @@ export const contributionPlanPtBR: Record<
     "{name} está sem cotação; sem ela o aporte não é dividido.",
   "contributionPlan.verdictMissingRate":
     "{name} está sem câmbio; sem ele o aporte não é dividido.",
+  "contributionPlan.verdictNameMissing":
+    "Dê um nome a cada grupo para ver a divisão.",
+  "contributionPlan.editHint":
+    "Arraste ou digite o ideal de cada grupo. Os outros se ajustam para somar 100%. O cadeado mantém um grupo fixo.",
   "contributionPlan.ideal": "Carteira frente ao ideal",
   "contributionPlan.keyToday": "hoje",
   "contributionPlan.keyAfter": "com este aporte",

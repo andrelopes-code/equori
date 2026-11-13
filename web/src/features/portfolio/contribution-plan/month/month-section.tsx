@@ -10,6 +10,7 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
+import { IncompleteVerdict } from "@/features/portfolio/contribution-plan/month/incomplete-verdict";
 import { PurchaseList } from "@/features/portfolio/contribution-plan/month/purchase-list";
 import { monthVerdict } from "@/features/portfolio/contribution-plan/model/month-verdict";
 import { useScale } from "@/features/setup";
@@ -23,6 +24,8 @@ interface MonthSectionProps {
   view: Plan;
   amount: number;
   pending: boolean;
+  // A group without a name blocks the split.
+  nameless: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onAmount: (minor: number) => void;
 }
@@ -33,6 +36,7 @@ export function MonthSection({
   view,
   amount,
   pending,
+  nameless,
   memberName,
   onAmount,
 }: MonthSectionProps) {
@@ -57,7 +61,9 @@ export function MonthSection({
     list: (items) =>
       new Intl.ListFormat(tag, { type: "conjunction" }).format(items),
     memberName,
+    nameMissing: nameless,
   });
+  const incomplete = view.status === "incomplete" && !nameless;
 
   return (
     <Section size="lg" ground="surface" aria-busy={pending}>
@@ -89,7 +95,11 @@ export function MonthSection({
             </Text>
           </Inline>
 
-          <Text>{verdict}</Text>
+          {incomplete ? (
+            <IncompleteVerdict view={view} />
+          ) : (
+            <Text>{verdict}</Text>
+          )}
 
           <PurchaseList view={view} memberName={memberName} />
         </Stack>
