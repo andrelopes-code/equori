@@ -207,7 +207,7 @@ func (s *Service) benchmark(
 		end = w.until
 	}
 
-	start, ends, _, err := s.pieces(ctx, p, w.returnFrom, end)
+	start, ends, _, err := s.pieces(ctx, p, p.comparedFrom(w, b), end)
 	if err != nil {
 		return err
 	}
@@ -218,6 +218,17 @@ func (s *Service) benchmark(
 	p.report.Benchmark = &b
 
 	return nil
+}
+
+// comparedFrom is the first day of the return compared with the index. A tree without recorded
+// yield is compared over the days the index has rates, so an index whose history starts after the
+// period leaves the earlier days out of both returns (return honesty HR11).
+func (p period) comparedFrom(w window, b Benchmark) time.Time {
+	if !p.recorded && b.From.After(w.returnFrom) {
+		return b.From
+	}
+
+	return w.returnFrom
 }
 
 // firstRateDay is the date of the first rate dated in the period; zero when there is none.

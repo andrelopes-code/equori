@@ -14,6 +14,7 @@ Corrections to the section "How it performed" of `/portfolio` after the owner re
 | F6 | The reason "Só um crédito de rendimento registrado" shows on an account with 13 monthly credits. | Each deposit between two month-end credits restarts the comparison (R20); one credit follows the last restart. |
 | F7 | No period above 366 days. | `MaxReturnDays = 366`. |
 | F8 | From 2023-11-14 to 2024-11-13 the portfolio grows from 19,631.81 to 37,888.09 with 1,100.00 of flows: 87.36%. | The monthly fundings from the opening balances account are no flow: an external flow counts only asset and liability accounts. |
+| F9 | From 2023-11-14 to 2024-11-13 the bars compare the portfolio over 365 days with the CDI over 68 days. | The stored CDI rates start on 2024-08-12; the compared return of a tree without recorded yield starts at the period's start. |
 
 ## Rules
 
@@ -36,6 +37,8 @@ Corrections to the section "How it performed" of `/portfolio` after the owner re
 **HR9 Layout.** The money panel takes the whole width when no comparison exists.
 
 **HR10 Equity flows.** A posting on an equity account outside the tree (opening balances, adjustments, transfers in transit) is an external flow, as an asset or liability posting is. Amends investments design 4.3.
+
+**HR11 Index history.** The return compared with an index, for a tree without recorded yield, starts on the first day the comparison has a rate: an index whose stored history starts after the period leaves the earlier days out of both bars.
 
 ## Cross-cutting questions
 

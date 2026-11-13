@@ -1074,6 +1074,30 @@ func TestS326SmallBalance(t *testing.T) {
 	}
 }
 
+// Return honesty HR11: an index whose rates start after the period compares the tree over the
+// days it has rates; the dividend of the 5th, before the first rate, stays out of the comparison.
+func TestIndexHistoryShorterThanThePeriod(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{
+		cdi:     weekdays("2026-01-07", "2026-01-09"),
+		credits: []string{},
+		empty:   true,
+	})
+	cash := b.stockBrokerage(t, "30")
+	dividends := b.h.Account("Dividends", "income", "", nil)
+	b.h.Record("2026-01-05", apitest.Posting(cash, 1000), apitest.Posting(dividends, -1000))
+
+	r := b.compared(t, "2026-01-02", "2026-01-09", "")
+	if r.PeriodBP == nil || *r.PeriodBP != 333 || r.Benchmark == nil {
+		t.Fatalf("report = %+v", r)
+	}
+
+	got := *r.Benchmark
+	if got.From != "2026-01-07" || got.ReturnBP == nil || *got.ReturnBP != 0 {
+		t.Fatalf("benchmark = %+v", got)
+	}
+}
+
 // S327: a dividend paid into a brokerage is income of a security tree: section 4.3 applies, the
 // profile is market and no yield is recorded (R19 covers cash trees only).
 func TestS327BrokerageWithADividend(t *testing.T) {
