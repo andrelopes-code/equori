@@ -66,6 +66,8 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.portfolioAfter":
     "Carteira hoje {today} · depois do aporte {after}",
   "contributionPlan.verdictApply": "Aplique {list}.",
+  "contributionPlan.verdictMany":
+    "Aplique {amount} em {count} compras, listadas abaixo.",
   "contributionPlan.verdictItem": "{amount} em {name}",
   "contributionPlan.verdictRest": "Os demais grupos não recebem neste mês.",
   "contributionPlan.verdictNoAmount":
@@ -89,6 +91,18 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.statusAboveMember":
     "acima do ideal (hoje {today}, ideal {ideal} do grupo)",
   "contributionPlan.statusAtMember": "no ideal ({ideal} do grupo)",
+  "contributionPlan.statusBelowAfter":
+    "abaixo do ideal (hoje {today}, depois {after}, ideal {ideal})",
+  "contributionPlan.statusAboveAfter":
+    "acima do ideal (hoje {today}, depois {after}, ideal {ideal})",
+  "contributionPlan.statusAtAfter":
+    "no ideal (hoje {today}, depois {after}, ideal {ideal})",
+  "contributionPlan.statusBelowAfterMember":
+    "abaixo do ideal (hoje {today}, depois {after}, ideal {ideal} do grupo)",
+  "contributionPlan.statusAboveAfterMember":
+    "acima do ideal (hoje {today}, depois {after}, ideal {ideal} do grupo)",
+  "contributionPlan.statusAtAfterMember":
+    "no ideal (hoje {today}, depois {after}, ideal {ideal} do grupo)",
   "contributionPlan.statusNoIdeal": "sem ideal próprio (hoje {today} do grupo)",
   "contributionPlan.outcomeReceives": "recebe {amount}",
   "contributionPlan.outcomeNone": "não recebe neste mês",

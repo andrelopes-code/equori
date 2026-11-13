@@ -29,6 +29,55 @@ describe("groupStatus", () => {
 describe("statusText", () => {
   it.each([
     {
+      today: 7400,
+      after: 1600,
+      ideal: 2000,
+      member: false,
+      want: "abaixo do ideal (hoje 74%, depois 16%, ideal 20%)",
+    },
+    {
+      today: 1000,
+      after: 3000,
+      ideal: 2000,
+      member: false,
+      want: "acima do ideal (hoje 10%, depois 30%, ideal 20%)",
+    },
+    {
+      today: 7400,
+      after: 2010,
+      ideal: 2000,
+      member: false,
+      want: "no ideal (hoje 74%, depois 20%, ideal 20%)",
+    },
+    {
+      today: 0,
+      after: 3000,
+      ideal: 5000,
+      member: true,
+      want: "abaixo do ideal (hoje 0%, depois 30%, ideal 50% do grupo)",
+    },
+    {
+      today: 9000,
+      after: 6000,
+      ideal: 5000,
+      member: true,
+      want: "acima do ideal (hoje 90%, depois 60%, ideal 50% do grupo)",
+    },
+    {
+      today: 9000,
+      after: 5010,
+      ideal: 5000,
+      member: true,
+      want: "no ideal (hoje 90%, depois 50%, ideal 50% do grupo)",
+    },
+    {
+      today: 10000,
+      after: 8000,
+      ideal: undefined,
+      member: true,
+      want: "sem ideal próprio (hoje 100% do grupo)",
+    },
+    {
       today: 0,
       ideal: 4000,
       member: false,
@@ -66,7 +115,12 @@ describe("statusText", () => {
       member: false,
       want: "abaixo do ideal (hoje 7,4%, ideal 20%)",
     },
-  ])("writes $today of $ideal as $want", ({ today, ideal, member, want }) => {
-    expect(statusText({ today, ideal, member, t, tag: "pt-BR" })).toBe(want);
-  });
+  ])(
+    "writes $today then $after of $ideal as $want",
+    ({ today, after, ideal, member, want }) => {
+      expect(statusText({ today, after, ideal, member, t, tag: "pt-BR" })).toBe(
+        want,
+      );
+    },
+  );
 });

@@ -63,6 +63,8 @@ export const contributionPlanEn = {
   "contributionPlan.portfolioAfter":
     "Portfolio today {today} · after this contribution {after}",
   "contributionPlan.verdictApply": "Apply {list}.",
+  "contributionPlan.verdictMany":
+    "Put {amount} into {count} purchases, listed below.",
   "contributionPlan.verdictItem": "{amount} to {name}",
   "contributionPlan.verdictRest":
     "The other groups receive nothing this month.",
@@ -87,6 +89,18 @@ export const contributionPlanEn = {
   "contributionPlan.statusAboveMember":
     "above the target (today {today}, target {ideal} of the group)",
   "contributionPlan.statusAtMember": "on target ({ideal} of the group)",
+  "contributionPlan.statusBelowAfter":
+    "below the target (today {today}, after {after}, target {ideal})",
+  "contributionPlan.statusAboveAfter":
+    "above the target (today {today}, after {after}, target {ideal})",
+  "contributionPlan.statusAtAfter":
+    "on target (today {today}, after {after}, target {ideal})",
+  "contributionPlan.statusBelowAfterMember":
+    "below the target (today {today}, after {after}, target {ideal} of the group)",
+  "contributionPlan.statusAboveAfterMember":
+    "above the target (today {today}, after {after}, target {ideal} of the group)",
+  "contributionPlan.statusAtAfterMember":
+    "on target (today {today}, after {after}, target {ideal} of the group)",
   "contributionPlan.statusNoIdeal":
     "no target of its own (today {today} of the group)",
   "contributionPlan.outcomeReceives": "gets {amount}",

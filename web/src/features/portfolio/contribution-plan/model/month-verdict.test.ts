@@ -91,6 +91,20 @@ describe("monthVerdict", () => {
     expect(monthVerdict(view, deps)).toBe("Aplique R$ 5.000,00 em BBAS3.");
   });
 
+  it("counts the purchases from three receivers on", () => {
+    const view: Plan = {
+      ...demo,
+      classes: demo.classes.map((c, i) => ({
+        ...c,
+        amount: brl([100000, 250000, 150000][i] ?? 0),
+      })),
+    };
+
+    expect(monthVerdict(view, deps)).toBe(
+      "Aplique R$ 5.000,00 em 3 compras, listadas abaixo.",
+    );
+  });
+
   it("writes no rest clause when every group receives money", () => {
     const view: Plan = {
       ...demo,

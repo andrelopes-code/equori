@@ -27,7 +27,12 @@ const plan = (amount: boolean) => ({
   total: brl(1800000),
   drift_bp: 0,
   classes: [
-    cls("Renda fixa", 4000, 5555, amount ? { amount: brl(0) } : {}),
+    cls(
+      "Renda fixa",
+      4000,
+      5555,
+      amount ? { amount: brl(0), after_share_bp: 4600 } : {},
+    ),
     cls("Ações exterior", 2000, 557, {
       ...(amount ? { amount: brl(300000), after_share_bp: 1818 } : {}),
     }),
@@ -89,10 +94,10 @@ describe("Contribution plan, portfolio against the ideal", () => {
     const list = await open(plan(true));
 
     expect(rowOf(list, "Renda fixa")).toHaveTextContent(
-      "acima do ideal (hoje 56%, ideal 40%)",
+      "acima do ideal (hoje 56%, depois 46%, ideal 40%)",
     );
     expect(rowOf(list, "Ações exterior")).toHaveTextContent(
-      "abaixo do ideal (hoje 5,6%, ideal 20%)",
+      "abaixo do ideal (hoje 5,6%, depois 18%, ideal 20%)",
     );
     expect(
       within(list).getByRole("img", {

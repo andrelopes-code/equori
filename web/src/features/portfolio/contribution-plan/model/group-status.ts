@@ -6,6 +6,8 @@ export type GroupStatus = "below" | "above" | "at" | "noIdeal";
 interface StatusTextInput {
   // Basis points.
   today: number;
+  // The share after this contribution; undefined without an amount.
+  after?: number | undefined;
   ideal: number | undefined;
   // A member states its shares inside its group.
   member: boolean;
@@ -28,14 +30,26 @@ export function groupStatus(
 
 // The status of an entry in words (spec, Screen, Portfolio against the ideal).
 export function statusText(input: StatusTextInput): string {
-  const { today, ideal, member, t, tag } = input;
-  const status = groupStatus(today, ideal);
+  const { today, after, ideal, member, t, tag } = input;
+  const compared = after ?? today;
+  const status = groupStatus(compared, ideal);
   const vars = {
     today: shareText(today / 10000, tag),
+    after: shareText(compared / 10000, tag),
     ideal: shareText((ideal ?? 0) / 10000, tag),
   };
 
   if (status === "noIdeal") return t("contributionPlan.statusNoIdeal", vars);
+
+  if (after !== undefined) {
+    const key = {
+      below: "contributionPlan.statusBelowAfter",
+      above: "contributionPlan.statusAboveAfter",
+      at: "contributionPlan.statusAtAfter",
+    } as const;
+
+    return member ? t(`${key[status]}Member`, vars) : t(key[status], vars);
+  }
 
   const key = {
     below: "contributionPlan.statusBelow",

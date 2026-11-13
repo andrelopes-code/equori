@@ -58,7 +58,12 @@ export function GroupRow({
           position={index}
         />
 
-        <EntryStatus today={today} ideal={group.target_bp} member={false} />
+        <EntryStatus
+          today={today}
+          after={hasAmount && !waiting ? group.after_share_bp : undefined}
+          ideal={group.target_bp}
+          member={false}
+        />
 
         <EntryOutcome
           amount={groupCost(group)}

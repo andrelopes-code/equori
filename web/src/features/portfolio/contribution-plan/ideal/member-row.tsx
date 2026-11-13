@@ -41,7 +41,12 @@ export function MemberRow({
         position={position}
       />
 
-      <EntryStatus today={today} ideal={member.target_bp} member />
+      <EntryStatus
+        today={today}
+        after={hasAmount && !waiting ? member.after_share_bp : undefined}
+        ideal={member.target_bp}
+        member
+      />
 
       <EntryOutcome
         amount={member.cost ?? member.amount}
