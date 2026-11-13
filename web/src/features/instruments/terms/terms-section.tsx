@@ -5,7 +5,7 @@ import {
   DescriptionListTerm,
 } from "@slotted/react/description-list";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -22,6 +22,13 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type Terms = components["schemas"]["FixedIncomeTerms"];
 
@@ -71,39 +78,46 @@ export function TermsSection({ code, terms, quote }: TermsSectionProps) {
       : accruedBp(terms.face_value, scale(quote), latest.value);
 
   return (
-    <Stack gap={3}>
-      <Heading level={2} size="md">
-        {t("terms.title")}
-      </Heading>
-      {terms === null ? (
-        <Text tone="muted">{t("terms.none")}</Text>
-      ) : (
-        <>
-          <TermProgress terms={terms} />
-          {accrued !== null && latest != null && (
-            <Text size="sm" tone="muted">
-              {t("terms.accrued", {
-                price: price.text(latest.value),
-                percent: fmt.hidden
-                  ? MASK
-                  : formatSignedBasisPoints(accrued, locale),
-              })}
-            </Text>
+    <Section size="lg">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("terms.title")}</SectionHeading>
+        </SectionTitle>
+      </SectionHeader>
+
+      <SectionBody>
+        <Stack gap={3}>
+          {terms === null ? (
+            <Text tone="muted">{t("terms.none")}</Text>
+          ) : (
+            <>
+              <TermProgress terms={terms} />
+              {accrued !== null && latest != null && (
+                <Text size="sm" tone="muted">
+                  {t("terms.accrued", {
+                    price: price.text(latest.value),
+                    percent: fmt.hidden
+                      ? MASK
+                      : formatSignedBasisPoints(accrued, locale),
+                  })}
+                </Text>
+              )}
+              <DescriptionList variant="ruled" aria-label={t("terms.facts")}>
+                {rows
+                  .filter(([, value]) => value !== "")
+                  .map(([term, value]) => (
+                    <DescriptionListItem key={term}>
+                      <DescriptionListTerm>{term}</DescriptionListTerm>
+                      <DescriptionListDescription>
+                        {value}
+                      </DescriptionListDescription>
+                    </DescriptionListItem>
+                  ))}
+              </DescriptionList>
+            </>
           )}
-          <DescriptionList variant="ruled" aria-label={t("terms.facts")}>
-            {rows
-              .filter(([, value]) => value !== "")
-              .map(([term, value]) => (
-                <DescriptionListItem key={term}>
-                  <DescriptionListTerm>{term}</DescriptionListTerm>
-                  <DescriptionListDescription>
-                    {value}
-                  </DescriptionListDescription>
-                </DescriptionListItem>
-              ))}
-          </DescriptionList>
-        </>
-      )}
-    </Stack>
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

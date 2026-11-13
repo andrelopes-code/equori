@@ -1,5 +1,12 @@
+import {
+  Section,
+  SectionBody,
+  SectionDescription,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { CandidateCard } from "@/features/accounts/candidates/candidate-card";
@@ -29,25 +36,34 @@ export function CandidateList({
   const candidates = record.scored_candidates ?? [];
 
   return (
-    <Stack gap={3}>
-      <Heading level={3} size="sm">
-        {t("batch.candidates", { count: candidates.length })}
-      </Heading>
-      <Text size="sm" tone="muted">
-        {t("batch.bands", { link: linkScore, review: reviewScore })}
-      </Text>
-      {candidates.map((candidate) => (
-        <CandidateCard
-          key={candidate.transaction_id}
-          candidate={candidate}
-          accountId={record.account_id}
-          scale={scale}
-          busy={pending === candidate.transaction_id}
-          onMatch={() => {
-            onMatch(candidate.transaction_id);
-          }}
-        />
-      ))}
-    </Stack>
+    <Section size="sm" level="3">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>
+            {t("batch.candidates", { count: candidates.length })}
+          </SectionHeading>
+          <SectionDescription>
+            {t("batch.bands", { link: linkScore, review: reviewScore })}
+          </SectionDescription>
+        </SectionTitle>
+      </SectionHeader>
+
+      <SectionBody>
+        <Stack gap={3}>
+          {candidates.map((candidate) => (
+            <CandidateCard
+              key={candidate.transaction_id}
+              candidate={candidate}
+              accountId={record.account_id}
+              scale={scale}
+              busy={pending === candidate.transaction_id}
+              onMatch={() => {
+                onMatch(candidate.transaction_id);
+              }}
+            />
+          ))}
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

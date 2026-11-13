@@ -1,12 +1,16 @@
-import { Stack } from "@slotted/react/stack";
-import { Heading } from "@slotted/react/typography";
-
 import type { components } from "@/api/schema.gen";
 import { InstrumentDataLayer } from "@/features/instruments/data/instrument-data-layer";
 import { sourceLabel } from "@/features/instruments/model/instrument-labels";
 import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { DetailDialog } from "@/ui/dialogs/detail-dialog";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type Instrument = components["schemas"]["Instrument"];
 
@@ -49,24 +53,28 @@ export function InstrumentData({
         );
 
   return (
-    <Stack gap={3}>
-      <Heading level={2} size="md">
-        {t("instrument.data.title")}
-      </Heading>
+    <Section size="lg">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("instrument.data.title")}</SectionHeading>
+        </SectionTitle>
+      </SectionHeader>
 
-      <DetailDialog
-        title={t("instrument.data.title")}
-        description={t("instrument.data.layer.description")}
-        summary={summary}
-        triggerLabel={t("instrument.data.open")}
-      >
-        <InstrumentDataLayer
-          instrument={instrument}
-          coverage={coverage}
-          quote={quote}
-          onRecord={onRecord}
-        />
-      </DetailDialog>
-    </Stack>
+      <SectionBody>
+        <DetailDialog
+          title={t("instrument.data.title")}
+          description={t("instrument.data.layer.description")}
+          summary={summary}
+          triggerLabel={t("instrument.data.open")}
+        >
+          <InstrumentDataLayer
+            instrument={instrument}
+            coverage={coverage}
+            quote={quote}
+            onRecord={onRecord}
+          />
+        </DetailDialog>
+      </SectionBody>
+    </Section>
   );
 }

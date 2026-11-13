@@ -12,7 +12,7 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -32,6 +32,13 @@ import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { PricedValue } from "@/ui/money/priced-value";
 import { QueryError } from "@/ui/feedback/query-error";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type Position = components["schemas"]["Position"];
 
@@ -110,72 +117,83 @@ export function InstrumentPositions({
     : undefined;
 
   return (
-    <Stack gap={3}>
-      <Heading level={2} size="md">
-        {t("instrument.positions.title")}
-      </Heading>
-      {quote !== null && (
-        <PositionFigures rows={rows} quote={quote} accountName={accountName} />
-      )}
-      {!onlyAccount && (
-        <Table columns={6} variant="framed">
-          <TableContent>
-            <TableCaption>{t("instrument.positions.caption")}</TableCaption>
-            <TableHead>
-              <TableRow>
-                <TableColumnHeader>
-                  {t("instrument.positions.account")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("positions.quantity")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("positions.averageCost")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("positions.costBasis")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("positions.marketValue")}
-                </TableColumnHeader>
-                <TableColumnHeader numeric>
-                  {t("instrument.position.result")}
-                </TableColumnHeader>
-              </TableRow>
-            </TableHead>
-            {pending ? (
-              <TableLoader skeletonRows={2} />
-            ) : (
-              <TableBody>
-                {rows.length === 0 && (
-                  <TableEmpty>{t("instrument.positions.empty")}</TableEmpty>
-                )}
-                {rows.map((p) => (
-                  <TableRow key={p.account_id} value={p.account_id}>
-                    <TableRowHeader text="truncate">
-                      {account(p)}
-                    </TableRowHeader>
-                    <TableCell numeric>
-                      {fmt.number(p.quantity, scale(p.quantity.currency))}
-                    </TableCell>
-                    <TableCell numeric>
-                      {averageCostText(
-                        fmt,
-                        p.average_cost,
-                        p.cost_basis.currency,
-                        scale(p.cost_basis.currency),
-                      )}
-                    </TableCell>
-                    <TableCell numeric>{money(p.cost_basis)}</TableCell>
-                    <TableCell numeric>{marketValue(p)}</TableCell>
-                    <TableCell numeric>{result(p) ?? "—"}</TableCell>
+    <Section size="lg">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("instrument.positions.title")}</SectionHeading>
+        </SectionTitle>
+      </SectionHeader>
+
+      <SectionBody>
+        <Stack gap={3}>
+          {quote !== null && (
+            <PositionFigures
+              rows={rows}
+              quote={quote}
+              accountName={accountName}
+            />
+          )}
+          {!onlyAccount && (
+            <Table columns={6} variant="framed">
+              <TableContent>
+                <TableCaption>{t("instrument.positions.caption")}</TableCaption>
+                <TableHead>
+                  <TableRow>
+                    <TableColumnHeader>
+                      {t("instrument.positions.account")}
+                    </TableColumnHeader>
+                    <TableColumnHeader numeric>
+                      {t("positions.quantity")}
+                    </TableColumnHeader>
+                    <TableColumnHeader numeric>
+                      {t("positions.averageCost")}
+                    </TableColumnHeader>
+                    <TableColumnHeader numeric>
+                      {t("positions.costBasis")}
+                    </TableColumnHeader>
+                    <TableColumnHeader numeric>
+                      {t("positions.marketValue")}
+                    </TableColumnHeader>
+                    <TableColumnHeader numeric>
+                      {t("instrument.position.result")}
+                    </TableColumnHeader>
                   </TableRow>
-                ))}
-              </TableBody>
-            )}
-          </TableContent>
-        </Table>
-      )}
-    </Stack>
+                </TableHead>
+                {pending ? (
+                  <TableLoader skeletonRows={2} />
+                ) : (
+                  <TableBody>
+                    {rows.length === 0 && (
+                      <TableEmpty>{t("instrument.positions.empty")}</TableEmpty>
+                    )}
+                    {rows.map((p) => (
+                      <TableRow key={p.account_id} value={p.account_id}>
+                        <TableRowHeader text="truncate">
+                          {account(p)}
+                        </TableRowHeader>
+                        <TableCell numeric>
+                          {fmt.number(p.quantity, scale(p.quantity.currency))}
+                        </TableCell>
+                        <TableCell numeric>
+                          {averageCostText(
+                            fmt,
+                            p.average_cost,
+                            p.cost_basis.currency,
+                            scale(p.cost_basis.currency),
+                          )}
+                        </TableCell>
+                        <TableCell numeric>{money(p.cost_basis)}</TableCell>
+                        <TableCell numeric>{marketValue(p)}</TableCell>
+                        <TableCell numeric>{result(p) ?? "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                )}
+              </TableContent>
+            </Table>
+          )}
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

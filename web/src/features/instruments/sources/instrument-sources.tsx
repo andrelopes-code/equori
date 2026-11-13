@@ -7,8 +7,14 @@ import {
   ListItemLabel,
   ListItemLink,
 } from "@slotted/react/list-item";
-import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
+import {
+  Section,
+  SectionBody,
+  SectionDescription,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 import type { components } from "@/api/schema.gen";
 import { sourceLinks } from "@/features/instruments/sources/source-links";
@@ -34,36 +40,37 @@ export function InstrumentSources({
   if (links.length === 0) return null;
 
   return (
-    <Stack gap={3}>
-      <Heading level={2} size="md">
-        {t("instrument.links.title")}
-      </Heading>
+    <Section size="lg">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("instrument.links.title")}</SectionHeading>
+          <SectionDescription>{t("instrument.links.hint")}</SectionDescription>
+        </SectionTitle>
+      </SectionHeader>
 
-      <Text size="sm" tone="muted">
-        {t("instrument.links.hint")}
-      </Text>
-
-      <List aria-label={t("instrument.links.title")} variant="framed">
-        {links.map((link) => (
-          <ListItem key={link.id}>
-            <ListItemLink
-              href={link.href}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ListItemBody>
-                <ListItemLabel>
-                  {catalogLabel(t, `instrument.link.${link.id}`, link.id)}
-                </ListItemLabel>
-                <ListItemDescription>
-                  {catalogLabel(t, `instrument.link.${link.id}.job`, "")}
-                </ListItemDescription>
-              </ListItemBody>
-              <ListItemEnd>{link.host}</ListItemEnd>
-            </ListItemLink>
-          </ListItem>
-        ))}
-      </List>
-    </Stack>
+      <SectionBody>
+        <List aria-label={t("instrument.links.title")} variant="framed">
+          {links.map((link) => (
+            <ListItem key={link.id}>
+              <ListItemLink
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ListItemBody>
+                  <ListItemLabel>
+                    {catalogLabel(t, `instrument.link.${link.id}`, link.id)}
+                  </ListItemLabel>
+                  <ListItemDescription>
+                    {catalogLabel(t, `instrument.link.${link.id}.job`, "")}
+                  </ListItemDescription>
+                </ListItemBody>
+                <ListItemEnd>{link.host}</ListItemEnd>
+              </ListItemLink>
+            </ListItem>
+          ))}
+        </List>
+      </SectionBody>
+    </Section>
   );
 }
