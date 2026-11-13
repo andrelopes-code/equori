@@ -1,0 +1,13 @@
+@layer app {
+  /* Workaround for Slotted issue #106: an icon button of size sm is taller than the line of the
+     text it sits in; the negative margin keeps the layout box at one line and the hit area whole. */
+  .trigger {
+    margin-block: calc((1lh - var(--slotted-control-height-sm)) / 2);
+    cursor: help;
+  }
+
+  /* A sentence of explanation reads at about 40 characters a line, not across the screen. */
+  .content {
+    max-inline-size: 22rem;
+  }
+}

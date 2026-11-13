@@ -6,6 +6,7 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
@@ -77,9 +78,7 @@ describe("ReturnView", () => {
     renderView(market, "portfolio");
 
     expect(
-      screen.getByText(
-        "In the period, the portfolio returned −10.00%: 10.33 pp below the CDI, with a real return of −0.89% over the IPCA.",
-      ),
+      screen.getByText("In the period, the portfolio returned −10.00%."),
     ).toBeInTheDocument();
     expect(screen.getByText("Against the CDI")).toBeInTheDocument();
     expect(screen.getByText("Against inflation")).toBeInTheDocument();
@@ -98,9 +97,7 @@ describe("ReturnView", () => {
     renderView(compared, "portfolio");
 
     expect(
-      screen.getByText(
-        "In the period, the portfolio returned 0.33%, against 0.33% of the CDI.",
-      ),
+      screen.getByText("In the period, the portfolio returned 0.33%."),
     ).toBeInTheDocument();
     expect(screen.getByText("Against the CDI")).toBeInTheDocument();
     expect(screen.queryByText("Against inflation")).not.toBeInTheDocument();
@@ -136,12 +133,28 @@ describe("ReturnView", () => {
     expect(method()).toBeInTheDocument();
   });
 
-  it("PC11: states the personal rate as one figure when nothing else draws", () => {
+  it("HR3: states the personal rate in a sentence when nothing else draws", () => {
     renderView(plain, "portfolio");
 
-    expect(screen.getByText("5.00%")).toBeInTheDocument();
     expect(
-      screen.getByText(catalogEn["holdings.return.personal"]),
+      screen.getByText("In the period, your personal rate was 5.00% a year."),
     ).toBeInTheDocument();
+  });
+
+  it("HR4: explains why each comparison has its own window", async () => {
+    const user = userEvent.setup();
+    renderView(market, "portfolio");
+
+    expect(
+      screen.getByText("Portfolio and CDI, 01/02/2026 to 01/09/2026 · 6 days"),
+    ).toBeInTheDocument();
+
+    await user.hover(
+      screen.getByRole("button", { name: "About “Against the CDI”" }),
+    );
+
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Both bars measure the portfolio and the CDI on those days",
+    );
   });
 });

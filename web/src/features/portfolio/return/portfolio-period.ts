@@ -1,18 +1,25 @@
 import { shiftDate } from "@/i18n/format";
 
-// The longest period getReturn accepts, in days between its two ends.
-const maxDays = 366;
+// The longest period getReturn accepts, in days between its two ends: 3,660 days with both ends
+// (return honesty HR2).
+const maxDays = 3659;
 
 function utc(iso: string): number {
   const [year = 0, month = 1, day = 1] = iso.split("-").map(Number);
   return Date.UTC(year, month - 1, day);
 }
 
-// The first day of the 12 months that end on `to`.
-export function defaultFrom(to: string): string {
+// The first day of the `years` years that end on `to`.
+export function defaultFrom(to: string, years = 1): string {
   const [year = 0, month = 1, day = 1] = to.split("-").map(Number);
-  const back = new Date(Date.UTC(year - 1, month - 1, day));
+  const back = new Date(Date.UTC(year - years, month - 1, day));
+
   return shiftDate(back.toISOString().slice(0, 10), 1);
+}
+
+// The calendar days of a period, its two ends included.
+export function periodDays(from: string, to: string): number {
+  return (utc(to) - utc(from)) / 86_400_000 + 1;
 }
 
 export function periodProblem(

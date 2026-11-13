@@ -46,17 +46,20 @@ describe("Portfolio return", () => {
       ),
     ).toBeInTheDocument();
     expect(
-      within(section).queryByText(catalogEn["holdings.return.period"]),
-    ).not.toBeInTheDocument();
+      within(section).getByRole("button", {
+        name: `About “${catalogEn["holdings.method.period"]}”`,
+      }),
+    ).toBeInTheDocument();
   });
 
-  it("PC11: falls back to the personal rate of a report without a period return", async () => {
+  it("HR3: falls back to the personal rate of a report without a period return", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     const section = await performance();
 
-    expect(await within(section).findByText("5.00%")).toBeInTheDocument();
     expect(
-      within(section).getByText(catalogEn["holdings.return.personal"]),
+      await within(section).findByText(
+        "In the period, your personal rate was 5.00% a year.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -398,6 +401,40 @@ describe("Portfolio return", () => {
     });
   });
 
+  it("HR5: names an account the subject of its return", async () => {
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": () =>
+        json(200, { ...plainReturn, period_bp: 480 }),
+    });
+    await renderApp(`/portfolio?account=${brokerID}`, { fetch });
+    const section = await performance();
+
+    expect(
+      await within(section).findByText(
+        "In the period, the account returned 4.80%.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("HR2, HR3: measures ten years and states the annual rate", async () => {
+    const asked: string[] = [];
+    const fetch = portfolioApi({
+      "GET /api/v1/reports/return": (req) => {
+        asked.push(req.url);
+        return json(200, { ...plainReturn, period_bp: 2100 });
+      },
+    });
+    await renderApp("/portfolio?from=2024-10-18&to=2026-10-17", { fetch });
+    const section = await performance();
+
+    expect(
+      await within(section).findByText(
+        "In the period, the portfolio returned 21.00%, or 10.00% a year.",
+      ),
+    ).toBeInTheDocument();
+    expect(asked).toHaveLength(1);
+  });
+
   it("offers the parents of an investment account, the investment accounts and the reserves (A208 R7)", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     const user = userEvent.setup();
@@ -496,7 +533,9 @@ describe("Portfolio return", () => {
       });
     });
     expect(
-      await within(await performance()).findByText("5.00%"),
+      await within(await performance()).findByText(
+        "In the period, your personal rate was 5.00% a year.",
+      ),
     ).toBeInTheDocument();
   });
 
@@ -578,7 +617,7 @@ describe("Portfolio return", () => {
     expect(container.textContent).not.toMatch(/CDI|IPCA|SOFR/);
   });
 
-  it("blocks a period above 366 days without asking for it", async () => {
+  it("blocks a period above 3,660 days without asking for it (HR2)", async () => {
     const asked: string[] = [];
     const fetch = portfolioApi({
       "GET /api/v1/reports/return": (req) => {
@@ -586,7 +625,7 @@ describe("Portfolio return", () => {
         return json(200, contributionReturn);
       },
     });
-    await renderApp("/portfolio?from=2025-10-01&to=2026-10-17", { fetch });
+    await renderApp("/portfolio?from=2015-10-01&to=2026-10-17", { fetch });
     expect(
       await screen.findByText(catalogEn["portfolio.return.periodTooLong"]),
     ).toBeInTheDocument();
@@ -609,7 +648,9 @@ describe("Portfolio return", () => {
     });
     try {
       await renderApp("/portfolio", { fetch });
-      await screen.findByText("3.33%");
+      await screen.findByText(
+        "In the period, your personal rate was 3.33% a year.",
+      );
       await openMethod();
       await screen.findAllByText(catalogEn["holdings.method.personal"]);
       expect(document.body.textContent).not.toContain("2,050.00");

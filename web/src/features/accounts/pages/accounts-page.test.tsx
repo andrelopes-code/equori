@@ -345,10 +345,10 @@ describe("AccountsPage", () => {
 
   it.each([
     ["no_yield_recorded", "No yield recorded in the period"],
-    ["single_credit", "Only one yield credit recorded"],
+    ["too_small", "Balance too small: credits are rounded to the cent"],
     ["nothing_held", "Nothing held in the period"],
   ])(
-    "states the reason alone, never a 0.00% return: %s (R8, R23, W2)",
+    "states the reason alone, never a 0.00% return: %s (R8, R23, W2, HR7)",
     async (reason, text) => {
       await renderApp("/accounts", {
         fetch: api([], {

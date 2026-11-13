@@ -18,6 +18,7 @@ import { ProblemError } from "@/api/problem";
 import { returnQuery } from "@/features/portfolio/api";
 import {
   defaultFrom,
+  periodDays,
   periodProblem,
 } from "@/features/portfolio/return/portfolio-period";
 import { PortfolioProblem } from "@/features/portfolio/notices/portfolio-problem";
@@ -33,10 +34,18 @@ import {
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { HelpTip } from "@/ui/display/help-tip";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { PeriodControl } from "@/ui/navigation/period-control";
 import type { Period } from "@/ui/navigation/period-control";
+import type { PeriodPreset } from "@/ui/navigation/period-presets";
 import { QueryError } from "@/ui/feedback/query-error";
+
+const YEAR_PRESETS = [
+  { years: 3, label: "holdings.period.years3" },
+  { years: 5, label: "holdings.period.years5" },
+  { years: 10, label: "holdings.period.years10" },
+] as const;
 
 interface PortfolioReturnProps {
   date: string;
@@ -45,9 +54,9 @@ interface PortfolioReturnProps {
   onChange: (patch: SearchPatch) => void;
 }
 
-// PC10: the return of the whole portfolio or of one account tree over a period of at most 366
-// days; the period starts as the 12 months ending at the valuation date, and a day after today
-// holds nothing to read, so the request stops at today.
+// PC10: the return of every brokerage or of one account tree over a period of at most 3,660 days
+// (return honesty HR2); the period starts as the 12 months ending at the valuation date, and a day
+// after today holds nothing to read, so the request stops at today.
 export function PortfolioReturn({
   date,
   valueIn,
@@ -67,6 +76,7 @@ export function PortfolioReturn({
   const selected =
     options.find((o) => o.value === search.account)?.value ?? options[0]?.value;
   const accountID = selected === wholePortfolio ? null : selected;
+  const subject = accountID === null ? "portfolio" : "account";
   const problem = periodProblem(from, to);
   const report = useQuery(
     returnQuery(api, accountID, from, asked, valueIn, problem === undefined),
@@ -96,29 +106,30 @@ export function PortfolioReturn({
         </SectionTitle>
         <SectionActions>
           <Inline gap={3} align="center" wrap="nowrap">
-            <ChoiceSelect
-              label={t("portfolio.return.account")}
-              choices={options}
-              multiple={false}
-              value={selected ?? null}
-              onChange={(next) => {
-                if (typeof next === "string")
-                  onChange({
-                    account: next === options[0]?.value ? undefined : next,
-                  });
-              }}
-            />
+            <Inline gap={1} align="center" wrap="nowrap">
+              <ChoiceSelect
+                label={t("portfolio.return.account")}
+                choices={options}
+                multiple={false}
+                value={selected ?? null}
+                onChange={(next) => {
+                  if (typeof next === "string")
+                    onChange({
+                      account: next === options[0]?.value ? undefined : next,
+                    });
+                }}
+              />
+              <HelpTip
+                label={t("return.help.about", {
+                  term: t("portfolio.return.whole"),
+                })}
+                text={t("return.help.scope")}
+              />
+            </Inline>
             <PeriodControl
               value={{ from, to }}
               allowAll={false}
-              extraPresets={[
-                {
-                  key: "last-12-months",
-                  label: "holdings.period.year",
-                  from: yearFrom,
-                  to: date,
-                },
-              ]}
+              extraPresets={periodPresets(date, yearFrom)}
               onChange={handlePeriod}
             />
           </Inline>
@@ -180,9 +191,31 @@ export function PortfolioReturn({
         {reading && !report.isError && !ready && <Skeleton />}
 
         {reading && !report.isError && ready && (
-          <ReturnView report={report.data} subject="portfolio" />
+          <ReturnView
+            report={report.data}
+            subject={subject}
+            days={periodDays(from, asked)}
+          />
         )}
       </SectionBody>
     </Section>
   );
+}
+
+// HR2: the 12 months of the valuation date, then 3, 5 and 10 years ending on it.
+function periodPresets(date: string, yearFrom: string): PeriodPreset[] {
+  return [
+    {
+      key: "last-12-months",
+      label: "holdings.period.year",
+      from: yearFrom,
+      to: date,
+    },
+    ...YEAR_PRESETS.map(({ years, label }) => ({
+      key: `last-${String(years)}-years`,
+      label,
+      from: defaultFrom(date, years),
+      to: date,
+    })),
+  ];
 }

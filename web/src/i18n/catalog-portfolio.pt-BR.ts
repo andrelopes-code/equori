@@ -61,7 +61,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.allocation.noInstitution": "Sem instituição",
   "portfolio.allocation.empty": "Nada a alocar nesta data",
   "portfolio.return.account": "Conta do retorno",
-  "portfolio.return.whole": "Carteira inteira",
+  "portfolio.return.whole": "Todas as corretoras",
   "portfolio.return.opening": "Valor inicial",
   "portfolio.return.closing": "Valor final",
   "portfolio.yield.annual": "{rate} a.a.",
@@ -80,6 +80,8 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
     "Nenhum rendimento registrado no período",
   "portfolio.yield.reason.single_credit":
     "Só um crédito de rendimento registrado",
+  "portfolio.yield.reason.single_credit_after_flow":
+    "Sem compara\u00e7\u00e3o com o \u00edndice {index}: um aporte ou retirada entre cr\u00e9ditos de rendimento reinicia a compara\u00e7\u00e3o, e depois do \u00faltimo houve s\u00f3 um cr\u00e9dito",
   "portfolio.yield.reason.too_small":
     "Saldo pequeno demais: os créditos são arredondados ao centavo",
   "portfolio.yield.reason.too_few_days":
@@ -131,7 +133,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.return.undefined": "O retorno é indefinido neste período.",
   "portfolio.return.undefinedWhy":
     "O valor inicial e todos os aportes são zero, então nenhum dinheiro foi investido.",
-  "portfolio.return.periodTooLong": "O período tem mais de 366 dias.",
+  "portfolio.return.periodTooLong": "O per\u00edodo tem mais de 3.660 dias.",
   "portfolio.return.periodReversed": "O início é depois do fim.",
   "portfolio.return.noAccount": "Nenhuma conta de investimento a medir.",
 };

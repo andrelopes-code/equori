@@ -30,24 +30,35 @@ export interface ReturnComparison {
   key: "index" | "inflation";
   heading: string;
   window: string;
+  help: string;
   chip?: ReturnChip;
   bars: [ReturnBar, ReturnBar];
 }
 
 export interface ReturnSummary {
   verdict?: string;
+  verdictHelp?: string;
   comparisons: ReturnComparison[];
   axis?: ReturnAxis;
 }
 
-// returnSummary is the verdict sentence and the comparison blocks of a return report (RC2, RC3).
+// The longest period whose verdict states no annual rate (return honesty HR3).
+const YEAR_DAYS = 366;
+
+// returnSummary is the verdict sentence and the comparison blocks of a return report (RC2, RC3,
+// return honesty HR3, HR4). days is the calendar span of the period, its two ends included.
 export function returnSummary(
   report: ReturnReport,
   subject: ReturnSubject,
   t: TFunction,
   tag: string,
+  days?: number,
 ): ReturnSummary {
-  const verdict = verdictText(report, subject, t, tag);
+  const ret = periodReturn(report);
+  const annual =
+    ret !== undefined && days !== undefined && days > YEAR_DAYS
+      ? annualBP(ret, days)
+      : undefined;
   const comparisons = [
     indexComparison(report, subject, t, tag),
     inflationComparison(report, subject, t, tag),
@@ -55,78 +66,47 @@ export function returnSummary(
   const values = comparisons.flatMap((c) => c.bars.map((bar) => bar.bp));
 
   return {
-    ...(verdict === undefined ? {} : { verdict }),
+    ...(ret === undefined
+      ? {}
+      : {
+          verdict: verdictText(ret, annual, subject, t, tag),
+          verdictHelp: verdictHelp(annual, t),
+        }),
     comparisons,
     ...(values.length === 0 ? {} : { axis: comparisonAxis(values) }),
   };
 }
 
+// HR3: the period return alone; above a year, its annual rate as well.
 function verdictText(
-  report: ReturnReport,
+  ret: number,
+  annual: number | undefined,
   subject: ReturnSubject,
   t: TFunction,
   tag: string,
-): string | undefined {
-  const b = report.benchmark;
-  const ret = b?.return_bp ?? periodReturn(report);
-  if (ret === undefined) return undefined;
-
-  const i = report.inflation;
-  const core = verdictCore(report, ret, t, tag, {
+): string {
+  const core = t("return.verdict.period", {
     subject: t(`return.subject.${subject}`),
     return: formatBasisPoints(ret, tag),
-    index: b === undefined ? "" : indexName(b.index),
   });
-  const real =
-    i === undefined
+  const year =
+    annual === undefined
       ? ""
-      : t("return.verdict.real", {
-          real: formatBasisPoints(i.real_bp, tag),
-          inflation: indexName(i.index),
-        });
+      : t("return.verdict.annual", { annual: formatBasisPoints(annual, tag) });
 
-  return `${core}${real}.`;
+  return `${core}${year}.`;
 }
 
-function verdictCore(
-  report: ReturnReport,
-  ret: number,
-  t: TFunction,
-  tag: string,
-  vars: Record<string, string>,
-): string {
-  const b = report.benchmark;
+function verdictHelp(annual: number | undefined, t: TFunction): string {
+  const help = t("return.help.period");
 
-  if (
-    report.profile === "rate" &&
-    b?.percent_bp !== undefined &&
-    b.annual_bp !== undefined
-  ) {
-    return t("return.verdict.rate", {
-      ...vars,
-      percent: formatBasisPoints(b.percent_bp, tag),
-      annual: formatBasisPoints(b.annual_bp, tag),
-    });
-  }
+  return annual === undefined ? help : `${help} ${t("return.help.annual")}`;
+}
 
-  if (report.profile === "market" && b?.excess_bp !== undefined) {
-    const key = excessKey(b.excess_bp);
-    const delta = numberFormatter(tag, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(Math.abs(b.excess_bp) / 100);
-
-    return t(key, { ...vars, delta });
-  }
-
-  if (b?.return_bp !== undefined) {
-    return t("return.verdict.index", {
-      ...vars,
-      indexReturn: formatBasisPoints(b.index_bp, tag),
-    });
-  }
-
-  return t("return.verdict.period", vars);
+// annualBP is the rate a year that compounds to the period return over days: (1 + r)^(365 / days)
+// − 1, in basis points.
+function annualBP(periodBP: number, days: number): number {
+  return Math.round(((1 + periodBP / 10000) ** (365 / days) - 1) * 10000);
 }
 
 function indexComparison(
@@ -145,9 +125,15 @@ function indexComparison(
     key: "index",
     heading: t("return.against.index", { index }),
     window: t("return.against.window", {
+      subject: t(`return.bar.${subject}`),
+      index,
       from: formatDate(b.from, tag),
       until: formatDate(b.until, tag),
       days: String(b.days),
+    }),
+    help: t("return.help.index", {
+      subject: t(`return.subject.${subject}`),
+      index,
     }),
     ...(chip === undefined ? {} : { chip }),
     bars: [
@@ -166,12 +152,20 @@ function inflationComparison(
   const i = report.inflation;
   if (i === undefined) return undefined;
 
+  const inflation = indexName(i.index);
+
   return {
     key: "inflation",
     heading: t("return.against.inflation"),
     window: t("return.against.months", {
+      subject: t(`return.bar.${subject}`),
+      index: inflation,
       from: formatDate(i.from, tag),
       until: formatDate(i.until, tag),
+    }),
+    help: t("return.help.inflation", {
+      subject: t(`return.subject.${subject}`),
+      index: inflation,
     }),
     chip: {
       ...signTone(i.real_bp),
@@ -179,7 +173,7 @@ function inflationComparison(
     },
     bars: [
       subjectBar(subject, i.return_bp, t),
-      { key: "inflation", label: indexName(i.index), bp: i.index_bp },
+      { key: "inflation", label: inflation, bp: i.index_bp },
     ],
   };
 }
@@ -232,13 +226,4 @@ function signTone(bp: number): Pick<ReturnChip, "tone" | "icon"> {
   if (bp < 0) return { tone: "danger", icon: "down" };
 
   return { tone: "neutral", icon: "equal" };
-}
-
-function excessKey(
-  excessBP: number,
-): "return.verdict.above" | "return.verdict.below" | "return.verdict.inline" {
-  if (excessBP > 0) return "return.verdict.above";
-  if (excessBP < 0) return "return.verdict.below";
-
-  return "return.verdict.inline";
 }

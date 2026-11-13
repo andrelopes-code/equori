@@ -19,9 +19,10 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.income.open": "Ver",
   "holdings.income.record": "Registrar provento",
   "holdings.return": "Como rendeu",
-  "holdings.return.period": "Retorno do período",
-  "holdings.return.personal": "Sua taxa pessoal ao ano",
   "holdings.period.year": "Últimos 12 meses",
+  "holdings.period.years3": "\u00daltimos 3 anos",
+  "holdings.period.years5": "\u00daltimos 5 anos",
+  "holdings.period.years10": "\u00daltimos 10 anos",
   "holdings.method": "Detalhes e método",
   "holdings.method.period": "Retorno do período",
   "holdings.method.personal": "Sua taxa pessoal ao ano",
@@ -105,22 +106,33 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "taxYear.class.currency": "Moedas",
   "return.subject.portfolio": "a carteira",
   "return.subject.account": "a conta",
-  "return.verdict.rate":
-    "No período, {subject} rendeu {return}: {percent} do {index} ({annual} ao ano)",
-  "return.verdict.above":
-    "No período, {subject} rendeu {return}: {delta} p.p. acima do {index}",
-  "return.verdict.below":
-    "No período, {subject} rendeu {return}: {delta} p.p. abaixo do {index}",
-  "return.verdict.inline":
-    "No período, {subject} rendeu {return}: em linha com o {index}",
-  "return.verdict.index":
-    "No período, {subject} rendeu {return}, contra {indexReturn} do {index}",
   "return.verdict.period": "No período, {subject} rendeu {return}",
-  "return.verdict.real": ", com retorno real de {real} sobre o {inflation}",
+  "return.verdict.annual": ", ou {annual} ao ano",
+  "return.verdict.personal":
+    "No per\u00edodo, a sua taxa pessoal foi de {annual} ao ano.",
+  "return.help.about": "Sobre “{term}”",
+  "return.help.period":
+    "Quanto cada 100 aplicados no in\u00edcio do per\u00edodo renderam at\u00e9 o fim. Aportes e retiradas n\u00e3o mudam esse n\u00famero, por isso ele pode ser comparado com \u00edndices.",
+  "return.help.annual":
+    "A taxa ao ano \u00e9 a taxa que, repetida a cada ano, chega ao mesmo retorno.",
+  "return.help.index":
+    "O {index} s\u00f3 tem taxa em dias \u00fateis j\u00e1 publicados. As duas barras medem {subject} e o {index} nesses dias, por isso o n\u00famero pode diferir do retorno do per\u00edodo.",
+  "return.help.inflation":
+    "O {index} \u00e9 publicado uma vez por m\u00eas. As duas barras medem {subject} e o {index} s\u00f3 em meses inteiros j\u00e1 publicados, por isso o n\u00famero pode diferir do retorno do per\u00edodo. O retorno real \u00e9 quanto {subject} rendeu acima do {index}.",
+  "return.help.scope":
+    "Todas as corretoras soma as contas de corretora: os investimentos e o saldo delas. Caixinhas, poupan\u00e7as e contas correntes ficam fora; uma caixinha ou uma poupan\u00e7a pode ser escolhida sozinha nesta lista.",
+  "return.help.opening":
+    "Valor no fim do dia anterior ao in\u00edcio do per\u00edodo.",
+  "return.help.deposits":
+    "Dinheiro que entrou de fora menos dinheiro que saiu, no per\u00edodo. Rendimentos, proventos e transfer\u00eancias entre as contas medidas n\u00e3o contam.",
+  "return.help.gain":
+    "Saldo final menos saldo inicial menos aportes l\u00edquidos: quanto o dinheiro aplicado ganhou ou perdeu.",
+  "return.help.closing": "Valor no fim do \u00faltimo dia do per\u00edodo.",
   "return.against.index": "Contra o {index}",
   "return.against.inflation": "Contra a inflação",
-  "return.against.window": "{from} a {until} · {days} dias",
-  "return.against.months": "{from} a {until}",
+  "return.against.window":
+    "{subject} e {index}, de {from} a {until} \u00b7 {days} dias",
+  "return.against.months": "{subject} e {index}, de {from} a {until}",
   "return.chip.percent": "{percent} do {index}",
   "return.chip.real": "{real} real",
   "return.bar.portfolio": "Carteira",

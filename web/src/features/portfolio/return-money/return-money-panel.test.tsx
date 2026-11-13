@@ -89,6 +89,20 @@ describe("ReturnMoneyPanel", () => {
     }
   });
 
+  it("gives every term a help button (return honesty HR6)", async () => {
+    renderPanel(plain, "portfolio");
+
+    await screen.findByText(catalogEn["return.money.title"]);
+
+    for (const key of ["opening", "gain", "closing"] as const) {
+      const term = catalogEn[`return.money.${key}`];
+
+      expect(
+        screen.getByRole("button", { name: `About “${term}”` }),
+      ).toBeTruthy();
+    }
+  });
+
   it("draws a negative gain in the danger tone and no growth bar", async () => {
     renderPanel(
       { ...plain, closing: { amount: 90000, currency: "BRL" } },

@@ -114,21 +114,21 @@ describe("returnSummary", () => {
     name: string;
     report: ReturnReport;
     subject: ReturnSubject;
+    days?: number;
     verdict: string | undefined;
-    comparisons: ReturnComparison[];
+    comparisons: Omit<ReturnComparison, "help">[];
     axisValues?: number[];
   }[] = [
     {
       name: "a market return below the index, with inflation",
       report: market,
       subject: "portfolio",
-      verdict:
-        "In the period, the portfolio returned −10.00%: 10.33 pp below the CDI, with a real return of −0.89% over the IPCA.",
+      verdict: "In the period, the portfolio returned −10.00%.",
       comparisons: [
         {
           key: "index",
           heading: "Against the CDI",
-          window: "01/02/2026 to 01/09/2026 · 6 days",
+          window: "Portfolio and CDI, 01/02/2026 to 01/09/2026 · 6 days",
           chip: { tone: "danger", icon: "down", text: "−10.33 pp" },
           bars: [
             { key: "subject", label: "Portfolio", bp: -1000 },
@@ -138,7 +138,7 @@ describe("returnSummary", () => {
         {
           key: "inflation",
           heading: "Against inflation",
-          window: "11/01/2025 to 12/31/2025",
+          window: "Portfolio and IPCA, 11/01/2025 to 12/31/2025",
           chip: { tone: "danger", icon: "down", text: "−0.89% real" },
           bars: [
             { key: "subject", label: "Portfolio", bp: 0 },
@@ -152,13 +152,12 @@ describe("returnSummary", () => {
       name: "a compared return at 100% of the index",
       report: compared,
       subject: "portfolio",
-      verdict:
-        "In the period, the portfolio returned 0.33%, against 0.33% of the CDI.",
+      verdict: "In the period, the portfolio returned 0.33%.",
       comparisons: [
         {
           key: "index",
           heading: "Against the CDI",
-          window: "01/02/2026 to 01/09/2026 · 6 days",
+          window: "Portfolio and CDI, 01/02/2026 to 01/09/2026 · 6 days",
           chip: { tone: "success", icon: "check", text: "100.00% of the CDI" },
           bars: [
             { key: "subject", label: "Portfolio", bp: 33 },
@@ -186,13 +185,12 @@ describe("returnSummary", () => {
       name: "a rate return with percent, annual rate and inflation",
       report: rate,
       subject: "account",
-      verdict:
-        "In the period, the account returned 13.42%: 104.30% of the CDI (14.12% a year), with a real return of 7.55% over the IPCA.",
+      verdict: "In the period, the account returned 13.42%.",
       comparisons: [
         {
           key: "index",
           heading: "Against the CDI",
-          window: "11/03/2025 to 10/16/2026 · 245 days",
+          window: "Account and CDI, 11/03/2025 to 10/16/2026 · 245 days",
           chip: { tone: "success", icon: "check", text: "104.30% of the CDI" },
           bars: [
             { key: "subject", label: "Account", bp: 1342 },
@@ -202,7 +200,7 @@ describe("returnSummary", () => {
         {
           key: "inflation",
           heading: "Against inflation",
-          window: "11/01/2025 to 10/31/2026",
+          window: "Account and IPCA, 11/01/2025 to 10/31/2026",
           chip: { tone: "success", icon: "up", text: "7.55% real" },
           bars: [
             { key: "subject", label: "Account", bp: 1230 },
@@ -219,13 +217,12 @@ describe("returnSummary", () => {
         benchmark: { ...rateBenchmark, percent_bp: 9500, annual_bp: 1300 },
       },
       subject: "account",
-      verdict:
-        "In the period, the account returned 13.42%: 95.00% of the CDI (13.00% a year).",
+      verdict: "In the period, the account returned 13.42%.",
       comparisons: [
         {
           key: "index",
           heading: "Against the CDI",
-          window: "11/03/2025 to 10/16/2026 · 245 days",
+          window: "Account and CDI, 11/03/2025 to 10/16/2026 · 245 days",
           chip: { tone: "danger", icon: "down", text: "95.00% of the CDI" },
           bars: [
             { key: "subject", label: "Account", bp: 1342 },
@@ -242,13 +239,12 @@ describe("returnSummary", () => {
         benchmark: { ...marketBenchmark, return_bp: 427, excess_bp: 394 },
       },
       subject: "portfolio",
-      verdict:
-        "In the period, the portfolio returned 4.27%: 3.94 pp above the CDI.",
+      verdict: "In the period, the portfolio returned −10.00%.",
       comparisons: [
         {
           key: "index",
           heading: "Against the CDI",
-          window: "01/02/2026 to 01/09/2026 · 6 days",
+          window: "Portfolio and CDI, 01/02/2026 to 01/09/2026 · 6 days",
           chip: { tone: "success", icon: "up", text: "+3.94 pp" },
           bars: [
             { key: "subject", label: "Portfolio", bp: 427 },
@@ -265,13 +261,12 @@ describe("returnSummary", () => {
         benchmark: { ...marketBenchmark, return_bp: 33, excess_bp: 0 },
       },
       subject: "portfolio",
-      verdict:
-        "In the period, the portfolio returned 0.33%: in line with the CDI.",
+      verdict: "In the period, the portfolio returned −10.00%.",
       comparisons: [
         {
           key: "index",
           heading: "Against the CDI",
-          window: "01/02/2026 to 01/09/2026 · 6 days",
+          window: "Portfolio and CDI, 01/02/2026 to 01/09/2026 · 6 days",
           chip: { tone: "neutral", icon: "equal", text: "0.00 pp" },
           bars: [
             { key: "subject", label: "Portfolio", bp: 33 },
@@ -297,7 +292,7 @@ describe("returnSummary", () => {
         {
           key: "inflation",
           heading: "Against inflation",
-          window: "11/01/2025 to 10/31/2026",
+          window: "Account and IPCA, 11/01/2025 to 10/31/2026",
           chip: { tone: "success", icon: "up", text: "7.55% real" },
           bars: [
             { key: "subject", label: "Account", bp: 1230 },
@@ -307,13 +302,47 @@ describe("returnSummary", () => {
       ],
       axisValues: [1230, 441],
     },
+    {
+      name: "a single credit keeps the period return (HR7)",
+      report: {
+        ...noYieldWithoutInflation,
+        unavailable_reason: "single_credit",
+      },
+      subject: "account",
+      verdict: "In the period, the account returned 13.42%.",
+      comparisons: [],
+    },
+    {
+      name: "a balance too small withholds the period return (HR7)",
+      report: { ...noYieldWithoutInflation, unavailable_reason: "too_small" },
+      subject: "account",
+      verdict: undefined,
+      comparisons: [],
+    },
+    {
+      name: "a period of 366 days states no annual rate (HR3)",
+      report: { ...plain, period_bp: 2100 },
+      subject: "portfolio",
+      days: 366,
+      verdict: "In the period, the portfolio returned 21.00%.",
+      comparisons: [],
+    },
+    {
+      name: "a period of two years states the annual rate (HR3)",
+      report: { ...plain, period_bp: 2100 },
+      subject: "portfolio",
+      days: 730,
+      verdict:
+        "In the period, the portfolio returned 21.00%, or 10.00% a year.",
+      comparisons: [],
+    },
   ];
 
   it.each(cases)("en: $name", (c) => {
-    const got = returnSummary(c.report, c.subject, t, "en");
+    const got = returnSummary(c.report, c.subject, t, "en", c.days);
 
     expect(got.verdict).toBe(c.verdict);
-    expect(got.comparisons).toEqual(c.comparisons);
+    expect(got.comparisons.map(withoutHelp)).toEqual(c.comparisons);
     expect(got.axis).toEqual(
       c.axisValues === undefined ? undefined : comparisonAxis(c.axisValues),
     );
@@ -322,14 +351,12 @@ describe("returnSummary", () => {
   it("pt-BR: a market return below the index, with inflation", () => {
     const got = returnSummary(market, "portfolio", tPtBR, "pt-BR");
 
-    expect(got.verdict).toBe(
-      "No período, a carteira rendeu −10,00%: 10,33 p.p. abaixo do CDI, com retorno real de −0,89% sobre o IPCA.",
-    );
-    expect(got.comparisons).toEqual([
+    expect(got.verdict).toBe("No período, a carteira rendeu −10,00%.");
+    expect(got.comparisons.map(withoutHelp)).toEqual([
       {
         key: "index",
         heading: "Contra o CDI",
-        window: "02/01/2026 a 09/01/2026 · 6 dias",
+        window: "Carteira e CDI, de 02/01/2026 a 09/01/2026 · 6 dias",
         chip: { tone: "danger", icon: "down", text: "−10,33 p.p." },
         bars: [
           { key: "subject", label: "Carteira", bp: -1000 },
@@ -339,7 +366,7 @@ describe("returnSummary", () => {
       {
         key: "inflation",
         heading: "Contra a inflação",
-        window: "01/11/2025 a 31/12/2025",
+        window: "Carteira e IPCA, de 01/11/2025 a 31/12/2025",
         chip: { tone: "danger", icon: "down", text: "−0,89% real" },
         bars: [
           { key: "subject", label: "Carteira", bp: 0 },
@@ -352,9 +379,7 @@ describe("returnSummary", () => {
   it("pt-BR: a rate return with percent, annual rate and inflation", () => {
     const got = returnSummary(rate, "account", tPtBR, "pt-BR");
 
-    expect(got.verdict).toBe(
-      "No período, a conta rendeu 13,42%: 104,30% do CDI (14,12% ao ano), com retorno real de 7,55% sobre o IPCA.",
-    );
+    expect(got.verdict).toBe("No período, a conta rendeu 13,42%.");
     expect(got.comparisons[0]?.chip).toEqual({
       tone: "success",
       icon: "check",
@@ -362,3 +387,47 @@ describe("returnSummary", () => {
     });
   });
 });
+
+describe("returnSummary help", () => {
+  it("explains the period return and each comparison window (HR4, HR6)", () => {
+    const got = returnSummary(market, "portfolio", t, "en");
+
+    expect(got.verdictHelp).toBe(
+      "How much each 100 invested at the start of the period earned by its end. Deposits and withdrawals do not change this figure, so it can be compared with indexes.",
+    );
+    expect(got.comparisons.map((c) => c.help)).toEqual([
+      "The CDI has a rate only on business days already published. Both bars measure the portfolio and the CDI on those days, so the figure can differ from the period return.",
+      "The IPCA is published once a month. Both bars measure the portfolio and the IPCA over whole published months only, so the figure can differ from the period return. The real return is what the portfolio earned above the IPCA.",
+    ]);
+  });
+
+  it("adds the meaning of the annual rate to a period above a year", () => {
+    const got = returnSummary(
+      { ...plain, period_bp: 2100 },
+      "portfolio",
+      t,
+      "en",
+      730,
+    );
+
+    expect(got.verdictHelp).toContain(
+      "The annual rate is the rate that, repeated every year, reaches the same return.",
+    );
+  });
+});
+
+function withoutHelp({
+  key,
+  heading,
+  window,
+  chip,
+  bars,
+}: ReturnComparison): Omit<ReturnComparison, "help"> {
+  return {
+    key,
+    heading,
+    window,
+    ...(chip === undefined ? {} : { chip }),
+    bars,
+  };
+}

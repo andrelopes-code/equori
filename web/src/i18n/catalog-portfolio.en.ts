@@ -59,7 +59,7 @@ export const portfolioEn = {
   "portfolio.allocation.noInstitution": "No institution",
   "portfolio.allocation.empty": "Nothing to allocate at this date",
   "portfolio.return.account": "Account of the return",
-  "portfolio.return.whole": "Whole portfolio",
+  "portfolio.return.whole": "All brokerages",
   "portfolio.return.opening": "Opening value",
   "portfolio.return.closing": "Closing value",
   "portfolio.yield.annual": "{rate} a year",
@@ -76,6 +76,8 @@ export const portfolioEn = {
   "portfolio.yield.reason.nothing_held": "Nothing held in the period",
   "portfolio.yield.reason.no_yield_recorded": "No yield recorded in the period",
   "portfolio.yield.reason.single_credit": "Only one yield credit recorded",
+  "portfolio.yield.reason.single_credit_after_flow":
+    "No comparison with the {index} index: a deposit or withdrawal between yield credits restarts the comparison, and only one credit came after the last one",
   "portfolio.yield.reason.too_small":
     "Balance too small: credits are rounded to the cent",
   "portfolio.yield.reason.too_few_days":
@@ -127,7 +129,7 @@ export const portfolioEn = {
   "portfolio.return.undefined": "The return is undefined in this period.",
   "portfolio.return.undefinedWhy":
     "The opening value and every contribution are zero, so no money was invested.",
-  "portfolio.return.periodTooLong": "The period is longer than 366 days.",
+  "portfolio.return.periodTooLong": "The period is longer than 3,660 days.",
   "portfolio.return.periodReversed": "The start is after the end.",
   "portfolio.return.noAccount": "No investment account to measure.",
 } as const;

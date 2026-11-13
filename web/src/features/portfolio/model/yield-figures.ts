@@ -22,21 +22,17 @@ const REASONS = [
   "nothing_held",
   "no_yield_recorded",
   "single_credit",
+  "single_credit_after_flow",
   "too_small",
   "too_few_days",
   "no_rate_in_window",
   "percent_undefined",
 ] as const;
 
-// The reasons that keep the period return beside them (R8, R17). Any other reason without a
-// benchmark states itself alone: the return of a period with no recorded yield reads as zero and
-// misleads.
-const PERIOD_REASONS = [
-  "no_index_for_region",
-  "currency_mismatch",
-  "no_rate_in_window",
-  "percent_undefined",
-];
+// The reasons that withhold the period return without a benchmark (return honesty HR7, amending
+// R8): the return of a period with no recorded yield, or with credits rounded to the cent, reads
+// as zero or as rounding. Any other reason keeps the period return beside it.
+const WITHHELD_REASONS = ["nothing_held", "no_yield_recorded", "too_small"];
 
 // One line of the yield column: the figure and, muted beside it, the index it is read against.
 export interface YieldLine {
@@ -463,12 +459,12 @@ function percentWithMargin(
 }
 
 // periodReturn is `period_bp` when it reads true: with a benchmark, or without one for a reason
-// of PERIOD_REASONS or none (amendment A208 R8).
+// outside WITHHELD_REASONS (return honesty HR7).
 export function periodReturn(report: ReturnReport): number | undefined {
   const reason = report.unavailable_reason ?? "";
-  const keeps = reason === "" || PERIOD_REASONS.includes(reason);
+  const withheld = WITHHELD_REASONS.includes(reason);
 
-  return report.benchmark === undefined && !keeps
+  return report.benchmark === undefined && withheld
     ? undefined
     : report.period_bp;
 }

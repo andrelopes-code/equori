@@ -96,6 +96,10 @@ const REASONS = [
   ["nothing_held", "Nothing held in the period"],
   ["no_yield_recorded", "No yield recorded in the period"],
   ["single_credit", "Only one yield credit recorded"],
+  [
+    "single_credit_after_flow",
+    "No comparison with the CDI index: a deposit or withdrawal between yield credits restarts the comparison, and only one credit came after the last one",
+  ],
   ["too_small", "Balance too small: credits are rounded to the cent"],
   [
     "too_few_days",
@@ -306,6 +310,8 @@ describe("yieldLine", () => {
   it.each([
     "no_index_for_region",
     "currency_mismatch",
+    "single_credit",
+    "single_credit_after_flow",
     "no_rate_in_window",
     "percent_undefined",
   ])(
@@ -338,7 +344,7 @@ describe("yieldLine", () => {
     },
   );
 
-  it.each(["nothing_held", "no_yield_recorded", "single_credit"])(
+  it.each(["nothing_held", "no_yield_recorded", "too_small"])(
     "states the reason alone, never a period return of 0.00%: %s (R8, W2)",
     (reason) => {
       const line = yieldLine(
@@ -562,6 +568,8 @@ describe("yieldGroups", () => {
   it.each([
     "no_index_for_region",
     "currency_mismatch",
+    "single_credit",
+    "single_credit_after_flow",
     "no_rate_in_window",
     "percent_undefined",
   ])(
@@ -599,7 +607,7 @@ describe("yieldGroups", () => {
     },
   );
 
-  it.each(["nothing_held", "no_yield_recorded", "single_credit"])(
+  it.each(["nothing_held", "no_yield_recorded", "too_small"])(
     "draws no period return for a reason that leaves it misleading: %s (R17, W2)",
     (reason) => {
       const report: ReturnReport = {

@@ -11,6 +11,7 @@ import type { components } from "@/api/schema.gen";
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { HelpTip } from "@/ui/display/help-tip";
 import { useAmountTone } from "@/ui/money/amount-tone";
 
 import { ReturnGrowthBar } from "@/features/portfolio/return-money/return-growth-bar";
@@ -33,8 +34,8 @@ interface ReturnMoneyPanelProps {
   surface: ReturnSubject;
 }
 
-// RC4 states the result in money; RC9 adds the growth bar on the portfolio when both the net
-// deposits and the gain are above zero.
+// RC4 states the result in money, each term with its definition (return honesty HR6); RC9 adds
+// the growth bar on the portfolio when both the net deposits and the gain are above zero.
 export function ReturnMoneyPanel({ report, surface }: ReturnMoneyPanelProps) {
   const t = useT();
   const fmt = useMoneyFormat();
@@ -72,6 +73,12 @@ export function ReturnMoneyPanel({ report, surface }: ReturnMoneyPanelProps) {
               <DescriptionListItem key={key}>
                 <DescriptionListTerm>
                   {t(`return.money.${key}`)}
+                  <HelpTip
+                    label={t("return.help.about", {
+                      term: t(`return.money.${key}`),
+                    })}
+                    text={t(`return.help.${key}`)}
+                  />
                 </DescriptionListTerm>
                 <DescriptionListDescription>
                   <Text

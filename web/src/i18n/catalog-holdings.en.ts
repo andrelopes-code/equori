@@ -17,9 +17,10 @@ export const holdingsEn = {
   "holdings.income.open": "View",
   "holdings.income.record": "Record income",
   "holdings.return": "How it performed",
-  "holdings.return.period": "Return of the period",
-  "holdings.return.personal": "Your personal rate a year",
   "holdings.period.year": "Last 12 months",
+  "holdings.period.years3": "Last 3 years",
+  "holdings.period.years5": "Last 5 years",
+  "holdings.period.years10": "Last 10 years",
   "holdings.method": "Details and method",
   "holdings.method.period": "Return of the period",
   "holdings.method.personal": "Your personal rate a year",
@@ -103,22 +104,33 @@ export const holdingsEn = {
   "taxYear.class.currency": "Currencies",
   "return.subject.portfolio": "the portfolio",
   "return.subject.account": "the account",
-  "return.verdict.rate":
-    "In the period, {subject} returned {return}: {percent} of the {index} ({annual} a year)",
-  "return.verdict.above":
-    "In the period, {subject} returned {return}: {delta} pp above the {index}",
-  "return.verdict.below":
-    "In the period, {subject} returned {return}: {delta} pp below the {index}",
-  "return.verdict.inline":
-    "In the period, {subject} returned {return}: in line with the {index}",
-  "return.verdict.index":
-    "In the period, {subject} returned {return}, against {indexReturn} of the {index}",
   "return.verdict.period": "In the period, {subject} returned {return}",
-  "return.verdict.real": ", with a real return of {real} over the {inflation}",
+  "return.verdict.annual": ", or {annual} a year",
+  "return.verdict.personal":
+    "In the period, your personal rate was {annual} a year.",
+  "return.help.about": "About “{term}”",
+  "return.help.period":
+    "How much each 100 invested at the start of the period earned by its end. Deposits and withdrawals do not change this figure, so it can be compared with indexes.",
+  "return.help.annual":
+    "The annual rate is the rate that, repeated every year, reaches the same return.",
+  "return.help.index":
+    "The {index} has a rate only on business days already published. Both bars measure {subject} and the {index} on those days, so the figure can differ from the period return.",
+  "return.help.inflation":
+    "The {index} is published once a month. Both bars measure {subject} and the {index} over whole published months only, so the figure can differ from the period return. The real return is what {subject} earned above the {index}.",
+  "return.help.scope":
+    "All brokerages adds up the brokerage accounts: their investments and their cash. Reserves, savings and checking accounts stay out; a reserve or a savings account can be chosen on its own in this list.",
+  "return.help.opening":
+    "Value at the end of the day before the period starts.",
+  "return.help.deposits":
+    "Money that came in from outside minus money that went out, in the period. Yield, income and transfers between the measured accounts do not count.",
+  "return.help.gain":
+    "Closing balance minus opening balance minus net deposits: what the invested money earned or lost.",
+  "return.help.closing": "Value at the end of the last day of the period.",
   "return.against.index": "Against the {index}",
   "return.against.inflation": "Against inflation",
-  "return.against.window": "{from} to {until} · {days} days",
-  "return.against.months": "{from} to {until}",
+  "return.against.window":
+    "{subject} and {index}, {from} to {until} \u00b7 {days} days",
+  "return.against.months": "{subject} and {index}, {from} to {until}",
   "return.chip.percent": "{percent} of the {index}",
   "return.chip.real": "{real} real",
   "return.bar.portfolio": "Portfolio",
