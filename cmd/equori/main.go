@@ -30,6 +30,8 @@ func run(args []string) error {
 		return reportingCommand(args[2:])
 	case "portfolio":
 		return portfolioCommand(args[2:])
+	case "instruments":
+		return instrumentsCommand(args[2:])
 	case "planning":
 		return planningCommand(args[2:])
 	case "secrets":
@@ -44,7 +46,7 @@ func run(args []string) error {
 		return printVersion()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q; available: serve, user, reporting, portfolio, "+
-			"planning, secrets, backup, restore, service, healthcheck, version\n", cmd)
+			"instruments, planning, secrets, backup, restore, service, healthcheck, version\n", cmd)
 		os.Exit(2)
 	}
 

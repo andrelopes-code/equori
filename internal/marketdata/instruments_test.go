@@ -725,3 +725,56 @@ func TestS411ReclassifyRefusals(t *testing.T) {
 		t.Fatalf("type = %q, want reit", read.Type)
 	}
 }
+
+// S414: a stored share whose name says it is an ETF or a FII is listed with the type the name
+// says, and applying the list edits the types and leaves the other shares alone (amendment A226).
+func TestS414TypeFixes(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	for _, in := range []struct{ code, name, typ string }{
+		{"BOVA11", "ISHARES IBOVESPA CLASSE DE ÍNDICE - RESPONSABILIDADE LIMITADA", "stock"},
+		{"MXRF11", "Maxi Renda Fundo De Investimento Imobiliaro - FII", "stock"},
+		{"PETR4", "Petróleo Brasileiro S.A. - Petrobras", "stock"},
+		{"KNRI11", "Kinea Renda Imobiliária Fundo de Investimento Imobiliário", "reit"},
+	} {
+		body := mxrf11()
+		body["code"], body["name"], body["type"] = in.code, in.name, in.typ
+		h.MustDo(http.MethodPost, "/api/v1/instruments", body, http.StatusCreated, nil)
+	}
+
+	md := h.App.Marketdata
+
+	fixes, err := md.SuggestTypeFixes(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := make([]string, len(fixes))
+	for i, f := range fixes {
+		got[i] = string(f.Code) + " " + f.From + " " + f.To
+	}
+
+	if want := []string{"BOVA11 stock etf", "MXRF11 stock reit"}; !slices.Equal(got, want) {
+		t.Fatalf("fixes = %v, want %v", got, want)
+	}
+
+	if err := md.ApplyTypeFixes(t.Context(), fixes); err != nil {
+		t.Fatal(err)
+	}
+
+	for code, want := range map[string]string{
+		"BOVA11": "etf", "MXRF11": "reit", "PETR4": "stock", "KNRI11": "reit",
+	} {
+		var read instrumentAPI
+		h.MustDo(http.MethodGet, "/api/v1/instruments/"+code, nil, http.StatusOK, &read)
+
+		if read.Type != want || read.Exchange != "BVMF" {
+			t.Errorf("%s = %+v, want type %s on BVMF", code, read, want)
+		}
+	}
+
+	if again, err := md.SuggestTypeFixes(t.Context()); err != nil || len(again) != 0 {
+		t.Fatalf("after the fix: %v, %v", again, err)
+	}
+}

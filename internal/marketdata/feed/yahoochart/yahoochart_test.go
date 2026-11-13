@@ -358,3 +358,34 @@ func day(s string) time.Time {
 
 	return d
 }
+
+// Yahoo answers EQUITY for an ETF and a FII of the B3; the name states the type (amendment A226).
+func TestSearchTypesTheListingsOfTheB3ByName(t *testing.T) {
+	t.Parallel()
+
+	body := `{"quotes":[
+{"exchange":"SAO","quoteType":"EQUITY","symbol":"BOVA11.SA","longname":"ISHARES IBOVESPA CLASSE DE ÍNDICE - RESPONSABILIDADE LIMITADA"},
+{"exchange":"SAO","quoteType":"EQUITY","symbol":"MXRF11.SA","longname":"Maxi Renda Fundo De Investimento Imobiliaro - FII"},
+{"exchange":"SAO","quoteType":"EQUITY","symbol":"PETR4.SA","longname":"Petróleo Brasileiro S.A. - Petrobras"}
+]}`
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(body))
+	}))
+	t.Cleanup(srv.Close)
+
+	got, err := yahoochart.New(srv.Client(), srv.URL+"/yahoo/v8/finance/chart").
+		Search(t.Context(), "11", 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	types := make([]string, len(got))
+	for i, l := range got {
+		types[i] = string(l.Code) + " " + l.Type
+	}
+
+	if want := []string{"BOVA11 etf", "MXRF11 reit", "PETR4 stock"}; !slices.Equal(types, want) {
+		t.Fatalf("types = %v, want %v", types, want)
+	}
+}

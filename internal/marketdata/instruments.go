@@ -112,19 +112,38 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 func (m *Module) EditInstrument(
 	ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
 ) (Instrument, error) {
-	in, err := m.Instrument(ctx, code)
+	in, derived, err := m.editInstrument(ctx, code, typ, name, exchange, subtype, symbols)
 	if err != nil {
 		return Instrument{}, err
 	}
 
+	if derived {
+		if err := m.reclassified(ctx); err != nil {
+			return Instrument{}, fmt.Errorf("rebuild derived rows: %w", err)
+		}
+	}
+
+	return in, nil
+}
+
+// editInstrument stores an edit and reports whether it changed what other modules derive from the
+// instrument, so that the caller runs the reclassified hook once.
+func (m *Module) editInstrument(
+	ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
+) (Instrument, bool, error) {
+	in, err := m.Instrument(ctx, code)
+	if err != nil {
+		return Instrument{}, false, err
+	}
+
 	if in.Type == domain.TypeCurrency {
-		return Instrument{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+		return Instrument{}, false, &domain.FieldError{Field: "code", Message: "is a currency"}
 	}
 
 	old := in
 
 	if in, err = in.Reclassify(typ); err != nil {
-		return Instrument{}, err
+		return Instrument{}, false, err
 	}
 
 	in.Name, in.Exchange, in.Subtype = name, exchange, subtype
@@ -133,28 +152,24 @@ func (m *Module) EditInstrument(
 	}
 
 	if in, err = in.Validate(); err != nil {
-		return Instrument{}, err
+		return Instrument{}, false, err
 	}
 
 	if err := m.checkSymbolSources(symbols); err != nil {
-		return Instrument{}, err
+		return Instrument{}, false, err
 	}
 
 	if err := m.updateInstrument(ctx, in, symbols != nil); err != nil {
-		return Instrument{}, err
+		return Instrument{}, false, err
 	}
 
 	if in.Exchange != old.Exchange || (symbols != nil && !maps.Equal(symbols, old.Symbols)) {
 		m.requestDefaultHistory(ctx, in)
 	}
 
-	if typ != "" || in.Subtype != old.Subtype || in.Exchange != old.Exchange {
-		if err := m.reclassified(ctx); err != nil {
-			return Instrument{}, fmt.Errorf("rebuild derived rows: %w", err)
-		}
-	}
+	derived := typ != "" || in.Subtype != old.Subtype || in.Exchange != old.Exchange
 
-	return in, nil
+	return in, derived, nil
 }
 
 // DeleteInstrument removes a security with its prices, terms, history requests and symbols (A223

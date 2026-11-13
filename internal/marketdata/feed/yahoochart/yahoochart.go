@@ -214,8 +214,9 @@ func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Lis
 		}
 
 		out = append(out, feed.Listing{
-			Code: code, Name: name, Type: kind, Exchange: mic, QuoteCurrency: micCurrencies[mic],
-			Symbol: q.Symbol,
+			Code: code, Name: name, Type: feed.SecurityType(mic, name, kind), Exchange: mic,
+			QuoteCurrency: micCurrencies[mic],
+			Symbol:        q.Symbol,
 		})
 	}
 
