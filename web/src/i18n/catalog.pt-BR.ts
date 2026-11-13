@@ -485,6 +485,44 @@ export const catalogPtBR: Catalog = {
     "A transação está anulada e não pode ser alterada.",
   "problem.posting_reconciled":
     "A transação já foi conferida e não pode ser alterada. Reabra a conferência da conta para corrigi-la.",
+  "problem.investment_transaction":
+    "Compra, venda ou provento não é corrigido. Anule a transação e registre-a novamente com os valores certos.",
+  "problem.posting_not_movable":
+    "A transação não tem lançamento que possa ir para outra fatura.",
+  "problem.method_not_allowed":
+    "O servidor não aceita esta operação neste endereço.",
+  "problem.unsupported_media_type":
+    "O servidor não aceita o formato dos dados enviados.",
+  "problem.currency_unsupported": "A moeda não é aceita nesta operação.",
+  "problem.budget_exists": "A categoria já tem um orçamento.",
+  "problem.instrument_exists": "Já existe um ativo com este código.",
+  "problem.price_missing":
+    "O ativo não tem cotação nesta data. Registre uma cotação e tente novamente.",
+  "problem.attachment_not_inlineable":
+    "Só PDF ou imagem é exibido aqui. Baixe o anexo para abri-lo.",
+  "problem.archive_invalid": "O arquivo não é uma exportação do equori.",
+  "problem.archive_too_new":
+    "O arquivo vem de uma versão mais nova do equori. Atualize esta instalação e importe novamente.",
+  "problem.import_not_empty":
+    "Este livro já tem dados. Substitua o conteúdo para importar o arquivo.",
+  "problem.import_conflict":
+    "Um identificador do arquivo pertence a outro livro.",
+  "problem.export_pending":
+    "Uma exportação já está em andamento. Aguarde a conclusão.",
+  "problem.export_not_ready":
+    "A exportação ainda não está pronta. Tente novamente em instantes.",
+  "problem.trade_target_required":
+    "Escolha a conta do investimento, ou a corretora e o ativo, não os dois.",
+  "problem.brokerage_cash_missing":
+    "A corretora não tem conta de caixa aberta na moeda base. Crie uma conta de caixa chamada Cash na corretora ou escolha a conta de caixa da operação.",
+  "problem.brokerage_cash_ambiguous":
+    "A corretora tem várias contas de caixa. Escolha a conta de caixa da operação.",
+  "problem.holding_not_found": "A corretora não tem posição neste ativo.",
+  "problem.record_not_discarded":
+    "Só um registro descartado pode ser reaberto.",
+  "problem.too_many_lines":
+    "O texto tem mais de 100 linhas. Divida-o em partes menores.",
+  "problem.proposal_not_found": "A proposta do assistente não existe mais.",
   "problem.account_not_empty":
     "A conta tem saldo ou transações após a data de encerramento e não pode ser encerrada.",
   "problem.settings_locked":

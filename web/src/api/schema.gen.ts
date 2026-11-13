@@ -4094,7 +4094,11 @@ export interface components {
              *     last_owner, already_member, invitation_not_found, invitation_email_mismatch,
              *     confirmation_mismatch, books_has_members, last_books,
              *     backup_off, backup_failed, password_too_short, institution_in_use,
-             *     trade_target_required, brokerage_cash_missing, brokerage_cash_ambiguous, holding_not_found.
+             *     trade_target_required, brokerage_cash_missing, brokerage_cash_ambiguous, holding_not_found,
+             *     posting_not_movable, archive_invalid, import_not_empty, import_conflict, export_pending,
+             *     export_not_ready, record_not_discarded, no_decision, too_many_lines, proposal_not_found,
+             *     provider_not_found, use_not_found, capability_missing, key_required, secret_key_missing,
+             *     admin_required, unofficial_source.
              */
             code: string;
             request_id?: string;

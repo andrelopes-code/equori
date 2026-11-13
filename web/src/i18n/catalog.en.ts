@@ -476,6 +476,43 @@ export const catalogEn = {
     "The transaction is voided and cannot be changed.",
   "problem.posting_reconciled":
     "The transaction is already reconciled and cannot be changed. Unlock the account's reconciliation to correct it.",
+  "problem.investment_transaction":
+    "A purchase, a sale or an investment income is not corrected. Void the transaction and record it again with the right values.",
+  "problem.posting_not_movable":
+    "The transaction has no posting that can move to another statement.",
+  "problem.method_not_allowed":
+    "The server does not accept this operation at this address.",
+  "problem.unsupported_media_type":
+    "The server does not accept the format of the data sent.",
+  "problem.currency_unsupported":
+    "The currency is not supported in this operation.",
+  "problem.budget_exists": "The category already has a budget.",
+  "problem.instrument_exists": "An asset with this code already exists.",
+  "problem.price_missing":
+    "The asset has no price for this date. Record a price and try again.",
+  "problem.attachment_not_inlineable":
+    "Only a PDF or an image is shown here. Download the attachment to open it.",
+  "problem.archive_invalid": "The file is not an export of equori.",
+  "problem.archive_too_new":
+    "The file comes from a newer version of equori. Update this instance and import again.",
+  "problem.import_not_empty":
+    "These books already hold data. Replace the content to import the file.",
+  "problem.import_conflict":
+    "An identifier in the file belongs to another book.",
+  "problem.export_pending":
+    "An export is already in progress. Wait for it to finish.",
+  "problem.export_not_ready": "The export is not ready yet. Try again shortly.",
+  "problem.trade_target_required":
+    "Choose the investment account, or the brokerage and the asset, not both.",
+  "problem.brokerage_cash_missing":
+    "The brokerage has no open cash account in the base currency. Create a cash account named Cash in the brokerage, or choose the cash account of the trade.",
+  "problem.brokerage_cash_ambiguous":
+    "The brokerage has several cash accounts. Choose the cash account of the trade.",
+  "problem.holding_not_found": "The brokerage holds no position in this asset.",
+  "problem.record_not_discarded": "Only a discarded record can be reopened.",
+  "problem.too_many_lines":
+    "The text has more than 100 lines. Split it into smaller parts.",
+  "problem.proposal_not_found": "The assistant's proposal no longer exists.",
   "problem.account_not_empty":
     "The account has a balance or transactions after the closing date and cannot be closed.",
   "problem.settings_locked":
