@@ -1,9 +1,15 @@
 import type { Basis } from "@/features/accounts/api";
 
+// The values written in the address; Type and Balance, the defaults, are left out (AL1).
+export type SheetGroupBy = "institution" | "none";
+export type SheetOrder = "name" | "attention";
+
 export interface AccountsSearch {
   date?: string;
   basis?: Basis;
   closed?: true;
+  group?: SheetGroupBy;
+  order?: SheetOrder;
 }
 
 function isDate(value: unknown): value is string {
@@ -15,7 +21,7 @@ function isDate(value: unknown): value is string {
   );
 }
 
-// The balance sheet's date, basis and closed accounts are in the address, so a link reproduces it.
+// The balance sheet's date, basis, closed accounts, grouping and order are in the address, so a link reproduces it.
 export function validateAccountsSearch(
   raw: Record<string, unknown>,
 ): AccountsSearch {
@@ -23,5 +29,11 @@ export function validateAccountsSearch(
     ...(isDate(raw.date) ? { date: raw.date } : {}),
     ...(raw.basis === "settled" ? { basis: "settled" as const } : {}),
     ...(raw.closed === true ? { closed: true as const } : {}),
+    ...(raw.group === "institution" || raw.group === "none"
+      ? { group: raw.group }
+      : {}),
+    ...(raw.order === "name" || raw.order === "attention"
+      ? { order: raw.order }
+      : {}),
   };
 }
