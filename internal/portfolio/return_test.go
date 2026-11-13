@@ -123,10 +123,30 @@ func TestS127ReturnUndefined(t *testing.T) {
 	f.h.ExpectProblem(r, http.StatusUnprocessableEntity, "return_undefined", "")
 }
 
+// Return honesty HR2: a period of two years is measured.
+func TestReturnOverYears(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	checking := f.h.Account("Checking", "asset", "checking", nil)
+	f.h.Record("2025-10-15", apitest.Posting(checking, -100000), apitest.Posting(f.cash, 100000))
+	f.income(t, f.mxrf11, "dividend", 5000, f.dividends)
+
+	r, got := f.returnOf(t, f.xp, "2024-11-01", "2026-10-31")
+	if r.Status != http.StatusOK {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	if got.Opening["amount"] != float64(0) || got.Closing["amount"] != float64(105000) ||
+		len(got.Flows) != 1 || got.Flows[0].Date != "2025-10-15" {
+		t.Fatalf("return over two years = %+v", got)
+	}
+}
+
+// HR2: the longest period is 3,660 days.
 func TestReturnRequestErrors(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t)
-	r, _ := f.returnOf(t, f.xp, "2025-10-01", "2026-10-31")
+	r, _ := f.returnOf(t, f.xp, "2015-10-31", "2026-10-31")
 	f.h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "to")
 	r, _ = f.returnOf(t, f.xp, "2026-10-31", "2026-10-01")
 	f.h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "to")

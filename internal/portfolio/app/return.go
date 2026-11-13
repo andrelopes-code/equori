@@ -13,8 +13,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
-// MaxReturnDays is the longest period of a return (investments design 4.3).
-const MaxReturnDays = 366
+// MaxReturnDays is the longest period of a return: ten years with their leap days (return honesty
+// HR2, amending investments design 4.3).
+const MaxReturnDays = 3660
 
 var (
 	ErrNotFound = errors.New("not found")

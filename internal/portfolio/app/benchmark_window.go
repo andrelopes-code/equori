@@ -53,8 +53,13 @@ func (p period) recordedWindow(w window, since time.Time, rates []IndexRate) (wi
 		return window{}, false
 	}
 
-	if a, _ := domain.ComparisonStart(credits, p.flowDates()); a.Equal(credits[len(credits)-1]) {
-		p.unavailable(ReasonSingleCredit)
+	if a, restarted := domain.ComparisonStart(
+		credits,
+		p.flowDates(),
+	); a.Equal(
+		credits[len(credits)-1],
+	) {
+		p.unavailable(singleCreditReason(restarted))
 
 		return window{}, false
 	}
@@ -158,4 +163,14 @@ func firstHeldDay(
 	}
 
 	return time.Time{}, false
+}
+
+// singleCreditReason names why one credit is left: a flow moved the start to it (HR8), or the
+// period holds one credit.
+func singleCreditReason(restarted bool) string {
+	if restarted {
+		return ReasonSingleCreditAfterFlow
+	}
+
+	return ReasonSingleCredit
 }

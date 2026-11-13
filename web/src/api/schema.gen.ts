@@ -3702,7 +3702,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Money-weighted annual return of an account and its sub-accounts over a period of at most 366 days (investments design 4.3).
+         * Money-weighted annual return of an account and its sub-accounts over a period of at most 3660 days (return honesty HR2).
          * @description The flows are the money that entered or left the tree in transactions that also touch a balance account
          *     outside it; income, expense and tax postings are performance. Opening is valued on the day before from, closing
          *     on to, flows on their dates, all in value_in (the base currency by default). annual_bp is the internal rate of
@@ -6954,7 +6954,7 @@ export interface components {
             index?: string;
             benchmark?: components["schemas"]["ReturnBenchmark"];
             inflation?: components["schemas"]["ReturnInflation"];
-            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, too_small, too_few_days, no_rate_in_window or percent_undefined (amendment A208 R21). */
+            /** @description Why benchmark, or its percent_bp and annual_bp, is absent - no_index_for_region, currency_mismatch, nothing_held, no_yield_recorded, single_credit, single_credit_after_flow, too_small, too_few_days, no_rate_in_window or percent_undefined (amendment A208 R21). */
             unavailable_reason?: string;
             excluded?: components["schemas"]["ReturnExcluded"];
         };

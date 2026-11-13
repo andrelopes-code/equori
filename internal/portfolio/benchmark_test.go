@@ -873,6 +873,25 @@ func TestS324MonthlyCreditsWithAMidGapDeposit(t *testing.T) {
 	requireFigures(t, b.compared(t, "2026-01-02", "2026-03-31", ""), want, 348)
 }
 
+// Return honesty HR8: a deposit before the last of monthly credits restarts the comparison at that
+// credit; the reason names the restart, and the period return stays.
+func TestSingleCreditAfterAFlow(t *testing.T) {
+	t.Parallel()
+	b := buildBook(t, bookSpec{
+		cdi:     weekdays("2026-01-02", "2026-03-31"),
+		credits: []string{"2026-01-30", "2026-02-27", "2026-03-31"},
+		opened:  "2026-01-02",
+		moves:   map[string]int64{"2026-03-12": 1_000_000_000},
+		today:   "2026-04-01",
+	})
+
+	r := b.compared(t, "2026-01-02", "2026-03-31", "")
+	if r.Benchmark != nil || r.PeriodBP == nil ||
+		r.UnavailableReason != "single_credit_after_flow" {
+		t.Fatalf("report = %+v", r)
+	}
+}
+
 // S349: a monthly credit after a deposit leaves one compared day: the timing of one credit moves
 // the percent by a day in the days, so percent_bp and annual_bp are absent, reason too_few_days,
 // and the return, the index and the window stay (R22, R23).

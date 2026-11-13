@@ -110,10 +110,10 @@ func rangeProblem(err error) (problem.Details, bool) {
 		d := problem.New(
 			http.StatusBadRequest,
 			"invalid_request",
-			"from must not be after to, and the period must not exceed 366 days",
+			"from must not be after to, and the period must not exceed 3660 days",
 		)
 		d.Errors = []problem.FieldError{
-			{Field: "to", Message: "must be on or after from and at most 365 days after it"},
+			{Field: "to", Message: "must be on or after from and at most 3659 days after it"},
 		}
 
 		return d, true
