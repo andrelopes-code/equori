@@ -55,6 +55,17 @@ export function setClassTarget(
   };
 }
 
+// The targets of a boundary move, one per class in class order.
+export function setClassTargets(draft: EditDraft, next: number[]): EditDraft {
+  return {
+    ...draft,
+    classes: draft.classes.map((cls, i) => ({
+      ...cls,
+      targetBp: next[i] ?? cls.targetBp,
+    })),
+  };
+}
+
 export function setClassLocked(
   draft: EditDraft,
   index: number,

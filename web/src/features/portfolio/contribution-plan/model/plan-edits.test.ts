@@ -5,6 +5,7 @@ import {
   overlayDraft,
   removeClass,
   setClassTarget,
+  setClassTargets,
   setMemberTarget,
   setSplit,
   startEditing,
@@ -35,6 +36,12 @@ describe("plan edits", () => {
     expect(targets(setClassTarget(plan(), 1, 3000))).toEqual([
       3500, 3000, 1750, 1750,
     ]);
+  });
+
+  it("writes the targets of a boundary move in class order", () => {
+    const next = setClassTargets(plan(), [4100, 1900, 2000, 2000]);
+
+    expect(targets(next)).toEqual([4100, 1900, 2000, 2000]);
   });
 
   it("keeps a locked class at its value", () => {

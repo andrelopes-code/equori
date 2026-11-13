@@ -65,6 +65,9 @@ export function usePlanEditor(plan: Plan | undefined) {
     setTarget: (index: number, bp: number) => {
       change((d) => edits.setClassTarget(d, index, bp));
     },
+    setTargets: (next: number[]) => {
+      change((d) => edits.setClassTargets(d, next));
+    },
     setLocked: (index: number, locked: boolean) => {
       change((d) => edits.setClassLocked(d, index, locked));
     },

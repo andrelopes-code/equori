@@ -1,0 +1,60 @@
+@layer app {
+  /* The columns of every row: name, slider, percent, lock, today, amount, menu. Rows take them
+     as a subgrid, so each column has one width for every row and the amount ends on one vertical
+     line. The measures have no token: the name column 12 to 22rem, today 4rem, amount 10rem. */
+  .list {
+    display: grid;
+    grid-template-columns:
+      minmax(12rem, 22rem) minmax(8rem, 1fr) auto auto 4rem 10rem
+      auto;
+    column-gap: var(--slotted-space-4);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* One height for every row of every state. */
+  .row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    block-size: 2.75rem;
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    white-space: nowrap;
+  }
+
+  .row > * {
+    min-inline-size: 0;
+  }
+
+  .name {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  /* The name of an asset is indented one step from the text of a group name input: past the
+     colour swatch, its gap and the inset of a small text field (no token holds the inset). */
+  .member {
+    overflow: hidden;
+    padding-inline-start: calc(
+      2 * var(--slotted-space-4) + 0.5625rem + var(--slotted-space-6)
+    );
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .figure,
+  .amount {
+    overflow: hidden;
+    text-align: end;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}

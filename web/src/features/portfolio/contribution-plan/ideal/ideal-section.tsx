@@ -1,4 +1,3 @@
-import { Button } from "@slotted/react/button";
 import {
   Section,
   SectionActions,
@@ -9,12 +8,9 @@ import {
 } from "@slotted/react/section";
 import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { NameRequiredMessage } from "@/features/portfolio/contribution-plan/editor/name-required-message";
-import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import { BarKey } from "@/features/portfolio/contribution-plan/ideal/bar-key";
 import { GroupRow } from "@/features/portfolio/contribution-plan/ideal/group-row";
 import styles from "@/features/portfolio/contribution-plan/ideal/ideal-grid.module.css";
@@ -28,18 +24,12 @@ interface IdealSectionProps {
   // Undefined while the plan loads.
   view: Plan | undefined;
   pending: boolean;
-  editor: PlanEditor;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
 }
 
 // One row per group, then the members of an open group (spec, Screen, Portfolio against the
-// ideal). In edit mode the same rows hold the editors.
-export function IdealSection({
-  view,
-  pending,
-  editor,
-  memberName,
-}: IdealSectionProps) {
+// ideal).
+export function IdealSection({ view, pending, memberName }: IdealSectionProps) {
   const t = useT();
   const [open, setOpen] = useState<readonly number[]>([]);
 
@@ -49,7 +39,6 @@ export function IdealSection({
   const withAfter = groups.some(
     (g) => positive(g.amount) || g.members.some((m) => positive(m.amount)),
   );
-  const nameless = editor.draft?.classes.some((c) => c.name.trim() === "");
 
   function handleToggle(index: number) {
     setOpen((now) =>
@@ -64,23 +53,13 @@ export function IdealSection({
           <SectionHeading>{t("contributionPlan.ideal")}</SectionHeading>
         </SectionTitle>
 
-        {editor.draft === undefined && (
-          <SectionActions>
-            <BarKey withAfter={withAfter} />
-          </SectionActions>
-        )}
+        <SectionActions>
+          <BarKey withAfter={withAfter} />
+        </SectionActions>
       </SectionHeader>
 
       <SectionBody>
         <Stack gap={3}>
-          {editor.draft !== undefined && (
-            <Text size="sm" tone="muted">
-              {t("contributionPlan.editHint")}
-            </Text>
-          )}
-
-          <NameRequiredMessage shown={nameless === true} />
-
           {view === undefined && (
             <Stack gap={2}>
               {[0, 1, 2, 3].map((n) => (
@@ -95,7 +74,7 @@ export function IdealSection({
               aria-label={t("contributionPlan.ideal")}
               className={styles.grid}
             >
-              {editor.draft === undefined && <ScaleHeader />}
+              <ScaleHeader />
 
               {groups.map((group, index) => (
                 <GroupRow
@@ -105,26 +84,12 @@ export function IdealSection({
                   open={open.includes(index)}
                   hasAmount={hasAmount}
                   waiting={waiting}
-                  editor={editor}
                   memberName={memberName}
                   onToggle={() => {
                     handleToggle(index);
                   }}
                 />
               ))}
-            </div>
-          )}
-
-          {editor.draft !== undefined && (
-            <div>
-              <Button
-                size="sm"
-                variant="ghost"
-                tone="secondary"
-                onClick={editor.addClass}
-              >
-                {t("contributionPlan.addClass")}
-              </Button>
             </div>
           )}
         </Stack>

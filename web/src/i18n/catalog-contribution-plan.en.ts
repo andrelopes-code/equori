@@ -18,14 +18,11 @@ export const contributionPlanEn = {
   "contributionPlan.lock": "Keep {name} fixed",
   "contributionPlan.addClass": "Add group",
   "contributionPlan.className": "Group name",
-  "contributionPlan.nameRequired": "Name every group before saving.",
-  "contributionPlan.removeClass": "Remove {name}",
   "contributionPlan.split": "Split among assets",
   "contributionPlan.addAsset": "Add asset",
   "contributionPlan.pickAccounts": "Investment accounts",
   "contributionPlan.pickInstruments": "Assets",
   "contributionPlan.inClass": "In {name}",
-  "contributionPlan.removeAsset": "Remove {name}",
   "contributionPlan.moveTo": "Group of {name}",
   "contributionPlan.save": "Save",
   "contributionPlan.discard": "Discard",
@@ -70,9 +67,6 @@ export const contributionPlanEn = {
     "{name} has no price; without it the contribution is not split.",
   "contributionPlan.verdictMissingRate":
     "{name} has no exchange rate; without it the contribution is not split.",
-  "contributionPlan.verdictNameMissing": "Name every group to see the split.",
-  "contributionPlan.editHint":
-    "Drag or type the target of each group. The others adjust to add up to 100%. The lock keeps a group fixed.",
   "contributionPlan.ideal": "Portfolio against the target",
   "contributionPlan.keyToday": "today",
   "contributionPlan.keyAfter": "with this contribution",
@@ -109,4 +103,12 @@ export const contributionPlanEn = {
   "contributionPlan.barNameMissing": "name every group",
   "contributionPlan.handle": "Boundary between {left} and {right}",
   "contributionPlan.handleValue": "{left} {leftShare}, {right} {rightShare}",
+  "contributionPlan.help":
+    "Drag the boundary between two groups or type a percent. The total always stays at 100%. The lock keeps a group fixed.",
+  "contributionPlan.helpLabel": "How to edit",
+  "contributionPlan.decrease": "Decrease {name}",
+  "contributionPlan.increase": "Increase {name}",
+  "contributionPlan.rowMenu": "Actions for {name}",
+  "contributionPlan.removeGroup": "Remove group",
+  "contributionPlan.removeMember": "Remove asset",
 } as const;

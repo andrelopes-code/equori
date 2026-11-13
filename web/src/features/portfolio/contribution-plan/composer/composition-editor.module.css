@@ -37,11 +37,6 @@
     block-size: var(--bar-tall);
   }
 
-  .thinBar {
-    position: relative;
-    block-size: var(--bar-thin);
-  }
-
   .segments {
     display: flex;
     inline-size: 100%;
@@ -49,6 +44,12 @@
     overflow: hidden;
     border-radius: var(--slotted-radius-sm);
     background: var(--slotted-surface-sunken);
+  }
+
+  /* After .segments: a thin bar carries both classes and its height must win over the 100%. */
+  .thinBar {
+    position: relative;
+    block-size: var(--bar-thin);
   }
 
   /* A segment grows in proportion to its basis points, from a zero basis: the widths are exact
@@ -118,8 +119,12 @@
     color: var(--slotted-text-muted);
   }
 
+  /* It fills the cell, empty or not: the fit is measured on this room, so a room that shrinks to
+     its content could never grow back to show the amount. */
   .amountRoom {
+    flex: 1 1 0;
     min-inline-size: 0;
+    text-align: center;
     margin-inline: var(--slotted-space-2);
     overflow: hidden;
     white-space: nowrap;

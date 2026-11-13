@@ -17,15 +17,11 @@ export interface VerdictDeps {
   money: (m: Money) => string;
   list: (items: string[]) => string;
   memberName: (ref: MemberRef) => string;
-  // A group without a name blocks the preview.
-  nameMissing?: boolean;
 }
 
 // The sentence that says where this month's money goes (spec, Screen, This month).
 export function monthVerdict(view: Plan, deps: VerdictDeps): string {
-  const { t, money, list, memberName, nameMissing } = deps;
-
-  if (nameMissing === true) return t("contributionPlan.verdictNameMissing");
+  const { t, money, list, memberName } = deps;
 
   if (view.status === "incomplete" && view.missing.length > 0) {
     return view.missing

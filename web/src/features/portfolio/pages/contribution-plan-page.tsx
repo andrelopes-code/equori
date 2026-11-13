@@ -17,6 +17,7 @@ import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { contributionPlanQuery } from "@/features/portfolio/api";
+import { EditSection } from "@/features/portfolio/contribution-plan/editor/edit-section";
 import { IdealSection } from "@/features/portfolio/contribution-plan/ideal/ideal-section";
 import { ContributionEmpty } from "@/features/portfolio/contribution-plan/states/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/editor/contribution-save-bar";
@@ -132,17 +133,27 @@ export function ContributionPlanPage() {
               view={shown}
               amount={amount}
               pending={pending}
-              nameless={nameless === true}
+              editing={editor.draft !== undefined}
               memberName={memberName}
               onAmount={setAmount}
             />
           )}
 
-          {!plan.isError && !empty && (
+          {!plan.isError && !empty && editor.draft === undefined && (
             <IdealSection
               view={shown}
               pending={pending}
+              memberName={memberName}
+            />
+          )}
+
+          {shown !== undefined && editor.draft !== undefined && (
+            <EditSection
+              view={shown}
+              draft={editor.draft}
               editor={editor}
+              amount={amount}
+              pending={pending}
               memberName={memberName}
             />
           )}

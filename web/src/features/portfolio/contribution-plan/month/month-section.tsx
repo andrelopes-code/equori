@@ -24,8 +24,8 @@ interface MonthSectionProps {
   view: Plan;
   amount: number;
   pending: boolean;
-  // A group without a name blocks the split.
-  nameless: boolean;
+  // Edit mode: the card draws only its amount row.
+  editing: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onAmount: (minor: number) => void;
 }
@@ -36,7 +36,7 @@ export function MonthSection({
   view,
   amount,
   pending,
-  nameless,
+  editing,
   memberName,
   onAmount,
 }: MonthSectionProps) {
@@ -61,9 +61,8 @@ export function MonthSection({
     list: (items) =>
       new Intl.ListFormat(tag, { type: "conjunction" }).format(items),
     memberName,
-    nameMissing: nameless,
   });
-  const incomplete = view.status === "incomplete" && !nameless;
+  const incomplete = view.status === "incomplete";
 
   return (
     <Section size="lg" ground="surface" aria-busy={pending}>
@@ -95,13 +94,11 @@ export function MonthSection({
             </Text>
           </Inline>
 
-          {incomplete ? (
-            <IncompleteVerdict view={view} />
-          ) : (
-            <Text>{verdict}</Text>
-          )}
+          {!editing && incomplete && <IncompleteVerdict view={view} />}
 
-          <PurchaseList view={view} memberName={memberName} />
+          {!editing && !incomplete && <Text>{verdict}</Text>}
+
+          {!editing && <PurchaseList view={view} memberName={memberName} />}
         </Stack>
       </SectionBody>
     </Section>

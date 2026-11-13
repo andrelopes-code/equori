@@ -134,35 +134,10 @@ describe("Contribution plan without a plan", () => {
     });
     expect(name).toHaveValue("");
     expect(name).toHaveFocus();
-    expect(
-      screen.getByText(catalogPtBR["contributionPlan.nameRequired"]),
-    ).toBeInTheDocument();
+    expect(name).toBeInvalid();
     expect(screen.getByRole("textbox", { name: /^Ideal/ })).toHaveValue(
       "100,0",
     );
-  });
-
-  it("states a blank group name once above the rows, never inside a row", async () => {
-    await open(withPositions);
-
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogPtBR["contributionPlan.startScratch"],
-      }),
-    );
-
-    const name = await screen.findByRole("textbox", {
-      name: catalogPtBR["contributionPlan.className"],
-    });
-    const message = screen.getByText(
-      catalogPtBR["contributionPlan.nameRequired"],
-    );
-    expect(name).toBeInvalid();
-    expect(name.getAttribute("aria-describedby")).toContain(message.id);
-    expect(message.closest("[role='table'], table")).toBeNull();
-    expect(
-      screen.getAllByText(catalogPtBR["contributionPlan.nameRequired"]),
-    ).toHaveLength(1);
   });
 
   it("explains the screen with the three steps open above the two actions", async () => {
@@ -180,25 +155,6 @@ describe("Contribution plan without a plan", () => {
     expect(
       screen.getByText(catalogPtBR["contributionPlan.howStep1"]),
     ).toBeVisible();
-  });
-
-  it("says in the verdict that a blank group name blocks the split", async () => {
-    await open(withPositions);
-
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogPtBR["contributionPlan.startScratch"],
-      }),
-    );
-
-    expect(
-      await screen.findByText(
-        catalogPtBR["contributionPlan.verdictNameMissing"],
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(catalogPtBR["contributionPlan.verdictNoAmount"]),
-    ).not.toBeInTheDocument();
   });
 
   it("links to the first purchase when the book holds no position", async () => {

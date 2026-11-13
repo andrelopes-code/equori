@@ -1,0 +1,14 @@
+@layer app {
+  .field {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+
+  /* The measure of "100,0 %": no token holds it. */
+  .text {
+    inline-size: 5.5rem;
+    flex: none;
+  }
+}

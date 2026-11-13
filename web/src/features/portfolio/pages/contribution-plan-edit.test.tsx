@@ -89,6 +89,9 @@ async function edit(fetch = api()) {
   );
 }
 
+const menuOf = (name: string) =>
+  screen.findByRole("button", { name: `Ações de ${name}` });
+
 const target = (name: string) =>
   screen.findByRole("textbox", { name: `Ideal: ${name}` });
 
@@ -102,7 +105,7 @@ describe("Contribution plan edit mode", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("draws the bar key only outside edit mode and explains the rule instead", async () => {
+  it("draws the bar key only outside edit mode and puts the rules in a help popover", async () => {
     localStorage.setItem(
       "equori.locale",
       JSON.stringify({ language: "pt", region: "BR" }),
@@ -110,7 +113,9 @@ describe("Contribution plan edit mode", () => {
     await renderApp("/portfolio/contribution-plan", { fetch: api() });
     expect(await screen.findByText("hoje")).toBeInTheDocument();
     expect(
-      screen.queryByText(catalogPtBR["contributionPlan.editHint"]),
+      screen.queryByRole("button", {
+        name: catalogPtBR["contributionPlan.helpLabel"],
+      }),
     ).not.toBeInTheDocument();
 
     await userEvent.click(
@@ -118,11 +123,131 @@ describe("Contribution plan edit mode", () => {
         name: catalogPtBR["contributionPlan.edit"],
       }),
     );
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogPtBR["contributionPlan.helpLabel"],
+      }),
+    );
 
     expect(
-      await screen.findByText(catalogPtBR["contributionPlan.editHint"]),
+      await screen.findByText(catalogPtBR["contributionPlan.help"]),
     ).toBeInTheDocument();
     expect(screen.queryByText("hoje")).not.toBeInTheDocument();
+  });
+
+  it("keeps only the amount row in the month card while editing", async () => {
+    await edit();
+
+    expect(
+      await screen.findByRole("textbox", { name: "Aporte" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByText(catalogPtBR["contributionPlan.shoppingEmpty"]),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", {
+        name: catalogPtBR["contributionPlan.shopping"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("steps a target by one percent with the buttons", async () => {
+    await edit();
+
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Aumentar Ações Brasil" }),
+    );
+    await waitFor(() => {
+      expect(lastTargets()).toEqual([3950, 2100, 1975, 1975]);
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Diminuir Ações Brasil" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Diminuir Ações Brasil" }),
+    );
+    await waitFor(() => {
+      expect(lastTargets()).toEqual([4050, 1900, 2025, 2025]);
+    });
+  });
+
+  it("spreads a slider change of a row over the others and keeps the field in sync", async () => {
+    await edit();
+
+    const slider = await screen.findByRole("slider", {
+      name: "Ideal: Ações Brasil",
+    });
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+
+    await waitFor(() => {
+      expect(lastTargets()).toEqual([3995, 2010, 1997, 1998]);
+    });
+    expect(await target("Ações Brasil")).toHaveValue("20,1");
+  });
+
+  it("moves a boundary of the ideal bar between its two groups only", async () => {
+    await edit();
+
+    const handle = await screen.findByRole("slider", {
+      name: /Renda fixa.*Ações Brasil/,
+    });
+    fireEvent.keyDown(handle, { key: "ArrowRight" });
+
+    await waitFor(() => {
+      expect(lastTargets()).toEqual([4100, 1900, 2000, 2000]);
+    });
+  });
+
+  it("marks a blank name on the input and in the contribution bar only", async () => {
+    await edit();
+
+    const name = await screen.findByDisplayValue("Ações exterior");
+    await userEvent.clear(name);
+
+    expect(
+      await screen.findByRole("img", {
+        name: /Este aporte: dê um nome a cada grupo/,
+      }),
+    ).toBeInTheDocument();
+    expect(name).toBeInvalid();
+    expect(
+      screen.queryByText("Dê um nome a cada grupo antes de salvar."),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers the split, the picker and the removal in the menu of a group", async () => {
+    await edit();
+
+    await userEvent.click(await menuOf("Renda fixa"));
+
+    expect(
+      await screen.findByRole("menuitemcheckbox", {
+        name: "Dividir entre ativos",
+      }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("menuitem", { name: "Adicionar ativo" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("menuitem", { name: "Remover grupo" }),
+    ).toBeVisible();
+  });
+
+  it("gives a member its own percent field when the group is split", async () => {
+    await edit();
+    expect(
+      screen.queryByRole("textbox", { name: "Ideal: CDB Inter" }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(await menuOf("Renda fixa"));
+    await userEvent.click(
+      await screen.findByRole("menuitemcheckbox", {
+        name: "Dividir entre ativos",
+      }),
+    );
+
+    expect(await target("CDB Inter")).toHaveValue("100,0");
   });
 
   it("spreads a class change over the others and previews the draft", async () => {
@@ -154,8 +279,9 @@ describe("Contribution plan edit mode", () => {
   it("gives the target of a removed class to the others", async () => {
     await edit();
 
+    await userEvent.click(await menuOf("FIIs"));
     await userEvent.click(
-      await screen.findByRole("button", { name: "Remover FIIs" }),
+      await screen.findByRole("menuitem", { name: "Remover grupo" }),
     );
 
     await waitFor(() => {
@@ -165,17 +291,9 @@ describe("Contribution plan edit mode", () => {
 
   it("disables an entry of the picker that is already in the plan", async () => {
     await edit();
-    const rows = within(
-      await screen.findByRole("list", { name: "Carteira frente ao ideal" }),
-    ).getAllByRole("listitem");
-
+    await userEvent.click(await menuOf("Renda fixa"));
     await userEvent.click(
-      within(rows.at(0) ?? document.body)
-        .getAllByRole("button")
-        .at(0) ?? document.body,
-    );
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Adicionar ativo" }),
+      await screen.findByRole("menuitem", { name: "Adicionar ativo" }),
     );
 
     expect(
@@ -186,16 +304,9 @@ describe("Contribution plan edit mode", () => {
 
   it("filters the picker by the search field", async () => {
     await edit();
-    const rows = within(
-      await screen.findByRole("list", { name: "Carteira frente ao ideal" }),
-    ).getAllByRole("listitem");
+    await userEvent.click(await menuOf("Renda fixa"));
     await userEvent.click(
-      within(rows.at(0) ?? document.body)
-        .getAllByRole("button")
-        .at(0) ?? document.body,
-    );
-    await userEvent.click(
-      await screen.findByRole("button", { name: "Adicionar ativo" }),
+      await screen.findByRole("menuitem", { name: "Adicionar ativo" }),
     );
 
     await userEvent.type(

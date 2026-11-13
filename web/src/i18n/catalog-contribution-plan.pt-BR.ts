@@ -22,14 +22,11 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.lock": "Manter {name} fixo",
   "contributionPlan.addClass": "Adicionar grupo",
   "contributionPlan.className": "Nome do grupo",
-  "contributionPlan.nameRequired": "Dê um nome a cada grupo antes de salvar.",
-  "contributionPlan.removeClass": "Remover {name}",
   "contributionPlan.split": "Dividir entre ativos",
   "contributionPlan.addAsset": "Adicionar ativo",
   "contributionPlan.pickAccounts": "Contas de investimento",
   "contributionPlan.pickInstruments": "Ativos",
   "contributionPlan.inClass": "Em {name}",
-  "contributionPlan.removeAsset": "Remover {name}",
   "contributionPlan.moveTo": "Grupo de {name}",
   "contributionPlan.save": "Salvar",
   "contributionPlan.discard": "Descartar",
@@ -72,10 +69,6 @@ export const contributionPlanPtBR: Record<
     "{name} está sem cotação; sem ela o aporte não é dividido.",
   "contributionPlan.verdictMissingRate":
     "{name} está sem câmbio; sem ele o aporte não é dividido.",
-  "contributionPlan.verdictNameMissing":
-    "Dê um nome a cada grupo para ver a divisão.",
-  "contributionPlan.editHint":
-    "Arraste ou digite o ideal de cada grupo. Os outros se ajustam para somar 100%. O cadeado mantém um grupo fixo.",
   "contributionPlan.ideal": "Carteira frente ao ideal",
   "contributionPlan.keyToday": "hoje",
   "contributionPlan.keyAfter": "com este aporte",
@@ -111,4 +104,12 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.barNameMissing": "dê um nome a cada grupo",
   "contributionPlan.handle": "Divisão entre {left} e {right}",
   "contributionPlan.handleValue": "{left} {leftShare}, {right} {rightShare}",
+  "contributionPlan.help":
+    "Arraste a divisão entre dois grupos ou digite o percentual. O total fica sempre em 100%. O cadeado mantém um grupo fixo.",
+  "contributionPlan.helpLabel": "Como editar",
+  "contributionPlan.decrease": "Diminuir {name}",
+  "contributionPlan.increase": "Aumentar {name}",
+  "contributionPlan.rowMenu": "Ações de {name}",
+  "contributionPlan.removeGroup": "Remover grupo",
+  "contributionPlan.removeMember": "Remover ativo",
 };

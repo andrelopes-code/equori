@@ -29,18 +29,6 @@
     min-inline-size: 0;
   }
 
-  .editRow {
-    display: flex;
-    grid-column: 1 / -1;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: var(--slotted-space-8);
-    block-size: 3.25rem;
-    padding-inline-start: var(--slotted-space-10);
-    border-block-start: var(--slotted-border-width-thin) solid
-      var(--slotted-border-subtle);
-  }
-
   .status,
   .outcome {
     overflow: hidden;
@@ -52,15 +40,5 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-  }
-
-  .end {
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .field {
-    display: flex;
-    align-items: center;
   }
 }
