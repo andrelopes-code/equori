@@ -143,11 +143,11 @@ describe("Contribution plan edit mode", () => {
   it("disables an entry of the picker that is already in the plan", async () => {
     await edit();
     const rows = within(
-      await screen.findByRole("table", { name: "Plano de aporte" }),
-    ).getAllByRole("row");
+      await screen.findByRole("list", { name: "Carteira frente ao ideal" }),
+    ).getAllByRole("listitem");
 
     await userEvent.click(
-      within(rows.at(1) ?? document.body)
+      within(rows.at(0) ?? document.body)
         .getAllByRole("button")
         .at(0) ?? document.body,
     );
@@ -164,10 +164,10 @@ describe("Contribution plan edit mode", () => {
   it("filters the picker by the search field", async () => {
     await edit();
     const rows = within(
-      await screen.findByRole("table", { name: "Plano de aporte" }),
-    ).getAllByRole("row");
+      await screen.findByRole("list", { name: "Carteira frente ao ideal" }),
+    ).getAllByRole("listitem");
     await userEvent.click(
-      within(rows.at(1) ?? document.body)
+      within(rows.at(0) ?? document.body)
         .getAllByRole("button")
         .at(0) ?? document.body,
     );

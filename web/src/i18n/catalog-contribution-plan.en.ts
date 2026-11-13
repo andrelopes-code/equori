@@ -6,19 +6,10 @@ export const contributionPlanEn = {
   "contributionPlan.open": "Contribution plan",
   "contributionPlan.edit": "Edit groups and targets",
   "contributionPlan.amount": "Contribution",
-  "contributionPlan.colClass": "Group",
   "contributionPlan.colTarget": "Target",
-  "contributionPlan.colCurrent": "Today",
-  "contributionPlan.colAfter": "After",
-  "contributionPlan.colAmount": "Gets",
-  "contributionPlan.track":
-    "{name}: today {current}, after this contribution {after}, target {target}",
   "contributionPlan.quantity": "≈ {count} units",
   "contributionPlan.shopping": "Shopping list",
   "contributionPlan.copy": "Copy list",
-  "contributionPlan.colTrack": "Position against the target",
-  "contributionPlan.colExpand": "Assets",
-  "contributionPlan.colActions": "Actions",
   "contributionPlan.copyFailed": "The list could not be copied.",
   "contributionPlan.loadFailed": "The contribution plan could not be loaded.",
   "contributionPlan.retry": "Try again",
@@ -41,7 +32,7 @@ export const contributionPlanEn = {
   "contributionPlan.leaveTitle": "Discard the changes to the targets?",
   "contributionPlan.keepEditing": "Keep editing",
   "contributionPlan.outside": "Outside the plan",
-  "contributionPlan.noPrice": "No price",
+  "contributionPlan.noPrice": "no price",
   "contributionPlan.pickerSearch": "Search assets",
   "contributionPlan.chooseClass": "Choose a group",
   "contributionPlan.emptyBody":
@@ -63,9 +54,6 @@ export const contributionPlanEn = {
     "An asset of the plan is not an investment.",
   "problem.contribution_amount_invalid":
     "Enter a contribution greater than zero.",
-  "contributionPlan.legendCurrent": "Today",
-  "contributionPlan.legendContribution": "This contribution",
-  "contributionPlan.legendTarget": "Target",
   "contributionPlan.leaveBody":
     "The targets edited on this screen are not saved.",
   "contributionPlan.intro":
@@ -88,4 +76,33 @@ export const contributionPlanEn = {
     "{name} has no price; without it the contribution is not split.",
   "contributionPlan.verdictMissingRate":
     "{name} has no exchange rate; without it the contribution is not split.",
+  "contributionPlan.ideal": "Portfolio against the target",
+  "contributionPlan.keyToday": "today",
+  "contributionPlan.keyAfter": "with this contribution",
+  "contributionPlan.keyIdeal": "target",
+  "contributionPlan.markerIdeal": "target {share}",
+  "contributionPlan.statusBelow":
+    "below the target (today {today}, target {ideal})",
+  "contributionPlan.statusAbove":
+    "above the target (today {today}, target {ideal})",
+  "contributionPlan.statusAt": "on target ({ideal})",
+  "contributionPlan.statusBelowMember":
+    "below the target (today {today}, target {ideal} of the group)",
+  "contributionPlan.statusAboveMember":
+    "above the target (today {today}, target {ideal} of the group)",
+  "contributionPlan.statusAtMember": "on target ({ideal} of the group)",
+  "contributionPlan.statusNoIdeal":
+    "no target of its own (today {today} of the group)",
+  "contributionPlan.outcomeReceives": "gets {amount}",
+  "contributionPlan.outcomeNone": "gets nothing this month",
+  "contributionPlan.outcomeWaits": "waiting for the price",
+  "contributionPlan.barLabel": "{name}: today {today}, target {ideal}",
+  "contributionPlan.barLabelAfter":
+    "{name}: today {today}, after this contribution {after}, target {ideal}",
+  "contributionPlan.barLabelNoIdeal":
+    "{name}: today {today} of the group, no target of its own",
+  "contributionPlan.showAssets": "Show the assets of {name}",
+  "contributionPlan.outsideOne": "{count} investment outside the plan",
+  "contributionPlan.outsideMany": "{count} investments outside the plan",
+  "contributionPlan.outsideWithTotal": "{summary} · {total}",
 } as const;

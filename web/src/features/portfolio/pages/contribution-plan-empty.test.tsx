@@ -188,7 +188,7 @@ describe("Contribution plan with a missing valuation", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("S402 CN10: lists each missing entry as a link to its instrument and writes a dash in the figures", async () => {
+  it("S402 CN10: lists each missing entry as a link to its instrument and waits for the price in words, never a dash", async () => {
     await open(incomplete);
 
     const price = await screen.findByRole("link", {
@@ -202,16 +202,14 @@ describe("Contribution plan with a missing valuation", () => {
       screen.getByText(catalogPtBR["contributionPlan.incomplete"]),
     ).toBeInTheDocument();
 
-    const table = await screen.findByRole("table", {
-      name: catalogPtBR["contributionPlan.title"],
+    const list = await screen.findByRole("list", {
+      name: catalogPtBR["contributionPlan.ideal"],
     });
-    const row = within(table)
-      .getAllByRole("row")
-      .find((r) => r.textContent.includes("FIIs"));
-    const cells = [...(row?.querySelectorAll("td") ?? [])].map(
-      (c) => c.textContent,
-    );
-    expect(cells.slice(-3)).toEqual(["—", "—", "—"]);
-    expect(cells.at(-4)).toContain("60");
+    const row = within(list)
+      .getAllByRole("listitem")
+      .find((r) => r.textContent.startsWith("FIIs"));
+    expect(row).toHaveTextContent("aguarda a cotação");
+    expect(row).toHaveTextContent("ideal 60%");
+    expect(list).not.toHaveTextContent("—");
   });
 });

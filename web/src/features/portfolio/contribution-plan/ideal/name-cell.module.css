@@ -1,0 +1,28 @@
+@layer app {
+  .name {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  /* The width of the expander button, so a row without one keeps the name on the same line. */
+  .slot {
+    display: inline-flex;
+    flex: none;
+    justify-content: center;
+    inline-size: var(--slotted-space-9);
+  }
+
+  .member {
+    padding-inline-start: var(--slotted-space-9);
+  }
+
+  .label {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

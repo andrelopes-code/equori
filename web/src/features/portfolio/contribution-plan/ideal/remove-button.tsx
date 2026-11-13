@@ -1,16 +1,17 @@
 import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { TableCell } from "@slotted/react/table";
 
-interface RemoveCellProps {
+import styles from "@/features/portfolio/contribution-plan/ideal/ideal-grid.module.css";
+
+interface RemoveButtonProps {
   label: string;
   onRemove: () => void;
 }
 
-// The actions column of an edit row, pinned to the end edge.
-export function RemoveCell({ label, onRemove }: RemoveCellProps) {
+// The last column of an edit row, on its end edge.
+export function RemoveButton({ label, onRemove }: RemoveButtonProps) {
   return (
-    <TableCell sticky="end" align="end">
+    <div className={styles.end}>
       <IconButton
         size="sm"
         variant="ghost"
@@ -21,6 +22,6 @@ export function RemoveCell({ label, onRemove }: RemoveCellProps) {
           <Glyph name="trash" />
         </Icon>
       </IconButton>
-    </TableCell>
+    </div>
   );
 }

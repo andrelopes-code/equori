@@ -1,0 +1,70 @@
+@layer app {
+  /* The columns of every row: name, bar, status, outcome. Rows take them as a subgrid, so the
+     outcome column is as wide as its widest value and every value ends on one vertical line. The
+     measures have no token: the name ends in an ellipsis past 15rem, the bar keeps 8rem. */
+  .grid {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 15rem) minmax(8rem, 1fr) minmax(0, 21rem)
+      minmax(9rem, auto);
+    column-gap: var(--slotted-space-6);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* One height for every state of a row: the label above the bar and the small inputs of edit
+     mode fit inside it. */
+  .row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: center;
+    block-size: 3.25rem;
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    white-space: nowrap;
+  }
+
+  .row > * {
+    min-inline-size: 0;
+  }
+
+  .member {
+    background: var(--slotted-surface-sunken);
+  }
+
+  .editRow {
+    display: flex;
+    grid-column: 1 / -1;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--slotted-space-8);
+    block-size: 3.25rem;
+    padding-inline-start: var(--slotted-space-10);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .status,
+  .outcome {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .outcome {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .end {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+  }
+}

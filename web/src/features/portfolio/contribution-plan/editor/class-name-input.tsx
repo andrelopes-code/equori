@@ -1,7 +1,7 @@
 import { TextField } from "@slotted/react/text-field";
 
 import { nameRequiredId } from "@/features/portfolio/contribution-plan/editor/name-required-message";
-import styles from "@/features/portfolio/contribution-plan/table/class-table.module.css";
+import styles from "@/features/portfolio/contribution-plan/editor/class-name-input.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface ClassNameInputProps {

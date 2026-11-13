@@ -17,7 +17,7 @@ import { useApi } from "@/api/api-context";
 import { errorText } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
 import { contributionPlanQuery } from "@/features/portfolio/api";
-import { ClassTable } from "@/features/portfolio/contribution-plan/table/class-table";
+import { IdealSection } from "@/features/portfolio/contribution-plan/ideal/ideal-section";
 import { ContributionEmpty } from "@/features/portfolio/contribution-plan/states/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/editor/contribution-save-bar";
 import { IncompleteNotice } from "@/features/portfolio/contribution-plan/states/incomplete-notice";
@@ -27,7 +27,6 @@ import { LeaveDialog } from "@/features/portfolio/contribution-plan/editor/leave
 import { OutsideSection } from "@/features/portfolio/contribution-plan/outside/outside-section";
 import { PlanLoadFailed } from "@/features/portfolio/contribution-plan/states/plan-load-failed";
 import { overlayDraft } from "@/features/portfolio/contribution-plan/model/plan-edits";
-import { TrackLegend } from "@/features/portfolio/contribution-plan/table/track-legend";
 import { useContributionPreview } from "@/features/portfolio/contribution-plan/editor/use-contribution-preview";
 import { useLeaveGuard } from "@/features/portfolio/contribution-plan/editor/use-leave-guard";
 import { usePlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
@@ -142,16 +141,12 @@ export function ContributionPlanPage() {
           )}
 
           {!plan.isError && !empty && (
-            <Stack gap={3}>
-              <ClassTable
-                view={shown}
-                pending={pending}
-                editor={editor}
-                memberName={memberName}
-              />
-
-              {shown !== undefined && <TrackLegend />}
-            </Stack>
+            <IdealSection
+              view={shown}
+              pending={pending}
+              editor={editor}
+              memberName={memberName}
+            />
           )}
 
           {shown !== undefined && !empty && (

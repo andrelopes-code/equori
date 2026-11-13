@@ -66,13 +66,13 @@ const text = (node: Element) =>
 const cells = (row: HTMLElement) =>
   [...row.querySelectorAll("th, td")].map(text);
 
-const planTable = () =>
-  screen.findByRole("table", { name: catalogPtBR["contributionPlan.title"] });
+const planList = () =>
+  screen.findByRole("list", { name: catalogPtBR["contributionPlan.ideal"] });
 
-const rowOf = (table: HTMLElement, name: string) =>
-  within(table)
-    .getAllByRole("row")
-    .find((row) => cells(row).includes(name)) ?? document.body;
+const rowOf = (list: HTMLElement, name: string) =>
+  within(list)
+    .getAllByRole("listitem")
+    .find((row) => text(row).startsWith(name)) ?? document.body;
 
 describe("Contribution plan page", () => {
   afterEach(() => {
@@ -88,16 +88,21 @@ describe("Contribution plan page", () => {
     await renderApp("/portfolio/contribution-plan", { fetch: api() });
   }
 
-  it("S400: writes the amount of each class and a dash for zero", async () => {
+  it("S400: writes what each group receives in words, never a dash", async () => {
     await open();
-    const table = await planTable();
+    const list = await planList();
 
     await waitFor(() => {
-      expect(cells(rowOf(table, "Ações Brasil")).at(-1)).toBe("R$ 1.000,00");
+      expect(rowOf(list, "Ações Brasil")).toHaveTextContent(
+        "recebe R$ 1.000,00",
+      );
     });
-    expect(cells(rowOf(table, "Ações exterior")).at(-1)).toBe("R$ 3.000,00");
-    expect(cells(rowOf(table, "Renda fixa")).at(-1)).toBe("—");
-    expect(cells(rowOf(table, "FIIs")).at(-1)).toBe("—");
+    expect(rowOf(list, "Ações exterior")).toHaveTextContent(
+      "recebe R$ 3.000,00",
+    );
+    expect(rowOf(list, "Renda fixa")).toHaveTextContent("não recebe neste mês");
+    expect(rowOf(list, "FIIs")).toHaveTextContent("não recebe neste mês");
+    expect(list).not.toHaveTextContent("—");
     expect(await screen.findByRole("textbox", { name: "Aporte" })).toHaveValue(
       "4.000,00",
     );
@@ -119,12 +124,12 @@ describe("Contribution plan page", () => {
     });
   });
 
-  it("names the three shares of a class on its drift track", async () => {
+  it("names the three shares of a group on its bar", async () => {
     await open();
 
     expect(
       await screen.findByRole("img", {
-        name: "Ações exterior: hoje 5,6%, depois do aporte 18,2%, ideal 20%",
+        name: "Ações exterior: hoje 5,6%, depois do aporte 18%, ideal 20%",
       }),
     ).toBeInTheDocument();
   });
@@ -192,7 +197,7 @@ describe("Contribution plan page", () => {
   it("hides every amount and disables the copy in privacy mode", async () => {
     hideAmounts();
     await open();
-    const table = await planTable();
+    const table = await planList();
 
     await within(table).findByText("Ações Brasil");
     expect(screen.getByRole("button", { name: "Copiar lista" })).toBeDisabled();
@@ -205,21 +210,9 @@ describe("Contribution plan page", () => {
     );
   });
 
-  it("names the track and expander columns for assistive technology", async () => {
-    await open();
-    await planTable();
-
-    expect(
-      screen.getByRole("columnheader", { name: "Posição frente ao ideal" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("columnheader", { name: "Ativos" }),
-    ).toBeInTheDocument();
-  });
-
   it("draws the way back to the portfolio inside the page header", async () => {
     await open();
-    await planTable();
+    await planList();
 
     const header = document.querySelector<HTMLElement>(
       "[data-ui='page-header']",
@@ -259,7 +252,7 @@ describe("Contribution plan page", () => {
         "GET /api/v1/contribution-plan": () => json(200, withMembers),
       }),
     });
-    const table = await planTable();
+    const table = await planList();
 
     await user.click(
       await within(table).findByRole("button", { expanded: false }),
@@ -294,7 +287,7 @@ describe("Contribution plan page", () => {
       }),
     );
 
-    expect(await planTable()).toBeInTheDocument();
+    expect(await planList()).toBeInTheDocument();
   });
 
   it("says so when the list cannot be copied", async () => {

@@ -1,0 +1,141 @@
+@layer app {
+  .bar {
+    position: relative;
+    /* The bar fills its column and shrinks with it: a wider minimum would overflow a neighbour. */
+    inline-size: 100%;
+    min-inline-size: 0;
+    /* The row height of the section: the label, the track and the marker stack inside it. */
+    block-size: 3.25rem;
+  }
+
+  /* Gridlines at 25, 50 and 75% on the scale shared by every row. */
+  .track {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 1.125rem;
+    block-size: 0.875rem;
+    overflow: hidden;
+    border-radius: var(--slotted-radius-sm);
+    background-color: var(--slotted-surface-sunken);
+    background-image: linear-gradient(
+      to right,
+      transparent calc(25% - 1px),
+      var(--slotted-border-subtle) calc(25% - 1px) 25%,
+      transparent 25% calc(50% - 1px),
+      var(--slotted-border-subtle) calc(50% - 1px) 50%,
+      transparent 50% calc(75% - 1px),
+      var(--slotted-border-subtle) calc(75% - 1px) 75%,
+      transparent 75%
+    );
+  }
+
+  .today,
+  .after {
+    position: absolute;
+    inset-block: 0;
+  }
+
+  .today {
+    inset-inline-start: 0;
+    background: var(--share-color);
+  }
+
+  /* The hatch step has no token: 2px of colour every 5px at 135 degrees. */
+  .after {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--share-color) 0 2px,
+      transparent 2px 5px
+    );
+    box-shadow: inset 0 0 0 1px var(--share-color);
+  }
+
+  .marker {
+    position: absolute;
+    inset-block-start: 0.875rem;
+    block-size: 1.375rem;
+    inline-size: var(--slotted-border-width-thick);
+    margin-inline-start: calc(var(--slotted-border-width-thick) / -2);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-text);
+  }
+
+  .label {
+    position: absolute;
+    inset-block-start: 0;
+    transform: translateX(-50%);
+    font-size: var(--slotted-font-size-xs);
+    line-height: 0.75rem;
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .labelStart {
+    transform: none;
+    margin-inline-start: calc(var(--slotted-border-width-thick) / -2);
+  }
+
+  .labelEnd {
+    transform: translateX(-100%);
+    margin-inline-start: calc(var(--slotted-border-width-thick) / 2);
+  }
+
+  .slot1 {
+    --share-color: var(--slotted-data-1);
+  }
+
+  .slot2 {
+    --share-color: var(--slotted-data-2);
+  }
+
+  .slot3 {
+    --share-color: var(--slotted-data-3);
+  }
+
+  .slot4 {
+    --share-color: var(--slotted-data-4);
+  }
+
+  .slot5 {
+    --share-color: var(--slotted-data-5);
+  }
+
+  .slot6 {
+    --share-color: var(--slotted-data-6);
+  }
+
+  .slot7 {
+    --share-color: var(--slotted-data-7);
+  }
+
+  .slot8 {
+    --share-color: var(--slotted-data-8);
+  }
+
+  @media (forced-colors: active) {
+    .track {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .today {
+      background: Highlight;
+    }
+
+    .after {
+      background: repeating-linear-gradient(
+        135deg,
+        Highlight 0 2px,
+        transparent 2px 5px
+      );
+      box-shadow: inset 0 0 0 1px Highlight;
+    }
+
+    .marker {
+      background: CanvasText;
+    }
+
+    .label {
+      color: CanvasText;
+    }
+  }
+}

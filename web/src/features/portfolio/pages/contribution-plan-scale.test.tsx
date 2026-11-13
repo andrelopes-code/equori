@@ -35,15 +35,15 @@ const plan = {
   missing: [],
 };
 
-const barOf = (track: HTMLElement) =>
-  (track.firstElementChild as HTMLElement).style.inlineSize;
+const barOf = (bar: HTMLElement) =>
+  bar.querySelector<HTMLElement>("[data-part='today']")?.style.inlineSize;
 
-describe("Contribution plan track scale", () => {
+describe("Contribution plan bar scale", () => {
   afterEach(() => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("draws a member at 100% without squeezing the class bars", async () => {
+  it("draws a member at 100% and a class at 50% on one scale from 0 to 100%", async () => {
     localStorage.setItem(
       "equori.locale",
       JSON.stringify({ language: "pt", region: "BR" }),
@@ -53,19 +53,19 @@ describe("Contribution plan track scale", () => {
         "GET /api/v1/contribution-plan": () => json(200, plan),
       }),
     });
-    const table = await screen.findByRole("table", {
-      name: catalogPtBR["contributionPlan.title"],
+    const list = await screen.findByRole("list", {
+      name: catalogPtBR["contributionPlan.ideal"],
     });
     const classBar = barOf(
-      await within(table).findByRole("img", { name: /^Ações:/ }),
+      await within(list).findByRole("img", { name: /^Ações:/ }),
     );
 
-    await userEvent.click(within(table).getAllByRole("button").at(0) ?? table);
+    await userEvent.click(within(list).getAllByRole("button").at(0) ?? list);
     const memberBar = barOf(
-      await within(table).findByRole("img", { name: /^PETR4:/ }),
+      await within(list).findByRole("img", { name: /^PETR4:/ }),
     );
 
-    expect(classBar).toBe(`${String((5000 / 5500) * 100)}%`);
-    expect(memberBar).toBe(`${String((10000 / 10500) * 100)}%`);
+    expect(classBar).toBe("50%");
+    expect(memberBar).toBe("100%");
   });
 });

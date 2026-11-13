@@ -10,19 +10,10 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.open": "Plano de aporte",
   "contributionPlan.edit": "Editar grupos e ideais",
   "contributionPlan.amount": "Aporte",
-  "contributionPlan.colClass": "Grupo",
   "contributionPlan.colTarget": "Ideal",
-  "contributionPlan.colCurrent": "Hoje",
-  "contributionPlan.colAfter": "Depois",
-  "contributionPlan.colAmount": "Recebe",
-  "contributionPlan.track":
-    "{name}: hoje {current}, depois do aporte {after}, ideal {target}",
   "contributionPlan.quantity": "≈ {count} un.",
   "contributionPlan.shopping": "Lista de compras",
   "contributionPlan.copy": "Copiar lista",
-  "contributionPlan.colTrack": "Posição frente ao ideal",
-  "contributionPlan.colExpand": "Ativos",
-  "contributionPlan.colActions": "Ações",
   "contributionPlan.copyFailed": "Não foi possível copiar a lista.",
   "contributionPlan.loadFailed": "Não foi possível carregar o plano de aporte.",
   "contributionPlan.retry": "Tentar de novo",
@@ -45,7 +36,7 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.leaveTitle": "Descartar as alterações dos ideais?",
   "contributionPlan.keepEditing": "Continuar editando",
   "contributionPlan.outside": "Fora do plano",
-  "contributionPlan.noPrice": "Sem cotação",
+  "contributionPlan.noPrice": "sem cotação",
   "contributionPlan.pickerSearch": "Buscar ativos",
   "contributionPlan.chooseClass": "Escolher grupo",
   "contributionPlan.emptyBody":
@@ -66,9 +57,6 @@ export const contributionPlanPtBR: Record<
   "problem.contribution_member_invalid":
     "Um ativo do plano não é um investimento.",
   "problem.contribution_amount_invalid": "Informe um aporte maior que zero.",
-  "contributionPlan.legendCurrent": "Hoje",
-  "contributionPlan.legendContribution": "Este aporte",
-  "contributionPlan.legendTarget": "Ideal",
   "contributionPlan.leaveBody":
     "Os ideais editados nesta tela não foram salvos.",
   "contributionPlan.intro":
@@ -90,4 +78,32 @@ export const contributionPlanPtBR: Record<
     "{name} está sem cotação; sem ela o aporte não é dividido.",
   "contributionPlan.verdictMissingRate":
     "{name} está sem câmbio; sem ele o aporte não é dividido.",
+  "contributionPlan.ideal": "Carteira frente ao ideal",
+  "contributionPlan.keyToday": "hoje",
+  "contributionPlan.keyAfter": "com este aporte",
+  "contributionPlan.keyIdeal": "ideal",
+  "contributionPlan.markerIdeal": "ideal {share}",
+  "contributionPlan.statusBelow":
+    "abaixo do ideal (hoje {today}, ideal {ideal})",
+  "contributionPlan.statusAbove":
+    "acima do ideal (hoje {today}, ideal {ideal})",
+  "contributionPlan.statusAt": "no ideal ({ideal})",
+  "contributionPlan.statusBelowMember":
+    "abaixo do ideal (hoje {today}, ideal {ideal} do grupo)",
+  "contributionPlan.statusAboveMember":
+    "acima do ideal (hoje {today}, ideal {ideal} do grupo)",
+  "contributionPlan.statusAtMember": "no ideal ({ideal} do grupo)",
+  "contributionPlan.statusNoIdeal": "sem ideal próprio (hoje {today} do grupo)",
+  "contributionPlan.outcomeReceives": "recebe {amount}",
+  "contributionPlan.outcomeNone": "não recebe neste mês",
+  "contributionPlan.outcomeWaits": "aguarda a cotação",
+  "contributionPlan.barLabel": "{name}: hoje {today}, ideal {ideal}",
+  "contributionPlan.barLabelAfter":
+    "{name}: hoje {today}, depois do aporte {after}, ideal {ideal}",
+  "contributionPlan.barLabelNoIdeal":
+    "{name}: hoje {today} do grupo, sem ideal próprio",
+  "contributionPlan.showAssets": "Mostrar os ativos de {name}",
+  "contributionPlan.outsideOne": "{count} investimento fora do plano",
+  "contributionPlan.outsideMany": "{count} investimentos fora do plano",
+  "contributionPlan.outsideWithTotal": "{summary} · {total}",
 };

@@ -1,0 +1,68 @@
+@layer app {
+  .key {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--slotted-space-6);
+    font-size: var(--slotted-font-size-sm);
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+  }
+
+  .entry {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  /* The samples are drawn as the bars draw them; the hatch step has no token. */
+  .today,
+  .after {
+    --share-color: var(--slotted-data-1);
+
+    display: inline-block;
+    inline-size: 1.75rem;
+    block-size: 0.75rem;
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .today {
+    background: var(--share-color);
+  }
+
+  .after {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--share-color) 0 2px,
+      transparent 2px 5px
+    );
+    box-shadow: inset 0 0 0 1px var(--share-color);
+  }
+
+  .marker {
+    display: inline-block;
+    inline-size: var(--slotted-border-width-thick);
+    block-size: 1.125rem;
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-text);
+  }
+
+  @media (forced-colors: active) {
+    .today {
+      background: Highlight;
+    }
+
+    .after {
+      background: repeating-linear-gradient(
+        135deg,
+        Highlight 0 2px,
+        transparent 2px 5px
+      );
+      box-shadow: inset 0 0 0 1px Highlight;
+    }
+
+    .marker {
+      background: CanvasText;
+    }
+  }
+}

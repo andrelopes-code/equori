@@ -1,3 +1,10 @@
+import { Accordion } from "@slotted/react/accordion";
+import {
+  Collapsible,
+  CollapsibleHeader,
+  CollapsiblePanel,
+  CollapsibleTrigger,
+} from "@slotted/react/collapsible";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
@@ -20,7 +27,8 @@ interface OutsideSectionProps {
   onChoose: (classIndex: number, ref: MemberRef) => void;
 }
 
-// The positions no class holds, each with a class to put it in (spec, Outside the plan).
+// The positions no group holds, collapsed under one line, each with a group to put it in (spec,
+// Outside the plan).
 export function OutsideSection({
   view,
   memberName,
@@ -45,53 +53,85 @@ export function OutsideSection({
     label: cls.name,
   }));
 
+  const valued = view.outside.flatMap((e) => (e.value ? [e.value] : []));
+  const total = {
+    amount: valued.reduce((sum, v) => sum + v.amount, 0),
+    currency: view.total.currency,
+  };
+  const count = t(
+    view.outside.length === 1
+      ? "contributionPlan.outsideOne"
+      : "contributionPlan.outsideMany",
+    { count: view.outside.length },
+  );
+  const summary =
+    valued.length === 0
+      ? count
+      : t("contributionPlan.outsideWithTotal", {
+          summary: count,
+          total: fmt.money(total, scale?.(total.currency) ?? 0),
+        });
+
   return (
-    <section
-      aria-label={t("contributionPlan.outside")}
-      className={styles.section}
-    >
-      <Text weight="semibold">{t("contributionPlan.outside")}</Text>
+    <Accordion variant="framed" size="sm">
+      <Collapsible value="outside">
+        <CollapsibleHeader>
+          <CollapsibleTrigger>{summary}</CollapsibleTrigger>
+        </CollapsibleHeader>
 
-      {view.outside.map((entry) => {
-        const name = memberName(entry);
-        const item =
-          entry.instrument === undefined
-            ? undefined
-            : catalog.get(entry.instrument);
-
-        return (
-          <div
-            key={entry.account_id ?? entry.instrument}
-            className={styles.row}
+        <CollapsiblePanel>
+          <section
+            aria-label={t("contributionPlan.outside")}
+            className={styles.section}
           >
-            <div className={styles.name}>
-              <Text className={styles.label}>{item?.name ?? name}</Text>
+            {view.outside.map((entry) => {
+              const name = memberName(entry);
+              const item =
+                entry.instrument === undefined
+                  ? undefined
+                  : catalog.get(entry.instrument);
 
-              {item !== undefined && <Text tone="muted">{item.code}</Text>}
-            </div>
+              return (
+                <div
+                  key={entry.account_id ?? entry.instrument}
+                  className={styles.row}
+                >
+                  <div className={styles.name}>
+                    <Text className={styles.label}>{item?.name ?? name}</Text>
 
-            <Text
-              className={styles.value}
-              tone={entry.value === undefined ? "muted" : undefined}
-            >
-              {entry.value === undefined
-                ? t("contributionPlan.noPrice")
-                : fmt.money(entry.value, scale?.(entry.value.currency) ?? 0)}
-            </Text>
+                    {item !== undefined && (
+                      <Text tone="muted">{item.code}</Text>
+                    )}
+                  </div>
 
-            <ChoiceSelect
-              label={t("contributionPlan.moveTo", { name })}
-              placeholder={t("contributionPlan.chooseClass")}
-              choices={choices}
-              value={null}
-              multiple={false}
-              onChange={(next) => {
-                onChoose(Number(next), memberRefOf(entry));
-              }}
-            />
-          </div>
-        );
-      })}
-    </section>
+                  <Text
+                    className={styles.value}
+                    tone={entry.value === undefined ? "muted" : undefined}
+                  >
+                    {entry.value === undefined
+                      ? t("contributionPlan.noPrice")
+                      : fmt.money(
+                          entry.value,
+                          scale?.(entry.value.currency) ?? 0,
+                        )}
+                  </Text>
+
+                  <ChoiceSelect
+                    label={t("contributionPlan.moveTo", { name })}
+                    placeholder={t("contributionPlan.chooseClass")}
+                    choices={choices}
+                    value={null}
+                    multiple={false}
+                    onChange={(next) => {
+                      onChoose(Number(next), memberRefOf(entry));
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </section>
+        </CollapsiblePanel>
+      </Collapsible>
+    </Accordion>
   );
 }

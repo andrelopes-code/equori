@@ -3,11 +3,11 @@ import { TextField } from "@slotted/react/text-field";
 import { Toggle } from "@slotted/react/toggle";
 import { useState } from "react";
 
-import styles from "@/features/portfolio/contribution-plan/table/target-field.module.css";
+import styles from "@/features/portfolio/contribution-plan/editor/target-field.module.css";
 import {
   formatPercent,
   parsePercent,
-} from "@/features/portfolio/contribution-plan/table/target-percent";
+} from "@/features/portfolio/contribution-plan/editor/target-percent";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface TargetFieldProps {

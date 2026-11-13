@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatPercent,
   parsePercent,
-} from "@/features/portfolio/contribution-plan/table/target-percent";
+} from "@/features/portfolio/contribution-plan/editor/target-percent";
 
 describe("parsePercent", () => {
   it.each([
