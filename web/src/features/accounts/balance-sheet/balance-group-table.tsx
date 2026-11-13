@@ -59,7 +59,7 @@ export function BalanceGroupTable({
             <SheetShareBar share={section.share} />
           )}
           <Table columns={yieldColumn ? 4 : 3} variant="framed">
-            <TableContent aria-label={label}>
+            <TableContent aria-label={label} className={styles.fixed}>
               <TableHead>
                 <TableRow>
                   <TableColumnHeader>
@@ -72,7 +72,7 @@ export function BalanceGroupTable({
                     {t("balanceSheet.balance")}
                   </TableColumnHeader>
                   {yieldColumn && (
-                    <TableColumnHeader numeric className={styles.fit}>
+                    <TableColumnHeader numeric className={styles.yieldColumn}>
                       {t("balanceSheet.yield")}
                     </TableColumnHeader>
                   )}
