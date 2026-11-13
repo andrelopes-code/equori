@@ -6,16 +6,12 @@ import {
 import { Button } from "@slotted/react/button";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
-import { toast } from "@slotted/react/toast";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { useApi } from "@/api/api-context";
-import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import {
   clearAccountDraft,
-  draftProblems,
   emptyAccountDraft,
   readAccountDraft,
   writeAccountDraft,
@@ -25,22 +21,17 @@ import { AccountForm } from "@/features/accounts/account-form/account-form";
 import { AccountFormHeader } from "@/features/accounts/account-form/account-form-header";
 import type { AccountFormSearch } from "@/features/accounts/account-form/account-form-search";
 import { AccountPreview } from "@/features/accounts/account-form/account-preview";
-import { useCreateAccount } from "@/features/accounts/api";
-import {
-  accountInput,
-  createAccountSteps,
-} from "@/features/accounts/model/create-account-steps";
 import { KindChooser } from "@/features/accounts/account-form/kind-chooser";
-import { writePendingSetup } from "@/features/accounts/model/pending-setup";
-import { useEnsureInstitution } from "@/features/accounts/institutions/use-ensure-institution";
+import {
+  draftKey,
+  useCreateAccountSubmit,
+} from "@/features/accounts/account-form/use-create-account-submit";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { FormLayout } from "@/ui/form-layout/form-layout";
 
 type Account = components["schemas"]["Account"];
-
-const draftKey = "new";
 
 export function NewAccountScreen({
   search,
@@ -56,11 +47,8 @@ export function NewAccountScreen({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
-  const create = useCreateAccount();
-  const ensureInstitution = useEnsureInstitution();
   const [draft, setDraft] = useState<AccountDraft>(() => {
     const stored = readAccountDraft(draftKey) ?? emptyAccountDraft(today, base);
     return {
@@ -71,86 +59,14 @@ export function NewAccountScreen({
         : {}),
     };
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [summary, setSummary] = useState<string | null>(null);
-  const [running, setRunning] = useState(false);
+  const { submit, errors, summary, running } = useCreateAccountSubmit({
+    draft,
+    search,
+    accounts,
+  });
   useEffect(() => {
     writeAccountDraft(draftKey, draft);
   }, [draft]);
-
-  const destination = (account: Account) =>
-    account.kind === "credit_card"
-      ? navigate({ to: "/cards/$accountId", params: { accountId: account.id } })
-      : navigate({ to: "/accounts/$id", params: { id: account.id } });
-
-  const submit = async () => {
-    const problems = draftProblems(draft, "create");
-    if (Object.keys(problems).length > 0) {
-      setErrors(
-        Object.fromEntries(
-          Object.entries(problems).map(([f, key]) => [f, t(key)]),
-        ),
-      );
-      setSummary(t("accountForm.fixFields"));
-      return;
-    }
-    setErrors({});
-    setSummary(null);
-    setRunning(true);
-    let account: Account;
-    try {
-      account = await create.mutateAsync(
-        accountInput(draft, await ensureInstitution(draft)),
-      );
-    } catch (error) {
-      if (error instanceof ProblemError) setErrors(fieldErrors(error.problem));
-      setSummary(errorText(error, t));
-      setRunning(false);
-      return;
-    }
-    const openingBalances =
-      accounts.find((a) => a.system_role === "opening_balances")?.id ?? "";
-    const steps = createAccountSteps(draft, {
-      openingBalances,
-      cashName: t("brokerage.cashName"),
-    });
-    let done = 0;
-    try {
-      for (const step of steps) {
-        await step.run(api, account.id);
-        done += 1;
-      }
-    } catch {
-      // The account exists: its page offers the remaining steps again.
-      writePendingSetup(account.id, { draft, done });
-      clearAccountDraft(draftKey);
-      setRunning(false);
-      void destination(account);
-      return;
-    }
-    clearAccountDraft(draftKey);
-    setRunning(false);
-    toast.show({
-      tone: "success",
-      title: t("accountForm.created", { name: account.name }),
-    });
-    if (search.return === "links") {
-      void navigate({
-        to: "/accounts/links",
-        search: {
-          account: account.id,
-          ...(search.external === undefined
-            ? {}
-            : { external: search.external }),
-          ...(search.connection === undefined
-            ? {}
-            : { connection: search.connection }),
-        },
-      });
-    } else {
-      void destination(account);
-    }
-  };
 
   return (
     <Page
