@@ -1,0 +1,122 @@
+@layer app {
+  /* Workaround for Slotted issue #103: Table has no parent row that folds its children and no
+     connector between levels, so the indent, the toggle slot and the rail are drawn here. */
+
+  /* The marks of a level stand in one column. A parent's mark (md, one and a half targets) comes
+     after the toggle slot; a child's (sm) after the branch of the rail. The rail runs at the
+     centre of the parent's mark. No token holds the 1.5: it is the avatar's own step. */
+  .cell {
+    /* Workaround for Slotted issue #105: the family pads its cell from
+       --slotted-table-cell-padding-block and -inline and falls back to the control padding when
+       they are unset, so the padding in use cannot be read. The cell sets the block padding, and
+       the rail reads the inline one through the same fallback, so both are known here. */
+    --pad-block: var(--slotted-space-3);
+    --slotted-table-cell-padding-block: var(--pad-block);
+    --pad-inline: var(
+      --slotted-table-cell-padding-inline,
+      var(--slotted-control-padding-inline-md)
+    );
+    --toggle: var(--slotted-target-min);
+    --mark: calc(var(--slotted-target-min) * 1.5);
+    --rail: calc(
+      var(--pad-inline) + var(--toggle) + var(--slotted-space-4) + var(--mark) /
+        2
+    );
+    --branch: var(--slotted-space-7);
+    --rail-color: color-mix(in oklab, var(--slotted-text) 26%, transparent);
+    --line: var(--slotted-border-width-thin);
+
+    position: relative;
+  }
+
+  /* The row of a list on a phone: the same rail, from the padding the row sets itself. A parent
+     has no toggle there, so the mark of a level stands at the padding. */
+  .row {
+    --pad-block: var(--slotted-space-3);
+    --pad-inline: var(--slotted-space-6);
+    --slotted-list-item-padding-block: var(--pad-block);
+    --slotted-list-item-padding-inline: var(--pad-inline);
+    --slotted-list-item-gap: var(--slotted-space-5);
+    --mark: calc(var(--slotted-target-min) * 1.5);
+    --rail: calc(var(--pad-inline) + var(--mark) / 2);
+    --branch: var(--slotted-space-6);
+    --rail-color: color-mix(in oklab, var(--slotted-text) 26%, transparent);
+    --line: var(--slotted-border-width-thin);
+
+    position: relative;
+  }
+
+  .row.child {
+    padding-inline-start: calc(
+      var(--rail) + var(--branch) + var(--slotted-space-3)
+    );
+  }
+
+  .container {
+    background: color-mix(in oklab, var(--slotted-text) 3%, transparent);
+  }
+
+  .slot {
+    flex: none;
+    inline-size: var(--toggle);
+  }
+
+  /* The toggle takes the width of the slot, so the marks of parents and of leaves stand in one
+     column. */
+  .toggle {
+    inline-size: var(--toggle);
+    block-size: var(--toggle);
+  }
+
+  .account {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  /* A reason in place of a yield can be a sentence; the cell takes at most this measure and the
+     text keeps one line. No token holds a measure. */
+  .yield {
+    max-inline-size: 12rem;
+  }
+
+  .text {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .child .account {
+    padding-inline-start: calc(
+      var(--rail) + var(--branch) + var(--slotted-space-3) - var(--pad-inline)
+    );
+  }
+
+  /* The branch to the mark of a child, and the line that runs down the cell. The line of the
+     first child starts at the foot of the parent's mark; the line of the last ends at its
+     branch. */
+  .child::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: var(--rail);
+    inset-block-start: calc(50% - var(--line) / 2);
+    inline-size: var(--branch);
+    border-block-start: var(--line) solid var(--rail-color);
+  }
+
+  .child::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: var(--rail);
+    inset-block: calc(-1 * var(--line)) 0;
+    border-inline-start: var(--line) solid var(--rail-color);
+  }
+
+  .first::after {
+    inset-block-start: calc(-1 * (var(--pad-block) + var(--line)));
+  }
+
+  .last::after {
+    inset-block-end: calc(50% - var(--line) / 2);
+  }
+}

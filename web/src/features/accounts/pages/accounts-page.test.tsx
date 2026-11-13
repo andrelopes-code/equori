@@ -165,17 +165,17 @@ describe("AccountsPage", () => {
     const table = await screen.findByRole("table", {
       name: catalogEn["home.group.available"],
     });
+    // The default order is the largest balance first, a parent before its children and an
+    // account in another currency last (AL5 of docs/specs/2026-11-13-accounts-list-design.md).
     await waitFor(() => {
       expect(
         within(table)
           .getAllByRole("rowheader")
-          .map((cell) => cell.textContent)
-          // The summary row's header closes the list.
-          .filter((text) => text !== catalogEn["balanceSheet.groupTotal"]),
+          .map((cell) => cell.textContent),
       ).toEqual([
+        expect.stringContaining("Nubank"),
         expect.stringContaining("Carteiras"),
         expect.stringContaining("Dinheiro"),
-        expect.stringContaining("Nubank"),
         expect.stringContaining("Wise USD"),
       ]);
     });

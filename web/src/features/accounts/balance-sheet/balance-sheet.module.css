@@ -5,16 +5,30 @@
     gap: var(--slotted-space-8);
   }
 
-  /* A sub-account steps in by one space step per level behind its parent (BD-05's reading). */
-  .indent {
-    padding-inline-start: calc(var(--depth, 0) * var(--slotted-space-6));
+  /* The status, balance and yield columns have one width in every group, so the values of the
+     groups end on one vertical line. The status holds a date or a difference in one line; the
+     balance holds the trend, the amount and a line of yield. No token holds a measure. */
+  /* A table of fixed layout takes its widths from the header: the status, balance and yield
+     columns keep their width and the account takes the rest, so the groups that show the same
+     columns end each value on the same line. Below the measure the table scrolls inside its
+     frame instead of squeezing the account to nothing. No token holds a measure. */
+  .fixed {
+    table-layout: fixed;
+    inline-size: 100%;
+    min-inline-size: 48rem;
   }
 
-  /* A column that takes only its content's width: in a table of automatic layout the one
-     column without it, the account's name, takes the room the page leaves (1% is the table
-     algorithm's way to say "as narrow as the content"). */
-  .fit {
-    inline-size: 1%;
+  .statusColumn {
+    inline-size: 11rem;
+    white-space: nowrap;
+  }
+
+  .yieldColumn {
+    inline-size: 13rem;
+  }
+
+  .balanceColumn {
+    inline-size: 15rem;
     white-space: nowrap;
   }
 

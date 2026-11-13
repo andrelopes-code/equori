@@ -1,112 +1,119 @@
+import { Section, SectionBody } from "@slotted/react/section";
 import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
-  TableCaption,
-  TableCell,
   TableColumnHeader,
   TableContent,
   TableHead,
   TableRow,
-  TableRowHeader,
-  TableSummary,
 } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 
-import type { components } from "@/api/schema.gen";
+import { SheetAccountRow } from "@/features/accounts/balance-sheet/sheet-account-row";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
-import { BalanceGroupRow } from "@/features/accounts/balance-sheet/balance-group-row";
-import type { SheetRow } from "@/features/accounts/balance-sheet/balance-sheet";
+import { SheetShareBar } from "@/features/accounts/balance-sheet/sheet-share-bar";
+import { SheetGroupHeader } from "@/features/accounts/balance-sheet/sheet-group-header";
+import type { SheetGroupProps } from "@/features/accounts/balance-sheet/sheet-group-props";
+import { sheetLines } from "@/features/accounts/balance-sheet/sheet-lines";
+import { SheetPositionsRow } from "@/features/accounts/balance-sheet/sheet-positions-row";
+import { institutionNote } from "@/features/accounts/balance-sheet/institution-note";
 import { useMeasuredTops } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
-import { MoneyFigure } from "@/ui/money/money-figure";
 
-type Institution = components["schemas"]["Institution"];
-type Money = components["schemas"]["Money"];
-
-// A group of the balance sheet holds a household's accounts of one kind: a bounded set, so a
-// table (LP-14) with the group's total in its summary row (RP-07).
+// A group of the list holds a household's accounts: a bounded set, so a table (LP-14). Its
+// title, share and total stand in the caption, a parent folds its children and the positions
+// of a parent fold into one line.
 export function BalanceGroupTable({
+  section,
   label,
-  rows,
-  total,
-  excluded,
-  date,
+  view,
   institutions,
+  showInstitution,
+  date,
   scale,
-}: {
-  label: string;
-  rows: SheetRow[];
-  total: Money;
-  excluded: number;
-  date: string;
-  institutions: Map<string, Institution>;
-  scale: (code: string) => number;
-}) {
+  onToggleParent,
+  onTogglePositions,
+}: SheetGroupProps) {
   const t = useT();
   const measured = useMeasuredTops();
+  const lines = sheetLines(section.rows, view);
+  // The group shows the yield column when one of its accounts is measured (A208 R8).
+  const yieldColumn = section.rows.some((row) => measured.has(row.account.id));
+  const names = new Map(
+    section.rows.map((row) => [row.account.id, row.account.name]),
+  );
 
-  const yieldColumn = rows.some((row) => measured.has(row.account.id));
   return (
-    <Stack gap={2}>
-      <Table columns={yieldColumn ? 5 : 4} variant="framed">
-        <TableContent>
-          <TableCaption>{label}</TableCaption>
-          <TableHead>
-            <TableRow>
-              <TableColumnHeader>{t("balanceSheet.account")}</TableColumnHeader>
-              <TableColumnHeader className={styles.fit}>
-                {t("balanceSheet.kind")}
-              </TableColumnHeader>
-              <TableColumnHeader className={styles.fit}>
-                {t("balanceSheet.status")}
-              </TableColumnHeader>
-              <TableColumnHeader numeric className={styles.fit}>
-                {t("balanceSheet.balance")}
-              </TableColumnHeader>
-              {yieldColumn && (
-                <TableColumnHeader numeric className={styles.fit}>
-                  {t("balanceSheet.yield")}
-                </TableColumnHeader>
-              )}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {rows.map((row) => (
-              <BalanceGroupRow
-                key={row.account.id}
-                row={row}
-                date={date}
-                institutions={institutions}
-                scale={scale}
-                yieldColumn={yieldColumn}
-              />
-            ))}
-          </TableBody>
-          <TableSummary>
-            <TableRow>
-              <TableRowHeader colSpan={3}>
-                {t("balanceSheet.groupTotal")}
-              </TableRowHeader>
-              <TableCell numeric>
-                <Text size="sm" weight="semibold">
-                  <MoneyFigure
-                    amount={total.amount}
-                    currency={total.currency}
-                    scale={scale(total.currency)}
-                  />
-                </Text>
-              </TableCell>
-              {yieldColumn && <TableCell />}
-            </TableRow>
-          </TableSummary>
-        </TableContent>
-      </Table>
-      {excluded > 0 && (
-        <Text size="sm" tone="muted">
-          {t("balanceSheet.excluded", { count: excluded })}
-        </Text>
-      )}
-    </Stack>
+    <Section>
+      <SheetGroupHeader
+        label={label}
+        total={section.total}
+        scale={scale(section.total.currency)}
+        share={section.share}
+        shareOf={section.shareOf}
+      />
+      <SectionBody>
+        <Stack gap={3}>
+          {section.share !== undefined && (
+            <SheetShareBar share={section.share} />
+          )}
+          <Table columns={yieldColumn ? 4 : 3} variant="framed">
+            <TableContent aria-label={label} className={styles.fixed}>
+              <TableHead>
+                <TableRow>
+                  <TableColumnHeader>
+                    {t("balanceSheet.account")}
+                  </TableColumnHeader>
+                  <TableColumnHeader className={styles.statusColumn}>
+                    {t("balanceSheet.status")}
+                  </TableColumnHeader>
+                  <TableColumnHeader numeric className={styles.balanceColumn}>
+                    {t("balanceSheet.balance")}
+                  </TableColumnHeader>
+                  {yieldColumn && (
+                    <TableColumnHeader numeric className={styles.yieldColumn}>
+                      {t("balanceSheet.yield")}
+                    </TableColumnHeader>
+                  )}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {lines.map((line) =>
+                  line.type === "positions" ? (
+                    <SheetPositionsRow
+                      key={`${line.parentId}:positions`}
+                      line={line}
+                      parentName={names.get(line.parentId) ?? ""}
+                      yieldColumn={yieldColumn}
+                      onToggle={onTogglePositions}
+                    />
+                  ) : (
+                    <SheetAccountRow
+                      key={line.row.account.id}
+                      line={line}
+                      institution={
+                        showInstitution && line.row.depth === 0
+                          ? institutionNote(line.row.account, institutions)
+                          : undefined
+                      }
+                      date={date}
+                      scale={scale}
+                      yieldColumn={yieldColumn}
+                      onToggle={onToggleParent}
+                    />
+                  ),
+                )}
+              </TableBody>
+            </TableContent>
+          </Table>
+          {section.excluded > 0 && (
+            <Text size="sm" tone="muted">
+              {t("balanceSheet.excluded", { count: section.excluded })}
+            </Text>
+          )}
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

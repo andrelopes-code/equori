@@ -3,6 +3,7 @@ import type { BalanceGroup } from "@/features/accounts/balance-sheet/balance-gro
 
 type Account = components["schemas"]["Account"];
 type Money = components["schemas"]["Money"];
+type Item = BalanceGroup["items"][number];
 
 export interface SheetRow {
   account: Account;
@@ -12,6 +13,12 @@ export interface SheetRow {
   subtree: Money;
   depth: number;
   hasChildren: boolean;
+  // The parent that stands in the same group.
+  parentId?: string;
+  // The children of the account that stand in the same group.
+  childCount: number;
+  // A child in another currency than the base currency: a quantity, not money (AL9).
+  position: boolean;
 }
 
 export interface Sides {
@@ -20,7 +27,28 @@ export interface Sides {
   net: number;
 }
 
+export type Order = "balance" | "name" | "attention";
+
+export interface SheetRowOptions {
+  order?: Order;
+  // With the base currency, a child in another currency is a position.
+  base?: string;
+  // The accounts with an open reconciliation difference.
+  differing?: ReadonlySet<string>;
+  // Every item is a root: no hierarchy.
+  flat?: boolean;
+}
+
+interface Node {
+  item: Item;
+  kids: Node[];
+  subtree: number;
+  differs: boolean;
+  position: boolean;
+}
+
 const assetGroups = new Set(["available", "reserves"]);
+const noAccounts: ReadonlySet<string> = new Set();
 
 // Liabilities are kept as the positive amount owed; their balances are negative in the ledger.
 export function sides(groups: readonly BalanceGroup[]): Sides {
@@ -33,43 +61,86 @@ export function sides(groups: readonly BalanceGroup[]): Sides {
   return { assets, liabilities, net: assets - liabilities };
 }
 
-// The group's accounts depth first, children after their parent and siblings by name. A child
-// whose parent stands in another group starts a tree of its own.
-export function sheetRows(group: BalanceGroup, locale: string): SheetRow[] {
+// The group's accounts depth first, children after their parent, siblings in the order of the
+// option. A child whose parent stands in another group starts a tree of its own. Positions
+// come last under their parent, by name (AL5).
+export function sheetRows(
+  group: Pick<BalanceGroup, "items">,
+  locale: string,
+  options: SheetRowOptions = {},
+): SheetRow[] {
+  const {
+    order = "name",
+    base,
+    differing = noAccounts,
+    flat = false,
+  } = options;
   const collator = new Intl.Collator(locale, { sensitivity: "base" });
-  const inGroup = new Map(group.items.map((item) => [item.account.id, item]));
-  const children = new Map<string, typeof group.items>();
-  const roots: typeof group.items = [];
-  for (const item of group.items) {
-    const parent = item.account.parent_id;
-    if (parent !== undefined && inGroup.has(parent)) {
-      children.set(parent, [...(children.get(parent) ?? []), item]);
-    } else {
-      roots.push(item);
-    }
+  const nodes = new Map<string, Node>(
+    group.items.map((item) => [
+      item.account.id,
+      {
+        item,
+        kids: [],
+        subtree: item.balance.amount,
+        differs: differing.has(item.account.id),
+        position: false,
+      },
+    ]),
+  );
+  const roots: Node[] = [];
+  for (const node of nodes.values()) {
+    const parent = flat
+      ? undefined
+      : nodes.get(node.item.account.parent_id ?? "");
+    if (parent === undefined) roots.push(node);
+    else parent.kids.push(node);
   }
-  const byName = (a: (typeof roots)[number], b: (typeof roots)[number]) =>
-    collator.compare(a.account.name, b.account.name);
-  const rows: SheetRow[] = [];
-  const visit = (item: (typeof roots)[number], depth: number): number => {
-    const index = rows.length;
-    const kids = [...(children.get(item.account.id) ?? [])].sort(byName);
-    rows.push({
-      account: item.account,
-      balance: item.balance,
-      subtree: item.balance,
-      depth,
-      hasChildren: kids.length > 0,
-    });
-    let total = item.balance.amount;
-    for (const kid of kids) {
-      const sub = visit(kid, depth + 1);
-      if (kid.balance.currency === item.balance.currency) total += sub;
-    }
-    const row = rows[index];
-    if (row !== undefined) row.subtree = { ...item.balance, amount: total };
-    return total;
+
+  const inBase = (node: Node) =>
+    base === undefined || node.item.balance.currency === base;
+  const byName = (a: Node, b: Node) =>
+    collator.compare(a.item.account.name, b.item.account.name);
+  const byValue = (a: Node, b: Node) => {
+    if (inBase(a) !== inBase(b)) return inBase(a) ? -1 : 1;
+    return inBase(a) ? Math.abs(b.subtree) - Math.abs(a.subtree) : 0;
   };
-  for (const root of [...roots].sort(byName)) visit(root, 0);
+  const rank = (a: Node, b: Node) => {
+    if (a.position !== b.position) return a.position ? 1 : -1;
+    if (a.position || order === "name") return byName(a, b);
+    if (order === "attention" && a.differs !== b.differs)
+      return a.differs ? -1 : 1;
+    return byValue(a, b) || byName(a, b);
+  };
+
+  const settle = (node: Node, depth: number) => {
+    node.position =
+      base !== undefined && depth > 0 && node.item.balance.currency !== base;
+    for (const kid of node.kids) {
+      settle(kid, depth + 1);
+      if (kid.item.balance.currency === node.item.balance.currency) {
+        node.subtree += kid.subtree;
+      }
+      node.differs ||= kid.differs;
+    }
+  };
+  const rows: SheetRow[] = [];
+  const emit = (node: Node, depth: number, parentId: string | undefined) => {
+    const { account, balance } = node.item;
+    rows.push({
+      account,
+      balance,
+      subtree: { ...balance, amount: node.subtree },
+      depth,
+      hasChildren: node.kids.length > 0,
+      ...(parentId === undefined ? {} : { parentId }),
+      childCount: node.kids.length,
+      position: node.position,
+    });
+    for (const kid of [...node.kids].sort(rank))
+      emit(kid, depth + 1, account.id);
+  };
+  for (const root of roots) settle(root, 0);
+  for (const root of [...roots].sort(rank)) emit(root, 0, undefined);
   return rows;
 }

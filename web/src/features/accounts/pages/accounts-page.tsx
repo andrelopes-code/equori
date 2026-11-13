@@ -35,16 +35,20 @@ import {
 } from "@/features/accounts/api";
 import { BalanceGroupList } from "@/features/accounts/balance-sheet/balance-group-list";
 import { BalanceGroupTable } from "@/features/accounts/balance-sheet/balance-group-table";
-import {
-  groupBalances,
-  groupLabels,
-} from "@/features/accounts/balance-sheet/balance-groups";
-import {
-  sheetRows,
-  sides,
-} from "@/features/accounts/balance-sheet/balance-sheet";
+import { groupBalances } from "@/features/accounts/balance-sheet/balance-groups";
+import { sides } from "@/features/accounts/balance-sheet/balance-sheet";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
 import { BalanceSheetFigures } from "@/features/accounts/balance-sheet/balance-sheet-figures";
+import {
+  arrangeSheet,
+  type GroupBy,
+  type Order,
+} from "@/features/accounts/balance-sheet/sheet-layout";
+import { sectionLabel } from "@/features/accounts/balance-sheet/sheet-section-label";
+import { SheetControls } from "@/features/accounts/balance-sheet/sheet-controls";
+import { useDifferingAccounts } from "@/features/accounts/balance-sheet/use-differing-accounts";
+import { useSheetPreference } from "@/features/accounts/balance-sheet/use-sheet-preference";
+import { useSheetView } from "@/features/accounts/balance-sheet/use-sheet-view";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -70,6 +74,9 @@ export function AccountsPage() {
   const search = useSearch({ from: "/_authed/accounts/" });
   const date = search.date ?? today;
   const basis = search.basis ?? "booked";
+  const [preference, remember] = useSheetPreference();
+  const group = search.group ?? preference.group;
+  const order = search.order ?? preference.order;
   const beforeDate = shiftDate(date, -30);
   const shown = useDeferredValue({
     date,
@@ -107,9 +114,27 @@ export function AccountsPage() {
     [accounts.data, before.data, base],
   );
   const now = groups === undefined ? undefined : sides(groups);
-  const byInstitution = new Map(
-    (institutions.data ?? []).map((i) => [i.id, i]),
+  const byInstitution = useMemo(
+    () => new Map((institutions.data ?? []).map((i) => [i.id, i])),
+    [institutions.data],
   );
+  const differing = useDifferingAccounts(accounts.data, order === "attention");
+  const sections = useMemo(
+    () =>
+      groups === undefined || base === undefined
+        ? undefined
+        : arrangeSheet({
+            groups,
+            by: group,
+            order,
+            locale,
+            base,
+            institutions: byInstitution,
+            differing,
+          }),
+    [groups, base, group, order, locale, byInstitution, differing],
+  );
+  const sheetView = useSheetView();
   const pending = (connections.data?.items ?? []).reduce(
     (sum, c) => sum + c.accounts.filter((a) => a.state === "pending").length,
     0,
@@ -122,6 +147,8 @@ export function AccountsPage() {
     date?: string | undefined;
     basis?: "settled" | undefined;
     closed?: true | undefined;
+    group?: GroupBy | undefined;
+    order?: Order | undefined;
   }) => {
     void navigate({
       to: "/accounts",
@@ -235,63 +262,81 @@ export function AccountsPage() {
             />
             {/* The date and the basis the whole sheet is read at, with the closed accounts. */}
             <div className={styles.bar}>
-              <Inline gap={3}>
-                <div className={styles.date}>
-                  <DatePicker
-                    aria-label={t("balanceSheet.date")}
-                    value={parseISODate(date)}
+              <SheetControls
+                group={group}
+                order={order}
+                onGroupChange={(value) => {
+                  setSearch({ group: value });
+                  remember({ group: value, order });
+                }}
+                onOrderChange={(value) => {
+                  setSearch({ order: value });
+                  remember({ group, order: value });
+                }}
+              />
+              <Inline gap={6} wrap="wrap" align="center">
+                <Inline gap={3}>
+                  <div className={styles.date}>
+                    <DatePicker
+                      aria-label={t("balanceSheet.date")}
+                      value={parseISODate(date)}
+                      onValueChange={(value) => {
+                        if (
+                          value !== null &&
+                          !Array.isArray(value) &&
+                          "year" in value
+                        ) {
+                          const iso = toISODate(value);
+                          setSearch({ date: iso === today ? undefined : iso });
+                        }
+                      }}
+                    />
+                  </div>
+                  <SegmentedControl
+                    aria-label={t("balanceSheet.basis")}
+                    value={basis}
                     onValueChange={(value) => {
-                      if (
-                        value !== null &&
-                        !Array.isArray(value) &&
-                        "year" in value
-                      ) {
-                        const iso = toISODate(value);
-                        setSearch({ date: iso === today ? undefined : iso });
+                      if (value === "booked" || value === "settled") {
+                        setSearch({
+                          basis: value === "booked" ? undefined : value,
+                        });
                       }
                     }}
-                  />
-                </div>
-                <SegmentedControl
-                  aria-label={t("balanceSheet.basis")}
-                  value={basis}
-                  onValueChange={(value) => {
-                    if (value === "booked" || value === "settled") {
-                      setSearch({
-                        basis: value === "booked" ? undefined : value,
-                      });
-                    }
+                  >
+                    <Segment value="booked">{t("balanceSheet.booked")}</Segment>
+                    <Segment value="settled">
+                      {t("balanceSheet.settled")}
+                    </Segment>
+                  </SegmentedControl>
+                </Inline>
+                <Switch
+                  checked={search.closed === true}
+                  onCheckedChange={(checked) => {
+                    setSearch({ closed: checked ? true : undefined });
                   }}
                 >
-                  <Segment value="booked">{t("balanceSheet.booked")}</Segment>
-                  <Segment value="settled">{t("balanceSheet.settled")}</Segment>
-                </SegmentedControl>
+                  {t("balanceSheet.showClosed")}
+                </Switch>
               </Inline>
-              <Switch
-                checked={search.closed === true}
-                onCheckedChange={(checked) => {
-                  setSearch({ closed: checked ? true : undefined });
-                }}
-              >
-                {t("balanceSheet.showClosed")}
-              </Switch>
             </div>
-            {ready && (
+            {ready && sections !== undefined && (
               <div className={styles.groups}>
-                {groups.map((group) => {
+                {sections.map((section) => {
                   const props = {
-                    label: t(groupLabels[group.group]),
-                    rows: sheetRows(group, locale),
-                    total: group.total,
-                    excluded: group.excluded,
+                    section,
+                    label: sectionLabel(section, byInstitution, t),
+                    view: sheetView.view,
                     institutions: byInstitution,
-                    scale,
+                    showInstitution: group !== "institution",
                     date: shown.date,
+                    scale,
+                    onToggleParent: sheetView.toggleParent,
+                    onTogglePositions: sheetView.togglePositions,
                   };
                   return compact ? (
-                    <BalanceGroupList key={group.group} {...props} />
+                    <BalanceGroupList key={section.key} {...props} />
                   ) : (
-                    <BalanceGroupTable key={group.group} {...props} />
+                    <BalanceGroupTable key={section.key} {...props} />
                   );
                 })}
               </div>
