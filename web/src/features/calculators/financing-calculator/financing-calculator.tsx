@@ -1,6 +1,6 @@
 import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 
 import { AmountField } from "@/features/calculators/fields/amount-field";
 import {
@@ -43,6 +43,13 @@ import type { CalculatorMoney } from "@/features/calculators/fields/use-calculat
 import { useCalculatorMoney } from "@/features/calculators/fields/use-calculator-money";
 import { useAppLocale, useAppLocaleState, useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type Solve = "installment" | "amount" | "rate" | "months";
 const solves: readonly Solve[] = ["installment", "amount", "rate", "months"];
@@ -278,25 +285,32 @@ export function FinancingCalculator() {
       </Stack>
     );
     details = (
-      <Stack gap={4}>
-        <Heading level={2} size="md">
-          {t("calc.financing.schedule")}
-        </Heading>
-        <div className={styles.pair}>
-          <CalcTable
-            long
-            caption={t(names.priceTable)}
-            headers={columns}
-            rows={scheduleRows(price, money)}
-          />
-          <CalcTable
-            long
-            caption={t(names.sacTable)}
-            headers={columns}
-            rows={scheduleRows(sac, money)}
-          />
-        </div>
-      </Stack>
+      <Section size="lg">
+        <SectionHeader>
+          <SectionTitle>
+            <SectionHeading>{t("calc.financing.schedule")}</SectionHeading>
+          </SectionTitle>
+        </SectionHeader>
+
+        <SectionBody>
+          <Stack gap={4}>
+            <div className={styles.pair}>
+              <CalcTable
+                long
+                caption={t(names.priceTable)}
+                headers={columns}
+                rows={scheduleRows(price, money)}
+              />
+              <CalcTable
+                long
+                caption={t(names.sacTable)}
+                headers={columns}
+                rows={scheduleRows(sac, money)}
+              />
+            </div>
+          </Stack>
+        </SectionBody>
+      </Section>
     );
   }
 

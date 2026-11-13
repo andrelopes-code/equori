@@ -2,7 +2,7 @@ import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { ProblemError, errorText } from "@/api/problem";
@@ -15,6 +15,13 @@ import type { MessageKey } from "@/i18n/catalog.en";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type ExternalRecord = components["schemas"]["ExternalRecord"];
 type RecordResolution = components["schemas"]["RecordResolution"];
@@ -81,29 +88,38 @@ export function ReviewRecord({
   };
   return (
     <Stack gap={5}>
-      <Stack gap={2}>
-        <Heading level={2} size="md">
-          {record.description === ""
-            ? t("ledger.untitled")
-            : record.description}
-        </Heading>
-        <Inline gap={4}>
-          <Text size="sm" tone="muted">
-            {formatDate(record.date, locale)}
-          </Text>
-          <Text numeric="tabular" size="md" weight="semibold">
-            {fmt.signed(record.amount, scale(record.amount.currency))}
-          </Text>
-        </Inline>
-        {record.review_reason !== undefined && (
-          <Text size="sm">{t(reasonWords[record.review_reason])}</Text>
-        )}
-        {record.unapplied_change !== undefined && (
-          <Text size="sm" tone="muted">
-            {t("batch.unapplied", { change: record.unapplied_change })}
-          </Text>
-        )}
-      </Stack>
+      <Section size="lg">
+        <SectionHeader>
+          <SectionTitle>
+            <SectionHeading>
+              {record.description === ""
+                ? t("ledger.untitled")
+                : record.description}
+            </SectionHeading>
+          </SectionTitle>
+        </SectionHeader>
+
+        <SectionBody>
+          <Stack gap={2}>
+            <Inline gap={4}>
+              <Text size="sm" tone="muted">
+                {formatDate(record.date, locale)}
+              </Text>
+              <Text numeric="tabular" size="md" weight="semibold">
+                {fmt.signed(record.amount, scale(record.amount.currency))}
+              </Text>
+            </Inline>
+            {record.review_reason !== undefined && (
+              <Text size="sm">{t(reasonWords[record.review_reason])}</Text>
+            )}
+            {record.unapplied_change !== undefined && (
+              <Text size="sm" tone="muted">
+                {t("batch.unapplied", { change: record.unapplied_change })}
+              </Text>
+            )}
+          </Stack>
+        </SectionBody>
+      </Section>
       {message !== null && (
         <Alert tone="warning" live="polite">
           <AlertContent>

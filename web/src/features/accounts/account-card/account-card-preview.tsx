@@ -1,6 +1,5 @@
 import { Page, PageBody } from "@slotted/react/page";
 import { Stack } from "@slotted/react/stack";
-import { Heading } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 import type { ComponentProps } from "react";
 
@@ -16,6 +15,13 @@ import {
 import { formatDayMonth } from "@/i18n/format";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type Card = Omit<ComponentProps<typeof AccountCard>, "scale" | "currency"> & {
   key: string;
@@ -141,23 +147,30 @@ export function AccountCardPreview() {
       <PageBody>
         <Stack gap={8}>
           {sections.map((section) => (
-            <Stack gap={4} key={section.title}>
-              <Heading level={2} size="sm">
-                {t(section.title)}
-              </Heading>
-              <div className={styles.grid}>
-                {currency !== undefined && scale !== null
-                  ? section.cards.map(({ key, ...card }) => (
-                      <AccountCard
-                        key={key}
-                        {...card}
-                        currency={currency}
-                        scale={scale(currency)}
-                      />
-                    ))
-                  : null}
-              </div>
-            </Stack>
+            <Section size="lg" key={section.title}>
+              <SectionHeader>
+                <SectionTitle>
+                  <SectionHeading>{t(section.title)}</SectionHeading>
+                </SectionTitle>
+              </SectionHeader>
+
+              <SectionBody>
+                <Stack gap={4}>
+                  <div className={styles.grid}>
+                    {currency !== undefined && scale !== null
+                      ? section.cards.map(({ key, ...card }) => (
+                          <AccountCard
+                            key={key}
+                            {...card}
+                            currency={currency}
+                            scale={scale(currency)}
+                          />
+                        ))
+                      : null}
+                  </div>
+                </Stack>
+              </SectionBody>
+            </Section>
           ))}
         </Stack>
       </PageBody>

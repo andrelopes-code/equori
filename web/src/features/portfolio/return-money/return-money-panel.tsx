@@ -5,7 +5,7 @@ import {
   DescriptionListTerm,
 } from "@slotted/react/description-list";
 import { Stack } from "@slotted/react/stack";
-import { Heading, HeadingLevel, Text } from "@slotted/react/typography";
+import { HeadingLevel, Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { useScale } from "@/features/setup";
@@ -16,6 +16,13 @@ import { useAmountTone } from "@/ui/money/amount-tone";
 import { ReturnGrowthBar } from "@/features/portfolio/return-money/return-growth-bar";
 import { returnMoney } from "@/features/portfolio/return-money/return-money";
 import type { ReturnSubject } from "@/features/portfolio/model/return-summary";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 type ReturnReport = components["schemas"]["ReturnReport"];
 
@@ -51,38 +58,46 @@ export function ReturnMoneyPanel({ report, surface }: ReturnMoneyPanelProps) {
   const showBar = surface === "portfolio" && deposits > 0 && gain > 0;
 
   return (
-    <Stack gap={4}>
-      <Heading size="md">{t("return.money.title")}</Heading>
+    <Section size="lg">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("return.money.title")}</SectionHeading>
+        </SectionTitle>
+      </SectionHeader>
 
-      <DescriptionList variant="ruled">
-        {rows.map((key) => (
-          <DescriptionListItem key={key}>
-            <DescriptionListTerm>
-              {t(`return.money.${key}`)}
-            </DescriptionListTerm>
-            <DescriptionListDescription>
-              <Text
-                size="sm"
-                align="end"
-                numeric="tabular"
-                tone={key === "gain" ? gainTone : "inherit"}
-              >
-                {money(amounts[key])}
-              </Text>
-            </DescriptionListDescription>
-          </DescriptionListItem>
-        ))}
-      </DescriptionList>
+      <SectionBody>
+        <Stack gap={4}>
+          <DescriptionList variant="ruled">
+            {rows.map((key) => (
+              <DescriptionListItem key={key}>
+                <DescriptionListTerm>
+                  {t(`return.money.${key}`)}
+                </DescriptionListTerm>
+                <DescriptionListDescription>
+                  <Text
+                    size="sm"
+                    align="end"
+                    numeric="tabular"
+                    tone={key === "gain" ? gainTone : "inherit"}
+                  >
+                    {money(amounts[key])}
+                  </Text>
+                </DescriptionListDescription>
+              </DescriptionListItem>
+            ))}
+          </DescriptionList>
 
-      {showBar && (
-        <HeadingLevel>
-          <ReturnGrowthBar
-            deposits={deposits}
-            gain={gain}
-            currency={currency}
-          />
-        </HeadingLevel>
-      )}
-    </Stack>
+          {showBar && (
+            <HeadingLevel>
+              <ReturnGrowthBar
+                deposits={deposits}
+                gain={gain}
+                currency={currency}
+              />
+            </HeadingLevel>
+          )}
+        </Stack>
+      </SectionBody>
+    </Section>
   );
 }

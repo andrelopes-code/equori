@@ -4,7 +4,7 @@ import { Button } from "@slotted/react/button";
 import { Chart } from "@slotted/react/chart";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 
 import { AmountField } from "@/features/calculators/fields/amount-field";
 import { CalculatorFrame } from "@/features/calculators/calculator-frame/calculator-frame";
@@ -61,6 +61,13 @@ import {
 } from "@/features/calculators/rate-source/use-index-rate";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 const maxMonths = 1200;
 // A withdrawal lasts years more often than months.
@@ -268,30 +275,40 @@ export function CompoundCalculator() {
           />
         )}
         <ResultList results={rows} />
-        <Stack gap={3}>
-          <Heading level={2} size="md">
-            {t("calc.compound.income")}
-          </Heading>
-          {lasting === null && (
-            <Alert tone="warning">
-              <AlertContent>
-                <AlertDescription>
-                  {t("calc.compound.income.none")}
-                </AlertDescription>
-              </AlertContent>
-            </Alert>
-          )}
-          {income.length > 0 && (
-            <ResultList label={t("calc.compound.income")} results={income} />
-          )}
-          <Text size="sm" tone="muted">
-            {t(
-              inflation === null
-                ? "calc.compound.income.nominalNote"
-                : "calc.compound.income.realNote",
-            )}
-          </Text>
-        </Stack>
+        <Section size="lg">
+          <SectionHeader>
+            <SectionTitle>
+              <SectionHeading>{t("calc.compound.income")}</SectionHeading>
+            </SectionTitle>
+          </SectionHeader>
+
+          <SectionBody>
+            <Stack gap={3}>
+              {lasting === null && (
+                <Alert tone="warning">
+                  <AlertContent>
+                    <AlertDescription>
+                      {t("calc.compound.income.none")}
+                    </AlertDescription>
+                  </AlertContent>
+                </Alert>
+              )}
+              {income.length > 0 && (
+                <ResultList
+                  label={t("calc.compound.income")}
+                  results={income}
+                />
+              )}
+              <Text size="sm" tone="muted">
+                {t(
+                  inflation === null
+                    ? "calc.compound.income.nominalNote"
+                    : "calc.compound.income.realNote",
+                )}
+              </Text>
+            </Stack>
+          </SectionBody>
+        </Section>
       </Stack>
     );
     const format = (v: number) => money.format(v);

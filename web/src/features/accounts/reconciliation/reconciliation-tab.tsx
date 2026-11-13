@@ -1,6 +1,5 @@
 import { Button } from "@slotted/react/button";
-import { Card, CardBody } from "@slotted/react/card";
-import { Inline } from "@slotted/react/inline";
+import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Stack } from "@slotted/react/stack";
 import { Heading, Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
@@ -98,50 +97,51 @@ export function ReconciliationTab({
   return (
     <Stack gap={8}>
       <Card>
-        <CardBody>
-          <Stack gap={4}>
-            <Inline justify="between" gap={4}>
-              <Stack gap={1}>
-                <Heading level={2} size="md">
-                  {t("reconciliation.title")}
-                </Heading>
-                <Text size="sm" tone="muted">
-                  {last === undefined
-                    ? t("reconciliation.never")
-                    : t("reconciliation.lastOn", {
-                        date: formatDate(last, locale),
-                      })}
-                </Text>
-              </Stack>
-              <Inline gap={3}>
-                <HelpLink page="check-balance" />
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setOutcome(null);
-                    setForm(true);
-                  }}
-                >
-                  {t("reconciliation.record")}
-                </Button>
-              </Inline>
-            </Inline>
-            {outcome !== null && (
-              <AssertionOutcomeAlert outcome={outcome} scale={scale} />
-            )}
-            {open !== undefined && (
-              <OpenDifferenceAlert
-                open={open}
-                remains={remains}
-                pending={
-                  resolve.isPending ? resolve.variables.resolution : undefined
-                }
-                scale={scale}
-                onSettle={settle}
-              />
-            )}
-          </Stack>
-        </CardBody>
+        <CardHeader>
+          <Heading level={2} size="md">
+            {t("reconciliation.title")}
+          </Heading>
+          <Text size="sm" tone="muted">
+            {last === undefined
+              ? t("reconciliation.never")
+              : t("reconciliation.lastOn", {
+                  date: formatDate(last, locale),
+                })}
+          </Text>
+          <CardActions>
+            <HelpLink page="check-balance" />
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOutcome(null);
+                setForm(true);
+              }}
+            >
+              {t("reconciliation.record")}
+            </Button>
+          </CardActions>
+        </CardHeader>
+
+        {(outcome !== null || open !== undefined) && (
+          <CardBody>
+            <Stack gap={4}>
+              {outcome !== null && (
+                <AssertionOutcomeAlert outcome={outcome} scale={scale} />
+              )}
+              {open !== undefined && (
+                <OpenDifferenceAlert
+                  open={open}
+                  remains={remains}
+                  pending={
+                    resolve.isPending ? resolve.variables.resolution : undefined
+                  }
+                  scale={scale}
+                  onSettle={settle}
+                />
+              )}
+            </Stack>
+          </CardBody>
+        )}
       </Card>
 
       <AssertionHistory accountId={account.id} scale={scale} />

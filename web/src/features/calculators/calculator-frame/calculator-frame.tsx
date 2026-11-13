@@ -15,7 +15,6 @@ import {
   ResultStateTitle,
 } from "@slotted/react/result-state";
 import { Stack } from "@slotted/react/stack";
-import { Heading } from "@slotted/react/typography";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
@@ -23,6 +22,13 @@ import styles from "@/features/calculators/calculator-frame/calculators.module.c
 import type { CalculatorId } from "@/features/calculators/model/calculators";
 import { useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/navigation/page-back";
+import {
+  Section,
+  SectionBody,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 
 // One calculator (design §4, "Layout"): the inputs beside the results, which stay in view while
 // the inputs scroll and carry their own evidence (a chart, a short table); the optional inputs
@@ -88,12 +94,17 @@ export function CalculatorFrame({
               {options !== undefined && (
                 <Card className={styles.options}>
                   <CardBody>
-                    <Stack gap={6}>
-                      <Heading level={2} size="md">
-                        {t("calc.options")}
-                      </Heading>
-                      {options}
-                    </Stack>
+                    <Section size="lg">
+                      <SectionHeader>
+                        <SectionTitle>
+                          <SectionHeading>{t("calc.options")}</SectionHeading>
+                        </SectionTitle>
+                      </SectionHeader>
+
+                      <SectionBody>
+                        <Stack gap={6}>{options}</Stack>
+                      </SectionBody>
+                    </Section>
                   </CardBody>
                 </Card>
               )}

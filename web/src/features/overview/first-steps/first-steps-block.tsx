@@ -48,14 +48,12 @@ export function FirstStepsBlock() {
   return (
     <Card>
       <CardHeader>
-        <Stack gap={1}>
-          <Heading level={2} size="md">
-            {t("firstSteps.title")}
-          </Heading>
-          <Text size="sm" tone="muted">
-            {t("firstSteps.description")}
-          </Text>
-        </Stack>
+        <Heading level={2} size="md">
+          {t("firstSteps.title")}
+        </Heading>
+        <Text size="sm" tone="muted">
+          {t("firstSteps.description")}
+        </Text>
         <CardActions>
           <Inline gap={3} align="center" wrap="nowrap">
             <Tag size="sm" tone="secondary">

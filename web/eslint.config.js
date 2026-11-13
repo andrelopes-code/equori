@@ -61,6 +61,15 @@ const bareInlineMessage = {
     "Draw a field's error with FieldError and any other message with FormNotice (@/ui/form-layout/form-notice) (O15).",
 };
 
+// O17: a Heading directly inside a Stack puts the title, its description and the content at one
+// equal gap. A titled block is a Section (@slotted/react/section), which sets the spacing.
+const stackedHeading = {
+  selector:
+    'JSXElement[openingElement.name.name="Stack"] > JSXElement[openingElement.name.name="Heading"]',
+  message:
+    "Draw a titled block with Section, SectionHeader and SectionBody (@slotted/react/section), not a Heading inside a Stack (O17).",
+};
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -204,6 +213,27 @@ export default defineConfig(
         { noStrings: true, ignoreProps: true },
       ],
       "react/no-multi-comp": ["error", { ignoreStateless: false }],
+      "no-restricted-syntax": [
+        "error",
+        bareRouterLink,
+        pageHeaderBack,
+        bareInlineMessage,
+        stackedHeading,
+      ],
+    },
+  },
+  {
+    // A title block (a page title with its subtitle, a welcome, a featured card) heads one
+    // surface; it is not a titled region of a page, so O17 does not apply.
+    files: [
+      "src/features/assistant/panel/chat-welcome.tsx",
+      "src/features/help/featured/help-featured.tsx",
+      "src/features/session/login/login-password-form.tsx",
+      "src/features/session/login/login-second-factor.tsx",
+      "src/features/session/pages/invite-page.tsx",
+      "src/features/session/pages/setup-page.tsx",
+    ],
+    rules: {
       "no-restricted-syntax": [
         "error",
         bareRouterLink,
