@@ -22,13 +22,13 @@ describe("KindScene", () => {
       "400",
       "300",
       "210",
-      "132",
+      "116",
     ]);
     expect(rings.map((ring) => ring.getAttribute("rx"))).toEqual([
       "108",
       "81",
       "56.7",
-      "35.64",
+      "31.32",
     ]);
     expect(rings[0]?.getAttribute("x")).toBe("-24");
     expect(rings[0]?.getAttribute("y")).toBe("-130");
@@ -42,18 +42,18 @@ describe("KindScene", () => {
       "200",
       "150",
       "105",
-      "66",
+      "58",
     ]);
     expect(rings[0]?.getAttribute("cx")).toBe("176");
     expect(rings[0]?.getAttribute("cy")).toBe("70");
   });
 
-  it("places the panel drawing at translate(123.2 17.2) scale(2.2)", () => {
+  it("places the panel drawing at translate(130.4 24.4) scale(1.9)", () => {
     const { container } = render(<KindScene kind="checking" />);
     const place = container.querySelector("g[transform]");
 
     expect(place?.getAttribute("transform")).toBe(
-      "translate(123.2 17.2) scale(2.2)",
+      "translate(130.4 24.4) scale(1.9)",
     );
     expect(place?.children).toHaveLength(1);
     expect(place?.firstElementChild?.children).toHaveLength(7);

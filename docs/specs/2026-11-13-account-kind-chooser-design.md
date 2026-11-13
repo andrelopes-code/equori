@@ -64,7 +64,7 @@ The drawings come from the mock approved on 2026-11-13. Each kind has two drawin
 
 - Ink: `--equori-slot-3` for an asset, `--equori-slot-4` for a liability. The solid is the ink mixed with `--slotted-text` (88 % in the light scheme, 92 % in the dark scheme); the plate is the ink at 18 % over `--slotted-surface` with a 30 % hairline, as in `account-mark.module.css`.
 - Plate: a circle for `savings`, `reserve`, `brokerage`; a rounded square (`rx` 13 of 48) for the others, the card included.
-- Scene: viewBox 352 × 140, four rings of the plate's shape centred at (176, 70) with sides 400, 300, 210 and 132 (the ink at 18 %, 13 %, 9 % and 6 % over the surface), and the panel drawing at `translate(123.2 17.2) scale(2.2)`.
+- Scene: viewBox 352 × 140, four rings of the plate's shape centred at (176, 70) with sides 400, 300, 210 and 116 (the ink at 18 %, 13 %, 9 % and 6 % over the surface), and the panel drawing at `translate(130.4 24.4) scale(1.9)`, which leaves 12 units between the innermost ring and the top and bottom of the stage.
 - Every SVG is `aria-hidden`: the tile's and the panel's text carry the name.
 - Forced colors: every shape becomes a `CanvasText` outline over `Canvas`; the three outer rings are hidden. The chosen tile takes a 3 px `Highlight` outline.
 - A twelfth kind picks its shape, draws its main mass in the solid ink, cuts its details out, and adds its back layer in half tone for the panel drawing.

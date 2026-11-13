@@ -13,7 +13,7 @@ interface KindSceneProps {
 }
 
 // Sides of the four echoes of the plate's shape, the outermost first.
-const ringSides = [400, 300, 210, 132] as const;
+const ringSides = [400, 300, 210, 116] as const;
 
 export function KindScene({ kind, tone, heroName }: KindSceneProps) {
   const dataTone = tone ?? classOf(kind);
@@ -56,7 +56,7 @@ export function KindScene({ kind, tone, heroName }: KindSceneProps) {
 
       {/* A CSS transform replaces the transform attribute of its element: the hover lift moves
           the inner group, the outer one keeps the placement. */}
-      <g transform="translate(123.2 17.2) scale(2.2)">
+      <g transform="translate(130.4 24.4) scale(1.9)">
         <g className={styles.hero}>
           <KindShapes shapes={panelArt[kind]} />
         </g>
