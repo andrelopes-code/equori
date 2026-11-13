@@ -199,6 +199,7 @@
     --slotted-field-group-message-gap: var(--slotted-space-4);
     --slotted-form-field-gap: var(--slotted-space-8);
     --slotted-form-section-gap: var(--slotted-space-10);
+    --slotted-section-gap: var(--slotted-space-6);
     --slotted-top-navigation-color: var(--slotted-text-muted);
     --slotted-top-navigation-current-color: var(--slotted-text);
     --slotted-top-navigation-current-background: transparent;
@@ -1854,6 +1855,18 @@
 
     [data-ui="field-group"][data-kind="section"]:is(:hover, :focus-within) {
       border-inline-start-color: var(--slotted-tone-accent-solid);
+    }
+
+    [data-ui="section"] > [data-part="header"] > [data-part="title"] > [data-part="description"] {
+      margin-block-start: 0;
+    }
+
+    [data-ui="card"] > [data-part="header"]:has(> :nth-child(2 of :not([data-part="actions"]))) > [data-part="actions"] {
+      grid-row: 1 / span 2;
+    }
+
+    [data-ui="card"] > [data-part="header"]:has(> :nth-child(3 of :not([data-part="actions"]))) > [data-part="actions"] {
+      grid-row: 1 / span 3;
     }
 
     [data-ui="result-state"] {

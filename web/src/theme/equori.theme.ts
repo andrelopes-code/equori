@@ -77,6 +77,28 @@ const sectionRule = `
 }
 `;
 
+// Workaround for Slotted issue #98: the description keeps a fixed 2 px margin under the title,
+// and with the line boxes the title and the description stood 7 px apart, close to the 11 px of
+// the body. The margin goes, and the description sits at the title's line box.
+const sectionDescriptionRule = `
+[data-ui="section"] > [data-part="header"] > [data-part="title"] > [data-part="description"] {
+  margin-block-start: 0;
+}
+`;
+
+// Workaround for Slotted issue #99: the actions of a card header occupy its first row, and a
+// control taller than the title stretches that row, which pushes the description away. The
+// actions span the rows of the header's text, so its height is shared and adds nothing.
+const cardActionsRule = `
+[data-ui="card"] > [data-part="header"]:has(> :nth-child(2 of :not([data-part="actions"]))) > [data-part="actions"] {
+  grid-row: 1 / span 2;
+}
+
+[data-ui="card"] > [data-part="header"]:has(> :nth-child(3 of :not([data-part="actions"]))) > [data-part="actions"] {
+  grid-row: 1 / span 3;
+}
+`;
+
 // A light palette dims the page less: the material already sets it apart.
 const paletteScrimRule = `
 &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
@@ -371,6 +393,9 @@ export default extendTheme(
       // 2026-11-02).
       "--slotted-form-field-gap": "var(--slotted-space-8)",
       "--slotted-form-section-gap": "var(--slotted-space-10)",
+      // Owner review of 2026-11-13: a section's title and description read as one unit, and the
+      // body stands clear of both, 16 px under the description against about 5 px under the title.
+      "--slotted-section-gap": "var(--slotted-space-6)",
       "--slotted-top-navigation-color": "var(--slotted-text-muted)",
       "--slotted-top-navigation-current-color": "var(--slotted-text)",
       "--slotted-top-navigation-current-background": "transparent",
@@ -424,6 +449,8 @@ export default extendTheme(
       questionLegendRule,
       questionChoicesRule,
       sectionRule,
+      sectionDescriptionRule,
+      cardActionsRule,
       resultStateRule,
       paletteScrimRule,
       paletteGroupLabelRule,

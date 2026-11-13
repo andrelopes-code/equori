@@ -208,6 +208,25 @@ test("a section reserves a transparent bar in the gutter, so nothing shifts when
   );
 });
 
+test("a section sets its description tight under the title and the body clear of both", () => {
+  assert.match(css, /--slotted-section-gap: var\(--slotted-space-6\)/);
+  assert.match(
+    css,
+    /\[data-ui="section"\] > \[data-part="header"\] > \[data-part="title"\] > \[data-part="description"\]\s*\{[^}]*margin-block-start: 0/,
+  );
+});
+
+test("card actions span the header's text rows, so a tall control does not push the description down", () => {
+  assert.match(
+    css,
+    /\[data-ui="card"\] > \[data-part="header"\]:has\(> :nth-child\(2 of :not\(\[data-part="actions"\]\)\)\) > \[data-part="actions"\]\s*\{[^}]*grid-row: 1 \/ span 2/,
+  );
+  assert.match(
+    css,
+    /\[data-ui="card"\] > \[data-part="header"\]:has\(> :nth-child\(3 of :not\(\[data-part="actions"\]\)\)\) > \[data-part="actions"\]\s*\{[^}]*grid-row: 1 \/ span 3/,
+  );
+});
+
 test("a section under the pointer or holding the focus shows its bar and keeps the colour of its title", () => {
   const rule =
     /\[data-ui="field-group"\]\[data-kind="section"\]:is\(:hover, :focus-within\)\s*\{[^}]*\}/.exec(
