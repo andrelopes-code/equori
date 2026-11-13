@@ -113,10 +113,10 @@ describe("Contribution plan without a plan", () => {
       "Fundos imobiliários",
     ]);
     expect(
-      await screen.findByRole("textbox", { name: "Alvo: Ações" }),
+      await screen.findByRole("textbox", { name: "Ideal: Ações" }),
     ).toHaveValue("62,5");
     expect(
-      screen.getByRole("textbox", { name: "Alvo: Fundos imobiliários" }),
+      screen.getByRole("textbox", { name: "Ideal: Fundos imobiliários" }),
     ).toHaveValue("37,5");
   });
 
@@ -137,7 +137,32 @@ describe("Contribution plan without a plan", () => {
     expect(
       screen.getByText(catalogPtBR["contributionPlan.nameRequired"]),
     ).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: /^Alvo/ })).toHaveValue("100,0");
+    expect(screen.getByRole("textbox", { name: /^Ideal/ })).toHaveValue(
+      "100,0",
+    );
+  });
+
+  it("states a blank group name once above the rows, never inside a row", async () => {
+    await open(withPositions);
+
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogPtBR["contributionPlan.startScratch"],
+      }),
+    );
+
+    const name = await screen.findByRole("textbox", {
+      name: catalogPtBR["contributionPlan.className"],
+    });
+    const message = screen.getByText(
+      catalogPtBR["contributionPlan.nameRequired"],
+    );
+    expect(name).toBeInvalid();
+    expect(name.getAttribute("aria-describedby")).toContain(message.id);
+    expect(message.closest("[role='table'], table")).toBeNull();
+    expect(
+      screen.getAllByText(catalogPtBR["contributionPlan.nameRequired"]),
+    ).toHaveLength(1);
   });
 
   it("links to the first purchase when the book holds no position", async () => {

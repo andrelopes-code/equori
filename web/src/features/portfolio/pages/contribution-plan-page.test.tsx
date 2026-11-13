@@ -103,14 +103,20 @@ describe("Contribution plan page", () => {
     );
   });
 
-  it("CN15: states the drift before and after the contribution", async () => {
+  it("S400: says where the money goes, in list order, and which groups receive nothing", async () => {
     await open();
 
-    expect(
-      await screen.findByText(
-        "Este aporte leva a carteira de 17,8 p.p. para 5,5 p.p. de distância do alvo.",
-      ),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          (_, node) =>
+            node?.textContent.startsWith("Aplique") === true &&
+            node.children.length === 0 &&
+            text(node) ===
+              "Aplique R$ 1.000,00 em Ações Brasil e R$ 3.000,00 em Ações exterior. Os demais grupos não recebem neste mês.",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
   it("names the three shares of a class on its drift track", async () => {
@@ -118,9 +124,49 @@ describe("Contribution plan page", () => {
 
     expect(
       await screen.findByRole("img", {
-        name: "Ações exterior: atual 5,6%, após 18,2%, alvo 20%",
+        name: "Ações exterior: hoje 5,6%, depois do aporte 18,2%, ideal 20%",
       }),
     ).toBeInTheDocument();
+  });
+
+  it("explains the screen and keeps the three steps collapsed", async () => {
+    await open();
+
+    expect(
+      await screen.findByText(catalogPtBR["contributionPlan.intro"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: catalogPtBR["contributionPlan.how"],
+        expanded: false,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Editar grupos e ideais" }),
+    ).toBeInTheDocument();
+  });
+
+  it("asks for the amount when the plan has none", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    const withoutAmount = structuredClone(saved) as Partial<typeof saved>;
+    delete withoutAmount.amount;
+    await renderApp("/portfolio/contribution-plan", {
+      fetch: portfolioApi({
+        "GET /api/v1/contribution-plan": () => json(200, withoutAmount),
+      }),
+    });
+
+    expect(
+      await screen.findByText(catalogPtBR["contributionPlan.verdictNoAmount"]),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("table", {
+        name: catalogPtBR["contributionPlan.shopping"],
+      }),
+    ).not.toBeInTheDocument();
   });
 
   it("lists the purchases by amount and masks them in privacy mode", async () => {
@@ -164,7 +210,7 @@ describe("Contribution plan page", () => {
     await planTable();
 
     expect(
-      screen.getByRole("columnheader", { name: "Posição frente ao alvo" }),
+      screen.getByRole("columnheader", { name: "Posição frente ao ideal" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("columnheader", { name: "Ativos" }),

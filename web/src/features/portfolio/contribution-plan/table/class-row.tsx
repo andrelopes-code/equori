@@ -44,7 +44,6 @@ export function ClassRow({
   const key = `class-${String(index)}`;
   const draft = editor?.draft;
   const edit = draft?.classes[index];
-  const blank = edit?.name.trim() === "";
   const memberScale = trackScale(
     cls.members.flatMap((m) => [m.target_bp, m.share_bp, m.after_share_bp]),
   );
@@ -83,7 +82,6 @@ export function ClassRow({
           target={cls.target_bp}
           scale={scale}
           position={index}
-          blank={blank}
           slider={
             edit !== undefined && editor !== undefined
               ? {

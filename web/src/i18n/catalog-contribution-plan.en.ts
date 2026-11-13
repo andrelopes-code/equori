@@ -4,21 +4,15 @@ export const contributionPlanEn = {
   "contributionPlan.subtitle":
     "Where each contribution goes to bring the portfolio to its target",
   "contributionPlan.open": "Contribution plan",
-  "contributionPlan.edit": "Edit targets",
+  "contributionPlan.edit": "Edit groups and targets",
   "contributionPlan.amount": "Contribution",
-  "contributionPlan.total": "Portfolio",
-  "contributionPlan.totalAfter": "After the contribution",
-  "contributionPlan.driftMoves":
-    "This contribution moves the portfolio from {before} to {after} away from the target.",
-  "contributionPlan.driftNow": "The portfolio is {drift} away from the target.",
-  "contributionPlan.points": "{value} pp",
-  "contributionPlan.colClass": "Class",
+  "contributionPlan.colClass": "Group",
   "contributionPlan.colTarget": "Target",
-  "contributionPlan.colCurrent": "Current",
+  "contributionPlan.colCurrent": "Today",
   "contributionPlan.colAfter": "After",
-  "contributionPlan.colAmount": "Contribute",
+  "contributionPlan.colAmount": "Gets",
   "contributionPlan.track":
-    "{name}: current {current}, after {after}, target {target}",
+    "{name}: today {current}, after this contribution {after}, target {target}",
   "contributionPlan.quantity": "≈ {count} units",
   "contributionPlan.shopping": "Shopping list",
   "contributionPlan.copy": "Copy list",
@@ -31,9 +25,9 @@ export const contributionPlanEn = {
   "contributionPlan.copied": "List copied",
   "contributionPlan.shoppingEmpty": "No purchase for this amount",
   "contributionPlan.lock": "Keep {name} fixed",
-  "contributionPlan.addClass": "Add class",
-  "contributionPlan.className": "Class name",
-  "contributionPlan.nameRequired": "Name the class",
+  "contributionPlan.addClass": "Add group",
+  "contributionPlan.className": "Group name",
+  "contributionPlan.nameRequired": "Name every group before saving.",
   "contributionPlan.removeClass": "Remove {name}",
   "contributionPlan.split": "Split among assets",
   "contributionPlan.addAsset": "Add asset",
@@ -41,7 +35,7 @@ export const contributionPlanEn = {
   "contributionPlan.pickInstruments": "Assets",
   "contributionPlan.inClass": "In {name}",
   "contributionPlan.removeAsset": "Remove {name}",
-  "contributionPlan.moveTo": "Class of {name}",
+  "contributionPlan.moveTo": "Group of {name}",
   "contributionPlan.save": "Save",
   "contributionPlan.discard": "Discard",
   "contributionPlan.leaveTitle": "Discard the changes to the targets?",
@@ -49,9 +43,9 @@ export const contributionPlanEn = {
   "contributionPlan.outside": "Outside the plan",
   "contributionPlan.noPrice": "No price",
   "contributionPlan.pickerSearch": "Search assets",
-  "contributionPlan.chooseClass": "Choose a class",
+  "contributionPlan.chooseClass": "Choose a group",
   "contributionPlan.emptyBody":
-    "Set a target split once and each contribution is divided to bring the portfolio closer to it.",
+    "Set the target of each group once and each contribution is divided to bring the portfolio closer to it.",
   "contributionPlan.startPortfolio": "Start from my portfolio",
   "contributionPlan.startScratch": "Start from scratch",
   "contributionPlan.firstPurchase": "Record the first purchase",
@@ -59,20 +53,39 @@ export const contributionPlanEn = {
     "No split while these assets have no value today:",
   "contributionPlan.missingPrice": "{name}: no price",
   "contributionPlan.missingRate": "{name}: no exchange rate",
-  "problem.contribution_target_sum": "The class targets must add up to 100%.",
+  "problem.contribution_target_sum": "The group targets must add up to 100%.",
   "problem.contribution_member_target_sum":
-    "The asset targets of a class must add up to 100%.",
-  "problem.contribution_class_name_duplicate":
-    "Two classes have the same name.",
+    "The asset targets of a group must add up to 100%.",
+  "problem.contribution_class_name_duplicate": "Two groups have the same name.",
   "problem.contribution_member_duplicate":
     "An asset is in two places of the plan.",
   "problem.contribution_member_invalid":
     "An asset of the plan is not an investment.",
   "problem.contribution_amount_invalid":
     "Enter a contribution greater than zero.",
-  "contributionPlan.legendCurrent": "Current",
+  "contributionPlan.legendCurrent": "Today",
   "contributionPlan.legendContribution": "This contribution",
   "contributionPlan.legendTarget": "Target",
   "contributionPlan.leaveBody":
     "The targets edited on this screen are not saved.",
+  "contributionPlan.intro":
+    "You split the portfolio into groups and say how much each group should hold. Each contribution goes to the groups below their target, without selling anything.",
+  "contributionPlan.how": "How it works",
+  "contributionPlan.howStep1": "Define the groups and the target of each.",
+  "contributionPlan.howStep2": "Type the contribution amount.",
+  "contributionPlan.howStep3": "Buy what the list shows.",
+  "contributionPlan.month": "This month",
+  "contributionPlan.portfolioToday": "Portfolio today {today}",
+  "contributionPlan.portfolioAfter":
+    "Portfolio today {today} · after this contribution {after}",
+  "contributionPlan.verdictApply": "Apply {list}.",
+  "contributionPlan.verdictItem": "{amount} to {name}",
+  "contributionPlan.verdictRest":
+    "The other groups receive nothing this month.",
+  "contributionPlan.verdictNoAmount":
+    "Enter the contribution amount to see where to apply it.",
+  "contributionPlan.verdictMissingPrice":
+    "{name} has no price; without it the contribution is not split.",
+  "contributionPlan.verdictMissingRate":
+    "{name} has no exchange rate; without it the contribution is not split.",
 } as const;

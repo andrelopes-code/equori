@@ -14,6 +14,7 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import styles from "@/features/portfolio/contribution-plan/table/class-table.module.css";
+import { NameRequiredMessage } from "@/features/portfolio/contribution-plan/editor/name-required-message";
 import { ClassRow } from "@/features/portfolio/contribution-plan/table/class-row";
 import type { PlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
 import { trackScale } from "@/features/portfolio/contribution-plan/table/track-scale";
@@ -45,8 +46,12 @@ export function ClassTable({
     classes.flatMap((c) => [c.target_bp, c.share_bp, c.after_share_bp]),
   );
 
+  const nameless = editor?.draft?.classes.some((c) => c.name.trim() === "");
+
   return (
     <Stack gap={3}>
+      <NameRequiredMessage shown={nameless === true} />
+
       <Table
         columns={editing ? 8 : 7}
         layout="fixed"
@@ -58,15 +63,16 @@ export function ClassTable({
         <TableContent aria-label={t("contributionPlan.title")}>
           <TableHead>
             <TableRow>
-              <TableColumnHeader className={styles.colExpand}>
+              <TableColumnHeader text="nowrap" className={styles.colExpand}>
                 <VisuallyHidden>
                   {t("contributionPlan.colExpand")}
                 </VisuallyHidden>
               </TableColumnHeader>
-              <TableColumnHeader>
+              <TableColumnHeader text="nowrap">
                 {t("contributionPlan.colClass")}
               </TableColumnHeader>
               <TableColumnHeader
+                text="nowrap"
                 className={editing ? styles.colTrackEdit : undefined}
               >
                 <VisuallyHidden>
@@ -74,22 +80,39 @@ export function ClassTable({
                 </VisuallyHidden>
               </TableColumnHeader>
               <TableColumnHeader
+                text="nowrap"
                 numeric
                 className={editing ? styles.colTargetEdit : styles.colTarget}
               >
                 {t("contributionPlan.colTarget")}
               </TableColumnHeader>
-              <TableColumnHeader numeric className={styles.colShare}>
+              <TableColumnHeader
+                text="nowrap"
+                numeric
+                className={styles.colShare}
+              >
                 {t("contributionPlan.colCurrent")}
               </TableColumnHeader>
-              <TableColumnHeader numeric className={styles.colShare}>
+              <TableColumnHeader
+                text="nowrap"
+                numeric
+                className={styles.colShare}
+              >
                 {t("contributionPlan.colAfter")}
               </TableColumnHeader>
-              <TableColumnHeader numeric className={styles.colAmount}>
+              <TableColumnHeader
+                text="nowrap"
+                numeric
+                className={styles.colAmount}
+              >
                 {t("contributionPlan.colAmount")}
               </TableColumnHeader>
               {editing && (
-                <TableColumnHeader sticky="end" className={styles.colActions}>
+                <TableColumnHeader
+                  text="nowrap"
+                  sticky="end"
+                  className={styles.colActions}
+                >
                   <VisuallyHidden>
                     {t("contributionPlan.colActions")}
                   </VisuallyHidden>

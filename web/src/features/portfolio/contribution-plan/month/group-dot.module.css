@@ -1,0 +1,42 @@
+@layer app {
+  .dot {
+    display: inline-block;
+    flex: none;
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-full);
+    background: var(--dot-color);
+  }
+
+  .slot1 {
+    --dot-color: var(--slotted-data-1);
+  }
+
+  .slot2 {
+    --dot-color: var(--slotted-data-2);
+  }
+
+  .slot3 {
+    --dot-color: var(--slotted-data-3);
+  }
+
+  .slot4 {
+    --dot-color: var(--slotted-data-4);
+  }
+
+  .slot5 {
+    --dot-color: var(--slotted-data-5);
+  }
+
+  .slot6 {
+    --dot-color: var(--slotted-data-6);
+  }
+
+  .slot7 {
+    --dot-color: var(--slotted-data-7);
+  }
+
+  .slot8 {
+    --dot-color: var(--slotted-data-8);
+  }
+}

@@ -90,7 +90,7 @@ async function edit(fetch = api()) {
 }
 
 const target = (name: string) =>
-  screen.findByRole("textbox", { name: `Alvo: ${name}` });
+  screen.findByRole("textbox", { name: `Ideal: ${name}` });
 
 describe("Contribution plan edit mode", () => {
   beforeEach(() => {

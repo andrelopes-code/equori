@@ -20,23 +20,22 @@ import { contributionPlanQuery } from "@/features/portfolio/api";
 import { ClassTable } from "@/features/portfolio/contribution-plan/table/class-table";
 import { ContributionEmpty } from "@/features/portfolio/contribution-plan/states/contribution-empty";
 import { ContributionSaveBar } from "@/features/portfolio/contribution-plan/editor/contribution-save-bar";
-import { ContributionStrip } from "@/features/portfolio/contribution-plan/strip/contribution-strip";
 import { IncompleteNotice } from "@/features/portfolio/contribution-plan/states/incomplete-notice";
+import { MonthSection } from "@/features/portfolio/contribution-plan/month/month-section";
+import { PlanIntro } from "@/features/portfolio/contribution-plan/intro/plan-intro";
 import { LeaveDialog } from "@/features/portfolio/contribution-plan/editor/leave-dialog";
 import { OutsideSection } from "@/features/portfolio/contribution-plan/outside/outside-section";
 import { PlanLoadFailed } from "@/features/portfolio/contribution-plan/states/plan-load-failed";
 import { overlayDraft } from "@/features/portfolio/contribution-plan/model/plan-edits";
-import { ShoppingPanel } from "@/features/portfolio/contribution-plan/shopping/shopping-panel";
 import { TrackLegend } from "@/features/portfolio/contribution-plan/table/track-legend";
 import { useContributionPreview } from "@/features/portfolio/contribution-plan/editor/use-contribution-preview";
 import { useLeaveGuard } from "@/features/portfolio/contribution-plan/editor/use-leave-guard";
 import { usePlanEditor } from "@/features/portfolio/contribution-plan/editor/use-plan-editor";
-import styles from "@/features/portfolio/pages/contribution-plan-page.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { PageBack } from "@/ui/navigation/page-back";
 
-// Where this month's money goes, how far the portfolio is from the target (spec, Screen).
+// Where this month's money goes, how far the portfolio is from its ideal (spec, Screen).
 export function ContributionPlanPage() {
   const t = useT();
   const api = useApi();
@@ -112,6 +111,8 @@ export function ContributionPlanPage() {
 
       <PageBody>
         <Stack gap={6}>
+          <PlanIntro />
+
           {plan.isError && (
             <PlanLoadFailed
               onRetry={() => {
@@ -131,31 +132,26 @@ export function ContributionPlanPage() {
           )}
 
           {shown !== undefined && !empty && (
-            <ContributionStrip
+            <MonthSection
               view={shown}
               amount={amount}
               pending={pending}
+              memberName={memberName}
               onAmount={setAmount}
             />
           )}
 
           {!plan.isError && !empty && (
-            <div className={styles.layout}>
-              <Stack gap={3}>
-                <ClassTable
-                  view={shown}
-                  pending={pending}
-                  editor={editor}
-                  memberName={memberName}
-                />
+            <Stack gap={3}>
+              <ClassTable
+                view={shown}
+                pending={pending}
+                editor={editor}
+                memberName={memberName}
+              />
 
-                {shown !== undefined && <TrackLegend />}
-              </Stack>
-
-              {shown !== undefined && (
-                <ShoppingPanel view={shown} memberName={memberName} />
-              )}
-            </div>
+              {shown !== undefined && <TrackLegend />}
+            </Stack>
           )}
 
           {shown !== undefined && !empty && (

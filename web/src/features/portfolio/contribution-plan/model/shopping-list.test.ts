@@ -46,7 +46,9 @@ describe("shoppingList", () => {
   it("lists the member with an amount and its quantity (S401)", () => {
     const got = shoppingList(plan, names);
 
-    expect(got).toEqual([{ name: "PETR4", amount: brl(100000), quantity: 25 }]);
+    expect(got).toEqual([
+      { name: "PETR4", amount: brl(100000), quantity: 25, group: 1 },
+    ]);
   });
 
   it("lists a class without member targets by its name, sorted by amount then name", () => {

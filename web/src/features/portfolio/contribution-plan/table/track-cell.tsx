@@ -1,9 +1,7 @@
 import { TableCell } from "@slotted/react/table";
-import { Text } from "@slotted/react/typography";
 
 import { DriftTrack } from "@/features/portfolio/contribution-plan/table/drift-track";
 import { TargetSlider } from "@/features/portfolio/contribution-plan/table/target-slider";
-import { useT } from "@/i18n/i18n-provider";
 
 interface TrackCellProps {
   name: string;
@@ -12,8 +10,6 @@ interface TrackCellProps {
   target: number | undefined;
   scale: number;
   position: number;
-  // A class without a name says so in place of its track.
-  blank?: boolean;
   // Edit mode: the slider of the target replaces the track.
   slider?: { disabled: boolean; onChange: (bp: number) => void } | undefined;
 }
@@ -26,21 +22,8 @@ export function TrackCell({
   target,
   scale,
   position,
-  blank,
   slider,
 }: TrackCellProps) {
-  const t = useT();
-
-  if (blank === true) {
-    return (
-      <TableCell>
-        <Text tone="danger" size="xs">
-          {t("contributionPlan.nameRequired")}
-        </Text>
-      </TableCell>
-    );
-  }
-
   if (slider !== undefined && target !== undefined) {
     return (
       <TableCell>
