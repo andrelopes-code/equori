@@ -144,7 +144,19 @@ A key at the section header draws a solid sample, a hatched sample and the marke
 
 ### Edit mode
 
-"Editar grupos e ideais" turns the rows of the second section into editor rows: the name input, the slider in place of the bar, the percent input with the lock toggle, the remove button. One sentence above the rows explains the rule: "Arraste ou digite o ideal de cada grupo. Os outros se ajustam para somar 100%. O cadeado mantém um grupo fixo." Redistribution, member ideals ("Dividir entre ativos"), the asset picker, the save bar and the leave confirmation follow the rules of the first layout (`redistribute-targets.ts`, `plan-edits.ts`).
+Owner review of 2026-11-13: plain sentences that change while the owner drags a control are not an interface, and any content that changes height above the rows moves them under the pointer. Edit mode draws the composition and the effect of the contribution as pictures of fixed height.
+
+"Editar grupos e ideais" replaces the content of the second section with the composition editor; the "Este mês" card keeps only its amount row while editing.
+
+1. Composition editor, an own element, three bars of one width with a row label column on the left:
+   - "Ideal" (40 px high): one segment per group in its colour, width = its ideal, the name and the percent written inside the segment when they fit, the percent only when the name does not fit, nothing when the percent does not fit either (the group list below names it). Between two adjacent segments a handle moves the boundary: it transfers basis points between those two groups only, in steps of 10 bp (0.1%), never below 0. A handle next to a locked group is disabled. Each handle is a `role="slider"` with arrow keys (±100 bp), Shift+arrow (±500 bp), Home and End, an `aria-valuetext` naming both groups and their percents, a visible focus ring, a 24 px hit area and `cursor: col-resize`.
+   - "Hoje" (12 px): the same groups at their share today, same colours, for comparison.
+   - "Este aporte" (12 px): the contribution split among the groups that receive money, segments in their colours, each amount written under its segment when it fits; while the preview is pending the bar keeps the previous split; without an amount, a muted track with "informe o valor do aporte" inside; with a blank name, the same track with "dê um nome a cada grupo".
+2. Group list under the editor, one row per group of fixed height: colour swatch, name input, ideal percent input with − and + buttons (±1%), lock toggle, share today (muted), amount this group receives (fixed width, tabular numerals), and a row menu with "Dividir entre ativos", "Adicionar ativo" and "Remover grupo". Members of a split group follow as indented rows with the same columns. Changing a percent in the list redistributes among the unlocked groups as before (`redistribute-targets.ts`); dragging a handle in the editor transfers between the two neighbours only.
+3. The section title carries a help button that opens a short popover with the rules (drag a boundary or type a percent; the total stays 100%; the lock keeps a group fixed); no explanation sentence is drawn in the section.
+4. Nothing above the group list changes height while editing: the bars have fixed heights, the amounts have fixed widths, the blank-name error lives in the "Este aporte" track and as the invalid state of the input.
+
+The save bar, the leave confirmation, the asset picker and member ideals keep the rules of the first layout.
 
 ### Outside the plan
 
