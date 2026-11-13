@@ -133,11 +133,7 @@ func (s *seeder) loadPrices() {
 
 		s.do(
 			http.MethodGet,
-			"/prices?instrument="+sec.code+"&quote_instrument=BRL&from="+iso(
-				s.start,
-			)+"&to="+iso(
-				s.today,
-			),
+			s.pricesPath(sec.code),
 			nil,
 			&list,
 		)
@@ -219,12 +215,20 @@ func (s *seeder) hasPrices(code string) bool {
 	}
 	s.do(
 		http.MethodGet,
-		"/prices?instrument="+code+"&quote_instrument=BRL&from="+iso(s.start)+"&to="+iso(s.today),
+		s.pricesPath(code),
 		nil,
 		&list,
 	)
 
 	return len(list.Items) > 0
+}
+
+// pricesPath is the request of the prices of code, in quote currency BRL, since the start of the history.
+func (s *seeder) pricesPath(code string) string {
+	return "/prices?instrument=" + code +
+		"&quote_instrument=BRL" +
+		"&from=" + iso(s.start) +
+		"&to=" + iso(s.today)
 }
 
 // buy schedules a purchase of about reais reais of code on d, in whole units of the scale of the security.
