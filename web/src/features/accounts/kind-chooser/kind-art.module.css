@@ -1,0 +1,169 @@
+@layer app {
+  /* The art is flat geometric glyphs in three values of one ink: the solid, a half tone (45 % of
+     the solid over the plate) and a cut-out in the plate's colour. The plate is the ground of
+     account-mark.module.css: the ink at 18 % with a hairline at 30 %. The solid mixes the ink
+     with the text, 88 % in the light scheme and 92 % in the dark scheme; no token holds it. */
+  .ill {
+    --ink: var(--equori-slot-3);
+    --face: color-mix(in oklab, var(--ink) 18%, var(--slotted-surface));
+    --face-rim: color-mix(in oklab, var(--ink) 30%, transparent);
+    --half: color-mix(in oklab, var(--solid) 45%, var(--face));
+    --stage: color-mix(in oklab, var(--ink) 5%, var(--slotted-surface));
+
+    display: block;
+    flex: none;
+    overflow: visible;
+    forced-color-adjust: none;
+  }
+
+  .ill[data-tone="liability"] {
+    --ink: var(--equori-slot-4);
+  }
+
+  .ill[data-tone="neutral"] {
+    --ink: var(--slotted-text-muted);
+  }
+
+  [data-slotted-scheme="light"] .ill {
+    --solid: color-mix(in oklab, var(--ink) 88%, var(--slotted-text));
+  }
+
+  [data-slotted-scheme="dark"] .ill {
+    --solid: color-mix(in oklab, var(--ink) 92%, var(--slotted-text));
+  }
+
+  /* A paint class carries no ancestor selector but the tone and the scheme on the root svg. */
+  .g1 {
+    fill: var(--solid);
+  }
+
+  .g2 {
+    fill: var(--half);
+  }
+
+  .g0 {
+    fill: var(--face);
+  }
+
+  .g0s,
+  .g1s,
+  .g2s {
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .g0s {
+    stroke: var(--face);
+  }
+
+  .g1s {
+    stroke: var(--solid);
+  }
+
+  .g2s {
+    stroke: var(--half);
+  }
+
+  .gj {
+    stroke: var(--solid);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+  }
+
+  .e1,
+  .e2,
+  .e3,
+  .e4 {
+    stroke: var(--face-rim);
+    stroke-width: 1;
+  }
+
+  .e1 {
+    fill: var(--face);
+  }
+
+  .e2 {
+    fill: color-mix(in oklab, var(--ink) 13%, var(--slotted-surface));
+  }
+
+  .e3 {
+    fill: color-mix(in oklab, var(--ink) 9%, var(--slotted-surface));
+  }
+
+  .e4 {
+    fill: color-mix(in oklab, var(--ink) 6%, var(--slotted-surface));
+  }
+
+  .pf {
+    fill: var(--face);
+    stroke: var(--face-rim);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .scene {
+    inline-size: 100%;
+    block-size: auto;
+    overflow: hidden;
+    background: var(--stage);
+    border-radius: var(--slotted-radius-md);
+  }
+
+  /* Hovering the stage lifts the drawing by 4 px (KC5). */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero {
+      transition: transform var(--slotted-duration-short) ease-out;
+    }
+
+    .scene:hover .hero {
+      transform: translateY(-4px);
+    }
+  }
+
+  /* The name exists only while a transition of type kind runs (KC5, O11). */
+  :root:active-view-transition-type(kind) .scene[data-hero-name] {
+    view-transition-name: kind-scene;
+  }
+
+  @media (forced-colors: active) {
+    .g1,
+    .g2,
+    .g0,
+    .gj {
+      fill: Canvas;
+      stroke: CanvasText;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .g0s,
+    .g1s,
+    .g2s {
+      stroke: CanvasText;
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    .e1 {
+      fill: none;
+      stroke: CanvasText;
+    }
+
+    .e2,
+    .e3,
+    .e4 {
+      display: none;
+    }
+
+    .pf {
+      fill: none;
+      stroke: CanvasText;
+    }
+
+    .scene {
+      background: Canvas;
+    }
+  }
+}
