@@ -1,0 +1,107 @@
+@layer app {
+  .chooser {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .side {
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--slotted-space-3);
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--slotted-space-3);
+  }
+
+  /* The scene fills the tile's width; the meta row is 40 px in every state. */
+  .tile {
+    display: grid;
+    grid-template-rows: auto 40px;
+    padding: 0;
+    overflow: hidden;
+    font: inherit;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+    background: var(--slotted-surface-raised);
+    border: var(--slotted-border-width) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    transition:
+      border-color var(--slotted-duration-short) var(--slotted-easing-standard),
+      box-shadow var(--slotted-duration-short) var(--slotted-easing-standard),
+      transform var(--slotted-duration-short) var(--slotted-easing-standard);
+  }
+
+  .tile > svg {
+    border-radius: 0;
+  }
+
+  .tile:hover {
+    border-color: var(--slotted-border-strong);
+  }
+
+  .tile:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .tile[aria-checked="true"] {
+    border-color: var(--slotted-tone-accent-border);
+    box-shadow:
+      0 0 0 1px var(--slotted-tone-accent-border),
+      var(--slotted-shadow-sm);
+    transform: translateY(-2px);
+  }
+
+  .meta {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    padding-inline: var(--slotted-space-3);
+    border-block-start: var(--slotted-border-width) solid
+      var(--slotted-border-subtle);
+  }
+
+  .tile[aria-checked="true"] .meta {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .title {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* KC5: the scene travels for 0.5 s; no duration token is that long. */
+  :global(::view-transition-group(kind-scene)) {
+    animation-duration: 0.5s;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile {
+      transition: none;
+    }
+
+    .tile[aria-checked="true"] {
+      transform: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .tile[aria-checked="true"] {
+      outline: 3px solid Highlight;
+    }
+  }
+}
