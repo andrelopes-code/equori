@@ -338,7 +338,9 @@ export function NewTransactionPage() {
           }}
         >
           {(entry?.summary ?? summary) !== null && (
-            <FormNotice>{entry?.summary ?? summary}</FormNotice>
+            <FormNotice className="mb-6">
+              {entry?.summary ?? summary}
+            </FormNotice>
           )}
           {ready && investment === "investment_income" && scale !== null && (
             <IncomeForm
