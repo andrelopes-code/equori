@@ -15,6 +15,7 @@ export function useInstrumentEdit(
 ) {
   const t = useT();
   const edit = useEditInstrument();
+  const [type, setType] = useState(instrument.type);
   const [name, setName] = useState(instrument.name);
   const [exchange, setExchange] = useState(instrument.exchange ?? "");
   const [subtype, setSubtype] = useState(instrument.subtype ?? none);
@@ -45,6 +46,7 @@ export function useInstrumentEdit(
       .mutateAsync({
         code: instrument.code,
         edit: {
+          ...(type === instrument.type ? {} : { type }),
           name: name.trim(),
           ...(exchange.trim() === "" ? {} : { exchange: exchange.trim() }),
           ...(subtype === none ? {} : { subtype }),
@@ -63,6 +65,8 @@ export function useInstrumentEdit(
   };
 
   return {
+    type,
+    setType,
     name,
     setName,
     exchange,

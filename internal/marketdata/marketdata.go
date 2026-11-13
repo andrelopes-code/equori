@@ -23,8 +23,9 @@ type Module struct {
 	q     *postgres.Queries
 	feeds FeedConfig
 
-	profiles Profiles
-	admins   Admins
+	profiles       Profiles
+	admins         Admins
+	onReclassified func(ctx context.Context) error
 
 	calendars registry.Registry[calendar.Calendar]
 

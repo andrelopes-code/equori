@@ -805,3 +805,40 @@ func TestManageInstrumentToolDelete(t *testing.T) {
 		"name",
 	)
 }
+
+// S410: the edit action of manage_instrument previews and applies a type change, and refuses
+// one outside the four types of scale 0 (amendment A224).
+func TestManageInstrumentToolEditType(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
+
+	args := map[string]any{"action": "edit", "code": "MXRF11", "type": "etf"}
+
+	p, r := preview(t, h, "manage_instrument", args)
+	if r.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "kind" ||
+		p.Changes[0].Before.Text != "reit" || p.Changes[0].After.Text != "etf" {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	var out struct {
+		Instrument toolInstrument `json:"instrument"`
+	}
+	toolOutput(t, h, "manage_instrument", args, &out)
+
+	var read instrumentAPI
+	h.MustDo("GET", "/api/v1/instruments/MXRF11", nil, 200, &read)
+
+	if read.Type != "etf" {
+		t.Fatalf("type = %q, want etf", read.Type)
+	}
+
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "edit", "code": "MXRF11", "type": "crypto"},
+		),
+		"validation_failed",
+		"type",
+	)
+}

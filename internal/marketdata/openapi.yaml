@@ -353,7 +353,7 @@ paths:
       tags: [marketdata]
       operationId: editInstrument
       x-book-role: write
-      summary: Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134).
+      summary: Replace the name, exchange and subtype of a security, and its type among stock, etf, reit and depositary_receipt; an absent exchange or subtype is cleared, an absent type is kept (A134, A224).
       parameters:
         - name: code
           in: path
@@ -1052,6 +1052,8 @@ schemas:
     additionalProperties: false
     required: [name]
     properties:
+      type:
+        $ref: "#/components/schemas/InstrumentType"
       name:
         type: string
         minLength: 1

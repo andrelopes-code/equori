@@ -71,6 +71,7 @@ func applyEdit(
 	after, err = svc.EditInstrument(
 		ctx,
 		in.Code,
+		string(in.Type),
 		after.Name,
 		after.Exchange,
 		after.Subtype,
@@ -90,7 +91,7 @@ func applyRename(
 		return manageInstrumentOut{}, err
 	}
 
-	inst, err = svc.EditInstrument(ctx, in.Code, in.Name, inst.Exchange, inst.Subtype, nil)
+	inst, err = svc.EditInstrument(ctx, in.Code, "", in.Name, inst.Exchange, inst.Subtype, nil)
 
 	return manageInstrumentOut{Instrument: toInstrumentView(inst)}, err
 }

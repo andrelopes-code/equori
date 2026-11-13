@@ -34,15 +34,16 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 	case "edit":
 		if err := required(
 			name,
-			without(fields, "name", "exchange", "subtype", "symbols"),
+			without(fields, "name", "type", "exchange", "subtype", "symbols"),
 		); err != nil {
 			return err
 		}
 
-		if in.Name == "" && in.Exchange == "" && in.Subtype == "" && in.Symbols == nil {
+		if in.Name == "" && in.Type == "" && in.Exchange == "" && in.Subtype == "" &&
+			in.Symbols == nil {
 			return tool.InvalidArgument(
 				"name",
-				"or exchange, subtype or symbols is required for edit",
+				"or type, exchange, subtype or symbols is required for edit",
 			)
 		}
 
@@ -126,6 +127,10 @@ func (in manageInstrumentIn) edited(inst domain.Instrument) (domain.Instrument, 
 
 	if in.Name != "" {
 		inst.Name = in.Name
+	}
+
+	if inst, err = inst.Reclassify(string(in.Type)); err != nil {
+		return domain.Instrument{}, err
 	}
 
 	if in.Exchange != "" {

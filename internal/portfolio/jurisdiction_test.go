@@ -202,3 +202,28 @@ func TestTaxYearRangeInResponses(t *testing.T) {
 		})
 	}
 }
+
+// S412: a type edit rebuilds the derived rows, so a realized result takes the tax class of the
+// new type (amendment A224).
+func TestS412ReclassifyRebuildsTaxClass(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.trade(t, "buy", "2026-10-05", 150, "10.05", 490)
+	f.trade(t, "sell", "2026-10-20", 50, "10.80", 210)
+
+	if rs := f.results(t, "2026"); len(rs) != 1 || rs[0].TaxClass != "fii" {
+		t.Fatalf("before = %+v", rs)
+	}
+
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/instruments/MXRF11",
+		map[string]any{"type": "etf", "name": "MXRF11", "exchange": "BVMF"},
+		http.StatusOK,
+		nil,
+	)
+
+	if rs := f.results(t, "2026"); len(rs) != 1 || rs[0].TaxClass != "etf" {
+		t.Fatalf("after = %+v", rs)
+	}
+}

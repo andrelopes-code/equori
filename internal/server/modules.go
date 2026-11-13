@@ -230,6 +230,7 @@ func (m *modules) addPortfolio(pool *pgxpool.Pool, _ Config, log *slog.Logger) e
 	}
 
 	m.portfolio = module
+	m.marketdata.WithReclassified(module.RebuildAll)
 
 	return nil
 }

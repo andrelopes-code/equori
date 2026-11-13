@@ -66,6 +66,13 @@ func instrumentFactChanges(before, after domain.Instrument) []tool.Change {
 		)
 	}
 
+	if before.Type != after.Type && before.Type != "" {
+		changes = append(
+			changes,
+			tool.Change{Field: "kind", Before: text(before.Type), After: text(after.Type)},
+		)
+	}
+
 	if before.Exchange != after.Exchange {
 		changes = append(
 			changes,

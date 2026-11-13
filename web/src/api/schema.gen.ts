@@ -3099,7 +3099,7 @@ export interface paths {
         delete: operations["deleteInstrument"];
         options?: never;
         head?: never;
-        /** Replace the name, exchange and subtype of a security; an absent exchange or subtype is cleared (A134). */
+        /** Replace the name, exchange and subtype of a security, and its type among stock, etf, reit and depositary_receipt; an absent exchange or subtype is cleared, an absent type is kept (A134, A224). */
         patch: operations["editInstrument"];
         trace?: never;
     };
@@ -6427,6 +6427,7 @@ export interface components {
             symbols?: components["schemas"]["InstrumentSymbols"];
         };
         InstrumentEdit: {
+            type?: components["schemas"]["InstrumentType"];
             name: string;
             exchange?: string;
             subtype?: string;

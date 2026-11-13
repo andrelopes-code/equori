@@ -6189,7 +6189,7 @@
         },
         "type": {
           "type": "string",
-          "description": "for define: instrument type",
+          "description": "for define: instrument type; for edit: new type among stock, etf, reit, depositary_receipt",
           "enum": [
             "currency",
             "stock",

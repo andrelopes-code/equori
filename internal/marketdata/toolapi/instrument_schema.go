@@ -39,7 +39,7 @@ type manageInstrumentIn struct {
 	Action           manageInstrumentAction `json:"action"                       jsonschema:"operation to propose"`
 	Code             string                 `json:"code"                         jsonschema:"instrument code"`
 	Name             string                 `json:"name,omitzero"                jsonschema:"for define and rename: instrument name"`
-	Type             manageInstrumentType   `json:"type,omitzero"                jsonschema:"for define: instrument type"`
+	Type             manageInstrumentType   `json:"type,omitzero"                jsonschema:"for define: instrument type; for edit: new type among stock, etf, reit, depositary_receipt"`
 	QuoteCurrency    string                 `json:"quote_currency,omitzero"      jsonschema:"for define: currency the instrument is priced in"`
 	Scale            int                    `json:"scale,omitzero"               jsonschema:"for define: decimal places of a quantity"`
 	Date             tool.Date              `json:"date,omitzero"                jsonschema:"for record_price: price date"`

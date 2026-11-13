@@ -68,6 +68,21 @@ func (m *Module) WithProfiles(p Profiles) *Module {
 	return m
 }
 
+// WithReclassified sets the function that runs after an edit changes what other modules derive
+// from an instrument: its type, subtype or exchange (A224); the composition root calls it once.
+func (m *Module) WithReclassified(fn func(ctx context.Context) error) *Module {
+	m.onReclassified = fn
+	return m
+}
+
+func (m *Module) reclassified(ctx context.Context) error {
+	if m.onReclassified == nil {
+		return nil
+	}
+
+	return m.onReclassified(ctx)
+}
+
 // WithAdmins sets who may change the feeds; the composition root calls it once.
 func (m *Module) WithAdmins(a Admins) *Module {
 	m.admins = a

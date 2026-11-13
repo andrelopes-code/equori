@@ -33,7 +33,7 @@ type Service interface {
 	ListInstruments(ctx context.Context, typ string) ([]domain.Instrument, error)
 	Instrument(ctx context.Context, code string) (domain.Instrument, error)
 	EditInstrument(
-		ctx context.Context, code, name, exchange, subtype string, symbols map[string]string,
+		ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
 	) (domain.Instrument, error)
 	DeleteInstrument(ctx context.Context, code string) error
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)

@@ -115,7 +115,11 @@ func (s *Server) requestInstrumentHistory(w http.ResponseWriter, r *http.Request
 func (s *Server) editInstrument(
 	ctx context.Context, r *http.Request, b EditInstrumentJSONRequestBody,
 ) (Instrument, error) {
-	var exchange, subtype string
+	var typ, exchange, subtype string
+	if b.Type != nil {
+		typ = string(*b.Type)
+	}
+
 	if b.Exchange != nil {
 		exchange = *b.Exchange
 	}
@@ -130,7 +134,9 @@ func (s *Server) editInstrument(
 		maps.Copy(symbols, *b.Symbols)
 	}
 
-	out, err := s.svc.EditInstrument(ctx, r.PathValue("code"), b.Name, exchange, subtype, symbols)
+	out, err := s.svc.EditInstrument(
+		ctx, r.PathValue("code"), typ, b.Name, exchange, subtype, symbols,
+	)
 	if err != nil {
 		return Instrument{}, err
 	}

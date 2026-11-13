@@ -623,6 +623,48 @@ describe("Instrument page", () => {
     });
   });
 
+  it("changes the type of a security among the types of scale 0 and sends it", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "PATCH /api/v1/instruments/PETR4": async (req) => {
+        sent.push(await req.json());
+        return json(200, {
+          code: "PETR4",
+          type: "etf",
+          scale: 0,
+          name: "Petrobras PN",
+          quote_currency: "BRL",
+        });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["instrument.edit"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["instruments.field.type"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: catalogEn["instruments.type.etf"],
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["instrument.edit.save"],
+      }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { name: "Petrobras PN", exchange: "B3SA", type: "etf" },
+      ]);
+    });
+  });
+
   it("sets the symbol a source requests", async () => {
     const sent: unknown[] = [];
     const fetch = api({

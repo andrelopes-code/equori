@@ -42,6 +42,7 @@ ON CONFLICT (code) DO NOTHING;
 -- name: UpdateInstrument :execrows
 UPDATE marketdata_instrument
 SET
+    instrument_type = @instrument_type,
     name = @name,
     exchange = sqlc.narg (exchange),
     subtype = sqlc.narg (subtype)

@@ -21,6 +21,7 @@ import { useMemo } from "react";
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { subtypesQuery } from "@/features/instruments/api";
+import { InstrumentTypeField } from "@/features/instruments/edit-instrument/instrument-type-field";
 import { InstrumentSymbolFields } from "@/features/instruments/edit-instrument/instrument-symbol-fields";
 import { subtypeLabel } from "@/features/instruments/model/instrument-labels";
 import {
@@ -41,7 +42,7 @@ interface EditInstrumentDialogProps {
   onCancel: () => void;
 }
 
-// Edits the name, exchange and subtype of a security (A134); a cleared exchange or subtype is
+// Edits the type (A224), name, exchange and subtype of a security (A134); a cleared exchange or subtype is
 // sent as absent, which clears it.
 export function EditInstrumentDialog({
   instrument,
@@ -52,6 +53,8 @@ export function EditInstrumentDialog({
   const api = useApi();
   const overlayOpen = useOverlayOpen();
   const {
+    type,
+    setType,
     name,
     setName,
     exchange,
@@ -65,7 +68,7 @@ export function EditInstrumentDialog({
     isPending,
     submit,
   } = useInstrumentEdit(instrument, onDone);
-  const subtypes = useQuery(subtypesQuery(api, instrument.type));
+  const subtypes = useQuery(subtypesQuery(api, type));
   const subtypeChoices = useMemo(() => {
     const codes = subtypes.data ?? [];
     // A stored subtype outside the jurisdiction's list stays selectable.
@@ -115,6 +118,13 @@ export function EditInstrumentDialog({
                   <FieldError>{errors.name}</FieldError>
                 )}
               </Field>
+
+              <InstrumentTypeField
+                stored={instrument.type}
+                value={type}
+                error={errors.type}
+                onChange={setType}
+              />
 
               <FormRow>
                 {subtypeChoices.length > 1 && (

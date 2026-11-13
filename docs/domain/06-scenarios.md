@@ -768,7 +768,7 @@ Amendment A122: an instrument has an optional subtype, an identifier of 2 to 40 
 
 ### S171 Editing an instrument
 
-Amendment A134: `PATCH /instruments/{code}` replaces the name, the exchange and the subtype of a security; an exchange or subtype absent from the body is cleared. Code, type, scale and quote currency stay as defined (A59). MXRF11 (`reit`, `BVMF`, no subtype) edited to name "Maxi Renda FII", exchange absent and subtype `fii_papel` reads back with that name, no exchange and that subtype, and its manual price of 2026-10-22 is unchanged. A blank name is 422 `validation_failed` on `name`; a currency is 422 `validation_failed` on `code`; an unknown code is 404.
+Amendment A134 (type: A224): `PATCH /instruments/{code}` replaces the name, the exchange and the subtype of a security; an exchange or subtype absent from the body is cleared. Code, type, scale and quote currency stay as defined (A59). MXRF11 (`reit`, `BVMF`, no subtype) edited to name "Maxi Renda FII", exchange absent and subtype `fii_papel` reads back with that name, no exchange and that subtype, and its manual price of 2026-10-22 is unchanged. A blank name is 422 `validation_failed` on `name`; a currency is 422 `validation_failed` on `code`; an unknown code is 404.
 
 ### S126 Return of a brokerage
 
@@ -1063,6 +1063,10 @@ The scenarios of `docs/specs/2026-11-09-transfer-pairing-design.md`, section 6.1
 ### S385–S386 Instrument removal (A223)
 
 The scenarios of `docs/specs/2026-11-11-instrument-removal-design.md`: removing the security MXRF11 deletes it with its prices and leaves KNRI11 and its price; defining MXRF11 again starts without prices; an unknown code is 404 `not_found` and a currency is 422 `validation_failed` on `code` (S385); a security that an account holds is refused with 409 `instrument_in_use` and keeps its prices (S386).
+
+### S410–S412 Instrument type edit (A224)
+
+Amendment A224 of A134: `PATCH /instruments/{code}` accepts an optional `type`; an absent `type` keeps the stored one. A security changes its type only among `stock`, `etf`, `reit` and `depositary_receipt`, which share scale 0, take no terms and have the same price sources. MXRF11 (`reit`, `BVMF`) edited to `etf` reads back with type `etf`, scale 0 and its manual price unchanged (S410). A change to or from `fund`, `crypto`, `fixed_income` or `currency` is 422 `validation_failed` on `type` and the stored type stays; a value outside the type enumeration is 400 `invalid_request` (S411). After an edit that carries `type`, or that changes the subtype or the exchange, the portfolio rebuilds its derived rows: a realized result of MXRF11 sold on 2026-10-20 has `tax_class` `fii` before the edit to `etf` and `etf` after (S412). The `edit` action of `manage_instrument` takes `type` with the same rule. Tests in `internal/marketdata/instruments_test.go`, `internal/marketdata/market_tool_test.go` and `internal/portfolio/jurisdiction_test.go`.
 
 ### S387–S392 Brokerage clarity (BC6)
 

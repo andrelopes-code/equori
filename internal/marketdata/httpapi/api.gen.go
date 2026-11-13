@@ -347,6 +347,7 @@ type InstrumentEdit struct {
 
 	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
 	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
+	Type    *InstrumentType    `json:"type,omitempty"`
 }
 
 // InstrumentHistory defines model for InstrumentHistory.

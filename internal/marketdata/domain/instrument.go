@@ -23,6 +23,10 @@ var SecurityTypes = []string{
 	"crypto",
 }
 
+// ReclassifiableTypes are the types a security changes among: the same scale, no terms and the
+// same price sources (A224).
+var ReclassifiableTypes = []string{"stock", "etf", "reit", "depositary_receipt"}
+
 var micPattern = regexp.MustCompile(`^[A-Z0-9]{4}$`)
 
 var subtypePattern = regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
@@ -68,6 +72,22 @@ func (in Instrument) Validate() (Instrument, error) {
 			return in, invalid("symbols."+key, "must match ^[A-Za-z0-9.=^_-]{1,40}$")
 		}
 	}
+
+	return in, nil
+}
+
+// Reclassify returns in with type to. Both types must be in ReclassifiableTypes, unless they are
+// equal (A224).
+func (in Instrument) Reclassify(to string) (Instrument, error) {
+	if to == "" || to == in.Type {
+		return in, nil
+	}
+
+	if !slices.Contains(ReclassifiableTypes, in.Type) || !slices.Contains(ReclassifiableTypes, to) {
+		return in, invalid("type", "can change only among stock, etf, reit and depositary_receipt")
+	}
+
+	in.Type = to
 
 	return in, nil
 }

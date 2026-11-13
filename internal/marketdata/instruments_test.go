@@ -599,3 +599,129 @@ func TestDeleteInstrumentRoles(t *testing.T) {
 		"",
 	)
 }
+
+// S410: editing replaces the type among stock, etf, reit and depositary_receipt and keeps the
+// scale and the prices (amendment A224).
+func TestS410ReclassifyInstrument(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "MXRF11",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-22",
+			"value":            "10.50",
+		},
+		http.StatusCreated,
+		nil,
+	)
+
+	var got instrumentAPI
+	h.MustDo(
+		http.MethodPatch,
+		"/api/v1/instruments/MXRF11",
+		map[string]any{"type": "etf", "name": "Maxi Renda", "exchange": "BVMF"},
+		http.StatusOK,
+		&got,
+	)
+
+	want := instrumentAPI{
+		Code:          "MXRF11",
+		Type:          "etf",
+		Scale:         0,
+		Name:          "Maxi Renda",
+		QuoteCurrency: "BRL",
+		Exchange:      "BVMF",
+	}
+	if got != want {
+		t.Fatalf("edited = %+v, want %+v", got, want)
+	}
+
+	var read instrumentAPI
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &read)
+
+	if read != want {
+		t.Fatalf("read = %+v, want %+v", read, want)
+	}
+
+	var prices struct {
+		Items []priceAPI `json:"items"`
+	}
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/prices?instrument=MXRF11&quote_instrument=BRL&from=2026-10-01&to=2026-10-31",
+		nil,
+		http.StatusOK,
+		&prices,
+	)
+
+	if len(prices.Items) != 1 {
+		t.Fatalf("prices = %+v", prices.Items)
+	}
+}
+
+// S411: a type outside the four types of scale 0, as source or as target, is refused and the
+// stored type stays (amendment A224).
+func TestS411ReclassifyRefusals(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.MustDo(http.MethodPost, "/api/v1/instruments", mxrf11(), http.StatusCreated, nil)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments",
+		map[string]any{
+			"code":           "CDBXPTO",
+			"type":           "fixed_income",
+			"scale":          2,
+			"name":           "CDB",
+			"quote_currency": "BRL",
+		},
+		http.StatusCreated,
+		nil,
+	)
+
+	tests := []struct {
+		name, code, typ string
+	}{
+		{"to fund", "MXRF11", "fund"},
+		{"to crypto", "MXRF11", "crypto"},
+		{"to fixed_income", "MXRF11", "fixed_income"},
+		{"from fixed_income", "CDBXPTO", "stock"},
+		{"to currency", "MXRF11", "currency"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			h.ExpectProblem(
+				h.Do(
+					http.MethodPatch,
+					"/api/v1/instruments/"+tc.code,
+					map[string]any{"type": tc.typ, "name": "x"},
+				),
+				http.StatusUnprocessableEntity,
+				"validation_failed",
+				"type",
+			)
+		})
+	}
+
+	h.ExpectProblem(
+		h.Do(
+			http.MethodPatch,
+			"/api/v1/instruments/MXRF11",
+			map[string]any{"type": "bond", "name": "x"},
+		),
+		http.StatusBadRequest,
+		"invalid_request",
+		"",
+	)
+
+	var read instrumentAPI
+	h.MustDo(http.MethodGet, "/api/v1/instruments/MXRF11", nil, http.StatusOK, &read)
+
+	if read.Type != "reit" {
+		t.Fatalf("type = %q, want reit", read.Type)
+	}
+}
