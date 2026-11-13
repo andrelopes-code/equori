@@ -44,6 +44,7 @@ describe("catalogRows", () => {
       instrument: "VALE3",
       quote_instrument: "BRL",
       last: { date: "2026-10-16", value: "110" },
+      trend: [null, "100", "105.5", "110"],
       references: {
         week: { date: "2026-10-09", value: "100" },
         month: { date: "2026-09-16", value: "200" },
@@ -63,6 +64,7 @@ describe("catalogRows", () => {
       quarter: 0,
       year: 2500,
       yearToDate: null,
+      trend: [null, 100, 105.5, 110],
     });
   });
 
@@ -71,6 +73,7 @@ describe("catalogRows", () => {
       instrument: "CDB1",
       quote_instrument: "BRL",
       last: null,
+      trend: [],
       references: noReferences,
     };
 
@@ -89,6 +92,7 @@ describe("catalogRows", () => {
         quarter: null,
         year: null,
         yearToDate: null,
+        trend: [],
       });
     }
   });

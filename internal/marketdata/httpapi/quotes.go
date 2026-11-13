@@ -46,7 +46,21 @@ func toInstrumentQuoteAPI(q domain.InstrumentQuote) InstrumentQuote {
 			Year:       toQuotePointAPI(q.References.Year),
 			YearToDate: toQuotePointAPI(q.References.YearToDate),
 		},
+		Trend: toTrendAPI(q.Trend),
 	}
+}
+
+// toTrendAPI writes the value of each trend date; a date before the first price is null.
+func toTrendAPI(points []*domain.QuotePoint) []*string {
+	out := make([]*string, len(points))
+	for i, p := range points {
+		if p != nil {
+			value := p.Value.Reduced().String()
+			out[i] = &value
+		}
+	}
+
+	return out
 }
 
 func toQuotePointAPI(p *domain.QuotePoint) *QuotePoint {

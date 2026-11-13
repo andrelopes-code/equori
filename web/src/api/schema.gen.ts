@@ -6488,6 +6488,8 @@ export interface components {
         InstrumentQuote: {
             instrument: string;
             quote_instrument: string;
+            /** @description The chosen price on or before each of 31 dates, every 3 days from 90 days before the date of `last` to that date, oldest first; null before the first price. Empty when the instrument has no price (IQ13). */
+            trend: (components["schemas"]["Rate"] | null)[];
             /** @description The chosen price on or before today; null when the instrument has none. */
             last: components["schemas"]["QuotePoint"] | null;
             references: components["schemas"]["QuoteReferences"];

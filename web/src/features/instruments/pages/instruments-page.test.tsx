@@ -39,6 +39,7 @@ const withoutPrice = (code: string) =>
       ? {
           ...q,
           last: null,
+          trend: [],
           references: {
             week: null,
             month: null,
@@ -58,14 +59,27 @@ describe("Instrument catalog", () => {
     });
     await within(grid).findByText("38.45");
     expect(gridRows(grid)).toEqual([
-      "Code|Name|Latest price|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange",
+      "Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange",
       "Fixed income · 1",
-      `CDB1|CDB Bank One|${catalogEn["instruments.noPrice"]}||—|—|—|—|—|BRL|cdb|`,
+      `CDB1|CDB Bank One|${catalogEn["instruments.noPrice"]}|||—|—|—|—|—|BRL|cdb|`,
       "Stocks · 2",
-      `PETR4|Petrobras PN|38.45|10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
-      "VALE3|Vale ON|61.20|10/10/2026|—|—|—|" + bp(2000) + "|—|BRL||B3SA",
+      `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
+      "VALE3|Vale ON|61.20||10/10/2026|—|—|—|" + bp(2000) + "|—|BRL||B3SA",
       "Currencies · 2",
     ]);
+  });
+
+  it("IQ13: draws the trend of the price of a row from the quotes, in the tone of its direction", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    const line = await within(grid).findByRole("img", {
+      name: /^PETR4, price over the last 3 months/,
+    });
+
+    expect(line.getAttribute("data-tone")).toBe("success");
+    expect(within(grid).getAllByRole("img")).toHaveLength(1);
   });
 
   it("PC20: opens the currencies on request and reads their prices then", async () => {
@@ -223,7 +237,7 @@ describe("Instrument catalog", () => {
     await waitFor(() => {
       expect(gridRows(grid).slice(1)).toEqual([
         "Stocks · 1",
-        `PETR4|Petrobras PN|38.45|10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
+        `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
       ]);
     });
   });

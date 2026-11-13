@@ -66,6 +66,8 @@ export const quoteFixtures = [
     instrument: "PETR4",
     quote_instrument: "BRL",
     last: point("2026-10-16", "38.45"),
+    // IQ13: 31 prices, 3 days apart, rising to the last one.
+    trend: Array.from({ length: 31 }, (_, k) => String(30 + k * 0.28)),
     references: {
       week: point("2026-10-09", "36"),
       month: point("2026-09-16", "40"),
@@ -78,18 +80,21 @@ export const quoteFixtures = [
     instrument: "VALE3",
     quote_instrument: "BRL",
     last: point("2026-10-10", "61.20"),
+    trend: [],
     references: { ...noReferences, year: point("2025-10-10", "51") },
   },
   {
     instrument: "CDB1",
     quote_instrument: "BRL",
     last: null,
+    trend: [],
     references: noReferences,
   },
   {
     instrument: "USD",
     quote_instrument: "BRL",
     last: point("2026-10-16", "5.4830"),
+    trend: [],
     references: { ...noReferences, week: point("2026-10-09", "5.3") },
   },
 ];

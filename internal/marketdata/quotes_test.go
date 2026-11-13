@@ -27,6 +27,7 @@ type instrumentQuoteAPI struct {
 		Year       *quotePointAPI `json:"year"`
 		YearToDate *quotePointAPI `json:"year_to_date"`
 	} `json:"references"`
+	Trend []*string `json:"trend"`
 }
 
 // IQ2 to IQ5: the references count back from the date of the last price of each instrument, each
@@ -231,4 +232,77 @@ func assertPoint(t *testing.T, name string, got *quotePointAPI, date, value stri
 	if got == nil || *got != (quotePointAPI{Date: date, Value: value}) {
 		t.Fatalf("%s = %+v, want %s %s", name, got, date, value)
 	}
+}
+
+// IQ13: the trend holds the chosen price on or before 31 dates, every 3 days from 90 days before
+// the last price to the last price, oldest first; a date before the first price holds null. For
+// 2026-11-11 the dates run from 2026-08-13 to 2026-11-11.
+func TestS413InstrumentQuoteTrend(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-11-12"))
+	defineQuoted(t, h, "FULL1", "BRL")
+	defineQuoted(t, h, "SHORT", "BRL")
+	defineQuoted(t, h, "EMPTY", "BRL")
+	record(t, h, "FULL1", "BRL", "manual",
+		"2026-08-01", "10.00",
+		"2026-09-15", "12.00",
+		"2026-11-11", "15.00",
+	)
+	record(t, h, "SHORT", "BRL", "manual", "2026-11-01", "5.00", "2026-11-11", "6.00")
+
+	got := quotesByInstrument(t, h)
+
+	full := trendOf(t, got["FULL1"])
+	for k, v := range full {
+		want := "12"
+
+		switch {
+		case k <= 10:
+			want = "10"
+		case k == 30:
+			want = "15"
+		}
+
+		if v != want {
+			t.Errorf("FULL1 trend[%d] = %q, want %q", k, v, want)
+		}
+	}
+
+	short := trendOf(t, got["SHORT"])
+	for k, v := range short {
+		want := ""
+
+		switch {
+		case k >= 27 && k <= 29:
+			want = "5"
+		case k == 30:
+			want = "6"
+		}
+
+		if v != want {
+			t.Errorf("SHORT trend[%d] = %q, want %q (empty is null)", k, v, want)
+		}
+	}
+
+	if n := len(got["EMPTY"].Trend); n != 0 {
+		t.Errorf("EMPTY trend length = %d, want 0", n)
+	}
+}
+
+// trendOf returns the 31 values of q.Trend, a null as "".
+func trendOf(t *testing.T, q instrumentQuoteAPI) []string {
+	t.Helper()
+
+	if len(q.Trend) != 31 {
+		t.Fatalf("%s trend length = %d, want 31", q.Instrument, len(q.Trend))
+	}
+
+	out := make([]string, len(q.Trend))
+	for i, v := range q.Trend {
+		if v != nil {
+			out[i] = *v
+		}
+	}
+
+	return out
 }

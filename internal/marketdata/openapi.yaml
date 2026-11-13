@@ -1168,12 +1168,19 @@ schemas:
   InstrumentQuote:
     type: object
     additionalProperties: false
-    required: [instrument, quote_instrument, last, references]
+    required: [instrument, quote_instrument, last, references, trend]
     properties:
       instrument:
         type: string
       quote_instrument:
         type: string
+      trend:
+        type: array
+        description: The chosen price on or before each of 31 dates, every 3 days from 90 days before the date of `last` to that date, oldest first; null before the first price. Empty when the instrument has no price (IQ13).
+        items:
+          allOf:
+            - $ref: "#/components/schemas/Rate"
+          nullable: true
       last:
         allOf:
           - $ref: "#/components/schemas/QuotePoint"

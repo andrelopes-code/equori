@@ -430,6 +430,9 @@ type InstrumentQuote struct {
 	// December of the previous year when `last` lies in the current year. A reference is null when no price exists on
 	// or before its date or when `last` does not lie after it.
 	References QuoteReferences `json:"references"`
+
+	// Trend The chosen price on or before each of 31 dates, every 3 days from 90 days before the date of `last` to that date, oldest first; null before the first price. Empty when the instrument has no price (IQ13).
+	Trend []*Rate `json:"trend"`
 }
 
 // InstrumentQuoteList defines model for InstrumentQuoteList.

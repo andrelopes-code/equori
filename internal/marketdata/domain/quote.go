@@ -24,6 +24,24 @@ func QuoteReferences(anchor time.Time) QuoteDates {
 	}
 }
 
+// TrendSamples is the number of dates of a trend, and trendStepDays the days between two of them
+// (IQ13): 31 dates cover the 90 days that end at the last price.
+const (
+	TrendSamples  = 31
+	trendStepDays = 3
+)
+
+// QuoteTrendDays returns the dates of the trend of the catalog, oldest first: every 3 days from 90
+// days before anchor, the date of the last price, to anchor itself.
+func QuoteTrendDays(anchor time.Time) []time.Time {
+	days := make([]time.Time, TrendSamples)
+	for k := range days {
+		days[k] = anchor.AddDate(0, 0, -trendStepDays*(TrendSamples-1-k))
+	}
+
+	return days
+}
+
 // QuotePoint is the chosen price of one date.
 type QuotePoint struct {
 	Date  time.Time
@@ -41,6 +59,9 @@ type InstrumentQuote struct {
 	Quote      money.Currency
 	Last       *QuotePoint
 	References QuoteReferencesOf
+	// Trend holds the chosen price of each date of QuoteTrendDays; nil for a date before the first
+	// price. It is empty when the instrument has no price (IQ13).
+	Trend []*QuotePoint
 }
 
 // Inside returns ref when it lies before last, and nil otherwise: a price that does not predate

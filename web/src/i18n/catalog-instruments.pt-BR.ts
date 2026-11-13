@@ -27,6 +27,8 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instruments.col.exchange": "Bolsa",
   "instruments.col.price": "Último preço",
   "instruments.col.priceDate": "Data do preço",
+  "instruments.col.trend": "Últimos 3 meses",
+  "instruments.trendOf": "{name}, preço nos últimos 3 meses",
   "instruments.col.week": "7D",
   "instruments.col.month": "1M",
   "instruments.col.quarter": "3M",

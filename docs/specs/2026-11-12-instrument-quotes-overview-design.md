@@ -24,6 +24,7 @@ The catalog on `/instruments` gains the price change over a week, a month, a qua
 | IQ10 | The price column is not sortable: prices of different quote currencies do not compare. |
 | IQ11 | While the operation loads, the grid shows its loading state. A failed read shows the existing "failed to load" text in the price cell of every row, leaves the date and change cells empty, and the grid stays usable. |
 | IQ12 | `LatestPriceCell` is replaced by cells that read the row. `latestPriceQuery` stays: the terms section uses it. |
+| IQ13 | Amendment of 2026-11-13 (owner): each item draws the line of its price over 3 months, as the lists of Google Finance do. The line comes from the same operation, so the list keeps its one request and reads no price series. An item holds `trend`: the chosen price (IQ3) on or before each of 31 dates, every 3 days from 90 days before `last.date` to `last.date`, oldest first, the `Rate` of the price or null for a date before the first price. It is an empty array when `last` is null. The grid column `trend` comes after the price, is not sortable and draws nothing for fewer than 3 prices. The tone follows the direction of the last price against the first price of the series. |
 
 ## 3. Derivation
 

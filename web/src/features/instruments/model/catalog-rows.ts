@@ -25,6 +25,9 @@ export interface CatalogRow {
   quarter: number | null;
   year: number | null;
   yearToDate: number | null;
+  // The price on each of the 31 dates of IQ13, oldest first; null before the first price. Empty
+  // when the instrument has no price or the quotes did not load.
+  trend: (number | null)[];
 }
 
 // PC20: the securities a reader holds and looks up come first; the many currencies come last.
@@ -56,6 +59,9 @@ export function catalogRows(
         quarter: change(refs?.quarter, last),
         year: change(refs?.year, last),
         yearToDate: change(refs?.year_to_date, last),
+        trend: (quote?.trend ?? []).map((value) =>
+          value === null ? null : Number(value),
+        ),
       };
     })
     .sort(

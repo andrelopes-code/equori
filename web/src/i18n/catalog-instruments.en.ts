@@ -27,6 +27,8 @@ export const instrumentsEn = {
   "instruments.col.exchange": "Exchange",
   "instruments.col.price": "Latest price",
   "instruments.col.priceDate": "Price date",
+  "instruments.col.trend": "Last 3 months",
+  "instruments.trendOf": "{name}, price over the last 3 months",
   "instruments.col.week": "1W",
   "instruments.col.month": "1M",
   "instruments.col.quarter": "3M",

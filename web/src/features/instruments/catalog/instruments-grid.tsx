@@ -9,6 +9,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ChangeCell } from "@/features/instruments/catalog/change-cell";
 import { PriceCell } from "@/features/instruments/catalog/price-cell";
 import { PriceDateCell } from "@/features/instruments/catalog/price-date-cell";
+import { TrendCell } from "@/features/instruments/catalog/trend-cell";
 import { useCatalogColumns } from "@/features/instruments/catalog/use-catalog-columns";
 import type { CatalogRow } from "@/features/instruments/model/catalog-rows";
 import { typeLabel } from "@/features/instruments/model/instrument-labels";
@@ -54,6 +55,7 @@ export function InstrumentsGrid({
       price: ({ row }: { row: CatalogRow }) => (
         <PriceCell row={row} failed={quotesFailed} />
       ),
+      trend: ({ row }: { row: CatalogRow }) => <TrendCell row={row} />,
       priceDate: ({ row }: { row: CatalogRow }) => <PriceDateCell row={row} />,
       week: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.week} />,
       month: ({ row }: { row: CatalogRow }) => <ChangeCell bp={row.month} />,

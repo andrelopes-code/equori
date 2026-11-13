@@ -21,6 +21,8 @@ const (
 	posQuarter
 	posYear
 	posYearToDate
+	// posTrend is the position of the first date of the trend; the others follow it.
+	posTrend
 )
 
 // ListInstrumentQuotes returns, for each instrument with a quote instrument, its last price and the
@@ -128,7 +130,7 @@ func (m *Module) quotePrices(
 	return out, nil
 }
 
-// withReferences appends the reference dates of one pair to ask. The year to date is asked only
+// withReferences appends the reference dates and the trend dates of one pair to ask. The year to date is asked only
 // when the last price lies in the year of today: a price of an earlier year gives none.
 func withReferences(
 	ask postgres.ListQuoteReferencesParams,
@@ -145,6 +147,10 @@ func withReferences(
 
 	if last.Year() == today.Year() {
 		days[posYearToDate] = refs.YearToDate
+	}
+
+	for k, day := range domain.QuoteTrendDays(last) {
+		days[posTrend+int32(k)] = day
 	}
 
 	for position, day := range days {
@@ -189,6 +195,13 @@ func withPrices(q domain.InstrumentQuote, at map[int32]*domain.QuotePoint) domai
 		Quarter:    domain.Inside(q.Last, at[posQuarter]),
 		Year:       domain.Inside(q.Last, at[posYear]),
 		YearToDate: domain.Inside(q.Last, at[posYearToDate]),
+	}
+
+	if q.Last != nil {
+		q.Trend = make([]*domain.QuotePoint, domain.TrendSamples)
+		for k := range q.Trend {
+			q.Trend[k] = at[posTrend+int32(k)]
+		}
 	}
 
 	return q

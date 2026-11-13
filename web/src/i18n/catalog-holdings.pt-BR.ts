@@ -83,7 +83,6 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.columns": "Colunas",
   "holdings.col.price": "Preço",
   "holdings.col.trend": "Últimos 3 meses",
-  "holdings.trendOf": "{name}, preço nos últimos 3 meses",
   "holdings.trade": "Registrar compra ou venda",
   "holdings.prices": "Registrar preços",
   "instruments.type.cash": "Saldo de corretora",

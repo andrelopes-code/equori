@@ -80,6 +80,14 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         priority: 1,
       },
       {
+        id: "trend",
+        label: t("instruments.col.trend"),
+        accessor: () => "",
+        sortable: false,
+        width: 160,
+        priority: 3,
+      },
+      {
         // A row without a price holds null, which sorts after every date (IQ8).
         id: "priceDate",
         label: t("instruments.col.priceDate"),
