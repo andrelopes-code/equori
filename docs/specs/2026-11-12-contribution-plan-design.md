@@ -128,7 +128,7 @@ Title "Plano de aporte", subheading "Para onde vai cada aporte para levar a cart
 The first section answers where this month's money goes:
 
 - the amount field (`ui/money/money-input`, prefilled by CN11), the portfolio today and after the contribution;
-- a verdict sentence built by a pure function: the groups and members that receive money with their amounts, in list order, and one clause for the rest ("Os demais grupos estão acima do ideal e não recebem neste mês."); without an amount, "Informe o valor do aporte para ver onde aplicar.";
+- a verdict sentence built by a pure function: the groups and members that receive money with their amounts, in list order, and one clause for the rest ("Os demais grupos não recebem neste mês.": a group below the ideal can also receive nothing when the amount is small); without an amount, "Informe o valor do aporte para ver onde aplicar.";
 - the purchase list: one row per receiving entry (a member of a group with member ideals, else the group), largest first, with the group colour dot, the name, the approximate quantity (CN16) and the amount end-aligned; "Copiar lista" at the section header, disabled in privacy mode.
 
 ### Portfolio against the ideal
