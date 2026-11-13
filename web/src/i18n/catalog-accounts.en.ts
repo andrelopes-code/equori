@@ -145,6 +145,7 @@ export const accountsEn = {
   "kindPanel.stepIdentity": "Name and institution",
   "kindPanel.stepDetails": "Currency, opening date, parent account and colour",
   "kindPanel.stepDetailsNoParent": "Currency, opening date and colour",
+  "kindPanel.stepCashMode": "Where the cash is",
   "kindPanel.afterInstitution": "{step}, once the institution is chosen",
   "kindPanel.ifOwnCash": "{step}, when the cash is the brokerage's own",
   "kindPanel.emptyTitle": "Choose a kind beside",

@@ -60,7 +60,7 @@ function stepsOf(kind: Kind): readonly KindStep[] {
     ...(brokerage
       ? [
           {
-            key: "accountForm.cashMode.label" as const,
+            key: "kindPanel.stepCashMode" as const,
             wrap: "kindPanel.afterInstitution" as const,
             own: true,
           },

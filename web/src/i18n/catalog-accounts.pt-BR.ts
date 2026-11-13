@@ -144,6 +144,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "kindPanel.stepIdentity": "Nome e instituição",
   "kindPanel.stepDetails": "Moeda, data de abertura, conta-mãe e cor",
   "kindPanel.stepDetailsNoParent": "Moeda, data de abertura e cor",
+  "kindPanel.stepCashMode": "Onde fica o caixa",
   "kindPanel.afterInstitution": "{step}, depois da instituição",
   "kindPanel.ifOwnCash": "{step}, se o caixa for da corretora",
   "kindPanel.emptyTitle": "Escolha um tipo ao lado",

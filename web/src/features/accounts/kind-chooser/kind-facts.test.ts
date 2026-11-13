@@ -55,7 +55,7 @@ const rows: readonly Row[] = [
       { key: "kindPanel.stepIdentity", own: false },
       { key: "kindPanel.stepDetailsNoParent", own: false },
       {
-        key: "accountForm.cashMode.label",
+        key: "kindPanel.stepCashMode",
         wrap: "kindPanel.afterInstitution",
         own: true,
       },
@@ -116,7 +116,7 @@ describe("kindFacts", () => {
       (k) => k.startsWith("kindPanel.") || k.startsWith("kindChooser."),
     );
 
-    expect(keys).toHaveLength(26);
+    expect(keys).toHaveLength(27);
     for (const key of keys) {
       expect(accountsPtBR[key as keyof typeof accountsPtBR]).toBeTruthy();
     }
