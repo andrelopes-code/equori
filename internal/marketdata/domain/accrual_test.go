@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"maps"
 	"testing"
 	"time"
 )
@@ -324,5 +325,68 @@ func TestAccruePeriod(t *testing.T) {
 	)
 	if err != nil || len(prices) != 1 || prices[0].Value != "1000.000000000000" {
 		t.Fatalf("prices without rates = %+v, %v", prices, err)
+	}
+}
+
+// HR1: the accrued days after an observed price grow from it.
+func TestAnchor(t *testing.T) {
+	accrued := []DatedPrice{
+		{Date: date("2026-01-02"), Value: "100"},
+		{Date: date("2026-01-05"), Value: "110"},
+		{Date: date("2026-01-06"), Value: "121"},
+	}
+
+	tests := []struct {
+		name     string
+		observed []DatedPrice
+		want     map[string]string
+	}{
+		{
+			name: "no observed price",
+			want: map[string]string{"2026-01-02": "100", "2026-01-05": "110", "2026-01-06": "121"},
+		},
+		{
+			name:     "observed before the first accrued day",
+			observed: []DatedPrice{{Date: date("2026-01-01"), Value: "50"}},
+			want: map[string]string{
+				"2026-01-02": "100",
+				"2026-01-05": "110",
+				"2026-01-06": "121",
+			},
+		},
+		{
+			name:     "observed on a day without accrual",
+			observed: []DatedPrice{{Date: date("2026-01-03"), Value: "200"}},
+			want: map[string]string{
+				"2026-01-02": "100",
+				"2026-01-05": "220.000000000000",
+				"2026-01-06": "242.000000000000",
+			},
+		},
+		{
+			name: "the latest observed price wins",
+			observed: []DatedPrice{
+				{Date: date("2026-01-03"), Value: "200"},
+				{Date: date("2026-01-05"), Value: "300"},
+			},
+			want: map[string]string{
+				"2026-01-02": "100",
+				"2026-01-05": "300.000000000000",
+				"2026-01-06": "330.000000000000",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Anchor(accrued, tt.observed)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if g := values(got); !maps.Equal(g, tt.want) {
+				t.Errorf("Anchor = %v, want %v", g, tt.want)
+			}
+		})
 	}
 }

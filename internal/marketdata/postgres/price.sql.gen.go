@@ -81,6 +81,43 @@ func (q *Queries) ConversionIntermediate(ctx context.Context, arg ConversionInte
 	return code, err
 }
 
+const deleteAccruedAfter = `-- name: DeleteAccruedAfter :exec
+DELETE FROM marketdata_price p USING (
+    SELECT
+        i.instrument,
+        q.quote,
+        d.day
+    FROM
+        unnest($1::TEXT[]) WITH ORDINALITY AS i (instrument, n)
+        JOIN unnest($2::TEXT[]) WITH ORDINALITY AS q (quote, n) USING (n)
+        JOIN unnest($3::date[]) WITH ORDINALITY AS d (DAY, n) USING (n)
+) AS anchor
+WHERE
+    p.source = $4
+    AND p.instrument = anchor.instrument
+    AND p.quote_instrument = anchor.quote
+    AND p.date > anchor.day
+`
+
+type DeleteAccruedAfterParams struct {
+	Instruments []string
+	Quotes      []string
+	Days        []time.Time
+	Source      string
+}
+
+// Deletes the prices of @source dated after each row of the three arrays, the instrument, quote
+// and day at the same index: an accrual after a new anchor is computed again (HR1).
+func (q *Queries) DeleteAccruedAfter(ctx context.Context, arg DeleteAccruedAfterParams) error {
+	_, err := q.db.Exec(ctx, deleteAccruedAfter,
+		arg.Instruments,
+		arg.Quotes,
+		arg.Days,
+		arg.Source,
+	)
+	return err
+}
+
 const deletePricesBySource = `-- name: DeletePricesBySource :exec
 DELETE FROM marketdata_price
 WHERE
@@ -226,6 +263,55 @@ func (q *Queries) ListChosenPrices(ctx context.Context, arg ListChosenPricesPara
 			&i.Priority,
 			&i.RecordedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOutrankingPrices = `-- name: ListOutrankingPrices :many
+SELECT DISTINCT
+    ON (date) date,
+    value
+FROM
+    marketdata_price
+WHERE
+    instrument = $1
+    AND quote_instrument = $2
+    AND priority < $3
+ORDER BY
+    date,
+    priority,
+    recorded_at DESC
+`
+
+type ListOutrankingPricesParams struct {
+	Instrument      string
+	QuoteInstrument string
+	Priority        int16
+}
+
+type ListOutrankingPricesRow struct {
+	Date  time.Time
+	Value pgtype.Numeric
+}
+
+// The chosen price of each day of an instrument among the sources that outrank @priority, the
+// anchors of an accrual (return honesty HR1).
+func (q *Queries) ListOutrankingPrices(ctx context.Context, arg ListOutrankingPricesParams) ([]ListOutrankingPricesRow, error) {
+	rows, err := q.db.Query(ctx, listOutrankingPrices, arg.Instrument, arg.QuoteInstrument, arg.Priority)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListOutrankingPricesRow
+	for rows.Next() {
+		var i ListOutrankingPricesRow
+		if err := rows.Scan(&i.Date, &i.Value); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

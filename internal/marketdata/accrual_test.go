@@ -121,8 +121,57 @@ func TestS123AccruedCDB(t *testing.T) {
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	if p := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31")["2026-01-09"]; p.Value != "2006.071769875707" {
+	// The manual price of the 7th anchors the days after it (return honesty HR1): 1500 ×
+	// 2006.071769875707 / 2003.640853070181, the accruals of the new face value.
+	if p := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31")["2026-01-09"]; p.Value != "1501.81987465603" {
 		t.Fatalf("price on the 9th after the new face value = %+v", p)
+	}
+}
+
+// HR1: a price that outranks the accrual anchors the accrued days after it, so the series grows
+// from the recorded price instead of jumping back to the model. The values are 1500 times the
+// accrual of the day over the accrual of the 7th, computed with 80-digit decimals.
+func TestAccrualFollowsTheLatestOutrankingPrice(t *testing.T) {
+	t.Parallel()
+
+	s := &sgsServer{cdi: cdiWeek}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-09"),
+		apitest.IndexFeeds([]string{"br_cdi"}, indexURLs(srv)),
+	)
+	defineFixedIncome(t, h, "CDBXPTO")
+	h.MustDo(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", cdbTerms(), http.StatusOK, nil)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "CDBXPTO",
+			"quote_instrument": "BRL",
+			"date":             "2026-01-07",
+			"value":            "1500",
+		},
+		http.StatusCreated,
+		nil,
+	)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	got := pricesBetween(t, h, "CDBXPTO", "2026-01-01", "2026-01-31")
+
+	want := map[string]accrualPrice{
+		"2026-01-06": {Value: "1001.213249770686", Source: "accrual"},
+		"2026-01-07": {Value: "1500", Source: "manual"},
+		"2026-01-08": {Value: "1500.909661499999", Source: "accrual"},
+		"2026-01-09": {Value: "1501.819874656029", Source: "accrual"},
+	}
+	for d, w := range want {
+		if got[d].Value != w.Value || got[d].Source != w.Source {
+			t.Errorf("price on %s = %+v, want %+v", d, got[d], w)
+		}
 	}
 }
 

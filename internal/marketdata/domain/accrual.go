@@ -120,6 +120,41 @@ func Accrue(
 	return out, nil
 }
 
+// Anchor scales each accrued price that follows an observed price (return honesty HR1):
+// observed(d0) × A(d) / A(d0), d0 the latest observed day on or before d and A(d0) the accrued
+// price of the latest accrued day on or before d0. A day before every observed price, or whose d0
+// precedes the first accrued day, keeps its accrued price. Both lists are sorted by date.
+func Anchor(accrued, observed []DatedPrice) ([]DatedPrice, error) {
+	factors, err := anchorFactors(accrued, observed)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]DatedPrice, len(accrued))
+	j := -1
+
+	for i, a := range accrued {
+		for j+1 < len(observed) && !observed[j+1].Date.After(a.Date) {
+			j++
+		}
+
+		out[i] = a
+
+		if j < 0 || factors[j] == nil {
+			continue
+		}
+
+		v, ok := newFloat().SetString(a.Value)
+		if !ok {
+			return nil, fmt.Errorf("accrued price %q on %s", a.Value, a.Date.Format(time.DateOnly))
+		}
+
+		out[i].Value = v.Mul(v, factors[j]).Text('f', priceDecimals)
+	}
+
+	return out, nil
+}
+
 // accrualState is the running index of an accrual: the product of the rates applied so far, the
 // count of business days they cover and the position in the sorted rates.
 type accrualState struct {
@@ -209,6 +244,39 @@ func pricedDays(t Terms, byDay bool, rates []parsedRate, end time.Time) []time.T
 }
 
 func monthEnd(first time.Time) time.Time { return first.AddDate(0, 1, -first.Day()) }
+
+// anchorFactors is, for each observed price, the observed price over the accrued price of the
+// latest accrued day on or before it; nil when no accrued day precedes it.
+func anchorFactors(accrued, observed []DatedPrice) ([]*big.Float, error) {
+	factors := make([]*big.Float, len(observed))
+
+	for j, o := range observed {
+		i, _ := slices.BinarySearchFunc(accrued, o.Date, func(a DatedPrice, d time.Time) int {
+			return a.Date.Compare(d)
+		})
+		if i < len(accrued) && accrued[i].Date.Equal(o.Date) {
+			i++
+		}
+
+		if i == 0 {
+			continue
+		}
+
+		base, ok := newFloat().SetString(accrued[i-1].Value)
+		if !ok || base.Sign() <= 0 {
+			return nil, fmt.Errorf("accrued price %q", accrued[i-1].Value)
+		}
+
+		v, ok := newFloat().SetString(o.Value)
+		if !ok {
+			return nil, fmt.Errorf("observed price %q", o.Value)
+		}
+
+		factors[j] = v.Quo(v, base)
+	}
+
+	return factors, nil
+}
 
 func newFloat() *big.Float { return new(big.Float).SetPrec(precision) }
 

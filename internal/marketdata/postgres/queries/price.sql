@@ -244,3 +244,39 @@ FROM
         LIMIT
             1
     ) AS price;
+
+-- name: ListOutrankingPrices :many
+-- The chosen price of each day of an instrument among the sources that outrank @priority, the
+-- anchors of an accrual (return honesty HR1).
+SELECT DISTINCT
+    ON (date) date,
+    value
+FROM
+    marketdata_price
+WHERE
+    instrument = @instrument
+    AND quote_instrument = @quote_instrument
+    AND priority < @priority
+ORDER BY
+    date,
+    priority,
+    recorded_at DESC;
+
+-- name: DeleteAccruedAfter :exec
+-- Deletes the prices of @source dated after each row of the three arrays, the instrument, quote
+-- and day at the same index: an accrual after a new anchor is computed again (HR1).
+DELETE FROM marketdata_price p USING (
+    SELECT
+        i.instrument,
+        q.quote,
+        d.day
+    FROM
+        unnest(@instruments::TEXT[]) WITH ORDINALITY AS i (instrument, n)
+        JOIN unnest(@quotes::TEXT[]) WITH ORDINALITY AS q (quote, n) USING (n)
+        JOIN unnest(@days::date[]) WITH ORDINALITY AS d (DAY, n) USING (n)
+) AS anchor
+WHERE
+    p.source = @source
+    AND p.instrument = anchor.instrument
+    AND p.quote_instrument = anchor.quote
+    AND p.date > anchor.day;

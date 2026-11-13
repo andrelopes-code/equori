@@ -3,12 +3,14 @@ package marketdata
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	platformpg "github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
 // TickAccrual stores the accrued price of each fixed income security that has terms, for the days
@@ -56,22 +58,14 @@ func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeT
 		return err
 	}
 
-	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
+	accrued, err := m.anchoredSeries(ctx, row, in, today)
 	if err != nil {
 		return err
 	}
 
-	rates, err := m.accrualRates(ctx, row)
-	if err != nil {
-		return err
-	}
-
-	terms := toTerms(row)
-
-	accrued, err := domain.Accrue(terms, m.businessDays, quote.Scale, rates, from, today)
-	if err != nil {
-		return err
-	}
+	accrued = slices.DeleteFunc(accrued, func(p domain.DatedPrice) bool {
+		return p.Date.Before(from)
+	})
 
 	prices, err := accrualPrices(in, accrued)
 	if err != nil {
@@ -79,6 +73,39 @@ func (m *Module) accrue(ctx context.Context, row postgres.MarketdataFixedIncomeT
 	}
 
 	return m.upsert(ctx, prices)
+}
+
+// anchoredSeries is the accrual of in from its issue to today, anchored to the prices that outrank
+// it: an anchor before the first day to store still scales the days after it (HR1).
+func (m *Module) anchoredSeries(
+	ctx context.Context,
+	row postgres.MarketdataFixedIncomeTerm,
+	in Instrument,
+	today time.Time,
+) ([]domain.DatedPrice, error) {
+	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
+	if err != nil {
+		return nil, err
+	}
+
+	rates, err := m.accrualRates(ctx, row)
+	if err != nil {
+		return nil, err
+	}
+
+	terms := toTerms(row)
+
+	series, err := domain.Accrue(terms, m.businessDays, quote.Scale, rates, row.IssuedOn, today)
+	if err != nil {
+		return nil, err
+	}
+
+	anchors, err := m.anchors(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.Anchor(series, anchors)
 }
 
 // accrualRates reads the stored rates of the index of row since its issue date.
@@ -107,6 +134,40 @@ func (m *Module) accrualRates(
 	}
 
 	return rates, nil
+}
+
+// anchors reads the prices of in that outrank the accrual, oldest first (HR1).
+func (m *Module) anchors(ctx context.Context, in Instrument) ([]domain.DatedPrice, error) {
+	priority, err := domain.Priority(sourceAccrual, m.unofficial)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := m.q.ListOutrankingPrices(ctx, postgres.ListOutrankingPricesParams{
+		Instrument:      string(in.Code),
+		QuoteInstrument: string(in.QuoteCurrency),
+		Priority:        priority,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]domain.DatedPrice, len(rows))
+	for i, r := range rows {
+		v, err := platformpg.RateOf(r.Value)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"price of %s on %s: %w",
+				in.Code,
+				r.Date.Format(time.DateOnly),
+				err,
+			)
+		}
+
+		out[i] = domain.DatedPrice{Date: r.Date, Value: v.String()}
+	}
+
+	return out, nil
 }
 
 // accrualPrices converts the accrued prices of in to stored prices.

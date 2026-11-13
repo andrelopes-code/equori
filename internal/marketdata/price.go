@@ -238,8 +238,16 @@ func (m *Module) validatePrice(
 }
 
 func (m *Module) upsert(ctx context.Context, ps []Price) error {
+	accrual, err := domain.Priority(sourceAccrual, m.unofficial)
+	if err != nil {
+		return err
+	}
+
 	return pgx.BeginFunc(ctx, m.pool, func(tx pgx.Tx) error {
 		q := m.q.WithTx(tx)
+
+		var anchors postgres.DeleteAccruedAfterParams
+
 		for _, p := range ps {
 			priority, err := domain.Priority(p.Source, m.unofficial)
 			if err != nil {
@@ -252,9 +260,23 @@ func (m *Module) upsert(ctx context.Context, ps []Price) error {
 			}); err != nil {
 				return fmt.Errorf("record price: %w", err)
 			}
+
+			if priority < accrual {
+				anchors.Instruments = append(anchors.Instruments, string(p.Instrument))
+				anchors.Quotes = append(anchors.Quotes, string(p.Quote))
+				anchors.Days = append(anchors.Days, p.Date)
+			}
 		}
 
-		return nil
+		if len(anchors.Days) == 0 {
+			return nil
+		}
+
+		// A price that outranks the accrual anchors the days after it: the next tick computes them
+		// again (return honesty HR1).
+		anchors.Source = sourceAccrual
+
+		return q.DeleteAccruedAfter(ctx, anchors)
 	})
 }
 
