@@ -32,7 +32,7 @@ export function EntryClassificationFields({
 
   return (
     <>
-      <Field invalid={errors.category !== undefined}>
+      <Field required invalid={errors.category !== undefined}>
         <FieldLabel>{t("category.label")}</FieldLabel>
         <CategoryPicker
           placeholder={t("entry.categoryPlaceholder")}

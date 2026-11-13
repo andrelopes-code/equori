@@ -6,7 +6,6 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { chooseAccount } from "@/testing/account-choice";
 import { accountRoutes } from "@/testing/account-api";
 import { fakeApi, json } from "@/testing/fake-api";
-import { optionalName } from "@/testing/optional-name";
 import { renderApp } from "@/testing/render-app";
 
 const checkingID = "e0000000-0000-4000-8000-000000000001";
@@ -82,7 +81,7 @@ describe("First-use walk", () => {
     await chooseAccount(catalogEn["entry.payWith"], "Nubank checking");
     await userEvent.type(
       screen.getByRole("combobox", {
-        name: optionalName(catalogEn["category.label"]),
+        name: catalogEn["category.label"],
       }),
       "Food",
     );
