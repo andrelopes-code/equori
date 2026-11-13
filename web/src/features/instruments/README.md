@@ -28,6 +28,7 @@ Folders:
 - `price-chart/`: the price chart and its axis.
 - `positions/`: the positions that hold the instrument.
 - `quote/`: the quote section, hero, range figures and range control.
+- `sources/`: the "Where to check" section, the external pages that show the instrument (`docs/specs/2026-11-13-instrument-sources-design.md`).
 - `price-table/`: the price table and its details.
 - `record-price/`: the dialog that records a manual price.
 - `terms/`: the fixed income terms dialog, section, progress, accrual and maturity.

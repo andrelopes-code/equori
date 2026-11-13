@@ -23,6 +23,7 @@ import {
 } from "@/features/instruments/model/instrument-labels";
 import { InstrumentData } from "@/features/instruments/data/instrument-data";
 import { InstrumentPrices } from "@/features/instruments/quote/instrument-prices";
+import { InstrumentSources } from "@/features/instruments/sources/instrument-sources";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument/edit-instrument-dialog";
 import { RemoveInstrumentAction } from "@/features/instruments/remove-instrument/remove-instrument-action";
 import { RecordPriceDialog } from "@/features/instruments/record-price/record-price-dialog";
@@ -149,6 +150,8 @@ export function InstrumentPage() {
               setRecording(true);
             }}
           />
+
+          <InstrumentSources instrument={i} base={base} />
         </Stack>
       </PageBody>
       {recording && quote !== null && (
