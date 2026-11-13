@@ -113,63 +113,51 @@ The foreign keys of `account_id` (to `ledger_account (books_id, id)`) and of `in
 
 ## Screen
 
-Route `/portfolio/contribution-plan`, page width `full`, desktop-only, opened from a link in the portfolio page header. The screen answers three questions in this order: where this month's money goes, how far the portfolio is from the target, how the target changes.
+Route `/portfolio/contribution-plan`, page width `full`, desktop-only, opened from a link in the portfolio page header. Owner review of 2026-11-13 replaced the first layout: the owner did not know what a class is or what each column meant, the legend read as noise and the bar sat against a bare dash.
+
+### Vocabulary
+
+The screen never shows the words "class", "target", "p.p." or a bare column header. pt-BR uses "grupo" for a class, "ideal" for its target share, "hoje" for the current share and "depois do aporte" for the after share; en uses "group", "target", "today" and "after this contribution". Shares are whole percents, with one decimal below 10%. The guide article and the problem texts use the same words. Code identifiers keep `class` and `target`.
 
 ### Header
 
-Title "Contribution plan", a subheading that states the purpose, and the primary action "Edit targets". In edit mode the action is replaced by the save bar.
+Title "Plano de aporte", subheading "Para onde vai cada aporte para levar a carteira ao ideal", way back to the portfolio, primary action "Editar grupos e ideais". Below the header, one sentence explains the screen ("Você divide a carteira em grupos e diz quanto cada grupo deveria ter. Cada aporte vai para os grupos que estão abaixo do ideal, sem vender nada.") and a collapsed "Como funciona" holds three numbered steps: define the groups and the ideal of each; type the contribution; buy what the list shows.
 
-### Contribution strip
+### This month
 
-One row at the top of the body:
+The first section answers where this month's money goes:
 
-- the amount field, the app's own `ui/money/money-input`, prefilled by CN11;
-- the portfolio total and the total after the contribution, end-aligned;
-- one sentence with the drift before and after (CN15): "This contribution moves the portfolio from 17.8 pp to 5.5 pp away from the target." With no contribution amount the sentence states the current drift only.
+- the amount field (`ui/money/money-input`, prefilled by CN11), the portfolio today and after the contribution;
+- a verdict sentence built by a pure function: the groups and members that receive money with their amounts, in list order, and one clause for the rest ("Os demais grupos estão acima do ideal e não recebem neste mês."); without an amount, "Informe o valor do aporte para ver onde aplicar.";
+- the purchase list: one row per receiving entry (a member of a group with member ideals, else the group), largest first, with the group colour dot, the name, the approximate quantity (CN16) and the amount end-aligned; "Copiar lista" at the section header, disabled in privacy mode.
 
-A change of the amount calls the preview, debounced at 250 ms; the figures under it keep the previous values with the pending state of the family until the response arrives.
+### Portfolio against the ideal
 
-### Drift chart and class table
+The second section draws one row per group, then the members of an expanded group:
 
-One table, one row per class, columns in this order: name, drift track, target, current, after, amount to contribute. The drift track is an own element (`build-own-element`):
+- the name with the group colour dot;
+- the share bar, an own element: a track on one scale from 0 to 100% shared by every row, gridlines at 25, 50 and 75%, the scale written once above the first row; the share today as a solid fill in the group colour; for an entry that receives money, a hatched extension in the same colour from today to after this contribution; the ideal as a vertical marker labelled "ideal N%";
+- the status in words, from a pure function: "abaixo do ideal (hoje 0%, ideal 40%)", "acima do ideal (hoje 74%, ideal 20%)" or "no ideal (40%)"; an entry is at the ideal when today differs from the ideal by less than half a percentage point;
+- the outcome: "recebe R$ 3.636,36" in the heaviest weight, or "não recebe neste mês" in the muted tone; without an amount, nothing.
 
-- a horizontal track from 0 to the largest of the target, current and after shares of all classes, plus 5 percentage points;
-- the current share as a solid bar in the class colour;
-- the contribution as a segment appended to the bar, in the same colour at the lighter step of the palette, ending at the after share;
-- the target as a vertical tick across the track;
-- `aria-label` stating the three shares in words.
-
-Class colours come from the categorical palette of the theme, in plan order. The amount column is the heaviest text of the row. A class whose amount is zero writes "—" in the muted tone.
-
-Expanding a class shows its members as indented rows with the same columns. A member row adds the approximate quantity (CN16) under no separate column: it follows the amount on the same line, in the muted tone.
-
-### Shopping list
-
-A side panel beside the table, from 1280 px; below that width it sits under the table. It lists every member, or class without member targets, whose amount is positive, sorted by amount, largest first: name, amount, approximate quantity. An action "Copy list" writes the list as plain text to the clipboard, one line per entry; it is disabled in privacy mode.
+A key at the section header draws a solid sample, a hatched sample and the marker with the words "hoje", "com este aporte" and "ideal", in the same marks as the bars. Member bars use the shares inside their group and say "do grupo" after the percentages.
 
 ### Edit mode
 
-- The target cell of each class becomes a percent input with one decimal place and a slider of the Slotted family. A change of one class redistributes the difference among the other unlocked classes in proportion to their targets, in basis points, by largest remainder, so the sum stays 10000. A lock toggle per row keeps its target fixed. With every other class locked, the input is disabled.
-- The pure function `redistribute-targets.ts` holds the rule; its test covers proportional spread, largest remainder, locked rows, a class driven to 0 and a class driven to 100%.
-- A class is added with a name and a target of 0, renamed in place and removed. Removing a class moves its members to the outside-the-plan section.
-- Expanding a class in edit mode shows a switch "Split among assets". With the switch on, each member has a target input with the same redistribution among members. With the switch off, member targets are cleared.
-- "Add asset" opens a picker with two lists: investment accounts (CN3 `account_id`) and instruments of the catalog (CN3 `instrument`). Entries already in the plan are disabled with the class name beside them.
-- Each change calls the preview with the draft (CN13), debounced at 250 ms; the drift track, the after column, the amounts and the shopping list update together.
-- The save bar sits in the Page footer, as in the budget plan (`planning/budget-plan/plan-save-bar.tsx`): "Discard" and "Save". Leaving the page with a draft asks for confirmation, as in the budget plan (`plan-discard-dialog.tsx`).
+"Editar grupos e ideais" turns the rows of the second section into editor rows: the name input, the slider in place of the bar, the percent input with the lock toggle, the remove button. One sentence above the rows explains the rule: "Arraste ou digite o ideal de cada grupo. Os outros se ajustam para somar 100%. O cadeado mantém um grupo fixo." Redistribution, member ideals ("Dividir entre ativos"), the asset picker, the save bar and the leave confirmation follow the rules of the first layout (`redistribute-targets.ts`, `plan-edits.ts`).
 
 ### Outside the plan
 
-A section under the table lists the positions of CN6 with their value and a class selector. Choosing a class adds the position as a member in the draft and opens edit mode. The section is absent when every position is a member.
+A collapsed block under the second section: "N investimentos fora do plano · total", expanding to the list of CN6 with a group selector per entry; an entry without a value says "sem cotação".
 
 ### Empty and incomplete states
 
-- No plan: one panel with the purpose in one sentence and two actions: "Start from my portfolio" (CN12, primary) and "Start from scratch" (one class named by the investor, target 100%). Both open edit mode with the draft.
-- No position and no plan: the panel adds a link to record the first purchase.
-- Incomplete (CN10): one `FormNotice` above the table names the members without price or rate, each a link to its instrument page. The table keeps the target shares; the current, after and amount cells write "—".
+- No plan: the explanation sentence, "Como funciona" open, and the two actions "Partir da minha carteira" (CN12, primary) and "Começar do zero".
+- Incomplete (CN10): the verdict sentence names the entries without price or rate ("Bitcoin (BTCBRL) está sem cotação; sem ela o aporte não é dividido.") with a link to each instrument page; the second section keeps today and the ideal and says "aguarda a cotação" in place of the outcome.
 
 ### Layout rules
 
-Every row has a fixed height per state, one line per value, values end-aligned on one vertical line. A class name longer than its column is shortened by an ellipsis after the column width is set at 16 rem. No warning icon: the incomplete state is written in words in the tone of the notice.
+Every row has a fixed height per state, one line per value, values end-aligned on one vertical line. A group name longer than its column ends in an ellipsis after the column width is set. No warning icon. No bare dash stands for an absent amount: the absence is written in words.
 
 ## Cross-cutting questions
 
