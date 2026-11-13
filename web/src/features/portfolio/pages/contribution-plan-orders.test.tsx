@@ -107,19 +107,40 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
     expect(text(row("FIIs"))).toContain("recebe R$ 1.000,00");
   });
 
+  it("S409: the portfolio against the ideal shows no split action", async () => {
+    await open();
+
+    const ideal = await screen.findByRole("list", {
+      name: "Carteira frente ao ideal",
+    });
+
+    expect(
+      within(ideal).queryByRole("button", {
+        name: "divida entre ativos para ver as cotas",
+      }),
+    ).not.toBeInTheDocument();
+    expect(text(ideal)).not.toContain("divida entre ativos");
+  });
+
   it.each([
-    { from: 0, where: "the purchase list" },
-    { from: 1, where: "the portfolio against the ideal" },
+    { how: "a click", act: "{MouseLeft}" },
+    { how: "Enter", act: "{Enter}" },
+    { how: "Space", act: " " },
   ])(
-    "opens the assets of the group from the action in $where",
-    async ({ from }) => {
+    "opens the assets of the group from the purchase list action by $how",
+    async ({ act }) => {
       await open();
       const user = userEvent.setup();
-      const actions = await screen.findAllByRole("button", {
+      const action = await screen.findByRole("button", {
         name: "divida entre ativos para ver as cotas",
       });
 
-      await user.click(actions[from] ?? document.body);
+      if (act === "{MouseLeft}") {
+        await user.click(action);
+      } else {
+        action.focus();
+        await user.keyboard(act);
+      }
 
       expect(
         await screen.findByRole("button", { name: "Salvar" }),

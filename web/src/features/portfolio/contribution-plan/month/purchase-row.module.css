@@ -1,0 +1,9 @@
+@layer app {
+  /* A button inside the link's text style: only what a button adds is reset. */
+  .action {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+  }
+}

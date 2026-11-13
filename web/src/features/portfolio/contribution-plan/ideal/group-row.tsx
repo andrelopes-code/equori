@@ -8,7 +8,6 @@ import { ShareBar } from "@/features/portfolio/contribution-plan/ideal/share-bar
 import {
   groupCost,
   positive,
-  unitsWaitForSplit,
 } from "@/features/portfolio/contribution-plan/model/shopping-list";
 
 type Group = components["schemas"]["ContributionClass"];
@@ -21,7 +20,6 @@ interface GroupRowProps {
   waiting: boolean;
   memberName: (ref: { account_id?: string; instrument?: string }) => string;
   onToggle: () => void;
-  onSplit: (group: number) => void;
 }
 
 // A group and, while it is open, its members.
@@ -33,7 +31,6 @@ export function GroupRow({
   waiting,
   memberName,
   onToggle,
-  onSplit,
 }: GroupRowProps) {
   const key = `group-${String(index)}`;
   const today = group.share_bp ?? 0;
@@ -69,13 +66,6 @@ export function GroupRow({
           amount={groupCost(group)}
           hasAmount={hasAmount}
           waiting={waiting}
-          {...(unitsWaitForSplit(group)
-            ? {
-                onSplit: () => {
-                  onSplit(index);
-                },
-              }
-            : {})}
         />
       </div>
 

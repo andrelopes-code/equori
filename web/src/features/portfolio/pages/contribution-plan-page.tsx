@@ -154,7 +154,6 @@ export function ContributionPlanPage() {
               view={shown}
               pending={pending}
               memberName={memberName}
-              onSplit={handleSplit}
             />
           )}
 
