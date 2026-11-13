@@ -49,7 +49,7 @@ func (s *seeder) loadHolidays() {
 
 	s.holidays = map[time.Time]bool{}
 
-	for year := s.start.Year(); year <= s.today.Year()+1 && s.err == nil; year++ {
+	for year := s.investStart().Year(); year <= s.today.Year()+1 && s.err == nil; year++ {
 		var out struct {
 			Items []struct {
 				Date string `json:"date"`
@@ -162,7 +162,6 @@ var funders = map[string]string{
 	"itau.checking":   "itau.savings",
 	"wallet":          "itau.checking",
 	"xp.cash":         "itau.checking",
-	"mb.cash":         "nubank.checking",
 }
 
 // ensure moves money into key so that it can pay need cents on date.
@@ -185,7 +184,6 @@ func (s *seeder) ensure(date time.Time, key string, need int64) {
 		"itau.checking":   "Resgate da poupança Itaú",
 		"wallet":          "Saque caixa eletrônico",
 		"xp.cash":         "TED para XP Investimentos",
-		"mb.cash":         "Pix para Mercado Bitcoin",
 	}[key]
 	if key == "wallet" {
 		top = (short + 15000) / 5000 * 5000

@@ -50,7 +50,7 @@ func investmentsHarness(t *testing.T) *seeder {
 	s.requireEmpty()
 	s.localizeSystemAccounts()
 	s.buildChart(iso(s.start))
-	s.buildInvestments(iso(s.start))
+	s.buildInvestments()
 
 	return s
 }

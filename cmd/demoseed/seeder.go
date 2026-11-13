@@ -24,6 +24,7 @@ type seeder struct {
 
 	// Simulation state of the generated history.
 	rng     *rand.Rand
+	inv     *rand.Rand // draws the investments alone, so that the other generators keep their values
 	start   time.Time
 	today   time.Time
 	bal     map[string]int64 // running balance by account id, to fund accounts before they overdraw
@@ -52,7 +53,9 @@ func newSeeder(ctx context.Context, base string, c *http.Client) *seeder {
 		http: c,
 		ids:  map[string]string{},
 		//nolint:gosec // a fixed seed makes the generated history reproducible.
-		rng:     rand.New(rand.NewPCG(20241001, 7)),
+		rng: rand.New(rand.NewPCG(20241001, 14)),
+		//nolint:gosec // a fixed seed makes the generated history reproducible.
+		inv:     rand.New(rand.NewPCG(20211101, 11)),
 		bal:     map[string]int64{},
 		px:      map[string][]float64{},
 		quotes:  map[string][]quote{},

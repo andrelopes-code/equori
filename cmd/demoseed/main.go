@@ -68,7 +68,7 @@ func seed(s *seeder, cfg config) error {
 	s.requireEmpty()
 	s.localizeSystemAccounts()
 	s.buildChart(start)
-	s.buildInvestments(start)
+	s.buildInvestments()
 	s.openBalances(start)
 	s.postPrices()
 	s.loadPrices()
@@ -88,6 +88,7 @@ func seed(s *seeder, cfg config) error {
 	s.openDifference()
 	s.touchOccurrences()
 	s.goals()
+	s.saveContributionPlan()
 
 	return s.err
 }

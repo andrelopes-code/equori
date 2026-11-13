@@ -88,7 +88,6 @@ var accounts = []account{
 		kind:        "brokerage",
 		parent:      "xp",
 		institution: "xp",
-		opening:     10000000,
 		color:       4,
 	},
 	{

@@ -43,6 +43,12 @@ func (s *seeder) buildAccounts(start string) {
 			"opened_on": start,
 			"color":     a.color,
 		}
+		if a.institution == "xp" {
+			body["opened_on"] = iso(
+				s.investStart(),
+			) // the brokerage holds five years of investments.
+		}
+
 		if a.institution != "" {
 			body["institution_id"] = s.id("inst." + a.institution)
 		}

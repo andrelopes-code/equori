@@ -42,7 +42,7 @@ func TestSeedKeepsExistingPrices(t *testing.T) {
 	s.requireEmpty()
 	s.localizeSystemAccounts()
 	s.buildChart(start)
-	s.buildInvestments(start)
+	s.buildInvestments()
 	s.do(
 		http.MethodPost,
 		"/prices",
@@ -618,6 +618,8 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("five-year portfolio", func(t *testing.T) { assertPortfolioHistory(t, s) })
+
 	t.Run("investments", func(t *testing.T) {
 		// Positions of the second brokerage appear only after a rebuild, as make demo runs it.
 		if err := h.App.Portfolio.RebuildAll(t.Context()); err != nil {
@@ -639,6 +641,8 @@ func TestSeed(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("contribution plan", func(t *testing.T) { assertContributionPlan(t, s) })
 
 	t.Run("planning", func(t *testing.T) {
 		var occ struct {
