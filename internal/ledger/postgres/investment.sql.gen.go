@@ -13,6 +13,40 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const deleteInvestmentIncome = `-- name: DeleteInvestmentIncome :exec
+DELETE FROM ledger_investment_income
+WHERE
+    books_id = $1
+    AND transaction_id = $2
+`
+
+type DeleteInvestmentIncomeParams struct {
+	BooksID       int64
+	TransactionID uuid.UUID
+}
+
+func (q *Queries) DeleteInvestmentIncome(ctx context.Context, arg DeleteInvestmentIncomeParams) error {
+	_, err := q.db.Exec(ctx, deleteInvestmentIncome, arg.BooksID, arg.TransactionID)
+	return err
+}
+
+const deleteTrade = `-- name: DeleteTrade :exec
+DELETE FROM ledger_trade
+WHERE
+    books_id = $1
+    AND transaction_id = $2
+`
+
+type DeleteTradeParams struct {
+	BooksID       int64
+	TransactionID uuid.UUID
+}
+
+func (q *Queries) DeleteTrade(ctx context.Context, arg DeleteTradeParams) error {
+	_, err := q.db.Exec(ctx, deleteTrade, arg.BooksID, arg.TransactionID)
+	return err
+}
+
 const holding = `-- name: Holding :one
 SELECT
     coalesce(sum(amount), 0)::bigint AS quantity,
@@ -24,12 +58,14 @@ WHERE
     AND account_id = $2
     AND NOT voided
     AND booked_on <= $3
+    AND transaction_id <> $4
 `
 
 type HoldingParams struct {
 	BooksID   int64
 	AccountID uuid.UUID
 	OnDate    time.Time
+	Exclude   uuid.UUID
 }
 
 type HoldingRow struct {
@@ -37,9 +73,15 @@ type HoldingRow struct {
 	CostBasis int64
 }
 
-// The quantity and cost basis of a security account at the end of a date (P8 amendment A68).
+// The quantity and cost basis of a security account at the end of a date (P8 amendment A68),
+// without the postings of the transaction exclude (A227 IC6).
 func (q *Queries) Holding(ctx context.Context, arg HoldingParams) (HoldingRow, error) {
-	row := q.db.QueryRow(ctx, holding, arg.BooksID, arg.AccountID, arg.OnDate)
+	row := q.db.QueryRow(ctx, holding,
+		arg.BooksID,
+		arg.AccountID,
+		arg.OnDate,
+		arg.Exclude,
+	)
 	var i HoldingRow
 	err := row.Scan(&i.Quantity, &i.CostBasis)
 	return i, err

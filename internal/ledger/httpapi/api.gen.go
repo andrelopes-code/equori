@@ -1644,6 +1644,13 @@ type InvestmentIncome struct {
 	Withheld      Money              `json:"withheld"`
 }
 
+// InvestmentIncomeCorrectionInput defines model for InvestmentIncomeCorrectionInput.
+type InvestmentIncomeCorrectionInput struct {
+	ExpectedVersion int                   `json:"expected_version"`
+	Income          InvestmentIncomeInput `json:"income"`
+	Reason          string                `json:"reason"`
+}
+
 // InvestmentIncomeInput defines model for InvestmentIncomeInput.
 type InvestmentIncomeInput struct {
 	// AccountId The account holding the security that pays. Absent when brokerage_id and instrument name the target.
@@ -2113,6 +2120,13 @@ type Trade struct {
 	UnitPrice Rate `json:"unit_price"`
 }
 
+// TradeCorrectionInput defines model for TradeCorrectionInput.
+type TradeCorrectionInput struct {
+	ExpectedVersion int        `json:"expected_version"`
+	Reason          string     `json:"reason"`
+	Trade           TradeInput `json:"trade"`
+}
+
 // TradeInput defines model for TradeInput.
 type TradeInput struct {
 	// AccountId The account holding the security. Absent when brokerage_id and instrument name the target.
@@ -2435,6 +2449,9 @@ type SetInstitutionIdentifierJSONRequestBody = InstitutionIdentifierInput
 // RecordInvestmentIncomeJSONRequestBody defines body for RecordInvestmentIncome for application/json ContentType.
 type RecordInvestmentIncomeJSONRequestBody = InvestmentIncomeInput
 
+// CorrectInvestmentIncomeJSONRequestBody defines body for CorrectInvestmentIncome for application/json ContentType.
+type CorrectInvestmentIncomeJSONRequestBody = InvestmentIncomeCorrectionInput
+
 // CreatePayeeJSONRequestBody defines body for CreatePayee for application/json ContentType.
 type CreatePayeeJSONRequestBody = PayeeInput
 
@@ -2470,6 +2487,9 @@ type MergeTagJSONRequestBody = MergeTagInput
 
 // RecordTradeJSONRequestBody defines body for RecordTrade for application/json ContentType.
 type RecordTradeJSONRequestBody = TradeInput
+
+// CorrectTradeJSONRequestBody defines body for CorrectTrade for application/json ContentType.
+type CorrectTradeJSONRequestBody = TradeCorrectionInput
 
 // CreateTransactionBatchJSONRequestBody defines body for CreateTransactionBatch for application/json ContentType.
 type CreateTransactionBatchJSONRequestBody = TransactionBatchInput

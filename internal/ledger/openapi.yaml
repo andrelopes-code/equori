@@ -833,6 +833,37 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /trades/{id}:
+    put:
+      tags: [ledger]
+      operationId: correctTrade
+      x-book-role: write
+      summary: Correct a trade from its order; creates a new version (amendment A227).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeCorrectionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /investment-income:
     post:
       tags: [ledger]
@@ -860,6 +891,37 @@ paths:
         "400":
           $ref: "#/components/responses/Problem"
         "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /investment-income/{id}:
+    put:
+      tags: [ledger]
+      operationId: correctInvestmentIncome
+      x-book-role: write
+      summary: Correct an investment income from its order; creates a new version (amendment A227).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentIncomeCorrectionInput"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
@@ -3277,6 +3339,32 @@ schemas:
       description:
         type: string
         maxLength: 500
+  TradeCorrectionInput:
+    type: object
+    additionalProperties: false
+    required: [expected_version, reason, trade]
+    properties:
+      expected_version:
+        type: integer
+        minimum: 1
+      reason:
+        type: string
+        maxLength: 500
+      trade:
+        $ref: "#/components/schemas/TradeInput"
+  InvestmentIncomeCorrectionInput:
+    type: object
+    additionalProperties: false
+    required: [expected_version, reason, income]
+    properties:
+      expected_version:
+        type: integer
+        minimum: 1
+      reason:
+        type: string
+        maxLength: 500
+      income:
+        $ref: "#/components/schemas/InvestmentIncomeInput"
   Trade:
     type: object
     required: [account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes]

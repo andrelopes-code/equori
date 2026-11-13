@@ -31,9 +31,9 @@ var (
 	ErrPriceMissing = errors.New("price missing")
 	// ErrLaterSaleExists: the change would alter the cost of a recorded sale (P8 A69).
 	ErrLaterSaleExists = errors.New("a later sale of the security exists")
-	// ErrInvestmentTransaction: trades and income are voided and recorded again (P8 A69).
+	// ErrInvestmentTransaction: trades and income are corrected through their order (A227 IC13).
 	ErrInvestmentTransaction = errors.New(
-		"a trade or income transaction is not corrected; void it and record it again",
+		"a trade or income transaction is corrected through its own order, not through its postings",
 	)
 )
 

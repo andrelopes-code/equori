@@ -188,11 +188,23 @@ func (s *Server) recordInvestmentIncome(
 	r *http.Request,
 	in RecordInvestmentIncomeJSONRequestBody,
 ) (Transaction, string, error) {
-	b := in
-
-	gross, err := fromMoneyAPI("gross", b.Gross)
+	o, err := incomeOrderFromInput(in)
 	if err != nil {
 		return Transaction{}, "", err
+	}
+
+	t, err := s.svc.RecordIncome(ctx, auth.MustBooksID(ctx), o)
+	if err != nil {
+		return Transaction{}, "", err
+	}
+
+	return toTransactionAPI(t), location("/transactions/", t.ID), nil
+}
+
+func incomeOrderFromInput(b InvestmentIncomeInput) (domain.IncomeOrder, error) {
+	gross, err := fromMoneyAPI("gross", b.Gross)
+	if err != nil {
+		return domain.IncomeOrder{}, err
 	}
 
 	o := domain.IncomeOrder{
@@ -210,16 +222,11 @@ func (s *Server) recordInvestmentIncome(
 	if b.Withheld != nil {
 		withheld, err := fromMoneyAPI("withheld", *b.Withheld)
 		if err != nil {
-			return Transaction{}, "", err
+			return domain.IncomeOrder{}, err
 		}
 
 		o.Withheld = &withheld
 	}
 
-	t, err := s.svc.RecordIncome(ctx, auth.MustBooksID(ctx), o)
-	if err != nil {
-		return Transaction{}, "", err
-	}
-
-	return toTransactionAPI(t), location("/transactions/", t.ID), nil
+	return o, nil
 }

@@ -2136,6 +2136,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/trades/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Correct a trade from its order; creates a new version (amendment A227). */
+        put: operations["correctTrade"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/investment-income": {
         parameters: {
             query?: never;
@@ -2147,6 +2164,23 @@ export interface paths {
         put?: never;
         /** Record income paid on a security into cash of the same brokerage (P8 amendment A70). */
         post: operations["recordInvestmentIncome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/investment-income/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Correct an investment income from its order; creates a new version (amendment A227). */
+        put: operations["correctInvestmentIncome"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5896,6 +5930,16 @@ export interface components {
              */
             taxes_category_id?: string;
             description?: string;
+        };
+        TradeCorrectionInput: {
+            expected_version: number;
+            reason: string;
+            trade: components["schemas"]["TradeInput"];
+        };
+        InvestmentIncomeCorrectionInput: {
+            expected_version: number;
+            reason: string;
+            income: components["schemas"]["InvestmentIncomeInput"];
         };
         Trade: {
             /** Format: uuid */
@@ -11032,6 +11076,37 @@ export interface operations {
             422: components["responses"]["Problem"];
         };
     };
+    correctTrade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TradeCorrectionInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
     recordInvestmentIncome: {
         parameters: {
             query?: never;
@@ -11058,6 +11133,37 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    correctInvestmentIncome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestmentIncomeCorrectionInput"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

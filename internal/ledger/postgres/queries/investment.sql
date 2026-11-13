@@ -39,8 +39,15 @@ WHERE
     books_id = @books_id
     AND transaction_id = ANY (@transaction_ids::UUID[]);
 
+-- name: DeleteTrade :exec
+DELETE FROM ledger_trade
+WHERE
+    books_id = @books_id
+    AND transaction_id = @transaction_id;
+
 -- name: Holding :one
--- The quantity and cost basis of a security account at the end of a date (P8 amendment A68).
+-- The quantity and cost basis of a security account at the end of a date (P8 amendment A68),
+-- without the postings of the transaction exclude (A227 IC6).
 SELECT
     coalesce(sum(amount), 0)::bigint AS quantity,
     coalesce(sum(weight), 0)::bigint AS cost_basis
@@ -50,7 +57,8 @@ WHERE
     books_id = @books_id
     AND account_id = @account_id
     AND NOT voided
-    AND booked_on <= @on_date;
+    AND booked_on <= @on_date
+    AND transaction_id <> @exclude;
 
 -- name: LaterSaleExists :one
 -- P8 amendment A69: a non-voided sale of one of the accounts dated on or after on_date.
@@ -70,6 +78,12 @@ SELECT
             AND t.date >= @on_date
             AND tr.transaction_id <> @exclude
     );
+
+-- name: DeleteInvestmentIncome :exec
+DELETE FROM ledger_investment_income
+WHERE
+    books_id = @books_id
+    AND transaction_id = @transaction_id;
 
 -- name: InsertInvestmentIncome :exec
 INSERT INTO

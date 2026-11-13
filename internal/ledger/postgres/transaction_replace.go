@@ -74,7 +74,42 @@ func (r *Repository) ReplaceTransaction(
 		return referenceError(err)
 	}
 
-	return r.writeChildren(ctx, next)
+	if err := r.writeChildren(ctx, next); err != nil {
+		return err
+	}
+
+	return r.replaceDetail(ctx, prev, next)
+}
+
+// replaceDetail replaces the trade or income row of prev with the one of next (A227 IC7).
+func (r *Repository) replaceDetail(ctx context.Context, prev, next domain.Transaction) error {
+	if prev.Trade != nil {
+		if err := r.q.DeleteTrade(ctx, DeleteTradeParams{
+			BooksID:       prev.BooksID,
+			TransactionID: prev.ID,
+		}); err != nil {
+			return err
+		}
+	}
+
+	if prev.Income != nil {
+		if err := r.q.DeleteInvestmentIncome(ctx, DeleteInvestmentIncomeParams{
+			BooksID:       prev.BooksID,
+			TransactionID: prev.ID,
+		}); err != nil {
+			return err
+		}
+	}
+
+	if next.Trade != nil {
+		return r.insertTrade(ctx, next)
+	}
+
+	if next.Income != nil {
+		return r.insertIncome(ctx, next)
+	}
+
+	return nil
 }
 
 // ReplaceCategoryPostings deletes the postings of prev absent from next and inserts the

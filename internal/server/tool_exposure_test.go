@@ -100,6 +100,8 @@ var exposure = map[string]string{
 	"exchangeCurrency":                 "record_transaction",
 	"recordTrade":                      "record_investment",
 	"recordInvestmentIncome":           "record_investment",
+	"correctTrade":                     "record_investment",
+	"correctInvestmentIncome":          "record_investment",
 	"listPositions":                    "get_portfolio",
 	"listRealizedResults":              "get_tax_year",
 	"listIncomeEvents":                 "get_tax_year",

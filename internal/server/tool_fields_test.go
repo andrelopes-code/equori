@@ -150,6 +150,14 @@ var uncoveredFields = map[string][]string{
 		"links",
 		"postings",
 	}, // expected_version is the version the preview read; postings and links are not offered
+	"correctTrade": {
+		"expected_version",
+		"trade",
+	}, // expected_version is the version the preview read; the fields of trade are flat inputs
+	"correctInvestmentIncome": {
+		"expected_version",
+		"income",
+	}, // expected_version is the version the preview read; the fields of income are flat inputs
 	"createAccount": {
 		"color",
 		"icon",

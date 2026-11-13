@@ -3,7 +3,6 @@ package app
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"slices"
 	"time"
 
@@ -32,34 +31,53 @@ func (s *Service) RecordTrade(
 			return err
 		}
 
-		h, err := s.lockHolding(ctx, r, booksID, security, base, o.Date)
+		t, err := s.buildTrade(ctx, r, booksID, o, security, cash, base, uuid.Nil)
 		if err != nil {
 			return err
 		}
 
-		accts, err := s.tradeAccounts(ctx, r, booksID, o.TaxesCategoryID, "taxes_category_id")
-		if err != nil {
-			return err
-		}
-
-		postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, accts)
-		if err != nil {
-			return err
-		}
-
-		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID:           booksID,
-			Date:              o.Date,
-			Description:       o.Description,
-			BalancingCurrency: base,
-			Postings:          postings,
-			Trade:             &trade,
-		})
+		created, err = s.insert(ctx, r, t)
 
 		return err
 	})
 
 	return created, err
+}
+
+// buildTrade builds the transaction of the resolved order o; the holding of a sale leaves out
+// the postings of the transaction exclude (A227 IC6).
+func (s *Service) buildTrade(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o domain.TradeOrder,
+	security, cash domain.Account,
+	base money.Currency,
+	exclude uuid.UUID,
+) (domain.Transaction, error) {
+	h, err := s.lockHolding(ctx, r, booksID, security, base, o.Date, exclude)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	accts, err := s.tradeAccounts(ctx, r, booksID, o.TaxesCategoryID, "taxes_category_id")
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, accts)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return domain.Transaction{
+		BooksID:           booksID,
+		Date:              o.Date,
+		Description:       o.Description,
+		BalancingCurrency: base,
+		Postings:          postings,
+		Trade:             &trade,
+	}, nil
 }
 
 // resolveTrade resolves the security and cash accounts of o into o and checks its quantity.
@@ -109,13 +127,14 @@ func (s *Service) lockHolding(
 	security domain.Account,
 	base money.Currency,
 	date time.Time,
+	exclude uuid.UUID,
 ) (domain.Holding, error) {
 	// Two sales of one account serialize on its row, so each reads the holding the other left.
 	if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
 		return domain.Holding{}, err
 	}
 
-	quantity, basis, err := r.Holding(ctx, booksID, security.ID, date)
+	quantity, basis, err := r.Holding(ctx, booksID, security.ID, date, exclude)
 	if err != nil {
 		return domain.Holding{}, err
 	}
@@ -130,124 +149,6 @@ func (s *Service) lockHolding(
 	}
 
 	return h, nil
-}
-
-// RecordIncome records M18: income paid on a security into cash of the same brokerage
-// (P8 amendment A70).
-func (s *Service) RecordIncome(
-	ctx context.Context,
-	booksID int64,
-	o domain.IncomeOrder,
-) (domain.Transaction, error) {
-	var created domain.Transaction
-	err := s.repo.InTx(ctx, func(r Repository) error {
-		base, err := baseCurrency(ctx, r, booksID)
-		if err != nil {
-			return err
-		}
-
-		if err := s.resolveIncome(ctx, r, booksID, &o, base); err != nil {
-			return err
-		}
-
-		accts, err := s.tradeAccounts(ctx, r, booksID, o.WithheldCategoryID, "withheld_category_id")
-		if err != nil {
-			return err
-		}
-
-		o.WithheldCategoryID = accts.Taxes
-		if err := s.defaultWithholding(ctx, booksID, &o); err != nil {
-			return err
-		}
-
-		postings, income, err := domain.BuildIncome(o)
-		if err != nil {
-			return err
-		}
-
-		created, err = s.insert(ctx, r, domain.Transaction{
-			BooksID:           booksID,
-			Date:              o.Date,
-			Description:       o.Description,
-			BalancingCurrency: base,
-			Postings:          postings,
-			Income:            &income,
-		})
-
-		return err
-	})
-
-	return created, err
-}
-
-// resolveIncome resolves the security and cash accounts of o into o and checks its category.
-func (s *Service) resolveIncome(
-	ctx context.Context,
-	r Repository,
-	booksID int64,
-	o *domain.IncomeOrder,
-	base money.Currency,
-) error {
-	var err error
-
-	o.AccountID, o.CashAccountID, err = s.resolveTarget(ctx, r, booksID, base, target{
-		AccountID: o.AccountID, CashAccountID: o.CashAccountID, BrokerageID: o.BrokerageID,
-		Instrument: o.Instrument, Create: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	if _, _, err := s.brokerageAccounts(
-		ctx,
-		r,
-		booksID,
-		o.AccountID,
-		o.CashAccountID,
-		base,
-	); err != nil {
-		return err
-	}
-
-	if err := checkIncomeCategory(ctx, r, booksID, o.CategoryID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// checkIncomeCategory requires id to name an income category.
-func checkIncomeCategory(ctx context.Context, r Repository, booksID int64, id uuid.UUID) error {
-	category, err := loadAccount(ctx, r, booksID, id, "category_id")
-	if err != nil {
-		return err
-	}
-
-	if category.Class != domain.ClassIncome {
-		return fieldErr("category_id", "must be an income category", domain.ErrValidation)
-	}
-
-	return nil
-}
-
-// defaultWithholding sets the regional withholding of o when the request names none.
-func (s *Service) defaultWithholding(
-	ctx context.Context,
-	booksID int64,
-	o *domain.IncomeOrder,
-) error {
-	if o.Withheld != nil {
-		return nil
-	}
-
-	profile, err := s.profiles.Profile(ctx, booksID)
-	if err != nil {
-		return fmt.Errorf("read profile: %w", err)
-	}
-
-	o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
-
-	return nil
 }
 
 // brokerageAccounts checks a security account and a cash account of the same brokerage

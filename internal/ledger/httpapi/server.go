@@ -157,6 +157,14 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.HandleCreated(s.errs, s.recordInvestmentIncome),
 	)
 	mux.HandleFunc(
+		"PUT "+BaseURL+"/trades/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.correctTrade),
+	)
+	mux.HandleFunc(
+		"PUT "+BaseURL+"/investment-income/{id}",
+		httpserver.Handle(s.errs, http.StatusOK, s.correctInvestmentIncome),
+	)
+	mux.HandleFunc(
 		"GET "+BaseURL+"/transactions/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.getTransaction),
 	)

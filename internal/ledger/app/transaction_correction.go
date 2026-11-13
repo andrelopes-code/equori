@@ -25,7 +25,8 @@ func (s *Service) correctIn(
 		return domain.Transaction{}, err
 	}
 
-	if prev.Trade != nil || prev.Income != nil {
+	// A trade or an income is corrected only through its order (A227 IC1).
+	if (prev.Trade == nil) != (next.Trade == nil) || (prev.Income == nil) != (next.Income == nil) {
 		return domain.Transaction{}, ErrInvestmentTransaction
 	}
 

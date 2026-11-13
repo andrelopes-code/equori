@@ -43,11 +43,13 @@ type reportStore interface {
 		booksID int64,
 		accountIDs []uuid.UUID,
 	) ([]IncomeFact, error)
+	// Holding leaves out the postings of the transaction exclude; uuid.Nil leaves out none.
 	Holding(
 		ctx context.Context,
 		booksID int64,
 		accountID uuid.UUID,
 		date time.Time,
+		exclude uuid.UUID,
 	) (quantity, costBasis int64, err error)
 	LaterSaleExists(
 		ctx context.Context,

@@ -86,10 +86,11 @@ func (r *Repository) Holding(
 	booksID int64,
 	accountID uuid.UUID,
 	date time.Time,
+	exclude uuid.UUID,
 ) (int64, int64, error) {
 	row, err := r.q.Holding(
 		ctx,
-		HoldingParams{BooksID: booksID, AccountID: accountID, OnDate: date},
+		HoldingParams{BooksID: booksID, AccountID: accountID, OnDate: date, Exclude: exclude},
 	)
 
 	return row.Quantity, row.CostBasis, err

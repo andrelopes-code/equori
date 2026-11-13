@@ -34,6 +34,9 @@ type recordInvestmentIn struct {
 	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; an empty description is shown as a title derived from the kind and the investment"`
 	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
 	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"for income: expense category of the tax withheld; the taxes account when absent"`
+
+	TransactionID string `json:"transaction_id,omitzero" jsonschema:"trade or income to correct, from get_transactions; the proposal replaces its whole order, so repeat every field that stays"`
+	Reason        string `json:"reason,omitzero"         jsonschema:"with transaction_id: why the transaction changes, kept in its history"`
 }
 
 type recordInvestmentOut struct {
@@ -48,6 +51,7 @@ func recordInvestment(svc *app.Service) tool.Tool {
 			"A first buy creates the Investment line; a sale or income needs an existing one. " +
 			"A Brokerage without a Cash account in the base currency is refused: create a Cash account in it first with manage_accounts_and_payees. " +
 			"Use it when the user reports a trade, a dividend or other investment income. " +
+			"With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. " +
 			"Do not use it to define a new security: manage_instrument does. " +
 			"The user confirms first.",
 		Effect: tool.Write,
@@ -86,12 +90,18 @@ func planInvestment(
 		return pv, nil, err
 	}
 
+	fix, err := loadCorrection(ctx, svc, booksID, in)
+	if err != nil {
+		return pv, nil, err
+	}
+
 	pv.Target = target.name
 	pv.Changes = []tool.Change{
 		{Field: "instrument", After: tool.TextValue(string(target.instrument))},
 	}
+	fix.describe(&pv)
 
-	step := investmentStep{svc: svc, booksID: booksID, in: in, ids: ids, target: target}
+	step := investmentStep{svc: svc, booksID: booksID, in: in, ids: ids, target: target, fix: fix}
 	if in.Kind == "income" {
 		return step.income(ctx, pv)
 	}
@@ -152,6 +162,7 @@ func checkInvestmentFields(in recordInvestmentIn) error {
 		"taxes_category_id":    in.TaxesCategoryID != "",
 		"withheld_category_id": in.WithheldCategoryID != "",
 	}
+	// transaction_id and reason serve every kind; loadCorrection checks them.
 	target := []string{"account_id", "brokerage_id", "instrument", "cash_account_id"}
 
 	if in.Kind == "income" {
@@ -236,6 +247,7 @@ type investmentStep struct {
 	in      recordInvestmentIn
 	ids     investmentIDs
 	target  investmentTarget
+	fix     correction
 }
 
 func (s investmentStep) income(
@@ -273,7 +285,7 @@ func (s investmentStep) income(
 	s.appendCashAndDate(&pv)
 
 	return pv, func() (recordInvestmentOut, error) {
-		t, err := s.svc.RecordIncome(ctx, s.booksID, o)
+		t, err := s.fix.income(s.svc)(ctx, s.booksID, o)
 		return recordInvestmentOut{TransactionID: t.ID.String()}, err
 	}, nil
 }
@@ -299,7 +311,7 @@ func (s investmentStep) trade(
 	s.appendCashAndDate(&pv)
 
 	return pv, func() (recordInvestmentOut, error) {
-		t, err := s.svc.RecordTrade(ctx, s.booksID, o)
+		t, err := s.fix.trade(s.svc)(ctx, s.booksID, o)
 		return recordInvestmentOut{TransactionID: t.ID.String()}, err
 	}, nil
 }
