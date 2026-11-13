@@ -142,6 +142,36 @@ func TestReturnOverYears(t *testing.T) {
 	}
 }
 
+// Return honesty HR10: an opening balance dated in the period is money that entered the tree, a
+// flow, not a gain.
+func TestReturnCountsAnOpeningBalanceAsAFlow(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+
+	var opening string
+
+	err := f.h.Pool.QueryRow(
+		t.Context(),
+		`SELECT id::text FROM ledger_account WHERE system_role = 'opening_balances'`,
+	).Scan(&opening)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	f.h.Record("2026-03-01", apitest.Posting(opening, -100000), apitest.Posting(f.cash, 100000))
+
+	r, got := f.returnOf(t, f.xp, "2025-11-01", "2026-10-31")
+	if r.Status != http.StatusOK {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	if got.AnnualBP != 0 || got.Closing["amount"] != float64(100000) || len(got.Flows) != 1 ||
+		got.Flows[0].Date != "2026-03-01" ||
+		got.Flows[0].Amount["amount"] != float64(100000) {
+		t.Fatalf("return = %+v", got)
+	}
+}
+
 // HR2: the longest period is 3,660 days.
 func TestReturnRequestErrors(t *testing.T) {
 	t.Parallel()

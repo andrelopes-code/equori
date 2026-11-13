@@ -510,7 +510,7 @@ FROM
             tree
     )
     JOIN ledger_account oa ON oa.id = o.account_id
-    AND oa.account_class IN ('asset', 'liability')
+    AND oa.account_class IN ('asset', 'liability', 'equity')
 WHERE
     t.books_id = $1
     AND t.voided_at IS NULL
@@ -573,6 +573,8 @@ type TreeExternalFlowsRow struct {
 // balance account outside it, as the negated weights of the outside postings, in the
 // transaction's balancing currency. A transfer between two roots is internal. An income of the
 // tree paid to an account outside it has no posting on the tree and counts as touching it (BC15).
+// An equity account (opening balances, adjustments, transfers in transit) moves money in or out,
+// not a gain (return honesty HR10).
 func (q *Queries) TreeExternalFlows(ctx context.Context, arg TreeExternalFlowsParams) ([]TreeExternalFlowsRow, error) {
 	rows, err := q.db.Query(ctx, treeExternalFlows,
 		arg.BooksID,

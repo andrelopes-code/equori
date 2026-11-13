@@ -1,6 +1,6 @@
 # Return honesty
 
-Corrections to the section "How it performed" of `/portfolio` after the owner review of 2026-11-13 on the demo book. Amends `docs/specs/2026-11-09-return-clarity-design.md` (verdict of RC2, PC11 figure), `docs/specs/2026-11-06-return-index-comparison-design.md` (R8 period reasons on the return section, R23 texts) and investments design 4.3 (longest period of a return).
+Corrections to the section "How it performed" of `/portfolio` after the owner review of 2026-11-13 on the demo book. Amends `docs/specs/2026-11-09-return-clarity-design.md` (verdict of RC2, PC11 figure), `docs/specs/2026-11-06-return-index-comparison-design.md` (R8 period reasons, R23 texts) and investments design 4.3 (longest period of a return).
 
 ## Findings
 
@@ -12,8 +12,8 @@ Corrections to the section "How it performed" of `/portfolio` after the owner re
 | F4 | The opening balance, net deposits, gain and closing balance carry no definition. | No text defines them. |
 | F5 | Choosing the reserve account draws a lone full-width figure "Period return". | `PortfolioReturn` passes `subject="portfolio"` for an account; `single_credit` hides the verdict, so the bare branch draws the figure. |
 | F6 | The reason "Só um crédito de rendimento registrado" shows on an account with 13 monthly credits. | Each deposit between two month-end credits restarts the comparison (R20); one credit follows the last restart. |
-| F7 | The profile sentence "compared day by day with the CDI" shows on a report without comparison. | The sentence depends on the index, not on `benchmark`. |
-| F8 | No period above 366 days. | `MaxReturnDays = 366`. |
+| F7 | No period above 366 days. | `MaxReturnDays = 366`. |
+| F8 | From 2023-11-14 to 2024-11-13 the portfolio grows from 19,631.81 to 37,888.09 with 1,100.00 of flows: 87.36%. | The monthly fundings from the opening balances account are no flow: an external flow counts only asset and liability accounts. |
 
 ## Rules
 
@@ -29,13 +29,13 @@ Corrections to the section "How it performed" of `/portfolio` after the owner re
 
 **HR6 Definitions.** Each row of the money panel and the verdict carry a help button. The button is a ghost `IconButton` with the glyph `circle-question`, named "Sobre {term}", with `cursor: help`, under a Slotted `Tooltip` that describes it. Every fact of a tooltip is also in the guide article `investments.md` (Slotted tooltip rule: a tooltip is never the only place a fact is written).
 
-**HR7 Period reasons.** On the return section, the period return reads true for every reason but `no_yield_recorded`, `nothing_held` and `too_small`: those three read as zero or as rounding.
+**HR7 Period reasons.** Without `benchmark`, the period return reads true for every reason but `no_yield_recorded`, `nothing_held` and `too_small`: those three read as zero or as rounding. The rule holds on the return section, the Yield tab and the Yield column of the Accounts screen, which read the same function.
 
 **HR8 Restarted single credit.** A tree whose comparison start moved to its last credit because of a flow reports `single_credit_after_flow` in place of `single_credit`. Text: "Sem comparação com o {index}: um aporte ou retirada entre créditos de rendimento reinicia a comparação, e depois do último houve só um crédito".
 
-**HR9 Profile sentence.** The profile sentence of R17 shows only with `benchmark`.
+**HR9 Layout.** The money panel takes the whole width when no comparison exists.
 
-**HR10 Layout.** The money panel takes the whole width when no comparison exists.
+**HR10 Equity flows.** A posting on an equity account outside the tree (opening balances, adjustments, transfers in transit) is an external flow, as an asset or liability posting is. Amends investments design 4.3.
 
 ## Cross-cutting questions
 
