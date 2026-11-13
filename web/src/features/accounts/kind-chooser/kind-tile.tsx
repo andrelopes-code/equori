@@ -2,9 +2,9 @@ import { Text } from "@slotted/react/typography";
 import type { KeyboardEvent } from "react";
 
 import styles from "@/features/accounts/kind-chooser/kind-chooser.module.css";
+import { kindCountText } from "@/features/accounts/kind-chooser/kind-count-text";
 import { KindScene } from "@/features/accounts/kind-chooser/kind-scene";
 import { kindTitle, type Kind } from "@/features/accounts/model/account-kinds";
-import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface KindTileProps {
@@ -56,11 +56,7 @@ export function KindTile({
         </Text>
         {count > 0 && (
           <Text size="sm" tone="muted" numeric="tabular" wrap="nowrap">
-            {count === 1
-              ? t("kindPanel.countOne")
-              : t("kindPanel.countMany", {
-                  count: numberFormatter(tag).format(count),
-                })}
+            {kindCountText(t, tag, count)}
           </Text>
         )}
       </span>

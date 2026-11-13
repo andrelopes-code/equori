@@ -98,40 +98,64 @@ function words(key: keyof typeof catalogEn, values: Record<string, string>) {
 }
 
 describe("New account", () => {
-  it("offers the kinds under five headings", async () => {
+  // KC1: the gallery holds the kinds in two groups, by side of the net worth.
+  it("offers the kinds under the two groups of the gallery", async () => {
     await renderApp("/accounts/new", { fetch: api([]) });
-    for (const heading of [
-      "kind.group.accounts",
-      "kind.group.cards",
-      "kind.group.reserves",
-      "kind.group.investments",
-      "kind.group.debts",
-    ] as const) {
-      expect(
-        await screen.findByRole("group", { name: catalogEn[heading] }),
-      ).toBeInTheDocument();
-    }
+    await screen.findByRole("group", { name: catalogEn["kindChooser.assets"] });
+    const owe = screen.getByRole("group", {
+      name: catalogEn["kindChooser.liabilities"],
+    });
     expect(
-      screen.getByRole("radio", {
-        name: new RegExp(catalogEn["kind.credit_card"], "i"),
+      within(owe).getByRole("radio", {
+        name: new RegExp(catalogEn["kind.title.credit_card"], "i"),
       }),
     ).toBeInTheDocument();
   });
 
-  // BC1: the brokerage stands alone under Investments, with the tree in its hint.
-  it("offers the brokerage alone under Investments", async () => {
+  // BC1 as amended by KC7: the panel carries the hint of the brokerage.
+  it("shows the hint of the brokerage in the panel once it is chosen", async () => {
     await renderApp("/accounts/new", { fetch: api([]) });
-    const group = await screen.findByRole("group", {
-      name: catalogEn["kind.group.investments"],
-    });
-    const tiles = within(group).getAllByRole("radio");
-    expect(tiles).toHaveLength(1);
-    expect(tiles[0]).toHaveAccessibleName(
-      new RegExp(catalogEn["kind.title.brokerage"], "i"),
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: new RegExp(catalogEn["kind.title.brokerage"], "i"),
+      }),
     );
-    expect(tiles[0]).toHaveAccessibleDescription(
+    expect(await screen.findByRole("complementary")).toHaveTextContent(
       catalogEn["kind.hint.brokerage"],
     );
+  });
+
+  // KC3: a choice keeps the gallery on screen; Continue opens the form.
+  it("keeps the gallery after a choice and opens the form on Continue", async () => {
+    await renderApp("/accounts/new", { fetch: api([]) });
+    const reserve = await screen.findByRole("radio", {
+      name: new RegExp(catalogEn["kind.title.reserve"], "i"),
+    });
+    const next = screen.getByRole("button", {
+      name: catalogEn["accountForm.continue"],
+    });
+    expect(next).toBeDisabled();
+    await userEvent.click(reserve);
+    expect(reserve).toBeChecked();
+    expect(screen.getAllByRole("radio")).toHaveLength(11);
+    expect(
+      screen.getByText(catalogEn["kindPanel.accounts"]),
+    ).toBeInTheDocument();
+    await userEvent.click(next);
+    expect(
+      await screen.findByRole("textbox", {
+        name: catalogEn["accountForm.name"],
+      }),
+    ).toBeInTheDocument();
+  });
+
+  // KC6: the open accounts of the kind, the children of a brokerage left out.
+  it("counts the accounts of a kind on its tile", async () => {
+    await renderApp("/accounts/new", { fetch: api([]) });
+    const tile = await screen.findByRole("radio", {
+      name: new RegExp(catalogEn["kind.title.brokerage"], "i"),
+    });
+    expect(tile).toHaveTextContent(catalogEn["kindPanel.countOne"]);
   });
 
   // BC2: a brokerage is a line of its own, so the create form asks for no parent.
@@ -268,10 +292,10 @@ describe("New account", () => {
       }),
     );
     expect(
-      await screen.findByRole("group", {
-        name: catalogEn["kind.group.reserves"],
+      await screen.findByRole("radio", {
+        name: new RegExp(catalogEn["kind.title.reserve"], "i"),
       }),
-    ).toBeInTheDocument();
+    ).toBeChecked();
   });
 
   it("offers automatic yield for a reserve only", async () => {

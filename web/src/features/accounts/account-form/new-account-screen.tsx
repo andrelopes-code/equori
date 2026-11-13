@@ -21,11 +21,11 @@ import { AccountForm } from "@/features/accounts/account-form/account-form";
 import { AccountFormHeader } from "@/features/accounts/account-form/account-form-header";
 import type { AccountFormSearch } from "@/features/accounts/account-form/account-form-search";
 import { AccountPreview } from "@/features/accounts/account-form/account-preview";
-import { KindChooser } from "@/features/accounts/account-form/kind-chooser";
 import {
   draftKey,
   useCreateAccountSubmit,
 } from "@/features/accounts/account-form/use-create-account-submit";
+import { KindStep } from "@/features/accounts/kind-chooser/kind-step";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { FormNotice } from "@/ui/form-layout/form-notice";
@@ -59,6 +59,7 @@ export function NewAccountScreen({
         : {}),
     };
   });
+  const [choosing, setChoosing] = useState(draft.kind === null);
   const { submit, errors, summary, running } = useCreateAccountSubmit({
     draft,
     search,
@@ -88,13 +89,20 @@ export function NewAccountScreen({
                 </Button>
               </ActionBarAction>
               <ActionBarAction>
-                <Button
-                  disabled={draft.kind === null}
-                  loading={running}
-                  onClick={() => void submit()}
-                >
-                  {t("accountForm.create")}
-                </Button>
+                {choosing ? (
+                  <Button
+                    disabled={draft.kind === null}
+                    onClick={() => {
+                      setChoosing(false);
+                    }}
+                  >
+                    {t("accountForm.continue")}
+                  </Button>
+                ) : (
+                  <Button loading={running} onClick={() => void submit()}>
+                    {t("accountForm.create")}
+                  </Button>
+                )}
               </ActionBarAction>
             </ActionBarActions>
           </ActionBar>
@@ -108,11 +116,15 @@ export function NewAccountScreen({
         backLabel={t("nav.accounts")}
       />
       <PageBody>
-        {draft.kind === null ? (
-          <KindChooser
+        {choosing ? (
+          <KindStep
+            accounts={accounts}
             value={draft.kind}
             onChange={(kind) => {
               setDraft({ ...draft, kind });
+            }}
+            onContinue={() => {
+              setChoosing(false);
             }}
           />
         ) : (
@@ -133,7 +145,7 @@ export function NewAccountScreen({
                   draft={draft}
                   onChange={setDraft}
                   onChangeKind={() => {
-                    setDraft({ ...draft, kind: null });
+                    setChoosing(true);
                   }}
                   accounts={accounts}
                   base={base}

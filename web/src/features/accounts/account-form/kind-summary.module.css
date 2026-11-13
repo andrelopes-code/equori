@@ -21,10 +21,6 @@
     background: var(--slotted-tone-accent-surface);
   }
 
-  .mark {
-    color: var(--slotted-tone-accent-text);
-  }
-
   .text {
     display: grid;
     gap: var(--slotted-space-1);

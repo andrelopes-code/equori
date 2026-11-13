@@ -1,4 +1,5 @@
 import type { components } from "@/api/schema.gen";
+import { kindOrder } from "@/features/accounts/kind-chooser/kind-order";
 import type { Kind } from "@/features/accounts/model/account-kinds";
 
 type Account = components["schemas"]["Account"];
@@ -12,4 +13,10 @@ export function kindCount(accounts: readonly Account[], kind: Kind): number {
       a.closed_on === undefined &&
       (kind !== "brokerage" || a.parent_id === undefined),
   ).length;
+}
+
+export function kindCounts(accounts: readonly Account[]): Record<Kind, number> {
+  return Object.fromEntries(
+    kindOrder.map((kind) => [kind, kindCount(accounts, kind)]),
+  ) as Record<Kind, number>;
 }

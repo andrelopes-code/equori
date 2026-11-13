@@ -1,16 +1,17 @@
 import { Button } from "@slotted/react/button";
 import { useField } from "@slotted/react/field";
-import { Glyph, Icon } from "@slotted/react/icon";
 import { Text } from "@slotted/react/typography";
 
+import { KindPlate } from "@/features/accounts/kind-chooser/kind-plate";
 import { kindHint, kindTitle } from "@/features/accounts/model/account-kinds";
 import type { Kind } from "@/features/accounts/model/account-kinds";
 import styles from "@/features/accounts/account-form/kind-summary.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 // CP-04: the kind chosen in the first step, drawn as the chosen tile it was, with the way back
-// to the tiles beside it. radio-group draws a set to choose from, not one choice already made;
-// a bare line of text beside a ghost button read as neither a value nor a control.
+// to the tiles beside it; KC9 puts its plate in place of a check mark. radio-group draws a set to
+// choose from, not one choice already made; a bare line of text beside a ghost button read as
+// neither a value nor a control.
 export function KindSummary({
   kind,
   onChange,
@@ -31,11 +32,7 @@ export function KindSummary({
       className={styles.summary}
       data-chosen={onChange !== undefined || undefined}
     >
-      {onChange !== undefined && (
-        <Icon size="sm" className={styles.mark}>
-          <Glyph name="check" />
-        </Icon>
-      )}
+      {onChange !== undefined && <KindPlate kind={kind} />}
       <div className={styles.text}>
         <Text size="sm" weight="semibold">
           {t(kindTitle[kind])}

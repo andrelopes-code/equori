@@ -7,11 +7,11 @@ import {
 } from "@slotted/react/section";
 import { Text } from "@slotted/react/typography";
 
+import { kindCountText } from "@/features/accounts/kind-chooser/kind-count-text";
 import { kindFacts } from "@/features/accounts/kind-chooser/kind-facts";
 import styles from "@/features/accounts/kind-chooser/kind-panel.module.css";
 import type { Kind } from "@/features/accounts/model/account-kinds";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { numberFormatter } from "@/i18n/format";
 
 interface KindPanelFactsProps {
   kind: Kind;
@@ -25,7 +25,8 @@ export function KindPanelFacts({ kind, count }: KindPanelFactsProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const facts = kindFacts(kind);
-  const countText = countOf(count);
+  const countText =
+    count === 0 ? t(facts.noneLabel) : kindCountText(t, tag, count);
   const rows = [
     { label: t("kindPanel.opensIn"), value: t(facts.opensIn), muted: false },
     {
@@ -35,13 +36,6 @@ export function KindPanelFacts({ kind, count }: KindPanelFactsProps) {
     },
     { label: t(facts.countLabel), value: countText, muted: count === 0 },
   ];
-
-  function countOf(n: number): string {
-    if (n === 0) return t(facts.noneLabel);
-    if (n === 1) return t("kindPanel.countOne");
-
-    return t("kindPanel.countMany", { count: numberFormatter(tag).format(n) });
-  }
 
   return (
     <Section size="sm" level="4">

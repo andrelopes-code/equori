@@ -1,0 +1,8 @@
+@layer app {
+  .split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 25rem;
+    align-items: start;
+    gap: var(--slotted-space-6);
+  }
+}
