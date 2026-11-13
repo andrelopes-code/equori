@@ -33,7 +33,7 @@ export function KindPanelSteps({ kind }: KindPanelStepsProps) {
         <ol className={styles.steps}>
           {steps.map((step) => (
             <li key={step.key} data-own={step.own ? "" : undefined}>
-              <Text size="sm" wrap="nowrap">
+              <Text size="sm" truncate>
                 {step.wrap ? t(step.wrap, { step: t(step.key) }) : t(step.key)}
               </Text>
             </li>

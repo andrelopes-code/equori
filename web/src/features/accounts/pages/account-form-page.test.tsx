@@ -120,9 +120,12 @@ describe("New account", () => {
         name: new RegExp(catalogEn["kind.title.brokerage"], "i"),
       }),
     );
-    expect(await screen.findByRole("complementary")).toHaveTextContent(
-      catalogEn["kind.hint.brokerage"],
-    );
+    const panel = await screen.findByRole("complementary");
+
+    // KC7: one line per sentence of the hint.
+    for (const sentence of catalogEn["kind.hint.brokerage"].split(/(?<=\.) /)) {
+      expect(within(panel).getByText(sentence)).toBeInTheDocument();
+    }
   });
 
   // KC3: a choice keeps the gallery on screen; Continue opens the form.

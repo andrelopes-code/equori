@@ -9,7 +9,8 @@ import { classOf, type Kind } from "@/features/accounts/model/account-kinds";
 interface KindSceneProps {
   kind: Kind;
   tone?: "neutral";
-  heroName?: boolean;
+  // KC5: the scene plays its entrance when it mounts.
+  enter?: boolean;
   // KC5: the scene answers the pointer and the focus of the element that holds it.
   interactive?: boolean;
 }
@@ -17,12 +18,7 @@ interface KindSceneProps {
 // Sides of the four echoes of the plate's shape, the outermost first.
 const ringSides = [400, 300, 210, 116] as const;
 
-export function KindScene({
-  kind,
-  tone,
-  heroName,
-  interactive,
-}: KindSceneProps) {
+export function KindScene({ kind, tone, enter, interactive }: KindSceneProps) {
   const dataTone = tone ?? classOf(kind);
   const circle = plateShape(kind) === "circle";
 
@@ -30,7 +26,7 @@ export function KindScene({
     <svg
       className={[styles.ill, styles.scene].join(" ")}
       data-tone={dataTone}
-      data-hero-name={heroName ? "" : undefined}
+      data-enter={enter ? "" : undefined}
       data-interactive={interactive ? "" : undefined}
       viewBox="0 0 352 140"
       aria-hidden="true"

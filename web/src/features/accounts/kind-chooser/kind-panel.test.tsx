@@ -40,7 +40,7 @@ describe("KindPanel", () => {
     expect(factOf(panel, catalogEn["kindPanel.cards"])).toBe(
       catalogEn["kindPanel.noCards"],
     );
-    expect(container.querySelector("svg[data-hero-name]")).not.toBeNull();
+    expect(container.querySelector("svg[data-enter]")).not.toBeNull();
   });
 
   it("marks the steps only a reserve has and counts one account", () => {
@@ -60,6 +60,32 @@ describe("KindPanel", () => {
     expect(factOf(panel, catalogEn["kindPanel.accounts"])).toBe(
       catalogEn["kindPanel.countOne"],
     );
+  });
+
+  // KC7: a description of two sentences takes one line per sentence, so no line outgrows the panel.
+  it("writes each sentence of the description on its own line", () => {
+    inEnglish(<KindPanel kind="brokerage" count={2} />);
+    const panel = screen.getByRole("complementary");
+    const [first, second] = catalogEn["kind.hint.brokerage"].split(/(?<=\.) /);
+
+    expect(within(panel).getByText(first ?? "")).toBeInTheDocument();
+    expect(within(panel).getByText(second ?? "")).toBeInTheDocument();
+  });
+
+  // KC5: each kind mounts a new scene, so its entrance plays again.
+  it("mounts a new scene when the kind changes", () => {
+    const { container, rerender } = inEnglish(
+      <KindPanel kind="checking" count={0} />,
+    );
+    const before = container.querySelector("svg[data-enter]");
+
+    rerender(
+      <I18nProvider locale={{ language: "en", region: "US" }}>
+        <KindPanel kind="cash" count={0} />
+      </I18nProvider>,
+    );
+
+    expect(container.querySelector("svg[data-enter]")).not.toBe(before);
   });
 
   it("wraps the cash step of a brokerage after the institution", () => {
@@ -95,7 +121,7 @@ describe("KindPanel", () => {
     expect(panel).toHaveTextContent(catalogEn["kindPanel.emptyBody"]);
     expect(within(panel).queryAllByRole("listitem")).toHaveLength(0);
     expect(container.querySelector("svg[data-tone='neutral']")).not.toBeNull();
-    expect(container.querySelector("svg[data-hero-name]")).toBeNull();
+    expect(container.querySelector("svg[data-enter]")).toBeNull();
   });
 
   it("draws a scene that does not answer the pointer", () => {

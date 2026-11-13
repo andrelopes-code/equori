@@ -149,7 +149,7 @@ export const accountsEn = {
   "kindPanel.stepDetailsNoParent": "Currency, opening date and colour",
   "kindPanel.stepCashMode": "Where the cash is",
   "kindPanel.afterInstitution": "{step}, once the institution is chosen",
-  "kindPanel.ifOwnCash": "{step}, when the cash is the brokerage's own",
+  "kindPanel.stepOwnCash": "Cash in the brokerage, if it keeps its own",
   "kindPanel.emptyTitle": "Choose a kind beside",
   "kindPanel.emptyBody": "This panel shows what the form asks for.",
   "accountForm.continue": "Continue",

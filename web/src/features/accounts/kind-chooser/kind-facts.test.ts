@@ -59,11 +59,7 @@ const rows: readonly Row[] = [
         wrap: "kindPanel.afterInstitution",
         own: true,
       },
-      {
-        key: "accountForm.cashOpening",
-        wrap: "kindPanel.ifOwnCash",
-        own: false,
-      },
+      { key: "kindPanel.stepOwnCash", own: false },
     ],
     liquid: false,
     ...accounts,

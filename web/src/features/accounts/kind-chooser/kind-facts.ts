@@ -40,9 +40,12 @@ export function kindFacts(kind: Kind): KindFacts {
 
 function stepsOf(kind: Kind): readonly KindStep[] {
   const brokerage = kind === "brokerage";
+  // The brokerage's opening field shows only when the cash is its own (showOpening); its step
+  // says so in a line short enough for the panel.
   const opening: KindStep = {
-    key: openingLabel(kind, classOf(kind)),
-    ...(brokerage && { wrap: "kindPanel.ifOwnCash" as const }),
+    key: brokerage
+      ? "kindPanel.stepOwnCash"
+      : openingLabel(kind, classOf(kind)),
     own: false,
   };
 

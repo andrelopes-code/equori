@@ -91,12 +91,6 @@
     text-overflow: ellipsis;
   }
 
-  /* KC5: the scene travels for 0.5 s; no duration token is that long. */
-  :global(::view-transition-group(kind-scene)) {
-    animation-duration: 0.5s;
-    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .tile {
       transition: none;

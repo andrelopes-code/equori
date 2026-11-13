@@ -221,9 +221,58 @@
     }
   }
 
-  /* The name exists only while a transition of type kind runs (KC5, O11). */
-  :root:active-view-transition-type(kind) .scene[data-hero-name] {
-    view-transition-name: kind-scene;
+  /* KC5: a scene that enters (the panel's, on each choice) opens its rings from the centre
+     outward, lands its drawing and lets its back layer settle after the front, on the curve of
+     the hover. */
+  @media (prefers-reduced-motion: no-preference) {
+    .scene[data-enter] :is(.e1, .e2, .e3, .e4) {
+      transform-box: view-box;
+      transform-origin: 176px 70px;
+      animation: ring-open 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .scene[data-enter] .e2 {
+      animation-delay: 50ms;
+    }
+
+    .scene[data-enter] .e3 {
+      animation-delay: 100ms;
+    }
+
+    .scene[data-enter] .e4 {
+      animation-delay: 150ms;
+    }
+
+    .scene[data-enter] .hero {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      animation: land 600ms cubic-bezier(0.16, 1, 0.3, 1) 80ms both;
+    }
+
+    .scene[data-enter] :is(.g2, .g2s) {
+      transform-box: fill-box;
+      animation: settle 700ms cubic-bezier(0.16, 1, 0.3, 1) 140ms both;
+    }
+  }
+
+  @keyframes ring-open {
+    from {
+      transform: scale(0.9);
+    }
+  }
+
+  /* In drawing units: the group is scaled by 1.9 in the stage. */
+  @keyframes land {
+    from {
+      opacity: 0;
+      transform: translateY(4px) scale(0.96);
+    }
+  }
+
+  @keyframes settle {
+    from {
+      transform: translate(-1px, 2.4px);
+    }
   }
 
   @media (forced-colors: active) {

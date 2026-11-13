@@ -31,11 +31,11 @@ Facts from `web/src/features/accounts/account-form/kind-chooser.tsx` and the dem
 
 **KC4 Keyboard.** The gallery is one `radiogroup` with one tab stop on the chosen tile, or on the first tile when none is chosen. ArrowRight and ArrowLeft move the choice by one tile, ArrowDown and ArrowUp by three, across both blocks in KC1 order, stopping at the ends. Enter on a chosen tile opens the form, as "Continue" does.
 
-**KC5 Motion.** On a choice, the scene of the chosen tile travels to the panel's stage through a View Transition of type `kind` (0.5 s, `cubic-bezier(.16, 1, .3, 1)`). The `view-transition-name` exists only under `:root:active-view-transition-type(kind)` (O11). Without `document.startViewTransition`, or under `prefers-reduced-motion: reduce`, the panel changes with no motion. A tile hovered, focused from the keyboard or chosen holds a pose, under `prefers-reduced-motion: no-preference` only: the rings swell from the centre outward (scale 1.06, 1.08, 1.10 and 1.12, each 40 ms after the previous one) and take 10 % more ink, as does the stage (5 %); the drawing rises 3 drawing units and grows 5 % from its base; its half-tone back layer moves a further 1 unit right and 2.4 units up, so the layers part in depth; the tile rises 1 px with `--slotted-shadow-sm`. Every part moves on the curve of the View Transition in 600 ms (700 ms for the back layer). The scene of the panel holds no pose.
+**KC5 Motion.** On a choice, the panel mounts its content again and plays one entrance, under `prefers-reduced-motion: no-preference` only: the rings of its scene open from scale 0.9, 50 ms apart from the centre outward; the drawing lands from 4 drawing units below at 96 % size; its half-tone back layer settles after the front; the blocks under the scene rise 4 px into place, 40 ms apart. Every part runs on `cubic-bezier(.16, 1, .3, 1)` in 450 to 700 ms. Nothing covers the page while it runs, so every tile stays clickable. A tile hovered, focused from the keyboard or chosen holds a pose, under `prefers-reduced-motion: no-preference` only: the rings swell from the centre outward (scale 1.06, 1.08, 1.10 and 1.12, each 40 ms after the previous one) and take 10 % more ink, as does the stage (5 %); the drawing rises 3 drawing units and grows 5 % from its base; its half-tone back layer moves a further 1 unit right and 2.4 units up, so the layers part in depth; the tile rises 1 px with `--slotted-shadow-sm`. Every part moves on the same curve in 600 ms (700 ms for the back layer). The scene of the panel holds no pose.
 
 **KC6 Count.** The count of a kind is the number of accounts with that `kind` and no `closed_on`. For `brokerage`, only accounts without `parent_id` count: the cash line and the positions are children of the brokerage (BC2). Written as "1 account" or "{count} accounts", and as "1 card" or "{count} cards" for `credit_card`, the number through `numberFormatter`.
 
-**KC7 Panel.** The panel shows, from top to bottom: the scene at the panel's width; the kind's title; the side line; the kind's `kind.hint` text; "The form asks for" with the numbered steps of section 4, steps that only this kind has marked in the accent; "Once created" with three facts of section 4, values end-aligned. With no kind chosen, the panel shows the scene of `checking` in neutral ink, "Choose a kind beside" and "This panel shows what the form asks for."
+**KC7 Panel.** The panel shows, from top to bottom: the scene at the panel's width; the kind's title; the side line; the kind's `kind.hint` text, one line per sentence; "The form asks for" with the numbered steps of section 4, steps that only this kind has marked in the accent; "Once created" with three facts of section 4, values end-aligned. With no kind chosen, the panel shows the scene of `checking` in neutral ink, "Choose a kind beside" and "This panel shows what the form asks for."
 
 **KC8 Way back.** "Change kind" on the form returns to the gallery with the current kind chosen. A kind given by `?kind=` opens the form directly, as today.
 
@@ -53,7 +53,7 @@ Each fact is computed by a pure function from the predicates the form already us
 | Step 1                  | "Name and institution"                                                                                                                                                                                                   | `AccountIdentitySection`                                                 |
 | Step 2                  | "Currency, opening date, parent account and colour"; for `brokerage`, "Currency, opening date and colour"                                                                                                                | `AccountDetailsSection`, `showParent` (BC2)                              |
 | Own steps               | `credit_card`: `accountForm.billing`, `accountForm.limitGroup`, `accountForm.cards`. `savings`, `reserve`: `accountForm.yield`. `brokerage`: `kindPanel.stepCashMode` with the suffix ", once the institution is chosen" | `CardSetupSection`; `yieldCapable`; `CashModeField`                      |
-| Opening step            | `openingLabel(kind, classOf(kind))`; for `brokerage` with the suffix ", when the cash is the brokerage's own". For `credit_card` it precedes the three card steps                                                        | `AccountOpeningSection`, `showOpening`                                   |
+| Opening step            | `openingLabel(kind, classOf(kind))`; for `brokerage`, `kindPanel.stepOwnCash`, since its opening field shows only when the cash is its own. For `credit_card` it precedes the three card steps                           | `AccountOpeningSection`, `showOpening`                                   |
 | Opens in                | "Cards" (`nav.cards`) for `credit_card`; "Accounts" (`nav.accounts`) for the others                                                                                                                                      | `destination` in `new-account-screen.tsx`                                |
 | Counts toward liquidity | "Yes" for `checking`, `savings`, `cash`, `wallet`, `reserve`; "No" for the others                                                                                                                                        | `liquidCapable`; `liquidKinds` in `internal/reporting/app/indicators.go` |
 | Accounts of this kind   | KC6; "None yet" at zero. For `credit_card` the label is "Cards of this kind"                                                                                                                                             | KC6                                                                      |
@@ -71,38 +71,38 @@ The drawings come from the mock approved on 2026-11-13. Each kind has two drawin
 
 ## 6. Texts
 
-| Key                             | en                                                | pt-BR                                    |
-| ------------------------------- | ------------------------------------------------- | ---------------------------------------- |
-| `kindChooser.label`             | Account kind                                      | Tipo de conta                            |
-| `kindChooser.assets`            | What you have                                     | O que você tem                           |
-| `kindChooser.assetsNote`        | Adds to net worth                                 | Soma no patrimônio                       |
-| `kindChooser.liabilities`       | What you owe                                      | O que você deve                          |
-| `kindChooser.liabilitiesNote`   | Subtracts from net worth                          | Desconta do patrimônio                   |
-| `kindPanel.asset`               | Asset · adds to net worth                         | Ativo · soma no patrimônio               |
-| `kindPanel.liability`           | Liability · subtracts from net worth              | Passivo · desconta do patrimônio         |
-| `kindPanel.asks`                | The form asks for                                 | O formulário pede                        |
-| `kindPanel.after`               | Once created                                      | Depois de criado                         |
-| `kindPanel.opensIn`             | Opens in                                          | Abre em                                  |
-| `kindPanel.liquidity`           | Counts toward liquidity                           | Entra na liquidez                        |
-| `kindPanel.yes`                 | Yes                                               | Sim                                      |
-| `kindPanel.no`                  | No                                                | Não                                      |
-| `kindPanel.accounts`            | Accounts of this kind                             | Contas deste tipo                        |
-| `kindPanel.cards`               | Cards of this kind                                | Cartões deste tipo                       |
-| `kindPanel.noAccounts`          | None yet                                          | Nenhuma ainda                            |
-| `kindPanel.noCards`             | None yet                                          | Nenhum ainda                             |
-| `kindPanel.countOne`            | 1 account                                         | 1 conta                                  |
-| `kindPanel.countMany`           | {count} accounts                                  | {count} contas                           |
-| `kindPanel.countOneCard`        | 1 card                                            | 1 cartão                                 |
-| `kindPanel.countManyCard`       | {count} cards                                     | {count} cartões                          |
-| `kindPanel.stepIdentity`        | Name and institution                              | Nome e instituição                       |
-| `kindPanel.stepDetails`         | Currency, opening date, parent account and colour | Moeda, data de abertura, conta-mãe e cor |
-| `kindPanel.stepDetailsNoParent` | Currency, opening date and colour                 | Moeda, data de abertura e cor            |
-| `kindPanel.stepCashMode`        | Where the cash is                                 | Onde fica o caixa                        |
-| `kindPanel.afterInstitution`    | {step}, once the institution is chosen            | {step}, depois da instituição            |
-| `kindPanel.ifOwnCash`           | {step}, when the cash is the brokerage's own      | {step}, se o caixa for da corretora      |
-| `kindPanel.emptyTitle`          | Choose a kind beside                              | Escolha um tipo ao lado                  |
-| `kindPanel.emptyBody`           | This panel shows what the form asks for.          | O painel mostra o que o formulário pede. |
-| `accountForm.continue`          | Continue                                          | Continuar                                |
+| Key                             | en                                                | pt-BR                                         |
+| ------------------------------- | ------------------------------------------------- | --------------------------------------------- |
+| `kindChooser.label`             | Account kind                                      | Tipo de conta                                 |
+| `kindChooser.assets`            | What you have                                     | O que você tem                                |
+| `kindChooser.assetsNote`        | Adds to net worth                                 | Soma no patrimônio                            |
+| `kindChooser.liabilities`       | What you owe                                      | O que você deve                               |
+| `kindChooser.liabilitiesNote`   | Subtracts from net worth                          | Desconta do patrimônio                        |
+| `kindPanel.asset`               | Asset · adds to net worth                         | Ativo · soma no patrimônio                    |
+| `kindPanel.liability`           | Liability · subtracts from net worth              | Passivo · desconta do patrimônio              |
+| `kindPanel.asks`                | The form asks for                                 | O formulário pede                             |
+| `kindPanel.after`               | Once created                                      | Depois de criado                              |
+| `kindPanel.opensIn`             | Opens in                                          | Abre em                                       |
+| `kindPanel.liquidity`           | Counts toward liquidity                           | Entra na liquidez                             |
+| `kindPanel.yes`                 | Yes                                               | Sim                                           |
+| `kindPanel.no`                  | No                                                | Não                                           |
+| `kindPanel.accounts`            | Accounts of this kind                             | Contas deste tipo                             |
+| `kindPanel.cards`               | Cards of this kind                                | Cartões deste tipo                            |
+| `kindPanel.noAccounts`          | None yet                                          | Nenhuma ainda                                 |
+| `kindPanel.noCards`             | None yet                                          | Nenhum ainda                                  |
+| `kindPanel.countOne`            | 1 account                                         | 1 conta                                       |
+| `kindPanel.countMany`           | {count} accounts                                  | {count} contas                                |
+| `kindPanel.countOneCard`        | 1 card                                            | 1 cartão                                      |
+| `kindPanel.countManyCard`       | {count} cards                                     | {count} cartões                               |
+| `kindPanel.stepIdentity`        | Name and institution                              | Nome e instituição                            |
+| `kindPanel.stepDetails`         | Currency, opening date, parent account and colour | Moeda, data de abertura, conta-mãe e cor      |
+| `kindPanel.stepDetailsNoParent` | Currency, opening date and colour                 | Moeda, data de abertura e cor                 |
+| `kindPanel.stepCashMode`        | Where the cash is                                 | Onde fica o caixa                             |
+| `kindPanel.afterInstitution`    | {step}, once the institution is chosen            | {step}, depois da instituição                 |
+| `kindPanel.stepOwnCash`         | Cash in the brokerage, if it keeps its own        | Dinheiro já na corretora, se o caixa for dela |
+| `kindPanel.emptyTitle`          | Choose a kind beside                              | Escolha um tipo ao lado                       |
+| `kindPanel.emptyBody`           | This panel shows what the form asks for.          | O painel mostra o que o formulário pede.      |
+| `accountForm.continue`          | Continue                                          | Continuar                                     |
 
 ## 7. Cross-cutting questions
 

@@ -7,7 +7,6 @@ import {
   nextKind,
 } from "@/features/accounts/kind-chooser/kind-order";
 import { KindTile } from "@/features/accounts/kind-chooser/kind-tile";
-import { chooseKind } from "@/features/accounts/kind-chooser/kind-transition";
 import { classOf, type Kind } from "@/features/accounts/model/account-kinds";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -49,13 +48,8 @@ export function KindChooser({
 
     const tile = group.current?.querySelector(`[data-kind="${kind}"]`);
 
-    chooseKind(
-      () => {
-        onChange(kind);
-        (tile as HTMLElement | null)?.focus({ preventScroll: true });
-      },
-      tile?.querySelector("svg") ?? null,
-    );
+    onChange(kind);
+    (tile as HTMLElement | null)?.focus({ preventScroll: true });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, kind: Kind) {
