@@ -85,6 +85,16 @@ The value of a class is the sum of its members. The current share of a class is 
 
 **CN16 Unit value.** An `instrument` member with a price at today carries its unit value in the base currency. The screen writes the approximate quantity `floor(amount / unit value)` with integer division of minor units, prefixed by "≈". A member without a unit value shows no quantity.
 
+**CN17 Executable order.** Owner request of 2026-11-13: a target split in currency is not an order. After CN7 to CN9, each `instrument` member with a unit value gets an order: the quantity in steps of its instrument scale (`marketdata_instrument.scale`: 0 for a share, 8 for a coin), `q = floor(planned × 10^scale / unit)`, and its cost `ceil(q × unit / 10^scale)` in minor units of the base currency, so the cost never exceeds the planned amount. An `account_id` member and a group without member ideals are cash-like: their order is the planned amount, with no quantity.
+
+**CN18 Leftover.** The leftover is the contribution minus the sum of costs and cash-like amounts. It is reassigned one step at a time to the eligible entry whose value plus executed cost, over its ideal of the whole plan (group ideal × member ideal / 10000), is the lowest, ties by plan order. An eligible entry has a positive ideal and is cash-like or has one step costing no more than the leftover. A cash-like entry takes the whole leftover and ends the reassignment. What no entry can take stays as the leftover of the view. The reassignment uses only prices and rates of today; quantities and costs are estimates written with "≈".
+
+**CN19 Hand-computed cases.** Ideals of the whole plan in basis points, values zero unless stated.
+- One share entry, ideal 10000, planned 1,000.00, unit 150.00: 6 shares, cost 900.00, leftover 100.00.
+- Share A ideal 5000 planned 1,000.00 unit 150.00; share B ideal 5000 planned 500.00 unit 40.00: floors give A 6 (900.00) and B 12 (480.00), leftover 120.00; B is the lowest ratio three times: B 15 (600.00), leftover 0.
+- Share A ideal 5000 planned 1,000.00 unit 150.00; cash-like C ideal 5000 planned 500.00: A 6 (900.00), leftover 100.00 goes to C (600.00), leftover 0.
+- Coin, scale 8, ideal 10000, planned 1,000.00, unit 300,000.00: 0.00333333, cost ceil(999.999) = 1,000.00, leftover 0.
+
 ## API
 
 All operations are in `internal/portfolio/openapi.yaml`, tag `portfolio`.
@@ -157,6 +167,12 @@ Owner review of 2026-11-13: plain sentences that change while the owner drags a 
 4. Nothing above the group list changes height while editing: the bars have fixed heights, the amounts have fixed widths, the blank-name error lives in the "Este aporte" track and as the invalid state of the input.
 
 The save bar, the leave confirmation, the asset picker and member ideals keep the rules of the first layout.
+
+### Executable orders and group assets
+
+Owner review of 2026-11-13:
+- The purchase list and each member row show the order of CN17: "12 cotas · R$ 1.234,56" (quantity with the instrument's decimals, cost); a cash-like entry shows its amount only; the list ends with "Sobra R$ 37,20" when CN18 leaves money, or nothing when it does not. A group without member ideals that holds instrument members shows, in place of a quantity, "divida entre ativos para ver as cotas" as a link that opens its assets.
+- The actions of a group are visible, never behind a menu: the group row ends with a text button "Ativos (N)" that expands the group's assets panel, and a remove icon button with its tooltip. The panel lists the member rows and ends with the button "Adicionar ativo" and the switch "Dividir o ideal do grupo entre os ativos" with one muted line: "Ligado, cada ativo tem seu próprio ideal dentro do grupo." A group without assets opens with the line "Nenhum ativo neste grupo. Adicione os ativos que você compra para ele." beside "Adicionar ativo".
 
 ### Outside the plan
 
