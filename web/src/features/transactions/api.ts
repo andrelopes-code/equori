@@ -660,6 +660,49 @@ export function useCorrectTransaction() {
   });
 }
 
+// A227: a trade is corrected from its order, never from its postings.
+export function useCorrectTrade() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      body,
+    }: {
+      current: Transaction;
+      body: components["schemas"]["TradeCorrectionInput"];
+    }) =>
+      unwrap(
+        await api.PUT("/trades/{id}", {
+          params: { path: { id: current.id } },
+          body,
+        }),
+      ),
+    onSuccess: (next, { current }) => mutated(queryClient, current, next),
+  });
+}
+
+export function useCorrectInvestmentIncome() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      current,
+      body,
+    }: {
+      current: Transaction;
+      body: components["schemas"]["InvestmentIncomeCorrectionInput"];
+    }) =>
+      unwrap(
+        await api.PUT("/investment-income/{id}", {
+          params: { path: { id: current.id } },
+          body,
+        }),
+      ),
+    onSuccess: (next, { current }) => mutated(queryClient, current, next),
+  });
+}
+
 // The statement a card purchase on date would be billed on; null when the card has no billing
 // rule for it, which leaves the entry without that consequence.
 export function statementPlacementQuery(

@@ -7,6 +7,7 @@ import {
 import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TextField } from "@slotted/react/text-field";
+import type { ReactNode } from "react";
 
 import { formatRate } from "@/features/instruments";
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
@@ -32,7 +33,10 @@ interface TradeFormProps {
   view: TradeView;
   errors: Record<string, string>;
   scale: (code: string) => number;
-  onKind: (kind: EntryKind) => void;
+  // Absent on a correction: a transaction keeps its kind (A227 IC2).
+  onKind?: (kind: EntryKind) => void;
+  // Fields after the description, such as the reason of a correction.
+  children?: ReactNode;
 }
 
 // Families read: segmented-control, field, text-field, stat-card. The side is two exclusive words
@@ -45,6 +49,7 @@ export function TradeForm({
   errors,
   scale,
   onKind,
+  children,
 }: TradeFormProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -58,7 +63,9 @@ export function TradeForm({
 
   return (
     <FormLayout aside={<TradeAside view={view} sell={sell} scale={scale} />}>
-      <EntryKindPicker value="trade" onChange={onKind} investments />
+      {onKind !== undefined && (
+        <EntryKindPicker value="trade" onChange={onKind} investments />
+      )}
 
       <Field required>
         <FieldLabel>{t("trade.side")}</FieldLabel>
@@ -204,6 +211,8 @@ export function TradeForm({
           <FieldError>{errors.description}</FieldError>
         )}
       </Field>
+
+      {children}
     </FormLayout>
   );
 }

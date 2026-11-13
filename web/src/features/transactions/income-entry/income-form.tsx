@@ -1,5 +1,6 @@
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
+import type { ReactNode } from "react";
 
 import { CategoryPicker } from "@/features/categories";
 import { catalogLabel } from "@/features/setup";
@@ -28,13 +29,17 @@ export function IncomeForm({
   errors,
   scale,
   onKind,
+  children,
 }: {
   draft: IncomeDraft;
   onChange: (draft: IncomeDraft) => void;
   view: ReturnType<typeof useIncomeEntry>["view"];
   errors: Record<string, string>;
   scale: (code: string) => number;
-  onKind: (kind: EntryKind) => void;
+  // Absent on a correction: a transaction keeps its kind (A227 IC2).
+  onKind?: (kind: EntryKind) => void;
+  // Fields after the description, such as the reason of a correction.
+  children?: ReactNode;
 }) {
   const t = useT();
   const set = (patch: Partial<IncomeDraft>) => {
@@ -62,11 +67,13 @@ export function IncomeForm({
         </FigureGrid>
       }
     >
-      <EntryKindPicker
-        value="investment_income"
-        onChange={onKind}
-        investments
-      />
+      {onKind !== undefined && (
+        <EntryKindPicker
+          value="investment_income"
+          onChange={onKind}
+          investments
+        />
+      )}
 
       <BrokerageFields
         brokerages={view.brokerages}
@@ -213,6 +220,8 @@ export function IncomeForm({
           <FieldError>{errors.description}</FieldError>
         )}
       </Field>
+
+      {children}
     </FormLayout>
   );
 }

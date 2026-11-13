@@ -6,6 +6,8 @@ import { useParams } from "@tanstack/react-router";
 import { useApi } from "@/api/api-context";
 import { tagsQuery } from "@/features/transactions/api";
 import { CorrectionForm } from "@/features/transactions/correction/correction-form";
+import { IncomeCorrection } from "@/features/transactions/correction/income-correction";
+import { TradeCorrection } from "@/features/transactions/correction/trade-correction";
 import { TransactionDetail } from "@/features/transactions/transaction-detail/transaction-detail";
 import { useTransactionData } from "@/features/transactions/transaction-detail/use-transaction-data";
 
@@ -34,6 +36,27 @@ export function CorrectTransactionPage() {
           <SkeletonText lines={6} />
         </PageBody>
       </Page>
+    );
+  }
+  // A227: a trade or an income is corrected in the form of its order.
+  if (data.transaction.trade !== undefined) {
+    return (
+      <TradeCorrection
+        key={data.transaction.id}
+        transaction={data.transaction}
+        accounts={data.accounts}
+        scale={data.scale}
+      />
+    );
+  }
+  if (data.transaction.investment_income !== undefined) {
+    return (
+      <IncomeCorrection
+        key={data.transaction.id}
+        transaction={data.transaction}
+        accounts={data.accounts}
+        scale={data.scale}
+      />
     );
   }
   return (

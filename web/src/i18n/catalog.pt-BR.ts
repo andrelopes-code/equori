@@ -486,7 +486,7 @@ export const catalogPtBR: Catalog = {
   "problem.posting_reconciled":
     "A transação já foi conferida e não pode ser alterada. Reabra a conferência da conta para corrigi-la.",
   "problem.investment_transaction":
-    "Compra, venda ou provento não é corrigido. Anule a transação e registre-a novamente com os valores certos.",
+    "Compra, venda ou provento é corrigido no formulário da operação, não pelos lançamentos.",
   "problem.posting_not_movable":
     "A transação não tem lançamento que possa ir para outra fatura.",
   "problem.method_not_allowed":

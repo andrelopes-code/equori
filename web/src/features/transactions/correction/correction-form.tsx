@@ -4,12 +4,6 @@ import {
   ActionBarActions,
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
 import {
   PageHeader,
@@ -20,7 +14,6 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
-import { TextField } from "@slotted/react/text-field";
 import { toast } from "@slotted/react/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -34,6 +27,7 @@ import {
   useCorrectTransaction,
 } from "@/features/transactions/api";
 import { CorrectionConflict } from "@/features/transactions/correction/correction-conflict";
+import { ReasonField } from "@/features/transactions/correction/reason-field";
 import {
   draftFromTransaction,
   inputFromDraft,
@@ -253,21 +247,11 @@ export function CorrectionForm({
             scale={scale}
             errors={errors}
           >
-            <Field invalid={errors.reason !== undefined} required>
-              <FieldLabel>{t("correct.reason")}</FieldLabel>
-              <TextField
-                name="reason"
-                value={reason}
-                maxLength={500}
-                onChange={(event) => {
-                  setReason(event.target.value);
-                }}
-              />
-              <FieldDescription>{t("correct.reasonHint")}</FieldDescription>
-              {errors.reason !== undefined && (
-                <FieldError>{errors.reason}</FieldError>
-              )}
-            </Field>
+            <ReasonField
+              value={reason}
+              error={errors.reason}
+              onChange={setReason}
+            />
           </TransactionForm>
         </Stack>
       </PageBody>

@@ -53,7 +53,7 @@ A trade (A68) and an investment income (A70) are corrected through their own ord
 | D5 | Does not apply: no field of the diagnostic file. |
 | S1 | `correctTrade` and `correctInvestmentIncome` map to `record_investment` in `internal/server/tool_exposure_test.go`. No new `Problem.code`. |
 | S2 | `/transactions/$id/correct` is a phone route (ADR 027 S3); it draws the trade and income forms that `/transactions/new` serves on a phone. |
-| S3 | `internal/assistant/guide/articles/investments.md` states that a trade or an income is corrected from its page. |
+| S3 | `internal/assistant/guide/articles/transactions_and_postings.md`, the topic of Correct transaction, states that a trade or an income opens there in its own form. |
 | S4 | `record_investment` covers the correction (IC12). |
 | X1 | S415 and S416, tests in `internal/ledger/trade_correction_test.go`. |
 | X2 | Does not apply: R1, R2, C2 and C3 add no regional or cross-currency rule. |

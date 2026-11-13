@@ -8,8 +8,10 @@ import { accountsQuery, balanceQuery } from "@/features/accounts";
 import { settingsQuery, useScale } from "@/features/setup";
 import {
   incomeTypesQuery,
+  useCorrectInvestmentIncome,
   useRecordInvestmentIncome,
 } from "@/features/transactions/api";
+import { balanceWithout } from "@/features/transactions/correction/without-original";
 import {
   clearDraft,
   readStored,
@@ -24,30 +26,46 @@ import { useBrokerages } from "@/features/transactions/brokerage-account/use-bro
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
+type Transaction = components["schemas"]["Transaction"];
+
 const draftKey = "new-income";
+
+// A227: the stored income a correction replaces, the form it opens on and the reason typed.
+export interface IncomeCorrection {
+  transaction: Transaction;
+  start: IncomeDraft;
+  reason: string;
+}
 
 // The state of the investment income form. The server stores the amounts; the net amount here is
 // gross minus withheld, a preview. Withheld is always sent, so what the form shows is what is
-// recorded: the default a jurisdiction sets for a type is not assumed here.
-export function useIncomeEntry(accountId: string | null) {
+// recorded: the default a jurisdiction sets for a type is not assumed here. A correction keeps
+// no draft in the browser and reads the balance without the income it replaces (A227 IC10).
+export function useIncomeEntry(
+  accountId: string | null,
+  correction?: IncomeCorrection,
+) {
   const t = useT();
   const api = useApi();
   const today = useToday();
   const scale = useScale();
   const record = useRecordInvestmentIncome();
+  const correct = useCorrectInvestmentIncome();
   const types = useQuery(incomeTypesQuery(api));
   const base = useQuery(settingsQuery(api)).data?.base_currency;
 
   const [draft, setDraft] = useState<IncomeDraft>(() => {
+    if (correction !== undefined) return correction.start;
     const stored = readStored(draftKey);
     const start = isIncomeDraft(stored) ? stored : emptyIncome(today);
     return start;
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
+  const correcting = correction !== undefined;
   useEffect(() => {
-    writeDraft(draftKey, draft);
-  }, [draft]);
+    if (!correcting) writeDraft(draftKey, draft);
+  }, [draft, correcting]);
 
   // A route that names a holding account stands for its brokerage and its investment.
   const holding = useQuery(accountsQuery(api)).data?.find(
@@ -66,10 +84,15 @@ export function useIncomeEntry(accountId: string | null) {
   const instrument = chosen.instrument;
   const payer =
     state.payers.find((a) => a.id === draft.cashAccountId) ?? state.payer;
-  const balance = useQuery({
-    ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
-    enabled: payer !== undefined,
-  }).data?.balance.amount;
+  const balance = balanceWithout(
+    useQuery({
+      ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
+      enabled: payer !== undefined,
+    }).data?.balance.amount,
+    correction?.transaction,
+    payer?.id,
+    draft.date,
+  );
   const withheldTooHigh = draft.withheld > 0 && draft.withheld >= draft.gross;
   const net =
     draft.gross > 0 && !withheldTooHigh ? draft.gross - draft.withheld : null;
@@ -104,6 +127,8 @@ export function useIncomeEntry(accountId: string | null) {
     if (withheldTooHigh) problems.withheld = t("income.withheldTooHigh");
     if (draft.categoryId === null)
       problems.category_id = t("entry.required.category");
+    if (correction?.reason.trim() === "")
+      problems.reason = t("correct.reasonRequired");
     if (
       Object.keys(problems).length > 0 ||
       brokerage === undefined ||
@@ -120,21 +145,32 @@ export function useIncomeEntry(accountId: string | null) {
     setErrors({});
     setSummary(null);
     const description = draft.description.trim();
+    const order: components["schemas"]["InvestmentIncomeInput"] = {
+      brokerage_id: brokerage.id,
+      instrument,
+      cash_account_id: payer.id,
+      income_type: draft.incomeType,
+      date: draft.date,
+      gross: { amount: draft.gross, currency: base },
+      withheld: { amount: draft.withheld, currency: base },
+      category_id: draft.categoryId,
+      ...(draft.withheld > 0 && draft.withheldCategoryId !== null
+        ? { withheld_category_id: draft.withheldCategoryId }
+        : {}),
+      ...(description === "" ? {} : { description }),
+    };
     try {
-      const created = await record.mutateAsync({
-        brokerage_id: brokerage.id,
-        instrument,
-        cash_account_id: payer.id,
-        income_type: draft.incomeType,
-        date: draft.date,
-        gross: { amount: draft.gross, currency: base },
-        withheld: { amount: draft.withheld, currency: base },
-        category_id: draft.categoryId,
-        ...(draft.withheld > 0 && draft.withheldCategoryId !== null
-          ? { withheld_category_id: draft.withheldCategoryId }
-          : {}),
-        ...(description === "" ? {} : { description }),
-      });
+      if (correction !== undefined) {
+        return await correct.mutateAsync({
+          current: correction.transaction,
+          body: {
+            expected_version: correction.transaction.version,
+            reason: correction.reason.trim(),
+            income: order,
+          },
+        });
+      }
+      const created = await record.mutateAsync(order);
       clearDraft(draftKey);
       return created;
     } catch (error) {
@@ -163,7 +199,7 @@ export function useIncomeEntry(accountId: string | null) {
     view,
     submit,
     reset,
-    pending: record.isPending,
+    pending: record.isPending || correct.isPending,
     discard: () => {
       clearDraft(draftKey);
     },

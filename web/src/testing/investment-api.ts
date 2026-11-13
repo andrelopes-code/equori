@@ -87,25 +87,35 @@ export const secondCash = {
 
 export const brl = (amount: number) => ({ amount, currency: "BRL" });
 
+export interface InvestmentOptions {
+  price?: string;
+  held?: { quantity: number; cost: number };
+  extraAccounts?: unknown[];
+  cashBalance?: number;
+  // Booked balances of other accounts by id, in minor units of BRL.
+  balances?: Record<string, number>;
+  answer?: () => Response;
+  incomeTypes?: string[];
+  incomeAnswer?: () => Response;
+}
+
 export function investmentApi(
   sent: unknown[],
-  options: {
-    price?: string;
-    held?: { quantity: number; cost: number };
-    extraAccounts?: unknown[];
-    cashBalance?: number;
-    // Booked balances of other accounts by id, in minor units of BRL.
-    balances?: Record<string, number>;
-    answer?: () => Response;
-    incomeTypes?: string[];
-    incomeAnswer?: () => Response;
-  } = {},
+  options: InvestmentOptions = {},
 ) {
-  return fakeApi({
+  return fakeApi(investmentRoutes(sent, options));
+}
+
+// The routes of investmentApi, for a test that adds its own.
+export function investmentRoutes(
+  sent: unknown[],
+  options: InvestmentOptions = {},
+) {
+  return {
     ...sharedRoutes,
     "GET /api/v1/accounts": () =>
       json(200, { items: [...accounts, ...(options.extraAccounts ?? [])] }),
-    [`GET /api/v1/accounts/${cashID}/balance`]: (req) =>
+    [`GET /api/v1/accounts/${cashID}/balance`]: (req: Request) =>
       json(200, {
         account_id: cashID,
         date: new URL(req.url).searchParams.get("date"),
@@ -133,7 +143,7 @@ export function investmentApi(
           { code: "HGLG11", type: "reit", scale: 0, name: "CSHG Logística" },
         ],
       }),
-    "GET /api/v1/prices": (req) => {
+    "GET /api/v1/prices": (req: Request) => {
       const query = new URL(req.url).searchParams;
       return json(200, {
         items:
@@ -172,18 +182,18 @@ export function investmentApi(
       json(200, {
         items: options.incomeTypes ?? ["dividend", "jcp", "interest", "coupon"],
       }),
-    "POST /api/v1/investment-income": async (req) => {
+    "POST /api/v1/investment-income": async (req: Request) => {
       sent.push(await req.json());
       return (
         options.incomeAnswer ??
         (() => json(201, transactionFixture({ id: txID })))
       )();
     },
-    "POST /api/v1/trades": async (req) => {
+    "POST /api/v1/trades": async (req: Request) => {
       sent.push(await req.json());
       return (
         options.answer ?? (() => json(201, transactionFixture({ id: txID })))
       )();
     },
-  });
+  };
 }

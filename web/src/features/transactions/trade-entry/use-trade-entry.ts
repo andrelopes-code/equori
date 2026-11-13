@@ -11,7 +11,11 @@ import {
 } from "@/features/accounts";
 import { parseRate, pricesQuery } from "@/features/instruments";
 import { settingsQuery, useScale } from "@/features/setup";
-import { useRecordTrade } from "@/features/transactions/api";
+import { useCorrectTrade, useRecordTrade } from "@/features/transactions/api";
+import {
+  balanceWithout,
+  positionWithout,
+} from "@/features/transactions/correction/without-original";
 import {
   clearDraft,
   readStored,
@@ -36,8 +40,16 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 type Position = components["schemas"]["Position"];
+type Transaction = components["schemas"]["Transaction"];
 
 const draftKey = "new-trade";
+
+// A227: the stored trade a correction replaces, the form it opens on and the reason typed.
+export interface TradeCorrection {
+  transaction: Transaction;
+  start: TradeDraft;
+  reason: string;
+}
 
 export interface TradeView {
   base: string | undefined;
@@ -63,10 +75,12 @@ export interface TradeView {
 
 // The state of the trade form: the draft, what the server's reads add to it (price, position,
 // accounts of the brokerage) and the write. The server stays the source of what is stored; the
-// figures here are a preview of A68.
+// figures here are a preview of A68. A correction keeps no draft in the browser and reads the
+// position and the balance without the trade it replaces (A227 IC10).
 export function useTradeEntry(
   accountId: string | null,
   brokerageId: string | null = null,
+  correction?: TradeCorrection,
 ) {
   const t = useT();
   const api = useApi();
@@ -74,11 +88,13 @@ export function useTradeEntry(
   const fmt = useMoneyFormat();
   const scale = useScale();
   const record = useRecordTrade();
+  const correct = useCorrectTrade();
   const accounts = useQuery(accountsQuery(api));
   const settings = useQuery(settingsQuery(api));
   const base = settings.data?.base_currency;
 
   const [draft, setDraft] = useState<TradeDraft>(() => {
+    if (correction !== undefined) return correction.start;
     const stored = readStored(draftKey);
     const start = isTradeDraft(stored) ? stored : emptyTrade(today);
     return {
@@ -88,9 +104,10 @@ export function useTradeEntry(
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
+  const correcting = correction !== undefined;
   useEffect(() => {
-    writeDraft(draftKey, draft);
-  }, [draft]);
+    if (!correcting) writeDraft(draftKey, draft);
+  }, [draft, correcting]);
 
   // A route that names a holding account stands for its brokerage and its investment.
   const holding = accounts.data?.find((a) => a.id === accountId);
@@ -111,7 +128,12 @@ export function useTradeEntry(
     ...balanceQuery(api, payer?.id ?? "", draft.date, "booked"),
     enabled: payer !== undefined,
   });
-  const balance = balanceRead.data?.balance.amount;
+  const balance = balanceWithout(
+    balanceRead.data?.balance.amount,
+    correction?.transaction,
+    payer?.id,
+    draft.date,
+  );
 
   const prices = useQuery({
     ...pricesQuery(api, instrument ?? "", base ?? "", draft.date, draft.date),
@@ -121,8 +143,13 @@ export function useTradeEntry(
   const storedPrice = prices.data?.[0]?.value;
   const price = draft.unitPrice ?? storedPrice ?? "";
   const rate = parseRate(price);
-  const held = positions.data?.find(
-    (p) => p.account_id === state.held?.id && p.instrument === instrument,
+  const held = positionWithout(
+    positions.data?.find(
+      (p) => p.account_id === state.held?.id && p.instrument === instrument,
+    ),
+    correction?.transaction,
+    state.held?.id,
+    draft.date,
   );
 
   const quantityScale =
@@ -199,6 +226,8 @@ export function useTradeEntry(
     if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
     if (rate === null) problems.unit_price = t("trade.required.price");
     if (limit !== null) problems.quantity = limit;
+    if (correction?.reason.trim() === "")
+      problems.reason = t("correct.reasonRequired");
     if (
       Object.keys(problems).length > 0 ||
       state.brokerage === undefined ||
@@ -214,24 +243,35 @@ export function useTradeEntry(
     setErrors({});
     setSummary(null);
     const description = draft.description.trim();
+    const order: components["schemas"]["TradeInput"] = {
+      brokerage_id: state.brokerage.id,
+      instrument,
+      cash_account_id: payer.id,
+      side: draft.side,
+      date: draft.date,
+      quantity: { amount: draft.quantity, currency: instrument },
+      unit_price: rate,
+      ...(draft.fees > 0
+        ? { fees: { amount: draft.fees, currency: base } }
+        : {}),
+      ...(taxes > 0 ? { taxes: { amount: taxes, currency: base } } : {}),
+      ...(taxes > 0 && draft.taxesCategoryId !== null
+        ? { taxes_category_id: draft.taxesCategoryId }
+        : {}),
+      ...(description === "" ? {} : { description }),
+    };
     try {
-      const created = await record.mutateAsync({
-        brokerage_id: state.brokerage.id,
-        instrument,
-        cash_account_id: payer.id,
-        side: draft.side,
-        date: draft.date,
-        quantity: { amount: draft.quantity, currency: instrument },
-        unit_price: rate,
-        ...(draft.fees > 0
-          ? { fees: { amount: draft.fees, currency: base } }
-          : {}),
-        ...(taxes > 0 ? { taxes: { amount: taxes, currency: base } } : {}),
-        ...(taxes > 0 && draft.taxesCategoryId !== null
-          ? { taxes_category_id: draft.taxesCategoryId }
-          : {}),
-        ...(description === "" ? {} : { description }),
-      });
+      if (correction !== undefined) {
+        return await correct.mutateAsync({
+          current: correction.transaction,
+          body: {
+            expected_version: correction.transaction.version,
+            reason: correction.reason.trim(),
+            trade: order,
+          },
+        });
+      }
+      const created = await record.mutateAsync(order);
       clearDraft(draftKey);
       return created;
     } catch (error) {
@@ -259,7 +299,7 @@ export function useTradeEntry(
     view,
     submit,
     reset,
-    pending: record.isPending,
+    pending: record.isPending || correct.isPending,
     discard: () => {
       clearDraft(draftKey);
     },

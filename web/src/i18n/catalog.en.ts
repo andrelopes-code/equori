@@ -477,7 +477,7 @@ export const catalogEn = {
   "problem.posting_reconciled":
     "The transaction is already reconciled and cannot be changed. Unlock the account's reconciliation to correct it.",
   "problem.investment_transaction":
-    "A purchase, a sale or an investment income is not corrected. Void the transaction and record it again with the right values.",
+    "A purchase, a sale or an investment income is corrected in the form of the operation, not through its postings.",
   "problem.posting_not_movable":
     "The transaction has no posting that can move to another statement.",
   "problem.method_not_allowed":
