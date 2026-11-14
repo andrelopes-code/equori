@@ -67,6 +67,7 @@ function trade(side: "buy" | "sell"): Transaction {
       account_id: holdingID,
       cash_account_id: "cash",
       side,
+      settlement_date: "2026-10-17",
       quantity: { amount: 10, currency: "AUVP11" },
       unit_price: "10",
       gross: money,
