@@ -17,6 +17,7 @@ INSERT INTO
         cost,
         proceeds,
         result,
+        kind,
         tax_class,
         currency
     )
@@ -32,6 +33,7 @@ VALUES
         @cost,
         @proceeds,
         @result,
+        @kind,
         @tax_class,
         @currency
     );
@@ -47,4 +49,5 @@ WHERE
     AND date < @to_date
 ORDER BY
     date,
-    transaction_id;
+    transaction_id,
+    kind;

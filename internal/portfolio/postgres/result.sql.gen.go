@@ -42,6 +42,7 @@ INSERT INTO
         cost,
         proceeds,
         result,
+        kind,
         tax_class,
         currency
     )
@@ -58,7 +59,8 @@ VALUES
         $9,
         $10,
         $11,
-        $12
+        $12,
+        $13
     )
 `
 
@@ -73,6 +75,7 @@ type InsertRealizedResultParams struct {
 	Cost          int64
 	Proceeds      int64
 	Result        int64
+	Kind          string
 	TaxClass      *string
 	Currency      string
 }
@@ -89,6 +92,7 @@ func (q *Queries) InsertRealizedResult(ctx context.Context, arg InsertRealizedRe
 		arg.Cost,
 		arg.Proceeds,
 		arg.Result,
+		arg.Kind,
 		arg.TaxClass,
 		arg.Currency,
 	)
@@ -106,7 +110,8 @@ WHERE
     AND date < $3
 ORDER BY
     date,
-    transaction_id
+    transaction_id,
+    kind
 `
 
 type ListRealizedResultsParams struct {

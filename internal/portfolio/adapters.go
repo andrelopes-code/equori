@@ -123,6 +123,7 @@ func appendActivity(out *domain.Facts, f ledger.InvestmentFacts) {
 		out.Trades = append(out.Trades, domain.Trade{
 			TransactionID: x.TransactionID, AccountID: x.AccountID, Date: x.Date, Side: x.Side,
 			Quantity: x.Quantity, Gross: x.Gross, Fees: x.Fees, Taxes: x.Taxes, Cost: x.Cost,
+			DayTradeQuantity: x.DayTradeQuantity, DayTradeCost: x.DayTradeCost,
 		})
 	}
 

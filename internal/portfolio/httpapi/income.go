@@ -46,6 +46,7 @@ func (s *Server) listRealizedResults(
 				r.Proceeds,
 			),
 			Result:   toMoney(r.ResultAmount),
+			Kind:     RealizedResultKind(r.Kind),
 			TaxClass: optional(r.TaxClass),
 		}
 	}

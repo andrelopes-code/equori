@@ -160,6 +160,7 @@ func TestRebuild(t *testing.T) {
 		Cost:          50413,
 		Proceeds:      53790,
 		Result:        3377,
+		Kind:          "swing",
 		TaxClass:      "fii",
 		Currency:      "BRL",
 	}
@@ -193,6 +194,95 @@ func TestRebuild(t *testing.T) {
 	if len(got.Incomes) != 2 || got.Incomes[0] != wantIncomes[0] ||
 		got.Incomes[1] != wantIncomes[1] {
 		t.Fatalf("incomes = %+v", got.Incomes)
+	}
+}
+
+// A228 IO15: a sale gives a day_trade row and a swing row; proceeds split half to even.
+func TestRebuildSplitsASaleByKind(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name                  string
+		quantity, gross, cost int64
+		dtQuantity, dtCost    int64
+		want                  []RealizedResult
+	}{
+		{
+			name: "day trade and swing", quantity: 50, gross: 65000, cost: 56000,
+			dtQuantity: 30, dtCost: 36000,
+			want: []RealizedResult{
+				{Kind: "day_trade", Quantity: 30, Cost: 36000, Proceeds: 39000, Result: 3000},
+				{Kind: "swing", Quantity: 20, Cost: 20000, Proceeds: 26000, Result: 6000},
+			},
+		},
+		{
+			name: "no day trade", quantity: 50, gross: 65000, cost: 56000,
+			want: []RealizedResult{
+				{Kind: "swing", Quantity: 50, Cost: 56000, Proceeds: 65000, Result: 9000},
+			},
+		},
+		{
+			name: "all day trade", quantity: 50, gross: 65000, cost: 60000,
+			dtQuantity: 50, dtCost: 60000,
+			want: []RealizedResult{
+				{Kind: "day_trade", Quantity: 50, Cost: 60000, Proceeds: 65000, Result: 5000},
+			},
+		},
+		{
+			name: "rounding", quantity: 3, gross: 1000, cost: 900,
+			dtQuantity: 1, dtCost: 300,
+			want: []RealizedResult{
+				{Kind: "day_trade", Quantity: 1, Cost: 300, Proceeds: 333, Result: 33},
+				{Kind: "swing", Quantity: 2, Cost: 600, Proceeds: 667, Result: 67},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			a, sale := uuid.New(), uuid.New()
+			got := Rebuild(Facts{
+				Currency: "BRL",
+				Securities: []Security{
+					{AccountID: a, Instrument: "PETR4", Type: "stock", Exchange: "BVMF"},
+				},
+				Postings: []Posting{
+					{
+						AccountID:     a,
+						TransactionID: uuid.New(),
+						Date:          day("2026-11-03"),
+						Quantity:      100,
+						Weight:        100000,
+					},
+					{
+						AccountID:     a,
+						TransactionID: sale,
+						Date:          day("2026-11-10"),
+						Quantity:      -tt.quantity,
+						Weight:        -tt.cost,
+					},
+				},
+				Trades: []Trade{{
+					TransactionID: sale, AccountID: a, Date: day("2026-11-10"), Side: "sell",
+					Quantity: tt.quantity, Gross: tt.gross, Cost: tt.cost,
+					DayTradeQuantity: tt.dtQuantity, DayTradeCost: tt.dtCost,
+				}},
+			}, fixtureJurisdiction{})
+
+			if len(got.Results) != len(tt.want) {
+				t.Fatalf("results = %+v", got.Results)
+			}
+
+			for i, w := range tt.want {
+				r := got.Results[i]
+				if r.Kind != w.Kind || r.Quantity != w.Quantity || r.Cost != w.Cost ||
+					r.Proceeds != w.Proceeds || r.Result != w.Result || r.TransactionID != sale {
+					t.Fatalf("result %d = %+v, want %+v", i, r, w)
+				}
+			}
+		})
 	}
 }
 

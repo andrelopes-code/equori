@@ -5,6 +5,7 @@ package domain
 
 import (
 	"bytes"
+	"math/big"
 	"slices"
 	"time"
 
@@ -36,11 +37,18 @@ type Posting struct {
 	Quantity, Weight         int64
 }
 
+// Kinds of a realized result (A228 IO15).
+const (
+	KindSwing    = "swing"
+	KindDayTrade = "day_trade"
+)
+
 type Trade struct {
 	TransactionID, AccountID           uuid.UUID
 	Date                               time.Time
 	Side                               string
 	Quantity, Gross, Fees, Taxes, Cost int64
+	DayTradeQuantity, DayTradeCost     int64
 }
 
 type Income struct {
@@ -63,6 +71,7 @@ type RealizedResult struct {
 	Instrument                       money.Currency
 	Date, Month                      time.Time
 	Quantity, Cost, Proceeds, Result int64
+	Kind                             string
 	TaxClass                         string
 	Currency                         money.Currency
 }
@@ -146,29 +155,79 @@ func realizedResults(f Facts, securities map[uuid.UUID]Security, j Jurisdiction)
 		}
 
 		s := securities[t.AccountID]
-		proceeds := t.Gross - t.Fees
 
 		var taxClass string
 		if j != nil {
 			taxClass = j.TaxClass(s.Type, s.Subtype, s.Exchange)
 		}
 
-		results = append(results, RealizedResult{
+		base := RealizedResult{
 			TransactionID: t.TransactionID,
 			AccountID:     t.AccountID,
 			Instrument:    s.Instrument,
 			Date:          t.Date,
 			Month:         time.Date(t.Date.Year(), t.Date.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Quantity:      t.Quantity,
-			Cost:          t.Cost,
-			Proceeds:      proceeds,
-			Result:        proceeds - t.Cost,
 			TaxClass:      taxClass,
 			Currency:      f.Currency,
-		})
+		}
+
+		results = append(results, splitSale(base, t)...)
 	}
 
 	return results
+}
+
+// splitSale returns the day_trade row when the sale closes the day's purchases and the swing row
+// for the rest (A228 IO15). The day-trade proceeds are proceeds × dt ÷ q half to even.
+func splitSale(base RealizedResult, t Trade) []RealizedResult {
+	proceeds := t.Gross - t.Fees
+	dtProceeds := proceedsShare(proceeds, t.DayTradeQuantity, t.Quantity)
+
+	var rows []RealizedResult
+
+	if t.DayTradeQuantity > 0 {
+		rows = append(rows, kindRow(
+			base, KindDayTrade, t.DayTradeQuantity, t.DayTradeCost, dtProceeds,
+		))
+	}
+
+	if swing := t.Quantity - t.DayTradeQuantity; swing > 0 || t.DayTradeQuantity == 0 {
+		rows = append(rows, kindRow(
+			base, KindSwing, swing, t.Cost-t.DayTradeCost, proceeds-dtProceeds,
+		))
+	}
+
+	return rows
+}
+
+func kindRow(base RealizedResult, kind string, quantity, cost, proceeds int64) RealizedResult {
+	base.Kind = kind
+	base.Quantity = quantity
+	base.Cost = cost
+	base.Proceeds = proceeds
+	base.Result = proceeds - cost
+
+	return base
+}
+
+// proceedsShare returns proceeds × num ÷ den rounded half to even; den is positive.
+func proceedsShare(proceeds, num, den int64) int64 {
+	if num == 0 || den == 0 {
+		return 0
+	}
+
+	q, r := new(big.Int).DivMod(
+		new(big.Int).Mul(big.NewInt(proceeds), big.NewInt(num)),
+		big.NewInt(den),
+		new(big.Int),
+	)
+
+	twice := r.Lsh(r, 1).Cmp(big.NewInt(den))
+	if twice > 0 || twice == 0 && q.Bit(0) == 1 {
+		q.Add(q, big.NewInt(1))
+	}
+
+	return q.Int64()
 }
 
 func incomeEvents(f Facts, securities map[uuid.UUID]Security, j Jurisdiction) []IncomeEvent {

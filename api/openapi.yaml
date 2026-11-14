@@ -12852,7 +12852,7 @@ components:
           description: The date of the last stored price, or null.
     RealizedResult:
       type: object
-      required: [transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class]
+      required: [transaction_id, account_id, instrument, date, month, kind, quantity, cost, proceeds, result, tax_class]
       properties:
         transaction_id:
           type: string
@@ -12868,6 +12868,9 @@ components:
         month:
           type: string
           pattern: "^[0-9]{4}-[0-9]{2}$"
+        kind:
+          type: string
+          enum: [swing, day_trade]
         quantity:
           $ref: "#/components/schemas/Money"
         cost:

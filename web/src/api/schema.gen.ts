@@ -7061,6 +7061,8 @@ export interface components {
             /** Format: date */
             date: string;
             month: string;
+            /** @enum {string} */
+            kind: "swing" | "day_trade";
             quantity: components["schemas"]["Money"];
             cost: components["schemas"]["Money"];
             proceeds: components["schemas"]["Money"];

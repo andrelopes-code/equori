@@ -81,6 +81,24 @@ func (e InstrumentType) Valid() bool {
 	}
 }
 
+// Defines values for RealizedResultKind.
+const (
+	DayTrade RealizedResultKind = "day_trade"
+	Swing    RealizedResultKind = "swing"
+)
+
+// Valid indicates whether the value is a known member of the RealizedResultKind enum.
+func (e RealizedResultKind) Valid() bool {
+	switch e {
+	case DayTrade:
+		return true
+	case Swing:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ReturnReportProfile.
 const (
 	ReturnReportProfileMarket ReturnReportProfile = "market"
@@ -385,6 +403,7 @@ type RealizedResult struct {
 	Cost          Money              `json:"cost"`
 	Date          openapi_types.Date `json:"date"`
 	Instrument    string             `json:"instrument"`
+	Kind          RealizedResultKind `json:"kind"`
 	Month         string             `json:"month"`
 	Proceeds      Money              `json:"proceeds"`
 	Quantity      Money              `json:"quantity"`
@@ -392,6 +411,9 @@ type RealizedResult struct {
 	TaxClass      *string            `json:"tax_class"`
 	TransactionId openapi_types.UUID `json:"transaction_id"`
 }
+
+// RealizedResultKind defines model for RealizedResult.Kind.
+type RealizedResultKind string
 
 // RealizedResultList defines model for RealizedResultList.
 type RealizedResultList struct {

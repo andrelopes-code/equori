@@ -73,6 +73,8 @@ function trade(side: "buy" | "sell"): Transaction {
       gross: money,
       fees: money,
       taxes: money,
+      day_trade_quantity: { amount: 0, currency: "AUVP11" },
+      day_trade_cost: { amount: 0, currency: "BRL" },
     },
   });
 }

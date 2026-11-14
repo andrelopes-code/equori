@@ -19,6 +19,7 @@ function sale(result: number): Result {
     account_id: "a",
     instrument: "PETR4",
     date: "2026-03-01",
+    kind: "swing",
     month: "2026-03",
     quantity: { amount: 1, currency: "PETR4" },
     cost: money(100),

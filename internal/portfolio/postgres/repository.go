@@ -85,6 +85,7 @@ func (r *Repository) insertRebuilt(
 			Cost:          x.Cost,
 			Proceeds:      x.Proceeds,
 			Result:        x.Result,
+			Kind:          x.Kind,
 			TaxClass:      optional(x.TaxClass),
 			Currency:      string(x.Currency),
 		}); err != nil {
@@ -155,6 +156,7 @@ func (r *Repository) RealizedResults(
 			Cost:          row.Cost,
 			Proceeds:      row.Proceeds,
 			Result:        row.Result,
+			Kind:          row.Kind,
 			TaxClass:      deref(row.TaxClass),
 			Currency:      money.Currency(row.Currency),
 		}

@@ -113,6 +113,29 @@ func (f fixture) trade(
 	return out.ID
 }
 
+func (f fixture) petr4Trade(
+	t *testing.T,
+	side, date string,
+	quantity int64,
+	price string,
+) string {
+	t.Helper()
+
+	var out struct {
+		ID string `json:"id"`
+	}
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id":      f.petr4,
+		"cash_account_id": f.cash,
+		"side":            side,
+		"date":            date,
+		"quantity":        units(quantity, "PETR4"),
+		"unit_price":      price,
+	}, http.StatusCreated, &out)
+
+	return out.ID
+}
+
 type positionOut struct {
 	AccountID   string         `json:"account_id"`
 	Instrument  string         `json:"instrument"`
@@ -147,6 +170,7 @@ type resultOut struct {
 	Proceeds      map[string]any `json:"proceeds"`
 	Result        map[string]any `json:"result"`
 	TaxClass      string         `json:"tax_class"`
+	Kind          string         `json:"kind"`
 }
 
 func (f fixture) results(t *testing.T, year string) []resultOut {
@@ -222,6 +246,36 @@ func TestS64PositionAndRealizedResult(t *testing.T) {
 		rs[0].Quantity["amount"] != float64(50) ||
 		rs[0].TaxClass != "fii" {
 		t.Fatalf("results = %+v", rs)
+	}
+}
+
+// A228 IO15, S424: 30 units close the day's purchase, 20 come from the stock.
+func TestS424RealizedResultsSplitByKind(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.petr4Trade(t, "buy", "2026-11-03", 100, "10.00")
+	f.petr4Trade(t, "buy", "2026-11-10", 30, "12.00")
+	sale := f.petr4Trade(t, "sell", "2026-11-10", 50, "13.00")
+
+	rs := f.results(t, "2026")
+	if len(rs) != 2 {
+		t.Fatalf("results = %+v", rs)
+	}
+
+	want := []struct {
+		kind                             string
+		quantity, cost, proceeds, result float64
+	}{
+		{"day_trade", 30, 36000, 39000, 3000},
+		{"swing", 20, 20000, 26000, 6000},
+	}
+	for i, w := range want {
+		r := rs[i]
+		if r.TransactionID != sale || r.Kind != w.kind ||
+			r.Quantity["amount"] != w.quantity || r.Cost["amount"] != w.cost ||
+			r.Proceeds["amount"] != w.proceeds || r.Result["amount"] != w.result {
+			t.Fatalf("result %d = %+v, want %+v", i, r, w)
+		}
 	}
 }
 
