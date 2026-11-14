@@ -20,6 +20,11 @@ import { quoteReading } from "@/features/instruments/quote/quote-reading";
 import { RangeFigures } from "@/features/instruments/quote/range-figures";
 import { YearlyChanges } from "@/features/instruments/quote/yearly-changes";
 import { useInstrumentPositions } from "@/features/instruments/model/use-instrument-positions";
+import {
+  type Zoom,
+  pricesInZoom,
+  wholeRange,
+} from "@/features/instruments/model/zoom-window";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/feedback/query-error";
@@ -40,6 +45,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
   const today = useToday();
   const [range, setRange] = useState<PriceRange>("m3");
   const [activeDate, setActiveDate] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<Zoom>(wholeRange);
   const shown = useDeferredValue(range);
   const first = instrument.coverage?.first ?? null;
   const window = rangeWindow(today, shown, first);
@@ -60,8 +66,14 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
 
   const prices = series.data?.items ?? [];
   const reading = quoteReading(recent.data?.items ?? [], prices, activeDate);
-  const stats = priceStats(prices);
+  const stats = priceStats(pricesInZoom(prices, zoom));
   const averageCost = positionTotals(rows, quote)?.averageCost ?? null;
+
+  // The chart of another range starts unzoomed (key={shown}); the selection starts with it.
+  function handleRangeChange(next: PriceRange) {
+    setRange(next);
+    setZoom(wholeRange);
+  }
 
   if (series.isError)
     return (
@@ -79,7 +91,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
             stale={instrument.coverage?.stale ?? false}
           />
         </div>
-        <PriceRangeControl value={range} onChange={setRange} />
+        <PriceRangeControl value={range} onChange={handleRangeChange} />
       </div>
       {(series.isPending || prices.length > 0) && (
         <PriceChart
@@ -89,6 +101,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
           loading={series.isPending}
           averageCost={averageCost}
           onActiveDateChange={setActiveDate}
+          onZoomChange={setZoom}
         />
       )}
       {series.data?.items.length === 0 && (

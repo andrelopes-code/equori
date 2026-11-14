@@ -9,6 +9,10 @@ import {
   zoomedRange,
 } from "@/features/instruments/price-chart/price-axis";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
+import {
+  type Zoom,
+  wholeRange,
+} from "@/features/instruments/model/zoom-window";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Price = components["schemas"]["Price"];
@@ -20,14 +24,9 @@ interface PriceChartProps {
   // The average cost of the book's positions, drawn as a reference line (IP6).
   averageCost?: number | null | undefined;
   onActiveDateChange?: ((date: string | null) => void) | undefined;
+  // The window a drag on the plot leaves visible; the page reads its change as the selection's.
+  onZoomChange?: ((zoom: Zoom) => void) | undefined;
 }
-
-interface Zoom {
-  start: number;
-  end: number;
-}
-
-const wholeRange: Zoom = { start: 0, end: 1 };
 
 type Field = "date" | "price" | "manual";
 
@@ -39,6 +38,7 @@ export function PriceChart({
   loading,
   averageCost = null,
   onActiveDateChange,
+  onZoomChange,
 }: PriceChartProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -98,6 +98,11 @@ export function PriceChart({
           },
         ];
 
+  function handleZoomChange(next: Zoom) {
+    setZoom(next);
+    onZoomChange?.(next);
+  }
+
   return (
     <Chart
       variant="card"
@@ -108,7 +113,7 @@ export function PriceChart({
       legendInteractive={false}
       zoomable
       zoom={zoom}
-      onZoomChange={setZoom}
+      onZoomChange={handleZoomChange}
       data={data}
       series={series}
       annotations={annotations}
