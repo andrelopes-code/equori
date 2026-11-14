@@ -30,7 +30,7 @@ func (s *Service) correctIn(
 		return domain.Transaction{}, ErrInvestmentTransaction
 	}
 
-	if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id); err != nil {
+	if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id, true); err != nil {
 		return domain.Transaction{}, err
 	}
 
@@ -126,6 +126,7 @@ func (s *Service) correct(
 		corrected.Date,
 		corrected.Postings,
 		prev.ID,
+		true,
 	); err != nil {
 		return domain.Transaction{}, err
 	}
@@ -150,7 +151,7 @@ func (s *Service) voidIn(
 		return err
 	}
 
-	if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id); err != nil {
+	if err := checkLaterSales(ctx, r, booksID, prev.Date, prev.Postings, id, true); err != nil {
 		return err
 	}
 

@@ -361,6 +361,48 @@ func TestDBRejectsSaleWithoutCost(t *testing.T) {
 	requireViolation(t, err, checkViolation, "")
 }
 
+// A228 IO14: only a sale has a day-trade part, within its quantity and cost.
+func TestDBRejectsDayTradeOutsideSale(t *testing.T) {
+	t.Parallel()
+	f := newSchemaFixture(t)
+	cash, other := f.checking, f.food
+
+	id, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-10-20",
+		postingRow{cash, 100},
+		postingRow{other, -100},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	insert := `INSERT INTO ledger_trade (transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, day_trade_quantity, day_trade_cost, currency)
+		VALUES ($1, $2, $3, $4, $5, 1, 1, 100, 0, 0, $6, $7, $8, 'BRL')`
+
+	for _, tc := range []struct {
+		name         string
+		side         string
+		cost         *int64
+		dtQty, dtCst int64
+	}{
+		{"buy with day-trade quantity", "buy", nil, 1, 0},
+		{"buy with day-trade cost", "buy", nil, 0, 1},
+		{"sale with day-trade quantity above its quantity", "sell", new(int64(50)), 2, 0},
+		{"sale with day-trade cost above its cost", "sell", new(int64(50)), 1, 51},
+	} {
+		_, err = f.pool.Exec(
+			t.Context(), insert, id, f.booksID, other, cash, tc.side, tc.cost, tc.dtQty, tc.dtCst,
+		)
+		if err == nil {
+			t.Fatalf("%s: accepted", tc.name)
+		}
+
+		requireViolation(t, err, checkViolation, "ledger_trade_day_trade_check")
+	}
+}
+
 // Spec §5.7: an identifier has a scheme, is set with it, and names one institution of a book.
 func TestInstitutionIdentifierChecks(t *testing.T) {
 	t.Parallel()

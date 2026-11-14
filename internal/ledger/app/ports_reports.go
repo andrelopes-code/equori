@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -51,12 +52,22 @@ type reportStore interface {
 		date time.Time,
 		exclude uuid.UUID,
 	) (quantity, costBasis int64, err error)
+	// DayTrades returns the trades of a security account on date in recording order, leaving out
+	// the transaction exclude (A228 IO11).
+	DayTrades(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		date time.Time,
+		exclude uuid.UUID,
+	) ([]domain.DayTrade, error)
 	LaterSaleExists(
 		ctx context.Context,
 		booksID int64,
 		accountIDs []uuid.UUID,
 		date time.Time,
 		exclude uuid.UUID,
+		sameDay bool,
 	) (bool, error)
 	TreeBalancesByInstrument(
 		ctx context.Context,

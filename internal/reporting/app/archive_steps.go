@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 14
+const ArchiveVersion = 15
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -21,7 +21,7 @@ var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
-	addContributionPlan,
+	addContributionPlan, addDayTradeColumns,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -247,4 +247,15 @@ func addContributionPlan(tables []ArchiveTable) ([]ArchiveTable, error) {
 	}
 
 	return out, nil
+}
+
+// addDayTradeColumns writes 0 into day_trade_quantity and day_trade_cost of every version 14
+// row of ledger_trade (A228 IO14): a sale recorded before keeps its average cost (NG3).
+func addDayTradeColumns(tables []ArchiveTable) ([]ArchiveTable, error) {
+	tables, err := withField(tables, "ledger_trade", "day_trade_quantity", jsontext.Value("0"))
+	if err != nil {
+		return nil, err
+	}
+
+	return withField(tables, "ledger_trade", "day_trade_cost", jsontext.Value("0"))
 }

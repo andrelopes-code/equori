@@ -37,6 +37,7 @@ type TradeFact struct {
 	Date                               time.Time
 	Side                               string
 	Quantity, Gross, Fees, Taxes, Cost int64
+	DayTradeQuantity, DayTradeCost     int64
 }
 
 type IncomeFact struct {

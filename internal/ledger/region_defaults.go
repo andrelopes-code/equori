@@ -42,3 +42,9 @@ func DefaultWithholdingBP(region, incomeType string) int {
 
 	return 0
 }
+
+// SeparatesDayTrades reports whether a sale of a book of region separates the day's purchases
+// from the earlier stock (A228 IO10; BR: IN RFB 1.585/2015, art. 65).
+func SeparatesDayTrades(region string) bool {
+	return region == "BR"
+}

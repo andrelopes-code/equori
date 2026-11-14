@@ -3372,8 +3372,28 @@ schemas:
   Trade:
     type: object
     required:
-      [account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, settlement_date]
+      [
+        account_id,
+        cash_account_id,
+        side,
+        quantity,
+        unit_price,
+        gross,
+        fees,
+        taxes,
+        settlement_date,
+        day_trade_quantity,
+        day_trade_cost,
+      ]
     properties:
+      day_trade_quantity:
+        description: Units of a sale that close purchases of its date at the same brokerage (A228 IO12); zero on a purchase.
+        allOf:
+          - $ref: "#/components/schemas/Money"
+      day_trade_cost:
+        description: Cost of those units, in the base currency (A228 IO12); zero on a purchase.
+        allOf:
+          - $ref: "#/components/schemas/Money"
       account_id:
         type: string
         format: uuid

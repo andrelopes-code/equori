@@ -42,6 +42,9 @@ type snapshotTrade struct {
 	Taxes         int64     `json:"taxes"`
 	Cost          *int64    `json:"cost,omitempty"`
 	Currency      string    `json:"currency"`
+
+	DayTradeQuantity int64 `json:"day_trade_quantity,omitempty"`
+	DayTradeCost     int64 `json:"day_trade_cost,omitempty"`
 }
 
 type snapshotIncome struct {
@@ -143,6 +146,9 @@ func toSnapshotTrade(tr *domain.Trade) *snapshotTrade {
 		Fees:          tr.Fees.Amount(),
 		Taxes:         tr.Taxes.Amount(),
 		Currency:      string(tr.Gross.Currency()),
+
+		DayTradeQuantity: tr.DayTradeQuantity.Amount(),
+		DayTradeCost:     tr.DayTradeCost.Amount(),
 	}
 	if tr.Cost != nil {
 		c := tr.Cost.Amount()
@@ -229,19 +235,28 @@ func (st *snapshotTrade) trade(ctx context.Context, ins app.Instruments) (*domai
 		return nil, err
 	}
 
+	dayQuantity, err := app.AmountOf(ctx, ins, st.DayTradeQuantity, money.Currency(st.Instrument))
+	if err != nil {
+		return nil, err
+	}
+
 	tr := &domain.Trade{
-		AccountID:     st.AccountID,
-		CashAccountID: st.CashAccountID,
-		Side:          domain.Side(st.Side),
-		Quantity:      quantity,
-		UnitPrice:     price,
+		DayTradeQuantity: dayQuantity,
+		AccountID:        st.AccountID,
+		CashAccountID:    st.CashAccountID,
+		Side:             domain.Side(st.Side),
+		Quantity:         quantity,
+		UnitPrice:        price,
 	}
 
 	cur := money.Currency(st.Currency)
 	for _, x := range []struct {
 		to *money.Money
 		v  int64
-	}{{&tr.Gross, st.Gross}, {&tr.Fees, st.Fees}, {&tr.Taxes, st.Taxes}} {
+	}{
+		{&tr.Gross, st.Gross}, {&tr.Fees, st.Fees}, {&tr.Taxes, st.Taxes},
+		{&tr.DayTradeCost, st.DayTradeCost},
+	} {
 		if *x.to, err = money.New(x.v, cur); err != nil {
 			return nil, err
 		}

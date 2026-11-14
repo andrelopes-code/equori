@@ -116,18 +116,20 @@ func (r *Repository) insertTrade(ctx context.Context, t domain.Transaction) erro
 	}
 
 	return r.q.InsertTrade(ctx, InsertTradeParams{
-		TransactionID: t.ID,
-		BooksID:       t.BooksID,
-		AccountID:     tr.AccountID,
-		CashAccountID: tr.CashAccountID,
-		Side:          string(tr.Side),
-		Quantity:      tr.Quantity.Amount(),
-		UnitPrice:     platformpg.NumericOf(tr.UnitPrice),
-		Gross:         tr.Gross.Amount(),
-		Fees:          tr.Fees.Amount(),
-		Taxes:         tr.Taxes.Amount(),
-		Cost:          cost,
-		Currency:      string(tr.Gross.Currency()),
+		TransactionID:    t.ID,
+		BooksID:          t.BooksID,
+		AccountID:        tr.AccountID,
+		CashAccountID:    tr.CashAccountID,
+		Side:             string(tr.Side),
+		Quantity:         tr.Quantity.Amount(),
+		UnitPrice:        platformpg.NumericOf(tr.UnitPrice),
+		Gross:            tr.Gross.Amount(),
+		Fees:             tr.Fees.Amount(),
+		Taxes:            tr.Taxes.Amount(),
+		Cost:             cost,
+		DayTradeQuantity: tr.DayTradeQuantity.Amount(),
+		DayTradeCost:     tr.DayTradeCost.Amount(),
+		Currency:         string(tr.Gross.Currency()),
 	})
 }
 
@@ -241,15 +243,27 @@ func (r *Repository) toTrade(
 		}
 	}
 
+	dayQuantity, err := app.AmountOf(ctx, r.ins, row.DayTradeQuantity, instrument)
+	if err != nil {
+		return domain.Trade{}, fmt.Errorf("trade %s day-trade quantity: %w", row.TransactionID, err)
+	}
+
+	dayCost, err := money.New(row.DayTradeCost, cur)
+	if err != nil {
+		return domain.Trade{}, err
+	}
+
 	trade := domain.Trade{
-		AccountID:     row.AccountID,
-		CashAccountID: row.CashAccountID,
-		Side:          domain.Side(row.Side),
-		Quantity:      quantity,
-		UnitPrice:     price,
-		Gross:         amounts[0],
-		Fees:          amounts[1],
-		Taxes:         amounts[2],
+		DayTradeQuantity: dayQuantity,
+		DayTradeCost:     dayCost,
+		AccountID:        row.AccountID,
+		CashAccountID:    row.CashAccountID,
+		Side:             domain.Side(row.Side),
+		Quantity:         quantity,
+		UnitPrice:        price,
+		Gross:            amounts[0],
+		Fees:             amounts[1],
+		Taxes:            amounts[2],
 	}
 	if row.Cost != nil {
 		cost, err := money.New(*row.Cost, cur)

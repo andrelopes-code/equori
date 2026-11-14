@@ -182,7 +182,15 @@ func (s *Service) insert(
 		return domain.Transaction{}, err
 	}
 
-	if err := checkLaterSales(ctx, r, t.BooksID, valid.Date, valid.Postings, valid.ID); err != nil {
+	if err := checkLaterSales(
+		ctx,
+		r,
+		t.BooksID,
+		valid.Date,
+		valid.Postings,
+		valid.ID,
+		!onlyRemovesUnits(valid.Postings),
+	); err != nil {
 		return domain.Transaction{}, err
 	}
 

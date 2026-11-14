@@ -12,6 +12,8 @@ INSERT INTO
         fees,
         taxes,
         cost,
+        day_trade_quantity,
+        day_trade_cost,
         currency
     )
 VALUES
@@ -27,6 +29,8 @@ VALUES
         @fees,
         @taxes,
         sqlc.narg (cost),
+        @day_trade_quantity,
+        @day_trade_cost,
         @currency
     );
 
@@ -60,8 +64,31 @@ WHERE
     AND booked_on <= @on_date
     AND transaction_id <> @exclude;
 
+-- name: DayTrades :many
+-- The non-voided trades of a security account on a date in recording order, without the
+-- transaction exclude (A228 IO11).
+SELECT
+    tr.side,
+    tr.quantity,
+    tr.gross,
+    tr.fees,
+    tr.day_trade_quantity
+FROM
+    ledger_trade tr
+    JOIN ledger_transaction t ON t.books_id = tr.books_id
+    AND t.id = tr.transaction_id
+WHERE
+    tr.books_id = @books_id
+    AND tr.account_id = @account_id
+    AND t.voided_at IS NULL
+    AND t.date = @on_date
+    AND tr.transaction_id <> @exclude
+ORDER BY
+    tr.transaction_id;
+
 -- name: LaterSaleExists :one
--- P8 amendment A69: a non-voided sale of one of the accounts dated on or after on_date.
+-- P8 amendment A69, relaxed by A228 IO16: a non-voided sale of one of the accounts dated after
+-- on_date, or on it when same_day.
 SELECT
     EXISTS (
         SELECT
@@ -75,7 +102,13 @@ SELECT
             AND tr.account_id = ANY (@account_ids::UUID[])
             AND tr.side = 'sell'
             AND t.voided_at IS NULL
-            AND t.date >= @on_date
+            AND (
+                t.date > @on_date
+                OR (
+                    @same_day::boolean
+                    AND t.date = @on_date
+                )
+            )
             AND tr.transaction_id <> @exclude
     );
 
@@ -146,7 +179,9 @@ SELECT
     tr.gross,
     tr.fees,
     tr.taxes,
-    tr.cost
+    tr.cost,
+    tr.day_trade_quantity,
+    tr.day_trade_cost
 FROM
     ledger_trade tr
     JOIN ledger_transaction t ON t.books_id = tr.books_id

@@ -13,6 +13,75 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const dayTrades = `-- name: DayTrades :many
+SELECT
+    tr.side,
+    tr.quantity,
+    tr.gross,
+    tr.fees,
+    tr.day_trade_quantity
+FROM
+    ledger_trade tr
+    JOIN ledger_transaction t ON t.books_id = tr.books_id
+    AND t.id = tr.transaction_id
+WHERE
+    tr.books_id = $1
+    AND tr.account_id = $2
+    AND t.voided_at IS NULL
+    AND t.date = $3
+    AND tr.transaction_id <> $4
+ORDER BY
+    tr.transaction_id
+`
+
+type DayTradesParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+	OnDate    time.Time
+	Exclude   uuid.UUID
+}
+
+type DayTradesRow struct {
+	Side             string
+	Quantity         int64
+	Gross            int64
+	Fees             int64
+	DayTradeQuantity int64
+}
+
+// The non-voided trades of a security account on a date in recording order, without the
+// transaction exclude (A228 IO11).
+func (q *Queries) DayTrades(ctx context.Context, arg DayTradesParams) ([]DayTradesRow, error) {
+	rows, err := q.db.Query(ctx, dayTrades,
+		arg.BooksID,
+		arg.AccountID,
+		arg.OnDate,
+		arg.Exclude,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DayTradesRow
+	for rows.Next() {
+		var i DayTradesRow
+		if err := rows.Scan(
+			&i.Side,
+			&i.Quantity,
+			&i.Gross,
+			&i.Fees,
+			&i.DayTradeQuantity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteInvestmentIncome = `-- name: DeleteInvestmentIncome :exec
 DELETE FROM ledger_investment_income
 WHERE
@@ -151,6 +220,8 @@ INSERT INTO
         fees,
         taxes,
         cost,
+        day_trade_quantity,
+        day_trade_cost,
         currency
     )
 VALUES
@@ -166,23 +237,27 @@ VALUES
         $9,
         $10,
         $11,
-        $12
+        $12,
+        $13,
+        $14
     )
 `
 
 type InsertTradeParams struct {
-	TransactionID uuid.UUID
-	BooksID       int64
-	AccountID     uuid.UUID
-	CashAccountID uuid.UUID
-	Side          string
-	Quantity      int64
-	UnitPrice     pgtype.Numeric
-	Gross         int64
-	Fees          int64
-	Taxes         int64
-	Cost          *int64
-	Currency      string
+	TransactionID    uuid.UUID
+	BooksID          int64
+	AccountID        uuid.UUID
+	CashAccountID    uuid.UUID
+	Side             string
+	Quantity         int64
+	UnitPrice        pgtype.Numeric
+	Gross            int64
+	Fees             int64
+	Taxes            int64
+	Cost             *int64
+	DayTradeQuantity int64
+	DayTradeCost     int64
+	Currency         string
 }
 
 func (q *Queries) InsertTrade(ctx context.Context, arg InsertTradeParams) error {
@@ -198,6 +273,8 @@ func (q *Queries) InsertTrade(ctx context.Context, arg InsertTradeParams) error 
 		arg.Fees,
 		arg.Taxes,
 		arg.Cost,
+		arg.DayTradeQuantity,
+		arg.DayTradeCost,
 		arg.Currency,
 	)
 	return err
@@ -217,8 +294,14 @@ SELECT
             AND tr.account_id = ANY ($2::UUID[])
             AND tr.side = 'sell'
             AND t.voided_at IS NULL
-            AND t.date >= $3
-            AND tr.transaction_id <> $4
+            AND (
+                t.date > $3
+                OR (
+                    $4::boolean
+                    AND t.date = $3
+                )
+            )
+            AND tr.transaction_id <> $5
     )
 `
 
@@ -226,15 +309,18 @@ type LaterSaleExistsParams struct {
 	BooksID    int64
 	AccountIds []uuid.UUID
 	OnDate     time.Time
+	SameDay    bool
 	Exclude    uuid.UUID
 }
 
-// P8 amendment A69: a non-voided sale of one of the accounts dated on or after on_date.
+// P8 amendment A69, relaxed by A228 IO16: a non-voided sale of one of the accounts dated after
+// on_date, or on it when same_day.
 func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams) (bool, error) {
 	row := q.db.QueryRow(ctx, laterSaleExists,
 		arg.BooksID,
 		arg.AccountIds,
 		arg.OnDate,
+		arg.SameDay,
 		arg.Exclude,
 	)
 	var exists bool
@@ -288,7 +374,7 @@ func (q *Queries) ListInvestmentIncome(ctx context.Context, arg ListInvestmentIn
 
 const listTrades = `-- name: ListTrades :many
 SELECT
-    transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency
+    transaction_id, books_id, account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, cost, currency, day_trade_quantity, day_trade_cost
 FROM
     ledger_trade
 WHERE
@@ -323,6 +409,8 @@ func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]Ledge
 			&i.Taxes,
 			&i.Cost,
 			&i.Currency,
+			&i.DayTradeQuantity,
+			&i.DayTradeCost,
 		); err != nil {
 			return nil, err
 		}
@@ -464,7 +552,9 @@ SELECT
     tr.gross,
     tr.fees,
     tr.taxes,
-    tr.cost
+    tr.cost,
+    tr.day_trade_quantity,
+    tr.day_trade_cost
 FROM
     ledger_trade tr
     JOIN ledger_transaction t ON t.books_id = tr.books_id
@@ -484,15 +574,17 @@ type SecurityTradesParams struct {
 }
 
 type SecurityTradesRow struct {
-	TransactionID uuid.UUID
-	AccountID     uuid.UUID
-	Date          time.Time
-	Side          string
-	Quantity      int64
-	Gross         int64
-	Fees          int64
-	Taxes         int64
-	Cost          *int64
+	TransactionID    uuid.UUID
+	AccountID        uuid.UUID
+	Date             time.Time
+	Side             string
+	Quantity         int64
+	Gross            int64
+	Fees             int64
+	Taxes            int64
+	Cost             *int64
+	DayTradeQuantity int64
+	DayTradeCost     int64
 }
 
 func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) ([]SecurityTradesRow, error) {
@@ -514,6 +606,8 @@ func (q *Queries) SecurityTrades(ctx context.Context, arg SecurityTradesParams) 
 			&i.Fees,
 			&i.Taxes,
 			&i.Cost,
+			&i.DayTradeQuantity,
+			&i.DayTradeCost,
 		); err != nil {
 			return nil, err
 		}

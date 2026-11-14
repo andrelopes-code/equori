@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 )
 
 func (r *Repository) SecurityPostings(
@@ -50,6 +51,9 @@ func (r *Repository) SecurityTrades(
 			Gross:         row.Gross,
 			Fees:          row.Fees,
 			Taxes:         row.Taxes,
+
+			DayTradeQuantity: row.DayTradeQuantity,
+			DayTradeCost:     row.DayTradeCost,
 		}
 		if row.Cost != nil {
 			f.Cost = *row.Cost
@@ -102,6 +106,7 @@ func (r *Repository) LaterSaleExists(
 	accountIDs []uuid.UUID,
 	date time.Time,
 	exclude uuid.UUID,
+	sameDay bool,
 ) (bool, error) {
 	return r.q.LaterSaleExists(
 		ctx,
@@ -110,6 +115,32 @@ func (r *Repository) LaterSaleExists(
 			AccountIds: accountIDs,
 			OnDate:     date,
 			Exclude:    exclude,
+			SameDay:    sameDay,
 		},
 	)
+}
+
+func (r *Repository) DayTrades(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	exclude uuid.UUID,
+) ([]domain.DayTrade, error) {
+	rows, err := r.q.DayTrades(ctx, DayTradesParams{
+		BooksID:   booksID,
+		AccountID: accountID,
+		OnDate:    date,
+		Exclude:   exclude,
+	})
+
+	return mapAll(rows, func(row DayTradesRow) domain.DayTrade {
+		return domain.DayTrade{
+			Side:             domain.Side(row.Side),
+			Quantity:         row.Quantity,
+			Gross:            row.Gross,
+			Fees:             row.Fees,
+			DayTradeQuantity: row.DayTradeQuantity,
+		}
+	}), err
 }

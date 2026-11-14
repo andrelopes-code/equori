@@ -97,7 +97,7 @@ func (q *Queries) InsertRealizedResult(ctx context.Context, arg InsertRealizedRe
 
 const listRealizedResults = `-- name: ListRealizedResults :many
 SELECT
-    books_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency
+    books_id, transaction_id, account_id, instrument, date, month, quantity, cost, proceeds, result, tax_class, currency, kind
 FROM
     portfolio_realized_result
 WHERE
@@ -137,6 +137,7 @@ func (q *Queries) ListRealizedResults(ctx context.Context, arg ListRealizedResul
 			&i.Result,
 			&i.TaxClass,
 			&i.Currency,
+			&i.Kind,
 		); err != nil {
 			return nil, err
 		}

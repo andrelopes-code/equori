@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -72,7 +73,12 @@ func (s *Service) buildTrade(
 		return domain.Transaction{}, err
 	}
 
-	postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, accts)
+	day, err := s.dayOf(ctx, r, booksID, o, security, exclude)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, day, accts)
 	if err != nil {
 		return domain.Transaction{}, err
 	}
@@ -85,6 +91,39 @@ func (s *Service) buildTrade(
 		Postings:          postings,
 		Trade:             &trade,
 	}, nil
+}
+
+// dayOf reads what a sale o reads of its date; a purchase, or a book of a region that does not
+// separate day trades, reads nothing (A228 IO10, IO11).
+func (s *Service) dayOf(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o domain.TradeOrder,
+	security domain.Account,
+	exclude uuid.UUID,
+) (*domain.Day, error) {
+	if o.Side != domain.SideSell {
+		return nil, nil
+	}
+
+	profile, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return nil, fmt.Errorf("read profile: %w", err)
+	}
+
+	if !s.defaults.SeparatesDayTrades(profile.Region) {
+		return nil, nil
+	}
+
+	trades, err := r.DayTrades(ctx, booksID, security.ID, o.Date, exclude)
+	if err != nil {
+		return nil, err
+	}
+
+	day := domain.NewDay(trades)
+
+	return &day, nil
 }
 
 // settlementOf checks the explicit settlement date of o, or sets the one of the exchange's cycle.
@@ -273,8 +312,9 @@ func (s *Service) tradeAccounts(
 	return accts, nil
 }
 
-// checkLaterSales locks the security accounts of postings and rejects a change dated on
-// or before a non-voided sale of one of them other than exclude (P8 amendment A69).
+// checkLaterSales locks the security accounts of postings and rejects a change dated before a
+// non-voided sale of one of them other than exclude, or on its date when sameDay (P8 amendment
+// A69, A228 IO16).
 func checkLaterSales(
 	ctx context.Context,
 	r Repository,
@@ -282,6 +322,7 @@ func checkLaterSales(
 	date time.Time,
 	postings []domain.Posting,
 	exclude uuid.UUID,
+	sameDay bool,
 ) error {
 	ids := make([]uuid.UUID, 0, len(postings))
 	for _, p := range postings {
@@ -304,7 +345,7 @@ func checkLaterSales(
 		}
 	}
 
-	later, err := r.LaterSaleExists(ctx, booksID, ids, date, exclude)
+	later, err := r.LaterSaleExists(ctx, booksID, ids, date, exclude, sameDay)
 	if err != nil {
 		return err
 	}
@@ -314,6 +355,18 @@ func checkLaterSales(
 	}
 
 	return nil
+}
+
+// onlyRemovesUnits reports whether every posting of a security account has a negative amount:
+// such a change cannot alter the cost of a sale of its date (A228 IO16).
+func onlyRemovesUnits(postings []domain.Posting) bool {
+	for _, p := range postings {
+		if isSecurity(p.Amount.Currency()) && !p.Amount.IsNegative() {
+			return false
+		}
+	}
+
+	return true
 }
 
 func isSecurity(c money.Currency) bool {

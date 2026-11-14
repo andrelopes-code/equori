@@ -40,6 +40,9 @@ type Trade struct {
 	UnitPrice                money.Rate
 	Gross, Fees, Taxes       money.Money
 	Cost                     *money.Money
+	// DayTradeQuantity and DayTradeCost are the part of a sale that closes the purchases of its
+	// date (A228 IO12); zero on a purchase. The cost is in the cash currency.
+	DayTradeQuantity, DayTradeCost money.Money
 }
 
 // Holding is the security account on the trade date: quantity is the sum of its
@@ -55,11 +58,13 @@ type TradeAccounts struct {
 
 // BuildTrade returns the postings of a trade in currency cash: cash, taxes, security,
 // result. A sale removes cost at average cost, half to even, and the whole cost basis
-// when it sells the whole quantity (P8 amendment A68).
+// when it sells the whole quantity (P8 amendment A68). A non-nil day separates the units that
+// close the day's purchases (A228 IO12).
 func BuildTrade(
 	o TradeOrder,
 	cash money.Currency,
 	h Holding,
+	day *Day,
 	accts TradeAccounts,
 ) ([]Posting, Trade, error) {
 	zero, err := money.New(0, cash)
@@ -100,7 +105,7 @@ func BuildTrade(
 		return buyTrade(o, trade)
 	}
 
-	return sellTrade(o, h, accts, trade)
+	return sellTrade(o, h, day, accts, trade)
 }
 
 func checkTradeOrder(o TradeOrder, cash money.Currency, fees, taxes money.Money) error {
@@ -126,6 +131,14 @@ func buyTrade(o TradeOrder, trade Trade) ([]Posting, Trade, error) {
 		return nil, Trade{}, err
 	}
 
+	if trade.DayTradeQuantity, err = o.Quantity.Sub(o.Quantity); err != nil {
+		return nil, Trade{}, err
+	}
+
+	if trade.DayTradeCost, err = trade.Fees.Sub(trade.Fees); err != nil {
+		return nil, Trade{}, err
+	}
+
 	return []Posting{
 		{
 			AccountID: o.CashAccountID,
@@ -140,15 +153,18 @@ func buyTrade(o TradeOrder, trade Trade) ([]Posting, Trade, error) {
 func sellTrade(
 	o TradeOrder,
 	h Holding,
+	day *Day,
 	accts TradeAccounts,
 	trade Trade,
 ) ([]Posting, Trade, error) {
 	gross, fees, taxes := trade.Gross, trade.Fees, trade.Taxes
 
-	cost, err := soldCost(o, h)
+	lot, err := soldCost(o, h, day)
 	if err != nil {
 		return nil, Trade{}, err
 	}
+
+	cost := lot.Cost
 
 	net, err := gross.Sub(fees)
 	if err != nil {
@@ -169,7 +185,7 @@ func sellTrade(
 		return nil, Trade{}, err
 	}
 
-	trade.Cost = &cost
+	trade.Cost, trade.DayTradeQuantity, trade.DayTradeCost = &cost, lot.DayQuantity, lot.DayCost
 
 	postings := sellPostings(o, accts, proceeds, taxes, cost, result)
 
@@ -211,31 +227,49 @@ func sellPostings(
 	return postings
 }
 
-// soldCost is the cost basis of the quantity a sale gives up.
-func soldCost(o TradeOrder, h Holding) (cost money.Money, err error) {
+// soldCost is the cost basis of the quantity a sale gives up and its day-trade part; a nil day
+// takes the average cost of the whole holding.
+func soldCost(o TradeOrder, h Holding, day *Day) (lot soldLot, err error) {
 	if h.Quantity.Amount() < o.Quantity.Amount() {
-		return money.Money{}, invalid(
+		return soldLot{}, invalid(
 			"quantity",
 			"must not exceed the "+h.Quantity.String()+" held on the trade date",
 		)
 	}
 
-	cost = h.CostBasis
-	if o.Quantity.Amount() < h.Quantity.Amount() {
-		if cost, err = money.Fraction(
-			h.CostBasis,
-			o.Quantity.Amount(),
-			h.Quantity.Amount(),
-		); err != nil {
-			return money.Money{}, err
-		}
+	if day != nil {
+		lot, err = dayLot(o.Quantity, h, *day)
+	} else {
+		lot, err = averageLot(o.Quantity, h)
 	}
 
-	if cost.IsZero() || cost.IsNegative() {
-		return money.Money{}, invalid("quantity", "the held quantity has no cost basis")
+	if err != nil {
+		return soldLot{}, err
 	}
 
-	return cost, nil
+	if lot.Cost.IsZero() || lot.Cost.IsNegative() {
+		return soldLot{}, invalid("quantity", "the held quantity has no cost basis")
+	}
+
+	return lot, nil
+}
+
+// averageLot removes the average cost of the holding, and the whole cost basis when the sale
+// sells the whole quantity (A68).
+func averageLot(q money.Money, h Holding) (soldLot, error) {
+	cost, err := stockShare(h.CostBasis, q.Amount(), h.Quantity.Amount())
+	if err != nil {
+		return soldLot{}, err
+	}
+
+	zeroQuantity, err := q.Sub(q)
+	if err != nil {
+		return soldLot{}, err
+	}
+
+	zeroCost, err := cost.Sub(cost)
+
+	return soldLot{Cost: cost, DayQuantity: zeroQuantity, DayCost: zeroCost}, err
 }
 
 // settledOn is the settlement date of the cash posting: set only when it is after the date.

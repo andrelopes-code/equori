@@ -26,6 +26,8 @@ func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {
 	return DefaultReserveYieldPercent(currency)
 }
 
+func (regionDefaults) SeparatesDayTrades(region string) bool { return SeparatesDayTrades(region) }
+
 type pricesAdapter struct{ md MarketData }
 
 func (p pricesAdapter) Convert(

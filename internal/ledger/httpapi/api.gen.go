@@ -2107,10 +2107,16 @@ type Trade struct {
 	CashAccountId openapi_types.UUID `json:"cash_account_id"`
 
 	// Cost Cost basis removed by a sale at average cost.
-	Cost     *Money `json:"cost,omitempty"`
-	Fees     Money  `json:"fees"`
-	Gross    Money  `json:"gross"`
-	Quantity Money  `json:"quantity"`
+	Cost *Money `json:"cost,omitempty"`
+
+	// DayTradeCost Cost of those units, in the base currency (A228 IO12); zero on a purchase.
+	DayTradeCost Money `json:"day_trade_cost"`
+
+	// DayTradeQuantity Units of a sale that close purchases of its date at the same brokerage (A228 IO12); zero on a purchase.
+	DayTradeQuantity Money `json:"day_trade_quantity"`
+	Fees             Money `json:"fees"`
+	Gross            Money `json:"gross"`
+	Quantity         Money `json:"quantity"`
 
 	// SettlementDate The day the cash settles; the transaction date when it settles that day (A228 IO9).
 	SettlementDate openapi_types.Date `json:"settlement_date"`

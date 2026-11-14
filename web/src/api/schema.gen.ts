@@ -5947,6 +5947,10 @@ export interface components {
             income: components["schemas"]["InvestmentIncomeInput"];
         };
         Trade: {
+            /** @description Units of a sale that close purchases of its date at the same brokerage (A228 IO12); zero on a purchase. */
+            day_trade_quantity: components["schemas"]["Money"];
+            /** @description Cost of those units, in the base currency (A228 IO12); zero on a purchase. */
+            day_trade_cost: components["schemas"]["Money"];
             /** Format: uuid */
             account_id: string;
             /** Format: uuid */

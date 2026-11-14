@@ -45,4 +45,5 @@ type PortfolioRealizedResult struct {
 	Result        int64
 	TaxClass      *string
 	Currency      string
+	Kind          string
 }

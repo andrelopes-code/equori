@@ -415,3 +415,33 @@ func TestAddInstrumentSymbols(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 13", ArchiveVersion)
 	}
 }
+
+// Investment operations A228 IO14, ADR 021 V2: a version 14 ledger_trade row gains
+// day_trade_quantity and day_trade_cost as 0.
+func TestAddDayTradeColumns(t *testing.T) {
+	t.Parallel()
+
+	v14 := []ArchiveTable{
+		{Name: "ledger_trade", Rows: [][]byte{[]byte(`{"cost":100,"side":"sell"}`)}},
+		{Name: "ledger_account", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addDayTradeColumns(v14)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"cost":100,"day_trade_cost":0,"day_trade_quantity":0,"side":"sell"}`
+	if string(got[0].Rows[0]) != want {
+		t.Fatalf("ledger_trade row = %s, want %s", got[0].Rows[0], want)
+	}
+
+	if string(got[1].Rows[0]) != `{"id":"a"}` ||
+		string(v14[0].Rows[0]) != `{"cost":100,"side":"sell"}` {
+		t.Fatalf("other table %s, input %s", got[1].Rows[0], v14[0].Rows[0])
+	}
+
+	if ArchiveVersion < 15 {
+		t.Fatalf("ArchiveVersion = %d, want at least 15", ArchiveVersion)
+	}
+}

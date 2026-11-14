@@ -30,7 +30,10 @@ var (
 	)
 	ErrPriceMissing = errors.New("price missing")
 	// ErrLaterSaleExists: the change would alter the cost of a recorded sale (P8 A69).
-	ErrLaterSaleExists = errors.New("a later sale of the security exists")
+	ErrLaterSaleExists = errors.New(
+		"a later sale of the security exists; a day with a purchase after a sale is " +
+			"recorded as a brokerage note",
+	)
 	// ErrInvestmentTransaction: trades and income are corrected through their order (A227 IC13).
 	ErrInvestmentTransaction = errors.New(
 		"a trade or income transaction is corrected through its own order, not through its postings",
@@ -114,6 +117,7 @@ type RegionDefaults interface {
 	ForeignChargeBP(region string) int
 	WithholdingBP(region, incomeType string) int
 	ReserveYieldPercent(currency money.Currency) int64
+	SeparatesDayTrades(region string) bool
 }
 
 // Repository stores the ledger tables; postgres/ implements it.

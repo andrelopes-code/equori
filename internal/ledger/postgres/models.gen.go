@@ -175,18 +175,20 @@ type LedgerStatementFact struct {
 }
 
 type LedgerTrade struct {
-	TransactionID uuid.UUID
-	BooksID       int64
-	AccountID     uuid.UUID
-	CashAccountID uuid.UUID
-	Side          string
-	Quantity      int64
-	UnitPrice     pgtype.Numeric
-	Gross         int64
-	Fees          int64
-	Taxes         int64
-	Cost          *int64
-	Currency      string
+	TransactionID    uuid.UUID
+	BooksID          int64
+	AccountID        uuid.UUID
+	CashAccountID    uuid.UUID
+	Side             string
+	Quantity         int64
+	UnitPrice        pgtype.Numeric
+	Gross            int64
+	Fees             int64
+	Taxes            int64
+	Cost             *int64
+	Currency         string
+	DayTradeQuantity int64
+	DayTradeCost     int64
 }
 
 type LedgerTransaction struct {

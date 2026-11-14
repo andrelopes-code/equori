@@ -182,6 +182,9 @@ func setInvestment(out *Transaction, t domain.Transaction) {
 			Fees:          toMoneyAPI(tr.Fees),
 			Taxes:         toMoneyAPI(tr.Taxes),
 
+			DayTradeQuantity: toMoneyAPI(tr.DayTradeQuantity),
+			DayTradeCost:     toMoneyAPI(tr.DayTradeCost),
+
 			SettlementDate: apiDate(settlementDate(t, tr)),
 		}
 		if tr.Cost != nil {
