@@ -1305,6 +1305,42 @@ type BillingCycleRuleList struct {
 	Items []BillingCycleRule `json:"items"`
 }
 
+// BrokerageNote defines model for BrokerageNote.
+type BrokerageNote struct {
+	Transactions []Transaction `json:"transactions"`
+}
+
+// BrokerageNoteInput defines model for BrokerageNoteInput.
+type BrokerageNoteInput struct {
+	BrokerageId openapi_types.UUID `json:"brokerage_id"`
+
+	// CashAccountId As in TradeInput; absent takes the single paying account of the brokerage.
+	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
+	Date          openapi_types.Date  `json:"date"`
+	Description   *string             `json:"description,omitempty"`
+
+	// Fees Every cost of the note, allocated to the orders in proportion to their gross (A228 IO18).
+	Fees           *Money               `json:"fees,omitempty"`
+	Orders         []BrokerageNoteOrder `json:"orders"`
+	SettlementDate *openapi_types.Date  `json:"settlement_date,omitempty"`
+
+	// Taxes Income tax withheld on the note, allocated to the sales in proportion to their gross.
+	Taxes           *Money              `json:"taxes,omitempty"`
+	TaxesCategoryId *openapi_types.UUID `json:"taxes_category_id,omitempty"`
+}
+
+// BrokerageNoteOrder defines model for BrokerageNoteOrder.
+type BrokerageNoteOrder struct {
+	Instrument string    `json:"instrument"`
+	Quantity   Money     `json:"quantity"`
+	Side       TradeSide `json:"side"`
+
+	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	UnitPrice Rate `json:"unit_price"`
+}
+
 // BulkCategorizeInput defines model for BulkCategorizeInput.
 type BulkCategorizeInput struct {
 	CategoryId openapi_types.UUID `json:"category_id"`
@@ -2430,6 +2466,9 @@ type UnlockAccountJSONRequestBody = UnlockInput
 
 // ResolveBalanceAssertionJSONRequestBody defines body for ResolveBalanceAssertion for application/json ContentType.
 type ResolveBalanceAssertionJSONRequestBody = AssertionResolutionInput
+
+// RecordBrokerageNoteJSONRequestBody defines body for RecordBrokerageNote for application/json ContentType.
+type RecordBrokerageNoteJSONRequestBody = BrokerageNoteInput
 
 // UpdateCardJSONRequestBody defines body for UpdateCard for application/json ContentType.
 type UpdateCardJSONRequestBody = CardUpdate

@@ -30,22 +30,33 @@ func (s *Service) RecordTrade(
 			return err
 		}
 
-		security, cash, err := s.resolveTrade(ctx, r, booksID, &o, base)
-		if err != nil {
-			return err
-		}
-
-		t, err := s.buildTrade(ctx, r, booksID, o, security, cash, base, uuid.Nil)
-		if err != nil {
-			return err
-		}
-
-		created, err = s.insert(ctx, r, t)
+		created, err = s.recordTrade(ctx, r, booksID, o, base)
 
 		return err
 	})
 
 	return created, err
+}
+
+// recordTrade resolves, builds and inserts the transaction of o inside the transaction of r.
+func (s *Service) recordTrade(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o domain.TradeOrder,
+	base money.Currency,
+) (domain.Transaction, error) {
+	security, cash, err := s.resolveTrade(ctx, r, booksID, &o, base)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	t, err := s.buildTrade(ctx, r, booksID, o, security, cash, base, uuid.Nil)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return s.insert(ctx, r, t)
 }
 
 // buildTrade builds the transaction of the resolved order o; the holding of a sale leaves out

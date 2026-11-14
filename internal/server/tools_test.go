@@ -32,6 +32,7 @@ var exclusions = map[string]bool{
 	"-setup":    true, // the base currency changes only before the first transaction, during provisioning
 	"-instance": true, // the instance's outbound sources are chosen by an admin, not handed to a language model (ADR 025)
 	"-owner":    true, // a setting or membership of the book that only its owner changes (HA18)
+	"-screen":   true, // an investment operation recorded on its form; record_investment covers each trade (A228 NG8)
 }
 
 // withoutOperation are the tools that map to no operation, with the reason.

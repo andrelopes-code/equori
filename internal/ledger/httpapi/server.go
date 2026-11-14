@@ -153,6 +153,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 	)
 	mux.HandleFunc("POST "+BaseURL+"/trades", httpserver.HandleCreated(s.errs, s.recordTrade))
 	mux.HandleFunc(
+		"POST "+BaseURL+"/brokerage-notes",
+		httpserver.HandleCreated(s.errs, s.recordBrokerageNote),
+	)
+	mux.HandleFunc(
 		"POST "+BaseURL+"/investment-income",
 		httpserver.HandleCreated(s.errs, s.recordInvestmentIncome),
 	)

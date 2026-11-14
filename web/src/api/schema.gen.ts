@@ -2136,6 +2136,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/brokerage-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record the orders of a brokerage note as trades, its costs allocated by value (A228 IO17). */
+        post: operations["recordBrokerageNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/trades/{id}": {
         parameters: {
             query?: never;
@@ -5935,6 +5952,36 @@ export interface components {
              */
             taxes_category_id?: string;
             description?: string;
+        };
+        BrokerageNoteOrder: {
+            side: components["schemas"]["TradeSide"];
+            instrument: string;
+            quantity: components["schemas"]["Money"];
+            unit_price: components["schemas"]["Rate"];
+        };
+        BrokerageNoteInput: {
+            /** Format: uuid */
+            brokerage_id: string;
+            /**
+             * Format: uuid
+             * @description As in TradeInput; absent takes the single paying account of the brokerage.
+             */
+            cash_account_id?: string;
+            /** Format: date */
+            date: string;
+            /** Format: date */
+            settlement_date?: string;
+            /** @description Every cost of the note, allocated to the orders in proportion to their gross (A228 IO18). */
+            fees?: components["schemas"]["Money"];
+            /** @description Income tax withheld on the note, allocated to the sales in proportion to their gross. */
+            taxes?: components["schemas"]["Money"];
+            /** Format: uuid */
+            taxes_category_id?: string;
+            description?: string;
+            orders: components["schemas"]["BrokerageNoteOrder"][];
+        };
+        BrokerageNote: {
+            transactions: components["schemas"]["Transaction"][];
         };
         TradeCorrectionInput: {
             expected_version: number;
@@ -11084,6 +11131,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordBrokerageNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrokerageNoteInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the first created transaction. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BrokerageNote"];
                 };
             };
             400: components["responses"]["Problem"];
