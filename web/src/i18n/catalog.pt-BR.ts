@@ -687,6 +687,8 @@ export const catalogPtBR: Catalog = {
   "transaction.facts.fees": "Taxas",
   "transaction.facts.taxes": "Impostos",
   "transaction.facts.cost": "Custo pelo preço médio",
+  "transaction.facts.dayTrade": "Day trade",
+  "transaction.facts.dayTradeValue": "{quantity}, custo {cost}",
   "transaction.facts.securityAccount": "Conta do investimento",
   "transaction.facts.cashAccount": "Conta que pagou ou recebeu",
   "transaction.facts.incomeType": "Tipo de rendimento",

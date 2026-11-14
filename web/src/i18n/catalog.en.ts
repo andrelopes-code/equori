@@ -677,6 +677,8 @@ export const catalogEn = {
   "transaction.facts.fees": "Fees",
   "transaction.facts.taxes": "Taxes",
   "transaction.facts.cost": "Cost at average price",
+  "transaction.facts.dayTrade": "Day trade",
+  "transaction.facts.dayTradeValue": "{quantity}, cost {cost}",
   "transaction.facts.securityAccount": "Investment account",
   "transaction.facts.cashAccount": "Account that paid or received",
   "transaction.facts.incomeType": "Income type",

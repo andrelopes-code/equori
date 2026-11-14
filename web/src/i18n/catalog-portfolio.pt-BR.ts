@@ -18,6 +18,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "taxYear.totals.class": "Resultado por classe fiscal",
   "taxYear.month": "Mês",
   "taxYear.taxClass": "Classe fiscal",
+  "taxYear.dayTrade": "Day trade",
   "taxYear.date": "Data",
   "taxYear.instrument": "Investimento",
   "taxYear.account": "Conta",

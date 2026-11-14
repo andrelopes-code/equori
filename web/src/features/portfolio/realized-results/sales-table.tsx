@@ -9,6 +9,8 @@ import {
   TableLoader,
   TableRow,
 } from "@slotted/react/table";
+import { Inline } from "@slotted/react/inline";
+import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
@@ -89,10 +91,18 @@ export function SalesTable({ items, pending }: SalesTableProps) {
                     </AppLink>
                   </TableCell>
                   <TableCell>
-                    <InstrumentName
-                      code={r.instrument}
-                      name={instrumentName(r.instrument)}
-                    />
+                    <Inline align="center" wrap="wrap" gap={4}>
+                      <InstrumentName
+                        code={r.instrument}
+                        name={instrumentName(r.instrument)}
+                      />
+
+                      {r.kind === "day_trade" && (
+                        <Tag size="sm" variant="outline">
+                          {t("taxYear.dayTrade")}
+                        </Tag>
+                      )}
+                    </Inline>
                   </TableCell>
                   <TableCell>
                     {account !== undefined && (

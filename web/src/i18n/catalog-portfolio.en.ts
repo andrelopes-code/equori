@@ -18,6 +18,7 @@ export const portfolioEn = {
   "taxYear.totals.class": "Result by tax class",
   "taxYear.month": "Month",
   "taxYear.taxClass": "Tax class",
+  "taxYear.dayTrade": "Day trade",
   "taxYear.date": "Date",
   "taxYear.instrument": "Investment",
   "taxYear.account": "Account",

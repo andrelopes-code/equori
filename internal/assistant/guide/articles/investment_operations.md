@@ -3,3 +3,5 @@ A buy or sell is recorded on the New transaction screen as a trade of a Brokerag
 The "Settlement" date is optional. Empty, it takes the settlement cycle of the instrument's exchange: two business days on the B3 since 2019-05-27, three before. The position, the cost and the result are dated on the trade; the cash of the institution's view moves on the settlement date, which is the date a bank import matches.
 
 A code of the B3 odd-lot market (the round-lot code with a final F, such as PIBB11F) is the same security: a trade typed with it is recorded on the round-lot investment, and defining an instrument with it is refused with the code to define instead.
+
+In a Brazilian book, a sale first closes the purchases of its date at the same brokerage, in order, then the earlier stock. The units that close a purchase of the same date are a day trade: the transaction page lists them with their cost, and the realized results mark the sale with a "Day trade" tag.

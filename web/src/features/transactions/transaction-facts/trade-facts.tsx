@@ -66,6 +66,17 @@ export function TradeFacts({ trade, date }: TradeFactsProps) {
           {money(trade.cost)}
         </FactItem>
       )}
+      {trade.day_trade_quantity.amount > 0 && (
+        <FactItem label={t("transaction.facts.dayTrade")}>
+          {t("transaction.facts.dayTradeValue", {
+            quantity: formatRate(
+              decimalText(trade.day_trade_quantity.amount, scale(code)),
+              tag,
+            ),
+            cost: money(trade.day_trade_cost),
+          })}
+        </FactItem>
+      )}
       <AccountFact
         label={t("transaction.facts.securityAccount")}
         id={trade.account_id}

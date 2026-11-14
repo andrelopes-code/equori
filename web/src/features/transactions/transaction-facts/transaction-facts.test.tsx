@@ -48,6 +48,8 @@ const buy = transactionFixture({
     fees: brl(500),
     taxes: brl(0),
     settlement_date: "2026-10-10",
+    day_trade_quantity: { amount: 0, currency: "MXRF11" },
+    day_trade_cost: brl(0),
   },
 });
 
@@ -201,6 +203,30 @@ describe("transaction facts", () => {
       f("trade.side.sell"),
     );
     expect(fact(f("transaction.facts.cost"))).toHaveTextContent("R$900.00");
+  });
+
+  it("shows the day trade part of a sell", async () => {
+    const dayTrade = {
+      ...sell,
+      trade: {
+        ...sell.trade,
+        day_trade_quantity: { amount: 40, currency: "MXRF11" },
+        day_trade_cost: brl(36000),
+      },
+    };
+    await renderApp(`/transactions/${txID}`, { fetch: api(dayTrade) });
+    await screen.findByText(f("transaction.facts.side"));
+    expect(fact(f("transaction.facts.dayTrade"))).toHaveTextContent(
+      "40, cost R$360.00",
+    );
+  });
+
+  it("shows no day trade fact when no unit closes a purchase of its date", async () => {
+    await renderApp(`/transactions/${txID}`, { fetch: api(sell) });
+    await screen.findByText(f("transaction.facts.side"));
+    expect(
+      screen.queryByText(f("transaction.facts.dayTrade")),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the income with its type, withheld and net amounts", async () => {
