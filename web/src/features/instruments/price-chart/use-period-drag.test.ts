@@ -3,7 +3,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { usePeriodDrag } from "@/features/instruments/price-chart/use-period-drag";
 
-const press = (stop = vi.fn()) => ({ button: 0, stopPropagation: stop });
+const press = (stop = vi.fn(), clientX = 100) => ({
+  button: 0,
+  clientX,
+  stopPropagation: stop,
+});
+
+const release = (clientX: number) =>
+  window.dispatchEvent(new MouseEvent("pointerup", { clientX }));
 
 describe("usePeriodDrag", () => {
   afterEach(() => {
@@ -38,20 +45,21 @@ describe("usePeriodDrag", () => {
     expect(stop).toHaveBeenCalledTimes(1);
   });
 
-  it("clears the period when the pointer is released on the date it was pressed", () => {
+  it("clears the period when the pointer is released within 4 px of the press", () => {
     const onChange = vi.fn();
     const { result } = renderHook(() => usePeriodDrag(onChange));
 
     act(() => {
       result.current.handleActiveDate("2026-10-01");
       result.current.handlePointerDown(press());
-      window.dispatchEvent(new Event("pointerup"));
+      result.current.handleActiveDate("2026-10-02");
+      release(103);
     });
 
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
-  it("keeps the period when the pointer is released on another date", () => {
+  it("keeps the period when the pointer is released 4 px or more from the press", () => {
     const onChange = vi.fn();
     const { result } = renderHook(() => usePeriodDrag(onChange));
 
@@ -59,7 +67,7 @@ describe("usePeriodDrag", () => {
       result.current.handleActiveDate("2026-10-01");
       result.current.handlePointerDown(press());
       result.current.handleActiveDate("2026-10-11");
-      window.dispatchEvent(new Event("pointerup"));
+      release(104);
     });
 
     expect(onChange).not.toHaveBeenCalledWith(null);
@@ -72,7 +80,10 @@ describe("usePeriodDrag", () => {
     act(() => {
       result.current.handlePointerDown(press());
       result.current.handleActiveDate("2026-10-01");
-      result.current.handlePointerDown({ button: 2, stopPropagation: vi.fn() });
+      result.current.handlePointerDown({
+        ...press(),
+        button: 2,
+      });
       result.current.handleActiveDate("2026-10-11");
     });
 
@@ -81,10 +92,10 @@ describe("usePeriodDrag", () => {
 
   it("clears the period on Escape", () => {
     const onChange = vi.fn();
-    const { result } = renderHook(() => usePeriodDrag(onChange));
+    renderHook(() => usePeriodDrag(onChange));
 
     act(() => {
-      result.current.handleKeyDown({ key: "Escape" });
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
     });
 
     expect(onChange).toHaveBeenCalledWith(null);

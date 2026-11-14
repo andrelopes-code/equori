@@ -115,7 +115,8 @@ export function PriceChart({
       ? reference
       : [
           ...reference,
-          { kind: "band", axis: "x", from: period.from, to: period.to },
+          { kind: "line", axis: "x", value: period.from, tone: "accent" },
+          { kind: "line", axis: "x", value: period.to, tone: "accent" },
         ];
 
   function handleActivePointChange(point: { key: string } | null) {
@@ -152,7 +153,6 @@ export function PriceChart({
       onActivePointChange={handleActivePointChange}
       onPointerDownCapture={handlePointerDown}
       onMouseDownCapture={handlePointerDown}
-      onKeyDown={drag.handleKeyDown}
     />
   );
 }

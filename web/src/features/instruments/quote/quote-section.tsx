@@ -1,3 +1,4 @@
+import { Button } from "@slotted/react/button";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
@@ -74,6 +75,10 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
     setPeriod(null);
   }
 
+  function handleClearPeriod() {
+    setPeriod(null);
+  }
+
   if (series.isError)
     return (
       <QueryError error={series.error} onRetry={() => void series.refetch()} />
@@ -90,7 +95,15 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
             stale={instrument.coverage?.stale ?? false}
           />
         </div>
-        <PriceRangeControl value={range} onChange={handleRangeChange} />
+        <div className={styles.controls}>
+          {period !== null && (
+            <Button size="sm" variant="ghost" onClick={handleClearPeriod}>
+              {t("instrument.period.clear")}
+            </Button>
+          )}
+
+          <PriceRangeControl value={range} onChange={handleRangeChange} />
+        </div>
       </div>
       {(series.isPending || prices.length > 0) && (
         <PriceChart

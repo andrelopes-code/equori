@@ -118,6 +118,7 @@ export const instrumentsEn = {
   "instrument.yearly.from": "from {date}",
   "instrument.yearly.to": "until {date}",
   "instrument.range.label": "Range of the history",
+  "instrument.period.clear": "Clear selection",
   "instrument.range.w1": "1W",
   "instrument.range.m1": "1M",
   "instrument.range.m3": "3M",

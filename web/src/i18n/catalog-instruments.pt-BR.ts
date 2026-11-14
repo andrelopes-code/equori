@@ -119,6 +119,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.yearly.from": "desde {date}",
   "instrument.yearly.to": "até {date}",
   "instrument.range.label": "Intervalo do histórico",
+  "instrument.period.clear": "Limpar seleção",
   "instrument.range.w1": "1S",
   "instrument.range.m1": "1M",
   "instrument.range.m3": "3M",
