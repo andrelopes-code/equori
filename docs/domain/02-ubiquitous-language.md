@@ -184,6 +184,12 @@ classDiagram
 | Cost basis | Custo de aquisição | Total paid for a position, including fees. | 1,512.40 BRL for 150 MXRF11 |
 | Average cost | Preço médio | Cost basis divided by quantity, computed by Receita Federal rules (D1). | 10.0827 BRL |
 | Market value | Valor de mercado | Position quantity × latest price. | |
+| Settlement date | Data de liquidação | Day the cash of a trade moves at the institution; the exchange's cycle unless given (A228 IO7). | D+2 on the B3 |
+| Odd-lot code | Código fracionário | Code of an exchange's odd-lot market that names the round-lot security (A228 IO3). | PIBB11F for PIBB11 |
+| Day trade | Day trade | Units of a sale that close purchases of its date at the same brokerage, in order (IN RFB 1.585/2015, art. 65; A228 IO12). | Buy 50 and sell 50 PETR4 on one day |
+| Brokerage note | Nota de corretagem | Orders of one day at one brokerage with one set of costs, apportioned by gross (A228 IO17). | Two buys, costs 2.51 BRL |
+| Corporate action | Evento corporativo | Split, reverse split or bonus that changes the units of a holding (A228 IO22). | Split 1:10 |
+| Custody transfer | Transferência de custódia | Units moved to another brokerage with their cost (A228 IO29). | 40 PETR4 from XP to another brokerage |
 | Investment income | Provento | Dividend, JCP, interest, coupon or yield, with its tax treatment (D1). | JCP 45.00 gross, 6.75 withheld |
 
 ## 2.10 Planning and views
