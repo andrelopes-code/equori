@@ -173,10 +173,18 @@ func (s *Server) tradeOrderFromInput(
 		UnitPrice:       price,
 		Description:     optString(b.Description),
 	}
+	if err := setTradeCharges(&o, b); err != nil {
+		return domain.TradeOrder{}, err
+	}
+
+	return o, nil
+}
+
+func setTradeCharges(o *domain.TradeOrder, b RecordTradeJSONRequestBody) error {
 	if b.Fees != nil {
 		fees, err := fromMoneyAPI("fees", *b.Fees)
 		if err != nil {
-			return domain.TradeOrder{}, err
+			return err
 		}
 
 		o.Fees = &fees
@@ -185,13 +193,13 @@ func (s *Server) tradeOrderFromInput(
 	if b.Taxes != nil {
 		taxes, err := fromMoneyAPI("taxes", *b.Taxes)
 		if err != nil {
-			return domain.TradeOrder{}, err
+			return err
 		}
 
 		o.Taxes = &taxes
 	}
 
-	return o, nil
+	return nil
 }
 
 func (s *Server) recordInvestmentIncome(

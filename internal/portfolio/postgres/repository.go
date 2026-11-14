@@ -60,6 +60,22 @@ func (r *Repository) insertRebuilt(
 	booksID int64,
 	rb domain.Rebuilt,
 ) error {
+	if err := r.insertRebuiltDays(ctx, booksID, rb); err != nil {
+		return err
+	}
+
+	if err := r.insertRebuiltResults(ctx, booksID, rb); err != nil {
+		return err
+	}
+
+	return r.insertRebuiltIncomes(ctx, booksID, rb)
+}
+
+func (r *Repository) insertRebuiltDays(
+	ctx context.Context,
+	booksID int64,
+	rb domain.Rebuilt,
+) error {
 	for _, d := range rb.Days {
 		if err := r.q.InsertPositionDay(ctx, InsertPositionDayParams{
 			BooksID:    booksID,
@@ -73,6 +89,14 @@ func (r *Repository) insertRebuilt(
 		}
 	}
 
+	return nil
+}
+
+func (r *Repository) insertRebuiltResults(
+	ctx context.Context,
+	booksID int64,
+	rb domain.Rebuilt,
+) error {
 	for _, x := range rb.Results {
 		if err := r.q.InsertRealizedResult(ctx, InsertRealizedResultParams{
 			BooksID:       booksID,
@@ -93,6 +117,14 @@ func (r *Repository) insertRebuilt(
 		}
 	}
 
+	return nil
+}
+
+func (r *Repository) insertRebuiltIncomes(
+	ctx context.Context,
+	booksID int64,
+	rb domain.Rebuilt,
+) error {
 	for _, e := range rb.Incomes {
 		if err := r.q.InsertIncomeEvent(ctx, InsertIncomeEventParams{
 			BooksID:       booksID,

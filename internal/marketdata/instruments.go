@@ -5,14 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"maps"
-	"slices"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
-	"github.com/andrelopes-code/equori/internal/marketdata/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -108,59 +105,6 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	m.requestDefaultHistory(ctx, in)
 
 	return in, nil
-}
-
-// ResolveCode returns the round-lot instrument of an odd-lot code when one is known (A228 IO4),
-// else code.
-func (m *Module) ResolveCode(ctx context.Context, code string) (string, error) {
-	for _, mic := range oddLotExchanges {
-		round, ok := RoundLotCode(mic, code)
-		if !ok {
-			continue
-		}
-
-		in, err := m.Instrument(ctx, round)
-		if errors.Is(err, ErrUnknownInstrument) {
-			continue
-		}
-
-		if err != nil {
-			return "", err
-		}
-
-		if in.Exchange == mic {
-			return round, nil
-		}
-	}
-
-	return code, nil
-}
-
-// SettlementDate returns the date a trade of code made on date settles (A228 IO7).
-func (m *Module) SettlementDate(
-	ctx context.Context,
-	code string,
-	date time.Time,
-) (time.Time, error) {
-	in, err := m.Instrument(ctx, code)
-	if err != nil {
-		return time.Time{}, err
-	}
-
-	days, calendar, ok := SettlementCycle(in.Exchange, date)
-	if !ok {
-		return date, nil
-	}
-
-	settled := date
-	for range days {
-		settled, err = m.Adjust(ctx, calendar, settled.AddDate(0, 0, 1), AdjustFollowing)
-		if err != nil {
-			return time.Time{}, err
-		}
-	}
-
-	return settled, nil
 }
 
 // EditInstrument replaces the name, exchange and subtype of a security, and its type among the
@@ -365,67 +309,6 @@ func (m *Module) updateInstrument(ctx context.Context, in Instrument, replaceSym
 	}
 
 	return tx.Commit(ctx)
-}
-
-// storeSymbols replaces the symbols of code with symbols, inserted in key order.
-func storeSymbols(
-	ctx context.Context,
-	q *postgres.Queries,
-	code money.Currency,
-	symbols map[string]string,
-) error {
-	if err := q.DeleteInstrumentSymbols(ctx, string(code)); err != nil {
-		return fmt.Errorf("delete instrument symbols: %w", err)
-	}
-
-	for _, source := range slices.Sorted(maps.Keys(symbols)) {
-		err := q.InsertInstrumentSymbol(ctx, postgres.InsertInstrumentSymbolParams{
-			Instrument: string(code), Source: source, Symbol: symbols[source],
-		})
-		if err != nil {
-			return fmt.Errorf("insert instrument symbol: %w", err)
-		}
-	}
-
-	return nil
-}
-
-// checkSymbolSources accepts a key only when a registered source of that ID reads a symbol.
-func (m *Module) checkSymbolSources(symbols map[string]string) error {
-	for _, key := range slices.Sorted(maps.Keys(symbols)) {
-		reads := slices.ContainsFunc(m.feeds.Sources, func(src feed.Source) bool {
-			_, ok := src.(feed.SymbolOverride)
-			return ok && src.ID() == key
-		})
-		if !reads {
-			return &domain.FieldError{
-				Field:   "symbols." + key,
-				Message: "is not a source that reads a symbol",
-			}
-		}
-	}
-
-	return nil
-}
-
-// symbolsByInstrument returns the symbols of every instrument: instrument code, then source ID.
-func (m *Module) symbolsByInstrument(ctx context.Context) (map[string]map[string]string, error) {
-	rows, err := m.q.ListInstrumentSymbols(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list instrument symbols: %w", err)
-	}
-
-	out := make(map[string]map[string]string)
-
-	for _, r := range rows {
-		if out[r.Instrument] == nil {
-			out[r.Instrument] = make(map[string]string)
-		}
-
-		out[r.Instrument][r.Source] = r.Symbol
-	}
-
-	return out, nil
 }
 
 func optional(s string) *string {

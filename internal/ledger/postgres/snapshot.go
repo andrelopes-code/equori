@@ -58,18 +58,6 @@ type snapshotIncome struct {
 	Currency      string    `json:"currency"`
 }
 
-type snapshotAction struct {
-	AccountID         uuid.UUID `json:"account_id"`
-	Kind              string    `json:"kind"`
-	RatioFrom         int64     `json:"ratio_from"`
-	RatioTo           int64     `json:"ratio_to"`
-	Held              int64     `json:"held"`
-	Received          int64     `json:"received"`
-	FractionRemainder int64     `json:"fraction_remainder"`
-	UnitCost          *string   `json:"unit_cost,omitempty"`
-	Value             int64     `json:"value"`
-}
-
 type snapshotLink struct {
 	Type   string    `json:"type"`
 	Target uuid.UUID `json:"target"`
@@ -188,29 +176,6 @@ func toSnapshotIncome(in *domain.Income) *snapshotIncome {
 	}
 }
 
-func toSnapshotAction(a *domain.CorporateAction) *snapshotAction {
-	if a == nil {
-		return nil
-	}
-
-	sa := &snapshotAction{
-		AccountID:         a.AccountID,
-		Kind:              string(a.Kind),
-		RatioFrom:         a.RatioFrom,
-		RatioTo:           a.RatioTo,
-		Held:              a.Held.Amount(),
-		Received:          a.Received.Amount(),
-		FractionRemainder: a.FractionRemainder,
-		Value:             a.Value.Amount(),
-	}
-	if a.UnitCost != nil {
-		c := a.UnitCost.String()
-		sa.UnitCost = &c
-	}
-
-	return sa
-}
-
 func (s snapshot) transaction(
 	ctx context.Context,
 	ins app.Instruments,
@@ -291,6 +256,17 @@ func (st *snapshotTrade) trade(ctx context.Context, ins app.Instruments) (*domai
 		UnitPrice:        price,
 	}
 
+	if err := st.setAmounts(tr); err != nil {
+		return nil, err
+	}
+
+	return tr, nil
+}
+
+// setAmounts converts the money fields of st into tr.
+func (st *snapshotTrade) setAmounts(tr *domain.Trade) error {
+	var err error
+
 	cur := money.Currency(st.Currency)
 	for _, x := range []struct {
 		to *money.Money
@@ -300,20 +276,20 @@ func (st *snapshotTrade) trade(ctx context.Context, ins app.Instruments) (*domai
 		{&tr.DayTradeCost, st.DayTradeCost},
 	} {
 		if *x.to, err = money.New(x.v, cur); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
 	if st.Cost != nil {
 		cost, err := money.New(*st.Cost, cur)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		tr.Cost = &cost
 	}
 
-	return tr, nil
+	return nil
 }
 
 func (si *snapshotIncome) income() (*domain.Income, error) {
@@ -340,59 +316,6 @@ func (si *snapshotIncome) income() (*domain.Income, error) {
 		Gross:         gross,
 		Withheld:      withheld,
 	}, nil
-}
-
-func (sa *snapshotAction) action(
-	ctx context.Context,
-	ins app.Instruments,
-	t domain.Transaction,
-) (*domain.CorporateAction, error) {
-	if sa == nil {
-		return nil, nil
-	}
-
-	var instrument money.Currency
-	for _, p := range t.Postings {
-		if p.AccountID == sa.AccountID {
-			instrument = p.Amount.Currency()
-		}
-	}
-
-	held, err := app.AmountOf(ctx, ins, sa.Held, instrument)
-	if err != nil {
-		return nil, err
-	}
-
-	received, err := app.AmountOf(ctx, ins, sa.Received, instrument)
-	if err != nil {
-		return nil, err
-	}
-
-	value, err := money.New(sa.Value, t.BalancingCurrency)
-	if err != nil {
-		return nil, err
-	}
-
-	a := &domain.CorporateAction{
-		AccountID:         sa.AccountID,
-		Kind:              domain.ActionKind(sa.Kind),
-		RatioFrom:         sa.RatioFrom,
-		RatioTo:           sa.RatioTo,
-		Held:              held,
-		Received:          received,
-		FractionRemainder: sa.FractionRemainder,
-		Value:             value,
-	}
-	if sa.UnitCost != nil {
-		rate, err := money.ParseRate(*sa.UnitCost)
-		if err != nil {
-			return nil, err
-		}
-
-		a.UnitCost = &rate
-	}
-
-	return a, nil
 }
 
 func (sp snapshotPosting) posting(

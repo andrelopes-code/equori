@@ -10,7 +10,6 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
-	"github.com/andrelopes-code/equori/internal/platform/money"
 	platformpg "github.com/andrelopes-code/equori/internal/platform/postgres"
 )
 
@@ -214,71 +213,6 @@ func (r *Repository) VoidTransaction(ctx context.Context, t domain.Transaction) 
 			VoidReason: nullString(t.VoidReason),
 		},
 	)
-}
-
-func (r *Repository) toTrade(
-	ctx context.Context,
-	row LedgerTrade,
-	t *domain.Transaction,
-) (domain.Trade, error) {
-	var instrument money.Currency
-	for _, p := range t.Postings {
-		if p.AccountID == row.AccountID {
-			instrument = p.Amount.Currency()
-		}
-	}
-
-	quantity, err := app.AmountOf(ctx, r.ins, row.Quantity, instrument)
-	if err != nil {
-		return domain.Trade{}, fmt.Errorf("trade %s quantity: %w", row.TransactionID, err)
-	}
-
-	price, err := platformpg.RateOf(row.UnitPrice)
-	if err != nil {
-		return domain.Trade{}, err
-	}
-
-	cur := money.Currency(row.Currency)
-
-	amounts := make([]money.Money, 3)
-	for i, v := range []int64{row.Gross, row.Fees, row.Taxes} {
-		if amounts[i], err = money.New(v, cur); err != nil {
-			return domain.Trade{}, err
-		}
-	}
-
-	dayQuantity, err := app.AmountOf(ctx, r.ins, row.DayTradeQuantity, instrument)
-	if err != nil {
-		return domain.Trade{}, fmt.Errorf("trade %s day-trade quantity: %w", row.TransactionID, err)
-	}
-
-	dayCost, err := money.New(row.DayTradeCost, cur)
-	if err != nil {
-		return domain.Trade{}, err
-	}
-
-	trade := domain.Trade{
-		DayTradeQuantity: dayQuantity,
-		DayTradeCost:     dayCost,
-		AccountID:        row.AccountID,
-		CashAccountID:    row.CashAccountID,
-		Side:             domain.Side(row.Side),
-		Quantity:         quantity,
-		UnitPrice:        price,
-		Gross:            amounts[0],
-		Fees:             amounts[1],
-		Taxes:            amounts[2],
-	}
-	if row.Cost != nil {
-		cost, err := money.New(*row.Cost, cur)
-		if err != nil {
-			return domain.Trade{}, err
-		}
-
-		trade.Cost = &cost
-	}
-
-	return trade, nil
 }
 
 func (r *Repository) writeChildren(ctx context.Context, t domain.Transaction) error {

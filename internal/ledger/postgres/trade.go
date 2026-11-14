@@ -1,0 +1,109 @@
+package postgres
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/google/uuid"
+
+	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+	platformpg "github.com/andrelopes-code/equori/internal/platform/postgres"
+)
+
+func (r *Repository) toTrade(
+	ctx context.Context,
+	row LedgerTrade,
+	t *domain.Transaction,
+) (domain.Trade, error) {
+	instrument := postingInstrument(t, row.AccountID)
+
+	quantity, err := app.AmountOf(ctx, r.ins, row.Quantity, instrument)
+	if err != nil {
+		return domain.Trade{}, fmt.Errorf("trade %s quantity: %w", row.TransactionID, err)
+	}
+
+	price, err := platformpg.RateOf(row.UnitPrice)
+	if err != nil {
+		return domain.Trade{}, err
+	}
+
+	cur := money.Currency(row.Currency)
+
+	amounts, err := tradeAmounts(row, cur)
+	if err != nil {
+		return domain.Trade{}, err
+	}
+
+	dayQuantity, err := app.AmountOf(ctx, r.ins, row.DayTradeQuantity, instrument)
+	if err != nil {
+		return domain.Trade{}, fmt.Errorf("trade %s day-trade quantity: %w", row.TransactionID, err)
+	}
+
+	dayCost, err := money.New(row.DayTradeCost, cur)
+	if err != nil {
+		return domain.Trade{}, err
+	}
+
+	cost, err := optionalMoney(row.Cost, cur)
+	if err != nil {
+		return domain.Trade{}, err
+	}
+
+	trade := domain.Trade{
+		DayTradeQuantity: dayQuantity,
+		Cost:             cost,
+		DayTradeCost:     dayCost,
+		AccountID:        row.AccountID,
+		CashAccountID:    row.CashAccountID,
+		Side:             domain.Side(row.Side),
+		Quantity:         quantity,
+		UnitPrice:        price,
+		Gross:            amounts[0],
+		Fees:             amounts[1],
+		Taxes:            amounts[2],
+	}
+
+	return trade, nil
+}
+
+// postingInstrument returns the instrument of the posting of t on accountID.
+func postingInstrument(t *domain.Transaction, accountID uuid.UUID) money.Currency {
+	var instrument money.Currency
+	for _, p := range t.Postings {
+		if p.AccountID == accountID {
+			instrument = p.Amount.Currency()
+		}
+	}
+
+	return instrument
+}
+
+// tradeAmounts returns the gross, fees and taxes of row in cur.
+func tradeAmounts(row LedgerTrade, cur money.Currency) ([]money.Money, error) {
+	var err error
+
+	amounts := make([]money.Money, 3)
+	for i, v := range []int64{row.Gross, row.Fees, row.Taxes} {
+		if amounts[i], err = money.New(v, cur); err != nil {
+			return nil, err
+		}
+	}
+
+	return amounts, nil
+}
+
+// optionalMoney returns nil for a nil v, else v in cur.
+func optionalMoney(v *int64, cur money.Currency) (*money.Money, error) {
+	if v == nil {
+		return nil, nil
+	}
+
+	m, err := money.New(*v, cur)
+	if err != nil {
+		return nil, err
+	}
+
+	return &m, nil
+}
