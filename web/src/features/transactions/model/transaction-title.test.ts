@@ -92,6 +92,22 @@ function income(): Transaction {
   });
 }
 
+function action(kind: "split" | "reverse_split" | "bonus"): Transaction {
+  const units = (amount: number) => ({ amount, currency: "AUVP11" });
+  return tx({
+    corporate_action: {
+      account_id: holdingID,
+      kind,
+      ratio_from: 1,
+      ratio_to: 10,
+      held: units(10),
+      received: units(100),
+      fraction: "0",
+      value: { amount: 0, currency: "BRL" },
+    },
+  });
+}
+
 function translator(catalog: Record<string, string>): TFunction {
   return (key, vars) =>
     Object.entries(vars ?? {}).reduce(
@@ -147,6 +163,19 @@ describe("transactionTitle", () => {
 
   it("returns empty for an income whose holding account is unknown", () => {
     expect(transactionTitle(income(), t)).toBe("");
+  });
+
+  it("titles an action with its event and the currency of the holding account", () => {
+    expect(transactionTitle(action("reverse_split"), t, { accounts })).toBe(
+      "Grupamento de AUVP11",
+    );
+    expect(transactionTitle(action("bonus"), tEn, { accounts })).toBe(
+      "Bonus of AUVP11",
+    );
+  });
+
+  it("returns empty for an action whose holding account is unknown", () => {
+    expect(transactionTitle(action("split"), t)).toBe("");
   });
 
   it("keeps a non-empty description", () => {

@@ -3,6 +3,7 @@ import type {
   BuiltKind,
   EntryKind,
 } from "@/features/transactions/entry-model/entry-kind";
+import { ActionForm } from "@/features/transactions/action-entry/action-form";
 import { ExchangeForm } from "@/features/transactions/exchange-entry/exchange-form";
 import { ForeignForm } from "@/features/transactions/foreign-entry/foreign-form";
 import { IncomeForm } from "@/features/transactions/income-entry/income-form";
@@ -17,7 +18,10 @@ interface BuiltEntryFormProps {
   ready: boolean;
   scale: ((code: string) => number) | null;
   payees: readonly components["schemas"]["Payee"][];
-  entries: Pick<Entries, "trade" | "income" | "note" | "foreign" | "exchange">;
+  entries: Pick<
+    Entries,
+    "trade" | "income" | "note" | "foreign" | "exchange" | "action"
+  >;
   onKind: (kind: EntryKind) => void;
 }
 
@@ -29,7 +33,7 @@ export function BuiltEntryForm({
   entries,
   onKind,
 }: BuiltEntryFormProps) {
-  const { trade, income, note, foreign, exchange } = entries;
+  const { trade, income, note, foreign, exchange, action } = entries;
 
   return (
     <>
@@ -61,6 +65,17 @@ export function BuiltEntryForm({
           onChange={exchange.setDraft}
           view={exchange.view}
           errors={exchange.errors}
+          scale={scale}
+          onKind={onKind}
+        />
+      )}
+
+      {ready && investment === "corporate_action" && scale !== null && (
+        <ActionForm
+          draft={action.draft}
+          onChange={action.setDraft}
+          view={action.view}
+          errors={action.errors}
           scale={scale}
           onKind={onKind}
         />

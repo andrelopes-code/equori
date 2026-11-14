@@ -264,6 +264,40 @@ describe("transaction detail", () => {
     }
   });
 
+  // IO27: an event is voided and recorded again, never corrected.
+  it("offers no correction for a corporate action", async () => {
+    const units = (amount: number) => ({ amount, currency: "MXRF11" });
+    const action = {
+      ...transaction,
+      corporate_action: {
+        account_id: savingsID,
+        kind: "split",
+        ratio_from: 1,
+        ratio_to: 10,
+        held: units(100),
+        received: units(1000),
+        fraction: "0",
+        value: { amount: 0, currency: "BRL" },
+      },
+    };
+    await renderApp(`/transactions/${txID}`, {
+      width: 390,
+      fetch: api([], () => json(200, action)),
+    });
+    const actions = await screen.findByRole("toolbar", {
+      name: catalogEn["detail.actions"],
+    });
+
+    expect(
+      within(actions).getByRole("button", { name: catalogEn["detail.void"] }),
+    ).toBeInTheDocument();
+    expect(
+      within(actions).queryByRole("button", {
+        name: catalogEn["detail.correct"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it("opens the pane beside the list on a desktop", async () => {
     const { router } = await renderApp("/transactions", {
       width: 1280,

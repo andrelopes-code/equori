@@ -21,6 +21,7 @@ export function DetailActions({
   transfer,
   inflow,
   expense,
+  correctable,
   onCorrect,
   onTransfer,
   onReimburse,
@@ -34,6 +35,8 @@ export function DetailActions({
   transfer: boolean;
   inflow: boolean;
   expense: boolean;
+  // False for a record that is voided and recorded again, as a corporate action (A228 IO27).
+  correctable: boolean;
   onCorrect: () => void;
   onTransfer: () => void;
   onReimburse: () => void;
@@ -47,20 +50,22 @@ export function DetailActions({
     if (voided) return null;
     return (
       <Toolbar aria-label={t("detail.actions")} overflow="menu">
-        <ToolbarItem
-          counterpart={
-            <MenuItem onSelect={onCorrect}>{t("detail.correct")}</MenuItem>
-          }
-        >
-          <Button
-            size="sm"
-            variant="outline"
-            tone="secondary"
-            onClick={onCorrect}
+        {correctable && (
+          <ToolbarItem
+            counterpart={
+              <MenuItem onSelect={onCorrect}>{t("detail.correct")}</MenuItem>
+            }
           >
-            {t("detail.correct")}
-          </Button>
-        </ToolbarItem>
+            <Button
+              size="sm"
+              variant="outline"
+              tone="secondary"
+              onClick={onCorrect}
+            >
+              {t("detail.correct")}
+            </Button>
+          </ToolbarItem>
+        )}
         {!transfer && (
           <ToolbarItem
             counterpart={
@@ -144,7 +149,7 @@ export function DetailActions({
           )}
         />
         <MenuContent>
-          {!voided && (
+          {!voided && correctable && (
             <MenuItem onSelect={onCorrect}>{t("detail.correct")}</MenuItem>
           )}
           {!voided && !transfer && (

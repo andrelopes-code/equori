@@ -327,4 +327,54 @@ describe("transaction facts", () => {
       ["100", "61.00"].map((s) => s),
     );
   });
+
+  // S431: the detail of an action shows the event, its proportion and the units after.
+  it("shows the event and the units after of a split", async () => {
+    await renderApp(`/transactions/${txID}`, {
+      fetch: api(action("split", "0")),
+    });
+    await screen.findByText(f("transaction.facts.action"));
+
+    expect(fact(f("transaction.facts.action"))).toHaveTextContent("Split 1:10");
+    expect(fact(f("transaction.facts.received"))).toHaveTextContent("1,000");
+    expect(
+      screen.queryByText(f("transaction.facts.fraction")),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(f("transaction.facts.bonusValue")),
+    ).not.toBeInTheDocument();
+  });
+
+  // S432: the fraction left out and, for S433, the bonus value.
+  it("shows the fraction left out and the value of a bonus", async () => {
+    const bonus = action("bonus", "0.5", 5000);
+    await renderApp(`/transactions/${txID}`, { fetch: api(bonus) });
+    await screen.findByText(f("transaction.facts.action"));
+
+    expect(fact(f("transaction.facts.fraction"))).toHaveTextContent("0.5");
+    expect(fact(f("transaction.facts.bonusValue"))).toHaveTextContent(
+      "R$50.00",
+    );
+  });
 });
+
+function action(
+  kind: "split" | "bonus",
+  fraction: string,
+  value = 0,
+): Record<string, unknown> {
+  return {
+    ...buy,
+    trade: undefined,
+    corporate_action: {
+      account_id: securityID,
+      kind,
+      ratio_from: 1,
+      ratio_to: 10,
+      held: { amount: 100, currency: "MXRF11" },
+      received: { amount: 1000, currency: "MXRF11" },
+      fraction,
+      value: brl(value),
+    },
+  };
+}

@@ -780,3 +780,17 @@ export function transactionSuggestionsQuery(
     staleTime: Infinity,
   });
 }
+
+export function useRecordCorporateAction() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["CorporateActionInput"]) =>
+      unwrap(await api.POST("/corporate-actions", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}

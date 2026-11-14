@@ -1,6 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import type { MessageKey } from "@/i18n/catalog.en";
 import type { TFunction } from "@/i18n/i18n-provider";
+import { actionKindKeys } from "@/features/transactions/action-entry/action-kind";
 import { postingsTitle } from "@/features/transactions/model/transaction-title-kinds";
 
 type Account = components["schemas"]["Account"];
@@ -36,6 +37,17 @@ export function transactionTitle(
     const code = accounts?.get(tx.investment_income.account_id)?.currency;
 
     return code === undefined ? "" : t("transactions.title.income", { code });
+  }
+
+  if (tx.corporate_action !== undefined) {
+    const code = accounts?.get(tx.corporate_action.account_id)?.currency;
+
+    return code === undefined
+      ? ""
+      : t("transactions.title.action", {
+          kind: t(actionKindKeys[tx.corporate_action.kind]),
+          code,
+        });
   }
 
   return accounts === undefined ? "" : postingsTitle(tx, t, accounts);

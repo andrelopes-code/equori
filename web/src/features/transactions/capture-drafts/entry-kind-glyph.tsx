@@ -26,6 +26,13 @@ const PATHS: Record<EntryKind, readonly string[]> = {
     "M2 12h20",
     "M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z",
   ],
+  // Lucide split strokes.
+  corporate_action: [
+    "M16 3h5v5",
+    "M8 3H3v5",
+    "M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3",
+    "m15 9 6-6",
+  ],
   exchange: ["M3 7h14", "m13 3 4 4-4 4", "M21 17H7", "m11 13-4 4 4 4"],
   advanced: [
     "M21 4h-7",

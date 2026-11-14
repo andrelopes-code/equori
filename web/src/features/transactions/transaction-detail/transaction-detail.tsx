@@ -214,6 +214,7 @@ export function TransactionDetail({
                 transfer={row.transfer}
                 inflow={reimbursementState(tx, accounts).inflow}
                 expense={expenseState(tx, accounts).expense}
+                correctable={tx.corporate_action === undefined}
                 onCorrect={() => {
                   void navigate({
                     to: "/transactions/$id/correct",

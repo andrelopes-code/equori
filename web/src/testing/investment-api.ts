@@ -98,6 +98,7 @@ export interface InvestmentOptions {
   incomeTypes?: string[];
   incomeAnswer?: () => Response;
   noteAnswer?: () => Response;
+  actionAnswer?: () => Response;
 }
 
 export function investmentApi(
@@ -195,6 +196,13 @@ export function investmentRoutes(
       return (
         options.noteAnswer ??
         (() => json(201, { transactions: [transactionFixture({ id: txID })] }))
+      )();
+    },
+    "POST /api/v1/corporate-actions": async (req: Request) => {
+      sent.push(await req.json());
+      return (
+        options.actionAnswer ??
+        (() => json(201, transactionFixture({ id: txID })))
       )();
     },
     "POST /api/v1/trades": async (req: Request) => {

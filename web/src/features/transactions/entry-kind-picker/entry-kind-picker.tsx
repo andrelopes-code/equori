@@ -52,6 +52,11 @@ const kinds: {
     hint: "entry.kindHint.brokerage_note",
   },
   {
+    value: "corporate_action",
+    label: "entry.kind.corporate_action",
+    hint: "entry.kindHint.corporate_action",
+  },
+  {
     value: "foreign_purchase",
     label: "entry.kind.foreign_purchase",
     hint: "entry.kindHint.foreign_purchase",

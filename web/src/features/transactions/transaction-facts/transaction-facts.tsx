@@ -8,6 +8,7 @@ import { Inline } from "@slotted/react/inline";
 import { Tag } from "@slotted/react/tag";
 
 import type { components } from "@/api/schema.gen";
+import { ActionFacts } from "@/features/transactions/transaction-facts/action-facts";
 import { IncomeFacts } from "@/features/transactions/transaction-facts/income-facts";
 import { TradeFacts } from "@/features/transactions/transaction-facts/trade-facts";
 import { CategorizationText } from "@/features/transactions/transaction-facts/categorization-text";
@@ -79,6 +80,9 @@ export function TransactionFacts({
       </DescriptionListItem>
       {transaction.trade !== undefined && (
         <TradeFacts trade={transaction.trade} date={transaction.date} />
+      )}
+      {transaction.corporate_action !== undefined && (
+        <ActionFacts action={transaction.corporate_action} />
       )}
       {transaction.investment_income !== undefined && (
         <IncomeFacts income={transaction.investment_income} />
