@@ -174,7 +174,7 @@ Every scenario runs in a Brazilian book (base BRL) unless it says otherwise. Hol
 | D5 | No diagnostic field. |
 | S1 | `recordBrokerageNote`, `recordCorporateAction`, `recordCustodyTransfer`: excluded from tools in `internal/server/tool_exposure_test.go` with the reason "screen only (A228 NG8)". `odd_lot_code` has an HTTP test (S419). |
 | S2 | The three forms are entry kinds of `/transactions/new`, a phone route: one column (forms.md), tested at 390 px and at desktop width. |
-| S3 | `internal/assistant/guide/articles/investments.md` gains the total of an order, odd lots, settlement, day trades, notes, corporate actions and custody transfers. |
+| S3 | The topic `investment_operations` (`internal/assistant/guide/articles/investment_operations.md`, at most 3000 bytes) holds the total of an order, odd lots, settlement, day trades, notes, corporate actions and custody transfers; `web/src/navigation/navigation-map.json` lists it and the tasks of `/transactions/new`. |
 | S4 | The assistant reads trades through existing tools; the new detail fields reach it through `get_transaction`. |
 | X1 | S417 to S437. |
 | X2 | S422 (exchange without a cycle) and S426 (neutral profile, region NZ, base NZD). |
