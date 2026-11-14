@@ -31,13 +31,15 @@
       "transactions_and_postings",
       "transfers",
       "installments",
-      "foreign_purchases_and_exchange"
+      "foreign_purchases_and_exchange",
+      "investment_operations"
     ],
     "screen": "New transaction",
     "tasks": [
       "record an expense, income or transfer",
       "record a card purchase in installments",
-      "record a foreign purchase or a currency exchange"
+      "record a foreign purchase or a currency exchange",
+      "record a buy or sell by unit price or order total, with its settlement date"
     ]
   },
   {

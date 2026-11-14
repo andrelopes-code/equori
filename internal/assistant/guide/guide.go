@@ -29,6 +29,7 @@ var topics = []string{
 	"budgets",
 	"goals",
 	"investments",
+	"investment_operations",
 	"contribution_plan",
 	"reports",
 	"privacy_and_the_assistant",
