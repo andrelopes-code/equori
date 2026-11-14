@@ -137,6 +137,38 @@ func TestCustodyTransferRoles(t *testing.T) {
 	}
 }
 
+// A custody transfer without a description takes the ledger's wording in the book's language
+// (A228 IO31); a description given is kept.
+func TestCustodyTransferDescription(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
+	brokerageB := f.h.Account("Corretora B", "asset", "brokerage", nil)
+	f.h.Account("Corretora B cash", "asset", "brokerage", map[string]any{"parent_id": brokerageB})
+
+	for _, tc := range []struct {
+		name, given, want string
+	}{
+		{"wording", "", "Transferência de custódia de PETR4"},
+		{"given", "Portabilidade", "Portabilidade"},
+	} {
+		body := f.custodyBody(brokerageB, "2026-11-10", 10)
+		if tc.given != "" {
+			body["description"] = tc.given
+		}
+
+		var tx struct {
+			Description string `json:"description"`
+		}
+
+		f.h.MustDo(http.MethodPost, custodyPath, body, http.StatusCreated, &tx)
+
+		if tx.Description != tc.want {
+			t.Errorf("%s: description = %q, want %q", tc.name, tx.Description, tc.want)
+		}
+	}
+}
+
 func (f investFixture) custodyBody(brokerage, date string, quantity int64) map[string]any {
 	return map[string]any{
 		"account_id":   f.petr4,

@@ -3,10 +3,13 @@ package app
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 // RecordCustodyTransfer moves units of a holding to another brokerage with their cost
@@ -84,13 +87,38 @@ func (s *Service) buildCustodyTransfer(
 		return domain.Transaction{}, err
 	}
 
+	description, err := s.custodyDescription(ctx, booksID, o.Description, from.Instrument)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
 	return domain.Transaction{
 		BooksID:           booksID,
 		Date:              o.Date,
-		Description:       o.Description,
+		Description:       description,
 		BalancingCurrency: base,
 		Postings:          postings,
 	}, nil
+}
+
+// custodyDescription is the description given, else the ledger's wording of a custody transfer
+// of code in the book's language (A228 IO31).
+func (s *Service) custodyDescription(
+	ctx context.Context,
+	booksID int64,
+	given string,
+	code money.Currency,
+) (string, error) {
+	if strings.TrimSpace(given) != "" {
+		return given, nil
+	}
+
+	w, err := s.writerFor(ctx, booksID)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf(w.CustodyTransfer, code), nil
 }
 
 // receivingHolding returns the holding of the instrument of from under the brokerage,

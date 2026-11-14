@@ -13,5 +13,6 @@ func Portuguese() Wording {
 		Cancellation:       "Cancelamento: %s",
 		Anticipation:       "Antecipação: %s",
 		Chargeback:         "Contestação: %s",
+		CustodyTransfer:    "Transferência de custódia de %s",
 	}
 }

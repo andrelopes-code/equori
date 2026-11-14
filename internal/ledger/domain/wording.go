@@ -13,4 +13,5 @@ type Wording struct {
 	Cancellation       string // the purchase's description
 	Anticipation       string // the purchase's description
 	Chargeback         string // the purchase's description
+	CustodyTransfer    string // the instrument code
 }

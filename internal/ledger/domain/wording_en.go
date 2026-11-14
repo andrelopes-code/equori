@@ -13,5 +13,6 @@ func English() Wording {
 		Cancellation:       "Cancellation: %s",
 		Anticipation:       "Anticipation: %s",
 		Chargeback:         "Chargeback: %s",
+		CustodyTransfer:    "Custody transfer of %s",
 	}
 }
