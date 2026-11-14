@@ -119,12 +119,14 @@ export function PortfolioReturn({
                     });
                 }}
               />
-              <HelpTip
-                label={t("return.help.about", {
-                  term: t("portfolio.return.whole"),
-                })}
-                text={t("return.help.scope")}
-              />
+              <div className="ml-2">
+                <HelpTip
+                  label={t("return.help.about", {
+                    term: t("portfolio.return.whole"),
+                  })}
+                  text={t("return.help.scope")}
+                />
+              </div>
             </Inline>
             <PeriodControl
               value={{ from, to }}
