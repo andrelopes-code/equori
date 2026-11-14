@@ -54,7 +54,7 @@ func (Jurisdiction) TaxClass(instrumentType, subtype, exchange string) string {
 
 func (Jurisdiction) Treatment(incomeType, taxClass string) string {
 	switch incomeType {
-	case "dividend":
+	case "dividend", "bonus_shares":
 		return "exempt"
 	case "interest", "coupon":
 		if taxClass == "fixed_income_exempt" {

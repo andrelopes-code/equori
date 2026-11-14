@@ -195,6 +195,8 @@ ORDER BY
     tr.transaction_id;
 
 -- name: SecurityIncomes :many
+-- Income events of the accounts: recorded incomes, and bonuses with a value as bonus_shares
+-- (A228 IO28).
 SELECT
     i.transaction_id,
     i.account_id,
@@ -210,9 +212,27 @@ WHERE
     i.books_id = @books_id
     AND i.account_id = ANY (@account_ids::UUID[])
     AND t.voided_at IS NULL
-ORDER BY
+UNION ALL
+SELECT
+    c.transaction_id,
+    c.account_id,
     t.date,
-    i.transaction_id;
+    'bonus_shares' AS income_type,
+    c.value AS gross,
+    0::bigint AS withheld
+FROM
+    ledger_corporate_action c
+    JOIN ledger_transaction t ON t.books_id = c.books_id
+    AND t.id = c.transaction_id
+WHERE
+    c.books_id = @books_id
+    AND c.account_id = ANY (@account_ids::UUID[])
+    AND t.voided_at IS NULL
+    AND c.kind = 'bonus'
+    AND c.value > 0
+ORDER BY
+    date,
+    transaction_id;
 
 -- name: InsertCorporateAction :exec
 INSERT INTO

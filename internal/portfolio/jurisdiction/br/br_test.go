@@ -38,7 +38,8 @@ func TestBR(t *testing.T) {
 
 	for incomeType, want := range map[string]string{
 		"dividend": "exempt", "jcp": "exclusive", "interest": "exclusive",
-		"coupon": "exclusive", "distribution": "exclusive", "other": "",
+		"coupon": "exclusive", "distribution": "exclusive", "bonus_shares": "exempt",
+		"other": "",
 	} {
 		if got := j.Treatment(incomeType, ""); got != want {
 			t.Errorf("Treatment(%q) = %q, want %q", incomeType, got, want)
