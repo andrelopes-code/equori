@@ -2285,7 +2285,9 @@ export const catalogEn = {
   "bulkVoid.description":
     "Voided transactions leave every balance and stay in history. A transaction with reconciled postings is refused.",
   "problem.later_sale_exists":
-    "A later sale of this security depends on this transaction.",
+    "A later sale of this security depends on this transaction. A day with a purchase after a sale is recorded as a brokerage note.",
+  "problem.odd_lot_code":
+    "This code is the odd-lot market of another instrument. Register the round-lot code.",
 } as const;
 
 export type Catalog = { [K in keyof typeof catalogEn]: string };

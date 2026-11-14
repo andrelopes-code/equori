@@ -2310,5 +2310,7 @@ export const catalogPtBR: Catalog = {
   "bulkVoid.description":
     "As transações anuladas saem de todos os saldos e ficam no histórico. Uma transação com partidas conciliadas é recusada.",
   "problem.later_sale_exists":
-    "Uma venda posterior deste ativo depende desta transação.",
+    "Uma venda posterior deste ativo depende desta transação. Um dia com compra depois de venda é registrado como nota de corretagem.",
+  "problem.odd_lot_code":
+    "Este código é do mercado fracionário de outro ativo. Cadastre o código do lote padrão.",
 };
