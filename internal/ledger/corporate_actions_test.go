@@ -65,6 +65,54 @@ func TestS431Split(t *testing.T) {
 	)
 }
 
+func TestRecategorizedBonusKeepsItsDetailInVersions(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	bonuses := f.h.Account("Bonificações", "income", "", nil)
+	other := f.h.Account("Other income", "income", "", nil)
+	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
+	tx := f.recordAction(t, "bonus", "2026-11-10", 10, 11, map[string]any{
+		"unit_cost":   "5.00",
+		"category_id": bonuses,
+	})
+
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/transactions/"+tx.ID+"/categorize",
+		map[string]any{
+			"expected_version": tx.Version,
+			"parts":            []map[string]any{part(other, -5000)},
+		},
+		http.StatusOK,
+		nil,
+	)
+
+	var versions struct {
+		Items []struct {
+			Version     int      `json:"version"`
+			Transaction actionTx `json:"transaction"`
+		} `json:"items"`
+	}
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/transactions/"+tx.ID+"/versions",
+		nil,
+		http.StatusOK,
+		&versions,
+	)
+
+	if len(versions.Items) != 1 || versions.Items[0].Version != 1 {
+		t.Fatalf("versions = %+v", versions)
+	}
+
+	a := versions.Items[0].Transaction.CorporateAction
+	if a == nil || a.Kind != "bonus" || a.RatioFrom != 10 || a.RatioTo != 11 ||
+		a.Held["amount"] != float64(100) || a.Received["amount"] != float64(110) ||
+		a.Value["amount"] != float64(5000) {
+		t.Fatalf("detail = %+v", a)
+	}
+}
+
 func TestS432ReverseSplit(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)

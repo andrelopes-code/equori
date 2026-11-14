@@ -26,6 +26,8 @@ type snapshot struct {
 	Postings          []snapshotPosting `json:"postings"`
 	Trade             *snapshotTrade    `json:"trade,omitempty"`
 	Income            *snapshotIncome   `json:"income,omitempty"`
+
+	CorporateAction *snapshotAction `json:"corporate_action,omitempty"`
 }
 
 // snapshotTrade and snapshotIncome keep the detail a correction replaces (A227 IC8). Amounts
@@ -54,6 +56,18 @@ type snapshotIncome struct {
 	Gross         int64     `json:"gross"`
 	Withheld      int64     `json:"withheld"`
 	Currency      string    `json:"currency"`
+}
+
+type snapshotAction struct {
+	AccountID         uuid.UUID `json:"account_id"`
+	Kind              string    `json:"kind"`
+	RatioFrom         int64     `json:"ratio_from"`
+	RatioTo           int64     `json:"ratio_to"`
+	Held              int64     `json:"held"`
+	Received          int64     `json:"received"`
+	FractionRemainder int64     `json:"fraction_remainder"`
+	UnitCost          *string   `json:"unit_cost,omitempty"`
+	Value             int64     `json:"value"`
 }
 
 type snapshotLink struct {
@@ -126,6 +140,7 @@ func toSnapshot(t domain.Transaction) snapshot {
 	}
 
 	s.Trade, s.Income = toSnapshotTrade(t.Trade), toSnapshotIncome(t.Income)
+	s.CorporateAction = toSnapshotAction(t.CorporateAction)
 
 	return s
 }
@@ -173,6 +188,29 @@ func toSnapshotIncome(in *domain.Income) *snapshotIncome {
 	}
 }
 
+func toSnapshotAction(a *domain.CorporateAction) *snapshotAction {
+	if a == nil {
+		return nil
+	}
+
+	sa := &snapshotAction{
+		AccountID:         a.AccountID,
+		Kind:              string(a.Kind),
+		RatioFrom:         a.RatioFrom,
+		RatioTo:           a.RatioTo,
+		Held:              a.Held.Amount(),
+		Received:          a.Received.Amount(),
+		FractionRemainder: a.FractionRemainder,
+		Value:             a.Value.Amount(),
+	}
+	if a.UnitCost != nil {
+		c := a.UnitCost.String()
+		sa.UnitCost = &c
+	}
+
+	return sa
+}
+
 func (s snapshot) transaction(
 	ctx context.Context,
 	ins app.Instruments,
@@ -215,7 +253,11 @@ func (s snapshot) transaction(
 		return domain.Transaction{}, err
 	}
 
-	t.Income, err = s.Income.income()
+	if t.Income, err = s.Income.income(); err != nil {
+		return domain.Transaction{}, err
+	}
+
+	t.CorporateAction, err = s.CorporateAction.action(ctx, ins, t)
 
 	return t, err
 }
@@ -298,6 +340,59 @@ func (si *snapshotIncome) income() (*domain.Income, error) {
 		Gross:         gross,
 		Withheld:      withheld,
 	}, nil
+}
+
+func (sa *snapshotAction) action(
+	ctx context.Context,
+	ins app.Instruments,
+	t domain.Transaction,
+) (*domain.CorporateAction, error) {
+	if sa == nil {
+		return nil, nil
+	}
+
+	var instrument money.Currency
+	for _, p := range t.Postings {
+		if p.AccountID == sa.AccountID {
+			instrument = p.Amount.Currency()
+		}
+	}
+
+	held, err := app.AmountOf(ctx, ins, sa.Held, instrument)
+	if err != nil {
+		return nil, err
+	}
+
+	received, err := app.AmountOf(ctx, ins, sa.Received, instrument)
+	if err != nil {
+		return nil, err
+	}
+
+	value, err := money.New(sa.Value, t.BalancingCurrency)
+	if err != nil {
+		return nil, err
+	}
+
+	a := &domain.CorporateAction{
+		AccountID:         sa.AccountID,
+		Kind:              domain.ActionKind(sa.Kind),
+		RatioFrom:         sa.RatioFrom,
+		RatioTo:           sa.RatioTo,
+		Held:              held,
+		Received:          received,
+		FractionRemainder: sa.FractionRemainder,
+		Value:             value,
+	}
+	if sa.UnitCost != nil {
+		rate, err := money.ParseRate(*sa.UnitCost)
+		if err != nil {
+			return nil, err
+		}
+
+		a.UnitCost = &rate
+	}
+
+	return a, nil
 }
 
 func (sp snapshotPosting) posting(
