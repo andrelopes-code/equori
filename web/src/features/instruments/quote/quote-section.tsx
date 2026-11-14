@@ -21,10 +21,9 @@ import { RangeFigures } from "@/features/instruments/quote/range-figures";
 import { YearlyChanges } from "@/features/instruments/quote/yearly-changes";
 import { useInstrumentPositions } from "@/features/instruments/model/use-instrument-positions";
 import {
-  type Zoom,
-  pricesInZoom,
-  wholeRange,
-} from "@/features/instruments/model/zoom-window";
+  type Period,
+  pricesBetween,
+} from "@/features/instruments/model/price-period";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/feedback/query-error";
@@ -45,7 +44,7 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
   const today = useToday();
   const [range, setRange] = useState<PriceRange>("m3");
   const [activeDate, setActiveDate] = useState<string | null>(null);
-  const [zoom, setZoom] = useState<Zoom>(wholeRange);
+  const [period, setPeriod] = useState<Period | null>(null);
   const shown = useDeferredValue(range);
   const first = instrument.coverage?.first ?? null;
   const window = rangeWindow(today, shown, first);
@@ -66,13 +65,13 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
 
   const prices = series.data?.items ?? [];
   const reading = quoteReading(recent.data?.items ?? [], prices, activeDate);
-  const stats = priceStats(pricesInZoom(prices, zoom));
+  const stats = priceStats(pricesBetween(prices, period));
   const averageCost = positionTotals(rows, quote)?.averageCost ?? null;
 
-  // The chart of another range starts unzoomed (key={shown}); the selection starts with it.
+  // The chart of another range starts without a period (key={shown}).
   function handleRangeChange(next: PriceRange) {
     setRange(next);
-    setZoom(wholeRange);
+    setPeriod(null);
   }
 
   if (series.isError)
@@ -101,7 +100,8 @@ export function QuoteSection({ instrument, quote }: QuoteSectionProps) {
           loading={series.isPending}
           averageCost={averageCost}
           onActiveDateChange={setActiveDate}
-          onZoomChange={setZoom}
+          period={period}
+          onPeriodChange={setPeriod}
         />
       )}
       {series.data?.items.length === 0 && (

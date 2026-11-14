@@ -9,10 +9,11 @@ import {
   zoomedRange,
 } from "@/features/instruments/price-chart/price-axis";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
+import type { Period } from "@/features/instruments/model/price-period";
 import {
-  type Zoom,
-  wholeRange,
-} from "@/features/instruments/model/zoom-window";
+  type Press,
+  usePeriodDrag,
+} from "@/features/instruments/price-chart/use-period-drag";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 type Price = components["schemas"]["Price"];
@@ -24,9 +25,19 @@ interface PriceChartProps {
   // The average cost of the book's positions, drawn as a reference line (IP6).
   averageCost?: number | null | undefined;
   onActiveDateChange?: ((date: string | null) => void) | undefined;
-  // The window a drag on the plot leaves visible; the page reads its change as the selection's.
-  onZoomChange?: ((zoom: Zoom) => void) | undefined;
+  // The period a drag across the plot selects; drawn as a band, read by the page.
+  period?: Period | null | undefined;
+  onPeriodChange?: ((period: Period | null) => void) | undefined;
 }
+
+interface Zoom {
+  start: number;
+  end: number;
+}
+
+const wholeRange: Zoom = { start: 0, end: 1 };
+
+const ignore = () => undefined;
 
 type Field = "date" | "price" | "manual";
 
@@ -38,12 +49,14 @@ export function PriceChart({
   loading,
   averageCost = null,
   onActiveDateChange,
-  onZoomChange,
+  period = null,
+  onPeriodChange,
 }: PriceChartProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const format = usePriceFormat(quote);
   const [zoom, setZoom] = useState<Zoom>(wholeRange);
+  const drag = usePeriodDrag(onPeriodChange ?? ignore);
   const data = useMemo(
     () =>
       [...prices]
@@ -85,7 +98,7 @@ export function PriceChart({
       : []),
   ];
   // A reference outside the plotted prices would stretch the axis away from the line (IP6).
-  const annotations: ChartAnnotation[] =
+  const reference: ChartAnnotation[] =
     averageCost === null || !within(data, averageCost)
       ? []
       : [
@@ -97,10 +110,22 @@ export function PriceChart({
             tone: "secondary",
           },
         ];
+  const annotations: ChartAnnotation[] =
+    period === null
+      ? reference
+      : [
+          ...reference,
+          { kind: "band", axis: "x", from: period.from, to: period.to },
+        ];
 
-  function handleZoomChange(next: Zoom) {
-    setZoom(next);
-    onZoomChange?.(next);
+  function handleActivePointChange(point: { key: string } | null) {
+    const date = point === null ? null : point.key;
+    onActiveDateChange?.(date);
+    drag.handleActiveDate(date);
+  }
+
+  function handlePointerDown(event: Press) {
+    if (onPeriodChange !== undefined) drag.handlePointerDown(event);
   }
 
   return (
@@ -113,7 +138,7 @@ export function PriceChart({
       legendInteractive={false}
       zoomable
       zoom={zoom}
-      onZoomChange={handleZoomChange}
+      onZoomChange={setZoom}
       data={data}
       series={series}
       annotations={annotations}
@@ -124,9 +149,10 @@ export function PriceChart({
       }}
       y={{ format: format.tick }}
       extendOption={(option) => withTicks(option, ticks)}
-      onActivePointChange={(point) => {
-        onActiveDateChange?.(point === null ? null : point.key);
-      }}
+      onActivePointChange={handleActivePointChange}
+      onPointerDownCapture={handlePointerDown}
+      onMouseDownCapture={handlePointerDown}
+      onKeyDown={drag.handleKeyDown}
     />
   );
 }
