@@ -135,7 +135,7 @@ Every scenario runs in a Brazilian book (base BRL) unless it says otherwise. Hol
 | S423 | IO11 to IO15 | Stock: 100 PETR4 bought 2026-11-03 at 10.00 (cost 1000.00). On 2026-11-10: buy 50 at 12.00, then sell 50 at 13.00. Sale: day-trade quantity 50, day-trade cost 600.00, cost 600.00, result 50.00. Holding after: 100 units, cost 1000.00. One result `day_trade`: quantity 50, cost 600.00, proceeds 650.00, result 50.00. |
 | S424 | IO12, IO13, IO15 | Same stock. On 2026-11-10: buy 30 at 12.00, then sell 50 at 13.00. Day-trade 30, cost 360.00; swing 20 from the stock of 100 at 1000.00, cost 200.00; sale cost 560.00. Results: `day_trade` 30, cost 360.00, proceeds 390.00, result 30.00; `swing` 20, cost 200.00, proceeds 260.00, result 60.00. Holding after: 80 units, 800.00. |
 | S425 | IO12 | No stock. On 2026-11-10: buy 10 at 300.20, buy 5 at 300.40, sell 10 at 301.00 (cost 3002.00, result 8.00), sell 5 at 301.00 (cost 1502.00, result 3.00). Holding after: 0 units, 0.00. |
-| S426 | IO10 | A book of region `PT` (base EUR) with the sequence of S423 on an instrument of `XETR` in EUR: the sale's cost is 533.33 (1600.00 × 50 ÷ 150), result 116.67, one result `swing`, day-trade quantity 0. |
+| S426 | IO10 | A book of the neutral profile (`apitest.Neutral`: region NZ, base NZD) with the sequence of S423 on an instrument of exchange `XNZE` quoted in NZD: the sale's cost is 533.33 (1600.00 × 50 ÷ 150), result 116.67, one result `swing`, day-trade quantity 0. |
 | S427 | IO17 to IO19 | Note of 2026-11-10 at Corretora A, fees 2.51: buy 100 PETR4 at 30.00 (gross 3000.00), buy 50 VALE3 at 60.10 (gross 3005.00). Fee shares: PETR4 1.25, VALE3 1.26 (fractional cents 0.3955 and 0.6045). Two trades; cash −3001.25 and −3006.26, both `settled_on` 2026-11-12. |
 | S428 | IO18 | A note with taxes 0.50 and only buys is 422 `taxes`. |
 | S429 | IO20, IO21 | Stock of S423. Note of 2026-11-10 with orders: sell 100 PETR4 at 13.00, buy 100 PETR4 at 12.00, fees 0. The buy is recorded first; the sale has day-trade 100, cost 1200.00, result 100.00. Holding after: 100 units, 1000.00. |
@@ -177,7 +177,7 @@ Every scenario runs in a Brazilian book (base BRL) unless it says otherwise. Hol
 | S3 | `internal/assistant/guide/articles/investments.md` gains the total of an order, odd lots, settlement, day trades, notes, corporate actions and custody transfers. |
 | S4 | The assistant reads trades through existing tools; the new detail fields reach it through `get_transaction`. |
 | X1 | S417 to S437. |
-| X2 | S422 (exchange without a cycle) and S426 (region PT, base EUR). |
+| X2 | S422 (exchange without a cycle) and S426 (neutral profile, region NZ, base NZD). |
 
 ## 7. Left to the builder
 
