@@ -1825,7 +1825,7 @@ type Problem struct {
 	// record_resolved, already_matched, group_changed, not_categorizable, suggestion_closed, pairing_ambiguous,
 	// integration_unavailable, aggregator_unauthorized, aggregator_unavailable, integration_in_use,
 	// csv_suggestion_unavailable, csv_suggestion_unusable, currency_unsupported, occurrence_closed, transaction_in_use, pause_overlap, schedule_ended,
-	// budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists,
+	// budget_exists, instrument_exists, instrument_in_use, mixed_instruments, price_missing, no_source, later_sale_exists, odd_lot_code,
 	// investment_transaction, system_account, attachment_not_inlineable, archive_too_new, passphrase_invalid, passphrase_required,
 	// contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate,
 	// contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid,

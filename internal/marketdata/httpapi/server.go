@@ -211,6 +211,8 @@ func ToProblem(err error) (problem.Details, bool) {
 			"no_source",
 			"no enabled source quotes the instrument",
 		), true
+	case errors.Is(err, domain.ErrOddLotCode):
+		return problem.New(http.StatusUnprocessableEntity, "odd_lot_code", err.Error()), true
 	case errors.Is(err, domain.ErrInstrumentExists):
 		return problem.New(http.StatusConflict, "instrument_exists", err.Error()), true
 	case errors.Is(err, domain.ErrInstrumentInUse):

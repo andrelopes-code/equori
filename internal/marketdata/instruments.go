@@ -80,6 +80,10 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 		return Instrument{}, err
 	}
 
+	if round, ok := RoundLotCode(in.Exchange, string(in.Code)); ok {
+		return Instrument{}, &domain.OddLotCodeError{Code: string(in.Code), RoundLot: round}
+	}
+
 	if err := m.checkSymbolSources(in.Symbols); err != nil {
 		return Instrument{}, err
 	}
@@ -103,6 +107,32 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	m.requestDefaultHistory(ctx, in)
 
 	return in, nil
+}
+
+// ResolveCode returns the round-lot instrument of an odd-lot code when one is known (A228 IO4),
+// else code.
+func (m *Module) ResolveCode(ctx context.Context, code string) (string, error) {
+	for _, mic := range oddLotExchanges {
+		round, ok := RoundLotCode(mic, code)
+		if !ok {
+			continue
+		}
+
+		in, err := m.Instrument(ctx, round)
+		if errors.Is(err, ErrUnknownInstrument) {
+			continue
+		}
+
+		if err != nil {
+			return "", err
+		}
+
+		if in.Exchange == mic {
+			return round, nil
+		}
+	}
+
+	return code, nil
 }
 
 // EditInstrument replaces the name, exchange and subtype of a security, and its type among the

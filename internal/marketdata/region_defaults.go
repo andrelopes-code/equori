@@ -1,7 +1,9 @@
 package marketdata
 
 import (
+	"regexp"
 	"slices"
+	"time"
 )
 
 // euroArea lists the members of the euro area on 2026-01-01.
@@ -28,6 +30,15 @@ var euroArea = []string{
 	"SI",
 	"SK",
 }
+
+// oddLotExchanges are the exchanges with an odd-lot market whose codes RoundLotCode maps.
+var oddLotExchanges = []string{"BVMF"}
+
+// bvmfOddLot is the B3 odd-lot code: the round-lot code with a final F.
+var bvmfOddLot = regexp.MustCompile(`^([A-Z0-9]{4}[0-9]{1,2})F$`)
+
+// bvmfT2 is the first trade date settled in two business days (CMN Resolution 4,688).
+var bvmfT2 = time.Date(2019, time.May, 27, 0, 0, 0, 0, time.UTC)
 
 // DefaultCalendar returns the calendar a record takes when the owner's region is region.
 func (m *Module) DefaultCalendar(region string) string {
@@ -59,4 +70,33 @@ func SuggestedFeeds(region string) []string {
 	}
 
 	return nil
+}
+
+// RoundLotCode returns the round-lot code of an odd-lot code of exchange mic (A228 IO3).
+func RoundLotCode(mic, code string) (string, bool) {
+	if mic != "BVMF" {
+		return "", false
+	}
+
+	match := bvmfOddLot.FindStringSubmatch(code)
+	if match == nil {
+		return "", false
+	}
+
+	return match[1], true
+}
+
+// SettlementCycle returns the business days after the trade date on which a trade of exchange
+// mic made on date settles, and the calendar that counts them (A228 IO7); ok is false for an
+// exchange without a cycle.
+func SettlementCycle(mic string, date time.Time) (int, string, bool) {
+	if mic != "BVMF" {
+		return 0, "", false
+	}
+
+	if date.Before(bvmfT2) {
+		return 3, CalendarBRBanking, true
+	}
+
+	return 2, CalendarBRBanking, true
 }

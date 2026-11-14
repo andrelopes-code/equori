@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/money"
+	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
 
 type instrumentAPI struct {
@@ -776,5 +778,69 @@ func TestS414TypeFixes(t *testing.T) {
 
 	if again, err := md.SuggestTypeFixes(t.Context()); err != nil || len(again) != 0 {
 		t.Fatalf("after the fix: %v, %v", again, err)
+	}
+}
+
+func TestS419OddLotInstrumentIsRefused(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	r := h.Do(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code":           "PIBB11F",
+		"type":           "etf",
+		"scale":          0,
+		"name":           "PIBB11F",
+		"quote_currency": "BRL",
+		"exchange":       "BVMF",
+	})
+	if r.Status != http.StatusUnprocessableEntity {
+		t.Fatalf("status %d: %s", r.Status, r.Body)
+	}
+
+	var p struct {
+		Code   string `json:"code"`
+		Detail string `json:"detail"`
+	}
+	r.Decode(t, &p)
+
+	if p.Code != "odd_lot_code" ||
+		p.Detail != "PIBB11F is PIBB11 traded in the odd-lot market; register PIBB11" {
+		t.Fatalf("problem = %+v: %s", p, r.Body)
+	}
+
+	h.ExpectProblem(
+		h.Do(http.MethodGet, "/api/v1/instruments/PIBB11F", nil),
+		http.StatusNotFound,
+		"not_found",
+		"",
+	)
+}
+
+func TestResolveCode(t *testing.T) {
+	t.Parallel()
+	md := marketdata.New(pgtest.New(t))
+
+	ctx := t.Context()
+	if _, err := md.DefineInstrument(ctx, marketdata.Instrument{
+		Code:          "PIBB11",
+		Type:          "etf",
+		Name:          "PIBB11",
+		QuoteCurrency: "BRL",
+		Exchange:      "BVMF",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct{ code, want string }{
+		{"PIBB11F", "PIBB11"},
+		{"PIBB11", "PIBB11"},
+		{"VALE3F", "VALE3F"},
+	}
+
+	for _, tc := range tests {
+		got, err := md.ResolveCode(ctx, tc.code)
+		if err != nil || got != tc.want {
+			t.Errorf("ResolveCode(%q) = (%q, %v), want %q", tc.code, got, err, tc.want)
+		}
 	}
 }
