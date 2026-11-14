@@ -118,7 +118,7 @@ A trade records one quantity at one unit price for cash of one brokerage, at ave
 |---|---|---|
 | IO29 | `POST /custody-transfers` (`x-book-role: write`), `CustodyTransferInput`: `account_id` (the holding that gives), `brokerage_id` (the brokerage that receives), `date`, `quantity`, `description`. 201 with the `Transaction`. | |
 | IO30 | The receiving holding is found or created (`findOrCreateHolding`). The same brokerage is 422 `brokerage_id`. A quantity above the holding at the end of `date` is 422 `quantity`. | |
-| IO31 | Postings: the giving holding −q with weight −c; the receiving holding +q with weight +c; c is the whole cost basis when q is the whole holding, else `money.Fraction(C, q, H)`. | A68. Cost travels with the units; no result. |
+| IO31 | Postings: the giving holding −q with weight −c; the receiving holding +q with weight +c; c is the whole cost basis when q is the whole holding, else `money.Fraction(C, q, H)`. An empty description takes the ledger's wording `CustodyTransfer` in the book's language ("Transferência de custódia de PETR4"). | A68. Cost travels with the units; no result. The wording names the transfer without a guess from its postings. |
 
 ## 5. Scenarios
 
