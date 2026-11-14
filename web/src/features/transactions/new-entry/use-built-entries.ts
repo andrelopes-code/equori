@@ -1,5 +1,6 @@
 import type { BuiltKind } from "@/features/transactions/entry-model/entry-kind";
 import { useActionEntry } from "@/features/transactions/action-entry/use-action-entry";
+import { useCustodyEntry } from "@/features/transactions/custody-entry/use-custody-entry";
 import { useExchangeEntry } from "@/features/transactions/exchange-entry/use-exchange-entry";
 import { useForeignEntry } from "@/features/transactions/foreign-entry/use-foreign-entry";
 import { useIncomeEntry } from "@/features/transactions/income-entry/use-income-entry";
@@ -14,6 +15,7 @@ const createdKeys: Record<BuiltKind, MessageKey> = {
   foreign_purchase: "foreignPurchase.created",
   exchange: "exchange.created",
   corporate_action: "action.created",
+  custody_transfer: "custody.created",
 };
 
 // One hook per built kind, all called on every render; `entry` is the one the chosen kind uses.
@@ -28,6 +30,7 @@ export function useBuiltEntries(
   const foreign = useForeignEntry(accountId);
   const exchange = useExchangeEntry(accountId);
   const action = useActionEntry(accountId, brokerageId);
+  const custody = useCustodyEntry(accountId, brokerageId);
 
   const byKind = {
     trade,
@@ -36,6 +39,7 @@ export function useBuiltEntries(
     foreign_purchase: foreign,
     exchange,
     corporate_action: action,
+    custody_transfer: custody,
   };
   const entry = investment === null ? null : byKind[investment];
   const createdKey = investment === null ? null : createdKeys[investment];
@@ -47,6 +51,7 @@ export function useBuiltEntries(
     foreign.discard();
     exchange.discard();
     action.discard();
+    custody.discard();
   };
 
   return {
@@ -56,6 +61,7 @@ export function useBuiltEntries(
     foreign,
     exchange,
     action,
+    custody,
     entry,
     createdKey,
     discardAll,

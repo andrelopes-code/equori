@@ -15,6 +15,7 @@ const closedCashID = "b0000000-0000-4000-8000-000000000005";
 export const taxID = "b0000000-0000-4000-8000-000000000006";
 export const usdBrokerID = "b0000000-0000-4000-8000-000000000008";
 export const secondCashID = "b0000000-0000-4000-8000-000000000009";
+export const clearID = "b0000000-0000-4000-8000-00000000000b";
 
 export const accounts = [
   ...baseAccounts,
@@ -76,6 +77,24 @@ export const usdBrokerage = [
   },
 ];
 
+// A second brokerage with a cash account, the receiver of a custody transfer.
+export const clearBrokerage = [
+  {
+    id: clearID,
+    name: "Clear",
+    class: "asset",
+    kind: "brokerage",
+    currency: "BRL",
+  },
+  {
+    id: "b0000000-0000-4000-8000-00000000000c",
+    name: "Clear cash",
+    class: "asset",
+    currency: "BRL",
+    parent_id: clearID,
+  },
+];
+
 // A second open cash account of the XP brokerage.
 export const secondCash = {
   id: secondCashID,
@@ -99,6 +118,7 @@ export interface InvestmentOptions {
   incomeAnswer?: () => Response;
   noteAnswer?: () => Response;
   actionAnswer?: () => Response;
+  custodyAnswer?: () => Response;
 }
 
 export function investmentApi(
@@ -202,6 +222,13 @@ export function investmentRoutes(
       sent.push(await req.json());
       return (
         options.actionAnswer ??
+        (() => json(201, transactionFixture({ id: txID })))
+      )();
+    },
+    "POST /api/v1/custody-transfers": async (req: Request) => {
+      sent.push(await req.json());
+      return (
+        options.custodyAnswer ??
         (() => json(201, transactionFixture({ id: txID })))
       )();
     },

@@ -16,6 +16,7 @@ export const builtKinds = [
   "foreign_purchase",
   "exchange",
   "corporate_action",
+  "custody_transfer",
 ] as const;
 export type BuiltKind = (typeof builtKinds)[number];
 export type EntryKind = PostingKind | BuiltKind;

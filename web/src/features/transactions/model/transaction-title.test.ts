@@ -19,6 +19,13 @@ const cardID = "card";
 const usdID = "usd";
 const openingID = "opening";
 const adjustmentsID = "adjustments";
+const brokerAID = "broker-a";
+const brokerBID = "broker-b";
+const custodyAID = "custody-a";
+const custodyBID = "custody-b";
+const custodyA2ID = "custody-a2";
+const cashAID = "cash-a";
+const cashBID = "cash-b";
 const foodID = "food";
 const uncategorizedID = "uncategorized";
 
@@ -26,6 +33,16 @@ const accounts = new Map<string, Account>(
   [
     account(holdingID, "Corretora", { currency: "AUVP11" }),
     account(checkingID, "Nubank"),
+    account(brokerAID, "Corretora A", { kind: "brokerage" }),
+    account(brokerBID, "Corretora B", { kind: "brokerage" }),
+    account(custodyAID, "A PETR4", { currency: "PETR4", parent_id: brokerAID }),
+    account(custodyBID, "B PETR4", { currency: "PETR4", parent_id: brokerBID }),
+    account(custodyA2ID, "A PETR4 2", {
+      currency: "PETR4",
+      parent_id: brokerAID,
+    }),
+    account(cashAID, "A cash", { parent_id: brokerAID }),
+    account(cashBID, "B cash", { parent_id: brokerBID }),
     account(savingsID, "Reserva"),
     account(cardID, "Itaú Visa", { class: "liability", kind: "credit_card" }),
     account(usdID, "Wise USD", { currency: "USD" }),
@@ -90,6 +107,17 @@ function income(): Transaction {
       withheld: money,
     },
   });
+}
+
+function moved(from: string, to: string, currency: string): Transaction {
+  const posting = (account_id: string, amount: number) => ({
+    id: `p-${account_id}`,
+    account_id,
+    amount: { amount, currency },
+    weight: { amount, currency: "BRL" },
+  });
+
+  return tx({ postings: [posting(from, -40), posting(to, 40)] });
 }
 
 function action(kind: "split" | "reverse_split" | "bonus"): Transaction {
@@ -176,6 +204,33 @@ describe("transactionTitle", () => {
 
   it("returns empty for an action whose holding account is unknown", () => {
     expect(transactionTitle(action("split"), t)).toBe("");
+  });
+
+  it("titles a movement of one instrument between two brokerages as a custody", () => {
+    const custody = moved(custodyAID, custodyBID, "PETR4");
+
+    expect(transactionTitle(custody, tEn, { accounts })).toBe(
+      "Custody of PETR4",
+    );
+    expect(transactionTitle(custody, t, { accounts })).toBe(
+      "Custódia de PETR4",
+    );
+  });
+
+  it("does not title as a custody a movement inside one brokerage", () => {
+    const inside = moved(custodyAID, custodyA2ID, "PETR4");
+
+    expect(transactionTitle(inside, tEn, { accounts })).not.toBe(
+      "Custody of PETR4",
+    );
+  });
+
+  it("does not title as a custody a transfer of cash between two brokerages", () => {
+    const cash = moved(cashAID, cashBID, "BRL");
+
+    expect(transactionTitle(cash, tEn, { accounts })).not.toBe(
+      "Custody of BRL",
+    );
   });
 
   it("keeps a non-empty description", () => {

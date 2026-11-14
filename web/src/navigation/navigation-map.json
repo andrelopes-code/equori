@@ -41,7 +41,8 @@
       "record a foreign purchase or a currency exchange",
       "record a buy or sell by unit price or order total, with its settlement date",
       "record a brokerage note with costs split by value",
-      "record a split, reverse split or bonus"
+      "record a split, reverse split or bonus",
+      "move a holding to another brokerage with its cost"
     ]
   },
   {

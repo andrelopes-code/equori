@@ -57,6 +57,11 @@ const kinds: {
     hint: "entry.kindHint.corporate_action",
   },
   {
+    value: "custody_transfer",
+    label: "entry.kind.custody_transfer",
+    hint: "entry.kindHint.custody_transfer",
+  },
+  {
     value: "foreign_purchase",
     label: "entry.kind.foreign_purchase",
     hint: "entry.kindHint.foreign_purchase",

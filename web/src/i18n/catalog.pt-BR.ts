@@ -546,6 +546,7 @@ export const catalogPtBR: Catalog = {
   "transactions.title.sell": "Venda de {code}",
   "transactions.title.income": "Provento de {code}",
   "transactions.title.action": "{kind} de {code}",
+  "transactions.title.custody": "Custódia de {code}",
   "transactions.title.transfer": "Transferência de {from} para {to}",
   "transactions.title.cardPayment": "Pagamento da fatura {card}",
   "transactions.title.exchange": "Câmbio de {from} para {to}",
@@ -929,6 +930,14 @@ export const catalogPtBR: Catalog = {
   "action.fraction":
     "Fração de {fraction} fora da posição; registre o valor do leilão quando chegar.",
   "action.created": "Evento corporativo registrado",
+  "entry.kind.custody_transfer": "Transferência de custódia",
+  "entry.kindHint.custody_transfer":
+    "Cotas levadas a outra corretora com o custo.",
+  "custody.to": "Corretora que recebe",
+  "custody.quantity": "Quantidade",
+  "custody.created": "Transferência de custódia registrada",
+  "custody.required.to": "Escolha a corretora que recebe.",
+  "custody.required.quantity": "Informe a quantidade.",
   "note.required.orders": "Adicione ao menos uma ordem.",
   "exchange.required.fromAccount": "Escolha a conta que paga.",
   "exchange.required.toAccount": "Escolha a conta que recebe.",

@@ -781,6 +781,20 @@ export function transactionSuggestionsQuery(
   });
 }
 
+export function useRecordCustodyTransfer() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["CustodyTransferInput"]) =>
+      unwrap(await api.POST("/custody-transfers", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.postings.map((p) => p.account_id),
+      ),
+  });
+}
+
 export function useRecordCorporateAction() {
   const api = useApi();
   const queryClient = useQueryClient();

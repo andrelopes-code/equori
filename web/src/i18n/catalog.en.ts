@@ -535,6 +535,7 @@ export const catalogEn = {
   "transactions.title.sell": "Sale of {code}",
   "transactions.title.income": "Income from {code}",
   "transactions.title.action": "{kind} of {code}",
+  "transactions.title.custody": "Custody of {code}",
   "transactions.title.transfer": "Transfer from {from} to {to}",
   "transactions.title.cardPayment": "Payment of the {card} statement",
   "transactions.title.exchange": "Exchange of {from} for {to}",
@@ -921,6 +922,14 @@ export const catalogEn = {
   "action.fraction":
     "Fraction {fraction} left out; record the auction cash when it arrives.",
   "action.created": "Corporate action recorded",
+  "entry.kind.custody_transfer": "Custody transfer",
+  "entry.kindHint.custody_transfer":
+    "Units moved to another brokerage with their cost.",
+  "custody.to": "Receiving brokerage",
+  "custody.quantity": "Quantity",
+  "custody.created": "Custody transfer recorded",
+  "custody.required.to": "Choose the receiving brokerage.",
+  "custody.required.quantity": "Enter a quantity.",
   "note.required.orders": "Add at least one order.",
   "exchange.required.fromAccount": "Choose the account that pays.",
   "exchange.required.toAccount": "Choose the account that receives.",
