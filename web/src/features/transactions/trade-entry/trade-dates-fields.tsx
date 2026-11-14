@@ -32,8 +32,10 @@ export function TradeDatesFields({
         <DateInput
           name="date"
           value={draft.date}
+          // A settlement chosen for another trade date could fall before the new one; the
+          // exchange's cycle takes over (A228 IO7).
           onChange={(date) => {
-            onChange({ date });
+            onChange({ date, settlementDate: null });
           }}
         />
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}

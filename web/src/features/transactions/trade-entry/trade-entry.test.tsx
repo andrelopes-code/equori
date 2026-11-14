@@ -397,6 +397,31 @@ describe("trade entry", () => {
     expect(sent[0]).toMatchObject({ settlement_date: "2026-11-24" });
   });
 
+  // A228 IO7: a settlement chosen for one trade date does not carry to another; the exchange's
+  // cycle takes over.
+  it("clears the settlement date when the trade date changes", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await type(catalogEn["trade.quantity"], "10");
+    await type(catalogEn["trade.unitPrice"], "10.05");
+    await typeSettlement("11242026");
+    const date = await screen.findByRole("group", {
+      name: new RegExp(`^${catalogEn["entry.date"]}`),
+    });
+    await userEvent.click(
+      within(date).getByRole("spinbutton", { name: "month" }),
+    );
+    await userEvent.keyboard("12");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect((sent[0] as { date: string }).date).toMatch(/^2026-12-/);
+    expect(sent[0]).not.toHaveProperty("settlement_date");
+  });
+
   it("sends no settlement date when the field is empty", async () => {
     const sent: unknown[] = [];
     await renderApp(path, { fetch: api(sent) });
