@@ -66,7 +66,7 @@ export function ReturnView({ report, subject, window, days }: ReturnViewProps) {
   return (
     <Stack gap={4}>
       {verdict !== undefined && (
-        <Inline gap={2} align="center" wrap="nowrap">
+        <Inline gap={0} align="center" wrap="nowrap">
           <Text size="lg" weight="semibold">
             {verdict}
           </Text>

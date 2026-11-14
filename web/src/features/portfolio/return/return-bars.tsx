@@ -56,7 +56,7 @@ export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
         <div key={comparison.key} className={styles.block}>
           <div className={styles.head}>
             <Stack gap={0} className={styles.headText}>
-              <Inline gap={1} align="center" wrap="nowrap">
+              <Inline gap={0} align="center" wrap="nowrap">
                 <Text weight="semibold">{comparison.heading}</Text>
                 <HelpTip
                   label={t("return.help.about", { term: comparison.heading })}

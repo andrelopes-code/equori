@@ -106,7 +106,7 @@ export function PortfolioReturn({
         </SectionTitle>
         <SectionActions>
           <Inline gap={3} align="center" wrap="nowrap">
-            <Inline gap={1} align="center" wrap="nowrap">
+            <Inline gap={0} align="center" wrap="nowrap">
               <ChoiceSelect
                 label={t("portfolio.return.account")}
                 choices={options}
