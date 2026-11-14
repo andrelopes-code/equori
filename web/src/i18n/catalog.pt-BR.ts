@@ -920,6 +920,7 @@ export const catalogPtBR: Catalog = {
   "action.date": "Data ex",
   "action.ratioFrom": "A cada",
   "action.ratioTo": "O acionista fica com",
+  "action.required.ratio": "Informe os dois números da proporção.",
   "action.unitCost": "Custo por nova cota",
   "action.unitCostHelp":
     "Valor do lucro capitalizado por ação, como a companhia anunciou.",

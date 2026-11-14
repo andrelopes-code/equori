@@ -101,8 +101,10 @@ export function useActionEntry(
       problems.brokerage_id = t("entry.required.account");
     if (instrument === null)
       problems.instrument = t("trade.required.securityAccount");
-    if ((draft.ratioFrom ?? 0) <= 0) problems.ratio_from = t("setup.required");
-    if ((draft.ratioTo ?? 0) <= 0) problems.ratio_to = t("setup.required");
+    if ((draft.ratioFrom ?? 0) <= 0)
+      problems.ratio_from = t("action.required.ratio");
+    if ((draft.ratioTo ?? 0) <= 0)
+      problems.ratio_to = t("action.required.ratio");
     if (
       Object.keys(problems).length > 0 ||
       brokerage === undefined ||

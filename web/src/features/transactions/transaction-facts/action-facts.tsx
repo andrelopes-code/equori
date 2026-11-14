@@ -1,7 +1,6 @@
 import type { components } from "@/api/schema.gen";
 import { formatRate } from "@/features/instruments";
 import { useScale } from "@/features/setup";
-import { formatUnits } from "@/features/transactions/action-entry/format-units";
 import { actionKindKeys } from "@/features/transactions/action-entry/action-kind";
 import { FactItem } from "@/features/transactions/transaction-facts/fact-item";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -32,7 +31,7 @@ export function ActionFacts({ action }: ActionFactsProps) {
         })}
       </FactItem>
       <FactItem label={t("transaction.facts.received")}>
-        {formatUnits(received.amount, scale(received.currency), tag)}
+        {fmt.number(received, scale(received.currency))}
       </FactItem>
       {action.fraction !== "0" && (
         <FactItem label={t("transaction.facts.fraction")}>

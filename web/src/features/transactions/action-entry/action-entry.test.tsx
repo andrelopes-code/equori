@@ -150,7 +150,7 @@ describe("corporate action entry", () => {
     await save();
 
     expect(
-      (await screen.findAllByText(catalogEn["setup.required"])).length,
+      (await screen.findAllByText(catalogEn["action.required.ratio"])).length,
     ).toBeGreaterThan(0);
     expect(sent).toHaveLength(0);
   });

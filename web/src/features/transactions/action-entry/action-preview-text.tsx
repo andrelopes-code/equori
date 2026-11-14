@@ -1,14 +1,14 @@
 import { Text } from "@slotted/react/typography";
 
 import type { useActionEntry } from "@/features/transactions/action-entry/use-action-entry";
-import { formatUnits } from "@/features/transactions/action-entry/format-units";
 import { formatRate } from "@/features/instruments";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type View = ReturnType<typeof useActionEntry>["view"];
 
 interface ActionPreviewTextProps {
-  view: Pick<View, "held" | "preview" | "quantityScale">;
+  view: Pick<View, "instrument" | "held" | "preview" | "quantityScale">;
 }
 
 // The units before and after the action and, when one is left over, the fraction that leaves the
@@ -16,11 +16,18 @@ interface ActionPreviewTextProps {
 export function ActionPreviewText({ view }: ActionPreviewTextProps) {
   const t = useT();
   const [locale] = useAppLocale();
-  const { held, preview, quantityScale } = view;
-  if (held === undefined || preview === null || quantityScale === null)
+  const fmt = useMoneyFormat();
+  const { instrument, held, preview, quantityScale } = view;
+  if (
+    instrument === null ||
+    held === undefined ||
+    preview === null ||
+    quantityScale === null
+  )
     return null;
 
-  const units = (amount: number) => formatUnits(amount, quantityScale, locale);
+  const units = (amount: number) =>
+    fmt.number({ amount, currency: instrument }, quantityScale);
 
   return (
     <>

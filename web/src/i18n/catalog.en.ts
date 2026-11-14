@@ -912,6 +912,7 @@ export const catalogEn = {
   "action.date": "First day without the right",
   "action.ratioFrom": "For each",
   "action.ratioTo": "Holder gets",
+  "action.required.ratio": "Enter both numbers of the proportion.",
   "action.unitCost": "Cost per new unit",
   "action.unitCostHelp":
     "Value of capitalized profit per unit, as the company announced.",
