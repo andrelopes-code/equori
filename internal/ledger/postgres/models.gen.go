@@ -79,6 +79,20 @@ type LedgerCard struct {
 	ForeignChargeBp int32
 }
 
+type LedgerCorporateAction struct {
+	TransactionID     uuid.UUID
+	BooksID           int64
+	AccountID         uuid.UUID
+	Kind              string
+	RatioFrom         int64
+	RatioTo           int64
+	Held              int64
+	Received          int64
+	FractionRemainder int64
+	UnitCost          pgtype.Numeric
+	Value             int64
+}
+
 type LedgerCreditLimit struct {
 	BooksID       int64
 	AccountID     uuid.UUID

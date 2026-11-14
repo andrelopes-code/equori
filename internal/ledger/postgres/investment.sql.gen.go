@@ -156,6 +156,68 @@ func (q *Queries) Holding(ctx context.Context, arg HoldingParams) (HoldingRow, e
 	return i, err
 }
 
+const insertCorporateAction = `-- name: InsertCorporateAction :exec
+INSERT INTO
+    ledger_corporate_action (
+        transaction_id,
+        books_id,
+        account_id,
+        kind,
+        ratio_from,
+        ratio_to,
+        held,
+        received,
+        fraction_remainder,
+        unit_cost,
+        value
+    )
+VALUES
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11
+    )
+`
+
+type InsertCorporateActionParams struct {
+	TransactionID     uuid.UUID
+	BooksID           int64
+	AccountID         uuid.UUID
+	Kind              string
+	RatioFrom         int64
+	RatioTo           int64
+	Held              int64
+	Received          int64
+	FractionRemainder int64
+	UnitCost          pgtype.Numeric
+	Value             int64
+}
+
+func (q *Queries) InsertCorporateAction(ctx context.Context, arg InsertCorporateActionParams) error {
+	_, err := q.db.Exec(ctx, insertCorporateAction,
+		arg.TransactionID,
+		arg.BooksID,
+		arg.AccountID,
+		arg.Kind,
+		arg.RatioFrom,
+		arg.RatioTo,
+		arg.Held,
+		arg.Received,
+		arg.FractionRemainder,
+		arg.UnitCost,
+		arg.Value,
+	)
+	return err
+}
+
 const insertInvestmentIncome = `-- name: InsertInvestmentIncome :exec
 INSERT INTO
     ledger_investment_income (
@@ -326,6 +388,53 @@ func (q *Queries) LaterSaleExists(ctx context.Context, arg LaterSaleExistsParams
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const listCorporateActions = `-- name: ListCorporateActions :many
+SELECT
+    transaction_id, books_id, account_id, kind, ratio_from, ratio_to, held, received, fraction_remainder, unit_cost, value
+FROM
+    ledger_corporate_action
+WHERE
+    books_id = $1
+    AND transaction_id = ANY ($2::UUID[])
+`
+
+type ListCorporateActionsParams struct {
+	BooksID        int64
+	TransactionIds []uuid.UUID
+}
+
+func (q *Queries) ListCorporateActions(ctx context.Context, arg ListCorporateActionsParams) ([]LedgerCorporateAction, error) {
+	rows, err := q.db.Query(ctx, listCorporateActions, arg.BooksID, arg.TransactionIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LedgerCorporateAction
+	for rows.Next() {
+		var i LedgerCorporateAction
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.BooksID,
+			&i.AccountID,
+			&i.Kind,
+			&i.RatioFrom,
+			&i.RatioTo,
+			&i.Held,
+			&i.Received,
+			&i.FractionRemainder,
+			&i.UnitCost,
+			&i.Value,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listInvestmentIncome = `-- name: ListInvestmentIncome :many

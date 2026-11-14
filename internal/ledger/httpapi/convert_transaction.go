@@ -161,6 +161,10 @@ func toTransactionAPI(t domain.Transaction) Transaction {
 }
 
 func setInvestment(out *Transaction, t domain.Transaction) {
+	if t.CorporateAction != nil {
+		out.CorporateAction = toCorporateActionAPI(*t.CorporateAction)
+	}
+
 	if in := t.Income; in != nil {
 		out.InvestmentIncome = &InvestmentIncome{
 			AccountId:     in.AccountID,

@@ -445,3 +445,28 @@ func TestAddDayTradeColumns(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 15", ArchiveVersion)
 	}
 }
+
+// Investment operations A228 IO26, ADR 021 V2: version 15 has no ledger_corporate_action rows,
+// so every table carries over unchanged.
+func TestAddCorporateActions(t *testing.T) {
+	t.Parallel()
+
+	v15 := []ArchiveTable{
+		{Name: "ledger_trade", Rows: [][]byte{[]byte(`{"cost":100,"side":"sell"}`)}},
+		{Name: "ledger_account", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addCorporateActions(v15)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 2 || string(got[0].Rows[0]) != `{"cost":100,"side":"sell"}` ||
+		string(got[1].Rows[0]) != `{"id":"a"}` {
+		t.Fatalf("tables = %+v", got)
+	}
+
+	if ArchiveVersion < 16 {
+		t.Fatalf("ArchiveVersion = %d, want at least 16", ArchiveVersion)
+	}
+}

@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 15
+const ArchiveVersion = 16
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -21,7 +21,7 @@ var archiveSteps = []ArchiveStep{
 	addExcludedFromLiquidity, addBudgetReference, addStatementBasis, dropConversations,
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
-	addContributionPlan, addDayTradeColumns,
+	addContributionPlan, addDayTradeColumns, addCorporateActions,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -258,4 +258,16 @@ func addDayTradeColumns(tables []ArchiveTable) ([]ArchiveTable, error) {
 	}
 
 	return withField(tables, "ledger_trade", "day_trade_cost", jsontext.Value("0"))
+}
+
+// addCorporateActions moves a version 15 archive to version 16, which adds
+// ledger_corporate_action (migration 00100). Version 15 has no corporate action rows, so every
+// table carries over unchanged.
+func addCorporateActions(tables []ArchiveTable) ([]ArchiveTable, error) {
+	out := make([]ArchiveTable, len(tables))
+	for i, t := range tables {
+		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
+	}
+
+	return out, nil
 }

@@ -61,6 +61,8 @@ type Transaction struct {
 	// Trade and Income are the D1 detail of a trade or income transaction (P8 A68, A70).
 	Trade  *Trade
 	Income *Income
+	// CorporateAction is the D1 detail of a split, reverse split or bonus (A228 IO26).
+	CorporateAction *CorporateAction
 }
 
 // NewTransaction validates t against the accounts its postings reference and returns

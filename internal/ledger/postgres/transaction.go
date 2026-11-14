@@ -88,6 +88,10 @@ func (r *Repository) InsertTransactionRows(ctx context.Context, t domain.Transac
 		return r.insertTrade(ctx, t)
 	}
 
+	if t.CorporateAction != nil {
+		return r.insertCorporateAction(ctx, t)
+	}
+
 	return nil
 }
 

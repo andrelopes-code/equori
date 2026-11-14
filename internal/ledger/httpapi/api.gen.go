@@ -672,6 +672,27 @@ func (e CategoryIcon) Valid() bool {
 	}
 }
 
+// Defines values for CorporateActionKind.
+const (
+	CorporateActionKindBonus        CorporateActionKind = "bonus"
+	CorporateActionKindReverseSplit CorporateActionKind = "reverse_split"
+	CorporateActionKindSplit        CorporateActionKind = "split"
+)
+
+// Valid indicates whether the value is a known member of the CorporateActionKind enum.
+func (e CorporateActionKind) Valid() bool {
+	switch e {
+	case CorporateActionKindBonus:
+		return true
+	case CorporateActionKindReverseSplit:
+		return true
+	case CorporateActionKindSplit:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for DisputeOutcome.
 const (
 	DisputeOutcomeLost DisputeOutcome = "lost"
@@ -1461,6 +1482,53 @@ type Commitment struct {
 	Month  string `json:"month"`
 }
 
+// CorporateAction defines model for CorporateAction.
+type CorporateAction struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+
+	// Fraction Units left over, a decimal of at most 12 places (A228 IO26, NG2).
+	Fraction  string              `json:"fraction"`
+	Held      Money               `json:"held"`
+	Kind      CorporateActionKind `json:"kind"`
+	RatioFrom int64               `json:"ratio_from"`
+	RatioTo   int64               `json:"ratio_to"`
+	Received  Money               `json:"received"`
+
+	// UnitCost Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	UnitCost *Rate `json:"unit_cost,omitempty"`
+	Value    Money `json:"value"`
+}
+
+// CorporateActionInput defines model for CorporateActionInput.
+type CorporateActionInput struct {
+	// AccountId The holding account. Exactly one of account_id or the pair brokerage_id and instrument.
+	AccountId   *openapi_types.UUID `json:"account_id,omitempty"`
+	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
+
+	// CategoryId Income category of a bonus with unit_cost; required with it.
+	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
+
+	// Date The first day without the right.
+	Date        openapi_types.Date  `json:"date"`
+	Description *string             `json:"description,omitempty"`
+	Instrument  *string             `json:"instrument,omitempty"`
+	Kind        CorporateActionKind `json:"kind"`
+	RatioFrom   int64               `json:"ratio_from"`
+
+	// RatioTo Units received for each ratio_from held.
+	RatioTo int64 `json:"ratio_to"`
+
+	// UnitCost Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	UnitCost *Rate `json:"unit_cost,omitempty"`
+}
+
+// CorporateActionKind defines model for CorporateActionKind.
+type CorporateActionKind string
+
 // CorrectionInput defines model for CorrectionInput.
 type CorrectionInput struct {
 	Date            openapi_types.Date  `json:"date"`
@@ -2210,6 +2278,7 @@ type TradeSide string
 // Transaction defines model for Transaction.
 type Transaction struct {
 	BalancingCurrency string              `json:"balancing_currency"`
+	CorporateAction   *CorporateAction    `json:"corporate_action,omitempty"`
 	Date              openapi_types.Date  `json:"date"`
 	Description       string              `json:"description"`
 	Id                openapi_types.UUID  `json:"id"`
@@ -2472,6 +2541,9 @@ type RecordBrokerageNoteJSONRequestBody = BrokerageNoteInput
 
 // UpdateCardJSONRequestBody defines body for UpdateCard for application/json ContentType.
 type UpdateCardJSONRequestBody = CardUpdate
+
+// RecordCorporateActionJSONRequestBody defines body for RecordCorporateAction for application/json ContentType.
+type RecordCorporateActionJSONRequestBody = CorporateActionInput
 
 // ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
 type ResolveDisputeJSONRequestBody = DisputeResolution

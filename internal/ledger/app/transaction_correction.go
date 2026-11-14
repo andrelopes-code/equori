@@ -25,6 +25,11 @@ func (s *Service) correctIn(
 		return domain.Transaction{}, err
 	}
 
+	// A corporate action is voided and recorded again (A228 IO27).
+	if prev.CorporateAction != nil {
+		return domain.Transaction{}, ErrInvestmentTransaction
+	}
+
 	// A trade or an income is corrected only through its order (A227 IC1).
 	if (prev.Trade == nil) != (next.Trade == nil) || (prev.Income == nil) != (next.Income == nil) {
 		return domain.Transaction{}, ErrInvestmentTransaction

@@ -2136,6 +2136,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/corporate-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a split, a reverse split or a bonus of one holding (A228 IO22). */
+        post: operations["recordCorporateAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/brokerage-notes": {
         parameters: {
             query?: never;
@@ -5993,6 +6010,53 @@ export interface components {
             reason: string;
             income: components["schemas"]["InvestmentIncomeInput"];
         };
+        /** @enum {string} */
+        CorporateActionKind: "split" | "reverse_split" | "bonus";
+        CorporateActionInput: {
+            /**
+             * Format: uuid
+             * @description The holding account. Exactly one of account_id or the pair brokerage_id and instrument.
+             */
+            account_id?: string;
+            /** Format: uuid */
+            brokerage_id?: string;
+            instrument?: string;
+            kind: components["schemas"]["CorporateActionKind"];
+            /**
+             * Format: date
+             * @description The first day without the right.
+             */
+            date: string;
+            /** Format: int64 */
+            ratio_from: number;
+            /**
+             * Format: int64
+             * @description Units received for each ratio_from held.
+             */
+            ratio_to: number;
+            unit_cost?: components["schemas"]["Rate"];
+            /**
+             * Format: uuid
+             * @description Income category of a bonus with unit_cost; required with it.
+             */
+            category_id?: string;
+            description?: string;
+        };
+        CorporateAction: {
+            /** Format: uuid */
+            account_id: string;
+            kind: components["schemas"]["CorporateActionKind"];
+            /** Format: int64 */
+            ratio_from: number;
+            /** Format: int64 */
+            ratio_to: number;
+            held: components["schemas"]["Money"];
+            received: components["schemas"]["Money"];
+            /** @description Units left over, a decimal of at most 12 places (A228 IO26, NG2). */
+            fraction: string;
+            unit_cost?: components["schemas"]["Rate"];
+            value: components["schemas"]["Money"];
+        };
         Trade: {
             /** @description Units of a sale that close purchases of its date at the same brokerage (A228 IO12); zero on a purchase. */
             day_trade_quantity: components["schemas"]["Money"];
@@ -6199,6 +6263,7 @@ export interface components {
             referenced_by?: components["schemas"]["LinkReference"][];
             investment_income?: components["schemas"]["InvestmentIncome"];
             trade?: components["schemas"]["Trade"];
+            corporate_action?: components["schemas"]["CorporateAction"];
             postings: components["schemas"]["Posting"][];
         };
         TransactionPage: {
@@ -11119,6 +11184,36 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["TradeInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordCorporateAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorporateActionInput"];
             };
         };
         responses: {

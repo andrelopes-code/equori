@@ -58,6 +58,10 @@ func (r *Repository) completeAll(
 		return nil, err
 	}
 
+	if err := r.attachCorporateActions(ctx, booksID, ids, byID); err != nil {
+		return nil, err
+	}
+
 	return out, nil
 }
 

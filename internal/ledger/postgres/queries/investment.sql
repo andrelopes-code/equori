@@ -213,3 +213,42 @@ WHERE
 ORDER BY
     t.date,
     i.transaction_id;
+
+-- name: InsertCorporateAction :exec
+INSERT INTO
+    ledger_corporate_action (
+        transaction_id,
+        books_id,
+        account_id,
+        kind,
+        ratio_from,
+        ratio_to,
+        held,
+        received,
+        fraction_remainder,
+        unit_cost,
+        value
+    )
+VALUES
+    (
+        @transaction_id,
+        @books_id,
+        @account_id,
+        @kind,
+        @ratio_from,
+        @ratio_to,
+        @held,
+        @received,
+        @fraction_remainder,
+        @unit_cost,
+        @value
+    );
+
+-- name: ListCorporateActions :many
+SELECT
+    *
+FROM
+    ledger_corporate_action
+WHERE
+    books_id = @books_id
+    AND transaction_id = ANY (@transaction_ids::UUID[]);

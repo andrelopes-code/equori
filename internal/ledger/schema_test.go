@@ -522,3 +522,33 @@ func TestDBRejectsOneRecordOnTwoPostings(t *testing.T) {
 
 	requireViolation(t, link(), uniqueViolation, "ledger_posting_external_record_idx")
 }
+
+// A228 IO26: the detail of a corporate action belongs to a book and keeps a cost to a bonus.
+func TestDBRejectsCorporateActionOutsideItsRules(t *testing.T) {
+	t.Parallel()
+
+	f := newSchemaFixture(t)
+
+	id, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-03-01",
+		postingRow{f.checking, -10000},
+		postingRow{f.food, 10000},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const insert = `
+		INSERT INTO ledger_corporate_action
+			(transaction_id, books_id, account_id, kind, ratio_from, ratio_to, held, received,
+			 fraction_remainder, unit_cost)
+		VALUES ($1, $2, $3, $4, 1, 2, 10, 20, 0, $5)`
+
+	_, err = f.pool.Exec(t.Context(), insert, id, f.booksID+1000, f.checking, "split", nil)
+	requireViolation(t, err, foreignKeyViolation, "ledger_corporate_action")
+
+	_, err = f.pool.Exec(t.Context(), insert, id, f.booksID, f.checking, "split", "5.00")
+	requireViolation(t, err, checkViolation, "ledger_corporate_action")
+}
