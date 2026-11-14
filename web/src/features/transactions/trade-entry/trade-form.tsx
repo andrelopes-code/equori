@@ -11,11 +11,11 @@ import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
 import { TradeAside } from "@/features/transactions/trade-entry/trade-aside";
+import { TradeDatesFields } from "@/features/transactions/trade-entry/trade-dates-fields";
 import { TradeCostFields } from "@/features/transactions/trade-entry/trade-cost-fields";
 import { TradePriceField } from "@/features/transactions/trade-entry/trade-price-field";
 import type { TradeView } from "@/features/transactions/trade-entry/use-trade-entry";
 import { useT } from "@/i18n/i18n-provider";
-import { DateInput } from "@/ui/form-fields/date-input";
 import { FormLayout } from "@/ui/form-layout/form-layout";
 import { MoneyInput } from "@/ui/money/money-input";
 
@@ -103,17 +103,7 @@ export function TradeForm({
         <MissingCashNotice brokerage={view.brokerage} base={base} />
       )}
 
-      <Field required invalid={errors.date !== undefined}>
-        <FieldLabel>{t("entry.date")}</FieldLabel>
-        <DateInput
-          name="date"
-          value={draft.date}
-          onChange={(date) => {
-            set({ date });
-          }}
-        />
-        {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
-      </Field>
+      <TradeDatesFields draft={draft} errors={errors} onChange={set} />
 
       <Field required width="medium" invalid={errors.quantity !== undefined}>
         <FieldLabel>{t("trade.quantity")}</FieldLabel>

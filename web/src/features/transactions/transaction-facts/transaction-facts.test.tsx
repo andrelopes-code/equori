@@ -47,6 +47,7 @@ const buy = transactionFixture({
     gross: brl(102500),
     fees: brl(500),
     taxes: brl(0),
+    settlement_date: "2026-10-10",
   },
 });
 
@@ -171,6 +172,26 @@ describe("transaction facts", () => {
     expect(
       within(fact(f("transaction.facts.cashAccount"))).getByRole("link"),
     ).toHaveAttribute("href", `/accounts/${cashID}`);
+  });
+
+  it("shows the settlement date of a trade that settles after its date", async () => {
+    const later = {
+      ...buy,
+      trade: { ...(buy.trade as object), settlement_date: "2026-10-14" },
+    };
+    await renderApp(`/transactions/${txID}`, { fetch: api(later) });
+    await screen.findByText(f("transaction.facts.side"));
+    expect(fact(f("transaction.facts.settlementDate"))).toHaveTextContent(
+      "10/14/2026",
+    );
+  });
+
+  it("shows no settlement date for a trade that settles on its date", async () => {
+    await renderApp(`/transactions/${txID}`, { fetch: api(buy) });
+    await screen.findByText(f("transaction.facts.side"));
+    expect(
+      screen.queryByText(f("transaction.facts.settlementDate")),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the cost at average price of a sell", async () => {

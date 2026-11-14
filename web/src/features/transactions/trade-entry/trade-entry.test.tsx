@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -36,6 +36,16 @@ async function type(label: string | RegExp, text: string) {
     await screen.findByRole("textbox", { name: label }),
     text,
   );
+}
+
+async function typeSettlement(digits: string) {
+  const field = await screen.findByRole("group", {
+    name: new RegExp(catalogEn["trade.settlementDate"]),
+  });
+  await userEvent.click(
+    within(field).getByRole("spinbutton", { name: "month" }),
+  );
+  await userEvent.keyboard(digits);
 }
 
 beforeEach(() => {
@@ -369,6 +379,36 @@ describe("trade entry", () => {
       expect(sent).toHaveLength(1);
     });
     expect(sent[0]).toMatchObject({ unit_price: "9.40" });
+  });
+
+  // IO6: the settlement date is optional; empty takes the cycle of the exchange.
+  it("sends the settlement date chosen on the form", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await type(catalogEn["trade.quantity"], "10");
+    await type(catalogEn["trade.unitPrice"], "10.05");
+    await typeSettlement("11242026");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ settlement_date: "2026-11-24" });
+  });
+
+  it("sends no settlement date when the field is empty", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await type(catalogEn["trade.quantity"], "10");
+    await type(catalogEn["trade.unitPrice"], "10.05");
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).not.toHaveProperty("settlement_date");
   });
 
   // S417: an order filled at several prices is recorded by its total; the unit price is derived.

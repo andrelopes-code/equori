@@ -259,6 +259,9 @@ export function useTradeEntry(
       cash_account_id: payer.id,
       side: draft.side,
       date: draft.date,
+      ...(draft.settlementDate === null
+        ? {}
+        : { settlement_date: draft.settlementDate }),
       quantity: { amount: draft.quantity, currency: instrument },
       unit_price: rate,
       ...(draft.fees > 0

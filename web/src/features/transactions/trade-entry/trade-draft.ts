@@ -5,6 +5,8 @@ export interface TradeDraft {
   instrument: string | null;
   cashAccountId: string | null;
   date: string;
+  // Null until chosen: the settlement cycle of the exchange stands in (IO7).
+  settlementDate: string | null;
   // Units of the instrument, in its scale.
   quantity: number;
   // Null until typed: the stored price of the date stands in.
@@ -30,6 +32,7 @@ export function emptyTrade(
     instrument: null,
     cashAccountId: null,
     date,
+    settlementDate: null,
     quantity: 0,
     unitPrice: null,
     priceBasis: "unit",

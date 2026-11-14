@@ -23,6 +23,7 @@ export function tradeDraftOf(
     instrument: trade.quantity.currency,
     cashAccountId: trade.cash_account_id,
     date: tx.date,
+    settlementDate: trade.settlement_date,
     quantity: trade.quantity.amount,
     unitPrice: formatRate(trade.unit_price, locale),
     priceBasis: "unit",

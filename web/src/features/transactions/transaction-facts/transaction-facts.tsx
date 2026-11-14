@@ -78,7 +78,7 @@ export function TransactionFacts({
         </DescriptionListDescription>
       </DescriptionListItem>
       {transaction.trade !== undefined && (
-        <TradeFacts trade={transaction.trade} />
+        <TradeFacts trade={transaction.trade} date={transaction.date} />
       )}
       {transaction.investment_income !== undefined && (
         <IncomeFacts income={transaction.investment_income} />

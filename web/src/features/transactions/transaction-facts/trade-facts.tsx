@@ -8,13 +8,19 @@ import { useScale } from "@/features/setup";
 import { AccountFact } from "@/features/transactions/transaction-facts/account-fact";
 import { decimalText } from "@/features/transactions/model/decimal-text";
 import { FactItem } from "@/features/transactions/transaction-facts/fact-item";
+import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/navigation/app-link";
 
 type Trade = components["schemas"]["Trade"];
 
-export function TradeFacts({ trade }: { trade: Trade }) {
+interface TradeFactsProps {
+  trade: Trade;
+  date: string;
+}
+
+export function TradeFacts({ trade, date }: TradeFactsProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -30,6 +36,11 @@ export function TradeFacts({ trade }: { trade: Trade }) {
       <FactItem label={t("transaction.facts.side")}>
         {t(trade.side === "buy" ? "trade.side.buy" : "trade.side.sell")}
       </FactItem>
+      {trade.settlement_date !== date && (
+        <FactItem label={t("transaction.facts.settlementDate")}>
+          {formatDate(trade.settlement_date, tag)}
+        </FactItem>
+      )}
       <FactItem label={t("transaction.facts.instrument")}>
         <AppLink to={{ to: "/instruments/$code", params: { code } }}>
           {code}

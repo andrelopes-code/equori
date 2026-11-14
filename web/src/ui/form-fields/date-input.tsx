@@ -14,6 +14,8 @@ interface DateInputProps {
   value: string;
   onChange: (iso: string) => void;
   shortcuts?: boolean;
+  // An optional date: clearing the field reports the empty text.
+  clearable?: boolean;
   min?: string | undefined;
   max?: string | undefined;
   // The trigger's name where no visible label names the field (a page header).
@@ -28,6 +30,7 @@ export function DateInput({
   value,
   onChange,
   shortcuts = true,
+  clearable = false,
   min,
   max,
   messages,
@@ -52,10 +55,12 @@ export function DateInput({
       {...(minValue === null ? {} : { min: minValue })}
       {...(maxValue === null ? {} : { max: maxValue })}
       messages={messages}
+      clearable={clearable}
       {...(shortcuts
         ? { presets: <DateShortcuts value={value} onChoose={handleChoose} /> }
         : {})}
       onValueChange={(next) => {
+        if (next === null && clearable) onChange("");
         if (next !== null && !Array.isArray(next) && "year" in next) {
           onChange(toISODate(next));
         }
