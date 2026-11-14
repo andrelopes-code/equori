@@ -26,6 +26,7 @@ import {
   isTradeDraft,
 } from "@/features/transactions/trade-entry/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
+import { unitPriceOfTotal } from "@/features/transactions/trade-entry/unit-price-of-total";
 import { shortfall } from "@/features/transactions/brokerage-account/cash-state";
 import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
 import {
@@ -96,7 +97,9 @@ export function useTradeEntry(
   const [draft, setDraft] = useState<TradeDraft>(() => {
     if (correction !== undefined) return correction.start;
     const stored = readStored(draftKey);
-    const start = isTradeDraft(stored) ? stored : emptyTrade(today);
+    const start = isTradeDraft(stored)
+      ? { ...emptyTrade(today), ...stored }
+      : emptyTrade(today);
     return {
       ...start,
       brokerageId: brokerageId ?? start.brokerageId,
@@ -141,8 +144,6 @@ export function useTradeEntry(
   });
   const positions = useQuery(positionsQuery(api, draft.date));
   const storedPrice = prices.data?.[0]?.value;
-  const price = draft.unitPrice ?? storedPrice ?? "";
-  const rate = parseRate(price);
   const held = positionWithout(
     positions.data?.find(
       (p) => p.account_id === state.held?.id && p.instrument === instrument,
@@ -155,6 +156,12 @@ export function useTradeEntry(
   const quantityScale =
     scale === null || instrument === null ? null : scale(instrument);
   const baseScale = scale === null || base === undefined ? null : scale(base);
+  const price = draft.unitPrice ?? storedPrice ?? "";
+  const byTotal = draft.priceBasis === "total";
+  const rate =
+    byTotal && baseScale !== null && quantityScale !== null
+      ? unitPriceOfTotal(draft.total, baseScale, draft.quantity, quantityScale)
+      : parseRate(price);
   const priced =
     rate !== null &&
     draft.quantity > 0 &&
@@ -224,7 +231,10 @@ export function useTradeEntry(
     if (payer === undefined)
       problems.cash_account_id = t("trade.required.cashAccount");
     if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
-    if (rate === null) problems.unit_price = t("trade.required.price");
+    if (rate === null && !byTotal)
+      problems.unit_price = t("trade.required.price");
+    if (rate === null && byTotal && (draft.total === 0 || draft.quantity > 0))
+      problems.unit_price = t("trade.required.total");
     if (limit !== null) problems.quantity = limit;
     if (correction?.reason.trim() === "")
       problems.reason = t("correct.reasonRequired");

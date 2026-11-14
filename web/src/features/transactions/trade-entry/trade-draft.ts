@@ -9,6 +9,10 @@ export interface TradeDraft {
   quantity: number;
   // Null until typed: the stored price of the date stands in.
   unitPrice: string | null;
+  // How the price is given: per unit, or as the total of an order filled at several prices.
+  priceBasis: "unit" | "total";
+  // Minor units of the base currency; read only when the basis is total.
+  total: number;
   // Minor units of the base currency.
   fees: number;
   taxes: number;
@@ -28,6 +32,8 @@ export function emptyTrade(
     date,
     quantity: 0,
     unitPrice: null,
+    priceBasis: "unit",
+    total: 0,
     fees: 0,
     taxes: 0,
     taxesCategoryId: null,

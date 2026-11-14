@@ -25,6 +25,8 @@ export function tradeDraftOf(
     date: tx.date,
     quantity: trade.quantity.amount,
     unitPrice: formatRate(trade.unit_price, locale),
+    priceBasis: "unit",
+    total: 0,
     fees: trade.fees.amount,
     taxes: trade.taxes.amount,
     taxesCategoryId: chosen(taxesAccount(tx.postings, trade), accounts),

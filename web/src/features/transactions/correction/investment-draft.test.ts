@@ -19,6 +19,8 @@ describe("tradeDraftOf", () => {
       date: "2026-10-05",
       quantity: 150,
       unitPrice: "10,05",
+      priceBasis: "unit",
+      total: 0,
       fees: 490,
       taxes: 0,
       taxesCategoryId: null,

@@ -371,6 +371,76 @@ describe("trade entry", () => {
     expect(sent[0]).toMatchObject({ unit_price: "9.40" });
   });
 
+  // S417: an order filled at several prices is recorded by its total; the unit price is derived.
+  it("records an order by its total with the derived unit price", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await type(catalogEn["trade.quantity"], "15");
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["trade.priceBasis.total"],
+      }),
+    );
+    await type(catalogEn["trade.total"], "450400");
+    expect(
+      (await screen.findAllByText(moneyValue(/4,504\.00/))).length,
+    ).toBeGreaterThan(0);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ unit_price: "300.266666666667" });
+  });
+
+  it("refuses an order by its total when the total is empty", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await type(catalogEn["trade.quantity"], "15");
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["trade.priceBasis.total"],
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    expect(
+      await screen.findByText(catalogEn["trade.required.total"]),
+    ).toBeInTheDocument();
+    expect(sent).toHaveLength(0);
+  });
+
+  // A draft stored before the price basis existed opens with the unit price.
+  it("opens a stored draft of the old shape with the unit price basis", async () => {
+    sessionStorage.setItem(
+      "equori.draft.new-trade",
+      JSON.stringify({
+        side: "buy",
+        brokerageId: null,
+        instrument: null,
+        cashAccountId: null,
+        date: "2026-10-17",
+        quantity: 3,
+        unitPrice: "9.50",
+        fees: 0,
+        taxes: 0,
+        taxesCategoryId: null,
+        description: "",
+      }),
+    );
+    await renderApp(path, { fetch: api([]) });
+    expect(
+      await screen.findByRole("radio", {
+        name: catalogEn["trade.priceBasis.unit"],
+      }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole("textbox", { name: catalogEn["trade.unitPrice"] }),
+    ).toHaveValue("9.50");
+  });
+
   // S21, sale: 50 of 150 held at cost 1,512.40 sold at 10.80 with 2.10 in fees leave a result of 33.77.
   it("shows the position, average cost and estimated result of a sale", async () => {
     const sent: unknown[] = [];

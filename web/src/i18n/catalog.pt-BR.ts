@@ -899,6 +899,11 @@ export const catalogPtBR: Catalog = {
   "trade.cashAccountPlaceholder": "Escolha a conta de caixa",
   "trade.quantity": "Quantidade",
   "trade.unitPrice": "Preço unitário",
+  "trade.priceBasis": "Preço informado como",
+  "trade.priceBasis.unit": "Preço unitário",
+  "trade.priceBasis.total": "Total da ordem",
+  "trade.total": "Total da ordem",
+  "trade.totalHelp": "Soma das execuções, antes das taxas.",
   "trade.priceStored": "Preço registrado de {date}: {price}",
   "trade.noStoredPrice": "Sem preço registrado nesta data.",
   "trade.fees": "Taxas",
@@ -927,6 +932,7 @@ export const catalogPtBR: Catalog = {
   "trade.exceedsPosition": "A posição nesta data é {quantity}.",
   "trade.required.price":
     "Informe um preço maior que zero, com até 12 casas decimais.",
+  "trade.required.total": "Informe o total da ordem.",
   "trade.required.quantity": "Informe a quantidade.",
   "trade.required.cashAccount":
     "Escolha uma conta de caixa da mesma corretora.",
