@@ -165,7 +165,7 @@ Every scenario runs in a Brazilian book (base BRL) unless it says otherwise. Hol
 | T1 | Trade, settlement, action and transfer dates are calendar dates of the book; "today" from `platform/clock`. |
 | T2 | The settlement date counts business days of `br_banking` (IO7). |
 | B1 | `ledger_corporate_action` has `books_id`; queries filter by it; a schema test rejects a row without a book. |
-| B2 | The three new operations declare `write`; HTTP tests cover owner, write, read (403) and no membership (404). |
+| B2 | The three new operations declare `write`; HTTP tests cover owner, write, read (403) and a member of another book, whose brokerage or holding is not found in the caller's book (422 `invalid_account`, as `/trades` answers). |
 | B3 | No setting. |
 | D1 | `ledger_corporate_action` is a fact of the export; the archive version rises. |
 | D2 | One migration for `ledger_trade`, `portfolio_realized_result` and `ledger_corporate_action`. |
