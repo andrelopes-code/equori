@@ -6,6 +6,7 @@ import type {
 import { ExchangeForm } from "@/features/transactions/exchange-entry/exchange-form";
 import { ForeignForm } from "@/features/transactions/foreign-entry/foreign-form";
 import { IncomeForm } from "@/features/transactions/income-entry/income-form";
+import { NoteForm } from "@/features/transactions/note-entry/note-form";
 import type { useBuiltEntries } from "@/features/transactions/new-entry/use-built-entries";
 import { TradeForm } from "@/features/transactions/trade-entry/trade-form";
 
@@ -16,7 +17,7 @@ interface BuiltEntryFormProps {
   ready: boolean;
   scale: ((code: string) => number) | null;
   payees: readonly components["schemas"]["Payee"][];
-  entries: Pick<Entries, "trade" | "income" | "foreign" | "exchange">;
+  entries: Pick<Entries, "trade" | "income" | "note" | "foreign" | "exchange">;
   onKind: (kind: EntryKind) => void;
 }
 
@@ -28,7 +29,7 @@ export function BuiltEntryForm({
   entries,
   onKind,
 }: BuiltEntryFormProps) {
-  const { trade, income, foreign, exchange } = entries;
+  const { trade, income, note, foreign, exchange } = entries;
 
   return (
     <>
@@ -38,6 +39,17 @@ export function BuiltEntryForm({
           onChange={income.setDraft}
           view={income.view}
           errors={income.errors}
+          scale={scale}
+          onKind={onKind}
+        />
+      )}
+
+      {ready && investment === "brokerage_note" && scale !== null && (
+        <NoteForm
+          draft={note.draft}
+          onChange={note.setDraft}
+          view={note.view}
+          errors={note.errors}
           scale={scale}
           onKind={onKind}
         />

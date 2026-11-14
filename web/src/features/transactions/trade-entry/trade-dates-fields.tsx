@@ -10,10 +10,12 @@ import { useT } from "@/i18n/i18n-provider";
 import { DateInput } from "@/ui/form-fields/date-input";
 import { FormRow } from "@/ui/form-layout/form-row";
 
+type Dates = Pick<TradeDraft, "date" | "settlementDate">;
+
 interface TradeDatesFieldsProps {
-  draft: TradeDraft;
+  draft: Dates;
   errors: Record<string, string>;
-  onChange: (patch: Partial<TradeDraft>) => void;
+  onChange: (patch: Partial<Dates>) => void;
 }
 
 // The date of the trade and the optional day its cash settles (A228 IO6). Families read: field,

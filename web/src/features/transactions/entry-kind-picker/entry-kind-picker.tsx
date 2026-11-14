@@ -47,6 +47,11 @@ const kinds: {
     hint: "entry.kindHint.investment_income",
   },
   {
+    value: "brokerage_note",
+    label: "entry.kind.brokerage_note",
+    hint: "entry.kindHint.brokerage_note",
+  },
+  {
     value: "foreign_purchase",
     label: "entry.kind.foreign_purchase",
     hint: "entry.kindHint.foreign_purchase",

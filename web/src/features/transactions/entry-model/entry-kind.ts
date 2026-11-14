@@ -12,6 +12,7 @@ export type PostingKind = "expense" | "income" | "transfer" | "advanced";
 export const builtKinds = [
   "trade",
   "investment_income",
+  "brokerage_note",
   "foreign_purchase",
   "exchange",
 ] as const;

@@ -288,4 +288,25 @@ describe("foreign purchase entry", () => {
     expect(within(result).getByText("€0.00")).toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/R\$|BRL|IOF|350/);
   });
+
+  // The toast of "Save and add another" names the kind recorded; "View" opens the transaction.
+  it("announces the recorded entry in a toast that opens it", async () => {
+    const { router } = await renderApp(path, { fetch: api([]) });
+    await fillS16();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.saveAnother"] }),
+    );
+
+    expect(
+      await screen.findAllByText(catalogEn["foreignPurchase.created"]),
+    ).not.toHaveLength(0);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.view"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/transactions/${txID}`);
+    });
+  });
 });

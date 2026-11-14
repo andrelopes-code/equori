@@ -203,4 +203,25 @@ describe("currency exchange entry", () => {
     expect(within(result).getAllByText("€920.00").length).toBeGreaterThan(0);
     expect(container.innerHTML).not.toMatch(/R\$|BRL|IOF/);
   });
+
+  // The toast of "Save and add another" names the kind recorded; "View" opens the transaction.
+  it("announces the recorded entry in a toast that opens it", async () => {
+    const { router } = await renderApp(path, { fetch: api([]) });
+    await fillS17();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.saveAnother"] }),
+    );
+
+    expect(
+      await screen.findAllByText(catalogEn["exchange.created"]),
+    ).not.toHaveLength(0);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.view"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/transactions/${txID}`);
+    });
+  });
 });

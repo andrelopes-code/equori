@@ -188,4 +188,27 @@ describe("investment income entry", () => {
     ).toBeInTheDocument();
     expect(sent).toHaveLength(0);
   });
+
+  // The toast of "Save and add another" names the kind recorded; "View" opens the transaction.
+  it("announces the recorded entry in a toast that opens it", async () => {
+    const { router } = await renderApp(path, { fetch: api([]) });
+    await chooseType(catalogEn["income.type.dividend"]);
+    await type(catalogEn["income.gross"], "1000");
+    await pick(catalogEn["income.category"], "Dividends");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.saveAnother"] }),
+    );
+
+    expect(
+      await screen.findAllByText(catalogEn["income.created"]),
+    ).not.toHaveLength(0);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.view"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/transactions/${txID}`);
+    });
+  });
 });

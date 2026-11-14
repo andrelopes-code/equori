@@ -13,11 +13,12 @@ type Position = components["schemas"]["Position"];
 interface BrokerageFieldsProps {
   brokerages: readonly Account[];
   brokerage: Account | undefined;
-  instrument: string | null;
+  // Absent with `onInstrument`: the investment is asked elsewhere, as on a brokerage note.
+  instrument?: string | null;
   // The position of the chosen investment in the brokerage, drawn under the field of a purchase.
   held?: Position | undefined;
   // The codes the brokerage holds, for a sale; null for a purchase and an income.
-  heldCodes: readonly string[] | null;
+  heldCodes?: readonly string[] | null;
   payers: readonly Account[];
   payer: Account | undefined;
   // Minor units of the base currency; undefined until the balance loads.
@@ -29,7 +30,7 @@ interface BrokerageFieldsProps {
   errors: Record<string, string>;
   scale: (code: string) => number;
   onBrokerage: (id: string) => void;
-  onInstrument: (code: string | null) => void;
+  onInstrument?: (code: string | null) => void;
   onCash: (id: string) => void;
 }
 
@@ -38,9 +39,9 @@ interface BrokerageFieldsProps {
 export function BrokerageFields({
   brokerages,
   brokerage,
-  instrument,
+  instrument = null,
   held,
-  heldCodes,
+  heldCodes = null,
   payers,
   payer,
   balance,
@@ -85,26 +86,28 @@ export function BrokerageFields({
         )}
       </Field>
 
-      <Field required invalid={errors.instrument !== undefined}>
-        <FieldTitle label={t("trade.investment")} />
-        <InstrumentField
-          value={instrument}
-          heldCodes={heldCodes}
-          invalid={errors.instrument !== undefined}
-          onChange={onInstrument}
-        />
-        {held !== undefined && instrument !== null && (
-          <FieldDescription>
-            {t("trade.held", {
-              quantity: fmt.number(held.quantity, scale(instrument)),
-              code: instrument,
-            })}
-          </FieldDescription>
-        )}
-        {errors.instrument !== undefined && (
-          <FieldError>{errors.instrument}</FieldError>
-        )}
-      </Field>
+      {onInstrument !== undefined && (
+        <Field required invalid={errors.instrument !== undefined}>
+          <FieldTitle label={t("trade.investment")} />
+          <InstrumentField
+            value={instrument}
+            heldCodes={heldCodes}
+            invalid={errors.instrument !== undefined}
+            onChange={onInstrument}
+          />
+          {held !== undefined && instrument !== null && (
+            <FieldDescription>
+              {t("trade.held", {
+                quantity: fmt.number(held.quantity, scale(instrument)),
+                code: instrument,
+              })}
+            </FieldDescription>
+          )}
+          {errors.instrument !== undefined && (
+            <FieldError>{errors.instrument}</FieldError>
+          )}
+        </Field>
+      )}
 
       {payers.length === 1 && payer !== undefined && (
         <Field>

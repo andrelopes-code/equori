@@ -496,6 +496,22 @@ export function useRecordTrade() {
   });
 }
 
+export function useRecordBrokerageNote() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: components["schemas"]["BrokerageNoteInput"]) =>
+      unwrap(await api.POST("/brokerage-notes", { body })),
+    onSuccess: (created) =>
+      transactionMutated(
+        queryClient,
+        created.transactions.flatMap((tx) =>
+          tx.postings.map((p) => p.account_id),
+        ),
+      ),
+  });
+}
+
 export function useRecordInvestmentIncome() {
   const api = useApi();
   const queryClient = useQueryClient();

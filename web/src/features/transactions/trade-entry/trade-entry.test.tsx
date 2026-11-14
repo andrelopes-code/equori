@@ -586,6 +586,28 @@ describe("trade entry", () => {
       screen.getByRole("textbox", { name: catalogEn["trade.quantity"] }),
     ).toHaveAttribute("aria-invalid", "true");
   });
+
+  // The toast of "Save and add another" names the kind recorded; "View" opens the transaction.
+  it("announces the recorded entry in a toast that opens it", async () => {
+    const { router } = await renderApp(path, { fetch: api([]) });
+    await type(catalogEn["trade.quantity"], "10");
+    await type(catalogEn["trade.unitPrice"], "10.05");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.saveAnother"] }),
+    );
+
+    expect(
+      await screen.findAllByText(catalogEn["trade.created"]),
+    ).not.toHaveLength(0);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.view"] }),
+    );
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe(`/transactions/${txID}`);
+    });
+  });
 });
 
 // A brokerage of the institution "inter" with no Caixa, its checking account and an account of

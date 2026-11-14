@@ -5,3 +5,5 @@ The "Settlement" date is optional. Empty, it takes the settlement cycle of the i
 A code of the B3 odd-lot market (the round-lot code with a final F, such as PIBB11F) is the same security: a trade typed with it is recorded on the round-lot investment, and defining an instrument with it is refused with the code to define instead.
 
 In a Brazilian book, a sale first closes the purchases of its date at the same brokerage, in order, then the earlier stock. The units that close a purchase of the same date are a day trade: the transaction page lists them with their cost, and the realized results mark the sale with a "Day trade" tag.
+
+A brokerage note records the several orders of one day in one entry. On the new transaction page, the kind "Brokerage note" takes the brokerage, the cash account, the date, one block per order and the costs of the whole note. The costs are split among the orders in proportion to their gross value, and the cents left by the division go one each to the orders with the largest fractions. The withheld income tax is split the same way among the sales. Each order is recorded as a trade of its own.

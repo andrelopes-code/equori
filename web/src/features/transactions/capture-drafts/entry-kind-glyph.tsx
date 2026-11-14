@@ -12,6 +12,14 @@ const PATHS: Record<EntryKind, readonly string[]> = {
     "M12 2v20",
     "M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
   ],
+  // Lucide file-text strokes.
+  brokerage_note: [
+    "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
+    "M14 2v4a2 2 0 0 0 2 2h4",
+    "M10 9H8",
+    "M16 13H8",
+    "M16 17H8",
+  ],
   // Lucide globe and arrow-left-right strokes.
   foreign_purchase: [
     "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z",
