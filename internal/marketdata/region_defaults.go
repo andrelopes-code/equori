@@ -37,7 +37,7 @@ var oddLotExchanges = []string{"BVMF"}
 // bvmfOddLot is the B3 odd-lot code: the round-lot code with a final F.
 var bvmfOddLot = regexp.MustCompile(`^([A-Z0-9]{4}[0-9]{1,2})F$`)
 
-// bvmfT2 is the first trade date settled in two business days (CMN Resolution 4,688).
+// bvmfT2 is the first trade date settled in two business days (B3 project D+2, 2019-05-27).
 var bvmfT2 = time.Date(2019, time.May, 27, 0, 0, 0, 0, time.UTC)
 
 // DefaultCalendar returns the calendar a record takes when the owner's region is region.
