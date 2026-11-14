@@ -108,7 +108,7 @@ func TestRecategorizedBonusKeepsItsDetailInVersions(t *testing.T) {
 	a := versions.Items[0].Transaction.CorporateAction
 	if a == nil || a.Kind != "bonus" || a.RatioFrom != 10 || a.RatioTo != 11 ||
 		a.Held["amount"] != float64(100) || a.Received["amount"] != float64(110) ||
-		a.Value["amount"] != float64(5000) {
+		a.Value["amount"] != float64(5000) || a.UnitCost != "5" {
 		t.Fatalf("detail = %+v", a)
 	}
 }
