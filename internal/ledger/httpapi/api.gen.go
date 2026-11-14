@@ -1552,6 +1552,18 @@ type CreditLimitList struct {
 	Items []CreditLimit `json:"items"`
 }
 
+// CustodyTransferInput defines model for CustodyTransferInput.
+type CustodyTransferInput struct {
+	// AccountId The holding that gives the units.
+	AccountId openapi_types.UUID `json:"account_id"`
+
+	// BrokerageId The brokerage that receives them; its holding of the instrument is created when absent.
+	BrokerageId openapi_types.UUID `json:"brokerage_id"`
+	Date        openapi_types.Date `json:"date"`
+	Description *string            `json:"description,omitempty"`
+	Quantity    Money              `json:"quantity"`
+}
+
 // DeferPostingsInput defines model for DeferPostingsInput.
 type DeferPostingsInput struct {
 	TransactionIds []openapi_types.UUID `json:"transaction_ids"`
@@ -2544,6 +2556,9 @@ type UpdateCardJSONRequestBody = CardUpdate
 
 // RecordCorporateActionJSONRequestBody defines body for RecordCorporateAction for application/json ContentType.
 type RecordCorporateActionJSONRequestBody = CorporateActionInput
+
+// RecordCustodyTransferJSONRequestBody defines body for RecordCustodyTransfer for application/json ContentType.
+type RecordCustodyTransferJSONRequestBody = CustodyTransferInput
 
 // ResolveDisputeJSONRequestBody defines body for ResolveDispute for application/json ContentType.
 type ResolveDisputeJSONRequestBody = DisputeResolution

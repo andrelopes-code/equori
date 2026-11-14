@@ -865,6 +865,38 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /custody-transfers:
+    post:
+      tags: [ledger]
+      operationId: recordCustodyTransfer
+      x-book-role: write
+      summary: Move units of a holding to another brokerage with their cost (A228 IO29).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustodyTransferInput"
+      responses:
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created record.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /brokerage-notes:
     post:
       tags: [ledger]
@@ -3534,6 +3566,27 @@ schemas:
         type: string
         format: uuid
         description: Income category of a bonus with unit_cost; required with it.
+      description:
+        type: string
+        maxLength: 500
+  CustodyTransferInput:
+    type: object
+    additionalProperties: false
+    required: [account_id, brokerage_id, date, quantity]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+        description: The holding that gives the units.
+      brokerage_id:
+        type: string
+        format: uuid
+        description: The brokerage that receives them; its holding of the instrument is created when absent.
+      date:
+        type: string
+        format: date
+      quantity:
+        $ref: "#/components/schemas/Money"
       description:
         type: string
         maxLength: 500

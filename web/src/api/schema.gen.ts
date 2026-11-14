@@ -2153,6 +2153,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/custody-transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move units of a holding to another brokerage with their cost (A228 IO29). */
+        post: operations["recordCustodyTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/brokerage-notes": {
         parameters: {
             query?: never;
@@ -6040,6 +6057,22 @@ export interface components {
              * @description Income category of a bonus with unit_cost; required with it.
              */
             category_id?: string;
+            description?: string;
+        };
+        CustodyTransferInput: {
+            /**
+             * Format: uuid
+             * @description The holding that gives the units.
+             */
+            account_id: string;
+            /**
+             * Format: uuid
+             * @description The brokerage that receives them; its holding of the instrument is created when absent.
+             */
+            brokerage_id: string;
+            /** Format: date */
+            date: string;
+            quantity: components["schemas"]["Money"];
             description?: string;
         };
         CorporateAction: {
@@ -11214,6 +11247,36 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CorporateActionInput"];
+            };
+        };
+        responses: {
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created record. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    recordCustodyTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustodyTransferInput"];
             };
         };
         responses: {
