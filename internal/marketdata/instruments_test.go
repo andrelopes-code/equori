@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/marketdata"
@@ -841,6 +842,43 @@ func TestResolveCode(t *testing.T) {
 		got, err := md.ResolveCode(ctx, tc.code)
 		if err != nil || got != tc.want {
 			t.Errorf("ResolveCode(%q) = (%q, %v), want %q", tc.code, got, err, tc.want)
+		}
+	}
+}
+
+func TestSettlementDate(t *testing.T) {
+	t.Parallel()
+	md := marketdata.New(pgtest.New(t))
+
+	ctx := t.Context()
+	for code, exchange := range map[string]string{"PETR4": "BVMF", "AAPL": "XNAS"} {
+		if _, err := md.DefineInstrument(ctx, marketdata.Instrument{
+			Code:          money.Currency(code),
+			Type:          "stock",
+			Name:          code,
+			QuoteCurrency: "BRL",
+			Exchange:      exchange,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct{ name, code, date, want string }{
+		{"B3 holiday inside the cycle", "PETR4", "2026-11-19", "2026-11-24"},
+		{"B3 over a weekend", "PETR4", "2026-11-13", "2026-11-17"},
+		{"exchange without a cycle", "AAPL", "2026-11-19", "2026-11-19"},
+	}
+
+	for _, tc := range tests {
+		date, err := time.Parse(time.DateOnly, tc.date)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got, err := md.SettlementDate(ctx, tc.code, date)
+		if err != nil || got.Format(time.DateOnly) != tc.want {
+			t.Errorf("%s: SettlementDate(%s, %s) = (%s, %v), want %s",
+				tc.name, tc.code, tc.date, got.Format(time.DateOnly), err, tc.want)
 		}
 	}
 }

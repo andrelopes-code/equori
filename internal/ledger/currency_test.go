@@ -16,6 +16,7 @@ type postingOut struct {
 	Weight    map[string]any `json:"weight"`
 	Original  map[string]any `json:"original"`
 	Statement string         `json:"statement"`
+	SettledOn *string        `json:"settled_on"`
 }
 
 type transactionOut struct {

@@ -168,6 +168,7 @@ func (s *Server) tradeOrderFromInput(
 		TaxesCategoryID: optUUID(b.TaxesCategoryId),
 		Side:            domain.Side(b.Side),
 		Date:            dateOf(b.Date),
+		SettlementDate:  optDate(b.SettlementDate),
 		Quantity:        quantity,
 		UnitPrice:       price,
 		Description:     optString(b.Description),

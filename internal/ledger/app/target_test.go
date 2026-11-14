@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -469,4 +470,12 @@ func (q quotes) Instrument(_ context.Context, code money.Currency) (app.Instrume
 
 func (q quotes) ResolveCode(_ context.Context, code money.Currency) (money.Currency, error) {
 	return code, nil
+}
+
+func (q quotes) SettlementDate(
+	_ context.Context,
+	_ money.Currency,
+	date time.Time,
+) (time.Time, error) {
+	return date, nil
 }

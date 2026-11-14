@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -152,6 +153,68 @@ func TestBuildTrade(t *testing.T) {
 			if (trade.Cost == nil) != (tt.cost == -1) ||
 				(trade.Cost != nil && trade.Cost.Amount() != tt.cost) {
 				t.Fatalf("cost = %v, want %d", trade.Cost, tt.cost)
+			}
+		})
+	}
+}
+
+func TestBuildTradeSettlement(t *testing.T) {
+	t.Parallel()
+
+	security, cash := uuid.New(), uuid.New()
+	accts := TradeAccounts{RealizedGains: uuid.New(), RealizedLosses: uuid.New(), Taxes: uuid.New()}
+	date := time.Date(2026, 11, 19, 0, 0, 0, 0, time.UTC)
+	later := time.Date(2026, 11, 24, 0, 0, 0, 0, time.UTC)
+	fee := brl(t, 100)
+
+	tests := []struct {
+		name       string
+		order      TradeOrder
+		holding    Holding
+		settlement *time.Time
+	}{
+		{
+			name:       "buy settles later",
+			order:      TradeOrder{Side: SideBuy, SettlementDate: &later},
+			settlement: &later,
+		},
+		{
+			name:  "buy settling on the date",
+			order: TradeOrder{Side: SideBuy, SettlementDate: &date},
+		},
+		{
+			name:  "buy without a settlement date",
+			order: TradeOrder{Side: SideBuy},
+		},
+		{
+			name:       "sale with fees settles later on the cash posting only",
+			order:      TradeOrder{Side: SideSell, Fees: &fee, SettlementDate: &later},
+			holding:    Holding{Quantity: shares(t, 10), CostBasis: brl(t, 10000)},
+			settlement: &later,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.order.AccountID, tt.order.CashAccountID = security, cash
+			tt.order.Date = date
+			tt.order.Quantity = shares(t, 10)
+			tt.order.UnitPrice = price(t, "10")
+
+			postings, _, err := BuildTrade(tt.order, "BRL", tt.holding, accts)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			for _, p := range postings {
+				want := (*time.Time)(nil)
+				if p.AccountID == cash {
+					want = tt.settlement
+				}
+
+				if (p.SettledOn == nil) != (want == nil) ||
+					(want != nil && !p.SettledOn.Equal(*want)) {
+					t.Errorf("posting %s settled_on = %v, want %v", p.AccountID, p.SettledOn, want)
+				}
 			}
 		})
 	}

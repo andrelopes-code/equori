@@ -12,6 +12,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
+// maxSettlementDays is the latest an explicit settlement date falls after the trade date.
+const maxSettlementDays = 30
+
 // RecordTrade records M17: a purchase or sale of a security for cash of the same
 // brokerage, the sale at average cost (P8 amendment A68).
 func (s *Service) RecordTrade(
@@ -65,6 +68,10 @@ func (s *Service) buildTrade(
 		return domain.Transaction{}, err
 	}
 
+	if err := s.settlementOf(ctx, &o, security); err != nil {
+		return domain.Transaction{}, err
+	}
+
 	postings, trade, err := domain.BuildTrade(o, cash.Instrument, h, accts)
 	if err != nil {
 		return domain.Transaction{}, err
@@ -78,6 +85,37 @@ func (s *Service) buildTrade(
 		Postings:          postings,
 		Trade:             &trade,
 	}, nil
+}
+
+// settlementOf checks the explicit settlement date of o, or sets the one of the exchange's cycle.
+func (s *Service) settlementOf(
+	ctx context.Context,
+	o *domain.TradeOrder,
+	security domain.Account,
+) error {
+	if o.SettlementDate == nil {
+		settled, err := s.ins.SettlementDate(ctx, security.Instrument, o.Date)
+		if err != nil {
+			return err
+		}
+
+		o.SettlementDate = &settled
+
+		return nil
+	}
+
+	switch {
+	case o.SettlementDate.Before(o.Date):
+		return fieldErr("settlement_date", "must not be before the date", domain.ErrValidation)
+	case o.SettlementDate.After(o.Date.AddDate(0, 0, maxSettlementDays)):
+		return fieldErr(
+			"settlement_date",
+			"must be at most 30 days after the date",
+			domain.ErrValidation,
+		)
+	}
+
+	return nil
 }
 
 // resolveTrade resolves the security and cash accounts of o into o and checks its quantity.

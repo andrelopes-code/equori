@@ -5920,6 +5920,11 @@ export interface components {
             side: components["schemas"]["TradeSide"];
             /** Format: date */
             date: string;
+            /**
+             * Format: date
+             * @description The day the cash settles, not before date and at most 30 days after it; absent takes the settlement cycle of the instrument's exchange (A228 IO6, IO7).
+             */
+            settlement_date?: string;
             quantity: components["schemas"]["Money"];
             unit_price: components["schemas"]["Rate"];
             fees?: components["schemas"]["Money"];
@@ -5947,6 +5952,11 @@ export interface components {
             /** Format: uuid */
             cash_account_id: string;
             side: components["schemas"]["TradeSide"];
+            /**
+             * Format: date
+             * @description The day the cash settles; the transaction date when it settles that day (A228 IO9).
+             */
+            settlement_date: string;
             quantity: components["schemas"]["Money"];
             unit_price: components["schemas"]["Rate"];
             gross: components["schemas"]["Money"];

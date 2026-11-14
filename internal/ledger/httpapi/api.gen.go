@@ -2107,12 +2107,15 @@ type Trade struct {
 	CashAccountId openapi_types.UUID `json:"cash_account_id"`
 
 	// Cost Cost basis removed by a sale at average cost.
-	Cost     *Money    `json:"cost,omitempty"`
-	Fees     Money     `json:"fees"`
-	Gross    Money     `json:"gross"`
-	Quantity Money     `json:"quantity"`
-	Side     TradeSide `json:"side"`
-	Taxes    Money     `json:"taxes"`
+	Cost     *Money `json:"cost,omitempty"`
+	Fees     Money  `json:"fees"`
+	Gross    Money  `json:"gross"`
+	Quantity Money  `json:"quantity"`
+
+	// SettlementDate The day the cash settles; the transaction date when it settles that day (A228 IO9).
+	SettlementDate openapi_types.Date `json:"settlement_date"`
+	Side           TradeSide          `json:"side"`
+	Taxes          Money              `json:"taxes"`
 
 	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
 	//
@@ -2142,10 +2145,13 @@ type TradeInput struct {
 	Fees          *Money              `json:"fees,omitempty"`
 
 	// Instrument The investment's code; its holding account is created on the first purchase.
-	Instrument *string   `json:"instrument,omitempty"`
-	Quantity   Money     `json:"quantity"`
-	Side       TradeSide `json:"side"`
-	Taxes      *Money    `json:"taxes,omitempty"`
+	Instrument *string `json:"instrument,omitempty"`
+	Quantity   Money   `json:"quantity"`
+
+	// SettlementDate The day the cash settles, not before date and at most 30 days after it; absent takes the settlement cycle of the instrument's exchange (A228 IO6, IO7).
+	SettlementDate *openapi_types.Date `json:"settlement_date,omitempty"`
+	Side           TradeSide           `json:"side"`
+	Taxes          *Money              `json:"taxes,omitempty"`
 
 	// TaxesCategoryId Default the system account taxes.
 	TaxesCategoryId *openapi_types.UUID `json:"taxes_category_id,omitempty"`

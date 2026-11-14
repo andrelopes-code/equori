@@ -1,7 +1,9 @@
 package ledger_test
 
 import (
+	"maps"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -15,6 +17,8 @@ type tradeOut struct {
 	Fees      map[string]any `json:"fees"`
 	Taxes     map[string]any `json:"taxes"`
 	Cost      map[string]any `json:"cost"`
+
+	SettlementDate string `json:"settlement_date"`
 }
 
 type tradeTx struct {
@@ -495,5 +499,128 @@ func TestS418OddLotCodeReachesRoundLot(t *testing.T) {
 
 	if r := f.h.Do(http.MethodGet, "/api/v1/instruments/PIBB11F", nil); r.Status != 404 {
 		t.Fatalf("GET PIBB11F = %d %s, want 404", r.Status, r.Body)
+	}
+}
+
+// S420: the cash of a B3 trade settles on the second business day after the date.
+func TestS420SettlementOnTheB3Cycle(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+
+	// 2026-11-19 is a Thursday and 2026-11-20 a B3 holiday: D+2 is Tuesday 2026-11-24.
+	tx := f.buyPETR4(t, "2026-11-19", nil)
+	f.expectSettlement(t, tx, "2026-11-24", "2026-11-24")
+
+	// A correction reads the order again: an explicit settlement replaces the cycle.
+	var corrected tradeTx
+	f.h.MustDo(
+		http.MethodPut,
+		"/api/v1/trades/"+tx.ID,
+		map[string]any{
+			"expected_version": tx.Version,
+			"reason":           "settlement",
+			"trade": f.petr4Order(
+				"2026-11-19",
+				map[string]any{"settlement_date": "2026-11-23"},
+			),
+		},
+		http.StatusOK,
+		&corrected,
+	)
+	f.expectSettlement(t, corrected, "2026-11-23", "2026-11-23")
+}
+
+// S421: an explicit settlement before the date or more than 30 days after it is refused.
+func TestS421SettlementOutOfRange(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+
+	for _, date := range []string{"2026-11-18", "2026-12-20"} {
+		r := f.h.Do(
+			http.MethodPost,
+			"/api/v1/trades",
+			f.petr4Order("2026-11-19", map[string]any{"settlement_date": date}),
+		)
+		if r.Status != http.StatusUnprocessableEntity ||
+			!strings.Contains(string(r.Body), "settlement_date") {
+			t.Errorf("settlement_date %s: %d %s", date, r.Status, r.Body)
+		}
+	}
+}
+
+// S422: an exchange without a settlement cycle settles on the date.
+func TestS422NoCycleSettlesOnTheDate(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+
+	aapl := security("AAPL", "stock")
+	aapl["exchange"] = "XNAS"
+	f.h.MustDo(http.MethodPost, "/api/v1/instruments", aapl, http.StatusCreated, nil)
+
+	var tx tradeTx
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/trades",
+		map[string]any{
+			"brokerage_id":    f.xp,
+			"instrument":      "AAPL",
+			"cash_account_id": f.cash,
+			"side":            "buy",
+			"date":            "2026-11-19",
+			"quantity":        units(1, "AAPL"),
+			"unit_price":      "200.00",
+		},
+		http.StatusCreated,
+		&tx,
+	)
+
+	f.expectSettlement(t, tx, "", "2026-11-19")
+}
+
+func (f investFixture) buyPETR4(t *testing.T, date string, extra map[string]any) tradeTx {
+	t.Helper()
+
+	var out tradeTx
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/trades",
+		f.petr4Order(date, extra),
+		http.StatusCreated,
+		&out,
+	)
+
+	return out
+}
+
+func (f investFixture) petr4Order(date string, extra map[string]any) map[string]any {
+	order := map[string]any{
+		"account_id":      f.petr4,
+		"cash_account_id": f.cash,
+		"side":            "buy",
+		"date":            date,
+		"quantity":        units(100, "PETR4"),
+		"unit_price":      "30.00",
+	}
+	maps.Copy(order, extra)
+
+	return order
+}
+
+// expectSettlement checks settled_on of the cash posting (empty: none), of the security posting
+// (none) and the settlement_date of the trade.
+func (f investFixture) expectSettlement(t *testing.T, tx tradeTx, cashOn, settlement string) {
+	t.Helper()
+
+	for _, p := range tx.Postings {
+		switch {
+		case p.AccountID == f.cash && cashOn == "" && p.SettledOn != nil,
+			p.AccountID == f.cash && cashOn != "" && (p.SettledOn == nil || *p.SettledOn != cashOn),
+			p.AccountID != f.cash && p.SettledOn != nil:
+			t.Errorf("posting %s settled_on = %v, cash want %q", p.AccountID, p.SettledOn, cashOn)
+		}
+	}
+
+	if tx.Trade == nil || tx.Trade.SettlementDate != settlement {
+		t.Errorf("trade = %+v, want settlement_date %s", tx.Trade, settlement)
 	}
 }

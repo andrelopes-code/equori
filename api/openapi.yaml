@@ -10662,6 +10662,10 @@ components:
         date:
           type: string
           format: date
+        settlement_date:
+          type: string
+          format: date
+          description: The day the cash settles, not before date and at most 30 days after it; absent takes the settlement cycle of the instrument's exchange (A228 IO6, IO7).
         quantity:
           $ref: "#/components/schemas/Money"
         unit_price:
@@ -10705,7 +10709,8 @@ components:
           $ref: "#/components/schemas/InvestmentIncomeInput"
     Trade:
       type: object
-      required: [account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes]
+      required:
+        [account_id, cash_account_id, side, quantity, unit_price, gross, fees, taxes, settlement_date]
       properties:
         account_id:
           type: string
@@ -10715,6 +10720,10 @@ components:
           format: uuid
         side:
           $ref: "#/components/schemas/TradeSide"
+        settlement_date:
+          type: string
+          format: date
+          description: The day the cash settles; the transaction date when it settles that day (A228 IO9).
         quantity:
           $ref: "#/components/schemas/Money"
         unit_price:

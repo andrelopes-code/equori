@@ -23,10 +23,12 @@ type TradeOrder struct {
 	Instrument  money.Currency
 	Side        Side
 	Date        time.Time
-	Quantity    money.Money
-	UnitPrice   money.Rate
-	Fees, Taxes *money.Money
-	Description string
+	// SettlementDate is the day the cash settles; nil takes the exchange's cycle (A228 IO6, IO7).
+	SettlementDate *time.Time
+	Quantity       money.Money
+	UnitPrice      money.Rate
+	Fees, Taxes    *money.Money
+	Description    string
 }
 
 // Trade is the D1 detail stored with a trade transaction (P8 amendment A68). Cost is
@@ -125,7 +127,12 @@ func buyTrade(o TradeOrder, trade Trade) ([]Posting, Trade, error) {
 	}
 
 	return []Posting{
-		{AccountID: o.CashAccountID, Amount: cost.Neg(), Weight: cost.Neg()},
+		{
+			AccountID: o.CashAccountID,
+			Amount:    cost.Neg(),
+			Weight:    cost.Neg(),
+			SettledOn: settledOn(o),
+		},
 		{AccountID: o.AccountID, Amount: o.Quantity, Weight: cost},
 	}, trade, nil
 }
@@ -174,7 +181,12 @@ func sellPostings(
 	accts TradeAccounts,
 	proceeds, taxes, cost, result money.Money,
 ) []Posting {
-	postings := []Posting{{AccountID: o.CashAccountID, Amount: proceeds, Weight: proceeds}}
+	postings := []Posting{{
+		AccountID: o.CashAccountID,
+		Amount:    proceeds,
+		Weight:    proceeds,
+		SettledOn: settledOn(o),
+	}}
 	if !taxes.IsZero() {
 		postings = append(postings, Posting{AccountID: accts.Taxes, Amount: taxes, Weight: taxes})
 	}
@@ -224,4 +236,13 @@ func soldCost(o TradeOrder, h Holding) (cost money.Money, err error) {
 	}
 
 	return cost, nil
+}
+
+// settledOn is the settlement date of the cash posting: set only when it is after the date.
+func settledOn(o TradeOrder) *time.Time {
+	if o.SettlementDate == nil || !o.SettlementDate.After(o.Date) {
+		return nil
+	}
+
+	return o.SettlementDate
 }

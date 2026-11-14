@@ -121,3 +121,12 @@ func (c *instruments) ResolveCode(
 
 	return money.Currency(resolved), nil
 }
+
+// SettlementDate is not cached: it depends on the calendars stored at call time.
+func (c *instruments) SettlementDate(
+	ctx context.Context,
+	code money.Currency,
+	date time.Time,
+) (time.Time, error) {
+	return c.md.SettlementDate(ctx, string(code), date)
+}
