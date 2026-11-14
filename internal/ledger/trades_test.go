@@ -438,6 +438,38 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 	f.h.ExpectProblem(<-done, http.StatusConflict, "later_sale_exists", "")
 }
 
+// S417: the unit price the form derives from an order total of 4504.00 for 15 units, rounded half
+// to even to 12 decimals, gives that total as the gross (A228 IO1): 15 × 300.266666666667 is
+// 4504.000000000005, which rounds to 4504.00.
+func TestS417OrderTotalGivesItsGross(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+
+	var tx tradeTx
+
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/trades",
+		map[string]any{
+			"account_id":      f.petr4,
+			"cash_account_id": f.cash,
+			"side":            "buy",
+			"date":            "2026-10-05",
+			"quantity":        units(15, "PETR4"),
+			"unit_price":      "300.266666666667",
+		},
+		http.StatusCreated,
+		&tx,
+	)
+
+	if tx.Trade == nil || tx.Trade.Gross["amount"] != float64(450400) {
+		t.Fatalf("trade = %+v, want gross 450400", tx.Trade)
+	}
+
+	expectPostings(t, tx.Postings, [3]any{f.cash, int64(-450400), int64(-450400)},
+		[3]any{f.petr4, int64(15), int64(450400)})
+}
+
 // S418: an order naming the odd-lot code lands on the round-lot holding.
 func TestS418OddLotCodeReachesRoundLot(t *testing.T) {
 	t.Parallel()
