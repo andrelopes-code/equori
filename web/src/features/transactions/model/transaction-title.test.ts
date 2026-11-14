@@ -206,14 +206,15 @@ describe("transactionTitle", () => {
     expect(transactionTitle(action("split"), t)).toBe("");
   });
 
-  it("titles a movement of one instrument between two brokerages as a custody", () => {
-    const custody = moved(custodyAID, custodyBID, "PETR4");
+  // A228 IO31: the ledger writes the description of a custody transfer in the book's language.
+  it("titles a custody transfer by the description the ledger writes", () => {
+    const custody = {
+      ...moved(custodyAID, custodyBID, "PETR4"),
+      description: "Transferência de custódia de PETR4",
+    };
 
-    expect(transactionTitle(custody, tEn, { accounts })).toBe(
-      "Custody of PETR4",
-    );
     expect(transactionTitle(custody, t, { accounts })).toBe(
-      "Custódia de PETR4",
+      "Transferência de custódia de PETR4",
     );
   });
 

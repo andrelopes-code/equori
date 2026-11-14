@@ -29,9 +29,6 @@ export function postingsTitle(
     const account = accounts.get(posting.account_id);
     return account === undefined ? [] : [{ account, posting }];
   });
-  const custody = custodyTitle(tx, t, accounts, posted);
-  if (custody !== "") return custody;
-
   const balance = posted.filter(({ account }) => isBalance(account));
 
   const systemKey = posted
@@ -50,33 +47,6 @@ export function postingsTitle(
   }
 
   return transactionRow(tx, accounts, new Map()).category;
-}
-
-// Two postings of one instrument, other than the balancing currency, on holdings whose parents
-// are two different brokerages (A228 IO31).
-function custodyTitle(
-  tx: Transaction,
-  t: TFunction,
-  accounts: Map<string, Account>,
-  posted: Posted[],
-): string {
-  const [first, second] = posted;
-  if (tx.postings.length !== 2 || first === undefined || second === undefined) {
-    return "";
-  }
-  const code = first.account.currency;
-  const parents = [first, second].map(({ account }) =>
-    accounts.get(account.parent_id ?? ""),
-  );
-  const [from, to] = parents;
-  const brokerages =
-    from?.kind === "brokerage" && to?.kind === "brokerage" && from.id !== to.id;
-
-  return brokerages &&
-    code === second.account.currency &&
-    code !== tx.balancing_currency
-    ? t("transactions.title.custody", { code })
-    : "";
 }
 
 function movementTitle(
