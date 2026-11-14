@@ -239,8 +239,9 @@ var uncoveredFields = map[string][]string{
 		"value",
 	}, // read as code and price
 	"recordTrade": {
+		"settlement_date",
 		"side",
-	}, // read as kind
+	}, // side is read as kind; settlement_date takes the exchange's cycle (A228 NG8)
 	"reimburseTransaction": {
 		"expected_version",
 	}, // expected_version is the version the preview read
