@@ -21,6 +21,11 @@ import (
 const (
 	localDate = `{"chart":{"result":[{"meta":{"currency":"USD","exchangeTimezoneName":"America/New_York"},` +
 		`"timestamp":[1793845800],"indicators":{"quote":[{"close":[1.5]}]}}],"error":null}}`
+	// A flat bar with volume 0 is the last close that Yahoo repeats on a day without a trade.
+	noTrade = `{"chart":{"result":[{"meta":{"currency":"USD","exchangeTimezoneName":"America/New_York"},` +
+		`"timestamp":[1793802600,1793889000,1793975400],"indicators":{"quote":[{` +
+		`"open":[10,10,10],"high":[10,10,11],"low":[10,10,9],"close":[10,10,10.5],` +
+		`"volume":[5,0,0]}]}}],"error":null}}`
 	notFound = `{"chart":{"result":null,"error":{"code":"Not Found",` +
 		`"description":"No data found, symbol may be delisted"}}}`
 )
@@ -155,6 +160,13 @@ func TestFetch(t *testing.T) {
 			"",
 		},
 		{"local date", http.StatusOK, localDate, []string{"AAPL USD 2026-11-04 1.5"}, ""},
+		{
+			"day without a trade",
+			http.StatusOK,
+			noTrade,
+			[]string{"AAPL USD 2026-11-04 10", "AAPL USD 2026-11-06 10.5"},
+			"",
+		},
 		{"pence", http.StatusOK, gbp, nil, "instrument AAPL"},
 		{"unknown symbol", http.StatusNotFound, notFound, nil, ""},
 		{"server error", http.StatusInternalServerError, "", nil, "instrument AAPL"},

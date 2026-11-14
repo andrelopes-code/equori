@@ -281,9 +281,7 @@ func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.
 				} `json:"meta"`
 				Timestamp  []int64 `json:"timestamp"`
 				Indicators struct {
-					Quote []struct {
-						Close []*float64 `json:"close"`
-					} `json:"quote"`
+					Quote []series `json:"quote"`
 				} `json:"indicators"`
 			} `json:"result"`
 		} `json:"chart"`
@@ -313,7 +311,7 @@ func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.
 	}
 
 	return closeQuotes(
-		result.Indicators.Quote[0].Close,
+		result.Indicators.Quote[0],
 		result.Timestamp,
 		loc,
 		code,
@@ -324,7 +322,7 @@ func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.
 }
 
 func closeQuotes(
-	closes []*float64,
+	bars series,
 	timestamps []int64,
 	loc *time.Location,
 	code, quote money.Currency,
@@ -332,8 +330,8 @@ func closeQuotes(
 ) ([]feed.Quote, error) {
 	var out []feed.Quote
 
-	for i, closing := range closes {
-		if i >= len(timestamps) || closing == nil || *closing <= 0 {
+	for i, closing := range bars.Close {
+		if i >= len(timestamps) || closing == nil || *closing <= 0 || bars.untraded(i) {
 			continue
 		}
 
@@ -353,6 +351,32 @@ func closeQuotes(
 	}
 
 	return out, nil
+}
+
+// series holds the daily bars of a quote. A series without volume or without the open, high and
+// low keeps every close.
+type series struct {
+	Open   []*float64 `json:"open"`
+	High   []*float64 `json:"high"`
+	Low    []*float64 `json:"low"`
+	Close  []*float64 `json:"close"`
+	Volume []*float64 `json:"volume"`
+}
+
+// untraded reports whether bar i is a day without a trade: Yahoo repeats the last close with
+// volume 0 and the open, high and low equal to it (B5P211 repeated 71.25 for 959 days).
+func (s series) untraded(i int) bool {
+	if i >= len(s.Volume) || s.Volume[i] == nil || *s.Volume[i] != 0 {
+		return false
+	}
+
+	for _, v := range [][]*float64{s.Open, s.High, s.Low} {
+		if i >= len(v) || v[i] == nil || *v[i] != *s.Close[i] {
+			return false
+		}
+	}
+
+	return true
 }
 
 // closeText returns the decimal text of a close. Yahoo publishes float32 values, so the shortest
