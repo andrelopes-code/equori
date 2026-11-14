@@ -132,7 +132,17 @@ func (s *Server) tradeOrderFromInput(
 	ctx context.Context,
 	b RecordTradeJSONRequestBody,
 ) (domain.TradeOrder, error) {
-	quantity, err := s.svc.AmountOf(ctx, b.Quantity.Amount, money.Currency(b.Quantity.Currency))
+	code, err := s.svc.ResolveCode(ctx, money.Currency(b.Quantity.Currency))
+	if err != nil {
+		return domain.TradeOrder{}, err
+	}
+
+	instrument, err := s.svc.ResolveCode(ctx, money.Currency(optString(b.Instrument)))
+	if err != nil {
+		return domain.TradeOrder{}, err
+	}
+
+	quantity, err := s.svc.AmountOf(ctx, b.Quantity.Amount, code)
 	if err != nil {
 		return domain.TradeOrder{}, &domain.FieldError{
 			Field:   "quantity",
@@ -154,7 +164,7 @@ func (s *Server) tradeOrderFromInput(
 		AccountID:       optUUID(b.AccountId),
 		CashAccountID:   optUUID(b.CashAccountId),
 		BrokerageID:     optUUID(b.BrokerageId),
-		Instrument:      money.Currency(optString(b.Instrument)),
+		Instrument:      instrument,
 		TaxesCategoryID: optUUID(b.TaxesCategoryId),
 		Side:            domain.Side(b.Side),
 		Date:            dateOf(b.Date),
@@ -188,7 +198,7 @@ func (s *Server) recordInvestmentIncome(
 	r *http.Request,
 	in RecordInvestmentIncomeJSONRequestBody,
 ) (Transaction, string, error) {
-	o, err := incomeOrderFromInput(in)
+	o, err := s.incomeOrderFromInput(ctx, in)
 	if err != nil {
 		return Transaction{}, "", err
 	}
@@ -201,8 +211,16 @@ func (s *Server) recordInvestmentIncome(
 	return toTransactionAPI(t), location("/transactions/", t.ID), nil
 }
 
-func incomeOrderFromInput(b InvestmentIncomeInput) (domain.IncomeOrder, error) {
+func (s *Server) incomeOrderFromInput(
+	ctx context.Context,
+	b InvestmentIncomeInput,
+) (domain.IncomeOrder, error) {
 	gross, err := fromMoneyAPI("gross", b.Gross)
+	if err != nil {
+		return domain.IncomeOrder{}, err
+	}
+
+	instrument, err := s.svc.ResolveCode(ctx, money.Currency(optString(b.Instrument)))
 	if err != nil {
 		return domain.IncomeOrder{}, err
 	}
@@ -211,7 +229,7 @@ func incomeOrderFromInput(b InvestmentIncomeInput) (domain.IncomeOrder, error) {
 		AccountID:          optUUID(b.AccountId),
 		CashAccountID:      optUUID(b.CashAccountId),
 		BrokerageID:        optUUID(b.BrokerageId),
-		Instrument:         money.Currency(optString(b.Instrument)),
+		Instrument:         instrument,
 		CategoryID:         b.CategoryId,
 		WithheldCategoryID: optUUID(b.WithheldCategoryId),
 		Type:               domain.IncomeType(b.IncomeType),

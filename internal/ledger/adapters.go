@@ -108,3 +108,16 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 
 	return in, nil
 }
+
+// ResolveCode is not cached: it depends on the instruments defined at call time.
+func (c *instruments) ResolveCode(
+	ctx context.Context,
+	code money.Currency,
+) (money.Currency, error) {
+	resolved, err := c.md.ResolveCode(ctx, string(code))
+	if err != nil {
+		return "", err
+	}
+
+	return money.Currency(resolved), nil
+}

@@ -433,3 +433,67 @@ func TestSecurityPostingsWaitForTheAccountLock(t *testing.T) {
 
 	f.h.ExpectProblem(<-done, http.StatusConflict, "later_sale_exists", "")
 }
+
+// S418: an order naming the odd-lot code lands on the round-lot holding.
+func TestS418OddLotCodeReachesRoundLot(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/instruments",
+		security("PIBB11", "etf"),
+		http.StatusCreated,
+		nil,
+	)
+
+	var tx tradeTx
+
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/trades",
+		map[string]any{
+			"brokerage_id":    f.xp,
+			"instrument":      "PIBB11F",
+			"cash_account_id": f.cash,
+			"side":            "buy",
+			"date":            "2026-10-05",
+			"quantity":        units(1, "PIBB11F"),
+			"unit_price":      "306.10",
+		},
+		http.StatusCreated,
+		&tx,
+	)
+
+	var holding postingOut
+
+	for _, p := range tx.Postings {
+		if p.Amount["currency"] == "PIBB11" {
+			holding = p
+		}
+	}
+
+	if holding.AccountID == "" {
+		t.Fatalf("no PIBB11 posting in %+v", tx.Postings)
+	}
+
+	var account struct {
+		ParentID string `json:"parent_id"`
+		Currency string `json:"currency"`
+	}
+
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+holding.AccountID,
+		nil,
+		http.StatusOK,
+		&account,
+	)
+
+	if account.ParentID != f.xp || account.Currency != "PIBB11" {
+		t.Fatalf("holding account = %+v, want parent %s currency PIBB11", account, f.xp)
+	}
+
+	if r := f.h.Do(http.MethodGet, "/api/v1/instruments/PIBB11F", nil); r.Status != 404 {
+		t.Fatalf("GET PIBB11F = %d %s, want 404", r.Status, r.Body)
+	}
+}

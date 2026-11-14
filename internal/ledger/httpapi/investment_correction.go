@@ -48,7 +48,7 @@ func (s *Server) correctInvestmentIncome(
 		return Transaction{}, err
 	}
 
-	o, err := incomeOrderFromInput(in.Income)
+	o, err := s.incomeOrderFromInput(ctx, in.Income)
 	if err != nil {
 		return Transaction{}, err
 	}

@@ -154,6 +154,7 @@ type MarketData interface {
 		a marketdata.Adjustment,
 	) (time.Time, error)
 	Instrument(ctx context.Context, code string) (marketdata.Instrument, error)
+	ResolveCode(ctx context.Context, code string) (string, error)
 	Convert(
 		ctx context.Context,
 		q money.Money,

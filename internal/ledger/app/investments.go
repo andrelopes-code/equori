@@ -124,6 +124,18 @@ func (s *Service) AmountOf(
 	return AmountOf(ctx, s.ins, units, code)
 }
 
+// ResolveCode returns the instrument an order names by code (A228 IO4).
+func (s *Service) ResolveCode(
+	ctx context.Context,
+	code money.Currency,
+) (money.Currency, error) {
+	if s.ins == nil {
+		return code, nil
+	}
+
+	return s.ins.ResolveCode(ctx, code)
+}
+
 // describeInstrument sets the quote currency of a security account (P8 amendment A63).
 func (s *Service) describeInstrument(ctx context.Context, a *domain.Account) error {
 	if !a.HoldsSecurity() {

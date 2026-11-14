@@ -466,3 +466,7 @@ func (q quotes) Instrument(_ context.Context, code money.Currency) (app.Instrume
 
 	return app.Instrument{Code: code, Scale: 0, QuoteCurrency: quote}, nil
 }
+
+func (q quotes) ResolveCode(_ context.Context, code money.Currency) (money.Currency, error) {
+	return code, nil
+}

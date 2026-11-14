@@ -205,7 +205,12 @@ func resolveInvestmentTarget(
 			return t, err
 		}
 
-		t.name, t.instrument = brokerage.Name, money.Currency(in.Instrument)
+		instrument, err := svc.ResolveCode(ctx, money.Currency(in.Instrument))
+		if err != nil {
+			return t, err
+		}
+
+		t.name, t.instrument = brokerage.Name, instrument
 	} else {
 		security, err := svc.Account(ctx, booksID, ids.account)
 		if err != nil {

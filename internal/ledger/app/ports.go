@@ -46,6 +46,7 @@ type Clock interface {
 // Instruments reads the instruments of Market data (P8 amendment A63).
 type Instruments interface {
 	Instrument(ctx context.Context, code money.Currency) (Instrument, error)
+	ResolveCode(ctx context.Context, code money.Currency) (money.Currency, error)
 }
 
 // Instrument is what Ledger needs of a Market data instrument; QuoteCurrency is empty
