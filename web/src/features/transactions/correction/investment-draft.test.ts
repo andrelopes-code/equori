@@ -11,7 +11,7 @@ type Transaction = components["schemas"]["Transaction"];
 
 describe("tradeDraftOf", () => {
   it("fills the trade form from a stored purchase", () => {
-    expect(tradeDraftOf(buy, accounts, "pt-BR")).toEqual({
+    expect(tradeDraftOf(buy, accounts)).toEqual({
       side: "buy",
       brokerageId: "broker",
       instrument: "MXRF11",
@@ -19,7 +19,7 @@ describe("tradeDraftOf", () => {
       date: "2026-10-05",
       settlementDate: "2026-10-07",
       quantity: 150,
-      unitPrice: "10,05",
+      unitPrice: "10.05",
       priceBasis: "unit",
       total: 0,
       fees: 490,
@@ -53,11 +53,11 @@ describe("tradeDraftOf", () => {
   ])("reads the taxes category of a sale: $name", ({ postings, want }) => {
     const sale = trade({ side: "sell", taxes: brl(300) }, postings);
 
-    expect(tradeDraftOf(sale, accounts, "en")?.taxesCategoryId).toBe(want);
+    expect(tradeDraftOf(sale, accounts)?.taxesCategoryId).toBe(want);
   });
 
   it("returns null for a transaction without a trade", () => {
-    expect(tradeDraftOf(dividend, accounts, "en")).toBeNull();
+    expect(tradeDraftOf(dividend, accounts)).toBeNull();
   });
 });
 

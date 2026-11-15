@@ -207,7 +207,7 @@ export function useTradeEntry(
     baseCash: state.baseCash,
     balance,
     shortfall: shortfall(cashEffectValue, balance),
-    price,
+    price: byTotal ? (rate ?? "") : price,
     storedPrice,
     held,
     gross,

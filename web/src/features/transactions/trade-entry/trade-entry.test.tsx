@@ -441,15 +441,13 @@ describe("trade entry", () => {
     const sent: unknown[] = [];
     await renderApp(path, { fetch: api(sent) });
     await type(catalogEn["trade.quantity"], "15");
-    await userEvent.click(
-      await screen.findByRole("radio", {
-        name: catalogEn["trade.priceBasis.total"],
-      }),
-    );
-    await type(catalogEn["trade.total"], "450400");
+    await type(optionalName(catalogEn["trade.total"]), "450400");
     expect(
       (await screen.findAllByText(moneyValue(/4,504\.00/))).length,
     ).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("textbox", { name: catalogEn["trade.unitPrice"] }),
+    ).toHaveValue("300.266666666667");
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["entry.save"] }),
     );
@@ -459,13 +457,61 @@ describe("trade entry", () => {
     expect(sent[0]).toMatchObject({ unit_price: "300.266666666667" });
   });
 
-  it("refuses an order by its total when the total is empty", async () => {
+  it("writes the derived unit price with the decimal separator of the language", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp(path, { fetch: api([]) });
+    await type(catalogPtBR["trade.quantity"], "15");
+    await type(optionalName(catalogPtBR["trade.total"], "opcional"), "450400");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", { name: catalogPtBR["trade.unitPrice"] }),
+      ).toHaveValue("300,266666666667");
+    });
+  });
+
+  it("sends the price typed after a total", async () => {
     const sent: unknown[] = [];
     await renderApp(path, { fetch: api(sent) });
     await type(catalogEn["trade.quantity"], "15");
+    await type(optionalName(catalogEn["trade.total"]), "450400");
+    const price = screen.getByRole("textbox", {
+      name: catalogEn["trade.unitPrice"],
+    });
+    await userEvent.clear(price);
+    await userEvent.type(price, "301");
     await userEvent.click(
-      await screen.findByRole("radio", {
-        name: catalogEn["trade.priceBasis.total"],
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ unit_price: "301" });
+  });
+
+  it("shows the gross of the quantity and the price in the total field", async () => {
+    await renderApp(path, { fetch: api([]) });
+    await type(catalogEn["trade.quantity"], "15");
+    await type(catalogEn["trade.unitPrice"], "10");
+
+    expect(
+      screen.getByRole("textbox", {
+        name: optionalName(catalogEn["trade.total"]),
+      }),
+    ).toHaveValue("150.00");
+  });
+
+  it("refuses an order by its total when the total is emptied", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await type(catalogEn["trade.quantity"], "15");
+    await type(optionalName(catalogEn["trade.total"]), "5");
+    await userEvent.clear(
+      screen.getByRole("textbox", {
+        name: optionalName(catalogEn["trade.total"]),
       }),
     );
     await userEvent.click(
@@ -478,7 +524,7 @@ describe("trade entry", () => {
   });
 
   // A draft stored before the price basis existed opens with the unit price.
-  it("opens a stored draft of the old shape with the unit price basis", async () => {
+  it("opens a stored draft of the old shape with its unit price", async () => {
     sessionStorage.setItem(
       "equori.draft.new-trade",
       JSON.stringify({
@@ -497,12 +543,9 @@ describe("trade entry", () => {
     );
     await renderApp(path, { fetch: api([]) });
     expect(
-      await screen.findByRole("radio", {
-        name: catalogEn["trade.priceBasis.unit"],
+      await screen.findByRole("textbox", {
+        name: catalogEn["trade.unitPrice"],
       }),
-    ).toBeChecked();
-    expect(
-      screen.getByRole("textbox", { name: catalogEn["trade.unitPrice"] }),
     ).toHaveValue("9.50");
   });
 

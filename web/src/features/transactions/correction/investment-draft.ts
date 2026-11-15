@@ -1,5 +1,4 @@
 import type { components } from "@/api/schema.gen";
-import { formatRate } from "@/features/instruments";
 import type { IncomeDraft } from "@/features/transactions/income-entry/income-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
 
@@ -12,7 +11,6 @@ type Trade = components["schemas"]["Trade"];
 export function tradeDraftOf(
   tx: Transaction,
   accounts: readonly Account[],
-  locale: string,
 ): TradeDraft | null {
   const trade = tx.trade;
   if (trade === undefined) return null;
@@ -25,7 +23,7 @@ export function tradeDraftOf(
     date: tx.date,
     settlementDate: trade.settlement_date,
     quantity: trade.quantity.amount,
-    unitPrice: formatRate(trade.unit_price, locale),
+    unitPrice: trade.unit_price,
     priceBasis: "unit",
     total: 0,
     fees: trade.fees.amount,

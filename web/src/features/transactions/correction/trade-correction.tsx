@@ -8,7 +8,6 @@ import { useCorrectionDone } from "@/features/transactions/correction/use-correc
 import { emptyTrade } from "@/features/transactions/trade-entry/trade-draft";
 import { TradeForm } from "@/features/transactions/trade-entry/trade-form";
 import { useTradeEntry } from "@/features/transactions/trade-entry/use-trade-entry";
-import { useAppLocale } from "@/i18n/i18n-provider";
 
 type Account = components["schemas"]["Account"];
 type Transaction = components["schemas"]["Transaction"];
@@ -25,13 +24,10 @@ export function TradeCorrection({
   accounts,
   scale,
 }: TradeCorrectionProps) {
-  const [locale] = useAppLocale();
   const done = useCorrectionDone(transaction.id);
 
   const [start] = useState(
-    () =>
-      tradeDraftOf(transaction, accounts, locale) ??
-      emptyTrade(transaction.date),
+    () => tradeDraftOf(transaction, accounts) ?? emptyTrade(transaction.date),
   );
   const [reason, setReason] = useState("");
 
