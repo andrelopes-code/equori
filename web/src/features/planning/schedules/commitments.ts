@@ -77,18 +77,26 @@ export function commitments(
   };
 }
 
-// The column, 0 or 1, of each group: each goes to the column holding fewer rows so far.
-export function balanceColumns(sizes: readonly number[]): number[] {
-  let left = 0;
-  let right = 0;
+export interface CommitmentPart {
+  key: "bill" | "subscription" | "savings" | "free";
+  amount: number;
+  // Share of the fixed income.
+  bp: number;
+}
 
-  return sizes.map((size) => {
-    if (left <= right) {
-      left += size;
-      return 0;
-    }
+// The fixed income split into the kinds that take from it and what is left free (spec B2); no
+// free part when the commitments exceed the income, no part without income.
+export function commitmentParts(c: Commitments): CommitmentPart[] {
+  if (c.income <= 0) return [];
 
-    right += size;
-    return 1;
-  });
+  const parts: { key: CommitmentPart["key"]; amount: number }[] = [
+    { key: "bill", amount: c.bills },
+    { key: "subscription", amount: c.subscriptions },
+    { key: "savings", amount: c.savings },
+    { key: "free", amount: c.free },
+  ];
+
+  return parts
+    .filter((p) => p.amount > 0)
+    .map((p) => ({ ...p, bp: Math.round((p.amount * 10000) / c.income) }));
 }

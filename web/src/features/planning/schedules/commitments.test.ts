@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
-  balanceColumns,
+  commitmentParts,
   commitments,
 } from "@/features/planning/schedules/commitments";
 import * as fixtures from "@/testing/planning-api";
@@ -137,14 +137,44 @@ describe("commitments", () => {
   });
 });
 
-describe("balanceColumns", () => {
+describe("commitmentParts", () => {
+  const base = {
+    currency: "BRL",
+    income: 500000,
+    bills: 210000,
+    subscriptions: 3990,
+    savings: 0,
+    free: 286010,
+    shareBp: 4280,
+    counts: { income: 1, billsAndSubscriptions: 2, savings: 0 },
+    leftOut: [],
+  };
+
   it.each([
-    { sizes: [7, 10, 4, 4, 1], want: [0, 1, 0, 1, 0] },
-    { sizes: [3], want: [0] },
-    { sizes: [], want: [] },
-    { sizes: [2, 2, 2], want: [0, 1, 0] },
-  ])("places $sizes in $want", ({ sizes, want }) => {
-    expect(balanceColumns(sizes)).toEqual(want);
+    {
+      name: "the kinds with an amount and what is left free, in shares of the income",
+      input: base,
+      want: [
+        { key: "bill", amount: 210000, bp: 4200 },
+        { key: "subscription", amount: 3990, bp: 80 },
+        { key: "free", amount: 286010, bp: 5720 },
+      ],
+    },
+    {
+      name: "no free part when the commitments exceed the income",
+      input: { ...base, income: 100000, free: -113990 },
+      want: [
+        { key: "bill", amount: 210000, bp: 21000 },
+        { key: "subscription", amount: 3990, bp: 399 },
+      ],
+    },
+    {
+      name: "no part without income",
+      input: { ...base, income: 0, free: -213990 },
+      want: [],
+    },
+  ])("$name", ({ input, want }) => {
+    expect(commitmentParts(input)).toEqual(want);
   });
 });
 

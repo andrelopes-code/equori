@@ -1,0 +1,160 @@
+@layer app {
+  .root {
+    display: grid;
+    gap: var(--slotted-space-3);
+    padding: var(--slotted-space-3);
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-raised);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: var(--slotted-space-1);
+  }
+
+  .weekday {
+    padding-block-end: var(--slotted-space-1);
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+    text-align: center;
+    text-transform: lowercase;
+  }
+
+  /* A day holds three rows of fixed height: its number, its marks, its net (one line each). */
+  .day {
+    all: unset;
+    box-sizing: border-box;
+    container-type: inline-size;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+    block-size: var(--slotted-space-12);
+    padding: var(--slotted-space-1) var(--slotted-space-2);
+    border: var(--slotted-border-width-thin) solid transparent;
+    border-radius: var(--slotted-radius-sm);
+    color: var(--slotted-text);
+  }
+
+  .day[data-busy] {
+    background: var(--slotted-surface-sunken);
+    cursor: pointer;
+  }
+
+  .day[data-busy]:hover {
+    border-color: var(--slotted-border-strong);
+  }
+
+  .day[data-outside] {
+    color: var(--slotted-text-muted);
+  }
+
+  .day[data-today] .number {
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .day[data-today] {
+    border-color: var(--slotted-tone-accent-border);
+  }
+
+  .day[data-selected] {
+    border-color: var(--slotted-tone-accent-solid);
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .day:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .number {
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .marks {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: end;
+    gap: var(--slotted-space-2);
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  /* A mark is a disc in the series of its direction; hollow while the occurrence is pending. */
+  .mark {
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-full);
+    background: var(--direction);
+    box-shadow: inset 0 0 0 var(--slotted-border-width-medium) var(--direction);
+  }
+
+  .mark[data-direction="in"] {
+    --direction: var(--slotted-data-1);
+  }
+
+  .mark[data-direction="out"] {
+    --direction: var(--slotted-data-2);
+  }
+
+  .mark[data-pending] {
+    background: transparent;
+  }
+
+  .net {
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--slotted-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: end;
+  }
+
+  /* A narrow day keeps its marks and leaves the net to the tooltip and the list. */
+  @container (max-width: 3.5rem) {
+    .net {
+      display: none;
+    }
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2) var(--slotted-space-5);
+  }
+
+  .key {
+    display: inline-flex;
+    gap: var(--slotted-space-2);
+    align-items: center;
+  }
+
+  .tipRow {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  /* Forced colors drop the fills: an outline keeps a done mark apart from a pending one. */
+  @media (forced-colors: active) {
+    .mark {
+      background: CanvasText;
+      box-shadow: none;
+    }
+
+    .mark[data-pending] {
+      background: Canvas;
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .day[data-today],
+    .day[data-selected] {
+      border-color: Highlight;
+    }
+  }
+}

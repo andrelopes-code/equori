@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
-  dayMarks,
   lowestPoint,
   monthClose,
   pendingGroups,
@@ -151,17 +150,5 @@ describe("runningBalance", () => {
     );
 
     expect(series[30]).toEqual({ date: "2026-10-31", amount: 76010 });
-  });
-});
-
-describe("dayMarks", () => {
-  it("marks each day of the month by its most pressing state", () => {
-    const marks = dayMarks(rows(), "2026-10");
-
-    expect([...marks]).toEqual([
-      ["2026-10-05", { count: 1, tone: "danger" }],
-      ["2026-10-12", { count: 1, tone: "success" }],
-      ["2026-10-20", { count: 1, tone: "accent" }],
-    ]);
   });
 });

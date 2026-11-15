@@ -1877,16 +1877,12 @@ export const catalogPtBR: Catalog = {
   "recurrence.count": "{count} vezes",
   "planning.tab.schedules": "Agendamentos",
   "planning.new": "Novo agendamento",
-  "schedules.caption": "Agendamentos por tipo",
   "schedules.counterpart": "Categoria ou conta",
   "schedules.recurrence": "Recorrência",
   "schedules.next": "Próxima ocorrência",
   "schedules.ends": "Termina em",
   "schedules.ended": "Encerrados",
-  "schedules.yearly": "Por ano",
   "schedules.none": "Nenhuma",
-  "schedules.recurringShare":
-    "Contas e assinaturas anuais consomem {percent} da receita anual em {currency}.",
   "schedules.empty": "Nenhum agendamento ainda",
   "schedules.emptyHint":
     "Um agendamento registra uma conta, uma receita, uma assinatura, uma transferência ou uma poupança que se repete.",

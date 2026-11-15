@@ -129,6 +129,21 @@ describe("PlanningPage agenda", () => {
     ).toBeInTheDocument();
   });
 
+  // Spec A5: the month's own grid names each day's occurrences and reaches their rows.
+  it("names the occurrences of a day in the month's grid", async () => {
+    await renderApp("/planning", { fetch: api() });
+    const grid = await screen.findByRole("group", {
+      name: catalogEn["agenda.calendar"],
+    });
+
+    const day = await within(grid).findByRole("button", {
+      name: /^October 20; Salary \+R\$5,000\.00, Expected$/,
+    });
+    await userEvent.click(day);
+
+    expect(day).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("totals a group with one figure per currency, with a base currency of EUR", async () => {
     await renderApp("/planning", {
       fetch: api({

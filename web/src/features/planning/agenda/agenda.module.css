@@ -27,10 +27,4 @@
     align-content: start;
     min-inline-size: 0;
   }
-
-  /* The calendar's cell grows to fill the column: the family divides the room by seven up to
-     its cell size, and the theme's step leaves most of the column empty. */
-  .days {
-    --slotted-calendar-cell-size: 4rem;
-  }
 }

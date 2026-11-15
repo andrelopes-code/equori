@@ -1,30 +1,34 @@
-import styles from "@/features/planning/agenda/agenda.module.css";
-import { MonthCalendar } from "@/features/planning/agenda/month-calendar";
-import type { DayMark } from "@/features/planning/agenda/month-close";
+import type { CalendarDay } from "@/features/planning/agenda/month-days";
+import { MonthGrid } from "@/features/planning/agenda/month-grid";
+import { useToday } from "@/i18n/today";
 
 interface DaysSectionProps {
-  month: string;
-  marks: ReadonlyMap<string, DayMark>;
-  onMonth: (month: string) => void;
+  days: readonly CalendarDay[];
+  firstDay: number;
+  selected: string | null;
+  scale: (code: string) => number;
   onDay: (iso: string) => void;
 }
 
-// The days of the month that hold occurrences (spec A5); the calendar's own title names the
-// month, so the column draws no heading of its own.
+// The days of the month that move money (spec A5); the page header's month control names and
+// moves the month.
 export function DaysSection({
-  month,
-  marks,
-  onMonth,
+  days,
+  firstDay,
+  selected,
+  scale,
   onDay,
 }: DaysSectionProps) {
+  const today = useToday();
+
   return (
-    <div className={styles.days}>
-      <MonthCalendar
-        month={month}
-        marks={marks}
-        onMonth={onMonth}
-        onDay={onDay}
-      />
-    </div>
+    <MonthGrid
+      days={days}
+      firstDay={firstDay}
+      today={today}
+      selected={selected}
+      scale={scale}
+      onDay={onDay}
+    />
   );
 }

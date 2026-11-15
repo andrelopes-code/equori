@@ -1,0 +1,76 @@
+@layer app {
+  .root {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .bar {
+    display: flex;
+    gap: var(--slotted-space-1);
+    block-size: var(--slotted-space-3);
+    min-inline-size: 0;
+  }
+
+  .part {
+    flex-basis: 0;
+    min-inline-size: var(--slotted-space-1);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--tone);
+  }
+
+  /* What is left free is a hatch of the border: a part of the income, not a series. */
+  .part[data-tone="free"] {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-border-strong) 0 var(--slotted-space-1),
+      transparent var(--slotted-space-1) var(--slotted-space-2)
+    );
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      var(--slotted-border-strong);
+  }
+
+  [data-tone="data-1"] {
+    --tone: var(--slotted-data-1);
+  }
+
+  [data-tone="data-2"] {
+    --tone: var(--slotted-data-2);
+  }
+
+  [data-tone="data-3"] {
+    --tone: var(--slotted-data-3);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2) var(--slotted-space-6);
+    align-items: center;
+  }
+
+  .item {
+    display: inline-flex;
+    gap: var(--slotted-space-2);
+    align-items: center;
+  }
+
+  .swatch {
+    inline-size: var(--slotted-space-3);
+    block-size: var(--slotted-space-3);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--tone);
+  }
+
+  .swatch[data-tone="free"] {
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      var(--slotted-border-strong);
+  }
+
+  /* Forced colors drop the backgrounds: an outline keeps each part apart. */
+  @media (forced-colors: active) {
+    .part,
+    .swatch {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+  }
+}

@@ -1,8 +1,11 @@
 import { Inline } from "@slotted/react/inline";
-import { Tag } from "@slotted/react/tag";
+import { Stack } from "@slotted/react/stack";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
+import { Tag } from "@slotted/react/tag";
+import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
+import { nextWords } from "@/features/planning/model/next-words";
 import {
   currentTerms,
   kindLabel,
@@ -23,12 +26,13 @@ interface ScheduleRowProps {
   // The next expected occurrence, when there is one.
   nextOn: string | undefined;
   scale: (code: string) => number;
-  // An ended schedule sits outside the group of its kind, so the row names the kind itself, and
+  // An ended schedule sits outside the table of its kind, so the row names the kind itself, and
   // it draws muted.
   ended?: boolean;
 }
 
-// One schedule of the schedules table: its terms in force today and its next occurrence.
+// One schedule: where its money goes and how often, its next occurrence and end, its amount and
+// the change of terms already set (spec B3, B4).
 export function ScheduleRow({
   schedule: s,
   accountNames,
@@ -40,14 +44,39 @@ export function ScheduleRow({
   const [locale] = useAppLocale();
   const today = useToday();
   const fmt = useMoneyFormat();
+
   const terms = currentTerms(s.terms, today);
+  const ahead = s.terms.find((v) => v.effective_from > today);
+  const name = s.description === "" ? t("ledger.untitled") : s.description;
+  const where = [
+    accountNames.get(s.account_id),
+    accountNames.get(s.counterpart_id),
+  ]
+    .filter((part) => part !== undefined)
+    .join(" · ");
+  const monthly =
+    terms === undefined ||
+    (terms.recurrence.frequency === "monthly" &&
+      terms.recurrence.interval === 1);
+  const change =
+    terms !== undefined && ahead !== undefined
+      ? t(
+          ahead.amount.amount > terms.amount.amount
+            ? "schedules.rises"
+            : "schedules.falls",
+          {
+            amount: fmt.money(ahead.amount, scale(ahead.amount.currency)),
+            date: formatDate(ahead.effective_from, locale),
+          },
+        )
+      : undefined;
   const link = (
     <AppLink
       variant="neutral"
       underline="hover"
       to={{ to: "/planning/schedules/$id", params: { id: s.id } }}
     >
-      {s.description === "" ? t("ledger.untitled") : s.description}
+      {name}
     </AppLink>
   );
 
@@ -65,38 +94,59 @@ export function ScheduleRow({
           link
         )}
       </TableRowHeader>
-      <TableCell text="truncate">{accountNames.get(s.account_id)}</TableCell>
       <TableCell text="truncate">
-        {accountNames.get(s.counterpart_id)}
-      </TableCell>
-      <TableCell numeric>
-        {terms !== undefined &&
-          fmt.money(terms.amount, scale(terms.amount.currency))}
-      </TableCell>
-      <TableCell numeric>
-        {terms !== undefined &&
-          s.kind !== "transfer" &&
-          fmt.money(
-            {
-              amount: subscriptionCost(terms.recurrence, terms.amount.amount)
-                .yearly,
-              currency: terms.amount.currency,
-            },
-            scale(terms.amount.currency),
+        <Stack gap={0}>
+          <Text size="sm">{where}</Text>
+          {terms !== undefined && (
+            <Text size="xs" tone="muted">
+              {recurrenceWords(terms.recurrence, t, locale)}
+            </Text>
           )}
+        </Stack>
       </TableCell>
       <TableCell>
-        {terms !== undefined && recurrenceWords(terms.recurrence, t, locale)}
+        <Stack gap={0}>
+          <Text size="sm">
+            {nextOn === undefined
+              ? t("schedules.none")
+              : nextWords(nextOn, today, locale)}
+          </Text>
+          {s.ends_on !== undefined && (
+            <Text size="xs" tone="muted">
+              {t("schedules.endsOn", { date: formatDate(s.ends_on, locale) })}
+            </Text>
+          )}
+        </Stack>
       </TableCell>
-      <TableCell>
-        {nextOn === undefined
-          ? t("schedules.none")
-          : formatDate(nextOn, locale)}
-      </TableCell>
-      <TableCell>
-        {s.ends_on === undefined
-          ? t("schedule.noEnd")
-          : formatDate(s.ends_on, locale)}
+      <TableCell numeric>
+        {terms !== undefined && (
+          <Stack gap={0}>
+            <Text size="sm" numeric="tabular">
+              {fmt.money(terms.amount, scale(terms.amount.currency))}
+            </Text>
+            {change !== undefined && (
+              <Text size="xs" tone="info">
+                {change}
+              </Text>
+            )}
+            {change === undefined && !monthly && (
+              <Text size="xs" tone="muted" numeric="tabular">
+                {t("schedules.perMonth", {
+                  amount: fmt.money(
+                    {
+                      amount: subscriptionCost(
+                        terms.recurrence,
+                        terms.amount.amount,
+                      ).monthly,
+                      currency: terms.amount.currency,
+                    },
+                    scale(terms.amount.currency),
+                  ),
+                })}
+              </Text>
+            )}
+          </Stack>
+        )}
       </TableCell>
     </TableRow>
   );

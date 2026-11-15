@@ -33,11 +33,6 @@ export interface BalancePoint {
   amount: number;
 }
 
-export interface DayMark {
-  count: number;
-  tone: "danger" | "accent" | "success";
-}
-
 const weekDays = 7;
 
 // The month's close in one currency (spec A2): a realized row at its charged amount, a pending
@@ -148,41 +143,4 @@ export function lowestPoint(
     (low, p) => (low === undefined || p.amount < low.amount ? p : low),
     undefined,
   );
-}
-
-// One mark per day of the month that holds rows (spec A5).
-export function dayMarks(
-  rows: readonly AgendaRow[],
-  month: string,
-): Map<string, DayMark> {
-  const marks = new Map<string, DayMark>();
-  const sorted = [...rows].sort((a, b) =>
-    a.occurrence.expected_on.localeCompare(b.occurrence.expected_on),
-  );
-
-  for (const r of sorted) {
-    const day = r.occurrence.expected_on;
-    if (!day.startsWith(month)) continue;
-
-    const mark = marks.get(day) ?? { count: 0, tone: "success" };
-    marks.set(day, {
-      count: mark.count + 1,
-      tone: stronger(mark.tone, toneOf(r)),
-    });
-  }
-
-  return marks;
-}
-
-function toneOf(row: AgendaRow): DayMark["tone"] {
-  if (row.occurrence.state === "overdue") return "danger";
-  if (row.occurrence.state === "expected") return "accent";
-
-  return "success";
-}
-
-function stronger(a: DayMark["tone"], b: DayMark["tone"]): DayMark["tone"] {
-  const rank = { success: 0, accent: 1, danger: 2 };
-
-  return rank[a] >= rank[b] ? a : b;
 }

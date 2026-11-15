@@ -6,66 +6,46 @@ import {
   ResultStateDescription,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableColumnHeader,
-  TableContent,
-  TableGroupRow,
-  TableHead,
-  TableLoader,
-  TableRow,
-} from "@slotted/react/table";
-import { useQuery } from "@tanstack/react-query";
-import { Fragment } from "react";
+import { Stack } from "@slotted/react/stack";
 
-import { useApi } from "@/api/api-context";
-import type { components } from "@/api/schema.gen";
-import { accountsQuery } from "@/features/accounts";
-import { occurrencesQuery, schedulesQuery } from "@/features/planning/api";
-import { ScheduleRow } from "@/features/planning/schedules/schedule-row";
-import { hasEnded, kindLabel } from "@/features/planning/model/schedule-words";
-import { useScale } from "@/features/setup";
-import { shiftDate } from "@/i18n/format";
+import { CommitmentBar } from "@/features/planning/schedules/commitment-bar";
+import { EndedSchedules } from "@/features/planning/schedules/ended-schedules";
+import { ScheduleTable } from "@/features/planning/schedules/schedule-table";
+import { SchedulesSummary } from "@/features/planning/schedules/schedules-summary";
+import { useSchedulesData } from "@/features/planning/schedules/use-schedules-data";
 import { useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
+import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/feedback/query-error";
 
-type ScheduleKind = components["schemas"]["ScheduleKind"];
+interface SchedulesTabProps {
+  onCreate: () => void;
+}
 
-const kinds = Object.keys(kindLabel) as ScheduleKind[];
-
-// The schedules by kind, each with its terms in force today and its next expected occurrence.
-export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
+// What the fixed commitments take of the fixed income, and the schedules of each kind (docs/specs/2026-11-15-planning-tabs-design.md, section 5).
+export function SchedulesTab({ onCreate }: SchedulesTabProps) {
   const t = useT();
-  const api = useApi();
-  const today = useToday();
-  const scale = useScale();
-  const schedules = useQuery(schedulesQuery(api));
-  const accounts = useQuery(accountsQuery(api));
-  // listOccurrences reads at most 366 days.
-  const upcoming = useQuery(
-    occurrencesQuery(api, today, shiftDate(today, 365), { state: "expected" }),
-  );
-  const names = new Map((accounts.data ?? []).map((a) => [a.id, a.name]));
-  const next = new Map<string, string>();
-  for (const o of upcoming.data ?? [])
-    if (o.state === "expected" && !next.has(o.schedule_id))
-      next.set(o.schedule_id, o.expected_on);
-  const items = schedules.data ?? [];
-  const active = items.filter((s) => !hasEnded(s.ends_on, today));
-  const ended = items
-    .filter((s) => hasEnded(s.ends_on, today))
-    .sort((x, y) => (y.ends_on ?? "").localeCompare(x.ends_on ?? ""));
-  if (schedules.isError)
+  const fmt = useMoneyFormat();
+  const data = useSchedulesData();
+
+  const scale = data.scale ?? (() => 0);
+  const loading = data.schedules.isPending || data.scale === null;
+  const total = (monthly: number) =>
+    data.currency === undefined
+      ? undefined
+      : fmt.money(
+          { amount: monthly, currency: data.currency },
+          scale(data.currency),
+        );
+
+  if (data.schedules.isError)
     return (
       <QueryError
-        error={schedules.error}
-        onRetry={() => void schedules.refetch()}
+        error={data.schedules.error}
+        onRetry={() => void data.schedules.refetch()}
       />
     );
-  if (!schedules.isPending && items.length === 0)
+
+  if (!data.schedules.isPending && data.schedules.data.length === 0)
     return (
       <ResultState status="empty" reach="section">
         <ResultStateContent>
@@ -79,68 +59,44 @@ export function SchedulesTab({ onCreate }: { onCreate: () => void }) {
         </ResultStateActions>
       </ResultState>
     );
+
   return (
-    <Table
-      columns={8}
-      variant="framed"
-      loading={schedules.isFetching && !schedules.isPending}
-    >
-      <TableContent>
-        <TableCaption>{t("schedules.caption")}</TableCaption>
-        <TableHead>
-          <TableRow>
-            <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>
-            <TableColumnHeader>{t("agenda.account")}</TableColumnHeader>
-            <TableColumnHeader>{t("schedules.counterpart")}</TableColumnHeader>
-            <TableColumnHeader numeric>{t("ledger.amount")}</TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("schedules.yearly")}
-            </TableColumnHeader>
-            <TableColumnHeader>{t("schedules.recurrence")}</TableColumnHeader>
-            <TableColumnHeader>{t("schedules.next")}</TableColumnHeader>
-            <TableColumnHeader>{t("schedules.ends")}</TableColumnHeader>
-          </TableRow>
-        </TableHead>
-        {schedules.isPending || scale === null ? (
-          <TableLoader skeletonRows={4} />
-        ) : (
-          <TableBody>
-            {kinds.map((kind) => {
-              const rows = active.filter((s) => s.kind === kind);
-              if (rows.length === 0) return null;
-              return (
-                <Fragment key={kind}>
-                  <TableGroupRow>{t(kindLabel[kind])}</TableGroupRow>
-                  {rows.map((s) => (
-                    <ScheduleRow
-                      key={s.id}
-                      schedule={s}
-                      accountNames={names}
-                      nextOn={next.get(s.id)}
-                      scale={scale}
-                    />
-                  ))}
-                </Fragment>
-              );
-            })}
-            {ended.length > 0 && (
-              <>
-                <TableGroupRow>{t("schedules.ended")}</TableGroupRow>
-                {ended.map((s) => (
-                  <ScheduleRow
-                    key={s.id}
-                    schedule={s}
-                    accountNames={names}
-                    nextOn={next.get(s.id)}
-                    scale={scale}
-                    ended
-                  />
-                ))}
-              </>
-            )}
-          </TableBody>
+    <Stack gap={6}>
+      <Stack gap={4}>
+        <SchedulesSummary
+          commitments={data.commitments}
+          scale={data.scale}
+          loading={loading}
+        />
+        {data.commitments !== undefined && data.scale !== null && (
+          <CommitmentBar
+            commitments={data.commitments}
+            scale={data.scale(data.commitments.currency)}
+          />
         )}
-      </TableContent>
-    </Table>
+      </Stack>
+
+      <ScheduleTable
+        caption={t("schedules.caption")}
+        groups={data.groups.map((group) => ({
+          key: group.kind,
+          label: t(`schedules.group.${group.kind}`),
+          end: total(group.monthly),
+          schedules: group.schedules,
+        }))}
+        accountNames={data.accountNames}
+        nextOn={data.nextOn}
+        scale={scale}
+        loading={loading}
+      />
+
+      {!loading && (
+        <EndedSchedules
+          schedules={data.ended}
+          accountNames={data.accountNames}
+          scale={scale}
+        />
+      )}
+    </Stack>
   );
 }

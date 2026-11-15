@@ -18,12 +18,11 @@ import { useToday } from "@/i18n/today";
 
 interface AgendaTabProps {
   month: string;
-  onMonth: (month: string) => void;
 }
 
 // The month's close, what is still to pay and receive, the days money moves and the running
 // balance (docs/specs/2026-11-15-planning-tabs-design.md, section 4).
-export function AgendaTab({ month, onMonth }: AgendaTabProps) {
+export function AgendaTab({ month }: AgendaTabProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
@@ -31,6 +30,7 @@ export function AgendaTab({ month, onMonth }: AgendaTabProps) {
   const shownFilter = useDeferredValue(filter);
   const data = useAgendaMonth(month, shownFilter);
   const [doneOpen, setDoneOpen] = useState<boolean | null>(null);
+  const [day, setDay] = useState<string | null>(null);
   const pendingTable = useRef<TableHandle>(null);
   const doneTable = useRef<TableHandle>(null);
 
@@ -46,6 +46,7 @@ export function AgendaTab({ month, onMonth }: AgendaTabProps) {
   const open = doneOpen ?? (!data.loading && groups.length === 0);
 
   function handleDay(iso: string) {
+    setDay(iso);
     const pending = groups
       .flatMap((g) => g.rows)
       .find((r) => r.occurrence.expected_on === iso);
@@ -110,9 +111,10 @@ export function AgendaTab({ month, onMonth }: AgendaTabProps) {
         </div>
 
         <DaysSection
-          month={month}
-          marks={data.marks}
-          onMonth={onMonth}
+          days={data.days}
+          firstDay={data.firstDay}
+          selected={day}
+          scale={scale}
           onDay={handleDay}
         />
       </div>

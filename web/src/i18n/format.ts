@@ -327,6 +327,28 @@ export function formatDayHeader(
   return formatWeekdayDayMonth(iso, locale);
 }
 
+// The first day of the locale's week, 0 for Sunday. A runtime without week data starts on Monday,
+// the ISO 8601 week.
+export function firstDayOfWeek(locale: string): number {
+  const tag = new Intl.Locale(locale) as Intl.Locale & {
+    getWeekInfo?: () => { firstDay: number };
+    weekInfo?: { firstDay: number };
+  };
+  const info = tag.getWeekInfo?.() ?? tag.weekInfo;
+
+  return (info?.firstDay ?? 1) % 7;
+}
+
+// The short names of the seven weekdays from the given first day: "dom" … "sáb".
+export function weekdayLabels(locale: string, firstDay: number): string[] {
+  // 2023-01-01 is a Sunday.
+  return Array.from({ length: 7 }, (_, i) =>
+    dateFormat(locale, { weekday: "short" })
+      .format(utcDate(`2023-01-0${String(1 + ((firstDay + i) % 7))}`))
+      .replace(/\.$/, ""),
+  );
+}
+
 // "qua, 14 out" / "Wed, Oct 14", also for today and yesterday.
 export function formatWeekdayDayMonth(iso: string, locale: string): string {
   const weekday = dateParts(iso, locale, { weekday: "short" }).weekday ?? "";
