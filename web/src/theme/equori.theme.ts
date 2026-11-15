@@ -101,6 +101,19 @@ const sectionActionsRule = `
 }
 `;
 
+// Workaround for Slotted issue #116: a top-level section always titles itself as a 13 px uppercase
+// label. A large section on a surface is a panel of the page, and a conclusion inside it (15 px,
+// semibold) outweighed its label, so the panels read as one block. The panel's title reads in mixed
+// case, one step above that conclusion.
+const panelTitleRule = `
+[data-ui="section"][data-ground="surface"][data-size="lg"] > [data-part="header"] > [data-part="title"] > [data-part="heading"] {
+  font-size: var(--slotted-font-size-xl);
+  line-height: var(--slotted-line-height-xl);
+  letter-spacing: normal;
+  text-transform: none;
+}
+`;
+
 // Workaround for Slotted issue #99: the actions of a card header occupy its first row, and a
 // control taller than the title stretches that row, which pushes the description away. The
 // actions span the rows of the header's text, so its height is shared and adds nothing.
@@ -466,6 +479,7 @@ export default extendTheme(
       sectionRule,
       sectionDescriptionRule,
       sectionActionsRule,
+      panelTitleRule,
       cardActionsRule,
       resultStateRule,
       paletteScrimRule,

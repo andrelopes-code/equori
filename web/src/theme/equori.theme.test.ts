@@ -216,6 +216,13 @@ test("a section sets its description tight under the title and the body clear of
   );
 });
 
+test("a large section on a surface titles its panel in mixed case, a step above its body", () => {
+  assert.match(
+    css,
+    /\[data-ui="section"\]\[data-ground="surface"\]\[data-size="lg"\] > \[data-part="header"\] > \[data-part="title"\] > \[data-part="heading"\]\s*\{[^}]*font-size: var\(--slotted-font-size-xl\);[^}]*letter-spacing: normal;[^}]*text-transform: none/,
+  );
+});
+
 test("section actions of a titled description do not size the rows of the title", () => {
   const header =
     '\\[data-ui="section"\\] > \\[data-part="header"\\]:has\\(> \\[data-part="title"\\] > \\[data-part="description"\\]\\)';

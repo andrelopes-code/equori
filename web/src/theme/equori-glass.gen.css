@@ -1870,6 +1870,13 @@
       align-self: center;
     }
 
+    [data-ui="section"][data-ground="surface"][data-size="lg"] > [data-part="header"] > [data-part="title"] > [data-part="heading"] {
+      font-size: var(--slotted-font-size-xl);
+      line-height: var(--slotted-line-height-xl);
+      letter-spacing: normal;
+      text-transform: none;
+    }
+
     [data-ui="card"] > [data-part="header"]:has(> :nth-child(2 of :not([data-part="actions"]))) > [data-part="actions"] {
       grid-row: 1 / span 2;
     }
