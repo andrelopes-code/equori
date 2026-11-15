@@ -7,7 +7,7 @@ import {
   bucketGroups,
   bucketResolver,
   bucketStatus,
-} from "@/features/planning/budget-plan/bucket-figures";
+} from "@/features/planning/income-split/bucket-figures";
 import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
 
 type Bucket = components["schemas"]["BudgetPlanBucket"];

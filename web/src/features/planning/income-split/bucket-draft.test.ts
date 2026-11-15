@@ -10,7 +10,7 @@ import {
   initialDraft,
   keepChoices,
   totalBp,
-} from "@/features/planning/budget-plan/bucket-draft";
+} from "@/features/planning/income-split/bucket-draft";
 
 type Bucket = components["schemas"]["BudgetPlanBucket"];
 

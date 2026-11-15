@@ -12,12 +12,12 @@ import {
   initialDraft,
   keepChoices,
   maxBuckets,
-} from "@/features/planning/budget-plan/bucket-draft";
+} from "@/features/planning/income-split/bucket-draft";
 import type {
   BucketDraft,
   DraftBucket,
   PresetName,
-} from "@/features/planning/budget-plan/bucket-draft";
+} from "@/features/planning/income-split/bucket-draft";
 import { useT } from "@/i18n/i18n-provider";
 
 type Bucket = components["schemas"]["BudgetPlanBucket"];

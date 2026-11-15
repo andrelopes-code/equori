@@ -2,13 +2,13 @@ import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
 import type { CategoryEntry } from "@/features/categories";
-import { BucketCategoryRow } from "@/features/planning/budget-plan/bucket-category-row";
+import { BucketCategoryRow } from "@/features/planning/income-split/bucket-category-row";
 import {
   expenseBranches,
   outsideChoice,
   sameChoice,
-} from "@/features/planning/budget-plan/bucket-draft";
-import type { DraftBucket } from "@/features/planning/budget-plan/bucket-draft";
+} from "@/features/planning/income-split/bucket-draft";
+import type { DraftBucket } from "@/features/planning/income-split/bucket-draft";
 import { useT } from "@/i18n/i18n-provider";
 
 interface BucketCategoriesProps {

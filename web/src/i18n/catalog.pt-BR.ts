@@ -1,5 +1,4 @@
 import { planningTabsPtBR } from "@/i18n/catalog-planning-tabs.pt-BR";
-import { budgetBucketsPtBR } from "@/i18n/catalog-budget-buckets.pt-BR";
 import { budgetPlanPtBR } from "@/i18n/catalog-budget-plan.pt-BR";
 import { calculatorsPtBR } from "@/i18n/catalog-calculators.pt-BR";
 import { marketDataPtBR } from "@/i18n/catalog-market-data.pt-BR";
@@ -16,7 +15,6 @@ import type { Catalog } from "@/i18n/catalog.en";
 export const catalogPtBR: Catalog = {
   ...planningTabsPtBR,
   ...budgetPlanPtBR,
-  ...budgetBucketsPtBR,
   ...calculatorsPtBR,
   ...marketDataPtBR,
   ...accountsPtBR,

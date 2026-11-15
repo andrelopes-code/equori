@@ -3,12 +3,12 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
-import { BucketEditRow } from "@/features/planning/budget-plan/bucket-edit-row";
+import { BucketEditRow } from "@/features/planning/income-split/bucket-edit-row";
 import {
   maxBuckets,
   totalBp,
-} from "@/features/planning/budget-plan/bucket-draft";
-import type { DraftBucket } from "@/features/planning/budget-plan/bucket-draft";
+} from "@/features/planning/income-split/bucket-draft";
+import type { DraftBucket } from "@/features/planning/income-split/bucket-draft";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 

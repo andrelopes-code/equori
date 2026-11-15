@@ -3,8 +3,8 @@ import { Checkbox } from "@slotted/react/checkbox";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { TextField } from "@slotted/react/text-field";
 
-import styles from "@/features/planning/budget-plan/bucket-dialog.module.css";
-import type { DraftBucket } from "@/features/planning/budget-plan/bucket-draft";
+import styles from "@/features/planning/income-split/bucket-dialog.module.css";
+import type { DraftBucket } from "@/features/planning/income-split/bucket-draft";
 import { useT } from "@/i18n/i18n-provider";
 
 interface BucketEditRowProps {

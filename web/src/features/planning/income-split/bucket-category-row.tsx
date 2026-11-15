@@ -4,7 +4,7 @@ import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import type { CategoryEntry } from "@/features/categories";
-import styles from "@/features/planning/budget-plan/bucket-dialog.module.css";
+import styles from "@/features/planning/income-split/bucket-dialog.module.css";
 import type { Choice } from "@/ui/form-fields/choice-select";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { useT } from "@/i18n/i18n-provider";

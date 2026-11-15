@@ -3,7 +3,7 @@ import type { CategoryEntry } from "@/features/categories";
 import {
   bucketFigures,
   bucketGroups,
-} from "@/features/planning/budget-plan/bucket-figures";
+} from "@/features/planning/income-split/bucket-figures";
 import { planGroups } from "@/features/planning/budget-plan/plan-groups";
 import {
   firstNextChange,

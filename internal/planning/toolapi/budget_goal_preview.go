@@ -33,19 +33,7 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 		pv.Target, pv.Destructive = "Budget "+p.categoryName, true
 		pv.Changes = []tool.Change{{Field: "budget", Before: tool.TextValue(p.categoryName)}}
 	case "create_goal":
-		pv.Target = "Goal " + in.Name
-		pv.Changes = []tool.Change{
-			{
-				Field: "goal",
-				After: tool.TextValue(in.Name),
-			},
-			{Field: "target", After: tool.MoneyValue(*p.amount)},
-			{
-				Field: "due_on",
-				After: tool.DateValue(in.DueOn.Time),
-			},
-			{Field: "accounts", After: accounts},
-		}
+		previewGoalCreate(&pv, in, p, accounts)
 	case "update_goal":
 		if err := previewGoalUpdate(&pv, in, p, accounts); err != nil {
 			return tool.Preview{}, err
@@ -62,6 +50,21 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 	}
 
 	return pv, nil
+}
+
+func previewGoalCreate(
+	pv *tool.Preview,
+	in manageBudgetOrGoalIn,
+	p budgetGoalPlan,
+	accounts tool.Value,
+) {
+	pv.Target = "Goal " + in.Name
+	pv.Changes = []tool.Change{
+		{Field: "goal", After: tool.TextValue(in.Name)},
+		{Field: "target", After: tool.MoneyValue(*p.amount)},
+		{Field: "due_on", After: tool.DateValue(in.DueOn.Time)},
+		{Field: "accounts", After: accounts},
+	}
 }
 
 func previewBudgetAmount(pv *tool.Preview, p budgetGoalPlan) error {

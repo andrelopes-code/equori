@@ -9,8 +9,8 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 
-import type { BucketTotals } from "@/features/planning/budget-plan/bucket-figures";
-import { PlanBucketsTable } from "@/features/planning/budget-plan/plan-buckets-table";
+import type { BucketTotals } from "@/features/planning/income-split/bucket-figures";
+import { PlanBucketsTable } from "@/features/planning/income-split/plan-buckets-table";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 

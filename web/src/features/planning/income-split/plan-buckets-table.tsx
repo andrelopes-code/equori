@@ -9,8 +9,8 @@ import {
 } from "@slotted/react/table";
 import { VisuallyHidden } from "@slotted/react/visually-hidden";
 
-import type { BucketTotals } from "@/features/planning/budget-plan/bucket-figures";
-import { PlanBucketRow } from "@/features/planning/budget-plan/plan-bucket-row";
+import type { BucketTotals } from "@/features/planning/income-split/bucket-figures";
+import { PlanBucketRow } from "@/features/planning/income-split/plan-bucket-row";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 

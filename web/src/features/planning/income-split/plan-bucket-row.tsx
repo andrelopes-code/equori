@@ -2,7 +2,7 @@ import { Inline } from "@slotted/react/inline";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 
-import { bucketStatus } from "@/features/planning/budget-plan/bucket-figures";
+import { bucketStatus } from "@/features/planning/income-split/bucket-figures";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 

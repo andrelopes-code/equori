@@ -14,10 +14,10 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
-import { BucketCategories } from "@/features/planning/budget-plan/bucket-categories";
-import { BucketEditList } from "@/features/planning/budget-plan/bucket-edit-list";
-import type { PresetName } from "@/features/planning/budget-plan/bucket-draft";
-import { useBucketDraft } from "@/features/planning/budget-plan/use-bucket-draft";
+import { BucketCategories } from "@/features/planning/income-split/bucket-categories";
+import { BucketEditList } from "@/features/planning/income-split/bucket-edit-list";
+import type { PresetName } from "@/features/planning/income-split/bucket-draft";
+import { useBucketDraft } from "@/features/planning/income-split/use-bucket-draft";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
