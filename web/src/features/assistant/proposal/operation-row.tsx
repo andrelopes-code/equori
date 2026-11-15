@@ -10,7 +10,7 @@ import {
   actionTitle,
   proposalCardState,
 } from "@/features/assistant/proposal/proposal-card-state";
-import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes";
+import { OperationBody } from "@/features/assistant/proposal/operation-body";
 import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting";
 import { RowEnd } from "@/features/assistant/proposal/row-end";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
@@ -125,7 +125,7 @@ export function OperationRow({
           {proposal.status === "waiting" ? (
             <ProposalWaiting proposal={proposal} siblings={siblings} />
           ) : (
-            <ProposalChanges changes={preview.changes} />
+            <OperationBody preview={preview} />
           )}
 
           {proposal.suggested && proposal.reason !== undefined && (

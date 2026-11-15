@@ -8,7 +8,7 @@ import {
   actionTitle,
   proposalCardState,
 } from "@/features/assistant/proposal/proposal-card-state";
-import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes";
+import { OperationBody } from "@/features/assistant/proposal/operation-body";
 import { ResultLabel } from "@/features/assistant/proposal/result-label";
 import styles from "@/features/assistant/proposal/results.module.css";
 import { useExpired } from "@/features/assistant/proposal/use-expired";
@@ -67,7 +67,7 @@ export function ResultBlock({ proposal }: ResultBlockProps) {
         <ResultLabel status={status} />
       </div>
 
-      <ProposalChanges changes={preview.changes} />
+      <OperationBody preview={preview} />
 
       {failed && (
         <Text size="sm" className={styles.failure} role="status">

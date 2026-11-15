@@ -185,13 +185,18 @@ describe("ResultBlock", () => {
 
   // P14 (amended 2026-10-30): each field is one row of the list, its name then its value.
   it("lays each field on a row of its own (P14)", () => {
-    renderWithRouter(<ResultBlock proposal={recorded} />, routed);
+    const fields: Proposal = {
+      ...recorded,
+      preview: { ...recorded.preview, action: "manage_card.add_card" },
+    };
+
+    renderWithRouter(<ResultBlock proposal={fields} />, routed);
 
     const rows = [...document.querySelectorAll("dl > div")];
 
     expect(
       rows.map((row) => [...row.children].map((cell) => cell.tagName)),
-    ).toEqual(recorded.preview.changes.map(() => ["DT", "DD"]));
+    ).toEqual(fields.preview.changes.map(() => ["DT", "DD"]));
   });
 });
 

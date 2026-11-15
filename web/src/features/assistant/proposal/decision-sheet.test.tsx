@@ -49,14 +49,8 @@ describe("DecisionSheet", () => {
 
     expect(screen.getByText("Record transaction")).toBeInTheDocument();
     expect(screen.getByText("Checking")).toBeInTheDocument();
-    expect(screen.getByText("Amount")).toBeInTheDocument();
     expect(screen.getByText("Lunch")).toBeInTheDocument();
-
-    const before = screen.getByText(/10[.,]00/);
-    const after = screen.getByText(/1[.,]234[.,]56/);
-
-    expect(before.textContent).toMatch(/^was /);
-    expect(after.textContent).toMatch(/^becomes /);
+    expect(screen.getByText(/1[.,]234[.,]56/)).toBeInTheDocument();
     expect(
       screen.getByRole("checkbox", { name: "Record transaction" }),
     ).toBeChecked();
@@ -374,7 +368,7 @@ describe("DecisionSheet", () => {
     const { container } = renderAnswer([pending], fakeApi({}));
 
     expect(within(container).getByRole("checkbox")).toBeInTheDocument();
-    expect(within(container).getByText("Amount")).toBeInTheDocument();
+    expect(within(container).getByText("Lunch")).toBeInTheDocument();
     expectNoAmounts(container, leaks);
   });
 

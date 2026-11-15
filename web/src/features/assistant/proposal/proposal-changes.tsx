@@ -25,6 +25,8 @@ export function ProposalChanges({ changes }: ProposalChangesProps) {
   const t = useT();
   const changeText = useChangeText();
 
+  if (changes.length === 0) return null;
+
   return (
     <DescriptionList termWidth="8rem" className={styles.changes}>
       {changes.map((change, i) => {
