@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from "vitest";
 import type { components } from "@/api/schema.gen";
 import { assistantKeys } from "@/features/assistant/api";
 import { MessageItem } from "@/features/assistant/message/message-item";
-import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -48,6 +47,8 @@ function renderItem(proposals: Proposal[], fetch: typeof globalThis.fetch) {
 }
 
 describe("MessageItem proposals", () => {
+  // Spec 2026-11-15 section 4 (Dependent): the sheet's confirm follows a marked parent with its
+  // dependents.
   it("confirms pending and waiting proposals in order", async () => {
     const order: string[] = [];
     const answer = (id: string) => () => {
@@ -67,11 +68,7 @@ describe("MessageItem proposals", () => {
       }),
     );
 
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: catalogEn["assistant.proposal.confirm_all"],
-      }),
-    );
+    await userEvent.click(screen.getByRole("button", { name: "Confirm 1" }));
 
     await waitFor(() => {
       expect(order).toEqual(["p1", "p2"]);
@@ -87,7 +84,7 @@ describe("MessageItem proposals", () => {
       }),
     );
 
-    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirm 1" }));
 
     await waitFor(() => {
       expect(invalidate).toHaveBeenCalledWith({

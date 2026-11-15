@@ -1,0 +1,220 @@
+@layer app {
+  /* The mock's .sheet: radius 18, raised surface, 1 px border, shadow and an inner top highlight. */
+  .sheet {
+    overflow: hidden;
+    inline-size: 100%;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 18px;
+    background: var(--slotted-surface-raised);
+    box-shadow:
+      var(--slotted-shadow-md),
+      inset 0 1px 0 color-mix(in oklab, var(--slotted-text) 6%, transparent);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    block-size: 52px;
+    padding-inline: 16px;
+  }
+
+  .deadline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: auto;
+    white-space: nowrap;
+  }
+
+  .ring,
+  .ringSpin {
+    flex: none;
+    transform: rotate(-90deg);
+  }
+
+  .ringTrack,
+  .ringFill {
+    fill: none;
+  }
+
+  .ringTrack {
+    stroke: color-mix(in oklab, var(--slotted-text) 7%, transparent);
+  }
+
+  .ringFill {
+    stroke: var(--slotted-text-muted);
+    stroke-linecap: round;
+  }
+
+  .ringSpin {
+    animation: spin 1s linear infinite;
+  }
+
+  .op {
+    border-block-start: 1px solid
+      color-mix(in oklab, var(--slotted-text) 7%, transparent);
+  }
+
+  .opHead,
+  .dep {
+    display: grid;
+    grid-template-columns: 20px 30px minmax(0, 1fr) auto;
+    column-gap: 12px;
+    align-items: center;
+    padding-inline: 16px;
+  }
+
+  .opHead {
+    block-size: 52px;
+  }
+
+  .dep {
+    block-size: 44px;
+  }
+
+  .tile {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 9px;
+    background: var(--slotted-surface);
+    color: var(--slotted-text-muted);
+  }
+
+  .tileDanger {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: var(--slotted-tone-danger-surface);
+    color: var(--slotted-tone-danger-text);
+  }
+
+  .icon16 {
+    display: block;
+    flex: none;
+    inline-size: 16px;
+    block-size: 16px;
+  }
+
+  .icon14 {
+    display: block;
+    flex: none;
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
+  .opTitle,
+  .depTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-inline-size: 0;
+  }
+
+  .titleText {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tag,
+  .tagDanger {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    block-size: 20px;
+    padding-inline: 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .tag {
+    background: var(--slotted-tone-accent-surface);
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .tagDanger {
+    background: var(--slotted-tone-danger-surface);
+    color: var(--slotted-tone-danger-text);
+  }
+
+  .opEnd {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .opBody {
+    display: grid;
+    gap: 12px;
+    padding: 0 16px 16px 58px;
+  }
+
+  /* The info glyph sits on the first line of the reason: 14 px beside a 20 px line. */
+  .why {
+    display: flex;
+    gap: 8px;
+  }
+
+  .why .icon14 {
+    margin-block-start: 3px;
+    color: var(--slotted-text-muted);
+  }
+
+  .connector {
+    display: grid;
+    place-items: center;
+    inline-size: 30px;
+    color: var(--slotted-text-muted);
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    block-size: 64px;
+    padding-inline: 16px 12px;
+    border-block-start: 1px solid
+      color-mix(in oklab, var(--slotted-text) 7%, transparent);
+    background: color-mix(
+      in oklab,
+      var(--slotted-surface) 50%,
+      var(--slotted-surface-raised)
+    );
+  }
+
+  .summary {
+    display: grid;
+    margin-inline-end: auto;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 599px) {
+    .opBody {
+      padding-inline-start: 16px;
+    }
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(270deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ringSpin {
+      animation: none;
+    }
+  }
+}

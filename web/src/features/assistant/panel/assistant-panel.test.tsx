@@ -776,7 +776,8 @@ describe("AssistantPanel", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  // P13, U10: an answer with proposals brings the last card's actions into view.
+  // P13, U10: an answer with proposals brings the sheet's actions into view (spec 2026-11-15
+  // section 4, P13 amended).
   it("scrolls the actions of the last card into view (U10)", async () => {
     const scrolled: Element[] = [];
     const original = Object.getOwnPropertyDescriptor(
@@ -794,6 +795,8 @@ describe("AssistantPanel", () => {
         id,
         tool: "record_transaction",
         status: "pending",
+        suggested: false,
+        waiting_for: [],
         preview: { action: "record_transaction", changes: [] },
         created_at: "2026-10-23T10:00:00Z",
         expires_at: "2099-10-23T10:15:00Z",
@@ -818,13 +821,13 @@ describe("AssistantPanel", () => {
         );
         stream.close();
       });
-      const confirms = await screen.findAllByRole("button", {
-        name: catalogEn["assistant.proposal.confirm"],
-      });
-      const last = confirms.at(-1);
+      const confirm = await screen.findByRole("button", { name: "Confirm 2" });
       await waitFor(() => {
         expect(
-          scrolled.some((el) => last !== undefined && el.contains(last)),
+          scrolled.some(
+            (el) =>
+              el.hasAttribute("data-sheet-footer") && el.contains(confirm),
+          ),
         ).toBe(true);
       });
     } finally {

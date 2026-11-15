@@ -3,10 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { components } from "@/api/schema.gen";
-import { MessageItem } from "@/features/assistant/message/message-item";
 import { ProposalCard } from "@/features/assistant/proposal/proposal-card";
 import { catalogEn } from "@/i18n/catalog.en";
-import { fakeApi, json, problem } from "@/testing/fake-api";
+import { fakeApi, json } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";
 import { renderWithProviders, renderWithRouter } from "@/testing/render-app";
 import { setViewport } from "@/testing/viewport";
@@ -264,69 +263,6 @@ describe("ProposalCard", () => {
     ).toBeNull();
   });
 
-  // P17 and Review Focus 3 of phase 4.
-  it("confirms all in order and stops at the first failure", async () => {
-    const order: string[] = [];
-    const answer = (id: string) => async () => {
-      order.push(id);
-      await Promise.resolve();
-      return id === "p2"
-        ? problem(409, "proposal_stale")
-        : json(200, { ...pending, id, status: "executed" });
-    };
-    const three = ["p1", "p2", "p3"].map((id) => ({ ...pending, id }));
-    renderWithProviders(
-      <MessageItem
-        message={{
-          id: "m2",
-          role: "assistant",
-          content: "Three changes.",
-          outcome: "answered",
-          created_at: "2026-10-23T10:00:01Z",
-          proposals: three,
-        }}
-      />,
-      {
-        fetch: fakeApi({
-          "POST /api/v1/assistant/proposals/p1/confirm": answer("p1"),
-          "POST /api/v1/assistant/proposals/p2/confirm": answer("p2"),
-          "POST /api/v1/assistant/proposals/p3/confirm": answer("p3"),
-        }),
-      },
-    );
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: catalogEn["assistant.proposal.confirm_all"],
-      }),
-    );
-    await waitFor(() => {
-      expect(order).toEqual(["p1", "p2"]);
-    });
-    const cards = document.querySelectorAll('[data-ui="card"]');
-    const [first, second, third] = [...cards] as HTMLElement[];
-    if (first === undefined || second === undefined || third === undefined)
-      throw new Error("three cards");
-    expect(
-      await within(first).findByText(
-        catalogEn["assistant.proposal.status.executed"],
-      ),
-    ).toBeInTheDocument();
-    // The failure reads as the card's alert.
-    expect(within(second).getByRole("status")).toBeInTheDocument();
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
-    expect(order).toEqual(["p1", "p2"]);
-    expect(
-      within(third).getByRole("button", { name: "Confirm" }),
-    ).toBeEnabled();
-    expect(
-      screen.queryByRole("button", {
-        name: catalogEn["assistant.proposal.confirm_all"],
-      }),
-    ).toBeNull();
-  });
-
   it("labels a suggested card and gives its reason", () => {
     renderWithProviders(
       <ProposalCard
@@ -391,120 +327,5 @@ describe("ProposalCard", () => {
       screen.getByText(catalogEn["assistant.proposal.status.blocked"]),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
-  });
-
-  it("offers no confirm all for one pending proposal", () => {
-    renderWithProviders(
-      <MessageItem
-        message={{
-          id: "m2",
-          role: "assistant",
-          content: "One change.",
-          outcome: "answered",
-          created_at: "2026-10-23T10:00:01Z",
-          proposals: [pending],
-        }}
-      />,
-      { fetch: fakeApi({}) },
-    );
-    expect(
-      screen.queryByRole("button", {
-        name: catalogEn["assistant.proposal.confirm_all"],
-      }),
-    ).toBeNull();
-  });
-
-  // Review of phase 4: a tool that fails answers 200 with status failed; the run stops there.
-  it("stops confirm all at a proposal whose tool failed", async () => {
-    const order: string[] = [];
-    const answer = (id: string) => () => {
-      order.push(id);
-      return json(200, {
-        ...pending,
-        id,
-        status: id === "p2" ? "failed" : "executed",
-        result: id === "p2" ? { code: "x", detail: "the tool failed" } : {},
-      });
-    };
-    renderWithProviders(
-      <MessageItem
-        message={{
-          id: "m2",
-          role: "assistant",
-          content: "Three changes.",
-          outcome: "answered",
-          created_at: "2026-10-23T10:00:01Z",
-          proposals: ["p1", "p2", "p3"].map((id) => ({ ...pending, id })),
-        }}
-      />,
-      {
-        fetch: fakeApi({
-          "POST /api/v1/assistant/proposals/p1/confirm": answer("p1"),
-          "POST /api/v1/assistant/proposals/p2/confirm": answer("p2"),
-          "POST /api/v1/assistant/proposals/p3/confirm": answer("p3"),
-        }),
-      },
-    );
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: catalogEn["assistant.proposal.confirm_all"],
-      }),
-    );
-    expect(await screen.findByText("the tool failed")).toBeInTheDocument();
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
-    });
-    expect(order).toEqual(["p1", "p2"]);
-  });
-
-  // Review of phase 4: a proposal confirmed by its own card leaves the run, and no card confirms during it.
-  it("confirms all only what is still pending and locks the cards meanwhile", async () => {
-    const order: string[] = [];
-    let release: () => void = () => undefined;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const answer = (id: string) => async () => {
-      order.push(id);
-      if (id === "p2") await gate;
-      return json(200, { ...pending, id, status: "executed" });
-    };
-    renderWithProviders(
-      <MessageItem
-        message={{
-          id: "m2",
-          role: "assistant",
-          content: "Three changes.",
-          outcome: "answered",
-          created_at: "2026-10-23T10:00:01Z",
-          proposals: ["p1", "p2", "p3"].map((id) => ({ ...pending, id })),
-        }}
-      />,
-      {
-        fetch: fakeApi({
-          "POST /api/v1/assistant/proposals/p1/confirm": answer("p1"),
-          "POST /api/v1/assistant/proposals/p2/confirm": answer("p2"),
-          "POST /api/v1/assistant/proposals/p3/confirm": answer("p3"),
-        }),
-      },
-    );
-    const [first] = screen.getAllByRole("button", { name: "Confirm" });
-    if (first === undefined) throw new Error("no confirm");
-    await userEvent.click(first);
-    await screen.findByText(catalogEn["assistant.proposal.status.executed"]);
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: catalogEn["assistant.proposal.confirm_all"],
-      }),
-    );
-    await waitFor(() => {
-      expect(order).toEqual(["p1", "p2"]);
-    });
-    for (const button of screen.getAllByRole("button", { name: "Confirm" }))
-      expect(button).toBeDisabled();
-    release();
-    await waitFor(() => {
-      expect(order).toEqual(["p1", "p2", "p3"]);
-    });
   });
 });

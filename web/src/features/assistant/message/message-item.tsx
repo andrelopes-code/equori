@@ -13,8 +13,7 @@ import { parseAnswer } from "@/features/assistant/message/answer-markdown";
 import { AssistantTurn } from "@/features/assistant/message/assistant-turn";
 import { assistantKeys } from "@/features/assistant/api";
 import styles from "@/features/assistant/panel/assistant-panel.module.css";
-import { ConfirmAll } from "@/features/assistant/proposal/confirm-all";
-import type { Decision } from "@/features/assistant/proposal/confirm-all";
+import { DecisionSheet } from "@/features/assistant/proposal/decision-sheet";
 import {
   maskAmounts,
   maskMatch,
@@ -22,6 +21,8 @@ import {
 import { MessageAnswer } from "@/features/assistant/message/message-answer";
 import { MessageUnanswered } from "@/features/assistant/message/message-unanswered";
 import { ProposalCard } from "@/features/assistant/proposal/proposal-card";
+import { useAnswerSheet } from "@/features/assistant/proposal/use-answer-sheet";
+import type { Decision } from "@/features/assistant/proposal/use-sheet-decisions";
 import type { AssistantMessage } from "@/features/assistant/model/sse";
 import { TurnActivity } from "@/features/assistant/message/turn-activity";
 import { useT } from "@/i18n/i18n-provider";
@@ -54,15 +55,9 @@ export function MessageItem({
   const { hidden } = usePrivacy();
 
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
-  const [running, setRunning] = useState(false);
+  const sheet = useAnswerSheet(message.proposals, decisions);
 
   const own = message.role === "user";
-  const open = message.proposals.filter(
-    (p) =>
-      (p.status === "pending" || p.status === "waiting") &&
-      decisions[p.id] === undefined,
-  );
-  const lastOpen = open.at(-1)?.id;
   const tree = useMemo(() => {
     if (own || message.content === "") return null;
     const parsed = parseAnswer(message.content);
@@ -111,22 +106,21 @@ export function MessageItem({
                   {t("assistant.step_limit")}
                 </FormNotice>
               )}
-              {message.proposals.map((proposal) => (
+              <DecisionSheet
+                rows={sheet.rows}
+                deadline={sheet.deadline}
+                now={sheet.now}
+                siblings={message.proposals}
+                reveal={reveal}
+                onDecided={handleDecided}
+              />
+              {sheet.results.map((proposal) => (
                 <ProposalCard
                   key={proposal.id}
                   proposal={proposal}
                   siblings={message.proposals}
-                  reveal={reveal && proposal.id === lastOpen}
-                  decision={decisions[proposal.id]}
-                  locked={running}
-                  onDecided={handleDecided}
                 />
               ))}
-              <ConfirmAll
-                proposals={open}
-                onDecided={handleDecided}
-                onRunning={setRunning}
-              />
             </Stack>
           )}
 

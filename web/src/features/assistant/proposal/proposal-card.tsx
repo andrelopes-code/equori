@@ -16,7 +16,7 @@ import {
   useConfirmProposal,
   useRejectProposal,
 } from "@/features/assistant/api";
-import type { Decision } from "@/features/assistant/proposal/confirm-all";
+import type { Decision } from "@/features/assistant/proposal/use-sheet-decisions";
 import { ProposalActions } from "@/features/assistant/proposal/proposal-actions";
 import {
   actionTitle,
