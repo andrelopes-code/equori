@@ -20,6 +20,8 @@ import {
   depositsValue,
   futureValue,
   monthlyIncome,
+  REINVESTED_SHARE,
+  splitIncome,
 } from "@/features/calculators/model/compound-math";
 import { ChoiceField } from "@/features/calculators/fields/choice-field";
 import { FilledNote } from "@/features/calculators/fields/filled-note";
@@ -243,6 +245,30 @@ export function CompoundCalculator() {
               },
             ]),
       );
+    if (lasting !== null) {
+      const { reinvested, living } = splitIncome(today(lasting));
+      const share = REINVESTED_SHARE * 100;
+      income.push(
+        {
+          label: t(
+            inflation === null
+              ? "calc.compound.income.reinvest"
+              : "calc.compound.income.reinvestToday",
+            { share },
+          ),
+          value: money.format(reinvested),
+        },
+        {
+          label: t(
+            inflation === null
+              ? "calc.compound.income.living"
+              : "calc.compound.income.livingToday",
+            { share: 100 - share },
+          ),
+          value: money.format(living),
+        },
+      );
+    }
     if (spending !== null)
       income.push({
         label: t(

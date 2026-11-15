@@ -111,6 +111,12 @@ export const calculatorsEn = {
   "calc.compound.chart.month": "Month {month}",
   "calc.compound.income": "Monthly income after the term",
   "calc.compound.income.lasting": "Income that keeps the balance",
+  "calc.compound.income.reinvest": "Reinvest to keep the balance ({share}%)",
+  "calc.compound.income.reinvestToday":
+    "Reinvest to keep the balance ({share}%), in today's money",
+  "calc.compound.income.living": "Income to live on ({share}%)",
+  "calc.compound.income.livingToday":
+    "Income to live on ({share}%), in today's money",
   "calc.compound.income.lastingToday":
     "Income that keeps the purchasing power, in today's money",
   "calc.compound.income.lastingAtEnd":

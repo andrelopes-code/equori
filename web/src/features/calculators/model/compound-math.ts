@@ -65,3 +65,16 @@ export function monthlyIncome(
     (balance * (j - g)) / (1 - ((1 + g) / (1 + j)) ** months),
   );
 }
+
+// The share of a lasting income that is reinvested to keep the balance; the rest is lived on.
+export const REINVESTED_SHARE = 0.25;
+
+// Splits an income in minor units into the reinvested part, rounded half to even, and the
+// living part, so the two always add up to the income.
+export function splitIncome(income: number): {
+  reinvested: number;
+  living: number;
+} {
+  const reinvested = roundHalfEven(income * REINVESTED_SHARE);
+  return { reinvested, living: income - reinvested };
+}

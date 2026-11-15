@@ -6,6 +6,7 @@ import {
   depositsValue,
   futureValue,
   monthlyIncome,
+  splitIncome,
 } from "@/features/calculators/model/compound-math";
 
 describe("compound math", () => {
@@ -61,5 +62,14 @@ describe("compound math", () => {
     expect(monthlyIncome(1_000_000, 0.01, 0.005, 360)).toBe(6006);
     // j = g: F (1 + j) / n.
     expect(monthlyIncome(1_000_000, 0.01, 0.01, 120)).toBe(8417);
+  });
+
+  it("sets aside a quarter of the income and leaves the rest to live on", () => {
+    expect(splitIncome(752022)).toEqual({ reinvested: 188006, living: 564016 });
+  });
+
+  it("keeps the two parts equal to the income when the quarter is a half cent", () => {
+    // 1127 / 4 = 281.75 minor units: the reinvested part rounds half to even.
+    expect(splitIncome(1127)).toEqual({ reinvested: 282, living: 845 });
   });
 });

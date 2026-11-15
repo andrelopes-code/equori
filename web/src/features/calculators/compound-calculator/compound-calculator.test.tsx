@@ -117,6 +117,21 @@ describe("Compound interest calculator", () => {
     ).toContain("13.21");
   });
 
+  it("splits the income that keeps the balance into reinvested and living parts", async () => {
+    await open("initial=100000&months=12&rate=12.682503");
+    // 1,126.83 at 1% a month pays 11.27: a quarter is reinvested, the rest is lived on.
+    expect(
+      await result(
+        catalogEn["calc.compound.income.reinvest"].replace("{share}", "25"),
+      ),
+    ).toContain("2.82");
+    expect(
+      await result(
+        catalogEn["calc.compound.income.living"].replace("{share}", "75"),
+      ),
+    ).toContain("8.45");
+  });
+
   it("states that no income keeps the purchasing power above the rate", async () => {
     await open("initial=100000&months=12&rate=3&inflation=4");
     expect(

@@ -111,6 +111,13 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.chart.month": "Mês {month}",
   "calc.compound.income": "Renda mensal depois do prazo",
   "calc.compound.income.lasting": "Renda que mantém o patrimônio",
+  "calc.compound.income.reinvest":
+    "Reinvestir para manter o patrimônio ({share}%)",
+  "calc.compound.income.reinvestToday":
+    "Reinvestir para manter o patrimônio ({share}%), em dinheiro de hoje",
+  "calc.compound.income.living": "Renda para viver ({share}%)",
+  "calc.compound.income.livingToday":
+    "Renda para viver ({share}%), em dinheiro de hoje",
   "calc.compound.income.lastingToday":
     "Renda que mantém o poder de compra, em dinheiro de hoje",
   "calc.compound.income.lastingAtEnd":
