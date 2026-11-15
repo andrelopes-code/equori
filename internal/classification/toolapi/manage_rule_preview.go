@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -93,7 +94,7 @@ func previewRule(
 		return err
 	}
 
-	pv.Target = "Rule " + rule.Name
+	pv.Target = rule.Name
 
 	preview, err := svc.PreviewRule(ctx, booksID, rule)
 	if err != nil {
@@ -104,9 +105,7 @@ func previewRule(
 		ruleChanges(in, p, old, rule, categories, payees),
 		tool.Change{
 			Field: "count",
-			After: text(
-				fmt.Sprintf("%d transactions of the last year", preview.WouldCategorize.Count),
-			),
+			After: text(strconv.Itoa(preview.WouldCategorize.Count)),
 		},
 	)
 
@@ -127,7 +126,7 @@ func previewDeleteRule(
 		return err
 	}
 
-	pv.Target, pv.Destructive = "Rule "+old.Name, true
+	pv.Target, pv.Destructive = old.Name, true
 	pv.Changes = []tool.Change{{Field: "rule", Before: text(old.Name)}}
 
 	return nil
@@ -166,7 +165,6 @@ func previewReorder(
 		}
 	}
 
-	pv.Target = "Rule order"
 	for i, id := range p.rules {
 		if r := byID[id]; r.Priority != i+1 {
 			pv.Changes = append(
@@ -203,7 +201,7 @@ func previewSuggestion(
 		return app.ErrSuggestionClosed
 	}
 
-	pv.Target = "Suggested rule " + conditionsText(s.Conditions)
+	pv.Target = conditionsText(s.Conditions)
 	if in.Action == "dismiss_suggestion" {
 		pv.Changes = []tool.Change{
 			{Field: "status", Before: text(s.State), After: text(app.SuggestionDismissed)},
@@ -238,11 +236,10 @@ func previewRunRules(
 		return err
 	}
 
-	pv.Target = "Categorization rules"
 	pv.Changes = []tool.Change{
 		{
 			Field: "count",
-			After: text(fmt.Sprintf("%d uncategorized transactions", st.Uncategorized)),
+			After: text(strconv.Itoa(st.Uncategorized)),
 		},
 	}
 
@@ -272,7 +269,7 @@ func previewSourceCategory(
 		}
 	}
 
-	pv.Target = "Source category " + sc.Name
+	pv.Target = sc.Name
 	pv.Changes = []tool.Change{
 		{
 			Field:  "category",
@@ -329,7 +326,7 @@ func previewAlias(
 func previewAliasDelete(pv *tool.Preview, old domain.Alias, payees map[uuid.UUID]string) {
 	text := tool.TextValue
 
-	pv.Target, pv.Destructive = "Alias "+old.Pattern, true
+	pv.Target, pv.Destructive = old.Pattern, true
 	pv.Changes = []tool.Change{
 		{Field: "pattern", Before: text(old.Pattern)},
 		{Field: "payee", Before: text(payees[old.PayeeID])},
@@ -346,7 +343,7 @@ func previewAliasChange(
 ) {
 	text := tool.TextValue
 
-	pv.Target = "Alias " + in.Pattern
+	pv.Target = in.Pattern
 
 	pv.Changes = []tool.Change{
 		{Field: "pattern", After: text(in.Pattern)},

@@ -30,7 +30,7 @@ func previewSchedule(in manageScheduleIn, p schedulePlan) (tool.Preview, error) 
 
 		return pv, nil
 	case "update":
-		pv.Target, pv.Changes = "Schedule "+p.schedule.Description, updateChanges(p.schedule, in)
+		pv.Target, pv.Changes = p.schedule.Description, updateChanges(p.schedule, in)
 	case "change_terms":
 		if err := previewTermsChange(&pv, in, p); err != nil {
 			return tool.Preview{}, err
@@ -43,7 +43,8 @@ func previewSchedule(in manageScheduleIn, p schedulePlan) (tool.Preview, error) 
 }
 
 func previewScheduleCreate(pv *tool.Preview, in manageScheduleIn, p schedulePlan) {
-	pv.Target = "Schedule " + in.Description
+	pv.Target = in.Description
+	pv.Recurrence = recurrenceOf(*p.rule)
 
 	counterpart := "category"
 	if in.Kind == "transfer" || in.Kind == "savings" {
@@ -71,7 +72,7 @@ func previewScheduleCreate(pv *tool.Preview, in manageScheduleIn, p schedulePlan
 func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) error {
 	last := p.schedule.Terms[len(p.schedule.Terms)-1]
 
-	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(
+	pv.Target, pv.Basis = p.schedule.Description, last.EffectiveFrom.Format(
 		time.DateOnly,
 	)+"|"+fmt.Sprint(
 		last.Amount,
@@ -93,6 +94,7 @@ func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) e
 	}
 
 	if p.rule != nil {
+		pv.Recurrence = recurrenceOf(*p.rule)
 		pv.Changes = append(pv.Changes, tool.Change{
 			Field: "terms",
 			Before: tool.TextValue(
@@ -109,7 +111,7 @@ func previewTermsChange(pv *tool.Preview, in manageScheduleIn, p schedulePlan) e
 
 func previewScheduleStop(pv *tool.Preview, in manageScheduleIn, p schedulePlan) {
 	last := p.schedule.Terms[len(p.schedule.Terms)-1]
-	pv.Target, pv.Basis = "Schedule "+p.schedule.Description, last.EffectiveFrom.Format(
+	pv.Target, pv.Basis = p.schedule.Description, last.EffectiveFrom.Format(
 		time.DateOnly,
 	)+"|"+fmt.Sprint(
 		last.Amount,
@@ -132,6 +134,10 @@ func previewScheduleStop(pv *tool.Preview, in manageScheduleIn, p schedulePlan) 
 		},
 		{Field: "date", After: tool.DateValue(in.From.Time)},
 	}
+}
+
+func recurrenceOf(r domain.Rule) *tool.Recurrence {
+	return &tool.Recurrence{Frequency: string(r.Frequency), Interval: r.Interval, Day: r.DayOfMonth}
 }
 
 func describeTerms(r domain.Rule, from time.Time) string {

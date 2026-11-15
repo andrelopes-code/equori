@@ -138,7 +138,7 @@ func TestManageScheduleCreate(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_schedule.create",
-		Target: "Schedule Rent",
+		Target: "Rent",
 		Changes: []tool.Change{
 			{Field: "schedule", After: tool.TextValue("Rent")},
 			{Field: "amount", After: tool.Value{Amount: "2100.00", Currency: "BRL"}},
@@ -147,6 +147,7 @@ func TestManageScheduleCreate(t *testing.T) {
 			{Field: "category", After: tool.TextValue("Rent")},
 			{Field: "date", After: tool.Value{Date: "2026-11-05"}},
 		},
+		Recurrence: &tool.Recurrence{Frequency: "monthly", Interval: 1, Day: 5},
 	}
 	if !reflect.DeepEqual(p, want) {
 		t.Errorf("preview = %+v, want %+v", p, want)
@@ -231,8 +232,25 @@ func TestManageScheduleChangeTermsAndPause(t *testing.T) {
 	}
 
 	if p.Basis != "2026-11-12|3990" || p.Action != "manage_schedule.change_terms" ||
-		p.Target != "Schedule Streaming" {
+		p.Target != "Streaming" || p.Recurrence != nil {
 		t.Errorf("preview = %+v", p)
+	}
+
+	p, r = preview(t, f.h, "manage_schedule", map[string]any{
+		"action":       "change_terms",
+		"schedule_id":  id,
+		"from":         "2027-01-01",
+		"frequency":    "monthly",
+		"interval":     2,
+		"day_of_month": 20,
+	})
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+
+	wantRecurrence := &tool.Recurrence{Frequency: "monthly", Interval: 2, Day: 20}
+	if !reflect.DeepEqual(p.Recurrence, wantRecurrence) {
+		t.Errorf("recurrence = %+v, want %+v", p.Recurrence, wantRecurrence)
 	}
 
 	toolOutput(
@@ -875,7 +893,8 @@ func TestManageScheduleUpdate(t *testing.T) {
 		t.Fatalf("preview = error %s", r.Content)
 	}
 
-	if p.Action != "manage_schedule.update" || p.Target != "Schedule Rent" {
+	if p.Action != "manage_schedule.update" || p.Target != "Rent" ||
+		p.Recurrence != nil {
 		t.Errorf("preview = %+v", p)
 	}
 

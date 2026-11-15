@@ -73,11 +73,11 @@ func TestManageRuleToolCreateAndRun(t *testing.T) {
 	}
 
 	p, r := previewTool(t, b.h, "manage_rule", args)
-	if r.IsError || p.Target != "Rule iFood" || p.Destructive || len(p.Changes) != 4 ||
+	if r.IsError || p.Target != "iFood" || p.Destructive || len(p.Changes) != 4 ||
 		p.Changes[2].Field != "category" ||
 		p.Changes[2].After.Text != "Restaurant" ||
 		p.Changes[3].Field != "count" ||
-		p.Changes[3].After.Text != "2 transactions of the last year" {
+		p.Changes[3].After.Text != "2" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -96,7 +96,7 @@ func TestManageRuleToolCreateAndRun(t *testing.T) {
 	run := map[string]any{"action": "run_rules"}
 
 	p, _ = previewTool(t, b.h, "manage_rule", run)
-	if len(p.Changes) != 1 || p.Changes[0].After.Text != "2 uncategorized transactions" {
+	if p.Target != "" || len(p.Changes) != 1 || p.Changes[0].After.Text != "2" {
 		t.Fatalf("run preview = %+v", p)
 	}
 
@@ -261,7 +261,7 @@ func TestManageRuleToolChangeReorderDelete(t *testing.T) {
 	order := map[string]any{"action": "reorder_rules", "rule_ids": []string{c.ID, a.ID}}
 
 	p, _ = previewTool(t, b.h, "manage_rule", order)
-	if len(p.Changes) != 2 || p.Changes[0].After.Text != "B: 1" {
+	if p.Target != "" || len(p.Changes) != 2 || p.Changes[0].After.Text != "B: 1" {
 		t.Fatalf("reorder preview = %+v", p)
 	}
 
@@ -362,8 +362,8 @@ func TestManageRuleToolSuggestion(t *testing.T) {
 		b.h,
 		"manage_rule",
 		accept,
-	); r.IsError ||
-		p.Changes[0].After.Text != "Bakery" {
+	); r.IsError || p.Changes[0].After.Text != "Bakery" ||
+		p.Target == "" || p.Target != p.Changes[1].After.Text {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 
@@ -400,7 +400,7 @@ func TestManageRuleToolAliases(t *testing.T) {
 	}
 
 	p, _ := previewTool(t, b.h, "manage_rule", create)
-	if p.Target != "Alias uber *trip" || p.Changes[2].After.Text != "Uber" {
+	if p.Target != "uber *trip" || p.Changes[2].After.Text != "Uber" {
 		t.Fatalf("preview = %+v", p)
 	}
 
