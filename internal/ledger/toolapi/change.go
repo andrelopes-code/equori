@@ -80,7 +80,7 @@ func previewChange(
 
 	pv := tool.Preview{
 		Action: "change_transaction",
-		Target: targetOf(p.current),
+		Target: p.current.Description,
 		Basis:  basisOf(p.current),
 	}
 
@@ -88,6 +88,8 @@ func previewChange(
 	if err != nil {
 		return pv, err
 	}
+
+	pv.Items = []tool.Item{itemOf(p.current, accounts)}
 
 	switch in.Action {
 	case "correct":
@@ -121,7 +123,7 @@ func reimbursementChanges(p changePlan) ([]tool.Change, error) {
 	for i, a := range p.allocs {
 		changes = append(
 			changes,
-			tool.Change{Field: "transaction", After: tool.TextValue(targetText(p.expenses[i]))},
+			tool.Change{Field: "transaction", After: tool.TextValue(p.expenses[i].Description)},
 		)
 		if i == 0 {
 			total = a.Amount
@@ -199,10 +201,6 @@ func applyChange(
 	}
 
 	return id, err
-}
-
-func targetText(t domain.Transaction) string {
-	return t.Description + " of " + t.Date.Format("2006-01-02")
 }
 
 // unusedFields rejects the arguments the action does not read.

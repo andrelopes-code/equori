@@ -3,6 +3,7 @@ package ledger_test
 import (
 	"net/http"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -30,7 +31,9 @@ func TestChangeTransactionCorrect(t *testing.T) {
 		Before: tool.Value{Amount: "120.00", Currency: "BRL"},
 		After:  tool.Value{Amount: "130.00", Currency: "BRL"},
 	}
-	if !slices.Contains(p.Changes, want) || p.Basis != "v1" {
+	// Spec 2026-11-15 section 7: the target is the transaction's description, no sentence.
+	if !slices.Contains(p.Changes, want) || p.Basis != "v1" || len(p.Items) != 1 ||
+		p.Target != p.Items[0].Description || strings.Contains(p.Target, " of ") {
 		t.Fatalf("preview = %+v", p)
 	}
 

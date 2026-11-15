@@ -132,7 +132,13 @@ func planPurchase(
 		return pv, nil, tool.InvalidArgument("transaction_id", "is not a card purchase")
 	}
 
-	pv.Target, pv.Basis = "Purchase "+targetText(t), basisOf(t)
+	accounts, _, err := allAccounts(ctx, svc, booksID)
+	if err != nil {
+		return pv, nil, err
+	}
+
+	pv.Target, pv.Basis = t.Description, basisOf(t)
+	pv.Items = []tool.Item{itemOf(t, accounts)}
 
 	ev, err := resolvePurchaseEvent(ctx, svc, in, t, cardPosting, planID)
 	if err != nil {

@@ -19,10 +19,6 @@ type voidTransactionOut struct {
 	Voided        bool   `json:"voided"`
 }
 
-func targetOf(t domain.Transaction) string {
-	return "Transaction " + t.Description + " of " + t.Date.Format("2006-01-02")
-}
-
 func basisOf(t domain.Transaction) string { return "v" + strconv.Itoa(t.Version) }
 
 func voidTransaction(svc *app.Service) tool.Tool {

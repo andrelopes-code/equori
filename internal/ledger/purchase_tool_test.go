@@ -24,7 +24,8 @@ func TestHandleCardPurchaseRefundS08(t *testing.T) {
 	}
 
 	p := previewTool(t, c.h, "handle_card_purchase", args)
-	if p.Target != "Purchase test of 2026-10-20" || p.Basis != "v1" ||
+	if p.Target != "test" || len(p.Items) != 1 || p.Items[0].Description != "test" ||
+		p.Basis != "v1" ||
 		changeAfter(p, "amount").Amount != "230.00" ||
 		changeAfter(p, "description").Text != "test" ||
 		changeAfter(p, "account").Text != "Itaú Visa" {
