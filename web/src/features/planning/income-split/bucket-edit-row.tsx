@@ -42,6 +42,7 @@ export function BucketEditRow({
         }}
       />
       <Checkbox
+        className={styles.savings}
         checked={bucket.takesSavings}
         onCheckedChange={(checked) => {
           onChange({ takesSavings: checked });
@@ -50,7 +51,6 @@ export function BucketEditRow({
         {t("buckets.field.savings")}
       </Checkbox>
       <IconButton
-        size="sm"
         variant="ghost"
         tone="secondary"
         aria-label={t("buckets.remove", { name: label })}
