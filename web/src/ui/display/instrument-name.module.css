@@ -1,0 +1,10 @@
+@layer app {
+  /* The name gives way to the code: it shrinks to its ellipsis, the code keeps its width. */
+  .name {
+    min-inline-size: 0;
+  }
+
+  .code {
+    flex-shrink: 0;
+  }
+}

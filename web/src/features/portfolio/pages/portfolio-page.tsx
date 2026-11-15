@@ -56,10 +56,11 @@ export function PortfolioPage() {
         today={today}
         valueIn={valueIn}
         base={base}
+        canTrade={hasBrokerage && !empty && !positions.isError}
         onChange={change}
       />
       <PageBody>
-        <Stack gap={6}>
+        <Stack gap={8}>
           {positions.isError && (
             <PortfolioProblem
               error={positions.error}

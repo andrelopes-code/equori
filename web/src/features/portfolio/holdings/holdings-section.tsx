@@ -54,7 +54,8 @@ interface HoldingsSectionProps {
 
 const storageKey = "equori.portfolio.columns";
 
-// PC7, PC8: every row of the portfolio under its group, with what a reader records next.
+// PC7, PC8: every row of the portfolio under its group, with the income a reader records next. PP1,
+// PP4: a surface; the trade is the page header's.
 export function HoldingsSection({
   holdings,
   accounts,
@@ -104,7 +105,7 @@ export function HoldingsSection({
   );
 
   return (
-    <Section size="lg">
+    <Section size="lg" ground="surface">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("holdings.list")}</SectionHeading>
@@ -139,19 +140,6 @@ export function HoldingsSection({
               )}
             >
               {t("holdings.income.record")}
-            </ButtonLink>
-            <ButtonLink
-              variant="outline"
-              tone="secondary"
-              render={(props) => (
-                <Link
-                  {...props}
-                  to="/transactions/new"
-                  search={{ kind: "trade" }}
-                />
-              )}
-            >
-              {t("holdings.trade")}
             </ButtonLink>
           </Inline>
         </SectionActions>

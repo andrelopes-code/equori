@@ -99,7 +99,7 @@ export function PortfolioReturn({
   }
 
   return (
-    <Section size="lg" aria-label={t("holdings.return")}>
+    <Section size="lg" ground="surface" aria-label={t("holdings.return")}>
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("holdings.return")}</SectionHeading>

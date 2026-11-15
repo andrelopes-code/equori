@@ -48,7 +48,7 @@ export function WhereMoneySection({
   }));
 
   return (
-    <Section size="lg">
+    <Section size="lg" ground="surface">
       <SectionHeader>
         <SectionTitle>
           <SectionHeading>{t("holdings.where")}</SectionHeading>

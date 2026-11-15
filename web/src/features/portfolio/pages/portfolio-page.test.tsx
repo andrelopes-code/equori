@@ -7,6 +7,7 @@ import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { json, problem } from "@/testing/fake-api";
 import { accounts, brl, brokerID, cashID } from "@/testing/investment-api";
 import {
+  instruments,
   portfolioApi,
   positions,
   xpInstitutionID,
@@ -44,6 +45,13 @@ const figure = async (label: string) =>
   (await screen.findByText(label)).closest<HTMLElement>(
     "[data-ui='stat-card']",
   ) ?? document.body;
+
+const pageHeader = () =>
+  document.querySelector<HTMLElement>("[data-ui='page-header']") ??
+  document.body;
+
+const region = (inside: HTMLElement) =>
+  inside.closest<HTMLElement>("[data-ui='section']") ?? document.body;
 
 describe("Portfolio page", () => {
   afterEach(() => {
@@ -300,6 +308,65 @@ describe("Portfolio page", () => {
     expect(
       screen.getByRole("link", { name: catalogEn["holdings.prices"] }),
     ).toHaveAttribute("href", "/instruments");
+  });
+
+  it("PP3: the page header holds the trade as its one solid action", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    const grid = await list();
+    const header = pageHeader();
+
+    const trade = await within(header).findByRole("link", {
+      name: catalogEn["holdings.trade"],
+    });
+    expect(trade).toHaveAttribute("href", "/transactions/new?kind=trade");
+    expect(trade).toHaveAttribute("data-variant", "solid");
+    expect(
+      within(header).getByRole("link", {
+        name: catalogEn["contributionPlan.open"],
+      }),
+    ).toHaveAttribute("data-variant", "outline");
+    expect(
+      within(header).getByRole("link", { name: catalogEn["holdings.year"] }),
+    ).toHaveAttribute("data-variant", "ghost");
+    expect(header.querySelectorAll('[data-variant="solid"]')).toHaveLength(1);
+    expect(
+      within(region(grid)).queryByRole("link", {
+        name: catalogEn["holdings.trade"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("PP1: draws the return, where and holdings sections as surfaces", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+
+    const sections = [
+      region(await list()),
+      region(await where()),
+      await screen.findByRole("region", { name: catalogEn["holdings.return"] }),
+    ];
+
+    for (const section of sections)
+      expect(section).toHaveAttribute("data-ground", "surface");
+  });
+
+  it("PP5: keeps a long instrument name on one line with its whole text in its title", async () => {
+    const name = "Petróleo Brasileiro S.A. Petrobras Preferenciais Nominativas";
+    const fetch = portfolioApi({
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: instruments.map((i) =>
+            i.code === "PETR4" ? { ...i, name } : i,
+          ),
+        }),
+    });
+    await renderApp("/portfolio", { fetch });
+    const grid = await list();
+
+    const lines = await within(grid).findAllByTitle(name);
+    for (const line of lines) {
+      expect(line).toHaveAttribute("data-truncate");
+      expect(within(line).getByRole("link", { name })).toBeInTheDocument();
+    }
   });
 
   it("PC8: shows the empty state with the first action", async () => {

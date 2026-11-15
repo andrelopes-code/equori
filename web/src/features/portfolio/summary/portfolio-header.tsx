@@ -1,4 +1,6 @@
 import { ButtonLink } from "@slotted/react/button";
+import { Divider } from "@slotted/react/divider";
+import { Glyph } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import {
   PageHeader,
@@ -26,17 +28,21 @@ interface PortfolioHeaderProps {
   today: string;
   valueIn: string | undefined;
   base: string | undefined;
+  canTrade: boolean;
   onChange: (patch: SearchPatch) => void;
 }
 
 // PC9. CP-04: the valuation date is a day, so it is the app's date input; its shortcuts stay out
 // because a valuation reads any past day, not today and the two before. The valuation currency is
-// chosen among the currencies of the instrument catalog.
+// chosen among the currencies of the instrument catalog. PP3: the controls come first, a rule, then
+// the actions by rising weight; the trade is the page's one solid action, and the empty state
+// carries it when the date holds no position.
 export function PortfolioHeader({
   date,
   today,
   valueIn,
   base,
+  canTrade,
   onChange,
 }: PortfolioHeaderProps) {
   const t = useT();
@@ -84,8 +90,9 @@ export function PortfolioHeader({
                   onChange({ date: next === today ? undefined : next });
                 }}
               />
+              <Divider orientation="vertical" />
               <ButtonLink
-                variant="outline"
+                variant="ghost"
                 tone="secondary"
                 render={(props) => <Link {...props} to="/portfolio/year" />}
               >
@@ -98,6 +105,17 @@ export function PortfolioHeader({
               >
                 {t("contributionPlan.open")}
               </ButtonLink>
+              {canTrade && (
+                <ButtonLink
+                  start={<Glyph name="plus" />}
+                  render={routeTo({
+                    to: "/transactions/new",
+                    search: { kind: "trade" },
+                  })}
+                >
+                  {t("holdings.trade")}
+                </ButtonLink>
+              )}
             </Inline>
           </PageHeaderActions>
         </PageHeaderTitleRow>
