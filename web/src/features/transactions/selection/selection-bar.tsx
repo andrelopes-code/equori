@@ -98,7 +98,8 @@ export function SelectionBar({
                     aria-label={t("category.label")}
                     value={value}
                     amount={amount}
-                    portal={false}
+                    // Workaround for Slotted issue #109: the list does not flip above the bar.
+                    side="top"
                     onChange={(id) => {
                       if (id === null) return;
                       setValue(id);

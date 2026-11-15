@@ -38,6 +38,7 @@ export interface CategoryPickerProps {
   disabled?: boolean;
   // False keeps the list inside a layer the picker already stands in.
   portal?: boolean;
+  side?: "bottom" | "top";
   // Categories the choice may not land on, such as a merge source and its subtree.
   exclude?: ReadonlySet<string>;
   onOpenChange?: (open: boolean) => void;
