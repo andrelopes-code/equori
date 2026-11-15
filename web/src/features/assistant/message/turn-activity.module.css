@@ -1,0 +1,80 @@
+.steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  block-size: 22px;
+  animation: rise var(--slotted-duration-long) cubic-bezier(0.16, 1, 0.3, 1)
+    both;
+}
+
+.tile {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 22px;
+  block-size: 22px;
+  border: 1px solid var(--slotted-border-subtle);
+  border-radius: 7px;
+  background: var(--slotted-surface-raised);
+  color: var(--slotted-text-muted);
+}
+
+.tile svg,
+.stack span svg {
+  inline-size: 12px;
+  block-size: 12px;
+}
+
+.step[aria-current="step"] .tile {
+  border-color: color-mix(
+    in oklab,
+    var(--slotted-tone-accent-solid) 45%,
+    transparent
+  );
+  color: var(--slotted-tone-accent-text);
+}
+
+.stack {
+  display: flex;
+}
+
+.stack span {
+  display: grid;
+  place-items: center;
+  inline-size: 20px;
+  block-size: 20px;
+  border: 1px solid var(--slotted-border-subtle);
+  border-radius: 50%;
+  background: var(--slotted-surface-raised);
+  color: var(--slotted-text-muted);
+}
+
+.stack span + span {
+  margin-inline-start: -6px;
+}
+
+.stack span svg {
+  inline-size: 11px;
+  block-size: 11px;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    animation: none;
+  }
+}

@@ -727,13 +727,8 @@ describe("AssistantPanel", () => {
     const second = await screen.findByText(
       catalogEn["assistant.step.get_balances"],
     );
-    expect(first.closest('[data-part="activity-step"]')).toHaveAttribute(
-      "data-complete",
-    );
-    expect(second.closest('[data-part="activity-step"]')).toHaveAttribute(
-      "aria-current",
-      "step",
-    );
+    expect(first.closest("li")).not.toHaveAttribute("aria-current");
+    expect(second.closest("li")).toHaveAttribute("aria-current", "step");
     stream.close();
   });
 

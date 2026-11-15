@@ -37,4 +37,42 @@ describe("TurnActivity", () => {
       screen.getByRole("button", { name: /Sources consulted: 2/ }),
     ).toBeVisible();
   });
+
+  it("marks the last source current", () => {
+    renderWithProviders(
+      <TurnActivity steps={["list_accounts", "search_transactions"]} running />,
+      { fetch: fakeApi({}) },
+    );
+
+    const first = screen
+      .getByText(catalogEn["assistant.step.list_accounts"])
+      .closest("li");
+    const last = screen
+      .getByText(catalogEn["assistant.step.search_transactions"])
+      .closest("li");
+
+    expect(last).toHaveAttribute("aria-current", "step");
+    expect(first).not.toHaveAttribute("aria-current");
+  });
+
+  it("stacks at most three source icons", () => {
+    renderWithProviders(
+      <TurnActivity
+        steps={[
+          "list_accounts",
+          "search_transactions",
+          "list_rules",
+          "get_help",
+        ]}
+        running={false}
+      />,
+      { fetch: fakeApi({}) },
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: /Sources consulted: 4/,
+    });
+
+    expect(trigger.querySelectorAll("[data-source-icon]")).toHaveLength(3);
+  });
 });

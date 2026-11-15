@@ -2,60 +2,44 @@ import {
   Collapsible,
   CollapsibleHeader,
   CollapsiblePanel,
-  CollapsibleTrigger,
 } from "@slotted/react/collapsible";
-import { MessageActivity, MessageActivityStep } from "@slotted/react/message";
 
 import { distinctSteps } from "@/features/assistant/message/distinct-steps";
+import { SourcePill } from "@/features/assistant/message/source-pill";
+import {
+  SourceSteps,
+  type SourceEntry,
+} from "@/features/assistant/message/source-steps";
 import { catalogKey } from "@/features/assistant/model/catalog-key";
 import { useT } from "@/i18n/i18n-provider";
 
-// Families read: message (activity), collapsible. The sources of a turn, each once: while it runs
-// the last one is current; after the answer they fold into one line that opens them (P5).
-export function TurnActivity({
-  steps,
-  running,
-}: {
+interface TurnActivityProps {
   steps: string[];
   running: boolean;
-}) {
+}
+
+// Families read: collapsible. The sources of a turn, each once: while it runs the last one is
+// current; after the answer they fold into one line that opens them (P5).
+export function TurnActivity({ steps, running }: TurnActivityProps) {
   const t = useT();
-  const labels = distinctSteps(steps).flatMap((s) => {
-    const key = catalogKey(`assistant.step.${s}`);
-    return key === undefined ? [] : [t(key)];
+  const entries = distinctSteps(steps).flatMap((tool): SourceEntry[] => {
+    const key = catalogKey(`assistant.step.${tool}`);
+    return key === undefined ? [] : [{ tool, label: t(key) }];
   });
-  if (labels.length === 0) return null;
+  if (entries.length === 0) return null;
 
-  if (running) {
-    return (
-      <MessageActivity>
-        {labels.map((label, i) => (
-          <MessageActivityStep
-            key={i}
-            status={i === labels.length - 1 ? "current" : "complete"}
-          >
-            {label}
-          </MessageActivityStep>
-        ))}
-      </MessageActivity>
-    );
-  }
+  if (running) return <SourceSteps entries={entries} running />;
 
-  const summary = t("assistant.activity.summary", { count: labels.length });
+  const summary = t("assistant.activity.summary", { count: entries.length });
 
   return (
     <Collapsible size="sm">
       <CollapsibleHeader>
-        <CollapsibleTrigger>{summary}</CollapsibleTrigger>
+        <SourcePill entries={entries} summary={summary} />
       </CollapsibleHeader>
+
       <CollapsiblePanel>
-        <MessageActivity>
-          {labels.map((label, i) => (
-            <MessageActivityStep key={i} status="complete">
-              {label}
-            </MessageActivityStep>
-          ))}
-        </MessageActivity>
+        <SourceSteps entries={entries} running={false} />
       </CollapsiblePanel>
     </Collapsible>
   );
