@@ -113,7 +113,6 @@ func decodeBuckets(in []bucketIn, accounts map[uuid.UUID]Account, p *budgetGoalP
 // previewBuckets lists each bucket with its share and categories, or the buckets an empty
 // list removes.
 func previewBuckets(pv *tool.Preview, p budgetGoalPlan) {
-	pv.Target = "Income split"
 	if len(p.buckets) == 0 {
 		pv.Destructive = true
 		pv.Changes = []tool.Change{

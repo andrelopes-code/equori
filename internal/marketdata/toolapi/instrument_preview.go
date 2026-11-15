@@ -19,7 +19,7 @@ func previewInstrument(
 
 	p := tool.Preview{
 		Action: "manage_instrument." + string(in.Action),
-		Target: "Instrument " + in.Code,
+		Target: in.Code,
 	}
 	switch in.Action {
 	case "define":

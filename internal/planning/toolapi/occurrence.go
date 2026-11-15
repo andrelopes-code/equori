@@ -128,10 +128,13 @@ func previewOccurrence(
 	name := sch.Description + " expected " + o.ExpectedOn.Format(time.DateOnly)
 	pv := tool.Preview{
 		Action: "manage_occurrence." + string(in.Action),
-		Target: "Occurrence " + name,
+		Target: sch.Description,
 		Basis:  string(o.State),
 	}
-	pv.Changes = []tool.Change{{Field: "occurrence", After: tool.TextValue(name)}}
+	pv.Changes = []tool.Change{
+		{Field: "date", After: tool.DateValue(o.ExpectedOn)},
+		{Field: "occurrence", After: tool.TextValue(name)},
+	}
 
 	if err := occurrenceChanges(&pv, in, o, sch); err != nil {
 		return tool.Preview{}, err

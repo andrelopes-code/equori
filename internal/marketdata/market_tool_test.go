@@ -73,7 +73,7 @@ func TestManageInstrumentToolDefine(t *testing.T) {
 	}
 
 	p, r := preview(t, h, "manage_instrument", args)
-	if r.IsError || p.Target != "Instrument MXRF11" || p.Destructive || len(p.Changes) != 4 ||
+	if r.IsError || p.Target != "MXRF11" || p.Destructive || len(p.Changes) != 4 ||
 		p.Changes[0].Field != "instrument" ||
 		p.Changes[0].After.Text != "MXRF11" {
 		t.Fatalf("preview = %+v %s", p, r.Content)

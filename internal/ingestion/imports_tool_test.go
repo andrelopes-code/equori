@@ -216,7 +216,7 @@ func TestManageImportsResolveRecord(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_imports.resolve_record",
-		Target: "Bank line PIX of 2026-10-10",
+		Target: "PIX",
 		Changes: []tool.Change{
 			{
 				Field:  "status",
@@ -309,7 +309,7 @@ func TestManageImportsConnections(t *testing.T) {
 	del := map[string]any{"action": "delete_connection", "connection_id": conn.ID}
 
 	p, r := preview(t, a.h, "manage_imports", del)
-	if r.IsError || !p.Destructive || p.Target != "Connection "+conn.Name {
+	if r.IsError || !p.Destructive || p.Target != conn.Name {
 		t.Fatalf("preview = %+v, %s", p, r.Content)
 	}
 
@@ -354,7 +354,7 @@ func TestManageImportsUndoDecision(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_imports.undo_decision",
-		Target: "Bank line line tx-1 of 2026-11-05",
+		Target: "line tx-1",
 		Changes: []tool.Change{
 			{Field: "decision", Before: tool.TextValue("withdrawn")},
 		},

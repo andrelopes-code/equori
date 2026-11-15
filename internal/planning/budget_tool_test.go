@@ -61,7 +61,7 @@ func TestManageBudgetAndProgress(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_budget_or_goal.create_budget",
-		Target: "Budget Food",
+		Target: "Food",
 		Changes: []tool.Change{
 			{Field: "budget", After: tool.TextValue("Food")},
 			{Field: "amount", After: tool.Value{Amount: "1800.00", Currency: "BRL"}},
@@ -111,7 +111,7 @@ func TestManageBudgetAndProgress(t *testing.T) {
 	}
 
 	p, _ = preview(t, f.h, "manage_budget_or_goal", set)
-	if p.Target != "Budget Food" || len(p.Changes) != 3 ||
+	if p.Target != "Food" || len(p.Changes) != 3 ||
 		p.Changes[1].Before.Amount != "1800.00" ||
 		p.Changes[1].After.Amount != "2000.00" {
 		t.Errorf("preview = %+v", p)
@@ -151,7 +151,7 @@ func TestManageGoal(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_budget_or_goal.create_goal",
-		Target: "Goal Emergency",
+		Target: "Emergency",
 		Changes: []tool.Change{
 			{Field: "goal", After: tool.TextValue("Emergency")},
 			{Field: "target", After: tool.Value{Amount: "30000.00", Currency: "BRL"}},
@@ -201,7 +201,7 @@ func TestManageGoal(t *testing.T) {
 			After:  tool.Value{Amount: "40000.00", Currency: "BRL"},
 		},
 	}
-	if p.Target != "Goal Emergency" || !reflect.DeepEqual(p.Changes, wantChanges) || p.Destructive {
+	if p.Target != "Emergency" || !reflect.DeepEqual(p.Changes, wantChanges) || p.Destructive {
 		t.Errorf("update preview = %+v", p)
 	}
 
@@ -215,7 +215,7 @@ func TestManageGoal(t *testing.T) {
 	del := map[string]any{"action": "delete_goal", "goal_id": created.GoalID}
 
 	p, _ = preview(t, f.h, "manage_budget_or_goal", del)
-	if p.Target != "Goal Emergency" || !p.Destructive ||
+	if p.Target != "Emergency" || !p.Destructive ||
 		!reflect.DeepEqual(
 			p.Changes,
 			[]tool.Change{{Field: "goal", Before: tool.TextValue("Emergency")}},
@@ -242,7 +242,7 @@ func TestManageBudgetDelete(t *testing.T) {
 	del := map[string]any{"action": "delete_budget", "budget_id": id}
 
 	p, _ := preview(t, f.h, "manage_budget_or_goal", del)
-	if p.Target != "Budget Food" || !p.Destructive ||
+	if p.Target != "Food" || !p.Destructive ||
 		!reflect.DeepEqual(
 			p.Changes,
 			[]tool.Change{{Field: "budget", Before: tool.TextValue("Food")}},
@@ -503,7 +503,7 @@ func TestS166SavePlanTool(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_budget_or_goal.save_plan",
-		Target: "Budget plan 2026-11",
+		Target: "2026-11",
 		Changes: []tool.Change{
 			{Field: "date", After: tool.Value{Date: "2026-11-01"}},
 			{Field: "source", After: tool.TextValue("fixed")},

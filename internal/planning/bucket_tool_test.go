@@ -29,7 +29,6 @@ func TestSaveBucketsTool(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_budget_or_goal.save_buckets",
-		Target: "Income split",
 		Changes: []tool.Change{
 			{Field: "name", After: tool.TextValue("Needs")},
 			{Field: "rate", After: tool.TextValue("7000 bp of the reference")},
@@ -86,7 +85,6 @@ func TestRemoveBucketsTool(t *testing.T) {
 
 	want := tool.Preview{
 		Action:      "manage_budget_or_goal.save_buckets",
-		Target:      "Income split",
 		Destructive: true,
 		Changes:     []tool.Change{{Field: "name", Before: tool.TextValue("All")}},
 	}

@@ -16,7 +16,7 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 	accounts := tool.TextValue(strings.Join(p.accountNames, ", "))
 	switch in.Action {
 	case "create_budget":
-		pv.Target = "Budget " + p.categoryName
+		pv.Target = p.categoryName
 		pv.Changes = []tool.Change{
 			{
 				Field: "budget",
@@ -30,7 +30,7 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 			return tool.Preview{}, err
 		}
 	case "delete_budget":
-		pv.Target, pv.Destructive = "Budget "+p.categoryName, true
+		pv.Target, pv.Destructive = p.categoryName, true
 		pv.Changes = []tool.Change{{Field: "budget", Before: tool.TextValue(p.categoryName)}}
 	case "create_goal":
 		previewGoalCreate(&pv, in, p, accounts)
@@ -39,7 +39,7 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 			return tool.Preview{}, err
 		}
 	case "delete_goal":
-		pv.Target, pv.Destructive = "Goal "+p.goal.Name, true
+		pv.Target, pv.Destructive = p.goal.Name, true
 		pv.Changes = []tool.Change{{Field: "goal", Before: tool.TextValue(p.goal.Name)}}
 	case "save_plan":
 		if err := previewPlanSave(&pv, in, p); err != nil {
@@ -58,7 +58,7 @@ func previewGoalCreate(
 	p budgetGoalPlan,
 	accounts tool.Value,
 ) {
-	pv.Target = "Goal " + in.Name
+	pv.Target = in.Name
 	pv.Changes = []tool.Change{
 		{Field: "goal", After: tool.TextValue(in.Name)},
 		{Field: "target", After: tool.MoneyValue(*p.amount)},
@@ -73,7 +73,7 @@ func previewBudgetAmount(pv *tool.Preview, p budgetGoalPlan) error {
 		return err
 	}
 
-	pv.Target = "Budget " + p.categoryName
+	pv.Target = p.categoryName
 	pv.Changes = []tool.Change{
 		{Field: "budget", After: tool.TextValue(p.categoryName)},
 		{Field: "amount", Before: tool.MoneyValue(latest), After: tool.MoneyValue(*p.amount)},
@@ -89,7 +89,7 @@ func previewGoalUpdate(
 	p budgetGoalPlan,
 	accounts tool.Value,
 ) error {
-	pv.Target = "Goal " + p.goal.Name
+	pv.Target = p.goal.Name
 	if in.Name != "" {
 		pv.Changes = append(
 			pv.Changes,
@@ -136,7 +136,7 @@ func previewGoalUpdate(
 }
 
 func previewPlanSave(pv *tool.Preview, in manageBudgetOrGoalIn, p budgetGoalPlan) error {
-	pv.Target = "Budget plan " + p.month.Format(monthLayout)
+	pv.Target = p.month.Format(monthLayout)
 
 	pv.Changes = []tool.Change{{Field: "date", After: tool.DateValue(p.month)}}
 	if in.Source != "" {

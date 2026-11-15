@@ -57,7 +57,7 @@ func previewConnection(
 		return tool.Preview{}, err
 	}
 
-	p.Target = "Connection " + c.Name
+	p.Target = c.Name
 	if in.Action == "sync" {
 		p.Changes = []tool.Change{{Field: "connection", After: tool.TextValue(c.Name)}}
 	} else {
@@ -86,7 +86,7 @@ func previewResolve(
 		return tool.Preview{}, app.ErrRecordResolved
 	}
 
-	p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
+	p.Target = rec.Description
 
 	p.Changes = []tool.Change{
 		{
@@ -128,7 +128,7 @@ func previewReopen(
 		return tool.Preview{}, app.ErrRecordNotDiscarded
 	}
 
-	p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
+	p.Target = rec.Description
 	p.Changes = []tool.Change{
 		{
 			Field:  "status",
@@ -156,7 +156,7 @@ func previewUndo(
 		return tool.Preview{}, app.ErrNoDecision
 	}
 
-	p.Target = "Bank line " + rec.Description + " of " + rec.Date.Format(time.DateOnly)
+	p.Target = rec.Description
 	p.Changes = []tool.Change{{Field: "decision", Before: tool.TextValue(string(rec.Decision))}}
 
 	return p, nil
@@ -180,7 +180,7 @@ func previewDeleteIntegration(
 		return tool.Preview{}, app.ErrIntegrationInUse
 	}
 
-	p.Target, p.Destructive = "Integration "+i.Name, true
+	p.Target, p.Destructive = i.Name, true
 	p.Changes = []tool.Change{{Field: "name", Before: tool.TextValue(i.Name)}}
 
 	return p, nil
@@ -210,7 +210,7 @@ func previewMapping(
 		return tool.Preview{}, err
 	}
 
-	p.Target = "Bank account " + ext.Name + " of connection " + c.Name
+	p.Target = ext.Name
 	if in.Ignore {
 		p.Changes = []tool.Change{
 			{

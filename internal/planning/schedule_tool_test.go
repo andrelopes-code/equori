@@ -555,9 +555,10 @@ func TestManageOccurrence(t *testing.T) {
 
 	want := tool.Preview{
 		Action: "manage_occurrence.realize",
-		Target: "Occurrence Rent expected 2026-11-05",
+		Target: "Rent",
 		Basis:  "expected",
 		Changes: []tool.Change{
+			{Field: "date", After: tool.Value{Date: "2026-11-05"}},
 			{Field: "occurrence", After: tool.TextValue("Rent expected 2026-11-05")},
 			{
 				Field:  "status",
