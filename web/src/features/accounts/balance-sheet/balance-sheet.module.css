@@ -15,7 +15,7 @@
   .fixed {
     table-layout: fixed;
     inline-size: 100%;
-    min-inline-size: 48rem;
+    min-inline-size: 52rem;
   }
 
   .statusColumn {
@@ -23,8 +23,10 @@
     white-space: nowrap;
   }
 
+  /* The second line of a yield, "103,5% do índice CDI · desde 12/10", does not wrap and measures
+     about 14rem with the cell padding; a narrower column lets it overflow onto the balance. */
   .yieldColumn {
-    inline-size: 13rem;
+    inline-size: 17rem;
   }
 
   .balanceColumn {
