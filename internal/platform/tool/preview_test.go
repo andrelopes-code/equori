@@ -122,6 +122,77 @@ func TestRegistryPreviewWithout(t *testing.T) {
 	}
 }
 
+func TestPreviewEncodesItemsAndRecurrence(t *testing.T) {
+	t.Parallel()
+
+	lunch, err := money.New(-4290, "BRL")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	full := Preview{
+		Action:  "manage_schedule",
+		Changes: []Change{},
+		Items: []Item{{
+			Description: "Lunch",
+			Date:        "2026-11-15",
+			Amount:      MoneyValue(lunch),
+			Account:     "Checking",
+		}},
+		Recurrence: &Recurrence{Frequency: "monthly", Interval: 1, Day: 15},
+	}
+
+	var got struct {
+		Items []struct {
+			Description string `json:"description"`
+			Date        string `json:"date"`
+			Amount      struct {
+				Amount   string `json:"amount"`
+				Currency string `json:"currency"`
+			} `json:"amount"`
+			Account  string  `json:"account"`
+			Category *string `json:"category"`
+		} `json:"items"`
+		Recurrence struct {
+			Frequency string `json:"frequency"`
+			Interval  int    `json:"interval"`
+			Day       int    `json:"day"`
+		} `json:"recurrence"`
+	}
+
+	b, err := json.Marshal(full)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.Items) != 1 || got.Items[0].Description != "Lunch" ||
+		got.Items[0].Date != "2026-11-15" || got.Items[0].Amount.Amount != "-42.90" ||
+		got.Items[0].Amount.Currency != "BRL" || got.Items[0].Account != "Checking" ||
+		got.Items[0].Category != nil {
+		t.Errorf("items = %+v", got.Items)
+	}
+
+	if got.Recurrence.Frequency != "monthly" || got.Recurrence.Interval != 1 ||
+		got.Recurrence.Day != 15 {
+		t.Errorf("recurrence = %+v", got.Recurrence)
+	}
+
+	plain, err := json.Marshal(Preview{Action: "a", Changes: []Change{}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, key := range []string{`"items"`, `"recurrence"`} {
+		if strings.Contains(string(plain), key) {
+			t.Errorf("preview without records holds %s: %s", key, plain)
+		}
+	}
+}
+
 func TestPreviewDigest(t *testing.T) {
 	t.Parallel()
 

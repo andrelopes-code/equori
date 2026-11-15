@@ -36,19 +36,37 @@ type Change struct {
 	After  Value  `json:"after,omitzero"`
 }
 
+// Item is a record an operation reads or moves.
+type Item struct {
+	Description string `json:"description"`
+	Date        string `json:"date,omitzero"`
+	Amount      Value  `json:"amount,omitzero"`
+	Account     string `json:"account,omitzero"`
+	Category    string `json:"category,omitzero"`
+}
+
+// Recurrence is the rule of a schedule the operation creates or changes.
+type Recurrence struct {
+	Frequency string `json:"frequency"`
+	Interval  int    `json:"interval"`
+	Day       int    `json:"day,omitzero"`
+}
+
 // Preview describes what a write tool would change, without changing it.
 type Preview struct {
-	Action      string   `json:"action"`
-	Target      string   `json:"target,omitzero"`
-	Changes     []Change `json:"changes"`
-	Destructive bool     `json:"destructive,omitzero"`
+	Action      string      `json:"action"`
+	Target      string      `json:"target,omitzero"`
+	Changes     []Change    `json:"changes"`
+	Items       []Item      `json:"items,omitzero"`
+	Recurrence  *Recurrence `json:"recurrence,omitzero"`
+	Destructive bool        `json:"destructive,omitzero"`
 	// Basis is hidden state the changes do not show, such as a version.
 	Basis string `json:"-"`
 }
 
 // PreviewDigest is the hex SHA-256 of the encoded preview followed by its Basis.
 func PreviewDigest(p Preview) string {
-	b, _ := json.Marshal(p) // Preview holds only strings, bools and slices of them.
+	b, _ := json.Marshal(p) // Preview holds only strings, numbers, bools and slices of them.
 	sum := sha256.Sum256(append(b, p.Basis...))
 
 	return hex.EncodeToString(sum[:])
