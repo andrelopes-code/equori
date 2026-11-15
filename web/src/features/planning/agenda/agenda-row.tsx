@@ -1,3 +1,4 @@
+import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Tag } from "@slotted/react/tag";
@@ -23,7 +24,8 @@ interface AgendaRowProps {
   scale: (code: string) => number;
 }
 
-// One occurrence: its name, its day, its kind and account, when it falls or how it ended, and
+// One occurrence: its name, its kind and account, when it falls or how it ended over its day,
+// and
 // its expected amount, with what it moved once realized (spec A4).
 export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
   const t = useT();
@@ -42,9 +44,30 @@ export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
   return (
     <TableRow value={occurrence.id} muted={occurrence.state === "skipped"}>
       <TableRowHeader text="truncate">{name}</TableRowHeader>
+      <TableCell text="truncate">
+        <Text size="sm" tone="muted">
+          {[kind, accountName].filter((part) => part !== "").join(" · ")}
+        </Text>
+      </TableCell>
       <TableCell>
         <Stack gap={0}>
-          <Text size="sm">
+          {occurrence.state === "overdue" && (
+            <Tag size="sm" tone="danger">
+              {late === 1
+                ? t("agenda.lateOne")
+                : t("agenda.lateMany", { days: String(late) })}
+            </Tag>
+          )}
+          {occurrence.state === "expected" && (
+            <Text size="sm">{formatRelativeDays(-late, locale)}</Text>
+          )}
+          {(occurrence.state === "realized" ||
+            occurrence.state === "skipped") && (
+            <Tag size="sm" tone={stateTone[occurrence.state]}>
+              {t(`occurrence.state.${occurrence.state}`)}
+            </Tag>
+          )}
+          <Text size="xs" tone="muted">
             {formatWeekdayDayMonth(occurrence.expected_on, locale)}
           </Text>
           {occurrence.moved_from !== undefined && (
@@ -56,29 +79,6 @@ export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
           )}
         </Stack>
       </TableCell>
-      <TableCell text="truncate">
-        <Text size="sm" tone="muted">
-          {[kind, accountName].filter((part) => part !== "").join(" · ")}
-        </Text>
-      </TableCell>
-      <TableCell>
-        {occurrence.state === "overdue" && (
-          <Tag size="sm" tone="danger">
-            {late === 1
-              ? t("agenda.lateOne")
-              : t("agenda.lateMany", { days: String(late) })}
-          </Tag>
-        )}
-        {occurrence.state === "expected" && (
-          <Text size="sm">{formatRelativeDays(-late, locale)}</Text>
-        )}
-        {(occurrence.state === "realized" ||
-          occurrence.state === "skipped") && (
-          <Tag size="sm" tone={stateTone[occurrence.state]}>
-            {t(`occurrence.state.${occurrence.state}`)}
-          </Tag>
-        )}
-      </TableCell>
       <TableCell numeric>
         {fmt.signed(row.money, scale(row.money.currency))}
         <OccurrenceReceived
@@ -87,7 +87,17 @@ export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
         />
       </TableCell>
       <TableCell sticky="end">
-        <OccurrenceActions occurrence={occurrence} name={name} />
+        <Inline gap={2} wrap="nowrap" justify="end">
+          <OccurrenceActions
+            occurrence={occurrence}
+            name={name}
+            quick={
+              schedule?.kind === "income"
+                ? t("occurrence.markReceived")
+                : t("occurrence.markPaid")
+            }
+          />
+        </Inline>
       </TableCell>
     </TableRow>
   );

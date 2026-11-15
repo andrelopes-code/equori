@@ -17,7 +17,6 @@ export const planningTabsEn = {
   "agenda.nothingPending": "Nothing to pay or receive in this month",
   "agenda.lateOne": "1 day late",
   "agenda.lateMany": "{days} days late",
-  "agenda.date": "Date",
   "agenda.when": "When",
   "agenda.kindAccount": "Kind and account",
   "agenda.doneCaption": "Occurrences that already happened",
@@ -57,4 +56,6 @@ export const planningTabsEn = {
   "agenda.legendIn": "Inflow",
   "agenda.legendOut": "Outflow",
   "agenda.legendPending": "Pending",
+  "occurrence.markPaid": "Mark paid",
+  "occurrence.markReceived": "Mark received",
 };

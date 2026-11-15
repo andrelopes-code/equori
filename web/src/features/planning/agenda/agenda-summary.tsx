@@ -63,6 +63,11 @@ export function AgendaSummary({
           key: "inflows",
           label: t("agenda.inflows"),
           value: amount(close?.inflow ?? 0),
+          meter: {
+            value: close?.inflowDone ?? 0,
+            max: close?.inflow ?? 0,
+            label: t("agenda.inflows"),
+          },
           note: t("agenda.received", {
             percent: share(close?.inflowDone ?? 0, close?.inflow ?? 0),
           }),
@@ -71,6 +76,11 @@ export function AgendaSummary({
           key: "outflows",
           label: t("agenda.outflows"),
           value: amount(close?.outflow ?? 0),
+          meter: {
+            value: close?.outflowDone ?? 0,
+            max: close?.outflow ?? 0,
+            label: t("agenda.outflows"),
+          },
           note: t("agenda.paid", {
             percent: share(close?.outflowDone ?? 0, close?.outflow ?? 0),
           }),

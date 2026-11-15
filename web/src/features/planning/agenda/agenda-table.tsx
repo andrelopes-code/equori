@@ -63,13 +63,12 @@ export function AgendaTable({
   };
 
   return (
-    <Table columns={6} variant="framed" loading={refreshing}>
+    <Table columns={5} variant="framed" loading={refreshing}>
       <TableContent handleRef={handleRef}>
         <TableCaption>{caption}</TableCaption>
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>
-            <TableColumnHeader>{t("agenda.date")}</TableColumnHeader>
             <TableColumnHeader>{t("agenda.kindAccount")}</TableColumnHeader>
             <TableColumnHeader>{t("agenda.when")}</TableColumnHeader>
             <TableColumnHeader numeric>{t("agenda.amount")}</TableColumnHeader>

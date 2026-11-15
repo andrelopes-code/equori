@@ -5,8 +5,10 @@ import {
   StatCardHeader,
   StatCardLabel,
   StatCardMessage,
+  StatCardTrend,
   StatCardValue,
 } from "@slotted/react/stat-card";
+import { ProgressBar } from "@slotted/react/progress-indicator";
 import type { ReactNode } from "react";
 
 import styles from "@/features/planning/summary/summary-band.module.css";
@@ -19,6 +21,8 @@ export interface SummaryFigure {
   // Text as written, or an amount drawn with its symbol apart.
   value: string | (MoneyAmount & { signed?: boolean }) | undefined;
   note: ReactNode;
+  // A part of a whole drawn under the value: what came in of what was expected.
+  meter?: { value: number; max: number; label: string } | undefined;
 }
 
 interface SummaryBandProps {
@@ -50,6 +54,19 @@ export function SummaryBand({ label, figures, loading }: SummaryBandProps) {
               <StatCardValue value={figure.value} />
             )}
           </StatCardFigure>
+          {figure.meter !== undefined && figure.meter.max > 0 && (
+            <StatCardTrend>
+              <div className={styles.meter}>
+                <ProgressBar
+                  size="sm"
+                  hideLabel
+                  label={figure.meter.label}
+                  value={figure.meter.value}
+                  max={figure.meter.max}
+                />
+              </div>
+            </StatCardTrend>
+          )}
           <StatCardComparison>{figure.note}</StatCardComparison>
           {/* A figure with no value drops the comparison; the same words stand as its message. */}
           <StatCardMessage>{figure.note}</StatCardMessage>

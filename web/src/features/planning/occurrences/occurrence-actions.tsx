@@ -1,4 +1,4 @@
-import { IconButton } from "@slotted/react/button";
+import { Button, IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@slotted/react/menu";
 import { useQuery } from "@tanstack/react-query";
@@ -18,8 +18,12 @@ import { useT } from "@/i18n/i18n-provider";
 export function OccurrenceActions({
   occurrence,
   name,
+  quick,
 }: {
   occurrence: OccurrenceRef;
+  // The words of a button that realizes an open occurrence beside the menu, on a list whose work
+  // is to settle what is due (the agenda).
+  quick?: string | undefined;
   // What the occurrence is called in the menu's and the dialogs' words: its schedule's
   // description, read from the schedule when the list does not hold it.
   name?: string | undefined;
@@ -47,6 +51,18 @@ export function OccurrenceActions({
   if (actions.length === 0) return null;
   return (
     <>
+      {quick !== undefined && actions.includes("realize") && (
+        <Button
+          size="sm"
+          variant="outline"
+          tone="secondary"
+          onClick={() => {
+            setOpen("realize");
+          }}
+        >
+          {quick}
+        </Button>
+      )}
       <Menu>
         <MenuTrigger
           render={(props) => (

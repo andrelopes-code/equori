@@ -17,7 +17,6 @@ export const planningTabsPtBR: Record<keyof typeof planningTabsEn, string> = {
   "agenda.nothingPending": "Nada a pagar ou receber neste mês",
   "agenda.lateOne": "1 dia de atraso",
   "agenda.lateMany": "{days} dias de atraso",
-  "agenda.date": "Data",
   "agenda.when": "Quando",
   "agenda.kindAccount": "Tipo e conta",
   "agenda.doneCaption": "Ocorrências que já aconteceram",
@@ -57,4 +56,6 @@ export const planningTabsPtBR: Record<keyof typeof planningTabsEn, string> = {
   "agenda.legendIn": "Entrada",
   "agenda.legendOut": "Saída",
   "agenda.legendPending": "Pendente",
+  "occurrence.markPaid": "Paguei",
+  "occurrence.markReceived": "Recebi",
 };

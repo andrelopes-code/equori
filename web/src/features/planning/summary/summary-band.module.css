@@ -12,4 +12,9 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
+
+  /* The trend slot sizes to its content; the meter takes the card's width. */
+  .meter {
+    inline-size: 100%;
+  }
 }

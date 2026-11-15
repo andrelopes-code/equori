@@ -266,6 +266,20 @@ describe("PlanningPage agenda", () => {
     });
   });
 
+  // Spec A4: an open occurrence on the agenda is realized from its row, beside the menu.
+  it("opens the realize dialog from the row of an open occurrence", async () => {
+    await renderApp("/planning", { fetch: api() });
+    const row = await screen.findByRole("row", { name: /^Salary/ });
+
+    await userEvent.click(
+      within(row).getByRole("button", {
+        name: catalogEn["occurrence.markReceived"],
+      }),
+    );
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
   it("shows the Problem the server returns for a realize", async () => {
     await renderApp("/planning", {
       fetch: api({
