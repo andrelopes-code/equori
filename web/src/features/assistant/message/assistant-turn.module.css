@@ -8,6 +8,8 @@
     box-sizing: border-box;
     inline-size: 100%;
     min-inline-size: 0;
+    /* The rail spans the turn: a one-line turn still holds the whole mark. */
+    min-block-size: 26px;
   }
 
   .turn > * {
@@ -32,6 +34,7 @@
   }
 
   .mark {
+    flex: none;
     position: relative;
     display: grid;
     place-items: center;
