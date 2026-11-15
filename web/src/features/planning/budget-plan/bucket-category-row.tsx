@@ -60,17 +60,20 @@ export function BucketCategoryRow({
       </div>
 
       {subcategories.length > 0 && (
-        <Button
-          size="sm"
-          variant="ghost"
-          tone="secondary"
-          aria-expanded={open}
-          onClick={() => {
-            setOpen(!open);
-          }}
-        >
-          {t("buckets.subcategories", { name: root.name })}
-        </Button>
+        // A wrapper keeps the button at its own width at the start of the row.
+        <div>
+          <Button
+            size="sm"
+            variant="ghost"
+            tone="secondary"
+            aria-expanded={open}
+            onClick={() => {
+              setOpen(!open);
+            }}
+          >
+            {t("buckets.subcategories", { name: root.name })}
+          </Button>
+        </div>
       )}
       {open && (
         <Stack gap={1} className={styles.children}>
