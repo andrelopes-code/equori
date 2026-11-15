@@ -16,6 +16,7 @@ export const planningTabsEn = {
   "agenda.happened": "Already happened",
   "agenda.lateOne": "1 day late",
   "agenda.lateMany": "{days} days late",
+  "agenda.stateOn": "{state} · {day}",
   "agenda.when": "When",
   "agenda.running": "Running balance of the month",
   "agenda.runningLow":

@@ -16,6 +16,7 @@ export const planningTabsPtBR: Record<keyof typeof planningTabsEn, string> = {
   "agenda.happened": "Já aconteceram",
   "agenda.lateOne": "1 dia de atraso",
   "agenda.lateMany": "{days} dias de atraso",
+  "agenda.stateOn": "{state} · {day}",
   "agenda.when": "Quando",
   "agenda.running": "Saldo acumulado do mês",
   "agenda.runningLow":

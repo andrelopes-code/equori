@@ -24,8 +24,8 @@ interface AgendaRowProps {
   scale: (code: string) => number;
 }
 
-// One occurrence: its name over its kind and account, when it falls or how it ended over its
-// day, and its expected amount, with what it moved once realized (spec A4).
+// One occurrence: its name over its kind and account, when it falls over its day (or how it
+// ended, with its day, in one tag), and its expected amount, with what it moved once realized (spec A4).
 export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -39,6 +39,7 @@ export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
       : schedule.description;
   const kind = schedule === undefined ? "" : t(kindLabel[schedule.kind]);
   const late = dayCount(occurrence.expected_on, today);
+  const day = formatWeekdayDayMonth(occurrence.expected_on, locale);
 
   return (
     <TableRow value={occurrence.id} muted={occurrence.state === "skipped"}>
@@ -54,23 +55,32 @@ export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
         <Stack gap={0} align="start">
           {occurrence.state === "overdue" && (
             <Tag size="sm" tone="danger">
-              {late === 1
-                ? t("agenda.lateOne")
-                : t("agenda.lateMany", { days: String(late) })}
+              {t("agenda.stateOn", {
+                state:
+                  late === 1
+                    ? t("agenda.lateOne")
+                    : t("agenda.lateMany", { days: String(late) }),
+                day,
+              })}
+            </Tag>
+          )}
+          {(occurrence.state === "realized" ||
+            occurrence.state === "skipped") && (
+            <Tag size="sm" tone={stateTone[occurrence.state]}>
+              {t("agenda.stateOn", {
+                state: t(`occurrence.state.${occurrence.state}`),
+                day,
+              })}
             </Tag>
           )}
           {occurrence.state === "expected" && (
             <Text size="sm">{formatRelativeDays(-late, locale)}</Text>
           )}
-          {(occurrence.state === "realized" ||
-            occurrence.state === "skipped") && (
-            <Tag size="sm" tone={stateTone[occurrence.state]}>
-              {t(`occurrence.state.${occurrence.state}`)}
-            </Tag>
+          {occurrence.state === "expected" && (
+            <Text size="xs" tone="muted">
+              {day}
+            </Text>
           )}
-          <Text size="xs" tone="muted">
-            {formatWeekdayDayMonth(occurrence.expected_on, locale)}
-          </Text>
           {occurrence.moved_from !== undefined && (
             <Text size="xs" tone="muted">
               {t("agenda.movedFrom", {
