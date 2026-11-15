@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { sheetModel } from "@/features/assistant/proposal/sheet-model";
+import {
+  earliest,
+  sheetModel,
+} from "@/features/assistant/proposal/sheet-model";
 import type { SheetModel } from "@/features/assistant/proposal/sheet-model";
 import type { Decision } from "@/features/assistant/proposal/use-sheet-decisions";
 
@@ -18,27 +21,24 @@ export interface AnswerSheet extends SheetModel {
   now: number;
 }
 
-// The sheet of one answer after the decisions already taken: a decided proposal shows the server's
-// answer, and a pending one leaves the rows at its expiry instant, without a click (P15).
+// The sheet of one answer after the decisions already taken: a proposal decided in this session
+// stays a row with the server's answer, and a pending one stays a row past its expiry instant,
+// labelled expired, without a click (P15).
 export function useAnswerSheet(
   proposals: readonly Proposal[],
   decisions: Record<string, Decision>,
 ): AnswerSheet {
   const decided = proposals.map((p) => decisions[p.id]?.proposal ?? p);
+  const session = new Set(
+    proposals.filter((p) => decisions[p.id]?.proposal).map((p) => p.id),
+  );
   const now = useClock(
     decided.filter((p) => p.status === "pending").map(expiry),
   );
-  const model = sheetModel(
-    decided.filter((p) => p.status !== "pending" || expiry(p) > now),
-  );
-  const shown = new Set(
-    model.rows.flatMap((row) => [
-      row.proposal.id,
-      ...row.dependents.map((d) => d.id),
-    ]),
-  );
+  const model = sheetModel(decided, session);
+  const live = decided.filter((p) => p.status === "pending" && expiry(p) > now);
 
-  return { ...model, results: decided.filter((p) => !shown.has(p.id)), now };
+  return { ...model, deadline: earliest(live), now };
 }
 
 function useClock(instants: readonly number[]): number {

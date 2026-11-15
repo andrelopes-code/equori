@@ -48,7 +48,8 @@ export function DecisionSheet({
   if (rows.length === 0) return null;
 
   const count = rows.reduce((sum, row) => sum + 1 + row.dependents.length, 0);
-  const summary = sheetSummary(rows, decisions.marks);
+  const live = rows.filter((row) => !passed(row.proposal, now));
+  const summary = sheetSummary(live, decisions.marks);
   const until =
     deadline === undefined
       ? undefined
@@ -82,6 +83,7 @@ export function DecisionSheet({
             proposal={proposal}
             siblings={siblings}
             marked={decisions.marks[proposal.id] === true}
+            expired={passed(proposal, now)}
             locked={decisions.running}
             executing={decisions.active === proposal.id}
             error={decisions.errors[proposal.id]}
@@ -98,13 +100,22 @@ export function DecisionSheet({
         </Fragment>
       ))}
 
-      <SheetFooter
-        summary={summary}
-        running={decisions.running}
-        reveal={reveal}
-        onConfirm={decisions.confirm}
-        onReject={decisions.reject}
-      />
+      {summary.total > 0 && (
+        <SheetFooter
+          summary={summary}
+          running={decisions.running}
+          reveal={reveal}
+          onConfirm={decisions.confirm}
+          onReject={decisions.reject}
+        />
+      )}
     </section>
+  );
+}
+
+// A pending proposal whose expiry instant is at or before now (P15).
+function passed(proposal: Proposal, now: number): boolean {
+  return (
+    proposal.status === "pending" && Date.parse(proposal.expires_at) <= now
   );
 }

@@ -25,6 +25,18 @@ describe("sheetModel", () => {
     expect(model.deadline).toBe(p1);
   });
 
+  it("keeps a proposal decided in the session as a row, out of the deadline", () => {
+    const p1 = p("p1", "executed");
+    const p3 = p("p3", "executed", { waiting_for: ["p1"] });
+    const p4 = p("p4", "failed");
+
+    const model = sheetModel([p1, p3, p4], new Set(["p1", "p3"]));
+
+    expect(model.rows).toEqual([{ proposal: p1, dependents: [p3] }]);
+    expect(model.results).toEqual([p4]);
+    expect(model.deadline).toBeUndefined();
+  });
+
   it("draws an orphan waiting proposal as a row", () => {
     const p5 = p("p5", "waiting", { waiting_for: ["x"] });
 

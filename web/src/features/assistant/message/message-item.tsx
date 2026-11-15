@@ -20,7 +20,9 @@ import {
 } from "@/features/assistant/model/mask-amounts";
 import { MessageAnswer } from "@/features/assistant/message/message-answer";
 import { MessageUnanswered } from "@/features/assistant/message/message-unanswered";
-import { ProposalCard } from "@/features/assistant/proposal/proposal-card";
+import { isReceipt } from "@/features/assistant/proposal/proposal-card-state";
+import { Receipt } from "@/features/assistant/proposal/receipt";
+import { ResultBlock } from "@/features/assistant/proposal/result-block";
 import { useAnswerSheet } from "@/features/assistant/proposal/use-answer-sheet";
 import type { Decision } from "@/features/assistant/proposal/use-sheet-decisions";
 import type { AssistantMessage } from "@/features/assistant/model/sse";
@@ -114,13 +116,13 @@ export function MessageItem({
                 reveal={reveal}
                 onDecided={handleDecided}
               />
-              {sheet.results.map((proposal) => (
-                <ProposalCard
-                  key={proposal.id}
-                  proposal={proposal}
-                  siblings={message.proposals}
-                />
-              ))}
+              {sheet.results.map((proposal) =>
+                isReceipt(proposal) ? (
+                  <Receipt key={proposal.id} proposal={proposal} />
+                ) : (
+                  <ResultBlock key={proposal.id} proposal={proposal} />
+                ),
+              )}
             </Stack>
           )}
 

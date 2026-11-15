@@ -1,0 +1,198 @@
+@layer app {
+  .state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .dot {
+    flex: none;
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .success {
+    color: var(--slotted-tone-success-text);
+  }
+
+  .danger {
+    color: var(--slotted-tone-danger-text);
+  }
+
+  .muted {
+    color: var(--slotted-text-muted);
+  }
+
+  /* The mock's .receipt: a serrated bottom edge cut by a radial mask. The receipt is no ancestor
+     of a blurred surface (O11). */
+  .receipt {
+    display: grid;
+    gap: 14px;
+    padding: 18px 16px 22px;
+    border-radius: 18px 18px 0 0;
+    background: var(--slotted-surface-raised);
+    box-shadow: var(--slotted-shadow-md);
+    mask: radial-gradient(circle 6px at 50% 100%, #0000 97%, #000) 0 0 / 14px
+      100% repeat-x;
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 32px;
+    block-size: 32px;
+    border-radius: 50%;
+    background: var(--slotted-tone-success-surface);
+    color: var(--slotted-tone-success-text);
+  }
+
+  .check {
+    inline-size: 20px;
+    block-size: 20px;
+  }
+
+  .check circle {
+    stroke-dasharray: 64;
+    stroke-dashoffset: 64;
+    animation: draw var(--slotted-duration-long) cubic-bezier(0.16, 1, 0.3, 1)
+      forwards;
+  }
+
+  .check path {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    animation: draw var(--slotted-duration-long) cubic-bezier(0.16, 1, 0.3, 1)
+      var(--slotted-duration-long) forwards;
+  }
+
+  .heading {
+    display: grid;
+    min-inline-size: 0;
+    line-height: 1.3;
+  }
+
+  .open {
+    margin-inline-start: auto;
+    white-space: nowrap;
+  }
+
+  .icon14 {
+    display: inline-block;
+    inline-size: 14px;
+    block-size: 14px;
+    margin-inline-start: 4px;
+    vertical-align: middle;
+  }
+
+  .icon16 {
+    display: block;
+    inline-size: 16px;
+    block-size: 16px;
+  }
+
+  .amount {
+    font-size: var(--slotted-font-size-4xl);
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .rows {
+    display: grid;
+    padding-block-start: 10px;
+    border-block-start: 1px dashed var(--slotted-border-subtle);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 16px;
+    block-size: 30px;
+  }
+
+  .value {
+    overflow: hidden;
+    text-align: end;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .block,
+  .blockMuted {
+    display: grid;
+    gap: 14px;
+    padding: 14px 16px 16px;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 18px;
+    background: var(--slotted-surface-raised);
+    box-shadow: var(--slotted-shadow-md);
+  }
+
+  .blockMuted {
+    border-color: color-mix(in oklab, var(--slotted-text) 7%, transparent);
+    box-shadow: none;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    block-size: 36px;
+  }
+
+  .tile {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 30px;
+    block-size: 30px;
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 9px;
+    background: var(--slotted-surface);
+    color: var(--slotted-text-muted);
+  }
+
+  .title {
+    display: grid;
+    flex: 1;
+    min-inline-size: 0;
+    line-height: 1.3;
+  }
+
+  .failure {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-danger-surface) 70%,
+      transparent
+    );
+    color: var(--slotted-tone-danger-text);
+  }
+
+  @keyframes draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .check circle,
+    .check path {
+      animation: none;
+      stroke-dashoffset: 0;
+    }
+  }
+}

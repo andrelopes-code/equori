@@ -109,6 +109,14 @@
     block-size: 14px;
   }
 
+  .icon14Inline {
+    display: inline-block;
+    inline-size: 14px;
+    block-size: 14px;
+    margin-inline-start: 4px;
+    vertical-align: middle;
+  }
+
   .opTitle,
   .depTitle {
     display: flex;

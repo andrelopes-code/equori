@@ -11,7 +11,7 @@ export interface SheetRow {
 export interface SheetModel {
   // Pending, executing and waiting proposals without a parent in the answer, in the answer's order.
   rows: SheetRow[];
-  // Every other proposal, in the answer's order.
+  // Every other proposal, in the answer's order: the ones that arrived already decided.
   results: Proposal[];
   // The open proposal that expires first; undefined when rows is empty.
   deadline: Proposal | undefined;
@@ -26,21 +26,29 @@ export interface SheetSummary {
 
 const OPEN: readonly Proposal["status"][] = ["pending", "executing", "waiting"];
 
-export function sheetModel(proposals: readonly Proposal[]): SheetModel {
-  const open = proposals.filter(isOpen);
-  const openIDs = new Set(open.map((proposal) => proposal.id));
-  const rows: SheetRow[] = open
-    .filter((proposal) => !hasParent(proposal, openIDs))
+// `session` holds the proposals decided since the answer arrived: they stay rows, with their
+// outcome, instead of becoming results.
+export function sheetModel(
+  proposals: readonly Proposal[],
+  session: ReadonlySet<string> = new Set(),
+): SheetModel {
+  const kept = (proposal: Proposal) =>
+    isOpen(proposal) || session.has(proposal.id);
+  const shown = proposals.filter(kept);
+  const keptIDs = new Set(shown.map((proposal) => proposal.id));
+  const rows: SheetRow[] = shown
+    .filter((proposal) => !hasParent(proposal, keptIDs, session))
     .map((proposal) => ({
       proposal,
-      dependents: open.filter(
+      dependents: shown.filter(
         (other) =>
-          hasParent(other, openIDs) && other.waiting_for[0] === proposal.id,
+          hasParent(other, keptIDs, session) &&
+          other.waiting_for[0] === proposal.id,
       ),
     }));
-  const results = proposals.filter((proposal) => !isOpen(proposal));
+  const results = proposals.filter((proposal) => !kept(proposal));
 
-  return { rows, results, deadline: earliest(open) };
+  return { rows, results, deadline: earliest(proposals.filter(isOpen)) };
 }
 
 export function defaultMarks(
@@ -91,15 +99,18 @@ function isOpen(proposal: Proposal): boolean {
   return OPEN.includes(proposal.status);
 }
 
-function hasParent(proposal: Proposal, openIDs: ReadonlySet<string>): boolean {
+function hasParent(
+  proposal: Proposal,
+  shownIDs: ReadonlySet<string>,
+  session: ReadonlySet<string>,
+): boolean {
   const parent = proposal.waiting_for[0];
+  const waits = proposal.status === "waiting" || session.has(proposal.id);
 
-  return (
-    proposal.status === "waiting" && parent !== undefined && openIDs.has(parent)
-  );
+  return waits && parent !== undefined && shownIDs.has(parent);
 }
 
-function earliest(open: readonly Proposal[]): Proposal | undefined {
+export function earliest(open: readonly Proposal[]): Proposal | undefined {
   return open.reduce<Proposal | undefined>(
     (best, proposal) =>
       best === undefined ||

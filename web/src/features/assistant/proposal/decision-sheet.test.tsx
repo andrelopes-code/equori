@@ -130,7 +130,11 @@ describe("DecisionSheet", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Confirm 3" }));
 
-    expect(await screen.findByText("the tool failed")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        `${catalogEn["assistant.result.not_applied"]} the tool failed`,
+      ),
+    ).toBeInTheDocument();
 
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -333,6 +337,35 @@ describe("DecisionSheet", () => {
     expect(
       screen.getByText(catalogEn["assistant.sheet.next"]),
     ).toBeInTheDocument();
+  });
+
+  // Spec 2026-11-15 section 4 (Dependent): a waiting proposal whose parent is no longer open.
+  it("shows an orphan waiting row with its summary and its parent", () => {
+    const parent: Proposal = { ...pending, id: "p0", status: "executed" };
+
+    renderAnswer(
+      [
+        parent,
+        {
+          ...pending,
+          id: "p2",
+          status: "waiting",
+          summary: "Create the subscription",
+          waiting_for: ["p0"],
+          preview: { ...pending.preview, action: "manage_schedule.create" },
+        },
+      ],
+      fakeApi({}),
+    );
+
+    expect(screen.getByText("Create the subscription")).toBeInTheDocument();
+    expect(
+      screen.getByText("Waits for the confirmation of: Record transaction"),
+    ).toBeInTheDocument();
+
+    for (const box of screen.getAllByRole("checkbox")) {
+      expect(box).toBeDisabled();
+    }
   });
 
   // Spec 2026-11-15 section 4 (Privacy).

@@ -50,6 +50,13 @@ export function proposalCardState({
   return { status, hint, failure, outcome, screen };
 }
 
+// An executed `record_transaction` is drawn as a receipt (spec 2026-11-15, section 5).
+export function isReceipt(proposal: Proposal): boolean {
+  return (
+    proposal.status === "executed" && proposal.tool === "record_transaction"
+  );
+}
+
 // The title a card shows for its action; the card of a waiting proposal names its parents with it.
 export function actionTitle(action: string, t: TFunction): string {
   const key = catalogKey(`assistant.action.${action}`);

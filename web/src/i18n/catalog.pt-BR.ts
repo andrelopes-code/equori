@@ -1629,6 +1629,8 @@ export const catalogPtBR: Catalog = {
   "assistant.sheet.confirm": "Confirmar {count}",
   "assistant.sheet.next": "em seguida",
   "assistant.sheet.irreversible_tag": "Irreversível",
+  "assistant.result.not_applied": "Não aplicado.",
+  "assistant.result.receipt": "Transação registrada",
   "assistant.step.list_accounts": "Lendo contas",
   "assistant.step.get_balances": "Lendo saldos",
   "assistant.step.search_transactions": "Buscando transações",

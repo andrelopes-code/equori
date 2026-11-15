@@ -5,11 +5,14 @@ import { errorText } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { actionIcon } from "@/features/assistant/message/source-icon";
 import { AssistantIcon } from "@/features/assistant/panel/assistant-icon";
-import { DeadlineRing } from "@/features/assistant/proposal/deadline-ring";
 import styles from "@/features/assistant/proposal/decision-sheet.module.css";
-import { actionTitle } from "@/features/assistant/proposal/proposal-card-state";
+import {
+  actionTitle,
+  proposalCardState,
+} from "@/features/assistant/proposal/proposal-card-state";
 import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes";
 import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting";
+import { RowEnd } from "@/features/assistant/proposal/row-end";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -20,6 +23,8 @@ interface OperationRowProps {
   // The proposals of the answer, where a waiting row finds the proposals it waits for.
   siblings: readonly Proposal[];
   marked: boolean;
+  // The expiry instant has passed while the proposal waited for a decision (P15).
+  expired: boolean;
   // A confirm or a reject of the sheet is running.
   locked: boolean;
   // This proposal's request is in flight.
@@ -35,6 +40,7 @@ export function OperationRow({
   proposal,
   siblings,
   marked,
+  expired,
   locked,
   executing,
   error,
@@ -46,6 +52,14 @@ export function OperationRow({
   const title = actionTitle(preview.action, t);
   const destructive = preview.destructive === true;
   const running = executing || proposal.status === "executing";
+  const state = proposalCardState({
+    shown: proposal,
+    passed: expired,
+    busy: running,
+    error: null,
+    t,
+  });
+  const decided = !["pending", "executing", "waiting"].includes(state.status);
   const failure = error === undefined ? undefined : errorText(error, t);
 
   function handleToggle() {
@@ -55,13 +69,17 @@ export function OperationRow({
   return (
     <div className={styles.op}>
       <div className={styles.opHead}>
-        <Checkbox
-          size="sm"
-          aria-label={title}
-          checked={marked}
-          disabled={locked || running || proposal.status !== "pending"}
-          onChange={handleToggle}
-        />
+        {decided ? (
+          <span aria-hidden="true" />
+        ) : (
+          <Checkbox
+            size="sm"
+            aria-label={title}
+            checked={marked}
+            disabled={locked || running || proposal.status !== "pending"}
+            onChange={handleToggle}
+          />
+        )}
 
         <span className={destructive ? styles.tileDanger : styles.tile}>
           <span className={styles.icon16}>
@@ -85,46 +103,49 @@ export function OperationRow({
           )}
         </span>
 
-        {running && (
-          <span className={styles.opEnd}>
-            <DeadlineRing share={0.75} size={14} spinning />
-            <Text size="sm" tone="muted">
-              {t("assistant.proposal.status.executing")}
-            </Text>
-          </span>
-        )}
+        <RowEnd status={state.status} running={running} screen={state.screen} />
       </div>
 
-      <div className={styles.opBody}>
-        {preview.target !== undefined && (
-          <Text size="sm" tone="muted">
-            {valueText({ text: preview.target })}
-          </Text>
-        )}
-
-        {proposal.status === "waiting" ? (
-          <ProposalWaiting proposal={proposal} siblings={siblings} />
-        ) : (
-          <ProposalChanges changes={preview.changes} />
-        )}
-
-        {proposal.suggested && proposal.reason !== undefined && (
-          <div className={styles.why}>
-            <span className={styles.icon14}>
-              <AssistantIcon name="info" />
-            </span>
-            <Text size="sm" tone="muted">
-              {proposal.reason}
-            </Text>
-          </div>
-        )}
-
-        {failure !== undefined && (
+      {state.status === "failed" && (
+        <div className={styles.opBody}>
           <Text size="sm" tone="danger" role="status">
-            {failure}
+            {`${t("assistant.result.not_applied")} ${state.outcome ?? ""}`.trim()}
           </Text>
-        )}
-      </div>
+        </div>
+      )}
+
+      {!decided && (
+        <div className={styles.opBody}>
+          {preview.target !== undefined && (
+            <Text size="sm" tone="muted">
+              {valueText({ text: preview.target })}
+            </Text>
+          )}
+
+          {proposal.status === "waiting" ? (
+            <ProposalWaiting proposal={proposal} siblings={siblings} />
+          ) : (
+            <ProposalChanges changes={preview.changes} />
+          )}
+
+          {proposal.suggested && proposal.reason !== undefined && (
+            <div className={styles.why}>
+              <span className={styles.icon14}>
+                <AssistantIcon name="info" />
+              </span>
+              <Text size="sm" tone="muted">
+                {proposal.reason}
+              </Text>
+            </div>
+          )}
+
+          {failure !== undefined && (
+            <Text size="sm" tone="danger" role="status">
+              {failure}
+            </Text>
+          )}
+        </div>
+      )}
     </div>
   );
 }

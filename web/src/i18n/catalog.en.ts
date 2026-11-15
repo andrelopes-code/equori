@@ -1619,6 +1619,8 @@ export const catalogEn = {
   "assistant.sheet.confirm": "Confirm {count}",
   "assistant.sheet.next": "next",
   "assistant.sheet.irreversible_tag": "Irreversible",
+  "assistant.result.not_applied": "Not applied.",
+  "assistant.result.receipt": "Transaction recorded",
   "assistant.step.list_accounts": "Reading accounts",
   "assistant.step.get_balances": "Reading balances",
   "assistant.step.search_transactions": "Searching transactions",
