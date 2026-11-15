@@ -1,9 +1,12 @@
 @layer app {
   /* The frame of a framed table, so the grid reads as the list's neighbour. Its weeks take a fixed
-     height level with the closed list; it stays in view while an opened list scrolls by. */
+     height level with the closed list; it stays in view under the page's sticky header while the
+     list scrolls by. */
   .root {
     position: sticky;
-    inset-block-start: var(--slotted-space-6);
+    inset-block-start: calc(
+      var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
+    );
     align-self: start;
     display: grid;
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
