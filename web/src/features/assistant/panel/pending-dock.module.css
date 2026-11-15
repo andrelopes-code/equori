@@ -20,7 +20,6 @@
     margin-inline-end: auto;
   }
 
-  /* The pulse is the dock's own signal and runs under reduced motion too (spec section 6). */
   .pulse {
     flex: none;
     inline-size: 8px;
@@ -48,8 +47,10 @@
     }
   }
 
+  /* Spec section 6: the dot stands still under reduced motion. */
   @media (prefers-reduced-motion: reduce) {
-    .dock {
+    .dock,
+    .pulse {
       animation: none;
     }
   }

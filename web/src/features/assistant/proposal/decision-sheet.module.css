@@ -208,7 +208,14 @@
     white-space: nowrap;
   }
 
+  /* On a phone the sheet also takes the rail's 38 px column, as the mock does, so a row's title
+     keeps its words beside the tags. */
   @media (max-width: 599px) {
+    .sheet {
+      inline-size: calc(100% + 38px);
+      margin-inline-start: -38px;
+    }
+
     .opBody {
       padding-inline-start: 16px;
     }

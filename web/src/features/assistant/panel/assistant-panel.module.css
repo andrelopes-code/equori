@@ -125,8 +125,11 @@
   }
 
   /* One field per row: its name at the start, its value at the end of the card. */
+  /* A row list stacks below its term width plus this value width; a sheet's body at 390 px is
+     about 17rem wide, and each field keeps its value on the line of its name (P14). */
   .changes {
     row-gap: var(--slotted-space-3);
+    --slotted-description-list-value-min: 8rem;
   }
 
   .fieldValue {

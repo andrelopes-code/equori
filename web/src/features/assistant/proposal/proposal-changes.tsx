@@ -26,7 +26,7 @@ export function ProposalChanges({ changes }: ProposalChangesProps) {
   const valueText = useValueText();
 
   return (
-    <DescriptionList termWidth="10rem" className={styles.changes}>
+    <DescriptionList termWidth="8rem" className={styles.changes}>
       {changes.map((change, i) => {
         const fieldKey = catalogKey(`assistant.field.${change.field}`);
 
