@@ -50,6 +50,33 @@ These rules replace the Slotted guideline they name; the owner review of 2026-10
 - **Items inside an overlay.** A dialog and a drawer sit at the raised step, so an item drawn from `--slotted-surface-raised` and `--slotted-border-subtle` melts into the panel (1.00:1 and 1.3:1). Slotted families inside one read a wash and a ring of the text colour from `web/src/theme/overlay-items.ts`: 3% and 14%, about 1.06:1 and 1.5:1 of the panel, since a frame is a large area. An element of the app's own that is small and repeated, such as a row, takes more: the text colour at 8% for the ground and at 22% for the edge (`color-mix` in a co-located `*.module.css`, as `account-row.module.css` does). A new family that draws a ground inside an overlay gets a block in `overlay-items.ts` and a case in `equori.theme.test.ts`.
 - **Writes refresh.** Every successful mutation marks all queries stale (`api/query-client.ts`); a screen never needs a reload to show the result of a write.
 
+## Assistant conversation
+
+The owner review of 2026-11-15 set these rules for everything the assistant draws in a conversation (`features/assistant`). A new kind of answer block, proposal or result meets all of them before its first commit.
+
+- **A form per kind.** Each kind of information or operation has the form of what it represents (table below). A list of fields is the fallback for a kind the client does not know yet, never the design of a new kind. A new kind adds its row to the table in the same change.
+- **One decision per answer.** The proposals of one answer form one sheet: the deadline appears once, one button confirms the marked operations, an operation that waits for another is drawn under it and marked with it. An irreversible operation starts unmarked, carries the word "irreversible", and turns the confirm button to the danger tone when marked.
+- **A result replaces its proposal.** An executed write becomes a receipt with its amount first and a link to its record; a failed one states what was not applied and why; an expired one is dimmed and says how to ask again. Status is a word with an icon, never a colour or a badge alone.
+- **One thread.** Every assistant turn hangs from the assistant's mark and its rail; sources consulted fold into one line with their icons. No block floats between turns.
+- **Motion with a function.** While the turn runs, the mark carries the composer's ring and each step enters with its source icon; on arrival, bars grow from zero and lines draw; a confirmed operation draws its check. Every animation stops under `prefers-reduced-motion`. No gradient text.
+- **Honest values.** Every figure comes from the API or from a client derivation named in the spec with its own test (a difference between periods, the next dates of a schedule).
+- **Mock first.** A new kind ships with a mock of its form in the light and dark schemes and at 390 px, approved by the owner before code (skill `redesign-ui-section`).
+
+| Kind | Form |
+| --- | --- |
+| Two periods compared | Paired bars on one axis; the difference written in words |
+| Ranking | Bars in order, the value at the end, a zero written |
+| Balance over time | Step line, since a balance changes only at events; the lowest point marked and written |
+| Categorize | From one category to another, with the transactions moved |
+| Rule | When and then; the pattern in the monospace font |
+| Dependent operation | Under the operation it waits for, marked with it |
+| Void | The record struck through, outside the sheet until marked |
+| Schedule | Amount per period and the next occurrences |
+| Asset purchase | Quantity times price equals total, and the paying account |
+| Recorded transaction | Receipt with the amount first |
+| Credit limit | One gauge with the current limit and the requested one |
+| Payment | Source account, amount and destination |
+
 ## Utility classes
 
 Tailwind v4 utilities (ADR 032) serve a spacing tweak on one element (`<Text className="ms-2">`). `src/app/tailwind.css` is their only configuration.
