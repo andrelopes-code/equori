@@ -17,6 +17,7 @@ import { useScale } from "@/features/setup";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import bleed from "@/ui/display/section-bleed.module.css";
 
 type Money = components["schemas"]["Money"];
 
@@ -34,6 +35,8 @@ interface AllocationTableProps {
   rows: readonly AllocationRow[];
   total: Money | undefined;
   pending: boolean;
+  // Runs edge to edge at the end of a surface section, with no frame of its own.
+  flush?: boolean;
 }
 
 const columns = 4;
@@ -46,6 +49,7 @@ export function AllocationTable({
   rows,
   total,
   pending,
+  flush = false,
 }: AllocationTableProps) {
   const t = useT();
   const [tag] = useAppLocale();
@@ -56,7 +60,11 @@ export function AllocationTable({
   const percent = (bp: number) => formatBasisPoints(bp, tag);
 
   return (
-    <Table columns={columns} variant="framed">
+    <Table
+      columns={columns}
+      variant={flush ? "ruled" : "framed"}
+      {...(flush ? { className: bleed.bleed } : {})}
+    >
       <TableContent aria-label={caption}>
         <TableHead>
           <TableRow>

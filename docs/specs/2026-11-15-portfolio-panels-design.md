@@ -20,6 +20,7 @@ Measured on `/portfolio` with the demo book at 1440 px, before this change:
 | PP3 | The page header holds the controls (help, currency, date), a vertical `Divider`, then the actions by rising weight: income and sales (`ghost`), contribution plan (`outline`), record a trade (`solid`, accent, `plus` glyph). The trade appears when the book has a brokerage, the date holds a position and the positions loaded; otherwise the empty state carries it (PC8, BC9). |
 | PP4 | The holdings section keeps Columns (`ghost`) and Record income (`outline`); the trade leaves it.                                                                                                                                                                                                                                                                                     |
 | PP5 | An instrument name keeps one line: a long name ends in an ellipsis with the whole name in its `title`, and the code never shrinks (`ui/display/instrument-name`). Applies to every table that draws it.                                                                                                                                                                              |
+| PP6 | The holdings grid and the where table run edge to edge in their surface sections: `variant="ruled"`, no frame of their own, the lower corners on the section radius (`ui/display/section-bleed.module.css`, Slotted issue #118). The table of `assets-allocation` keeps its frame.                                                                                                   |
 
 ## Cross-cutting questions
 
@@ -47,5 +48,5 @@ Measured on `/portfolio` with the demo book at 1440 px, before this change:
 - S2: No: `/portfolio` is desktop-only (ADR 027, S3).
 - S3: Does not apply: the user can do the same things; only the place and weight of the actions change. `internal/assistant/guide/articles/investments.md` names no button place.
 - S4: Does not apply: no data for the assistant.
-- X1: Does not apply: no scenario added; `portfolio-page.test.tsx` covers PP1 and PP3, `equori.theme.test.ts` covers PP2.
+- X1: Does not apply: no scenario added; `portfolio-page.test.tsx` covers PP1, PP3, PP5 and PP6, `equori.theme.test.ts` covers PP2.
 - X2: Does not apply: R1, R2, C2 and C3 do not apply.

@@ -349,6 +349,18 @@ describe("Portfolio page", () => {
       expect(section).toHaveAttribute("data-ground", "surface");
   });
 
+  it("PP6: runs the holdings grid and the where table edge to edge, with no frame of their own", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+
+    const tables = [
+      (await list()).closest("[data-ui='data-grid']"),
+      (await where()).closest("[data-ui='table']"),
+    ];
+
+    for (const table of tables)
+      expect(table).toHaveAttribute("data-variant", "ruled");
+  });
+
   it("PP5: keeps a long instrument name on one line with its whole text in its title", async () => {
     const name = "Petróleo Brasileiro S.A. Petrobras Preferenciais Nominativas";
     const fetch = portfolioApi({

@@ -79,6 +79,7 @@ export function WhereMoneySection({
           rows={rows}
           total={{ amount: total, currency }}
           pending={pending}
+          flush
         />
       </SectionBody>
     </Section>

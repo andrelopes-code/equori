@@ -1,0 +1,17 @@
+@layer app {
+  /* Workaround for Slotted issue #118: a surface section has no edge-to-edge body, so a table
+     or grid at the end of one cancels the section inset, widens past its own max-inline-size of
+     100%, and rounds its lower corners to the section radius. */
+  .bleed {
+    --inset: var(--slotted-section-inset, var(--slotted-space-6));
+    --radius: var(--slotted-section-radius, var(--slotted-radius-lg));
+
+    inline-size: calc(100% + var(--inset) * 2);
+    max-inline-size: none;
+    margin-inline: calc(var(--inset) * -1);
+    margin-block-end: calc(var(--inset) * -1);
+    border-end-start-radius: var(--radius);
+    border-end-end-radius: var(--radius);
+    overflow: clip;
+  }
+}
