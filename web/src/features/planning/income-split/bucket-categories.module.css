@@ -1,0 +1,93 @@
+@layer app {
+  .panes {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    overflow: hidden;
+    min-block-size: 22rem;
+  }
+
+  .chooser {
+    display: grid;
+    align-content: start;
+    gap: var(--slotted-space-1);
+    padding: var(--slotted-space-2);
+    border-inline-end: 1px solid var(--slotted-border-subtle);
+    background: color-mix(in oklch, var(--slotted-text) 3%, transparent);
+  }
+
+  .choice {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-2);
+    block-size: 3rem;
+    padding-inline: var(--slotted-space-3);
+    border: 1px solid transparent;
+    border-radius: var(--slotted-radius-md);
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .choice:hover {
+    background: color-mix(in oklch, var(--slotted-text) 6%, transparent);
+  }
+
+  .choice:focus-visible {
+    outline: 2px solid
+      var(--slotted-focus-ring, var(--slotted-tone-accent-solid));
+    outline-offset: 2px;
+  }
+
+  .choice[aria-pressed="true"] {
+    background: var(--slotted-surface-raised);
+    border-color: color-mix(in oklch, var(--slotted-text) 22%, transparent);
+  }
+
+  .names {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .names > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .list {
+    display: grid;
+    align-content: start;
+    padding: var(--slotted-space-2) var(--slotted-space-4);
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    block-size: 2.5rem;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .item:last-child {
+    border-block-end: 0;
+  }
+
+  .label {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (forced-colors: active) {
+    .choice[aria-pressed="true"] {
+      border-color: Highlight;
+    }
+  }
+}

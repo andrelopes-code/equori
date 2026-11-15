@@ -278,6 +278,19 @@ export function budgetBucketsQuery(api: Client<paths>) {
   });
 }
 
+// The income split of month and the five months before it (income buckets A233).
+export function budgetBucketHistoryQuery(api: Client<paths>, month: string) {
+  return queryOptions({
+    queryKey: ["planning", "bucket-history", month] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/budget-buckets/history", {
+          params: { query: { month } },
+        }),
+      ),
+  });
+}
+
 // Replaces the book's income bucket method; an empty list removes it (income buckets A229).
 export function useSaveBudgetBuckets() {
   const api = useApi();

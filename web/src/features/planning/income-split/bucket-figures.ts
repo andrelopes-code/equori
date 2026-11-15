@@ -127,20 +127,18 @@ export function bucketGroups(
 }
 
 export interface BucketStatus {
-  kind: "left" | "over";
+  kind: "toPlan" | "over";
   amount: number;
 }
 
-// What a bucket has left of its target, or how far the larger of planned and spent passes
-// it; undefined without a target (income buckets spec 5).
+// What a bucket's target still leaves to plan, or how far the plan passes it; undefined
+// without a target (income buckets spec 5, Plan).
 export function bucketStatus(
   target: number | undefined,
   planned: number,
-  spent: number,
 ): BucketStatus | undefined {
   if (target === undefined) return undefined;
-  const used = Math.max(planned, spent);
-  return used > target
-    ? { kind: "over", amount: used - target }
-    : { kind: "left", amount: target - used };
+  return planned > target
+    ? { kind: "over", amount: planned - target }
+    : { kind: "toPlan", amount: target - planned };
 }

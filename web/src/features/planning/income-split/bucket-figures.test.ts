@@ -126,14 +126,11 @@ describe("bucketGroups", () => {
 
 describe("bucketStatus", () => {
   it.each([
-    [1000, 600, 400, { kind: "left", amount: 400 }],
-    [1000, 600, 1200, { kind: "over", amount: 200 }],
-    [1000, 1000, 0, { kind: "left", amount: 0 }],
-    [undefined, 600, 400, undefined],
-  ] as const)(
-    "target %s, planned %s, spent %s",
-    (target, planned, spent, want) => {
-      expect(bucketStatus(target, planned, spent)).toEqual(want);
-    },
-  );
+    [1000, 600, { kind: "toPlan", amount: 400 }],
+    [1000, 1200, { kind: "over", amount: 200 }],
+    [1000, 1000, { kind: "toPlan", amount: 0 }],
+    [undefined, 600, undefined],
+  ] as const)("target %s, planned %s", (target, planned, want) => {
+    expect(bucketStatus(target, planned)).toEqual(want);
+  });
 });

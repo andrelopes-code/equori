@@ -64,11 +64,8 @@ export function useBucketDraft(
     setDraft({ ...draft, buckets: [...draft.buckets, bucket] });
   };
 
-  const choose = (categoryId: string, choice: string) => {
-    setDraft({
-      ...draft,
-      choices: new Map(draft.choices).set(categoryId, choice),
-    });
+  const setChoices = (choices: Map<string, string>) => {
+    setDraft({ ...draft, choices });
   };
 
   const preset = (name: PresetName) => {
@@ -105,7 +102,7 @@ export function useBucketDraft(
     setBucket,
     removeBucket,
     addBucket,
-    choose,
+    setChoices,
     preset,
     save: () => {
       write(bucketsPayload(draft), t("buckets.saved"));

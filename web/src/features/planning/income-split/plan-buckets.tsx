@@ -24,9 +24,6 @@ type Bucket = components["schemas"]["BudgetBucket"];
 interface PlanBucketsProps {
   // Undefined while the book has no bucket method.
   totals: BucketTotals | undefined;
-  outsideSpent: number;
-  // The plan's month as a month name.
-  month: string;
   format: PlanFormat;
   // The stored method, which the dialog edits; undefined while the book has none.
   stored: readonly Bucket[] | undefined;
@@ -34,11 +31,9 @@ interface PlanBucketsProps {
 }
 
 // The income split of the month (income buckets spec 5): each bucket's share, target,
-// planned and spent amounts, or the invitation to set one up.
+// planned amounts, or the invitation to set one up.
 export function PlanBuckets({
   totals,
-  outsideSpent,
-  month,
   format,
   stored,
   entries,
@@ -54,7 +49,7 @@ export function PlanBuckets({
           <SectionDescription>
             {totals === undefined
               ? t("buckets.empty")
-              : t("buckets.description")}
+              : t("buckets.plan.description")}
           </SectionDescription>
         </SectionTitle>
         <SectionActions>
@@ -73,12 +68,7 @@ export function PlanBuckets({
 
       {totals !== undefined && (
         <SectionBody>
-          <PlanBucketsTable
-            totals={totals}
-            outsideSpent={outsideSpent}
-            month={month}
-            format={format}
-          />
+          <PlanBucketsTable totals={totals} format={format} />
         </SectionBody>
       )}
       {editing && (

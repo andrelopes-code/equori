@@ -57,7 +57,7 @@ describe("Income split", () => {
   });
 
   // Income buckets spec 5: target, planned and spent per bucket, the rest outside.
-  it("states each bucket against its target", async () => {
+  it("states each bucket's plan against its target", async () => {
     await renderApp(november, { fetch: budgetPlanApi(withBuckets), today });
 
     const rows = within(await splitTable()).getAllByRole("row");
@@ -67,15 +67,16 @@ describe("Income split", () => {
       r.textContent.includes(catalogEn["buckets.outside"]),
     );
 
-    // 60% of R$8,500.00; housing and food plan R$4,330.00 and spent R$5,000.00.
+    // Income buckets spec 5, Plan: the target against the plan, not against the spending.
+    // 60% of R$8,500.00 is R$5,100.00; housing and food plan R$4,330.00.
     expect(needs?.textContent).toContain("R$5,100.00");
     expect(needs?.textContent).toContain("R$4,330.00");
-    expect(needs?.textContent).toContain("R$100.00 left");
+    expect(needs?.textContent).toContain("R$770.00 to plan");
+    expect(needs?.textContent).not.toContain("R$5,000.00");
     expect(freedom?.textContent).toContain(catalogEn["buckets.withSavings"]);
-    expect(freedom?.textContent).toContain("R$3,400.00 left");
+    expect(freedom?.textContent).toContain("R$3,400.00 to plan");
     // Transport, leisure and health plan R$1,370.00 outside the split.
     expect(outside?.textContent).toContain("R$1,370.00");
-    expect(outside?.textContent).toContain("R$25.00");
   });
 
   it("saves the split only when the shares sum to 100%", async () => {

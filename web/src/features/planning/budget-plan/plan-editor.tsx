@@ -136,8 +136,6 @@ export function PlanEditor({
 
         <PlanBuckets
           totals={figures.buckets}
-          outsideSpent={plan.outside_spent?.amount ?? 0}
-          month={format.monthName(month)}
           format={format}
           stored={plan.buckets}
           entries={entries}

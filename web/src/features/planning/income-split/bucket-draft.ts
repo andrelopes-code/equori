@@ -229,3 +229,76 @@ export function outsideRoots(
     .map((b) => b.root)
     .filter((root) => draft.choices.get(root.id) === outsideChoice);
 }
+
+// The bucket key a category draws from in the draft: its own choice, or its parent's when it
+// follows it; undefined outside the split.
+export function effectiveChoice(
+  draft: BucketDraft,
+  parents: ReadonlyMap<string, string | undefined>,
+  categoryId: string,
+): string | undefined {
+  const seen = new Set<string>();
+  let id: string | undefined = categoryId;
+  while (id !== undefined && !seen.has(id)) {
+    seen.add(id);
+    const choice = draft.choices.get(id);
+    if (choice === outsideChoice) return undefined;
+    if (choice !== undefined && choice !== sameChoice) return choice;
+    id = parents.get(id);
+  }
+  return undefined;
+}
+
+// How a category reads in the checklist of one bucket: in it by its own choice, in it through
+// its parent (fixed while the parent stays), or elsewhere.
+export type CheckState = "own" | "inherited" | "elsewhere";
+
+export function checkState(
+  draft: BucketDraft,
+  parents: ReadonlyMap<string, string | undefined>,
+  categoryId: string,
+  bucket: string,
+): CheckState {
+  if (effectiveChoice(draft, parents, categoryId) !== bucket)
+    return "elsewhere";
+  return draft.choices.get(categoryId) === bucket ? "own" : "inherited";
+}
+
+// The choices after a click on a category in the checklist of bucket: an own category leaves
+// it (a top-level one outside the split, a subcategory back to its parent); one elsewhere
+// joins it, by following its parent when the parent already draws from it.
+export function toggleChoice(
+  draft: BucketDraft,
+  parents: ReadonlyMap<string, string | undefined>,
+  categoryId: string,
+  bucket: string,
+): Map<string, string> {
+  const choices = new Map(draft.choices);
+  const state = checkState(draft, parents, categoryId, bucket);
+  const parent = parents.get(categoryId);
+  const isRoot = draft.roots.has(categoryId) || parent === undefined;
+  if (state === "inherited") return choices;
+  if (state === "own") {
+    choices.set(categoryId, isRoot ? outsideChoice : sameChoice);
+    return choices;
+  }
+  const viaParent =
+    !isRoot && effectiveChoice(draft, parents, parent) === bucket;
+  choices.set(categoryId, viaParent ? sameChoice : bucket);
+  return choices;
+}
+
+// The number of open expense categories that draw from each bucket key.
+export function bucketCounts(
+  draft: BucketDraft,
+  parents: ReadonlyMap<string, string | undefined>,
+  branches: readonly CategoryBranch[],
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const b of branches)
+    for (const e of [b.root, ...b.subcategories]) {
+      const key = effectiveChoice(draft, parents, e.id);
+      if (key !== undefined) counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  return counts;
+}

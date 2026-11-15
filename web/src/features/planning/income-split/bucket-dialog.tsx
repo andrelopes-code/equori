@@ -101,9 +101,8 @@ export function BucketDialog({ stored, entries, onClose }: BucketDialogProps) {
 
             <BucketCategories
               entries={entries}
-              buckets={edit.draft.buckets}
-              choices={edit.draft.choices}
-              onChoose={edit.choose}
+              draft={edit.draft}
+              onChoices={edit.setChoices}
             />
           </Stack>
         </DialogBody>

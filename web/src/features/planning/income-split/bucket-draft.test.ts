@@ -5,12 +5,15 @@ import type { CategoryEntry } from "@/features/categories";
 import {
   applyPreset,
   bucketsPayload,
+  bucketCounts,
   canSave,
+  checkState,
   choiceOf,
   expenseBranches,
   initialDraft,
   keepChoices,
   outsideRoots,
+  toggleChoice,
   totalBp,
   withChoice,
 } from "@/features/planning/income-split/bucket-draft";
@@ -186,5 +189,50 @@ describe("outsideRoots", () => {
     expect(
       outsideRoots(draft, expenseBranches(entries)).map((e) => e.id),
     ).toEqual(["gym"]);
+  });
+});
+
+describe("checklist choices", () => {
+  const parents = new Map(entries.map((e) => [e.id, e.parentId]));
+
+  it("reads each category against one bucket", () => {
+    const draft = initialDraft(stored, entries);
+
+    expect(
+      ["food", "market", "gym"].map((id) =>
+        checkState(draft, parents, id, "b1"),
+      ),
+    ).toEqual(["own", "elsewhere", "elsewhere"]);
+    expect(checkState(draft, parents, "market", "b2")).toBe("own");
+  });
+
+  it("moves a category in and out of a bucket", () => {
+    const draft = initialDraft(stored, entries);
+
+    // market leaves Fun and follows food into Needs.
+    const out = toggleChoice(draft, parents, "market", "b2");
+    expect(out.get("market")).toBe("same");
+    expect(
+      checkState({ ...draft, choices: out }, parents, "market", "b1"),
+    ).toBe("inherited");
+    // A click on an inherited category changes nothing.
+    expect(
+      toggleChoice({ ...draft, choices: out }, parents, "market", "b1"),
+    ).toEqual(out);
+    // gym joins Fun; food leaves Needs for outside.
+    expect(toggleChoice(draft, parents, "gym", "b2").get("gym")).toBe("b2");
+    expect(toggleChoice(draft, parents, "food", "b1").get("food")).toBe(
+      "outside",
+    );
+  });
+
+  it("counts the categories each bucket draws from", () => {
+    const draft = initialDraft(stored, entries);
+    const counts = bucketCounts(draft, parents, expenseBranches(entries));
+
+    expect([...counts]).toEqual([
+      ["b1", 1],
+      ["b2", 1],
+    ]);
   });
 });

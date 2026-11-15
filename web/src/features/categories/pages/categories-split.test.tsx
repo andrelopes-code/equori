@@ -136,9 +136,11 @@ describe("Categories under an income split", () => {
       screen.getByRole("button", { name: catalogEn["buckets.manage"] }),
     );
     const dialog = await screen.findByRole("dialog");
-    expect(
-      within(dialog).getByText(catalogEn["buckets.outsideOne"]),
-    ).toBeVisible();
+    // Fun has no bucket: the last entry of the bucket list counts it.
+    const unplaced = within(dialog).getByRole("button", {
+      name: new RegExp(`^${catalogEn["buckets.unplaced"]}`),
+    });
+    expect(unplaced).toHaveTextContent(catalogEn["buckets.count.one"]);
 
     await userEvent.click(
       within(dialog).getByRole("button", {
@@ -159,6 +161,59 @@ describe("Categories under an income split", () => {
 
     await waitFor(() => {
       expect(sent).toEqual([{ buckets: [] }]);
+    });
+  });
+
+  it("checks what goes in the chosen bucket", async () => {
+    const sent: unknown[] = [];
+    await renderApp("/categories", { fetch: api(sent) });
+    await screen.findByText("Needs");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["buckets.manage"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+
+    // Needs is chosen first: Groceries follows Food and stays fixed while Food is in it.
+    const groceries = within(dialog).getByRole("checkbox", {
+      name: "Groceries",
+    });
+    expect(groceries).toBeChecked();
+    expect(groceries).toBeDisabled();
+    expect(
+      within(dialog).getByText(
+        catalogEn["buckets.follows"].replace("{name}", "Food"),
+      ),
+    ).toBeVisible();
+
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: /^Wants/ }),
+    );
+    await userEvent.click(
+      within(dialog).getByRole("checkbox", { name: "Fun" }),
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["buckets.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          buckets: [
+            {
+              name: "Needs",
+              share_bp: 6000,
+              takes_savings: false,
+              category_ids: ["food"],
+            },
+            {
+              name: "Wants",
+              share_bp: 4000,
+              takes_savings: false,
+              category_ids: ["fun"],
+            },
+          ],
+        },
+      ]);
     });
   });
 });

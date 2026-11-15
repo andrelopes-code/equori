@@ -5,6 +5,7 @@ import { useDeferredValue, useState } from "react";
 import { BudgetPlanTab } from "@/features/planning/budget-plan/budget-plan-tab";
 import { BudgetsTab } from "@/features/planning/budgets/budgets-tab";
 import type { BudgetView } from "@/features/planning/model/planning-search";
+import { BucketTrack } from "@/features/planning/income-split/bucket-track";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
@@ -58,7 +59,10 @@ export function BudgetsArea({
             }}
           />
         ) : (
-          <BudgetsTab month={month} onCreate={onCreate} />
+          <Stack gap={6}>
+            <BucketTrack month={month} />
+            <BudgetsTab month={month} onCreate={onCreate} />
+          </Stack>
         )}
       </div>
     </Stack>

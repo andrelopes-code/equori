@@ -1,0 +1,159 @@
+@layer app {
+  .rows {
+    display: grid;
+  }
+
+  .row,
+  .head {
+    display: grid;
+    grid-template-columns: minmax(9rem, 12rem) minmax(8rem, 1fr) 15rem 8.5rem;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .row {
+    block-size: 3.5rem;
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .row:last-child {
+    border-block-end: 0;
+  }
+
+  .stack {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .stack > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .endStack {
+    display: grid;
+    min-inline-size: 0;
+    text-align: end;
+  }
+
+  .endStack > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .gauge {
+    position: relative;
+    block-size: 0.75rem;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--slotted-text) 10%, transparent);
+  }
+
+  .fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    border-radius: 999px;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .fill[data-missed] {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-tone-danger-solid) 0 6px,
+      color-mix(in oklch, var(--slotted-tone-danger-solid) 70%, transparent) 6px
+        9px
+    );
+  }
+
+  .tick {
+    position: absolute;
+    inset-block: -0.25rem;
+    inline-size: 2px;
+    background: var(--slotted-text);
+  }
+
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(6, 1.125rem);
+    gap: var(--slotted-space-1);
+    justify-content: end;
+  }
+
+  .cell {
+    block-size: 1.125rem;
+    border-radius: 3px;
+    border: 1px solid var(--slotted-border-subtle);
+  }
+
+  .cell[data-state="kept"],
+  .swatch[data-state="kept"] {
+    border-color: var(--slotted-tone-accent-solid);
+    background: color-mix(
+      in oklch,
+      var(--slotted-tone-accent-solid) 18%,
+      transparent
+    );
+  }
+
+  .cell[data-state="missed"],
+  .swatch[data-state="missed"] {
+    border-color: var(--slotted-tone-danger-solid);
+    background: var(--slotted-tone-danger-solid);
+  }
+
+  .cell[data-current] {
+    outline: 2px solid var(--slotted-text);
+    outline-offset: 1px;
+  }
+
+  .letters {
+    font-size: var(--slotted-font-size-xs, 0.75rem);
+    color: var(--slotted-text-muted);
+    text-align: center;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-5);
+    margin-block-start: var(--slotted-space-3);
+  }
+
+  .key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-2);
+  }
+
+  .swatch {
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    border-radius: 3px;
+    border: 1px solid var(--slotted-border-subtle);
+  }
+
+  .legendTick {
+    display: inline-block;
+    inline-size: 2px;
+    block-size: 0.75rem;
+    background: var(--slotted-text);
+  }
+
+  @media (forced-colors: active) {
+    .fill,
+    .cell[data-state="missed"],
+    .swatch[data-state="missed"] {
+      background: CanvasText;
+    }
+
+    .fill[data-missed] {
+      background: repeating-linear-gradient(
+        135deg,
+        CanvasText 0 6px,
+        Canvas 6px 9px
+      );
+    }
+  }
+}

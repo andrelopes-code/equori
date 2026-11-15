@@ -13,11 +13,10 @@ interface PlanBucketRowProps {
   share: string | undefined;
   target: number | undefined;
   planned: number;
-  spent: number;
   format: PlanFormat;
 }
 
-// A bucket's figures on one line; the status says in words what is left or how far it is
+// A bucket's plan on one line; the status says in words what is left to plan or how far it is
 // over, in the danger tone when over.
 export function PlanBucketRow({
   name,
@@ -25,11 +24,10 @@ export function PlanBucketRow({
   share,
   target,
   planned,
-  spent,
   format,
 }: PlanBucketRowProps) {
   const t = useT();
-  const status = bucketStatus(target, planned, spent);
+  const status = bucketStatus(target, planned);
   const dash = t("plan.dash");
 
   return (
@@ -51,12 +49,11 @@ export function PlanBucketRow({
         {target === undefined ? dash : format.money(target)}
       </TableCell>
       <TableCell numeric>{format.money(planned)}</TableCell>
-      <TableCell numeric>{format.money(spent)}</TableCell>
       <TableCell numeric>
         {status === undefined && dash}
-        {status?.kind === "left" && (
+        {status?.kind === "toPlan" && (
           <Text size="sm">
-            {t("buckets.left", { amount: format.money(status.amount) })}
+            {t("buckets.plan.toPlan", { amount: format.money(status.amount) })}
           </Text>
         )}
         {status?.kind === "over" && (
