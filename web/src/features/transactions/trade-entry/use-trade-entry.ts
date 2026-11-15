@@ -24,6 +24,7 @@ import {
 import {
   emptyTrade,
   isTradeDraft,
+  storedTrade,
 } from "@/features/transactions/trade-entry/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
 import { unitPriceOfTotal } from "@/features/transactions/trade-entry/unit-price-of-total";
@@ -98,7 +99,7 @@ export function useTradeEntry(
     if (correction !== undefined) return correction.start;
     const stored = readStored(draftKey);
     const start = isTradeDraft(stored)
-      ? { ...emptyTrade(today), ...stored }
+      ? storedTrade(stored, today)
       : emptyTrade(today);
     return {
       ...start,

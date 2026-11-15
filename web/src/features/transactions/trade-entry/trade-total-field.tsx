@@ -20,7 +20,8 @@ interface TradeTotalFieldProps {
 }
 
 // The total of an order filled at several prices (A228 IO1). Typing it makes it the amount the
-// order is recorded by; otherwise it shows the gross of the quantity and the unit price.
+// order is recorded by. While the unit price leads, the field is empty: its digits enter at the
+// right, so typed digits would join a gross shown there; the aside shows that gross.
 export function TradeTotalField({
   draft,
   view,
@@ -38,7 +39,7 @@ export function TradeTotalField({
         <FieldLabel>{t("trade.total")}</FieldLabel>
         <MoneyInput
           size="field"
-          value={byTotal ? draft.total : (view.gross ?? 0)}
+          value={byTotal ? draft.total : 0}
           currency={view.base ?? ""}
           scale={view.base === undefined ? 0 : scale(view.base)}
           sign="neutral"

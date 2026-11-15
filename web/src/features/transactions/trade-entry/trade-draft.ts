@@ -1,3 +1,5 @@
+import { parseRate } from "@/features/instruments";
+
 export interface TradeDraft {
   side: "buy" | "sell";
   brokerageId: string | null;
@@ -41,6 +43,17 @@ export function emptyTrade(
     taxes: 0,
     taxesCategoryId: null,
     description: "",
+  };
+}
+
+// A stored draft read back: fields added since it was stored take their empty value, and a unit
+// price stored as typed in its language ("9,50") becomes the decimal the form now keeps.
+export function storedTrade(stored: TradeDraft, today: string): TradeDraft {
+  const start = { ...emptyTrade(today), ...stored };
+
+  return {
+    ...start,
+    unitPrice: start.unitPrice === null ? null : parseRate(start.unitPrice),
   };
 }
 

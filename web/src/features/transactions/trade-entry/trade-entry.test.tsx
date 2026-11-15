@@ -492,16 +492,27 @@ describe("trade entry", () => {
     expect(sent[0]).toMatchObject({ unit_price: "301" });
   });
 
-  it("shows the gross of the quantity and the price in the total field", async () => {
-    await renderApp(path, { fetch: api([]) });
+  // Owner review of 2026-11-15: a total typed after a price starts from zero; the gross of the
+  // price stays in the aside, so the typed digits never join it.
+  it("starts a total typed after a price from zero", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
     await type(catalogEn["trade.quantity"], "15");
     await type(catalogEn["trade.unitPrice"], "10");
+    const total = screen.getByRole("textbox", {
+      name: optionalName(catalogEn["trade.total"]),
+    });
+    expect(total).toHaveValue("0.00");
 
-    expect(
-      screen.getByRole("textbox", {
-        name: optionalName(catalogEn["trade.total"]),
-      }),
-    ).toHaveValue("150.00");
+    await type(optionalName(catalogEn["trade.total"]), "450400");
+    expect(total).toHaveValue("4,504.00");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({ unit_price: "300.266666666667" });
   });
 
   it("refuses an order by its total when the total is emptied", async () => {
@@ -523,7 +534,7 @@ describe("trade entry", () => {
     expect(sent).toHaveLength(0);
   });
 
-  // A draft stored before the price basis existed opens with the unit price.
+  // A draft stored before the price basis existed holds the price as typed in its language.
   it("opens a stored draft of the old shape with its unit price", async () => {
     sessionStorage.setItem(
       "equori.draft.new-trade",
@@ -534,7 +545,7 @@ describe("trade entry", () => {
         cashAccountId: null,
         date: "2026-10-17",
         quantity: 3,
-        unitPrice: "9.50",
+        unitPrice: "9,50",
         fees: 0,
         taxes: 0,
         taxesCategoryId: null,
