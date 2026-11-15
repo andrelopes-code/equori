@@ -3,6 +3,7 @@ import { Button } from "@slotted/react/button";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 
+import { AssistantTurn } from "@/features/assistant/message/assistant-turn";
 import { useT } from "@/i18n/i18n-provider";
 
 interface MessageUnansweredProps {
@@ -23,16 +24,18 @@ export function MessageUnanswered({
   return (
     <Message align="start">
       <MessageBody>
-        <Stack gap={2} align="start">
-          <Text size="sm" tone="muted">
-            {t(reason)}
-          </Text>
-          {onRetry !== undefined && (
-            <Button variant="outline" size="sm" onClick={onRetry}>
-              {t("assistant.retry")}
-            </Button>
-          )}
-        </Stack>
+        <AssistantTurn thinking={false}>
+          <Stack gap={2} align="start">
+            <Text size="sm" tone="muted">
+              {t(reason)}
+            </Text>
+            {onRetry !== undefined && (
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                {t("assistant.retry")}
+              </Button>
+            )}
+          </Stack>
+        </AssistantTurn>
       </MessageBody>
     </Message>
   );

@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 
 import { AnswerCopy } from "@/features/assistant/message/answer-copy";
 import { parseAnswer } from "@/features/assistant/message/answer-markdown";
+import { AssistantTurn } from "@/features/assistant/message/assistant-turn";
 import { assistantKeys } from "@/features/assistant/api";
 import styles from "@/features/assistant/panel/assistant-panel.module.css";
 import { ConfirmAll } from "@/features/assistant/proposal/confirm-all";
@@ -80,44 +81,59 @@ export function MessageItem({
     return <MessageUnanswered outcome={message.outcome} onRetry={onRetry} />;
   }
 
-  return (
-    <Message align={own ? "end" : "start"}>
-      <MessageBody>
-        {steps !== undefined && <TurnActivity steps={steps} running={false} />}
-        {own && (
-          <Bubble>
+  if (own) {
+    return (
+      <Message align="end">
+        <MessageBody>
+          <Bubble variant="soft" tone="accent">
             <BubbleContent>{message.content}</BubbleContent>
           </Bubble>
-        )}
-        {!own && <MessageAnswer tree={tree} />}
-        {(message.outcome === "step_limit" || message.proposals.length > 0) && (
-          <Stack gap={3} className={styles.attached}>
-            {message.outcome === "step_limit" && (
-              <FormNotice tone="warning">
-                {t("assistant.step_limit")}
-              </FormNotice>
-            )}
-            {message.proposals.map((proposal) => (
-              <ProposalCard
-                key={proposal.id}
-                proposal={proposal}
-                siblings={message.proposals}
-                reveal={reveal && proposal.id === lastOpen}
-                decision={decisions[proposal.id]}
-                locked={running}
+        </MessageBody>
+      </Message>
+    );
+  }
+
+  return (
+    <Message align="start">
+      <MessageBody>
+        <AssistantTurn thinking={false}>
+          {steps !== undefined && (
+            <TurnActivity steps={steps} running={false} />
+          )}
+
+          <MessageAnswer tree={tree} />
+
+          {(message.outcome === "step_limit" ||
+            message.proposals.length > 0) && (
+            <Stack gap={3} className={styles.attached}>
+              {message.outcome === "step_limit" && (
+                <FormNotice tone="warning">
+                  {t("assistant.step_limit")}
+                </FormNotice>
+              )}
+              {message.proposals.map((proposal) => (
+                <ProposalCard
+                  key={proposal.id}
+                  proposal={proposal}
+                  siblings={message.proposals}
+                  reveal={reveal && proposal.id === lastOpen}
+                  decision={decisions[proposal.id]}
+                  locked={running}
+                  onDecided={handleDecided}
+                />
+              ))}
+              <ConfirmAll
+                proposals={open}
                 onDecided={handleDecided}
+                onRunning={setRunning}
               />
-            ))}
-            <ConfirmAll
-              proposals={open}
-              onDecided={handleDecided}
-              onRunning={setRunning}
-            />
-          </Stack>
-        )}
-        {!own && tree !== null && !streaming && (
-          <AnswerCopy content={message.content} />
-        )}
+            </Stack>
+          )}
+
+          {tree !== null && !streaming && (
+            <AnswerCopy content={message.content} />
+          )}
+        </AssistantTurn>
       </MessageBody>
     </Message>
   );

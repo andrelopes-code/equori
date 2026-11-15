@@ -8,6 +8,7 @@ import {
 import { MessageScrollerItem } from "@slotted/react/message-scroller";
 
 import { MessageItem } from "@/features/assistant/message/message-item";
+import { AssistantTurn } from "@/features/assistant/message/assistant-turn";
 import { TurnActivity } from "@/features/assistant/message/turn-activity";
 import { useFrameValue } from "@/features/assistant/conversation/use-frame-value";
 
@@ -30,7 +31,7 @@ export function PendingTurn({ question, steps, answer }: PendingTurnProps) {
       <MessageScrollerItem messageId="pending" anchor>
         <Message align="end">
           <MessageBody>
-            <Bubble>
+            <Bubble variant="soft" tone="accent">
               <BubbleContent>{question}</BubbleContent>
             </Bubble>
           </MessageBody>
@@ -40,13 +41,15 @@ export function PendingTurn({ question, steps, answer }: PendingTurnProps) {
       {(steps.length > 0 || draft === "") && (
         <Message status="streaming">
           <MessageBody>
-            {steps.length > 0 ? (
-              <TurnActivity steps={steps} running />
-            ) : (
-              <Bubble>
-                <BubbleTyping />
-              </Bubble>
-            )}
+            <AssistantTurn thinking>
+              {steps.length > 0 ? (
+                <TurnActivity steps={steps} running />
+              ) : (
+                <Bubble>
+                  <BubbleTyping />
+                </Bubble>
+              )}
+            </AssistantTurn>
           </MessageBody>
         </Message>
       )}

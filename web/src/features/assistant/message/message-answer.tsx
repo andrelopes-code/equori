@@ -23,7 +23,7 @@ export function MessageAnswer({ tree }: MessageAnswerProps) {
         </Text>
       )}
       {tree !== null && (
-        <Markdown tree={tree} size="md" renderers={screenLinks} />
+        <Markdown tree={tree} size="lg" renderers={screenLinks} />
       )}
     </div>
   );
