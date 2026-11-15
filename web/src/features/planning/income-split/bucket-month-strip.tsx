@@ -4,16 +4,17 @@ import { useT } from "@/i18n/i18n-provider";
 
 interface BucketMonthStripProps {
   cells: readonly TrackCell[];
-  current: string;
+  // The month on screen, whose name the strip writes in the text colour.
+  shown: string;
   // The month's name for each cell, in the cells' order.
   names: readonly string[];
 }
 
-// Six squares, one per month: kept, missed or without income, the month on screen outlined.
-// Each square names its month and state for a screen reader.
+// Six marks, one per month, each over its month's short name: solid when the bucket kept its
+// target, hatched when it missed it, dashed without income. Each names its month and state.
 export function BucketMonthStrip({
   cells,
-  current,
+  shown,
   names,
 }: BucketMonthStripProps) {
   const t = useT();
@@ -21,18 +22,29 @@ export function BucketMonthStrip({
   return (
     <div className={styles.strip} role="list">
       {cells.map((c, i) => {
-        const state = c.state;
         const month = names[i] ?? c.month;
+        const current = c.month === shown;
         return (
           <span
             key={c.month}
             role="listitem"
-            className={styles.cell}
-            data-state={state}
-            aria-label={t(`track.cell.${state}`, { month })}
-            title={t(`track.cell.${state}`, { month })}
-            {...(c.month === current ? { "data-current": "" } : {})}
-          />
+            className={styles.month}
+            aria-label={t(`track.cell.${c.state}`, { month })}
+            title={t(`track.cell.${c.state}`, { month })}
+          >
+            <span
+              className={styles.cell}
+              data-state={c.state}
+              aria-hidden="true"
+            />
+            <span
+              className={styles.monthName}
+              aria-hidden="true"
+              {...(current ? { "data-current": "" } : {})}
+            >
+              {month}
+            </span>
+          </span>
         );
       })}
     </div>

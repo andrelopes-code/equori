@@ -72,7 +72,7 @@ export function BucketTrackRow({
         </Text>
       </div>
 
-      <BucketMonthStrip cells={row.months} current={month} names={monthNames} />
+      <BucketMonthStrip cells={row.months} shown={month} names={monthNames} />
     </div>
   );
 }

@@ -3,16 +3,15 @@
     display: grid;
   }
 
-  .row,
-  .head {
+  .row {
     display: grid;
-    grid-template-columns: minmax(9rem, 12rem) minmax(8rem, 1fr) 15rem 8.5rem;
+    grid-template-columns: minmax(9rem, 12rem) minmax(8rem, 1fr) 15rem 12.5rem;
     align-items: center;
     gap: var(--slotted-space-4);
   }
 
   .row {
-    block-size: 3.5rem;
+    block-size: 4rem;
     border-block-end: 1px solid var(--slotted-border-subtle);
   }
 
@@ -76,42 +75,51 @@
 
   .strip {
     display: grid;
-    grid-template-columns: repeat(6, 1.125rem);
+    grid-template-columns: repeat(6, 1.875rem);
     gap: var(--slotted-space-1);
     justify-content: end;
   }
 
-  .cell {
-    block-size: 1.125rem;
+  .month {
+    display: grid;
+    justify-items: center;
+    gap: 0.125rem;
+  }
+
+  .cell,
+  .swatch {
+    inline-size: 1.25rem;
+    block-size: 0.875rem;
     border-radius: 3px;
-    border: 1px solid var(--slotted-border-subtle);
+    border: 1px dashed var(--slotted-border-strong);
   }
 
   .cell[data-state="kept"],
   .swatch[data-state="kept"] {
-    border-color: var(--slotted-tone-accent-solid);
-    background: color-mix(
-      in oklch,
-      var(--slotted-tone-accent-solid) 18%,
-      transparent
-    );
+    border: 0;
+    background: var(--slotted-tone-accent-solid);
   }
 
   .cell[data-state="missed"],
   .swatch[data-state="missed"] {
-    border-color: var(--slotted-tone-danger-solid);
-    background: var(--slotted-tone-danger-solid);
+    border: 0;
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-tone-danger-solid) 0 4px,
+      color-mix(in oklch, var(--slotted-tone-danger-solid) 55%, transparent) 4px
+        6px
+    );
   }
 
-  .cell[data-current] {
-    outline: 2px solid var(--slotted-text);
-    outline-offset: 1px;
-  }
-
-  .letters {
-    font-size: var(--slotted-font-size-xs, 0.75rem);
+  .monthName {
+    font-size: 0.6875rem;
+    line-height: 1;
     color: var(--slotted-text-muted);
-    text-align: center;
+  }
+
+  .monthName[data-current] {
+    color: var(--slotted-text);
+    font-weight: 600;
   }
 
   .legend {
@@ -125,13 +133,6 @@
     display: inline-flex;
     align-items: center;
     gap: var(--slotted-space-2);
-  }
-
-  .swatch {
-    inline-size: 0.75rem;
-    block-size: 0.75rem;
-    border-radius: 3px;
-    border: 1px solid var(--slotted-border-subtle);
   }
 
   .legendTick {

@@ -1,13 +1,6 @@
-import {
-  Section,
-  SectionBody,
-  SectionDescription,
-  SectionHeader,
-  SectionHeading,
-  SectionTitle,
-} from "@slotted/react/section";
+import { Card, CardBody, CardHeader } from "@slotted/react/card";
 import { Skeleton } from "@slotted/react/skeleton";
-import { Text } from "@slotted/react/typography";
+import { Heading, Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -63,36 +56,27 @@ export function BucketTrack({ month }: BucketTrackProps) {
     history.data.months.find((m) => m.month === month)?.outside.amount ?? 0;
 
   return (
-    <Section>
-      <SectionHeader>
-        <SectionTitle>
-          <SectionHeading>{t("buckets.title")}</SectionHeading>
-          <SectionDescription>
-            {t(verdict.key, {
-              month: monthName,
-              count: "count" in verdict ? String(verdict.count) : "",
-              total: String(track.rows.length),
-            })}{" "}
-            {track.received > 0 &&
-              t("track.received", { amount: money(track.received) })}
-          </SectionDescription>
-        </SectionTitle>
-      </SectionHeader>
+    <Card>
+      <CardHeader>
+        <Heading level={2} size="sm">
+          {t("buckets.title")}
+        </Heading>
+        <Text size="md" weight="medium">
+          {t(verdict.key, {
+            month: monthName,
+            count: "count" in verdict ? String(verdict.count) : "",
+            total: String(track.rows.length),
+          })}
+        </Text>
+        {track.received > 0 && (
+          <Text size="sm" tone="muted">
+            {t("track.received", { amount: money(track.received) })}
+          </Text>
+        )}
+      </CardHeader>
 
-      <SectionBody>
+      <CardBody>
         <div className={styles.rows}>
-          <div className={styles.head} aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <div className={styles.strip}>
-              {names.narrow.map((n, i) => (
-                <span key={String(i)} className={styles.letters}>
-                  {n}
-                </span>
-              ))}
-            </div>
-          </div>
           {track.rows.map((row) => (
             <BucketTrackRow
               key={row.id}
@@ -110,7 +94,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
           </Text>
         )}
         <BucketTrackLegend />
-      </SectionBody>
-    </Section>
+      </CardBody>
+    </Card>
   );
 }
