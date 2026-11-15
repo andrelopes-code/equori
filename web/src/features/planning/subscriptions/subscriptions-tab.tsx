@@ -1,166 +1,68 @@
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableColumnHeader,
-  TableContent,
-  TableEmpty,
-  TableGroupRow,
-  TableHead,
-  TableLoader,
-  TableRow,
-  TableRowHeader,
-  TableSummary,
-} from "@slotted/react/table";
-import { useQuery } from "@tanstack/react-query";
+import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 
-import { useApi } from "@/api/api-context";
-import { accountsQuery } from "@/features/accounts";
-import { schedulesQuery } from "@/features/planning/api";
-import { SubscriptionRow } from "@/features/planning/subscriptions/subscription-row";
-import {
-  currentTerms,
-  hasEnded,
-  subscriptionCost,
-} from "@/features/planning/model/schedule-words";
-import { settingsQuery, useScale } from "@/features/setup";
+import { EndedSubscriptions } from "@/features/planning/subscriptions/ended-subscriptions";
+import { NextCharges } from "@/features/planning/subscriptions/next-charges";
+import { PriceChanges } from "@/features/planning/subscriptions/price-changes";
+import { RankingTable } from "@/features/planning/subscriptions/ranking-table";
+import styles from "@/features/planning/subscriptions/subscriptions.module.css";
+import { SubscriptionsSummary } from "@/features/planning/subscriptions/subscriptions-summary";
+import { useSubscriptionsData } from "@/features/planning/subscriptions/use-subscriptions-data";
 import { useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
-import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/feedback/query-error";
 
-// The subscriptions: what each costs a month and a year at the price in force, and how its price
-// moved from one terms version to the next.
+const legend = ["paid", "other", "skipped"] as const;
+
+// What the subscriptions cost, which weigh most, how each charged over the last 12 months and
+// which prices change (docs/specs/2026-11-15-planning-tabs-design.md, section 6).
 export function SubscriptionsTab() {
   const t = useT();
-  const api = useApi();
-  const today = useToday();
-  const fmt = useMoneyFormat();
-  const scale = useScale();
-  const schedules = useQuery(schedulesQuery(api));
-  const accounts = useQuery(accountsQuery(api));
-  const settings = useQuery(settingsQuery(api));
-  const names = new Map((accounts.data ?? []).map((a) => [a.id, a.name]));
-  const rows = (schedules.data ?? [])
-    .filter((s) => s.kind === "subscription")
-    .flatMap((schedule) => {
-      const terms = currentTerms(schedule.terms, today);
-      return terms === undefined
-        ? []
-        : [
-            {
-              schedule,
-              terms,
-              cost: subscriptionCost(terms.recurrence, terms.amount.amount),
-            },
-          ];
-    });
-  const currency = settings.data?.base_currency;
-  // The totals count what is still running: an ended subscription costs nothing from now on.
-  const active = rows.filter((r) => !hasEnded(r.schedule.ends_on, today));
-  const ended = rows
-    .filter((r) => hasEnded(r.schedule.ends_on, today))
-    .sort((x, y) =>
-      (y.schedule.ends_on ?? "").localeCompare(x.schedule.ends_on ?? ""),
-    );
-  const total = (key: "monthly" | "yearly") =>
-    active.reduce((sum, r) => sum + r.cost[key], 0);
-  if (schedules.isError)
+  const data = useSubscriptionsData();
+
+  const scale = data.scale ?? (() => 0);
+
+  if (data.schedules.isError)
     return (
       <QueryError
-        error={schedules.error}
-        onRetry={() => void schedules.refetch()}
+        error={data.schedules.error}
+        onRetry={() => void data.schedules.refetch()}
       />
     );
+
   return (
-    <Table
-      columns={8}
-      variant="framed"
-      loading={schedules.isFetching && !schedules.isPending}
-    >
-      <TableContent>
-        <TableCaption>{t("subscriptions.caption")}</TableCaption>
-        <TableHead>
-          <TableRow>
-            <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>
-            <TableColumnHeader>{t("agenda.account")}</TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("subscriptions.price")}
-            </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("subscriptions.monthly")}
-            </TableColumnHeader>
-            <TableColumnHeader numeric>
-              {t("subscriptions.yearly")}
-            </TableColumnHeader>
-            <TableColumnHeader>{t("subscriptions.history")}</TableColumnHeader>
-            <TableColumnHeader>{t("schedules.ends")}</TableColumnHeader>
-            <TableColumnHeader sticky="end">
-              {t("agenda.actions")}
-            </TableColumnHeader>
-          </TableRow>
-        </TableHead>
-        {schedules.isPending || scale === null ? (
-          <TableLoader skeletonRows={3} />
-        ) : (
-          <>
-            <TableBody>
-              {rows.length === 0 && (
-                <TableEmpty>{t("subscriptions.empty")}</TableEmpty>
-              )}
-              {active.map(({ schedule, terms, cost }) => (
-                <SubscriptionRow
-                  key={schedule.id}
-                  schedule={schedule}
-                  terms={terms}
-                  cost={cost}
-                  accountNames={names}
-                  scale={scale}
-                />
-              ))}
-              {ended.length > 0 && (
-                <>
-                  <TableGroupRow>{t("schedules.ended")}</TableGroupRow>
-                  {ended.map(({ schedule, terms, cost }) => (
-                    <SubscriptionRow
-                      key={schedule.id}
-                      schedule={schedule}
-                      terms={terms}
-                      cost={cost}
-                      accountNames={names}
-                      scale={scale}
-                      ended
-                    />
-                  ))}
-                </>
-              )}
-            </TableBody>
-            {currency !== undefined && active.length > 0 && (
-              <TableSummary>
-                <TableRow>
-                  <TableRowHeader colSpan={3}>
-                    {t("subscriptions.total")}
-                  </TableRowHeader>
-                  <TableCell numeric>
-                    {fmt.money(
-                      { amount: total("monthly"), currency },
-                      scale(currency),
-                    )}
-                  </TableCell>
-                  <TableCell numeric>
-                    {fmt.money(
-                      { amount: total("yearly"), currency },
-                      scale(currency),
-                    )}
-                  </TableCell>
-                  <TableCell colSpan={3} />
-                </TableRow>
-              </TableSummary>
-            )}
-          </>
-        )}
-      </TableContent>
-    </Table>
+    <Stack gap={6}>
+      <SubscriptionsSummary
+        figures={data.figures}
+        scale={data.scale}
+        loading={data.loading}
+      />
+
+      <div className={styles.columns}>
+        <div className={styles.column}>
+          <RankingTable
+            lines={data.figures?.active ?? []}
+            accountNames={data.accountNames}
+            scale={scale}
+            loading={data.loading}
+          />
+          <div className={styles.legend} aria-hidden="true">
+            {legend.map((state) => (
+              <span key={state} className={styles.key}>
+                <i className={styles.cell} data-state={state} />
+                <Text size="xs" tone="muted">
+                  {t(`subscriptions.legend.${state}`)}
+                </Text>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.column}>
+          <PriceChanges changes={data.figures?.changes ?? []} scale={scale} />
+          <NextCharges charges={data.figures?.next ?? []} scale={scale} />
+          <EndedSubscriptions lines={data.figures?.ended ?? []} scale={scale} />
+        </div>
+      </div>
+    </Stack>
   );
 }

@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
-import { subscriptionFigures } from "@/features/planning/subscriptions/subscription-figures";
+import {
+  subscriptionFigures,
+  windowStart,
+} from "@/features/planning/subscriptions/subscription-figures";
 import * as fixtures from "@/testing/planning-api";
 
 type Occurrence = components["schemas"]["Occurrence"];
@@ -201,5 +204,14 @@ describe("subscriptionFigures", () => {
       "2026-11-04",
       "2026-11-05",
     ]);
+  });
+});
+
+describe("windowStart", () => {
+  it.each([
+    { today: "2026-10-17", want: "2025-11-01" },
+    { today: "2026-01-31", want: "2025-02-01" },
+  ])("the 12 months up to $today start on $want", ({ today: day, want }) => {
+    expect(windowStart(day)).toBe(want);
   });
 });

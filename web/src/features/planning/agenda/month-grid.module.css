@@ -1,92 +1,118 @@
 @layer app {
+  /* The frame of a framed table, so the grid reads as the list's neighbour. Its weeks take a fixed
+     height level with the closed list; it stays in view while an opened list scrolls by. */
   .root {
+    position: sticky;
+    inset-block-start: var(--slotted-space-6);
+    align-self: start;
     display: grid;
-    gap: var(--slotted-space-3);
-    padding: var(--slotted-space-3);
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-md);
     background: var(--slotted-surface-raised);
+    overflow: hidden;
   }
 
+  .weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  /* Aligned with the day numbers below it. */
+  .weekday {
+    padding: var(--slotted-space-4) var(--slotted-space-4);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    color: var(--slotted-text-muted);
+    text-transform: uppercase;
+  }
+
+  /* Hairlines between the days: the gap shows the border colour behind the cells. */
   .grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: var(--slotted-space-1);
+    grid-auto-rows: calc(var(--slotted-space-12) + var(--slotted-space-4));
+    gap: var(--slotted-border-width-thin);
+    background: var(--slotted-border-subtle);
   }
 
-  .weekday {
-    padding-block-end: var(--slotted-space-1);
-    font-size: var(--slotted-font-size-xs);
-    color: var(--slotted-text-muted);
-    text-align: center;
-    text-transform: lowercase;
-  }
-
-  /* A day holds three rows of fixed height: its number, its marks, its net (one line each). */
+  /* Number on top, the day's net in the middle at the end, the marks at the foot. */
   .day {
     all: unset;
     box-sizing: border-box;
     container-type: inline-size;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: var(--slotted-space-1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     min-inline-size: 0;
-    block-size: var(--slotted-space-12);
-    padding: var(--slotted-space-1) var(--slotted-space-2);
-    border: var(--slotted-border-width-thin) solid transparent;
-    border-radius: var(--slotted-radius-sm);
+    padding: var(--slotted-space-3) var(--slotted-space-4);
+    background: var(--slotted-surface-raised);
     color: var(--slotted-text);
   }
 
   .day[data-busy] {
-    background: var(--slotted-surface-sunken);
     cursor: pointer;
   }
 
   .day[data-busy]:hover {
-    border-color: var(--slotted-border-strong);
+    background: color-mix(
+      in oklab,
+      var(--slotted-text) 5%,
+      var(--slotted-surface-raised)
+    );
   }
 
-  .day[data-outside] {
+  .day[data-outside] .number {
     color: var(--slotted-text-muted);
-  }
-
-  .day[data-today] .number {
-    color: var(--slotted-tone-accent-text);
-  }
-
-  .day[data-today] {
-    border-color: var(--slotted-tone-accent-border);
+    font-weight: var(--slotted-font-weight-regular);
   }
 
   .day[data-selected] {
-    border-color: var(--slotted-tone-accent-solid);
-    background: var(--slotted-tone-accent-surface);
+    background: color-mix(
+      in oklab,
+      var(--slotted-tone-accent-solid) 14%,
+      var(--slotted-surface-raised)
+    );
   }
 
   .day:focus-visible {
     outline: var(--slotted-focus-ring-width) solid
       var(--slotted-focus-ring-color);
-    outline-offset: var(--slotted-focus-ring-offset);
+    outline-offset: calc(-1 * var(--slotted-focus-ring-width));
   }
 
   .number {
+    align-self: start;
+    min-inline-size: var(--slotted-space-8);
+    block-size: var(--slotted-space-8);
+    margin: calc(-1 * var(--slotted-space-2)) 0 0
+      calc(-1 * var(--slotted-space-3));
+    display: grid;
+    place-items: center;
+    border-radius: var(--slotted-radius-full);
     font-size: var(--slotted-font-size-xs);
-    font-weight: var(--slotted-font-weight-semibold);
+    font-weight: var(--slotted-font-weight-medium);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Today: the number in a disc of the accent. */
+  .day[data-today] .number {
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+    font-weight: var(--slotted-font-weight-semibold);
   }
 
   .marks {
     display: flex;
-    flex-wrap: wrap;
-    align-content: end;
     gap: var(--slotted-space-2);
-    min-block-size: 0;
+    min-inline-size: 0;
     overflow: hidden;
   }
 
   /* A mark is a disc in the series of its direction; hollow while the occurrence is pending. */
   .mark {
+    flex: none;
     inline-size: var(--slotted-space-4);
     block-size: var(--slotted-space-4);
     border-radius: var(--slotted-radius-full);
@@ -107,16 +133,15 @@
   }
 
   .net {
+    align-self: end;
     font-size: var(--slotted-font-size-xs);
     font-variant-numeric: tabular-nums;
-    color: var(--slotted-text-muted);
+    color: var(--slotted-text);
     white-space: nowrap;
-    overflow: hidden;
-    text-align: end;
   }
 
   /* A narrow day keeps its marks and leaves the net to the tooltip and the list. */
-  @container (max-width: 3.5rem) {
+  @container (max-width: 3rem) {
     .net {
       display: none;
     }
@@ -125,7 +150,10 @@
   .legend {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--slotted-space-2) var(--slotted-space-5);
+    gap: var(--slotted-space-2) var(--slotted-space-6);
+    padding: var(--slotted-space-4);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
   }
 
   .key {
@@ -142,6 +170,10 @@
 
   /* Forced colors drop the fills: an outline keeps a done mark apart from a pending one. */
   @media (forced-colors: active) {
+    .grid {
+      background: CanvasText;
+    }
+
     .mark {
       background: CanvasText;
       box-shadow: none;
@@ -152,9 +184,9 @@
       outline: var(--slotted-border-width-thin) solid CanvasText;
     }
 
-    .day[data-today],
+    .day[data-today] .number,
     .day[data-selected] {
-      border-color: Highlight;
+      outline: var(--slotted-border-width-medium) solid Highlight;
     }
   }
 }

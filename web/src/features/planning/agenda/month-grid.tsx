@@ -60,20 +60,25 @@ export function MonthGrid({
 
   return (
     <div className={styles.root}>
+      <div className={styles.weekdays} aria-hidden="true">
+        {weekdayLabels(locale, firstDay).map((label) => (
+          <span key={label} className={styles.weekday}>
+            {label}
+          </span>
+        ))}
+      </div>
       <div
         className={styles.grid}
         role="group"
         aria-label={t("agenda.calendar")}
       >
-        {weekdayLabels(locale, firstDay).map((label) => (
-          <span key={label} className={styles.weekday} aria-hidden="true">
-            {label}
-          </span>
-        ))}
         {days.map((day) => {
           const body = (
             <>
               <span className={styles.number}>{Number(day.date.slice(8))}</span>
+              <span className={styles.net} aria-hidden="true">
+                {short(day)}
+              </span>
               <span className={styles.marks} aria-hidden="true">
                 {day.marks.map((mark, index) => (
                   <i
@@ -83,9 +88,6 @@ export function MonthGrid({
                     data-pending={mark.pending ? "" : undefined}
                   />
                 ))}
-              </span>
-              <span className={styles.net} aria-hidden="true">
-                {short(day)}
               </span>
             </>
           );

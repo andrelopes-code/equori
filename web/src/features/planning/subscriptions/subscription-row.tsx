@@ -1,43 +1,36 @@
+import { Stack } from "@slotted/react/stack";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
-import { Fragment } from "react";
 
-import type { components } from "@/api/schema.gen";
 import { ScheduleActions } from "@/features/planning/subscriptions/schedule-actions";
-import type { subscriptionCost } from "@/features/planning/model/schedule-words";
-import styles from "@/features/planning/subscriptions/subscriptions-tab.module.css";
-import { formatDate } from "@/i18n/format";
+import type { SubscriptionLine } from "@/features/planning/subscriptions/subscription-figures";
+import { SubscriptionMonths } from "@/features/planning/subscriptions/subscription-months";
+import styles from "@/features/planning/subscriptions/subscriptions.module.css";
+import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/navigation/app-link";
 
-type Schedule = components["schemas"]["Schedule"];
-type ScheduleTerms = components["schemas"]["ScheduleTerms"];
-
 interface SubscriptionRowProps {
-  schedule: Schedule;
-  // The terms in force today.
-  terms: ScheduleTerms;
-  cost: ReturnType<typeof subscriptionCost>;
+  line: SubscriptionLine;
+  position: number;
   accountNames: ReadonlyMap<string, string>;
   scale: (code: string) => number;
-  // An ended subscription draws muted.
-  ended?: boolean;
 }
 
-// One subscription of the subscriptions table: its price in force, what it costs a month and a
-// year, and how its price moved.
+// One subscription of the ranking: its place, the account it charges, its last 12
+// months, its share of the total, and its monthly and yearly cost (spec C3).
 export function SubscriptionRow({
-  schedule,
-  terms,
-  cost,
+  line,
+  position,
   accountNames,
   scale,
-  ended = false,
 }: SubscriptionRowProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
+
+  const { schedule, terms } = line;
   const name =
     schedule.description === "" ? t("ledger.untitled") : schedule.description;
   const money = (amount: number) =>
@@ -45,49 +38,55 @@ export function SubscriptionRow({
       { amount, currency: terms.amount.currency },
       scale(terms.amount.currency),
     );
-
   return (
-    <TableRow value={schedule.id} muted={ended}>
+    <TableRow value={schedule.id}>
+      <TableCell numeric>
+        <Text size="xs" tone="muted">
+          {position}
+        </Text>
+      </TableCell>
       <TableRowHeader text="truncate">
-        <AppLink
-          variant="neutral"
-          underline="hover"
-          to={{
-            to: "/planning/schedules/$id",
-            params: { id: schedule.id },
-          }}
-        >
-          {name}
-        </AppLink>
+        <Stack gap={0}>
+          <AppLink
+            variant="neutral"
+            underline="hover"
+            to={{ to: "/planning/schedules/$id", params: { id: schedule.id } }}
+          >
+            {name}
+          </AppLink>
+          <Text size="xs" tone="muted">
+            {accountNames.get(schedule.account_id)}
+          </Text>
+        </Stack>
       </TableRowHeader>
-      <TableCell text="truncate">
-        {accountNames.get(schedule.account_id)}
-      </TableCell>
-      <TableCell numeric>{money(terms.amount.amount)}</TableCell>
-      <TableCell numeric>{money(cost.monthly)}</TableCell>
-      <TableCell numeric>{money(cost.yearly)}</TableCell>
       <TableCell>
-        <div className={styles.history}>
-          {schedule.terms.map((v) => (
-            <Fragment key={v.effective_from}>
-              <Text size="sm" tone="muted" numeric="tabular">
-                {formatDate(v.effective_from, locale)}
-              </Text>
-              <Text
-                size="sm"
-                numeric="tabular"
-                {...(ended ? { tone: "muted" as const } : {})}
-              >
-                {fmt.money(v.amount, scale(v.amount.currency))}
-              </Text>
-            </Fragment>
-          ))}
-        </div>
+        <SubscriptionMonths cells={line.cells} scale={scale} />
       </TableCell>
-      <TableCell>
-        {schedule.ends_on === undefined
-          ? t("schedule.noEnd")
-          : formatDate(schedule.ends_on, locale)}
+      <TableCell numeric>
+        {line.shareBp === undefined ? (
+          <Text size="xs" tone="muted">
+            {t("subscriptions.outOfTotal")}
+          </Text>
+        ) : (
+          <span className={styles.share}>
+            <span className={styles.shareBar} aria-hidden="true">
+              <i style={{ inlineSize: `${String(line.shareBp / 100)}%` }} />
+            </span>
+            <Text size="sm" numeric="tabular">
+              {formatBasisPoints(line.shareBp, locale)}
+            </Text>
+          </span>
+        )}
+      </TableCell>
+      <TableCell numeric>
+        <Stack gap={0}>
+          <Text size="sm" numeric="tabular">
+            {money(line.monthly)}
+          </Text>
+          <Text size="xs" tone="muted" numeric="tabular">
+            {t("subscriptions.perYearLine", { amount: money(line.yearly) })}
+          </Text>
+        </Stack>
       </TableCell>
       <TableCell sticky="end">
         <ScheduleActions schedule={schedule} name={name} />

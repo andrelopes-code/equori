@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { checkingID, money } from "@/testing/account-api";
 import { json, problem } from "@/testing/fake-api";
-import { moneyValue } from "@/testing/money-value";
+import { bandValue } from "@/testing/band-value";
 import {
   occurrence,
   planningApi as api,
@@ -62,14 +62,14 @@ describe("Schedules tab", () => {
 
     await waitFor(() => {
       expect(
-        within(figures).getByText(moneyValue("R$2,860.10")),
+        within(figures).getByText(bandValue("R$2,860.10")),
       ).toBeInTheDocument();
     });
     expect(
-      within(figures).getByText(moneyValue("R$5,000.00")),
+      within(figures).getByText(bandValue("R$5,000.00")),
     ).toBeInTheDocument();
     expect(
-      within(figures).getByText(moneyValue("R$2,139.90")),
+      within(figures).getByText(bandValue("R$2,139.90")),
     ).toBeInTheDocument();
     expect(
       within(figures).getByText(

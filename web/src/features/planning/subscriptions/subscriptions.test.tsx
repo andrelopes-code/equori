@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json } from "@/testing/fake-api";
+import { bandValue } from "@/testing/band-value";
 import {
   planningApi as api,
   streamingID,
@@ -11,30 +12,85 @@ import {
 } from "@/testing/planning-api";
 import { renderApp } from "@/testing/render-app";
 
+// docs/specs/2026-11-15-planning-tabs-design.md, section 6.
 describe("Subscriptions tab", () => {
   it("costs each subscription a month and a year and lists its price changes (S29)", async () => {
     await renderApp("/planning?tab=subscriptions", { fetch: api() });
-    const table = await screen.findByRole("table", {
-      name: catalogEn["subscriptions.caption"],
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["subscriptions.figures"],
     });
-    const row = await within(table).findByRole("row", { name: /^Streaming/ });
-    const cells = within(row)
-      .getAllByRole("cell")
-      .map((cell) => cell.textContent);
-    expect(cells.slice(0, 4)).toEqual([
-      "Nubank",
-      "R$39.90",
-      "R$39.90",
-      "R$478.80",
-    ]);
-    expect(cells[4]).toContain("R$39.90");
-    expect(cells[4]).toContain("R$44.90");
-    expect(cells[4]).toContain("01/01/2027");
-    expect(cells[5]).toBe("06/01/2027");
-    const summary = within(table).getAllByRole("row").at(-1);
-    if (summary === undefined) throw new Error("no summary row");
-    expect(within(summary).getAllByText("R$39.90")).toHaveLength(1);
-    expect(within(summary).getByText("R$478.80")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(within(figures).getAllByText(bandValue("R$39.90"))).toHaveLength(
+        2,
+      );
+    });
+    expect(
+      within(figures).getByText(bandValue("R$478.80")),
+    ).toBeInTheDocument();
+
+    const ranking = screen.getByRole("table", {
+      name: catalogEn["subscriptions.ranking"],
+    });
+    const row = within(ranking).getByRole("row", { name: /^1 Streaming/ });
+    expect(within(row).getByText("R$39.90")).toBeInTheDocument();
+    expect(
+      within(row).getByText(
+        words("subscriptions.perYearLine", { amount: "R$478.80" }),
+      ),
+    ).toBeInTheDocument();
+    expect(within(row).getByText("100.00%")).toBeInTheDocument();
+
+    const changes = screen.getByRole("table", {
+      name: catalogEn["subscriptions.changes"],
+    });
+    const change = within(changes).getByRole("row", { name: /^Streaming/ });
+    expect(
+      within(change).getByText(
+        words("subscriptions.change.rises", { date: "01/01/2027" }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(change).getByText(
+        words("subscriptions.fromTo", {
+          from: "R$39.90",
+          to: "R$44.90",
+          year: "+R$60.00",
+        }),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("leaves a subscription in another currency out of the totals and says why", async () => {
+    const usd = {
+      ...streamingSchedule,
+      id: "e1000000-0000-4000-8000-00000000000a",
+      description: "Cloud",
+      terms: streamingSchedule.terms.map((v) => ({
+        ...v,
+        amount: { amount: 2000, currency: "USD" },
+      })),
+    };
+    await renderApp("/planning?tab=subscriptions", {
+      fetch: api({
+        "GET /api/v1/schedules": () =>
+          json(200, { items: [streamingSchedule, usd] }),
+      }),
+    });
+    const figures = await screen.findByRole("region", {
+      name: catalogEn["subscriptions.figures"],
+    });
+
+    await waitFor(() => {
+      expect(
+        within(figures).getByText(
+          words("subscriptions.leftOut", { amounts: "$20.00" }),
+        ),
+      ).toBeInTheDocument();
+    });
+    const row = screen.getByRole("row", { name: /^2 Cloud/ });
+    expect(
+      within(row).getByText(catalogEn["subscriptions.outOfTotal"]),
+    ).toBeInTheDocument();
   });
 
   it("pauses a subscription from its row", async () => {
@@ -102,49 +158,60 @@ describe("Subscriptions tab with an ended subscription", () => {
     })),
   };
 
-  async function renderTable() {
+  async function renderTab() {
     await renderApp("/planning?tab=subscriptions", {
       fetch: api({
         "GET /api/v1/schedules": () =>
           json(200, { items: [gym, streamingSchedule] }),
       }),
     });
-    const table = await screen.findByRole("table", {
-      name: catalogEn["subscriptions.caption"],
-    });
-    await within(table).findByRole("row", { name: /^Streaming/ });
-    return table;
+    await screen.findByRole("row", { name: /^1 Streaming/ });
   }
 
-  it("lists the ended subscription after the active ones, under its own heading", async () => {
-    const table = await renderTable();
+  async function openEnded() {
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: words("subscriptions.endedCount", { count: "1" }),
+      }),
+    );
+    return screen.findByRole("table", { name: catalogEn["schedules.ended"] });
+  }
+
+  it("keeps the ended subscription in a closed list after the active ones", async () => {
+    await renderTab();
+    expect(screen.queryByRole("row", { name: /Gym/ })).not.toBeInTheDocument();
+
+    const ended = await openEnded();
 
     expect(
-      within(table)
-        .getAllByRole("rowheader")
-        .map((cell) => cell.textContent),
-    ).toEqual([
-      "Streaming",
-      catalogEn["schedules.ended"],
-      "Gym",
-      catalogEn["subscriptions.total"],
-    ]);
+      within(ended).getByRole("row", { name: /^Gym/ }),
+    ).toBeInTheDocument();
   });
 
-  it("leaves the ended subscription out of the totals", async () => {
-    const table = await renderTable();
-    const summary = within(table).getAllByRole("row").at(-1);
-    if (summary === undefined) throw new Error("no summary row");
+  it("leaves the ended subscription out of the totals and counts what it saves", async () => {
+    await renderTab();
+    const figures = screen.getByRole("region", {
+      name: catalogEn["subscriptions.figures"],
+    });
 
-    expect(within(summary).getByText("R$39.90")).toBeInTheDocument();
-    expect(within(summary).getByText("R$478.80")).toBeInTheDocument();
-    expect(within(summary).queryByText("R$139.90")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        within(figures).getByText(bandValue("R$478.80")),
+      ).toBeInTheDocument();
+    });
+    expect(
+      within(figures).getByText(bandValue("R$100.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).queryByText(bandValue("R$139.90")),
+    ).not.toBeInTheDocument();
   });
 
   it("draws the ended subscription muted and offers it no actions", async () => {
-    const table = await renderTable();
-    const ended = within(table).getByRole("row", { name: /^Gym/ });
-    const active = within(table).getByRole("row", { name: /^Streaming/ });
+    await renderTab();
+    const active = screen.getByRole("row", { name: /^1 Streaming/ });
+
+    const ended = within(await openEnded()).getByRole("row", { name: /^Gym/ });
 
     expect(ended).toHaveAttribute("data-muted");
     expect(active).not.toHaveAttribute("data-muted");
@@ -160,3 +227,10 @@ describe("Subscriptions tab with an ended subscription", () => {
     ).toBeInTheDocument();
   });
 });
+
+function words(key: keyof typeof catalogEn, values: Record<string, string>) {
+  return Object.entries(values).reduce<string>(
+    (text, [k, v]) => text.replace(`{${k}}`, v),
+    catalogEn[key],
+  );
+}

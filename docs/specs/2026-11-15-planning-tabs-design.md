@@ -24,7 +24,7 @@ The three tabs draw the data in the shape the table family allows. Measured on t
 
 ## 3. Layout shared by the three tabs
 
-- P1. Each tab opens with a summary band: one row of four `StatCard`s (family) in a grid whose first column is wider. The first card is the tab's conclusion at `size="md"`, one step above the others at `size="sm"`. Each figure appears once on the tab.
+- P1. Each tab opens with a summary band of the application's own (section 7): one frame of four cells parted by hairlines, the first one wider with the tab's conclusion one type step above the others; each cell holds its label, its value and its note, and a part of a whole draws a thin bar beside the note, inside the cell's padding. Each figure appears once on the tab.
 - P2. Under the band, two columns of sections, 7/5, for the agenda and the subscriptions; the schedules keep one column, as a table of four columns needs the whole width at 1440 px (two side by side clip the amounts). A section whose content needs the whole width (the running balance) sits under the two columns. Below 1200 px the second column moves under the first. `/planning` is desktop-only (ADR 027, S3).
 - P3. Every list is a `Table` (family, `variant="framed"`): values end on one vertical line, a group's subtotal sits in its `TableGroupRow` `end`. A cell holds one line per piece of information.
 - P4. A list of what already happened, or of what ended, is a `Collapsible` (family) under the open list, closed by default.
@@ -49,13 +49,13 @@ The three tabs draw the data in the shape the table family allows. Measured on t
 
 - C1. Band: "Subscriptions per month", "Per year", "Charged in the last 12 months" with the difference from the expected amounts when it is not zero, "Ended" with the monthly cost no longer paid.
 - C2'. Totals hold the base currency; a subscription in another currency is listed with its own amounts and "left out of the total: no exchange rate". This fixes the cross-currency sum of section 1.
-- C3. Left column: the ranking table, highest monthly cost first: rank, description over "account · recurrence", the last 12 months (one cell per month: paid at the expected amount, paid at another amount, skipped, expected, none), the share of the total (a `ProgressBar` and its percentage), the monthly cost over the yearly cost, and the existing `ScheduleActions`.
-- C4. Right column: "Price changes": a term version that starts after today ("rises on <date>": old and new amount, yearly difference), the latest term version that started in the last 12 months ("changed on <date>"), and the last realized occurrence whose actual amount differs from the expected one ("charged differently"); each links to the schedule page, where the terms and the update of the expected amount live. Then "Next charges": the 5 next expected occurrences. Then the collapsible "Ended".
+- C3. Left column: the ranking table, highest monthly cost first: rank, description over its account, the last 12 months (one cell per month: paid at the expected amount, paid at another amount, skipped, expected, none), the share of the total (a `ProgressBar` and its percentage), the monthly cost over the yearly cost, and the existing `ScheduleActions`.
+- C4. Right column: "Price changes": a term version that starts after today ("rises on <date>": old and new amount, yearly difference), the latest term version that started in the last 12 months ("changed on <date>"), and the last realized occurrence whose actual amount differs from the expected one ("charged differently"); the name links to the schedule page, where the terms and the update of the expected amount live. Then "Next charges": the 5 next expected occurrences. Then the collapsible "Ended".
 - C5. The 12-month cells read the occurrences of the last 365 days (`occurrencesQuery`, at most 366 days).
 
 ## 7. Own elements
 
-- E1. The month grid (A5), the 12-month cells (C3) and the segmented bar (B2) are elements of the application. The calendar family draws one dot of one tone per day and no content inside a day (Slotted issue #111); no family draws a row of month cells or a part-to-whole bar of one line (the chart family draws axes and legends). Both are images with an accessible name that lists their values; colour is never the only channel (the name and the legend carry the state).
+- E1. The summary band (P1), the month grid (A5), the 12-month cells (C3) and the segmented bar (B2) are elements of the application. The stat-card family draws one card per figure and keeps its trend slot for a sparkline, where a progress bar ignores the card's padding. The calendar family draws one dot of one tone per day and no content inside a day (Slotted issue #111); no family draws a row of month cells or a part-to-whole bar of one line (the chart family draws axes and legends). Both are images with an accessible name that lists their values; colour is never the only channel (the name and the legend carry the state).
 
 ## 8. Cross-cutting questions
 

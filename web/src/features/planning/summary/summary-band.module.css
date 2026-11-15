@@ -1,9 +1,85 @@
 @layer app {
-  /* The conclusion takes the wider first column; the other figures share the rest (spec P1). */
+  /* One frame, the frame of a framed table; the conclusion takes the wider first column. */
   .band {
     display: grid;
-    grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-md);
+    background: var(--slotted-surface-raised);
+  }
+
+  /* Label, value and note on three fixed lines, the cells parted by hairlines. */
+  .cell {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    gap: var(--slotted-space-2);
+    min-inline-size: 0;
+    padding: var(--slotted-space-6) var(--slotted-space-7);
+  }
+
+  .cell + .cell {
+    border-inline-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .label,
+  .note {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .value {
+    font-size: var(--slotted-font-size-3xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+    white-space: nowrap;
+    color: var(--slotted-text);
+  }
+
+  .value[data-focal] {
+    font-size: var(--slotted-font-size-4xl);
+  }
+
+  /* The symbol and the fraction at the unit step, after the whole units. */
+  .unit {
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    color: var(--slotted-text-muted);
+  }
+
+  .unit:first-child {
+    margin-inline-end: var(--slotted-space-2);
+  }
+
+  .placeholder {
+    inline-size: 60%;
+    block-size: var(--slotted-font-size-3xl);
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
     gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  /* A thin bar of the accent inside the cell's padding: the share of the figure already done. */
+  .meter {
+    flex: 0 0 var(--slotted-space-12);
+    block-size: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-full);
+    background: color-mix(in oklab, var(--slotted-text) 12%, transparent);
+    overflow: hidden;
+  }
+
+  .meter i {
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--slotted-tone-accent-solid);
   }
 
   /* Below 1200 px four figures leave each value too narrow: two per row. */
@@ -11,10 +87,24 @@
     .band {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .cell:nth-child(3) {
+      border-inline-start: none;
+    }
+
+    .cell:nth-child(n + 3) {
+      border-block-start: var(--slotted-border-width-thin) solid
+        var(--slotted-border-subtle);
+    }
   }
 
-  /* The trend slot sizes to its content; the meter takes the card's width. */
-  .meter {
-    inline-size: 100%;
+  @media (forced-colors: active) {
+    .meter {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .meter i {
+      background: CanvasText;
+    }
   }
 }

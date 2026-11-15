@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
-import { moneyValue } from "@/testing/money-value";
+import { bandValue } from "@/testing/band-value";
 import {
   exactID,
   planningApi as api,
@@ -188,17 +188,17 @@ describe("PlanningPage agenda", () => {
     });
     await waitFor(() => {
       expect(
-        within(figures).getByText(moneyValue("R$+760.10")),
+        within(figures).getByText(bandValue("R$+760.10")),
       ).toBeInTheDocument();
     });
     expect(
-      within(figures).getByText(moneyValue("R$5,000.00")),
+      within(figures).getByText(bandValue("R$5,000.00")),
     ).toBeInTheDocument();
     expect(
-      within(figures).getByText(moneyValue("R$4,239.90")),
+      within(figures).getByText(bandValue("R$4,239.90")),
     ).toBeInTheDocument();
     expect(
-      within(figures).getByText(moneyValue("R$4,200.00")),
+      within(figures).getByText(bandValue("R$4,200.00")),
     ).toBeInTheDocument();
     expect(
       within(figures).getByText(

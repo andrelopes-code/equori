@@ -160,6 +160,11 @@ function line(
   ];
 }
 
+// The first day of the 12 months the cells read: the month 11 months back.
+export function windowStart(today: string): string {
+  return `${lastMonths(today)[0] ?? today.slice(0, 7)}-01`;
+}
+
 // The month 11 months back to the current one, as YYYY-MM.
 function lastMonths(today: string): string[] {
   const [year = 0, month = 1] = today.split("-").map(Number);

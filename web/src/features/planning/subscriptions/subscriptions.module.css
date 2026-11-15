@@ -1,0 +1,111 @@
+@layer app {
+  /* The ranking takes seven parts and the changes, next charges and ended ones five (spec P2). */
+  .columns {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+
+  /* Below 1200 px the ranking needs the whole width: the second column moves under. */
+  @media (max-width: 1199px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .column {
+    display: grid;
+    gap: var(--slotted-space-6);
+    align-content: start;
+    min-inline-size: 0;
+  }
+
+  /* Twelve month cells of one line; the state reads from the fill and the cell's name. */
+  .months {
+    display: grid;
+    grid-template-columns: repeat(12, var(--slotted-space-4));
+    gap: var(--slotted-space-1);
+  }
+
+  .cell {
+    block-size: var(--slotted-space-6);
+    border-radius: var(--slotted-radius-xs);
+    background: color-mix(in oklab, var(--slotted-text) 10%, transparent);
+  }
+
+  .cell[data-state="paid"] {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .cell[data-state="other"] {
+    background: var(--slotted-data-2);
+  }
+
+  .cell[data-state="skipped"] {
+    background: transparent;
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      var(--slotted-border-strong);
+  }
+
+  .cell[data-state="expected"] {
+    background: transparent;
+    box-shadow: inset 0 0 0 var(--slotted-border-width-medium)
+      var(--slotted-tone-accent-solid);
+  }
+
+  /* The share as a thin bar before its percentage, the percentages end-aligned. */
+  .share {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .shareBar {
+    inline-size: var(--slotted-space-12);
+    block-size: var(--slotted-space-2);
+    border-radius: var(--slotted-radius-full);
+    background: color-mix(in oklab, var(--slotted-text) 12%, transparent);
+    overflow: hidden;
+  }
+
+  .shareBar i {
+    display: block;
+    block-size: 100%;
+    border-radius: inherit;
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-2) var(--slotted-space-6);
+  }
+
+  .key {
+    display: inline-flex;
+    gap: var(--slotted-space-2);
+    align-items: center;
+  }
+
+  .key .cell {
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
+  }
+
+  @media (forced-colors: active) {
+    .cell,
+    .shareBar {
+      outline: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .cell[data-state="paid"],
+    .shareBar i {
+      background: CanvasText;
+    }
+
+    .cell[data-state="other"] {
+      background: Highlight;
+    }
+  }
+}
