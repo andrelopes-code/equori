@@ -82,7 +82,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.yield.reason.single_credit":
     "Só um crédito de rendimento registrado",
   "portfolio.yield.reason.single_credit_after_flow":
-    "Sem compara\u00e7\u00e3o com o \u00edndice {index}: um aporte ou retirada entre cr\u00e9ditos de rendimento reinicia a compara\u00e7\u00e3o, e depois do \u00faltimo houve s\u00f3 um cr\u00e9dito",
+    "Só um crédito de rendimento depois do último aporte ou retirada",
   "portfolio.yield.reason.too_small":
     "Saldo pequeno demais: os créditos são arredondados ao centavo",
   "portfolio.yield.reason.too_few_days":

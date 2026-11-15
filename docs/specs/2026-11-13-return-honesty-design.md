@@ -32,7 +32,7 @@ Corrections to the section "How it performed" of `/portfolio` after the owner re
 
 **HR7 Period reasons.** Without `benchmark`, the period return reads true for every reason but `no_yield_recorded`, `nothing_held` and `too_small`: those three read as zero or as rounding. The rule holds on the return section, the Yield tab and the Yield column of the Accounts screen, which read the same function.
 
-**HR8 Restarted single credit.** A tree whose comparison start moved to its last credit because of a flow reports `single_credit_after_flow` in place of `single_credit`. Text: "Sem comparação com o {index}: um aporte ou retirada entre créditos de rendimento reinicia a comparação, e depois do último houve só um crédito".
+**HR8 Restarted single credit.** A tree whose comparison start moved to its last credit because of a flow reports `single_credit_after_flow` in place of `single_credit`. Text: "Só um crédito de rendimento depois do último aporte ou retirada". The text is one short sentence like the other reasons: the yield column of a row wraps a long one onto several lines.
 
 **HR9 Layout.** The money panel takes the whole width when no comparison exists.
 

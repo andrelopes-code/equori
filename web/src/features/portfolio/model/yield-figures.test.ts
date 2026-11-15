@@ -98,7 +98,7 @@ const REASONS = [
   ["single_credit", "Only one yield credit recorded"],
   [
     "single_credit_after_flow",
-    "No comparison with the CDI index: a deposit or withdrawal between yield credits restarts the comparison, and only one credit came after the last one",
+    "Only one yield credit since the last deposit or withdrawal",
   ],
   ["too_small", "Balance too small: credits are rounded to the cent"],
   [
