@@ -70,7 +70,15 @@ While at least one sheet of the open conversation has a pending proposal and no 
 | `manage_card.set_credit_limit` | Gauge of the current and the requested limit | `limit` | the current limit |
 | `settle_statement.pay` | Source account, amount, statement | `amount`, `account`, `date` | the statement as structured values |
 
-Plan 2 also replaces the English targets the tools write ("Transaction X of 2026-10-12", "Statement … of …", "Schedule …", "Rule …") with structured values the client formats in the reader's language.
+Plan 2 contract, decided 2026-11-15:
+
+- `AssistantPreview` gains `items`: the records an operation reads or moves (`description`, `date`, `amount`, `account`, `category`), and `recurrence`: `frequency`, `interval`, `day`. Both are optional.
+- A target is a name the record carries ("Outback", "Nubank Ultravioleta", "iFood"), never a sentence: the English words of today's targets ("Transaction … of …", "Statement … of …", "Schedule …", "Rule …", "Suggested rule …", "Source category …", "N transactions", "Categorization rules", "Rule order") go. A count is the number alone. The client writes the words in the reader's language.
+- `void_transaction` drops its `status` change (the action says it) and carries the voided transaction in `items`.
+- `categorize_transactions` carries the moved transactions in `items`, each with the category it leaves.
+- `manage_card.set_credit_limit` carries the current limit as the `limit` change's `before` when the card has one.
+- `settle_statement` carries the statement's month as a `statement` change (`YYYY-MM`); the client writes it as a month name.
+- `manage_schedule.create` and `change_terms` carry `recurrence`; the month tiles show six nominal dates of a monthly rule (the start date's month onward, the rule's day, the month's last day when shorter); other frequencies show the `terms` text only.
 
 ## 8. Answer blocks (plan 3)
 
