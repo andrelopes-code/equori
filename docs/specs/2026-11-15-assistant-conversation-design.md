@@ -107,7 +107,7 @@ A GFM table of the answer whose last column holds amounts of one currency is dra
 - B2: Does not apply: no operation; confirm and reject keep their roles.
 - B3: Does not apply: no setting.
 - D1 to D5: Does not apply: no table, schema, fact or diagnostic field.
-- S1: Does not apply in plan 1: no operation; plan 2 changes the preview schema and states its exposure.
+- S1: No operation is added: plan 2 adds the optional `items` and `recurrence` to the response schema `AssistantPreview`, which `internal/server/tool_exposure_test.go` does not list; no `Problem.code` is added.
 - S2: The panel is served on a phone today; every form is checked at 390 px.
 - S3: The guide has no article for the panel (`features/assistant/README.md`, "Guide topic").
 - S4: Does not apply: the assistant's tools do not change.
