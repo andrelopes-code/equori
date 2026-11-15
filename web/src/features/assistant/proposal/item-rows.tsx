@@ -4,6 +4,8 @@ import type { components } from "@/api/schema.gen";
 import styles from "@/features/assistant/proposal/bodies.module.css";
 import { initials } from "@/features/assistant/proposal/initials";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { formatDayMonthNumeric } from "@/i18n/format";
+import { useAppLocale } from "@/i18n/i18n-provider";
 
 type Item = components["schemas"]["AssistantPreviewItem"];
 
@@ -15,6 +17,7 @@ interface ItemRowsProps {
 // Families read: typography. A framed list of transactions, one 44 px row each: the initials, the
 // description over its date and account, the amount at the end.
 export function ItemRows({ items, struck = false }: ItemRowsProps) {
+  const [locale] = useAppLocale();
   const valueText = useValueText();
 
   return (
@@ -38,9 +41,9 @@ export function ItemRows({ items, struck = false }: ItemRowsProps) {
             </Text>
             <Text size="xs" tone="muted" className={styles.ellipsis}>
               {[
-                valueText(
-                  item.date === undefined ? undefined : { date: item.date },
-                ),
+                item.date === undefined
+                  ? undefined
+                  : formatDayMonthNumeric(item.date, locale),
                 item.account,
               ]
                 .filter((part) => part !== undefined && part !== "")

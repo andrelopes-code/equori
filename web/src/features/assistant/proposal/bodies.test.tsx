@@ -43,7 +43,7 @@ describe("OperationBody", () => {
     expect(screen.getByText(catalogEn["assistant.body.to"])).toBeVisible();
     expect(screen.getByText("Dining")).toBeVisible();
     expect(screen.getByText("iFood lunch")).toBeVisible();
-    expect(screen.getByText("10/08/2026 · Nubank")).toBeVisible();
+    expect(screen.getByText("10/08 · Nubank")).toBeVisible();
     expect(screen.getByText("\u2212$54.90")).toBeVisible();
     expect(screen.getByText("PR")).toBeVisible();
     expect(screen.getByText("iFood")).toBeVisible();
@@ -114,7 +114,7 @@ describe("OperationBody", () => {
     });
 
     expect(screen.getByText("Lunch")).toBeVisible();
-    expect(screen.getByText("11/15/2026 · Checking")).toBeVisible();
+    expect(screen.getByText("11/15 · Checking")).toBeVisible();
     expect(screen.getByText("\u2212$42.90")).toBeVisible();
     expect(screen.getByText("Dining")).toBeVisible();
   });

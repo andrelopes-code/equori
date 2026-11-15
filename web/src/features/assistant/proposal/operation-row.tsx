@@ -13,6 +13,7 @@ import {
 import { OperationBody } from "@/features/assistant/proposal/operation-body";
 import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting";
 import { RowEnd } from "@/features/assistant/proposal/row-end";
+import { targetShownElsewhere } from "@/features/assistant/proposal/target-shown";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -50,6 +51,7 @@ export function OperationRow({
   const valueText = useValueText();
   const { preview } = proposal;
   const title = actionTitle(preview.action, t);
+  const repeated = targetShownElsewhere(preview);
   const destructive = preview.destructive === true;
   const running = executing || proposal.status === "executing";
   const state = proposalCardState({
@@ -116,7 +118,7 @@ export function OperationRow({
 
       {!decided && (
         <div className={styles.opBody}>
-          {preview.target !== undefined && (
+          {preview.target !== undefined && !repeated && (
             <Text size="sm" tone="muted">
               {valueText({ text: preview.target })}
             </Text>

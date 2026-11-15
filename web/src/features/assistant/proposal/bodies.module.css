@@ -144,11 +144,19 @@
 
   .ruleRow {
     display: grid;
-    grid-template-columns: 52px minmax(0, 1fr) auto;
+    grid-template-columns: 60px minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 10px;
     block-size: 44px;
     padding-inline: 12px;
+    white-space: nowrap;
+  }
+
+  /* Each cell keeps one line; the middle one gives way first. */
+  .ruleRow > * {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .ruleRow + .ruleRow {
@@ -322,6 +330,10 @@
     gap: 6px;
     min-inline-size: 0;
     text-align: center;
+  }
+
+  .node > * {
+    max-inline-size: 100%;
   }
 
   .nodeIcon {
