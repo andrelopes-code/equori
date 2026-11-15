@@ -1,0 +1,56 @@
+@layer app {
+  /* A blurred material surface (O11: no ancestor sets a backdrop root property). The mock floats
+     it 8 px above the composer; here it takes its own row above it, 8 px apart. */
+  .dock {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    block-size: 44px;
+    padding-inline: var(--slotted-space-3) var(--slotted-space-2);
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: 14px;
+    background: var(--slotted-surface-material);
+    backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: var(--slotted-shadow-md);
+    animation: rise var(--slotted-duration-long) cubic-bezier(0.16, 1, 0.3, 1)
+      backwards;
+  }
+
+  .label {
+    margin-inline-end: auto;
+  }
+
+  /* The pulse is the dock's own signal and runs under reduced motion too (spec section 6). */
+  .pulse {
+    flex: none;
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-solid);
+    animation: pulse 2s ease-out infinite;
+  }
+
+  @keyframes pulse {
+    from {
+      box-shadow: 0 0 0 0
+        color-mix(in oklab, var(--slotted-tone-accent-solid) 60%, transparent);
+    }
+
+    to {
+      box-shadow: 0 0 0 10px transparent;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dock {
+      animation: none;
+    }
+  }
+}

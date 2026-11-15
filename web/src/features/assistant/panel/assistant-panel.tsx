@@ -19,6 +19,7 @@ import { ChatWelcome } from "@/features/assistant/panel/chat-welcome";
 import { ConversationFeed } from "@/features/assistant/conversation/conversation-feed";
 import { ConversationList } from "@/features/assistant/conversation/conversation-list";
 import { HeaderActions } from "@/features/assistant/panel/header-actions";
+import { PendingDock } from "@/features/assistant/panel/pending-dock";
 import { ProviderNotice } from "@/features/assistant/panel/provider-notice";
 import { retryText } from "@/features/assistant/panel/retry-text";
 import { routeSuggestions } from "@/features/assistant/panel/route-suggestions";
@@ -62,6 +63,8 @@ export function AssistantPanel({
   // The composer's text lives here so that a move between the drawer and the pane keeps it.
   const [draftText, setDraftText] = useState("");
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  // The element that holds the feed; the dock watches its sheets.
+  const [thread, setThread] = useState<HTMLElement | null>(null);
 
   // A kept conversation that was deleted, or belongs to another user, opens a new one (P19).
   const gone =
@@ -149,7 +152,7 @@ export function AssistantPanel({
   );
 
   const body = (
-    <div data-own="assistant-panel" className={styles.thread}>
+    <div data-own="assistant-panel" className={styles.thread} ref={setThread}>
       {listing && (
         <div className={styles.scroll}>
           <ConversationList
@@ -187,17 +190,21 @@ export function AssistantPanel({
   );
 
   const footer = listing ? null : (
-    <div className={styles.composer}>
-      {started && notices}
-      <AssistantComposer
-        disabled={blocked || !ready}
-        busy={turn.pending !== null}
-        onSend={send}
-        onStop={turn.stop}
-        inputRef={composerRef}
-        value={draftText}
-        onValueChange={setDraftText}
-      />
+    <div className={styles.footerStack}>
+      {started && <PendingDock scrollRoot={thread} />}
+
+      <div className={styles.composer}>
+        {started && notices}
+        <AssistantComposer
+          disabled={blocked || !ready}
+          busy={turn.pending !== null}
+          onSend={send}
+          onStop={turn.stop}
+          inputRef={composerRef}
+          value={draftText}
+          onValueChange={setDraftText}
+        />
+      </div>
     </div>
   );
 

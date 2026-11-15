@@ -49,6 +49,7 @@ export function DecisionSheet({
 
   const count = rows.reduce((sum, row) => sum + 1 + row.dependents.length, 0);
   const live = rows.filter((row) => !passed(row.proposal, now));
+  const pending = live.some((row) => row.proposal.status === "pending");
   const summary = sheetSummary(live, decisions.marks);
   const until =
     deadline === undefined
@@ -59,7 +60,10 @@ export function DecisionSheet({
         }).format(new Date(deadline.expires_at));
 
   return (
-    <section className={styles.sheet}>
+    <section
+      className={styles.sheet}
+      data-open-sheet={pending ? "" : undefined}
+    >
       <div className={styles.header}>
         <Text size="md" weight="semibold">
           {count === 1

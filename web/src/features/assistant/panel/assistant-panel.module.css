@@ -71,9 +71,16 @@
     color: var(--slotted-tone-accent-solid);
   }
 
+  /* The pending dock stands 8 px above the composer, in the footer's flow. */
+  .footerStack {
+    flex: 1;
+    min-inline-size: 0;
+    display: grid;
+    gap: var(--slotted-space-2);
+  }
+
   /* A notice that blocks the composer stands right above it, where the reader looks to type. */
   .composer {
-    flex: 1;
     min-inline-size: 0;
     display: grid;
     gap: var(--slotted-space-3);
