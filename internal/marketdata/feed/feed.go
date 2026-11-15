@@ -22,6 +22,9 @@ var ErrNoData = errors.New("no data")
 // trades file about 6 MiB.
 const maxResponseBytes = 16 << 20
 
+// maxErrorBodyBytes bounds the part of an error answer that a StatusError keeps.
+const maxErrorBodyBytes = 512
+
 // maxDownloadBytes bounds an answer read through Download: a COTAHIST year file had 102 MB in
 // 2026 (A222 MQ13).
 const maxDownloadBytes = 256 << 20
@@ -70,8 +73,11 @@ func (e *ScopeError) Error() string { return e.Key + " " + e.Value + ": " + e.Er
 
 func (e *ScopeError) Unwrap() error { return e.Err }
 
-// StatusError is an answer other than 200 and 404.
-type StatusError struct{ Code int }
+// StatusError is an answer other than 200 and 404. Body holds the first bytes of the answer.
+type StatusError struct {
+	Code int
+	Body string
+}
 
 func (e *StatusError) Error() string { return fmt.Sprintf("status %d", e.Code) }
 
@@ -139,7 +145,9 @@ func GetSince(ctx context.Context, c *http.Client, url, since string) ([]byte, s
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", &StatusError{Code: resp.StatusCode}
+		head, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodyBytes))
+
+		return nil, "", &StatusError{Code: resp.StatusCode, Body: string(head)}
 	}
 
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBytes))

@@ -26,6 +26,11 @@ const (
 		`"timestamp":[1793802600,1793889000,1793975400],"indicators":{"quote":[{` +
 		`"open":[10,10,10],"high":[10,10,11],"low":[10,10,9],"close":[10,10,10.5],` +
 		`"volume":[5,0,0]}]}}],"error":null}}`
+	// Yahoo answers 400 for a range without bars, as for an ETF listed after the start date.
+	noBars = `{"chart":{"result":null,"error":{"code":"Bad Request",` +
+		`"description":"Data doesn't exist for startDate = 1163462400, endDate = 1792972800"}}}`
+	badRequest = `{"chart":{"result":null,"error":{"code":"Bad Request",` +
+		`"description":"Invalid input - interval=1x is not supported"}}}`
 	notFound = `{"chart":{"result":null,"error":{"code":"Not Found",` +
 		`"description":"No data found, symbol may be delisted"}}}`
 )
@@ -167,6 +172,8 @@ func TestFetch(t *testing.T) {
 			[]string{"AAPL USD 2026-11-04 10", "AAPL USD 2026-11-06 10.5"},
 			"",
 		},
+		{"range without bars", http.StatusBadRequest, noBars, nil, ""},
+		{"invalid request", http.StatusBadRequest, badRequest, nil, "instrument AAPL"},
 		{"pence", http.StatusOK, gbp, nil, "instrument AAPL"},
 		{"unknown symbol", http.StatusNotFound, notFound, nil, ""},
 		{"server error", http.StatusInternalServerError, "", nil, "instrument AAPL"},

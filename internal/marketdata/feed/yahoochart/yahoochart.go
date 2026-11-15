@@ -230,7 +230,7 @@ func (s Source) fetchCode(
 		s.baseURL, url.PathEscape(t.symbol), from.Unix(), to.AddDate(0, 0, 1).Unix())
 
 	body, err := feed.Get(ctx, s.client, endpoint)
-	if errors.Is(err, feed.ErrNoData) {
+	if errors.Is(err, feed.ErrNoData) || noBars(err) {
 		return nil, nil
 	}
 
@@ -239,6 +239,15 @@ func (s Source) fetchCode(
 	}
 
 	return parse(body, code, t.quote, from, to)
+}
+
+// noBars reports whether err is the 400 answer of Yahoo to a range without bars, such as a start
+// date before the listing of an ETF. Any other 400 stays an error.
+func noBars(err error) bool {
+	var status *feed.StatusError
+
+	return errors.As(err, &status) && status.Code == http.StatusBadRequest &&
+		strings.Contains(status.Body, "Data doesn't exist")
 }
 
 // resolveSymbol returns the code and the MIC of a Yahoo symbol: the suffix after the last `.`
