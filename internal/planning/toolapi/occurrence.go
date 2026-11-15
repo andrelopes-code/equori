@@ -2,7 +2,6 @@ package toolapi
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -125,7 +124,7 @@ func previewOccurrence(
 		return tool.Preview{}, app.ErrOccurrenceClosed
 	}
 
-	name := sch.Description + " expected " + o.ExpectedOn.Format(time.DateOnly)
+	name := sch.Description
 	pv := tool.Preview{
 		Action: "manage_occurrence." + string(in.Action),
 		Target: sch.Description,

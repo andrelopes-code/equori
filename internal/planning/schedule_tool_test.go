@@ -559,7 +559,7 @@ func TestManageOccurrence(t *testing.T) {
 		Basis:  "expected",
 		Changes: []tool.Change{
 			{Field: "date", After: tool.Value{Date: "2026-11-05"}},
-			{Field: "occurrence", After: tool.TextValue("Rent expected 2026-11-05")},
+			{Field: "occurrence", After: tool.TextValue("Rent")},
 			{
 				Field:  "status",
 				Before: tool.TextValue("expected"),
