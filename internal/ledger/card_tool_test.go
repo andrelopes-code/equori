@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type cardOut struct {
@@ -63,6 +64,34 @@ func otherUserCardPurchase(t *testing.T, h *apitest.Harness) (card, purchase, st
 		Decode(t, &list)
 
 	return card, tx.ID, list.Items[0].ID
+}
+
+func TestManageCardLimitPreviewCurrentLimit(t *testing.T) {
+	t.Parallel()
+	c := newCardSetup(t, "2026-10-23")
+	limit := func(amount, from string) map[string]any {
+		return map[string]any{
+			"account_id":     c.card,
+			"action":         "set_credit_limit",
+			"amount":         amount,
+			"effective_from": from,
+		}
+	}
+
+	first := previewTool(t, c.h, "manage_card", limit("5000.00", "2026-10-01"))
+	if first.Changes[0].Before != (tool.Value{}) {
+		t.Errorf("limit before without a limit = %+v", first.Changes[0].Before)
+	}
+
+	toolOutput(t, c.h, "manage_card", limit("5000.00", "2026-10-01"), &struct{}{})
+
+	second := previewTool(t, c.h, "manage_card", limit("8000.00", "2026-11-01"))
+
+	want := tool.Value{Amount: "5000.00", Currency: "BRL"}
+	if second.Changes[0].Field != "limit" || second.Changes[0].Before != want ||
+		second.Changes[0].After.Amount != "8000.00" {
+		t.Errorf("limit change = %+v", second.Changes[0])
+	}
 }
 
 func TestManageCard(t *testing.T) {

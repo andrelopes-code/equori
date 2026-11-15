@@ -39,16 +39,18 @@ func voidTransaction(svc *app.Service) tool.Tool {
 			return tool.Preview{}, err
 		}
 
+		accounts, _, err := allAccounts(ctx, svc, booksID)
+		if err != nil {
+			return tool.Preview{}, err
+		}
+
 		return tool.Preview{
-			Action: "void_transaction", Target: targetOf(t), Destructive: true, Basis: basisOf(t),
-			Changes: []tool.Change{
-				{
-					Field:  "status",
-					Before: tool.TextValue("active"),
-					After:  tool.TextValue("voided"),
-				},
-				{Field: "reason", After: tool.TextValue(in.Reason)},
-			},
+			Action:      "void_transaction",
+			Target:      t.Description,
+			Destructive: true,
+			Basis:       basisOf(t),
+			Changes:     []tool.Change{{Field: "reason", After: tool.TextValue(in.Reason)}},
+			Items:       []tool.Item{itemOf(t, accounts)},
 		}, nil
 	}, func(ctx context.Context, booksID int64, in voidTransactionIn) (voidTransactionOut, error) {
 		t, err := voidTarget(ctx, svc, booksID, in)

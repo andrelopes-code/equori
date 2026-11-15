@@ -32,6 +32,7 @@ type categorizeTransactionsOut struct {
 type categorizePlan struct {
 	category domain.Account
 	items    []app.BulkItem
+	txs      []domain.Transaction
 	payeeID  uuid.UUID
 }
 
@@ -68,12 +69,20 @@ func previewCategorize(
 
 	slices.Sort(keys)
 
+	accounts, _, err := allAccounts(ctx, svc, booksID)
+	if err != nil {
+		return tool.Preview{}, err
+	}
+
 	pv := tool.Preview{
 		Action:  "categorize_transactions",
-		Target:  strconv.Itoa(len(p.items)) + " transactions",
 		Basis:   strings.Join(keys, ","),
 		Changes: []tool.Change{{Field: "category", After: tool.TextValue(p.category.Name)}},
 	}
+	for _, t := range p.txs {
+		pv.Items = append(pv.Items, itemOf(t, accounts))
+	}
+
 	if p.payeeID != uuid.Nil {
 		names, err := svc.PayeeNames(ctx, booksID, []uuid.UUID{p.payeeID})
 		if err != nil {
@@ -209,6 +218,7 @@ func planCategorize(
 		}
 
 		p.items = append(p.items, app.BulkItem{ID: id, ExpectedVersion: t.Version})
+		p.txs = append(p.txs, t)
 	}
 
 	return p, nil

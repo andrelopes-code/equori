@@ -27,9 +27,10 @@ func TestSettleStatementPayS10(t *testing.T) {
 	}
 
 	p := previewTool(t, c.h, "settle_statement", args)
-	if p.Target != "Statement 2026-11 of Itaú Visa" || p.Basis != "1500.00:1500.00" ||
-		p.Changes[0].After.Amount != "1500.00" ||
-		p.Changes[1].After.Text != "Nubank" {
+	if p.Target != "Itaú Visa" || p.Basis != "1500.00:1500.00" ||
+		p.Changes[0].Field != "statement" || p.Changes[0].After.Text != "2026-11" ||
+		p.Changes[1].After.Amount != "1500.00" ||
+		p.Changes[2].After.Text != "Nubank" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -65,8 +66,8 @@ func TestSettleStatementFinanceS11(t *testing.T) {
 	}
 
 	p := previewTool(t, c.h, "settle_statement", args)
-	if p.Changes[0].Field != "installments" || p.Changes[0].After.Text != "6" ||
-		p.Changes[1].After.Amount != "363.40" {
+	if p.Changes[0].Field != "statement" || p.Changes[1].Field != "installments" ||
+		p.Changes[1].After.Text != "6" || p.Changes[2].After.Amount != "363.40" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -97,8 +98,8 @@ func TestSettleStatementFacts(t *testing.T) {
 		c.h,
 		"settle_statement",
 		facts,
-	); p.Changes[1].Field != "due_on" ||
-		p.Changes[1].After.Date != "2026-11-10" {
+	); p.Changes[2].Field != "due_on" ||
+		p.Changes[2].After.Date != "2026-11-10" {
 		t.Fatalf("preview = %+v", p)
 	}
 
@@ -177,8 +178,8 @@ func TestSettleStatementFactsMinimum(t *testing.T) {
 	}
 
 	p := previewTool(t, c.h, "settle_statement", facts)
-	if len(p.Changes) != 3 || p.Changes[2].Field != "limit" ||
-		p.Changes[2].After.Amount != "225.00" {
+	if len(p.Changes) != 4 || p.Changes[3].Field != "limit" ||
+		p.Changes[3].After.Amount != "225.00" {
 		t.Fatalf("preview = %+v", p)
 	}
 

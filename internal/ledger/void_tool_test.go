@@ -2,9 +2,11 @@ package ledger_test
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 func TestVoidTransactionTool(t *testing.T) {
@@ -13,13 +15,18 @@ func TestVoidTransactionTool(t *testing.T) {
 	id := f.h.Record("2026-10-20", apitest.Posting(f.checking, -100), apitest.Posting(f.food, 100))
 
 	args := map[string]any{"transaction_id": id, "reason": "duplicate"}
-	if p := previewTool(
-		t,
-		f.h,
-		"void_transaction",
-		args,
-	); !p.Destructive || p.Basis != "v1" || len(p.Changes) != 2 ||
-		p.Changes[0].After.Text != "voided" {
+	p := previewTool(t, f.h, "void_transaction", args)
+
+	wantItems := []tool.Item{{
+		Description: "test",
+		Date:        "2026-10-20",
+		Amount:      tool.Value{Amount: "-1.00", Currency: "BRL"},
+		Account:     "Nubank checking",
+		Category:    "Food",
+	}}
+	if !p.Destructive || p.Basis != "v1" || p.Target != "test" || len(p.Changes) != 1 ||
+		p.Changes[0].Field != "reason" || p.Changes[0].After.Text != "duplicate" ||
+		!slices.Equal(p.Items, wantItems) {
 		t.Fatalf("preview = %+v", p)
 	}
 

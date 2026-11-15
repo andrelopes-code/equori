@@ -3,6 +3,7 @@ package ledger_test
 import (
 	"fmt"
 	"net/http"
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -14,6 +15,45 @@ type categorizeOut struct {
 		TransactionID string `json:"transaction_id"`
 		Status        string `json:"status"`
 	} `json:"results"`
+}
+
+func TestCategorizePreviewItems(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-10-23"))
+	a := f.h.Record(
+		"2026-10-20",
+		apitest.Posting(f.checking, -100),
+		apitest.Posting(systemAccounts(f.h)["uncategorized_expense"], 100),
+	)
+	b := f.h.Record(
+		"2026-10-21",
+		apitest.Posting(f.checking, -200),
+		apitest.Posting(f.restaurant, 200),
+	)
+
+	p := previewTool(t, f.h, "categorize_transactions", map[string]any{
+		"transaction_ids": []string{a, b},
+		"category_id":     f.food,
+	})
+
+	want := []tool.Item{
+		{
+			Description: "test",
+			Date:        "2026-10-20",
+			Amount:      tool.Value{Amount: "-1.00", Currency: "BRL"},
+			Account:     "Nubank checking",
+		},
+		{
+			Description: "test",
+			Date:        "2026-10-21",
+			Amount:      tool.Value{Amount: "-2.00", Currency: "BRL"},
+			Account:     "Nubank checking",
+			Category:    "Restaurant",
+		},
+	}
+	if p.Target != "" || !slices.Equal(p.Items, want) {
+		t.Errorf("target = %q, items = %+v", p.Target, p.Items)
+	}
 }
 
 func TestCategorizeTransactionsTool(t *testing.T) {

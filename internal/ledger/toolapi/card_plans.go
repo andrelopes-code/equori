@@ -101,6 +101,30 @@ func planSetCardActive(
 	}, nil
 }
 
+// currentLimit is the limit in force today, or the zero Value when the card has none.
+func currentLimit(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	cardID uuid.UUID,
+) (tool.Value, error) {
+	limits, err := svc.CreditLimits(ctx, booksID, cardID)
+	if err != nil {
+		return tool.Value{}, err
+	}
+
+	today := svc.Today(ctx)
+
+	var current tool.Value
+	for _, l := range limits {
+		if !l.EffectiveFrom.After(today) {
+			current = tool.MoneyValue(l.Amount)
+		}
+	}
+
+	return current, nil
+}
+
 func planSetCreditLimit(
 	ctx context.Context,
 	svc *app.Service,
@@ -120,8 +144,13 @@ func planSetCreditLimit(
 		return pv, nil, err
 	}
 
+	current, err := currentLimit(ctx, svc, booksID, a.ID)
+	if err != nil {
+		return pv, nil, err
+	}
+
 	pv.Changes = []tool.Change{
-		{Field: "limit", After: tool.MoneyValue(amount)},
+		{Field: "limit", Before: current, After: tool.MoneyValue(amount)},
 		{Field: "date", After: tool.DateValue(in.EffectiveFrom.Time)},
 	}
 

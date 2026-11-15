@@ -88,7 +88,7 @@ func planSettle(
 		return pv, nil, err
 	}
 
-	pv.Target = "Statement " + v.Input.Reference.String() + " of " + card.Name
+	pv.Target = card.Name
 	pv.Basis = due.Amount + ":" + unpaid.Amount
 
 	date := svc.Today(ctx)
@@ -108,7 +108,7 @@ func planSettle(
 		date:    date,
 	}
 
-	return step.plan(ctx, pv)
+	return step.planWithStatement(ctx, pv, v.Input.Reference.String())
 }
 
 func settleIDs(in settleStatementIn) (id, fromID uuid.UUID, err error) {
