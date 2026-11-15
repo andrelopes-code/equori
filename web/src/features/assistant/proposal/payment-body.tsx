@@ -26,11 +26,7 @@ export function PaymentBody({ preview }: PaymentBodyProps) {
   const valueText = useValueText();
   const month = changeOf(preview, "statement")?.after?.text;
   const statement =
-    month === undefined
-      ? undefined
-      : t("assistant.body.statement", {
-          month: formatReferenceMonth(month, locale),
-        });
+    month === undefined ? undefined : formatReferenceMonth(month, locale);
   const amount = valueText(changeOf(preview, "amount")?.after);
   const account = valueText(changeOf(preview, "account")?.after);
   const rest = changesWithout(preview, ["statement", "amount", "account"]);
@@ -47,7 +43,11 @@ export function PaymentBody({ preview }: PaymentBodyProps) {
           <span className={styles.flow} aria-hidden="true" />
         </span>
 
-        <PaymentNode icon="card" text={statement} />
+        <PaymentNode
+          icon="card"
+          text={t("assistant.field.statement")}
+          caption={statement}
+        />
       </div>
 
       <ProposalChanges changes={rest} />

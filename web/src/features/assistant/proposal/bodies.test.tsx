@@ -224,7 +224,10 @@ describe("OperationBody", () => {
 
     expect(screen.getByText("Itaú")).toBeVisible();
     expect(screen.getByText("$2,918.38")).toBeVisible();
-    expect(screen.getByText("Nov 2026 statement")).toBeVisible();
+    expect(
+      screen.getByText(catalogEn["assistant.field.statement"]),
+    ).toBeVisible();
+    expect(screen.getByText("Nov 2026")).toBeVisible();
     expect(screen.getByText("11/15/2026")).toBeVisible();
   });
 

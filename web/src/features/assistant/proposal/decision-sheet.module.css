@@ -2,6 +2,7 @@
   /* The mock's .sheet: radius 18, raised surface, 1 px border, shadow and an inner top highlight. */
   .sheet {
     overflow: hidden;
+    box-sizing: border-box;
     inline-size: 100%;
     border: 1px solid var(--slotted-border-subtle);
     border-radius: 18px;
