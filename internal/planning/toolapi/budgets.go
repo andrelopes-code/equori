@@ -66,6 +66,8 @@ type planView struct {
 	Planned        tool.Money    `json:"planned"`
 	Unassigned     tool.Money    `json:"unassigned,omitzero"`
 	Rows           []planRowView `json:"rows"`
+	// Buckets is the income split with each bucket's target, planned and spent amounts (A230).
+	Buckets []planBucketView `json:"buckets,omitzero"`
 }
 
 type getBudgetsAndGoalsOut struct {
@@ -118,6 +120,10 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 	}
 
 	if out.Rows, err = planRowViews(p, accounts); err != nil {
+		return planView{}, err
+	}
+
+	if out.Buckets, err = planBucketViews(p, accounts); err != nil {
 		return planView{}, err
 	}
 

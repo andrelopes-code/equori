@@ -22,6 +22,8 @@ func TestBucketTargets(t *testing.T) {
 		{"tie goes to the earlier", 1, []int{5000, 5000}, []int64{1, 0}},
 		{"zero reference", 0, []int{5000, 5000}, []int64{0, 0}},
 		{"negative reference", -100, []int{10000}, []int64{0}},
+		{"no buckets", 600000, nil, []int64{}},
+		{"shares below the whole", 100, []int{2500}, []int64{25}},
 	}
 	for _, tt := range tests {
 		buckets := make([]Bucket, len(tt.shares))
@@ -103,6 +105,7 @@ func TestCheckBuckets(t *testing.T) {
 		_, err := CheckBuckets(tt.buckets, expense)
 
 		field := ""
+
 		fe := &FieldError{}
 		if errors.As(err, &fe) {
 			field = fe.Field

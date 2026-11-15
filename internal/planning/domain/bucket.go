@@ -130,7 +130,13 @@ func BucketTargets(reference int64, buckets []Bucket) []int64 {
 
 	slices.SortStableFunc(order, func(a, b int) int { return cmp.Compare(rests[b], rests[a]) })
 
-	for _, i := range order[:reference-assigned] {
+	// Shares that sum to the whole leave fewer units than buckets; other shares keep the floors.
+	left := reference - assigned
+	if left >= int64(len(order)) {
+		left = 0
+	}
+
+	for _, i := range order[:left] {
 		out[i]++
 	}
 

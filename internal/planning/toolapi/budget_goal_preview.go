@@ -57,6 +57,8 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 		if err := previewPlanSave(&pv, in, p); err != nil {
 			return tool.Preview{}, err
 		}
+	case "save_buckets":
+		previewBuckets(&pv, p)
 	}
 
 	return pv, nil

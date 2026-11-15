@@ -27,6 +27,8 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 			"amount",
 			"savings_target_bp",
 		)
+	case "save_buckets":
+		err = required(name, fields, []string{"buckets"})
 	}
 
 	return err
@@ -55,5 +57,6 @@ func budgetGoalFields(in manageBudgetOrGoalIn) []field {
 		},
 		{"amounts", len(in.Amounts) > 0},
 		{"savings_target_bp", in.SavingsTargetBP.Set},
+		{"buckets", len(in.Buckets) > 0},
 	}
 }

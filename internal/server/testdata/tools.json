@@ -1506,6 +1506,91 @@
                 ],
                 "additionalProperties": false
               }
+            },
+            "buckets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "share_bp": {
+                    "type": "integer"
+                  },
+                  "takes_savings": {
+                    "type": "boolean"
+                  },
+                  "categories": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "target": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "planned": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "spent": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "name",
+                  "share_bp",
+                  "categories",
+                  "planned",
+                  "spent"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
@@ -5740,7 +5825,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating a monthly budget for a category, setting a budget's amount from a month on, deleting a budget, saving a month's budget plan (several amounts and the reference income at once), or creating, changing or deleting a goal. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan (amounts and reference income at once) or the income split into buckets (50/30/20 and others). Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -5756,7 +5841,8 @@
             "create_goal",
             "update_goal",
             "delete_goal",
-            "save_plan"
+            "save_plan",
+            "save_buckets"
           ]
         },
         "budget_id": {
@@ -5773,11 +5859,11 @@
         },
         "amount": {
           "type": "string",
-          "description": "for create_budget and set_budget_amount: positive monthly amount; for create_goal and update_goal: positive target; for save_plan: the fixed reference income"
+          "description": "positive monthly amount (budgets), target (goals) or fixed reference income (save_plan)"
         },
         "month": {
           "type": "string",
-          "description": "for create_budget, set_budget_amount and save_plan: first month the amount applies to; written YYYY-MM"
+          "description": "first month the amount applies to, YYYY-MM"
         },
         "source": {
           "type": "string",
@@ -5799,7 +5885,7 @@
             "properties": {
               "category_id": {
                 "type": "string",
-                "description": "expense category from list_accounts or a row of get_budgets_and_goals with kind plan"
+                "description": "expense category from list_accounts"
               },
               "amount": {
                 "type": "string",
@@ -5812,7 +5898,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "for save_plan: the categories whose amount changes from month on; a version of that month is replaced"
+          "description": "for save_plan: the categories whose amount changes from month on"
         },
         "rollover": {
           "type": "boolean",
@@ -5833,6 +5919,39 @@
             "type": "string"
           },
           "description": "for create_goal and update_goal: balance accounts whose value counts toward the goal"
+        },
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "unique bucket name"
+              },
+              "share_bp": {
+                "type": "integer",
+                "description": "basis points; shares sum to 10000"
+              },
+              "takes_savings": {
+                "type": "boolean",
+                "description": "also draws the savings; one bucket at most"
+              },
+              "category_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "expense categories; subcategories follow"
+              }
+            },
+            "required": [
+              "name",
+              "share_bp"
+            ],
+            "additionalProperties": false
+          },
+          "description": "for save_buckets: the whole split"
         }
       },
       "required": [
