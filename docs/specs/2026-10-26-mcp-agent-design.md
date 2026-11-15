@@ -181,7 +181,7 @@ P1: the `answer` event writes the user message and the answer into the conversat
 
 ### 4.3 Activity (D5, U16)
 
-P5: the pending answer lists every step of the turn in order with its catalog label; the running step shows progress, finished steps a check. After the answer, the list collapses to one line ("Consultou 2 fontes") that expands.
+P5: the pending answer lists each tool of the turn once, with its catalog label, in the order of its last call; the running step shows progress, finished steps a check. After the answer, the list collapses to one line that counts the distinct tools ("Consultou 2 fontes") and expands. Amended 2026-11-15: a tool called several times was listed once per call.
 
 ### 4.4 Errors and limits (U3, U4, U14)
 
