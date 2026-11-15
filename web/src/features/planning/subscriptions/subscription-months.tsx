@@ -1,3 +1,4 @@
+import { monthHeights } from "@/features/planning/subscriptions/month-heights";
 import type { MonthCell } from "@/features/planning/subscriptions/subscription-figures";
 import styles from "@/features/planning/subscriptions/subscriptions.module.css";
 import { formatReferenceMonth } from "@/i18n/format";
@@ -9,8 +10,9 @@ interface SubscriptionMonthsProps {
   scale: (code: string) => number;
 }
 
-// The last 12 months of one subscription, one cell per month: paid at the expected amount, paid
-// at another amount, skipped, expected, or no charge (spec C3). Built here: no family draws a row
+// The last 12 months of one subscription, one bar per month on a common baseline, as tall as its
+// amount against the largest of the 12: paid at the expected amount, paid at another amount,
+// expected (hollow), skipped (a ring) or no charge (the baseline alone) (spec C3). Built here: no family draws a row
 // of month cells; the sparkline draws a line of values, not the state of each month.
 export function SubscriptionMonths({ cells, scale }: SubscriptionMonthsProps) {
   const t = useT();
@@ -35,6 +37,7 @@ export function SubscriptionMonths({ cells, scale }: SubscriptionMonthsProps) {
     return t(`subscriptions.cell.${cell.state}`, { month });
   };
   const all = cells.map(words);
+  const heights = monthHeights(cells);
 
   return (
     <span className={styles.months} role="img" aria-label={all.join("; ")}>
@@ -44,6 +47,11 @@ export function SubscriptionMonths({ cells, scale }: SubscriptionMonthsProps) {
           className={styles.cell}
           data-state={cell.state}
           title={all[index]}
+          style={
+            (heights[index] ?? 0) > 0
+              ? { blockSize: `${String(heights[index])}%` }
+              : undefined
+          }
         />
       ))}
     </span>

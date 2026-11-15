@@ -21,8 +21,10 @@
     }
   }
 
+  /* One track that may shrink below its content: the table fits the column instead of widening it. */
   .column {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--slotted-space-6);
     align-content: start;
     min-inline-size: 0;

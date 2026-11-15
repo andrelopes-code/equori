@@ -91,7 +91,7 @@ describe("Agenda received amounts", () => {
   it("shows no received amount for an occurrence that is not realized", async () => {
     await renderApp("/planning", { fetch: agendaApi([salary]) });
 
-    await screen.findByRole("rowheader", { name: "Salary" });
+    await screen.findByRole("rowheader", { name: /^Salary/ });
 
     expect(screen.queryByText(/^Received /)).toBeNull();
   });

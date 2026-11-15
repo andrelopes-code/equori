@@ -33,7 +33,7 @@ describe("PlanningPage agenda", () => {
     const { container, router } = await renderApp("/planning", {
       fetch: api(),
     });
-    await screen.findByRole("rowheader", { name: "Salary" });
+    await screen.findByRole("rowheader", { name: /^Salary/ });
     const header = container.querySelector('[data-ui="page-header"]');
     if (!(header instanceof HTMLElement)) throw new Error("no page header");
     const month = within(header).getByRole("group", {
@@ -47,44 +47,40 @@ describe("PlanningPage agenda", () => {
     });
   });
 
-  // Spec 2026-11-15-planning-tabs-design.md, A3: the pending occurrences in three windows; what
-  // already happened waits in its own closed list.
+  // Spec 2026-11-15-planning-tabs-design.md, A3: the pending occurrences in three windows, then
+  // what already happened, as the last group of the same table.
   it("lists the overdue occurrences first, then those due within 7 days", async () => {
     await renderApp("/planning", { fetch: api() });
     const table = await screen.findByRole("table", {
       name: catalogEn["agenda.caption"],
     });
-    await within(table).findByRole("rowheader", { name: "Salary" });
+    await within(table).findByRole("rowheader", { name: /^Salary/ });
     const headers = within(table)
       .getAllByRole("rowheader")
       .map((cell) => cell.textContent);
     expect(headers).toEqual([
       expect.stringContaining(catalogEn["agenda.overdue"]),
-      "Rent",
-      "Rent",
+      rowName("Rent", "bill"),
+      rowName("Rent", "bill"),
       expect.stringContaining(
         catalogEn["agenda.until"].replace("{date}", "Oct 24"),
       ),
-      "Salary",
+      rowName("Salary", "income"),
+      expect.stringContaining(catalogEn["agenda.happened"]),
+      rowName("Streaming", "subscription"),
     ]);
   });
 
-  it("keeps what already happened in a closed list under the pending ones", async () => {
+  it("shows what already happened without a press, in the pending ones' table", async () => {
     await renderApp("/planning", { fetch: api() });
-    await screen.findByRole("rowheader", { name: "Salary" });
-    expect(
-      screen.queryByRole("rowheader", { name: "Streaming" }),
-    ).not.toBeInTheDocument();
-
-    await userEvent.click(
-      screen.getByRole("button", {
-        name: catalogEn["agenda.happened"].replace("{count}", "1"),
-      }),
-    );
+    const table = await screen.findByRole("table", {
+      name: catalogEn["agenda.caption"],
+    });
 
     expect(
-      await screen.findByRole("rowheader", { name: "Streaming" }),
+      await within(table).findByRole("rowheader", { name: /^Streaming/ }),
     ).toBeInTheDocument();
+    expect(screen.getAllByRole("table")).toHaveLength(1);
   });
 
   it("leaves the overdue occurrences of earlier months out of another month", async () => {
@@ -101,13 +97,16 @@ describe("PlanningPage agenda", () => {
     const table = await screen.findByRole("table", {
       name: catalogEn["agenda.caption"],
     });
-    await within(table).findByRole("rowheader", { name: "Salary" });
+    await within(table).findByRole("rowheader", { name: /^Salary/ });
 
     expect(
       within(table)
         .getAllByRole("rowheader")
         .map((cell) => cell.textContent),
-    ).toEqual([expect.stringContaining(catalogEn["agenda.rest"]), "Salary"]);
+    ).toEqual([
+      expect.stringContaining(catalogEn["agenda.rest"]),
+      rowName("Salary", "income"),
+    ]);
   });
 
   it("says where a moved occurrence was expected before", async () => {
@@ -174,8 +173,8 @@ describe("PlanningPage agenda", () => {
       .map((cell) => cell.textContent);
     expect(headers).toEqual([
       `${catalogEn["agenda.until"].replace("{date}", "Oct 24")}−€5,000 · −$10.00`,
-      "Rent",
-      "Rent",
+      rowName("Rent", "bill"),
+      rowName("Rent", "bill"),
     ]);
   });
 
@@ -209,7 +208,7 @@ describe("PlanningPage agenda", () => {
 
   it("filters the agenda by kind", async () => {
     await renderApp("/planning", { fetch: api() });
-    await screen.findByRole("rowheader", { name: "Salary" });
+    await screen.findByRole("rowheader", { name: /^Salary/ });
     const user = userEvent.setup();
     await user.click(
       screen.getByRole("combobox", { name: catalogEn["agenda.kind"] }),
@@ -220,10 +219,10 @@ describe("PlanningPage agenda", () => {
       }),
     );
     await waitFor(() => {
-      expect(screen.queryByRole("rowheader", { name: "Rent" })).toBeNull();
+      expect(screen.queryByRole("rowheader", { name: /^Rent/ })).toBeNull();
     });
     expect(
-      screen.getByRole("rowheader", { name: "Salary" }),
+      screen.getByRole("rowheader", { name: /^Salary/ }),
     ).toBeInTheDocument();
   });
 
@@ -375,12 +374,8 @@ describe("PlanningPage agenda", () => {
         json(200, { ...streaming, state: "expected" }),
     });
     await renderApp("/planning", { fetch });
-    // Spec A3: the realized occurrence sits in the closed list of what already happened.
-    await userEvent.click(
-      await screen.findByRole("button", {
-        name: catalogEn["agenda.happened"].replace("{count}", "1"),
-      }),
-    );
+    // Spec A3: the realized occurrence sits in the group of what already happened.
+    await screen.findByRole("rowheader", { name: /^Streaming/ });
     const { user, dialog } = await openAction(
       "Streaming",
       0,
@@ -401,3 +396,8 @@ describe("PlanningPage agenda", () => {
     });
   });
 });
+
+// The text of an occurrence's row header: its name over its kind and account (spec A4).
+function rowName(name: string, kind: "bill" | "income" | "subscription") {
+  return `${name}${catalogEn[`scheduled.kind.${kind}`]} · Nubank`;
+}

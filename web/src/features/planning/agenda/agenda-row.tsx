@@ -24,9 +24,8 @@ interface AgendaRowProps {
   scale: (code: string) => number;
 }
 
-// One occurrence: its name, its kind and account, when it falls or how it ended over its day,
-// and
-// its expected amount, with what it moved once realized (spec A4).
+// One occurrence: its name over its kind and account, when it falls or how it ended over its
+// day, and its expected amount, with what it moved once realized (spec A4).
 export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -43,14 +42,16 @@ export function AgendaRow({ row, accountName, scale }: AgendaRowProps) {
 
   return (
     <TableRow value={occurrence.id} muted={occurrence.state === "skipped"}>
-      <TableRowHeader text="truncate">{name}</TableRowHeader>
-      <TableCell text="truncate">
-        <Text size="sm" tone="muted">
-          {[kind, accountName].filter((part) => part !== "").join(" · ")}
-        </Text>
-      </TableCell>
-      <TableCell>
+      <TableRowHeader text="truncate">
         <Stack gap={0}>
+          {name}
+          <Text size="xs" tone="muted">
+            {[kind, accountName].filter((part) => part !== "").join(" · ")}
+          </Text>
+        </Stack>
+      </TableRowHeader>
+      <TableCell>
+        <Stack gap={0} align="start">
           {occurrence.state === "overdue" && (
             <Tag size="sm" tone="danger">
               {late === 1

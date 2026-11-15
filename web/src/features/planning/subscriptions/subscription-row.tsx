@@ -3,6 +3,7 @@ import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 
 import { ScheduleActions } from "@/features/planning/subscriptions/schedule-actions";
+import { ShareRing } from "@/features/planning/subscriptions/share-ring";
 import type { SubscriptionLine } from "@/features/planning/subscriptions/subscription-figures";
 import { SubscriptionMonths } from "@/features/planning/subscriptions/subscription-months";
 import styles from "@/features/planning/subscriptions/subscriptions.module.css";
@@ -69,9 +70,7 @@ export function SubscriptionRow({
           </Text>
         ) : (
           <span className={styles.share}>
-            <span className={styles.shareBar} aria-hidden="true">
-              <i style={{ inlineSize: `${String(line.shareBp / 100)}%` }} />
-            </span>
+            <ShareRing bp={line.shareBp} />
             <Text size="sm" numeric="tabular">
               {formatBasisPoints(line.shareBp, locale)}
             </Text>

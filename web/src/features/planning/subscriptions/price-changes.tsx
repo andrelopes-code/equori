@@ -10,7 +10,6 @@ import {
   TableRow,
   TableRowHeader,
 } from "@slotted/react/table";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import {
@@ -36,8 +35,9 @@ const tones = {
   charged: "warning",
 } as const;
 
-// A price set to change, a price that changed within the year, a charge at another amount; the
-// name opens the schedule, where the terms change (spec C4).
+// A price set to change, a price that changed within the year, a charge at another amount: the
+// name over what changed and when, in the tone of the change; the prices over their effect,
+// end-aligned. The name opens the schedule, where the terms change (spec C4).
 export function PriceChanges({ changes, scale }: PriceChangesProps) {
   const t = useT();
   const [locale] = useAppLocale();
@@ -46,28 +46,29 @@ export function PriceChanges({ changes, scale }: PriceChangesProps) {
   if (changes.length === 0) return null;
 
   const money = (m: PriceChange["from"]) => fmt.money(m, scale(m.currency));
-  const line = (c: PriceChange) => {
-    if (c.kind === "charged")
-      return t("subscriptions.chargedLine", {
-        from: money(c.from),
-        to: money(c.to),
-      });
-
+  const yearly = (c: PriceChange) => {
     const recurrence = currentTerms(c.schedule.terms, today)?.recurrence;
-    const yearly =
+    const amount =
       recurrence === undefined
         ? 0
         : subscriptionCost(recurrence, c.to.amount).yearly -
           subscriptionCost(recurrence, c.from.amount).yearly;
-    return t("subscriptions.fromTo", {
-      from: money(c.from),
-      to: money(c.to),
-      year: fmt.signed(
-        { amount: yearly, currency: c.to.currency },
-        scale(c.to.currency),
-      ),
-    });
+    return fmt.signed(
+      { amount, currency: c.to.currency },
+      scale(c.to.currency),
+    );
   };
+  const price = (c: PriceChange) =>
+    c.kind === "charged"
+      ? money(c.to)
+      : t("subscriptions.priceFromTo", {
+          from: money(c.from),
+          to: money(c.to),
+        });
+  const effect = (c: PriceChange) =>
+    c.kind === "charged"
+      ? t("subscriptions.expectedLine", { amount: money(c.from) })
+      : t("subscriptions.perYearLine", { amount: yearly(c) });
 
   return (
     <Table columns={2} variant="framed">
@@ -78,7 +79,9 @@ export function PriceChanges({ changes, scale }: PriceChangesProps) {
             <TableColumnHeader>
               {t("subscriptions.subscription")}
             </TableColumnHeader>
-            <TableColumnHeader>{t("subscriptions.change")}</TableColumnHeader>
+            <TableColumnHeader numeric>
+              {t("subscriptions.change")}
+            </TableColumnHeader>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -88,28 +91,31 @@ export function PriceChanges({ changes, scale }: PriceChangesProps) {
               value={`${c.schedule.id}-${c.kind}`}
             >
               <TableRowHeader text="truncate">
-                <AppLink
-                  variant="neutral"
-                  underline="hover"
-                  to={{
-                    to: "/planning/schedules/$id",
-                    params: { id: c.schedule.id },
-                  }}
-                >
-                  {c.schedule.description}
-                </AppLink>
+                <Stack gap={0}>
+                  <AppLink
+                    variant="neutral"
+                    underline="hover"
+                    to={{
+                      to: "/planning/schedules/$id",
+                      params: { id: c.schedule.id },
+                    }}
+                  >
+                    {c.schedule.description}
+                  </AppLink>
+                  <Text size="xs" tone={tones[c.kind]}>
+                    {t(`subscriptions.change.${c.kind}`, {
+                      date: formatDate(c.on, locale),
+                    })}
+                  </Text>
+                </Stack>
               </TableRowHeader>
-              <TableCell>
-                <Stack gap={1}>
-                  <span>
-                    <Tag size="sm" tone={tones[c.kind]}>
-                      {t(`subscriptions.change.${c.kind}`, {
-                        date: formatDate(c.on, locale),
-                      })}
-                    </Tag>
-                  </span>
+              <TableCell numeric>
+                <Stack gap={0}>
+                  <Text size="sm" numeric="tabular">
+                    {price(c)}
+                  </Text>
                   <Text size="xs" tone="muted" numeric="tabular">
-                    {line(c)}
+                    {effect(c)}
                   </Text>
                 </Stack>
               </TableCell>

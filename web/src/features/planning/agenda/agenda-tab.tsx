@@ -3,12 +3,11 @@ import type { TableHandle } from "@slotted/react/table";
 import { useDeferredValue, useRef, useState } from "react";
 
 import { AgendaFilters } from "@/features/planning/agenda/agenda-filters";
+import { agendaSections } from "@/features/planning/agenda/agenda-sections";
 import { AgendaSummary } from "@/features/planning/agenda/agenda-summary";
 import { AgendaTable } from "@/features/planning/agenda/agenda-table";
 import styles from "@/features/planning/agenda/agenda.module.css";
 import { DaysSection } from "@/features/planning/agenda/days-section";
-import { DoneSection } from "@/features/planning/agenda/done-section";
-import { pendingSections } from "@/features/planning/agenda/pending-sections";
 import { RunningBalance } from "@/features/planning/agenda/running-balance";
 import { useAgendaMonth } from "@/features/planning/agenda/use-agenda-month";
 import type { AgendaFilter } from "@/features/planning/model/agenda";
@@ -29,39 +28,26 @@ export function AgendaTab({ month }: AgendaTabProps) {
   const [filter, setFilter] = useState<AgendaFilter>({});
   const shownFilter = useDeferredValue(filter);
   const data = useAgendaMonth(month, shownFilter);
-  const [doneOpen, setDoneOpen] = useState<boolean | null>(null);
   const [day, setDay] = useState<string | null>(null);
-  const pendingTable = useRef<TableHandle>(null);
-  const doneTable = useRef<TableHandle>(null);
+  const table = useRef<TableHandle>(null);
 
-  const groups = pendingSections(data.groups, {
+  const groups = agendaSections(data.groups, {
     overdue: t("agenda.overdue"),
     week: t("agenda.until", {
       date: formatDayMonth(shiftDate(today, 7), locale),
     }),
     later: t("agenda.rest"),
+    done: t("agenda.happened"),
   });
   const accountNames = new Map(data.accounts.map((a) => [a.id, a.name]));
   const scale = data.scale ?? (() => 0);
-  const open = doneOpen ?? (!data.loading && groups.length === 0);
 
   function handleDay(iso: string) {
     setDay(iso);
-    const pending = groups
+    const row = groups
       .flatMap((g) => g.rows)
       .find((r) => r.occurrence.expected_on === iso);
-    if (pending !== undefined) {
-      pendingTable.current?.scrollToRow(pending.occurrence.id);
-      return;
-    }
-
-    const done = data.groups.done.find((r) => r.occurrence.expected_on === iso);
-    if (done === undefined) return;
-
-    setDoneOpen(true);
-    requestAnimationFrame(() =>
-      doneTable.current?.scrollToRow(done.occurrence.id),
-    );
+    if (row !== undefined) table.current?.scrollToRow(row.occurrence.id);
   }
 
   return (
@@ -88,25 +74,12 @@ export function AgendaTab({ month }: AgendaTabProps) {
           <AgendaTable
             caption={t("agenda.caption")}
             groups={groups}
-            empty={
-              data.rows.length === 0
-                ? t("agenda.empty")
-                : t("agenda.nothingPending")
-            }
+            empty={t("agenda.empty")}
             accountNames={accountNames}
             scale={scale}
             loading={data.loading}
             refreshing={data.refreshing}
-            handleRef={pendingTable}
-          />
-
-          <DoneSection
-            rows={data.groups.done}
-            open={open}
-            onOpenChange={setDoneOpen}
-            accountNames={accountNames}
-            scale={scale}
-            handleRef={doneTable}
+            handleRef={table}
           />
         </div>
 

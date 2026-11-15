@@ -1,14 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { pendingSections } from "@/features/planning/agenda/pending-sections";
+import { agendaSections } from "@/features/planning/agenda/agenda-sections";
 import type { AgendaRow } from "@/features/planning/model/agenda";
 
 const row = (id: string) => ({ occurrence: { id } }) as AgendaRow;
-const labels = { overdue: "Overdue", week: "Until Oct 24", later: "Rest" };
+const labels = {
+  overdue: "Overdue",
+  week: "Until Oct 24",
+  later: "Rest",
+  done: "Already happened",
+};
 
-describe("pendingSections", () => {
-  it("labels each group and drops the empty ones", () => {
-    const got = pendingSections(
+describe("agendaSections", () => {
+  it("labels each group, puts what happened last and drops the empty ones", () => {
+    const got = agendaSections(
       {
         overdue: [row("a")],
         week: [],
@@ -23,15 +28,13 @@ describe("pendingSections", () => {
     ).toEqual([
       ["overdue", "Overdue", ["a"]],
       ["later", "Rest", ["b", "c"]],
+      ["done", "Already happened", ["d"]],
     ]);
   });
 
-  it("returns nothing when nothing is pending", () => {
+  it("returns nothing when the month holds no occurrence", () => {
     expect(
-      pendingSections(
-        { overdue: [], week: [], later: [], done: [row("d")] },
-        labels,
-      ),
+      agendaSections({ overdue: [], week: [], later: [], done: [] }, labels),
     ).toEqual([]);
   });
 });

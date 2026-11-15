@@ -12,6 +12,7 @@ import {
 import { Fragment } from "react";
 
 import type { components } from "@/api/schema.gen";
+import { HiddenCaption } from "@/features/planning/hidden-caption/hidden-caption";
 import { ScheduleRow } from "@/features/planning/schedules/schedule-row";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -48,10 +49,19 @@ export function ScheduleTable({
 }: ScheduleTableProps) {
   const t = useT();
 
+  // An ended table sits inside the frame of its collapsible, so it draws none of its own (spec P4).
   return (
-    <Table columns={4} variant="framed">
+    <Table
+      columns={4}
+      variant={ended ? "plain" : "framed"}
+      edges={ended ? "flush" : "inset"}
+    >
       <TableContent>
-        <TableCaption>{caption}</TableCaption>
+        {ended ? (
+          <HiddenCaption text={caption} />
+        ) : (
+          <TableCaption>{caption}</TableCaption>
+        )}
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>

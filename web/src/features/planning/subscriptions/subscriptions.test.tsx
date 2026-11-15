@@ -51,11 +51,12 @@ describe("Subscriptions tab", () => {
     ).toBeInTheDocument();
     expect(
       within(change).getByText(
-        words("subscriptions.fromTo", {
-          from: "R$39.90",
-          to: "R$44.90",
-          year: "+R$60.00",
-        }),
+        words("subscriptions.priceFromTo", { from: "R$39.90", to: "R$44.90" }),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(change).getByText(
+        words("subscriptions.perYearLine", { amount: "+R$60.00" }),
       ),
     ).toBeInTheDocument();
   });

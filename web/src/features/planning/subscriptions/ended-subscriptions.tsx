@@ -7,7 +7,6 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableColumnHeader,
   TableContent,
@@ -16,6 +15,7 @@ import {
   TableRowHeader,
 } from "@slotted/react/table";
 
+import { HiddenCaption } from "@/features/planning/hidden-caption/hidden-caption";
 import type { SubscriptionLine } from "@/features/planning/subscriptions/subscription-figures";
 import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -42,9 +42,9 @@ export function EndedSubscriptions({ lines, scale }: EndedSubscriptionsProps) {
       </CollapsibleHeader>
 
       <CollapsiblePanel>
-        <Table columns={3} variant="framed">
+        <Table columns={3} variant="plain" edges="flush">
           <TableContent>
-            <TableCaption>{t("schedules.ended")}</TableCaption>
+            <HiddenCaption text={t("schedules.ended")} />
             <TableHead>
               <TableRow>
                 <TableColumnHeader>
