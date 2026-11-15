@@ -3639,6 +3639,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budget-buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace the book's income bucket method; an empty list removes it (income buckets A229).
+         * @description Shares sum to 10000 basis points; names are unique ignoring case; at most one bucket takes savings; a category
+         *     is an expense category of the book listed in one bucket. A broken rule is a 422 on its field.
+         */
+        put: operations["saveBudgetBuckets"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/reopen": {
         parameters: {
             query?: never;
@@ -6922,6 +6943,34 @@ export interface components {
             /** @description The changed categories only. */
             amounts: components["schemas"]["BudgetPlanAmount"][];
         };
+        BudgetBucketInput: {
+            name: string;
+            /** @description The bucket's share of the reference in basis points, from 0 to 10000. */
+            share_bp: number;
+            /** @description The bucket also draws the month's savings; at most one bucket of a method. */
+            takes_savings: boolean;
+            /** @description Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor. */
+            category_ids: string[];
+        };
+        BudgetBucketsInput: {
+            buckets: components["schemas"]["BudgetBucketInput"][];
+        };
+        /**
+         * @description A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
+         *     with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
+         *     the month's own postings of its categories, plus the realized savings when it takes savings.
+         */
+        BudgetPlanBucket: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            share_bp: number;
+            takes_savings: boolean;
+            category_ids: string[];
+            target?: components["schemas"]["Money"];
+            planned: components["schemas"]["Money"];
+            spent: components["schemas"]["Money"];
+        };
         /**
          * @description installments are those billed on the month's statements for purchases booked before it; savings are the month's
          *     occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
@@ -6951,6 +7000,10 @@ export interface components {
             /** @description Prices that value occurrences in another currency at today (P8 amendment A72). */
             prices?: components["schemas"]["Price"][];
             rows: components["schemas"]["BudgetPlanRow"][];
+            /** @description The book's income bucket method; absent without one (A229). */
+            buckets?: components["schemas"]["BudgetPlanBucket"][];
+            outside_planned?: components["schemas"]["Money"];
+            outside_spent?: components["schemas"]["Money"];
         };
         GoalInput: {
             name: string;
@@ -14040,6 +14093,31 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BudgetPlan"];
                 };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    saveBudgetBuckets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetBucketsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];

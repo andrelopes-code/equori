@@ -470,3 +470,26 @@ func TestAddCorporateActions(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 16", ArchiveVersion)
 	}
 }
+
+// Income buckets D1, ADR 021 V2: version 16 has no planning_bucket rows, so every table carries
+// over unchanged.
+func TestAddBuckets(t *testing.T) {
+	t.Parallel()
+
+	v16 := []ArchiveTable{
+		{Name: "planning_budget_reference", Rows: [][]byte{[]byte(`{"source":"fixed"}`)}},
+	}
+
+	got, err := addBuckets(v16)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || string(got[0].Rows[0]) != `{"source":"fixed"}` {
+		t.Fatalf("tables = %+v", got)
+	}
+
+	if ArchiveVersion < 17 {
+		t.Fatalf("ArchiveVersion = %d, want at least 17", ArchiveVersion)
+	}
+}

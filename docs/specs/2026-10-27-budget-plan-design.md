@@ -22,7 +22,7 @@ Goals:
 
 Non-goals:
 
-- Category groups of the needs, wants and savings kind (the 50/30/20 rule). The category tree is the only grouping.
+- Category groups of the needs, wants and savings kind (the 50/30/20 rule). The category tree is the only grouping. Replaced by income buckets (`docs/specs/2026-11-15-income-buckets-design.md`).
 - Budgets of income categories in the plan. They stay in Track only.
 - Changes to Track, to the budget detail page or to the budget form.
 - Editing past months. Plan is read-only for months before the current one.

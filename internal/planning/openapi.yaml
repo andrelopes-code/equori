@@ -719,6 +719,30 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /budget-buckets:
+    put:
+      tags: [planning]
+      operationId: saveBudgetBuckets
+      x-book-role: write
+      summary: Replace the book's income bucket method; an empty list removes it (income buckets A229).
+      description: |
+        Shares sum to 10000 basis points; names are unique ignoring case; at most one bucket takes savings; a category
+        is an expense category of the book listed in one bucket. A broken rule is a 422 on its field.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BudgetBucketsInput"
+      responses:
+        "204":
+          description: Saved.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/reopen:
     post:
       tags: [planning]
@@ -1111,6 +1135,65 @@ schemas:
         maxItems: 500
         items:
           $ref: "#/components/schemas/BudgetPlanAmount"
+  BudgetBucketInput:
+    type: object
+    additionalProperties: false
+    required: [name, share_bp, takes_savings, category_ids]
+    properties:
+      name:
+        type: string
+        maxLength: 60
+      share_bp:
+        type: integer
+        description: The bucket's share of the reference in basis points, from 0 to 10000.
+      takes_savings:
+        type: boolean
+        description: The bucket also draws the month's savings; at most one bucket of a method.
+      category_ids:
+        type: array
+        maxItems: 500
+        description: Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor.
+        items:
+          type: string
+          format: uuid
+  BudgetBucketsInput:
+    type: object
+    additionalProperties: false
+    required: [buckets]
+    properties:
+      buckets:
+        type: array
+        maxItems: 10
+        items:
+          $ref: "#/components/schemas/BudgetBucketInput"
+  BudgetPlanBucket:
+    type: object
+    required: [id, name, share_bp, takes_savings, category_ids, planned, spent]
+    description: |
+      A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
+      with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
+      the month's own postings of its categories, plus the realized savings when it takes savings.
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      share_bp:
+        type: integer
+      takes_savings:
+        type: boolean
+      category_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+      target:
+        $ref: "#/components/schemas/Money"
+      planned:
+        $ref: "#/components/schemas/Money"
+      spent:
+        $ref: "#/components/schemas/Money"
   BudgetPlan:
     type: object
     required: [month, currency, source, received_income, installments, savings, planned, rows]
@@ -1170,6 +1253,15 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/BudgetPlanRow"
+      buckets:
+        type: array
+        description: The book's income bucket method; absent without one (A229).
+        items:
+          $ref: "#/components/schemas/BudgetPlanBucket"
+      outside_planned:
+        $ref: "#/components/schemas/Money"
+      outside_spent:
+        $ref: "#/components/schemas/Money"
   GoalInput:
     type: object
     additionalProperties: false

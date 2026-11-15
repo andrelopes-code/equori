@@ -365,6 +365,10 @@ type Repository interface {
 		r domain.Reference,
 		currency money.Currency,
 	) error
+	// Buckets returns the book's bucket method in order; nil without one (A229).
+	Buckets(ctx context.Context, booksID int64) ([]domain.Bucket, error)
+	// SaveBuckets replaces the book's bucket method; an empty list removes it.
+	SaveBuckets(ctx context.Context, booksID int64, buckets []domain.Bucket) error
 
 	// InsertGoal stores g with its accounts; a used name is a field error on name.
 	InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)

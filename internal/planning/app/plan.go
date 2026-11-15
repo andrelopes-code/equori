@@ -53,15 +53,30 @@ func (s *Service) BudgetPlan(ctx context.Context, booksID int64, month time.Time
 	out.Planned = sumPlanned(out.Rows)
 	applyIncomeHistory(&out, totals.income, month)
 
-	if err := s.planOccurrences(ctx, booksID, &out); err != nil {
-		return Plan{}, err
-	}
-
-	if err := s.resolveReference(ctx, booksID, &out); err != nil {
+	if err := s.addPlanFigures(ctx, booksID, &out, accounts, totals); err != nil {
 		return Plan{}, err
 	}
 
 	return out, nil
+}
+
+// addPlanFigures adds the month's occurrences, the reference and the bucket figures to out.
+func (s *Service) addPlanFigures(
+	ctx context.Context,
+	booksID int64,
+	out *Plan,
+	accounts planAccounts,
+	totals ledgerTotals,
+) error {
+	if err := s.planOccurrences(ctx, booksID, out); err != nil {
+		return err
+	}
+
+	if err := s.resolveReference(ctx, booksID, out); err != nil {
+		return err
+	}
+
+	return s.planBuckets(ctx, booksID, out, accounts.categories, totals.own)
 }
 
 // planAccounts holds the accounts of the book that the plan reads.
@@ -291,6 +306,10 @@ func (s *Service) addOccurrences(
 
 		if sch.Kind == domain.Savings {
 			out.Savings += amount
+			if o.State == domain.Realized {
+				out.SavingsRealized += amount
+			}
+
 			continue
 		}
 

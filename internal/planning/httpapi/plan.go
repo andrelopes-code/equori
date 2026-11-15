@@ -55,6 +55,7 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	setPlanSettings(&out, p)
 	setPlanSavings(&out, p, optional)
 	setPlanReference(&out, p, optional)
+	setPlanBuckets(&out, p, m)
 
 	for i, r := range p.Rows {
 		out.Rows[i] = toBudgetPlanRowAPI(r, m)

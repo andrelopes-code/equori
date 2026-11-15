@@ -177,6 +177,24 @@ type BudgetAmount struct {
 	EffectiveFrom string `json:"effective_from"`
 }
 
+// BudgetBucketInput defines model for BudgetBucketInput.
+type BudgetBucketInput struct {
+	// CategoryIds Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor.
+	CategoryIds []openapi_types.UUID `json:"category_ids"`
+	Name        string               `json:"name"`
+
+	// ShareBp The bucket's share of the reference in basis points, from 0 to 10000.
+	ShareBp int `json:"share_bp"`
+
+	// TakesSavings The bucket also draws the month's savings; at most one bucket of a method.
+	TakesSavings bool `json:"takes_savings"`
+}
+
+// BudgetBucketsInput defines model for BudgetBucketsInput.
+type BudgetBucketsInput struct {
+	Buckets []BudgetBucketInput `json:"buckets"`
+}
+
 // BudgetInput defines model for BudgetInput.
 type BudgetInput struct {
 	Amount        Money              `json:"amount"`
@@ -197,14 +215,19 @@ type BudgetPage struct {
 // occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
 // reference, which is absent when the source has no figure.
 type BudgetPlan struct {
-	AverageIncome  *Money              `json:"average_income,omitempty"`
-	AverageMonths  *int                `json:"average_months,omitempty"`
+	AverageIncome *Money `json:"average_income,omitempty"`
+	AverageMonths *int   `json:"average_months,omitempty"`
+
+	// Buckets The book's income bucket method; absent without one (A229).
+	Buckets        *[]BudgetPlanBucket `json:"buckets,omitempty"`
 	Currency       string              `json:"currency"`
 	ExpectedIncome *Money              `json:"expected_income,omitempty"`
 	ExpectedItems  *[]BudgetPlanIncome `json:"expected_items,omitempty"`
 	Fixed          *Money              `json:"fixed,omitempty"`
 	Installments   Money               `json:"installments"`
 	Month          string              `json:"month"`
+	OutsidePlanned *Money              `json:"outside_planned,omitempty"`
+	OutsideSpent   *Money              `json:"outside_spent,omitempty"`
 	Planned        Money               `json:"planned"`
 
 	// Prices Prices that value occurrences in another currency at today (P8 amendment A72).
@@ -229,6 +252,20 @@ type BudgetPlan struct {
 type BudgetPlanAmount struct {
 	Amount     Money              `json:"amount"`
 	CategoryId openapi_types.UUID `json:"category_id"`
+}
+
+// BudgetPlanBucket A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
+// with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
+// the month's own postings of its categories, plus the realized savings when it takes savings.
+type BudgetPlanBucket struct {
+	CategoryIds  []openapi_types.UUID `json:"category_ids"`
+	Id           openapi_types.UUID   `json:"id"`
+	Name         string               `json:"name"`
+	Planned      Money                `json:"planned"`
+	ShareBp      int                  `json:"share_bp"`
+	Spent        Money                `json:"spent"`
+	TakesSavings bool                 `json:"takes_savings"`
+	Target       *Money               `json:"target,omitempty"`
 }
 
 // BudgetPlanIncome defines model for BudgetPlanIncome.
@@ -675,6 +712,9 @@ type UpdateScheduleMatchingJSONBody struct {
 	MatchWindowDays  *int                `json:"match_window_days,omitempty"`
 	StartsOn         *openapi_types.Date `json:"starts_on,omitempty"`
 }
+
+// SaveBudgetBucketsJSONRequestBody defines body for SaveBudgetBuckets for application/json ContentType.
+type SaveBudgetBucketsJSONRequestBody = BudgetBucketsInput
 
 // SaveBudgetPlanJSONRequestBody defines body for SaveBudgetPlan for application/json ContentType.
 type SaveBudgetPlanJSONRequestBody = BudgetPlanInput
