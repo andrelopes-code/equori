@@ -1,0 +1,7 @@
+@layer app {
+  /* A legend takes the width of its text; the title and the removal need the group's width to
+     stand at its two ends. */
+  .title {
+    width: 100%;
+  }
+}

@@ -900,6 +900,7 @@ export const catalogEn = {
   "note.fees": "Note costs",
   "note.feesHelp": "Brokerage, exchange and settlement fees of the whole note.",
   "note.taxes": "Withheld income tax",
+  "note.orderFigures": "{gross} · {share}",
   "note.feeShare": "Cost share {amount}",
   "note.created": "Brokerage note recorded",
   "entry.kind.corporate_action": "Corporate action",

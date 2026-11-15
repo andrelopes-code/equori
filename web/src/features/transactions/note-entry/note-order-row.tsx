@@ -8,11 +8,12 @@ import {
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
+import { useId } from "react";
 
 import { InstrumentField } from "@/features/transactions/brokerage-account/instrument-field";
 import type { NoteOrder } from "@/features/transactions/note-entry/note-draft";
+import styles from "@/features/transactions/note-entry/note-order-row.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FormRow } from "@/ui/form-layout/form-row";
@@ -47,6 +48,7 @@ export function NoteOrderRow({
   onRemove,
 }: NoteOrderRowProps) {
   const t = useT();
+  const titleId = useId();
   const fmt = useMoneyFormat();
   const n = index + 1;
   const prefix = `orders[${String(index)}]`;
@@ -58,12 +60,33 @@ export function NoteOrderRow({
       ? ""
       : fmt.money({ amount: value, currency: base }, scale(base));
 
-  const grossText =
-    gross === null ? "" : `${t("trade.gross")} ${amount(gross)}`;
+  const figures =
+    gross === null
+      ? ""
+      : t("note.orderFigures", {
+          gross: `${t("trade.gross")} ${amount(gross)}`,
+          share: t("note.feeShare", { amount: amount(share) }),
+        });
 
   return (
-    <FieldGroup necessity="none">
-      <FieldGroupLegend>{t("note.order", { n })}</FieldGroupLegend>
+    // The legend holds the removal button, so the group is named by the title alone.
+    <FieldGroup necessity="none" aria-labelledby={titleId}>
+      <FieldGroupLegend className={styles.title}>
+        <Inline justify="between" align="center" wrap="nowrap">
+          <span id={titleId}>{t("note.order", { n })}</span>
+
+          <IconButton
+            aria-label={t("note.removeOrder", { n })}
+            variant="ghost"
+            tone="secondary"
+            onClick={onRemove}
+          >
+            <Icon>
+              <Glyph name="x" />
+            </Icon>
+          </IconButton>
+        </Inline>
+      </FieldGroupLegend>
       <FieldGroupContent>
         <Field required>
           <FieldLabel>{t("trade.side")}</FieldLabel>
@@ -129,27 +152,7 @@ export function NoteOrderRow({
           </Field>
         </FormRow>
 
-        <Inline justify="between" align="center">
-          <Stack gap={1}>
-            {gross !== null && <Text size="sm">{grossText}</Text>}
-            {gross !== null && (
-              <Text size="sm">
-                {t("note.feeShare", { amount: amount(share) })}
-              </Text>
-            )}
-          </Stack>
-
-          <IconButton
-            aria-label={t("note.removeOrder", { n })}
-            variant="ghost"
-            tone="secondary"
-            onClick={onRemove}
-          >
-            <Icon>
-              <Glyph name="x" />
-            </Icon>
-          </IconButton>
-        </Inline>
+        {gross !== null && <Text size="sm">{figures}</Text>}
       </FieldGroupContent>
     </FieldGroup>
   );

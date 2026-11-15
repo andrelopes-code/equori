@@ -77,6 +77,30 @@ describe("brokerage note entry", () => {
     expect(price).toHaveValue("1,234.5");
   });
 
+  it("keeps the title and the removal of an order on one line, and its figures in one text", async () => {
+    await renderApp(path, { fetch: investmentApi([]) });
+    await fillOrder(1, "MXRF11", "100", "30.00");
+    await userEvent.type(
+      screen.getByRole("textbox", {
+        name: optionalName(catalogEn["note.fees"]),
+      }),
+      "251",
+    );
+
+    const row = within(order(1));
+    const legend = order(1).querySelector("legend");
+    if (legend === null) throw new Error("the order has no legend");
+
+    expect(
+      within(legend).getByRole("button", {
+        name: catalogEn["note.removeOrder"].replace("{n}", "1"),
+      }),
+    ).toBeVisible();
+    expect(
+      await row.findByText(/^Gross .*3,000\.00 · Cost share .*2\.51$/),
+    ).toBeVisible();
+  });
+
   it("asks for at least one order before sending", async () => {
     const sent: unknown[] = [];
     await renderApp(path, { fetch: investmentApi(sent) });

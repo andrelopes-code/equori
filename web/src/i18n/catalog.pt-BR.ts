@@ -908,6 +908,7 @@ export const catalogPtBR: Catalog = {
   "note.feesHelp":
     "Corretagem, emolumentos e taxa de liquidação da nota inteira.",
   "note.taxes": "IR retido na fonte",
+  "note.orderFigures": "{gross} · {share}",
   "note.feeShare": "Parte dos custos {amount}",
   "note.created": "Nota de corretagem registrada",
   "entry.kind.corporate_action": "Evento corporativo",
