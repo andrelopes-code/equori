@@ -549,4 +549,92 @@ describe("Budget plan", () => {
     await screen.findByText(catalogEn["plan.privacy"]);
     expectNoAmounts(container, ["2,125.00", "425.00", "212500", "42500"]);
   });
+  it("clears the pending changes once saved", async () => {
+    await renderPlan();
+    const field = await input("Energy");
+    await userEvent.clear(field);
+    await userEvent.type(field, "20500");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: catalogEn["plan.save"] }),
+      ).toBeNull();
+    });
+  });
+
+  it("fits a suggestion to the room the savings leave", async () => {
+    await renderPlan(
+      budgetPlanApi((month) => budgetPlan(month, { savings: money(100000) })),
+    );
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["plan.source.fixed"] }),
+    );
+    const fixed = await screen.findByRole("textbox", {
+      name: catalogEn["plan.fixedAmount"],
+    });
+    await userEvent.clear(fixed);
+    await userEvent.type(fixed, "600000");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["plan.suggest"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["plan.suggest.average"],
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: words("plan.applyChecked", { count: "8" }),
+      }),
+    );
+
+    // 6,000.00 less 640.00 of installments and 1,000.00 of savings leaves nothing over.
+    expect(await figure("R$0.00")).toBeInTheDocument();
+  });
+
+  it("folds a group away and opens it again", async () => {
+    await renderPlan();
+    const toggle = await screen.findByRole("button", {
+      name: words("plan.toggle", { name: "Housing" }),
+    });
+
+    await userEvent.click(toggle);
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("textbox", {
+          name: words("plan.input", { name: "Rent" }),
+        }),
+      ).toBeNull();
+    });
+    await userEvent.click(toggle);
+
+    expect(await input("Rent")).toBeInTheDocument();
+  });
+
+  it("repeats the unassigned figure in the strip once the panel scrolls away", async () => {
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        constructor(
+          private readonly report: (
+            entries: { isIntersecting: boolean }[],
+          ) => void,
+        ) {}
+        observe() {
+          this.report([{ isIntersecting: false }]);
+        }
+        disconnect() {
+          return undefined;
+        }
+      },
+    );
+    await renderPlan();
+
+    // The panel and the strip both write the figure.
+    expect(await screen.findAllByText("R$2,160.00")).toHaveLength(2);
+    vi.unstubAllGlobals();
+  });
 });

@@ -26,6 +26,10 @@ export function BucketCategories({
   onChoose,
 }: BucketCategoriesProps) {
   const t = useT();
+  const branches = expenseBranches(entries);
+  const outside = branches.filter(
+    (b) => choices.get(b.root.id) === outsideChoice,
+  ).length;
   const options = buckets
     .filter((b) => b.name.trim() !== "")
     .map((b) => ({ value: b.key, label: b.name }));
@@ -39,8 +43,15 @@ export function BucketCategories({
         <Text size="sm" tone="muted">
           {t("buckets.categories.hint")}
         </Text>
+        {outside > 0 && (
+          <Text size="sm" weight="medium">
+            {outside === 1
+              ? t("buckets.outsideOne")
+              : t("buckets.outsideCount", { count: String(outside) })}
+          </Text>
+        )}
       </Stack>
-      {expenseBranches(entries).map((branch) => (
+      {branches.map((branch) => (
         <BucketCategoryRow
           key={branch.root.id}
           root={branch.root}

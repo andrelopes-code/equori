@@ -6,10 +6,13 @@ import {
   applyPreset,
   bucketsPayload,
   canSave,
+  choiceOf,
   expenseBranches,
   initialDraft,
   keepChoices,
+  outsideRoots,
   totalBp,
+  withChoice,
 } from "@/features/planning/income-split/bucket-draft";
 
 type Bucket = components["schemas"]["BudgetPlanBucket"];
@@ -155,5 +158,33 @@ describe("expenseBranches", () => {
       ["food", ["market", "bakery"]],
       ["gym", []],
     ]);
+  });
+});
+
+describe("choiceOf and withChoice", () => {
+  it("reads a category's bucket and moves it to another", () => {
+    expect(choiceOf(stored, "market", false)).toBe("b2");
+    expect(choiceOf(stored, "gym", true)).toBe("outside");
+    expect(choiceOf(stored, "bakery", false)).toBe("same");
+
+    const moved = withChoice(stored, "market", "b1");
+
+    expect(moved.buckets.map((b) => b.category_ids)).toEqual([
+      ["food", "market"],
+      [],
+    ]);
+    expect(
+      withChoice(stored, "food", "outside").buckets[0]?.category_ids,
+    ).toEqual([]);
+  });
+});
+
+describe("outsideRoots", () => {
+  it("lists the top-level categories left outside", () => {
+    const draft = initialDraft(stored, entries);
+
+    expect(
+      outsideRoots(draft, expenseBranches(entries)).map((e) => e.id),
+    ).toEqual(["gym"]);
   });
 });

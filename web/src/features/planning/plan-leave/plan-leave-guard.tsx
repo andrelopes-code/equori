@@ -1,5 +1,5 @@
-import { PlanDiscardDialog } from "@/features/planning/budget-plan/plan-discard-dialog";
-import { usePlanBlocker } from "@/features/planning/budget-plan/use-plan-blocker";
+import { PlanDiscardDialog } from "@/features/planning/plan-leave/plan-discard-dialog";
+import { usePlanBlocker } from "@/features/planning/plan-leave/use-plan-blocker";
 
 interface PlanLeaveGuardProps {
   pending: number;

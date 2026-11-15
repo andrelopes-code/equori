@@ -11,6 +11,8 @@ import { CategoryRowMenu } from "@/features/categories/category-tree/category-ro
 import type { CategoryAction } from "@/features/categories/category-tree/category-row-menu";
 import styles from "@/features/categories/category-tree/category-tree.module.css";
 import { ShareBar } from "@/features/categories/category-tree/share-bar";
+import { TreeBucketCell } from "@/features/categories/category-tree/tree-bucket-cell";
+import { useTreePlacements } from "@/features/categories/category-tree/use-tree-placements";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
@@ -44,6 +46,8 @@ export function CategoryTree({
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
+  const placements = useTreePlacements(rows);
+  const split = placements !== null;
   const expanded = useMemo(
     () => [
       ...new Set(
@@ -65,6 +69,18 @@ export function CategoryTree({
         // Narrow enough that the total keeps its column beside it on a 390 px phone.
         minWidth: 150,
       },
+      ...(split
+        ? [
+            {
+              id: "bucket",
+              label: t("buckets.col"),
+              accessor: (row: TreeRow) => row.id,
+              width: 200,
+              priority: 4,
+              sortable: false,
+            },
+          ]
+        : []),
       {
         id: "subtree",
         label: t("category.total"),
@@ -101,7 +117,7 @@ export function CategoryTree({
         sortable: false,
       },
     ];
-  }, [t, currency, scale, fmt]);
+  }, [t, currency, scale, fmt, split]);
 
   const percent = useMemo(
     () =>
@@ -148,6 +164,9 @@ export function CategoryTree({
           </Text>
         </span>
       ),
+      bucket: ({ row }: { row: TreeRow }) => (
+        <TreeBucketCell entry={row.entry} placement={placements?.get(row.id)} />
+      ),
       actions: ({ row }: { row: TreeRow }) => (
         <CategoryRowMenu
           entry={row.entry}
@@ -157,7 +176,7 @@ export function CategoryTree({
         />
       ),
     }),
-    [t, percent, act],
+    [t, percent, act, placements],
   );
 
   return (

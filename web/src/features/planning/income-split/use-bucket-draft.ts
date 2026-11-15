@@ -20,7 +20,7 @@ import type {
 } from "@/features/planning/income-split/bucket-draft";
 import { useT } from "@/i18n/i18n-provider";
 
-type Bucket = components["schemas"]["BudgetPlanBucket"];
+type Bucket = components["schemas"]["BudgetBucket"];
 
 // The draft of the income split dialog and its save (income buckets spec 5): nothing reaches
 // the server before Save split or Remove split.

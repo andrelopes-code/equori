@@ -28,6 +28,7 @@ import type {
   CategoryIconName,
 } from "@/features/categories/model/category-paths";
 import { useSaveCategory } from "@/features/categories/category-dialog/use-save-category";
+import { CategoryBucketField, useCategoryBuckets } from "@/features/planning";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { FormLayout } from "@/ui/form-layout/form-layout";
@@ -53,9 +54,14 @@ export function CategoryDialog({
 }: CategoryDialogProps) {
   const t = useT();
   const change = useStableCallback(onOpenChange);
-  const { save, busy, errors, summary } = useSaveCategory(editing, () => {
-    onOpenChange(false);
-  });
+  const buckets = useCategoryBuckets(entries);
+  const { save, busy, errors, summary } = useSaveCategory(
+    editing,
+    () => {
+      onOpenChange(false);
+    },
+    buckets.assign,
+  );
 
   const [name, setName] = useState(editing?.name ?? "");
   const [cls, setCls] = useState<CategoryClass>(editing?.class ?? defaultClass);
@@ -66,6 +72,7 @@ export function CategoryDialog({
   const [icon, setIcon] = useState<CategoryIconName | null>(
     editing?.icon ?? null,
   );
+  const [bucket, setBucket] = useState<string | null>(null);
 
   const excluded = notParents(entries, editing, cls);
 
@@ -76,7 +83,7 @@ export function CategoryDialog({
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
-            void save({ name, cls, parent, color, icon });
+            void save({ name, cls, parent, color, icon, bucket });
           }}
         >
           <DialogHeader>
@@ -159,6 +166,18 @@ export function CategoryDialog({
                   <FieldError>{errors.parent}</FieldError>
                 )}
               </Field>
+
+              {cls === "expense" && buckets.method.length > 0 && (
+                <CategoryBucketField
+                  method={buckets.method}
+                  hasParent={parent !== null}
+                  value={
+                    bucket ??
+                    buckets.choiceFor(editing?.id ?? "", parent === null)
+                  }
+                  onChange={setBucket}
+                />
+              )}
             </FormLayout>
           </DialogBody>
           <DialogFooter>

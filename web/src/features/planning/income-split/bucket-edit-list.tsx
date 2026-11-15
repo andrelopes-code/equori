@@ -9,12 +9,11 @@ import {
   totalBp,
 } from "@/features/planning/income-split/bucket-draft";
 import type { DraftBucket } from "@/features/planning/income-split/bucket-draft";
-import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
+import { useShareText } from "@/features/planning/income-split/use-share-text";
 import { useT } from "@/i18n/i18n-provider";
 
 interface BucketEditListProps {
   buckets: readonly DraftBucket[];
-  format: PlanFormat;
   onChange: (key: string, change: Partial<DraftBucket>) => void;
   onRemove: (key: string) => void;
   onAdd: () => void;
@@ -24,15 +23,15 @@ interface BucketEditListProps {
 // in the danger tone while it differs from 100% (income buckets A229).
 export function BucketEditList({
   buckets,
-  format,
   onChange,
   onRemove,
   onAdd,
 }: BucketEditListProps) {
   const t = useT();
+  const shareText = useShareText();
   const total = totalBp(buckets);
   const whole = total === 10_000;
-  const totalText = format.share(total) ?? t("plan.dash");
+  const totalText = total === undefined ? t("plan.dash") : shareText(total);
 
   return (
     <Stack gap={3}>

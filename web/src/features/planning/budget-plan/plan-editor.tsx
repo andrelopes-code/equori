@@ -1,27 +1,21 @@
 import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
-import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useState } from "react";
 import type { KeyboardEvent } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
-import { BucketDialog } from "@/features/planning/income-split/bucket-dialog";
 import { PlanAllocationBar } from "@/features/planning/budget-plan/plan-allocation-bar";
-import { PlanDistributeDialog } from "@/features/planning/budget-plan/plan-distribute-dialog";
 import { planShortcut } from "@/features/planning/budget-plan/plan-keys";
-import { suggestion } from "@/features/planning/budget-plan/plan-math";
 import { PlanBuckets } from "@/features/planning/income-split/plan-buckets";
-import { PlanLeaveGuard } from "@/features/planning/budget-plan/plan-leave-guard";
+import { PlanAnnouncer } from "@/features/planning/budget-plan/plan-announcer";
+import { PlanLeaveGuard } from "@/features/planning/plan-leave/plan-leave-guard";
 import { PlanNotices } from "@/features/planning/budget-plan/plan-notices";
 import { PlanReferencePanel } from "@/features/planning/budget-plan/plan-reference-panel";
 import { PlanSaveBar } from "@/features/planning/budget-plan/plan-save-bar";
 import { PlanSaveFailure } from "@/features/planning/budget-plan/plan-save-failure";
 import { PlanStickyStrip } from "@/features/planning/budget-plan/plan-sticky-strip";
-import { PlanSuggestionBanner } from "@/features/planning/budget-plan/plan-suggestion-banner";
-import { PlanTable } from "@/features/planning/budget-plan/plan-table";
-import { PlanToolbar } from "@/features/planning/budget-plan/plan-toolbar";
+import { PlanWorkArea } from "@/features/planning/budget-plan/plan-work-area";
 import { showUndoToast } from "@/features/planning/budget-plan/plan-undo-toast";
 import { usePlanDraft } from "@/features/planning/budget-plan/use-plan-draft";
 import { usePlanFigures } from "@/features/planning/budget-plan/use-plan-figures";
@@ -33,7 +27,6 @@ import { useVisible } from "@/ui/runtime/use-visible";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { usePrivacy } from "@/privacy/privacy-provider";
-import { useDebounced } from "@/ui/runtime/use-debounced";
 
 type BudgetPlan = components["schemas"]["BudgetPlan"];
 
@@ -66,21 +59,14 @@ export function PlanEditor({
   const [panelRef, panelVisible] = useVisible();
   const { collapsed, toggle, select } = usePlanGroupsOpen();
 
-  const [unit, setUnit] = useState<"money" | "share">("money");
   const [highlighted, setHighlighted] = useState<string | null>(null);
-  const [picking, setPicking] = useState(false);
-  const [splitting, setSplitting] = useState(false);
 
   const past = month < today.slice(0, 7);
   const editable = !past && !format.hidden;
   const figures = usePlanFigures(plan, draft, entries, month, format);
-  const { reference, unassigned, over, groups, lastMonth } = figures;
+  const { reference, unassigned, over, lastMonth } = figures;
   const review = usePlanReview(draft, figures.room, format, lastMonth);
   const save = usePlanSave(draft, month, format);
-  const announced = useDebounced(
-    `${over ? t("plan.over") : t("plan.unassigned")} ${figures.figure}`,
-    500,
-  );
 
   const undoToast = (title: string) => {
     showUndoToast(title, t("plan.undo"), () => {
@@ -153,92 +139,31 @@ export function PlanEditor({
           outsideSpent={plan.outside_spent?.amount ?? 0}
           month={format.monthName(month)}
           format={format}
-          onEdit={() => {
-            setSplitting(true);
-          }}
+          stored={plan.buckets}
+          entries={entries}
         />
 
-        <VisuallyHidden>
-          <span aria-live="polite">{announced}</span>
-        </VisuallyHidden>
+        <PlanAnnouncer over={over} figure={figures.figure} />
         {save.failure !== null && (
           <PlanSaveFailure message={save.failure.message} />
         )}
 
-        <Stack gap={3}>
-          {editable && (
-            <PlanToolbar
-              heading={t("plan.heading", { month: format.month(month) })}
-              previousMonth={lastMonth}
-              unit={unit}
-              shareable={reference !== undefined && reference > 0}
-              canDistribute={unassigned !== undefined && unassigned > 0}
-              suggestPrimary={
-                noHistory || plan.rows.every((r) => r.budget_id === undefined)
-              }
-              onUnit={setUnit}
-              onDistribute={() => {
-                draft.distribute("proportional");
-                undoToast(t("plan.distributed"));
-              }}
-              onPickOne={() => {
-                setPicking(true);
-              }}
-              onSuggest={(basis) => {
-                review.start(basis, suggestion(draft.rows, basis));
-              }}
-            />
-          )}
-          {!editable && (
-            <Text size="md" weight="semibold">
-              {t("plan.heading", { month: format.month(month) })}
-            </Text>
-          )}
-          {noHistory && (
-            <Text size="sm" tone="muted">
-              {t("plan.noHistory")}
-            </Text>
-          )}
-          {review.review !== null && (
-            <PlanSuggestionBanner
-              summary={review.summary}
-              checked={review.accepted.size}
-              fit={review.review.fit}
-              canFit={review.canFit}
-              onFit={review.setFit}
-              onApply={() => {
-                const count = review.apply();
-                undoToast(
-                  count === 1
-                    ? t("plan.appliedOne")
-                    : t("plan.applied", { count: String(count) }),
-                );
-              }}
-              onDiscard={review.clear}
-            />
-          )}
-
-          <PlanTable
-            caption={t("plan.heading", { month: format.month(month) })}
-            groups={groups}
-            collapsed={collapsed}
-            previousMonth={lastMonth}
-            format={format}
-            unit={unit}
-            reference={reference}
-            rest={unassigned ?? 0}
-            editable={editable}
-            invalid={save.failure?.invalid ?? new Set()}
-            highlighted={highlighted}
-            review={review.rows}
-            onToggle={toggle}
-            onHighlight={setHighlighted}
-            onChange={(id, amount) => {
-              if (amount === undefined) draft.revert(id);
-              else draft.set(id, amount);
-            }}
-          />
-        </Stack>
+        <PlanWorkArea
+          plan={plan}
+          draft={draft}
+          figures={figures}
+          review={review}
+          format={format}
+          month={month}
+          editable={editable}
+          noHistory={noHistory}
+          collapsed={collapsed}
+          highlighted={highlighted}
+          invalid={save.failure?.invalid ?? new Set()}
+          onToggle={toggle}
+          onHighlight={setHighlighted}
+          onUndoable={undoToast}
+        />
       </Stack>
 
       {editable && (
@@ -253,31 +178,6 @@ export function PlanEditor({
             undoToast(t("plan.discarded"));
           }}
           onSave={save.run}
-        />
-      )}
-      {picking && (
-        <PlanDistributeDialog
-          rows={groups.flatMap((g) => g.lines)}
-          rest={unassigned ?? 0}
-          format={format}
-          onCancel={() => {
-            setPicking(false);
-          }}
-          onPick={(categoryId) => {
-            setPicking(false);
-            draft.distribute({ categoryId });
-            undoToast(t("plan.distributed"));
-          }}
-        />
-      )}
-      {splitting && (
-        <BucketDialog
-          stored={plan.buckets}
-          entries={entries}
-          format={format}
-          onClose={() => {
-            setSplitting(false);
-          }}
         />
       )}
       <PlanLeaveGuard

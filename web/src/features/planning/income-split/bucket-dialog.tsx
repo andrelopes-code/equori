@@ -11,25 +11,25 @@ import {
 } from "@slotted/react/dialog";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
+import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import { BucketCategories } from "@/features/planning/income-split/bucket-categories";
 import { BucketEditList } from "@/features/planning/income-split/bucket-edit-list";
+import { BucketRemoveConfirm } from "@/features/planning/income-split/bucket-remove-confirm";
 import type { PresetName } from "@/features/planning/income-split/bucket-draft";
 import { useBucketDraft } from "@/features/planning/income-split/use-bucket-draft";
-import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
-type Bucket = components["schemas"]["BudgetPlanBucket"];
+type Bucket = components["schemas"]["BudgetBucket"];
 
 interface BucketDialogProps {
   // The stored method; undefined while the book has none.
   stored: readonly Bucket[] | undefined;
   entries: readonly CategoryEntry[];
-  format: PlanFormat;
   onClose: () => void;
 }
 
@@ -37,14 +37,11 @@ const presetNames: readonly PresetName[] = ["503020", "six", "scratch"];
 
 // The income split in one dialog (income buckets spec 5): a starting point, the buckets with
 // their shares, and the bucket of each expense category.
-export function BucketDialog({
-  stored,
-  entries,
-  format,
-  onClose,
-}: BucketDialogProps) {
+export function BucketDialog({ stored, entries, onClose }: BucketDialogProps) {
   const t = useT();
   const edit = useBucketDraft(stored, entries, onClose);
+  const [confirming, setConfirming] = useState(false);
+  const hasMethod = (stored?.length ?? 0) > 0;
   const change = useStableCallback((open: boolean) => {
     if (!open) onClose();
   });
@@ -59,6 +56,14 @@ export function BucketDialog({
 
         <DialogBody>
           <Stack gap={6}>
+            {confirming && (
+              <BucketRemoveConfirm
+                onRemove={edit.remove}
+                onKeep={() => {
+                  setConfirming(false);
+                }}
+              />
+            )}
             {edit.failure !== null && (
               <Alert tone="danger">
                 <AlertContent>
@@ -89,7 +94,6 @@ export function BucketDialog({
 
             <BucketEditList
               buckets={edit.draft.buckets}
-              format={format}
               onChange={edit.setBucket}
               onRemove={edit.removeBucket}
               onAdd={edit.addBucket}
@@ -105,12 +109,14 @@ export function BucketDialog({
         </DialogBody>
 
         <DialogFooter>
-          {stored !== undefined && (
+          {hasMethod && (
             <Button
               variant="ghost"
               tone="danger"
-              disabled={edit.saving}
-              onClick={edit.remove}
+              disabled={edit.saving || confirming}
+              onClick={() => {
+                setConfirming(true);
+              }}
             >
               {t("buckets.removeAll")}
             </Button>

@@ -269,6 +269,15 @@ export function useSaveBudgetPlan(month: string) {
   });
 }
 
+// The book's income bucket method without a month (income buckets A229); an empty list
+// without one.
+export function budgetBucketsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["planning", "buckets"] as const,
+    queryFn: async () => unwrap(await api.GET("/budget-buckets")),
+  });
+}
+
 // Replaces the book's income bucket method; an empty list removes it (income buckets A229).
 export function useSaveBudgetBuckets() {
   const api = useApi();

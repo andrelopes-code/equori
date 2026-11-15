@@ -8,6 +8,7 @@ import { largestRemainder } from "@/features/planning/budget-plan/plan-math";
 import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
 
 type Bucket = components["schemas"]["BudgetPlanBucket"];
+type MethodBucket = components["schemas"]["BudgetBucket"];
 
 export interface BucketFigure {
   id: string;
@@ -29,11 +30,11 @@ export const outsideBucket = "outside";
 
 // The bucket a category resolves to: its own, or that of its nearest ancestor that sits in
 // one (income buckets A229); undefined outside the method.
-export function bucketResolver(
-  buckets: readonly Bucket[],
+export function bucketResolver<B extends MethodBucket>(
+  buckets: readonly B[],
   entries: readonly CategoryEntry[],
-): (categoryId: string) => Bucket | undefined {
-  const placed = new Map<string, Bucket>();
+): (categoryId: string) => B | undefined {
+  const placed = new Map<string, B>();
   for (const b of buckets) for (const id of b.category_ids) placed.set(id, b);
   const parents = new Map(entries.map((e) => [e.id, e.parentId]));
   return (categoryId) => {

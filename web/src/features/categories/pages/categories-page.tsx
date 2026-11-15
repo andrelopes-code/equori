@@ -47,6 +47,7 @@ import {
 } from "@/features/categories/model/category-figures";
 import { CategoryCharts } from "@/features/categories/category-charts/category-charts";
 import { FiguresRow } from "@/features/categories/figures-row/figures-row";
+import { IncomeSplitAction } from "@/features/planning";
 import { settingsQuery, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { MonthControl } from "@/ui/navigation/month-control";
@@ -246,6 +247,7 @@ export function CategoriesPage() {
               refreshing={refresh.refreshing}
               onRefresh={refresh.refresh}
             />
+            <IncomeSplitAction entries={entries} />
             <HeaderAction
               primary
               label={t("category.new")}

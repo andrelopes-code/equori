@@ -1,3 +1,4 @@
+import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -23,12 +24,15 @@ export interface CategoryDraft {
   parent: string | null;
   color: number | null;
   icon: CategoryIconName | null;
+  // The bucket of the income split the reader chose; null when the field was not touched.
+  bucket: string | null;
 }
 
 // Writes the dialog's draft: one create, or one request per changed fact of an edited category.
 export function useSaveCategory(
   editing: CategoryEntry | null,
   onSaved: () => void,
+  assignBucket: (categoryId: string, choice: string) => Promise<void>,
 ) {
   const t = useT();
   const api = useApi();
@@ -47,7 +51,14 @@ export function useSaveCategory(
     move.isPending ||
     appearance.isPending;
 
-  const save = async ({ name, cls, parent, color, icon }: CategoryDraft) => {
+  const save = async ({
+    name,
+    cls,
+    parent,
+    color,
+    icon,
+    bucket,
+  }: CategoryDraft) => {
     setErrors({});
     setSummary(null);
     const trimmed = name.trim();
@@ -56,11 +67,12 @@ export function useSaveCategory(
       return;
     }
 
+    let id = editing?.id;
     try {
       if (editing === null) {
         const currency = settings.data?.base_currency;
         if (currency === undefined) return;
-        await create.mutateAsync({
+        const created = await create.mutateAsync({
           name: trimmed,
           class: cls,
           currency,
@@ -68,6 +80,7 @@ export function useSaveCategory(
           ...(color === null ? {} : { color }),
           ...(icon === null ? {} : { icon }),
         });
+        id = created.id;
       } else {
         if (trimmed !== editing.name) {
           await rename.mutateAsync({ id: editing.id, name: trimmed });
@@ -82,7 +95,6 @@ export function useSaveCategory(
           await appearance.mutateAsync({ id: editing.id, color, icon });
         }
       }
-      onSaved();
     } catch (error) {
       if (error instanceof ProblemError) {
         const byField = fieldErrors(error.problem);
@@ -94,7 +106,21 @@ export function useSaveCategory(
         });
       }
       setSummary(errorText(error, t));
+      return;
     }
+
+    // The category stands saved: a failed bucket is reported, never a second create.
+    if (bucket !== null && cls === "expense" && id !== undefined) {
+      try {
+        await assignBucket(id, bucket);
+      } catch (error) {
+        toast.show({
+          tone: "danger",
+          title: t("buckets.assignFailed", { reason: errorText(error, t) }),
+        });
+      }
+    }
+    onSaved();
   };
 
   return { save, busy, errors, summary };

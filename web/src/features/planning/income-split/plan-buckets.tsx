@@ -9,10 +9,17 @@ import {
   SectionTitle,
 } from "@slotted/react/section";
 
+import { useState } from "react";
+
+import type { components } from "@/api/schema.gen";
+import type { CategoryEntry } from "@/features/categories";
+import { BucketDialog } from "@/features/planning/income-split/bucket-dialog";
 import type { BucketTotals } from "@/features/planning/income-split/bucket-figures";
 import { PlanBucketsTable } from "@/features/planning/income-split/plan-buckets-table";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
+
+type Bucket = components["schemas"]["BudgetBucket"];
 
 interface PlanBucketsProps {
   // Undefined while the book has no bucket method.
@@ -21,7 +28,9 @@ interface PlanBucketsProps {
   // The plan's month as a month name.
   month: string;
   format: PlanFormat;
-  onEdit: () => void;
+  // The stored method, which the dialog edits; undefined while the book has none.
+  stored: readonly Bucket[] | undefined;
+  entries: readonly CategoryEntry[];
 }
 
 // The income split of the month (income buckets spec 5): each bucket's share, target,
@@ -31,9 +40,11 @@ export function PlanBuckets({
   outsideSpent,
   month,
   format,
-  onEdit,
+  stored,
+  entries,
 }: PlanBucketsProps) {
   const t = useT();
+  const [editing, setEditing] = useState(false);
 
   return (
     <Section>
@@ -47,7 +58,14 @@ export function PlanBuckets({
           </SectionDescription>
         </SectionTitle>
         <SectionActions>
-          <Button size="sm" variant="outline" tone="secondary" onClick={onEdit}>
+          <Button
+            size="sm"
+            variant="outline"
+            tone="secondary"
+            onClick={() => {
+              setEditing(true);
+            }}
+          >
             {totals === undefined ? t("buckets.setUp") : t("buckets.edit")}
           </Button>
         </SectionActions>
@@ -62,6 +80,15 @@ export function PlanBuckets({
             format={format}
           />
         </SectionBody>
+      )}
+      {editing && (
+        <BucketDialog
+          stored={stored}
+          entries={entries}
+          onClose={() => {
+            setEditing(false);
+          }}
+        />
       )}
     </Section>
   );

@@ -6,7 +6,7 @@ import {
 } from "@/features/planning/budget-plan/plan-math";
 import type { MessageKey } from "@/i18n/catalog.en";
 
-type Bucket = components["schemas"]["BudgetPlanBucket"];
+type Bucket = components["schemas"]["BudgetBucket"];
 type BucketsInput = components["schemas"]["BudgetBucketsInput"];
 
 export interface DraftBucket {
@@ -188,4 +188,44 @@ export function expenseBranches(
     branches.get(rootOf(e.id))?.subcategories.push(e);
   }
   return [...branches.values()];
+}
+
+// The choice a stored method gives a category: its bucket, or the default of its place.
+export function choiceOf(
+  method: readonly Bucket[],
+  categoryId: string,
+  isRoot: boolean,
+): string {
+  const bucket = method.find((b) => b.category_ids.includes(categoryId));
+  if (bucket !== undefined) return bucket.id;
+  return isRoot ? outsideChoice : sameChoice;
+}
+
+// The body that saves method with one category moved to choice; the other categories stay.
+export function withChoice(
+  method: readonly Bucket[],
+  categoryId: string,
+  choice: string,
+): BucketsInput {
+  return {
+    buckets: method.map((b) => {
+      const others = b.category_ids.filter((id) => id !== categoryId);
+      return {
+        name: b.name,
+        share_bp: b.share_bp,
+        takes_savings: b.takes_savings,
+        category_ids: b.id === choice ? [...others, categoryId] : others,
+      };
+    }),
+  };
+}
+
+// The top-level expense categories the draft leaves outside the split.
+export function outsideRoots(
+  draft: BucketDraft,
+  branches: readonly CategoryBranch[],
+): CategoryEntry[] {
+  return branches
+    .map((b) => b.root)
+    .filter((root) => draft.choices.get(root.id) === outsideChoice);
 }

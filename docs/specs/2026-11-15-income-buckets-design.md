@@ -153,7 +153,9 @@ BudgetBucketsInput:
   1. Starting point: a select of the three presets of A232; it is applied only on choice.
   2. Buckets: one row per bucket with name, percentage with one decimal, the radio "takes savings" and a remove button; the button **Add bucket** stops at 10. Under the rows, the total in percent; when it differs from 100 %, the line "The shares sum to {total}; they must sum to 100 %." in the danger tone, and **Save** is disabled.
   3. Categories: the root expense categories in tree order, each with a select of the buckets plus "Outside the split". A root with subcategories has a disclosure that lists them, each with the same options plus "Same as {root}", the default.
-  - **Save** writes the method; **Remove split** (shown when a method exists) saves an empty list; the toast reports the removal.
+  - **Save** writes the method; **Remove split** (shown when a method exists) saves an empty list after the alert below; the toast reports the removal.
+- **Categories screen.** The header action **Income split** opens the same dialog. With a method, the category tree gains the column **Bucket** after the name: the bucket of the category itself, the parent's bucket in the muted tone with "(from the parent)", or "Outside the split"; an income category shows none. The category form gains the field **Bucket** for an expense category: the buckets plus "Same as the parent category" for a subcategory or "Outside the split" for a top-level one. The category saves first; its bucket then saves through `PUT /budget-buckets` with the method read from `GET /budget-buckets`, and a failure of that second write is a toast that names it, since the category already stands.
+- **Dialog safeguards.** **Remove split** shows an alert that states what it erases, with **Remove split** and **Keep split**; nothing is written before the second choice. The categories part counts the top-level categories left outside the split ("3 categories outside the split").
 - Figures through `useMoneyFormat()` and `formatBasisPoints`; under privacy mode the amounts are masked and the shares stay visible (ADR 018).
 
 ## 6. Cross-cutting questions

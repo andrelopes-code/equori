@@ -144,4 +144,15 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "buckets.saved": "Divisão da renda salva",
   "buckets.removed": "Divisão da renda removida",
   "buckets.saveFailed": "A divisão não foi salva",
+  "buckets.removeConfirm":
+    "Remover a divisão apaga os potes e o pote de cada categoria. O plano volta a agrupar por categoria.",
+  "buckets.keep": "Manter divisão",
+  "buckets.outsideOne": "1 categoria fora da divisão",
+  "buckets.outsideCount": "{count} categorias fora da divisão",
+  "buckets.manage": "Divisão da renda",
+  "buckets.field.bucket": "Pote",
+  "buckets.option.parent": "Igual à categoria-mãe",
+  "buckets.col": "Pote",
+  "buckets.inherited": "{name} (da categoria-mãe)",
+  "buckets.assignFailed": "A categoria foi salva; o pote não: {reason}",
 };

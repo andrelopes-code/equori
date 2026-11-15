@@ -145,4 +145,16 @@ export const budgetPlanEn = {
   "buckets.saved": "Income split saved",
   "buckets.removed": "Income split removed",
   "buckets.saveFailed": "The split was not saved",
+  "buckets.removeConfirm":
+    "Removing the split erases the buckets and the bucket of each category. The plan returns to the groups by category.",
+  "buckets.keep": "Keep split",
+  "buckets.outsideOne": "1 category outside the split",
+  "buckets.outsideCount": "{count} categories outside the split",
+  "buckets.manage": "Income split",
+  "buckets.field.bucket": "Bucket",
+  "buckets.option.parent": "Same as the parent category",
+  "buckets.col": "Bucket",
+  "buckets.inherited": "{name} (from the parent)",
+  "buckets.assignFailed":
+    "The category was saved; its bucket was not: {reason}",
 };
