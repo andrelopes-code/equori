@@ -160,3 +160,13 @@ func checkBucket(b *Bucket, prefix string, names map[string]bool) error {
 
 	return nil
 }
+
+// KeptTarget reports whether a month's real amount kept to its target: an expense bucket at or
+// below it, the bucket that takes savings at or above it (income buckets A233).
+func KeptTarget(b Bucket, real, target int64) bool {
+	if b.TakesSavings {
+		return real >= target
+	}
+
+	return real <= target
+}

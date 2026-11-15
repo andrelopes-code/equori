@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -98,4 +99,55 @@ func TestRemoveBucketsTool(t *testing.T) {
 	if got := f.bucketPlan("2026-11"); got.Buckets != nil {
 		t.Errorf("buckets after removal = %+v", got.Buckets)
 	}
+}
+
+// S446 through the assistant: kind split lists six months with each bucket's target on the
+// income received, its real amount and whether it kept to the target.
+func TestSplitHistoryTool(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	f.h.Record(
+		"2026-11-05",
+		apitest.Posting(f.checking, 100000),
+		apitest.Posting(f.salary, -100000),
+	)
+	f.pay("2026-11-06", 70000, f.rent, "")
+	f.saveBuckets(bucket("Needs", 5000, false, f.rent), bucket("Freedom", 5000, true))
+
+	var out struct {
+		Split []struct {
+			Month    string     `json:"month"`
+			Received toolAmount `json:"received"`
+			Buckets  []struct {
+				Name   string     `json:"name"`
+				Target toolAmount `json:"target"`
+				Real   toolAmount `json:"real"`
+				Kept   bool       `json:"kept"`
+			} `json:"buckets"`
+		} `json:"split"`
+	}
+	toolOutput(
+		t,
+		f.h,
+		"get_budgets_and_goals",
+		map[string]any{"month": "2026-11", "kind": "split"},
+		&out,
+	)
+
+	if len(out.Split) != 6 {
+		t.Fatalf("split = %+v", out.Split)
+	}
+
+	november := out.Split[5].Buckets
+	if out.Split[5].Received.Amount != "1000.00" || len(november) != 2 ||
+		november[0].Target.Amount != "500.00" || november[0].Real.Amount != "700.00" || november[0].Kept ||
+		november[1].Real.Amount != "300.00" || november[1].Kept {
+		t.Errorf("november = %+v", out.Split[5])
+	}
+}
+
+// toolAmount is a tool's money: a decimal string with its currency.
+type toolAmount struct {
+	Amount   string `json:"amount"`
+	Currency string `json:"currency"`
 }

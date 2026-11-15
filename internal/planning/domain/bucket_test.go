@@ -127,3 +127,25 @@ func TestCheckBucketsTrimsNames(t *testing.T) {
 		t.Fatalf("CheckBuckets = %+v %v, want the name Needs", got, err)
 	}
 }
+
+func TestKeptTarget(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name         string
+		savings      bool
+		real, target int64
+		want         bool
+	}{
+		{"expense below", false, 900, 1000, true},
+		{"expense at", false, 1000, 1000, true},
+		{"expense above", false, 1001, 1000, false},
+		{"savings above", true, 1200, 1000, true},
+		{"savings below", true, -50, 1000, false},
+	}
+	for _, tt := range tests {
+		if got := KeptTarget(Bucket{TakesSavings: tt.savings}, tt.real, tt.target); got != tt.want {
+			t.Errorf("%s: KeptTarget = %t, want %t", tt.name, got, tt.want)
+		}
+	}
+}

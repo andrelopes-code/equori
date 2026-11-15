@@ -2,7 +2,7 @@
 
 - Status: proposed
 - Date: 2026-11-15
-- Phase: P7 Planning, amendments A229 to A232, scenarios S438 to S445
+- Phase: P7 Planning, amendments A229 to A233, scenarios S438 to S446
 
 ## 1. Intent
 
@@ -58,9 +58,15 @@ For a book with a method and a month M, each bucket carries:
 |---|---|
 | `target` | `reference × share / 10000`, split over the buckets with the largest-remainder method of A132, so the targets sum exactly to `reference`. Absent without `reference`. |
 | `planned` | Sum of `planned` of the counted rows (A129) whose category resolves to the bucket; plus `savings` for the bucket that takes savings. |
-| `spent` | Sum of the accrual totals in M of the expense categories, own postings only, that resolve to the bucket; plus the realized savings occurrences of M, valued as `savings`, for the bucket that takes savings. |
+| `spent` | Sum of the accrual totals in M of the expense categories, own postings only, that resolve to the bucket; plus, for the bucket that takes savings, what the month left (A233). |
 
 The plan also carries `outside_planned` and `outside_spent`: the same sums over the categories outside the method. A budget on a category covers its subtree (A129), so its `planned` counts in the bucket of the budget's category, while the `spent` of each subcategory counts in the bucket its own category resolves to.
+
+### A233 Real amount and history
+
+What a month left is the income received in it (`received_income` of A129) less the accrual total of every expense category: the rule of the savings rate indicator (`internal/reporting/app/indicator_months.go`). It replaces the realized savings occurrences, which a book that saves by transfers without a savings schedule never fills. The bucket that takes savings adds it to its own categories' spending, so the real amounts of the buckets and the spending outside the split sum to the income received.
+
+The history of a month M covers M and the five months before it. Each month holds `received`, the real amount of each bucket in method order and `outside`. A month's target of a bucket splits `received` by share with the largest-remainder method of A230; the plan of a single month keeps the reference as its base. A bucket **kept** its target when its real amount is at most the target, or at least the target for the bucket that takes savings.
 
 ### A231 Savings target under a method
 
@@ -109,6 +115,7 @@ The sum of 10000 and the expense class of a category are checked by the applicat
 
 Operations, tag `planning`:
 
+- `GET /budget-buckets/history?month=YYYY-MM` (`getBudgetBucketHistory`), `x-book-role: read`, returns `BudgetBucketHistory`: `currency`, the method's `buckets`, and `months`, each with `month`, `received`, `outside` and `buckets` of `{ id, real }` (A233). `get_budgets_and_goals` covers it through the kind `split`, which adds each bucket's target and whether it kept it.
 - `GET /budget-buckets` (`getBudgetBuckets`), `x-book-role: read`, returns `BudgetBuckets`: the method in order with each bucket's `id`, `name`, `share_bp`, `takes_savings` and `category_ids`, and an empty list without one. The categories screen reads it, since it reads no month.
 - `PUT /budget-buckets` (`saveBudgetBuckets`), `x-book-role: write`, takes `BudgetBucketsInput` and returns 204. Field errors are 422 with the existing validation problem, the field named `buckets[i].name`, `buckets[i].share_bp`, `buckets[i].category_ids` or `buckets`.
 - `GET /budget-plan` gains the method:
@@ -184,7 +191,7 @@ BudgetBucketsInput:
 - S2: Does not apply: Planning is desktop-only (ADR 027, S3).
 - S3: The guide article `budgets.md` gains one paragraph on the income split.
 - S4: The assistant reads the buckets through `get_budgets_and_goals` kind `plan` and writes them through `manage_budget_or_goal` action `save_buckets`.
-- X1: S438 to S445, section 7.
+- X1: S438 to S446, section 7.
 - X2: Does not apply: R1, R2, C2 and C3 add no regional value; C2's conversion is the one A72 already tests.
 
 ## 7. Scenarios
@@ -197,3 +204,4 @@ BudgetBucketsInput:
 - S443. Saving an empty list removes the method: the plan has no `buckets`, and the savings target is the stored one again.
 - S444. With a stored savings target of 1000 and a savings bucket of 2500, a plan save that carries 2500 keeps 1000; removing the split returns the target to 1000.
 - S445. `GET /budget-buckets` returns an empty list without a method and the method in order after a save; a reader can read it.
+- S446. The history of 2026-11 lists 2026-06 to 2026-11; in October, with 5,000.00 received, 1,200.00 on a category of Needs, 300.00 on a subcategory placed in Fun and 100.00 outside, Needs holds 1,200.00, Fun 300.00, Freedom 3,400.00 and outside 100.00; a book without a method gets six months and no buckets.

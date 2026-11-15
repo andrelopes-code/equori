@@ -1085,12 +1085,13 @@
         },
         "kind": {
           "type": "string",
-          "description": "budgets, goals or both; both when absent; plan returns only the month's budget plan",
+          "description": "budgets, goals or both; both when absent; plan returns only the month's budget plan; split the income split of the month and the five before",
           "enum": [
             "budgets",
             "goals",
             "both",
-            "plan"
+            "plan",
+            "split"
           ]
         }
       },
@@ -1601,6 +1602,98 @@
             "rows"
           ],
           "additionalProperties": false
+        },
+        "split": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "month": {
+                "type": "string"
+              },
+              "received": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "buckets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "real": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "kept": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "target",
+                    "real",
+                    "kept"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "month",
+              "received",
+              "buckets"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [

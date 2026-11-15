@@ -3661,6 +3661,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budget-buckets/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The income split of a month and the five before it (income buckets A233).
+         * @description Each month holds the income received, the real amount of each bucket in method order and the spending
+         *     outside the split. A bucket's real amount is the own spending of its categories; the bucket that takes
+         *     savings adds what the month left, the income received less every expense.
+         */
+        get: operations["getBudgetBucketHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/reopen": {
         parameters: {
             query?: never;
@@ -6966,6 +6988,22 @@ export interface components {
         };
         BudgetBuckets: {
             buckets: components["schemas"]["BudgetBucket"][];
+        };
+        BudgetBucketHistory: {
+            currency: string;
+            buckets: components["schemas"]["BudgetBucket"][];
+            months: components["schemas"]["BudgetBucketMonth"][];
+        };
+        BudgetBucketMonth: {
+            month: string;
+            received: components["schemas"]["Money"];
+            outside: components["schemas"]["Money"];
+            buckets: components["schemas"]["BudgetBucketReal"][];
+        };
+        BudgetBucketReal: {
+            /** Format: uuid */
+            id: string;
+            real: components["schemas"]["Money"];
         };
         /**
          * @description A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
@@ -14151,6 +14189,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBudgetBucketHistory: {
+        parameters: {
+            query: {
+                month: components["parameters"]["PlanMonth"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetBucketHistory"];
+                };
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];

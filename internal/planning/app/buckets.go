@@ -124,10 +124,16 @@ func (s *Service) planBuckets(
 		out.OutsideSpent += spent
 	}
 
+	var spent int64
+	for _, c := range categories {
+		spent += own[c.ID][out.Month]
+	}
+
 	for i, b := range method {
 		out.Buckets[i].Bucket = b
 		if b.TakesSavings {
-			out.Buckets[i].Planned, out.Buckets[i].Spent = out.Savings, out.SavingsRealized
+			// What the month left, the rule of the savings rate indicator (A233).
+			out.Buckets[i].Planned, out.Buckets[i].Spent = out.Savings, out.Received-spent
 			out.Reference.TargetBP, out.Reference.HasTarget = b.ShareBP, true
 		}
 	}

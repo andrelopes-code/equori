@@ -186,6 +186,13 @@ type BudgetBucket struct {
 	TakesSavings bool                 `json:"takes_savings"`
 }
 
+// BudgetBucketHistory defines model for BudgetBucketHistory.
+type BudgetBucketHistory struct {
+	Buckets  []BudgetBucket      `json:"buckets"`
+	Currency string              `json:"currency"`
+	Months   []BudgetBucketMonth `json:"months"`
+}
+
 // BudgetBucketInput defines model for BudgetBucketInput.
 type BudgetBucketInput struct {
 	// CategoryIds Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor.
@@ -197,6 +204,20 @@ type BudgetBucketInput struct {
 
 	// TakesSavings The bucket also draws the month's savings; at most one bucket of a method.
 	TakesSavings bool `json:"takes_savings"`
+}
+
+// BudgetBucketMonth defines model for BudgetBucketMonth.
+type BudgetBucketMonth struct {
+	Buckets  []BudgetBucketReal `json:"buckets"`
+	Month    string             `json:"month"`
+	Outside  Money              `json:"outside"`
+	Received Money              `json:"received"`
+}
+
+// BudgetBucketReal defines model for BudgetBucketReal.
+type BudgetBucketReal struct {
+	Id   openapi_types.UUID `json:"id"`
+	Real Money              `json:"real"`
 }
 
 // BudgetBuckets defines model for BudgetBuckets.
@@ -669,6 +690,11 @@ type TagName = string
 // GetProjectionParams defines parameters for GetProjection.
 type GetProjectionParams struct {
 	To openapi_types.Date `form:"to" json:"to"`
+}
+
+// GetBudgetBucketHistoryParams defines parameters for GetBudgetBucketHistory.
+type GetBudgetBucketHistoryParams struct {
+	Month PlanMonth `form:"month" json:"month"`
 }
 
 // GetBudgetPlanParams defines parameters for GetBudgetPlan.

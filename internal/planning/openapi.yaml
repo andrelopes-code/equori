@@ -757,6 +757,31 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /budget-buckets/history:
+    get:
+      tags: [planning]
+      operationId: getBudgetBucketHistory
+      x-book-role: read
+      summary: The income split of a month and the five before it (income buckets A233).
+      description: |
+        Each month holds the income received, the real amount of each bucket in method order and the spending
+        outside the split. A bucket's real amount is the own spending of its categories; the bucket that takes
+        savings adds what the month left, the income received less every expense.
+      parameters:
+        - $ref: "#/components/parameters/PlanMonth"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetBucketHistory"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/reopen:
     post:
       tags: [planning]
@@ -1206,6 +1231,43 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/BudgetBucket"
+  BudgetBucketHistory:
+    type: object
+    required: [currency, buckets, months]
+    properties:
+      currency:
+        type: string
+      buckets:
+        type: array
+        items:
+          $ref: "#/components/schemas/BudgetBucket"
+      months:
+        type: array
+        items:
+          $ref: "#/components/schemas/BudgetBucketMonth"
+  BudgetBucketMonth:
+    type: object
+    required: [month, received, outside, buckets]
+    properties:
+      month:
+        type: string
+      received:
+        $ref: "#/components/schemas/Money"
+      outside:
+        $ref: "#/components/schemas/Money"
+      buckets:
+        type: array
+        items:
+          $ref: "#/components/schemas/BudgetBucketReal"
+  BudgetBucketReal:
+    type: object
+    required: [id, real]
+    properties:
+      id:
+        type: string
+        format: uuid
+      real:
+        $ref: "#/components/schemas/Money"
   BudgetPlanBucket:
     type: object
     required: [id, name, share_bp, takes_savings, category_ids, planned, spent]

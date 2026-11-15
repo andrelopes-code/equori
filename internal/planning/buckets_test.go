@@ -179,13 +179,20 @@ func TestS441BucketPlannedAndSpent(t *testing.T) {
 	}
 }
 
-// S442: the savings bucket draws the month's savings and sets the savings target.
+// S442: the savings bucket plans the month's savings, holds what the month left (A233) and sets
+// the savings target.
 func TestS442SavingsBucket(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-01")
 	paid := f.schedule("savings", f.checking, f.savings, 50000, monthly("2026-11-01", 10, ""), nil)
 	f.schedule("savings", f.checking, f.savings, 30000, monthly("2026-11-01", 20, ""), nil)
 	f.pay("2026-11-10", 50000, f.savings, "")
+	f.h.Record(
+		"2026-11-01",
+		apitest.Posting(f.checking, 300000),
+		apitest.Posting(f.salary, -300000),
+	)
+	f.pay("2026-11-01", 40000, f.rent, "")
 
 	if o := f.occurrence(paid, 1); o.State != "realized" {
 		t.Fatalf("paid occurrence = %+v, want realized", o)
@@ -201,9 +208,10 @@ func TestS442SavingsBucket(t *testing.T) {
 	got := f.bucketPlan("2026-11")
 
 	freedom := got.Buckets[1]
-	if freedom.Planned.Amount != 80000 || freedom.Spent.Amount != 50000 ||
+	// A233: the savings bucket holds what the month left, 3,000.00 received less 400.00 spent.
+	if freedom.Planned.Amount != 80000 || freedom.Spent.Amount != 260000 ||
 		amountOf(freedom.Target) != 250000 {
-		t.Errorf("freedom = %+v, want planned 80000 spent 50000 target 250000", freedom)
+		t.Errorf("freedom = %+v, want planned 80000 spent 260000 target 250000", freedom)
 	}
 
 	if got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 ||
@@ -396,5 +404,77 @@ func TestS445GetBucketMethod(t *testing.T) {
 	reader := f.h.JoinAs("reader@example.com", f.h.OwnerID(), "read")
 	if r := f.h.Call(reader, http.MethodGet, bucketsPath, nil); r.Status != http.StatusOK {
 		t.Errorf("reader GET = %d: %s", r.Status, r.Body)
+	}
+}
+
+type bucketHistoryView struct {
+	Buckets []bucketView `json:"buckets"`
+	Months  []struct {
+		Month    string `json:"month"`
+		Received money  `json:"received"`
+		Outside  money  `json:"outside"`
+		Buckets  []struct {
+			ID   string `json:"id"`
+			Real money  `json:"real"`
+		} `json:"buckets"`
+	} `json:"months"`
+}
+
+// S446: six months end at the month asked; each holds the income received, the spending of
+// each bucket and outside the split, and the savings bucket holds what was left (A233).
+func TestS446BucketHistory(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	food := f.h.Account("Food", "expense", "", nil)
+	fun := f.h.Account("Fun", "expense", "", map[string]any{"parent_id": food})
+	gym := f.h.Account("Gym", "expense", "", nil)
+	f.h.Record(
+		"2026-10-05",
+		apitest.Posting(f.checking, 500000),
+		apitest.Posting(f.salary, -500000),
+	)
+	f.pay("2026-10-06", 120000, food, "")
+	f.pay("2026-10-07", 30000, fun, "")
+	f.pay("2026-10-08", 10000, gym, "")
+	f.pay("2026-11-03", 20000, food, "")
+	f.saveBuckets(
+		bucket("Needs", 5000, false, food),
+		bucket("Fun", 3000, false, fun),
+		bucket("Freedom", 2000, true),
+	)
+
+	var got bucketHistoryView
+	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
+
+	if len(got.Buckets) != 3 || len(got.Months) != 6 || got.Months[0].Month != "2026-06" ||
+		got.Months[5].Month != "2026-11" {
+		t.Fatalf("history = %+v", got)
+	}
+
+	october := got.Months[4]
+
+	want := []int64{120000, 30000, 500000 - 160000}
+	for i, w := range want {
+		if october.Buckets[i].ID != got.Buckets[i].ID || october.Buckets[i].Real.Amount != w {
+			t.Errorf("october bucket %d = %+v, want %d", i, october.Buckets[i], w)
+		}
+	}
+
+	if october.Received.Amount != 500000 || october.Outside.Amount != 10000 {
+		t.Errorf("october received %d outside %d, want 500000 10000",
+			october.Received.Amount, october.Outside.Amount)
+	}
+
+	november := got.Months[5]
+	if november.Buckets[0].Real.Amount != 20000 || november.Buckets[2].Real.Amount != -20000 {
+		t.Errorf("november = %+v, want needs 20000 and freedom -20000", november.Buckets)
+	}
+
+	var empty bucketHistoryView
+	g := newFixture(t, "2026-11-12")
+	g.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &empty)
+
+	if len(empty.Buckets) != 0 || len(empty.Months) != 6 {
+		t.Errorf("history without a method = %+v", empty)
 	}
 }

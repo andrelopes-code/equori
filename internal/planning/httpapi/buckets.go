@@ -80,3 +80,61 @@ func setPlanBuckets(out *BudgetPlan, p app.Plan, m func(int64) Money) {
 	planned, spent := m(p.OutsidePlanned), m(p.OutsideSpent)
 	out.Buckets, out.OutsidePlanned, out.OutsideSpent = &buckets, &planned, &spent
 }
+
+func (s *Server) getBudgetBucketHistory(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (BudgetBucketHistory, error) {
+	params, err := httpserver.Query[GetBudgetBucketHistoryParams](r)
+	if err != nil {
+		return BudgetBucketHistory{}, err
+	}
+
+	month, err := parseMonth("month", params.Month)
+	if err != nil {
+		return BudgetBucketHistory{}, err
+	}
+
+	h, err := s.svc.BucketHistory(ctx, auth.MustBooksID(ctx), month)
+	if err != nil {
+		return BudgetBucketHistory{}, err
+	}
+
+	return toBucketHistoryAPI(h), nil
+}
+
+func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
+	m := func(amount int64) Money { return toMoneyAPI(amount, h.Currency) }
+	out := BudgetBucketHistory{
+		Currency: string(h.Currency),
+		Buckets:  make([]BudgetBucket, len(h.Buckets)),
+		Months:   make([]BudgetBucketMonth, len(h.Months)),
+	}
+
+	for i, b := range h.Buckets {
+		out.Buckets[i] = BudgetBucket{
+			Id:           b.ID,
+			Name:         b.Name,
+			ShareBp:      b.ShareBP,
+			TakesSavings: b.TakesSavings,
+			CategoryIds:  b.Categories,
+		}
+	}
+
+	for i, month := range h.Months {
+		reals := make([]BudgetBucketReal, len(month.Real))
+		for j, real := range month.Real {
+			reals[j] = BudgetBucketReal{Id: h.Buckets[j].ID, Real: m(real)}
+		}
+
+		out.Months[i] = BudgetBucketMonth{
+			Month:    month.Month.Format(monthLayout),
+			Received: m(month.Received),
+			Outside:  m(month.Outside),
+			Buckets:  reals,
+		}
+	}
+
+	return out
+}

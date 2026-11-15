@@ -15,11 +15,13 @@ import (
 
 type getBudgetsAndGoalsKind string
 
-func (getBudgetsAndGoalsKind) Values() []string { return []string{"budgets", "goals", "both", "plan"} }
+func (getBudgetsAndGoalsKind) Values() []string {
+	return []string{"budgets", "goals", "both", "plan", "split"}
+}
 
 type getBudgetsAndGoalsIn struct {
 	Month string                 `json:"month,omitzero" jsonschema:"month of the budget progress; the current month when absent; written YYYY-MM"`
-	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero"  jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan"`
+	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero"  jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan; split the income split of the month and the five before"`
 }
 
 type budgetView struct {
@@ -75,6 +77,7 @@ type getBudgetsAndGoalsOut struct {
 	Budgets []budgetView `json:"budgets"`
 	Goals   []goalView   `json:"goals"`
 	Plan    planView     `json:"plan,omitzero"`
+	Split   []splitMonth `json:"split,omitzero"`
 }
 
 // toPlanView leaves a figure the plan does not have at its zero value, which the output omits.
@@ -204,6 +207,12 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		}
 		if in.Kind == "plan" {
 			err := fillPlan(ctx, svc, l, booksID, month, &out)
+
+			return out, err
+		}
+
+		if in.Kind == "split" {
+			out.Split, err = splitMonths(ctx, svc, booksID, month)
 
 			return out, err
 		}

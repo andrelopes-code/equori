@@ -78,6 +78,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetPlan))
 	mux.HandleFunc("PUT "+BaseURL+"/budget-plan",
 		httpserver.Handle(s.errs, http.StatusOK, s.saveBudgetPlan))
+	mux.HandleFunc("GET "+BaseURL+"/budget-buckets/history",
+		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetBucketHistory))
 	mux.HandleFunc("GET "+BaseURL+"/budget-buckets",
 		httpserver.Handle(s.errs, http.StatusOK, s.getBudgetBuckets))
 	mux.HandleFunc("PUT "+BaseURL+"/budget-buckets",

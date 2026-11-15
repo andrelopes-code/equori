@@ -26,8 +26,6 @@ type Plan struct {
 	Rows                                     []domain.PlanRow
 	Prices                                   []Price
 
-	// SavingsRealized is the part of Savings whose occurrences are realized (A230).
-	SavingsRealized int64
 	// Buckets is the book's bucket method; nil without one (A229, A230).
 	Buckets                      []PlanBucket
 	OutsidePlanned, OutsideSpent int64

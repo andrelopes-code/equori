@@ -306,10 +306,6 @@ func (s *Service) addOccurrences(
 
 		if sch.Kind == domain.Savings {
 			out.Savings += amount
-			if o.State == domain.Realized {
-				out.SavingsRealized += amount
-			}
-
 			continue
 		}
 

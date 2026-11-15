@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -149,4 +150,58 @@ func categoryNames(ids []uuid.UUID, accounts map[uuid.UUID]Account) []string {
 	}
 
 	return names
+}
+
+// splitMonth is one month of the income split: the income received and each bucket's target
+// on it, its real amount and whether it kept to the target (income buckets A233).
+type splitMonth struct {
+	Month    string        `json:"month"`
+	Received tool.Money    `json:"received"`
+	Buckets  []splitBucket `json:"buckets"`
+}
+
+type splitBucket struct {
+	Name   string     `json:"name"`
+	Target tool.Money `json:"target"`
+	Real   tool.Money `json:"real"`
+	Kept   bool       `json:"kept"`
+}
+
+// splitMonths returns the income split of month and the five before; nil without a method.
+func splitMonths(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	month time.Time,
+) ([]splitMonth, error) {
+	h, err := svc.BucketHistory(ctx, booksID, month)
+	if err != nil || len(h.Buckets) == 0 {
+		return nil, err
+	}
+
+	out := make([]splitMonth, len(h.Months))
+	for i, m := range h.Months {
+		received, err := moneyOf(m.Received, h.Currency)
+		if err != nil {
+			return nil, err
+		}
+
+		out[i] = splitMonth{Month: m.Month.Format(monthLayout), Received: received}
+
+		targets := domain.BucketTargets(m.Received, h.Buckets)
+		for j, b := range h.Buckets {
+			v := splitBucket{Name: b.Name, Kept: domain.KeptTarget(b, m.Real[j], targets[j])}
+			if v.Target, err = moneyOf(targets[j], h.Currency); err != nil {
+				return nil, err
+			}
+
+			if v.Real, err = moneyOf(m.Real[j], h.Currency); err != nil {
+				return nil, err
+			}
+
+			out[i].Buckets = append(out[i].Buckets, v)
+		}
+	}
+
+	return out, nil
 }
