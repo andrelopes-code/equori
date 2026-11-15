@@ -1,3 +1,4 @@
+import { planningTabsPtBR } from "@/i18n/catalog-planning-tabs.pt-BR";
 import { budgetPlanPtBR } from "@/i18n/catalog-budget-plan.pt-BR";
 import { calculatorsPtBR } from "@/i18n/catalog-calculators.pt-BR";
 import { marketDataPtBR } from "@/i18n/catalog-market-data.pt-BR";
@@ -12,6 +13,7 @@ import { settingsPtBR } from "@/i18n/catalog-settings.pt-BR";
 import type { Catalog } from "@/i18n/catalog.en";
 
 export const catalogPtBR: Catalog = {
+  ...planningTabsPtBR,
   ...budgetPlanPtBR,
   ...calculatorsPtBR,
   ...marketDataPtBR,
@@ -1806,15 +1808,11 @@ export const catalogPtBR: Catalog = {
   "agenda.description": "Descrição",
   "agenda.amount": "Valor previsto",
   "agenda.actions": "Ações",
-  "agenda.caption": "Ocorrências do mês",
+  "agenda.caption": "A pagar e a receber",
   "agenda.overdue": "Atrasadas",
   "agenda.empty": "Nenhuma ocorrência neste mês",
   "agenda.calendar": "Calendário do mês",
   "agenda.figures": "Totais do mês",
-  "agenda.inflow": "Entradas previstas",
-  "agenda.inflowNote": "Receitas do mês, sem as ocorrências puladas",
-  "agenda.outflow": "Saídas previstas",
-  "agenda.outflowNote": "Contas, assinaturas, transferências e poupança do mês",
   "occurrence.state.expected": "Prevista",
   "occurrence.state.overdue": "Atrasada",
   "occurrence.state.realized": "Realizada",

@@ -4,6 +4,7 @@ import {
   formatDate,
   formatDayHeader,
   formatDayMonth,
+  formatWeekdayDayMonth,
   formatDayMonthLong,
   formatDayMonthNumeric,
   formatMoney,
@@ -205,6 +206,16 @@ describe("short dates", () => {
   ] as const)("day header of %s in %s", (iso, locale, want) => {
     expect(formatDayHeader(iso, "2026-10-16", locale, words)).toBe(want);
   });
+
+  it.each([
+    ["2026-10-16", "pt-BR", "sex, 16 out"],
+    ["2026-10-14", "en", "Wed, Oct 14"],
+  ] as const)(
+    "weekday and day of %s in %s, today or not",
+    (iso, locale, want) => {
+      expect(formatWeekdayDayMonth(iso, locale)).toBe(want);
+    },
+  );
 });
 
 describe("month and signed formats", () => {

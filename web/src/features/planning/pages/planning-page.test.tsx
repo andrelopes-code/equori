@@ -3,13 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
-import { formatDayHeader } from "@/i18n/format";
 import { json, problem } from "@/testing/fake-api";
 import { moneyValue } from "@/testing/money-value";
 import {
   exactID,
   planningApi as api,
   rentOctober,
+  rentSeptember,
   salary,
   streaming,
 } from "@/testing/planning-api";
@@ -47,26 +47,67 @@ describe("PlanningPage agenda", () => {
     });
   });
 
-  it("lists the overdue occurrences first in their own group, then the month by day", async () => {
+  // Spec 2026-11-15-planning-tabs-design.md, A3: the pending occurrences in three windows; what
+  // already happened waits in its own closed list.
+  it("lists the overdue occurrences first, then those due within 7 days", async () => {
     await renderApp("/planning", { fetch: api() });
-    await screen.findByRole("rowheader", { name: "Salary" });
-    const headers = screen
+    const table = await screen.findByRole("table", {
+      name: catalogEn["agenda.caption"],
+    });
+    await within(table).findByRole("rowheader", { name: "Salary" });
+    const headers = within(table)
       .getAllByRole("rowheader")
       .map((cell) => cell.textContent);
-    const day = (iso: string) =>
-      formatDayHeader(iso, "2026-10-17", "en", {
-        today: catalogEn["day.today"],
-        yesterday: catalogEn["day.yesterday"],
-      });
     expect(headers).toEqual([
       expect.stringContaining(catalogEn["agenda.overdue"]),
       "Rent",
       "Rent",
-      expect.stringContaining(day("2026-10-12")),
-      "Streaming",
-      expect.stringContaining(day("2026-10-20")),
+      expect.stringContaining(
+        catalogEn["agenda.until"].replace("{date}", "Oct 24"),
+      ),
       "Salary",
     ]);
+  });
+
+  it("keeps what already happened in a closed list under the pending ones", async () => {
+    await renderApp("/planning", { fetch: api() });
+    await screen.findByRole("rowheader", { name: "Salary" });
+    expect(
+      screen.queryByRole("rowheader", { name: "Streaming" }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: catalogEn["agenda.happened"].replace("{count}", "1"),
+      }),
+    );
+
+    expect(
+      await screen.findByRole("rowheader", { name: "Streaming" }),
+    ).toBeInTheDocument();
+  });
+
+  it("leaves the overdue occurrences of earlier months out of another month", async () => {
+    await renderApp("/planning?month=2026-11", {
+      fetch: api({
+        "GET /api/v1/occurrences": (req) =>
+          new URL(req.url).searchParams.get("state") === "overdue"
+            ? json(200, { items: [rentSeptember, rentOctober] })
+            : json(200, {
+                items: [{ ...salary, expected_on: "2026-11-20" }],
+              }),
+      }),
+    });
+    const table = await screen.findByRole("table", {
+      name: catalogEn["agenda.caption"],
+    });
+    await within(table).findByRole("rowheader", { name: "Salary" });
+
+    expect(
+      within(table)
+        .getAllByRole("rowheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([expect.stringContaining(catalogEn["agenda.rest"]), "Salary"]);
   });
 
   it("says where a moved occurrence was expected before", async () => {
@@ -88,7 +129,7 @@ describe("PlanningPage agenda", () => {
     ).toBeInTheDocument();
   });
 
-  it("totals a day with one figure per currency, with a base currency of EUR", async () => {
+  it("totals a group with one figure per currency, with a base currency of EUR", async () => {
     await renderApp("/planning", {
       fetch: api({
         "GET /api/v1/settings": () => json(200, { base_currency: "EUR" }),
@@ -116,21 +157,38 @@ describe("PlanningPage agenda", () => {
     const headers = screen
       .getAllByRole("rowheader")
       .map((cell) => cell.textContent);
-    expect(headers).toEqual(["Mon, Oct 5−€5,000 · −$10.00", "Rent", "Rent"]);
+    expect(headers).toEqual([
+      `${catalogEn["agenda.until"].replace("{date}", "Oct 24")}−€5,000 · −$10.00`,
+      "Rent",
+      "Rent",
+    ]);
   });
 
-  it("totals the month's expected inflow and outflow", async () => {
+  // Spec A1, A2: the overdue rent of September is still owed in October; the realized streaming
+  // counts at its charged amount.
+  it("states the month's close, its inflows and outflows and what is still to pay", async () => {
     await renderApp("/planning", { fetch: api() });
     const figures = await screen.findByRole("region", {
       name: catalogEn["agenda.figures"],
     });
     await waitFor(() => {
       expect(
-        within(figures).getByText(moneyValue("R$5,000.00")),
+        within(figures).getByText(moneyValue("R$+760.10")),
       ).toBeInTheDocument();
     });
     expect(
-      within(figures).getByText(moneyValue("R$2,139.90")),
+      within(figures).getByText(moneyValue("R$5,000.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$4,239.90")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(moneyValue("R$4,200.00")),
+    ).toBeInTheDocument();
+    expect(
+      within(figures).getByText(
+        catalogEn["agenda.pendingMany"].replace("{count}", "3"),
+      ),
     ).toBeInTheDocument();
   });
 
@@ -288,6 +346,12 @@ describe("PlanningPage agenda", () => {
         json(200, { ...streaming, state: "expected" }),
     });
     await renderApp("/planning", { fetch });
+    // Spec A3: the realized occurrence sits in the closed list of what already happened.
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["agenda.happened"].replace("{count}", "1"),
+      }),
+    );
     const { user, dialog } = await openAction(
       "Streaming",
       0,

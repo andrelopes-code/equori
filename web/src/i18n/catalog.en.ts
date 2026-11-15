@@ -1,3 +1,4 @@
+import { planningTabsEn } from "@/i18n/catalog-planning-tabs.en";
 import { budgetPlanEn } from "@/i18n/catalog-budget-plan.en";
 import { calculatorsEn } from "@/i18n/catalog-calculators.en";
 import { marketDataEn } from "@/i18n/catalog-market-data.en";
@@ -11,6 +12,7 @@ import { securityEn } from "@/i18n/catalog-security.en";
 import { settingsEn } from "@/i18n/catalog-settings.en";
 
 export const catalogEn = {
+  ...planningTabsEn,
   ...budgetPlanEn,
   ...calculatorsEn,
   ...marketDataEn,
@@ -1781,16 +1783,11 @@ export const catalogEn = {
   "agenda.description": "Description",
   "agenda.amount": "Expected amount",
   "agenda.actions": "Actions",
-  "agenda.caption": "Occurrences of the month",
+  "agenda.caption": "To pay and to receive",
   "agenda.overdue": "Overdue",
   "agenda.empty": "No occurrence in this month",
   "agenda.calendar": "Calendar of the month",
   "agenda.figures": "Month totals",
-  "agenda.inflow": "Expected inflow",
-  "agenda.inflowNote": "Income of the month, skipped occurrences left out",
-  "agenda.outflow": "Expected outflow",
-  "agenda.outflowNote":
-    "Bills, subscriptions, transfers and savings of the month",
   "occurrence.state.expected": "Expected",
   "occurrence.state.overdue": "Overdue",
   "occurrence.state.realized": "Realized",

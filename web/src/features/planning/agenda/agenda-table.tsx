@@ -2,7 +2,6 @@ import {
   Table,
   TableBody,
   TableCaption,
-  TableCell,
   TableColumnHeader,
   TableContent,
   TableEmpty,
@@ -10,123 +9,69 @@ import {
   TableHead,
   TableLoader,
   TableRow,
-  TableRowHeader,
 } from "@slotted/react/table";
 import type { TableHandle } from "@slotted/react/table";
-import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
-import { Text } from "@slotted/react/typography";
 import { Fragment } from "react";
 import type { RefObject } from "react";
 
+import { AgendaRow } from "@/features/planning/agenda/agenda-row";
 import { netOf } from "@/features/planning/model/agenda";
-import type { Agenda, AgendaRow } from "@/features/planning/model/agenda";
-import { OccurrenceActions } from "@/features/planning/occurrences/occurrence-actions";
-import { OccurrenceReceived } from "@/features/planning/occurrences/occurrence-received";
-import { kindLabel, stateTone } from "@/features/planning/model/schedule-words";
-import { formatDate, formatDayHeader } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
+import type { AgendaRow as Row } from "@/features/planning/model/agenda";
+import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
-// The month's occurrences: the overdue group, then one group per day with its net at the end.
-export function AgendaTable({
-  caption,
-  view,
-  accountNames,
-  scale,
-  loading,
-  refreshing,
-  handleRef,
-}: {
+export interface AgendaGroup {
+  key: string;
+  // A group without a label draws no group row.
+  label?: string;
+  rows: readonly Row[];
+}
+
+interface AgendaTableProps {
   caption: string;
-  view: Agenda;
+  groups: readonly AgendaGroup[];
+  // What the body says when no group holds a row.
+  empty?: string;
   accountNames: ReadonlyMap<string, string>;
   scale: (code: string) => number;
   loading: boolean;
   refreshing: boolean;
   handleRef: RefObject<TableHandle | null>;
-}) {
+}
+
+// Occurrences in groups, each group with its net per currency at the end (spec A3).
+export function AgendaTable({
+  caption,
+  groups,
+  empty,
+  accountNames,
+  scale,
+  loading,
+  refreshing,
+  handleRef,
+}: AgendaTableProps) {
   const t = useT();
-  const [locale] = useAppLocale();
-  const today = useToday();
   const fmt = useMoneyFormat();
-  const group = (label: string, rows: AgendaRow[]) => {
-    const totals = netOf(rows);
-    return (
-      <TableGroupRow
-        end={
-          totals.length === 0
-            ? undefined
-            : totals
-                .map((total) => fmt.signed(total, scale(total.currency)))
-                .join(" · ")
-        }
-      >
-        {label}
-      </TableGroupRow>
-    );
+
+  const net = (rows: readonly Row[]) => {
+    const totals = netOf([...rows]);
+    return totals.length === 0
+      ? undefined
+      : totals
+          .map((total) => fmt.signed(total, scale(total.currency)))
+          .join(" · ");
   };
-  const row = (r: AgendaRow) => {
-    const name =
-      r.schedule === undefined || r.schedule.description === ""
-        ? t("ledger.untitled")
-        : r.schedule.description;
-    return (
-      <TableRow key={r.occurrence.id} value={r.occurrence.id}>
-        <TableRowHeader text="truncate">{name}</TableRowHeader>
-        <TableCell>
-          <Stack gap={0}>
-            <Text size="sm">
-              {formatDate(r.occurrence.expected_on, locale)}
-            </Text>
-            {r.occurrence.moved_from !== undefined && (
-              <Text size="xs" tone="muted">
-                {t("agenda.movedFrom", {
-                  date: formatDate(r.occurrence.moved_from, locale),
-                })}
-              </Text>
-            )}
-          </Stack>
-        </TableCell>
-        <TableCell>
-          {r.schedule !== undefined && t(kindLabel[r.schedule.kind])}
-        </TableCell>
-        <TableCell text="truncate">
-          {r.schedule === undefined
-            ? ""
-            : (accountNames.get(r.schedule.account_id) ?? "")}
-        </TableCell>
-        <TableCell>
-          <Tag size="sm" tone={stateTone[r.occurrence.state]}>
-            {t(`occurrence.state.${r.occurrence.state}`)}
-          </Tag>
-        </TableCell>
-        <TableCell numeric>
-          {fmt.signed(r.money, scale(r.money.currency))}
-          <OccurrenceReceived
-            occurrence={r.occurrence}
-            income={r.schedule?.kind === "income"}
-          />
-        </TableCell>
-        <TableCell sticky="end">
-          <OccurrenceActions occurrence={r.occurrence} name={name} />
-        </TableCell>
-      </TableRow>
-    );
-  };
-  const empty = view.overdue.length === 0 && view.days.length === 0;
+
   return (
-    <Table columns={7} variant="framed" loading={refreshing}>
+    <Table columns={6} variant="framed" loading={refreshing}>
       <TableContent handleRef={handleRef}>
         <TableCaption>{caption}</TableCaption>
         <TableHead>
           <TableRow>
             <TableColumnHeader>{t("agenda.description")}</TableColumnHeader>
-            <TableColumnHeader>{t("scheduled.date")}</TableColumnHeader>
-            <TableColumnHeader>{t("agenda.kind")}</TableColumnHeader>
-            <TableColumnHeader>{t("agenda.account")}</TableColumnHeader>
-            <TableColumnHeader>{t("agenda.state")}</TableColumnHeader>
+            <TableColumnHeader>{t("agenda.date")}</TableColumnHeader>
+            <TableColumnHeader>{t("agenda.kindAccount")}</TableColumnHeader>
+            <TableColumnHeader>{t("agenda.when")}</TableColumnHeader>
             <TableColumnHeader numeric>{t("agenda.amount")}</TableColumnHeader>
             <TableColumnHeader sticky="end">
               {t("agenda.actions")}
@@ -134,26 +79,31 @@ export function AgendaTable({
           </TableRow>
         </TableHead>
         {loading ? (
-          <TableLoader skeletonRows={6} />
+          <TableLoader skeletonRows={5} />
         ) : (
           <TableBody>
-            {empty && <TableEmpty>{t("agenda.empty")}</TableEmpty>}
-            {view.overdue.length > 0 && (
-              <>
-                {group(t("agenda.overdue"), view.overdue)}
-                {view.overdue.map(row)}
-              </>
+            {groups.length === 0 && empty !== undefined && (
+              <TableEmpty>{empty}</TableEmpty>
             )}
-            {view.days.map((day) => (
-              <Fragment key={day.date}>
-                {group(
-                  formatDayHeader(day.date, today, locale, {
-                    today: t("day.today"),
-                    yesterday: t("day.yesterday"),
-                  }),
-                  day.rows,
+            {groups.map((group) => (
+              <Fragment key={group.key}>
+                {group.label !== undefined && (
+                  <TableGroupRow end={net(group.rows)}>
+                    {group.label}
+                  </TableGroupRow>
                 )}
-                {day.rows.map(row)}
+                {group.rows.map((row) => (
+                  <AgendaRow
+                    key={row.occurrence.id}
+                    row={row}
+                    accountName={
+                      row.schedule === undefined
+                        ? ""
+                        : (accountNames.get(row.schedule.account_id) ?? "")
+                    }
+                    scale={scale}
+                  />
+                ))}
               </Fragment>
             ))}
           </TableBody>

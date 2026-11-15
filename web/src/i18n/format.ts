@@ -324,6 +324,11 @@ export function formatDayHeader(
     .toISOString()
     .slice(0, 10);
   if (iso === yesterday) return words.yesterday;
+  return formatWeekdayDayMonth(iso, locale);
+}
+
+// "qua, 14 out" / "Wed, Oct 14", also for today and yesterday.
+export function formatWeekdayDayMonth(iso: string, locale: string): string {
   const weekday = dateParts(iso, locale, { weekday: "short" }).weekday ?? "";
   return `${weekday}, ${formatDayMonth(iso, locale)}`;
 }

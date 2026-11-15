@@ -1,26 +1,36 @@
 @layer app {
-  /* The four filters share rows of controls at least 11rem wide. */
+  /* The four filters share one row of controls at least 10rem wide. */
   .filters {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
     gap: var(--slotted-space-3);
   }
 
-  /* The list takes the width the calendar leaves (CP-03). */
-  .layout {
+  /* The list takes seven parts and the calendar with the running balance five (spec P2). */
+  .columns {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
     gap: var(--slotted-space-6);
     align-items: start;
   }
 
-  @media (min-width: 1024px) {
-    .layout {
-      grid-template-columns: minmax(0, 1fr) auto;
+  /* Below 1200 px the rows of the list need the whole width: the second column moves under. */
+  @media (max-width: 1199px) {
+    .columns {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 
-  .list {
+  .column {
+    display: grid;
+    gap: var(--slotted-space-6);
+    align-content: start;
     min-inline-size: 0;
+  }
+
+  /* The calendar's cell grows to fill the column: the family divides the room by seven up to
+     its cell size, and the theme's step leaves most of the column empty. */
+  .days {
+    --slotted-calendar-cell-size: 4rem;
   }
 }

@@ -22,11 +22,12 @@ Guide topics (`navigation-map.json`): `schedules_and_occurrences`, `budgets`.
 
 - `pages/`: the five routed components and the tests of the pages.
 - `model/`: agenda, schedule words, budget month, calendar and search functions used by several folders.
-- `agenda/`: the agenda tab, its table and styles.
+- `agenda/`: the agenda tab: its summary, filters, pending and done tables, calendar with marks, running balance, and the month close functions.
+- `summary/`: the band of figures each tab opens with.
 - `occurrences/`: occurrence actions, realize and edit dialogs, amount variance, realized list.
 - `schedules/`: the schedules tab and its rows.
 - `subscriptions/`: the subscriptions tab, its rows and actions.
-- `schedule-detail/`: schedule menu and the end, pause, rename, start, terms and matching dialogs.
+- `schedule-detail/`: schedule menu, the occurrences table of the schedule page, and the end, pause, rename, start, terms and matching dialogs.
 - `schedule-fields/`: recurrence and matching fields shared by the form and the dialogs.
 - `schedule-form/`: schedule form sections, draft and start hooks.
 - `terms-suggestion/`: terms suggestion banner and its rule.

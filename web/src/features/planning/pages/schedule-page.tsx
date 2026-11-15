@@ -37,7 +37,7 @@ import { useApi } from "@/api/api-context";
 import type { TableHandle } from "@slotted/react/table";
 import { accountsQuery } from "@/features/accounts";
 import { agenda } from "@/features/planning/model/agenda";
-import { AgendaTable } from "@/features/planning/agenda/agenda-table";
+import { ScheduleOccurrences } from "@/features/planning/schedule-detail/schedule-occurrences";
 import { occurrencesQuery, scheduleQuery } from "@/features/planning/api";
 import { calendarLabel } from "@/features/planning/model/calendar-label";
 import { EndDialog } from "@/features/planning/schedule-detail/end-dialog";
@@ -304,7 +304,7 @@ export function SchedulePage() {
               </TableContent>
             </Table>
           </Grid>
-          <AgendaTable
+          <ScheduleOccurrences
             caption={t("schedule.occurrences")}
             view={view}
             accountNames={names}
