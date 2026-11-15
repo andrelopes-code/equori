@@ -118,12 +118,13 @@ describe("corporate action entry", () => {
     });
     await chooseAction(catalogEn["action.kind.bonus"]);
     await proportion("10", "11");
-    await userEvent.type(
-      await screen.findByRole("textbox", {
-        name: optionalName(catalogEn["action.unitCost"]),
-      }),
-      "5",
-    );
+    const cost = await screen.findByRole("textbox", {
+      name: optionalName(catalogEn["action.unitCost"]),
+    });
+    await userEvent.type(cost, "5");
+    const frame = cost.closest('[data-ui="text-field"]');
+    expect(frame).toHaveTextContent("R$");
+    expect(frame).not.toHaveTextContent("%");
     await save();
 
     expect(await screen.findByText("Category required.")).toBeInTheDocument();

@@ -64,6 +64,19 @@ describe("brokerage note entry", () => {
     });
   });
 
+  it("writes the unit price of an order with the grouping of the language", async () => {
+    await renderApp(path, { fetch: investmentApi([]) });
+    await screen.findByRole("group", { name: orderName(1) });
+    const price = within(order(1)).getByRole("textbox", {
+      name: catalogEn["trade.unitPrice"],
+    });
+
+    await userEvent.type(price, "1234.5");
+    await userEvent.tab();
+
+    expect(price).toHaveValue("1,234.5");
+  });
+
   it("asks for at least one order before sending", async () => {
     const sent: unknown[] = [];
     await renderApp(path, { fetch: investmentApi(sent) });

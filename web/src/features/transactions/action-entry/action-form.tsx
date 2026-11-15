@@ -150,6 +150,7 @@ export function ActionForm({
       {draft.kind === "bonus" && (
         <ActionBonusFields
           draft={draft}
+          base={view.base}
           errors={errors}
           onChange={handleChange}
         />

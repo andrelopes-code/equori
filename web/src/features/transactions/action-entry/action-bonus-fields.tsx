@@ -5,18 +5,20 @@ import type { ActionDraft } from "@/features/transactions/action-entry/action-dr
 import { useT } from "@/i18n/i18n-provider";
 import { FieldTitle } from "@/ui/form-fields/field-title";
 import { FormRow } from "@/ui/form-layout/form-row";
-import { RateInput } from "@/ui/money/rate-input";
+import { PriceInput } from "@/ui/money/price-input";
 
 interface ActionBonusFieldsProps {
   draft: ActionDraft;
+  base: string | undefined;
   errors: Record<string, string>;
   onChange: (patch: Partial<ActionDraft>) => void;
 }
 
 // The cost per new unit that the company announced and the income category of its value (A228
-// IO25). Families read: field, text-field.
+// IO25). Families read: field.
 export function ActionBonusFields({
   draft,
+  base,
   errors,
   onChange,
 }: ActionBonusFieldsProps) {
@@ -29,9 +31,10 @@ export function ActionBonusFields({
           label={t("action.unitCost")}
           help={t("action.unitCostHelp")}
         />
-        <RateInput
+        <PriceInput
           name="unit_cost"
           value={draft.unitCost}
+          currency={base ?? ""}
           onChange={(unitCost) => {
             onChange({ unitCost });
           }}

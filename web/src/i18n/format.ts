@@ -50,7 +50,7 @@ function numberFormat(
 export function numberFormatter(
   locale: string,
   options: Intl.NumberFormatOptions = {},
-): { format: (value: number) => string } {
+): { format: (value: number | bigint) => string } {
   const format = numberFormat(locale, options);
   return {
     format: (value) =>

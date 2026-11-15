@@ -9,7 +9,6 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Stack } from "@slotted/react/stack";
-import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 
 import { InstrumentField } from "@/features/transactions/brokerage-account/instrument-field";
@@ -18,6 +17,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FormRow } from "@/ui/form-layout/form-row";
 import { MoneyInput } from "@/ui/money/money-input";
+import { PriceInput } from "@/ui/money/price-input";
 
 interface NoteOrderRowProps {
   order: NoteOrder;
@@ -34,7 +34,7 @@ interface NoteOrderRowProps {
 }
 
 // One order of the note: side, investment, quantity and unit price, then its gross and its share
-// of the costs. Families read: field-group, segmented-control, field, text-field.
+// of the costs. Families read: field-group, segmented-control, field.
 export function NoteOrderRow({
   order,
   index,
@@ -116,13 +116,13 @@ export function NoteOrderRow({
 
           <Field required width="medium" invalid={priceError !== undefined}>
             <FieldLabel>{t("trade.unitPrice")}</FieldLabel>
-            <TextField
+            <PriceInput
               name={`${prefix}.unit_price`}
-              inputMode="decimal"
-              autoComplete="off"
               value={order.unitPrice}
-              onChange={(event) => {
-                onChange({ unitPrice: event.target.value });
+              currency={base ?? ""}
+              invalid={priceError !== undefined}
+              onChange={(unitPrice) => {
+                onChange({ unitPrice });
               }}
             />
             {priceError !== undefined && <FieldError>{priceError}</FieldError>}
