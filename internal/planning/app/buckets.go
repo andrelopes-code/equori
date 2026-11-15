@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,6 +42,38 @@ func (s *Service) SaveBudgetBuckets(
 	return s.repo.InTx(ctx, func(repo Repository) error {
 		return repo.SaveBuckets(ctx, booksID, checked)
 	})
+}
+
+// BudgetBuckets returns the book's bucket method in order; empty without one (A229).
+func (s *Service) BudgetBuckets(ctx context.Context, booksID int64) ([]domain.Bucket, error) {
+	return s.repo.Buckets(ctx, booksID)
+}
+
+// keepBucketTarget replaces the savings target of a plan save with the stored one while a
+// bucket takes the savings: the plan reads the bucket's share then, and a save of that share
+// would overwrite the target the book returns to without the split (A231).
+func (s *Service) keepBucketTarget(
+	ctx context.Context,
+	booksID int64,
+	ref *domain.Reference,
+) error {
+	method, err := s.repo.Buckets(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	if !slices.ContainsFunc(method, func(b domain.Bucket) bool { return b.TakesSavings }) {
+		return nil
+	}
+
+	stored, _, err := s.repo.BudgetReference(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	ref.TargetBP, ref.HasTarget = stored.TargetBP, stored.HasTarget
+
+	return nil
 }
 
 // BucketTargets returns the target of each bucket; false without a reference (A230).

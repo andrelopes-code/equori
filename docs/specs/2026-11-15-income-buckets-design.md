@@ -2,7 +2,7 @@
 
 - Status: proposed
 - Date: 2026-11-15
-- Phase: P7 Planning, amendments A229 to A232, scenarios S438 to S443
+- Phase: P7 Planning, amendments A229 to A232, scenarios S438 to S445
 
 ## 1. Intent
 
@@ -64,7 +64,7 @@ The plan also carries `outside_planned` and `outside_spent`: the same sums over 
 
 ### A231 Savings target under a method
 
-When a bucket takes savings, the plan's savings target (A188) is that bucket's share. The stored `savings_target_bp` is kept and applies again once no bucket takes savings.
+When a bucket takes savings, the plan's savings target (A188) is that bucket's share. The stored `savings_target_bp` is kept and applies again once no bucket takes savings: a plan save under a savings bucket ignores the target it carries and keeps the stored one, since the screen and the assistant send back the share they read.
 
 ### A232 Presets
 
@@ -109,6 +109,7 @@ The sum of 10000 and the expense class of a category are checked by the applicat
 
 Operations, tag `planning`:
 
+- `GET /budget-buckets` (`getBudgetBuckets`), `x-book-role: read`, returns `BudgetBuckets`: the method in order with each bucket's `id`, `name`, `share_bp`, `takes_savings` and `category_ids`, and an empty list without one. The categories screen reads it, since it reads no month.
 - `PUT /budget-buckets` (`saveBudgetBuckets`), `x-book-role: write`, takes `BudgetBucketsInput` and returns 204. Field errors are 422 with the existing validation problem, the field named `buckets[i].name`, `buckets[i].share_bp`, `buckets[i].category_ids` or `buckets`.
 - `GET /budget-plan` gains the method:
 
@@ -138,7 +139,7 @@ BudgetBucketsInput:
         required: [name, share_bp, takes_savings, category_ids]
 ```
 
-`getBudgetPlan` keeps its tool, `get_budgets_and_goals` kind `plan`, which now lists the buckets. `saveBudgetBuckets` is covered by `manage_budget_or_goal` through a new action `save_buckets`, previewed like `save_plan`.
+`getBudgetPlan` keeps its tool, `get_budgets_and_goals` kind `plan`, which now lists the buckets. `saveBudgetBuckets` is covered by `manage_budget_or_goal` through a new action `save_buckets`, previewed like `save_plan`; an empty list previews a destructive removal that names the stored buckets. `getBudgetBuckets` is covered by `get_budgets_and_goals`, whose kind `plan` lists the same buckets.
 
 ## 5. The Plan view
 
@@ -177,11 +178,11 @@ BudgetBucketsInput:
 - D3: Does not apply: no recorded fact changes; a method is configuration.
 - D4: Does not apply: no data from a bank, a file or a model.
 - D5: Does not apply: the diagnostic file is unchanged.
-- S1: `saveBudgetBuckets` gets the entry `manage_budget_or_goal` in `internal/server/tool_exposure_test.go`. No new `Problem.code`.
+- S1: `getBudgetBuckets` gets the entry `get_budgets_and_goals` and `saveBudgetBuckets` the entry `manage_budget_or_goal` in `internal/server/tool_exposure_test.go`. No new `Problem.code`.
 - S2: Does not apply: Planning is desktop-only (ADR 027, S3).
 - S3: The guide article `budgets.md` gains one paragraph on the income split.
 - S4: The assistant reads the buckets through `get_budgets_and_goals` kind `plan` and writes them through `manage_budget_or_goal` action `save_buckets`.
-- X1: S438 to S443, section 7.
+- X1: S438 to S445, section 7.
 - X2: Does not apply: R1, R2, C2 and C3 add no regional value; C2's conversion is the one A72 already tests.
 
 ## 7. Scenarios
@@ -192,3 +193,5 @@ BudgetBucketsInput:
 - S441. A budget on a root category in bucket A, a subcategory placed in bucket B: the budget's planned amount counts in A; the subcategory's spending of M counts in B; a category outside any bucket counts in the outside sums.
 - S442. The bucket that takes savings has `planned` including `savings`, `spent` including the realized savings of M, and the plan's savings target equals its share.
 - S443. Saving an empty list removes the method: the plan has no `buckets`, and the savings target is the stored one again.
+- S444. With a stored savings target of 1000 and a savings bucket of 2500, a plan save that carries 2500 keeps 1000; removing the split returns the target to 1000.
+- S445. `GET /budget-buckets` returns an empty list without a method and the method in order after a save; a reader can read it.

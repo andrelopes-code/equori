@@ -344,3 +344,57 @@ func TestBucketSchema(t *testing.T) {
 		}
 	}
 }
+
+// S444: a plan save under a savings bucket keeps the stored savings target, which applies again
+// once the split is removed (A231).
+func TestS444PlanSaveKeepsStoredTargetUnderSavingsBucket(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	body := map[string]any{
+		"source": "fixed", "fixed": apitest.BRL(1000000), "savings_target_bp": 1000,
+		"amounts": []map[string]any{},
+	}
+	f.savePlan("2026-11", body)
+	f.saveBuckets(bucket("Living", 7500, false), bucket("Freedom", 2500, true))
+
+	// The screen sends the target the plan shows: the bucket's share.
+	body["savings_target_bp"] = 2500
+	f.savePlan("2026-11", body)
+	f.saveBuckets()
+
+	if got := f.plan("2026-11"); got.SavingsTargetBP == nil || *got.SavingsTargetBP != 1000 {
+		t.Errorf("savings target after removal = %v, want 1000", got.SavingsTargetBP)
+	}
+}
+
+// S445: the stored method reads back without a month, in order, with its categories.
+func TestS445GetBucketMethod(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	var empty struct {
+		Buckets []bucketView `json:"buckets"`
+	}
+	f.h.MustDo(http.MethodGet, bucketsPath, nil, http.StatusOK, &empty)
+
+	if empty.Buckets == nil || len(empty.Buckets) != 0 {
+		t.Fatalf("method without buckets = %+v, want an empty list", empty.Buckets)
+	}
+
+	f.saveBuckets(bucket("Needs", 6000, false, f.rent), bucket("Freedom", 4000, true))
+
+	var got struct {
+		Buckets []bucketView `json:"buckets"`
+	}
+	f.h.MustDo(http.MethodGet, bucketsPath, nil, http.StatusOK, &got)
+
+	if len(got.Buckets) != 2 || got.Buckets[0].Name != "Needs" ||
+		len(got.Buckets[0].CategoryIDs) != 1 || got.Buckets[0].CategoryIDs[0] != f.rent ||
+		!got.Buckets[1].TakesSavings {
+		t.Errorf("method = %+v", got.Buckets)
+	}
+
+	reader := f.h.JoinAs("reader@example.com", f.h.OwnerID(), "read")
+	if r := f.h.Call(reader, http.MethodGet, bucketsPath, nil); r.Status != http.StatusOK {
+		t.Errorf("reader GET = %d: %s", r.Status, r.Body)
+	}
+}

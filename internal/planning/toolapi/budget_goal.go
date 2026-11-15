@@ -133,7 +133,7 @@ func resolveBudgetGoalCurrency(
 	case "save_plan":
 		return loadBudgetPlan(ctx, svc, l, booksID, in, p, accounts)
 	case "save_buckets":
-		err = decodeBuckets(in.Buckets, accounts, p)
+		err = loadBuckets(ctx, svc, booksID, in.Buckets, accounts, p)
 	case "update_goal", "delete_goal":
 		if p.goal, err = svc.Goal(ctx, booksID, p.goalID); err == nil {
 			currency = p.goal.Currency

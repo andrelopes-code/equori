@@ -28,6 +28,30 @@ func (s *Server) saveBudgetBuckets(
 	return httpserver.None{}, s.svc.SaveBudgetBuckets(ctx, auth.MustBooksID(ctx), buckets)
 }
 
+func (s *Server) getBudgetBuckets(
+	ctx context.Context,
+	_ *http.Request,
+	_ httpserver.None,
+) (BudgetBuckets, error) {
+	method, err := s.svc.BudgetBuckets(ctx, auth.MustBooksID(ctx))
+	if err != nil {
+		return BudgetBuckets{}, err
+	}
+
+	out := BudgetBuckets{Buckets: make([]BudgetBucket, len(method))}
+	for i, b := range method {
+		out.Buckets[i] = BudgetBucket{
+			Id:           b.ID,
+			Name:         b.Name,
+			ShareBp:      b.ShareBP,
+			TakesSavings: b.TakesSavings,
+			CategoryIds:  b.Categories,
+		}
+	}
+
+	return out, nil
+}
+
 // setPlanBuckets adds the bucket method and its figures (A230); nothing without a method.
 func setPlanBuckets(out *BudgetPlan, p app.Plan, m func(int64) Money) {
 	if len(p.Buckets) == 0 {

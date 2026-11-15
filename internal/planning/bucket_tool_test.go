@@ -69,3 +69,33 @@ func TestSaveBucketsTool(t *testing.T) {
 		t.Errorf("plan buckets = %+v", b)
 	}
 }
+
+// S443 through the assistant: an empty list previews a destructive removal and removes the split.
+func TestRemoveBucketsTool(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-10")
+	f.saveBuckets(bucket("All", 10000, false, f.rent))
+
+	args := map[string]any{"action": "save_buckets", "buckets": []map[string]any{}}
+
+	p, r := preview(t, f.h, "manage_budget_or_goal", args)
+	if r.IsError {
+		t.Fatalf("preview = error %s", r.Content)
+	}
+
+	want := tool.Preview{
+		Action:      "manage_budget_or_goal.save_buckets",
+		Target:      "Income split",
+		Destructive: true,
+		Changes:     []tool.Change{{Field: "name", Before: tool.TextValue("All")}},
+	}
+	if !reflect.DeepEqual(p, want) {
+		t.Errorf("preview = %+v, want %+v", p, want)
+	}
+
+	toolOutput(t, f.h, "manage_budget_or_goal", args, &toolManaged{})
+
+	if got := f.bucketPlan("2026-11"); got.Buckets != nil {
+		t.Errorf("buckets after removal = %+v", got.Buckets)
+	}
+}

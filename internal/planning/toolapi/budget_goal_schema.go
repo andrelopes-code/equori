@@ -55,7 +55,7 @@ type manageBudgetOrGoalIn struct {
 	Name            string                   `json:"name,omitzero"              jsonschema:"for create_goal and update_goal: goal name"`
 	DueOn           tool.Date                `json:"due_on,omitzero"            jsonschema:"for create_goal and update_goal: date the target should be reached"`
 	AccountIDs      []string                 `json:"account_ids,omitzero"       jsonschema:"for create_goal and update_goal: balance accounts whose value counts toward the goal"`
-	Buckets         []bucketIn               `json:"buckets,omitzero"           jsonschema:"for save_buckets: the whole split"`
+	Buckets         []bucketIn               `json:"buckets,omitzero"           jsonschema:"for save_buckets: whole split; empty removes it"`
 }
 
 type manageBudgetOrGoalOut struct {
@@ -79,4 +79,5 @@ type budgetGoalPlan struct {
 	planNames                    []string
 	buckets                      []domain.Bucket
 	bucketNames                  [][]string
+	storedNames                  []string
 }

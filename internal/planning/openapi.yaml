@@ -720,6 +720,20 @@ paths:
         "422":
           $ref: "#/components/responses/Problem"
   /budget-buckets:
+    get:
+      tags: [planning]
+      operationId: getBudgetBuckets
+      x-book-role: read
+      summary: The book's income bucket method in order, without figures; an empty list without one (income buckets A229).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetBuckets"
+        "401":
+          $ref: "#/components/responses/Problem"
     put:
       tags: [planning]
       operationId: saveBudgetBuckets
@@ -1166,6 +1180,32 @@ schemas:
         maxItems: 10
         items:
           $ref: "#/components/schemas/BudgetBucketInput"
+  BudgetBucket:
+    type: object
+    required: [id, name, share_bp, takes_savings, category_ids]
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      share_bp:
+        type: integer
+      takes_savings:
+        type: boolean
+      category_ids:
+        type: array
+        items:
+          type: string
+          format: uuid
+  BudgetBuckets:
+    type: object
+    required: [buckets]
+    properties:
+      buckets:
+        type: array
+        items:
+          $ref: "#/components/schemas/BudgetBucket"
   BudgetPlanBucket:
     type: object
     required: [id, name, share_bp, takes_savings, category_ids, planned, spent]

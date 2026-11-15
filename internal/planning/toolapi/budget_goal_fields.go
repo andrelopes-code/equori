@@ -57,6 +57,7 @@ func budgetGoalFields(in manageBudgetOrGoalIn) []field {
 		},
 		{"amounts", len(in.Amounts) > 0},
 		{"savings_target_bp", in.SavingsTargetBP.Set},
-		{"buckets", len(in.Buckets) > 0},
+		// An empty list removes the split, so presence is the field set, not its length.
+		{"buckets", in.Buckets != nil},
 	}
 }

@@ -3646,7 +3646,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** The book's income bucket method in order, without figures; an empty list without one (income buckets A229). */
+        get: operations["getBudgetBuckets"];
         /**
          * Replace the book's income bucket method; an empty list removes it (income buckets A229).
          * @description Shares sum to 10000 basis points; names are unique ignoring case; at most one bucket takes savings; a category
@@ -6954,6 +6955,17 @@ export interface components {
         };
         BudgetBucketsInput: {
             buckets: components["schemas"]["BudgetBucketInput"][];
+        };
+        BudgetBucket: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            share_bp: number;
+            takes_savings: boolean;
+            category_ids: string[];
+        };
+        BudgetBuckets: {
+            buckets: components["schemas"]["BudgetBucket"][];
         };
         /**
          * @description A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
@@ -14097,6 +14109,27 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getBudgetBuckets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetBuckets"];
+                };
+            };
+            401: components["responses"]["Problem"];
         };
     };
     saveBudgetBuckets: {

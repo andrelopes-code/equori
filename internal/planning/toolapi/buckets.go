@@ -1,6 +1,7 @@
 package toolapi
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -67,6 +68,27 @@ func planBucketViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planBucketVi
 	return out, nil
 }
 
+// loadBuckets reads the stored bucket names and the method of a save_buckets call into p.
+func loadBuckets(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in []bucketIn,
+	accounts map[uuid.UUID]Account,
+	p *budgetGoalPlan,
+) error {
+	stored, err := svc.BudgetBuckets(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	for _, b := range stored {
+		p.storedNames = append(p.storedNames, b.Name)
+	}
+
+	return decodeBuckets(in, accounts, p)
+}
+
 // decodeBuckets reads the bucket method of a save_buckets call into p; the service checks it.
 func decodeBuckets(in []bucketIn, accounts map[uuid.UUID]Account, p *budgetGoalPlan) error {
 	for i, b := range in {
@@ -87,9 +109,19 @@ func decodeBuckets(in []bucketIn, accounts map[uuid.UUID]Account, p *budgetGoalP
 	return nil
 }
 
-// previewBuckets lists each bucket with its share and categories.
+// previewBuckets lists each bucket with its share and categories, or the buckets an empty
+// list removes.
 func previewBuckets(pv *tool.Preview, p budgetGoalPlan) {
 	pv.Target = "Income split"
+	if len(p.buckets) == 0 {
+		pv.Destructive = true
+		pv.Changes = []tool.Change{
+			{Field: "name", Before: tool.TextValue(strings.Join(p.storedNames, ", "))},
+		}
+
+		return
+	}
+
 	for i, b := range p.buckets {
 		rate := fmt.Sprintf("%d bp of the reference", b.ShareBP)
 		if b.TakesSavings {

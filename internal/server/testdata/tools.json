@@ -5951,7 +5951,7 @@
             ],
             "additionalProperties": false
           },
-          "description": "for save_buckets: the whole split"
+          "description": "for save_buckets: whole split; empty removes it"
         }
       },
       "required": [

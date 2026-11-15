@@ -177,6 +177,15 @@ type BudgetAmount struct {
 	EffectiveFrom string `json:"effective_from"`
 }
 
+// BudgetBucket defines model for BudgetBucket.
+type BudgetBucket struct {
+	CategoryIds  []openapi_types.UUID `json:"category_ids"`
+	Id           openapi_types.UUID   `json:"id"`
+	Name         string               `json:"name"`
+	ShareBp      int                  `json:"share_bp"`
+	TakesSavings bool                 `json:"takes_savings"`
+}
+
 // BudgetBucketInput defines model for BudgetBucketInput.
 type BudgetBucketInput struct {
 	// CategoryIds Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor.
@@ -188,6 +197,11 @@ type BudgetBucketInput struct {
 
 	// TakesSavings The bucket also draws the month's savings; at most one bucket of a method.
 	TakesSavings bool `json:"takes_savings"`
+}
+
+// BudgetBuckets defines model for BudgetBuckets.
+type BudgetBuckets struct {
+	Buckets []BudgetBucket `json:"buckets"`
 }
 
 // BudgetBucketsInput defines model for BudgetBucketsInput.
