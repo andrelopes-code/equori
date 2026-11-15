@@ -10,7 +10,7 @@ import type { components } from "@/api/schema.gen";
 import styles from "@/features/assistant/panel/assistant-panel.module.css";
 import { catalogKey } from "@/features/assistant/model/catalog-key";
 import { ProposalChange } from "@/features/assistant/proposal/proposal-change";
-import { useValueText } from "@/features/assistant/proposal/use-value-text";
+import { useChangeText } from "@/features/assistant/proposal/use-change-text";
 import { useT } from "@/i18n/i18n-provider";
 
 type Change = components["schemas"]["AssistantPreview"]["changes"][number];
@@ -23,7 +23,7 @@ interface ProposalChangesProps {
 // the field at the start and the value at the end of the card (P14).
 export function ProposalChanges({ changes }: ProposalChangesProps) {
   const t = useT();
-  const valueText = useValueText();
+  const changeText = useChangeText();
 
   return (
     <DescriptionList termWidth="8rem" className={styles.changes}>
@@ -39,8 +39,8 @@ export function ProposalChanges({ changes }: ProposalChangesProps) {
             </DescriptionListTerm>
             <DescriptionListDescription className={styles.fieldValue}>
               <ProposalChange
-                before={valueText(change.before)}
-                after={valueText(change.after)}
+                before={changeText(change.field, change.before)}
+                after={changeText(change.field, change.after)}
               />
             </DescriptionListDescription>
           </DescriptionListItem>
