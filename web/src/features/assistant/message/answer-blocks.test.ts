@@ -161,7 +161,29 @@ describe("answerSegments", () => {
     ).toEqual([0, 2, 10]);
   });
 
+  it("moves a year-less row to the next year when its month comes earlier", () => {
+    const segments = answerSegments(
+      table("Data", "Saldo", [
+        "| 20/12/2026 | R$ 10,00 |",
+        "| 02/01 | R$ 20,00 |",
+        "| 10/01 | R$ 15,00 |",
+      ]),
+      "pt-BR",
+    );
+
+    const series = segments[0];
+    expect(series?.kind).toBe("series");
+    expect(
+      series?.kind === "series" ? series.rows.map((r) => r.day) : [],
+    ).toEqual([0, 13, 21]);
+  });
+
   it.each([
+    {
+      name: "a comparison with a negative value",
+      rows: ["| A | R$ 10,00 |", "| B | −R$ 5,00 |"],
+      columns: 2,
+    },
     {
       name: "a ranking with a negative value",
       rows: ["| A | R$ 10,00 |", "| B | −R$ 5,00 |", "| C | R$ 3,00 |"],

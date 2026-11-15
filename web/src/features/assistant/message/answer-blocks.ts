@@ -148,7 +148,12 @@ function tableBlock(
   const rows = amountRows(body, locale);
   if (rows === undefined) return undefined;
 
-  if (rows.length === 2) return { kind: "compare", head: header, rows };
+  // Bars start at zero, so a negative value keeps the table as text.
+  if (rows.length === 2) {
+    if (rows.some((row) => row.value < 0)) return undefined;
+
+    return { kind: "compare", head: header, rows };
+  }
 
   const series = seriesRows(body, rows, locale);
   if (series !== undefined)
@@ -192,17 +197,31 @@ function seriesRows(
   let year = fallbackYear;
   let first = 0;
   let previous = Number.NEGATIVE_INFINITY;
+  let previousMonth = 0;
 
   for (const [i, row] of rows.entries()) {
     const parsed = parseDay(body[i]?.[0] ?? "", locale);
     if (parsed === undefined) return undefined;
 
     year = parsed.year ?? year;
-    const time = Date.UTC(year, parsed.month - 1, parsed.day);
+    let time = Date.UTC(year, parsed.month - 1, parsed.day);
+
+    // A year-less row whose month comes before the previous row's crosses into the next year.
+    if (
+      parsed.year === undefined &&
+      time <= previous &&
+      parsed.month < previousMonth
+    ) {
+      year += 1;
+      time = Date.UTC(year, parsed.month - 1, parsed.day);
+    }
+
     if (time <= previous) return undefined;
 
     if (i === 0) first = time;
+
     previous = time;
+    previousMonth = parsed.month;
     series.push({ ...row, day: Math.round((time - first) / msPerDay) });
   }
 
