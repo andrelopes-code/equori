@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// Cost methods: how a sale removes cost from a holding (see CostMethod in package ledger).
+const (
+	CostAverage = "average"
+	CostFIFO    = "fifo"
+)
+
 // ErrLotsInconsistent reports open lots that cannot give up the units or the cost asked of them.
 var ErrLotsInconsistent = errors.New("open lots are inconsistent with the holding")
 

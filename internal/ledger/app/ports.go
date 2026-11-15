@@ -59,6 +59,7 @@ type Instrument struct {
 	Code          money.Currency
 	Scale         int
 	QuoteCurrency money.Currency
+	Type          string
 }
 
 // Prices converts amounts with stored prices (Market data, P8 amendment A61); it returns
@@ -118,6 +119,7 @@ type RegionDefaults interface {
 	WithholdingBP(region, incomeType string) int
 	ReserveYieldPercent(currency money.Currency) int64
 	SeparatesDayTrades(region string) bool
+	CostMethod(region, instrumentType string) string
 }
 
 // Repository stores the ledger tables; postgres/ implements it.

@@ -28,6 +28,10 @@ func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {
 
 func (regionDefaults) SeparatesDayTrades(region string) bool { return SeparatesDayTrades(region) }
 
+func (regionDefaults) CostMethod(region, instrumentType string) string {
+	return CostMethod(region, instrumentType)
+}
+
 type pricesAdapter struct{ md MarketData }
 
 func (p pricesAdapter) Convert(
@@ -102,7 +106,12 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 		return app.Instrument{}, err
 	}
 
-	in = app.Instrument{Code: m.Code, Scale: m.Scale, QuoteCurrency: m.QuoteCurrency}
+	in = app.Instrument{
+		Code:          m.Code,
+		Scale:         m.Scale,
+		QuoteCurrency: m.QuoteCurrency,
+		Type:          m.Type,
+	}
 
 	c.mu.Lock()
 	c.cache[code] = in

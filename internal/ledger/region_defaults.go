@@ -1,6 +1,9 @@
 package ledger
 
-import "github.com/andrelopes-code/equori/internal/platform/money"
+import (
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
+)
 
 // DefaultBaseCurrency returns the base currency a new book of a region starts with.
 func DefaultBaseCurrency(region string) (money.Currency, bool) {
@@ -47,4 +50,15 @@ func DefaultWithholdingBP(region, incomeType string) int {
 // from the earlier stock (A228 IO10; BR: IN RFB 1.585/2015, art. 65).
 func SeparatesDayTrades(region string) bool {
 	return region == "BR"
+}
+
+// CostMethod returns how a sale of an instrument type removes cost in a book of region: the
+// oldest lot first for a fixed income security in BR (Tesouro Direto sells by PEPS), the average
+// cost of the holding otherwise.
+func CostMethod(region, instrumentType string) string {
+	if region == "BR" && instrumentType == "fixed_income" {
+		return domain.CostFIFO
+	}
+
+	return domain.CostAverage
 }
