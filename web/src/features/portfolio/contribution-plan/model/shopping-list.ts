@@ -13,6 +13,15 @@ export interface ShoppingEntry {
   cost: Money;
   // The units of the order as a decimal string of the instrument scale, "0.00150000" at scale 8.
   quantity?: string;
+  // The price of one unit, beside the quantity.
+  unit?: Money;
+  // The instrument that names a quantity with decimals ("0.00098412 BTC"); a whole quantity is
+  // written in units.
+  symbol?: string;
+  // An account, or a class without instruments: bought by its amount, with no units.
+  byValue?: boolean;
+  // An instrument member without a unit value: the cost is the planned amount.
+  unpriced?: boolean;
   // A class without member targets that holds an instrument: the units wait for a split.
   splitToSee?: boolean;
   // The position of the entry's class in the plan: it picks the class colour.
@@ -45,6 +54,7 @@ export function receivingEntries(
       if (!positive(cost)) return;
       const entry: ShoppingEntry = { name: cls.name, cost, group };
       if (unitsWaitForSplit(cls)) entry.splitToSee = true;
+      else entry.byValue = true;
       entries.push(entry);
 
       return;
@@ -54,15 +64,28 @@ export function receivingEntries(
       if (!positive(cost)) continue;
       const entry: ShoppingEntry = { name: memberName(member), cost, group };
       if (member.quantity !== undefined)
-        entry.quantity = decimalOf(
-          member.quantity.amount,
-          scaleOf(member.quantity.currency),
+        Object.assign(
+          entry,
+          orderOf(member.quantity, member.unit_value, scaleOf),
         );
+      if (member.instrument === undefined) entry.byValue = true;
+      else if (member.unit_value === undefined) entry.unpriced = true;
       entries.push(entry);
     }
   });
 
   return entries;
+}
+
+// The contribution the list spends: the costs plus the leftover, which CN18 makes the amount.
+export function contributionOf(
+  entries: ShoppingEntry[],
+  leftover: Money | undefined,
+): Money {
+  const costs = entries.reduce((sum, entry) => sum + entry.cost.amount, 0);
+  const currency = entries[0]?.cost.currency ?? leftover?.currency ?? "";
+
+  return { amount: costs + (leftover?.amount ?? 0), currency };
 }
 
 export function positive(money: Money | undefined): money is Money {
@@ -90,6 +113,22 @@ export function groupCost(group: Plan["classes"][number]): Money | undefined {
     amount: costs.reduce((sum, c) => sum + (c?.amount ?? 0), 0),
     currency,
   };
+}
+
+// The units of an order, its unit price, and the instrument when the units carry decimals.
+function orderOf(
+  quantity: Money,
+  unit: Money | undefined,
+  scaleOf: (instrument: string) => number,
+): Pick<ShoppingEntry, "quantity" | "unit" | "symbol"> {
+  const scale = scaleOf(quantity.currency);
+  const order: Pick<ShoppingEntry, "quantity" | "unit" | "symbol"> = {
+    quantity: decimalOf(quantity.amount, scale),
+  };
+  if (unit !== undefined) order.unit = unit;
+  if (scale > 0) order.symbol = quantity.currency;
+
+  return order;
 }
 
 // The integer of an amount at a scale as a decimal string, by position: no division.

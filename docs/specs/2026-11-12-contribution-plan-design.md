@@ -176,6 +176,21 @@ Owner review of 2026-11-13:
 - The purchase list and each member row show the order of CN17: "12 cotas · R$ 1.234,56" (quantity with the instrument's decimals, cost); a cash-like entry shows its amount only; the list ends with "Sobra R$ 37,20" when CN18 leaves money, or nothing when it does not. A group without member ideals that holds instrument members shows, in place of a quantity, "divida entre ativos para ver as cotas" as a link that opens its assets.
 - The actions of a group are visible, never behind a menu: the group row ends with a text button "Ativos (N)" that expands the group's assets panel, and a remove icon button with its tooltip. The panel lists the member rows and ends with the button "Adicionar ativo" and the switch "Dividir o ideal do grupo entre os ativos" with one muted line: "Ligado, cada ativo tem seu próprio ideal dentro do grupo." A group without assets opens with the line "Nenhum ativo neste grupo. Adicione os ativos que você compra para ele." beside "Adicionar ativo".
 
+### Purchase list as one bar
+
+Owner review of 2026-11-15 (concept B of the mock): the list read as names on the left and amounts on the right with the width of the page between them, a colour dot whose group was named only in the next section, no unit price, and no share of the contribution. It replaces the purchase list bullet of "This month" and the list half of the first bullet of "Executable orders and group assets".
+
+- A bar, an own element, draws the contribution: one segment per purchase in the order of the rows, width proportional to its cost, in its group colour; the leftover of CN18 is the last segment, hatched in the muted text colour. Under it, "0" at the start and "aporte R$ 1.500,00" at the end. Its accessible name lists each segment with its share ("Divisão do aporte: HGLG11 88%, SBSP3 7,3%, …").
+- The rows form one table under the bar, with column headers "Ordem", "Total" and "Do aporte" (the asset and group columns carry their names for assistive technology only). A row draws a square swatch in the group colour and the name; the group name in the muted tone when the row is a member (nothing when the row is the group); the order; the cost in the heaviest weight; the share of the contribution in the muted tone.
+- The order of a row: "≈ 9 cotas × R$ 146,02" (one unit reads "≈ 1 cota × R$ 15,10"; a quantity with decimals names the instrument, "≈ 0,00098412 BTC × R$ 350.000,00"); "aplicação por valor" for an account member or a group with no instrument; "sem cotação · valor planejado" for an instrument member without a unit value; the link "divida entre ativos para ver as cotas" as before.
+- The leftover is the last row: hatched swatch, "Sobra", "fica na conta", its amount and its share. It replaces the "Sobra R$ 37,20" line under the list.
+- Pointing at a row dims every other segment of the bar to a quarter, with no motion under `prefers-reduced-motion`.
+- The share of a row is its cost over the contribution, the costs plus the leftover (CN18 makes that sum the amount), written by `share-text.ts` (whole percent, one decimal below 10%). It is a client derivation with its own test.
+- Privacy mode masks the amounts, the unit prices and the quantities; the bar and the shares stay, as the shares of the second section do.
+- "Copiar lista" and its text are unchanged.
+
+Feature-design answers: regions and currencies, every amount in the plan's base currency through `useMoneyFormat()`, the share and the quantity through `numberFormatter`; languages, pt-BR and en keys in `catalog-contribution-plan.*`; time, access and data lifecycle, unchanged (no new request, no stored state); surfaces, desktop only (S2, ADR 027); tests, the model functions and S409 in `contribution-plan-orders.test.tsx`.
+
 ### Outside the plan
 
 A collapsed block under the second section: "N investimentos fora do plano · total", expanding to the list of CN6 with a group selector per entry; an entry without a value says "sem cotação".

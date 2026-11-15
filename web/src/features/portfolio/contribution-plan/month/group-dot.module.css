@@ -8,6 +8,24 @@
     background: var(--dot-color);
   }
 
+  /* Beside the purchase bar, whose segments are square. */
+  .square {
+    inline-size: var(--slotted-space-5);
+    block-size: var(--slotted-space-5);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  /* The leftover: no group colour. The hatch step has no token: 2px every 4px at 135 degrees. */
+  .hatch {
+    box-sizing: border-box;
+    border: var(--slotted-border-width-thin) solid var(--slotted-text-muted);
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-text-muted) 0 1px,
+      transparent 1px 3px
+    );
+  }
+
   .slot1 {
     --dot-color: var(--slotted-data-1);
   }

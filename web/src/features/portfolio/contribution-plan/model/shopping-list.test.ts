@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { shoppingList } from "@/features/portfolio/contribution-plan/model/shopping-list";
+import {
+  contributionOf,
+  shoppingList,
+} from "@/features/portfolio/contribution-plan/model/shopping-list";
 import type { components } from "@/api/schema.gen";
 
 type Plan = components["schemas"]["ContributionPlan"];
@@ -50,7 +53,13 @@ describe("shoppingList", () => {
     });
 
     expect(shoppingList(view, names)).toEqual([
-      { name: "PETR4", cost: brl(100000), quantity: "25", group: 1 },
+      {
+        name: "PETR4",
+        cost: brl(100000),
+        quantity: "25",
+        unit: brl(4000),
+        group: 1,
+      },
     ]);
   });
 
@@ -61,7 +70,13 @@ describe("shoppingList", () => {
     });
 
     expect(shoppingList(view, names)).toEqual([
-      { name: "PETR4", cost: brl(99033), quantity: "33", group: 1 },
+      {
+        name: "PETR4",
+        cost: brl(99033),
+        quantity: "33",
+        unit: brl(4000),
+        group: 1,
+      },
     ]);
   });
 
@@ -74,6 +89,62 @@ describe("shoppingList", () => {
     const got = shoppingList(view, names, () => 8);
 
     expect(got[0]?.quantity).toBe("0.00150000");
+    expect(got[0]?.symbol).toBe("PETR4");
+  });
+
+  it("names no symbol for a quantity in whole units", () => {
+    const view = withPetr4({
+      quantity: { amount: 25, currency: "PETR4" },
+      cost: brl(100000),
+    });
+
+    expect(shoppingList(view, names)[0]?.symbol).toBeUndefined();
+  });
+
+  it("marks an account member and a class without instruments as bought by value", () => {
+    const view: Plan = {
+      ...plan,
+      classes: [
+        {
+          name: "Fixed income",
+          target_bp: 5000,
+          value: brl(0),
+          amount: brl(100000),
+          members: [
+            {
+              account_id: "acc-1",
+              target_bp: 10000,
+              value: brl(0),
+              amount: brl(60000),
+            },
+          ],
+        },
+        {
+          name: "Bonds",
+          target_bp: 5000,
+          value: brl(0),
+          amount: brl(40000),
+          members: [],
+        },
+      ],
+    };
+
+    const got = shoppingList(view, names);
+
+    expect(got.map((e) => [e.name, e.byValue])).toEqual([
+      ["acc-1", true],
+      ["Bonds", true],
+    ]);
+  });
+
+  it("marks an instrument member without a unit value as unpriced", () => {
+    const view = withPetr4({});
+    delete view.classes[1]?.members[1]?.unit_value;
+
+    const got = shoppingList(view, names);
+
+    expect(got[0]?.unpriced).toBe(true);
+    expect(got[0]?.byValue).toBeUndefined();
   });
 
   it("lists a member without a quantity by its amount", () => {
@@ -159,6 +230,23 @@ describe("shoppingList", () => {
     };
 
     expect(shoppingList(view, names)).toEqual([]);
+  });
+});
+
+describe("contributionOf", () => {
+  it("adds the leftover to the costs (S409: 990,33 + 1.000,00 + 9,67)", () => {
+    const entries = [
+      { name: "PETR4", cost: brl(99033), group: 0 },
+      { name: "FIIs", cost: brl(100000), group: 1 },
+    ];
+
+    expect(contributionOf(entries, brl(967))).toEqual(brl(200000));
+  });
+
+  it("is the sum of the costs without a leftover", () => {
+    const entries = [{ name: "PETR4", cost: brl(99033), group: 0 }];
+
+    expect(contributionOf(entries, undefined)).toEqual(brl(99033));
   });
 });
 

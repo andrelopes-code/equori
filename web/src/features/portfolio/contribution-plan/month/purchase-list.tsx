@@ -1,16 +1,30 @@
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { Table, TableBody, TableContent } from "@slotted/react/table";
+import {
+  Table,
+  TableBody,
+  TableColumnHeader,
+  TableContent,
+  TableHead,
+  TableRow,
+} from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
+import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { CopyListButton } from "@/features/portfolio/contribution-plan/month/copy-list-button";
-import { PurchaseRow } from "@/features/portfolio/contribution-plan/month/purchase-row";
 import { quantityText } from "@/features/portfolio/contribution-plan/model/quantity-text";
+import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import {
+  contributionOf,
   positive,
   shoppingList,
 } from "@/features/portfolio/contribution-plan/model/shopping-list";
+import { CopyListButton } from "@/features/portfolio/contribution-plan/month/copy-list-button";
+import { LeftoverRow } from "@/features/portfolio/contribution-plan/month/leftover-row";
+import { PurchaseBar } from "@/features/portfolio/contribution-plan/month/purchase-bar";
+import type { PurchaseSegment } from "@/features/portfolio/contribution-plan/month/purchase-bar";
+import { PurchaseRow } from "@/features/portfolio/contribution-plan/month/purchase-row";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -25,17 +39,40 @@ interface PurchaseListProps {
   onSplit: (group: number) => void;
 }
 
-// One row per receiving entry, largest cost first, the leftover and the plain-text copy of the
-// list.
+const leftoverKey = "leftover";
+
+// The contribution as one bar and the purchases as its legend, largest cost first, the leftover
+// last, and the plain-text copy of the list (spec, Purchase list as one bar).
 export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const scale = useScale();
 
+  const [active, setActive] = useState<string>();
+
   const entries = shoppingList(view, memberName, scale ?? undefined);
   const leftover = positive(view.leftover) ? view.leftover : undefined;
+  const base = contributionOf(entries, leftover);
   const money = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
+  const shareOf = (m: Money) => shareText(m.amount / base.amount, locale);
+  const groupOf = (name: string, group: number) => {
+    const groupName = view.classes[group]?.name;
+
+    return groupName === name ? undefined : groupName;
+  };
+  const segments: PurchaseSegment[] = entries.map((entry) => ({
+    key: entry.name,
+    group: entry.group,
+    amount: entry.cost.amount,
+    label: `${entry.name} ${shareOf(entry.cost)}`,
+  }));
+  if (leftover !== undefined)
+    segments.push({
+      key: leftoverKey,
+      amount: leftover.amount,
+      label: `${t("contributionPlan.leftoverName")} ${shareOf(leftover)}`,
+    });
   const text = entries
     .map((entry) =>
       entry.quantity === undefined
@@ -64,23 +101,73 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
         <CopyListButton text={text} disabled={fmt.hidden} />
       </Inline>
 
-      <Table columns={2} variant="plain">
-        <TableContent aria-label={t("contributionPlan.shopping")}>
-          <TableBody>
-            {entries.map((entry) => (
-              <PurchaseRow key={entry.name} entry={entry} onSplit={onSplit} />
-            ))}
-          </TableBody>
-        </TableContent>
-      </Table>
+      <PurchaseBar
+        segments={segments}
+        total={t("contributionPlan.purchaseBarEnd", { amount: money(base) })}
+        active={active}
+      />
 
-      {leftover !== undefined && (
-        <Inline justify="end">
-          <Text size="sm" tone="muted">
-            {t("contributionPlan.leftover", { amount: money(leftover) })}
-          </Text>
-        </Inline>
-      )}
+      <div data-slotted-density="comfortable">
+        <Table columns={5} variant="ruled" edges="flush">
+          <TableContent aria-label={t("contributionPlan.shopping")}>
+            <TableHead>
+              <TableRow>
+                <TableColumnHeader>
+                  <VisuallyHidden>
+                    {t("contributionPlan.colAsset")}
+                  </VisuallyHidden>
+                </TableColumnHeader>
+
+                <TableColumnHeader>
+                  <VisuallyHidden>
+                    {t("contributionPlan.colGroup")}
+                  </VisuallyHidden>
+                </TableColumnHeader>
+
+                <TableColumnHeader align="end">
+                  <Text size="xs" tone="muted" weight="medium">
+                    {t("contributionPlan.colOrder")}
+                  </Text>
+                </TableColumnHeader>
+
+                <TableColumnHeader numeric>
+                  <Text size="xs" tone="muted" weight="medium">
+                    {t("contributionPlan.colTotal")}
+                  </Text>
+                </TableColumnHeader>
+
+                <TableColumnHeader numeric>
+                  <Text size="xs" tone="muted" weight="medium">
+                    {t("contributionPlan.colShare")}
+                  </Text>
+                </TableColumnHeader>
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {entries.map((entry) => (
+                <PurchaseRow
+                  key={entry.name}
+                  entry={entry}
+                  groupName={groupOf(entry.name, entry.group)}
+                  base={base.amount}
+                  onSplit={onSplit}
+                  onPointer={setActive}
+                />
+              ))}
+
+              {leftover !== undefined && (
+                <LeftoverRow
+                  rowKey={leftoverKey}
+                  amount={leftover}
+                  base={base.amount}
+                  onPointer={setActive}
+                />
+              )}
+            </TableBody>
+          </TableContent>
+        </Table>
+      </div>
     </Stack>
   );
 }

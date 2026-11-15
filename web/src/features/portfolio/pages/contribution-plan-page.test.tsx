@@ -189,7 +189,12 @@ describe("Contribution plan page", () => {
               .filter((c) => c !== "")
               .join("|"),
           ),
-      ).toEqual(["Ações exterior|R$ 3.000,00", "Ações Brasil|R$ 1.000,00"]);
+      ).toEqual([
+        "Ativo|Grupo|Ordem|Total|Do aporte",
+        // Groups without assets are bought by value; 3.000 and 1.000 of a 4.000 contribution.
+        "Ações exterior|aplicação por valor|R$ 3.000,00|75%",
+        "Ações Brasil|aplicação por valor|R$ 1.000,00|25%",
+      ]);
     });
     expect(screen.getByRole("button", { name: "Copiar lista" })).toBeEnabled();
   });

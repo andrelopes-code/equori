@@ -73,23 +73,60 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
     localStorage.removeItem("equori.locale");
   });
 
-  it("S409: writes the units and the cost of each row, and the leftover under the list", async () => {
+  // Spec, Purchase list as one bar: the order is units times the unit price, each row writes its
+  // share of the R$ 2.000,00 (990,33 + 1.000,00 + 9,67), and the leftover is the last row.
+  it("S409: writes the order, the cost and the share of each row, and the leftover as the last row", async () => {
     const list = await open();
 
     await waitFor(() => {
-      expect(within(list).getAllByRole("row")).toHaveLength(2);
+      expect(within(list).getAllByRole("row")).toHaveLength(4);
     });
-    const [fiis, petr4] = within(list).getAllByRole("row");
+    const [, fiis, petr4, leftover] = within(list).getAllByRole("row");
 
     expect(text(fiis ?? list)).toContain("FIIs");
     expect(within(fiis ?? list).getByRole("button")).toHaveTextContent(
       "divida entre ativos para ver as cotas",
     );
     expect(within(fiis ?? list).getByText("R$ 1.000,00")).toBeInTheDocument();
+    expect(within(fiis ?? list).getByText("50%")).toBeInTheDocument();
     expect(text(petr4 ?? list)).toContain("PETR4");
-    expect(within(petr4 ?? list).getByText("≈ 33 cotas")).toBeInTheDocument();
+    expect(within(petr4 ?? list).getByText("Ações Brasil")).toBeInTheDocument();
+    expect(text(petr4 ?? list)).toContain("≈ 33 cotas × R$ 30,01");
     expect(within(petr4 ?? list).getByText("R$ 990,33")).toBeInTheDocument();
-    expect(screen.getByText("Sobra R$ 9,67")).toBeInTheDocument();
+    expect(within(petr4 ?? list).getByText("50%")).toBeInTheDocument();
+    expect(text(leftover ?? list)).toContain("Sobrafica na conta");
+    expect(within(leftover ?? list).getByText("R$ 9,67")).toBeInTheDocument();
+    expect(within(leftover ?? list).getByText("0,5%")).toBeInTheDocument();
+  });
+
+  it("draws the contribution as one bar named by its shares", async () => {
+    await open();
+
+    expect(
+      await screen.findByRole("img", {
+        name: "Divisão do aporte: FIIs 50%, PETR4 50% e Sobra 0,5%",
+      }),
+    ).toBeInTheDocument();
+    expect(text(document.body)).toContain("aporte R$ 2.000,00");
+  });
+
+  it("marks the segment of the row under the pointer", async () => {
+    const list = await open();
+    const user = userEvent.setup();
+    const bar = await screen.findByRole("img", { name: /Divisão do aporte/ });
+    const petr4 = within(list).getAllByRole("row")[2] ?? list;
+
+    await user.hover(petr4);
+
+    expect(bar).toHaveAttribute("data-active", "true");
+    const marked = Array.from(bar.children).map((s) =>
+      s.getAttribute("data-current"),
+    );
+    expect(marked).toEqual(["false", "true", "false"]);
+
+    await user.unhover(petr4);
+
+    expect(bar).toHaveAttribute("data-active", "false");
   });
 
   it("writes the cost of each row of the portfolio against the ideal", async () => {
