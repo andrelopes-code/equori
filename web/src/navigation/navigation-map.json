@@ -251,7 +251,8 @@
       "list the schedules by kind with their next occurrence",
       "see what each subscription costs a month and a year, pause or end it",
       "see each budget's planned, carried, spent and available amounts in a month",
-      "see the spending no budget covers and what the month already commits"
+      "see the spending no budget covers and what the month already commits",
+      "split the income into buckets with a share each and compare each bucket's target, planned and spent amounts"
     ]
   },
   {

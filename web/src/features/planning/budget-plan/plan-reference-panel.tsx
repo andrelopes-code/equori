@@ -233,6 +233,7 @@ export function PlanReferencePanel({
               savings={plan.savings.amount}
               target={target}
               editable={editable}
+              bucket={plan.buckets?.find((b) => b.takes_savings)?.name}
               format={format}
               onTarget={onTarget}
             />

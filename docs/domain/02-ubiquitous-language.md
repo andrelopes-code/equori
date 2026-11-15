@@ -197,6 +197,7 @@ classDiagram
 | Term | Portuguese | Definition | Example |
 |---|---|---|---|
 | Budget | Orçamento | Planned amount for a category over a period. | Food: 1,800.00 per month |
+| Income split | Divisão da renda | Named buckets that each take a share of the amount to distribute and the expense categories placed in them. | Needs 50%, Wants 30%, Savings 20% |
 | Goal | Meta | Target balance for an account or group of accounts by a date. | Emergency fund 30,000.00 by 2027-06 |
 | Accrual view | Regime de competência | Income and expenses on their transaction date. An installment purchase counts in full on the purchase date. | |
 | Cash view | Regime de caixa | Income and expenses on the date money left or entered a balance account. A card expense counts when its statement is paid, in proportion to the payment. | |

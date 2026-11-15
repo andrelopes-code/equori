@@ -1,0 +1,26 @@
+@layer app {
+  .bucketRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 6rem auto auto;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  .categoryRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14rem;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-block-size: var(--slotted-space-9);
+  }
+
+  .categoryName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .children {
+    padding-inline-start: var(--slotted-space-6);
+  }
+}

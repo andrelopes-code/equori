@@ -7,10 +7,12 @@ import type { KeyboardEvent } from "react";
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import styles from "@/features/planning/budget-plan/budget-plan.module.css";
+import { BucketDialog } from "@/features/planning/budget-plan/bucket-dialog";
 import { PlanAllocationBar } from "@/features/planning/budget-plan/plan-allocation-bar";
 import { PlanDistributeDialog } from "@/features/planning/budget-plan/plan-distribute-dialog";
 import { planShortcut } from "@/features/planning/budget-plan/plan-keys";
 import { suggestion } from "@/features/planning/budget-plan/plan-math";
+import { PlanBuckets } from "@/features/planning/budget-plan/plan-buckets";
 import { PlanLeaveGuard } from "@/features/planning/budget-plan/plan-leave-guard";
 import { PlanNotices } from "@/features/planning/budget-plan/plan-notices";
 import { PlanReferencePanel } from "@/features/planning/budget-plan/plan-reference-panel";
@@ -67,6 +69,7 @@ export function PlanEditor({
   const [unit, setUnit] = useState<"money" | "share">("money");
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
+  const [splitting, setSplitting] = useState(false);
 
   const past = month < today.slice(0, 7);
   const editable = !past && !format.hidden;
@@ -143,6 +146,16 @@ export function PlanEditor({
           }
           over={over}
           bar={bar}
+        />
+
+        <PlanBuckets
+          totals={figures.buckets}
+          outsideSpent={plan.outside_spent?.amount ?? 0}
+          month={format.monthName(month)}
+          format={format}
+          onEdit={() => {
+            setSplitting(true);
+          }}
         />
 
         <VisuallyHidden>
@@ -254,6 +267,16 @@ export function PlanEditor({
             setPicking(false);
             draft.distribute({ categoryId });
             undoToast(t("plan.distributed"));
+          }}
+        />
+      )}
+      {splitting && (
+        <BucketDialog
+          stored={plan.buckets}
+          entries={entries}
+          format={format}
+          onClose={() => {
+            setSplitting(false);
           }}
         />
       )}

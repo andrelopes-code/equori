@@ -1,4 +1,5 @@
 import { planningTabsEn } from "@/i18n/catalog-planning-tabs.en";
+import { budgetBucketsEn } from "@/i18n/catalog-budget-buckets.en";
 import { budgetPlanEn } from "@/i18n/catalog-budget-plan.en";
 import { calculatorsEn } from "@/i18n/catalog-calculators.en";
 import { marketDataEn } from "@/i18n/catalog-market-data.en";
@@ -14,6 +15,7 @@ import { settingsEn } from "@/i18n/catalog-settings.en";
 export const catalogEn = {
   ...planningTabsEn,
   ...budgetPlanEn,
+  ...budgetBucketsEn,
   ...calculatorsEn,
   ...marketDataEn,
   ...accountsEn,

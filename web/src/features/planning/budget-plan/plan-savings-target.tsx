@@ -1,4 +1,4 @@
-import { Field, FieldLabel } from "@slotted/react/field";
+import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
 import { useState } from "react";
 import type { ChangeEvent } from "react";
@@ -21,6 +21,8 @@ interface PlanSavingsTargetProps {
   // The savings target in basis points of the reference.
   target: number | undefined;
   editable: boolean;
+  // The bucket that takes the savings sets the target (income buckets A231).
+  bucket: string | undefined;
   format: PlanFormat;
   onTarget: (bp: number | undefined) => void;
 }
@@ -35,6 +37,7 @@ export function PlanSavingsTarget({
   savings,
   target,
   editable,
+  bucket,
   format,
   onTarget,
 }: PlanSavingsTargetProps) {
@@ -71,9 +74,14 @@ export function PlanSavingsTarget({
           name="savings_target"
           inputMode="decimal"
           value={shown}
-          readOnly={!editable}
+          readOnly={!editable || bucket !== undefined}
           onChange={handleChange}
         />
+        {bucket !== undefined && (
+          <FieldDescription>
+            {t("buckets.savingsFrom", { bucket })}
+          </FieldDescription>
+        )}
       </Field>
       {rate !== undefined && (
         <PlanLedgerLine

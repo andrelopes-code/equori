@@ -142,17 +142,17 @@ BudgetBucketsInput:
 
 ## 5. The Plan view
 
-- **Buckets table**, between the allocation bar and the plan table, when a method exists. A framed `Table` with the caption "Income split", one row per bucket in method order and a last row "Outside the split" when its planned or spent amount is above zero. Columns: Bucket, Share, Target, Planned, Spent in {month}, and Status. Every amount ends on one vertical line. Status is one line of words: "{amount} left" when planned and spent are at most the target, "{amount} over" in the danger tone otherwise, using the larger of planned and spent; a dash without a target. The savings bucket carries the word "with savings" after its name, in the muted tone.
+- **Buckets section**, a `Section` "Income split" between the reference panel and the plan table. With a method, its body is a framed `Table` with the caption "Income split", one row per bucket in method order and a last row "Outside the split" when its planned or spent amount is above zero. Columns: Bucket, Share, Target, Planned, Spent in {month}, and Status. Every amount ends on one vertical line. Status is one line of words: "{amount} left" when planned and spent are at most the target, "{amount} over" in the danger tone otherwise, using the larger of planned and spent; a dash without a target. The savings bucket carries the word "with savings" after its name, in the muted tone.
 - **Without a method**, the same place holds one line, "Split the income into buckets: 50/30/20, six buckets or your own.", and the button **Set up split**.
-- **Toolbar**: the button **Income split** opens the dialog. Past months are read-only (budget plan section 5) except this button, since the method is not per month.
+- **Section action**: the button **Edit split**, or **Set up split** without a method, opens the dialog. It shows in past months too, since the method is not per month.
 - **Allocation bar**: with a method, its segments are the buckets by planned amount, not the root categories; the unassigned rest stays as today.
-- **Plan table**: with a method, rows are grouped by bucket in method order, then "Outside the split". A group row shows the bucket's planned amount and target. Without a method, the root-category grouping stays.
-- **Savings target**: with a bucket that takes savings, the savings target field is replaced by the line "Savings target: {share} from the {bucket} bucket" (A231).
+- **Plan table**: with a method, rows are grouped by bucket in method order, then "Outside the split". A group row shows the sums of its counted rows, as a root group does; the buckets section carries the targets. A line shows its full category path, since a bucket mixes roots. Without a method, the root-category grouping stays.
+- **Savings target**: with a bucket that takes savings, the savings target field is read-only and its description reads "Set by the {bucket} bucket." (A231).
 - **Dialog "Income split"**, three parts in one scrolling body:
   1. Starting point: a select of the three presets of A232; it is applied only on choice.
   2. Buckets: one row per bucket with name, percentage with one decimal, the radio "takes savings" and a remove button; the button **Add bucket** stops at 10. Under the rows, the total in percent; when it differs from 100 %, the line "The shares sum to {total}; they must sum to 100 %." in the danger tone, and **Save** is disabled.
   3. Categories: the root expense categories in tree order, each with a select of the buckets plus "Outside the split". A root with subcategories has a disclosure that lists them, each with the same options plus "Same as {root}", the default.
-  - **Save** writes the method; **Remove split** (shown when a method exists) saves an empty list after a confirmation.
+  - **Save** writes the method; **Remove split** (shown when a method exists) saves an empty list; the toast reports the removal.
 - Figures through `useMoneyFormat()` and `formatBasisPoints`; under privacy mode the amounts are masked and the shares stay visible (ADR 018).
 
 ## 6. Cross-cutting questions
