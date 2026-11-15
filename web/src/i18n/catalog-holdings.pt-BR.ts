@@ -34,7 +34,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.method.summary":
     "Fechamento {closing}. Período {period}. Anual {annual}.",
   "holdings.method.summaryNoPeriod": "Fechamento {closing}. Anual {annual}.",
-  "holdings.method.reconciliation": "Conciliação",
+  "holdings.method.reconciliation": "Conferência",
   "holdings.method.deposits": "Aportes",
   "holdings.method.withdrawals": "Retiradas",
   "holdings.method.result": "Resultado",
@@ -53,7 +53,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.tax": "Para a declaração de imposto",
   "holdings.tax.group": "Tipo e tratamento",
   "holdings.sales.result": "Resultado do ano",
-  "holdings.sales.result.note": "Valor da venda menos custo médio",
+  "holdings.sales.result.note": "Valor da venda menos preço médio",
   "holdings.sales.sold": "Total vendido",
   "holdings.sales.sold.note": "Valor de todas as vendas",
   "holdings.sales.count": "Vendas",
@@ -80,7 +80,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.by": "Agrupar por",
   "holdings.list": "Investimentos",
   "holdings.list.note":
-    "Do maior para o menor. Quantidade, custo médio e outros dados ficam em Colunas.",
+    "Do maior para o menor. Quantidade, preço médio e outros dados ficam em Colunas.",
   "holdings.columns": "Colunas",
   "holdings.col.price": "Preço",
   "holdings.col.trend": "Últimos 3 meses",

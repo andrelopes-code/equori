@@ -425,7 +425,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "positions.caption": "Posições",
   "positions.instrument": "Investimento",
   "positions.quantity": "Quantidade",
-  "positions.averageCost": "Custo médio",
+  "positions.averageCost": "Preço médio",
   "positions.costBasis": "Custo",
   "positions.marketValue": "Valor de mercado",
   "positions.result": "Lucro ou prejuízo atual",
@@ -585,7 +585,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "batch.reason.probable":
     "A melhor transação pontua entre os limites: confirme ou escolha outro caminho.",
   "batch.reason.changed":
-    "O banco mudou esta linha depois da conciliação. Corrija a transação ou mantenha o valor conciliado.",
+    "O banco mudou esta linha depois da conferência. Corrija a transação ou mantenha o valor conferido.",
   "batch.reason.repeated":
     "Parece repetir um pagamento da fatura já registrado. Crie se foram dois pagamentos; descarte se for o mesmo.",
   "batch.reason.group":

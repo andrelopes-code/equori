@@ -725,7 +725,7 @@ export const catalogPtBR: Catalog = {
   "links.out.reimbursement_of": "Reembolso de",
   "links.out.cancellation_of": "Cancelamento de",
   "links.out.anticipation_of": "Antecipação de",
-  "links.out.chargeback_of": "Chargeback de",
+  "links.out.chargeback_of": "Contestação de",
   "links.out.correction_of": "Correção de",
   "links.in.refund_of": "Estornada por",
   "links.in.reimbursement_of": "Reembolsada por",
@@ -976,7 +976,7 @@ export const catalogPtBR: Catalog = {
   "trade.moveMoney": "Mover dinheiro para {name}",
   "trade.cashEffect": "Quanto sai ou entra na conta",
   "trade.position": "Posição na data",
-  "trade.averageCost": "Custo médio",
+  "trade.averageCost": "Preço médio",
   "trade.estimatedResult": "Resultado estimado",
   "trade.noPosition": "Sem posição nesta data.",
   "trade.exceedsPosition": "A posição nesta data é {quantity}.",
@@ -1619,7 +1619,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.get_balances": "Lendo saldos",
   "assistant.step.search_transactions": "Buscando transações",
   "assistant.step.get_transaction": "Lendo uma transação",
-  "assistant.step.list_payees_and_tags": "Lendo beneficiários e etiquetas",
+  "assistant.step.list_payees_and_tags": "Lendo favorecidos e tags",
   "assistant.step.get_account_details": "Lendo detalhes da conta",
   "assistant.step.get_statement": "Lendo uma fatura",
   "assistant.step.record_transaction": "Preparando uma transação",
@@ -1670,11 +1670,11 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_accounts_and_payees.merge_category":
     "Mesclar categoria",
   "assistant.action.manage_accounts_and_payees.create_payee":
-    "Criar beneficiário",
+    "Criar favorecido",
   "assistant.action.manage_accounts_and_payees.rename_payee":
-    "Renomear beneficiário",
+    "Renomear favorecido",
   "assistant.action.manage_accounts_and_payees.merge_payee":
-    "Mesclar beneficiário",
+    "Mesclar favorecido",
   "assistant.action.manage_accounts_and_payees.create_institution":
     "Criar instituição",
   "assistant.action.manage_card.add_card": "Adicionar cartão",
@@ -1735,10 +1735,9 @@ export const catalogPtBR: Catalog = {
   "assistant.action.manage_rule.run_rules": "Executar regras",
   "assistant.action.manage_rule.map_source_category":
     "Mapear categoria do banco",
-  "assistant.action.manage_rule.create_alias": "Criar apelido de beneficiário",
-  "assistant.action.manage_rule.change_alias":
-    "Alterar apelido de beneficiário",
-  "assistant.action.manage_rule.delete_alias": "Apagar apelido de beneficiário",
+  "assistant.action.manage_rule.create_alias": "Criar apelido de favorecido",
+  "assistant.action.manage_rule.change_alias": "Alterar apelido de favorecido",
+  "assistant.action.manage_rule.delete_alias": "Apagar apelido de favorecido",
   "assistant.action.manage_imports.sync": "Sincronizar conexão",
   "assistant.action.manage_imports.map_account": "Mapear conta do banco",
   "assistant.action.manage_imports.resolve_record":
@@ -1751,8 +1750,8 @@ export const catalogPtBR: Catalog = {
   "assistant.field.date": "Data",
   "assistant.field.from": "Desde",
   "assistant.field.description": "Descrição",
-  "assistant.field.payee": "Beneficiário",
-  "assistant.field.tags": "Etiquetas",
+  "assistant.field.payee": "Favorecido",
+  "assistant.field.tags": "Tags",
   "assistant.field.status": "Situação",
   "assistant.field.class": "Classe",
   "assistant.field.kind": "Tipo",
@@ -2306,7 +2305,7 @@ export const catalogPtBR: Catalog = {
   "selection.void": "Anular",
   "bulkVoid.title": "Anular {count} transações",
   "bulkVoid.description":
-    "As transações anuladas saem de todos os saldos e ficam no histórico. Uma transação com partidas conciliadas é recusada.",
+    "As transações anuladas saem de todos os saldos e ficam no histórico. Uma transação com lançamentos conferidos é recusada.",
   "problem.later_sale_exists":
     "Uma venda posterior deste ativo depende desta transação. Um dia com compra depois de venda é registrado como nota de corretagem.",
   "problem.odd_lot_code":

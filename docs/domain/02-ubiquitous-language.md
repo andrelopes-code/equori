@@ -84,11 +84,11 @@ classDiagram
 |---|---|---|---|
 | Ledger | Livro-razão | The complete, ordered set of transactions of one user. | All records of the owner since tracking started |
 | Transaction | Transação | An event that changes balances, dated on the day it happened, made of two or more postings that sum to zero per instrument. A transaction is the unit of creation, correction and deletion. | "Supermarket, 2026-10-14": card −230.00, Food +230.00 |
-| Posting | Partida | One line of a transaction: an account and a signed amount in the account's instrument. | Food +230.00 BRL |
+| Posting | Lançamento | One line of a transaction: an account and a signed amount in the account's instrument. | Food +230.00 BRL |
 | Sign convention | Convenção de sinal | Positive amounts increase asset and expense accounts; negative amounts increase liability, income and equity accounts. The interface shows natural signs per account class. | A purchase is +230 on Food and −230 on the card; the card screen shows "230.00 owed" |
 | Balance | Saldo | Sum of the postings of an account up to and including a date. Always derived, never stored as editable state (B01). | Checking balance on 2026-10-31 |
 | Transaction date | Data da transação | The calendar day the event happened (accrual basis). | Purchase day |
-| Posting status | Situação da partida | `pending`: authorized or scheduled, not yet settled. `cleared`: settled by the institution. `reconciled`: confirmed against an institution statement or balance assertion; changes require an explicit unlock of the account from a date (P3 amendment A8). | A card authorization is `pending` until it appears on the statement |
+| Posting status | Situação do lançamento | `pending`: authorized or scheduled, not yet settled. `cleared`: settled by the institution. `reconciled`: confirmed against an institution statement or balance assertion; changes require an explicit unlock of the account from a date (P3 amendment A8). | A card authorization is `pending` until it appears on the statement |
 | Link | Vínculo | A typed relation between two transactions. Types: `refund_of`, `reimbursement_of`, `cancellation_of`, `anticipation_of`, `chargeback_of`, `correction_of`. | A refund transaction `refund_of` the original purchase |
 | Opening balance | Saldo inicial | Transaction that sets the balance of an account on the first tracked day, against the equity account "Opening balances". | Checking holds 1,240.55 on 2026-01-01 |
 | Balance adjustment | Ajuste de saldo | Transaction that closes an unexplained difference found at reconciliation, against the equity account "Adjustments". | −2.10 found missing after checking the bank statement |
@@ -120,7 +120,7 @@ classDiagram
 | Credit limit | Limite | Maximum debt of a card account, effective-dated. Available limit = limit − debt. | 10,000.00 from 2026-03-01 |
 | Billing cycle rule | Regra de ciclo | The closing day, the due day and the closing-day assignment of a card account, effective-dated (T05). Closing-day assignment: whether a purchase made on the closing date goes to the `next` statement (default) or to the `closing` statement (T04). | Closes on day 3, due on day 10, closing-day purchases to the next statement, from statement 2026-11 |
 | Statement | Fatura | The bill of one billing cycle of a card account, identified by its reference month, with closing date, due date and the postings billed on it. | Statement 2026-11: closes 2026-11-03, due 2026-11-10 |
-| Card posting role | Papel da partida no cartão | Classification of every card posting: `charge` (purchase, installment, fee, interest), `credit` (refund, cashback, reversal), `payment` (statement payment or financing settlement). | Statement payment posting: `payment` |
+| Card posting role | Papel do lançamento no cartão | Classification of every card posting: `charge` (purchase, installment, fee, interest), `credit` (refund, cashback, reversal), `payment` (statement payment or financing settlement). | Statement payment posting: `payment` |
 | Billed on | Faturado em | The statement a card posting belongs to. Defaults from the transaction date and the billing cycle rule (T04); import data can set it explicitly. | Purchase on 2026-11-04 billed on statement 2026-12 |
 | Statement status | Situação da fatura | `open` (accepting postings), `closed` (closing date passed, unpaid), `paid`, `partially_paid`, `overdue`. Derived from dates and payments. | |
 | Statement payment | Pagamento de fatura | Transaction from a balance account to a card account whose card posting has role `payment` and is billed on the statement it pays. Full, partial, minimum or early. | Checking −1,500.00, card +1,500.00 |
@@ -156,9 +156,9 @@ classDiagram
 | Import batch | Lote de importação | One run of a file import or an integration sync. | OFX file of October |
 | External record | Registro externo | One raw entry received from a source, stored unchanged, with the source's own identifier. | One line of an OFX file |
 | Deduplication key | Chave de deduplicação | Identifier that makes re-importing the same external record a no-op (SC2). | Source id + account + external id |
-| Matching | Correspondência | Linking an external record to an existing transaction instead of creating a new one. | Imported PIX matched to a manual entry |
+| Matching | Associação | Linking an external record to an existing transaction instead of creating a new one. | Imported PIX matched to a manual entry |
 | Balance assertion | Saldo informado | The balance an institution reports for an account at a date, stored as a fact (B03). | Bank app shows 3,201.17 on 2026-10-31 |
-| Reconciliation | Conciliação | The act of confirming that derived balances equal balance assertions and that every institution entry has a matching posting; confirmed postings become `reconciled`. | October checking reconciled |
+| Reconciliation | Conferência | The act of confirming that derived balances equal balance assertions and that every institution entry has a matching posting; confirmed postings become `reconciled`. | October checking reconciled |
 | Difference | Diferença | Asserted balance minus derived balance at the assertion date. | +3.12 unexplained, usually yield |
 
 ## 2.8 Classification
@@ -166,7 +166,7 @@ classDiagram
 | Term | Portuguese | Definition | Example |
 |---|---|---|---|
 | Payee | Favorecido | The merchant, person or organization on the other side of a transaction. Several raw names map to one payee. | "IFD*IFOOD" and "iFood" → iFood |
-| Tag | Marcador | Free label orthogonal to categories, for cross-cutting analysis. | "trip-lisbon-2026" |
+| Tag | Tag | Free label orthogonal to categories, for cross-cutting analysis. | "trip-lisbon-2026" |
 | Categorization rule | Regra de categorização | Conditions on a transaction or external record (payee, description, amount, account, source) and actions (set category, payee, tags, split). Rules run in priority order. | Description contains "UBER" → Transport › Ride-hailing |
 | Split | Divisão | A transaction with more than one expense or income posting. | Supermarket: Food 180.00, Cleaning 50.00 |
 | Reimbursement | Reembolso | Money expected back for an expense paid by the user, tracked through a receivable (M13). | Work trip paid on the card, refunded by the employer |

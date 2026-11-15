@@ -223,7 +223,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.quote.stale": "Atrasada",
   "instrument.quote.none": "Nenhuma cotação registrada.",
   "instrument.chart.manual": "Preço manual",
-  "instrument.chart.averageCost": "Custo médio",
+  "instrument.chart.averageCost": "Preço médio",
   "instrument.figures.label": "Resumo do intervalo",
   "instrument.figures.change": "Variação no intervalo",
   "instrument.figures.changeNote": "de\u00a0{from} a\u00a0{to}",
@@ -236,7 +236,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "instrument.position.resultNote": "valor de mercado menos custo",
   "instrument.position.accounts.one": "em {count} conta",
   "instrument.position.accounts.other": "em {count} contas",
-  "instrument.position.averageNote": "custo médio {price}",
+  "instrument.position.averageNote": "preço médio {price}",
   "instrument.position.noPrice": "Sem cotação para valorar a posição.",
   "instrument.position.currencyMismatch":
     "Custo em {cost} e valor em {value}: o resultado não é calculado.",
