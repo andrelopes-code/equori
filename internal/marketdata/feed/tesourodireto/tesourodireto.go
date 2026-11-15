@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
@@ -39,6 +40,7 @@ type Source struct {
 	url    string
 	seen   *feed.Conditional
 	list   *feed.ListCache
+	fill   *sync.Mutex
 }
 
 // New returns a Source that reads the CSV file at url.
@@ -48,6 +50,7 @@ func New(c *http.Client, url string) Source {
 		url:    url,
 		seen:   feed.NewConditional(),
 		list:   feed.NewListCache(time.Now),
+		fill:   &sync.Mutex{},
 	}
 }
 
@@ -116,26 +119,52 @@ func (s Source) Fetch(
 }
 
 // Search returns the titles of the latest Data Base of the file whose code or name contains query.
-// Without a fresh list it downloads the file.
+// Without a fresh list it downloads the file. A download that outlasts ctx goes on, so the next
+// search finds the list: the file takes longer than the bound of a catalog search.
 func (s Source) Search(ctx context.Context, query string, limit int) ([]feed.Listing, error) {
 	list, ok := s.list.Fresh()
 	if !ok {
-		_, err := feed.DownloadSince(ctx, s.client, s.url, "", func(f *os.File, _ int64) error {
-			var err error
+		done := make(chan error, 1)
+		go func() { done <- s.fillList(context.WithoutCancel(ctx)) }()
 
-			_, list, err = readFile(f, nil, time.Time{}, time.Time{})
-			if err == nil {
-				s.list.Set(list)
+		select {
+		case err := <-done:
+			if err != nil {
+				return nil, fmt.Errorf("search Tesouro titles: %w", err)
 			}
-
-			return err
-		})
-		if err != nil && !errors.Is(err, feed.ErrNoData) {
-			return nil, fmt.Errorf("search Tesouro titles: %w", err)
+		case <-ctx.Done():
+			return nil, fmt.Errorf("search Tesouro titles: %w", ctx.Err())
 		}
+
+		list = s.list.Last()
 	}
 
 	return feed.MatchListings(list, query, limit), nil
+}
+
+// fillList downloads the file into the list unless a call it waited for filled it; the timeout
+// of the client bounds a download that no search waits for.
+func (s Source) fillList(ctx context.Context) error {
+	s.fill.Lock()
+	defer s.fill.Unlock()
+
+	if _, ok := s.list.Fresh(); ok {
+		return nil
+	}
+
+	_, err := feed.DownloadSince(ctx, s.client, s.url, "", func(f *os.File, _ int64) error {
+		_, list, err := readFile(f, nil, time.Time{}, time.Time{})
+		if err == nil {
+			s.list.Set(list)
+		}
+
+		return err
+	})
+	if errors.Is(err, feed.ErrNoData) {
+		return nil
+	}
+
+	return err
 }
 
 // readFile returns the quotes of codes in [from, to] and the titles of the latest Data Base.

@@ -1,6 +1,7 @@
 package tesourodireto_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -216,6 +217,51 @@ func TestSearch(t *testing.T) {
 		}
 
 		if n := requests.Load(); n != 1 {
+			t.Fatalf("requests = %d, want 1", n)
+		}
+	})
+
+	// The file takes longer to download than the bound of a catalog search (4 s on 2026-11-15).
+	t.Run("a search past its bound fills the list for the next one", func(t *testing.T) {
+		var slowRequests atomic.Int32
+
+		started, release := make(chan struct{}), make(chan struct{})
+
+		slow := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			if slowRequests.Add(1) == 1 {
+				close(started)
+			}
+
+			<-release
+
+			_, _ = w.Write([]byte(titlesFixture))
+		}))
+		t.Cleanup(slow.Close)
+
+		src := tesourodireto.New(slow.Client(), slow.URL+"/td.csv")
+		ctx, cancel := context.WithCancel(t.Context())
+		errs := make(chan error, 1)
+
+		go func() {
+			_, err := src.Search(ctx, "selic", 20)
+			errs <- err
+		}()
+
+		<-started
+		cancel()
+
+		if err := <-errs; err == nil {
+			t.Fatal("first search: err = nil, want the error of its bound")
+		}
+
+		close(release)
+
+		got, err := src.Search(t.Context(), "selic", 20)
+		if err != nil || len(got) != 1 || got[0].Code != "LFT.20270301" {
+			t.Fatalf("selic = %v, err = %v", got, err)
+		}
+
+		if n := slowRequests.Load(); n != 1 {
 			t.Fatalf("requests = %d, want 1", n)
 		}
 	})
