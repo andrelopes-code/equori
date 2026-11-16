@@ -330,6 +330,7 @@ func TestS397_ReturnWithMoneyPaidOutside(t *testing.T) {
 			buy := s.buy("2026-10-05", 10)
 			buy["cash_account_id"] = checking
 			s.h.MustDo(http.MethodPost, tradesPath, buy, http.StatusCreated, nil)
+
 			for date, value := range map[string]string{"2026-10-05": "10", "2026-12-05": "12"} {
 				s.h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
 					"instrument": "AUVP11", "quote_instrument": "BRL",

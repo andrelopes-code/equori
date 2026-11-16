@@ -32,22 +32,7 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 			"quote_currency",
 		)
 	case "edit":
-		if err := required(
-			name,
-			without(fields, "name", "type", "exchange", "subtype", "symbols"),
-		); err != nil {
-			return err
-		}
-
-		if in.Name == "" && in.Type == "" && in.Exchange == "" && in.Subtype == "" &&
-			in.Symbols == nil {
-			return tool.InvalidArgument(
-				"name",
-				"or type, exchange, subtype or symbols is required for edit",
-			)
-		}
-
-		return nil
+		return checkEditArgs(in, fields)
 	case "rename":
 		return required(name, fields, "name")
 	case "record_price":
@@ -65,6 +50,27 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		"matures_on",
 		"face_value",
 	)
+}
+
+func checkEditArgs(in manageInstrumentIn, fields []field) error {
+	name := string(in.Action)
+
+	if err := required(
+		name,
+		without(fields, "name", "type", "exchange", "subtype", "symbols"),
+	); err != nil {
+		return err
+	}
+
+	if in.Name == "" && in.Type == "" && in.Exchange == "" && in.Subtype == "" &&
+		in.Symbols == nil {
+		return tool.InvalidArgument(
+			"name",
+			"or type, exchange, subtype or symbols is required for edit",
+		)
+	}
+
+	return nil
 }
 
 // without returns fields minus the named ones, which an action takes as optional.
