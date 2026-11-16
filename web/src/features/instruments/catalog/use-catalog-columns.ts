@@ -56,6 +56,8 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         label: t("instruments.col.name"),
         accessor: "name",
         searchable: true,
+        // One line in the fixed row height; a longer name ends in an ellipsis.
+        text: "truncate",
         flex: 1,
         minWidth: 160,
         priority: 3,
