@@ -36,12 +36,12 @@ export interface BalancePoint {
 const weekDays = 7;
 
 // The month's close in one currency (spec A2): a realized row at its charged amount, a pending
-// row at its expected amount, a skipped row not at all.
+// row at its expected amount, a skipped row and a transfer not at all.
 export function monthClose(
   rows: readonly AgendaRow[],
   currency: string,
 ): MonthClose {
-  const counted = rows.filter((r) => r.occurrence.state !== "skipped");
+  const counted = rows.filter((r) => movesCash(r));
   const own = counted.filter((r) => r.money.currency === currency);
   const flow = (sign: 1 | -1, state?: "realized") =>
     own
@@ -60,7 +60,7 @@ export function monthClose(
     inflowDone: flow(1, "realized"),
     outflowDone,
     toPay: outflow - outflowDone,
-    pendingCount: rows.filter((r) => isPending(r)).length,
+    pendingCount: counted.filter((r) => isPending(r)).length,
     close: inflow - outflow,
     leftOut: netOf(
       counted
@@ -68,6 +68,14 @@ export function monthClose(
         .map((r) => ({ ...r, money: rowAmount(r) })),
     ),
   };
+}
+
+// A skipped row moves nothing; a transfer moves money between two accounts of the owner, so
+// the month neither gains nor loses it (spec A2).
+function movesCash(row: AgendaRow): boolean {
+  return (
+    row.occurrence.state !== "skipped" && row.schedule?.kind !== "transfer"
+  );
 }
 
 // What a row moves: the charged amount once realized, signed like the expected one.
@@ -117,8 +125,7 @@ export function runningBalance(
   const flows = new Map<string, number>();
 
   for (const r of rows) {
-    if (r.occurrence.state === "skipped" || r.money.currency !== currency)
-      continue;
+    if (!movesCash(r) || r.money.currency !== currency) continue;
 
     const day =
       r.occurrence.expected_on < first ? first : r.occurrence.expected_on;

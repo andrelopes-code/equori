@@ -8,6 +8,6 @@ The action Move to another account on the schedule screen, and in the actions me
 
 When a purchase repeats every week, month, quarter or year, the assistant suggests a subscription schedule and links the purchase to its first occurrence.
 
-The agenda states how the month closes and what is still to pay, and lists open occurrences with Mark paid or Mark received. Schedules shows what stays free after fixed commitments; Subscriptions ranks them by monthly cost.
+The agenda states how the month closes and what is still to pay, leaving transfers between the owner's accounts out of both figures, and lists open occurrences with Mark paid or Mark received. Schedules shows what stays free after fixed commitments; Subscriptions ranks them by monthly cost.
 
 Scheduled occurrences show on Transactions and on the Account screen, where the **Projection** uses them.

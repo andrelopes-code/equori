@@ -33,6 +33,32 @@ function rows(
   return [...view.overdue, ...view.days.flatMap((d) => d.rows)];
 }
 
+// A move between two accounts of the owner.
+const transferSchedule = {
+  ...schedules[0],
+  id: "e1000000-0000-4000-8000-0000000000bb",
+  kind: "transfer",
+} as Schedule;
+const transfer: Occurrence = {
+  ...rentOctober,
+  id: "f1000000-0000-4000-8000-0000000000bb",
+  schedule_id: transferSchedule.id,
+  expected_on: "2026-10-22",
+  state: "expected",
+  expected_amount: { amount: 500000, currency: "BRL" },
+};
+
+function rowsWithTransfer(): AgendaRow[] {
+  const view = agenda(
+    [rentOctober, streaming, salary, transfer],
+    [rentSeptember, rentOctober],
+    [...schedules, transferSchedule],
+    {},
+  );
+
+  return [...view.overdue, ...view.days.flatMap((d) => d.rows)];
+}
+
 const usd: Occurrence = {
   ...salary,
   id: "f1000000-0000-4000-8000-0000000000aa",
@@ -102,6 +128,20 @@ describe("monthClose", () => {
         leftOut: [{ amount: 2000, currency: "USD" }],
       },
     },
+    {
+      name: "a transfer between own accounts stays out of every figure",
+      input: rowsWithTransfer(),
+      want: {
+        inflow: 500000,
+        outflow: 423990,
+        inflowDone: 0,
+        outflowDone: 3990,
+        toPay: 420000,
+        pendingCount: 3,
+        close: 76010,
+        leftOut: [],
+      },
+    },
   ])("$name", ({ input, want }) => {
     expect(monthClose(input, "BRL")).toEqual({ currency: "BRL", ...want });
   });
@@ -140,6 +180,12 @@ describe("runningBalance", () => {
       date: "2026-10-12",
       amount: -423990,
     });
+  });
+
+  it("leaves a transfer out", () => {
+    const series = runningBalance(rowsWithTransfer(), "2026-10", "BRL");
+
+    expect(series[30]).toEqual({ date: "2026-10-31", amount: 76010 });
   });
 
   it("leaves another currency out", () => {
