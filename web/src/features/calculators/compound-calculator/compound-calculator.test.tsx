@@ -169,4 +169,51 @@ describe("Compound interest calculator", () => {
     ] as const)
       expect(await result(catalogEn[key])).toMatch(/\d/);
   });
+
+  it("lives on the income and reinvests a share, month by month", async () => {
+    await open(
+      "mode=income&initial=100000000&period=month&rate=1&months=2&monthsUnit=month&share=25",
+    );
+    const monthly = await screen.findByRole("table", {
+      name: catalogEn["calc.compound.live.monthly"],
+    });
+    const rows = within(monthly).getAllByRole("row");
+
+    // Month 1: 1,000,000.00 × 1% = 10,000.00; 25% reinvested, the rest spent.
+    expect(cellsOf(rows, 1)).toEqual([
+      "1",
+      "R$1,000,000.00",
+      "R$10,000.00",
+      "R$2,500.00",
+      "R$7,500.00",
+      "R$1,002,500.00",
+    ]);
+    // Month 2 earns on the balance plus the reinvested part.
+    expect(cellsOf(rows, 2)).toEqual([
+      "2",
+      "R$1,002,500.00",
+      "R$10,025.00",
+      "R$2,506.25",
+      "R$7,518.75",
+      "R$1,005,006.25",
+    ]);
+    expect(await result(catalogEn["calc.compound.live.final"])).toContain(
+      "1,005,006.25",
+    );
+  });
+
+  it("shows no income table while the share is above 100", async () => {
+    await open("mode=income&initial=100000000&rate=12&months=2&share=101");
+    await screen.findByText(catalogEn["calc.compound.live.share"]);
+    expect(
+      screen.queryByRole("table", {
+        name: catalogEn["calc.compound.live.monthly"],
+      }),
+    ).toBeNull();
+  });
 });
+
+// The text of each cell of one row of a table, in order.
+function cellsOf(rows: HTMLElement[], index: number): (string | null)[] {
+  return Array.from(rows[index]?.children ?? []).map((c) => c.textContent);
+}

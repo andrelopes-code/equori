@@ -71,10 +71,76 @@ export const REINVESTED_SHARE = 0.25;
 
 // Splits an income in minor units into the reinvested part, rounded half to even, and the
 // living part, so the two always add up to the income.
-export function splitIncome(income: number): {
+export function splitIncome(
+  income: number,
+  share: number = REINVESTED_SHARE,
+): {
   reinvested: number;
   living: number;
 } {
-  const reinvested = roundHalfEven(income * REINVESTED_SHARE);
+  const reinvested = roundHalfEven(income * share);
   return { reinvested, living: income - reinvested };
+}
+
+export interface IncomeRow {
+  month: number;
+  opening: number;
+  income: number;
+  reinvested: number;
+  living: number;
+  closing: number;
+}
+
+// The months of living on the income: each month earns income = opening × j, reinvests the share
+// of it and lives on the rest, so the next month opens with the reinvested part added.
+export function incomeEvolution(
+  balance: number,
+  j: number,
+  share: number,
+  n: number,
+): IncomeRow[] {
+  const out: IncomeRow[] = [];
+  let opening = balance;
+  for (let month = 1; month <= n; month++) {
+    const income = roundHalfEven(opening * j);
+    const { reinvested, living } = splitIncome(income, share);
+    const closing = opening + reinvested;
+    out.push({ month, opening, income, reinvested, living, closing });
+    opening = closing;
+  }
+  return out;
+}
+
+export interface IncomeYear {
+  year: number;
+  opening: number;
+  income: number;
+  reinvested: number;
+  living: number;
+  closing: number;
+}
+
+// Groups the months of incomeEvolution by year; the last year may hold fewer than 12 months.
+export function yearlyIncome(rows: readonly IncomeRow[]): IncomeYear[] {
+  const out: IncomeYear[] = [];
+  for (const row of rows) {
+    const year = Math.ceil(row.month / 12);
+    const last = out.at(-1);
+    if (last?.year !== year)
+      out.push({
+        year,
+        opening: row.opening,
+        income: row.income,
+        reinvested: row.reinvested,
+        living: row.living,
+        closing: row.closing,
+      });
+    else {
+      last.income += row.income;
+      last.reinvested += row.reinvested;
+      last.living += row.living;
+      last.closing = row.closing;
+    }
+  }
+  return out;
 }

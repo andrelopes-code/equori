@@ -90,6 +90,49 @@ export const calculatorsEn = {
   "calc.compound.mode": "What to calculate",
   "calc.compound.mode.final": "Final amount",
   "calc.compound.mode.target": "Required deposit",
+  "calc.compound.mode.income": "Live on income",
+  "calc.compound.mode.final.hint":
+    "What the money becomes after the term, with monthly deposits.",
+  "calc.compound.mode.target.hint":
+    "How much to deposit each month to reach a target.",
+  "calc.compound.mode.income.hint":
+    "How the balance evolves when the income is spent and part of it is reinvested.",
+  "calc.compound.live.balance": "Balance",
+  "calc.compound.live.balance.hint":
+    "What is invested when the income starts to be used.",
+  "calc.compound.live.share": "Share of the income reinvested",
+  "calc.compound.live.share.hint":
+    "The rest is spent every month. Empty: 25. Zero: the whole income is spent.",
+  "calc.compound.live.term": "Follow for",
+  "calc.compound.live.term.hint": "How long the table follows the balance.",
+  "calc.compound.live.final": "Balance at the end",
+  "calc.compound.live.summary":
+    "In {months} months: {living} spent and {reinvested} reinvested.",
+  "calc.compound.live.firstIncome": "Income of the first month",
+  "calc.compound.live.firstReinvested":
+    "Reinvested in the first month ({share}%)",
+  "calc.compound.live.firstLiving": "Spent in the first month",
+  "calc.compound.live.lastLiving": "Spent in the last month",
+  "calc.compound.live.totalLiving": "Total spent",
+  "calc.compound.live.totalReinvested": "Total reinvested",
+  "calc.compound.live.growth": "Growth of the balance",
+  "calc.compound.live.chart": "Balance over time",
+  "calc.compound.live.monthly": "Month by month",
+  "calc.compound.live.yearly": "Summary by year",
+  "calc.compound.live.col.month": "Month",
+  "calc.compound.live.col.year": "Year",
+  "calc.compound.live.col.opening": "Opening balance",
+  "calc.compound.live.col.income": "Income",
+  "calc.compound.live.col.reinvested": "Reinvested",
+  "calc.compound.live.col.living": "Spent",
+  "calc.compound.live.col.closing": "Closing balance",
+  "calc.compound.live.year": "Year {year}",
+  "calc.compound.step9":
+    "Each month the opening balance earns j times its value; the reinvested part joins the next month's balance and the rest is spent.",
+  "calc.compound.formula8":
+    "income = balance · j; reinvested = income · share; spent = income − reinvested",
+  "calc.compound.assumption7":
+    "In the live-on-income evolution, the rate is the same in every month and the income is received at the end of each month.",
   "calc.compound.initial": "Initial amount",
   "calc.compound.deposit": "Monthly deposit",
   "calc.compound.target": "Target",

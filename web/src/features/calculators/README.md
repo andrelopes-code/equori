@@ -28,7 +28,7 @@ Defined in `web/src/app/router.tsx`.
 - `rate-source/`: the index catalog, the index rates, the floating rate and the rate source fields.
 - `model/`: pure functions used by two or more folders (the calculator catalog, the search string, rate, round, solve, duration, credit and plan maths).
 - `cash-or-installments-calculator/`: cash against installments.
-- `compound-calculator/`: compound interest and its simulation.
+- `compound-calculator/`: compound interest, its simulation and the mode that lives on the income, with its month and year tables.
 - `correction-calculator/`: correction of a value by an index.
 - `credit-cost-calculator/`: total cost of a credit.
 - `debt-payoff-calculator/`: debt payoff, with its maths, region rules and rows.

@@ -90,6 +90,50 @@ export const calculatorsPtBR: Record<keyof typeof calculatorsEn, string> = {
   "calc.compound.mode": "O que calcular",
   "calc.compound.mode.final": "Valor final",
   "calc.compound.mode.target": "Depósito necessário",
+  "calc.compound.mode.income": "Viver de renda",
+  "calc.compound.mode.final.hint":
+    "O que o dinheiro vira depois do prazo, com depósitos mensais.",
+  "calc.compound.mode.target.hint":
+    "Quanto depositar por mês para chegar a uma meta.",
+  "calc.compound.mode.income.hint":
+    "Como o patrimônio evolui quando a renda é consumida e parte dela é reinvestida.",
+  "calc.compound.live.balance": "Patrimônio",
+  "calc.compound.live.balance.hint":
+    "O que está investido quando a renda passa a ser usada.",
+  "calc.compound.live.share": "Parte da renda reinvestida",
+  "calc.compound.live.share.hint":
+    "O restante é consumido todo mês. Vazio: 25. Zero: a renda inteira é consumida.",
+  "calc.compound.live.term": "Acompanhar por",
+  "calc.compound.live.term.hint":
+    "Por quanto tempo a tabela mostra o patrimônio.",
+  "calc.compound.live.final": "Patrimônio no fim",
+  "calc.compound.live.summary":
+    "Em {months} meses: {living} consumidos e {reinvested} reinvestidos.",
+  "calc.compound.live.firstIncome": "Renda do primeiro mês",
+  "calc.compound.live.firstReinvested":
+    "Reinvestido no primeiro mês ({share}%)",
+  "calc.compound.live.firstLiving": "Consumido no primeiro mês",
+  "calc.compound.live.lastLiving": "Consumido no último mês",
+  "calc.compound.live.totalLiving": "Total consumido",
+  "calc.compound.live.totalReinvested": "Total reinvestido",
+  "calc.compound.live.growth": "Crescimento do patrimônio",
+  "calc.compound.live.chart": "Evolução do patrimônio",
+  "calc.compound.live.monthly": "Evolução mês a mês",
+  "calc.compound.live.yearly": "Resumo por ano",
+  "calc.compound.live.col.month": "Mês",
+  "calc.compound.live.col.year": "Ano",
+  "calc.compound.live.col.opening": "Patrimônio inicial",
+  "calc.compound.live.col.income": "Renda",
+  "calc.compound.live.col.reinvested": "Reinvestido",
+  "calc.compound.live.col.living": "Consumido",
+  "calc.compound.live.col.closing": "Patrimônio final",
+  "calc.compound.live.year": "Ano {year}",
+  "calc.compound.step9":
+    "Cada mês rende o patrimônio inicial vezes j; a parte reinvestida soma ao patrimônio do mês seguinte e o restante é consumido.",
+  "calc.compound.formula8":
+    "renda = patrimônio · j; reinvestido = renda · parte; consumido = renda − reinvestido",
+  "calc.compound.assumption7":
+    "Na evolução de viver de renda, a taxa é a mesma em todos os meses e a renda é recebida no fim de cada mês.",
   "calc.compound.initial": "Valor inicial",
   "calc.compound.deposit": "Depósito mensal",
   "calc.compound.target": "Meta",

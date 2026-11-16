@@ -5,8 +5,10 @@ import {
   depositForTarget,
   depositsValue,
   futureValue,
+  incomeEvolution,
   monthlyIncome,
   splitIncome,
+  yearlyIncome,
 } from "@/features/calculators/model/compound-math";
 
 describe("compound math", () => {
@@ -71,5 +73,53 @@ describe("compound math", () => {
   it("keeps the two parts equal to the income when the quarter is a half cent", () => {
     // 1127 / 4 = 281.75 minor units: the reinvested part rounds half to even.
     expect(splitIncome(1127)).toEqual({ reinvested: 282, living: 845 });
+  });
+
+  it("reinvests a share of each month's income and lives on the rest", () => {
+    // 1 000 000.00 at 1.0979% a month: income 10 979.00, reinvested 25% = 2 744.75.
+    const rows = incomeEvolution(100_000_000, 0.010979, 0.25, 2);
+
+    expect(rows[0]).toEqual({
+      month: 1,
+      opening: 100_000_000,
+      income: 1_097_900,
+      reinvested: 274_475,
+      living: 823_425,
+      closing: 100_274_475,
+    });
+    // The second month earns on the opening balance plus the reinvested part.
+    expect(rows[1]?.opening).toBe(100_274_475);
+    expect(rows[1]?.income).toBe(1_100_913);
+  });
+
+  it("keeps the balance when the whole income is lived on", () => {
+    const rows = incomeEvolution(100_000_000, 0.01, 0, 3);
+
+    expect(rows.map((r) => r.closing)).toEqual([
+      100_000_000, 100_000_000, 100_000_000,
+    ]);
+    expect(rows.map((r) => r.living)).toEqual([
+      1_000_000, 1_000_000, 1_000_000,
+    ]);
+  });
+
+  it("sums the months of each year", () => {
+    const rows = incomeEvolution(100_000_000, 0.01, 0.5, 14);
+    const years = yearlyIncome(rows);
+
+    expect(years).toHaveLength(2);
+    expect(years[0]).toMatchObject({
+      year: 1,
+      opening: 100_000_000,
+      closing: rows[11]?.closing,
+    });
+    expect(years[0]?.living).toBe(
+      rows.slice(0, 12).reduce((s, r) => s + r.living, 0),
+    );
+    expect(years[1]).toMatchObject({
+      year: 2,
+      opening: rows[11]?.closing,
+      closing: rows[13]?.closing,
+    });
   });
 });
