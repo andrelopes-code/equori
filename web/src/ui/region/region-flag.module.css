@@ -37,8 +37,15 @@
     pointer-events: none;
   }
 
+  /* The global region has no flag: its tile is solid, with no hairline, so it reads as a symbol
+     beside the flags and not as an empty plate. */
   .flag[data-art="global"] {
-    color: var(--slotted-text-muted);
+    background: var(--slotted-tone-secondary-solid);
+    color: var(--slotted-tone-secondary-on-solid);
+  }
+
+  .flag[data-art="global"]::after {
+    box-shadow: none;
   }
 
   .flag[data-art="global"] svg {
