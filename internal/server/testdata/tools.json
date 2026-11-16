@@ -3511,7 +3511,7 @@
   },
   {
     "name": "get_portfolio",
-    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for questions about investments and net worth. Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
+    "description": "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. Use it for investments and net worth. Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -3528,12 +3528,13 @@
             "income_types",
             "subtypes",
             "contribution",
-            "fixed_income_events"
+            "fixed_income_events",
+            "issuer_exposure"
           ]
         },
         "date": {
           "type": "string",
-          "description": "for positions, allocation and net_worth: valuation date; today when absent",
+          "description": "for positions, allocation, net_worth and issuer_exposure: valuation date; today when absent",
           "format": "date"
         },
         "by": {
@@ -4445,6 +4446,183 @@
             "additionalProperties": false
           },
           "description": "for fixed_income_events: interest, amortization and maturity payments dated in the range, with their state"
+        },
+        "issuers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "issuer": {
+                "type": "string"
+              },
+              "market_value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "covered_value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "uncovered_value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "limit": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "excess": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "market_value",
+              "covered_value",
+              "uncovered_value"
+            ],
+            "additionalProperties": false
+          },
+          "description": "for issuer_exposure: fixed income per issuer, with covered value, limit and excess"
+        },
+        "guarantee": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "limit_per_issuer": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "limit_per_period": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "period_years": {
+              "type": "integer"
+            }
+          },
+          "description": "for issuer_exposure: deposit guarantee; absent when none",
+          "required": [
+            "name",
+            "limit_per_issuer",
+            "limit_per_period",
+            "period_years"
+          ],
+          "additionalProperties": false
+        },
+        "period_note": {
+          "type": "boolean",
+          "description": "for issuer_exposure: covered values exceed the period limit"
+        },
+        "missing_prices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "for issuer_exposure: instruments without a price"
         }
       },
       "additionalProperties": false

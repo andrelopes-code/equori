@@ -20,6 +20,7 @@ func (getPortfolioView) Values() []string {
 		"subtypes",
 		"contribution",
 		"fixed_income_events",
+		"issuer_exposure",
 	}
 }
 
@@ -44,7 +45,7 @@ func (getPortfolioInstrumentType) Values() []string {
 
 type getPortfolioIn struct {
 	View           getPortfolioView           `json:"view"                     jsonschema:"what to return"`
-	Date           tool.Date                  `json:"date,omitzero"            jsonschema:"for positions, allocation and net_worth: valuation date; today when absent"`
+	Date           tool.Date                  `json:"date,omitzero"            jsonschema:"for positions, allocation, net_worth and issuer_exposure: valuation date; today when absent"`
 	By             getPortfolioBy             `json:"by,omitzero"              jsonschema:"for allocation: grouping"`
 	AccountID      string                     `json:"account_id,omitzero"      jsonschema:"for return: account or brokerage from list_accounts"`
 	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return and fixed_income_events: first date"`
@@ -136,6 +137,11 @@ type getPortfolioOut struct {
 	Contribution contributionView `json:"contribution,omitzero" jsonschema:"for contribution: the saved target split valued today, with the split of amount when given"`
 
 	FixedIncomeEvents []fixedIncomeEventView `json:"fixed_income_events,omitzero" jsonschema:"for fixed_income_events: interest, amortization and maturity payments dated in the range, with their state"`
+
+	Issuers       []issuerExposureView `json:"issuers,omitzero"        jsonschema:"for issuer_exposure: fixed income per issuer, with covered value, limit and excess"`
+	Guarantee     guaranteeView        `json:"guarantee,omitzero"      jsonschema:"for issuer_exposure: deposit guarantee; absent when none"`
+	PeriodNote    bool                 `json:"period_note,omitzero"    jsonschema:"for issuer_exposure: covered values exceed the period limit"`
+	MissingPrices []string             `json:"missing_prices,omitzero" jsonschema:"for issuer_exposure: instruments without a price"`
 }
 
 func getPortfolio(
@@ -148,8 +154,8 @@ func getPortfolio(
 		Description: "Returns investment views at a date: positions with quantity, cost and market value; allocation by instrument type, currency or institution; net worth; or the annual return of an account over a period, with its time-weighted return and the percent of the default index of the region (the region's daily reference rate) that grows as much. " +
 			"With view contribution it returns the saved contribution plan, a target split of the portfolio by class, valued today, and with amount the split of a contribution over its classes. " +
 			"Also lists the income types and instrument subtypes the book's tax jurisdiction accepts. " +
-			"Use it for questions about investments and net worth. " +
-			"Do not use it for cash balances only: get_balances does; nor for a tax year: get_tax_year does.",
+			"Use it for investments and net worth. " +
+			"Do not use it for cash balances only (get_balances) nor for a tax year (get_tax_year).",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
 	}, func(ctx context.Context, booksID int64, in getPortfolioIn) (getPortfolioOut, error) {
@@ -176,7 +182,7 @@ func validatePortfolioIn(in getPortfolioIn) error {
 
 	var err error
 	switch in.View {
-	case "positions", "net_worth":
+	case "positions", "net_worth", "issuer_exposure":
 		err = optionalFields(name, fields, "date")
 	case "allocation":
 		err = optionalFields(name, fields, "date", "by")
@@ -228,6 +234,8 @@ func portfolioView(
 		return contributionResult(ctx, svc, booksID, in)
 	case "fixed_income_events":
 		return fixedIncomeEventsView(ctx, svc, names, booksID, in)
+	case "issuer_exposure":
+		return issuerExposureResult(ctx, svc, booksID, date)
 	case "income_types":
 		types, err := svc.IncomeTypes(ctx, booksID)
 		return getPortfolioOut{IncomeTypes: nonNil(types)}, err

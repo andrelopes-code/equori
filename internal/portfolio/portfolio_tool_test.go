@@ -450,3 +450,40 @@ func TestGetPortfolioToolFixedIncomeEvents(t *testing.T) {
 		"to",
 	)
 }
+
+// S520 through the tool.
+func TestGetPortfolioToolIssuerExposure(t *testing.T) {
+	t.Parallel()
+	h := newExposureBook(t, apitest.Brazil(), []exposureHolding{
+		{"CDBX", "cdb", "Banco X", "br_cnpj", "11222333000181", 20000000, false},
+		{"LCIX", "lci", "Banco X", "br_cnpj", "11222333000181", 10000000, false},
+		{"LFX", "lf", "Banco X", "br_cnpj", "11222333000181", 3000000, false},
+		{"DEBY", "debenture", "Y", "", "", 5000000, false},
+	})
+
+	var got struct {
+		Issuers []struct {
+			Issuer string      `json:"issuer"`
+			Excess *tool.Money `json:"excess"`
+		} `json:"issuers"`
+		Guarantee struct {
+			Name string `json:"name"`
+		} `json:"guarantee"`
+	}
+	toolOutput(
+		t,
+		h,
+		"get_portfolio",
+		map[string]any{"view": "issuer_exposure", "date": exposureDate},
+		&got,
+	)
+
+	if len(got.Issuers) != 2 || got.Issuers[0].Issuer != "Banco X" ||
+		got.Issuers[0].Excess == nil || got.Issuers[0].Excess.Amount != "50000.00" {
+		t.Fatalf("issuers = %+v", got.Issuers)
+	}
+
+	if got.Guarantee.Name != "FGC" {
+		t.Fatalf("guarantee = %+v", got.Guarantee)
+	}
+}
