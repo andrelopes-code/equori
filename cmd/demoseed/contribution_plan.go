@@ -33,6 +33,7 @@ func (g group) planMembers() []map[string]any {
 
 	for i, m := range g.members {
 		out[i] = map[string]any{"instrument": m.code}
+
 		if !g.split {
 			continue
 		}
