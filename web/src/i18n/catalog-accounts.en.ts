@@ -731,7 +731,7 @@ export const accountsEn = {
   "cards.limitUsed": "Limit used",
   "cards.limitText": "{used} of {limit}",
   "cards.stub.name": "Closed statement",
-  "cards.stub.reference": "{month} statement",
+  "cards.stub.reference": "{month}",
   "cards.stub.referenceMany": "{count} statements open",
   "cards.stub.due": "Due {when}",
   "cards.stub.overdue": "Was due {when}",

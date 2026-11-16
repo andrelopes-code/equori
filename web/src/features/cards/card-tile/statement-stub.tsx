@@ -13,7 +13,7 @@ import {
 import styles from "@/features/cards/card-tile/statement-stub.module.css";
 import {
   formatDayMonth,
-  formatReferenceMonth,
+  formatReferenceMonthCompact,
   formatRelativeDays,
 } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -60,7 +60,7 @@ export function StatementStub({
   const single = unpaid.length === 1;
   const reference = single
     ? t("cards.stub.reference", {
-        month: formatReferenceMonth(oldest.reference, locale),
+        month: formatReferenceMonthCompact(oldest.reference, locale),
       })
     : t("cards.stub.referenceMany", { count: unpaid.length });
   const paidText = t("cards.stub.paid", {
@@ -106,7 +106,11 @@ export function StatementStub({
             </Text>
           )}
         </div>
-        <Button size="sm" onClick={handlePay}>
+        <Button
+          size="sm"
+          tone={due.status === "info" ? "accent" : due.status}
+          onClick={handlePay}
+        >
           {t("cards.pay")}
         </Button>
       </div>

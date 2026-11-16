@@ -265,6 +265,18 @@ export function formatReferenceMonth(month: string, locale: string): string {
   );
 }
 
+// The month and year of a reference month in the fewest characters: "nov-2026".
+export function formatReferenceMonthCompact(
+  month: string,
+  locale: string,
+): string {
+  const [year = 0, m = 1] = month.split("-").map(Number);
+  const name = dateFormat(locale, { month: "short" })
+    .format(new Date(Date.UTC(year, m - 1, 1)))
+    .replace(".", "");
+  return `${name}-${String(year)}`;
+}
+
 function utcDate(iso: string): Date {
   const [year = 0, month = 1, day = 1] = iso.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day));

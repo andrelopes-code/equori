@@ -21,6 +21,7 @@ import {
   formatRelativeDays,
   numberFormatter,
   formatReferenceMonth,
+  formatReferenceMonthCompact,
   parseAmount,
   todayISO,
 } from "@/i18n/format";
@@ -98,6 +99,15 @@ describe("formatDate", () => {
 describe("todayISO", () => {
   it("formats the local calendar date", () => {
     expect(todayISO(new Date(2026, 9, 7, 23, 59))).toBe("2026-10-07");
+  });
+});
+
+describe("formatReferenceMonthCompact", () => {
+  it.each([
+    ["2026-11", "pt-BR", "nov-2026"],
+    ["2026-11", "en", "Nov-2026"],
+  ] as const)("formats %s in %s as %s", (month, locale, want) => {
+    expect(formatReferenceMonthCompact(month, locale)).toBe(want);
   });
 });
 

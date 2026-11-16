@@ -158,7 +158,7 @@ describe("CardsPage", () => {
     ).toBeInTheDocument();
     expect(
       within(stub).getByText(
-        words("cards.stub.reference", { month: "Oct 2026" }),
+        words("cards.stub.reference", { month: "Oct-2026" }),
       ),
     ).toBeInTheDocument();
     expect(within(stub).getByText("R$1,800.00")).toBeInTheDocument();
@@ -178,6 +178,34 @@ describe("CardsPage", () => {
     });
     expect(router.state.location.search).toMatchObject({ pay: true });
   });
+
+  it.each([
+    ["2026-10-18", "warning"],
+    ["2026-10-10", "danger"],
+  ])(
+    "draws the pay button of a statement due %s in the tone %s",
+    async (dueDate, tone) => {
+      await renderApp("/cards", {
+        fetch: api({
+          [`GET /api/v1/accounts/${cardID}/statements`]: () =>
+            json(200, {
+              items: statementFixtures.map((s) =>
+                s.reference === "2026-10" ? { ...s, due_date: dueDate } : s,
+              ),
+            }),
+        }),
+      });
+      const tile = await screen.findByRole("article", { name: "Itaú Visa" });
+      const stub = await within(tile).findByRole("group", {
+        name: catalogEn["cards.stub.name"],
+      });
+
+      expect(stub).toHaveAttribute("data-status", tone);
+      expect(
+        within(stub).getByRole("button", { name: catalogEn["cards.pay"] }),
+      ).toHaveAttribute("data-tone", tone);
+    },
+  );
 
   it("creates a card through the account form", async () => {
     const { router } = await renderApp("/cards", { fetch: api() });

@@ -730,7 +730,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "cards.limitUsed": "Limite usado",
   "cards.limitText": "{used} de {limit}",
   "cards.stub.name": "Fatura fechada",
-  "cards.stub.reference": "Fatura de {month}",
+  "cards.stub.reference": "{month}",
   "cards.stub.referenceMany": "{count} faturas em aberto",
   "cards.stub.due": "Vence {when}",
   "cards.stub.overdue": "Venceu {when}",
