@@ -3,6 +3,7 @@
 - Status: accepted
 - Date: 2026-10-20
 - Amended by ADR 020: T9, T10, T14
+- Amended by ADR 029: T9, T14
 
 ## Context
 
@@ -50,3 +51,8 @@ A model provider that rejects schemas produced under T4, or a tool whose input c
 ## Amendment of 2026-10-27 (ADR 024)
 
 - T13: a call through MCP also writes the line `mcp call` with the token ID beside the user ID, tool, effect, outcome, duration and size; never arguments, results or the token.
+
+## Amendment of 2026-11-16 (tool parity, owner operations)
+
+- T9: `Spec.Role` names the lowest book role that may call a tool. The registry refuses a call or a preview of a lower role, or of a context with no role, with `book_role_required`. The chat declarations and the MCP listing leave out a tool above the member's role (ADR 029, HA17).
+- T14: exclusion reasons are `-session`, `-binary`, `-capture`, `-llm`, `-secret`, `-file`, `-dialog`, `-visual`, `-setup`, `-instance`, `-screen`, `-credential` and `-erase`; `internal/server/tools_test.go` is the list. `-credential` covers an operation whose input or answer is a token or a password (`createInvitation`, `setCopyPassword`), because it would enter a stored conversation. `-erase` covers `deleteCurrentBooks`, which erases the book. `-owner` no longer exists: an operation with `x-book-role` `owner` has a tool with `Role` owner (`manage_book`, `get_book_access`) or one of these exclusions.
