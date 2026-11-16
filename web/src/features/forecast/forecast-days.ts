@@ -24,18 +24,25 @@ export function forecastDays({
   month,
   today,
   start,
+  startRange,
   scheduled,
   variable,
 }: {
   month: string;
   today: string;
   start: number;
+  // The likely range of `start` when it is itself a forecast: each day adds its offsets (F17).
+  startRange?: { low: number; high: number } | undefined;
   scheduled: readonly DatedAmount[];
   variable: VariableForecast;
 }): ForecastPoint[] {
   const ahead = monthDays(month).filter((date) => date > today);
   const dueToday = sumOn(scheduled, today);
   const range = variable.range;
+  const carried = {
+    low: (startRange?.low ?? start) - start,
+    high: (startRange?.high ?? start) - start,
+  };
 
   let fixed = 0;
   let routine = 0;
@@ -59,8 +66,8 @@ export function forecastDays({
       ...(range === null
         ? {}
         : {
-            low: Math.round(exact + range.lower * share),
-            high: Math.round(exact + range.upper * share),
+            low: Math.round(exact + range.lower * share + carried.low),
+            high: Math.round(exact + range.upper * share + carried.high),
           }),
       scheduled: dayScheduled,
       recurring: dayRecurring,
@@ -72,7 +79,9 @@ export function forecastDays({
     {
       date: today,
       value: start,
-      ...(range === null ? {} : { low: start, high: start }),
+      ...(range === null
+        ? {}
+        : { low: start + carried.low, high: start + carried.high }),
       scheduled: 0,
       recurring: 0,
       variable: 0,

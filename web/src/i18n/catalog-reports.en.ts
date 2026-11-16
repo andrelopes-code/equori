@@ -122,6 +122,8 @@ export const reportsEn = {
     "Dashed: forecast from the schedules and the last month",
   "report.netWorth.forecastNote":
     "Dashed: forecast from the schedules and the last {count} months",
+  "report.netWorth.forecastNext":
+    "Starts from the forecast for the end of {month}; the likely range includes that month's",
   "report.netWorth.entries": "Income and expenses of the month",
   "report.netWorth.entriesOfDay": "Income and expenses of {date}",
   "report.netWorth.noEntries": "No income or expense in this period",

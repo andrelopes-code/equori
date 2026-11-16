@@ -26,11 +26,14 @@ function shiftMonth(month: string, by: number): string {
 // date-picker family shows "10 / 2026" and moves only through its calendar.
 export function MonthControl({
   value,
+  max,
   onChange,
   label,
 }: {
   // YYYY-MM.
   value: string;
+  // The last month the control reaches, YYYY-MM; the next step stops there.
+  max?: string;
   onChange: (month: string) => void;
   // The group's name: what the month bounds.
   label: string;
@@ -38,6 +41,8 @@ export function MonthControl({
   const t = useT();
   const [locale] = useAppLocale();
   const [open, setOpen] = useState(false);
+  const last = max === undefined ? null : parseISODate(`${max}-01`);
+
   return (
     <ButtonGroup aria-label={label} variant="outline" tone="secondary">
       <IconButton
@@ -63,6 +68,7 @@ export function MonthControl({
                 granularity="month"
                 // A month cell's value is the first day of that month.
                 value={parseISODate(`${value}-01`)}
+                max={last ?? undefined}
                 onValueChange={(next) => {
                   if (next !== null && !Array.isArray(next) && "year" in next) {
                     setOpen(false);
@@ -76,6 +82,7 @@ export function MonthControl({
       </Popover>
       <IconButton
         aria-label={t("month.next")}
+        disabled={max !== undefined && value >= max}
         onClick={() => {
           onChange(shiftMonth(value, 1));
         }}

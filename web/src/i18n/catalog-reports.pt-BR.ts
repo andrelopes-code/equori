@@ -124,6 +124,8 @@ export const reportsPtBR: Record<keyof typeof reportsEn, string> = {
     "Tracejado: previsão pelos agendamentos e pelo último mês",
   "report.netWorth.forecastNote":
     "Tracejado: previsão pelos agendamentos e pelos últimos {count} meses",
+  "report.netWorth.forecastNext":
+    "Parte da previsão para o fim de {month}; a faixa provável inclui a desse mês",
   "report.netWorth.entries": "Receitas e despesas do mês",
   "report.netWorth.entriesOfDay": "Receitas e despesas de {date}",
   "report.netWorth.noEntries": "Nenhuma receita ou despesa neste período",

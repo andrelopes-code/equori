@@ -33,6 +33,39 @@ describe("forecast days", () => {
     ]);
   });
 
+  it("adds the range of the start to the range of each day", () => {
+    const got = forecastDays({
+      month: "2026-11",
+      today: "2026-10-31",
+      start: 100000,
+      startRange: { low: 90000, high: 105000 },
+      scheduled: [{ date: "2026-11-02", amount: -2000 }],
+      variable: {
+        history: 3,
+        routine: [
+          { date: "2026-11-01", amount: -100 },
+          { date: "2026-11-02", amount: -100 },
+        ],
+        recurring: [],
+        range: { lower: -3000, upper: 3000 },
+      },
+    });
+
+    expect(got).toHaveLength(31);
+    expect(got[0]).toEqual(
+      day("2026-10-31", [100000, 90000, 105000], [0, 0, 0]),
+    );
+    expect(got[1]).toEqual(
+      day("2026-11-01", [99900, 89800, 105000], [0, 0, -100]),
+    );
+    expect(got[2]).toEqual(
+      day("2026-11-02", [97800, 87600, 103000], [-2000, 0, -100]),
+    );
+    expect(got.at(-1)).toEqual(
+      day("2026-11-30", [97800, 84800, 105800], [0, 0, 0]),
+    );
+  });
+
   it("states no range without one", () => {
     const got = forecastDays({
       month: "2026-10",

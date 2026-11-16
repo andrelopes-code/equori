@@ -5,7 +5,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
-import { netWorthQuery } from "@/features/overview";
+import { netWorthQuery, shiftMonth } from "@/features/overview";
 import { AssetsAllocation } from "@/features/portfolio";
 import type { AllocationBy } from "@/features/portfolio";
 import { NetWorthGrowthCards } from "@/features/reports/net-worth-growth/net-worth-growth-cards";
@@ -79,9 +79,11 @@ export function NetWorthTab({
   const label = (month: string) => formatReferenceMonth(month, tag);
 
   // A point names its month by the x value; clearing the selection returns to the current month.
-  // A month after the current one holds no net worth yet.
+  // The card reaches the month after the current one, which holds a forecast and no net worth.
   function handleMonth(next: string) {
-    setSelected(next > current ? current : next);
+    const last = shiftMonth(current, 1);
+
+    setSelected(next > last ? last : next);
   }
 
   function handleSelect(point: ChartPoint | null) {

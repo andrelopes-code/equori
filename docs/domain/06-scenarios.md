@@ -976,6 +976,14 @@ The same book with September 2026 picked: the card draws no forecast and no fore
 
 A forecast day of 500.00 with a likely range of 400.00 to 525.00, the rent of −2,000.00, an estimate "Family (estimated)" of −400.00 and an estimated day-to-day amount of −10.00 states "Forecast R$500.00", "Likely range R$400 to R$525", and under "On this day" "Rent −R$2,000.00", "Family (estimated) −R$400.00" and "Estimated day-to-day −R$10.00"; a day nothing moves states no "On this day"; today states "Net" and no range. Privacy mode masks the amounts (F9, F12).
 
+### S486 Net worth forecast of the next month
+
+The book of S286 with the rent of 2,000.00 expected on 2026-11-25 and the picked month November 2026 (the month after the current one). The card draws no "Net" line, draws the forecast from 2026-11-01 to 2026-11-30 starting from the value of 2026-10-31 (−1,135.00), and states "Dashed: forecast from the schedules and the last 3 months" and the sentence that it starts from the forecast for the end of October 2026 (`docs/specs/2026-11-05-net-worth-forecast-design.md`, F13 to F18).
+
+### S487 The month control stops after the next month
+
+On the card of S486 the next step of the month control is disabled and the previous step is enabled (F19).
+
 ### S176–S181, S184 Card billing certainty (A136–A139, A141)
 
 The scenarios of `docs/specs/2026-10-29-card-billing-certainty-design.md`: a reviewed match moves a manual charge to the bill its line states (S176); a closed statement that differs from the institution's total proposes the provisional postings that explain it (S177); a statement the owner chose stays (S178); a difference no posting explains shows as a possible rounding difference of the source (S179); an open statement leaves out the previous statement's unpaid amount until it is overdue (S180); a statement is reconciled as soon as a later entry closes its difference with the institution's total (S181); a pending line stays on its statement whatever the reported total, and moves only by its bill (S184).

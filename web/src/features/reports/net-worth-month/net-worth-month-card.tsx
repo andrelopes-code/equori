@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
+import { shiftMonth } from "@/features/overview";
 import { netWorthDaysQuery } from "@/features/reports/api";
 import { EntryTable } from "@/features/reports/net-worth-month/entry-table";
 import { EntryTotals } from "@/features/reports/net-worth-month/entry-totals";
@@ -41,6 +42,7 @@ export function NetWorthMonthCard({
   const [tag] = useAppLocale();
   const scale = useScale();
   const today = useToday();
+  const current = today.slice(0, 7);
   const { from, to } = monthRange(month, today);
   const days = useQuery(netWorthDaysQuery(api, from, to, valueIn));
   const transactions = useQuery(periodTransactionsQuery(api, from, to));
@@ -67,7 +69,7 @@ export function NetWorthMonthCard({
   );
   const shownDay = day?.startsWith(month) === true ? day : undefined;
   const rows = monthEntries(
-    transactions.data ?? [],
+    (transactions.data ?? []).filter((tx) => tx.date.startsWith(month)),
     categories,
     base,
     shownDay,
@@ -89,9 +91,17 @@ export function NetWorthMonthCard({
             {t(noteKey(forecast.history), { count: forecast.history })}
           </Text>
         )}
+        {forecast !== undefined && month > current && (
+          <Text size="sm" tone="muted">
+            {t("report.netWorth.forecastNext", {
+              month: formatMonthTitle(current, tag),
+            })}
+          </Text>
+        )}
         <CardActions>
           <MonthControl
             value={month}
+            max={shiftMonth(current, 1)}
             onChange={onMonth}
             label={t("report.netWorth.monthPick")}
           />
@@ -102,7 +112,7 @@ export function NetWorthMonthCard({
         <Grid columns={2} gap={4} minItemWidth="lg">
           <NetWorthDayChart
             title={title}
-            days={days.data ?? []}
+            days={(days.data ?? []).filter((d) => d.date.startsWith(month))}
             forecast={forecast}
             currency={valueIn}
             digits={digits(valueIn)}

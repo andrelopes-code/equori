@@ -38,7 +38,9 @@ const paceBounds = { low: 0.5, high: 2 } as const;
 
 // What the entries no schedule produced say about the rest of the month: the series that recur,
 // then the routine, without the atypical amounts, at the median rate of each category over the
-// history months and weighed by the month's own pace (net worth forecast design, F4 to F8).
+// history months and weighed by the month's own pace (net worth forecast design, F4 to F8). A
+// `today` before the month's first day makes the month wholly ahead: its history is that of the
+// month of `today`, which is incomplete, and its pace is 1 (F16).
 export function variableForecast({
   entries,
   month,
@@ -50,7 +52,8 @@ export function variableForecast({
 }): VariableForecast {
   const days = monthDays(month);
   const ahead = days.filter((date) => date > today);
-  const history = historyOf(entries, month);
+  const wholly = today < `${month}-01`;
+  const history = historyOf(entries, wholly ? today.slice(0, 7) : month);
   const scoped = entries.filter(
     (entry) =>
       history.some((m) => entry.date.startsWith(m)) ||
@@ -77,7 +80,7 @@ export function variableForecast({
     "expense",
   );
   const dom = Number(today.slice(8, 10));
-  const pace = paceOf(spent, usual.expense * dom);
+  const pace = wholly ? 1 : paceOf(spent, usual.expense * dom);
   const expense = usual.expense * (1 + (pace - 1) * (dom / days.length));
 
   return {

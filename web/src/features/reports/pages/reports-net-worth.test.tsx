@@ -286,6 +286,97 @@ describe("Reports net worth", () => {
     expect(screen.queryByText(/Dashed: forecast/)).not.toBeInTheDocument();
   });
 
+  it("S486: forecasts the next month from the end of the current forecast", async () => {
+    const user = userEvent.setup();
+    const days: URLSearchParams[] = [];
+    const routes = reportApiRoutes();
+    const { fetch } = api({
+      ...forecastRoutes(),
+      "GET /api/v1/reports/net-worth/days": (req) => {
+        days.push(new URL(req.url).searchParams);
+        return routes["GET /api/v1/reports/net-worth/days"](req);
+      },
+      [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+        json(200, rentProjection()),
+    });
+
+    await renderApp("/reports", { fetch });
+
+    const october = await screen.findByRole("group", {
+      name: "Net worth by day · October 2026",
+    });
+    await user.click(
+      within(october.closest("[data-ui='card']") ?? document.body).getByRole(
+        "button",
+        { name: "Next month" },
+      ),
+    );
+
+    const chart = await screen.findByRole("group", {
+      name: "Net worth by day · November 2026",
+    });
+    expect(
+      await screen.findByText(
+        "Starts from the forecast for the end of October 2026; the likely range includes that month's",
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        "Dashed: forecast from the schedules and the last 3 months",
+      ),
+    ).toBeVisible();
+    // Only today's net worth is read, to start the chain.
+    expect(days.at(-1)?.get("from")).toBe("2026-10-17");
+    expect(days.at(-1)?.get("to")).toBe("2026-10-17");
+
+    const figure = chart.closest("[data-ui='chart']");
+    await user.click(
+      within(figure as HTMLElement).getByRole("button", { name: /table/i }),
+    );
+
+    // October ends at −1,135.00; November adds 10.00 a day and the rent of 2,000.00 on the 25th.
+    const table = await within(figure as HTMLElement).findByRole("table");
+    expect(rowTexts(table).find((row) => row.startsWith("Nov 1|"))).toContain(
+      "\u2212R$1,145.00",
+    );
+    expect(rowTexts(table).find((row) => row.startsWith("Nov 24"))).toContain(
+      "\u2212R$1,375.00",
+    );
+    expect(rowTexts(table).find((row) => row.startsWith("Nov 30"))).toContain(
+      "\u2212R$3,435.00",
+    );
+    expect(rowTexts(table).some((row) => row.startsWith("Oct"))).toBe(false);
+  });
+
+  it("S487: stops the month control on the month after the current one", async () => {
+    const user = userEvent.setup();
+    const { fetch } = api({
+      ...forecastRoutes(),
+      [`GET /api/v1/accounts/${checkingID}/projection`]: () =>
+        json(200, rentProjection()),
+    });
+
+    await renderApp("/reports", { fetch });
+
+    const october = await screen.findByRole("group", {
+      name: "Net worth by day · October 2026",
+    });
+    await user.click(
+      within(october.closest("[data-ui='card']") ?? document.body).getByRole(
+        "button",
+        { name: "Next month" },
+      ),
+    );
+
+    const november = await screen.findByRole("group", {
+      name: "Net worth by day · November 2026",
+    });
+    const card = within(november.closest("[data-ui='card']") ?? document.body);
+
+    expect(card.getByRole("button", { name: "Next month" })).toBeDisabled();
+    expect(card.getByRole("button", { name: "Previous month" })).toBeEnabled();
+  });
+
   it("reads 24 months at most", async () => {
     const { fetch, queries } = api();
     await renderApp("/reports?months=24", { fetch });
@@ -593,6 +684,30 @@ function forecastRoutes(): Record<string, (req: Request) => Response> {
         closing: { amount: 0, currency: "BRL" },
         points: [],
       }),
+  };
+}
+
+// The rent of 2,000.00 expected on 2026-10-25 and on 2026-11-25.
+function rentProjection() {
+  const rentID = "5c000000-0000-4000-8000-000000000001";
+  const point = (date: string, id: string, balance: number) => ({
+    date,
+    occurrence_id: id,
+    schedule_id: rentID,
+    amount: { amount: -200000, currency: "BRL" },
+    balance: { amount: balance, currency: "BRL" },
+  });
+
+  return {
+    account_id: checkingID,
+    from: "2026-10-17",
+    to: "2026-11-30",
+    opening: { amount: 0, currency: "BRL" },
+    closing: { amount: -400000, currency: "BRL" },
+    points: [
+      point("2026-10-25", "0c000000-0000-4000-8000-000000000001", -200000),
+      point("2026-11-25", "0c000000-0000-4000-8000-000000000002", -400000),
+    ],
   };
 }
 

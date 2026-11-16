@@ -4,10 +4,9 @@ import type { components } from "@/api/schema.gen";
 import { useApi } from "@/api/api-context";
 import { ProblemError } from "@/api/problem";
 import { accountsQuery } from "@/features/accounts";
-import { forecastDays, variableForecast } from "@/features/forecast";
-import type { ForecastPoint, RecurringEstimate } from "@/features/forecast";
+import { forecastMonth } from "@/features/forecast";
+import type { MonthForecast } from "@/features/forecast";
 import { mergeEvents, monthEnd, shiftMonth } from "@/features/overview";
-import type { ForecastEvent } from "@/features/overview";
 import {
   occurrencesQuery,
   projectionQuery,
@@ -23,21 +22,15 @@ type Transaction = components["schemas"]["Transaction"];
 type Projection = components["schemas"]["Projection"];
 type Schedule = components["schemas"]["Schedule"];
 
-export interface NetWorthForecast {
-  history: number;
-  points: ForecastPoint[];
-  // The scheduled occurrences and the recurring estimates, each drawn as a line on its day.
-  events: ForecastEvent[];
-  recurring: RecurringEstimate[];
-}
+export type NetWorthForecast = MonthForecast;
 
 // The history covers six complete months; occurrences are read a month further back, so a
 // transaction realized late on an occurrence of the month before still counts as scheduled.
 const historyMonths = 6;
 
-// The forecast of the net worth to the month's end, from today's net worth `start`; undefined
-// when the month, the valuation currency or today leave none (net worth forecast design, F1), and
-// while an input loads or after one fails.
+// The forecast of the net worth to the month's end, from today's net worth `start`, for the current
+// month and the month after it; undefined when the month, the valuation currency or today leave
+// none (net worth forecast design, F1, F13), and while an input loads or after one fails.
 export function useNetWorthForecast(
   month: string,
   valueIn: string,
@@ -49,10 +42,12 @@ export function useNetWorthForecast(
   const accounts = useQuery(accountsQuery(api));
 
   const base = settings.data?.base_currency;
+  const current = today.slice(0, 7);
   const end = monthEnd(month);
   const enabled =
-    month === today.slice(0, 7) && today < end && base === valueIn;
-  const from = `${shiftMonth(month, -historyMonths)}-01`;
+    base === valueIn &&
+    (month === shiftMonth(current, 1) || (month === current && today < end));
+  const from = `${shiftMonth(current, -historyMonths)}-01`;
   const scope = enabled ? balanceAccounts(accounts.data ?? [], valueIn) : [];
 
   const history = useQuery({
@@ -62,7 +57,7 @@ export function useNetWorthForecast(
   const realized = useQuery({
     ...occurrencesQuery(
       api,
-      `${shiftMonth(month, -historyMonths - 1)}-01`,
+      `${shiftMonth(current, -historyMonths - 1)}-01`,
       today,
       { state: "realized" },
     ),
@@ -161,12 +156,6 @@ function forecastOf({
     ),
     new Map(schedules.map((schedule) => [schedule.id, schedule])),
   );
-  const variable = variableForecast({ entries, month, today });
 
-  return {
-    history: variable.history,
-    points: forecastDays({ month, today, start, scheduled: events, variable }),
-    events,
-    recurring: variable.recurring,
-  };
+  return forecastMonth({ entries, events, month, today, start });
 }

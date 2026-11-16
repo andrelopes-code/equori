@@ -16,7 +16,8 @@ export interface EntryRow {
 }
 
 // The days of a month that hold a net worth: the whole month, or up to today in the current one
-// (net worth days design, D3).
+// (net worth days design, D3). A month after today's holds none: its range is today, whose net
+// worth starts the forecast of that month (net worth forecast design, F18).
 export function monthRange(
   month: string,
   today: string,
@@ -24,7 +25,9 @@ export function monthRange(
   const [year = 0, m = 1] = month.split("-").map(Number);
   const last = new Date(Date.UTC(year, m, 0)).toISOString().slice(0, 10);
 
-  return { from: `${month}-01`, to: last < today ? last : today };
+  const to = last < today ? last : today;
+
+  return { from: `${month}-01` > to ? to : `${month}-01`, to };
 }
 
 // Each posting on an income or expense category in one currency, dated by its transaction, by

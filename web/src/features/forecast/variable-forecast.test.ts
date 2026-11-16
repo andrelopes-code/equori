@@ -209,6 +209,44 @@ describe("variable forecast", () => {
     },
   );
 
+  it("forecasts a month wholly ahead from the months before the month of today, at pace 1", () => {
+    // Today is the last day of October: October is not a history month and its own pace, three
+    // times the usual, weighs nothing in November.
+    const got = variableForecast({
+      entries: [
+        entry("2026-06-30", -1000),
+        ...["2026-07", "2026-08", "2026-09"].flatMap((month) =>
+          daily(month, [1000]),
+        ),
+        ...daily("2026-10", [3000]),
+      ],
+      month: "2026-11",
+      today: "2026-10-31",
+    });
+
+    expect(got.history).toBe(3);
+    expect(got.routine).toHaveLength(30);
+    expect(got.routine[0]?.date).toBe("2026-11-01");
+    for (const day of got.routine) expect(day.amount).toBeCloseTo(-1000);
+  });
+
+  it("enters each recurring series once in a month wholly ahead", () => {
+    const got = variableForecast({
+      entries: [
+        entry("2026-06-30", -1000),
+        ...["2026-07-05", "2026-08-04", "2026-09-08"].map((date) =>
+          entry(date, -40000, "family", "Family"),
+        ),
+      ],
+      month: "2026-11",
+      today: "2026-10-31",
+    });
+
+    expect(got.recurring).toEqual([
+      { date: "2026-11-05", amount: -40000, label: "Family" },
+    ]);
+  });
+
   it("states the likely range from the quartiles of three months", () => {
     // Routine rates of 1,000, 2,000 and 3,000 a day; the median is 2,000.
     const got = variableForecast({

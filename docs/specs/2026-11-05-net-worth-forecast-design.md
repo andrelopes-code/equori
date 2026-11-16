@@ -2,7 +2,7 @@
 
 - Status: delivered
 - Date: 2026-11-05
-- Scenarios: S286 to S288 of `docs/domain/06-scenarios.md`
+- Scenarios: S286 to S288, S486 and S487 of `docs/domain/06-scenarios.md`
 - Extends: `docs/specs/2026-11-04-net-worth-days-design.md` (D3, D4)
 
 ## 1. Intent
@@ -27,7 +27,7 @@ The model separates three kinds of history entry, the practice of recurring-tran
 
 | ID | Rule |
 |---|---|
-| F1 | The forecast is drawn only for the current month, with the valuation currency equal to the base currency and today before the last day of the month. A past month, another valuation currency and the last day of the month draw no forecast. |
+| F1 | The forecast is drawn only for the current month, with the valuation currency equal to the base currency and today before the last day of the month. A past month, another valuation currency and the last day of the month draw no forecast. F13 adds the month after the current one. |
 | F2 | The forecast is a dashed line "Forecast" / "Previsão" from today to the last day. On today it equals the net worth of today. On a remaining day `d` it equals the net worth of today plus the scheduled, recurring and routine amounts of every day from the day after today to `d`. Prices and exchange rates stay at today's values. |
 | F3 | The scheduled amount of a day is the sum of the points of `getProjection`, to the last day of the month, of every open balance account (`asset`, `liability`) in the base currency, merged by occurrence: a transfer between two such accounts nets to zero and is dropped. An occurrence the projection dates today (due today or overdue) counts on the day after today. Each scheduled day draws an upright line labelled by the schedule's description, with the absolute amount as its priority (balance forecast design, B5). |
 | F4 | A series recurs when it repeats monthly with a similar amount. Its typical amount `M` is the median of the amounts of its entries in the history months. In each history month, the entry closest to `M` matches when it lies within 25 % of `M`. The series recurs when its entries number fewer than three a month in median over the months that hold one, it matches in the last history month, and it matches in at least `max(2, ⌈0.75 × h⌉)` history months. Its matched entries leave the routine of F6. |
@@ -68,3 +68,48 @@ The model knows no screen and no account scope: it takes dated, signed amounts w
 
 - S286 to S288 each have a web test whose name carries the scenario ID.
 - The model's tests cover: no history month; the first month of the data left out; a monthly payment that recurs, one with a different amount each month, one already paid this month, one late by up to seven days, and one a schedule took over; high-frequency entries kept routine; the fence on a skewed history and below eight candidates; an atypical purchase in the current month left out of the pace; purchases in categories of one history month, with four and with two history months; a category of two history months at its median; a category absent from the last two history months; a category of every other month; a purchase of the current month in a category the history lacks left out of the pace; a small refund and the refund of an atypical purchase; the pace and its bounds; the range with three months; and `forecastDays` with an occurrence dated today.
+
+## 6. Amendment: the month after the current one
+
+The card also draws a forecast for the month after the current one, so the commitments of that month show at the end of this one. The model of sections 2 and 3 holds; the rules below add the chain.
+
+| ID | Rule |
+|---|---|
+| F13 | The forecast is also drawn for the month after the current one, under the valuation currency condition of F1. The current month after its last day and every month after the next one draw none. On the last day of the current month the next month is the only month with a forecast. |
+| F14 | The forecast of the next month starts on the last day `e` of the current month with the value of the last point of the forecast of the current month (the net worth of today when `e` is today). On a day `d` of the next month it equals that value plus the scheduled, recurring and routine amounts of every day from its first day to `d`. |
+| F15 | The scheduled amount of a day of the next month is the point of `getProjection` of F3, read to the last day of the next month. When today is `e`, an occurrence the projection dates today counts on the first day of the next month (F3). |
+| F16 | The history months, the recurring series (F4, F5) and the usual rates (F7) are those of the current month: the current month is incomplete and is not a history month. Every recurring series enters once. The pace `ρ` is 1: the next month has no days of its own. |
+| F17 | The likely range on a day of the next month is the range of F8 over the days of that month, added to the range of the last point of the current month, so the band does not narrow where the forecast is already uncertain. With fewer than three history months there is no range. |
+| F18 | The card of the next month draws no "Net" line and its table lists no entry. It reads the net worth of today only to start the chain. Under the sentence of F10 a muted sentence states the start: "Starts from the forecast for the end of {month}; the likely range includes that month's" / "Parte da previsão para o fim de {month}; a faixa provável inclui a desse mês". |
+| F19 | The month control of the card stops on the next month: its next step is a disabled button there, and the calendar disables later months. The net worth tab keeps no month after the next one. |
+
+The model of the next month is the pure `variableForecast` and `forecastDays` of section 4 with two additions: `variableForecast` treats a `today` before the first day of `month` as the last day before the month (history of the month before `month`, `ρ = 1`); `forecastDays` takes `startRange` (the low and high of the start) and adds its offsets to each day's range.
+
+### Cross-cutting questions
+
+- R1: Does not apply: no value varies by country. The forecast reads the base currency, the schedules and the history; seasonality is not modelled.
+- R2: Does not apply: same reason as R1.
+- R3: Does not apply: no value set grows with regions.
+- R4: Does not apply: no extension point.
+- R5: One new key, `report.netWorth.forecastNext`, in `catalog-reports.en.ts` and `catalog-reports.pt-BR.ts`.
+- R6: The months come from `formatMonthTitle` and the amounts from `useMoneyFormat()`.
+- C1: Every amount is an integer of minor units in the base currency (`Math.round` on each point, as in F2).
+- C2: A sum holds the base currency: F1 draws no forecast under another valuation currency.
+- C3: A valuation currency other than the base draws no forecast (F1, F13).
+- C4: The currency comes from settings (`base_currency`) and from the valuation currency of the card.
+- T1: The current month and `e` come from `useToday()`; no wall clock.
+- T2: Does not apply: no business-day count.
+- B1: Does not apply: no table.
+- B2: Does not apply: no new operation; `getProjection` and `getNetWorthDays` keep their role `read`.
+- B3: Does not apply: no setting.
+- D1: Does not apply: no table.
+- D2: Does not apply: no schema change.
+- D3: Does not apply: no recorded fact changes.
+- D4: Does not apply: no data is written.
+- D5: Does not apply: no diagnostic field.
+- S1: Does not apply: no operation and no `Problem.code`.
+- S2: Does not apply: `/reports` is desktop-only (ADR 027, S3).
+- S3: The net worth paragraph of `internal/assistant/guide/articles/reports.md` changes in the same commit.
+- S4: Does not apply: the forecast is computed in the web interface.
+- X1: S486 and S487 of `docs/domain/06-scenarios.md`, each with a web test whose name carries the ID.
+- X2: Does not apply: no region or currency rule is added.
