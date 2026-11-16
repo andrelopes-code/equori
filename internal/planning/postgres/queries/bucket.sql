@@ -3,7 +3,9 @@ SELECT
     id,
     name,
     share_bp,
-    takes_savings
+    takes_savings,
+    takes_goals,
+    at_least
 FROM
     planning_bucket
 WHERE
@@ -29,9 +31,9 @@ WHERE
 
 -- name: InsertBucket :one
 INSERT INTO
-    planning_bucket (books_id, position, name, share_bp, takes_savings)
+    planning_bucket (books_id, position, name, share_bp, takes_savings, takes_goals, at_least)
 VALUES
-    (@books_id, @position, @name, @share_bp, @takes_savings)
+    (@books_id, @position, @name, @share_bp, @takes_savings, @takes_goals, @at_least)
 RETURNING
     id;
 

@@ -306,7 +306,8 @@ func bucket(name string, share int, savings bool, categories ...string) map[stri
 }
 
 // The database rejects a bucket without a book, a second savings bucket, a name used twice
-// ignoring case and a category of another book (income buckets B1).
+// ignoring case, a category of another book (income buckets B1), and a bucket taking both the
+// goals and the savings or a second goals bucket (A234).
 func TestBucketSchema(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-12")
@@ -336,6 +337,20 @@ func TestBucketSchema(t *testing.T) {
 		{"without a book", insert(nil, "Wants", false)},
 		{"second savings bucket", insert(book, "Wants", true)},
 		{"name used twice", insert(book, "NEEDS", false)},
+		{"goals and savings on one bucket", func() error {
+			_, err := f.h.Pool.Exec(ctx, `INSERT INTO planning_bucket
+				(books_id, position, name, share_bp, takes_savings, takes_goals)
+				VALUES ($1, 6, 'Both', 0, true, true)`, other)
+
+			return err
+		}()},
+		{"second goals bucket", func() error {
+			_, err := f.h.Pool.Exec(ctx, `INSERT INTO planning_bucket
+				(books_id, position, name, share_bp, takes_goals)
+				VALUES ($1, 7, 'G1', 0, true), ($1, 8, 'G2', 0, true)`, other)
+
+			return err
+		}()},
 		{"category of another book", func() error {
 			_, err := f.h.Pool.Exec(ctx, `WITH b AS (
 					INSERT INTO planning_bucket (books_id, position, name, share_bp)
@@ -476,5 +491,66 @@ func TestS446BucketHistory(t *testing.T) {
 
 	if len(empty.Buckets) != 0 || len(empty.Months) != 6 {
 		t.Errorf("history without a method = %+v", empty)
+	}
+}
+
+// S447: a bucket that takes the goals draws what went into the goals' accounts from the book's
+// other accounts, yields excluded; the savings bucket keeps what the month left beyond it, and a
+// floor bucket keeps its target when it reaches it (A234).
+func TestS447GoalsBucket(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	books := f.h.Account("Books", "expense", "", nil)
+	reserve := f.h.Account("Reserve", "asset", "savings", nil)
+	f.goal("Emergency", 1000000, reserve)
+	f.h.Record(
+		"2026-10-05",
+		apitest.Posting(f.checking, 500000),
+		apitest.Posting(f.salary, -500000),
+	)
+	f.pay("2026-10-06", 100000, f.rent, "")
+	f.pay("2026-10-07", 30000, books, "")
+	f.h.Record(
+		"2026-10-10",
+		apitest.Posting(reserve, 80000),
+		apitest.Posting(f.checking, -80000),
+	)
+	f.h.Record(
+		"2026-10-31",
+		apitest.Posting(reserve, 900),
+		apitest.Posting(f.salary, -900),
+	)
+
+	goals := bucket("Goals", 2000, false)
+	goals["takes_goals"] = true
+	goals["at_least"] = true
+	learn := bucket("Learn", 1000, false, books)
+	learn["at_least"] = true
+	f.saveBuckets(bucket("Needs", 5000, false, f.rent), goals, learn, bucket("Freedom", 2000, true))
+
+	var method struct {
+		Buckets []struct {
+			TakesGoals bool `json:"takes_goals"`
+			AtLeast    bool `json:"at_least"`
+		} `json:"buckets"`
+	}
+	f.h.MustDo(http.MethodGet, bucketsPath, nil, http.StatusOK, &method)
+
+	if len(method.Buckets) != 4 || !method.Buckets[1].TakesGoals || !method.Buckets[1].AtLeast ||
+		!method.Buckets[2].AtLeast || method.Buckets[3].TakesGoals || method.Buckets[3].AtLeast {
+		t.Fatalf("method = %+v", method)
+	}
+
+	var got bucketHistoryView
+	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
+
+	// Received 5000.00 and the 9.00 yield; 1300.00 spent; 800.00 into the goal.
+	october := got.Months[4]
+
+	want := []int64{100000, 80000, 30000, 500900 - 130000 - 80000}
+	for i, w := range want {
+		if october.Buckets[i].Real.Amount != w {
+			t.Errorf("october bucket %d = %d, want %d", i, october.Buckets[i].Real.Amount, w)
+		}
 	}
 }

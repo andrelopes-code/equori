@@ -6987,6 +6987,16 @@ export interface components {
             share_bp: number;
             /** @description The bucket also draws the month's savings; at most one bucket of a method. */
             takes_savings: boolean;
+            /**
+             * @description The bucket also draws what went into the goals' accounts from other accounts of the book; at most one bucket of a method, never the one that takes savings.
+             * @default false
+             */
+            takes_goals: boolean;
+            /**
+             * @description The target is a floor the bucket should reach, not a ceiling it should stay under.
+             * @default false
+             */
+            at_least: boolean;
             /** @description Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor. */
             category_ids: string[];
         };
@@ -6999,6 +7009,8 @@ export interface components {
             name: string;
             share_bp: number;
             takes_savings: boolean;
+            takes_goals: boolean;
+            at_least: boolean;
             category_ids: string[];
         };
         BudgetBuckets: {
@@ -7031,6 +7043,8 @@ export interface components {
             name: string;
             share_bp: number;
             takes_savings: boolean;
+            takes_goals: boolean;
+            at_least: boolean;
             category_ids: string[];
             target?: components["schemas"]["Money"];
             planned: components["schemas"]["Money"];

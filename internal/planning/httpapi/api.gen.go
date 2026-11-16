@@ -179,10 +179,12 @@ type BudgetAmount struct {
 
 // BudgetBucket defines model for BudgetBucket.
 type BudgetBucket struct {
+	AtLeast      bool                 `json:"at_least"`
 	CategoryIds  []openapi_types.UUID `json:"category_ids"`
 	Id           openapi_types.UUID   `json:"id"`
 	Name         string               `json:"name"`
 	ShareBp      int                  `json:"share_bp"`
+	TakesGoals   bool                 `json:"takes_goals"`
 	TakesSavings bool                 `json:"takes_savings"`
 }
 
@@ -195,12 +197,18 @@ type BudgetBucketHistory struct {
 
 // BudgetBucketInput defines model for BudgetBucketInput.
 type BudgetBucketInput struct {
+	// AtLeast The target is a floor the bucket should reach, not a ceiling it should stay under.
+	AtLeast *bool `json:"at_least,omitempty"`
+
 	// CategoryIds Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor.
 	CategoryIds []openapi_types.UUID `json:"category_ids"`
 	Name        string               `json:"name"`
 
 	// ShareBp The bucket's share of the reference in basis points, from 0 to 10000.
 	ShareBp int `json:"share_bp"`
+
+	// TakesGoals The bucket also draws what went into the goals' accounts from other accounts of the book; at most one bucket of a method, never the one that takes savings.
+	TakesGoals *bool `json:"takes_goals,omitempty"`
 
 	// TakesSavings The bucket also draws the month's savings; at most one bucket of a method.
 	TakesSavings bool `json:"takes_savings"`
@@ -293,12 +301,14 @@ type BudgetPlanAmount struct {
 // with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
 // the month's own postings of its categories, plus the realized savings when it takes savings.
 type BudgetPlanBucket struct {
+	AtLeast      bool                 `json:"at_least"`
 	CategoryIds  []openapi_types.UUID `json:"category_ids"`
 	Id           openapi_types.UUID   `json:"id"`
 	Name         string               `json:"name"`
 	Planned      Money                `json:"planned"`
 	ShareBp      int                  `json:"share_bp"`
 	Spent        Money                `json:"spent"`
+	TakesGoals   bool                 `json:"takes_goals"`
 	TakesSavings bool                 `json:"takes_savings"`
 	Target       *Money               `json:"target,omitempty"`
 }

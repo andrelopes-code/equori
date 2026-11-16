@@ -12661,6 +12661,14 @@ components:
         takes_savings:
           type: boolean
           description: The bucket also draws the month's savings; at most one bucket of a method.
+        takes_goals:
+          type: boolean
+          default: false
+          description: The bucket also draws what went into the goals' accounts from other accounts of the book; at most one bucket of a method, never the one that takes savings.
+        at_least:
+          type: boolean
+          default: false
+          description: The target is a floor the bucket should reach, not a ceiling it should stay under.
         category_ids:
           type: array
           maxItems: 500
@@ -12680,7 +12688,7 @@ components:
             $ref: "#/components/schemas/BudgetBucketInput"
     BudgetBucket:
       type: object
-      required: [id, name, share_bp, takes_savings, category_ids]
+      required: [id, name, share_bp, takes_savings, takes_goals, at_least, category_ids]
       properties:
         id:
           type: string
@@ -12690,6 +12698,10 @@ components:
         share_bp:
           type: integer
         takes_savings:
+          type: boolean
+        takes_goals:
+          type: boolean
+        at_least:
           type: boolean
         category_ids:
           type: array
@@ -12743,7 +12755,7 @@ components:
           $ref: "#/components/schemas/Money"
     BudgetPlanBucket:
       type: object
-      required: [id, name, share_bp, takes_savings, category_ids, planned, spent]
+      required: [id, name, share_bp, takes_savings, takes_goals, at_least, category_ids, planned, spent]
       description: |
         A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
         with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
@@ -12757,6 +12769,10 @@ components:
         share_bp:
           type: integer
         takes_savings:
+          type: boolean
+        takes_goals:
+          type: boolean
+        at_least:
           type: boolean
         category_ids:
           type: array

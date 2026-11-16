@@ -1522,6 +1522,12 @@
                   "takes_savings": {
                     "type": "boolean"
                   },
+                  "takes_goals": {
+                    "type": "boolean"
+                  },
+                  "at_least": {
+                    "type": "boolean"
+                  },
                   "categories": {
                     "type": "array",
                     "items": {
@@ -5918,7 +5924,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan (amounts and reference income at once) or the income split into buckets (50/30/20 and others). Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others). Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -5956,11 +5962,11 @@
         },
         "month": {
           "type": "string",
-          "description": "first month the amount applies to, YYYY-MM"
+          "description": "first month it applies, YYYY-MM"
         },
         "source": {
           "type": "string",
-          "description": "for save_plan: reference income of the plan; the stored one when absent",
+          "description": "for save_plan: reference income; the stored one when absent",
           "enum": [
             "expected_income",
             "average_income",
@@ -5969,7 +5975,7 @@
         },
         "savings_target_bp": {
           "type": "integer",
-          "description": "for save_plan: share of the reference to save, in basis points from 0 to 10000; the stored one when absent"
+          "description": "for save_plan: share of the reference to save in basis points; the stored one when absent"
         },
         "amounts": {
           "type": "array",
@@ -5982,7 +5988,7 @@
               },
               "amount": {
                 "type": "string",
-                "description": "monthly amount, zero or more"
+                "description": "zero or more"
               }
             },
             "required": [
@@ -5991,11 +5997,11 @@
             ],
             "additionalProperties": false
           },
-          "description": "for save_plan: the categories whose amount changes from month on"
+          "description": "for save_plan: categories whose amount changes from month on"
         },
         "rollover": {
           "type": "boolean",
-          "description": "for create_budget: the unspent amount carries to the next month"
+          "description": "for create_budget: unspent amount carries over"
         },
         "name": {
           "type": "string",
@@ -6003,7 +6009,7 @@
         },
         "due_on": {
           "type": "string",
-          "description": "for create_goal and update_goal: date the target should be reached",
+          "description": "for create_goal and update_goal: target date",
           "format": "date"
         },
         "account_ids": {
@@ -6011,7 +6017,7 @@
           "items": {
             "type": "string"
           },
-          "description": "for create_goal and update_goal: balance accounts whose value counts toward the goal"
+          "description": "for create_goal and update_goal: accounts whose balance counts toward the goal"
         },
         "buckets": {
           "type": "array",
@@ -6028,7 +6034,15 @@
               },
               "takes_savings": {
                 "type": "boolean",
-                "description": "also draws the savings; one bucket at most"
+                "description": "also draws the savings; one at most"
+              },
+              "takes_goals": {
+                "type": "boolean",
+                "description": "also draws goal deposits"
+              },
+              "at_least": {
+                "type": "boolean",
+                "description": "target is a floor"
               },
               "category_ids": {
                 "type": "array",

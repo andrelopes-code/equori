@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -83,9 +84,19 @@ func (s *Service) addBucketMonths(
 		return err
 	}
 
+	var goals map[time.Time]int64
+	if slices.ContainsFunc(out.Buckets, func(b domain.Bucket) bool { return b.TakesGoals }) {
+		goals, err = s.goalInflows(ctx, booksID, facts, out.Currency, from, to)
+		if err != nil {
+			return err
+		}
+	}
+
 	resolve := domain.BucketResolver(out.Buckets, expenseParents(facts))
 	for m := from; m.Before(to); m = m.AddDate(0, 1, 0) {
-		out.Months = append(out.Months, bucketMonth(m, out.Buckets, resolve, expense, income))
+		month := bucketMonth(m, out.Buckets, resolve, expense, income)
+		addGoals(&month, out.Buckets, goals[m])
+		out.Months = append(out.Months, month)
 	}
 
 	return nil
@@ -101,6 +112,22 @@ func expenseParents(facts []Account) map[uuid.UUID]uuid.UUID {
 	}
 
 	return parents
+}
+
+// addGoals adds what went into the goals in the month to the bucket that takes the goals and
+// takes it from the bucket that takes savings, which keeps what the month left beyond it (A234).
+// It does nothing without a bucket that takes the goals.
+func addGoals(month *BucketMonth, method []domain.Bucket, goals int64) {
+	i := slices.IndexFunc(method, func(b domain.Bucket) bool { return b.TakesGoals })
+	if i < 0 {
+		return
+	}
+
+	month.Real[i] += goals
+
+	if j := slices.IndexFunc(method, func(b domain.Bucket) bool { return b.TakesSavings }); j >= 0 {
+		month.Real[j] -= goals
+	}
 }
 
 // bucketMonth splits the month's own expense postings over the buckets; the bucket that takes

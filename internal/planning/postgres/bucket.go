@@ -34,6 +34,8 @@ func (r *Repository) Buckets(ctx context.Context, booksID int64) ([]domain.Bucke
 			Name:         row.Name,
 			ShareBP:      int(row.ShareBp),
 			TakesSavings: row.TakesSavings,
+			TakesGoals:   row.TakesGoals,
+			AtLeast:      row.AtLeast,
 			Categories:   []uuid.UUID{},
 		}
 	}
@@ -64,6 +66,8 @@ func (r *Repository) SaveBuckets(
 			Name:         b.Name,
 			ShareBp:      int32(b.ShareBP),
 			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals,
+			AtLeast:      b.AtLeast,
 		})
 		if err != nil {
 			return fmt.Errorf("insert bucket: %w", err)

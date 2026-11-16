@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 17
+const ArchiveVersion = 18
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -22,6 +22,7 @@ var archiveSteps = []ArchiveStep{
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
 	addContributionPlan, addDayTradeColumns, addCorporateActions, addBuckets,
+	addBucketDirections,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -282,4 +283,16 @@ func addBuckets(tables []ArchiveTable) ([]ArchiveTable, error) {
 	}
 
 	return out, nil
+}
+
+// addBucketDirections writes false into at_least and takes_goals of every version 17 row of
+// planning_bucket (migration 00102): a bucket saved before keeps its target as a ceiling and draws
+// no goal deposits (income buckets A234).
+func addBucketDirections(tables []ArchiveTable) ([]ArchiveTable, error) {
+	tables, err := withField(tables, "planning_bucket", "at_least", jsontext.Value("false"))
+	if err != nil {
+		return nil, err
+	}
+
+	return withField(tables, "planning_bucket", "takes_goals", jsontext.Value("false"))
 }

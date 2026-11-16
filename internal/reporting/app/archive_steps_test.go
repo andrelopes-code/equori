@@ -493,3 +493,27 @@ func TestAddBuckets(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 17", ArchiveVersion)
 	}
 }
+
+// Income buckets A234, ADR 021 V2: a version 17 bucket gains at_least and takes_goals, both false.
+func TestAddBucketDirections(t *testing.T) {
+	t.Parallel()
+
+	v17 := []ArchiveTable{
+		{Name: "planning_bucket", Rows: [][]byte{[]byte(`{"name":"Needs"}`)}},
+		{Name: "planning_budget_reference", Rows: [][]byte{[]byte(`{"source":"fixed"}`)}},
+	}
+
+	got, err := addBucketDirections(v17)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got[0].Rows[0]) != `{"at_least":false,"name":"Needs","takes_goals":false}` ||
+		string(got[1].Rows[0]) != `{"source":"fixed"}` {
+		t.Fatalf("tables = %s %s", got[0].Rows[0], got[1].Rows[0])
+	}
+
+	if ArchiveVersion < 18 {
+		t.Fatalf("ArchiveVersion = %d, want at least 18", ArchiveVersion)
+	}
+}

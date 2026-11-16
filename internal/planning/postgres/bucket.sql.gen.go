@@ -24,9 +24,9 @@ func (q *Queries) DeleteBuckets(ctx context.Context, booksID int64) error {
 
 const insertBucket = `-- name: InsertBucket :one
 INSERT INTO
-    planning_bucket (books_id, position, name, share_bp, takes_savings)
+    planning_bucket (books_id, position, name, share_bp, takes_savings, takes_goals, at_least)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4, $5, $6, $7)
 RETURNING
     id
 `
@@ -37,6 +37,8 @@ type InsertBucketParams struct {
 	Name         string
 	ShareBp      int32
 	TakesSavings bool
+	TakesGoals   bool
+	AtLeast      bool
 }
 
 func (q *Queries) InsertBucket(ctx context.Context, arg InsertBucketParams) (uuid.UUID, error) {
@@ -46,6 +48,8 @@ func (q *Queries) InsertBucket(ctx context.Context, arg InsertBucketParams) (uui
 		arg.Name,
 		arg.ShareBp,
 		arg.TakesSavings,
+		arg.TakesGoals,
+		arg.AtLeast,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)
@@ -112,7 +116,9 @@ SELECT
     id,
     name,
     share_bp,
-    takes_savings
+    takes_savings,
+    takes_goals,
+    at_least
 FROM
     planning_bucket
 WHERE
@@ -126,6 +132,8 @@ type ListBucketsRow struct {
 	Name         string
 	ShareBp      int32
 	TakesSavings bool
+	TakesGoals   bool
+	AtLeast      bool
 }
 
 func (q *Queries) ListBuckets(ctx context.Context, booksID int64) ([]ListBucketsRow, error) {
@@ -142,6 +150,8 @@ func (q *Queries) ListBuckets(ctx context.Context, booksID int64) ([]ListBuckets
 			&i.Name,
 			&i.ShareBp,
 			&i.TakesSavings,
+			&i.TakesGoals,
+			&i.AtLeast,
 		); err != nil {
 			return nil, err
 		}

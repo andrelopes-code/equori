@@ -38,7 +38,7 @@ func (planSource) Values() []string {
 
 type planAmountIn struct {
 	CategoryID string `json:"category_id" jsonschema:"expense category from list_accounts"`
-	Amount     string `json:"amount"      jsonschema:"monthly amount, zero or more"`
+	Amount     string `json:"amount"      jsonschema:"zero or more"`
 }
 
 type manageBudgetOrGoalIn struct {
@@ -47,14 +47,14 @@ type manageBudgetOrGoalIn struct {
 	GoalID          string                   `json:"goal_id,omitzero"           jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
 	CategoryID      string                   `json:"category_id,omitzero"       jsonschema:"for create_budget: expense category from list_accounts"`
 	Amount          string                   `json:"amount,omitzero"            jsonschema:"positive monthly amount (budgets), target (goals) or fixed reference income (save_plan)"`
-	Month           string                   `json:"month,omitzero"             jsonschema:"first month the amount applies to, YYYY-MM"`
-	Source          planSource               `json:"source,omitzero"            jsonschema:"for save_plan: reference income of the plan; the stored one when absent"`
-	SavingsTargetBP tool.OptionalInt         `json:"savings_target_bp,omitzero" jsonschema:"for save_plan: share of the reference to save, in basis points from 0 to 10000; the stored one when absent"`
-	Amounts         []planAmountIn           `json:"amounts,omitzero"           jsonschema:"for save_plan: the categories whose amount changes from month on"`
-	Rollover        bool                     `json:"rollover,omitzero"          jsonschema:"for create_budget: the unspent amount carries to the next month"`
+	Month           string                   `json:"month,omitzero"             jsonschema:"first month it applies, YYYY-MM"`
+	Source          planSource               `json:"source,omitzero"            jsonschema:"for save_plan: reference income; the stored one when absent"`
+	SavingsTargetBP tool.OptionalInt         `json:"savings_target_bp,omitzero" jsonschema:"for save_plan: share of the reference to save in basis points; the stored one when absent"`
+	Amounts         []planAmountIn           `json:"amounts,omitzero"           jsonschema:"for save_plan: categories whose amount changes from month on"`
+	Rollover        bool                     `json:"rollover,omitzero"          jsonschema:"for create_budget: unspent amount carries over"`
 	Name            string                   `json:"name,omitzero"              jsonschema:"for create_goal and update_goal: goal name"`
-	DueOn           tool.Date                `json:"due_on,omitzero"            jsonschema:"for create_goal and update_goal: date the target should be reached"`
-	AccountIDs      []string                 `json:"account_ids,omitzero"       jsonschema:"for create_goal and update_goal: balance accounts whose value counts toward the goal"`
+	DueOn           tool.Date                `json:"due_on,omitzero"            jsonschema:"for create_goal and update_goal: target date"`
+	AccountIDs      []string                 `json:"account_ids,omitzero"       jsonschema:"for create_goal and update_goal: accounts whose balance counts toward the goal"`
 	Buckets         []bucketIn               `json:"buckets,omitzero"           jsonschema:"for save_buckets: whole split; empty removes it"`
 }
 

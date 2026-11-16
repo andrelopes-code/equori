@@ -94,6 +94,19 @@ func TestCheckBuckets(t *testing.T) {
 			[]Bucket{b("A", 5000, true), b("B", 5000, true)},
 			"buckets[1].takes_savings",
 		},
+		{
+			"second goals",
+			[]Bucket{
+				{Name: "A", ShareBP: 5000, TakesGoals: true},
+				{Name: "B", ShareBP: 5000, TakesGoals: true},
+			},
+			"buckets[1].takes_goals",
+		},
+		{
+			"goals and savings",
+			[]Bucket{{Name: "A", ShareBP: 10000, TakesGoals: true, TakesSavings: true}},
+			"buckets[0].takes_goals",
+		},
 		{"income", []Bucket{b("A", 10000, false, salary)}, "buckets[0].category_ids"},
 		{
 			"twice",
@@ -133,18 +146,21 @@ func TestKeptTarget(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		savings      bool
+		bucket       Bucket
 		real, target int64
 		want         bool
 	}{
-		{"expense below", false, 900, 1000, true},
-		{"expense at", false, 1000, 1000, true},
-		{"expense above", false, 1001, 1000, false},
-		{"savings above", true, 1200, 1000, true},
-		{"savings below", true, -50, 1000, false},
+		{"expense below", Bucket{}, 900, 1000, true},
+		{"expense at", Bucket{}, 1000, 1000, true},
+		{"expense above", Bucket{}, 1001, 1000, false},
+		{"savings above", Bucket{TakesSavings: true}, 1200, 1000, true},
+		{"savings below", Bucket{TakesSavings: true}, -50, 1000, false},
+		{"at least below", Bucket{AtLeast: true}, 0, 1000, false},
+		{"at least at", Bucket{AtLeast: true}, 1000, 1000, true},
+		{"at least above", Bucket{AtLeast: true}, 1500, 1000, true},
 	}
 	for _, tt := range tests {
-		if got := KeptTarget(Bucket{TakesSavings: tt.savings}, tt.real, tt.target); got != tt.want {
+		if got := KeptTarget(tt.bucket, tt.real, tt.target); got != tt.want {
 			t.Errorf("%s: KeptTarget = %t, want %t", tt.name, got, tt.want)
 		}
 	}

@@ -16,7 +16,9 @@ import (
 type bucketIn struct {
 	Name         string   `json:"name"                   jsonschema:"unique bucket name"`
 	ShareBP      int      `json:"share_bp"               jsonschema:"basis points; shares sum to 10000"`
-	TakesSavings bool     `json:"takes_savings,omitzero" jsonschema:"also draws the savings; one bucket at most"`
+	TakesSavings bool     `json:"takes_savings,omitzero" jsonschema:"also draws the savings; one at most"`
+	TakesGoals   bool     `json:"takes_goals,omitzero"   jsonschema:"also draws goal deposits"`
+	AtLeast      bool     `json:"at_least,omitzero"      jsonschema:"target is a floor"`
 	CategoryIDs  []string `json:"category_ids,omitzero"  jsonschema:"expense categories; subcategories follow"`
 }
 
@@ -25,6 +27,8 @@ type planBucketView struct {
 	Name         string     `json:"name"`
 	ShareBP      int        `json:"share_bp"`
 	TakesSavings bool       `json:"takes_savings,omitzero"`
+	TakesGoals   bool       `json:"takes_goals,omitzero"`
+	AtLeast      bool       `json:"at_least,omitzero"`
 	Categories   []string   `json:"categories"`
 	Target       tool.Money `json:"target,omitzero"`
 	Planned      tool.Money `json:"planned"`
@@ -41,6 +45,8 @@ func planBucketViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planBucketVi
 			Name:         b.Name,
 			ShareBP:      b.ShareBP,
 			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals,
+			AtLeast:      b.AtLeast,
 			Categories:   categoryNames(b.Categories, accounts),
 		}
 
@@ -93,7 +99,13 @@ func loadBuckets(
 // decodeBuckets reads the bucket method of a save_buckets call into p; the service checks it.
 func decodeBuckets(in []bucketIn, accounts map[uuid.UUID]Account, p *budgetGoalPlan) error {
 	for i, b := range in {
-		bucket := domain.Bucket{Name: b.Name, ShareBP: b.ShareBP, TakesSavings: b.TakesSavings}
+		bucket := domain.Bucket{
+			Name:         b.Name,
+			ShareBP:      b.ShareBP,
+			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals,
+			AtLeast:      b.AtLeast,
+		}
 		for _, s := range b.CategoryIDs {
 			id, err := optionalID(s, fmt.Sprintf("buckets[%d].category_ids", i))
 			if err != nil {
@@ -126,6 +138,14 @@ func previewBuckets(pv *tool.Preview, p budgetGoalPlan) {
 		rate := fmt.Sprintf("%d bp of the reference", b.ShareBP)
 		if b.TakesSavings {
 			rate += " and the savings"
+		}
+
+		if b.TakesGoals {
+			rate += " and what went into the goals"
+		}
+
+		if b.AtLeast {
+			rate += ", at least"
 		}
 
 		pv.Changes = append(

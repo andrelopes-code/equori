@@ -21,6 +21,8 @@ func (s *Server) saveBudgetBuckets(
 			Name:         b.Name,
 			ShareBP:      b.ShareBp,
 			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals != nil && *b.TakesGoals,
+			AtLeast:      b.AtLeast != nil && *b.AtLeast,
 			Categories:   b.CategoryIds,
 		}
 	}
@@ -45,6 +47,8 @@ func (s *Server) getBudgetBuckets(
 			Name:         b.Name,
 			ShareBp:      b.ShareBP,
 			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals,
+			AtLeast:      b.AtLeast,
 			CategoryIds:  b.Categories,
 		}
 	}
@@ -67,6 +71,8 @@ func setPlanBuckets(out *BudgetPlan, p app.Plan, m func(int64) Money) {
 			Name:         b.Name,
 			ShareBp:      b.ShareBP,
 			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals,
+			AtLeast:      b.AtLeast,
 			CategoryIds:  b.Categories,
 			Planned:      m(b.Planned),
 			Spent:        m(b.Spent),
@@ -118,6 +124,8 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 			Name:         b.Name,
 			ShareBp:      b.ShareBP,
 			TakesSavings: b.TakesSavings,
+			TakesGoals:   b.TakesGoals,
+			AtLeast:      b.AtLeast,
 			CategoryIds:  b.Categories,
 		}
 	}

@@ -212,7 +212,7 @@ func parseBudgetGoalAmount(amount string, currency money.Currency) (*money.Money
 func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
-		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan (amounts and reference income at once) or the income split into buckets (50/30/20 and others). " +
+		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others). " +
 			"Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. " +
 			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,

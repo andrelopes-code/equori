@@ -17,13 +17,16 @@ const (
 	bucketWholeShare = 10000
 )
 
-// Bucket is a named share of the reference income that its categories, and the month's savings
-// when TakesSavings, draw from (income buckets A229).
+// Bucket is a named share of the reference income that its categories, the month's savings when
+// TakesSavings and what went into the goals when TakesGoals draw from (income buckets A229,
+// A234). AtLeast makes the target a floor instead of a ceiling.
 type Bucket struct {
 	ID           uuid.UUID
 	Name         string
 	ShareBP      int
 	TakesSavings bool
+	TakesGoals   bool
+	AtLeast      bool
 	Categories   []uuid.UUID
 }
 
@@ -37,7 +40,7 @@ func CheckBuckets(buckets []Bucket, expense func(uuid.UUID) bool) ([]Bucket, err
 	out := slices.Clone(buckets)
 	names := make(map[string]bool, len(out))
 	placed := make(map[uuid.UUID]bool)
-	savings, total := false, 0
+	savings, goals, total := false, false, 0
 
 	for i := range out {
 		b := &out[i]
@@ -51,7 +54,15 @@ func CheckBuckets(buckets []Bucket, expense func(uuid.UUID) bool) ([]Bucket, err
 			return nil, invalid(prefix+"takes_savings", "is set on another bucket")
 		}
 
+		if b.TakesGoals && (goals || b.TakesSavings) {
+			return nil, invalid(
+				prefix+"takes_goals",
+				"is set on another bucket or with takes_savings",
+			)
+		}
+
 		savings = savings || b.TakesSavings
+		goals = goals || b.TakesGoals
 		total += b.ShareBP
 
 		for _, c := range b.Categories {
@@ -161,10 +172,10 @@ func checkBucket(b *Bucket, prefix string, names map[string]bool) error {
 	return nil
 }
 
-// KeptTarget reports whether a month's real amount kept to its target: an expense bucket at or
-// below it, the bucket that takes savings at or above it (income buckets A233).
+// KeptTarget reports whether a month's real amount kept to its target: a bucket at or below it,
+// the bucket that takes savings or one marked AtLeast at or above it (income buckets A233, A234).
 func KeptTarget(b Bucket, real, target int64) bool {
-	if b.TakesSavings {
+	if b.TakesSavings || b.AtLeast {
 		return real >= target
 	}
 
