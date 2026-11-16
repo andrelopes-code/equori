@@ -29,6 +29,7 @@ export function MarketDataRegions({
           region={groups.home.region}
           feeds={groups.home.items}
           home
+          folded={false}
           controls={controls}
         />
       )}
@@ -38,6 +39,7 @@ export function MarketDataRegions({
           region={groups.global.region}
           feeds={groups.global.items}
           home={false}
+          folded={false}
           controls={controls}
         />
       )}

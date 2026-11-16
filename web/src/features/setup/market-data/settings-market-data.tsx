@@ -71,6 +71,17 @@ export function SettingsMarketData() {
       topic="market_data"
       title={t("settings.market_data.title")}
       description={t("settings.summary.market_data")}
+      actions={
+        feeds.isSuccess && (
+          <MarketDataToolbar
+            admin={admin}
+            working={working}
+            refreshDisabled={enabled.length === 0}
+            refreshing={refresh.isPending}
+            onRefresh={handleRefresh}
+          />
+        )
+      }
     >
       {feeds.isError ? (
         <QueryError error={feeds.error} onRetry={() => void feeds.refetch()} />
@@ -92,14 +103,6 @@ export function SettingsMarketData() {
             attention={enabled.some(feedHasProblem)}
             polling={polling}
             failure={failure}
-          />
-
-          <MarketDataToolbar
-            admin={admin}
-            working={working}
-            refreshDisabled={enabled.length === 0}
-            refreshing={refresh.isPending}
-            onRefresh={handleRefresh}
           />
 
           <MarketDataRegions

@@ -1,6 +1,7 @@
 @layer app {
   .label {
-    display: inline-flex;
+    display: flex;
+    line-height: inherit;
     min-inline-size: 0;
     align-items: center;
     gap: var(--slotted-space-4);

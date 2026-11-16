@@ -37,7 +37,7 @@
   .paneHeader {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-3);
+    gap: 0;
   }
 
   .paneTitle {
@@ -68,7 +68,7 @@
     display: flex;
     min-inline-size: 0;
     flex-direction: column;
-    gap: var(--slotted-space-1);
+    gap: 0;
   }
 
   .rowControl {
@@ -168,7 +168,7 @@
     min-inline-size: 14rem;
     flex: 1 1 14rem;
     flex-direction: column;
-    gap: var(--slotted-space-2);
+    gap: 0;
   }
 
   .sampleValue {

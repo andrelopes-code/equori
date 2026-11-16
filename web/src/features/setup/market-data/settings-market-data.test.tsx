@@ -272,16 +272,15 @@ describe("Market data section (ADR 025 F10)", () => {
       name: catalogEn["marketData.feed.b3_cotahist"],
     });
 
-    const headers = within(section())
-      .getAllByRole("button")
-      .map((b) => b.textContent)
-      .filter((text) => /Brazil|Global|Other regions/.test(text));
+    const text = section().textContent;
+    const at = (word: string) => text.indexOf(word);
 
-    expect(headers).toHaveLength(3);
-    expect(headers[0]).toContain("Brazil");
-    expect(headers[0]).toContain(catalogEn["region.yours"]);
-    expect(headers[1]).toContain("Global");
-    expect(headers[2]).toContain(catalogEn["marketData.others"]);
+    expect(at("Brazil")).toBeGreaterThan(-1);
+    expect(at("Brazil")).toBeLessThan(at("Global"));
+    expect(at("Global")).toBeLessThan(at(catalogEn["marketData.others"]));
+    expect(
+      within(section()).getByText(catalogEn["region.yours"]),
+    ).toBeVisible();
   });
 
   it("keeps the other regions closed until one is opened", async () => {
@@ -297,13 +296,9 @@ describe("Market data section (ADR 025 F10)", () => {
     expect(eu()).toBeNull();
 
     await userEvent.click(
-      within(section()).getByRole("button", {
-        name: new RegExp(catalogEn["marketData.others"]),
-      }),
+      within(section()).getByText(catalogEn["marketData.others"]),
     );
-    await userEvent.click(
-      within(section()).getByRole("button", { name: /Euro area/ }),
-    );
+    await userEvent.click(within(section()).getByText("Euro area"));
 
     expect(eu()).toBeVisible();
   });
@@ -324,7 +319,7 @@ describe("Market data section (ADR 025 F10)", () => {
   it("marks no region as the book's when the book's region has no feed", async () => {
     const a = api(feeds({ b3_cotahist: { enabled: true } }), "admin", "DE");
     await open(a.fetch);
-    await within(section()).findByRole("button", { name: /Global/ });
+    await within(section()).findByText("Global");
 
     expect(within(section()).queryByText(catalogEn["region.yours"])).toBeNull();
   });

@@ -7,7 +7,7 @@ import { regionName } from "@/ui/region/region-name";
 
 interface RegionLabelProps {
   region: string;
-  size?: "sm" | "md" | "lg";
+  size?: "md" | "lg";
   // The text beside the flag when it is not the region's name, such as a calendar's.
   children?: ReactNode;
 }

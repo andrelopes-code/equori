@@ -4,7 +4,8 @@ import { flagArt } from "@/ui/region/flag-art";
 interface RegionFlagProps {
   // A region code of the application ("BR", "EU") or "global".
   region: string;
-  size?: "sm" | "md" | "lg";
+  // md beside text, lg on a band or a title. One size per place, so flags never differ.
+  size?: "md" | "lg";
 }
 
 // Families read: avatar, badge, icon. None draws the flag of a region, so the flag is the

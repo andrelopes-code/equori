@@ -13,6 +13,7 @@ import { Heading, Text } from "@slotted/react/typography";
 import type { ReactNode } from "react";
 
 import styles from "@/features/setup/pages/settings-page.module.css";
+import own from "@/features/setup/settings-layout/settings-section.module.css";
 import type { SettingsTopic } from "@/features/setup/model/settings-topics";
 import { useT } from "@/i18n/i18n-provider";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
@@ -24,12 +25,15 @@ export function SettingsSection({
   title,
   description,
   local = false,
+  actions,
   children,
 }: {
   topic: SettingsTopic;
   title: string;
   description?: string;
   local?: boolean;
+  // What acts on the whole pane: at the end of the title line, above the groups on a phone.
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   const t = useT();
@@ -59,6 +63,7 @@ export function SettingsSection({
         </PageHeader>
         <PageBody>
           <section id={topic} aria-label={title} className={styles.pane}>
+            {actions}
             {children}
           </section>
         </PageBody>
@@ -66,18 +71,22 @@ export function SettingsSection({
     );
   return (
     <section id={topic} aria-labelledby={heading} className={styles.pane}>
-      <header className={styles.paneHeader}>
-        <div className={styles.paneTitle}>
-          <Heading level={2} size="2xl" id={heading}>
-            {title}
-          </Heading>
-          {tag}
+      <header className={own.head}>
+        <div className={[styles.paneHeader, own.titleBlock].join(" ")}>
+          <div className={styles.paneTitle}>
+            <Heading level={2} size="2xl" id={heading}>
+              {title}
+            </Heading>
+            {tag}
+          </div>
+          {description !== undefined && (
+            <Text size="md" tone="muted">
+              {description}
+            </Text>
+          )}
         </div>
-        {description !== undefined && (
-          <Text size="md" tone="muted">
-            {description}
-          </Text>
-        )}
+
+        {actions !== undefined && <div className={own.actions}>{actions}</div>}
       </header>
       {children}
     </section>

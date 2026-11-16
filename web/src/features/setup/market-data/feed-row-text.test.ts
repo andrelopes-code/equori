@@ -32,9 +32,17 @@ function feed(patch: Partial<Feed> = {}): Feed {
 }
 
 describe("feedRowText", () => {
-  it("names the kind and the coverage of a price feed", () => {
-    expect(feedRowText(feed(), t, "en-US").detail).toBe(
-      "Price · Covers 28 instruments",
+  it("names the source and the kind of a feed", () => {
+    expect(feedRowText(feed(), t, "en-US").detail).toBe("B3 · Price");
+  });
+
+  it("names only the kind of a feed the catalogs do not name", () => {
+    expect(feedRowText(feed({ id: "x" }), t, "en-US").detail).toBe("Price");
+  });
+
+  it("writes the coverage of a price feed apart from its detail", () => {
+    expect(feedRowText(feed(), t, "en-US").coverage).toBe(
+      "Covers 28 instruments",
     );
   });
 
@@ -42,15 +50,13 @@ describe("feedRowText", () => {
     [0, "Covers no instrument"],
     [1, "Covers 1 instrument"],
   ])("writes a coverage of %i", (covers, text) => {
-    expect(feedRowText(feed({ covers }), t, "en-US").detail).toBe(
-      `Price · ${text}`,
-    );
+    expect(feedRowText(feed({ covers }), t, "en-US").coverage).toBe(text);
   });
 
-  it("names only the kind of an index feed", () => {
+  it("has no coverage for an index feed", () => {
     expect(
-      feedRowText(feed({ kind: "index", covers: 0 }), t, "en-US").detail,
-    ).toBe("Index");
+      feedRowText(feed({ kind: "index", covers: 0 }), t, "en-US").coverage,
+    ).toBeNull();
   });
 
   it("has no issue for a healthy feed", () => {

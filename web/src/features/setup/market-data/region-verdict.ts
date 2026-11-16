@@ -3,7 +3,7 @@ import type { TFunction } from "@/i18n/i18n-provider";
 
 export interface RegionVerdict {
   text: string;
-  tone: "muted" | "warning";
+  tone: "ok" | "muted" | "warning";
 }
 
 // The verdict of a region, in words: no feed active, feeds with a problem, or up to date.
@@ -18,14 +18,14 @@ export function regionVerdict(s: FeedSummary, t: TFunction): RegionVerdict {
       tone: "warning",
     };
 
-  return { text: t("marketData.verdict.upToDate"), tone: "muted" };
+  return { text: t("marketData.verdict.upToDate"), tone: "ok" };
 }
 
-export function regionSummary(s: FeedSummary, t: TFunction): string {
-  return [
-    t("marketData.count.active", { enabled: s.enabled, total: s.total }),
-    regionVerdict(s, t).text,
-  ].join(" · ");
+// The count under a region's name: "8 of 8 active".
+export function regionLine(s: FeedSummary, t: TFunction): string {
+  return s.total === 1
+    ? t("marketData.count.active.one", { enabled: s.enabled })
+    : t("marketData.count.active", { enabled: s.enabled, total: s.total });
 }
 
 // The line under "Other regions": text only, so the header does not grow with the regions.

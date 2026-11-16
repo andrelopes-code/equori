@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   othersSummary,
-  regionSummary,
+  regionLine,
   regionVerdict,
 } from "@/features/setup/market-data/region-verdict";
 import { catalogEn } from "@/i18n/catalog.en";
@@ -35,15 +35,21 @@ describe("regionVerdict", () => {
   it("says a healthy region is up to date", () => {
     expect(regionVerdict({ total: 8, enabled: 8, problems: 0 }, t)).toEqual({
       text: "Up to date",
-      tone: "muted",
+      tone: "ok",
     });
   });
 });
 
-describe("regionSummary", () => {
-  it("writes the active count and the verdict", () => {
-    expect(regionSummary({ total: 8, enabled: 8, problems: 0 }, t)).toBe(
-      "Active: 8 of 8 · Up to date",
+describe("regionLine", () => {
+  it("writes the active count", () => {
+    expect(regionLine({ total: 8, enabled: 8, problems: 0 }, t)).toBe(
+      "8 of 8 active",
+    );
+  });
+
+  it("writes the singular for one source", () => {
+    expect(regionLine({ total: 1, enabled: 0, problems: 0 }, t)).toBe(
+      "0 of 1 active",
     );
   });
 });

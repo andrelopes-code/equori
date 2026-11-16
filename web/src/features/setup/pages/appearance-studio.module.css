@@ -55,7 +55,7 @@
   .fieldText {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-1);
+    gap: 0;
   }
 
   .canvas {

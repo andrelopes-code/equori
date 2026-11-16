@@ -1,64 +1,170 @@
 @layer app {
-  /* The surface of the pane: the regions stand one under another as bands of one card, edge to
-     edge. It is also the container the rows ask their width of. */
+  /* The surface of the pane, as in the approved mock: the regions are bands of one card, edge to
+     edge. It is the container the rows and bands ask their width of. */
   .surface {
     overflow: hidden;
     border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
     background: var(--slotted-surface-raised);
+    box-shadow: var(--slotted-shadow-sm);
     container-type: inline-size;
+  }
+
+  /* A band names a region. It shares its columns with the rows below it, so the verdict ends on
+     the line where the status words end. The three measures, 3rem, 2.5rem and 7rem, are the band's
+     minimum height, the switch column and the status column; no token holds them. */
+  .band {
+    display: grid;
+    min-block-size: 3rem;
+    align-items: center;
+    padding-inline: var(--slotted-space-7);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    background: color-mix(
+      in srgb,
+      var(--slotted-text) 4%,
+      var(--slotted-surface-raised)
+    );
+    column-gap: var(--slotted-space-6);
+    grid-template-columns: minmax(0, 1fr) 7rem 2.5rem;
+  }
+
+  .band:first-child {
+    border-block-start: 0;
+  }
+
+  .band[data-sub] {
+    min-block-size: 2.5rem;
+    background: none;
+  }
+
+  .bandTitle {
+    display: flex;
+    min-inline-size: 0;
+    align-items: center;
+    gap: var(--slotted-space-5);
+  }
+
+  .bandText {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+  }
+
+  .bandName {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-lg);
+  }
+
+  .band[data-sub] .bandName {
+    font-size: var(--slotted-font-size-md);
+  }
+
+  .bandLine {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    line-height: var(--slotted-line-height-sm);
+    white-space: nowrap;
+  }
+
+  .verdict {
+    display: inline-flex;
+    grid-column: 2;
+    align-items: center;
+    justify-self: end;
+    gap: var(--slotted-space-3);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    white-space: nowrap;
+  }
+
+  .verdict::before {
+    flex: none;
+    border-radius: var(--slotted-radius-full);
+    background: currentcolor;
+    block-size: var(--slotted-space-3);
+    content: "";
+    inline-size: var(--slotted-space-3);
+  }
+
+  .verdict[data-tone="ok"]::before {
+    background: var(--slotted-tone-success-solid);
+  }
+
+  .verdict[data-tone="warning"],
+  .inlineVerdict[data-tone="warning"] {
+    color: var(--slotted-tone-warning-text);
+  }
+
+  /* The chevron of a folded band stands in the switch column, so it ends where the switches do. */
+  .chevron {
+    display: inline-flex;
+    grid-column: 3;
+    justify-self: end;
+    color: var(--slotted-text-muted);
+    transition: none;
+  }
+
+  details[open] > summary .chevron {
+    transform: rotate(180deg);
+  }
+
+  .inlineVerdict {
+    display: none;
+  }
+
+  /* A separator drawn by the style: the words on either side are catalog text. */
+  .coverageWide::before,
+  .inlineVerdict::before {
+    margin-inline: var(--slotted-space-3);
+    content: "·";
+  }
+
+  .fold {
+    display: block;
+  }
+
+  .fold > summary {
+    display: block;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .fold > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .fold > summary:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: calc(var(--slotted-focus-ring-width) * -1);
   }
 
   .placeholderHeader {
     display: flex;
     align-items: center;
     gap: var(--slotted-space-5);
-    padding: var(--slotted-space-6) var(--slotted-space-8);
-  }
-
-  .regionTitle {
-    display: inline-flex;
-    min-inline-size: 0;
-    align-items: center;
-    gap: var(--slotted-space-5);
-  }
-
-  .regionText {
-    display: flex;
-    min-inline-size: 0;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .regionName {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--slotted-space-4);
-  }
-
-  .regionSummary {
-    color: var(--slotted-text-muted);
-    font-size: var(--slotted-font-size-sm);
-    font-weight: var(--slotted-font-weight-regular);
-    line-height: var(--slotted-line-height-sm);
-  }
-
-  .regionSummary[data-tone="warning"] {
-    color: var(--slotted-tone-warning-text);
+    padding: var(--slotted-space-6) var(--slotted-space-7);
   }
 
   /* A row has one height per state, so the status words of every row stand on the same lines. The
-     three measures, 3.75, 5.125 and 4.875 rem, fit two text lines, three, and two plus the status
-     line of a phone; none has a token. */
+     heights, 3.75, 5.125 and 4.875 rem, fit two text lines, three, and the phone's two; none has
+     a token. */
   .row {
     display: grid;
     min-inline-size: 0;
     align-items: center;
+    padding-inline: var(--slotted-space-7);
     border-block-start: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
     block-size: 3.75rem;
-    column-gap: var(--slotted-space-7);
-    grid-template-columns: minmax(0, 1fr) 7rem auto;
+    column-gap: var(--slotted-space-6);
+    grid-template-columns: minmax(0, 1fr) 7rem 2.5rem;
   }
 
   .row[data-issue] {
@@ -121,16 +227,41 @@
     background: var(--slotted-tone-success-solid);
   }
 
-  /* Under 36 rem the status leaves its column and goes under the words, word first, the date at
-     its end; the switch keeps its place and spans both lines. */
+  .toggle {
+    justify-self: end;
+  }
+
+  .coverageNarrow {
+    display: none;
+  }
+
+  /* Under 36 rem the status goes under the words, word first, then the date and the coverage; the
+     verdict of a band moves into its line; the switch spans both lines. */
   @container (max-width: 36rem) {
+    .band,
+    .row {
+      padding-inline: var(--slotted-space-6);
+      grid-template-columns: minmax(0, 1fr) 2.5rem;
+    }
+
     .row {
       block-size: 4.875rem;
-      grid-template-columns: minmax(0, 1fr) auto;
     }
 
     .row[data-issue] {
       block-size: 6.125rem;
+    }
+
+    .verdict {
+      display: none;
+    }
+
+    .inlineVerdict {
+      display: inline;
+    }
+
+    .chevron {
+      grid-column: 2;
     }
 
     .main {
@@ -141,9 +272,27 @@
       flex-direction: row-reverse;
       grid-column: 1;
       grid-row: 2;
-      justify-content: flex-end;
-      gap: var(--slotted-space-4);
       align-items: center;
+      gap: var(--slotted-space-4);
+      justify-content: flex-end;
+    }
+
+    .coverageWide {
+      display: none;
+    }
+
+    .coverageNarrow {
+      display: inline;
+      min-inline-size: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .date::before,
+    .coverageNarrow::before {
+      margin-inline-end: var(--slotted-space-3);
+      content: "·";
     }
 
     .toggle {

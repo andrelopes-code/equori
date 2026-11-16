@@ -1,6 +1,6 @@
 @layer app {
-  /* The flag keeps the 4:3 of a flag at three heights, one per text size beside it: 14, 18 and
-     24 px. No token holds them. */
+  /* The flag keeps the 4:3 of a flag at two heights: 18 px beside text and 24 px on a band. No
+     token holds them. */
   .flag {
     --flag-height: 1.125rem;
 
@@ -13,10 +13,6 @@
     overflow: hidden;
     border-radius: var(--slotted-radius-sm);
     background: var(--slotted-surface-sunken);
-  }
-
-  .flag[data-size="sm"] {
-    --flag-height: 0.875rem;
   }
 
   .flag[data-size="lg"] {
@@ -46,14 +42,22 @@
   }
 
   .flag[data-art="global"] svg {
-    inline-size: 64%;
-    block-size: auto;
+    inline-size: auto;
+    block-size: 76%;
+    aspect-ratio: 1;
   }
 
+  /* A region with no artwork is a plate as legible as a flag: the same box, a ground lifted from
+     the surface and the code in the text colour. */
   .flag[data-art="plate"] {
-    color: var(--slotted-text-muted);
-    font-size: calc(var(--flag-height) * 0.46);
-    font-weight: var(--slotted-font-weight-semibold);
+    background: color-mix(
+      in srgb,
+      var(--slotted-text) 12%,
+      var(--slotted-surface-raised)
+    );
+    color: var(--slotted-text);
+    font-size: calc(var(--flag-height) * 0.56);
+    font-weight: var(--slotted-font-weight-bold, 700);
     letter-spacing: 0.02em;
     line-height: 1;
   }

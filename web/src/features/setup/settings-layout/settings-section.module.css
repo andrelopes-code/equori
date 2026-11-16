@@ -1,0 +1,17 @@
+@layer app {
+  /* The title block at the start, the actions of the pane at the end of its first line. */
+  .head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--slotted-space-6);
+  }
+
+  .titleBlock {
+    min-inline-size: 0;
+  }
+
+  .actions {
+    flex: none;
+  }
+}

@@ -1,9 +1,3 @@
-import {
-  Collapsible,
-  CollapsibleHeader,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@slotted/react/collapsible";
 import { Tag } from "@slotted/react/tag";
 
 import type { components } from "@/api/schema.gen";
@@ -11,64 +5,71 @@ import type { FeedControls } from "@/features/setup/market-data/feed-controls";
 import { summarizeFeeds } from "@/features/setup/market-data/feed-status";
 import styles from "@/features/setup/market-data/market-data.module.css";
 import { MarketDataFeeds } from "@/features/setup/market-data/market-data-feeds";
+import { RegionBand } from "@/features/setup/market-data/region-band";
 import {
-  regionSummary,
+  regionLine,
   regionVerdict,
 } from "@/features/setup/market-data/region-verdict";
+import { useOpenedOnce } from "@/features/setup/market-data/use-opened-once";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { RegionFlag } from "@/ui/region/region-flag";
 import { regionName } from "@/ui/region/region-name";
 
 interface MarketDataRegionProps {
   region: string;
   feeds: readonly components["schemas"]["MarketDataFeed"][];
-  // The book's region: it opens and carries the "Your region" tag.
+  // The book's region: it carries the "Your region" tag.
   home: boolean;
+  // A folded region opens on its band, or on its own when a feed has a problem.
+  folded: boolean;
   controls: FeedControls;
 }
 
-// Families read: collapsible, section, accordion. A collapsible draws the header, the trigger and
-// the panel; the flag, the tag and the verdict sit in its label.
+// A region: its band over its rows. The book's region and the global one stand open; the others
+// fold. The band is the page's own (region-band.tsx).
 export function MarketDataRegion({
   region,
   feeds,
   home,
+  folded,
   controls,
 }: MarketDataRegionProps) {
   const t = useT();
   const [tag] = useAppLocale();
   const summary = summarizeFeeds(feeds);
-  const verdict = regionVerdict(summary, t);
-  const open = home || region === "global" || summary.problems > 0;
+  const open = summary.problems > 0;
+  const { opened, onToggle } = useOpenedOnce(open);
+  const line = regionLine(summary, t);
+  const band = (
+    <RegionBand
+      region={region}
+      title={regionName(region, t, tag)}
+      tag={
+        home && (
+          <Tag size="sm" tone="accent">
+            {t("region.yours")}
+          </Tag>
+        )
+      }
+      line={region === "global" ? `${line} · ${t("region.globalHint")}` : line}
+      verdict={regionVerdict(summary, t)}
+      folded={folded}
+      sub={folded}
+    />
+  );
+
+  if (!folded)
+    return (
+      <>
+        {band}
+        <MarketDataFeeds feeds={feeds} controls={controls} />
+      </>
+    );
 
   return (
-    <Collapsible variant="ruled" defaultOpen={open} mount="lazy">
-      <CollapsibleHeader>
-        <CollapsibleTrigger>
-          <span className={styles.regionTitle}>
-            <RegionFlag region={region} size="lg" />
+    <details className={styles.fold} open={open} onToggle={onToggle}>
+      <summary>{band}</summary>
 
-            <span className={styles.regionText}>
-              <span className={styles.regionName}>
-                {regionName(region, t, tag)}
-                {home && (
-                  <Tag size="sm" tone="accent">
-                    {t("region.yours")}
-                  </Tag>
-                )}
-              </span>
-
-              <span className={styles.regionSummary} data-tone={verdict.tone}>
-                {regionSummary(summary, t)}
-              </span>
-            </span>
-          </span>
-        </CollapsibleTrigger>
-      </CollapsibleHeader>
-
-      <CollapsiblePanel>
-        <MarketDataFeeds feeds={feeds} controls={controls} />
-      </CollapsiblePanel>
-    </Collapsible>
+      {opened && <MarketDataFeeds feeds={feeds} controls={controls} />}
+    </details>
   );
 }

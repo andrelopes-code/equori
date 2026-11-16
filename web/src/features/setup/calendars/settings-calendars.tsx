@@ -134,7 +134,7 @@ export function SettingsCalendars() {
         <SettingsGroup
           title={t("calendar.holidays.title", { year: String(year) })}
           description={
-            <RegionLabel region={calendarRegion(chosen.id)} size="sm">
+            <RegionLabel region={calendarRegion(chosen.id)} size="md">
               {calendarLabel(t, chosen.id)}
             </RegionLabel>
           }
@@ -186,7 +186,7 @@ export function SettingsCalendars() {
             />
           ) : (
             <>
-              <Text size="sm" tone="muted">
+              <Text size="md" tone="muted">
                 <output aria-live="polite">
                   {months.length === 0
                     ? t("calendar.holidays.empty", { year: String(year) })
@@ -213,7 +213,7 @@ export function SettingsCalendars() {
                             </ListItemBody>
                             {h.source === "instance" && (
                               <ListItemEnd>
-                                <Tag size="sm">
+                                <Tag size="md">
                                   {t("calendar.source.instance")}
                                 </Tag>
                               </ListItemEnd>
