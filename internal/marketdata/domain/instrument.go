@@ -35,6 +35,10 @@ var codePattern = regexp.MustCompile(`^[A-Z0-9.]{2,20}$`)
 
 var symbolPattern = regexp.MustCompile("^[A-Za-z0-9.=^_-]{1,40}$")
 
+// TypeFixedIncome is the only type a book can own (A236 FC1); the list of SecurityTypes keeps
+// its literal.
+const TypeFixedIncome = "fixed_income"
+
 type Instrument struct {
 	Code          money.Currency
 	Type          string
@@ -44,6 +48,20 @@ type Instrument struct {
 	Exchange      string            // ISO 10383 MIC or empty
 	Subtype       string            // refines Type for the owner's jurisdiction; empty when none
 	Symbols       map[string]string // source ID to symbol; nil when none (A222 MQ20)
+	BooksID       int64             // 0: a public security; else the book that owns the contract (A236 FC1)
+	Issuer        Issuer            // zero when unknown (A236 FC3)
+}
+
+// Issuer names who owes a security; Scheme and ID are both empty or both set.
+type Issuer struct {
+	Name, Scheme, ID string
+}
+
+// VisibleTo reports whether booksID may read the instrument (A236 FC1).
+func (in Instrument) VisibleTo(
+	booksID int64,
+) bool {
+	return in.BooksID == 0 || in.BooksID == booksID
 }
 
 // Validate checks a security definition (P8 amendment A59); the quote currency is
@@ -72,6 +90,13 @@ func (in Instrument) Validate() (Instrument, error) {
 			return in, invalid("symbols."+key, "must match ^[A-Za-z0-9.=^_-]{1,40}$")
 		}
 	}
+
+	issuer, err := validateIssuer(in.Issuer)
+	if err != nil {
+		return in, err
+	}
+
+	in.Issuer = issuer
 
 	return in, nil
 }
