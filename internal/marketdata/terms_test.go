@@ -327,7 +327,7 @@ func TestS469TermsRefuseCalendarAndGrace(t *testing.T) {
 }
 
 // S486: interest_every_months expands into the payments of the terms; a PUT without a payment field
-// clears them; payments and interest_every_months together are refused.
+// clears them; payments and interest_every_months together merge by date.
 func TestS486TermsWithInterestEvery(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
@@ -371,18 +371,27 @@ func TestS486TermsWithInterestEvery(t *testing.T) {
 		t.Fatalf("read payments = %s, want %s", b, want)
 	}
 
-	h.ExpectProblem(
-		put(map[string]any{
-			"interest_every_months": 6,
-			"first_payment_on":      "2026-07-06",
-			"payments": []map[string]any{
-				{"pays_on": "2026-07-06", "amortization_bp": 0, "pays_interest": true},
-			},
-		}),
-		http.StatusUnprocessableEntity,
-		"validation_failed",
-		"payments",
-	)
+	r = put(map[string]any{
+		"interest_every_months": 6,
+		"first_payment_on":      "2026-07-06",
+		"payments": []map[string]any{
+			{"pays_on": "2026-07-06", "amortization_bp": 5000, "pays_interest": false},
+		},
+	})
+	if r.Status != http.StatusOK {
+		t.Fatalf("PUT with both = %d: %s", r.Status, r.Body)
+	}
+
+	got = paymentsAPI{}
+	if err := json.Unmarshal(r.Body, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	merged := `[{"pays_on":"2026-07-06","amortization_bp":5000,"pays_interest":true},` +
+		`{"pays_on":"2027-01-05","amortization_bp":0,"pays_interest":true}]`
+	if b, _ := json.Marshal(got.Payments); string(b) != merged {
+		t.Fatalf("merged payments = %s, want %s", b, merged)
+	}
 
 	if r := put(nil); r.Status != http.StatusOK {
 		t.Fatalf("PUT without payments = %d: %s", r.Status, r.Body)

@@ -38,16 +38,23 @@ type getMarketDataIn struct {
 }
 
 type termsView struct {
-	IssuedOn         tool.Date  `json:"issued_on"`
-	MaturesOn        tool.Date  `json:"matures_on"`
-	IndexID          string     `json:"index_id,omitzero"`
-	PercentOfIndexBP int        `json:"percent_of_index_bp"`
-	SpreadBP         int        `json:"spread_bp"`
-	DayCount         string     `json:"day_count"`
-	FaceValue        tool.Money `json:"face_value"`
-	CalendarID       string     `json:"calendar_id,omitzero"`
-	DailyLiquidity   bool       `json:"daily_liquidity"`
-	RedeemableFrom   tool.Date  `json:"redeemable_from,omitzero"`
+	IssuedOn         tool.Date     `json:"issued_on"`
+	MaturesOn        tool.Date     `json:"matures_on"`
+	IndexID          string        `json:"index_id,omitzero"`
+	PercentOfIndexBP int           `json:"percent_of_index_bp"`
+	SpreadBP         int           `json:"spread_bp"`
+	DayCount         string        `json:"day_count"`
+	FaceValue        tool.Money    `json:"face_value"`
+	CalendarID       string        `json:"calendar_id,omitzero"`
+	DailyLiquidity   bool          `json:"daily_liquidity"`
+	RedeemableFrom   tool.Date     `json:"redeemable_from,omitzero"`
+	Payments         []paymentView `json:"payments,omitzero"`
+}
+
+type paymentView struct {
+	PaysOn         tool.Date `json:"pays_on"`
+	AmortizationBP int       `json:"amortization_bp"`
+	PaysInterest   bool      `json:"pays_interest"`
 }
 
 type instrumentView struct {
@@ -178,7 +185,19 @@ func toTermsView(t domain.Terms, quote money.Currency) (termsView, error) {
 		return termsView{}, err
 	}
 
+	payments := make([]paymentView, 0, len(t.Payments))
+	for _, p := range t.Payments {
+		payments = append(payments, paymentView{
+			PaysOn: tool.DateOf(
+				p.PaysOn,
+			),
+			AmortizationBP: p.AmortizationBP,
+			PaysInterest:   p.PaysInterest,
+		})
+	}
+
 	return termsView{
+		Payments:         payments,
 		IssuedOn:         tool.DateOf(t.IssuedOn),
 		MaturesOn:        tool.DateOf(t.MaturesOn),
 		IndexID:          t.IndexID,

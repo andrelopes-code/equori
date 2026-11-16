@@ -3,6 +3,7 @@ package toolapi
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
@@ -229,9 +230,11 @@ func previewSetTerms(
 		}
 	}
 
-	change := tool.Change{Field: "terms", After: tool.TextValue(termsText(t))}
+	change := tool.Change{Field: "terms", After: tool.TextValue(
+		termsText(t, in.InterestEveryMonths, in.FirstPaymentOn.Time),
+	)}
 	if old, err := svc.Terms(ctx, in.Code); err == nil {
-		change.Before = tool.TextValue(termsText(old))
+		change.Before = tool.TextValue(termsText(old, 0, time.Time{}))
 	}
 
 	p.Changes = []tool.Change{change}

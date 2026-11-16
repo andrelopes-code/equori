@@ -113,6 +113,16 @@ type Contract struct {
 	DailyLiquidity             bool
 	RedeemableFrom             time.Time
 	Region                     string // the book's region, for the defaults
+	Payments                   []Payment
+	InterestEveryMonths        int       // expands into a schedule merged with Payments
+	FirstPaymentOn             time.Time // required with InterestEveryMonths
+}
+
+// Payment is a date on which a contract pays interest, returns principal or both (A236 FC6).
+type Payment struct {
+	PaysOn         time.Time
+	AmortizationBP int
+	PaysInterest   bool
 }
 
 // ExternalFlow is money that entered (positive) or left (negative) an account tree on a date,

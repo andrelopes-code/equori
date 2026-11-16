@@ -1241,7 +1241,7 @@ schemas:
         maxItems: 400
         items:
           $ref: "#/components/schemas/FixedIncomePayment"
-        description: Dates of interest and principal; empty when omitted. Excludes interest_every_months.
+        description: Dates of interest and principal; empty when omitted. Merged by date with the interest_every_months schedule.
       interest_every_months:
         type: integer
         enum: [1, 3, 6, 12]

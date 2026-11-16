@@ -3044,6 +3044,30 @@
                   "redeemable_from": {
                     "type": "string",
                     "format": "date"
+                  },
+                  "payments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "pays_on": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "amortization_bp": {
+                          "type": "integer"
+                        },
+                        "pays_interest": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "pays_on",
+                        "amortization_bp",
+                        "pays_interest"
+                      ],
+                      "additionalProperties": false
+                    }
                   }
                 },
                 "required": [
@@ -3197,6 +3221,30 @@
                 "redeemable_from": {
                   "type": "string",
                   "format": "date"
+                },
+                "payments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "pays_on": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "amortization_bp": {
+                        "type": "integer"
+                      },
+                      "pays_interest": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "pays_on",
+                      "amortization_bp",
+                      "pays_interest"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": [
@@ -6802,6 +6850,15 @@
           "description": "for request_history: first price date",
           "format": "date"
         },
+        "interest_every_months": {
+          "type": "integer",
+          "description": "for set_terms: interest every 1, 3, 6 or 12 months"
+        },
+        "first_payment_on": {
+          "type": "string",
+          "description": "for set_terms: first interest date",
+          "format": "date"
+        },
         "exchange": {
           "type": "string",
           "description": "for define and edit: ISO 10383 MIC, such as BVMF"
@@ -6933,6 +6990,30 @@
                 "redeemable_from": {
                   "type": "string",
                   "format": "date"
+                },
+                "payments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "pays_on": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "amortization_bp": {
+                        "type": "integer"
+                      },
+                      "pays_interest": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "pays_on",
+                      "amortization_bp",
+                      "pays_interest"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": [
@@ -7066,6 +7147,30 @@
             "redeemable_from": {
               "type": "string",
               "format": "date"
+            },
+            "payments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pays_on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "amortization_bp": {
+                    "type": "integer"
+                  },
+                  "pays_interest": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "pays_on",
+                  "amortization_bp",
+                  "pays_interest"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
@@ -7860,6 +7965,38 @@
           "type": "string",
           "description": "new contract: first date it can be redeemed",
           "format": "date"
+        },
+        "interest_every_months": {
+          "type": "integer",
+          "description": "new contract: interest every 1, 3, 6 or 12 months"
+        },
+        "first_payment_on": {
+          "type": "string",
+          "description": "new contract: first interest date",
+          "format": "date"
+        },
+        "amortizations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "pays_on": {
+                "type": "string",
+                "description": "date",
+                "format": "date"
+              },
+              "percent": {
+                "type": "string",
+                "description": "percent of the principal, such as 50"
+              }
+            },
+            "required": [
+              "pays_on",
+              "percent"
+            ],
+            "additionalProperties": false
+          },
+          "description": "new contract: principal returned by date"
         }
       },
       "required": [

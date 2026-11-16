@@ -175,7 +175,7 @@ func (c contracts) Check(
 	ct app.Contract,
 	applicationID uuid.UUID,
 ) (app.Contract, error) {
-	checked, err := c.md.CheckContract(ctx, booksID, marketdata.Contract(ct), applicationID)
+	checked, err := c.md.CheckContract(ctx, booksID, toMarketContract(ct), applicationID)
 	if fe, ok := errors.AsType[*marketdata.FieldError](err); ok {
 		return app.Contract{}, &domain.FieldError{
 			Field:   fe.Field,
@@ -184,11 +184,11 @@ func (c contracts) Check(
 		}
 	}
 
-	return app.Contract(checked), err
+	return fromMarketContract(checked), err
 }
 
 func (c contracts) Define(ctx context.Context, booksID int64, ct app.Contract) error {
-	return c.md.DefineContract(ctx, booksID, marketdata.Contract(ct))
+	return c.md.DefineContract(ctx, booksID, toMarketContract(ct))
 }
 
 func (c contracts) Discard(ctx context.Context, booksID int64, code money.Currency) error {
@@ -209,4 +209,42 @@ func (c contracts) Price(
 	p, ok, err := c.md.PriceOnOrBefore(ctx, code, quote, date)
 
 	return p.Value, ok, err
+}
+
+// toMarketContract and fromMarketContract copy the fields of the two Contract types; the
+// Payments slices differ in element type.
+func toMarketContract(c app.Contract) marketdata.Contract {
+	out := marketdata.Contract{
+		Code: c.Code, Currency: c.Currency, Subtype: c.Subtype, Name: c.Name,
+		IssuerName: c.IssuerName, IssuerScheme: c.IssuerScheme, IssuerID: c.IssuerID,
+		IssuedOn: c.IssuedOn, MaturesOn: c.MaturesOn, IndexID: c.IndexID,
+		PercentOfIndexBP: c.PercentOfIndexBP, SpreadBP: c.SpreadBP, DayCount: c.DayCount,
+		CalendarID: c.CalendarID, DailyLiquidity: c.DailyLiquidity,
+		RedeemableFrom: c.RedeemableFrom, Region: c.Region,
+		InterestEveryMonths: c.InterestEveryMonths, FirstPaymentOn: c.FirstPaymentOn,
+	}
+
+	for _, p := range c.Payments {
+		out.Payments = append(out.Payments, marketdata.Payment(p))
+	}
+
+	return out
+}
+
+func fromMarketContract(c marketdata.Contract) app.Contract {
+	out := app.Contract{
+		Code: c.Code, Currency: c.Currency, Subtype: c.Subtype, Name: c.Name,
+		IssuerName: c.IssuerName, IssuerScheme: c.IssuerScheme, IssuerID: c.IssuerID,
+		IssuedOn: c.IssuedOn, MaturesOn: c.MaturesOn, IndexID: c.IndexID,
+		PercentOfIndexBP: c.PercentOfIndexBP, SpreadBP: c.SpreadBP, DayCount: c.DayCount,
+		CalendarID: c.CalendarID, DailyLiquidity: c.DailyLiquidity,
+		RedeemableFrom: c.RedeemableFrom, Region: c.Region,
+		InterestEveryMonths: c.InterestEveryMonths, FirstPaymentOn: c.FirstPaymentOn,
+	}
+
+	for _, p := range c.Payments {
+		out.Payments = append(out.Payments, app.Payment(p))
+	}
+
+	return out
 }

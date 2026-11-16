@@ -765,6 +765,30 @@ func (e FixedIncomeContractInputDayCount) Valid() bool {
 	}
 }
 
+// Defines values for FixedIncomeContractInputInterestEveryMonths.
+const (
+	N1  FixedIncomeContractInputInterestEveryMonths = 1
+	N12 FixedIncomeContractInputInterestEveryMonths = 12
+	N3  FixedIncomeContractInputInterestEveryMonths = 3
+	N6  FixedIncomeContractInputInterestEveryMonths = 6
+)
+
+// Valid indicates whether the value is a known member of the FixedIncomeContractInputInterestEveryMonths enum.
+func (e FixedIncomeContractInputInterestEveryMonths) Valid() bool {
+	switch e {
+	case N1:
+		return true
+	case N12:
+		return true
+	case N3:
+		return true
+	case N6:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstallmentPlanStatus.
 const (
 	Active      InstallmentPlanStatus = "active"
@@ -1715,24 +1739,43 @@ type FixedIncomeApplicationInput struct {
 
 // FixedIncomeContractInput defines model for FixedIncomeContractInput.
 type FixedIncomeContractInput struct {
-	CalendarId       *string                           `json:"calendar_id,omitempty"`
-	DailyLiquidity   *bool                             `json:"daily_liquidity,omitempty"`
-	DayCount         *FixedIncomeContractInputDayCount `json:"day_count,omitempty"`
-	IndexId          *string                           `json:"index_id,omitempty"`
-	IssuedOn         *openapi_types.Date               `json:"issued_on,omitempty"`
-	Issuer           string                            `json:"issuer"`
-	IssuerId         *string                           `json:"issuer_id,omitempty"`
-	IssuerScheme     *string                           `json:"issuer_scheme,omitempty"`
-	MaturesOn        openapi_types.Date                `json:"matures_on"`
-	Name             *string                           `json:"name,omitempty"`
-	PercentOfIndexBp *int                              `json:"percent_of_index_bp,omitempty"`
-	RedeemableFrom   *openapi_types.Date               `json:"redeemable_from,omitempty"`
-	SpreadBp         *int                              `json:"spread_bp,omitempty"`
-	Subtype          string                            `json:"subtype"`
+	CalendarId     *string                           `json:"calendar_id,omitempty"`
+	DailyLiquidity *bool                             `json:"daily_liquidity,omitempty"`
+	DayCount       *FixedIncomeContractInputDayCount `json:"day_count,omitempty"`
+
+	// FirstPaymentOn First interest date; required with interest_every_months.
+	FirstPaymentOn *openapi_types.Date `json:"first_payment_on,omitempty"`
+	IndexId        *string             `json:"index_id,omitempty"`
+
+	// InterestEveryMonths Interest paid every n months from first_payment_on up to matures_on.
+	InterestEveryMonths *FixedIncomeContractInputInterestEveryMonths `json:"interest_every_months,omitempty"`
+	IssuedOn            *openapi_types.Date                          `json:"issued_on,omitempty"`
+	Issuer              string                                       `json:"issuer"`
+	IssuerId            *string                                      `json:"issuer_id,omitempty"`
+	IssuerScheme        *string                                      `json:"issuer_scheme,omitempty"`
+	MaturesOn           openapi_types.Date                           `json:"matures_on"`
+	Name                *string                                      `json:"name,omitempty"`
+
+	// Payments Dates of interest and principal; merged by date with the interest_every_months schedule.
+	Payments         *[]FixedIncomeContractPayment `json:"payments,omitempty"`
+	PercentOfIndexBp *int                          `json:"percent_of_index_bp,omitempty"`
+	RedeemableFrom   *openapi_types.Date           `json:"redeemable_from,omitempty"`
+	SpreadBp         *int                          `json:"spread_bp,omitempty"`
+	Subtype          string                        `json:"subtype"`
 }
 
 // FixedIncomeContractInputDayCount defines model for FixedIncomeContractInput.DayCount.
 type FixedIncomeContractInputDayCount string
+
+// FixedIncomeContractInputInterestEveryMonths Interest paid every n months from first_payment_on up to matures_on.
+type FixedIncomeContractInputInterestEveryMonths int
+
+// FixedIncomeContractPayment defines model for FixedIncomeContractPayment.
+type FixedIncomeContractPayment struct {
+	AmortizationBp int                `json:"amortization_bp"`
+	PaysInterest   bool               `json:"pays_interest"`
+	PaysOn         openapi_types.Date `json:"pays_on"`
+}
 
 // ForeignPurchaseInput defines model for ForeignPurchaseInput.
 type ForeignPurchaseInput struct {

@@ -35,6 +35,9 @@ type Contract struct {
 	DailyLiquidity             bool
 	RedeemableFrom             time.Time
 	Region                     string // the book's region, for the defaults
+	Payments                   []Payment
+	InterestEveryMonths        int       // expands into a schedule merged with Payments
+	FirstPaymentOn             time.Time // required with InterestEveryMonths
 }
 
 // CheckContract validates c for the application and returns it with the defaults of A236 FC12.
@@ -158,7 +161,15 @@ func (m *Module) contractParts(ctx context.Context, c Contract) (Instrument, Ter
 		percent = defaultPercentBP
 	}
 
+	payments, err := domain.ResolvePayments(
+		c.Payments, c.InterestEveryMonths, c.FirstPaymentOn, c.MaturesOn,
+	)
+	if err != nil {
+		return Instrument{}, Terms{}, prefixField(err)
+	}
+
 	terms := Terms{
+		Payments:         payments,
 		IssuedOn:         c.IssuedOn,
 		MaturesOn:        c.MaturesOn,
 		IndexID:          c.IndexID,

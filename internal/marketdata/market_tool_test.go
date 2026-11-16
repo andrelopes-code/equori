@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -60,6 +61,11 @@ type toolInstrument struct {
 		FaceValue        tool.Money `json:"face_value"`
 		CalendarID       string     `json:"calendar_id"`
 		DailyLiquidity   bool       `json:"daily_liquidity"`
+		Payments         []struct {
+			PaysOn         string `json:"pays_on"`
+			AmortizationBP int    `json:"amortization_bp"`
+			PaysInterest   bool   `json:"pays_interest"`
+		} `json:"payments"`
 	} `json:"terms"`
 }
 
@@ -366,6 +372,44 @@ func TestManageInstrumentToolSetTerms(t *testing.T) {
 		"validation_failed",
 		"matures_on",
 	)
+}
+
+// A236 FC6, FC16: set_terms expands interest_every_months and takes explicit payments.
+func TestManageInstrumentToolSetTermsPayments(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	defineFixedIncome(t, h, "CDBXPTO")
+
+	args := map[string]any{
+		"action":                "set_terms",
+		"code":                  "CDBXPTO",
+		"issued_on":             "2026-01-02",
+		"matures_on":            "2027-01-02",
+		"face_value":            "1000.00",
+		"interest_every_months": 6,
+		"first_payment_on":      "2026-07-06",
+	}
+
+	p, r := preview(t, h, "manage_instrument", args)
+	if r.IsError || len(p.Changes) != 1 ||
+		!strings.HasSuffix(p.Changes[0].After.Text, ", interest every 6 months from 2026-07-06") {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	toolOutput(t, h, "manage_instrument", args, &struct{}{})
+
+	var got struct {
+		Instrument toolInstrument `json:"instrument"`
+	}
+
+	view := map[string]any{"view": "instrument", "code": "CDBXPTO"}
+	toolOutput(t, h, "get_market_data", view, &got)
+
+	pays := got.Instrument.Terms.Payments
+	if len(pays) != 2 || pays[0].PaysOn != "2026-07-06" || !pays[0].PaysInterest ||
+		pays[1].PaysOn != "2027-01-02" || pays[1].AmortizationBP != 0 {
+		t.Fatalf("payments = %+v", pays)
+	}
 }
 
 func TestGetMarketDataToolCalendars(t *testing.T) {

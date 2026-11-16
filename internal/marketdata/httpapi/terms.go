@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
@@ -87,36 +88,28 @@ func (s *Server) getInstrumentTerms(
 // paymentsOf is the payments the body sets: the listed rows, or the expansion of
 // interest_every_months (A236 FC6).
 func paymentsOf(b PutInstrumentTermsJSONRequestBody) ([]domain.Payment, error) {
-	if b.InterestEveryMonths == nil {
-		var out []domain.Payment
-		if b.Payments != nil {
-			for _, p := range *b.Payments {
-				out = append(out, domain.Payment{
-					PaysOn:         p.PaysOn.Time,
-					AmortizationBP: p.AmortizationBp,
-					PaysInterest:   p.PaysInterest,
-				})
-			}
-		}
-
-		return out, nil
-	}
-
+	var rows []domain.Payment
 	if b.Payments != nil {
-		return nil, &domain.FieldError{
-			Field:   "payments",
-			Message: "set payments or interest_every_months",
+		for _, p := range *b.Payments {
+			rows = append(rows, domain.Payment{
+				PaysOn:         p.PaysOn.Time,
+				AmortizationBP: p.AmortizationBp,
+				PaysInterest:   p.PaysInterest,
+			})
 		}
 	}
 
-	if b.FirstPaymentOn == nil {
-		return nil, &domain.FieldError{
-			Field:   "first_payment_on",
-			Message: "is required with interest_every_months",
-		}
+	var every int
+	if b.InterestEveryMonths != nil {
+		every = int(*b.InterestEveryMonths)
 	}
 
-	return domain.Schedule(b.FirstPaymentOn.Time, b.MaturesOn.Time, int(*b.InterestEveryMonths))
+	var first time.Time
+	if b.FirstPaymentOn != nil {
+		first = b.FirstPaymentOn.Time
+	}
+
+	return domain.ResolvePayments(rows, every, first, b.MaturesOn.Time)
 }
 
 func toTermsAPI(t domain.Terms) FixedIncomeTerms {

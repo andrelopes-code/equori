@@ -123,10 +123,8 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 
 var uncoveredFields = map[string][]string{
 	"putInstrumentTerms": {
-		"first_payment_on",
-		"interest_every_months",
 		"payments",
-	}, // the tool inputs arrive in plan FI4 task 3
+	}, // explicit payment dates exceed the tool budget; set through the API and the terms dialog (A236 FC16 amended)
 	"createFixedIncomeApplication": {
 		"application_id",
 		"contract",

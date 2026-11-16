@@ -75,6 +75,61 @@ func TestRecordFixedIncomeRates(t *testing.T) {
 	}
 }
 
+// A236 FC16: amortizations are sent as payment rows without interest.
+func TestRecordFixedIncomeAmortizations(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	args := f.fixedIncomeToolArgs()
+	args["amortizations"] = []map[string]any{{"pays_on": "2027-03-02", "percent": "50"}}
+
+	var out fixedIncomeToolOut
+	toolOutput(t, f.h, "record_fixed_income", args, &out)
+
+	var terms struct {
+		Payments []struct {
+			PaysOn         string `json:"pays_on"`
+			AmortizationBP int    `json:"amortization_bp"`
+			PaysInterest   bool   `json:"pays_interest"`
+		} `json:"payments"`
+	}
+
+	f.h.MustDo("GET", "/api/v1/instruments/"+out.Instrument+"/terms", nil, 200, &terms)
+
+	if len(terms.Payments) != 1 || terms.Payments[0].PaysOn != "2027-03-02" ||
+		terms.Payments[0].AmortizationBP != 5000 || terms.Payments[0].PaysInterest {
+		t.Fatalf("payments = %+v", terms.Payments)
+	}
+}
+
+// Task 3 amendment: amortizations merge by date with the interest schedule.
+func TestRecordFixedIncomeAmortizationsWithInterest(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	args := f.fixedIncomeToolArgs()
+	args["interest_every_months"] = 6
+	args["first_payment_on"] = "2026-09-02"
+	args["amortizations"] = []map[string]any{{"pays_on": "2027-03-02", "percent": "50"}}
+
+	var out fixedIncomeToolOut
+	toolOutput(t, f.h, "record_fixed_income", args, &out)
+
+	var terms struct {
+		Payments []struct {
+			PaysOn         string `json:"pays_on"`
+			AmortizationBP int    `json:"amortization_bp"`
+			PaysInterest   bool   `json:"pays_interest"`
+		} `json:"payments"`
+	}
+
+	f.h.MustDo("GET", "/api/v1/instruments/"+out.Instrument+"/terms", nil, 200, &terms)
+
+	if len(terms.Payments) != 4 || terms.Payments[1].PaysOn != "2027-03-02" ||
+		terms.Payments[1].AmortizationBP != 5000 || !terms.Payments[1].PaysInterest ||
+		terms.Payments[0].AmortizationBP != 0 {
+		t.Fatalf("payments = %+v", terms.Payments)
+	}
+}
+
 func TestRecordFixedIncomeInvalidRate(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)

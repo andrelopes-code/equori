@@ -142,3 +142,31 @@ func assertField(t *testing.T, err error, field string) {
 		t.Fatalf("field = %q, want %q", fe.Field, field)
 	}
 }
+
+// A236 FC6, amended at execution of FI4 task 3: rows merge by date with the schedule.
+func TestResolvePaymentsMerge(t *testing.T) {
+	t.Parallel()
+
+	rows := []Payment{
+		{PaysOn: date("2026-07-06"), AmortizationBP: 5000},
+		{PaysOn: date("2026-09-01"), AmortizationBP: 1000},
+	}
+
+	got, err := ResolvePayments(rows, 6, date("2026-07-06"), date("2027-01-05"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []Payment{
+		{PaysOn: date("2026-07-06"), AmortizationBP: 5000, PaysInterest: true},
+		{PaysOn: date("2026-09-01"), AmortizationBP: 1000},
+		{PaysOn: date("2027-01-05"), PaysInterest: true},
+	}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("payments = %v, want %v", got, want)
+	}
+
+	if _, err := ResolvePayments(nil, 6, time.Time{}, date("2027-01-05")); err == nil {
+		t.Fatal("a schedule without first_payment_on was accepted")
+	}
+}

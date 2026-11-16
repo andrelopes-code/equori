@@ -6151,6 +6151,24 @@ export interface components {
             daily_liquidity?: boolean;
             /** Format: date */
             redeemable_from?: string;
+            /** @description Dates of interest and principal; merged by date with the interest_every_months schedule. */
+            payments?: components["schemas"]["FixedIncomeContractPayment"][];
+            /**
+             * @description Interest paid every n months from first_payment_on up to matures_on.
+             * @enum {integer}
+             */
+            interest_every_months?: 1 | 3 | 6 | 12;
+            /**
+             * Format: date
+             * @description First interest date; required with interest_every_months.
+             */
+            first_payment_on?: string;
+        };
+        FixedIncomeContractPayment: {
+            /** Format: date */
+            pays_on: string;
+            amortization_bp: number;
+            pays_interest: boolean;
         };
         FixedIncomeApplication: {
             instrument: string;
@@ -6924,7 +6942,7 @@ export interface components {
              * @description First date of a redemption before maturity; absent when redeemable from issued_on.
              */
             redeemable_from?: string;
-            /** @description Dates of interest and principal; empty when omitted. Excludes interest_every_months. */
+            /** @description Dates of interest and principal; empty when omitted. Merged by date with the interest_every_months schedule. */
             payments?: components["schemas"]["FixedIncomePayment"][];
             /**
              * @description Interest paid every n months from first_payment_on up to matures_on; expands into payments.

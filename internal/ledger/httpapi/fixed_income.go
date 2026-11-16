@@ -123,7 +123,33 @@ func contractFromInput(in FixedIncomeContractInput) app.Contract {
 		c.RedeemableFrom = *d
 	}
 
+	if in.InterestEveryMonths != nil {
+		c.InterestEveryMonths = int(*in.InterestEveryMonths)
+	}
+
+	if d := optDate(in.FirstPaymentOn); d != nil {
+		c.FirstPaymentOn = *d
+	}
+
+	if in.Payments != nil {
+		c.Payments = paymentsFromInput(*in.Payments)
+	}
+
 	return c
+}
+
+func paymentsFromInput(in []FixedIncomeContractPayment) []app.Payment {
+	out := make([]app.Payment, 0, len(in))
+
+	for _, p := range in {
+		out = append(out, app.Payment{
+			PaysOn:         dateOf(p.PaysOn),
+			AmortizationBP: p.AmortizationBp,
+			PaysInterest:   p.PaysInterest,
+		})
+	}
+
+	return out
 }
 
 func toFixedIncomeAPI(r app.FixedIncomeResult) FixedIncomeApplication {

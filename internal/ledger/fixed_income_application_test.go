@@ -58,6 +58,41 @@ func TestS479NewContract(t *testing.T) {
 	}
 }
 
+// S496: a contract with interest_every_months stores the expanded payments.
+func TestS496InterestSchedule(t *testing.T) {
+	t.Parallel()
+	f := newInvestFixture(t)
+	body := f.newContractBody("2026-03-02", 1000000)
+	contract := body["contract"].(map[string]any)
+	contract["interest_every_months"] = 6
+	contract["first_payment_on"] = "2026-09-02"
+
+	f.h.MustDo(http.MethodPost, fixedIncomePath, body, http.StatusCreated, nil)
+
+	var terms struct {
+		Payments []struct {
+			PaysOn         string `json:"pays_on"`
+			AmortizationBP int    `json:"amortization_bp"`
+			PaysInterest   bool   `json:"pays_interest"`
+		} `json:"payments"`
+	}
+
+	f.h.MustDo(
+		http.MethodGet, "/api/v1/instruments/"+fixedIncomeCode+"/terms", nil, http.StatusOK, &terms,
+	)
+
+	want := []string{"2026-09-02", "2027-03-02", "2027-09-02", "2028-03-02"}
+	if len(terms.Payments) != len(want) {
+		t.Fatalf("payments = %+v", terms.Payments)
+	}
+
+	for i, p := range terms.Payments {
+		if p.PaysOn != want[i] || !p.PaysInterest || p.AmortizationBP != 0 {
+			t.Fatalf("payments[%d] = %+v, want interest on %s", i, p, want[i])
+		}
+	}
+}
+
 func TestS480ReplayedApplication(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)

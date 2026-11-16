@@ -18,6 +18,8 @@ var optionalTermFields = []string{
 	"calendar_id",
 	"daily_liquidity",
 	"redeemable_from",
+	"interest_every_months",
+	"first_payment_on",
 }
 
 func checkInstrumentArgs(in manageInstrumentIn) error {
@@ -202,7 +204,15 @@ func (in manageInstrumentIn) terms(
 		return domain.Terms{}, err
 	}
 
+	payments, err := domain.ResolvePayments(
+		nil, in.InterestEveryMonths, in.FirstPaymentOn.Time, in.MaturesOn.Time,
+	)
+	if err != nil {
+		return domain.Terms{}, err
+	}
+
 	t := domain.Terms{
+		Payments:         payments,
 		IssuedOn:         in.IssuedOn.Time,
 		MaturesOn:        in.MaturesOn.Time,
 		IndexID:          in.IndexID,
@@ -256,6 +266,8 @@ func presentFields(in manageInstrumentIn) []field {
 		{"calendar_id", in.CalendarID != ""},
 		{"daily_liquidity", in.DailyLiquidity},
 		{"redeemable_from", !in.RedeemableFrom.IsZero()},
+		{"interest_every_months", in.InterestEveryMonths != 0},
+		{"first_payment_on", !in.FirstPaymentOn.IsZero()},
 		{"from", !in.From.IsZero()},
 		{
 			"exchange",

@@ -284,7 +284,7 @@ type FixedIncomeTermsInput struct {
 	IssuedOn            openapi_types.Date                        `json:"issued_on"`
 	MaturesOn           openapi_types.Date                        `json:"matures_on"`
 
-	// Payments Dates of interest and principal; empty when omitted. Excludes interest_every_months.
+	// Payments Dates of interest and principal; empty when omitted. Merged by date with the interest_every_months schedule.
 	Payments *[]FixedIncomePayment `json:"payments,omitempty"`
 
 	// PercentOfIndexBp 10000 is 100% of the index; 10000 when omitted.

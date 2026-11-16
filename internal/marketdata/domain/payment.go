@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -38,6 +39,50 @@ func Schedule(first, maturesOn time.Time, everyMonths int) ([]Payment, error) {
 	}
 
 	return append(out, Payment{PaysOn: maturesOn, PaysInterest: true}), nil
+}
+
+// ResolvePayments is the payments of a request: rows alone, or the expansion of everyMonths from
+// first merged with rows by date (A236 FC6). A date in both pays interest and takes the
+// AmortizationBP of the row. everyMonths 0 means rows.
+func ResolvePayments(
+	rows []Payment,
+	everyMonths int,
+	first, maturesOn time.Time,
+) ([]Payment, error) {
+	if everyMonths == 0 {
+		return rows, nil
+	}
+
+	if first.IsZero() {
+		return nil, invalid("first_payment_on", "is required with interest_every_months")
+	}
+
+	out, err := Schedule(first, maturesOn, everyMonths)
+	if err != nil {
+		return nil, err
+	}
+
+	scheduled := len(out)
+	merged := map[time.Time]bool{}
+
+	for _, r := range rows {
+		i := slices.IndexFunc(
+			out[:scheduled],
+			func(p Payment) bool { return p.PaysOn.Equal(r.PaysOn) },
+		)
+		if i < 0 || merged[r.PaysOn] {
+			out = append(out, r)
+
+			continue
+		}
+
+		out[i].AmortizationBP = r.AmortizationBP
+		merged[r.PaysOn] = true
+	}
+
+	slices.SortFunc(out, func(a, b Payment) int { return a.PaysOn.Compare(b.PaysOn) })
+
+	return out, nil
 }
 
 // validatePayments checks the rows of t.Payments, sorted by PaysOn.

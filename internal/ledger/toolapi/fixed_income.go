@@ -40,6 +40,15 @@ type recordFixedIncomeIn struct {
 	CalendarID     string    `json:"calendar_id,omitzero"      jsonschema:"new contract: business day calendar of bus252; the region calendar when empty"`
 	DailyLiquidity bool      `json:"daily_liquidity,omitzero"  jsonschema:"new contract: true when it can be redeemed any day"`
 	RedeemableFrom tool.Date `json:"redeemable_from,omitzero"  jsonschema:"new contract: first date it can be redeemed"`
+
+	InterestEveryMonths int                       `json:"interest_every_months,omitzero" jsonschema:"new contract: interest every 1, 3, 6 or 12 months"`
+	FirstPaymentOn      tool.Date                 `json:"first_payment_on,omitzero"      jsonschema:"new contract: first interest date"`
+	Amortizations       []fixedIncomeAmortization `json:"amortizations,omitzero"         jsonschema:"new contract: principal returned by date"`
+}
+
+type fixedIncomeAmortization struct {
+	PaysOn  tool.Date `json:"pays_on" jsonschema:"date"`
+	Percent string    `json:"percent" jsonschema:"percent of the principal, such as 50"`
 }
 
 type recordFixedIncomeOut struct {
@@ -134,6 +143,10 @@ func checkFixedIncomeFields(in recordFixedIncomeIn) error {
 		"calendar_id":      in.CalendarID != "",
 		"daily_liquidity":  in.DailyLiquidity,
 		"redeemable_from":  !in.RedeemableFrom.IsZero(),
+
+		"interest_every_months": in.InterestEveryMonths != 0,
+		"first_payment_on":      !in.FirstPaymentOn.IsZero(),
+		"amortizations":         in.Amortizations != nil,
 	}
 	common := []string{"cash_account_id", "fees", "description"}
 	required := []string{"brokerage_id", "applied_on", "amount"}
@@ -145,6 +158,7 @@ func checkFixedIncomeFields(in recordFixedIncomeIn) error {
 	contract := []string{
 		"issuer_scheme", "issuer_id", "name", "issued_on", "index_id", "percent_of_index",
 		"spread", "day_count", "calendar_id", "daily_liquidity", "redeemable_from",
+		"interest_every_months", "first_payment_on", "amortizations",
 	}
 
 	return checkFields(
@@ -243,6 +257,9 @@ func fixedIncomeContract(in recordFixedIncomeIn) (app.Contract, error) {
 		CalendarID:     in.CalendarID,
 		DailyLiquidity: in.DailyLiquidity,
 		RedeemableFrom: in.RedeemableFrom.Time,
+
+		InterestEveryMonths: in.InterestEveryMonths,
+		FirstPaymentOn:      in.FirstPaymentOn.Time,
 	}
 
 	if c.Name == "" {
@@ -256,9 +273,29 @@ func fixedIncomeContract(in recordFixedIncomeIn) (app.Contract, error) {
 		return c, err
 	}
 
-	c.SpreadBP, err = percentToBP("spread", in.Spread)
+	if c.SpreadBP, err = percentToBP("spread", in.Spread); err != nil {
+		return c, err
+	}
+
+	c.Payments, err = amortizationPayments(in.Amortizations)
 
 	return c, err
+}
+
+// amortizationPayments reads each amortization as a payment row that pays no interest.
+func amortizationPayments(in []fixedIncomeAmortization) ([]app.Payment, error) {
+	var out []app.Payment
+
+	for i, a := range in {
+		bp, err := percentToBP(fmt.Sprintf("amortizations[%d].percent", i), a.Percent)
+		if err != nil {
+			return nil, err
+		}
+
+		out = append(out, app.Payment{PaysOn: a.PaysOn.Time, AmortizationBP: bp})
+	}
+
+	return out, nil
 }
 
 // percentToBP converts percent text ("110", "6.5") to basis points; empty is 0.

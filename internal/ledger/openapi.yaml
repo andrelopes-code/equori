@@ -3650,6 +3650,34 @@ schemas:
       redeemable_from:
         type: string
         format: date
+      payments:
+        type: array
+        maxItems: 400
+        items:
+          $ref: "#/components/schemas/FixedIncomeContractPayment"
+        description: Dates of interest and principal; merged by date with the interest_every_months schedule.
+      interest_every_months:
+        type: integer
+        enum: [1, 3, 6, 12]
+        description: Interest paid every n months from first_payment_on up to matures_on.
+      first_payment_on:
+        type: string
+        format: date
+        description: First interest date; required with interest_every_months.
+  FixedIncomeContractPayment:
+    type: object
+    additionalProperties: false
+    required: [pays_on, amortization_bp, pays_interest]
+    properties:
+      pays_on:
+        type: string
+        format: date
+      amortization_bp:
+        type: integer
+        minimum: 0
+        maximum: 10000
+      pays_interest:
+        type: boolean
   FixedIncomeApplication:
     type: object
     required: [instrument, transaction_id, quantity, unit_price]

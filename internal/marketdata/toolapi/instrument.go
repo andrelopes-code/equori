@@ -64,7 +64,8 @@ func issuerText(i domain.Issuer) string {
 	return text
 }
 
-func termsText(t domain.Terms) string {
+// termsText states t; every and first, when set, are the schedule that t.Payments expands.
+func termsText(t domain.Terms, every int, first time.Time) string {
 	text := fmt.Sprintf(
 		"issued %s, matures %s, index %q at %d bp plus %d bp, %s",
 		t.IssuedOn.Format(
@@ -87,6 +88,14 @@ func termsText(t domain.Terms) string {
 
 	if !t.RedeemableFrom.IsZero() {
 		text += ", redeemable from " + t.RedeemableFrom.Format(time.DateOnly)
+	}
+
+	if every > 0 {
+		text += fmt.Sprintf(
+			", interest every %d months from %s",
+			every,
+			first.Format(time.DateOnly),
+		)
 	}
 
 	return text

@@ -55,6 +55,9 @@ type manageInstrumentIn struct {
 	RedeemableFrom   tool.Date              `json:"redeemable_from,omitzero"     jsonschema:"for set_terms: first early redemption date"`
 	From             tool.Date              `json:"from,omitzero"                jsonschema:"for request_history: first price date"`
 
+	InterestEveryMonths int       `json:"interest_every_months,omitzero" jsonschema:"for set_terms: interest every 1, 3, 6 or 12 months"`
+	FirstPaymentOn      tool.Date `json:"first_payment_on,omitzero"      jsonschema:"for set_terms: first interest date"`
+
 	Exchange string                   `json:"exchange,omitzero"  jsonschema:"for define and edit: ISO 10383 MIC, such as BVMF"`
 	Subtype  string                   `json:"subtype,omitzero"   jsonschema:"for define and edit: refines the type, such as cdb or fii_papel"`
 	Symbols  []string                 `json:"symbols,omitzero"   jsonschema:"for define and edit: source=symbol entries, such as yahoo=PETR4.SA; an empty list clears them"`
