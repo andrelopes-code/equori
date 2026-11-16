@@ -64,6 +64,7 @@ type Instrument struct {
 	Scale         int
 	QuoteCurrency money.Currency
 	Type          string
+	BooksID       int64 // 0: a public security
 }
 
 // Prices converts amounts with stored prices (Market data, P8 amendment A61); it returns

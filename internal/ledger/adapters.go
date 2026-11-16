@@ -118,6 +118,7 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 		Scale:         m.Scale,
 		QuoteCurrency: m.QuoteCurrency,
 		Type:          m.Type,
+		BooksID:       m.BooksID,
 	}
 
 	c.mu.Lock()

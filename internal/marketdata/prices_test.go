@@ -43,7 +43,7 @@ func TestManualPriceWinsOverFeed(t *testing.T) {
 	ctx := t.Context()
 
 	if err := md.RecordPrices(
-		ctx,
+		ctx, 0,
 		[]marketdata.Price{feedPrice(t, "bcb_ptax", "2026-10-30", "5.4950")},
 	); err != nil {
 		t.Fatal(err)
@@ -68,7 +68,7 @@ func TestManualPriceWinsOverFeed(t *testing.T) {
 	}
 
 	if err := md.RecordPrices(
-		ctx,
+		ctx, 0,
 		[]marketdata.Price{
 			feedPrice(t, "bcb_ptax", "2026-10-30", "5.4960"),
 			feedPrice(t, "bcb_ptax", "2026-10-29", "5.4800"),

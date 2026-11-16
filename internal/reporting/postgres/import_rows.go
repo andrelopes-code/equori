@@ -35,6 +35,10 @@ func insert(
 		switch c {
 		case "books_id":
 			values[i] = "$2::bigint"
+			if shared {
+				// A public row keeps no book; an own row takes the importing book (A236 D1).
+				values[i] = "CASE WHEN r.books_id IS NULL THEN NULL ELSE $2::bigint END"
+			}
 		case laterReferences[table]:
 			values[i] = "NULL"
 		default:
@@ -44,7 +48,7 @@ func insert(
 		cols[i] = pgx.Identifier{c}.Sanitize()
 	}
 
-	if slices.Contains(values, "$2::bigint") {
+	if slices.ContainsFunc(values, func(v string) bool { return strings.Contains(v, "$2") }) {
 		args = append(args, booksID)
 	}
 

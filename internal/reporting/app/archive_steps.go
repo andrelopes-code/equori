@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 19
+const ArchiveVersion = 20
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -22,7 +22,7 @@ var archiveSteps = []ArchiveStep{
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
 	addContributionPlan, addDayTradeColumns, addCorporateActions, addBuckets,
-	addBucketDirections, addTermsLiquidity,
+	addBucketDirections, addTermsLiquidity, addInstrumentOwner,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -315,4 +315,20 @@ func addTermsLiquidity(tables []ArchiveTable) ([]ArchiveTable, error) {
 	}
 
 	return withField(tables, table, "redeemable_from", jsontext.Value("null"))
+}
+
+// addInstrumentOwner writes null into books_id, issuer, issuer_scheme and issuer_id of every version
+// 19 row of marketdata_instrument (migration 00104): an instrument saved before is public and has
+// no issuer (fixed income complete A236 FC1, FC3).
+func addInstrumentOwner(tables []ArchiveTable) ([]ArchiveTable, error) {
+	const table = "marketdata_instrument"
+
+	for _, column := range []string{"books_id", "issuer", "issuer_scheme", "issuer_id"} {
+		var err error
+		if tables, err = withField(tables, table, column, jsontext.Value("null")); err != nil {
+			return nil, err
+		}
+	}
+
+	return tables, nil
 }

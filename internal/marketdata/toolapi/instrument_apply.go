@@ -10,6 +10,7 @@ import (
 func applyInstrument(
 	ctx context.Context,
 	svc Service,
+	booksID int64,
 	in manageInstrumentIn,
 ) (manageInstrumentOut, error) {
 	if err := checkInstrumentArgs(in); err != nil {
@@ -24,7 +25,7 @@ func applyInstrument(
 	case "rename":
 		return applyRename(ctx, svc, in)
 	case "record_price":
-		return applyRecordPrice(ctx, svc, in)
+		return applyRecordPrice(ctx, svc, booksID, in)
 	case "delete":
 		return manageInstrumentOut{}, svc.DeleteInstrument(ctx, in.Code)
 	case "request_history":
@@ -76,6 +77,7 @@ func applyEdit(
 		after.Exchange,
 		after.Subtype,
 		in.symbolsForEdit(after),
+		after.Issuer,
 	)
 
 	return manageInstrumentOut{Instrument: toInstrumentView(after)}, err
@@ -91,7 +93,16 @@ func applyRename(
 		return manageInstrumentOut{}, err
 	}
 
-	inst, err = svc.EditInstrument(ctx, in.Code, "", in.Name, inst.Exchange, inst.Subtype, nil)
+	inst, err = svc.EditInstrument(
+		ctx,
+		in.Code,
+		"",
+		in.Name,
+		inst.Exchange,
+		inst.Subtype,
+		nil,
+		inst.Issuer,
+	)
 
 	return manageInstrumentOut{Instrument: toInstrumentView(inst)}, err
 }
@@ -99,6 +110,7 @@ func applyRename(
 func applyRecordPrice(
 	ctx context.Context,
 	svc Service,
+	booksID int64,
 	in manageInstrumentIn,
 ) (manageInstrumentOut, error) {
 	inst, err := svc.Instrument(ctx, in.Code)
@@ -118,7 +130,7 @@ func applyRecordPrice(
 		return manageInstrumentOut{}, err
 	}
 
-	err = svc.RecordPrices(ctx, []domain.Price{{
+	err = svc.RecordPrices(ctx, booksID, []domain.Price{{
 		Instrument: inst.Code,
 		Quote:      inst.QuoteCurrency,
 		Date:       in.Date.Time,

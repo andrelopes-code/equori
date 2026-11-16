@@ -26,7 +26,19 @@ ORDER BY
 
 -- name: InsertInstrument :execrows
 INSERT INTO
-    marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange, subtype)
+    marketdata_instrument (
+        code,
+        instrument_type,
+        scale,
+        name,
+        quote_currency,
+        exchange,
+        subtype,
+        books_id,
+        issuer,
+        issuer_scheme,
+        issuer_id
+    )
 VALUES
     (
         @code,
@@ -35,7 +47,11 @@ VALUES
         @name,
         @quote_currency,
         sqlc.narg (exchange),
-        sqlc.narg (subtype)
+        sqlc.narg (subtype),
+        sqlc.narg (books_id),
+        sqlc.narg (issuer),
+        sqlc.narg (issuer_scheme),
+        sqlc.narg (issuer_id)
     )
 ON CONFLICT (code) DO NOTHING;
 
@@ -45,7 +61,10 @@ SET
     instrument_type = @instrument_type,
     name = @name,
     exchange = sqlc.narg (exchange),
-    subtype = sqlc.narg (subtype)
+    subtype = sqlc.narg (subtype),
+    issuer = sqlc.narg (issuer),
+    issuer_scheme = sqlc.narg (issuer_scheme),
+    issuer_id = sqlc.narg (issuer_id)
 WHERE
     code = @code;
 

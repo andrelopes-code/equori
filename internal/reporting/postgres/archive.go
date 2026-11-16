@@ -42,7 +42,8 @@ func NewExports(pool *pgxpool.Pool, appVersion string) *Exports {
 	return &Exports{pool: pool, q: New(pool), appVersion: appVersion}
 }
 
-// FactTables returns the tables with books_id that the archive carries, by name.
+// FactTables returns the tables with books_id that the archive carries by book, by name; a shared
+// table with books_id (marketdata_instrument) has its own condition.
 func FactTables(ctx context.Context, q DBTX) ([]string, error) {
 	rows, err := q.Query(ctx, `SELECT table_name FROM information_schema.columns
 		WHERE table_schema = current_schema() AND column_name = 'books_id' ORDER BY table_name`)
@@ -57,7 +58,9 @@ func FactTables(ctx context.Context, q DBTX) ([]string, error) {
 
 	return slices.DeleteFunc(
 		names,
-		func(n string) bool { return slices.Contains(notExported, n) },
+		func(n string) bool {
+			return slices.Contains(notExported, n) || slices.Contains(sharedTables, n)
+		},
 	), nil
 }
 

@@ -196,7 +196,7 @@ func record(t *testing.T, h *apitest.Harness, instrument, quote, source string, 
 		})
 	}
 
-	if err := marketdata.New(h.Pool).RecordPrices(t.Context(), prices); err != nil {
+	if err := marketdata.New(h.Pool).RecordPrices(t.Context(), 0, prices); err != nil {
 		t.Fatal(err)
 	}
 }

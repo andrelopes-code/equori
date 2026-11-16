@@ -29,6 +29,18 @@ var sharedTables = []string{
 	"marketdata_price",
 }
 
+// ownInstruments selects the codes the exporting book may carry: the public ones and its own
+// (A236 FC1, D1).
+const ownInstruments = `SELECT code FROM marketdata_instrument WHERE books_id IS NULL OR books_id = $1`
+
+// sharedConditions limit a shared table to the rows of the exporting book and of no other book.
+var sharedConditions = map[string]string{
+	"marketdata_instrument":         `(t.books_id IS NULL OR t.books_id = $1)`,
+	"marketdata_instrument_symbol":  `t.instrument IN (` + ownInstruments + `)`,
+	"marketdata_fixed_income_terms": `t.instrument_code IN (` + ownInstruments + `)`,
+	"marketdata_price":              `t.instrument IN (` + ownInstruments + `)`,
+}
+
 // rowExpressions write a row of t without books_id; a table listed here drops more.
 var rowExpressions = map[string]string{
 	// The bytes travel as a file of their own.
@@ -170,7 +182,8 @@ type tableSource struct{ table, from, where string }
 func tableSources(facts []string) []tableSource {
 	var sources []tableSource
 	for _, t := range sharedTables {
-		sources = append(sources, tableSource{t, "to_jsonb(t)", "true"})
+		where := cmp.Or(sharedConditions[t], "true")
+		sources = append(sources, tableSource{t, "to_jsonb(t)", where})
 	}
 
 	for _, t := range facts {

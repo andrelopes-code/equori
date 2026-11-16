@@ -144,7 +144,7 @@ func (s *Service) describeInstrument(ctx context.Context, a *domain.Account) err
 	}
 
 	in, err := s.ins.Instrument(ctx, a.Instrument)
-	if err != nil {
+	if err != nil || (in.BooksID != 0 && in.BooksID != a.BooksID) {
 		return &domain.FieldError{
 			Field:   "currency",
 			Message: "is not a known instrument",

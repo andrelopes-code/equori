@@ -18,10 +18,10 @@ const rateMessage = "value must be a positive decimal with at most 12 decimals a
 
 // RecordPrices stores ps in one transaction; an existing (instrument, quote, date,
 // source) gets the new value (P8 amendment A60).
-func (m *Module) RecordPrices(ctx context.Context, ps []Price) error {
+func (m *Module) RecordPrices(ctx context.Context, booksID int64, ps []Price) error {
 	checked := map[money.Currency]Instrument{}
 	for _, p := range ps {
-		if err := m.validatePrice(ctx, p, checked); err != nil {
+		if err := m.validatePrice(ctx, booksID, p, checked); err != nil {
 			return err
 		}
 	}
@@ -30,7 +30,9 @@ func (m *Module) RecordPrices(ctx context.Context, ps []Price) error {
 }
 
 // ImportPrices records a CSV file as source csv, all or nothing.
-func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) {
+func (m *Module) ImportPrices(
+	ctx context.Context, booksID int64, content []byte,
+) (int, error) {
 	ps, err := domain.ParsePriceCSV(content)
 	if err != nil {
 		return 0, err
@@ -38,7 +40,7 @@ func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) 
 
 	checked := map[money.Currency]Instrument{}
 	for i, p := range ps {
-		if err := m.validatePrice(ctx, p, checked); err != nil {
+		if err := m.validatePrice(ctx, booksID, p, checked); err != nil {
 			var fe *domain.FieldError
 			if errors.As(err, &fe) {
 				return 0, &domain.FieldError{
@@ -59,7 +61,8 @@ func (m *Module) ImportPrices(ctx context.Context, content []byte) (int, error) 
 func (m *Module) RecordInstrumentPrices(
 	ctx context.Context, code string, quote money.Currency, points []domain.PricePoint, dryRun bool,
 ) (domain.PriceCounts, error) {
-	if _, err := m.Instrument(ctx, code); err != nil {
+	in, err := m.Instrument(ctx, code)
+	if err != nil {
 		return domain.PriceCounts{}, err
 	}
 
@@ -68,7 +71,7 @@ func (m *Module) RecordInstrumentPrices(
 		return domain.PriceCounts{}, err
 	}
 
-	if err := m.validatePrice(ctx, ps[0], map[money.Currency]Instrument{}); err != nil {
+	if err := m.validatePrice(ctx, in.BooksID, ps[0], map[money.Currency]Instrument{}); err != nil {
 		return domain.PriceCounts{}, err
 	}
 
@@ -184,6 +187,7 @@ func (m *Module) priceCounts(ctx context.Context, ps []Price) (domain.PriceCount
 
 func (m *Module) validatePrice(
 	ctx context.Context,
+	booksID int64,
 	p Price,
 	checked map[money.Currency]Instrument,
 ) error {
@@ -206,12 +210,12 @@ func (m *Module) validatePrice(
 		return in, true, nil
 	}
 
-	_, ok, err := lookup(p.Instrument)
+	in, ok, err := lookup(p.Instrument)
 	if err != nil {
 		return err
 	}
 
-	if !ok {
+	if !ok || !in.VisibleTo(booksID) {
 		return &domain.FieldError{Field: "instrument", Message: "is not a known instrument"}
 	}
 

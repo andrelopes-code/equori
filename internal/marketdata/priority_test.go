@@ -25,7 +25,7 @@ func TestS355OfficialBeatsAccrual(t *testing.T) {
 
 	h.App.Marketdata.TickFeeds(t.Context())
 
-	if err := h.App.Marketdata.RecordPrices(t.Context(), []marketdata.Price{
+	if err := h.App.Marketdata.RecordPrices(t.Context(), 0, []marketdata.Price{
 		feedPrice(t, "accrual", "2026-10-29", "9.99"),
 	}); err != nil {
 		t.Fatal(err)
@@ -70,13 +70,13 @@ func TestS356UnofficialFillsGaps(t *testing.T) {
 		"quote_currency": "BRL", "exchange": "BVMF",
 	}, http.StatusCreated, nil)
 
-	if err := h.App.Marketdata.RecordPrices(t.Context(), []marketdata.Price{
+	if err := h.App.Marketdata.RecordPrices(t.Context(), 0, []marketdata.Price{
 		securityPrice(t, "b3_consolidated", "2026-11-05", "32.45"),
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := h.App.Marketdata.RecordPrices(t.Context(), []marketdata.Price{
+	if err := h.App.Marketdata.RecordPrices(t.Context(), 0, []marketdata.Price{
 		securityPrice(t, "yahoo_chart", "2026-11-05", "32.40"),
 		securityPrice(t, "yahoo_chart", "2026-11-06", "32.50"),
 	}); err != nil {

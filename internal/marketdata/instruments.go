@@ -107,14 +107,33 @@ func (m *Module) DefineInstrument(ctx context.Context, in Instrument) (Instrumen
 	return in, nil
 }
 
-// EditInstrument replaces the name, exchange and subtype of a security, and its type among the
+// DefineOwnInstrument stores a fixed income contract owned by booksID (A236 FC1).
+func (m *Module) DefineOwnInstrument(
+	ctx context.Context, booksID int64, in Instrument,
+) (Instrument, error) {
+	if in.Type != domain.TypeFixedIncome {
+		return Instrument{}, &domain.FieldError{
+			Field:   "type",
+			Message: "must be fixed_income for a book's instrument",
+		}
+	}
+
+	in.BooksID = booksID
+
+	return m.DefineInstrument(ctx, in)
+}
+
+// EditInstrument replaces the name, exchange, subtype and issuer of a security, and its type among the
 // ReclassifiableTypes; the other fields are immutable (A59, A134, A224). An empty typ keeps the
 // stored type. symbols nil keeps the stored symbols; an empty map clears them (plan 2 D19). After
 // a change that alters the tax class, or a request that carries typ, the reclassified hook runs.
 func (m *Module) EditInstrument(
 	ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
+	issuer domain.Issuer,
 ) (Instrument, error) {
-	in, derived, err := m.editInstrument(ctx, code, typ, name, exchange, subtype, symbols)
+	in, derived, err := m.editInstrument(
+		ctx, code, typ, name, exchange, subtype, symbols, issuer,
+	)
 	if err != nil {
 		return Instrument{}, err
 	}
@@ -132,6 +151,7 @@ func (m *Module) EditInstrument(
 // instrument, so that the caller runs the reclassified hook once.
 func (m *Module) editInstrument(
 	ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
+	issuer domain.Issuer,
 ) (Instrument, bool, error) {
 	in, err := m.Instrument(ctx, code)
 	if err != nil {
@@ -144,11 +164,18 @@ func (m *Module) editInstrument(
 
 	old := in
 
+	if in.BooksID != 0 && typ != "" && typ != domain.TypeFixedIncome {
+		return Instrument{}, false, &domain.FieldError{
+			Field:   "type",
+			Message: "a book's instrument stays fixed_income",
+		}
+	}
+
 	if in, err = in.Reclassify(typ); err != nil {
 		return Instrument{}, false, err
 	}
 
-	in.Name, in.Exchange, in.Subtype = name, exchange, subtype
+	in.Name, in.Exchange, in.Subtype, in.Issuer = name, exchange, subtype, issuer
 	if symbols != nil {
 		in.Symbols = symbols
 	}
@@ -257,6 +284,10 @@ func (m *Module) insertInstrument(ctx context.Context, in Instrument) error {
 		QuoteCurrency: &quoteCode,
 		Exchange:      optional(in.Exchange),
 		Subtype:       optional(in.Subtype),
+		BooksID:       optionalID(in.BooksID),
+		Issuer:        optional(in.Issuer.Name),
+		IssuerScheme:  optional(in.Issuer.Scheme),
+		IssuerID:      optional(in.Issuer.ID),
 	})
 	if err != nil {
 		return fmt.Errorf("insert instrument: %w", err)
@@ -293,6 +324,9 @@ func (m *Module) updateInstrument(ctx context.Context, in Instrument, replaceSym
 		Name:           in.Name,
 		Exchange:       optional(in.Exchange),
 		Subtype:        optional(in.Subtype),
+		Issuer:         optional(in.Issuer.Name),
+		IssuerScheme:   optional(in.Issuer.Scheme),
+		IssuerID:       optional(in.Issuer.ID),
 	})
 	if err != nil {
 		return fmt.Errorf("update instrument: %w", err)
@@ -309,14 +343,6 @@ func (m *Module) updateInstrument(ctx context.Context, in Instrument, replaceSym
 	}
 
 	return tx.Commit(ctx)
-}
-
-func optional(s string) *string {
-	if s == "" {
-		return nil
-	}
-
-	return &s
 }
 
 func toInstrument(r postgres.MarketdataInstrument) Instrument {
@@ -336,6 +362,16 @@ func toInstrument(r postgres.MarketdataInstrument) Instrument {
 
 	if r.Subtype != nil {
 		in.Subtype = *r.Subtype
+	}
+
+	if r.BooksID != nil {
+		in.BooksID = *r.BooksID
+	}
+
+	in.Issuer = domain.Issuer{
+		Name:   deref(r.Issuer),
+		Scheme: deref(r.IssuerScheme),
+		ID:     deref(r.IssuerID),
 	}
 
 	return in

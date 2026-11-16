@@ -135,7 +135,7 @@ func (s *Server) editInstrument(
 	}
 
 	out, err := s.svc.EditInstrument(
-		ctx, r.PathValue("code"), typ, b.Name, exchange, subtype, symbols,
+		ctx, r.PathValue("code"), typ, b.Name, exchange, subtype, symbols, domain.Issuer{},
 	)
 	if err != nil {
 		return Instrument{}, err

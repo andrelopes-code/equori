@@ -545,3 +545,28 @@ func TestAddTermsLiquidity(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 19", ArchiveVersion)
 	}
 }
+
+// Fixed income complete A236, ADR 021 V2: a version 19 instrument row gains books_id and the
+// issuer columns.
+func TestAddInstrumentOwner(t *testing.T) {
+	t.Parallel()
+
+	v19 := []ArchiveTable{
+		{Name: "marketdata_instrument", Rows: [][]byte{[]byte(`{"code":"CDB1"}`)}},
+		{Name: "planning_budget_reference", Rows: [][]byte{[]byte(`{"source":"fixed"}`)}},
+	}
+
+	got, err := addInstrumentOwner(v19)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"books_id":null,"code":"CDB1","issuer":null,"issuer_id":null,"issuer_scheme":null}`
+	if string(got[0].Rows[0]) != want || string(got[1].Rows[0]) != `{"source":"fixed"}` {
+		t.Fatalf("tables = %s %s", got[0].Rows[0], got[1].Rows[0])
+	}
+
+	if ArchiveVersion < 20 {
+		t.Fatalf("ArchiveVersion = %d, want at least 20", ArchiveVersion)
+	}
+}

@@ -58,7 +58,7 @@ func (q *Queries) DeleteInstrumentTerms(ctx context.Context, code string) error 
 
 const getInstrument = `-- name: GetInstrument :one
 SELECT
-    code, instrument_type, scale, name, quote_currency, exchange, subtype
+    code, instrument_type, scale, name, quote_currency, exchange, subtype, books_id, issuer, issuer_scheme, issuer_id
 FROM
     marketdata_instrument
 WHERE
@@ -76,13 +76,29 @@ func (q *Queries) GetInstrument(ctx context.Context, code string) (MarketdataIns
 		&i.QuoteCurrency,
 		&i.Exchange,
 		&i.Subtype,
+		&i.BooksID,
+		&i.Issuer,
+		&i.IssuerScheme,
+		&i.IssuerID,
 	)
 	return i, err
 }
 
 const insertInstrument = `-- name: InsertInstrument :execrows
 INSERT INTO
-    marketdata_instrument (code, instrument_type, scale, name, quote_currency, exchange, subtype)
+    marketdata_instrument (
+        code,
+        instrument_type,
+        scale,
+        name,
+        quote_currency,
+        exchange,
+        subtype,
+        books_id,
+        issuer,
+        issuer_scheme,
+        issuer_id
+    )
 VALUES
     (
         $1,
@@ -91,7 +107,11 @@ VALUES
         $4,
         $5,
         $6,
-        $7
+        $7,
+        $8,
+        $9,
+        $10,
+        $11
     )
 ON CONFLICT (code) DO NOTHING
 `
@@ -104,6 +124,10 @@ type InsertInstrumentParams struct {
 	QuoteCurrency  *string
 	Exchange       *string
 	Subtype        *string
+	BooksID        *int64
+	Issuer         *string
+	IssuerScheme   *string
+	IssuerID       *string
 }
 
 func (q *Queries) InsertInstrument(ctx context.Context, arg InsertInstrumentParams) (int64, error) {
@@ -115,6 +139,10 @@ func (q *Queries) InsertInstrument(ctx context.Context, arg InsertInstrumentPara
 		arg.QuoteCurrency,
 		arg.Exchange,
 		arg.Subtype,
+		arg.BooksID,
+		arg.Issuer,
+		arg.IssuerScheme,
+		arg.IssuerID,
 	)
 	if err != nil {
 		return 0, err
@@ -146,7 +174,7 @@ func (q *Queries) InsertMissingCurrencies(ctx context.Context, arg InsertMissing
 
 const listInstruments = `-- name: ListInstruments :many
 SELECT
-    code, instrument_type, scale, name, quote_currency, exchange, subtype
+    code, instrument_type, scale, name, quote_currency, exchange, subtype, books_id, issuer, issuer_scheme, issuer_id
 FROM
     marketdata_instrument
 ORDER BY
@@ -170,6 +198,10 @@ func (q *Queries) ListInstruments(ctx context.Context) ([]MarketdataInstrument, 
 			&i.QuoteCurrency,
 			&i.Exchange,
 			&i.Subtype,
+			&i.BooksID,
+			&i.Issuer,
+			&i.IssuerScheme,
+			&i.IssuerID,
 		); err != nil {
 			return nil, err
 		}
@@ -183,7 +215,7 @@ func (q *Queries) ListInstruments(ctx context.Context) ([]MarketdataInstrument, 
 
 const listInstrumentsByType = `-- name: ListInstrumentsByType :many
 SELECT
-    code, instrument_type, scale, name, quote_currency, exchange, subtype
+    code, instrument_type, scale, name, quote_currency, exchange, subtype, books_id, issuer, issuer_scheme, issuer_id
 FROM
     marketdata_instrument
 WHERE
@@ -209,6 +241,10 @@ func (q *Queries) ListInstrumentsByType(ctx context.Context, instrumentType stri
 			&i.QuoteCurrency,
 			&i.Exchange,
 			&i.Subtype,
+			&i.BooksID,
+			&i.Issuer,
+			&i.IssuerScheme,
+			&i.IssuerID,
 		); err != nil {
 			return nil, err
 		}
@@ -226,9 +262,12 @@ SET
     instrument_type = $1,
     name = $2,
     exchange = $3,
-    subtype = $4
+    subtype = $4,
+    issuer = $5,
+    issuer_scheme = $6,
+    issuer_id = $7
 WHERE
-    code = $5
+    code = $8
 `
 
 type UpdateInstrumentParams struct {
@@ -236,6 +275,9 @@ type UpdateInstrumentParams struct {
 	Name           string
 	Exchange       *string
 	Subtype        *string
+	Issuer         *string
+	IssuerScheme   *string
+	IssuerID       *string
 	Code           string
 }
 
@@ -245,6 +287,9 @@ func (q *Queries) UpdateInstrument(ctx context.Context, arg UpdateInstrumentPara
 		arg.Name,
 		arg.Exchange,
 		arg.Subtype,
+		arg.Issuer,
+		arg.IssuerScheme,
+		arg.IssuerID,
 		arg.Code,
 	)
 	if err != nil {

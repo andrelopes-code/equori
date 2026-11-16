@@ -10,8 +10,11 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/marketdata"
+	platformmoney "github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/reporting/app"
 )
 
@@ -674,4 +677,95 @@ func replacedRows(t *testing.T, h *apitest.Harness) int {
 	}
 
 	return n
+}
+
+// S475: the archive of a book carries the public instruments and its own contracts; the import
+// stores a contract absent from the target under the importing book.
+func TestS475ArchiveCarriesPublicAndOwnInstruments(t *testing.T) {
+	t.Parallel()
+	source := apitest.New(t, apitest.Today("2026-10-26"))
+	source.Login("b@example.com")
+
+	own := map[string]int64{
+		"RF.280302.CS3YS": source.OwnerID(),
+		"RF.280302.6DAHD": source.BooksIDOf("b@example.com"),
+	}
+
+	for code, booksID := range own {
+		defineOwned(t, source, booksID, code)
+	}
+
+	content := export(t, source)
+	files := archive(t, content)
+
+	for _, table := range []string{
+		"marketdata_instrument", "marketdata_fixed_income_terms", "marketdata_price",
+	} {
+		rows := string(files["tables/"+table+".jsonl"])
+		if !strings.Contains(rows, "RF.280302.CS3YS") || strings.Contains(rows, "RF.280302.6DAHD") {
+			t.Fatalf("%s = %s", table, rows)
+		}
+	}
+
+	if !strings.Contains(string(files["tables/marketdata_instrument.jsonl"]), `"code": "BRL"`) {
+		t.Fatalf("the archive lacks the public BRL")
+	}
+
+	target := apitest.New(t, apitest.Today("2026-10-26"))
+	if r := target.Upload(importPath, "a.zip", content); r.Status != http.StatusOK {
+		t.Fatalf("import = %d: %s", r.Status, r.Body)
+	}
+
+	var contract, brl *int64
+	if err := target.Pool.QueryRow(t.Context(), `SELECT
+		(SELECT books_id FROM marketdata_instrument WHERE code = 'RF.280302.CS3YS'),
+		(SELECT books_id FROM marketdata_instrument WHERE code = 'BRL')`).
+		Scan(&contract, &brl); err != nil {
+		t.Fatal(err)
+	}
+
+	if contract == nil || *contract != target.OwnerID() || brl != nil {
+		t.Fatalf("books_id = %v, BRL = %v; want %d and null", contract, brl, target.OwnerID())
+	}
+}
+
+func defineOwned(t *testing.T, h *apitest.Harness, booksID int64, code string) {
+	t.Helper()
+
+	md := h.App.Marketdata
+	in := marketdata.Instrument{
+		Code: platformmoney.Currency(code), Type: "fixed_income", Name: code, QuoteCurrency: "BRL",
+	}
+
+	if _, err := md.DefineOwnInstrument(t.Context(), booksID, in); err != nil {
+		t.Fatal(err)
+	}
+
+	terms := marketdata.Terms{
+		IssuedOn:         time.Date(2026, 3, 2, 0, 0, 0, 0, time.UTC),
+		MaturesOn:        time.Date(2028, 3, 2, 0, 0, 0, 0, time.UTC),
+		IndexID:          "cdi",
+		PercentOfIndexBP: 11000,
+		DayCount:         "bus252",
+		FaceValue:        100000,
+	}
+	if _, err := md.PutTerms(t.Context(), code, terms); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := platformmoney.ParseRate("101.5")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	price := marketdata.Price{
+		Instrument: platformmoney.Currency(code),
+		Quote:      "BRL",
+		Date:       time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC),
+		Value:      value,
+		Source:     "manual",
+	}
+	if err := md.RecordPrices(t.Context(), booksID, []marketdata.Price{price}); err != nil {
+		t.Fatal(err)
+	}
 }

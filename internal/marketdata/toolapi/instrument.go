@@ -22,8 +22,8 @@ func manageInstrument(svc Service) tool.Tool {
 		Effect: tool.Write,
 	}, func(ctx context.Context, _ int64, in manageInstrumentIn) (tool.Preview, error) {
 		return previewInstrument(ctx, svc, in)
-	}, func(ctx context.Context, _ int64, in manageInstrumentIn) (manageInstrumentOut, error) {
-		return applyInstrument(ctx, svc, in)
+	}, func(ctx context.Context, booksID int64, in manageInstrumentIn) (manageInstrumentOut, error) {
+		return applyInstrument(ctx, svc, booksID, in)
 	})
 }
 

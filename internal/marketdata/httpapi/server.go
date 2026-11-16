@@ -34,12 +34,13 @@ type Service interface {
 	Instrument(ctx context.Context, code string) (domain.Instrument, error)
 	EditInstrument(
 		ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
+		issuer domain.Issuer,
 	) (domain.Instrument, error)
 	DeleteInstrument(ctx context.Context, code string) error
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)
-	RecordPrices(ctx context.Context, ps []domain.Price) error
-	ImportPrices(ctx context.Context, content []byte) (int, error)
+	RecordPrices(ctx context.Context, booksID int64, ps []domain.Price) error
+	ImportPrices(ctx context.Context, booksID int64, content []byte) (int, error)
 	ListPrices(
 		ctx context.Context,
 		instrument, quote money.Currency,

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/marketdata"
 )
 
 type lotSaleOut struct {
@@ -406,5 +407,53 @@ func TestAccountLotsOfAnExemptSecurityHaveNoEstimate(t *testing.T) {
 
 	if got.Method != "fifo" || got.EstimatesWithholding {
 		t.Fatalf("lots = %+v, want method fifo and no estimate", got)
+	}
+}
+
+// S473: a book cannot hold the contract another book owns.
+func TestS473HoldingOfAnotherBooksInstrument(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	own := marketdata.Instrument{
+		Code:          "RF.280302.CS3YS",
+		Type:          "fixed_income",
+		Name:          "RF.280302.CS3YS",
+		QuoteCurrency: "BRL",
+	}
+	if _, err := h.App.Marketdata.DefineOwnInstrument(t.Context(), h.OwnerID(), own); err != nil {
+		t.Fatal(err)
+	}
+
+	holding := func(c *http.Client) apitest.Response {
+		var inst idOnly
+
+		r := h.Call(c, http.MethodPost, "/api/v1/institutions", map[string]string{"name": "XP"})
+		r.Decode(t, &inst)
+
+		var parent idOnly
+
+		r = h.Call(c, http.MethodPost, "/api/v1/accounts", map[string]any{
+			"name": "XP", "class": "asset", "kind": "brokerage", "currency": "BRL",
+			"institution_id": inst.ID,
+		})
+		r.Decode(t, &parent)
+
+		return h.Call(c, http.MethodPost, "/api/v1/accounts", map[string]any{
+			"name": "XP CDB", "class": "asset", "kind": "brokerage", "currency": "RF.280302.CS3YS",
+			"institution_id": inst.ID, "parent_id": parent.ID,
+		})
+	}
+
+	other := h.Login("other@example.com")
+	h.ExpectProblem(
+		holding(other),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"currency",
+	)
+
+	if r := holding(h.Client); r.Status != http.StatusCreated {
+		t.Fatalf("owner status %d: %s", r.Status, r.Body)
 	}
 }

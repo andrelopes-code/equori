@@ -1,6 +1,7 @@
 package marketdata_test
 
 import (
+	"errors"
 	"maps"
 	"net/http"
 	"slices"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
@@ -880,5 +882,87 @@ func TestSettlementDate(t *testing.T) {
 			t.Errorf("%s: SettlementDate(%s, %s) = (%s, %v), want %s",
 				tc.name, tc.code, tc.date, got.Format(time.DateOnly), err, tc.want)
 		}
+	}
+}
+
+func ownContract(code string) marketdata.Instrument {
+	return marketdata.Instrument{
+		Code:          money.Currency(code),
+		Type:          "fixed_income",
+		Name:          code,
+		QuoteCurrency: "BRL",
+	}
+}
+
+func TestDefineOwnInstrumentRefusesAnotherType(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+
+	in := ownContract("RF.280302.CS3YS")
+	in.Type = "stock"
+
+	_, err := h.App.Marketdata.DefineOwnInstrument(t.Context(), h.OwnerID(), in)
+
+	var fe *domain.FieldError
+	if !errors.As(err, &fe) || fe.Field != "type" ||
+		fe.Message != "must be fixed_income for a book's instrument" {
+		t.Fatalf("err = %v, want field type", err)
+	}
+}
+
+// S474: the deletion of a book removes its instruments with their terms and prices.
+func TestS474BookDeletionRemovesItsInstruments(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	md := h.App.Marketdata
+	ctx := t.Context()
+	booksID := h.OwnerID()
+
+	if _, err := md.DefineOwnInstrument(ctx, booksID, ownContract("RF.280302.CS3YS")); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := md.PutTerms(ctx, "RF.280302.CS3YS", marketdata.Terms{
+		IssuedOn:         day("2026-03-02"),
+		MaturesOn:        day("2028-03-02"),
+		IndexID:          "cdi",
+		PercentOfIndexBP: 11000,
+		DayCount:         "bus252",
+		FaceValue:        100000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value, err := money.ParseRate("101.5")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := md.RecordPrices(ctx, booksID, []marketdata.Price{{
+		Instrument: "RF.280302.CS3YS",
+		Quote:      "BRL",
+		Date:       day("2026-10-30"),
+		Value:      value,
+		Source:     "manual",
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.Pool.Exec(ctx, `DELETE FROM identity_books WHERE id = $1`, booksID); err != nil {
+		t.Fatal(err)
+	}
+
+	var instruments, terms, prices, brl int
+	if err := h.Pool.QueryRow(ctx, `SELECT
+		(SELECT count(*) FROM marketdata_instrument WHERE code = 'RF.280302.CS3YS'),
+		(SELECT count(*) FROM marketdata_fixed_income_terms WHERE instrument_code = 'RF.280302.CS3YS'),
+		(SELECT count(*) FROM marketdata_price WHERE instrument = 'RF.280302.CS3YS'),
+		(SELECT count(*) FROM marketdata_instrument WHERE code = 'BRL')`).
+		Scan(&instruments, &terms, &prices, &brl); err != nil {
+		t.Fatal(err)
+	}
+
+	if instruments != 0 || terms != 0 || prices != 0 || brl != 1 {
+		t.Fatalf("rows = %d %d %d, BRL = %d; want 0 0 0 and 1", instruments, terms, prices, brl)
 	}
 }

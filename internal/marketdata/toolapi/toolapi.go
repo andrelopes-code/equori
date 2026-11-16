@@ -18,9 +18,10 @@ type Service interface {
 	DefineInstrument(ctx context.Context, in domain.Instrument) (domain.Instrument, error)
 	EditInstrument(
 		ctx context.Context, code, typ, name, exchange, subtype string, symbols map[string]string,
+		issuer domain.Issuer,
 	) (domain.Instrument, error)
 	DeleteInstrument(ctx context.Context, code string) error
-	RecordPrices(ctx context.Context, ps []domain.Price) error
+	RecordPrices(ctx context.Context, booksID int64, ps []domain.Price) error
 	ListPrices(
 		ctx context.Context,
 		instrument, quote money.Currency,

@@ -45,7 +45,7 @@ func TestConvert(t *testing.T) {
 			Source:     "manual",
 		}
 	}
-	if err := md.RecordPrices(ctx, []marketdata.Price{
+	if err := md.RecordPrices(ctx, 0, []marketdata.Price{
 		price("USD", "BRL", "2026-10-30", "5.5"),
 		price("MXRF11", "BRL", "2026-10-29", "9.36"),
 	}); err != nil {

@@ -183,3 +183,51 @@ func TestSchemaRejectsInvalidSymbols(t *testing.T) {
 		})
 	}
 }
+
+func TestSchemaRejectsInvalidInstrumentOwner(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+
+	ctx := t.Context()
+
+	var booksID int64
+	if err := pool.QueryRow(ctx, `INSERT INTO identity_books (region, name) VALUES ('PT', 'Owner') RETURNING id`).
+		Scan(&booksID); err != nil {
+		t.Fatal(err)
+	}
+
+	const cols = `INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency, books_id, issuer, issuer_scheme, issuer_id) VALUES `
+
+	tests := []struct{ name, sql string }{
+		{
+			"stock owned by a book",
+			cols + `('PETR4', 'stock', 0, 'Petrobras', 'BRL', $1, null, null, null)`,
+		},
+		{
+			"issuer scheme without id",
+			cols + `('RF.280302.CS3YS', 'fixed_income', 0, 'CDB', 'BRL', null, 'Banco', 'br_cnpj', null)`,
+		},
+		{
+			"issuer id without scheme",
+			cols + `('RF.280302.CS3YS', 'fixed_income', 0, 'CDB', 'BRL', null, 'Banco', null, '1')`,
+		},
+		{
+			"issuer with spaces around the name",
+			cols + `('RF.280302.CS3YS', 'fixed_income', 0, 'CDB', 'BRL', null, ' Banco ', null, null)`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := []any{}
+			if strings.Contains(tt.sql, "$1") {
+				args = append(args, booksID)
+			}
+
+			if _, err := pool.Exec(ctx, tt.sql, args...); err == nil ||
+				!strings.Contains(err.Error(), "violates check constraint") {
+				t.Fatalf("err = %v, want a check violation", err)
+			}
+		})
+	}
+}

@@ -8,6 +8,7 @@ import { useId } from "react";
 import type { ReactNode } from "react";
 
 import styles from "@/features/transactions/account-field/account-section-list.module.css";
+import { Inline, Tag } from "@slotted/react";
 
 interface AccountOtherBlockProps {
   label: string;
@@ -39,8 +40,9 @@ export function AccountOtherBlock({
     >
       <CollapsibleHeader>
         <CollapsibleTrigger>
-          <span id={labelId}>{label}</span>{" "}
-          <span className={styles.count}>{count}</span>
+          <Inline gap={3}>
+            <span id={labelId}>{label}</span> <Tag size="sm">{count}</Tag>
+          </Inline>
         </CollapsibleTrigger>
       </CollapsibleHeader>
 

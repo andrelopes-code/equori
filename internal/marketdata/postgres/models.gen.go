@@ -52,6 +52,10 @@ type MarketdataInstrument struct {
 	QuoteCurrency  *string
 	Exchange       *string
 	Subtype        *string
+	BooksID        *int64
+	Issuer         *string
+	IssuerScheme   *string
+	IssuerID       *string
 }
 
 type MarketdataInstrumentSymbol struct {

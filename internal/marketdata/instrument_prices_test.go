@@ -34,7 +34,7 @@ func TestS370InstrumentPrices(t *testing.T) {
 	feed := feedPrice(t, "b3_consolidated", "2026-11-04", "9.05")
 	feed.Instrument = "MXRF11"
 
-	if err := h.App.Marketdata.RecordPrices(t.Context(), []marketdata.Price{feed}); err != nil {
+	if err := h.App.Marketdata.RecordPrices(t.Context(), 0, []marketdata.Price{feed}); err != nil {
 		t.Fatal(err)
 	}
 

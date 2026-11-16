@@ -45,7 +45,7 @@ func (m *Module) ApplyTypeFixes(ctx context.Context, fixes []TypeFix) error {
 		}
 
 		if _, _, err := m.editInstrument(
-			ctx, string(f.Code), f.To, in.Name, in.Exchange, in.Subtype, nil,
+			ctx, string(f.Code), f.To, in.Name, in.Exchange, in.Subtype, nil, in.Issuer,
 		); err != nil {
 			return fmt.Errorf("fix the type of %s: %w", f.Code, err)
 		}

@@ -13,6 +13,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -40,7 +41,7 @@ func (s *Server) recordPrice(
 		Value:      value,
 		Source:     domain.SourceManual,
 	}
-	if err := s.svc.RecordPrices(ctx, []domain.Price{p}); err != nil {
+	if err := s.svc.RecordPrices(ctx, auth.MustBooksID(ctx), []domain.Price{p}); err != nil {
 		return Price{}, err
 	}
 
@@ -98,7 +99,7 @@ func (s *Server) importPricesFile(
 			return PriceImport{}, err
 		}
 
-		n, err := s.svc.ImportPrices(ctx, content)
+		n, err := s.svc.ImportPrices(ctx, auth.MustBooksID(ctx), content)
 		if err != nil {
 			return PriceImport{}, err
 		}

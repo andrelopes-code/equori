@@ -193,7 +193,7 @@ func TestS17CurrencyExchange(t *testing.T) {
 		return r
 	}
 	if err := md.RecordPrices(
-		t.Context(),
+		t.Context(), 0,
 		[]marketdata.Price{
 			{
 				Instrument: "USD",

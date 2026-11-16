@@ -114,7 +114,11 @@ func recordMXRF11(t *testing.T, f fixture, date, value, source string) {
 	}
 
 	price := marketdata.Price{Instrument: "MXRF11", Quote: "BRL", Date: d, Value: v, Source: source}
-	if err := f.h.App.Marketdata.RecordPrices(t.Context(), []marketdata.Price{price}); err != nil {
+	if err := f.h.App.Marketdata.RecordPrices(
+		t.Context(),
+		0,
+		[]marketdata.Price{price},
+	); err != nil {
 		t.Fatal(err)
 	}
 }
