@@ -32,12 +32,14 @@ export function holdingsColumns({
   tag,
   scale,
   valueIn,
+  showNet,
 }: {
   t: TFunction;
   fmt: MoneyFormat;
   tag: string;
   scale: (code: string) => number;
   valueIn: string;
+  showNet: boolean;
 }): GridColumn<GridHolding>[] {
   const digits = scale(valueIn);
   const money = (value: unknown) =>
@@ -169,6 +171,20 @@ export function holdingsColumns({
       aggregate: sum,
       format: money,
     },
+    ...(showNet
+      ? [
+          {
+            id: "estimatedNet",
+            label: t("portfolio.estimatedNet"),
+            accessor: (h: GridHolding) =>
+              h.position?.estimated_net?.amount ?? null,
+            kind: "number" as const,
+            numeric: true,
+            width: 180,
+            format: money,
+          },
+        ]
+      : []),
     {
       id: "gain",
       label: t("positions.result"),

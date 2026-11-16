@@ -23,7 +23,10 @@ import { TermProgress } from "@/features/instruments/terms/term-progress";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import { indexName } from "@/features/calculators";
 import { calendarLabel } from "@/features/planning";
-import { fixedIncomeEventsQuery } from "@/features/portfolio";
+import {
+  fixedIncomeEventsQuery,
+  issuerExposureQuery,
+} from "@/features/portfolio";
 import { useScale } from "@/features/setup";
 import { formatDate, formatSignedBasisPoints, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT, type TFunction } from "@/i18n/i18n-provider";
@@ -40,6 +43,7 @@ import {
 
 type Terms = components["schemas"]["FixedIncomeTerms"];
 type Issuer = components["schemas"]["InstrumentIssuer"];
+type Guarantee = components["schemas"]["DepositGuarantee"];
 type FixedIncomeEvent = components["schemas"]["FixedIncomeEvent"];
 
 const nextPaymentDays = 400;
@@ -49,6 +53,7 @@ interface TermsSectionProps {
   terms: Terms | null;
   quote: string;
   issuer?: Issuer | undefined;
+  subtype?: string | undefined;
 }
 
 // The terms the accrual of prices reads, how far the term has run, and the note that none are set.
@@ -57,6 +62,7 @@ export function TermsSection({
   terms,
   quote,
   issuer,
+  subtype,
 }: TermsSectionProps) {
   const t = useT();
   const api = useApi();
@@ -73,6 +79,10 @@ export function TermsSection({
     ...fixedIncomeEventsQuery(api, today, shiftDate(today, nextPaymentDays)),
     enabled: terms !== null,
   }).data?.items.find((e) => e.instrument === code && e.state !== "recorded");
+  const guarantee = useQuery({
+    ...issuerExposureQuery(api, today),
+    enabled: terms !== null,
+  }).data?.guarantee;
   const rows: [string, string][] =
     terms === null || scale === null
       ? []
@@ -115,6 +125,7 @@ export function TermsSection({
               ? ""
               : nextPaymentText(t, next, scale, fmt, locale),
           ],
+          [t("terms.guarantee"), guaranteeText(t, guarantee, subtype)],
           [
             t("terms.faceValue"),
             fmt.money(
@@ -179,6 +190,20 @@ function paymentsText(t: TFunction, terms: Terms): string {
   if (terms.payments.length === 0) return "";
 
   return t("terms.paymentsCount", { count: String(terms.payments.length) });
+}
+
+function guaranteeText(
+  t: TFunction,
+  guarantee: Guarantee | undefined,
+  subtype: string | undefined,
+): string {
+  if (guarantee === undefined) return "";
+  const key =
+    subtype !== undefined && guarantee.covered.includes(subtype)
+      ? "terms.guarantee.covered"
+      : "terms.guarantee.uncovered";
+
+  return t(key, { name: guarantee.name });
 }
 
 function issuerText(issuer: Issuer | undefined): string {

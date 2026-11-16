@@ -182,6 +182,42 @@ describe("Portfolio page", () => {
     ]);
   });
 
+  // S526: the value net of tax of a position that has one.
+  it("S526: adds the estimated net column when a position has it", async () => {
+    const withNet = positions.map((p, i) =>
+      i === 0
+        ? { ...p, estimated_net: { amount: 1080000, currency: "BRL" } }
+        : p,
+    );
+    await renderApp("/portfolio", {
+      fetch: portfolioApi({
+        "GET /api/v1/positions": () =>
+          json(200, { items: withNet, quote_warnings: [] }),
+      }),
+    });
+    const grid = await list();
+
+    await within(grid).findAllByRole("link", { name: "MXRF11" });
+    expect(
+      within(grid).getByRole("columnheader", {
+        name: catalogEn["portfolio.estimatedNet"],
+      }),
+    ).toBeInTheDocument();
+    expect(within(grid).getByText("R$10,800.00")).toBeInTheDocument();
+  });
+
+  it("S526: draws no estimated net column when no position has it", async () => {
+    await renderApp("/portfolio", { fetch: portfolioApi() });
+    const grid = await list();
+
+    await within(grid).findAllByRole("link", { name: "MXRF11" });
+    expect(
+      within(grid).queryByRole("columnheader", {
+        name: catalogEn["portfolio.estimatedNet"],
+      }),
+    ).toBeNull();
+  });
+
   it("PC7: draws the price of each priced position over the last 3 months", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/positions": () =>

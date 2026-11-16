@@ -79,6 +79,7 @@ export function HoldingsSection({
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
   );
+  const showNet = holdings.some((h) => h.position?.estimated_net !== undefined);
   const columns = useMemo(
     () =>
       holdingsColumns({
@@ -87,8 +88,9 @@ export function HoldingsSection({
         tag,
         scale: scale ?? (() => 0),
         valueIn: valueIn ?? "",
+        showNet,
       }),
-    [t, fmt, tag, scale, valueIn],
+    [t, fmt, tag, scale, valueIn, showNet],
   );
   const managed = useMemo(
     () => columns.filter((c) => c.id !== "group"),

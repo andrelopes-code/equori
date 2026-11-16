@@ -40,6 +40,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "portfolio.dateChange": "Data de avaliação, {date}",
   "portfolio.account": "Conta",
   "portfolio.share": "% da carteira",
+  "portfolio.estimatedNet": "Líquido estimado",
   "portfolio.unvalued":
     "Posições sem preço, fora do total e da participação: {count}",
   "portfolio.resultMixed":

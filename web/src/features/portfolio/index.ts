@@ -10,4 +10,7 @@ export { validateYearSearch } from "@/features/portfolio/pages/year-search";
 export { AccountYield } from "@/features/portfolio/account-yield/account-yield";
 export { AccountYieldSection } from "@/features/portfolio/account-yield/account-yield-section";
 export { useMeasuredTops } from "@/features/portfolio/account-yield/use-measured-tops";
-export { fixedIncomeEventsQuery } from "@/features/portfolio/api";
+export {
+  fixedIncomeEventsQuery,
+  issuerExposureQuery,
+} from "@/features/portfolio/api";

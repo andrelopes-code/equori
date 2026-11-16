@@ -428,4 +428,69 @@ describe("Fixed income terms", () => {
     expect(screen.queryByText(catalogEn["terms.title"])).toBeNull();
     expect(asked).toBe(0);
   });
+
+  // A236 FC35: the deposit guarantee of a contract.
+  describe("deposit guarantee", () => {
+    const report = (guarantee?: object) => ({
+      date: "2026-10-16",
+      issuers: [],
+      ...(guarantee === undefined ? {} : { guarantee }),
+      period_note: false,
+      missing_prices: [],
+    });
+    const fgc = {
+      name: "FGC",
+      limit_per_issuer: { amount: 25000000, currency: "BRL" },
+      limit_per_period: { amount: 100000000, currency: "BRL" },
+      period_years: 4,
+      covered: ["cdb", "lci"],
+    };
+    const withReport = (body: object, subtype: string) =>
+      api({
+        "GET /api/v1/issuer-exposure": () => json(200, body),
+        "GET /api/v1/instruments/CDB1": () =>
+          json(200, {
+            code: "CDB1",
+            type: "fixed_income",
+            scale: 2,
+            name: "CDB Bank One",
+            quote_currency: "BRL",
+            subtype,
+          }),
+      });
+
+    it("says a covered subtype is covered by the guarantee", async () => {
+      await renderApp("/instruments/CDB1", {
+        fetch: withReport(report(fgc), "cdb"),
+      });
+      await screen.findByText("110%");
+      await waitFor(() => {
+        expect(termsRow(catalogEn["terms.guarantee"])).toBe("Covered by FGC");
+      });
+    });
+
+    it("says an uncovered subtype is not covered by the guarantee", async () => {
+      await renderApp("/instruments/CDB1", {
+        fetch: withReport(report(fgc), "lf"),
+      });
+      await screen.findByText("110%");
+      await waitFor(() => {
+        expect(termsRow(catalogEn["terms.guarantee"])).toBe(
+          "Not covered by FGC",
+        );
+      });
+    });
+
+    it("draws no row when the report has no guarantee", async () => {
+      await renderApp("/instruments/CDB1", {
+        fetch: withReport(report(), "cdb"),
+      });
+      await screen.findByText("110%");
+      expect(
+        screen
+          .getAllByRole("term")
+          .some((el) => el.textContent === catalogEn["terms.guarantee"]),
+      ).toBe(false);
+    });
+  });
 });

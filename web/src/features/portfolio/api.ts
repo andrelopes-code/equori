@@ -129,6 +129,16 @@ export function usePreviewContributionPlan() {
   });
 }
 
+export function issuerExposureQuery(api: Client<paths>, date: string) {
+  return queryOptions({
+    queryKey: ["issuer-exposure", date] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/issuer-exposure", { params: { query: { date } } }),
+      ),
+  });
+}
+
 export function fixedIncomeEventsQuery(
   api: Client<paths>,
   from: string,

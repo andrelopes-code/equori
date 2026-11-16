@@ -40,6 +40,7 @@ export const portfolioEn = {
   "portfolio.dateChange": "Valuation date, {date}",
   "portfolio.account": "Account",
   "portfolio.share": "% of portfolio",
+  "portfolio.estimatedNet": "Estimated net",
   "portfolio.unvalued":
     "Positions without a price, left out of the total and of the shares: {count}",
   "portfolio.resultMixed": "Cost and market value are in different currencies",

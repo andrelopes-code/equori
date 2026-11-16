@@ -163,6 +163,7 @@ export function InstrumentPage() {
               terms={terms.data}
               quote={quote}
               issuer={i.issuer}
+              subtype={i.subtype}
             />
           )}
           <InstrumentData
