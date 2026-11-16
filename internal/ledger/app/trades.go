@@ -214,51 +214,6 @@ func (s *Service) resolveTrade(
 	return security, cash, nil
 }
 
-// lockHolding locks the security account and returns the holding it has on date.
-func (s *Service) lockHolding(
-	ctx context.Context,
-	r Repository,
-	booksID int64,
-	security domain.Account,
-	base money.Currency,
-	date time.Time,
-	exclude uuid.UUID,
-) (domain.Holding, error) {
-	// Two sales of one account serialize on its row, so each reads the holding the other left.
-	if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
-		return domain.Holding{}, err
-	}
-
-	return s.readHolding(ctx, r, booksID, security, base, date, exclude)
-}
-
-// readHolding returns the holding of the security account on date without locking it.
-func (s *Service) readHolding(
-	ctx context.Context,
-	r Repository,
-	booksID int64,
-	security domain.Account,
-	base money.Currency,
-	date time.Time,
-	exclude uuid.UUID,
-) (domain.Holding, error) {
-	quantity, basis, err := r.Holding(ctx, booksID, security.ID, date, exclude)
-	if err != nil {
-		return domain.Holding{}, err
-	}
-
-	var h domain.Holding
-	if h.Quantity, err = s.AmountOf(ctx, quantity, security.Instrument); err != nil {
-		return domain.Holding{}, err
-	}
-
-	if h.CostBasis, err = money.New(basis, base); err != nil {
-		return domain.Holding{}, err
-	}
-
-	return h, nil
-}
-
 // brokerageAccounts checks a security account and a cash account of the same brokerage
 // in the base currency.
 func (s *Service) brokerageAccounts(

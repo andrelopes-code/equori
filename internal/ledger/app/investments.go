@@ -156,3 +156,202 @@ func (s *Service) describeInstrument(ctx context.Context, a *domain.Account) err
 
 	return nil
 }
+
+// lockHolding locks the security account and returns the holding it has on date.
+func (s *Service) lockHolding(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	security domain.Account,
+	base money.Currency,
+	date time.Time,
+	exclude uuid.UUID,
+) (domain.Holding, error) {
+	// Two sales of one account serialize on its row, so each reads the holding the other left.
+	if _, err := r.LockAccount(ctx, booksID, security.ID); err != nil {
+		return domain.Holding{}, err
+	}
+
+	return s.readHolding(ctx, r, booksID, security, base, date, exclude)
+}
+
+// readHolding returns the holding of the security account on date without locking it.
+func (s *Service) readHolding(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	security domain.Account,
+	base money.Currency,
+	date time.Time,
+	exclude uuid.UUID,
+) (domain.Holding, error) {
+	quantity, basis, err := r.Holding(ctx, booksID, security.ID, date, exclude)
+	if err != nil {
+		return domain.Holding{}, err
+	}
+
+	var h domain.Holding
+	if h.Quantity, err = s.AmountOf(ctx, quantity, security.Instrument); err != nil {
+		return domain.Holding{}, err
+	}
+
+	if h.CostBasis, err = money.New(basis, base); err != nil {
+		return domain.Holding{}, err
+	}
+
+	return h, nil
+}
+
+// HoldingLots is a security account on a date: the cost method a sale of it uses, its holding
+// and, under the lot method, the open lots (A234 FL11).
+type HoldingLots struct {
+	Method              string
+	Quantity, CostBasis money.Money
+	Lots                []OpenLot
+}
+
+// OpenLot is the part of a holding bought on one date.
+type OpenLot struct {
+	AcquiredOn     time.Time
+	Quantity, Cost money.Money
+}
+
+// OpenLots returns the cost method, the holding and the open lots of a security account at the
+// end of date without the postings of the transaction exclude, if any. The lots are empty under
+// the average method.
+func (s *Service) OpenLots(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	exclude uuid.UUID,
+) (HoldingLots, error) {
+	base, err := baseCurrency(ctx, s.repo, booksID)
+	if err != nil {
+		return HoldingLots{}, err
+	}
+
+	security, err := s.repo.Account(ctx, booksID, accountID)
+	if err != nil {
+		return HoldingLots{}, err
+	}
+
+	if !security.HoldsSecurity() {
+		return HoldingLots{}, fieldErr("id", "must hold a security", domain.ErrValidation)
+	}
+
+	h, err := s.readHolding(ctx, s.repo, booksID, security, base, date, exclude)
+	if err != nil {
+		return HoldingLots{}, err
+	}
+
+	h, err = s.withCostMethod(ctx, s.repo, booksID, security, h, date, exclude)
+	if err != nil {
+		return HoldingLots{}, err
+	}
+
+	out := HoldingLots{Method: h.Method, Quantity: h.Quantity, CostBasis: h.CostBasis}
+	if out.Method == "" {
+		out.Method = domain.CostAverage
+	}
+
+	for _, l := range h.Lots {
+		lot, err := s.openLot(ctx, l, security.Instrument, base)
+		if err != nil {
+			return HoldingLots{}, err
+		}
+
+		out.Lots = append(out.Lots, lot)
+	}
+
+	return out, nil
+}
+
+func (s *Service) openLot(
+	ctx context.Context,
+	l domain.Lot,
+	instrument, base money.Currency,
+) (OpenLot, error) {
+	quantity, err := s.AmountOf(ctx, l.Quantity, instrument)
+	if err != nil {
+		return OpenLot{}, err
+	}
+
+	cost, err := money.New(l.Cost, base)
+	if err != nil {
+		return OpenLot{}, err
+	}
+
+	return OpenLot{AcquiredOn: l.AcquiredOn, Quantity: quantity, Cost: cost}, nil
+}
+
+// withCostMethod gives h the cost method of its instrument in the book's region and, under
+// fixed income lots, the open lots on date. A holding whose lots disagree with its quantity
+// is a defect of the derivation and fails the operation (FL8).
+func (s *Service) withCostMethod(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	security domain.Account,
+	h domain.Holding,
+	date time.Time,
+	exclude uuid.UUID,
+) (domain.Holding, error) {
+	profile, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return domain.Holding{}, fmt.Errorf("read profile: %w", err)
+	}
+
+	in, err := s.ins.Instrument(ctx, security.Instrument)
+	if err != nil {
+		return domain.Holding{}, err
+	}
+
+	if s.defaults.CostMethod(profile.Region, in.Type) != domain.CostFIFO {
+		return h, nil
+	}
+
+	lots, err := s.openLots(ctx, r, booksID, security.ID, date, uuid.Nil, exclude)
+	if err != nil {
+		return domain.Holding{}, fmt.Errorf("open lots of account %s: %w", security.ID, err)
+	}
+
+	if openQuantity(lots) != h.Quantity.Amount() {
+		return domain.Holding{}, fmt.Errorf(
+			"open lots of account %s hold %d units, the holding %d: %w",
+			security.ID, openQuantity(lots), h.Quantity.Amount(), domain.ErrLotsInconsistent,
+		)
+	}
+
+	h.Method, h.Lots = domain.CostFIFO, lots
+
+	return h, nil
+}
+
+// openLots replays the postings of an account up to date; a transfer in reads the open lots of
+// its source just before the transfer.
+func (s *Service) openLots(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	beforeTx, exclude uuid.UUID,
+) ([]domain.Lot, error) {
+	postings, err := r.OpenLotPostings(ctx, booksID, accountID, date, beforeTx, exclude)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.ReplayLots(postings, func(p domain.LotPosting) ([]domain.Lot, error) {
+		return s.openLots(ctx, r, booksID, p.Source, p.Date, p.TransactionID, exclude)
+	})
+}
+
+func openQuantity(lots []domain.Lot) (units int64) {
+	for _, l := range lots {
+		units += l.Quantity
+	}
+
+	return units
+}
