@@ -326,4 +326,8 @@ export const settingsPtBR: Record<keyof typeof settingsEn, string> = {
   "problem.backup_failed": "O backup falhou. O log do servidor contém a causa.",
   "problem.password_too_short":
     "A senha da cópia precisa de no mínimo 12 caracteres.",
+  "region.global": "Global",
+  "region.euroArea": "Zona do euro",
+  "region.yours": "Sua região",
+  "region.globalHint": "Valem em qualquer região",
 };

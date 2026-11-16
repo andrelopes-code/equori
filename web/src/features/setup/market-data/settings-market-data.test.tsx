@@ -63,7 +63,7 @@ interface PutBody {
   accept_unofficial?: boolean;
 }
 
-function api(list: Feed[], role = "admin") {
+function api(list: Feed[], role = "admin", region = "BR") {
   const puts: ({ id: string } & PutBody)[] = [];
   let refreshes = 0;
   const fetch = fakeApi(
@@ -74,7 +74,7 @@ function api(list: Feed[], role = "admin") {
           email: "a@b.c",
           role,
           language: "en",
-          region: "BR",
+          region,
         }),
       "GET /api/v1/market-data/feeds": () => json(200, { items: list }),
       "POST /api/v1/market-data/refresh": () => {
@@ -120,7 +120,7 @@ describe("Market data section (ADR 025 F10)", () => {
       name: catalogEn["marketData.feed.b3_cotahist"],
     });
     expect(b3).toBeChecked();
-    expect(b3).toHaveAccessibleDescription(/Overdue: latest data/);
+    expect(b3).toHaveAccessibleDescription(/Overdue/);
     expect(
       within(section()).getByText(catalogEn["marketData.attention"]),
     ).toBeInTheDocument();
@@ -222,7 +222,7 @@ describe("Market data section (ADR 025 F10)", () => {
   });
 
   // A223: the waiting states of the section.
-  it("draws the two cards of the section as placeholders while the feeds load", async () => {
+  it("draws the surface of the pane as placeholders while the feeds load", async () => {
     const a = api(feeds());
     const never = (input: RequestInfo | URL, init?: RequestInit) =>
       new URL(new Request(input, init).url).pathname ===
@@ -235,11 +235,10 @@ describe("Market data section (ADR 025 F10)", () => {
     await open(fetch);
 
     await waitFor(() => {
-      expect(section().querySelectorAll('[data-ui="card"]')).toHaveLength(2);
+      expect(
+        section().querySelectorAll('[data-ui="skeleton"]').length,
+      ).toBeGreaterThan(8);
     });
-    expect(
-      section().querySelectorAll('[data-ui="skeleton"]').length,
-    ).toBeGreaterThan(4);
     expect(within(section()).queryByRole("switch")).toBeNull();
   });
 
@@ -264,5 +263,101 @@ describe("Market data section (ADR 025 F10)", () => {
     });
 
     expect(within(section()).queryByRole("progressbar")).toBeNull();
+  });
+
+  it("orders the regions: the book's, the global one, then the others", async () => {
+    const a = api(feeds({ b3_cotahist: { enabled: true } }));
+    await open(a.fetch);
+    await within(section()).findByRole("switch", {
+      name: catalogEn["marketData.feed.b3_cotahist"],
+    });
+
+    const headers = within(section())
+      .getAllByRole("button")
+      .map((b) => b.textContent)
+      .filter((text) => /Brazil|Global|Other regions/.test(text));
+
+    expect(headers).toHaveLength(3);
+    expect(headers[0]).toContain("Brazil");
+    expect(headers[0]).toContain(catalogEn["region.yours"]);
+    expect(headers[1]).toContain("Global");
+    expect(headers[2]).toContain(catalogEn["marketData.others"]);
+  });
+
+  it("keeps the other regions closed until one is opened", async () => {
+    const a = api(feeds({ b3_cotahist: { enabled: true } }));
+    await open(a.fetch);
+    await within(section()).findByRole("switch", {
+      name: catalogEn["marketData.feed.b3_cotahist"],
+    });
+    const eu = () =>
+      within(section()).queryByRole("switch", {
+        name: catalogEn["marketData.feed.eu_estr"],
+      });
+    expect(eu()).toBeNull();
+
+    await userEvent.click(
+      within(section()).getByRole("button", {
+        name: new RegExp(catalogEn["marketData.others"]),
+      }),
+    );
+    await userEvent.click(
+      within(section()).getByRole("button", { name: /Euro area/ }),
+    );
+
+    expect(eu()).toBeVisible();
+  });
+
+  it("opens the other regions when one of their feeds has a problem", async () => {
+    const a = api(
+      feeds({ us_sofr: { enabled: true, stale: true, last: "2026-10-01" } }),
+    );
+    await open(a.fetch);
+
+    expect(
+      await within(section()).findByRole("switch", {
+        name: catalogEn["marketData.feed.us_sofr"],
+      }),
+    ).toBeVisible();
+  });
+
+  it("marks no region as the book's when the book's region has no feed", async () => {
+    const a = api(feeds({ b3_cotahist: { enabled: true } }), "admin", "DE");
+    await open(a.fetch);
+    await within(section()).findByRole("button", { name: /Global/ });
+
+    expect(within(section()).queryByText(catalogEn["region.yours"])).toBeNull();
+  });
+
+  it("tags an unofficial source beside its name", async () => {
+    const a = api(
+      feeds({
+        yahoo_chart: { official: false, enabled: true, last: "2026-11-13" },
+      }),
+    );
+    await open(a.fetch);
+
+    await within(section()).findByRole("switch", {
+      name: catalogEn["marketData.feed.yahoo_chart"],
+    });
+    expect(
+      within(section()).getByText(catalogEn["settings.feeds.unofficial.tag"]),
+    ).toBeVisible();
+  });
+
+  it("states the failure of a feed under its name", async () => {
+    const a = api(
+      feeds({
+        br_cdi: { enabled: true, last: "2026-11-12", error: "HTTP 503" },
+      }),
+    );
+    await open(a.fetch);
+
+    const cdi = await within(section()).findByRole("switch", {
+      name: catalogEn["marketData.feed.br_cdi"],
+    });
+
+    expect(cdi).toHaveAccessibleDescription(/Last update failed: HTTP 503/);
+    expect(cdi).toHaveAccessibleDescription(/Failed/);
   });
 });

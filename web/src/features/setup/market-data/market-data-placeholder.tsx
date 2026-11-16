@@ -1,39 +1,42 @@
-import { Inline } from "@slotted/react/inline";
 import { Skeleton, SkeletonRegion } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 
-import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
-import { useT } from "@/i18n/i18n-provider";
+import styles from "@/features/setup/market-data/market-data.module.css";
 
-const priceRows = 4;
-const indexRows = 6;
+const regions = 2;
+const rowsPerRegion = 3;
 
-// A223: the two cards of the market data section while the feeds load. The titles are chrome and
-// stay real; each row reserves a name, a description and a switch.
+// A223: the surface of the pane while the feeds load. Each region reserves a flag, a title and
+// three rows of a name, a detail line, a status and a switch.
 export function MarketDataPlaceholder() {
-  const t = useT();
-
   return (
     <SkeletonRegion>
-      <SettingsGroup title={t("marketData.prices")}>
-        {rows(priceRows)}
-      </SettingsGroup>
+      <div className={styles.surface}>
+        {Array.from({ length: regions }, (_, region) => (
+          <div key={region}>
+            <div className={styles.placeholderHeader}>
+              <Skeleton shape="block" inlineSize="2rem" blockSize="1.5rem" />
+              <Skeleton shape="text" inlineSize="10rem" />
+            </div>
 
-      <SettingsGroup title={t("marketData.indexes")}>
-        {rows(indexRows)}
-      </SettingsGroup>
+            {Array.from({ length: rowsPerRegion }, (_, row) => (
+              <div key={row} className={styles.row}>
+                <div className={styles.main}>
+                  <Skeleton shape="text" inlineSize="12rem" />
+                  <Skeleton shape="text" inlineSize="8rem" />
+                </div>
+                <div className={styles.status}>
+                  <Skeleton shape="text" inlineSize="4rem" />
+                </div>
+                <Skeleton
+                  shape="block"
+                  inlineSize="2.5rem"
+                  blockSize="1.5rem"
+                />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </SkeletonRegion>
   );
-}
-
-function rows(count: number) {
-  return Array.from({ length: count }, (_, i) => (
-    <Inline key={i} gap={4} align="center" justify="between" wrap="nowrap">
-      <Stack gap={1}>
-        <Skeleton shape="text" inlineSize="12rem" />
-        <Skeleton shape="text" inlineSize="20rem" />
-      </Stack>
-      <Skeleton shape="block" inlineSize="2.5rem" blockSize="1.5rem" />
-    </Inline>
-  ));
 }

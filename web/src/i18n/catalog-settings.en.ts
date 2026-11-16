@@ -321,4 +321,8 @@ export const settingsEn = {
   "problem.backup_failed": "The backup failed. The server log holds the cause.",
   "problem.password_too_short":
     "The copy password needs at least 12 characters.",
+  "region.global": "Global",
+  "region.euroArea": "Euro area",
+  "region.yours": "Your region",
+  "region.globalHint": "Valid in any region",
 } as const;

@@ -1,0 +1,154 @@
+@layer app {
+  /* The surface of the pane: the regions stand one under another as bands of one card, edge to
+     edge. It is also the container the rows ask their width of. */
+  .surface {
+    overflow: hidden;
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-raised);
+    container-type: inline-size;
+  }
+
+  .placeholderHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    padding: var(--slotted-space-6) var(--slotted-space-8);
+  }
+
+  .regionTitle {
+    display: inline-flex;
+    min-inline-size: 0;
+    align-items: center;
+    gap: var(--slotted-space-5);
+  }
+
+  .regionText {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .regionName {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .regionSummary {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-regular);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .regionSummary[data-tone="warning"] {
+    color: var(--slotted-tone-warning-text);
+  }
+
+  /* A row has one height per state, so the status words of every row stand on the same lines. The
+     three measures, 3.75, 5.125 and 4.875 rem, fit two text lines, three, and two plus the status
+     line of a phone; none has a token. */
+  .row {
+    display: grid;
+    min-inline-size: 0;
+    align-items: center;
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    block-size: 3.75rem;
+    column-gap: var(--slotted-space-7);
+    grid-template-columns: minmax(0, 1fr) 7rem auto;
+  }
+
+  .row[data-issue] {
+    block-size: 5.125rem;
+  }
+
+  .main {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+  }
+
+  .name {
+    display: flex;
+    min-inline-size: 0;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .nameText {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .line {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .date {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .word {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    white-space: nowrap;
+  }
+
+  .dot {
+    flex: none;
+    border-radius: var(--slotted-radius-full);
+    background: currentcolor;
+    block-size: var(--slotted-space-3);
+    inline-size: var(--slotted-space-3);
+  }
+
+  .dot[data-tone="ok"] {
+    background: var(--slotted-tone-success-solid);
+  }
+
+  /* Under 36 rem the status leaves its column and goes under the words, word first, the date at
+     its end; the switch keeps its place and spans both lines. */
+  @container (max-width: 36rem) {
+    .row {
+      block-size: 4.875rem;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .row[data-issue] {
+      block-size: 6.125rem;
+    }
+
+    .main {
+      grid-column: 1;
+    }
+
+    .status {
+      flex-direction: row-reverse;
+      grid-column: 1;
+      grid-row: 2;
+      justify-content: flex-end;
+      gap: var(--slotted-space-4);
+      align-items: center;
+    }
+
+    .toggle {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+    }
+  }
+}

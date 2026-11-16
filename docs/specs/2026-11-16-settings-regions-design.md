@@ -28,7 +28,7 @@ Out of scope: a `region` field on the API, matching a euro-area country to the `
 - R1: The region of a feed (`feedRegion`), the region of a calendar (`calendarRegion`) and the flag art (`flag-art`) vary by region. Each is a `switch` on the region code in `web/`.
 - R2: A region without a case has the `Global` group for its feeds and calendars, and a code plate for its flag.
 - R3: Does not apply: no stored value set is added.
-- R4: Adds the rows "Feed region" and "Flag" to `docs/contributing/regions.md`.
+- R4: Adds the rows "Feed region" (extension points) and `flag-art.tsx` (web files) to `docs/contributing/regions.md`.
 - R5: Adds `marketData.region.*`, `marketData.kind.*`, `marketData.status.*`, `region.global`, `region.euroArea`, `region.yours` and `calendar.regionGroup.*` keys, each with pt-BR and en text.
 - R6: Dates go through `formatDate` with the active tag; counts go through `numberFormatter`.
 - C1: Does not apply: no amount is stored or computed.
@@ -47,7 +47,7 @@ Out of scope: a `region` field on the API, matching a euro-area country to the `
 - D5: Does not apply: the diagnostic file is unchanged.
 - S1: Does not apply: no operation is added.
 - S2: The settings page is served on a phone (ADR 027); each group and row is captured at 390 px.
-- S3: The guide articles of `market_data` and `calendars` describe the groups.
+- S3: Does not apply: the guide has no article for the topics `market_data` and `calendars`.
 - S4: Does not apply: the assistant reads no new data.
 - X1: Does not apply: no scenario of `docs/domain/06-scenarios.md` is added.
 - X2: `feed-region.test.ts` and `settings-market-data.test.tsx` run with the book's region `DE` (no home group) and `BR`.

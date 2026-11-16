@@ -1,0 +1,79 @@
+import { describe, expect, it } from "vitest";
+
+import type { components } from "@/api/schema.gen";
+import { feedRowText } from "@/features/setup/market-data/feed-row-text";
+import { catalogEn } from "@/i18n/catalog.en";
+import type { MessageKey } from "@/i18n/catalog.en";
+
+type Feed = components["schemas"]["MarketDataFeed"];
+
+const t = (key: MessageKey, vars: Record<string, string | number> = {}) =>
+  Object.entries(vars).reduce(
+    (text: string, [name, value]) => text.replace(`{${name}}`, String(value)),
+    catalogEn[key],
+  );
+
+function feed(patch: Partial<Feed> = {}): Feed {
+  return {
+    id: "b3_cotahist",
+    kind: "price",
+    enabled: true,
+    suggested: false,
+    last: "2026-11-13",
+    stale: false,
+    last_run: null,
+    error: null,
+    official: true,
+    covers: 28,
+    history_pending: 0,
+    symbol_override: false,
+    ...patch,
+  };
+}
+
+describe("feedRowText", () => {
+  it("names the kind and the coverage of a price feed", () => {
+    expect(feedRowText(feed(), t, "en-US").detail).toBe(
+      "Price · Covers 28 instruments",
+    );
+  });
+
+  it.each([
+    [0, "Covers no instrument"],
+    [1, "Covers 1 instrument"],
+  ])("writes a coverage of %i", (covers, text) => {
+    expect(feedRowText(feed({ covers }), t, "en-US").detail).toBe(
+      `Price · ${text}`,
+    );
+  });
+
+  it("names only the kind of an index feed", () => {
+    expect(
+      feedRowText(feed({ kind: "index", covers: 0 }), t, "en-US").detail,
+    ).toBe("Index");
+  });
+
+  it("has no issue for a healthy feed", () => {
+    expect(feedRowText(feed(), t, "en-US").issue).toBeNull();
+  });
+
+  it("states a failure in the danger tone", () => {
+    expect(feedRowText(feed({ error: "HTTP 503" }), t, "en-US").issue).toEqual({
+      tone: "danger",
+      text: "Last update failed: HTTP 503",
+    });
+  });
+
+  it("states a pending history in the muted tone", () => {
+    expect(feedRowText(feed({ history_pending: 3 }), t, "en-US").issue).toEqual(
+      { tone: "muted", text: "Loading history: 3 pending" },
+    );
+  });
+
+  it("puts a failure before a pending history", () => {
+    expect(
+      feedRowText(feed({ error: "x", history_pending: 3 }), t, "en-US").issue
+        ?.tone,
+    ).toBe("danger");
+  });
+});
