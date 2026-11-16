@@ -7642,6 +7642,10 @@ export interface components {
             average_cost?: components["schemas"]["Rate"];
             /** @description Quantity valued in the base currency; absent without a price. */
             market_value?: components["schemas"]["Money"];
+            /** @description Income tax and IOF a sale of the whole quantity at market_value would withhold (A235); absent when the book has no table for the position or value_in is not the base currency. */
+            estimated_tax?: components["schemas"]["Money"];
+            /** @description market_value less estimated_tax. */
+            estimated_net?: components["schemas"]["Money"];
             prices?: components["schemas"]["Price"][];
         };
         PositionList: {

@@ -656,6 +656,14 @@ schemas:
         description: Quantity valued in the base currency; absent without a price.
         allOf:
           - $ref: "#/components/schemas/Money"
+      estimated_tax:
+        description: Income tax and IOF a sale of the whole quantity at market_value would withhold (A235); absent when the book has no table for the position or value_in is not the base currency.
+        allOf:
+          - $ref: "#/components/schemas/Money"
+      estimated_net:
+        description: market_value less estimated_tax.
+        allOf:
+          - $ref: "#/components/schemas/Money"
       prices:
         type: array
         items:

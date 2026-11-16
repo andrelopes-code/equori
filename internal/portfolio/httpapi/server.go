@@ -117,10 +117,22 @@ func positionItems(ps []app.Position) []Position {
 			}
 
 			items[i].MarketValue, items[i].Prices = &v, &prices
+			items[i].EstimatedTax = estimate(p.EstimatedTax)
+			items[i].EstimatedNet = estimate(p.EstimatedNet)
 		}
 	}
 
 	return items
+}
+
+func estimate(m *money.Money) *Money {
+	if m == nil {
+		return nil
+	}
+
+	v := toMoney(*m)
+
+	return &v
 }
 
 func (s *Server) listInstrumentSubtypes(

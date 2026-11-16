@@ -34,6 +34,9 @@ const (
 	CauseMerge = app.CauseMerge
 )
 
+// WithholdingEstimate is the income tax, the IOF and the net of a sale of a taxed security.
+type WithholdingEstimate = app.WithholdingEstimate
+
 // Errors returned to other modules.
 var (
 	ErrNotFound          = app.ErrNotFound

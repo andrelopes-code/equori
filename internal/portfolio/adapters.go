@@ -68,6 +68,27 @@ func (p ledgerPort) BaseCurrency(ctx context.Context, booksID int64) (money.Curr
 	return p.l.BaseCurrency(ctx, booksID)
 }
 
+func (p ledgerPort) EstimateWithholding(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	units, proceedsMinor int64,
+) (money.Money, bool, error) {
+	w, err := p.l.EstimateWithholding(ctx, booksID, accountID, date, units, proceedsMinor)
+	if errors.Is(err, ledger.ErrValidation) {
+		return money.Money{}, false, nil
+	}
+
+	if err != nil {
+		return money.Money{}, false, err
+	}
+
+	tax, err := w.IncomeTax.Add(w.IOF)
+
+	return tax, err == nil, err
+}
+
 func (p ledgerPort) Today(ctx context.Context) time.Time { return p.l.Today(ctx) }
 
 func (p ledgerPort) InvestmentFacts(

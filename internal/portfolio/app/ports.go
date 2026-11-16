@@ -50,6 +50,15 @@ type Ledger interface {
 	// Balances is the balance of every asset and liability account at the end of date, each in
 	// its own instrument and counting its own postings only.
 	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)
+	// EstimateWithholding is the income tax and IOF a sale of units of the security for
+	// proceedsMinor would withhold on date; ok is false when the account has no withholding table.
+	EstimateWithholding(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		date time.Time,
+		units, proceedsMinor int64,
+	) (tax money.Money, ok bool, err error)
 }
 
 // Jurisdictions gives the tax jurisdiction of a book; a nil result means none applies.

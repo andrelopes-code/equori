@@ -395,9 +395,15 @@ type Position struct {
 	AccountId openapi_types.UUID `json:"account_id"`
 
 	// AverageCost Cost basis per unit; absent unless quantity and cost basis are positive.
-	AverageCost *Rate  `json:"average_cost,omitempty"`
-	CostBasis   Money  `json:"cost_basis"`
-	Instrument  string `json:"instrument"`
+	AverageCost *Rate `json:"average_cost,omitempty"`
+	CostBasis   Money `json:"cost_basis"`
+
+	// EstimatedNet market_value less estimated_tax.
+	EstimatedNet *Money `json:"estimated_net,omitempty"`
+
+	// EstimatedTax Income tax and IOF a sale of the whole quantity at market_value would withhold (A235); absent when the book has no table for the position or value_in is not the base currency.
+	EstimatedTax *Money `json:"estimated_tax,omitempty"`
+	Instrument   string `json:"instrument"`
 
 	// MarketValue Quantity valued in the base currency; absent without a price.
 	MarketValue *Money   `json:"market_value,omitempty"`

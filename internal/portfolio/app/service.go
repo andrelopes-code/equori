@@ -176,6 +176,9 @@ type Position struct {
 	AverageCost         *money.Rate
 	MarketValue         *money.Money
 	Prices              []Price
+	// EstimatedTax and EstimatedNet are the withholding a sale of the whole quantity at its market
+	// value would suffer and what remains; both are nil when the estimate does not answer.
+	EstimatedTax, EstimatedNet *money.Money
 }
 
 // Positions returns the non-empty positions at the end of date with the cost in the base currency
@@ -199,7 +202,7 @@ func (s *Service) Positions(
 
 	out := make([]Position, 0, len(rows))
 	for _, row := range rows {
-		p, err := s.position(ctx, row, base, date, in)
+		p, err := s.position(ctx, booksID, row, base, date, in)
 		if err != nil {
 			return nil, err
 		}
@@ -212,6 +215,7 @@ func (s *Service) Positions(
 
 func (s *Service) position(
 	ctx context.Context,
+	booksID int64,
 	row domain.PositionDay,
 	base money.Currency,
 	date time.Time,
@@ -243,6 +247,12 @@ func (s *Service) position(
 	case err != nil:
 		return Position{}, err
 	default:
+		if in == "" || in == base {
+			if err := s.estimate(ctx, booksID, &p, value, date); err != nil {
+				return Position{}, err
+			}
+		}
+
 		if value.Currency() != in && in != "" {
 			var more []Price
 			if value, more, err = s.md.Convert(ctx, value, in, date); err != nil {
