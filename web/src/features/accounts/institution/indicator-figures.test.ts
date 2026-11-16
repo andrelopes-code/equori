@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { indicatorFigures } from "@/features/accounts/institution/indicator-figures";
+import {
+  indicatorFigures,
+  trendBounds,
+} from "@/features/accounts/institution/indicator-figures";
 import type { components } from "@/api/schema.gen";
 
 type Indicators = components["schemas"]["InstitutionIndicators"];
@@ -218,5 +221,18 @@ describe("indicatorFigures, a past episode (A237 L6)", () => {
 
     expect(figures[2]?.past).toBeUndefined();
     expect(figures[4]?.past).toBeUndefined();
+  });
+});
+
+describe("trendBounds", () => {
+  it("runs every trend from zero and draws the floor with the buffer as the reference", () => {
+    expect(trendBounds({ minimum: 800, withBuffer: 1050 })).toEqual({
+      min: 0,
+      reference: 1050,
+    });
+  });
+
+  it("runs a figure with no floor from zero and draws no reference", () => {
+    expect(trendBounds(undefined)).toEqual({ min: 0 });
   });
 });

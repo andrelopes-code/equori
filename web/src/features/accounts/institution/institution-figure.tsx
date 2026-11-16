@@ -4,6 +4,7 @@ import { formatBasisPoints, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FigureCard } from "@/ui/display/figure-card";
+import { trendBounds } from "@/features/accounts/institution/indicator-figures";
 import type { IndicatorFigure } from "@/features/accounts/institution/indicator-figures";
 
 interface InstitutionFigureProps {
@@ -37,10 +38,7 @@ export function InstitutionFigure({
           <Sparkline
             size="sm"
             data={figure.trend}
-            // The dashed line is the floor with the buffer, so the distance to it reads at a glance.
-            {...(figure.floor === undefined
-              ? {}
-              : { reference: figure.floor.withBuffer })}
+            {...trendBounds(figure.floor)}
             label={t("institution.trend", {
               name: label,
               count: figure.trend.length,

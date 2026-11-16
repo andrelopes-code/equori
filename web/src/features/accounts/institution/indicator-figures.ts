@@ -115,6 +115,18 @@ function attentionOf(
   return {};
 }
 
+// Every trend runs from zero, so the five boxes read alike and no axis is cut to exaggerate a
+// change; the data still widen the box when a quarter lies under zero (a net loss). A figure with
+// a floor draws the floor with the buffer as a dashed reference.
+export function trendBounds(floor: Floor | undefined): {
+  min: number;
+  reference?: number;
+} {
+  return floor === undefined
+    ? { min: 0 }
+    : { min: 0, reference: floor.withBuffer };
+}
+
 // The lowest earlier quarter under the floor with the buffer, the most recent on a tie. The newest
 // quarter is periods[0]; it keeps its own note when it has attention.
 function pastOf(
