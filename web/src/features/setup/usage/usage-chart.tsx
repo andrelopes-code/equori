@@ -19,7 +19,6 @@ import { useCallback, useMemo } from "react";
 
 import { useApi } from "@/api/api-context";
 import { usageDaysQuery } from "@/features/setup/api";
-import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { usageDayRows } from "@/features/setup/usage/usage-days";
 import {
   formatDate,
@@ -74,7 +73,11 @@ export function UsageChart() {
   );
 
   return (
-    <SettingsGroup title={t("assistant.usage.chart", { days: String(days) })}>
+    <Stack gap={5}>
+      <Text size="sm" weight="medium">
+        {t("assistant.usage.chart", { days: String(days) })}
+      </Text>
+
       {query.error !== null && (
         <QueryError
           error={query.error}
@@ -90,11 +93,13 @@ export function UsageChart() {
         </Text>
       )}
       {query.data !== undefined && used.length > 0 && (
-        <Stack gap={3}>
+        <Stack gap={6}>
           {charts.map(({ field, series }) => (
             <Chart
               key={field}
-              variant="card"
+              variant="plain"
+              toolbar="hover"
+              legend={false}
               size="sm"
               title={t(`assistant.usage.chart.${field}`)}
               data={data}
@@ -103,7 +108,7 @@ export function UsageChart() {
               y={yAxis}
             />
           ))}
-          <Table columns={4} variant="framed">
+          <Table columns={4} variant="ruled">
             <TableContent>
               <TableCaption>
                 {t("assistant.usage.chart", { days: String(days) })}
@@ -138,6 +143,6 @@ export function UsageChart() {
           </Table>
         </Stack>
       )}
-    </SettingsGroup>
+    </Stack>
   );
 }
