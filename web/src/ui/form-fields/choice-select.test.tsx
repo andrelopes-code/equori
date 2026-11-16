@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { fakeApi } from "@/testing/fake-api";
@@ -29,7 +29,9 @@ describe("ChoiceSelect", () => {
 
     await screen.findByRole("combobox", { name: "Region" });
 
-    expect(container.querySelector('[data-art="BR"]')).not.toBeNull();
+    await waitFor(() => {
+      expect(container.querySelector('[data-art="BR"]')).not.toBeNull();
+    });
     expect(screen.getByRole("combobox", { name: "Region" })).toHaveTextContent(
       "Brazil",
     );

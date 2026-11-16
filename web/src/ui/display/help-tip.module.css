@@ -11,7 +11,12 @@
     border: 0;
     background: none;
     color: var(--slotted-text-muted);
-    vertical-align: middle;
+
+    /* The box is one line of the neighbouring text, so the icon centres on that line. `middle`
+       aligns to the x-height, which sits below the centre of the line. */
+    font: inherit;
+    block-size: 1lh;
+    vertical-align: top;
     cursor: help;
   }
 

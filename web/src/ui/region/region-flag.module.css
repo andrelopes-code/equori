@@ -19,7 +19,8 @@
     --flag-height: 1.5rem;
   }
 
-  .flag svg {
+  .flag svg,
+  .flag img {
     display: block;
     inline-size: 100%;
     block-size: 100%;
