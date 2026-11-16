@@ -398,6 +398,41 @@ func TestAnchor(t *testing.T) {
 	}
 }
 
+// TestAccrueDailyIndexIgnoresCalendar is S468 (A236 FC5): an index that compounds by business
+// day keeps its published days as the business days, whatever calendar the terms name.
+func TestAccrueDailyIndexIgnoresCalendar(t *testing.T) {
+	t.Parallel()
+
+	terms := cdb(10000, 600)
+	terms.CalendarID = "br_banking"
+	noTuesday := func(d time.Time) bool { return d.Format(time.DateOnly) != "2026-01-06" }
+
+	prices, err := Accrue(
+		terms,
+		BusinessDayIndexes{"cdi"},
+		2,
+		cdiWeek(),
+		date("2026-01-02"),
+		date("2026-01-09"),
+		noTuesday,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := values(prices)
+	want := map[string]string{
+		"2026-01-06": "1001.565992708698",
+		"2026-01-09": "1003.919581096297",
+	}
+
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
+
 func TestAccruePreFixedBusinessDays(t *testing.T) {
 	t.Parallel()
 
