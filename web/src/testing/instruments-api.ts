@@ -111,6 +111,9 @@ export const cdbTerms = {
   daily_liquidity: false,
 };
 
+// What the API returns for the terms above: the output always carries the expanded payments.
+export const cdbTermsOutput = { ...cdbTerms, payments: [] };
+
 export const positionFixtures = [
   {
     account_id: stockID,
@@ -143,7 +146,7 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
           () => json(200, i),
         ]),
       ),
-      "GET /api/v1/instruments/CDB1/terms": () => json(200, cdbTerms),
+      "GET /api/v1/instruments/CDB1/terms": () => json(200, cdbTermsOutput),
       "GET /api/v1/indexes": () =>
         json(200, {
           items: [

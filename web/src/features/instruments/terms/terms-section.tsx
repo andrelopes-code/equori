@@ -14,13 +14,17 @@ import { accruedBp } from "@/features/instruments/terms/accrual";
 import { latestPriceQuery } from "@/features/instruments/api";
 import { formatPercentBp } from "@/features/instruments/terms/basis-points";
 import { dayCountLabel } from "@/features/instruments/model/instrument-labels";
+import {
+  interestKeys,
+  interestPeriodOf,
+} from "@/features/instruments/terms/payments-draft";
 import { TermProgress } from "@/features/instruments/terms/term-progress";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import { indexName } from "@/features/calculators";
 import { calendarLabel } from "@/features/planning";
 import { useScale } from "@/features/setup";
 import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT, type TFunction } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -86,6 +90,7 @@ export function TermsSection({ code, terms, quote }: TermsSectionProps) {
               ? ""
               : formatDate(terms.redeemable_from, locale),
           ],
+          [t("terms.payments"), paymentsText(t, terms)],
           [
             t("terms.faceValue"),
             fmt.money(
@@ -142,4 +147,12 @@ export function TermsSection({ code, terms, quote }: TermsSectionProps) {
       </SectionBody>
     </Section>
   );
+}
+
+function paymentsText(t: TFunction, terms: Terms): string {
+  const every = interestPeriodOf(terms.payments, terms.matures_on);
+  if (every > 0) return t(interestKeys[every]);
+  if (terms.payments.length === 0) return "";
+
+  return t("terms.paymentsCount", { count: String(terms.payments.length) });
 }

@@ -17,6 +17,7 @@ import {
   dayCountLabel,
   dayCounts,
 } from "@/features/instruments/model/instrument-labels";
+import { PaymentsFields } from "@/features/instruments/terms/payments-fields";
 import { TermsLiquidityFields } from "@/features/instruments/terms/terms-liquidity-fields";
 import { TermsRateFields } from "@/features/instruments/terms/terms-rate-fields";
 import { useTermsDraft } from "@/features/instruments/terms/use-terms-draft";
@@ -171,6 +172,14 @@ export function TermsDialog({
                 draft={draft}
                 errors={errors}
                 onChange={change}
+              />
+
+              <PaymentsFields
+                draft={draft.payments}
+                errors={errors}
+                onChange={(payments) => {
+                  change({ payments });
+                }}
               />
             </FormLayout>
           </DialogBody>

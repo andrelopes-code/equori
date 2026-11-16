@@ -8,6 +8,13 @@ export {
   typeLabel,
 } from "@/features/instruments/model/instrument-labels";
 export { formatRate, parseRate } from "@/features/instruments/model/rate";
+export { PaymentsFields } from "@/features/instruments/terms/payments-fields";
+export {
+  noPayments,
+  paymentsBody,
+  paymentsDraftOf,
+  type PaymentsDraft,
+} from "@/features/instruments/terms/payments-draft";
 export {
   bpText,
   parsePercentBp,

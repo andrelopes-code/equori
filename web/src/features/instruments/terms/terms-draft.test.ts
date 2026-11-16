@@ -21,6 +21,7 @@ const draft: TermsDraft = {
   calendar: "",
   dailyLiquidity: false,
   redeemableFrom: "",
+  payments: { every: 0, first: "", amortizations: [] },
 };
 
 describe("termsBody", () => {

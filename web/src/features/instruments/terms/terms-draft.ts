@@ -4,6 +4,12 @@ import {
   bpText,
   parsePercentBp,
 } from "@/features/instruments/terms/basis-points";
+import {
+  noPayments,
+  paymentsBody,
+  paymentsDraftOf,
+  type PaymentsDraft,
+} from "@/features/instruments/terms/payments-draft";
 import { shiftDate } from "@/i18n/format";
 import type { TFunction } from "@/i18n/i18n-provider";
 
@@ -22,6 +28,7 @@ export interface TermsDraft {
   calendar: string;
   dailyLiquidity: boolean;
   redeemableFrom: string;
+  payments: PaymentsDraft;
 }
 
 export type TermsOutcome =
@@ -46,6 +53,10 @@ export function initialDraft(
     calendar: terms?.calendar_id ?? "",
     dailyLiquidity: terms?.daily_liquidity ?? false,
     redeemableFrom: terms?.redeemable_from ?? "",
+    payments:
+      terms === null
+        ? noPayments
+        : paymentsDraftOf(terms.payments, terms.matures_on),
   };
 }
 
@@ -55,6 +66,7 @@ export function termsBody(draft: TermsDraft, t: TFunction): TermsOutcome {
   const percentBp = parsePercentBp(draft.percent);
   const spreadBp = parsePercentBp(draft.spread);
   const { dayCount, index } = draft;
+  const payments = paymentsBody(draft.payments, t);
 
   if (percentBp === null || percentBp < 1)
     errors.percent_of_index_bp = t("terms.invalid.percent");
@@ -62,8 +74,11 @@ export function termsBody(draft: TermsDraft, t: TFunction): TermsOutcome {
   if (dayCount === null) errors.day_count = required;
   if (draft.face < 1) errors.face_value = required;
 
+  Object.assign(errors, payments.errors);
+
   if (
     Object.keys(errors).length > 0 ||
+    payments.body === undefined ||
     percentBp === null ||
     spreadBp === null ||
     dayCount === null
@@ -84,6 +99,7 @@ export function termsBody(draft: TermsDraft, t: TFunction): TermsOutcome {
       ...(draft.redeemableFrom === ""
         ? {}
         : { redeemable_from: draft.redeemableFrom }),
+      ...payments.body,
     },
   };
 }

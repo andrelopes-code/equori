@@ -6,6 +6,7 @@ import { catalogEn } from "@/i18n/catalog.en";
 import { json, problem } from "@/testing/fake-api";
 import {
   cdbTerms,
+  cdbTermsOutput,
   instrumentsApi as api,
   price,
 } from "@/testing/instruments-api";
@@ -204,7 +205,7 @@ describe("Fixed income terms", () => {
   it("shows liquidity and grace of the terms", async () => {
     const fetch = api({
       "GET /api/v1/instruments/CDB1/terms": () =>
-        json(200, { ...cdbTerms, redeemable_from: "2026-04-02" }),
+        json(200, { ...cdbTermsOutput, redeemable_from: "2026-04-02" }),
     });
     await renderApp("/instruments/CDB1", { fetch });
     await screen.findByText("110%");
@@ -291,6 +292,72 @@ describe("Fixed income terms", () => {
     expect(
       await within(dialog).findByText(catalogEn["problem.not_found"]),
     ).toBeInTheDocument();
+  });
+
+  it("sends the interest period and its first date from the payments section", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "PUT /api/v1/instruments/CDB1/terms": async (req) => {
+        sent.push(await req.json());
+        return json(200, cdbTerms);
+      },
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["terms.change"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(
+      within(dialog).getByRole("button", { name: catalogEn["terms.payments"] }),
+    );
+    await user.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["terms.interestEvery"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: catalogEn["terms.interestEvery.6"],
+      }),
+    );
+    const first = within(dialog).getByRole("group", {
+      name: new RegExp(catalogEn["terms.firstPaymentOn"]),
+    });
+    await user.click(within(first).getByRole("spinbutton", { name: "month" }));
+    await user.keyboard("07062026");
+
+    await user.click(
+      within(dialog).getByRole("button", { name: catalogEn["terms.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toEqual({
+      ...cdbTerms,
+      interest_every_months: 6,
+      first_payment_on: "2026-07-06",
+    });
+  });
+
+  it("shows the interest period of the terms in the payments row", async () => {
+    const fetch = api({
+      "GET /api/v1/instruments/CDB1/terms": () =>
+        json(200, {
+          ...cdbTerms,
+          payments: [
+            { pays_on: "2026-07-02", amortization_bp: 0, pays_interest: true },
+            { pays_on: "2027-01-02", amortization_bp: 0, pays_interest: true },
+          ],
+        }),
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    await screen.findByText("110%");
+
+    expect(termsRow(catalogEn["terms.payments"])).toBe(
+      catalogEn["terms.interestEvery.6"],
+    );
   });
 
   it("offers no terms for an instrument that is not fixed income", async () => {
