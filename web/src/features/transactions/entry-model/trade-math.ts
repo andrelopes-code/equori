@@ -34,6 +34,57 @@ export function saleCost(
   );
 }
 
+export interface CostLot {
+  quantity: number;
+  cost: number;
+}
+
+// A234: the cost of the quantity units the oldest lots give up; a lot the sale closes gives its
+// whole cost. Lots arrive oldest first. internal/ledger/domain/testdata/fifo-cost.json holds the
+// cases the server (FIFOCost) and this function both satisfy.
+export function lotsCost(lots: CostLot[], quantity: number): number {
+  let remaining = quantity;
+  let cost = 0;
+  for (const lot of lots) {
+    if (remaining === 0) break;
+    const taken = Math.min(remaining, lot.quantity);
+    cost +=
+      taken === lot.quantity
+        ? lot.cost
+        : Number(
+            divideHalfEven(
+              BigInt(lot.cost) * BigInt(taken),
+              BigInt(lot.quantity),
+            ),
+          );
+    remaining -= taken;
+  }
+  return cost;
+}
+
+interface Costing {
+  method: string;
+  lots: { quantity: { amount: number }; cost: { amount: number } }[];
+}
+
+// The cost the server records for a sale: the oldest lots under "fifo", the average otherwise.
+export function soldCost(
+  costing: Costing,
+  costBasis: number,
+  quantity: number,
+  held: number,
+): number {
+  if (costing.method !== "fifo") return saleCost(costBasis, quantity, held);
+
+  return lotsCost(
+    costing.lots.map((l) => ({
+      quantity: l.quantity.amount,
+      cost: l.cost.amount,
+    })),
+    quantity,
+  );
+}
+
 export function cashEffect(
   side: "buy" | "sell",
   gross: number,

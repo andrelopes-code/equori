@@ -1,7 +1,9 @@
 package domain
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 	"slices"
 	"testing"
 	"time"
@@ -87,6 +89,43 @@ func TestConsumeLots(t *testing.T) {
 
 			if !slices.Equal(rest, tt.wantRest) {
 				t.Errorf("rest = %v, want %v", rest, tt.wantRest)
+			}
+		})
+	}
+}
+
+// The web preview of a sale reads the same file (web/src/features/transactions/entry-model).
+func TestFIFOCostFixture(t *testing.T) {
+	raw, err := os.ReadFile("testdata/fifo-cost.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var cases []struct {
+		Name string `json:"name"`
+		Lots []struct {
+			Quantity int64 `json:"quantity"`
+			Cost     int64 `json:"cost"`
+		} `json:"lots"`
+		Quantity int64 `json:"quantity"`
+		Cost     int64 `json:"cost"`
+	}
+	if err := json.Unmarshal(raw, &cases); err != nil {
+		t.Fatal(err)
+	}
+
+	day := time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC)
+
+	for _, tt := range cases {
+		t.Run(tt.Name, func(t *testing.T) {
+			lots := make([]Lot, len(tt.Lots))
+			for i, l := range tt.Lots {
+				lots[i] = Lot{AcquiredOn: day.AddDate(0, i, 0), Quantity: l.Quantity, Cost: l.Cost}
+			}
+
+			got, err := FIFOCost(lots, tt.Quantity)
+			if err != nil || got != tt.Cost {
+				t.Errorf("cost = %d, %v, want %d", got, err, tt.Cost)
 			}
 		})
 	}

@@ -560,6 +560,28 @@ describe("trade entry", () => {
     ).toHaveValue("9.50");
   });
 
+  // S447, the sale form: 50 units come out of the oldest lot (cost 500.00), not at the average.
+  it("estimates the result of a sale by lot", async () => {
+    await renderApp(path, {
+      fetch: api([], {
+        held: { quantity: 150, cost: 151240 },
+        lots: [
+          { acquired_on: "2026-01-05", quantity: 100, cost: 100000 },
+          { acquired_on: "2026-02-05", quantity: 50, cost: 51240 },
+        ],
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("radio", { name: catalogEn["trade.side.sell"] }),
+    );
+    await type(catalogEn["trade.quantity"], "50");
+    await type(catalogEn["trade.unitPrice"], "10.80");
+    await type(optionalName(catalogEn["trade.fees"]), "210");
+    expect(
+      await screen.findAllByText(moneyValue(/(^|\D)37\.90/)),
+    ).not.toHaveLength(0);
+  });
+
   // S21, sale: 50 of 150 held at cost 1,512.40 sold at 10.80 with 2.10 in fees leave a result of 33.77.
   it("shows the position, average cost and estimated result of a sale", async () => {
     const sent: unknown[] = [];

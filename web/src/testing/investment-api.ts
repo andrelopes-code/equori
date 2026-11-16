@@ -111,6 +111,9 @@ export interface InvestmentOptions {
   held?: { quantity: number; cost: number };
   extraAccounts?: unknown[];
   cashBalance?: number;
+  // Open purchase lots of the security account, oldest first: the account then sells by lot
+  // (A234). Without it the account sells at the average cost.
+  lots?: { acquired_on: string; quantity: number; cost: number }[];
   // Booked balances of other accounts by id, in minor units of BRL.
   balances?: Record<string, number>;
   answer?: () => Response;
@@ -137,6 +140,19 @@ export function investmentRoutes(
     ...sharedRoutes,
     "GET /api/v1/accounts": () =>
       json(200, { items: [...accounts, ...(options.extraAccounts ?? [])] }),
+    [`GET /api/v1/accounts/${securityID}/lots`]: (req: Request) =>
+      json(200, {
+        account_id: securityID,
+        date: new URL(req.url).searchParams.get("date"),
+        method: options.lots === undefined ? "average" : "fifo",
+        quantity: { amount: options.held?.quantity ?? 0, currency: "MXRF11" },
+        cost_basis: brl(options.held?.cost ?? 0),
+        lots: (options.lots ?? []).map((l) => ({
+          acquired_on: l.acquired_on,
+          quantity: { amount: l.quantity, currency: "MXRF11" },
+          cost: brl(l.cost),
+        })),
+      }),
     [`GET /api/v1/accounts/${cashID}/balance`]: (req: Request) =>
       json(200, {
         account_id: cashID,

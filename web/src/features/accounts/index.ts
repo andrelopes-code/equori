@@ -1,5 +1,6 @@
 export {
   accountKeys,
+  accountLotsQuery,
   accountsQuery,
   balanceKeys,
   balanceQuery,

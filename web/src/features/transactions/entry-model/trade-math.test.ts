@@ -1,11 +1,33 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import {
   cashEffect,
   estimatedResult,
   grossOf,
+  lotsCost,
   saleCost,
+  soldCost,
 } from "@/features/transactions/entry-model/trade-math";
+
+interface FifoCase {
+  name: string;
+  lots: { quantity: number; cost: number }[];
+  quantity: number;
+  cost: number;
+}
+
+// The Go test TestFIFOCostFixture reads the same file.
+const fifoCases = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../../../../internal/ledger/domain/testdata/fifo-cost.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as FifoCase[];
 
 describe("trade math", () => {
   // S21: buy 150 MXRF11 at 10.05 and sell 50 at 10.80.
@@ -36,6 +58,21 @@ describe("trade math", () => {
     expect(saleCost(151240, 150, 150)).toBe(151240);
     expect(saleCost(5, 1, 2)).toBe(2);
     expect(saleCost(7, 1, 2)).toBe(4);
+  });
+
+  it.each(fifoCases)("removes the cost by lot: $name", (c) => {
+    expect(lotsCost(c.lots, c.quantity)).toBe(c.cost);
+  });
+
+  it("takes the cost by method", () => {
+    const lots = [
+      { quantity: { amount: 10 }, cost: { amount: 100000 } },
+      { quantity: { amount: 10 }, cost: { amount: 120000 } },
+    ];
+    expect(soldCost({ method: "fifo", lots }, 220000, 5, 20)).toBe(50000);
+    expect(soldCost({ method: "average", lots: [] }, 220000, 5, 20)).toBe(
+      55000,
+    );
   });
 
   it("estimates the result against the cost", () => {

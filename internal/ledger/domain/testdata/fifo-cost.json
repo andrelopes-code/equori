@@ -1,0 +1,32 @@
+[
+  {
+    "name": "partial sale takes the oldest lot",
+    "lots": [{"quantity": 10, "cost": 100000}, {"quantity": 10, "cost": 120000}],
+    "quantity": 5,
+    "cost": 50000
+  },
+  {
+    "name": "sale spans two lots",
+    "lots": [{"quantity": 10, "cost": 100000}, {"quantity": 10, "cost": 120000}],
+    "quantity": 15,
+    "cost": 160000
+  },
+  {
+    "name": "whole holding",
+    "lots": [{"quantity": 10, "cost": 100000}, {"quantity": 10, "cost": 120000}],
+    "quantity": 20,
+    "cost": 220000
+  },
+  {
+    "name": "a tie rounds down to even",
+    "lots": [{"quantity": 2, "cost": 5}],
+    "quantity": 1,
+    "cost": 2
+  },
+  {
+    "name": "a tie rounds up to even",
+    "lots": [{"quantity": 2, "cost": 7}],
+    "quantity": 1,
+    "cost": 4
+  }
+]

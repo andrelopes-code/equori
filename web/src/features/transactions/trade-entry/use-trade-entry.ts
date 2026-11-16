@@ -5,6 +5,7 @@ import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import {
+  accountLotsQuery,
   accountsQuery,
   balanceQuery,
   positionsQuery,
@@ -34,7 +35,7 @@ import {
   cashEffect,
   estimatedResult,
   grossOf,
-  saleCost,
+  soldCost,
 } from "@/features/transactions/entry-model/trade-math";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -77,7 +78,7 @@ export interface TradeView {
 
 // The state of the trade form: the draft, what the server's reads add to it (price, position,
 // accounts of the brokerage) and the write. The server stays the source of what is stored; the
-// figures here are a preview of A68. A correction keeps no draft in the browser and reads the
+// figures here are a preview of A68 and A234. A correction keeps no draft in the browser and reads the
 // position and the balance without the trade it replaces (A227 IC10).
 export function useTradeEntry(
   accountId: string | null,
@@ -154,6 +155,16 @@ export function useTradeEntry(
     draft.date,
   );
 
+  const lots = useQuery({
+    ...accountLotsQuery(
+      api,
+      state.held?.id ?? "",
+      draft.date,
+      correction?.transaction.id,
+    ),
+    enabled: sell && state.held !== undefined,
+  });
+
   const quantityScale =
     scale === null || instrument === null ? null : scale(instrument);
   const baseScale = scale === null || base === undefined ? null : scale(base);
@@ -173,12 +184,20 @@ export function useTradeEntry(
     : null;
   const taxes = draft.side === "sell" ? draft.taxes : 0;
   const heldQuantity = held?.quantity.amount ?? 0;
+  // The server removes cost by lot or at the average by account (A234): the preview follows its
+  // answer and shows no cost before it arrives.
   const cost =
     gross !== null &&
     draft.side === "sell" &&
     held !== undefined &&
-    draft.quantity <= heldQuantity
-      ? saleCost(held.cost_basis.amount, draft.quantity, heldQuantity)
+    draft.quantity <= heldQuantity &&
+    lots.data !== undefined
+      ? soldCost(
+          lots.data,
+          held.cost_basis.amount,
+          draft.quantity,
+          heldQuantity,
+        )
       : null;
 
   // A sale is limited to the position of the date; before the position loads nothing is refused.

@@ -22,6 +22,7 @@ export const accountKeys = {
   balance: (id: string, basis: Basis) =>
     ["accounts", "balance", id, basis] as const,
   series: (id: string) => ["accounts", "series", id] as const,
+  lots: (id: string) => ["accounts", "lots", id] as const,
 };
 
 export const balanceKeys = {
@@ -230,6 +231,33 @@ export function projectionQuery(api: Client<paths>, id: string, to: string) {
       unwrap(
         await api.GET("/accounts/{id}/projection", {
           params: { path: { id }, query: { to } },
+        }),
+      ),
+  });
+}
+
+// A234: the cost method and open purchase lots of a security account, without the transaction a
+// correction replaces.
+export function accountLotsQuery(
+  api: Client<paths>,
+  id: string,
+  date: string,
+  exclude?: string,
+) {
+  return queryOptions({
+    queryKey: [...accountKeys.lots(id), date, exclude ?? null] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/accounts/{id}/lots", {
+          params: {
+            path: { id },
+            query: {
+              date,
+              ...(exclude === undefined
+                ? {}
+                : { exclude_transaction_id: exclude }),
+            },
+          },
         }),
       ),
   });
