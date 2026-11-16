@@ -8,7 +8,7 @@ Terms. Indexes: cdi (business days, bus252) and ipca (monthly, act365). 110% of 
 
 Tesouro Direto. The code is the listing code: LFT, LTN, NTNF, NTNB, NTNBP, NTNC, EDUCA or RENDA, a dot and the maturity as YYYYMMDD (NTNB.20350515). Subtype tesouro, quote currency BRL, scale 2.
 
-Dividend. Exempt when the profit is of 2025 or earlier, approved by 2025-12-31 and paid as the approval states. Otherwise a source that pays one individual more than R$ 50,000 in a month withholds 10% of the whole amount (Lei 15.270/2025); withheld is that amount.
+Dividend. Exempt up to R$ 50,000 a month paid by one source to one individual, and above it when the profit is of 2025 or earlier, approved by 2025-12-31 and paid as the approval states. From 2026 a source that pays more than R$ 50,000 in a month withholds 10% of the whole amount (Lei 15.270/2025); withheld is that amount. The annual minimum tax on high income is settled in the tax return, not recorded here.
 
 JCP. 15% at source up to 2025-12-31 and 17.5% from 2026-01-01, by the payment date (Lei Complementar 224/2025).
 
