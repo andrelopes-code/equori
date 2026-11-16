@@ -4,7 +4,10 @@ import { PaymentsFields } from "@/features/instruments";
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
-import type { FixedIncomeDraft } from "@/features/transactions/fixed-income-entry/fixed-income-draft";
+import {
+  paymentErrors,
+  type FixedIncomeDraft,
+} from "@/features/transactions/fixed-income-entry/fixed-income-draft";
 import { FixedIncomeReturnFields } from "@/features/transactions/fixed-income-entry/fixed-income-return-fields";
 import { FixedIncomeTermFields } from "@/features/transactions/fixed-income-entry/fixed-income-term-fields";
 import { FixedIncomeWhatFields } from "@/features/transactions/fixed-income-entry/fixed-income-what-fields";
@@ -118,7 +121,7 @@ export function FixedIncomeForm({
 
           <PaymentsFields
             draft={draft.payments}
-            errors={errors}
+            errors={paymentErrors(errors)}
             onChange={(payments) => {
               set({ payments });
             }}

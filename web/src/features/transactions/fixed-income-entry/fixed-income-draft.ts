@@ -155,3 +155,25 @@ function returnText(draft: FixedIncomeDraft, t: TFunction): string {
 
   return t("fixedIncome.summary.fixed", { rate });
 }
+
+const paymentFields =
+  /^contract\.(first_payment_on|interest_every_months|payments(\[\d+\])?)$/;
+
+// paymentErrors gives the payment fields the errors of the server, which names them under
+// contract; an error of the form itself keeps its own key and wins.
+export function paymentErrors(
+  errors: Record<string, string>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+
+  for (const [key, message] of Object.entries(errors)) {
+    const match = paymentFields.exec(key);
+    if (match?.[1] !== undefined) out[match[1]] = message;
+  }
+
+  for (const [key, message] of Object.entries(errors)) {
+    if (!key.startsWith("contract.")) out[key] = message;
+  }
+
+  return out;
+}

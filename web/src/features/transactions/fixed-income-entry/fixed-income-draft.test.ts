@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   applicationBody,
+  paymentErrors,
   contractSummary,
   emptyFixedIncomeDraft,
 } from "@/features/transactions/fixed-income-entry/fixed-income-draft";
@@ -146,5 +147,21 @@ describe("contractSummary", () => {
     expect(contractSummary(draft(), t, fmt)).toBe(
       "CDB Banco X · 110% of CDI · matures 03/02/2028 · R$10,000.00",
     );
+  });
+});
+
+describe("paymentErrors", () => {
+  it("reads the server's contract errors as the keys of the payment fields", () => {
+    expect(
+      paymentErrors({
+        "contract.first_payment_on": "must be on or before matures_on",
+        "contract.payments[0]": "repeats a date",
+        "contract.matures_on": "is in the past",
+        first_payment_on: "required",
+      }),
+    ).toEqual({
+      first_payment_on: "required",
+      "payments[0]": "repeats a date",
+    });
   });
 });
