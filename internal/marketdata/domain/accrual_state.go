@@ -57,16 +57,30 @@ func (s *accrualState) advance(
 // price is face × I × J on d: J is the product of the period's rates times the spread root
 // raised to the days of the period.
 func (s *accrualState) price(t Terms, face, dayRoot *big.Float, d time.Time) string {
+	price := newFloat().Mul(face, s.index)
+	price.Mul(price, s.growth(t, dayRoot, d))
+
+	return price.Text('f', priceDecimals)
+}
+
+// coupon splits the price on d into the interest of the period, face × I × (J − 1), and the
+// principal face × I.
+func (s *accrualState) coupon(t Terms, face, dayRoot *big.Float, d time.Time) (string, string) {
+	principal := newFloat().Mul(face, s.index)
+	interest := newFloat().Sub(s.growth(t, dayRoot, d), newFloat().SetInt64(1))
+	interest.Mul(interest, principal)
+
+	return interest.Text('f', priceDecimals), principal.Text('f', priceDecimals)
+}
+
+// growth is J on d.
+func (s *accrualState) growth(t Terms, dayRoot *big.Float, d time.Time) *big.Float {
 	days := int(d.Sub(s.periodStart).Hours() / 24)
 	if t.DayCount == DayCountBus252 {
 		days = s.periodDays
 	}
 
-	price := newFloat().Mul(face, s.index)
-	price.Mul(price, s.period)
-	price.Mul(price, power(dayRoot, days))
-
-	return price.Text('f', priceDecimals)
+	return newFloat().Mul(s.period, power(dayRoot, days))
 }
 
 // startPeriod restarts the daily product and the day count on the first priced day after an
@@ -117,10 +131,7 @@ func adjustedInterestDates(t Terms, isBusinessDay BusinessDay) []time.Time {
 			continue
 		}
 
-		d := p.PaysOn
-		for !d.After(t.MaturesOn) && !isPriceable(d, isBusinessDay) {
-			d = d.AddDate(0, 0, 1)
-		}
+		d := adjustedDate(t, p.PaysOn, isBusinessDay)
 
 		out = append(out, d)
 	}
@@ -128,4 +139,13 @@ func adjustedInterestDates(t Terms, isBusinessDay BusinessDay) []time.Time {
 	slices.SortFunc(out, func(a, b time.Time) int { return a.Compare(b) })
 
 	return out
+}
+
+// adjustedDate moves d to the next business day, or stops at maturity.
+func adjustedDate(t Terms, d time.Time, isBusinessDay BusinessDay) time.Time {
+	for !d.After(t.MaturesOn) && !isPriceable(d, isBusinessDay) {
+		d = d.AddDate(0, 0, 1)
+	}
+
+	return d
 }

@@ -74,15 +74,8 @@ func Accrue(
 	from, to time.Time,
 	isBusinessDay BusinessDay,
 ) ([]DatedPrice, error) {
-	if err := t.Validate(daily); err != nil {
+	if err := checkAccrual(t, daily, isBusinessDay); err != nil {
 		return nil, err
-	}
-
-	if t.CalendarID != "" && isBusinessDay == nil {
-		return nil, fmt.Errorf(
-			"terms name calendar %q and no business days were given",
-			t.CalendarID,
-		)
 	}
 
 	byDay := daily.Has(t.IndexID)
@@ -115,6 +108,19 @@ func Accrue(
 	}
 
 	return out, nil
+}
+
+// checkAccrual validates t and requires business days when t names a calendar.
+func checkAccrual(t Terms, daily BusinessDayIndexes, isBusinessDay BusinessDay) error {
+	if err := t.Validate(daily); err != nil {
+		return err
+	}
+
+	if t.CalendarID != "" && isBusinessDay == nil {
+		return fmt.Errorf("terms name calendar %q and no business days were given", t.CalendarID)
+	}
+
+	return nil
 }
 
 // Anchor scales each accrued price that follows an observed price (return honesty HR1):

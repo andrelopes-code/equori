@@ -83,37 +83,19 @@ func (m *Module) anchoredSeries(
 	in Instrument,
 	today time.Time,
 ) ([]domain.DatedPrice, error) {
-	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
+	inputs, err := m.accrualInputs(ctx, row, in, today)
 	if err != nil {
 		return nil, err
-	}
-
-	rates, err := m.accrualRates(ctx, row)
-	if err != nil {
-		return nil, err
-	}
-
-	terms, err := m.termsWithPayments(ctx, row)
-	if err != nil {
-		return nil, err
-	}
-
-	var isBusinessDay domain.BusinessDay
-	if row.CalendarID != nil {
-		isBusinessDay, err = m.businessDayOf(ctx, *row.CalendarID, row.IssuedOn, today)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	series, err := domain.Accrue(
-		terms,
+		inputs.terms,
 		m.businessDays,
-		quote.Scale,
-		rates,
+		inputs.quoteScale,
+		inputs.rates,
 		row.IssuedOn,
 		today,
-		isBusinessDay,
+		inputs.isBusinessDay,
 	)
 	if err != nil {
 		return nil, err
@@ -125,6 +107,47 @@ func (m *Module) anchoredSeries(
 	}
 
 	return domain.Anchor(series, anchors)
+}
+
+// accrualInput is what the accrual of a contract reads from the store.
+type accrualInput struct {
+	terms         Terms
+	rates         []domain.IndexRate
+	isBusinessDay domain.BusinessDay
+	quoteScale    int
+}
+
+// accrualInputs reads the terms, the rates and the calendar of in for the dates up to to.
+func (m *Module) accrualInputs(
+	ctx context.Context,
+	row postgres.MarketdataFixedIncomeTerm,
+	in Instrument,
+	to time.Time,
+) (accrualInput, error) {
+	quote, err := m.Instrument(ctx, string(in.QuoteCurrency))
+	if err != nil {
+		return accrualInput{}, err
+	}
+
+	rates, err := m.accrualRates(ctx, row)
+	if err != nil {
+		return accrualInput{}, err
+	}
+
+	terms, err := m.termsWithPayments(ctx, row)
+	if err != nil {
+		return accrualInput{}, err
+	}
+
+	out := accrualInput{terms: terms, rates: rates, quoteScale: quote.Scale}
+	if row.CalendarID != nil {
+		out.isBusinessDay, err = m.businessDayOf(ctx, *row.CalendarID, row.IssuedOn, to)
+		if err != nil {
+			return accrualInput{}, err
+		}
+	}
+
+	return out, nil
 }
 
 // businessDayOf is the business-day predicate of calendar name, with its rule and instance
