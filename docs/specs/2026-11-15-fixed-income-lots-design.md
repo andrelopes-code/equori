@@ -99,7 +99,7 @@ Fixtures: purchases of 10 units at 100.00 on 2026-01-05 and 10 units at 120.00 o
 | S2 | The sale form is an entry kind of `/transactions/new`, a phone route. The cost line keeps one line at 390 px and at desktop width. |
 | S3 | The guide article of the investments topic (`internal/assistant/guide/articles/investments.md`) states that a fixed income sale in Brazil removes the oldest purchase first. |
 | S4 | Does not apply: the assistant reads the realized result through existing tools. |
-| X1 | S447 to S454: FL-S1 is S447, FL-S2 S448, FL-S3 S449, FL-S4 S450, FL-S5 S451, FL-S6 S452, FL-S9 S453. FL-S7 is tested by `TestReplayLots`, FL-S8 is S454, FL-S10 is tested by the task that adds it. Each has a test that carries its ID. |
+| X1 | S447 to S455: FL-S1 is S447, FL-S2 S448, FL-S3 S449, FL-S4 S450, FL-S5 S451, FL-S6 S452, FL-S9 S453. FL-S7 is tested by `TestReplayLots`, FL-S8 is S454, FL-S10 is S455. Each has a test that carries its ID. |
 | X2 | FL-S4 runs outside Brazil with a base currency other than BRL. |
 
 ## 7. Left to the builder

@@ -123,3 +123,47 @@ func (s *Server) listBalances(
 
 	return out, nil
 }
+
+func (s *Server) getAccountLots(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (AccountLots, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return AccountLots{}, err
+	}
+
+	params, err := httpserver.Query[GetAccountLotsParams](r)
+	if err != nil {
+		return AccountLots{}, err
+	}
+
+	var exclude uuid.UUID
+	if params.ExcludeTransactionId != nil {
+		exclude = *params.ExcludeTransactionId
+	}
+
+	h, err := s.svc.OpenLots(ctx, auth.MustBooksID(ctx), id, dateOf(params.Date), exclude)
+	if err != nil {
+		return AccountLots{}, err
+	}
+
+	lots := make([]OpenLot, len(h.Lots))
+	for i, l := range h.Lots {
+		lots[i] = OpenLot{
+			AcquiredOn: apiDate(l.AcquiredOn),
+			Quantity:   toMoneyAPI(l.Quantity),
+			Cost:       toMoneyAPI(l.Cost),
+		}
+	}
+
+	return AccountLots{
+		AccountId: id,
+		Date:      params.Date,
+		Method:    AccountLotsMethod(h.Method),
+		Quantity:  toMoneyAPI(h.Quantity),
+		CostBasis: toMoneyAPI(h.CostBasis),
+		Lots:      lots,
+	}, nil
+}

@@ -566,6 +566,42 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/lots:
+    get:
+      tags: [ledger]
+      operationId: getAccountLots
+      x-book-role: read
+      summary: Cost method, holding and open purchase lots of a security account at the end of a date (A234).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: exclude_transaction_id
+          in: query
+          required: false
+          description: A transaction the answer leaves out, as a correction form reads the state without the transaction it replaces.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountLots"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/balance:
     get:
       tags: [ledger]
@@ -3359,6 +3395,40 @@ schemas:
       closed_on:
         type: string
         format: date
+  AccountLots:
+    type: object
+    required: [account_id, date, method, quantity, cost_basis, lots]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      method:
+        description: How a sale removes cost. With average the lots are empty.
+        type: string
+        enum: [average, fifo]
+      quantity:
+        $ref: "#/components/schemas/Money"
+      cost_basis:
+        $ref: "#/components/schemas/Money"
+      lots:
+        type: array
+        description: Open lots, oldest first.
+        items:
+          $ref: "#/components/schemas/OpenLot"
+  OpenLot:
+    type: object
+    required: [acquired_on, quantity, cost]
+    properties:
+      acquired_on:
+        type: string
+        format: date
+      quantity:
+        $ref: "#/components/schemas/Money"
+      cost:
+        $ref: "#/components/schemas/Money"
   Balance:
     type: object
     required: [account_id, date, basis, balance]

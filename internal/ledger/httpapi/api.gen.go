@@ -162,6 +162,24 @@ func (e AccountInputYieldMode) Valid() bool {
 	}
 }
 
+// Defines values for AccountLotsMethod.
+const (
+	Average AccountLotsMethod = "average"
+	Fifo    AccountLotsMethod = "fifo"
+)
+
+// Valid indicates whether the value is a known member of the AccountLotsMethod enum.
+func (e AccountLotsMethod) Valid() bool {
+	switch e {
+	case Average:
+		return true
+	case Fifo:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AccountPatchYieldMode.
 const (
 	AccountPatchYieldModeAuto AccountPatchYieldMode = "auto"
@@ -1165,6 +1183,23 @@ type AccountList struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// AccountLots defines model for AccountLots.
+type AccountLots struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	CostBasis Money              `json:"cost_basis"`
+	Date      openapi_types.Date `json:"date"`
+
+	// Lots Open lots, oldest first.
+	Lots []OpenLot `json:"lots"`
+
+	// Method How a sale removes cost. With average the lots are empty.
+	Method   AccountLotsMethod `json:"method"`
+	Quantity Money             `json:"quantity"`
+}
+
+// AccountLotsMethod How a sale removes cost. With average the lots are empty.
+type AccountLotsMethod string
+
 // AccountParent null makes the account top level (A84).
 type AccountParent struct {
 	ParentId *openapi_types.UUID `json:"parent_id"`
@@ -1848,6 +1883,13 @@ type OpenDifference struct {
 	Difference  Money              `json:"difference"`
 }
 
+// OpenLot defines model for OpenLot.
+type OpenLot struct {
+	AcquiredOn openapi_types.Date `json:"acquired_on"`
+	Cost       Money              `json:"cost"`
+	Quantity   Money              `json:"quantity"`
+}
+
 // Payee defines model for Payee.
 type Payee struct {
 	Id   openapi_types.UUID `json:"id"`
@@ -2423,6 +2465,14 @@ type ListBalanceAssertionsParams struct {
 // GetCommitmentParams defines parameters for GetCommitment.
 type GetCommitmentParams struct {
 	Month string `form:"month" json:"month"`
+}
+
+// GetAccountLotsParams defines parameters for GetAccountLots.
+type GetAccountLotsParams struct {
+	Date openapi_types.Date `form:"date" json:"date"`
+
+	// ExcludeTransactionId A transaction the answer leaves out, as a correction form reads the state without the transaction it replaces.
+	ExcludeTransactionId *openapi_types.UUID `form:"exclude_transaction_id,omitempty" json:"exclude_transaction_id,omitempty"`
 }
 
 // GetStatementPlacementParams defines parameters for GetStatementPlacement.

@@ -17,7 +17,7 @@ import (
 const maxSettlementDays = 30
 
 // RecordTrade records M17: a purchase or sale of a security for cash of the same
-// brokerage, the sale at average cost (P8 amendment A68).
+// brokerage, the sale at average cost (P8 amendment A68) or by purchase lot (A234).
 func (s *Service) RecordTrade(
 	ctx context.Context,
 	booksID int64,
@@ -229,6 +229,19 @@ func (s *Service) lockHolding(
 		return domain.Holding{}, err
 	}
 
+	return s.readHolding(ctx, r, booksID, security, base, date, exclude)
+}
+
+// readHolding returns the holding of the security account on date without locking it.
+func (s *Service) readHolding(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	security domain.Account,
+	base money.Currency,
+	date time.Time,
+	exclude uuid.UUID,
+) (domain.Holding, error) {
 	quantity, basis, err := r.Holding(ctx, booksID, security.ID, date, exclude)
 	if err != nil {
 		return domain.Holding{}, err

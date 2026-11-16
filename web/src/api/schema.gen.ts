@@ -2033,6 +2033,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cost method, holding and open purchase lots of a security account at the end of a date (A234). */
+        get: operations["getAccountLots"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/balance": {
         parameters: {
             query?: never;
@@ -5990,6 +6007,27 @@ export interface components {
         CloseAccountInput: {
             /** Format: date */
             closed_on: string;
+        };
+        AccountLots: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: date */
+            date: string;
+            /**
+             * @description How a sale removes cost. With average the lots are empty.
+             * @enum {string}
+             */
+            method: "average" | "fifo";
+            quantity: components["schemas"]["Money"];
+            cost_basis: components["schemas"]["Money"];
+            /** @description Open lots, oldest first. */
+            lots: components["schemas"]["OpenLot"][];
+        };
+        OpenLot: {
+            /** Format: date */
+            acquired_on: string;
+            quantity: components["schemas"]["Money"];
+            cost: components["schemas"]["Money"];
         };
         Balance: {
             /** Format: uuid */
@@ -11151,6 +11189,36 @@ export interface operations {
                     "application/json": components["schemas"]["Account"];
                 };
             };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getAccountLots: {
+        parameters: {
+            query: {
+                date: string;
+                /** @description A transaction the answer leaves out, as a correction form reads the state without the transaction it replaces. */
+                exclude_transaction_id?: string;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountLots"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];

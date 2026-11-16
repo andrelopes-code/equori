@@ -58,6 +58,105 @@ func TestStockSaleKeepsTheAverageCost(t *testing.T) {
 	}
 }
 
+type lotsOut struct {
+	Method    string         `json:"method"`
+	Quantity  map[string]any `json:"quantity"`
+	CostBasis map[string]any `json:"cost_basis"`
+	Lots      []struct {
+		AcquiredOn string         `json:"acquired_on"`
+		Quantity   map[string]any `json:"quantity"`
+		Cost       map[string]any `json:"cost"`
+	} `json:"lots"`
+}
+
+// S455 (FL-S10): the lots of a fixed income account before a sale, for every role; a member of
+// another book gets 404.
+func TestAccountLotsOperation(t *testing.T) {
+	t.Parallel()
+	f := newLotFixture(t, "TDX", "fixed_income")
+	f.trade(t, "buy", "2026-01-05", 10, "100.00")
+	f.trade(t, "buy", "2026-02-05", 10, "120.00")
+
+	path := "/api/v1/accounts/" + f.account + "/lots?date=2026-03-05"
+	owner := f.h.OwnerID()
+	reader := f.h.JoinAs("lots-reader@example.com", owner, "read")
+	writer := f.h.JoinAs("lots-writer@example.com", owner, "write")
+
+	for name, client := range map[string]*http.Client{"read": reader, "write": writer} {
+		if r := f.h.Call(client, http.MethodGet, path, nil); r.Status != http.StatusOK {
+			t.Fatalf("%s status = %d: %s", name, r.Status, r.Body)
+		}
+	}
+
+	var got lotsOut
+	f.h.MustDo(http.MethodGet, path, nil, http.StatusOK, &got)
+
+	if got.Method != "fifo" || got.CostBasis["amount"] != float64(220000) || len(got.Lots) != 2 {
+		t.Fatalf("lots = %+v", got)
+	}
+
+	first, second := got.Lots[0], got.Lots[1]
+	if first.AcquiredOn != "2026-01-05" || first.Quantity["amount"] != float64(10) ||
+		first.Cost["amount"] != float64(100000) || second.AcquiredOn != "2026-02-05" ||
+		second.Cost["amount"] != float64(120000) {
+		t.Fatalf("lots = %+v", got.Lots)
+	}
+
+	outsider := f.h.LoginMember("lots-outsider@example.com")
+	if r := f.h.Call(outsider, http.MethodGet, path, nil); r.Status != http.StatusNotFound {
+		t.Fatalf("outsider status = %d: %s", r.Status, r.Body)
+	}
+}
+
+// S455: an account under the average method returns no lots.
+func TestAccountLotsUnderTheAverageMethod(t *testing.T) {
+	t.Parallel()
+	f := newLotFixture(t, "TDS", "stock")
+	f.trade(t, "buy", "2026-01-05", 10, "100.00")
+
+	var got lotsOut
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+f.account+"/lots?date=2026-03-05",
+		nil,
+		http.StatusOK,
+		&got,
+	)
+
+	if got.Method != "average" || len(got.Lots) != 0 || got.CostBasis["amount"] != float64(100000) {
+		t.Fatalf("lots = %+v", got)
+	}
+}
+
+// S455: a correction form reads the lots without the sale it replaces.
+func TestAccountLotsWithoutATransaction(t *testing.T) {
+	t.Parallel()
+	f := newLotFixture(t, "TDX", "fixed_income")
+	f.trade(t, "buy", "2026-01-05", 10, "100.00")
+	sale := f.trade(t, "sell", "2026-03-05", 5, "130.00")
+
+	base := "/api/v1/accounts/" + f.account + "/lots?date=2026-03-05"
+
+	var after, without lotsOut
+	f.h.MustDo(http.MethodGet, base, nil, http.StatusOK, &after)
+	f.h.MustDo(
+		http.MethodGet,
+		base+"&exclude_transaction_id="+sale.ID,
+		nil,
+		http.StatusOK,
+		&without,
+	)
+
+	if len(after.Lots) != 1 || after.Lots[0].Quantity["amount"] != float64(5) {
+		t.Fatalf("after the sale = %+v", after)
+	}
+
+	if len(without.Lots) != 1 || without.Lots[0].Quantity["amount"] != float64(10) ||
+		without.CostBasis["amount"] != float64(100000) {
+		t.Fatalf("without the sale = %+v", without)
+	}
+}
+
 type lotFixture struct {
 	investFixture
 	code, account string
