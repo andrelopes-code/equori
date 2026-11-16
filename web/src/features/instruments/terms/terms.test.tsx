@@ -238,6 +238,61 @@ describe("Fixed income terms", () => {
     ).toBeInTheDocument();
   });
 
+  it("sends the maturity typed in the dialog and keeps the issue date", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "PUT /api/v1/instruments/CDB1/terms": async (req) => {
+        sent.push(await req.json());
+        return json(200, cdbTerms);
+      },
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["terms.change"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const matures = within(dialog).getByRole("group", {
+      name: new RegExp(catalogEn["terms.maturesOn"]),
+    });
+    await user.click(
+      within(matures).getByRole("spinbutton", { name: "month" }),
+    );
+    await user.keyboard("06302027");
+
+    await user.click(
+      within(dialog).getByRole("button", { name: catalogEn["terms.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      issued_on: cdbTerms.issued_on,
+      matures_on: "2027-06-30",
+    });
+  });
+
+  it("states a refusal that names no field above the form", async () => {
+    const fetch = api({
+      "PUT /api/v1/instruments/CDB1/terms": () => problem(404, "not_found"),
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["terms.change"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+
+    await user.click(
+      within(dialog).getByRole("button", { name: catalogEn["terms.save"] }),
+    );
+
+    expect(
+      await within(dialog).findByText(catalogEn["problem.not_found"]),
+    ).toBeInTheDocument();
+  });
+
   it("offers no terms for an instrument that is not fixed income", async () => {
     let asked = 0;
     const fetch = api({
