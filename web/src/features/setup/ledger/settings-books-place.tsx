@@ -19,7 +19,10 @@ export function SettingsBooksPlace() {
   const books = useQuery(booksQuery(api));
   const update = useUpdateBooks();
 
-  const regionChoices = useMemo(() => regionChoicesFor(tag), [tag]);
+  const regionChoices = useMemo(
+    () => regionChoicesFor(tag).map((c) => ({ ...c, flag: c.value })),
+    [tag],
+  );
 
   const defaultZone = books.data?.default_time_zone ?? "";
   const zoneChoices = useMemo(

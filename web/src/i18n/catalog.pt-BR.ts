@@ -369,6 +369,8 @@ export const catalogPtBR: Catalog = {
   "settings.baseCurrency.help":
     "Os totais entre contas são expressos nesta moeda.",
   "settings.baseCurrency.locked": "Bloqueada porque já existem transações.",
+  "settings.baseCurrency.inUse": "Em uso",
+  "settings.baseCurrency.all": "Todas as moedas",
   "login.title": "Entrar",
   "login.subtitle": "Entre para acessar suas finanças.",
   "login.tagline": "Suas finanças, em equilíbrio.",

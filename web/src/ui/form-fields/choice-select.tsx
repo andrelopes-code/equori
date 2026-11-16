@@ -4,15 +4,19 @@ import {
   SelectGroup,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@slotted/react/select";
 import { Fragment } from "react";
+
+import { ChoiceSelectValue } from "@/ui/form-fields/choice-select-value";
+import { RegionLabel } from "@/ui/region/region-label";
 
 export interface Choice {
   value: string;
   label: string;
   // Choices that follow each other with the same group stand under one heading.
   group?: string;
+  // A region code or "global": its flag stands beside the label.
+  flag?: string;
 }
 
 function sections(choices: readonly Choice[]) {
@@ -35,6 +39,7 @@ export function ChoiceSelect({
   invalid,
   readOnly,
   placeholder,
+  search,
   onChange,
   className,
 }: {
@@ -45,6 +50,8 @@ export function ChoiceSelect({
   invalid?: boolean;
   readOnly?: boolean;
   placeholder?: string;
+  // A search field at the top of the list, for a long set.
+  search?: boolean;
   onChange: (value: string | string[] | null) => void;
   // A width step of ui/field-width (docs/contributing/forms.md, F3).
   className?: string | undefined;
@@ -58,18 +65,27 @@ export function ChoiceSelect({
       }}
       {...(invalid === undefined ? {} : { invalid })}
       {...(readOnly === undefined ? {} : { readOnly })}
+      {...(search === undefined ? {} : { search })}
     >
       <SelectTrigger
         aria-label={label}
         {...(className === undefined ? {} : { className })}
       >
-        <SelectValue {...(placeholder === undefined ? {} : { placeholder })} />
+        <ChoiceSelectValue choices={choices} placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
         {sections(choices).map((section, index) => {
           const items = section.choices.map((choice) => (
-            <SelectItem key={choice.value} value={choice.value}>
-              {choice.label}
+            <SelectItem
+              key={choice.value}
+              value={choice.value}
+              textValue={choice.label}
+            >
+              {choice.flag === undefined ? (
+                choice.label
+              ) : (
+                <RegionLabel region={choice.flag}>{choice.label}</RegionLabel>
+              )}
             </SelectItem>
           ));
           return section.group === undefined ? (

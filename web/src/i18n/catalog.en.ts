@@ -361,6 +361,8 @@ export const catalogEn = {
   "settings.baseCurrency.help":
     "Totals across accounts are stated in this currency.",
   "settings.baseCurrency.locked": "Locked because transactions already exist.",
+  "settings.baseCurrency.inUse": "In use",
+  "settings.baseCurrency.all": "All currencies",
   "login.title": "Sign in",
   "login.subtitle": "Sign in to reach your finances.",
   "login.tagline": "Your finances, in balance.",

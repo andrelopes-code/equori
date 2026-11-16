@@ -11,12 +11,13 @@ import {
   settingsQuery,
   useUpdateSettings,
 } from "@/features/setup/api";
+import { currencyChoices } from "@/features/setup/ledger/currency-choices";
 import { SettingsBooksName } from "@/features/setup/ledger/settings-books-name";
 import { SettingsBooksPlace } from "@/features/setup/ledger/settings-books-place";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsRow } from "@/features/setup/settings-layout/settings-row";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { routeTo } from "@/ui/navigation/route-to";
 import { useServed } from "@/ui/navigation/use-served";
@@ -25,6 +26,7 @@ const instrumentsPage = { to: "/instruments" } as const;
 
 export function SettingsLedger() {
   const t = useT();
+  const [tag] = useAppLocale();
   const served = useServed();
   const api = useApi();
   const settings = useQuery(settingsQuery(api));
@@ -32,12 +34,18 @@ export function SettingsLedger() {
   const hasTransactions = useQuery(hasTransactionsQuery(api));
   const update = useUpdateSettings();
 
-  const currencyChoices = useMemo(
+  const choices = useMemo(
     () =>
-      (instruments.data?.items ?? [])
-        .filter((i) => i.type === "currency")
-        .map((i) => ({ value: i.code, label: `${i.code} ${i.name}` })),
-    [instruments.data],
+      currencyChoices(
+        (instruments.data?.items ?? []).filter((i) => i.type === "currency"),
+        tag,
+        settings.data?.base_currency ?? null,
+        {
+          inUse: t("settings.baseCurrency.inUse"),
+          all: t("settings.baseCurrency.all"),
+        },
+      ),
+    [instruments.data, settings.data, tag, t],
   );
 
   // The server refuses the change once a transaction exists (409); the field says so before the
@@ -67,7 +75,8 @@ export function SettingsLedger() {
           <Field necessity="none" invalid={currencyError !== undefined}>
             <ChoiceSelect
               label={t("settings.baseCurrency")}
-              choices={currencyChoices}
+              choices={choices}
+              search
               value={settings.data?.base_currency ?? null}
               multiple={false}
               readOnly={locked || update.isPending}
