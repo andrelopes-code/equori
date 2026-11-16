@@ -1,10 +1,10 @@
 @layer app {
   /* One frame, the frame of a framed table; the conclusion takes the wider first column. */
   .band {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
+    position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
-    border: var(--slotted-border-width-thin) solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-md);
     background: var(--slotted-panel-surface, var(--slotted-surface-raised));
     box-shadow: var(--slotted-panel-shadow, none);

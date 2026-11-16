@@ -342,6 +342,7 @@
   }
 
   .strip {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
     position: sticky;
     inset-block-start: var(--slotted-page-sticky-top, 0);
     z-index: 1;
@@ -349,8 +350,6 @@
     align-items: center;
     gap: var(--slotted-space-4);
     padding: var(--slotted-space-2) var(--slotted-space-4);
-    border: var(--slotted-border-width-thin) solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-md);
     background: var(--slotted-panel-surface, var(--slotted-surface-raised));
     box-shadow: var(--slotted-panel-shadow, none);

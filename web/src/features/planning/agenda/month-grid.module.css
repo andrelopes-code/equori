@@ -7,10 +7,9 @@
     inset-block-start: calc(
       var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6)
     );
+    composes: edge from "../../../ui/display/panel-edge.module.css";
     align-self: start;
     display: grid;
-    border: var(--slotted-border-width-thin) solid
-      var(--slotted-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-md);
     background: var(--slotted-panel-surface, var(--slotted-surface-raised));
     box-shadow: var(--slotted-panel-shadow, none);

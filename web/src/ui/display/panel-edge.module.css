@@ -1,0 +1,15 @@
+@layer app {
+  /* The edge of a card as the Slotted Card draws it: a border on a pseudo-element over the box. The
+     lit top line of the panel shadow then sits under the edge. A real `border` pushes that line one
+     border width below the edge, and the top reads thicker than the sides. The element that
+     composes this class is positioned. */
+  .edge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: var(--slotted-border-width-thin) solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: inherit;
+    pointer-events: none;
+  }
+}
