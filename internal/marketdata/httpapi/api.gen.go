@@ -207,18 +207,31 @@ type FieldError struct {
 
 // FixedIncomeTerms defines model for FixedIncomeTerms.
 type FixedIncomeTerms struct {
+	// CalendarId Calendar whose business days bus252 counts when the index does not compound by business day.
+	CalendarId *string `json:"calendar_id,omitempty"`
+
+	// DailyLiquidity The security can be redeemed on any business day; false when omitted.
+	DailyLiquidity   bool               `json:"daily_liquidity"`
 	DayCount         TermsDayCount      `json:"day_count"`
 	FaceValue        int64              `json:"face_value"`
 	IndexId          *string            `json:"index_id,omitempty"`
 	IssuedOn         openapi_types.Date `json:"issued_on"`
 	MaturesOn        openapi_types.Date `json:"matures_on"`
 	PercentOfIndexBp int                `json:"percent_of_index_bp"`
-	SpreadBp         int                `json:"spread_bp"`
+
+	// RedeemableFrom First date of a redemption before maturity; absent when redeemable from issued_on.
+	RedeemableFrom *openapi_types.Date `json:"redeemable_from,omitempty"`
+	SpreadBp       int                 `json:"spread_bp"`
 }
 
 // FixedIncomeTermsInput defines model for FixedIncomeTermsInput.
 type FixedIncomeTermsInput struct {
-	DayCount TermsDayCount `json:"day_count"`
+	// CalendarId Calendar whose business days bus252 counts when the index does not compound by business day.
+	CalendarId *string `json:"calendar_id,omitempty"`
+
+	// DailyLiquidity The security can be redeemed on any business day; false when omitted.
+	DailyLiquidity *bool         `json:"daily_liquidity,omitempty"`
+	DayCount       TermsDayCount `json:"day_count"`
 
 	// FaceValue Price of one unit on issued_on, in minor units of the quote currency.
 	FaceValue int64 `json:"face_value"`
@@ -230,6 +243,9 @@ type FixedIncomeTermsInput struct {
 
 	// PercentOfIndexBp 10000 is 100% of the index; 10000 when omitted.
 	PercentOfIndexBp *int `json:"percent_of_index_bp,omitempty"`
+
+	// RedeemableFrom First date of a redemption before maturity; absent when redeemable from issued_on.
+	RedeemableFrom *openapi_types.Date `json:"redeemable_from,omitempty"`
 
 	// SpreadBp Annual spread over the index, or the annual rate of a pre-fixed security; 0 when omitted.
 	SpreadBp *int `json:"spread_bp,omitempty"`

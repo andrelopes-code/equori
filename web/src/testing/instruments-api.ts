@@ -108,6 +108,7 @@ export const cdbTerms = {
   spread_bp: 0,
   day_count: "bus252",
   face_value: 100000,
+  daily_liquidity: false,
 };
 
 export const positionFixtures = [
@@ -143,6 +144,33 @@ export function instrumentsApi(overrides: Record<string, Route> = {}) {
         ]),
       ),
       "GET /api/v1/instruments/CDB1/terms": () => json(200, cdbTerms),
+      "GET /api/v1/indexes": () =>
+        json(200, {
+          items: [
+            {
+              id: "cdi",
+              expected: false,
+              period: "day",
+              first: "2020-01-01",
+              last: "2026-10-16",
+            },
+            {
+              id: "ipca",
+              expected: true,
+              period: "month",
+              first: "2020-01-01",
+              last: "2026-09-01",
+            },
+          ],
+        }),
+      "GET /api/v1/calendars": () =>
+        json(200, {
+          default: "br_banking",
+          items: [
+            { id: "br_banking", weekend: ["saturday", "sunday"] },
+            { id: "weekend", weekend: ["saturday", "sunday"] },
+          ],
+        }),
       "GET /api/v1/positions": () => json(200, { items: positionFixtures }),
       "GET /api/v1/instrument-subtypes": (req) =>
         json(200, {

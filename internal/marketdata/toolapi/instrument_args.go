@@ -11,7 +11,14 @@ import (
 )
 
 // optionalTermFields may be absent in set_terms; the contract gives them defaults.
-var optionalTermFields = []string{"index_id", "percent_of_index_bp", "spread_bp"}
+var optionalTermFields = []string{
+	"index_id",
+	"percent_of_index_bp",
+	"spread_bp",
+	"calendar_id",
+	"daily_liquidity",
+	"redeemable_from",
+}
 
 func checkInstrumentArgs(in manageInstrumentIn) error {
 	if in.Code == "" {
@@ -192,6 +199,9 @@ func (in manageInstrumentIn) terms(
 		SpreadBP:         in.SpreadBP,
 		DayCount:         domain.DayCountAct365,
 		FaceValue:        face.Amount(),
+		CalendarID:       in.CalendarID,
+		DailyLiquidity:   in.DailyLiquidity,
+		RedeemableFrom:   in.RedeemableFrom.Time,
 	}
 	if in.DayCount != "" {
 		t.DayCount = string(in.DayCount)
@@ -201,7 +211,7 @@ func (in manageInstrumentIn) terms(
 		t.PercentOfIndexBP = 10000
 	}
 
-	if in.DayCount == "" && daily.Has(t.IndexID) {
+	if in.DayCount == "" && (daily.Has(t.IndexID) || t.CalendarID != "") {
 		t.DayCount = domain.DayCountBus252
 	}
 
@@ -232,6 +242,9 @@ func presentFields(in manageInstrumentIn) []field {
 		},
 		{"percent_of_index_bp", in.PercentOfIndexBP != 0},
 		{"spread_bp", in.SpreadBP != 0},
+		{"calendar_id", in.CalendarID != ""},
+		{"daily_liquidity", in.DailyLiquidity},
+		{"redeemable_from", !in.RedeemableFrom.IsZero()},
 		{"from", !in.From.IsZero()},
 		{
 			"exchange",

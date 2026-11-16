@@ -197,7 +197,9 @@ export function SettingsCalendars() {
                         <ListItem key={`${h.date}/${h.name}`}>
                           <ListItemContent>
                             <ListItemStart>
-                              <CalendarDay {...fmt.tile(h.date)} />
+                              <div className="mr-2">
+                                <CalendarDay {...fmt.tile(h.date)} />
+                              </div>
                             </ListItemStart>
                             <ListItemBody>
                               <ListItemLabel>{holidayName(t, h)}</ListItemLabel>

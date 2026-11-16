@@ -15,10 +15,10 @@ import (
 func manageInstrument(svc Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_instrument",
-		Description: "Proposes defining, renaming or deleting a security for the whole instance (a security that a position, an account or a transaction uses cannot be deleted), recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. " +
-			"Use it when the user needs a security that does not exist yet or a price that is missing. " +
+		Description: "Proposes defining, renaming or deleting a security for the whole instance, recording a manual price, setting fixed income terms, or loading its price history since a date from the enabled sources. A security in use cannot be deleted. " +
+			"Use it when a security or a price is missing. " +
 			"Do not use it to buy or sell: record_investment does. " +
-			"Instruments and prices are shared by every book of the instance; the user confirms first.",
+			"Instruments and prices are shared by every book; the user confirms first.",
 		Effect: tool.Write,
 	}, func(ctx context.Context, _ int64, in manageInstrumentIn) (tool.Preview, error) {
 		return previewInstrument(ctx, svc, in)
@@ -28,7 +28,7 @@ func manageInstrument(svc Service) tool.Tool {
 }
 
 func termsText(t domain.Terms) string {
-	return fmt.Sprintf(
+	text := fmt.Sprintf(
 		"issued %s, matures %s, index %q at %d bp plus %d bp, %s",
 		t.IssuedOn.Format(
 			time.DateOnly,
@@ -39,6 +39,20 @@ func termsText(t domain.Terms) string {
 		t.SpreadBP,
 		t.DayCount,
 	)
+
+	if t.CalendarID != "" {
+		text += ", calendar " + t.CalendarID
+	}
+
+	if t.DailyLiquidity {
+		text += ", daily liquidity"
+	}
+
+	if !t.RedeemableFrom.IsZero() {
+		text += ", redeemable from " + t.RedeemableFrom.Format(time.DateOnly)
+	}
+
+	return text
 }
 
 // symbolsForEdit returns the symbols to send to EditInstrument: nil keeps the stored set.

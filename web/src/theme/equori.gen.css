@@ -220,6 +220,9 @@
     --slotted-command-palette-surface: var(--slotted-surface-material);
     --slotted-command-palette-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-popover-measure-sm: 24rem;
+    --slotted-card-header-gap: 0;
+    --slotted-list-item-body-gap: 0;
+    --slotted-stepper-description-gap: 0;
     --slotted-toast-surface: var(--slotted-surface-material);
     --slotted-toast-backdrop-filter: var(--slotted-material-backdrop);
     --slotted-command-palette-footer-surface: color-mix(in oklab, var(--slotted-surface-sunken) 50%, transparent);
@@ -1885,6 +1888,10 @@
       grid-row: 1 / span 3;
     }
 
+    [data-ui="chart"] > [data-part="header"] [data-part="description"] {
+      margin-block-start: calc(var(--slotted-space-1) * -1);
+    }
+
     [data-ui="result-state"] {
       --slotted-result-state-title-font-size: var(--slotted-font-size-md);
     }
@@ -1967,6 +1974,16 @@
     [data-ui="multi-select"],
     [data-ui="entity-picker"] {
       --slotted-overlay-max-block-size: 20rem;
+    }
+
+    [data-part="empty"] + [data-part="status"] {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      padding: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      clip-path: inset(50%);
     }
 
     [data-ui="table"][data-sticky-header] {

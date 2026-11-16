@@ -19,6 +19,9 @@ export interface TermsDraft {
   spread: string;
   dayCount: DayCount | null;
   face: number;
+  calendar: string;
+  dailyLiquidity: boolean;
+  redeemableFrom: string;
 }
 
 export type TermsOutcome =
@@ -40,6 +43,9 @@ export function initialDraft(
     spread: formatRate(bpText(terms?.spread_bp ?? 0), locale),
     dayCount: terms?.day_count ?? null,
     face: terms?.face_value ?? 0,
+    calendar: terms?.calendar_id ?? "",
+    dailyLiquidity: terms?.daily_liquidity ?? false,
+    redeemableFrom: terms?.redeemable_from ?? "",
   };
 }
 
@@ -72,7 +78,12 @@ export function termsBody(draft: TermsDraft, t: TFunction): TermsOutcome {
       percent_of_index_bp: percentBp,
       spread_bp: spreadBp,
       day_count: dayCount,
+      ...(draft.calendar === "" ? {} : { calendar_id: draft.calendar }),
       face_value: draft.face,
+      daily_liquidity: draft.dailyLiquidity,
+      ...(draft.redeemableFrom === ""
+        ? {}
+        : { redeemable_from: draft.redeemableFrom }),
     },
   };
 }

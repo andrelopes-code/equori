@@ -80,7 +80,7 @@
   .label {
     flex: 1;
     min-inline-size: 0;
-    overflow: hidden;
+    overflow: visible;
     text-overflow: ellipsis;
     white-space: nowrap;
   }

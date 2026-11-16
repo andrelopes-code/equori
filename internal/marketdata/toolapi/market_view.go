@@ -45,6 +45,9 @@ type termsView struct {
 	SpreadBP         int        `json:"spread_bp"`
 	DayCount         string     `json:"day_count"`
 	FaceValue        tool.Money `json:"face_value"`
+	CalendarID       string     `json:"calendar_id,omitzero"`
+	DailyLiquidity   bool       `json:"daily_liquidity"`
+	RedeemableFrom   tool.Date  `json:"redeemable_from,omitzero"`
 }
 
 type instrumentView struct {
@@ -179,5 +182,8 @@ func toTermsView(t domain.Terms, quote money.Currency) (termsView, error) {
 		SpreadBP:         t.SpreadBP,
 		DayCount:         t.DayCount,
 		FaceValue:        tool.MoneyOf(face),
+		CalendarID:       t.CalendarID,
+		DailyLiquidity:   t.DailyLiquidity,
+		RedeemableFrom:   tool.DateOf(t.RedeemableFrom),
 	}, nil
 }

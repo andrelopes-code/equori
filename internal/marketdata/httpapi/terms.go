@@ -38,6 +38,18 @@ func (s *Server) putInstrumentTerms(
 		t.SpreadBP = *b.SpreadBp
 	}
 
+	if b.CalendarId != nil {
+		t.CalendarID = *b.CalendarId
+	}
+
+	if b.DailyLiquidity != nil {
+		t.DailyLiquidity = *b.DailyLiquidity
+	}
+
+	if b.RedeemableFrom != nil {
+		t.RedeemableFrom = b.RedeemableFrom.Time
+	}
+
 	out, err := s.svc.PutTerms(ctx, r.PathValue("code"), t)
 	if err != nil {
 		return FixedIncomeTerms{}, err
@@ -67,10 +79,20 @@ func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 		SpreadBp:         t.SpreadBP,
 		DayCount:         TermsDayCount(t.DayCount),
 		FaceValue:        t.FaceValue,
+		DailyLiquidity:   t.DailyLiquidity,
 	}
 	if t.IndexID != "" {
 		index := t.IndexID
 		out.IndexId = &index
+	}
+
+	if t.CalendarID != "" {
+		calendar := t.CalendarID
+		out.CalendarId = &calendar
+	}
+
+	if !t.RedeemableFrom.IsZero() {
+		out.RedeemableFrom = &openapi_types.Date{Time: t.RedeemableFrom}
 	}
 
 	return out

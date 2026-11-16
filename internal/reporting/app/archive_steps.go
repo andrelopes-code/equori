@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 18
+const ArchiveVersion = 19
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -22,7 +22,7 @@ var archiveSteps = []ArchiveStep{
 	addReliableSync, addSavingsTarget, addMatchWindow, addAssistantConfiguration,
 	addCsvReading, addExternalIdentity, addTransferPairing, addInstrumentSymbols,
 	addContributionPlan, addDayTradeColumns, addCorporateActions, addBuckets,
-	addBucketDirections,
+	addBucketDirections, addTermsLiquidity,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -295,4 +295,24 @@ func addBucketDirections(tables []ArchiveTable) ([]ArchiveTable, error) {
 	}
 
 	return withField(tables, "planning_bucket", "takes_goals", jsontext.Value("false"))
+}
+
+// addTermsLiquidity writes null into calendar_id and redeemable_from and false into
+// daily_liquidity of every version 18 row of marketdata_fixed_income_terms (migration 00103): terms
+// saved before count calendar days, redeem from the issue date and carry no daily liquidity (fixed
+// income complete A236).
+func addTermsLiquidity(tables []ArchiveTable) ([]ArchiveTable, error) {
+	const table = "marketdata_fixed_income_terms"
+
+	tables, err := withField(tables, table, "calendar_id", jsontext.Value("null"))
+	if err != nil {
+		return nil, err
+	}
+
+	tables, err = withField(tables, table, "daily_liquidity", jsontext.Value("false"))
+	if err != nil {
+		return nil, err
+	}
+
+	return withField(tables, table, "redeemable_from", jsontext.Value("null"))
 }

@@ -517,3 +517,31 @@ func TestAddBucketDirections(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 18", ArchiveVersion)
 	}
 }
+
+// Fixed income complete A236, ADR 021 V2: a version 18 terms row gains calendar_id, daily_liquidity
+// and redeemable_from.
+func TestAddTermsLiquidity(t *testing.T) {
+	t.Parallel()
+
+	v18 := []ArchiveTable{
+		{
+			Name: "marketdata_fixed_income_terms",
+			Rows: [][]byte{[]byte(`{"instrument_code":"CDB1"}`)},
+		},
+		{Name: "planning_budget_reference", Rows: [][]byte{[]byte(`{"source":"fixed"}`)}},
+	}
+
+	got, err := addTermsLiquidity(v18)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := `{"calendar_id":null,"daily_liquidity":false,"instrument_code":"CDB1","redeemable_from":null}`
+	if string(got[0].Rows[0]) != want || string(got[1].Rows[0]) != `{"source":"fixed"}` {
+		t.Fatalf("tables = %s %s", got[0].Rows[0], got[1].Rows[0])
+	}
+
+	if ArchiveVersion < 19 {
+		t.Fatalf("ArchiveVersion = %d, want at least 19", ArchiveVersion)
+	}
+}

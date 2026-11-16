@@ -93,10 +93,8 @@ describe("Fixed income terms", () => {
       await screen.findByRole("button", { name: catalogEn["terms.set"] }),
     );
     const dialog = await screen.findByRole("dialog");
-    await user.type(
-      within(dialog).getByRole("textbox", { name: /^Index/ }),
-      "ipca",
-    );
+    await user.click(within(dialog).getByRole("combobox", { name: /^Index/ }));
+    await user.click(await screen.findByRole("option", { name: "IPCA" }));
     const spread = within(dialog).getByRole("textbox", {
       name: /^Annual spread/,
     });
@@ -127,9 +125,94 @@ describe("Fixed income terms", () => {
           spread_bp: 600,
           day_count: "act365",
           face_value: 100000,
+          daily_liquidity: false,
         },
       ]);
     });
+  });
+
+  it("saves a fixed rate on the business days of a calendar (S467)", async () => {
+    const sent: unknown[] = [];
+    const fetch = api({
+      "GET /api/v1/instruments/CDB1/terms": () => problem(404, "not_found"),
+      "PUT /api/v1/instruments/CDB1/terms": async (req) => {
+        sent.push(await req.json());
+        return json(200, cdbTerms);
+      },
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    const user = userEvent.setup();
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["terms.set"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("combobox", { name: /^Index/ }));
+    await user.click(
+      await screen.findByRole("option", { name: catalogEn["terms.indexNone"] }),
+    );
+    const spread = within(dialog).getByRole("textbox", {
+      name: /^Annual spread/,
+    });
+    await user.clear(spread);
+    await user.type(spread, "12");
+    await user.click(
+      within(dialog).getByRole("combobox", { name: /^Day count/ }),
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: catalogEn["instruments.dayCount.bus252"],
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole("combobox", {
+        name: catalogEn["terms.calendar"],
+      }),
+    );
+    await user.click(
+      await screen.findByRole("option", {
+        name: catalogEn["calendar.br_banking"],
+      }),
+    );
+    await user.click(
+      within(dialog).getByRole("checkbox", {
+        name: catalogEn["terms.dailyLiquidity"],
+      }),
+    );
+    await user.type(
+      within(dialog).getByRole("textbox", { name: /^Face value/ }),
+      "100000",
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: catalogEn["terms.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          issued_on: "2026-10-17",
+          matures_on: "2027-10-17",
+          percent_of_index_bp: 10000,
+          spread_bp: 1200,
+          day_count: "bus252",
+          calendar_id: "br_banking",
+          daily_liquidity: true,
+          face_value: 100000,
+        },
+      ]);
+    });
+  });
+
+  it("shows liquidity and grace of the terms", async () => {
+    const fetch = api({
+      "GET /api/v1/instruments/CDB1/terms": () =>
+        json(200, { ...cdbTerms, redeemable_from: "2026-04-02" }),
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    await screen.findByText("110%");
+    expect(termsRow(catalogEn["terms.liquidity"])).toBe(
+      catalogEn["terms.liquidity.atMaturity"],
+    );
+    expect(termsRow(catalogEn["terms.redeemableFrom"])).toBe("04/02/2026");
+    expect(termsRow(catalogEn["terms.index"])).toBe("CDI");
   });
 
   it("shows the problem the server returns for terms it refuses (S125)", async () => {

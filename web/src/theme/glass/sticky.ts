@@ -28,8 +28,15 @@ const stuckWithoutDivider = `${family("section")}[data-sticky]:not([data-divider
 const stickyEnd = `${family("table")} [data-sticky="end"]`;
 const stickyStart = `${family("table")} [data-sticky="start"]`;
 
+// Workaround for Slotted issue #122: the header is pinned per cell, so the blur is drawn per cell
+// and restarts at each column boundary.
+// The header of a table paints no fill: the glass behind it (the card) already has the tone, and a
+// fill would stack on it into another tone. The strong blur alone hides the rows that pass under.
+export const tableHeadCell = `${family("table")}[data-sticky-header] [data-part="column-header"]`;
+
 // The elements that carry a blur, which reduced transparency turns off.
 export const blurredBars = [
+  tableHeadCell,
   sectionHeader,
   stuckFill,
   gridHead,
@@ -43,7 +50,6 @@ export const permanentBars = [gridHead];
 
 // A bar made of many cells is filled and not blurred: a blur per cell is redrawn on every scroll.
 const filledBars = [
-  `${family("table")}[data-sticky-header] [data-part="column-header"]`,
   `${family("table")} [data-part="group-row"][data-sticky] > [data-part="group-header"]`,
 ];
 
@@ -60,6 +66,8 @@ const ground: Declarations = { "background-color": fill("sticky") };
 const frostTint: Declarations = { "background-color": fill("frost") };
 const frosted = blur("var(--glass-blur)", "var(--glass-saturate)");
 const strongFrost = blur("var(--glass-blur-strong)", "var(--glass-saturate)");
+// The card's tint lies in the header's backdrop: a saturation there would turn it bluer than the card.
+const plainFrost = blur("var(--glass-blur-strong)", "100%");
 
 export const stickyRules: readonly Block[] = [
   rule(stuck, {
@@ -82,6 +90,7 @@ export const stickyRules: readonly Block[] = [
     "border-start-end-radius": frameInnerRadius,
   }),
   rule(filledBars, ground),
+  rule(tableHeadCell, { "background-color": "transparent", ...plainFrost }),
   rule(family("data-grid"), {
     "--slotted-data-grid-header-surface": fill("sticky"),
   }),

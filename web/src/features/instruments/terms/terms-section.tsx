@@ -16,6 +16,8 @@ import { formatPercentBp } from "@/features/instruments/terms/basis-points";
 import { dayCountLabel } from "@/features/instruments/model/instrument-labels";
 import { TermProgress } from "@/features/instruments/terms/term-progress";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
+import { indexName } from "@/features/calculators";
+import { calendarLabel } from "@/features/planning";
 import { useScale } from "@/features/setup";
 import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -57,13 +59,33 @@ export function TermsSection({ code, terms, quote }: TermsSectionProps) {
       : [
           [t("terms.issuedOn"), formatDate(terms.issued_on, locale)],
           [t("terms.maturesOn"), formatDate(terms.matures_on, locale)],
-          [t("terms.index"), (terms.index_id ?? "").toUpperCase()],
+          [t("terms.index"), indexName(terms.index_id ?? "")],
           [
             t("terms.percentOfIndex"),
             formatPercentBp(terms.percent_of_index_bp, locale),
           ],
           [t("terms.spread"), formatPercentBp(terms.spread_bp, locale)],
           [t("terms.dayCount"), dayCountLabel(t, terms.day_count)],
+          [
+            t("terms.calendar"),
+            terms.calendar_id === undefined
+              ? ""
+              : calendarLabel(t, terms.calendar_id),
+          ],
+          [
+            t("terms.liquidity"),
+            t(
+              terms.daily_liquidity
+                ? "terms.liquidity.daily"
+                : "terms.liquidity.atMaturity",
+            ),
+          ],
+          [
+            t("terms.redeemableFrom"),
+            terms.redeemable_from === undefined
+              ? ""
+              : formatDate(terms.redeemable_from, locale),
+          ],
           [
             t("terms.faceValue"),
             fmt.money(

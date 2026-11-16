@@ -3028,6 +3028,16 @@
                       "currency"
                     ],
                     "additionalProperties": false
+                  },
+                  "calendar_id": {
+                    "type": "string"
+                  },
+                  "daily_liquidity": {
+                    "type": "boolean"
+                  },
+                  "redeemable_from": {
+                    "type": "string",
+                    "format": "date"
                   }
                 },
                 "required": [
@@ -3036,7 +3046,8 @@
                   "percent_of_index_bp",
                   "spread_bp",
                   "day_count",
-                  "face_value"
+                  "face_value",
+                  "daily_liquidity"
                 ],
                 "additionalProperties": false
               },
@@ -3164,6 +3175,16 @@
                     "currency"
                   ],
                   "additionalProperties": false
+                },
+                "calendar_id": {
+                  "type": "string"
+                },
+                "daily_liquidity": {
+                  "type": "boolean"
+                },
+                "redeemable_from": {
+                  "type": "string",
+                  "format": "date"
                 }
               },
               "required": [
@@ -3172,7 +3193,8 @@
                 "percent_of_index_bp",
                 "spread_bp",
                 "day_count",
-                "face_value"
+                "face_value",
+                "daily_liquidity"
               ],
               "additionalProperties": false
             },
@@ -6666,7 +6688,7 @@
   },
   {
     "name": "manage_instrument",
-    "description": "Proposes defining, renaming or deleting a security for the whole instance (a security that a position, an account or a transaction uses cannot be deleted), recording a manual price, setting the terms of a fixed income instrument, or loading the price history of an instrument since a date from the enabled sources. Use it when the user needs a security that does not exist yet or a price that is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book of the instance; the user confirms first.",
+    "description": "Proposes defining, renaming or deleting a security for the whole instance, recording a manual price, setting fixed income terms, or loading its price history since a date from the enabled sources. A security in use cannot be deleted. Use it when a security or a price is missing. Do not use it to buy or sell: record_investment does. Instruments and prices are shared by every book; the user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -6695,7 +6717,7 @@
         },
         "type": {
           "type": "string",
-          "description": "for define: instrument type; for edit: new type among stock, etf, reit, depositary_receipt",
+          "description": "for define: instrument type; edit allows stock, etf, reit, depositary_receipt",
           "enum": [
             "currency",
             "stock",
@@ -6709,7 +6731,7 @@
         },
         "quote_currency": {
           "type": "string",
-          "description": "for define: currency the instrument is priced in"
+          "description": "for define: currency of its prices"
         },
         "scale": {
           "type": "integer",
@@ -6722,7 +6744,7 @@
         },
         "price": {
           "type": "string",
-          "description": "for record_price: decimal price of one unit in quote_currency"
+          "description": "for record_price: unit price in quote_currency"
         },
         "issued_on": {
           "type": "string",
@@ -6740,24 +6762,37 @@
         },
         "index_id": {
           "type": "string",
-          "description": "for set_terms: index identifier; absent for a fixed rate"
+          "description": "for set_terms: index id; absent for a fixed rate"
         },
         "percent_of_index_bp": {
           "type": "integer",
-          "description": "for set_terms: percentage of the index in basis points, 11000 for 110%"
+          "description": "for set_terms: percent of the index in bp, 11000 for 110%"
         },
         "spread_bp": {
           "type": "integer",
-          "description": "for set_terms: annual spread in basis points"
+          "description": "for set_terms: annual spread in bp"
+        },
+        "calendar_id": {
+          "type": "string",
+          "description": "for set_terms: calendar of bus252 days, such as br_banking"
+        },
+        "daily_liquidity": {
+          "type": "boolean",
+          "description": "for set_terms: redeemable any business day"
+        },
+        "redeemable_from": {
+          "type": "string",
+          "description": "for set_terms: first early redemption date",
+          "format": "date"
         },
         "from": {
           "type": "string",
-          "description": "for request_history: first date of the prices to load",
+          "description": "for request_history: first price date",
           "format": "date"
         },
         "exchange": {
           "type": "string",
-          "description": "for define and edit: ISO 10383 market code, such as BVMF"
+          "description": "for define and edit: ISO 10383 MIC, such as BVMF"
         },
         "subtype": {
           "type": "string",
@@ -6768,11 +6803,11 @@
           "items": {
             "type": "string"
           },
-          "description": "for define and edit: source=symbol entries, such as yahoo=PETR4.SA; an empty list on edit clears them"
+          "description": "for define and edit: source=symbol entries, such as yahoo=PETR4.SA; an empty list clears them"
         },
         "day_count": {
           "type": "string",
-          "description": "for set_terms: bus252 needs a daily index; follows the index when absent",
+          "description": "for set_terms: bus252 needs a daily index or calendar_id; follows the index when absent",
           "enum": [
             "bus252",
             "act365"
@@ -6858,6 +6893,16 @@
                     "currency"
                   ],
                   "additionalProperties": false
+                },
+                "calendar_id": {
+                  "type": "string"
+                },
+                "daily_liquidity": {
+                  "type": "boolean"
+                },
+                "redeemable_from": {
+                  "type": "string",
+                  "format": "date"
                 }
               },
               "required": [
@@ -6866,7 +6911,8 @@
                 "percent_of_index_bp",
                 "spread_bp",
                 "day_count",
-                "face_value"
+                "face_value",
+                "daily_liquidity"
               ],
               "additionalProperties": false
             },
@@ -6980,6 +7026,16 @@
                 "currency"
               ],
               "additionalProperties": false
+            },
+            "calendar_id": {
+              "type": "string"
+            },
+            "daily_liquidity": {
+              "type": "boolean"
+            },
+            "redeemable_from": {
+              "type": "string",
+              "format": "date"
             }
           },
           "required": [
@@ -6988,7 +7044,8 @@
             "percent_of_index_bp",
             "spread_bp",
             "day_count",
-            "face_value"
+            "face_value",
+            "daily_liquidity"
           ],
           "additionalProperties": false
         }

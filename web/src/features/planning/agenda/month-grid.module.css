@@ -9,9 +9,11 @@
     );
     align-self: start;
     display: grid;
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
+    border: var(--slotted-border-width-thin) solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
     border-radius: var(--slotted-radius-md);
-    background: var(--slotted-surface-raised);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
     overflow: hidden;
   }
 
@@ -31,13 +33,15 @@
     text-transform: uppercase;
   }
 
-  /* Hairlines between the days: the gap shows the border colour behind the cells. */
+  /* Hairlines between the days are the cells' own end and bottom borders, so the cells stay
+     clear and the frame's fill shows through them. The grid is one border wider at the end and
+     at the bottom: the frame clips the last column's and row's border. */
   .grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
     grid-auto-rows: calc(var(--slotted-space-12) + var(--slotted-space-4));
-    gap: var(--slotted-border-width-thin);
-    background: var(--slotted-border-subtle);
+    margin-inline-end: calc(-1 * var(--slotted-border-width-thin));
+    margin-block-end: calc(-1 * var(--slotted-border-width-thin));
   }
 
   /* Number on top, the day's net in the middle at the end, the marks at the foot. */
@@ -50,7 +54,10 @@
     justify-content: space-between;
     min-inline-size: 0;
     padding: var(--slotted-space-3) var(--slotted-space-4);
-    background: var(--slotted-surface-raised);
+    border-inline-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+    border-block-end: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
     color: var(--slotted-text);
   }
 
@@ -59,11 +66,7 @@
   }
 
   .day[data-busy]:hover {
-    background: color-mix(
-      in oklab,
-      var(--slotted-text) 5%,
-      var(--slotted-surface-raised)
-    );
+    background: color-mix(in oklab, var(--slotted-text) 5%, transparent);
   }
 
   .day[data-outside] .number {
@@ -75,7 +78,7 @@
     background: color-mix(
       in oklab,
       var(--slotted-tone-accent-solid) 14%,
-      var(--slotted-surface-raised)
+      transparent
     );
   }
 

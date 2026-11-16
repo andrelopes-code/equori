@@ -2,6 +2,7 @@
   .growth {
     display: grid;
     row-gap: var(--slotted-space-3);
+    margin-block: var(--slotted-space-4);
   }
 
   .bar {

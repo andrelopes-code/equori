@@ -18,6 +18,9 @@ const draft: TermsDraft = {
   spread: "6",
   dayCount: "act365",
   face: 100000,
+  calendar: "",
+  dailyLiquidity: false,
+  redeemableFrom: "",
 };
 
 describe("termsBody", () => {
@@ -31,7 +34,33 @@ describe("termsBody", () => {
         spread_bp: 600,
         day_count: "act365",
         face_value: 100000,
+        daily_liquidity: false,
       },
+    });
+  });
+
+  it("omits an empty grace date and an empty calendar", () => {
+    const outcome = termsBody(draft, t);
+
+    expect(outcome.body).not.toHaveProperty("redeemable_from");
+    expect(outcome.body).not.toHaveProperty("calendar_id");
+  });
+
+  it("sends the calendar, the liquidity and the grace date", () => {
+    const outcome = termsBody(
+      {
+        ...draft,
+        calendar: "br_banking",
+        dailyLiquidity: true,
+        redeemableFrom: "2027-01-02",
+      },
+      t,
+    );
+
+    expect(outcome.body).toMatchObject({
+      calendar_id: "br_banking",
+      daily_liquidity: true,
+      redeemable_from: "2027-01-02",
     });
   });
 

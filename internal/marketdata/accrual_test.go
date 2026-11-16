@@ -235,3 +235,74 @@ func TestAccrualStopsAtMaturity(t *testing.T) {
 		t.Fatalf("prices = %+v", got)
 	}
 }
+
+// S467: a pre-fixed CDB of 12% a year over 252 business days skips the weekends and the holidays
+// of its calendar (A236 FC5). The values were computed independently with 80-digit decimals.
+func TestS467PreFixedAccruesOnBusinessDays(t *testing.T) {
+	t.Parallel()
+
+	got := accruePreFixed(t, "br_banking")
+
+	want := map[string]string{
+		"2026-01-30": "1009.034910724779",
+		"2026-02-27": "1017.236102727987",
+	}
+	for d, v := range want {
+		if got[d].Value != v || got[d].Source != "accrual" {
+			t.Errorf("price on %s = %+v, want %s from accrual", d, got[d], v)
+		}
+	}
+
+	// Carnival 2026 (Monday and Tuesday) and a Saturday carry no price.
+	for _, d := range []string{"2026-02-16", "2026-02-17", "2026-01-03"} {
+		if p, ok := got[d]; ok {
+			t.Errorf("price on %s = %+v, want none", d, p)
+		}
+	}
+}
+
+// S470: a calendar of no region (weekends only) prices every weekday, Carnival included.
+func TestS470WeekendCalendarAccruesEveryWeekday(t *testing.T) {
+	t.Parallel()
+
+	got := accruePreFixed(t, "weekend")
+
+	if _, ok := got["2026-02-16"]; !ok {
+		t.Error("no price on 2026-02-16")
+	}
+
+	if p := got["2026-02-27"]; p.Value != "1018.151451061362" {
+		t.Errorf("price on 2026-02-27 = %+v, want 1018.151451061362", p)
+	}
+}
+
+func accruePreFixed(t *testing.T, calendar string) map[string]accrualPrice {
+	t.Helper()
+
+	h := apitest.New(t, apitest.Today("2026-02-27"))
+	defineFixedIncome(t, h, "CDBPRE")
+
+	var terms termsAPI
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/instruments/CDBPRE/terms",
+		map[string]any{
+			"issued_on":   "2026-01-02",
+			"matures_on":  "2030-01-02",
+			"spread_bp":   1200,
+			"day_count":   "bus252",
+			"calendar_id": calendar,
+			"face_value":  100000,
+		},
+		http.StatusOK,
+		&terms,
+	)
+
+	if terms.CalendarID != calendar || terms.DailyLiquidity {
+		t.Fatalf("terms = %+v", terms)
+	}
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	return pricesBetween(t, h, "CDBPRE", "2026-01-01", "2026-02-28")
+}

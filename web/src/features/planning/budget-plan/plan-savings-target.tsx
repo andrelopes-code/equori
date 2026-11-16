@@ -68,7 +68,7 @@ export function PlanSavingsTarget({
 
   return (
     <div className={styles.ledger}>
-      <Field>
+      <Field className="mt-4 mb-6">
         <FieldLabel>{t("plan.savingsTarget")}</FieldLabel>
         <TextField
           name="savings_target"

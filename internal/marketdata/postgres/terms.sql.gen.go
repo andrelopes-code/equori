@@ -12,7 +12,7 @@ import (
 
 const getTerms = `-- name: GetTerms :one
 SELECT
-    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value
+    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from
 FROM
     marketdata_fixed_income_terms
 WHERE
@@ -31,13 +31,16 @@ func (q *Queries) GetTerms(ctx context.Context, instrumentCode string) (Marketda
 		&i.SpreadBp,
 		&i.DayCount,
 		&i.FaceValue,
+		&i.CalendarID,
+		&i.DailyLiquidity,
+		&i.RedeemableFrom,
 	)
 	return i, err
 }
 
 const listTerms = `-- name: ListTerms :many
 SELECT
-    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value
+    instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from
 FROM
     marketdata_fixed_income_terms
 ORDER BY
@@ -62,6 +65,9 @@ func (q *Queries) ListTerms(ctx context.Context) ([]MarketdataFixedIncomeTerm, e
 			&i.SpreadBp,
 			&i.DayCount,
 			&i.FaceValue,
+			&i.CalendarID,
+			&i.DailyLiquidity,
+			&i.RedeemableFrom,
 		); err != nil {
 			return nil, err
 		}
@@ -83,7 +89,10 @@ INSERT INTO
         percent_of_index_bp,
         spread_bp,
         day_count,
-        face_value
+        face_value,
+        calendar_id,
+        daily_liquidity,
+        redeemable_from
     )
 VALUES
     (
@@ -94,7 +103,10 @@ VALUES
         $5,
         $6,
         $7,
-        $8
+        $8,
+        $9,
+        $10,
+        $11
     )
 ON CONFLICT (instrument_code) DO UPDATE
 SET
@@ -104,7 +116,10 @@ SET
     percent_of_index_bp = EXCLUDED.percent_of_index_bp,
     spread_bp = EXCLUDED.spread_bp,
     day_count = EXCLUDED.day_count,
-    face_value = EXCLUDED.face_value
+    face_value = EXCLUDED.face_value,
+    calendar_id = EXCLUDED.calendar_id,
+    daily_liquidity = EXCLUDED.daily_liquidity,
+    redeemable_from = EXCLUDED.redeemable_from
 `
 
 type PutTermsParams struct {
@@ -116,6 +131,9 @@ type PutTermsParams struct {
 	SpreadBp         int32
 	DayCount         string
 	FaceValue        int64
+	CalendarID       *string
+	DailyLiquidity   bool
+	RedeemableFrom   *time.Time
 }
 
 func (q *Queries) PutTerms(ctx context.Context, arg PutTermsParams) error {
@@ -128,6 +146,9 @@ func (q *Queries) PutTerms(ctx context.Context, arg PutTermsParams) error {
 		arg.SpreadBp,
 		arg.DayCount,
 		arg.FaceValue,
+		arg.CalendarID,
+		arg.DailyLiquidity,
+		arg.RedeemableFrom,
 	)
 	return err
 }

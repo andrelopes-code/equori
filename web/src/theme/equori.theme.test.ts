@@ -178,6 +178,15 @@ test("the list of a select or a picker stops at 20 rem and scrolls", () => {
   }
 });
 
+test("the status of a list that shows its empty message is kept for screen readers only", () => {
+  const rule =
+    /\[data-part="empty"\] \+ \[data-part="status"\]\s*\{([^}]*)\}/.exec(css);
+  assert.notEqual(rule, null);
+  assert.match(rule?.[1] ?? "", /clip-path: inset\(50%\);/);
+  assert.match(rule?.[1] ?? "", /position: absolute;/);
+  assert.doesNotMatch(rule?.[1] ?? "", /display: none/);
+});
+
 test("a menu keeps the height its items need", () => {
   assert.doesNotMatch(
     css,
@@ -246,6 +255,19 @@ test("card actions span the header's text rows, so a tall control does not push 
   assert.match(
     css,
     /\[data-ui="card"\] > \[data-part="header"\]:has\(> :nth-child\(3 of :not\(\[data-part="actions"\]\)\)\) > \[data-part="actions"\]\s*\{[^}]*grid-row: 1 \/ span 3/,
+  );
+});
+
+test("a card header keeps no gap between its title and its description", () => {
+  assert.equal(theme.components["--slotted-card-header-gap"], "0");
+  assert.equal(theme.components["--slotted-list-item-body-gap"], "0");
+  assert.equal(theme.components["--slotted-stepper-description-gap"], "0");
+});
+
+test("a chart header takes the gap between its title and its description back", () => {
+  assert.match(
+    css,
+    /\[data-ui="chart"\] > \[data-part="header"\] \[data-part="description"\]\s*\{[^}]*margin-block-start: calc\(var\(--slotted-space-1\) \* -1\)/,
   );
 });
 

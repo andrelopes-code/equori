@@ -247,6 +247,22 @@ test("a chart's table view is glass and its header is opaque", () => {
   );
 });
 
+// The card behind a table is glass. A fill on the sticky header stacks on the card's own and reads
+// as another tone, so the header paints none; the strong blur hides the rows that pass under it.
+test("a table's sticky header has no fill and blurs what passes under it", () => {
+  assert.match(
+    glassOnly,
+    /\[data-ui="table"\]\[data-sticky-header\] \[data-part="column-header"\] \{\s*background-color: transparent;[^}]*backdrop-filter: blur\(var\(--glass-blur-strong\)\) saturate\(100%\)/,
+  );
+});
+
+test("a table's sticky header takes a solid fill under reduced transparency", () => {
+  assert.match(
+    glassOnly,
+    /prefers-reduced-transparency: reduce\)[^]*?\[data-ui="table"\]\[data-sticky-header\] \[data-part="column-header"\] \{\s*background-color: var\(--slotted-surface-raised\);/,
+  );
+});
+
 test("a table's sticky column blurs the rows that pass under it", () => {
   assert.match(
     glassOnly,

@@ -1,13 +1,12 @@
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 import { TextField } from "@slotted/react/text-field";
+import { useQuery } from "@tanstack/react-query";
 
+import { useApi } from "@/api/api-context";
+import { indexName, indexesQuery } from "@/features/calculators";
 import type { TermsDraft } from "@/features/instruments/terms/terms-draft";
 import { useT } from "@/i18n/i18n-provider";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { FormRow } from "@/ui/form-layout/form-row";
 
 interface TermsRateFieldsProps {
@@ -22,22 +21,28 @@ export function TermsRateFields({
   onChange,
 }: TermsRateFieldsProps) {
   const t = useT();
+  const api = useApi();
+  const indexes = useQuery(indexesQuery(api)).data ?? [];
+  const choices = [
+    { value: "", label: t("terms.indexNone") },
+    ...indexes.map((i) => ({ value: i.id, label: indexName(i.id) })),
+  ];
 
   return (
     <>
       <Field invalid={errors.index_id !== undefined}>
         <FieldLabel>{t("terms.index")}</FieldLabel>
-        <TextField
-          name="index_id"
+        <ChoiceSelect
+          label={t("terms.index")}
+          choices={choices}
           value={draft.index}
-          maxLength={40}
-          onChange={(event) => {
-            onChange({ index: event.target.value.toLowerCase() });
+          multiple={false}
+          invalid={errors.index_id !== undefined}
+          onChange={(next) => {
+            if (typeof next === "string") onChange({ index: next });
           }}
         />
-        {errors.index_id === undefined ? (
-          <FieldDescription>{t("terms.indexHint")}</FieldDescription>
-        ) : (
+        {errors.index_id !== undefined && (
           <FieldError>{errors.index_id}</FieldError>
         )}
       </Field>

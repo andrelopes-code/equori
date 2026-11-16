@@ -25,6 +25,7 @@ export function IncomeSplitAction({ entries }: IncomeSplitActionProps) {
       <HeaderAction
         label={t("buckets.manage")}
         glyph="pencil"
+        wordsOnly
         loading={method.isPending}
         onClick={() => {
           setOpen(true);

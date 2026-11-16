@@ -6790,6 +6790,15 @@ export interface components {
              * @description Price of one unit on issued_on, in minor units of the quote currency.
              */
             face_value: number;
+            /** @description Calendar whose business days bus252 counts when the index does not compound by business day. */
+            calendar_id?: string;
+            /** @description The security can be redeemed on any business day; false when omitted. */
+            daily_liquidity?: boolean;
+            /**
+             * Format: date
+             * @description First date of a redemption before maturity; absent when redeemable from issued_on.
+             */
+            redeemable_from?: string;
         };
         FixedIncomeTerms: {
             /** Format: date */
@@ -6802,6 +6811,15 @@ export interface components {
             day_count: components["schemas"]["TermsDayCount"];
             /** Format: int64 */
             face_value: number;
+            /** @description Calendar whose business days bus252 counts when the index does not compound by business day. */
+            calendar_id?: string;
+            /** @description The security can be redeemed on any business day; false when omitted. */
+            daily_liquidity: boolean;
+            /**
+             * Format: date
+             * @description First date of a redemption before maturity; absent when redeemable from issued_on.
+             */
+            redeemable_from?: string;
         };
         /** @enum {string} */
         TermsDayCount: "bus252" | "act365";

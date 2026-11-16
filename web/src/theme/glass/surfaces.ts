@@ -224,9 +224,15 @@ export const surfaces: readonly Surface[] = [
     // The shell's content card takes the base surface at a low alpha, so the aurora shows through
     // it; the Page inside it is transparent (see ground.ts).
     // The section surface is read by the application's own panes, which sit under the shell.
+    // The panel tokens are the whole card material (fill, ring, lit edge and shadow) for an element
+    // of the application's own that stands as a card (web.md, O18); the standard theme leaves them
+    // unset and the element's fallbacks apply.
     tokens: {
       "--slotted-app-shell-main-surface": fill("page"),
       "--slotted-section-surface": fill("card"),
+      "--slotted-panel-surface": fill("card"),
+      "--slotted-panel-border-color": ring,
+      "--slotted-panel-shadow": elevation(1),
     },
   },
 ];

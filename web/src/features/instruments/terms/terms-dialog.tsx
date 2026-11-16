@@ -17,6 +17,7 @@ import {
   dayCountLabel,
   dayCounts,
 } from "@/features/instruments/model/instrument-labels";
+import { TermsLiquidityFields } from "@/features/instruments/terms/terms-liquidity-fields";
 import { TermsRateFields } from "@/features/instruments/terms/terms-rate-fields";
 import { useTermsDraft } from "@/features/instruments/terms/use-terms-draft";
 import { useT } from "@/i18n/i18n-provider";
@@ -161,6 +162,12 @@ export function TermsDialog({
               </FormRow>
 
               <TermsRateFields
+                draft={draft}
+                errors={errors}
+                onChange={change}
+              />
+
+              <TermsLiquidityFields
                 draft={draft}
                 errors={errors}
                 onChange={change}

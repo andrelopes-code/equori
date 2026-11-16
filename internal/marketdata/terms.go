@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -19,6 +20,10 @@ const typeFixedIncome = "fixed_income"
 // PutTerms stores the terms of a fixed income instrument, replacing any earlier ones.
 func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, error) {
 	if err := t.Validate(m.businessDays); err != nil {
+		return Terms{}, err
+	}
+
+	if err := m.checkCalendar(t.CalendarID); err != nil {
 		return Terms{}, err
 	}
 
@@ -45,9 +50,12 @@ func (m *Module) PutTerms(ctx context.Context, code string, t Terms) (Terms, err
 			PercentOfIndexBp: int32(
 				t.PercentOfIndexBP,
 			),
-			SpreadBp:  int32(t.SpreadBP),
-			DayCount:  t.DayCount,
-			FaceValue: t.FaceValue,
+			SpreadBp:       int32(t.SpreadBP),
+			DayCount:       t.DayCount,
+			FaceValue:      t.FaceValue,
+			CalendarID:     optional(t.CalendarID),
+			DailyLiquidity: t.DailyLiquidity,
+			RedeemableFrom: optionalDate(t.RedeemableFrom),
 		}); err != nil {
 			return fmt.Errorf("put terms: %w", err)
 		}
@@ -79,6 +87,19 @@ func (m *Module) Terms(ctx context.Context, code string) (Terms, error) {
 // BusinessDayIndexes are the indexes that compound by business day.
 func (m *Module) BusinessDayIndexes() domain.BusinessDayIndexes { return m.businessDays }
 
+// checkCalendar refuses a calendar name that is not registered; an empty name is valid.
+func (m *Module) checkCalendar(name string) error {
+	if name == "" {
+		return nil
+	}
+
+	if _, err := m.calendar(name); err != nil {
+		return &domain.FieldError{Field: "calendar_id", Message: "is not a registered calendar"}
+	}
+
+	return nil
+}
+
 func toTerms(r postgres.MarketdataFixedIncomeTerm) Terms {
 	t := Terms{
 		IssuedOn:         r.IssuedOn,
@@ -87,10 +108,28 @@ func toTerms(r postgres.MarketdataFixedIncomeTerm) Terms {
 		SpreadBP:         int(r.SpreadBp),
 		DayCount:         r.DayCount,
 		FaceValue:        r.FaceValue,
+		DailyLiquidity:   r.DailyLiquidity,
 	}
 	if r.IndexID != nil {
 		t.IndexID = *r.IndexID
 	}
 
+	if r.CalendarID != nil {
+		t.CalendarID = *r.CalendarID
+	}
+
+	if r.RedeemableFrom != nil {
+		t.RedeemableFrom = *r.RedeemableFrom
+	}
+
 	return t
+}
+
+// optionalDate is nil for the zero time.
+func optionalDate(d time.Time) *time.Time {
+	if d.IsZero() {
+		return nil
+	}
+
+	return &d
 }

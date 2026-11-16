@@ -127,6 +127,16 @@ const cardActionsRule = `
 }
 `;
 
+// Workaround for Slotted issue #120: the header of a chart holds its description 0.125rem under its
+// title by a literal gap with no token, and the theme cannot select the unnamed element that
+// carries it. The description takes the gap back as a negative margin. The card variant keeps the
+// gap in its minimum height, so the header ends 0.125rem below the description.
+const chartHeaderRule = `
+[data-ui="chart"] > [data-part="header"] [data-part="description"] {
+  margin-block-start: calc(var(--slotted-space-1) * -1);
+}
+`;
+
 // A light palette dims the page less: the material already sets it apart.
 const paletteScrimRule = `
 &[data-slotted-scheme="light"] [data-ui="dialog"]:has([data-ui="command-palette"]) {
@@ -294,6 +304,22 @@ const listHeightRule = `
 [data-ui="multi-select"],
 [data-ui="entity-picker"] {
   --slotted-overlay-max-block-size: 20rem;
+}
+`;
+
+// Workaround for Slotted issue #125: a list with no match draws its empty message and, under it,
+// the count message, which reads the same for a total of 0. The count stays in the accessibility
+// tree as the live announcement and is not drawn. A leaf with no descendants, so the clip-path
+// does not end a backdrop-filter (O11).
+const emptyStatusRule = `
+[data-part="empty"] + [data-part="status"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
 }
 `;
 
@@ -466,6 +492,11 @@ export default extendTheme(
       // Workaround for Slotted issue #91: a widget's help note is a few sentences; the 16rem popover
       // of that control wraps it into a tall column.
       "--slotted-popover-measure-sm": "24rem",
+      // Owner review of 2026-11-15: the line boxes of the title and of the description already stand
+      // apart by the leading of their fonts; the header's 0.25rem row gap on top read as a hole.
+      "--slotted-card-header-gap": "0",
+      "--slotted-list-item-body-gap": "0",
+      "--slotted-stepper-description-gap": "0",
       "--slotted-toast-surface": "var(--slotted-surface-material)",
       "--slotted-toast-backdrop-filter": "var(--slotted-material-backdrop)",
       "--slotted-command-palette-footer-surface":
@@ -481,6 +512,7 @@ export default extendTheme(
       sectionActionsRule,
       panelTitleRule,
       cardActionsRule,
+      chartHeaderRule,
       resultStateRule,
       paletteScrimRule,
       paletteGroupLabelRule,
@@ -488,6 +520,7 @@ export default extendTheme(
       tooltipArrowClipRule,
       tagInsetRule,
       listHeightRule,
+      emptyStatusRule,
       stickyHeaderRule,
       ...overlayItemRules,
       stickyColumnRule,

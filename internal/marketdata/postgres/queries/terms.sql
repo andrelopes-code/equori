@@ -16,7 +16,10 @@ INSERT INTO
         percent_of_index_bp,
         spread_bp,
         day_count,
-        face_value
+        face_value,
+        calendar_id,
+        daily_liquidity,
+        redeemable_from
     )
 VALUES
     (
@@ -27,7 +30,10 @@ VALUES
         @percent_of_index_bp,
         @spread_bp,
         @day_count,
-        @face_value
+        @face_value,
+        sqlc.narg (calendar_id),
+        @daily_liquidity,
+        sqlc.narg (redeemable_from)
     )
 ON CONFLICT (instrument_code) DO UPDATE
 SET
@@ -37,7 +43,10 @@ SET
     percent_of_index_bp = EXCLUDED.percent_of_index_bp,
     spread_bp = EXCLUDED.spread_bp,
     day_count = EXCLUDED.day_count,
-    face_value = EXCLUDED.face_value;
+    face_value = EXCLUDED.face_value,
+    calendar_id = EXCLUDED.calendar_id,
+    daily_liquidity = EXCLUDED.daily_liquidity,
+    redeemable_from = EXCLUDED.redeemable_from;
 
 -- name: ListTerms :many
 SELECT

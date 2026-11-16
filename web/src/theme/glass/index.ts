@@ -6,6 +6,7 @@
 //   surfaces.ts   one entry per family: its tokens, its own paint, the elements that blur
 //   states.ts     hover, press, selection and tinted surfaces as washes over glass
 //   sticky.ts     bars that pinned content scrolls under
+//   table.ts      pinned cells and group bands of a framed table
 //   ground.ts     what the theme leaves clear so the aurora shows through
 //   lite.ts       phones and touch screens: bars without a blur
 //   fallbacks.ts  reduced transparency
@@ -30,6 +31,7 @@ import {
   surfaces,
   tokenSelector,
 } from "./surfaces.ts";
+import { tableRules } from "./table.ts";
 
 const surfaceRules = surfaces.flatMap((surface) => [
   ...(surface.tokens === undefined
@@ -57,6 +59,7 @@ const blocks: readonly Block[] = [
   ...blurRules,
   ...stateRules,
   ...stickyRules,
+  ...tableRules,
   ...liteRules,
   ...fallbackRules,
 ];

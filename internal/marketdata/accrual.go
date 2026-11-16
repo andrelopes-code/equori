@@ -95,6 +95,14 @@ func (m *Module) anchoredSeries(
 
 	terms := toTerms(row)
 
+	var isBusinessDay domain.BusinessDay
+	if row.CalendarID != nil {
+		isBusinessDay, err = m.businessDayOf(ctx, *row.CalendarID, row.IssuedOn, today)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	series, err := domain.Accrue(
 		terms,
 		m.businessDays,
@@ -102,7 +110,7 @@ func (m *Module) anchoredSeries(
 		rates,
 		row.IssuedOn,
 		today,
-		nil,
+		isBusinessDay,
 	)
 	if err != nil {
 		return nil, err
@@ -114,6 +122,36 @@ func (m *Module) anchoredSeries(
 	}
 
 	return domain.Anchor(series, anchors)
+}
+
+// businessDayOf is the business-day predicate of calendar name, with its rule and instance
+// holidays, for the dates from from to to.
+func (m *Module) businessDayOf(
+	ctx context.Context,
+	name string,
+	from, to time.Time,
+) (domain.BusinessDay, error) {
+	cal, err := m.calendar(name)
+	if err != nil {
+		return nil, err
+	}
+
+	holidays := map[string]bool{}
+
+	for year := from.Year(); year <= to.Year(); year++ {
+		hs, err := m.Holidays(ctx, name, year)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, h := range hs {
+			holidays[h.Date.Format(time.DateOnly)] = true
+		}
+	}
+
+	return func(d time.Time) bool {
+		return !cal.IsWeekend(d) && !holidays[d.Format(time.DateOnly)]
+	}, nil
 }
 
 // accrualRates reads the stored rates of the index of row since its issue date.

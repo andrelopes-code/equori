@@ -24,6 +24,9 @@ type MarketdataFixedIncomeTerm struct {
 	SpreadBp         int32
 	DayCount         string
 	FaceValue        int64
+	CalendarID       *string
+	DailyLiquidity   bool
+	RedeemableFrom   *time.Time
 }
 
 type MarketdataHistory struct {

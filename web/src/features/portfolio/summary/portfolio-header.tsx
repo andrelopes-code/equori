@@ -90,7 +90,7 @@ export function PortfolioHeader({
                   onChange({ date: next === today ? undefined : next });
                 }}
               />
-              <Divider orientation="vertical" />
+              <Divider className="ml-4" orientation="vertical" />
               <ButtonLink
                 variant="ghost"
                 tone="secondary"

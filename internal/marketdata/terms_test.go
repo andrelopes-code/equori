@@ -16,6 +16,9 @@ type termsAPI struct {
 	SpreadBP         int    `json:"spread_bp"`
 	DayCount         string `json:"day_count"`
 	FaceValue        int64  `json:"face_value"`
+	CalendarID       string `json:"calendar_id"`
+	DailyLiquidity   bool   `json:"daily_liquidity"`
+	RedeemableFrom   string `json:"redeemable_from"`
 }
 
 func defineFixedIncome(t *testing.T, h *apitest.Harness, code string) {
@@ -195,40 +198,48 @@ func TestSchemaRejectsInvalidTerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	const cols = `INSERT INTO marketdata_fixed_income_terms (instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value) VALUES `
+	const cols = `INSERT INTO marketdata_fixed_income_terms (instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, redeemable_from) VALUES `
 
 	tests := []struct{ name, sql string }{
 		{
 			"matures before issue",
-			cols + `('CDBXPTO', '2026-01-02', '2026-01-02', 'cdi', 10000, 0, 'bus252', 100000)`,
+			cols + `('CDBXPTO', '2026-01-02', '2026-01-02', 'cdi', 10000, 0, 'bus252', 100000, null, null)`,
 		},
 		{
 			"zero face value",
-			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'bus252', 0)`,
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'bus252', 0, null, null)`,
 		},
 		{
 			"zero percent",
-			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 0, 0, 'bus252', 100000)`,
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 0, 0, 'bus252', 100000, null, null)`,
 		},
 		{
 			"negative spread",
-			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, -1, 'bus252', 100000)`,
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, -1, 'bus252', 100000, null, null)`,
 		},
 		{
 			"index outside the pattern",
-			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'CDI', 10000, 0, 'bus252', 100000)`,
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'CDI', 10000, 0, 'bus252', 100000, null, null)`,
 		},
 		{
 			"unknown day count",
-			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'act360', 100000)`,
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'act360', 100000, null, null)`,
 		},
 		{
 			"bus252 without the cdi index",
-			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'ipca', 10000, 0, 'bus252', 100000)`,
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'ipca', 10000, 0, 'bus252', 100000, null, null)`,
+		},
+		{
+			"redeemable before issue",
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'bus252', 100000, null, '2026-01-01')`,
+		},
+		{
+			"calendar outside the pattern",
+			cols + `('CDBXPTO', '2026-01-02', '2027-01-02', null, 10000, 0, 'bus252', 100000, 'BR', null)`,
 		},
 		{
 			"unknown instrument",
-			cols + `('NOPE11', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'bus252', 100000)`,
+			cols + `('NOPE11', '2026-01-02', '2027-01-02', 'cdi', 10000, 0, 'bus252', 100000, null, null)`,
 		},
 	}
 	for _, tt := range tests {
@@ -237,5 +248,70 @@ func TestSchemaRejectsInvalidTerms(t *testing.T) {
 				t.Fatal("accepted")
 			}
 		})
+	}
+}
+
+// S469: a calendar that is not registered and a grace outside the term are refused; liquidity and
+// grace round-trip.
+func TestS469TermsRefuseCalendarAndGrace(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	defineFixedIncome(t, h, "CDBXPTO")
+
+	put := func(change map[string]any) apitest.Response {
+		body := cdbTerms()
+		for k, v := range change {
+			if v == nil {
+				delete(body, k)
+				continue
+			}
+
+			body[k] = v
+		}
+
+		return h.Do(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", body)
+	}
+	h.ExpectProblem(
+		put(map[string]any{"calendar_id": "mars_banking"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"calendar_id",
+	)
+	h.ExpectProblem(
+		put(map[string]any{"redeemable_from": "2026-01-01"}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"redeemable_from",
+	)
+
+	if r := put(
+		map[string]any{"index_id": nil, "calendar_id": "br_banking"},
+	); r.Status != http.StatusOK {
+		t.Fatalf("pre-fixed with a calendar = %d", r.Status)
+	}
+
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/instruments/CDBXPTO/terms",
+		map[string]any{
+			"issued_on":       "2026-01-02",
+			"matures_on":      "2028-01-02",
+			"spread_bp":       1200,
+			"day_count":       "bus252",
+			"face_value":      100000,
+			"calendar_id":     "br_banking",
+			"daily_liquidity": true,
+			"redeemable_from": "2026-04-02",
+		},
+		http.StatusOK,
+		nil,
+	)
+
+	var read termsAPI
+	h.MustDo(http.MethodGet, "/api/v1/instruments/CDBXPTO/terms", nil, http.StatusOK, &read)
+
+	if read.CalendarID != "br_banking" || !read.DailyLiquidity ||
+		read.RedeemableFrom != "2026-04-02" {
+		t.Fatalf("read = %+v", read)
 	}
 }

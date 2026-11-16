@@ -12306,9 +12306,20 @@ components:
           format: int64
           minimum: 1
           description: Price of one unit on issued_on, in minor units of the quote currency.
+        calendar_id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Calendar whose business days bus252 counts when the index does not compound by business day.
+        daily_liquidity:
+          type: boolean
+          description: The security can be redeemed on any business day; false when omitted.
+        redeemable_from:
+          type: string
+          format: date
+          description: First date of a redemption before maturity; absent when redeemable from issued_on.
     FixedIncomeTerms:
       type: object
-      required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value]
+      required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value, daily_liquidity]
       properties:
         issued_on:
           type: string
@@ -12328,6 +12339,17 @@ components:
         face_value:
           type: integer
           format: int64
+        calendar_id:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Calendar whose business days bus252 counts when the index does not compound by business day.
+        daily_liquidity:
+          type: boolean
+          description: The security can be redeemed on any business day; false when omitted.
+        redeemable_from:
+          type: string
+          format: date
+          description: First date of a redemption before maturity; absent when redeemable from issued_on.
     TermsDayCount:
       type: string
       enum: [bus252, act365]

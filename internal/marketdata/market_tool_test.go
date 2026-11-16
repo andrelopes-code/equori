@@ -58,6 +58,8 @@ type toolInstrument struct {
 		PercentOfIndexBP int        `json:"percent_of_index_bp"`
 		DayCount         string     `json:"day_count"`
 		FaceValue        tool.Money `json:"face_value"`
+		CalendarID       string     `json:"calendar_id"`
+		DailyLiquidity   bool       `json:"daily_liquidity"`
 	} `json:"terms"`
 }
 
@@ -744,6 +746,52 @@ func TestManageInstrumentToolDayCount(t *testing.T) {
 	args["index_id"], args["day_count"] = "", "bus252"
 	delete(args, "index_id")
 	h.ExpectToolError(h.Tool("manage_instrument", args), "validation_failed", "")
+}
+
+// A236 FC4, FC5 through the tool: a calendar and daily liquidity.
+func TestManageInstrumentSetTermsCalendar(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	defineFixedIncome(t, h, "CDBPRE")
+
+	args := map[string]any{
+		"action":          "set_terms",
+		"code":            "CDBPRE",
+		"issued_on":       "2026-01-02",
+		"matures_on":      "2030-01-02",
+		"face_value":      "1000.00",
+		"spread_bp":       1200,
+		"calendar_id":     "br_banking",
+		"daily_liquidity": true,
+	}
+
+	p, r := preview(t, h, "manage_instrument", args)
+	if r.IsError || len(p.Changes) != 1 {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	want := `issued 2026-01-02, matures 2030-01-02, index "" at 10000 bp plus 1200 bp, bus252, ` +
+		`calendar br_banking, daily liquidity`
+	if p.Changes[0].After.Text != want {
+		t.Errorf("preview text = %q, want %q", p.Changes[0].After.Text, want)
+	}
+
+	toolOutput(t, h, "manage_instrument", args, &struct{}{})
+
+	var got struct {
+		Instrument toolInstrument `json:"instrument"`
+	}
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "instrument", "code": "CDBPRE"},
+		&got,
+	)
+
+	if got.Instrument.Terms.CalendarID != "br_banking" || !got.Instrument.Terms.DailyLiquidity {
+		t.Errorf("terms = %+v", got.Instrument.Terms)
+	}
 }
 
 func TestMarketToolCatalog(t *testing.T) {
