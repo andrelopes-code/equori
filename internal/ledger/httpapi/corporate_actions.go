@@ -65,7 +65,41 @@ func (s *Server) actionOrderFromInput(
 		o.UnitCost = &cost
 	}
 
+	if err := s.unitTaxFromInput(ctx, b, &o); err != nil {
+		return domain.ActionOrder{}, err
+	}
+
 	return o, nil
+}
+
+// unitTaxFromInput sets the quantity and the amount of a unit tax; absent, they stay zero and
+// the domain reports the field.
+func (s *Server) unitTaxFromInput(
+	ctx context.Context,
+	b CorporateActionInput,
+	o *domain.ActionOrder,
+) error {
+	if b.Quantity != nil {
+		code, err := s.svc.ResolveCode(ctx, money.Currency(b.Quantity.Currency))
+		if err != nil {
+			return err
+		}
+
+		if o.Quantity, err = s.svc.AmountOf(ctx, b.Quantity.Amount, code); err != nil {
+			return err
+		}
+	}
+
+	if b.Amount != nil {
+		amount, err := fromMoneyAPI("amount", *b.Amount)
+		if err != nil {
+			return err
+		}
+
+		o.Amount = amount
+	}
+
+	return nil
 }
 
 func toCorporateActionAPI(a domain.CorporateAction) *CorporateAction {

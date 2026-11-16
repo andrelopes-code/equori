@@ -80,6 +80,9 @@ const (
 	// RoleTransfersInTransit holds the other side of a card payment until the paying
 	// account's line pairs with it (A88).
 	RoleTransfersInTransit SystemRole = "transfers_in_transit"
+	// RolePrepaidTax holds the income tax a fund withholds by cancelling units, a credit of
+	// the book (A236 FC25). It is outside systemRoles: the first unit tax of a book creates it.
+	RolePrepaidTax SystemRole = "prepaid_tax"
 )
 
 var systemRoles = []struct {
@@ -111,6 +114,10 @@ func SystemRoles() []SystemRole {
 }
 
 func (r SystemRole) Class() Class {
+	if r == RolePrepaidTax {
+		return ClassAsset
+	}
+
 	for _, s := range systemRoles {
 		if s.role == r {
 			return s.class
@@ -120,8 +127,21 @@ func (r SystemRole) Class() Class {
 	return ""
 }
 
+// Kind is the kind of the system account; only the asset account prepaid_tax has one.
+func (r SystemRole) Kind() Kind {
+	if r == RolePrepaidTax {
+		return KindReceivable
+	}
+
+	return ""
+}
+
 // DefaultName is the name given to the system account when the book is provisioned.
 func (r SystemRole) DefaultName() string {
+	if r == RolePrepaidTax {
+		return "Prepaid income tax"
+	}
+
 	for _, s := range systemRoles {
 		if s.role == r {
 			return s.name

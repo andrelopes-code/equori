@@ -11379,10 +11379,11 @@ components:
           $ref: "#/components/schemas/InvestmentIncomeInput"
     CorporateActionKind:
       type: string
-      enum: [split, reverse_split, bonus]
+      enum: [split, reverse_split, bonus, unit_tax]
     CorporateActionInput:
       type: object
       additionalProperties: false
+      description: A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it.
       required: [kind, date, ratio_from, ratio_to]
       properties:
         account_id:
@@ -11418,6 +11419,10 @@ components:
           type: string
           format: uuid
           description: Income category of a bonus with unit_cost; required with it.
+        quantity:
+          $ref: "#/components/schemas/Money"
+        amount:
+          $ref: "#/components/schemas/Money"
         description:
           type: string
           maxLength: 500

@@ -15,11 +15,13 @@ const (
 	ActionSplit        ActionKind = "split"
 	ActionReverseSplit ActionKind = "reverse_split"
 	ActionBonus        ActionKind = "bonus"
+	ActionUnitTax      ActionKind = "unit_tax"
 )
 
 const maxActionRatio = 1000000
 
-// ActionOrder is a split, reverse split or bonus of one holding (A228 IO22).
+// ActionOrder is a split, reverse split, bonus or unit tax of one holding (A228 IO22). Quantity
+// (units of the holding) and Amount (base currency) are for a unit tax only.
 type ActionOrder struct {
 	AccountID, BrokerageID, CategoryID uuid.UUID
 	Instrument                         money.Currency
@@ -27,6 +29,7 @@ type ActionOrder struct {
 	Date                               time.Time
 	RatioFrom, RatioTo                 int64
 	UnitCost                           *money.Rate
+	Quantity, Amount                   money.Money
 	Description                        string
 }
 

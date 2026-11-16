@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,7 +13,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// RecordCorporateAction records a split, a reverse split or a bonus of one holding (A228 IO22).
+const instrumentTypeFund = "fund"
+
+// RecordCorporateAction records a split, a reverse split, a bonus or a unit tax of one holding
+// (A228 IO22, A236 FC25).
 func (s *Service) RecordCorporateAction(
 	ctx context.Context,
 	booksID int64,
@@ -60,6 +64,10 @@ func (s *Service) buildCorporateAction(
 	h, err := s.lockHolding(ctx, r, booksID, security, base, o.Date.AddDate(0, 0, -1), uuid.Nil)
 	if err != nil {
 		return domain.Transaction{}, err
+	}
+
+	if o.Kind == domain.ActionUnitTax {
+		return s.buildUnitTax(ctx, r, booksID, o, security, h, base)
 	}
 
 	postings, action, err := domain.BuildCorporateAction(o, h, base)
@@ -278,4 +286,88 @@ func lockPair(ctx context.Context, r Repository, booksID int64, a, b uuid.UUID) 
 	}
 
 	return nil
+}
+
+// buildUnitTax builds the transaction of a unit tax on h, the holding of security the day
+// before o.Date (A236 FC25).
+func (s *Service) buildUnitTax(
+	ctx context.Context,
+	r Repository,
+	booksID int64,
+	o domain.ActionOrder,
+	security domain.Account,
+	h domain.Holding,
+	base money.Currency,
+) (domain.Transaction, error) {
+	in, err := s.ins.Instrument(ctx, security.Instrument)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	if in.Type != instrumentTypeFund {
+		return domain.Transaction{}, fieldErr(
+			"account_id",
+			"a unit tax applies to a fund",
+			domain.ErrValidation,
+		)
+	}
+
+	adjustments, err := r.SystemAccount(ctx, booksID, domain.RoleAdjustments)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	prepaid, err := prepaidTaxAccount(ctx, r, adjustments)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	accounts := domain.UnitTaxAccounts{PrepaidTax: prepaid.ID, Adjustments: adjustments.ID}
+
+	postings, action, err := domain.BuildUnitTax(o, h, base, accounts)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return domain.Transaction{
+		BooksID:           booksID,
+		Date:              o.Date,
+		Description:       o.Description,
+		BalancingCurrency: base,
+		Postings:          postings,
+		CorporateAction:   &action,
+	}, nil
+}
+
+// prepaidTaxAccount returns the prepaid_tax account of the book, created by its first unit tax.
+// The lock on the adjustments account serializes two first unit taxes of one book, so the
+// unique index on (books_id, system_role) never rejects the second insert.
+func prepaidTaxAccount(
+	ctx context.Context,
+	r Repository,
+	adjustments domain.Account,
+) (domain.Account, error) {
+	if _, err := r.LockAccount(ctx, adjustments.BooksID, adjustments.ID); err != nil {
+		return domain.Account{}, err
+	}
+
+	prepaid, err := r.SystemAccount(ctx, adjustments.BooksID, domain.RolePrepaidTax)
+	if !errors.Is(err, ErrNotFound) {
+		return prepaid, err
+	}
+
+	prepaid, err = domain.NewAccount(domain.Account{
+		BooksID:    adjustments.BooksID,
+		Name:       domain.RolePrepaidTax.DefaultName(),
+		Class:      domain.RolePrepaidTax.Class(),
+		Kind:       domain.RolePrepaidTax.Kind(),
+		Instrument: adjustments.Instrument,
+		OpenedOn:   earliestDate,
+		SystemRole: domain.RolePrepaidTax,
+	})
+	if err != nil {
+		return domain.Account{}, err
+	}
+
+	return r.InsertAccount(ctx, prepaid)
 }

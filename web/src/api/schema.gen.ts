@@ -6315,7 +6315,8 @@ export interface components {
             income: components["schemas"]["InvestmentIncomeInput"];
         };
         /** @enum {string} */
-        CorporateActionKind: "split" | "reverse_split" | "bonus";
+        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax";
+        /** @description A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. */
         CorporateActionInput: {
             /**
              * Format: uuid
@@ -6344,6 +6345,8 @@ export interface components {
              * @description Income category of a bonus with unit_cost; required with it.
              */
             category_id?: string;
+            quantity?: components["schemas"]["Money"];
+            amount?: components["schemas"]["Money"];
             description?: string;
         };
         CustodyTransferInput: {

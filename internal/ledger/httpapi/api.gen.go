@@ -695,6 +695,7 @@ const (
 	CorporateActionKindBonus        CorporateActionKind = "bonus"
 	CorporateActionKindReverseSplit CorporateActionKind = "reverse_split"
 	CorporateActionKindSplit        CorporateActionKind = "split"
+	CorporateActionKindUnitTax      CorporateActionKind = "unit_tax"
 )
 
 // Valid indicates whether the value is a known member of the CorporateActionKind enum.
@@ -705,6 +706,8 @@ func (e CorporateActionKind) Valid() bool {
 	case CorporateActionKindReverseSplit:
 		return true
 	case CorporateActionKindSplit:
+		return true
+	case CorporateActionKindUnitTax:
 		return true
 	default:
 		return false
@@ -1581,10 +1584,11 @@ type CorporateAction struct {
 	Value    Money `json:"value"`
 }
 
-// CorporateActionInput defines model for CorporateActionInput.
+// CorporateActionInput A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it.
 type CorporateActionInput struct {
 	// AccountId The holding account. Exactly one of account_id or the pair brokerage_id and instrument.
 	AccountId   *openapi_types.UUID `json:"account_id,omitempty"`
+	Amount      *Money              `json:"amount,omitempty"`
 	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
 
 	// CategoryId Income category of a bonus with unit_cost; required with it.
@@ -1595,6 +1599,7 @@ type CorporateActionInput struct {
 	Description *string             `json:"description,omitempty"`
 	Instrument  *string             `json:"instrument,omitempty"`
 	Kind        CorporateActionKind `json:"kind"`
+	Quantity    *Money              `json:"quantity,omitempty"`
 	RatioFrom   int64               `json:"ratio_from"`
 
 	// RatioTo Units received for each ratio_from held.

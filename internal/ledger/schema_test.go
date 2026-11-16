@@ -552,3 +552,52 @@ func TestDBRejectsCorporateActionOutsideItsRules(t *testing.T) {
 	_, err = f.pool.Exec(t.Context(), insert, id, f.booksID, f.checking, "split", "5.00")
 	requireViolation(t, err, checkViolation, "ledger_corporate_action")
 }
+
+// A236 FC25: a unit tax cancels units, keeps the 1:1 ratio and carries a positive value.
+func TestDBRejectsUnitTaxOutsideItsRules(t *testing.T) {
+	t.Parallel()
+
+	f := newSchemaFixture(t)
+
+	id, err := f.recordTx(
+		t,
+		f.booksID,
+		"2026-03-01",
+		postingRow{f.checking, -10000},
+		postingRow{f.food, 10000},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const insert = `
+		INSERT INTO ledger_corporate_action
+			(transaction_id, books_id, account_id, kind, ratio_from, ratio_to, held, received,
+			 fraction_remainder, value)
+		VALUES ($1, $2, $3, 'unit_tax', $4, $5, 1000, $6, 0, $7)`
+
+	cases := []struct {
+		name                 string
+		from, to, got, value int64
+	}{
+		{"received equals held", 1, 1, 1000, 150},
+		{"received above held", 1, 1, 1001, 150},
+		{"ratio is not 1:1", 1, 2, 900, 150},
+		{"no value", 1, 1, 900, 0},
+	}
+	for _, c := range cases {
+		_, err = f.pool.Exec(
+			t.Context(), insert, id, f.booksID, f.checking, c.from, c.to, c.got, c.value,
+		)
+		if err == nil {
+			t.Fatalf("%s: accepted", c.name)
+		}
+
+		requireViolation(t, err, checkViolation, "ledger_corporate_action")
+	}
+
+	_, err = f.pool.Exec(t.Context(), insert, id, f.booksID, f.checking, 1, 1, 900, 150)
+	if err != nil {
+		t.Fatalf("valid unit tax rejected: %v", err)
+	}
+}
