@@ -326,9 +326,9 @@ func TestS469TermsRefuseCalendarAndGrace(t *testing.T) {
 	}
 }
 
-// S486: interest_every_months expands into the payments of the terms; a PUT without a payment field
+// S517: interest_every_months expands into the payments of the terms; a PUT without a payment field
 // clears them; payments and interest_every_months together merge by date.
-func TestS486TermsWithInterestEvery(t *testing.T) {
+func TestS517TermsWithInterestEvery(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
 	defineFixedIncome(t, h, "CDBXPTO")

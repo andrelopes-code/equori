@@ -307,9 +307,9 @@ func accruePreFixed(t *testing.T, calendar string) map[string]accrualPrice {
 	return pricesBetween(t, h, "CDBPRE", "2026-01-01", "2026-02-28")
 }
 
-// S487: the price of an interest date carries the coupon and the next priced day restarts at the
+// S518: the price of an interest date carries the coupon and the next priced day restarts at the
 // face value; the values match the domain test of the same terms on the weekend calendar.
-func TestS487AccrualRestartsAfterInterest(t *testing.T) {
+func TestS518AccrualRestartsAfterInterest(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t, apitest.Today("2026-07-07"))
 	defineFixedIncome(t, h, "CDBCUPOM")
