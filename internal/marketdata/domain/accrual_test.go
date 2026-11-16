@@ -131,6 +131,7 @@ func TestAccrueCDI(t *testing.T) {
 				tt.rates,
 				date("2026-01-01"),
 				date("2026-01-09"),
+				nil,
 			)
 			if err != nil {
 				t.Fatal(err)
@@ -168,6 +169,7 @@ func TestAccruePreFixed(t *testing.T) {
 		nil,
 		date("2026-01-01"),
 		date("2026-02-27"),
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -216,6 +218,7 @@ func TestAccrueIPCAStep(t *testing.T) {
 		rates,
 		date("2026-01-30"),
 		date("2026-03-02"),
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -261,6 +264,7 @@ func TestAccrueIPCAWithoutPublishedMonth(t *testing.T) {
 		rates,
 		date("2026-04-01"),
 		date("2026-04-02"),
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -289,6 +293,7 @@ func TestAccruePeriod(t *testing.T) {
 		cdiWeek(),
 		date("2026-01-01"),
 		date("2026-01-09"),
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -305,6 +310,7 @@ func TestAccruePeriod(t *testing.T) {
 		cdiWeek(),
 		date("2026-01-07"),
 		date("2026-01-09"),
+		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -322,6 +328,7 @@ func TestAccruePeriod(t *testing.T) {
 		nil,
 		date("2026-01-01"),
 		date("2026-01-09"),
+		nil,
 	)
 	if err != nil || len(prices) != 1 || prices[0].Value != "1000.000000000000" {
 		t.Fatalf("prices without rates = %+v, %v", prices, err)
@@ -389,4 +396,106 @@ func TestAnchor(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAccruePreFixedBusinessDays(t *testing.T) {
+	t.Parallel()
+
+	terms := Terms{
+		IssuedOn: date("2026-01-02"), MaturesOn: date("2030-01-02"), SpreadBP: 1200,
+		DayCount: DayCountBus252, CalendarID: "br_banking", FaceValue: 100000,
+	}
+
+	prices, err := Accrue(
+		terms,
+		BusinessDayIndexes{"cdi"},
+		2,
+		nil,
+		date("2026-01-02"),
+		date("2026-02-27"),
+		carnivalClosed,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := values(prices)
+	want := map[string]string{
+		"2026-01-02": "1000.000000000000",
+		"2026-01-05": "1000.449818143039",
+		"2026-01-30": "1009.034910724779",
+		"2026-02-13": "1013.582931252300",
+		"2026-02-16": "",
+		"2026-02-17": "",
+		"2026-02-18": "1014.038859244253",
+		"2026-02-27": "1017.236102727987",
+	}
+
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
+
+func TestAccrueIPCASpreadBusinessDays(t *testing.T) {
+	t.Parallel()
+
+	terms := Terms{
+		IssuedOn: date("2026-02-01"), MaturesOn: date("2035-05-15"), IndexID: "ipca",
+		PercentOfIndexBP: 10000, SpreadBP: 600, DayCount: DayCountBus252,
+		CalendarID: "br_banking", FaceValue: 100000,
+	}
+	rates := []IndexRate{{Date: date("2026-02-01"), Rate: "0.003300000000"}}
+
+	prices, err := Accrue(
+		terms,
+		BusinessDayIndexes{"cdi"},
+		2,
+		rates,
+		date("2026-02-01"),
+		date("2026-03-02"),
+		carnivalClosed,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := values(prices)
+	want := map[string]string{
+		"2026-02-27": "1004.170738286911",
+		"2026-03-02": "1007.717485094087",
+	}
+
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
+
+func TestAccrueCalendarWithoutBusinessDays(t *testing.T) {
+	t.Parallel()
+
+	terms := Terms{
+		IssuedOn: date("2026-01-02"), MaturesOn: date("2030-01-02"), SpreadBP: 1200,
+		DayCount: DayCountBus252, CalendarID: "br_banking", FaceValue: 100000,
+	}
+
+	_, err := Accrue(
+		terms, BusinessDayIndexes{"cdi"}, 2, nil, date("2026-01-02"), date("2026-02-27"), nil,
+	)
+	if err == nil {
+		t.Fatal("Accrue with a calendar and no predicate returned nil")
+	}
+}
+
+// carnivalClosed is a weekday calendar closed on 2026-02-16 and 2026-02-17.
+func carnivalClosed(d time.Time) bool {
+	switch d.Format(time.DateOnly) {
+	case "2026-02-16", "2026-02-17":
+		return false
+	}
+
+	return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday
 }

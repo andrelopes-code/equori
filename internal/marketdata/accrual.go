@@ -95,7 +95,15 @@ func (m *Module) anchoredSeries(
 
 	terms := toTerms(row)
 
-	series, err := domain.Accrue(terms, m.businessDays, quote.Scale, rates, row.IssuedOn, today)
+	series, err := domain.Accrue(
+		terms,
+		m.businessDays,
+		quote.Scale,
+		rates,
+		row.IssuedOn,
+		today,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

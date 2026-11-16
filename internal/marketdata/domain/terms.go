@@ -31,6 +31,12 @@ type Terms struct {
 	SpreadBP            int
 	DayCount            string
 	FaceValue           int64
+
+	// CalendarID counts the business days of bus252 when the index does not compound by
+	// business day; empty otherwise (A236 FC5).
+	CalendarID     string
+	DailyLiquidity bool
+	RedeemableFrom time.Time // zero: redeemable from the issue date
 }
 
 // Validate checks the rules the contract cannot state; the contract bounds the numbers.
@@ -40,16 +46,21 @@ func (t Terms) Validate(daily BusinessDayIndexes) error {
 		return invalid("matures_on", "must be after issued_on")
 	case t.IndexID != "" && !indexPattern.MatchString(t.IndexID):
 		return invalid("index_id", "must match ^[a-z0-9_]{2,40}$")
+	case t.CalendarID != "" && !indexPattern.MatchString(t.CalendarID):
+		return invalid("calendar_id", "must match ^[a-z0-9_]{2,40}$")
 	case t.DayCount != DayCountBus252 && t.DayCount != DayCountAct365:
 		return invalid("day_count", "must be bus252 or act365")
-	case t.DayCount == DayCountBus252 && !daily.Has(t.IndexID):
+	case t.DayCount == DayCountBus252 && !daily.Has(t.IndexID) && t.CalendarID == "":
 		return invalid(
 			"day_count",
 			"bus252 counts the business days of the "+strings.Join(
 				daily,
 				" or ",
-			)+" index; use act365",
+			)+" index or of calendar_id; use act365 or set calendar_id",
 		)
+	case !t.RedeemableFrom.IsZero() &&
+		(t.RedeemableFrom.Before(t.IssuedOn) || t.RedeemableFrom.After(t.MaturesOn)):
+		return invalid("redeemable_from", "must be between issued_on and matures_on")
 	}
 
 	return nil

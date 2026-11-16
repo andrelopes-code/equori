@@ -47,6 +47,9 @@ type DatedPrice struct {
 	Value string
 }
 
+// BusinessDay reports whether d is a business day of a calendar.
+type BusinessDay func(d time.Time) bool
+
 // Accrue computes the price of one unit of a fixed income security on each day from `from` to
 // min(`to`, maturity), counting the growth from the issue date:
 //
@@ -58,8 +61,10 @@ type DatedPrice struct {
 //     there is a price on each weekday;
 //   - no index: weekdays only;
 //
-// times the spread: the 252nd (bus252, counted in the business days of such an index) or 365th
-// (act365, calendar days) root of 1 + spread, raised to the number of days. A day with no
+// times the spread: the 252nd (bus252, counted in the business days of such an index or, for
+// another index or none, in the days isBusinessDay accepts) or 365th (act365, calendar days) root
+// of 1 + spread, raised to the number of days. isBusinessDay replaces the weekdays of an index
+// that does not compound by business day and is not read for one that does. A day with no
 // published rate has no price. quoteScale is the decimals of the quote currency of FaceValue.
 func Accrue(
 	t Terms,
@@ -67,9 +72,17 @@ func Accrue(
 	quoteScale int,
 	rates []IndexRate,
 	from, to time.Time,
+	isBusinessDay BusinessDay,
 ) ([]DatedPrice, error) {
 	if err := t.Validate(daily); err != nil {
 		return nil, err
+	}
+
+	if t.CalendarID != "" && isBusinessDay == nil {
+		return nil, fmt.Errorf(
+			"terms name calendar %q and no business days were given",
+			t.CalendarID,
+		)
 	}
 
 	byDay := daily.Has(t.IndexID)
@@ -96,11 +109,15 @@ func Accrue(
 	var out []DatedPrice
 	state := accrualState{index: newFloat().SetInt64(1)}
 
-	for _, d := range pricedDays(t, byDay, parsed, end) {
+	for _, d := range pricedDays(t, byDay, parsed, end, isBusinessDay) {
 		if byDay {
 			state.advanceDaily(t, parsed, percent, d)
 		} else {
 			state.advanceMonthly(t, parsed, d)
+
+			if d.After(t.IssuedOn) {
+				state.businessDays++
+			}
 		}
 
 		if d.Before(from) {
@@ -216,7 +233,13 @@ func parseRates(rates []IndexRate) ([]parsedRate, error) {
 }
 
 // pricedDays lists the days up to end that have a price, oldest first, from the issue date.
-func pricedDays(t Terms, byDay bool, rates []parsedRate, end time.Time) []time.Time {
+func pricedDays(
+	t Terms,
+	byDay bool,
+	rates []parsedRate,
+	end time.Time,
+	isBusinessDay BusinessDay,
+) []time.Time {
 	var days []time.Time
 
 	if t.IssuedOn.After(end) {
@@ -235,7 +258,8 @@ func pricedDays(t Terms, byDay bool, rates []parsedRate, end time.Time) []time.T
 	}
 
 	for d := t.IssuedOn; !d.After(end); d = d.AddDate(0, 0, 1) {
-		if wd := d.Weekday(); wd != time.Saturday && wd != time.Sunday {
+		if isBusinessDay != nil && isBusinessDay(d) ||
+			isBusinessDay == nil && d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
 			days = append(days, d)
 		}
 	}
