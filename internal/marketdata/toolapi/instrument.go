@@ -15,7 +15,7 @@ import (
 func manageInstrument(svc Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_instrument",
-		Description: "Proposes defining, renaming or deleting a security for the whole instance, recording a manual price, setting fixed income terms, or loading its price history since a date from the enabled sources. A security in use cannot be deleted. " +
+		Description: "Proposes defining, renaming, hiding from the lists of the book, showing again or deleting a security, recording a manual price, setting fixed income terms, or loading its price history since a date from the enabled sources. A security in use cannot be deleted. " +
 			"Use it when a security or a price is missing. " +
 			"Do not use it to buy or sell: record_investment does. " +
 			"Instruments and prices are shared by every book; the user confirms first.",

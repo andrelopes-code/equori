@@ -48,7 +48,7 @@ func checkInstrumentArgs(in manageInstrumentIn) error {
 		return required(name, fields, "date", "price")
 	case "request_history":
 		return required(name, fields, "from")
-	case "delete":
+	case "delete", "hide", "show":
 		return required(name, fields)
 	}
 

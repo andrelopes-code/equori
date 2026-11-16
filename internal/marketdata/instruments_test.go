@@ -1081,6 +1081,20 @@ func TestS471AnotherBooksInstrumentIsAbsent(t *testing.T) {
 			return h.UploadAs(c, "/api/v1/prices/import", nil, "prices.csv", []byte(csv(code)))
 		}},
 		{
+			"hideInstrument",
+			http.StatusNoContent,
+			func(c *http.Client, code string) apitest.Response {
+				return h.Call(c, http.MethodPut, "/api/v1/instruments/"+code+"/hidden", nil)
+			},
+		},
+		{
+			"showInstrument",
+			http.StatusNoContent,
+			func(c *http.Client, code string) apitest.Response {
+				return h.Call(c, http.MethodDelete, "/api/v1/instruments/"+code+"/hidden", nil)
+			},
+		},
+		{
 			"deleteInstrument",
 			http.StatusNoContent,
 			func(c *http.Client, code string) apitest.Response {

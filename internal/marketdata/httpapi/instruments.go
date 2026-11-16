@@ -45,7 +45,7 @@ func (s *Server) defineInstrument(
 		return Instrument{}, "", err
 	}
 
-	return toInstrumentAPI(out), BaseURL + "/instruments/" + string(out.Code), nil
+	return toInstrumentAPI(out, false), BaseURL + "/instruments/" + string(out.Code), nil
 }
 
 func (s *Server) listInstruments(
@@ -69,11 +69,19 @@ func (s *Server) listInstruments(
 	}
 
 	booksID := auth.MustBooksID(ctx)
+
+	hidden, err := s.svc.HiddenInstruments(ctx, booksID)
+	if err != nil {
+		return InstrumentList{}, err
+	}
+
+	includeHidden := params.IncludeHidden != nil && *params.IncludeHidden
 	items := make([]Instrument, 0, len(ins))
 
 	for _, in := range ins {
-		if in.VisibleTo(booksID) {
-			items = append(items, toInstrumentAPI(in))
+		isHidden := hidden[string(in.Code)]
+		if in.VisibleTo(booksID) && (includeHidden || !isHidden) {
+			items = append(items, toInstrumentAPI(in, isHidden))
 		}
 	}
 
@@ -95,7 +103,12 @@ func (s *Server) getInstrument(
 		return Instrument{}, err
 	}
 
-	out := toInstrumentAPI(in)
+	hidden, err := s.isHidden(ctx, in)
+	if err != nil {
+		return Instrument{}, err
+	}
+
+	out := toInstrumentAPI(in, hidden)
 	out.Coverage = coverageOf(cov)
 
 	return out, nil
@@ -158,7 +171,12 @@ func (s *Server) editInstrument(
 		return Instrument{}, err
 	}
 
-	return toInstrumentAPI(out), nil
+	hidden, err := s.isHidden(ctx, out)
+	if err != nil {
+		return Instrument{}, err
+	}
+
+	return toInstrumentAPI(out, hidden), nil
 }
 
 func (s *Server) deleteInstrument(
@@ -175,13 +193,44 @@ func (s *Server) deleteInstrument(
 	return httpserver.None{}, nil
 }
 
-func toInstrumentAPI(in domain.Instrument) Instrument {
+func (s *Server) hideInstrument(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (httpserver.None, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return httpserver.None{}, err
+	}
+
+	err := s.svc.HideInstrument(ctx, auth.MustBooksID(ctx), r.PathValue("code"))
+
+	return httpserver.None{}, err
+}
+
+func (s *Server) showInstrument(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (httpserver.None, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return httpserver.None{}, err
+	}
+
+	err := s.svc.ShowInstrument(ctx, auth.MustBooksID(ctx), r.PathValue("code"))
+
+	return httpserver.None{}, err
+}
+
+func (s *Server) isHidden(ctx context.Context, in domain.Instrument) (bool, error) {
+	hidden, err := s.svc.HiddenInstruments(ctx, auth.MustBooksID(ctx))
+
+	return hidden[string(in.Code)], err
+}
+
+func toInstrumentAPI(in domain.Instrument, hidden bool) Instrument {
 	out := Instrument{
-		Code:  string(in.Code),
-		Type:  InstrumentType(in.Type),
-		Scale: in.Scale,
-		Name:  in.Name,
-		Owned: in.BooksID != 0,
+		Code:   string(in.Code),
+		Type:   InstrumentType(in.Type),
+		Scale:  in.Scale,
+		Name:   in.Name,
+		Owned:  in.BooksID != 0,
+		Hidden: hidden,
 	}
 	if in.Issuer.Name != "" {
 		out.Issuer = issuerAPI(in.Issuer)

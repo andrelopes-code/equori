@@ -13,6 +13,8 @@ func (manageInstrumentAction) Values() []string {
 		"set_terms",
 		"request_history",
 		"delete",
+		"hide",
+		"show",
 	}
 }
 

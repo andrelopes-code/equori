@@ -38,6 +38,9 @@ type Service interface {
 		issuer domain.Issuer,
 	) (domain.Instrument, error)
 	DeleteInstrument(ctx context.Context, code string) error
+	HiddenInstruments(ctx context.Context, booksID int64) (map[string]bool, error)
+	HideInstrument(ctx context.Context, booksID int64, code string) error
+	ShowInstrument(ctx context.Context, booksID int64, code string) error
 	PutTerms(ctx context.Context, code string, t domain.Terms) (domain.Terms, error)
 	Terms(ctx context.Context, code string) (domain.Terms, error)
 	RecordPrices(ctx context.Context, booksID int64, ps []domain.Price) error
@@ -120,6 +123,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.editInstrument))
 	mux.HandleFunc("DELETE "+BaseURL+"/instruments/{code}",
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteInstrument))
+	mux.HandleFunc("PUT "+BaseURL+"/instruments/{code}/hidden",
+		httpserver.Handle(s.errs, http.StatusOK, s.hideInstrument))
+	mux.HandleFunc("DELETE "+BaseURL+"/instruments/{code}/hidden",
+		httpserver.Handle(s.errs, http.StatusOK, s.showInstrument))
 	mux.HandleFunc("GET "+BaseURL+"/instruments/{code}/terms",
 		httpserver.Handle(s.errs, http.StatusOK, s.getInstrumentTerms))
 	mux.HandleFunc("PUT "+BaseURL+"/instruments/{code}/terms",

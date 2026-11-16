@@ -309,13 +309,19 @@ paths:
       tags: [marketdata]
       operationId: listInstruments
       x-book-role: read
-      summary: Instruments of the instance in code order.
+      summary: Instruments of the instance in code order; the ones the book hides are left out unless include_hidden is true (A238).
       parameters:
         - name: type
           in: query
           required: false
           schema:
             $ref: "#/components/schemas/InstrumentType"
+        - name: include_hidden
+          in: query
+          required: false
+          description: When true, the instruments the book hides are listed with hidden set to true (A238 HD4).
+          schema:
+            type: boolean
       responses:
         "200":
           description: OK.
@@ -432,6 +438,41 @@ paths:
         "404":
           $ref: "#/components/responses/Problem"
         "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /instruments/{code}/hidden:
+    parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags: [marketdata]
+      operationId: hideInstrument
+      x-book-role: write
+      summary: Hide the security from the lists of the book; idempotent (A238 HD2).
+      responses:
+        "204":
+          description: Hidden.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+    delete:
+      tags: [marketdata]
+      operationId: showInstrument
+      x-book-role: write
+      summary: Return a hidden security to the lists of the book; idempotent (A238 HD2).
+      responses:
+        "204":
+          description: Shown.
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
@@ -879,7 +920,7 @@ schemas:
   Instrument:
     type: object
     additionalProperties: false
-    required: [code, type, scale, name, owned]
+    required: [code, type, scale, name, owned, hidden]
     properties:
       code:
         type: string
@@ -889,6 +930,9 @@ schemas:
         type: integer
       name:
         type: string
+      hidden:
+        type: boolean
+        description: The book hides the instrument from its lists (A238 HD3).
       owned:
         type: boolean
         description: The instrument belongs to the book and no other book reads it.

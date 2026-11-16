@@ -408,8 +408,11 @@ type Instrument struct {
 	Code     string              `json:"code"`
 	Coverage *InstrumentCoverage `json:"coverage,omitempty"`
 	Exchange *string             `json:"exchange,omitempty"`
-	Issuer   *InstrumentIssuer   `json:"issuer,omitempty"`
-	Name     string              `json:"name"`
+
+	// Hidden The book hides the instrument from its lists (A238 HD3).
+	Hidden bool              `json:"hidden"`
+	Issuer *InstrumentIssuer `json:"issuer,omitempty"`
+	Name   string            `json:"name"`
 
 	// Owned The instrument belongs to the book and no other book reads it.
 	Owned bool `json:"owned"`
@@ -774,6 +777,9 @@ type ListInstrumentQuotesParams struct {
 // ListInstrumentsParams defines parameters for ListInstruments.
 type ListInstrumentsParams struct {
 	Type *InstrumentType `form:"type,omitempty" json:"type,omitempty"`
+
+	// IncludeHidden When true, the instruments the book hides are listed with hidden set to true (A238 HD4).
+	IncludeHidden *bool `form:"include_hidden,omitempty" json:"include_hidden,omitempty"`
 }
 
 // SearchInstrumentCatalogParams defines parameters for SearchInstrumentCatalog.

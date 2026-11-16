@@ -21,6 +21,8 @@ type Service interface {
 		issuer domain.Issuer,
 	) (domain.Instrument, error)
 	DeleteInstrument(ctx context.Context, code string) error
+	HideInstrument(ctx context.Context, booksID int64, code string) error
+	ShowInstrument(ctx context.Context, booksID int64, code string) error
 	RecordPrices(ctx context.Context, booksID int64, ps []domain.Price) error
 	ListPrices(
 		ctx context.Context,

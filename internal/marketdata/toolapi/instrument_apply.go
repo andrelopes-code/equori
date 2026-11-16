@@ -34,6 +34,10 @@ func applyInstrument(
 		return applyRecordPrice(ctx, svc, booksID, in)
 	case "delete":
 		return manageInstrumentOut{}, svc.DeleteInstrument(ctx, in.Code)
+	case "hide":
+		return manageInstrumentOut{}, svc.HideInstrument(ctx, booksID, in.Code)
+	case "show":
+		return manageInstrumentOut{}, svc.ShowInstrument(ctx, booksID, in.Code)
 	case "request_history":
 		return applyRequestHistory(ctx, svc, in)
 	}

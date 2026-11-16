@@ -40,6 +40,8 @@ func previewInstrument(
 		return previewRecordPrice(ctx, svc, in, p)
 	case "delete":
 		return previewDelete(ctx, svc, in, p)
+	case "hide", "show":
+		return previewVisibility(ctx, svc, in, p)
 	case "request_history":
 		if _, err := svc.Instrument(ctx, in.Code); err != nil {
 			return tool.Preview{}, err
@@ -198,6 +200,34 @@ func previewDelete(
 	p.Destructive = true
 	p.Changes = []tool.Change{
 		{Field: "instrument", Before: tool.TextValue(string(inst.Code) + " " + inst.Name)},
+	}
+
+	return p, nil
+}
+
+// previewVisibility states the change of the book's lists that hide or show makes (A238 HD10).
+func previewVisibility(
+	ctx context.Context,
+	svc Service,
+	in manageInstrumentIn,
+	p tool.Preview,
+) (tool.Preview, error) {
+	inst, err := svc.Instrument(ctx, in.Code)
+	if err != nil {
+		return tool.Preview{}, err
+	}
+
+	if inst.Type == domain.TypeCurrency {
+		return tool.Preview{}, &domain.FieldError{Field: "code", Message: "is a currency"}
+	}
+
+	before, after := "shown", "hidden"
+	if in.Action == "show" {
+		before, after = after, before
+	}
+
+	p.Changes = []tool.Change{
+		{Field: "lists", Before: tool.TextValue(before), After: tool.TextValue(after)},
 	}
 
 	return p, nil

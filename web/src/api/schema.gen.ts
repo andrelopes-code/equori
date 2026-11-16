@@ -3226,7 +3226,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Instruments of the instance in code order. */
+        /** Instruments of the instance in code order; the ones the book hides are left out unless include_hidden is true (A238). */
         get: operations["listInstruments"];
         put?: never;
         /** Define a security for the whole instance (P8 amendment A59). */
@@ -3254,6 +3254,26 @@ export interface paths {
         head?: never;
         /** Replace the name, exchange and subtype of a security, and its type among stock, etf, reit and depositary_receipt; an absent exchange or subtype is cleared, an absent type is kept (A134, A224). */
         patch: operations["editInstrument"];
+        trace?: never;
+    };
+    "/instruments/{code}/hidden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Hide the security from the lists of the book; idempotent (A238 HD2). */
+        put: operations["hideInstrument"];
+        post?: never;
+        /** Return a hidden security to the lists of the book; idempotent (A238 HD2). */
+        delete: operations["showInstrument"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/instruments/{code}/terms": {
@@ -6775,6 +6795,8 @@ export interface components {
             type: components["schemas"]["InstrumentType"];
             scale: number;
             name: string;
+            /** @description The book hides the instrument from its lists (A238 HD3). */
+            hidden: boolean;
             /** @description The instrument belongs to the book and no other book reads it. */
             owned: boolean;
             issuer?: components["schemas"]["InstrumentIssuer"];
@@ -13505,6 +13527,8 @@ export interface operations {
         parameters: {
             query?: {
                 type?: components["schemas"]["InstrumentType"];
+                /** @description When true, the instruments the book hides are listed with hidden set to true (A238 HD4). */
+                include_hidden?: boolean;
             };
             header?: never;
             path?: never;
@@ -13628,6 +13652,52 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    hideInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Hidden. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    showInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Shown. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];

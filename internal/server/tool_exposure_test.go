@@ -160,6 +160,8 @@ var exposure = map[string]string{
 	"getInstrument":                    "get_market_data",
 	"editInstrument":                   "manage_instrument",
 	"deleteInstrument":                 "manage_instrument",
+	"hideInstrument":                   "manage_instrument",
+	"showInstrument":                   "manage_instrument",
 	"requestInstrumentHistory":         "manage_instrument",
 	"listPrices":                       "get_market_data",
 	"listInstrumentQuotes":             "get_market_data",

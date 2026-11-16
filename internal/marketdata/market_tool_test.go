@@ -898,6 +898,47 @@ func TestManageInstrumentToolDelete(t *testing.T) {
 	)
 }
 
+// A238 HD10: the actions hide and show preview the change and apply it to the book.
+func TestManageInstrumentToolHide(t *testing.T) {
+	t.Parallel()
+
+	h := apitest.New(t)
+	h.MustDo("POST", "/api/v1/instruments", mxrf11(), 201, nil)
+
+	hide := map[string]any{"action": "hide", "code": "MXRF11"}
+
+	p, r := preview(t, h, "manage_instrument", hide)
+	if r.IsError || p.Action != "manage_instrument.hide" || p.Destructive {
+		t.Fatalf("preview = %+v %s", p, r.Content)
+	}
+
+	toolOutput(t, h, "manage_instrument", hide, &struct{}{})
+	assertListed(t, h, nil, "/api/v1/instruments", false)
+
+	toolOutput(
+		t,
+		h,
+		"manage_instrument",
+		map[string]any{"action": "show", "code": "MXRF11"},
+		&struct{}{},
+	)
+	assertListed(t, h, nil, "/api/v1/instruments", true)
+
+	h.ExpectToolError(
+		h.Tool("manage_instrument", map[string]any{"action": "hide", "code": "BRL"}),
+		"validation_failed",
+		"code",
+	)
+	h.ExpectToolError(
+		h.Tool(
+			"manage_instrument",
+			map[string]any{"action": "hide", "code": "MXRF11", "name": "X"},
+		),
+		"invalid_arguments",
+		"name",
+	)
+}
+
 // S410: the edit action of manage_instrument previews and applies a type change, and refuses
 // one outside the four types of scale 0 (amendment A224).
 func TestManageInstrumentToolEditType(t *testing.T) {
