@@ -23,6 +23,8 @@ export interface PaymentsDraft {
   every: InterestPeriod;
   first: string;
   amortizations: AmortizationDraft[];
+  // Interest dates that follow no period, kept as stored so a save does not drop them.
+  keptInterest?: string[];
 }
 
 export type PaymentsBody = Pick<
@@ -55,7 +57,12 @@ export function paymentsBody(
   t: TFunction,
 ): PaymentsOutcome {
   const errors: Record<string, string> = {};
-  const payments: Payment[] = [];
+  const byDate = new Map<string, Payment>(
+    (draft.keptInterest ?? []).map((d) => [
+      d,
+      { pays_on: d, amortization_bp: 0, pays_interest: true },
+    ]),
+  );
 
   if (draft.every > 0 && draft.first === "")
     errors.first_payment_on = t("instruments.required");
@@ -67,14 +74,18 @@ export function paymentsBody(
     else if (bp === null || bp < 1 || bp > 10000)
       errors[`payments[${String(i)}]`] = t("terms.invalid.percent");
     else
-      payments.push({
+      byDate.set(row.paysOn, {
         pays_on: row.paysOn,
         amortization_bp: bp,
-        pays_interest: false,
+        pays_interest: byDate.get(row.paysOn)?.pays_interest ?? false,
       });
   });
 
   if (Object.keys(errors).length > 0) return { errors };
+
+  const payments = [...byDate.values()].sort((a, b) =>
+    a.pays_on.localeCompare(b.pays_on),
+  );
 
   return {
     body: {
@@ -96,9 +107,15 @@ export function paymentsDraftOf(
   const every = interestPeriodOf(payments, maturesOn);
   const first = interestDates(payments, maturesOn)[0] ?? "";
 
+  const kept =
+    every === 0
+      ? payments.filter((p) => p.pays_interest).map((p) => p.pays_on)
+      : [];
+
   return {
     every,
     first: every === 0 ? "" : first,
+    ...(kept.length === 0 ? {} : { keptInterest: kept }),
     amortizations: payments
       .filter((p) => p.amortization_bp > 0)
       .map((p) => ({ paysOn: p.pays_on, percent: bpText(p.amortization_bp) })),
@@ -107,8 +124,7 @@ export function paymentsDraftOf(
 
 // The stored rows keep no period: it is the equal gap, in months, between the interest dates
 // before maturity. Dates that follow no period read as none.
-// shortcut: interest on irregular dates is not rebuilt, the dialog shows none; upgrade when the
-// API returns the period.
+// Interest on irregular dates reads as no period; paymentsDraftOf keeps those dates.
 export function interestPeriodOf(
   payments: Terms["payments"],
   maturesOn: string,
@@ -124,7 +140,27 @@ export function interestPeriodOf(
   if (last === undefined || gap === undefined || period === undefined) return 0;
   if (gaps.some((g) => g !== gap) || last > gap) return 0;
 
-  return period;
+  const dates = interestDates(payments, maturesOn);
+
+  return dates.every((d, k) => d === addMonths(dates[0] ?? d, k * period))
+    ? period
+    : 0;
+}
+
+// addMonths is the schedule rule of the server (A236 FC6): the day of the month of start,
+// clamped to the last day of the target month.
+function addMonths(start: string, months: number): string {
+  const index = monthIndex(start) - 1 + months;
+  const year = Math.floor(index / 12);
+  const month = (index % 12) + 1;
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const day = Math.min(Number(start.slice(8, 10)), last);
+
+  return [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
 }
 
 function interestDates(payments: Payment[], maturesOn: string): string[] {

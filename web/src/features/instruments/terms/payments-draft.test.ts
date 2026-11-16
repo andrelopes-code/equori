@@ -135,6 +135,19 @@ describe("paymentsDraftOf", () => {
     expect(interestPeriodOf(payments, "2027-01-02")).toBe(6);
   });
 
+  it("keeps interest on irregular dates when the terms are saved again", () => {
+    const payments = [
+      pay("2026-05-10"),
+      pay("2026-11-20", 5000),
+      pay("2027-01-05"),
+    ];
+
+    const draft = paymentsDraftOf(payments, "2027-01-05");
+
+    expect(draft.every).toBe(0);
+    expect(paymentsBody(draft, t)).toEqual({ body: { payments } });
+  });
+
   it("reads no payments as an empty draft", () => {
     expect(paymentsDraftOf([], "2027-01-02")).toEqual(none);
     expect(interestPeriodOf([pay("2027-01-02")], "2027-01-02")).toBe(0);
