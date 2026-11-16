@@ -94,6 +94,26 @@ describe("Institution tab", () => {
     expect(calls).toContain("?scheme=br_ispb&identifier=18236120");
   });
 
+  it("names the quarter that lay under the minimum when the current one is fine (A237 L6)", async () => {
+    const [current, ...earlier] = indicators.periods;
+    const past = {
+      ...indicators,
+      periods: [
+        { ...current, basel: "0.1200000000" },
+        { ...earlier[0], basel: "0.0750000000" },
+        ...earlier.slice(1),
+      ],
+    };
+    await renderApp(`/accounts/${checkingID}?tab=institution`, {
+      fetch: fakeApi(accountRoutes({ [`GET ${path}`]: () => json(200, past) })),
+    });
+
+    expect(
+      await screen.findByText("Already below the minimum of 8.00% in Mar 2026"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("12.00%")).toBeInTheDocument();
+  });
+
   it("draws no tab when the source holds no indicators for the institution", async () => {
     await renderApp(`/accounts/${checkingID}`, {
       fetch: fakeApi(

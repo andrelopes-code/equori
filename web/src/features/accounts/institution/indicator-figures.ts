@@ -18,6 +18,15 @@ interface FigureBase {
   // Basis points; absent for a figure the rule sets no floor for.
   floor?: Floor;
   attention?: Attention;
+  // An earlier quarter under a floor, named when the newest one has no attention (A237 L6).
+  past?: PastEpisode;
+}
+
+export interface PastEpisode {
+  basisPoints: number;
+  // The last day of the quarter, as the API states it.
+  period: string;
+  level: Attention;
 }
 
 export type IndicatorFigure = FigureBase &
@@ -49,6 +58,7 @@ export function indicatorFigures(x: Indicators): IndicatorFigure[] {
       basisPoints: basel,
       floor: baselFloor,
       ...attentionOf(basel, baselFloor),
+      ...pastOf(basel, x.periods, (p) => p.basel, baselFloor),
       trend: ratios(oldestFirst, (p) => p.basel),
     },
     {
@@ -57,6 +67,7 @@ export function indicatorFigures(x: Indicators): IndicatorFigure[] {
       basisPoints: capital,
       floor: capitalFloor,
       ...attentionOf(capital, capitalFloor),
+      ...pastOf(capital, x.periods, (p) => p.principal_capital, capitalFloor),
       trend: ratios(oldestFirst, (p) => p.principal_capital),
     },
     {
@@ -102,6 +113,30 @@ function attentionOf(
   if (value < floor.minimum) return { attention: "danger" };
   if (value < floor.withBuffer) return { attention: "warning" };
   return {};
+}
+
+// The lowest earlier quarter under the floor with the buffer, the most recent on a tie. The newest
+// quarter is periods[0]; it keeps its own note when it has attention.
+function pastOf(
+  current: number | null,
+  periods: Period[],
+  pick: (p: Period) => string | null,
+  floor: Floor,
+): { past?: PastEpisode } {
+  if (current === null || current < floor.withBuffer) return {};
+  let worst: PastEpisode | undefined;
+  for (const p of periods.slice(1)) {
+    const value = basisPoints(pick(p));
+    if (value === null || value >= floor.withBuffer) continue;
+    if (worst === undefined || value < worst.basisPoints) {
+      worst = {
+        basisPoints: value,
+        period: p.period,
+        level: value < floor.minimum ? "danger" : "warning",
+      };
+    }
+  }
+  return worst === undefined ? {} : { past: worst };
 }
 
 function ratios(

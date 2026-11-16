@@ -299,6 +299,9 @@ export const accountsEn = {
   "institution.floor.ok": "Minimum {minimum}, {withBuffer} with buffer",
   "institution.floor.warning": "Below {withBuffer}, the minimum with buffer",
   "institution.floor.danger": "Below the minimum of {minimum}",
+  "institution.past.danger":
+    "Already below the minimum of {minimum} in {month}",
+  "institution.past.warning": "Already below {withBuffer} in {month}",
   "institution.floorRule":
     "Minimum and conservation buffer of {rule}. Additionals required of a specific institution are not included.",
   "institution.trend": "{name}, last {count} quarters",

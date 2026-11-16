@@ -1,6 +1,6 @@
 import { Sparkline } from "@slotted/react/sparkline";
 
-import { formatBasisPoints } from "@/i18n/format";
+import { formatBasisPoints, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FigureCard } from "@/ui/display/figure-card";
@@ -37,6 +37,10 @@ export function InstitutionFigure({
           <Sparkline
             size="sm"
             data={figure.trend}
+            // The dashed line is the floor with the buffer, so the distance to it reads at a glance.
+            {...(figure.floor === undefined
+              ? {}
+              : { reference: figure.floor.withBuffer })}
             label={t("institution.trend", {
               name: label,
               count: figure.trend.length,
@@ -79,6 +83,21 @@ export function InstitutionFigure({
       return t("institution.floor.warning", {
         withBuffer: percent(figure.floor.withBuffer),
       });
+    }
+    if (figure.past !== undefined) {
+      const month = formatReferenceMonth(
+        figure.past.period.slice(0, 7),
+        locale,
+      );
+      return figure.past.level === "danger"
+        ? t("institution.past.danger", {
+            minimum: percent(figure.floor.minimum),
+            month,
+          })
+        : t("institution.past.warning", {
+            withBuffer: percent(figure.floor.withBuffer),
+            month,
+          });
     }
     return t("institution.floor.ok", {
       minimum: percent(figure.floor.minimum),

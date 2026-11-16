@@ -295,6 +295,9 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "institution.floor.ok": "Mínimo {minimum}, {withBuffer} com adicional",
   "institution.floor.warning": "Abaixo de {withBuffer}, o mínimo com adicional",
   "institution.floor.danger": "Abaixo do mínimo de {minimum}",
+  "institution.past.danger":
+    "Já esteve abaixo do mínimo de {minimum} em {month}",
+  "institution.past.warning": "Já esteve abaixo de {withBuffer} em {month}",
   "institution.floorRule":
     "Mínimo e adicional de conservação da {rule}. Adicionais exigidos de uma instituição específica não estão incluídos.",
   "institution.trend": "{name}, últimos {count} trimestres",

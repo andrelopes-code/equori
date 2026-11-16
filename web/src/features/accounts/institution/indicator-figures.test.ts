@@ -133,3 +133,90 @@ describe("indicatorFigures", () => {
     expect(figures[2]?.floor).toBeUndefined();
   });
 });
+
+describe("indicatorFigures, a past episode (A237 L6)", () => {
+  function with_(...periods: Partial<Period>[]) {
+    // Newest first: the first is the current quarter.
+    return indicatorFigures(
+      indicators(
+        ...periods.map((p, i) => ({
+          ...june,
+          period: `2026-0${String(6 - i * 3)}-30`,
+          ...p,
+        })),
+      ),
+    );
+  }
+
+  it("names the quarter that lay under the minimum when the current one is fine", () => {
+    const figures = with_(
+      { basel: "0.1200" },
+      { basel: "0.0750" },
+      { basel: "0.1100" },
+    );
+
+    expect(figures[0]?.attention).toBeUndefined();
+    expect(figures[0]?.past).toEqual({
+      basisPoints: 750,
+      period: "2026-03-30",
+      level: "danger",
+    });
+  });
+
+  it("names a quarter under the minimum with the buffer as a warning", () => {
+    const figures = with_({ basel: "0.1200" }, { basel: "0.0900" });
+
+    expect(figures[0]?.past).toMatchObject({
+      basisPoints: 900,
+      level: "warning",
+    });
+  });
+
+  it("picks the lowest quarter under a floor and, on a tie, the most recent", () => {
+    const lowest = with_(
+      { basel: "0.1200" },
+      { basel: "0.0900" },
+      { basel: "0.0800" },
+    );
+    const tie = with_(
+      { basel: "0.1200" },
+      { basel: "0.0900" },
+      { basel: "0.0900" },
+    );
+
+    expect(lowest[0]?.past).toMatchObject({
+      basisPoints: 800,
+      level: "warning",
+    });
+    expect(tie[0]?.past).toMatchObject({ period: "2026-03-30" });
+  });
+
+  it("names nothing when every earlier quarter holds the floor with the buffer", () => {
+    expect(
+      with_({ basel: "0.1200" }, { basel: "0.1050" })[0]?.past,
+    ).toBeUndefined();
+  });
+
+  it("names nothing when the current quarter has its own attention", () => {
+    const figures = with_({ basel: "0.0900" }, { basel: "0.0750" });
+
+    expect(figures[0]?.attention).toBe("warning");
+    expect(figures[0]?.past).toBeUndefined();
+  });
+
+  it("never reads a null quarter as under a floor", () => {
+    expect(
+      with_({ basel: "0.1200" }, { basel: null })[0]?.past,
+    ).toBeUndefined();
+  });
+
+  it("names nothing for a ratio or an amount with no floor", () => {
+    const figures = with_(
+      { fixed_asset: "0.9" },
+      { fixed_asset: "0.0100", net_income: -5 },
+    );
+
+    expect(figures[2]?.past).toBeUndefined();
+    expect(figures[4]?.past).toBeUndefined();
+  });
+});

@@ -94,6 +94,7 @@ The first screen drew five figures with no reading of them and no past. This ame
 | L3 | A floor is the minimum the rule sets for every institution. An institution with a systemic or countercyclical additional owes more; the screen states "minimum plus conservation buffer" and no other. | Those additionals were not read. |
 | L4 | The trend of a figure is a `Sparkline` of its non-null values, oldest first, drawn from two values on. | A null is never drawn as zero and a gap is never bridged. |
 | L5 | Regions: `Limits()` is part of the institution source (extension point row of `docs/contributing/regions.md`). A region without a source has no tab. | R1, R2. |
+| L6 | When the newest quarter has no attention and an earlier quarter held by the table lies under a floor of its ratio, the note names that quarter: "Already below the minimum of 8.00% in Mar 2026", or "Already below 10.50% in …" for the minimum with the buffer. The quarter is the one with the lowest value under the floor; on a tie, the most recent. The Sparkline of such a ratio draws a dashed reference at the minimum with the buffer. A newest quarter with attention keeps its own note; a null quarter is never read as under a floor. Tested by `indicator-figures.test.ts`: the rule has no HTTP behaviour, so it has no scenario id. | A past episode is information; the current state keeps the only colour. |
 
 New scenarios: S495 (history newest first, nulls kept), S496 (`limits` of `br_ifdata`), S497 (a second tick reads no stored period again), S498 (rows older than eight quarters are deleted).
 
