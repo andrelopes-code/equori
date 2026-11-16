@@ -2033,6 +2033,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/withholding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estimated income tax and IOF of a sale of a taxed fixed income security (A235). */
+        get: operations["getAccountWithholding"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/lots": {
         parameters: {
             query?: never;
@@ -6007,6 +6024,16 @@ export interface components {
         CloseAccountInput: {
             /** Format: date */
             closed_on: string;
+        };
+        /** @description Proceeds less income tax and IOF is net. */
+        WithholdingEstimate: {
+            /** Format: uuid */
+            account_id: string;
+            /** Format: date */
+            date: string;
+            income_tax: components["schemas"]["Money"];
+            iof: components["schemas"]["Money"];
+            net: components["schemas"]["Money"];
         };
         AccountLots: {
             /** Format: uuid */
@@ -11189,6 +11216,38 @@ export interface operations {
                     "application/json": components["schemas"]["Account"];
                 };
             };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getAccountWithholding: {
+        parameters: {
+            query: {
+                date: string;
+                /** @description Units sold, in minor units of the security. */
+                quantity: number;
+                /** @description Gross proceeds of the sale, in minor units of the base currency. */
+                proceeds: number;
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WithholdingEstimate"];
+                };
+            };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];

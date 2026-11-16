@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -24,6 +25,12 @@ func (regionDefaults) WithholdingBP(region, incomeType string, date time.Time) i
 
 func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {
 	return DefaultReserveYieldPercent(currency)
+}
+
+func (regionDefaults) FixedIncomeWithholding(
+	region, instrumentType, subtype string,
+) (domain.WithholdingTable, bool) {
+	return FixedIncomeWithholding(region, instrumentType, subtype)
 }
 
 func (regionDefaults) SeparatesDayTrades(region string) bool { return SeparatesDayTrades(region) }
@@ -118,6 +125,16 @@ func (c *instruments) Instrument(ctx context.Context, code money.Currency) (app.
 	c.mu.Unlock()
 
 	return in, nil
+}
+
+// Subtype is not cached: an owner can retype it.
+func (c *instruments) Subtype(ctx context.Context, code money.Currency) (string, error) {
+	m, err := c.md.Instrument(ctx, string(code))
+	if errors.Is(err, marketdata.ErrUnknownInstrument) {
+		return "", app.ErrUnknownInstrument
+	}
+
+	return m.Subtype, err
 }
 
 // ResolveCode is not cached: it depends on the instruments defined at call time.

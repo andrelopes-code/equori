@@ -36,6 +36,7 @@ func Tools(svc *app.Service) []tool.Tool {
 		manageAccountsAndPayees(svc),
 		reconcileAccount(svc),
 		recordInvestment(svc),
+		estimateRedemption(svc),
 	}
 }
 

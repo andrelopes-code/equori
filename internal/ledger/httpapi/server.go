@@ -127,6 +127,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.getAccountBalance),
 	)
 	mux.HandleFunc(
+		"GET "+BaseURL+"/accounts/{id}/withholding",
+		httpserver.Handle(s.errs, http.StatusOK, s.getAccountWithholding),
+	)
+	mux.HandleFunc(
 		"GET "+BaseURL+"/accounts/{id}/lots",
 		httpserver.Handle(s.errs, http.StatusOK, s.getAccountLots),
 	)

@@ -94,6 +94,7 @@ var exposure = map[string]string{
 	"mergeAccount":                     "manage_accounts_and_payees",
 	"getAccountBalance":                "get_balances",
 	"getAccountLots":                   "-screen",
+	"getAccountWithholding":            "estimate_redemption",
 	"listBalances":                     "get_balances",
 	"listTransactions":                 "search_transactions",
 	"createTransaction":                "record_transaction",

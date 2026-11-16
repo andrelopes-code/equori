@@ -566,6 +566,51 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/withholding:
+    get:
+      tags: [ledger]
+      operationId: getAccountWithholding
+      x-book-role: read
+      summary: Estimated income tax and IOF of a sale of a taxed fixed income security (A235).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: quantity
+          in: query
+          required: true
+          description: Units sold, in minor units of the security.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: proceeds
+          in: query
+          required: true
+          description: Gross proceeds of the sale, in minor units of the base currency.
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithholdingEstimate"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/lots:
     get:
       tags: [ledger]
@@ -3395,6 +3440,23 @@ schemas:
       closed_on:
         type: string
         format: date
+  WithholdingEstimate:
+    type: object
+    description: Proceeds less income tax and IOF is net.
+    required: [account_id, date, income_tax, iof, net]
+    properties:
+      account_id:
+        type: string
+        format: uuid
+      date:
+        type: string
+        format: date
+      income_tax:
+        $ref: "#/components/schemas/Money"
+      iof:
+        $ref: "#/components/schemas/Money"
+      net:
+        $ref: "#/components/schemas/Money"
   AccountLots:
     type: object
     required: [account_id, date, method, quantity, cost_basis, lots]

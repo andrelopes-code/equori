@@ -165,9 +165,20 @@ type lotFixture struct {
 func newLotFixture(t *testing.T, code, instrumentType string) lotFixture {
 	t.Helper()
 
+	return newLotFixtureOf(t, code, instrumentType, "")
+}
+
+func newLotFixtureOf(t *testing.T, code, instrumentType, subtype string) lotFixture {
+	t.Helper()
+
 	f := newInvestFixture(t)
 	body := security(code, instrumentType)
 	delete(body, "exchange")
+
+	if subtype != "" {
+		body["subtype"] = subtype
+	}
+
 	f.h.MustDo(http.MethodPost, "/api/v1/instruments", body, http.StatusCreated, nil)
 
 	account := f.h.Account(

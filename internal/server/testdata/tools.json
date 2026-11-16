@@ -163,6 +163,109 @@
     }
   },
   {
+    "name": "estimate_redemption",
+    "description": "Returns the income tax and the IOF a broker withholds on the redemption or sale of a fixed income security, estimated from the dated purchase lots that the sale consumes, oldest first. It answers only for a security taxed at source in a Brazilian book (CDB, RDB, LC, LF, debenture, Tesouro); LCI, LCA, CRI, CRA and stocks have no estimate. Use it to show what a redemption nets and to fill taxes in record_investment when the user has no notice yet. Do not use it as the figure to record when the user has the notice of the broker: the notice prevails.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "Investment line of the fixed income security, from list_accounts"
+        },
+        "date": {
+          "type": "string",
+          "description": "redemption or sale date",
+          "format": "date"
+        },
+        "quantity": {
+          "type": "string",
+          "description": "units redeemed or sold, a decimal in the scale of the security"
+        },
+        "proceeds": {
+          "type": "string",
+          "description": "gross amount received before tax, a decimal in the base currency"
+        }
+      },
+      "required": [
+        "account_id",
+        "date",
+        "quantity",
+        "proceeds"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "income_tax": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "description": "estimated income tax withheld at source",
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "iof": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "description": "estimated IOF on a redemption within 30 days",
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "net": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "description": "proceeds less income tax and IOF",
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "income_tax",
+        "iof",
+        "net"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "explain_categorization",
     "description": "Explains how transactions got their categories (rule, source category, history or manual), counts transactions by categorization method in a period, or previews what a rule would categorize. Use it for why a transaction has a category, how much is categorized automatically, or before proposing a rule. Do not use it to change a category: categorize_transactions does.",
     "effect": "read_only",

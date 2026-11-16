@@ -54,3 +54,30 @@ func TestCostMethod(t *testing.T) {
 		})
 	}
 }
+
+// FS4: only a taxed fixed income security of a Brazilian book has a withholding table.
+func TestFixedIncomeWithholding(t *testing.T) {
+	t.Parallel()
+
+	for _, tc := range []struct {
+		region, instrumentType, subtype string
+		want                            bool
+	}{
+		{"BR", "fixed_income", "", true},
+		{"BR", "fixed_income", "cdb", true},
+		{"BR", "fixed_income", "lf", true},
+		{"BR", "fixed_income", "xyz_bond", true},
+		{"BR", "fixed_income", "lci", false},
+		{"BR", "fixed_income", "debenture_incentivada", false},
+		{"BR", "stock", "", false},
+		{"BR", "fund", "multimarket", false},
+		{"NZ", "fixed_income", "cdb", false},
+		{"", "fixed_income", "cdb", false},
+	} {
+		_, got := ledger.FixedIncomeWithholding(tc.region, tc.instrumentType, tc.subtype)
+		if got != tc.want {
+			t.Errorf("FixedIncomeWithholding(%q, %q, %q) = %v, want %v",
+				tc.region, tc.instrumentType, tc.subtype, got, tc.want)
+		}
+	}
+}

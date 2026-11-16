@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
@@ -51,6 +52,9 @@ type Instruments interface {
 	Instrument(ctx context.Context, code money.Currency) (Instrument, error)
 	ResolveCode(ctx context.Context, code money.Currency) (money.Currency, error)
 	SettlementDate(ctx context.Context, code money.Currency, date time.Time) (time.Time, error)
+	// Subtype is the subtype of a security, empty when it has none. It can change, so it is read
+	// at each call and never cached.
+	Subtype(ctx context.Context, code money.Currency) (string, error)
 }
 
 // Instrument is what Ledger needs of a Market data instrument; QuoteCurrency is empty
@@ -120,6 +124,7 @@ type RegionDefaults interface {
 	ReserveYieldPercent(currency money.Currency) int64
 	SeparatesDayTrades(region string) bool
 	CostMethod(region, instrumentType string) string
+	FixedIncomeWithholding(region, instrumentType, subtype string) (domain.WithholdingTable, bool)
 }
 
 // Repository stores the ledger tables; postgres/ implements it.

@@ -167,3 +167,34 @@ func (s *Server) getAccountLots(
 		Lots:      lots,
 	}, nil
 }
+
+func (s *Server) getAccountWithholding(
+	ctx context.Context,
+	r *http.Request,
+	_ httpserver.None,
+) (WithholdingEstimate, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return WithholdingEstimate{}, err
+	}
+
+	params, err := httpserver.Query[GetAccountWithholdingParams](r)
+	if err != nil {
+		return WithholdingEstimate{}, err
+	}
+
+	w, err := s.svc.EstimateWithholding(
+		ctx, auth.MustBooksID(ctx), id, dateOf(params.Date), params.Quantity, params.Proceeds,
+	)
+	if err != nil {
+		return WithholdingEstimate{}, err
+	}
+
+	return WithholdingEstimate{
+		AccountId: id,
+		Date:      params.Date,
+		IncomeTax: toMoneyAPI(w.IncomeTax),
+		Iof:       toMoneyAPI(w.IOF),
+		Net:       toMoneyAPI(w.Net),
+	}, nil
+}

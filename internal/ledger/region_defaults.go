@@ -1,6 +1,7 @@
 package ledger
 
 import (
+	"slices"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -72,4 +73,39 @@ func CostMethod(region, instrumentType string) string {
 	}
 
 	return domain.CostAverage
+}
+
+// brFixedIncomeWithholding is the withholding on the gain of a taxed fixed income security in
+// Brazil: income tax by days since the purchase (Lei 11.033/2004 art. 1) and IOF on the gain of
+// a redemption within 30 days (Decreto 6.306/2007 art. 32, the table of days 1 to 29).
+var brFixedIncomeWithholding = domain.WithholdingTable{
+	IncomeTax: []domain.TaxBand{
+		{UpToDays: 180, RateBP: 2250},
+		{UpToDays: 360, RateBP: 2000},
+		{UpToDays: 720, RateBP: 1750},
+		{RateBP: 1500},
+	},
+	IOF: []int{
+		9600, 9300, 9000, 8600, 8300, 8000, 7600, 7300, 7000, 6600,
+		6300, 6000, 5600, 5300, 5000, 4600, 4300, 4000, 3600, 3300,
+		3000, 2600, 2300, 2000, 1600, 1300, 1000, 600, 300,
+	},
+}
+
+// brExemptFixedIncome are the subtypes whose interest is exempt for an individual; it mirrors
+// subtypeClass of internal/portfolio/jurisdiction/br, and a server test keeps both equal.
+var brExemptFixedIncome = []string{"lci", "lca", "cri", "cra", "debenture_incentivada"}
+
+// FixedIncomeWithholding returns the withholding table of a fixed income security of a region
+// and whether the security pays tax at source (A235 FS4). Only BR taxes a subtype outside the
+// exempt list.
+func FixedIncomeWithholding(
+	region, instrumentType, subtype string,
+) (domain.WithholdingTable, bool) {
+	if region != "BR" || instrumentType != "fixed_income" ||
+		slices.Contains(brExemptFixedIncome, subtype) {
+		return domain.WithholdingTable{}, false
+	}
+
+	return brFixedIncomeWithholding, true
 }

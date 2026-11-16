@@ -472,6 +472,8 @@ func (q quotes) ResolveCode(_ context.Context, code money.Currency) (money.Curre
 	return code, nil
 }
 
+func (q quotes) Subtype(context.Context, money.Currency) (string, error) { return "", nil }
+
 func (q quotes) SettlementDate(
 	_ context.Context,
 	_ money.Currency,

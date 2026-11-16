@@ -2426,6 +2426,15 @@ type VoidInput struct {
 	Reason string `json:"reason"`
 }
 
+// WithholdingEstimate Proceeds less income tax and IOF is net.
+type WithholdingEstimate struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Date      openapi_types.Date `json:"date"`
+	IncomeTax Money              `json:"income_tax"`
+	Iof       Money              `json:"iof"`
+	Net       Money              `json:"net"`
+}
+
 // Cursor defines model for Cursor.
 type Cursor = string
 
@@ -2486,6 +2495,17 @@ type ListStatementsParams struct {
 	To     *string `form:"to,omitempty" json:"to,omitempty"`
 	Limit  *Limit  `form:"limit,omitempty" json:"limit,omitempty"`
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+}
+
+// GetAccountWithholdingParams defines parameters for GetAccountWithholding.
+type GetAccountWithholdingParams struct {
+	Date openapi_types.Date `form:"date" json:"date"`
+
+	// Quantity Units sold, in minor units of the security.
+	Quantity int64 `form:"quantity" json:"quantity"`
+
+	// Proceeds Gross proceeds of the sale, in minor units of the base currency.
+	Proceeds int64 `form:"proceeds" json:"proceeds"`
 }
 
 // GetAttachmentContentParams defines parameters for GetAttachmentContent.

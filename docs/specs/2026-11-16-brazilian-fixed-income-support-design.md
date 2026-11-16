@@ -47,8 +47,8 @@ Anti-goals:
 | FS2 | `Treatment("distribution", "fii")` returns `exempt`; `Treatment("distribution", any other class)` stays `exclusive`. | Lei 11.033/2004, art. 3. |
 | FS3 | `br.Subtypes("fixed_income")` adds `lc`, `lf` and `debenture`, each of tax class `fixed_income`. | A taxed security has a name that a book can store. |
 | FS4 | `Jurisdiction` gains `Withholding(taxClass string) (WithholdingTable, bool)`; `br` returns the regressive table for class `fixed_income` and none for any other class. The domain function `EstimateWithholding(table, lots, proceeds, date)` takes the consumed lots of a sale (A234), splits `proceeds` over them by units (half to even, the cents left to the oldest lot), and for each lot with a gain returns IOF = gain × IOF rate of the days, then income tax = (gain − IOF) × rate of the days. Days count from the acquisition date of the lot to the sale date. | The tax of each lot depends on its own period. |
-| FS5 | `GET /api/v1/accounts/{id}/withholding?date=&quantity=&proceeds=` (role `read`) returns `income_tax`, `iof` and `net` for a sale of `quantity` units for `proceeds`, or `404` for an account outside the book and `422` when the account holds no fixed income security taxed at source. | The sale form and the assistant read one estimate. |
-| FS6 | The assistant tool `get_portfolio` gains the view `redemption`. | Same estimate for the assistant (S1). |
+| FS5 | `GET /api/v1/accounts/{id}/withholding?date=&quantity=&proceeds=` (role `read`; `quantity` in minor units of the security and `proceeds` in minor units of the base currency) returns `income_tax`, `iof` and `net` for a sale of `quantity` units for `proceeds`, or `404` for an account outside the book and `422` when the account holds no fixed income security taxed at source. | The sale form and the assistant read one estimate. |
+| FS6 | The assistant tool `estimate_redemption` returns the same estimate. | Same estimate for the assistant (S1). |
 | FS7 | The guide articles state the dated rules and the estimate. | S3. |
 
 ## 5. Scenarios
@@ -60,7 +60,7 @@ Anti-goals:
 | FS-S3 | Distribution of a listed FII in a Brazilian book | Treatment `exempt` in `GET /income-events` |
 | FS-S4 | `GET /instrument-subtypes?type=fixed_income` | Adds `debenture`, `lc`, `lf` in order |
 | FS-S5 | One lot of 100 units, cost 1,000.00, sold for 1,100.00 after 10 days | IOF 66.00 (gain 100.00 × 66%), income tax (100.00 − 66.00) × 22.5% = 7.65, net 1,026.35 |
-| FS-S6 | Two lots (cost 500.00 after 200 days, cost 600.00 after 400 days), sale of both for 1,300.00 | Per lot gain 100.00 and 100.00; no IOF; income tax 20.00 and 17.50 |
+| FS-S6 | Two lots: 60 units with cost 600.00 acquired 400 days before, 40 units with cost 500.00 acquired 200 days before; sale of 100 units for 1,300.00 | Shares 780.00 and 520.00, gains 180.00 and 20.00, no IOF, income tax 31.50 (17.5%) and 4.00 (20%), net 1,264.50 |
 | FS-S7 | A sale at a loss | Income tax 0, IOF 0 |
 | FS-S8 | An account of a stock, a `lci` or a book outside Brazil | 422 |
 | FS-S9 | Roles `owner`, `write`, `read`; a member of another book | 200 for the three roles; 404 |
@@ -89,12 +89,12 @@ Anti-goals:
 | D3 | No recorded fact changes; a recorded withholding is never rewritten. |
 | D4 | No bank, file or model writes the estimate. |
 | D5 | No diagnostic field. |
-| S1 | One operation: `GET /accounts/{id}/withholding`. `get_portfolio` view `redemption` covers it. No new `Problem.code`. |
+| S1 | One operation: `GET /accounts/{id}/withholding`. The tool `estimate_redemption` covers it. No new `Problem.code`. |
 | S2 | The sale form is a phone route; the estimate line keeps one line at 390 px. |
 | S3 | The articles `fixed_income`, `fixed_income_payments` and `investment_income` change. |
-| S4 | The view `redemption` of `get_portfolio`. |
-| X1 | S456 to S464 map FS-S1 to FS-S9 in order. Each test carries its ID. |
-| X2 | FS-S1, FS-S2, FS-S3, FS-S5 and FS-S8 run with region `BR`; FS-S8 also with region `NZ`. |
+| S4 | The tool `estimate_redemption`. |
+| X1 | S456 to S464 map FS-S1 to FS-S9 in order; S465 is the tool of FS6. FS-S4 is S459. Each test carries its ID. |
+| X2 | FS-S1, FS-S2, FS-S3, FS-S5 and FS-S8 run with region `BR`; a region without a table is covered by `TestFixedIncomeWithholding`. |
 
 ## 7. Left to the builder
 
