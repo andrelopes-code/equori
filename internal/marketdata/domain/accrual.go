@@ -99,26 +99,13 @@ func Accrue(
 
 	percent := ratio(int64(t.PercentOfIndexBP), 10000)
 	dayRoot := spreadRoot(t)
-	scale := new(
-		big.Float,
-	).SetPrec(precision).
-		SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(quoteScale)), nil))
-	face := new(big.Float).SetPrec(precision).SetInt64(t.FaceValue)
-	face.Quo(face, scale)
+	face := faceUnits(t.FaceValue, quoteScale)
 
 	var out []DatedPrice
 	state := accrualState{index: newFloat().SetInt64(1)}
 
 	for _, d := range pricedDays(t, byDay, parsed, end, isBusinessDay) {
-		if byDay {
-			state.advanceDaily(t, parsed, percent, d)
-		} else {
-			state.advanceMonthly(t, parsed, d)
-
-			if d.After(t.IssuedOn) {
-				state.businessDays++
-			}
-		}
+		state.advance(t, byDay, parsed, percent, d)
 
 		if d.Before(from) {
 			continue
@@ -178,6 +165,28 @@ type accrualState struct {
 	index        *big.Float
 	businessDays int
 	next         int
+}
+
+// advance applies the rates up to d and counts d when it is a priced day of an index that does
+// not compound by business day.
+func (s *accrualState) advance(
+	t Terms,
+	byDay bool,
+	parsed []parsedRate,
+	percent *big.Float,
+	d time.Time,
+) {
+	if byDay {
+		s.advanceDaily(t, parsed, percent, d)
+
+		return
+	}
+
+	s.advanceMonthly(t, parsed, d)
+
+	if d.After(t.IssuedOn) {
+		s.businessDays++
+	}
 }
 
 // advanceDaily applies the rates of the business days up to d.
@@ -265,6 +274,14 @@ func pricedDays(
 	}
 
 	return days
+}
+
+// faceUnits is the face value in units of the quote currency: minor units over 10^quoteScale.
+func faceUnits(minor int64, quoteScale int) *big.Float {
+	scale := newFloat().SetInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(quoteScale)), nil))
+	face := newFloat().SetInt64(minor)
+
+	return face.Quo(face, scale)
 }
 
 func monthEnd(first time.Time) time.Time { return first.AddDate(0, 1, -first.Day()) }
