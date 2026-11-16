@@ -36,9 +36,17 @@ func (s *Service) EstimateWithholding(
 		return WithholdingEstimate{}, err
 	}
 
-	table, err := s.withholdingTable(ctx, booksID, security)
+	table, ok, err := s.withholdingTable(ctx, booksID, security)
 	if err != nil {
 		return WithholdingEstimate{}, err
+	}
+
+	if !ok {
+		return WithholdingEstimate{}, fieldErr(
+			"id",
+			"holds no fixed income security taxed at source",
+			domain.ErrValidation,
+		)
 	}
 
 	if units <= 0 || proceedsMinor < 0 {
@@ -49,26 +57,7 @@ func (s *Service) EstimateWithholding(
 		)
 	}
 
-	h, err := s.readHolding(ctx, s.repo, booksID, security, base, date, uuid.Nil)
-	if err != nil {
-		return WithholdingEstimate{}, err
-	}
-
-	h, err = s.withCostMethod(ctx, s.repo, booksID, security, h, date, uuid.Nil)
-	if err != nil {
-		return WithholdingEstimate{}, err
-	}
-
-	cost, err := domain.FIFOCost(h.Lots, units)
-	if err != nil {
-		return WithholdingEstimate{}, fieldErr(
-			"quantity",
-			"exceeds the position",
-			domain.ErrValidation,
-		)
-	}
-
-	consumed, _, err := domain.ConsumeLots(h.Lots, units, cost)
+	consumed, err := s.consumedLots(ctx, booksID, security, base, date, units)
 	if err != nil {
 		return WithholdingEstimate{}, err
 	}
@@ -78,46 +67,65 @@ func (s *Service) EstimateWithholding(
 	return withholdingMoney(w, proceedsMinor, base)
 }
 
-// withholdingTable returns the withholding table of the security, or a validation error when
-// the book's region does not tax it at source.
+// consumedLots returns the open lots a sale of units of the security on date consumes, oldest
+// first, at their FIFO cost.
+func (s *Service) consumedLots(
+	ctx context.Context,
+	booksID int64,
+	security domain.Account,
+	base money.Currency,
+	date time.Time,
+	units int64,
+) ([]domain.Lot, error) {
+	h, err := s.readHolding(ctx, s.repo, booksID, security, base, date, uuid.Nil)
+	if err != nil {
+		return nil, err
+	}
+
+	h, err = s.withCostMethod(ctx, s.repo, booksID, security, h, date, uuid.Nil)
+	if err != nil {
+		return nil, err
+	}
+
+	cost, err := domain.FIFOCost(h.Lots, units)
+	if err != nil {
+		return nil, fieldErr("quantity", "exceeds the position", domain.ErrValidation)
+	}
+
+	consumed, _, err := domain.ConsumeLots(h.Lots, units, cost)
+
+	return consumed, err
+}
+
+// withholdingTable returns the withholding table of the security and whether the book's region
+// taxes it at source.
 func (s *Service) withholdingTable(
 	ctx context.Context,
 	booksID int64,
 	security domain.Account,
-) (domain.WithholdingTable, error) {
-	profile, err := s.profiles.Profile(ctx, booksID)
-	if err != nil {
-		return domain.WithholdingTable{}, fmt.Errorf("read profile: %w", err)
+) (table domain.WithholdingTable, ok bool, err error) {
+	if !security.HoldsSecurity() {
+		return table, false, nil
 	}
 
-	if !security.HoldsSecurity() {
-		return domain.WithholdingTable{}, fieldErr(
-			"id",
-			"must hold a security",
-			domain.ErrValidation,
-		)
+	profile, err := s.profiles.Profile(ctx, booksID)
+	if err != nil {
+		return table, false, fmt.Errorf("read profile: %w", err)
 	}
 
 	in, err := s.ins.Instrument(ctx, security.Instrument)
 	if err != nil {
-		return domain.WithholdingTable{}, err
+		return table, false, err
 	}
 
 	subtype, err := s.ins.Subtype(ctx, security.Instrument)
 	if err != nil {
-		return domain.WithholdingTable{}, err
+		return table, false, err
 	}
 
-	table, ok := s.defaults.FixedIncomeWithholding(profile.Region, in.Type, subtype)
-	if !ok {
-		return domain.WithholdingTable{}, fieldErr(
-			"id",
-			"holds no fixed income security taxed at source",
-			domain.ErrValidation,
-		)
-	}
+	table, ok = s.defaults.FixedIncomeWithholding(profile.Region, in.Type, subtype)
 
-	return table, nil
+	return table, ok, nil
 }
 
 func withholdingMoney(

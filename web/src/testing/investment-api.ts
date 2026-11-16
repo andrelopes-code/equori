@@ -162,6 +162,7 @@ export function investmentRoutes(
         account_id: securityID,
         date: new URL(req.url).searchParams.get("date"),
         method: options.lots === undefined ? "average" : "fifo",
+        estimates_withholding: options.withholding !== undefined,
         quantity: { amount: options.held?.quantity ?? 0, currency: "MXRF11" },
         cost_basis: brl(options.held?.cost ?? 0),
         lots: (options.lots ?? []).map((l) => ({

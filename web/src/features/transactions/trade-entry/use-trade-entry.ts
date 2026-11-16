@@ -218,7 +218,7 @@ export function useTradeEntry(
       gross !== null &&
       draft.quantity > 0 &&
       draft.quantity <= heldQuantity &&
-      lots.data?.method === "fifo",
+      lots.data?.estimates_withholding === true,
   });
   const withheld =
     withholding.data === undefined

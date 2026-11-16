@@ -1189,6 +1189,9 @@ type AccountLots struct {
 	CostBasis Money              `json:"cost_basis"`
 	Date      openapi_types.Date `json:"date"`
 
+	// EstimatesWithholding True when GET /accounts/{id}/withholding answers for the account, as the book's region taxes the security at source (A235).
+	EstimatesWithholding bool `json:"estimates_withholding"`
+
 	// Lots Open lots, oldest first.
 	Lots []OpenLot `json:"lots"`
 

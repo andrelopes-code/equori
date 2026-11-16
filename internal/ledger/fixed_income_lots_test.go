@@ -59,10 +59,11 @@ func TestStockSaleKeepsTheAverageCost(t *testing.T) {
 }
 
 type lotsOut struct {
-	Method    string         `json:"method"`
-	Quantity  map[string]any `json:"quantity"`
-	CostBasis map[string]any `json:"cost_basis"`
-	Lots      []struct {
+	Method               string         `json:"method"`
+	EstimatesWithholding bool           `json:"estimates_withholding"`
+	Quantity             map[string]any `json:"quantity"`
+	CostBasis            map[string]any `json:"cost_basis"`
+	Lots                 []struct {
 		AcquiredOn string         `json:"acquired_on"`
 		Quantity   map[string]any `json:"quantity"`
 		Cost       map[string]any `json:"cost"`
@@ -91,7 +92,8 @@ func TestAccountLotsOperation(t *testing.T) {
 	var got lotsOut
 	f.h.MustDo(http.MethodGet, path, nil, http.StatusOK, &got)
 
-	if got.Method != "fifo" || got.CostBasis["amount"] != float64(220000) || len(got.Lots) != 2 {
+	if got.Method != "fifo" || !got.EstimatesWithholding ||
+		got.CostBasis["amount"] != float64(220000) || len(got.Lots) != 2 {
 		t.Fatalf("lots = %+v", got)
 	}
 
@@ -123,7 +125,8 @@ func TestAccountLotsUnderTheAverageMethod(t *testing.T) {
 		&got,
 	)
 
-	if got.Method != "average" || len(got.Lots) != 0 || got.CostBasis["amount"] != float64(100000) {
+	if got.Method != "average" || got.EstimatesWithholding || len(got.Lots) != 0 ||
+		got.CostBasis["amount"] != float64(100000) {
 		t.Fatalf("lots = %+v", got)
 	}
 }
@@ -383,5 +386,25 @@ func TestInconsistentLotsFailTheSale(t *testing.T) {
 
 	if after := f.h.Rows("SELECT count(*) FROM ledger_transaction"); after[0] != before[0] {
 		t.Fatalf("transactions = %s, want %s", after[0], before[0])
+	}
+}
+
+// S466: an exempt security sells by lot but has no withholding estimate, and the answer says so.
+func TestAccountLotsOfAnExemptSecurityHaveNoEstimate(t *testing.T) {
+	t.Parallel()
+	f := newLotFixtureOf(t, "TDL", "fixed_income", "lci")
+	f.trade(t, "buy", "2026-01-05", 10, "100.00")
+
+	var got lotsOut
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+f.account+"/lots?date=2026-03-05",
+		nil,
+		http.StatusOK,
+		&got,
+	)
+
+	if got.Method != "fifo" || got.EstimatesWithholding {
+		t.Fatalf("lots = %+v, want method fifo and no estimate", got)
 	}
 }

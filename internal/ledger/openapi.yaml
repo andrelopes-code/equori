@@ -3459,7 +3459,7 @@ schemas:
         $ref: "#/components/schemas/Money"
   AccountLots:
     type: object
-    required: [account_id, date, method, quantity, cost_basis, lots]
+    required: [account_id, date, method, estimates_withholding, quantity, cost_basis, lots]
     properties:
       account_id:
         type: string
@@ -3471,6 +3471,9 @@ schemas:
         description: How a sale removes cost. With average the lots are empty.
         type: string
         enum: [average, fifo]
+      estimates_withholding:
+        description: True when GET /accounts/{id}/withholding answers for the account, as the book's region taxes the security at source (A235).
+        type: boolean
       quantity:
         $ref: "#/components/schemas/Money"
       cost_basis:

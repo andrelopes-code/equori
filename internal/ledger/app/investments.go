@@ -205,9 +205,12 @@ func (s *Service) readHolding(
 // HoldingLots is a security account on a date: the cost method a sale of it uses, its holding
 // and, under the lot method, the open lots (A234 FL11).
 type HoldingLots struct {
-	Method              string
-	Quantity, CostBasis money.Money
-	Lots                []OpenLot
+	Method string
+	// EstimatesWithholding is true when EstimateWithholding answers for the account: the book's
+	// region taxes the security at source (A235 FS4).
+	EstimatesWithholding bool
+	Quantity, CostBasis  money.Money
+	Lots                 []OpenLot
 }
 
 // OpenLot is the part of a holding bought on one date.
@@ -250,7 +253,17 @@ func (s *Service) OpenLots(
 		return HoldingLots{}, err
 	}
 
-	out := HoldingLots{Method: h.Method, Quantity: h.Quantity, CostBasis: h.CostBasis}
+	_, estimates, err := s.withholdingTable(ctx, booksID, security)
+	if err != nil {
+		return HoldingLots{}, err
+	}
+
+	out := HoldingLots{
+		Method:               h.Method,
+		EstimatesWithholding: estimates,
+		Quantity:             h.Quantity,
+		CostBasis:            h.CostBasis,
+	}
 	if out.Method == "" {
 		out.Method = domain.CostAverage
 	}

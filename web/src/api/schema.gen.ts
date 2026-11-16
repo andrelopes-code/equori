@@ -6045,6 +6045,8 @@ export interface components {
              * @enum {string}
              */
             method: "average" | "fifo";
+            /** @description True when GET /accounts/{id}/withholding answers for the account, as the book's region taxes the security at source (A235). */
+            estimates_withholding: boolean;
             quantity: components["schemas"]["Money"];
             cost_basis: components["schemas"]["Money"];
             /** @description Open lots, oldest first. */

@@ -159,12 +159,13 @@ func (s *Server) getAccountLots(
 	}
 
 	return AccountLots{
-		AccountId: id,
-		Date:      params.Date,
-		Method:    AccountLotsMethod(h.Method),
-		Quantity:  toMoneyAPI(h.Quantity),
-		CostBasis: toMoneyAPI(h.CostBasis),
-		Lots:      lots,
+		AccountId:            id,
+		Date:                 params.Date,
+		Method:               AccountLotsMethod(h.Method),
+		EstimatesWithholding: h.EstimatesWithholding,
+		Quantity:             toMoneyAPI(h.Quantity),
+		CostBasis:            toMoneyAPI(h.CostBasis),
+		Lots:                 lots,
 	}, nil
 }
 
