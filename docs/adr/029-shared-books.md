@@ -28,3 +28,7 @@ ADR 003 gives every business table a `user_id`, which names both the person who 
 ## Amendment of 2026-10-30 (P11, households)
 
 Design `docs/specs/2026-10-30-households-access-design.md`. Login opens the membership of the last visit, ties broken by the lowest books ID (HA3); this replaces BK12. The instance role grants no access to a book (HA7). Each operation of `api/openapi.yaml` declares `x-book-role` (`public`, `read`, `write`, `owner`); `identity.Authorize` reads the membership role with the session and refuses a lower role with 403 `book_role_required` before the request is validated (HA8 to HA13). An assistant conversation belongs to one membership and is deleted with it (HA28); the export archive carries no conversation, message or proposal from archive version 5 (HA55).
+
+## Amendment of 2026-11-16 (tool parity)
+
+A tool declares the lowest book role that may call it (`tool.Spec.Role`). The registry refuses a call or a preview of a lower role, or of a context with no role, with `book_role_required`. HA12 reads: an `owner` operation maps to an exclusion or only to tools whose `Role` is `owner`. HA18 changes: `updateCurrentBooks`, `updateMember`, `removeMember` and `deleteInvitation` map to `manage_book`, and `getCurrentBooks`, `listMembers` and `listInvitations` to `get_book_access`, both with `Role` `owner`. `createInvitation` and `deleteCurrentBooks` stay excluded (ADR 012 T14).

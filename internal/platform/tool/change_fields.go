@@ -51,4 +51,8 @@ var ChangeFields = []string{
 	"exchange",
 	"subtype",
 	"symbols",
+	"time_zone",
+	"role",
+	"member",
+	"invitation",
 }

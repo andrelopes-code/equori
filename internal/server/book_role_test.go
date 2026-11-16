@@ -8,11 +8,15 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 
 	"github.com/andrelopes-code/equori/api"
+	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 )
 
-// HA12: every operation declares its book role, and an owner operation has no tool.
+// HA12 (amended 2026-11-16): every operation declares its book role, and an owner operation has an
+// exclusion or only tools that need the role owner.
 func TestBookRoleDeclared(t *testing.T) {
 	t.Parallel()
+	h := apitest.New(t)
 
 	doc, err := openapi3.NewLoader().LoadFromData(api.Contract)
 	if err != nil {
@@ -31,12 +35,19 @@ func TestBookRoleDeclared(t *testing.T) {
 				continue
 			}
 
-			if role == "owner" && !strings.HasPrefix(exposure[op.OperationID], "-") {
-				t.Errorf(
-					"owner operation %s has exposure %q, want an exclusion",
-					op.OperationID,
-					exposure[op.OperationID],
-				)
+			if role != "owner" || strings.HasPrefix(exposure[op.OperationID], "-") {
+				continue
+			}
+
+			for name := range strings.SplitSeq(exposure[op.OperationID], ",") {
+				tl, ok := h.App.Tools.Tool(name)
+				if !ok || tl.Spec().Role != auth.RoleOwner {
+					t.Errorf(
+						"owner operation %s maps to tool %q, want an exclusion or a tool with the role owner",
+						op.OperationID,
+						name,
+					)
+				}
 			}
 		}
 	}

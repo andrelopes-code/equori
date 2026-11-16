@@ -1,15 +1,22 @@
 package apitest
 
 import (
+	"context"
 	"encoding/json/v2"
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// Tool calls a tool of App.Tools as the harness client's member. A successful output must
-// match the tool's output schema.
+// Tool calls a tool of App.Tools as the owner of the harness. A successful output must match the
+// tool's output schema.
 func (h *Harness) Tool(name string, args any) tool.Result {
+	h.t.Helper()
+	return h.ToolAs("owner@example.com", auth.RoleOwner, name, args)
+}
+
+// ToolAs is Tool for the member with email, whose role in the owner's book is role.
+func (h *Harness) ToolAs(email string, role auth.BookRole, name string, args any) tool.Result {
 	h.t.Helper()
 
 	b, err := json.Marshal(args)
@@ -17,16 +24,7 @@ func (h *Harness) Tool(name string, args any) tool.Result {
 		h.t.Fatal(err)
 	}
 
-	r, err := h.App.Tools.Call(
-		auth.WithIdentity(
-			h.t.Context(),
-			h.MemberIDOf("owner@example.com"),
-			h.OwnerID(),
-			auth.RoleOwner,
-		),
-		name,
-		b,
-	)
+	r, err := h.App.Tools.Call(h.WithIdentity(email, role), name, b)
 	if err != nil {
 		h.t.Fatalf("call tool %s: %v", name, err)
 	}
@@ -39,6 +37,12 @@ func (h *Harness) Tool(name string, args any) tool.Result {
 	}
 
 	return r
+}
+
+// WithIdentity returns the test context of the member with email in the owner's book.
+func (h *Harness) WithIdentity(email string, role auth.BookRole) context.Context {
+	h.t.Helper()
+	return auth.WithIdentity(h.t.Context(), h.MemberIDOf(email), h.OwnerID(), role)
 }
 
 // ExpectToolError checks a tool error; field, when not empty, must be the first field error.

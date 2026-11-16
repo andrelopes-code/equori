@@ -7,5 +7,5 @@ import (
 )
 
 func Tools(svc *app.Service) []tool.Tool {
-	return []tool.Tool{updateProfile(svc)}
+	return []tool.Tool{updateProfile(svc), getBookAccess(svc), manageBook(svc)}
 }

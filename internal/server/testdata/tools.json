@@ -1072,6 +1072,91 @@
     }
   },
   {
+    "name": "get_book_access",
+    "description": "Reads the book's name, region and time zone, its members with their roles and its pending invitations, without the invitation token. Use it when the owner asks who has access to the book or what its settings are, and before manage_book. Do not use it for the member's own profile: update_profile does.",
+    "effect": "read_only",
+    "idempotent": true,
+    "input_schema": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "time_zone": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "member_id": {
+                "type": "integer"
+              },
+              "email": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "member_id",
+              "email",
+              "role"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "invitations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              },
+              "expires_at": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "role",
+              "expires_at"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "name",
+        "region",
+        "time_zone",
+        "members",
+        "invitations"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "get_budgets_and_goals",
     "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. With kind plan it returns the month's budget plan instead: the reference income, the installments and savings it pays, the budgets and the unassigned rest. Use it for how a budget or goal is going, or how much income still has no budget. Do not use it for spending by category without a budget: get_category_totals does.",
     "effect": "read_only",
@@ -5918,6 +6003,76 @@
         "action",
         "id",
         "name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "manage_book",
+    "description": "Proposes a change of the book that only its owner makes: rename it or change its region or time zone, change the role of a member, remove a member with its sessions and access tokens, or revoke a pending invitation. Use it when the owner asks to change the book's settings or who has access to it; read get_book_access first. Do not use it to invite someone or to delete the book: the owner does both in settings. The user confirms every change.",
+    "effect": "destructive",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "operation to propose",
+          "enum": [
+            "update_book",
+            "change_member_role",
+            "remove_member",
+            "delete_invitation"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "description": "for update_book: new name of the book, 1 to 80 characters"
+        },
+        "region": {
+          "type": "string",
+          "description": "for update_book: ISO 3166-1 alpha-2 code of the book's region, such as BR"
+        },
+        "time_zone": {
+          "type": "string",
+          "description": "for update_book: IANA time zone name, or default for the zone of the region"
+        },
+        "member_id": {
+          "type": "integer",
+          "description": "for change_member_role and remove_member: member_id from get_book_access"
+        },
+        "role": {
+          "type": "string",
+          "description": "for change_member_role: new role of the member",
+          "enum": [
+            "read",
+            "write",
+            "owner"
+          ]
+        },
+        "invitation_id": {
+          "type": "string",
+          "description": "for delete_invitation: id from get_book_access"
+        }
+      },
+      "required": [
+        "action"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "action",
+        "target"
       ],
       "additionalProperties": false
     }
