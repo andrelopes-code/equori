@@ -9,46 +9,40 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@slotted/react/field";
-import { TextField } from "@slotted/react/text-field";
-import { useMemo, useState } from "react";
+import { Field, FieldError, FieldLabel } from "@slotted/react/field";
+import { useMemo, type SyntheticEvent } from "react";
 
-import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { usePutTerms } from "@/features/instruments/api";
-import {
-  bpText,
-  parsePercentBp,
-} from "@/features/instruments/terms/basis-points";
 import {
   dayCountLabel,
   dayCounts,
 } from "@/features/instruments/model/instrument-labels";
-import { formatRate } from "@/features/instruments/model/rate";
-import { shiftDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
+import { TermsRateFields } from "@/features/instruments/terms/terms-rate-fields";
+import { useTermsDraft } from "@/features/instruments/terms/use-terms-draft";
+import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { DateInput } from "@/ui/form-fields/date-input";
+import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { FormLayout } from "@/ui/form-layout/form-layout";
 import { FormRow } from "@/ui/form-layout/form-row";
 import { MoneyInput } from "@/ui/money/money-input";
-import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Terms = components["schemas"]["FixedIncomeTerms"];
 type DayCount = components["schemas"]["TermsDayCount"];
 
+interface TermsDialogProps {
+  code: string;
+  quote: string;
+  scale: number;
+  terms: Terms | null;
+  onDone: () => void;
+  onCancel: () => void;
+}
+
 // Sets the terms of a fixed income instrument. The server replaces the earlier terms and the
-// prices accrued from them, and the form says so before the write. The dates start at today and a
-// year ahead; the index, the day count and the face value start empty, as no value of them is
-// neutral for every region.
+// prices accrued from them, and the form says so before the write.
 export function TermsDialog({
   code,
   quote,
@@ -56,95 +50,33 @@ export function TermsDialog({
   terms,
   onDone,
   onCancel,
-}: {
-  code: string;
-  quote: string;
-  scale: number;
-  terms: Terms | null;
-  onDone: () => void;
-  onCancel: () => void;
-}) {
+}: TermsDialogProps) {
   const t = useT();
-  const [locale] = useAppLocale();
-  const today = useToday();
   const overlayOpen = useOverlayOpen();
-  const put = usePutTerms();
-  const [issued, setIssued] = useState(terms?.issued_on ?? today);
-  const [matures, setMatures] = useState(
-    terms?.matures_on ?? shiftDate(today, 365),
-  );
-  const [index, setIndex] = useState(terms?.index_id ?? "");
-  const [percent, setPercent] = useState(
-    formatRate(bpText(terms?.percent_of_index_bp ?? 10000), locale),
-  );
-  const [spread, setSpread] = useState(
-    formatRate(bpText(terms?.spread_bp ?? 0), locale),
-  );
-  const [dayCount, setDayCount] = useState<DayCount | null>(
-    terms?.day_count ?? null,
-  );
-  const [face, setFace] = useState(terms?.face_value ?? 0);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [summary, setSummary] = useState<string | null>(null);
+  const { draft, errors, summary, pending, change, submit } = useTermsDraft({
+    code,
+    terms,
+    onDone,
+  });
+
   const dayCountChoices = useMemo(
     () => dayCounts.map((d) => ({ value: d, label: dayCountLabel(t, d) })),
     [t],
   );
+
   const openChange = useStableCallback((open: boolean) => {
     if (!open) onCancel();
   });
-  const submit = () => {
-    const next: Record<string, string> = {};
-    const required = t("instruments.required");
-    const percentBp = parsePercentBp(percent);
-    const spreadBp = parsePercentBp(spread);
-    if (percentBp === null || percentBp < 1)
-      next.percent_of_index_bp = t("terms.invalid.percent");
-    if (spreadBp === null) next.spread_bp = t("terms.invalid.percent");
-    if (dayCount === null) next.day_count = required;
-    if (face < 1) next.face_value = required;
-    setErrors(next);
-    setSummary(null);
-    if (
-      Object.keys(next).length > 0 ||
-      percentBp === null ||
-      spreadBp === null ||
-      dayCount === null
-    )
-      return;
-    put
-      .mutateAsync({
-        code,
-        terms: {
-          issued_on: issued,
-          matures_on: matures,
-          ...(index.trim() === "" ? {} : { index_id: index.trim() }),
-          percent_of_index_bp: percentBp,
-          spread_bp: spreadBp,
-          day_count: dayCount,
-          face_value: face,
-        },
-      })
-      .then(onDone)
-      .catch((caught: unknown) => {
-        const fields =
-          caught instanceof ProblemError ? fieldErrors(caught.problem) : {};
-        setErrors(fields);
-        setSummary(
-          Object.keys(fields).length > 0 ? null : errorText(caught, t),
-        );
-      });
+
+  const handleSubmit = (event: SyntheticEvent) => {
+    event.preventDefault();
+    submit();
   };
+
   return (
     <Dialog open={overlayOpen} size="md" onOpenChange={openChange}>
       <DialogContent>
-        <form
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit();
-          }}
-        >
+        <form noValidate onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{t("terms.title")}</DialogTitle>
             <DialogDescription>
@@ -164,9 +96,11 @@ export function TermsDialog({
                   <FieldLabel>{t("terms.issuedOn")}</FieldLabel>
                   <DateInput
                     name="issued_on"
-                    value={issued}
+                    value={draft.issued}
                     shortcuts={false}
-                    onChange={setIssued}
+                    onChange={(issued) => {
+                      change({ issued });
+                    }}
                   />
                   {errors.issued_on !== undefined && (
                     <FieldError>{errors.issued_on}</FieldError>
@@ -177,9 +111,11 @@ export function TermsDialog({
                   <FieldLabel>{t("terms.maturesOn")}</FieldLabel>
                   <DateInput
                     name="matures_on"
-                    value={matures}
+                    value={draft.matures}
                     shortcuts={false}
-                    onChange={setMatures}
+                    onChange={(matures) => {
+                      change({ matures });
+                    }}
                   />
                   {errors.matures_on !== undefined && (
                     <FieldError>{errors.matures_on}</FieldError>
@@ -192,8 +128,10 @@ export function TermsDialog({
                   <FieldLabel>{t("terms.faceValue")}</FieldLabel>
                   <MoneyInput
                     size="field"
-                    value={face}
-                    onChange={setFace}
+                    value={draft.face}
+                    onChange={(face) => {
+                      change({ face });
+                    }}
                     currency={quote}
                     scale={scale}
                     sign="neutral"
@@ -208,12 +146,12 @@ export function TermsDialog({
                   <ChoiceSelect
                     label={t("terms.dayCount")}
                     choices={dayCountChoices}
-                    value={dayCount}
+                    value={draft.dayCount}
                     multiple={false}
                     invalid={errors.day_count !== undefined}
                     onChange={(next) => {
                       if (typeof next === "string")
-                        setDayCount(next as DayCount);
+                        change({ dayCount: next as DayCount });
                     }}
                   />
                   {errors.day_count !== undefined && (
@@ -222,64 +160,18 @@ export function TermsDialog({
                 </Field>
               </FormRow>
 
-              <Field invalid={errors.index_id !== undefined}>
-                <FieldLabel>{t("terms.index")}</FieldLabel>
-                <TextField
-                  name="index_id"
-                  value={index}
-                  maxLength={40}
-                  onChange={(event) => {
-                    setIndex(event.target.value.toLowerCase());
-                  }}
-                />
-                {errors.index_id === undefined ? (
-                  <FieldDescription>{t("terms.indexHint")}</FieldDescription>
-                ) : (
-                  <FieldError>{errors.index_id}</FieldError>
-                )}
-              </Field>
-
-              <FormRow>
-                <Field
-                  invalid={errors.percent_of_index_bp !== undefined}
-                  required
-                >
-                  <FieldLabel>{t("terms.percentOfIndex")}</FieldLabel>
-                  <TextField
-                    name="percent_of_index"
-                    inputMode="decimal"
-                    value={percent}
-                    onChange={(event) => {
-                      setPercent(event.target.value);
-                    }}
-                  />
-                  {errors.percent_of_index_bp !== undefined && (
-                    <FieldError>{errors.percent_of_index_bp}</FieldError>
-                  )}
-                </Field>
-
-                <Field invalid={errors.spread_bp !== undefined} required>
-                  <FieldLabel>{t("terms.spread")}</FieldLabel>
-                  <TextField
-                    name="spread"
-                    inputMode="decimal"
-                    value={spread}
-                    onChange={(event) => {
-                      setSpread(event.target.value);
-                    }}
-                  />
-                  {errors.spread_bp !== undefined && (
-                    <FieldError>{errors.spread_bp}</FieldError>
-                  )}
-                </Field>
-              </FormRow>
+              <TermsRateFields
+                draft={draft}
+                errors={errors}
+                onChange={change}
+              />
             </FormLayout>
           </DialogBody>
           <DialogFooter>
             <Button variant="ghost" tone="secondary" onClick={onCancel}>
               {t("detail.cancel")}
             </Button>
-            <Button type="submit" loading={put.isPending}>
+            <Button type="submit" loading={pending}>
               {t("terms.save")}
             </Button>
           </DialogFooter>
