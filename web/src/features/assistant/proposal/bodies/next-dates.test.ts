@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { nextDates } from "@/features/assistant/proposal/next-dates";
+import { nextDates } from "@/features/assistant/proposal/bodies/next-dates";
 
 describe("nextDates", () => {
   it("lists six monthly dates by default", () => {

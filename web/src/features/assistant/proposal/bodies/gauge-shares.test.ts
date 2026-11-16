@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { gaugeShares } from "@/features/assistant/proposal/gauge-shares";
+import { gaugeShares } from "@/features/assistant/proposal/bodies/gauge-shares";
 
 describe("gaugeShares", () => {
   it("fills the current limit and hatches the increase", () => {

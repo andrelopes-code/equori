@@ -1,14 +1,14 @@
 import type { components } from "@/api/schema.gen";
-import { CategorizeBody } from "@/features/assistant/proposal/categorize-body";
-import { bodyKind } from "@/features/assistant/proposal/body-kind";
-import { InvestmentBody } from "@/features/assistant/proposal/investment-body";
-import { LimitBody } from "@/features/assistant/proposal/limit-body";
-import { PaymentBody } from "@/features/assistant/proposal/payment-body";
+import { CategorizeBody } from "@/features/assistant/proposal/bodies/categorize-body";
+import { bodyKind } from "@/features/assistant/proposal/bodies/body-kind";
+import { InvestmentBody } from "@/features/assistant/proposal/bodies/investment-body";
+import { LimitBody } from "@/features/assistant/proposal/bodies/limit-body";
+import { PaymentBody } from "@/features/assistant/proposal/bodies/payment-body";
 import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes";
-import { RecordBody } from "@/features/assistant/proposal/record-body";
-import { RuleBody } from "@/features/assistant/proposal/rule-body";
-import { ScheduleBody } from "@/features/assistant/proposal/schedule-body";
-import { VoidBody } from "@/features/assistant/proposal/void-body";
+import { RecordBody } from "@/features/assistant/proposal/bodies/record-body";
+import { RuleBody } from "@/features/assistant/proposal/bodies/rule-body";
+import { ScheduleBody } from "@/features/assistant/proposal/bodies/schedule-body";
+import { VoidBody } from "@/features/assistant/proposal/bodies/void-body";
 
 type Preview = components["schemas"]["AssistantPreview"];
 

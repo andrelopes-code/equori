@@ -1,8 +1,8 @@
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import styles from "@/features/assistant/proposal/bodies.module.css";
-import { gaugeShares } from "@/features/assistant/proposal/gauge-shares";
+import styles from "@/features/assistant/proposal/bodies/bodies.module.css";
+import { gaugeShares } from "@/features/assistant/proposal/bodies/gauge-shares";
 import {
   changeOf,
   changesWithout,

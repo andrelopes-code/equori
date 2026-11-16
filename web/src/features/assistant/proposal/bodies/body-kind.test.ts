@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   bodyKind,
   type BodyKind,
-} from "@/features/assistant/proposal/body-kind";
+} from "@/features/assistant/proposal/bodies/body-kind";
 
 describe("bodyKind", () => {
   const rows: [string, BodyKind][] = [

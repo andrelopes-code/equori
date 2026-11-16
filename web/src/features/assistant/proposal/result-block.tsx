@@ -8,7 +8,7 @@ import {
   actionTitle,
   proposalCardState,
 } from "@/features/assistant/proposal/proposal-card-state";
-import { OperationBody } from "@/features/assistant/proposal/operation-body";
+import { OperationBody } from "@/features/assistant/proposal/bodies/operation-body";
 import { ResultLabel } from "@/features/assistant/proposal/result-label";
 import styles from "@/features/assistant/proposal/results.module.css";
 import { useExpired } from "@/features/assistant/proposal/use-expired";

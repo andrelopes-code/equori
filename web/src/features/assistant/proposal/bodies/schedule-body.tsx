@@ -2,8 +2,8 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { catalogKey } from "@/features/assistant/model/catalog-key";
-import styles from "@/features/assistant/proposal/bodies.module.css";
-import { nextDates } from "@/features/assistant/proposal/next-dates";
+import styles from "@/features/assistant/proposal/bodies/bodies.module.css";
+import { nextDates } from "@/features/assistant/proposal/bodies/next-dates";
 import {
   changeOf,
   changesWithout,

@@ -4,7 +4,7 @@ import {
   AssistantIcon,
   type AssistantIconName,
 } from "@/features/assistant/panel/assistant-icon";
-import styles from "@/features/assistant/proposal/bodies.module.css";
+import styles from "@/features/assistant/proposal/bodies/bodies.module.css";
 
 interface PaymentNodeProps {
   icon: AssistantIconName;

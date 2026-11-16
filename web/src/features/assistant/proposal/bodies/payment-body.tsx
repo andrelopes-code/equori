@@ -1,8 +1,8 @@
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import styles from "@/features/assistant/proposal/bodies.module.css";
-import { PaymentNode } from "@/features/assistant/proposal/payment-node";
+import styles from "@/features/assistant/proposal/bodies/bodies.module.css";
+import { PaymentNode } from "@/features/assistant/proposal/bodies/payment-node";
 import {
   changeOf,
   changesWithout,

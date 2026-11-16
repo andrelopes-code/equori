@@ -5,7 +5,7 @@ import type { components } from "@/api/schema.gen";
 import { DeadlineRing } from "@/features/assistant/proposal/deadline-ring";
 import styles from "@/features/assistant/proposal/decision-sheet.module.css";
 import { DependentRow } from "@/features/assistant/proposal/dependent-row";
-import { OperationRow } from "@/features/assistant/proposal/operation-row";
+import { OperationRow } from "@/features/assistant/proposal/bodies/operation-row";
 import { SheetFooter } from "@/features/assistant/proposal/sheet-footer";
 import {
   sheetSummary,

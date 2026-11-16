@@ -2,7 +2,7 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
-import { OperationBody } from "@/features/assistant/proposal/operation-body";
+import { OperationBody } from "@/features/assistant/proposal/bodies/operation-body";
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi } from "@/testing/fake-api";
 import { expectNoAmounts, hideAmounts } from "@/testing/privacy";

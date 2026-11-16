@@ -1,6 +1,6 @@
 import type { components } from "@/api/schema.gen";
-import styles from "@/features/assistant/proposal/bodies.module.css";
-import { ItemRows } from "@/features/assistant/proposal/item-rows";
+import styles from "@/features/assistant/proposal/bodies/bodies.module.css";
+import { ItemRows } from "@/features/assistant/proposal/bodies/item-rows";
 import {
   changeOf,
   changesWithout,

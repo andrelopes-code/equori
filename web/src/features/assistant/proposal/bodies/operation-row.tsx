@@ -10,9 +10,9 @@ import {
   actionTitle,
   proposalCardState,
 } from "@/features/assistant/proposal/proposal-card-state";
-import { OperationBody } from "@/features/assistant/proposal/operation-body";
+import { OperationBody } from "@/features/assistant/proposal/bodies/operation-body";
 import { ProposalWaiting } from "@/features/assistant/proposal/proposal-waiting";
-import { RowEnd } from "@/features/assistant/proposal/row-end";
+import { RowEnd } from "@/features/assistant/proposal/bodies/row-end";
 import { targetShownElsewhere } from "@/features/assistant/proposal/target-shown";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
