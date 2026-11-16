@@ -268,5 +268,31 @@ describe("attentionCount", () => {
         },
       ]);
     });
+
+    it("gives one week item per currency", () => {
+      const usd = {
+        ...(fixed("interest", "2026-10-20", "upcoming", 70) as object),
+        gross: { amount: 70, currency: "USD" },
+      } as never;
+      const items = attentionItems({
+        ...empty,
+        fixedIncome: [fixed("interest", "2026-10-18", "upcoming", 100), usd],
+      });
+
+      expect(items).toEqual([
+        {
+          kind: "fixed_income_week",
+          weight: "low",
+          count: 1,
+          total: money(100),
+        },
+        {
+          kind: "fixed_income_week",
+          weight: "low",
+          count: 1,
+          total: { amount: 70, currency: "USD" },
+        },
+      ]);
+    });
   });
 });

@@ -196,20 +196,26 @@ function fixedIncomeWeekItems(input: AttentionInput): AttentionItem[] {
       event.date >= input.today &&
       event.date <= until,
   );
-  const currency = week.find((e) => e.gross !== undefined)?.gross?.currency;
-  if (week.length === 0 || currency === undefined) return [];
+  const currencies = [
+    ...new Set(
+      week.flatMap((e) => (e.gross === undefined ? [] : [e.gross.currency])),
+    ),
+  ];
 
-  return [
-    {
-      kind: "fixed_income_week",
-      weight: "low",
-      count: week.length,
+  // One item per currency: amounts of two currencies never add up (C2).
+  return currencies.map((currency) => {
+    const events = week.filter((e) => e.gross?.currency === currency);
+
+    return {
+      kind: "fixed_income_week" as const,
+      weight: "low" as const,
+      count: events.length,
       total: {
-        amount: week.reduce((sum, e) => sum + (e.gross?.amount ?? 0), 0),
+        amount: events.reduce((sum, e) => sum + (e.gross?.amount ?? 0), 0),
         currency,
       },
-    },
-  ];
+    };
+  });
 }
 
 function budgetItems(budgets: AttentionInput["budgets"]): BudgetItem[] {

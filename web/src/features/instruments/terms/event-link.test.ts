@@ -31,6 +31,15 @@ describe("recordLink", () => {
     );
   });
 
+  it("rounds the unit price half to even (C1)", () => {
+    const half = {
+      ...event("maturity", "2027-01-05", 1),
+      quantity: { amount: 131072, currency: "CDB1" },
+    };
+
+    expect(recordLink(half, scale)).toContain("unit_price=0.076293945312");
+  });
+
   it("leaves out the amount of an event whose rate is missing", () => {
     expect(recordLink(event("amortization", "2027-01-05"), scale)).toBe(
       `/transactions/new?kind=trade&side=sell&account_id=${account_id}` +
