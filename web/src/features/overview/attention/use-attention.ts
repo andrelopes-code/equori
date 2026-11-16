@@ -10,7 +10,11 @@ import { currentAndUnpaid, statementsQuery } from "@/features/cards";
 import { categoryEntries } from "@/features/categories";
 import { connectionsQuery } from "@/features/connections";
 import { uncategorizedQuery } from "@/features/overview/api";
-import { attentionItems } from "@/features/overview/attention/attention";
+import {
+  attentionItems,
+  fixedIncomeWeekDays,
+  shiftDay,
+} from "@/features/overview/attention/attention";
 import type { AttentionItem } from "@/features/overview/attention/attention";
 import { shiftMonth } from "@/features/overview/model/forecast";
 import { useBase } from "@/features/overview/model/use-base";
@@ -19,11 +23,15 @@ import {
   budgetsQuery,
   startsBy,
 } from "@/features/planning";
+import { fixedIncomeEventsQuery } from "@/features/portfolio";
 import { useAppLocale } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
 // Twelve months back hold every closed statement still owing in practice.
 const lookBackMonths = 12;
+
+// A payment still unrecorded after this many days is no longer listed as due.
+const fixedIncomeLookBackDays = 90;
 
 export interface Attention {
   items: AttentionItem[];
@@ -43,6 +51,13 @@ export function useAttention(): Attention {
   const uncategorized = useQuery(uncategorizedQuery(api));
   const connections = useQuery(connectionsQuery(api));
   const budgets = useQuery(budgetsQuery(api));
+  const fixedIncome = useQuery(
+    fixedIncomeEventsQuery(
+      api,
+      shiftDay(today, -fixedIncomeLookBackDays),
+      shiftDay(today, fixedIncomeWeekDays),
+    ),
+  );
   const all = accounts.data ?? [];
   // An account with sub-accounts holds no records: the API refuses its unconfirmed list.
   const parents = new Set(all.map((account) => account.parent_id));
@@ -75,6 +90,7 @@ export function useAttention(): Attention {
     uncategorized,
     connections,
     budgets,
+    fixedIncome,
     ...unconfirmed,
     ...reconciliations,
     ...statements,
@@ -107,6 +123,7 @@ export function useAttention(): Attention {
                 ...(statementId === undefined ? {} : { statementId }),
               };
             }),
+            fixedIncome: fixedIncome.data?.items ?? [],
             connections: connections.data?.items ?? [],
             differences: open.map((account, i) => ({
               account,

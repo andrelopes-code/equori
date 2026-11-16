@@ -4,6 +4,8 @@ import type { AttentionItem } from "@/features/overview/attention/attention";
 import { BudgetRow } from "@/features/overview/attention/budget-row";
 import { ConnectionsRow } from "@/features/overview/attention/connections-row";
 import { DifferenceRow } from "@/features/overview/attention/difference-row";
+import { FixedIncomeDueRow } from "@/features/overview/attention/fixed-income-due-row";
+import { FixedIncomeWeekRow } from "@/features/overview/attention/fixed-income-week-row";
 import { QuietBudgetRow } from "@/features/overview/attention/quiet-budget-row";
 import { ReviewRow } from "@/features/overview/attention/review-row";
 import { StatementHero } from "@/features/overview/attention/statement-hero";
@@ -41,6 +43,15 @@ export function AttentionList({
             return <ReviewRow key={item.kind} item={item} />;
           case "difference":
             return <DifferenceRow key={item.account.id} item={item} />;
+          case "fixed_income_due":
+            return (
+              <FixedIncomeDueRow
+                key={`${item.event.account_id}/${item.event.instrument}/${item.event.date}/${item.event.kind}`}
+                item={item}
+              />
+            );
+          case "fixed_income_week":
+            return <FixedIncomeWeekRow key={item.kind} item={item} />;
         }
       })}
     </List>

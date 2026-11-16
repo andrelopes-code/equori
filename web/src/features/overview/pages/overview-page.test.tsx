@@ -110,6 +110,7 @@ function api(overrides: Record<string, (req: Request) => Response> = {}) {
     "GET /api/v1/schedules": () => json(200, { items: schedules }),
     "GET /api/v1/occurrences": () => json(200, { items: [] }),
     "GET /api/v1/budgets": () => json(200, { items: [] }),
+    "GET /api/v1/fixed-income-events": () => json(200, { items: [] }),
     "GET /api/v1/commitments": () =>
       json(200, {
         month: "2026-10",

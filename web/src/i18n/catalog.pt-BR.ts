@@ -2355,6 +2355,14 @@ export const catalogPtBR: Catalog = {
   "overview.attention.withUnconfirmed":
     "{account} · {count} sem confirmação do banco",
   "overview.attention.connections": "Conexões que pedem ação",
+  "overview.attention.fixedIncomeDue.interest":
+    "Juros de {instrument} a registrar",
+  "overview.attention.fixedIncomeDue.amortization":
+    "Amortização de {instrument} a registrar",
+  "overview.attention.fixedIncomeDue.maturity": "{instrument} venceu",
+  "overview.attention.fixedIncomeWeek":
+    "{count} pagamentos de renda fixa nesta semana · {amount}",
+  "overview.attention.record": "Registrar",
   "overview.attention.difference": "Diferença aberta na conferência de saldo",
   "start.title": "Prepare suas contas",
   "start.subtitle": "Três passos e depois a primeira transação.",

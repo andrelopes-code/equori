@@ -523,6 +523,12 @@ const newTransactionRoute = createRoute({
     to_account_id?: string;
     brokerage_id?: string;
     instrument?: string;
+    side?: "buy" | "sell";
+    date?: string;
+    quantity?: number;
+    unit_price?: string;
+    gross?: number;
+    income_type?: string;
     kind?: BuiltKind | "transfer";
   } => ({
     ...validateNewTransactionSearch(search),

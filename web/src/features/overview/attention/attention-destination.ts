@@ -26,7 +26,10 @@ export function itemDestination(
       return item.account.kind === "credit_card"
         ? accountRoute(item.account)
         : { ...accountRoute(item.account), search: { tab: "reconciliation" } };
+    // The record link of a payment needs the scale of its instrument: its row builds it.
     case "review":
+    case "fixed_income_due":
+    case "fixed_income_week":
       return undefined;
   }
 }

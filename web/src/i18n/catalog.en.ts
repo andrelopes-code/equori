@@ -2329,6 +2329,13 @@ export const catalogEn = {
   "overview.attention.withUnconfirmed":
     "{account} · {count} not confirmed by the bank",
   "overview.attention.connections": "Connections that need action",
+  "overview.attention.fixedIncomeDue.interest": "Interest of {instrument} due",
+  "overview.attention.fixedIncomeDue.amortization":
+    "Amortization of {instrument} due",
+  "overview.attention.fixedIncomeDue.maturity": "{instrument} matured",
+  "overview.attention.fixedIncomeWeek":
+    "{count} fixed income payments this week · {amount}",
+  "overview.attention.record": "Record",
   "overview.attention.difference": "Open reconciliation difference",
   "start.title": "Set up your accounts",
   "start.subtitle": "Three steps, then your first transaction.",

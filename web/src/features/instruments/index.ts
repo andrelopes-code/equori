@@ -19,3 +19,7 @@ export {
   bpText,
   parsePercentBp,
 } from "@/features/instruments/terms/basis-points";
+export {
+  recordLink,
+  recordSearch,
+} from "@/features/instruments/terms/event-link";

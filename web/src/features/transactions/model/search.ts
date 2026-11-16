@@ -20,6 +20,8 @@ const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const datePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
 const maxQueryLength = 100;
+const unitPricePattern = /^\d+(\.\d{1,12})?$/;
+const incomeTypePattern = /^[a-z0-9_]{2,40}$/;
 
 function uuid(value: unknown): string | undefined {
   return typeof value === "string" && uuidPattern.test(value)
@@ -90,18 +92,46 @@ export function validateTransactionSearch(
   };
 }
 
-// The presets of the new-entry route: the account that pays, the account that receives and the
-// brokerage of a trade.
-export function validateNewTransactionSearch(raw: Record<string, unknown>): {
+export interface NewTransactionSearch {
   account_id?: string;
   to_account_id?: string;
   brokerage_id?: string;
   instrument?: string;
-} {
+  side?: "buy" | "sell";
+  date?: string;
+  // Minor units of the instrument's scale.
+  quantity?: number;
+  // Decimal text, at most 12 decimals.
+  unit_price?: string;
+  // Minor units of the account currency.
+  gross?: number;
+  income_type?: string;
+}
+
+// The presets of the new-entry route: the account that pays, the account that receives, the
+// brokerage of a trade and the initial values of a trade or an investment income.
+export function validateNewTransactionSearch(
+  raw: Record<string, unknown>,
+): NewTransactionSearch {
   const account_id = uuid(raw.account_id);
   const to_account_id = uuid(raw.to_account_id);
   const brokerage_id = uuid(raw.brokerage_id);
+  const date = isoDate(raw.date);
+  const quantity = minorUnits(raw.quantity);
+  const gross = minorUnits(raw.gross);
+  const price = text(raw.unit_price, 40);
+  const unit_price =
+    price !== undefined && unitPricePattern.test(price) ? price : undefined;
+  const type = text(raw.income_type, 40);
+  const income_type =
+    type !== undefined && incomeTypePattern.test(type) ? type : undefined;
   return {
+    ...(raw.side === "buy" || raw.side === "sell" ? { side: raw.side } : {}),
+    ...(date === undefined ? {} : { date }),
+    ...(quantity === undefined ? {} : { quantity }),
+    ...(unit_price === undefined ? {} : { unit_price }),
+    ...(gross === undefined ? {} : { gross }),
+    ...(income_type === undefined ? {} : { income_type }),
     ...(account_id === undefined ? {} : { account_id }),
     ...(to_account_id === undefined ? {} : { to_account_id }),
     ...(brokerage_id === undefined ? {} : { brokerage_id }),

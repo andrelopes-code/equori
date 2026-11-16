@@ -107,4 +107,37 @@ describe("validateNewTransactionSearch", () => {
       validateNewTransactionSearch({ to_account_id: "x", brokerage_id: 7 }),
     ).toEqual({});
   });
+
+  it("keeps the six entry presets and drops a malformed value", () => {
+    expect(
+      validateNewTransactionSearch({
+        side: "sell",
+        date: "2027-01-05",
+        quantity: "10000000",
+        unit_price: "1000.000000000000",
+        gross: 60206,
+        income_type: "coupon",
+      }),
+    ).toEqual({
+      side: "sell",
+      date: "2027-01-05",
+      quantity: 10000000,
+      unit_price: "1000.000000000000",
+      gross: 60206,
+      income_type: "coupon",
+    });
+    expect(
+      validateNewTransactionSearch({
+        side: "hold",
+        date: "2027-02-30",
+        quantity: -1,
+        unit_price: "1.1234567890123",
+        gross: 1.5,
+        income_type: "Coupon!",
+      }),
+    ).toEqual({});
+    expect(validateNewTransactionSearch({ unit_price: 1000 })).toEqual({
+      unit_price: "1000",
+    });
+  });
 });

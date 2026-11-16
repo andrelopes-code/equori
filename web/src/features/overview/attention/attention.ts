@@ -5,10 +5,14 @@ import type { Figures } from "@/features/planning";
 type Account = components["schemas"]["Account"];
 type Statement = components["schemas"]["StatementSummary"];
 type Money = components["schemas"]["Money"];
+type FixedIncomeEvent = components["schemas"]["FixedIncomeEvent"];
 type ConnectionState = components["schemas"]["Connection"]["state"];
 
 // A statement due within this many days, or past due, is noticed.
 export const statementNoticeDays = 3;
+
+// Upcoming fixed income payments within this many days are counted in one item (FC19).
+export const fixedIncomeWeekDays = 7;
 
 // A budget over its amount by up to this share of its room is of the lowest weight (AT3).
 export const budgetMarginPercent = 10;
@@ -61,6 +65,18 @@ export type AttentionItem =
       difference: Money;
       // The account's unconfirmed entries, on its difference item (A133).
       unconfirmed?: number;
+    }
+  | {
+      kind: "fixed_income_due";
+      weight: "high" | "normal";
+      event: FixedIncomeEvent;
+    }
+  | {
+      kind: "fixed_income_week";
+      weight: "low";
+      count: number;
+      // The sum of the gross of the events; events whose rate is missing add nothing.
+      total: Money;
     };
 
 interface AttentionInput {
@@ -76,24 +92,37 @@ interface AttentionInput {
   differences: readonly { account: Account; difference: Money | undefined }[];
   statements: readonly { account: Account; unpaid: readonly Statement[] }[];
   budgets: readonly { id: string; name: string; progress: Figures }[];
+  fixedIncome?: readonly FixedIncomeEvent[];
 }
 
 export type StatementItem = Extract<AttentionItem, { kind: "statement" }>;
 export type BudgetItem = Extract<AttentionItem, { kind: "budget" }>;
 export type ReviewItem = Extract<AttentionItem, { kind: "review" }>;
 export type DifferenceItem = Extract<AttentionItem, { kind: "difference" }>;
+export type FixedIncomeDueItem = Extract<
+  AttentionItem,
+  { kind: "fixed_income_due" }
+>;
+export type FixedIncomeWeekItem = Extract<
+  AttentionItem,
+  { kind: "fixed_income_week" }
+>;
 
 // Items come ranked: by weight, then by kind (AT2).
 export function attentionItems(input: AttentionInput): AttentionItem[] {
   const budgets = budgetItems(input.budgets);
+  const due = fixedIncomeDueItems(input.fixedIncome ?? []);
 
   return [
     ...statementItems(input),
     ...connectionItems(input.connections),
+    ...due.filter((d) => d.weight === "high"),
     ...budgets.filter((b) => b.weight === "normal"),
+    ...due.filter((d) => d.weight === "normal"),
     ...reviewItems(input),
     ...differenceItems(input),
     ...budgets.filter((b) => b.weight === "low"),
+    ...fixedIncomeWeekItems(input),
   ];
 }
 
@@ -103,7 +132,7 @@ export function attentionCount(items: readonly AttentionItem[]): number {
 }
 
 function statementItems(input: AttentionInput): AttentionItem[] {
-  const noticeUntil = plusDays(input.today, statementNoticeDays);
+  const noticeUntil = shiftDay(input.today, statementNoticeDays);
 
   return input.statements
     .flatMap((s) =>
@@ -139,6 +168,48 @@ function connectionItems(
   return stuck > 0
     ? [{ kind: "connections", weight: "high", count: stuck }]
     : [];
+}
+
+function fixedIncomeDueItems(
+  events: readonly FixedIncomeEvent[],
+): FixedIncomeDueItem[] {
+  return events
+    .filter((event) => event.state === "due")
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        a.instrument.localeCompare(b.instrument),
+    )
+    .map((event) => ({
+      kind: "fixed_income_due" as const,
+      weight:
+        event.kind === "maturity" ? ("high" as const) : ("normal" as const),
+      event,
+    }));
+}
+
+function fixedIncomeWeekItems(input: AttentionInput): AttentionItem[] {
+  const until = shiftDay(input.today, fixedIncomeWeekDays);
+  const week = (input.fixedIncome ?? []).filter(
+    (event) =>
+      event.state === "upcoming" &&
+      event.date >= input.today &&
+      event.date <= until,
+  );
+  const currency = week.find((e) => e.gross !== undefined)?.gross?.currency;
+  if (week.length === 0 || currency === undefined) return [];
+
+  return [
+    {
+      kind: "fixed_income_week",
+      weight: "low",
+      count: week.length,
+      total: {
+        amount: week.reduce((sum, e) => sum + (e.gross?.amount ?? 0), 0),
+        currency,
+      },
+    },
+  ];
 }
 
 function budgetItems(budgets: AttentionInput["budgets"]): BudgetItem[] {
@@ -232,7 +303,7 @@ function daysBetween(from: string, to: string): number {
   );
 }
 
-function plusDays(day: string, n: number): string {
+export function shiftDay(day: string, n: number): string {
   const date = new Date(`${day}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + n);
 

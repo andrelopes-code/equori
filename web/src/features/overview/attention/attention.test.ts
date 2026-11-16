@@ -218,4 +218,55 @@ describe("attentionCount", () => {
     expect(items).toHaveLength(3);
     expect(attentionCount(items)).toBe(2);
   });
+
+  describe("fixed income", () => {
+    const fixed = (kind: string, date: string, state: string, gross = 100) =>
+      ({
+        account_id: "a",
+        instrument: "CDB1",
+        date,
+        kind,
+        quantity: money(1),
+        gross: money(gross),
+        rate_missing: false,
+        state,
+      }) as never;
+
+    it("gives one normal item per due interest", () => {
+      const event = fixed("interest", "2026-10-15", "due");
+      expect(attentionItems({ ...empty, fixedIncome: [event] })).toEqual([
+        { kind: "fixed_income_due", weight: "normal", event },
+      ]);
+    });
+
+    it("gives a high item to a due maturity", () => {
+      const items = attentionItems({
+        ...empty,
+        fixedIncome: [fixed("maturity", "2026-10-15", "due")],
+      });
+      expect(items.map((i) => [i.kind, i.weight])).toEqual([
+        ["fixed_income_due", "high"],
+      ]);
+    });
+
+    it("sums the upcoming events of the next 7 days in one low item", () => {
+      const items = attentionItems({
+        ...empty,
+        fixedIncome: [
+          fixed("interest", "2026-10-18", "upcoming", 100),
+          fixed("amortization", "2026-10-24", "upcoming", 250),
+          fixed("interest", "2026-10-25", "upcoming", 999),
+          fixed("interest", "2026-10-10", "recorded", 999),
+        ],
+      });
+      expect(items).toEqual([
+        {
+          kind: "fixed_income_week",
+          weight: "low",
+          count: 2,
+          total: money(350),
+        },
+      ]);
+    });
+  });
 });

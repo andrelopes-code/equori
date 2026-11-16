@@ -128,3 +128,19 @@ export function usePreviewContributionPlan() {
     ) => unwrap(await api.POST("/contribution-plan/preview", { body })),
   });
 }
+
+export function fixedIncomeEventsQuery(
+  api: Client<paths>,
+  from: string,
+  to: string,
+) {
+  return queryOptions({
+    queryKey: ["fixed-income-events", from, to] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/fixed-income-events", {
+          params: { query: { from, to } },
+        }),
+      ),
+  });
+}
