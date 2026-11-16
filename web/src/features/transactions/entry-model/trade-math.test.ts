@@ -18,15 +18,9 @@ interface FifoCase {
   cost: number;
 }
 
-// The Go test TestFIFOCostFixture reads the same file.
+// The Go test TestFIFOCostFixture reads the same file; vitest runs from web/.
 const fifoCases = JSON.parse(
-  readFileSync(
-    new URL(
-      "../../../../../internal/ledger/domain/testdata/fifo-cost.json",
-      import.meta.url,
-    ),
-    "utf8",
-  ),
+  readFileSync("../internal/ledger/domain/testdata/fifo-cost.json", "utf8"),
 ) as FifoCase[];
 
 describe("trade math", () => {
