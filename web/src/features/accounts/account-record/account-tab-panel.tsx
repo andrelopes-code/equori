@@ -1,6 +1,7 @@
 import type { components } from "@/api/schema.gen";
 import { AccountLedger } from "@/features/accounts/account-ledger/account-ledger";
 import { ImportsTab } from "@/features/accounts/imports-tab/imports-tab";
+import { InstitutionTab } from "@/features/accounts/institution/institution-tab";
 import { PositionsTab } from "@/features/accounts/positions/positions-tab";
 import { ReconciliationTab } from "@/features/accounts/reconciliation/reconciliation-tab";
 import { ScheduledTab } from "@/features/accounts/scheduled/scheduled-tab";
@@ -13,6 +14,7 @@ import type {
 
 type Account = components["schemas"]["Account"];
 type Connection = components["schemas"]["Connection"];
+type InstitutionIndicators = components["schemas"]["InstitutionIndicators"];
 type ExternalAccount = components["schemas"]["ExternalAccount"];
 
 export interface Linked {
@@ -26,6 +28,7 @@ export function AccountTabPanel({
   account,
   search,
   linked,
+  indicators,
   descendants,
   scale,
 }: {
@@ -33,6 +36,7 @@ export function AccountTabPanel({
   account: Account;
   search: AccountSearch;
   linked: Linked | undefined;
+  indicators: InstitutionIndicators | undefined;
   // Unknown until the account list arrives: whether the account is a leaf decides the columns.
   descendants: Account[] | undefined;
   scale: (code: string) => number;
@@ -64,6 +68,10 @@ export function AccountTabPanel({
           descendants={descendants}
           scale={scale}
         />
+      );
+    case "institution":
+      return indicators === undefined ? null : (
+        <InstitutionTab indicators={indicators} scale={scale} />
       );
     case "sync":
       return linked === undefined ? null : (

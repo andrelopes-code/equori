@@ -19,6 +19,7 @@ interface AccountTabsInput {
   leaf: boolean;
   brokerage: boolean;
   linked: boolean;
+  institution: boolean;
   measured: boolean;
   reconciliationCount: number | undefined;
   importCount: number | undefined;
@@ -31,6 +32,7 @@ export function useAccountTabs({
   leaf,
   brokerage,
   linked,
+  institution,
   measured,
   reconciliationCount,
   importCount,
@@ -67,6 +69,9 @@ export function useAccountTabs({
     { tab: "scheduled", label: t("account.tab.scheduled") },
     ...(brokerage
       ? [{ tab: "positions" as const, label: t("account.tab.positions") }]
+      : []),
+    ...(institution
+      ? [{ tab: "institution" as const, label: t("account.tab.institution") }]
       : []),
     ...(linked ? [{ tab: "sync" as const, label: t("account.tab.sync") }] : []),
   ];

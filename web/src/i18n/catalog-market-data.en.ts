@@ -38,6 +38,8 @@ export const marketDataEn = {
   "marketData.feed.ea_hicp": "Euro area HICP (Eurostat)",
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
   "marketData.feed.br_focus": "Focus market survey (Banco Central do Brasil)",
+  "marketData.feed.br_ifdata":
+    "IF.data institution indicators (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
   "settings.feeds.covers.none": "Covers no instrument",
   "settings.feeds.covers.one": "Covers 1 instrument",
@@ -100,6 +102,8 @@ export const marketDataEn = {
   "marketData.feedSource.us_sofr": "Federal Reserve Bank of New York",
   "marketData.feedName.br_focus": "Focus market survey",
   "marketData.feedSource.br_focus": "Banco Central do Brasil",
+  "marketData.feedName.br_ifdata": "IF.data institution indicators",
+  "marketData.feedSource.br_ifdata": "Banco Central do Brasil",
   "marketData.feedName.us_cpi": "CPI-U",
   "marketData.feedSource.us_cpi": "Bureau of Labor Statistics",
 } as const;

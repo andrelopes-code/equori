@@ -27,6 +27,7 @@ import {
   unconfirmedQuery,
 } from "@/features/accounts/api";
 import { BalanceChart } from "@/features/accounts/balance-chart/balance-chart";
+import { useInstitutionIndicators } from "@/features/accounts/institution/use-institution-indicators";
 import { useAccountTabs } from "@/features/accounts/account-record/use-account-tabs";
 import { AccountYieldSection, useMeasuredTops } from "@/features/portfolio";
 import { institutionsQuery } from "@/features/setup";
@@ -73,6 +74,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
       .filter((a) => a.account_id === account.id && a.state === "mapped")
       .map((external) => ({ connection: c, external })),
   )[0];
+  const indicators = useInstitutionIndicators(institution);
   const { ancestors, descendants } = lineage(account, accounts.data ?? []);
   const measured = useMeasuredTops().has(account.id);
   const isBrokerage =
@@ -84,6 +86,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
     leaf,
     brokerage: isBrokerage,
     linked: linked !== undefined,
+    institution: indicators !== undefined,
     measured,
     reconciliationCount:
       reconciliation.data === undefined || unconfirmed.data === undefined
@@ -152,6 +155,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
               account={account}
               search={search}
               linked={linked}
+              indicators={indicators}
               descendants={
                 accounts.data === undefined ? undefined : descendants
               }

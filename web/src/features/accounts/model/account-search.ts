@@ -5,6 +5,7 @@ export type AccountTab =
   | "imports"
   | "scheduled"
   | "positions"
+  | "institution"
   | "sync";
 
 // The tabs an account's page offers below 600 px (ADR 027, S5).
@@ -26,6 +27,7 @@ const tabs: readonly AccountTab[] = [
   "imports",
   "scheduled",
   "positions",
+  "institution",
   "sync",
 ];
 

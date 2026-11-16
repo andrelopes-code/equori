@@ -12,6 +12,7 @@ describe("feedRegion", () => {
     ["br_cdi", "BR"],
     ["br_ipca", "BR"],
     ["br_focus", "BR"],
+    ["br_ifdata", "BR"],
     ["ecb", "EU"],
     ["eu_estr", "EU"],
     ["ea_hicp", "EU"],

@@ -283,6 +283,26 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "account.tab.scheduled": "Agendados",
   "account.tab.positions": "Posições",
   "account.tab.sync": "Sincronização",
+  "account.tab.institution": "Instituição",
+  "institution.title": "Indicadores prudenciais",
+  "institution.description":
+    "Números do conglomerado prudencial {name}, data-base {period}.",
+  "institution.basel": "Índice de Basileia",
+  "institution.principalCapital": "Capital principal",
+  "institution.fixedAsset": "Índice de imobilização",
+  "institution.equity": "Patrimônio líquido",
+  "institution.netIncome": "Lucro líquido no período",
+  "institution.note.basel":
+    "Patrimônio de referência sobre os ativos ponderados pelo risco",
+  "institution.note.principalCapital":
+    "Capital principal sobre os ativos ponderados pelo risco",
+  "institution.note.fixedAsset": "Conforme informado pelo Banco Central",
+  "institution.note.equity": "Do conglomerado",
+  "institution.note.netIncome": "Do conglomerado",
+  "institution.notInformed": "Não informado",
+  "institution.link": "Abrir no IF.data",
+  "institution.link.job":
+    "Fonte: Banco Central do Brasil. Os números podem ser conferidos lá.",
   "account.figures": "Indicadores da conta",
   "account.figure.balance": "Saldo",
   "account.figure.balanceNote": "Tudo o que foi registrado até hoje",

@@ -786,3 +786,24 @@ export function goalsQuery(api: Client<paths>) {
       ).items,
   });
 }
+
+// A 404 is the answer "no indicators": the source is off, or it holds no row for the institution
+// (A237 I9). The query then holds null and the account draws no institution tab.
+export function institutionIndicatorsQuery(
+  api: Client<paths>,
+  scheme: string,
+  identifier: string,
+) {
+  return queryOptions({
+    queryKey: ["institutions", "indicators", scheme, identifier] as const,
+    queryFn: async () => {
+      const result = await api.GET("/market-data/institution-indicators", {
+        params: { query: { scheme, identifier } },
+      });
+      if (result.response.status === 404) return null;
+      return unwrap(result);
+    },
+    // The figures change once a quarter.
+    staleTime: 60 * 60 * 1000,
+  });
+}

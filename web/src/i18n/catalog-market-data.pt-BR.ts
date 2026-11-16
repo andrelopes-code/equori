@@ -42,6 +42,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
   "marketData.feed.br_focus":
     "Pesquisa Focus de mercado (Banco Central do Brasil)",
+  "marketData.feed.br_ifdata":
+    "Indicadores de instituições do IF.data (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
   "settings.feeds.covers.none": "Não cobre nenhum ativo",
   "settings.feeds.covers.one": "Cobre 1 ativo",
@@ -105,6 +107,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feedSource.us_sofr": "Federal Reserve Bank of New York",
   "marketData.feedName.br_focus": "Pesquisa Focus de mercado",
   "marketData.feedSource.br_focus": "Banco Central do Brasil",
+  "marketData.feedName.br_ifdata": "Indicadores de instituições do IF.data",
+  "marketData.feedSource.br_ifdata": "Banco Central do Brasil",
   "marketData.feedName.us_cpi": "CPI-U",
   "marketData.feedSource.us_cpi": "Bureau of Labor Statistics",
 };
