@@ -3880,6 +3880,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/issuer-exposure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fixed income held per issuer against the deposit guarantee of the book's region (A236 FC23).
+         * @description Each holding is valued in the base currency at date. A holding without a price is in missing_prices and out of every sum. limit, excess and guarantee are absent when the region has no guarantee.
+         */
+        get: operations["getIssuerExposure"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/investment-income-types": {
         parameters: {
             query?: never;
@@ -7713,6 +7733,34 @@ export interface components {
             rate_missing: boolean;
             /** @enum {string} */
             state: "upcoming" | "due" | "recorded";
+        };
+        IssuerExposureReport: {
+            /** Format: date */
+            date: string;
+            /** @description By market value, largest first; the group without issuer last. */
+            issuers: components["schemas"]["IssuerExposure"][];
+            guarantee?: components["schemas"]["DepositGuarantee"];
+            /** @description The covered values of all issuers together exceed limit_per_period. */
+            period_note: boolean;
+            missing_prices: string[];
+        };
+        IssuerExposure: {
+            /** @description The issuer identifier or the folded name; absent for holdings without issuer. */
+            key?: string;
+            issuer?: string;
+            market_value: components["schemas"]["Money"];
+            covered_value: components["schemas"]["Money"];
+            uncovered_value: components["schemas"]["Money"];
+            limit?: components["schemas"]["Money"];
+            excess?: components["schemas"]["Money"];
+        };
+        DepositGuarantee: {
+            name: string;
+            limit_per_issuer: components["schemas"]["Money"];
+            limit_per_period: components["schemas"]["Money"];
+            period_years: number;
+            /** @description The subtypes the guarantee covers. */
+            covered: string[];
         };
         ContributionPlan: {
             amount?: components["schemas"]["Money"];
@@ -14906,6 +14954,31 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
+        };
+    };
+    getIssuerExposure: {
+        parameters: {
+            query?: {
+                /** @description Defaults to today. */
+                date?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuerExposureReport"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
         };
     };
     listInvestmentIncomeTypes: {

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -25,6 +26,20 @@ func TestGuaranteeCovered(t *testing.T) {
 		if got := g.Covered(subtype); got != want {
 			t.Errorf("Covered(%q) = %v, want %v", subtype, got, want)
 		}
+	}
+}
+
+func TestGuaranteeCoveredSubtypes(t *testing.T) {
+	t.Parallel()
+
+	m, _ := money.New(1, "BRL")
+	g := NewGuarantee("FGC", m, m, 4, "cdb", "lci")
+
+	got := g.CoveredSubtypes()
+	got[0] = "x"
+
+	if want := []string{"cdb", "lci"}; !slices.Equal(g.CoveredSubtypes(), want) {
+		t.Errorf("CoveredSubtypes() = %v, want %v", g.CoveredSubtypes(), want)
 	}
 }
 

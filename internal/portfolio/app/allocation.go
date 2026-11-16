@@ -35,6 +35,10 @@ type InstrumentInfo struct {
 	Type          string
 	QuoteCurrency money.Currency
 	BooksID       int64 // 0: a public security; else the book that owns it (A236 FC1)
+	Subtype       string
+	Issuer        string // empty when unknown (A236 FC3)
+	IssuerScheme  string
+	IssuerID      string
 }
 
 // AllocationGroup is the value held under one key of an allocation and its share in basis points.

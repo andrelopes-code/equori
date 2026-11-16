@@ -34,6 +34,9 @@ func NewGuarantee(
 // Covered reports whether the guarantee covers a security of subtype.
 func (g Guarantee) Covered(subtype string) bool { return slices.Contains(g.covered, subtype) }
 
+// CoveredSubtypes lists the subtypes the guarantee covers, in declaration order.
+func (g Guarantee) CoveredSubtypes() []string { return slices.Clone(g.covered) }
+
 // IssuerKey groups the holdings of one issuer (A236 FC3): the identifier of the issuer when
 // both parts are set, else the folded name, else "".
 func IssuerKey(name, scheme, id string) string {

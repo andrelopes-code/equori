@@ -36,6 +36,10 @@ func (p marketPort) InstrumentOf(
 		Type:          in.Type,
 		QuoteCurrency: in.QuoteCurrency,
 		BooksID:       in.BooksID,
+		Subtype:       in.Subtype,
+		Issuer:        in.Issuer.Name,
+		IssuerScheme:  in.Issuer.Scheme,
+		IssuerID:      in.Issuer.ID,
 	}, err
 }
 

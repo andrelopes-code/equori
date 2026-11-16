@@ -258,6 +258,16 @@ type ContributionPreviewInput struct {
 	Classes []ContributionClassInput `json:"classes"`
 }
 
+// DepositGuarantee defines model for DepositGuarantee.
+type DepositGuarantee struct {
+	// Covered The subtypes the guarantee covers.
+	Covered        []string `json:"covered"`
+	LimitPerIssuer Money    `json:"limit_per_issuer"`
+	LimitPerPeriod Money    `json:"limit_per_period"`
+	Name           string   `json:"name"`
+	PeriodYears    int      `json:"period_years"`
+}
+
 // FieldError defines model for FieldError.
 type FieldError struct {
 	Field   string `json:"field"`
@@ -322,6 +332,32 @@ type IncomeTypeList struct {
 
 // InstrumentType defines model for InstrumentType.
 type InstrumentType string
+
+// IssuerExposure defines model for IssuerExposure.
+type IssuerExposure struct {
+	CoveredValue Money   `json:"covered_value"`
+	Excess       *Money  `json:"excess,omitempty"`
+	Issuer       *string `json:"issuer,omitempty"`
+
+	// Key The issuer identifier or the folded name; absent for holdings without issuer.
+	Key            *string `json:"key,omitempty"`
+	Limit          *Money  `json:"limit,omitempty"`
+	MarketValue    Money   `json:"market_value"`
+	UncoveredValue Money   `json:"uncovered_value"`
+}
+
+// IssuerExposureReport defines model for IssuerExposureReport.
+type IssuerExposureReport struct {
+	Date      openapi_types.Date `json:"date"`
+	Guarantee *DepositGuarantee  `json:"guarantee,omitempty"`
+
+	// Issuers By market value, largest first; the group without issuer last.
+	Issuers       []IssuerExposure `json:"issuers"`
+	MissingPrices []string         `json:"missing_prices"`
+
+	// PeriodNote The covered values of all issuers together exceed limit_per_period.
+	PeriodNote bool `json:"period_note"`
+}
 
 // Money defines model for Money.
 type Money struct {
@@ -594,6 +630,12 @@ type ListIncomeEventsParams struct {
 // ListInstrumentSubtypesParams defines parameters for ListInstrumentSubtypes.
 type ListInstrumentSubtypesParams struct {
 	Type InstrumentType `form:"type" json:"type"`
+}
+
+// GetIssuerExposureParams defines parameters for GetIssuerExposure.
+type GetIssuerExposureParams struct {
+	// Date Defaults to today.
+	Date *openapi_types.Date `form:"date,omitempty" json:"date,omitempty"`
 }
 
 // ListPositionsParams defines parameters for ListPositions.
