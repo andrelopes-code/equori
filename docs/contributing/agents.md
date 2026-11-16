@@ -47,13 +47,6 @@ The implementing model stops, writes the checkpoint and reports when any conditi
 
 After a stop, the planning model amends the plan and resumes the same subagent with the amendment. The owner is asked only for a decision that the spec, an ADR or the owner's earlier answers do not settle.
 
-A new session starts only after a spec or a plan is written, after a plan is reviewed, or when the context reaches the limits of the execution slice protocol.
+One session carries an issue from its spec to its last reviewed plan: after a review, the same session writes and checks the next plan and executes it. Context size is not a reason to end the session; auto-compaction and the checkpoint keep the state. A model never ends its turn by recommending a new session or by handing the owner a message to send.
 
-A model that ends its turn by recommending a new session, for the next step of this section or for any other task, gives the owner the message to send in that session:
-
-- The message stands alone: it names the step, the plan or spec file, the checkpoint `.claude/progress/current.md`, the model and effort of the step, and the expected result and stop.
-- It sits at the end of the reply, in one fenced code block, preceded by a line that starts with the marker 🔴 and names the target session, for example `🔴 Prompt for the new session (plan check, Opus, effort high):`.
-- The marker is the only emoji allowed in a reply or document of this project; it exists so the owner finds the message among the rest of the reply.
-- A reply gives exactly one marked block. The owner runs one session at a time and clears it before sending the next message, so issues that could run side by side run one after the other, in the order of their dependencies.
-- A step that waits on the owner, such as the owner tasks of a reviewed plan, goes into the next message as its first item: the new session asks the owner for the result in its single question and records it before the step it names.
-
+A decision only the owner holds, such as the result of an owner task or a choice no spec or ADR settles, is asked in the same session as one question, and the work continues after the answer. Work the question does not block continues while the answer is pending.
