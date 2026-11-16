@@ -14,4 +14,6 @@ An index that compounds by business day counts business days (bus252). A pre-fix
 
 Buy. record_investment kind buy, with quantity as the amount applied and unit_price 1.00 on the issue date. A later contribution to a product with the same terms, such as a daily-liquidity deposit, is a buy at the Price of that day. Another rate or maturity is another instrument.
 
+A contract of a private issuer belongs to the book: no other book sees it or its code. The issuer is its name, a scheme and an identifier, set with manage_instrument edit (issuer, issuer_scheme, issuer_id). The region article names the schemes.
+
 A security that pays coupons or returns principal takes no terms: terms compound the interest and count it twice. Its Price is the unit price of the issuer, recorded with record_price. Payments are in the article fixed_income_payments.

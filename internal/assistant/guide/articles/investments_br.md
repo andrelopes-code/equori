@@ -12,4 +12,6 @@ Dividend. Exempt up to R$ 50,000 a month paid by one source to one individual, a
 
 JCP. 15% at source up to 2025-12-31 and 17.5% from 2026-01-01, by the payment date (Lei Complementar 224/2025).
 
+Issuer. The CNPJ of the issuer of a contract, numeric or alphanumeric (IN RFB 2.229/2024), is its identifier with the scheme br_cnpj; the check digits are validated.
+
 Distribution. Exempt for a listed FII or Fiagro under the conditions of Lei 11.033/2004 (exchange traded, holder below 10% of the units); the informe of the fund states them.
