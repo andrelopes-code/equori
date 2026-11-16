@@ -40,13 +40,16 @@ var bvmfOddLot = regexp.MustCompile(`^([A-Z0-9]{4}[0-9]{1,2})F$`)
 // bvmfT2 is the first trade date settled in two business days (B3 project D+2, 2019-05-27).
 var bvmfT2 = time.Date(2019, time.May, 27, 0, 0, 0, 0, time.UTC)
 
+// neutralCalendar is the calendar of a region without a banking calendar: weekends only.
+const neutralCalendar = "weekend"
+
 // DefaultCalendar returns the calendar a record takes when the owner's region is region.
 func (m *Module) DefaultCalendar(region string) string {
 	if region == "BR" {
 		return CalendarBRBanking
 	}
 
-	return "weekend"
+	return neutralCalendar
 }
 
 // SuggestedFeeds names the feeds suggested to a book of region (ADR 025 F3); a suggestion
