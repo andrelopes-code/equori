@@ -54,16 +54,16 @@ export function InstrumentsGrid({
           {row.code}
         </AppLink>
       ),
-      // A hidden row reads dimmer; its row button says what a click does. A renderer's text is
-      // not truncated by the column, so the row keeps its height through `truncate`.
-      name: ({ row }: { row: CatalogRow }) =>
-        row.hidden ? (
-          <Text tone="muted" truncate title={row.name}>
-            {row.name}
-          </Text>
-        ) : (
-          row.name
-        ),
+      // The column truncates a plain span child of the cell, not a bare string or a family: the
+      // name stays one line in the fixed row, and a hidden row reads dimmer.
+      name: ({ row }: { row: CatalogRow }) => (
+        <span
+          className={row.hidden ? styles.dimmed : undefined}
+          title={row.name}
+        >
+          {row.name}
+        </span>
+      ),
       actions: ({ row }: { row: CatalogRow }) => (
         <HideInstrumentRowButton row={row} />
       ),

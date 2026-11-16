@@ -69,6 +69,19 @@ describe("Instrument catalog", () => {
     ]);
   });
 
+  // A238 HD9: the grid truncates a plain span child of a cell marked data-text=truncate; a bare
+  // string or a family in the cell wraps the name into the fixed row.
+  it("keeps the name in a truncating span of its cell", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    const name = await within(grid).findByText("Petrobras PN");
+
+    expect(name.tagName).toBe("SPAN");
+    expect(name.parentElement).toHaveAttribute("data-text", "truncate");
+  });
+
   it("IQ13: draws the trend of the price of a row from the quotes, in the tone of its direction", async () => {
     await renderApp("/instruments", { fetch: api() });
     const grid = await screen.findByRole("grid", {

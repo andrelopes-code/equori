@@ -7,6 +7,10 @@
 
   /* The grid keeps a height of its own so it windows its rows: the viewport less the shell's
      header, the page header and the filter bar, and never under 20rem. No token holds a measure. */
+  .dimmed {
+    color: var(--slotted-text-muted);
+  }
+
   .listing {
     block-size: max(20rem, calc(100dvh - 16rem));
     min-block-size: 0;
