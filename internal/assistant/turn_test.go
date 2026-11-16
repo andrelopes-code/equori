@@ -220,7 +220,8 @@ func TestTurnRead(t *testing.T) {
 	}
 }
 
-// HA17: the chat of a read member declares only the ReadOnly tools.
+// HA17 (amended 2026-11-16): the chat of a read member declares only the ReadOnly tools that need no
+// role above read.
 func TestTurnReadMemberTools(t *testing.T) {
 	t.Parallel()
 
@@ -235,7 +236,7 @@ func TestTurnReadMemberTools(t *testing.T) {
 
 	var want []string
 	for _, tl := range h.App.Tools.Tools() {
-		if tl.Spec().Effect == tool.ReadOnly {
+		if tl.Spec().Effect == tool.ReadOnly && tl.Spec().Role != auth.RoleOwner {
 			want = append(want, tl.Spec().Name)
 		}
 	}
@@ -248,7 +249,7 @@ func TestTurnReadMemberTools(t *testing.T) {
 	}
 
 	if !slices.Equal(got, want) {
-		t.Errorf("declared tools = %v, want the ReadOnly tools %v", got, want)
+		t.Errorf("declared tools = %v, want the ReadOnly tools below owner %v", got, want)
 	}
 }
 

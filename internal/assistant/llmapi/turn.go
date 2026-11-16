@@ -18,8 +18,11 @@ import (
 // Agent runs the chat's model loop over the tools of the chat set.
 type Agent struct {
 	client *llm.Client
-	decls  []llm.Tool
-	// reads are the declarations of the ReadOnly tools, sent to a member whose book role is below write (HA17).
+	// decls are the declarations of every tool, sent to an owner.
+	decls []llm.Tool
+	// writes are the declarations of the tools a member with the role write may call (HA17).
+	writes []llm.Tool
+	// reads are the declarations of the ReadOnly tools a member with the role read may call (HA17).
 	reads    []llm.Tool
 	handlers map[string]llm.ToolHandler
 	wait     func(ctx context.Context, until time.Time) error
@@ -46,14 +49,25 @@ func NewAgent(
 		return ok && e == tool.ReadOnly
 	}
 
-	reads := slices.DeleteFunc(
+	// A tool above the owner's role never reaches the model of a member below it.
+	roles := map[string]auth.BookRole{}
+	for _, t := range set.Tools() {
+		roles[t.Spec().Name] = t.Spec().Role
+	}
+
+	writes := slices.DeleteFunc(
 		slices.Clone(decls),
+		func(d llm.Tool) bool { return roles[d.Name] == auth.RoleOwner },
+	)
+	reads := slices.DeleteFunc(
+		slices.Clone(writes),
 		func(d llm.Tool) bool { return !concurrent(d.Name) },
 	)
 
 	return &Agent{
 		client:     client,
 		decls:      decls,
+		writes:     writes,
 		reads:      reads,
 		handlers:   handlers,
 		wait:       wait,
@@ -91,6 +105,20 @@ func (a *Agent) Run(
 	return second, mapError(err)
 }
 
+// declsFor returns the declarations the role of the member in ctx may call (HA17).
+func (a *Agent) declsFor(ctx context.Context) []llm.Tool {
+	role, ok := auth.CurrentRole(ctx)
+
+	switch {
+	case !ok || role.Allows(auth.RoleOwner):
+		return a.decls
+	case role.Allows(auth.RoleWrite):
+		return a.writes
+	default:
+		return a.reads
+	}
+}
+
 func (a *Agent) run(
 	ctx context.Context,
 	booksID int64,
@@ -98,10 +126,7 @@ func (a *Agent) run(
 	onStep, onText func(string),
 	onRestart func(),
 ) (app.AgentResult, error) {
-	req := llm.Request{System: in.System, Tools: a.decls}
-	if role, ok := auth.CurrentRole(ctx); ok && !role.Allows(auth.RoleWrite) {
-		req.Tools = a.reads
-	}
+	req := llm.Request{System: in.System, Tools: a.declsFor(ctx)}
 
 	for _, m := range in.History {
 		role := llm.RoleUser

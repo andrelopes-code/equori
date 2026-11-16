@@ -39,13 +39,15 @@ const maxBodyBytes = 1 << 20
 
 // New returns the handler of POST /mcp.
 func New(cfg Config) http.Handler {
-	read, write := newServer(cfg, false), newServer(cfg, true)
-	h := sdk.NewStreamableHTTPHandler(func(r *http.Request) *sdk.Server {
-		if g, ok := grantFrom(r.Context()); ok && g.Write {
-			return write
-		}
+	servers := map[variant]*sdk.Server{}
+	for _, v := range variants {
+		servers[v] = newServer(cfg, v)
+	}
 
-		return read
+	h := sdk.NewStreamableHTTPHandler(func(r *http.Request) *sdk.Server {
+		g, _ := grantFrom(r.Context())
+
+		return servers[variantOf(g)]
 	}, &sdk.StreamableHTTPOptions{
 		Stateless: true, MaxRequestBodyBytes: maxBodyBytes, Logger: cfg.Log,
 		// Behind a reverse proxy the Host is the public name on a loopback listener; the origin check
@@ -66,19 +68,46 @@ func New(cfg Config) http.Handler {
 
 const grantExtra = "equori_grant"
 
-func newServer(cfg Config, write bool) *sdk.Server {
+// variant is what a listing depends on: whether the token writes and the role of its member. A
+// grant with no member lists as the role read.
+type variant struct {
+	write bool
+	role  auth.BookRole
+}
+
+// variants are the listings a grant can reach: a write token comes from the role write or owner.
+var variants = []variant{
+	{false, auth.RoleRead},
+	{false, auth.RoleWrite},
+	{false, auth.RoleOwner},
+	{true, auth.RoleWrite},
+	{true, auth.RoleOwner},
+}
+
+func variantOf(g Grant) variant {
+	switch {
+	case g.Role.Allows(auth.RoleOwner):
+		return variant{g.Write, auth.RoleOwner}
+	case g.Role.Allows(auth.RoleWrite):
+		return variant{g.Write, auth.RoleWrite}
+	default:
+		return variant{false, auth.RoleRead}
+	}
+}
+
+func newServer(cfg Config, v variant) *sdk.Server {
 	s := sdk.NewServer(
 		&sdk.Implementation{Name: "equori", Version: cfg.Version},
 		&sdk.ServerOptions{Instructions: cfg.Instructions},
 	)
 
-	listed := addTools(s, cfg, write)
+	listed := addTools(s, cfg, v)
 
 	for _, p := range cfg.Prompts {
 		addPrompt(s, p)
 	}
 
-	if !write {
+	if !v.write {
 		// X14: a read token reaches no write tool, also by calling it without listing it.
 		s.AddReceivingMiddleware(readOnlyGuard(listed))
 	}
@@ -86,8 +115,9 @@ func newServer(cfg Config, write bool) *sdk.Server {
 	return s
 }
 
-// addTools registers the tools of cfg that the token reaches and returns their names.
-func addTools(s *sdk.Server, cfg Config, write bool) []string {
+// addTools registers the tools of cfg that the token reaches and returns their names. A tool above
+// the role of the member is not listed (HA17); the registry refuses a call to it all the same.
+func addTools(s *sdk.Server, cfg Config, v variant) []string {
 	var listed []string
 	for _, name := range cfg.Names {
 		t, ok := cfg.Registry.Tool(name)
@@ -96,7 +126,8 @@ func addTools(s *sdk.Server, cfg Config, write bool) []string {
 		}
 
 		spec := t.Spec()
-		if !write && spec.Effect != tool.ReadOnly {
+		if (!v.write && spec.Effect != tool.ReadOnly) ||
+			(spec.Role != "" && !v.role.Allows(spec.Role)) {
 			continue
 		}
 

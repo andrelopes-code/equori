@@ -175,8 +175,9 @@ func TestMCPListsToolsByScope(t *testing.T) {
 	}
 }
 
-// S197, HA16: a token keeps the role its member holds now; a demoted member's write token lists only
-// the ReadOnly tools, and a read member creates no write token.
+// S197, HA16, HA17 (amended 2026-11-16): a token keeps the role its member holds now; a demoted
+// member's write token lists only the ReadOnly tools below owner, and a read member creates no
+// write token.
 func TestMCPDemotedToken(t *testing.T) {
 	t.Parallel()
 	h := apitest.New(t)
@@ -184,8 +185,17 @@ func TestMCPDemotedToken(t *testing.T) {
 	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
 	tok := mcpToken(t, h, writer, "write")
 
-	if got := listNames(t, mcpSession(t, h, tok)); len(got) != len(h.App.Tools.Tools()) {
-		t.Fatalf("write member lists %d tools, registry has %d", len(got), len(h.App.Tools.Tools()))
+	if got, want := sortedNames(
+		listNames(t, mcpSession(t, h, tok)),
+	), toolsFor(
+		h,
+		auth.RoleWrite,
+		false,
+	); !slices.Equal(
+		got,
+		want,
+	) {
+		t.Fatalf("write member lists %v, want %v", got, want)
 	}
 
 	if _, err := h.Pool.Exec(t.Context(),
@@ -194,24 +204,9 @@ func TestMCPDemotedToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var reads []string
-	for _, tl := range h.App.Tools.Tools() {
-		if tl.Spec().Effect == tool.ReadOnly {
-			reads = append(reads, tl.Spec().Name)
-		}
-	}
+	reads := toolsFor(h, auth.RoleRead, true)
 
-	slices.Sort(reads)
-
-	demoted := listNames(t, mcpSession(t, h, tok))
-
-	var got []string
-	for n := range demoted {
-		got = append(got, n)
-	}
-
-	slices.Sort(got)
-
+	got := sortedNames(listNames(t, mcpSession(t, h, tok)))
 	if !slices.Equal(got, reads) {
 		t.Fatalf("demoted token lists %v, want the ReadOnly tools %v", got, reads)
 	}
@@ -238,6 +233,50 @@ func TestMCPDemotedToken(t *testing.T) {
 	)
 	if r.Status != http.StatusCreated {
 		t.Errorf("read token of a read member: %d %s", r.Status, r.Body)
+	}
+}
+
+// HA16, HA17 (amended 2026-11-16): the listing of a token leaves out the tools above the role of
+// its member; the registry refuses a call to one of them all the same.
+func TestMCPOwnerToolsByRole(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	writer := h.JoinAs("writer@example.com", h.OwnerID(), "write")
+	reader := h.JoinAs("reader@example.com", h.OwnerID(), "read")
+
+	tests := []struct {
+		name   string
+		client *http.Client
+		scope  string
+		role   auth.BookRole
+	}{
+		{"owner write", h.Client, "write", auth.RoleOwner},
+		{"owner read", h.Client, "read", auth.RoleOwner},
+		{"writer write", writer, "write", auth.RoleWrite},
+		{"writer read", writer, "read", auth.RoleWrite},
+		{"reader read", reader, "read", auth.RoleRead},
+	}
+	for _, tt := range tests {
+		got := sortedNames(listNames(t, mcpSession(t, h, mcpToken(t, h, tt.client, tt.scope))))
+
+		if want := toolsFor(h, tt.role, tt.scope == "read"); !slices.Equal(got, want) {
+			t.Errorf("%s token lists %v, want %v", tt.name, got, want)
+		}
+
+		owner := slices.Contains(got, "manage_book") || slices.Contains(got, "get_book_access")
+		if owner != (tt.role == auth.RoleOwner) {
+			t.Errorf("%s token lists the owner tools = %v", tt.name, owner)
+		}
+	}
+
+	s := mcpSession(t, h, mcpToken(t, h, writer, "write"))
+
+	_, err := s.CallTool(t.Context(), &mcp.CallToolParams{
+		Name:      "manage_book",
+		Arguments: map[string]any{"action": "update_book", "name": "Casa"},
+	})
+	if err == nil || !strings.Contains(err.Error(), `unknown tool "manage_book"`) {
+		t.Fatalf("manage_book by a writer = %v, want an unknown tool", err)
 	}
 }
 
@@ -610,4 +649,34 @@ func TestMCPPrompts(t *testing.T) {
 	); err == nil {
 		t.Error("reconcile_account accepts no account")
 	}
+}
+
+// toolsFor returns the sorted names of the tools a member with role may call, only the ReadOnly
+// ones when readOnly.
+func toolsFor(h *apitest.Harness, role auth.BookRole, readOnly bool) []string {
+	var names []string
+
+	for _, tl := range h.App.Tools.Tools() {
+		s := tl.Spec()
+		if (readOnly && s.Effect != tool.ReadOnly) || (s.Role != "" && !role.Allows(s.Role)) {
+			continue
+		}
+
+		names = append(names, s.Name)
+	}
+
+	slices.Sort(names)
+
+	return names
+}
+
+func sortedNames(listed map[string]*mcp.Tool) []string {
+	names := make([]string, 0, len(listed))
+	for n := range listed {
+		names = append(names, n)
+	}
+
+	slices.Sort(names)
+
+	return names
 }

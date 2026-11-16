@@ -256,7 +256,7 @@ The owner brought "Deleting a book" into 1.0, so a book created by mistake can b
 
 ## 10.2 Amendment of 2026-11-16: owner tools
 
-A tool declares `Spec.Role`, and the registry refuses a lower role with `book_role_required`. HA12: an `owner` operation maps to an exclusion or only to tools with the role `owner`. HA18: `updateCurrentBooks`, `updateMember`, `removeMember`, `deleteInvitation` map to `manage_book`; `getCurrentBooks`, `listMembers`, `listInvitations` map to `get_book_access`. ADR 029 records the amendment.
+A tool declares `Spec.Role`, and the registry refuses a lower role with `book_role_required`. HA12: an `owner` operation maps to an exclusion or only to tools with the role `owner`. HA17: the assistant and the MCP listing leave out a tool above the member's role. HA18: `updateCurrentBooks`, `updateMember`, `removeMember`, `deleteInvitation` map to `manage_book`; `getCurrentBooks`, `listMembers`, `listInvitations` map to `get_book_access`. ADR 029 records the amendment.
 
 ## 11. Plans
 
