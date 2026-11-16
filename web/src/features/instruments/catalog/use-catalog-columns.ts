@@ -135,6 +135,14 @@ export function useCatalogColumns(rows: readonly CatalogRow[]) {
         width: 80,
         priority: 7,
       },
+      {
+        id: "actions",
+        label: t("instruments.col.actions"),
+        kind: "actions",
+        accessor: () => "",
+        width: 56,
+        sortable: false,
+      },
     ],
     [t, typeOptions, subtypeOptions, quoteOptions],
   );

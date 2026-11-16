@@ -59,12 +59,12 @@ describe("Instrument catalog", () => {
     });
     await within(grid).findByText("38.45");
     expect(gridRows(grid)).toEqual([
-      "Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange",
+      "Code|Name|Latest price|Last 3 months|Price date|1W|1M|3M|12M|YTD|Quote currency|Subtype|Exchange|Actions",
       "Fixed income · 1",
-      `CDB1|CDB Bank One|${catalogEn["instruments.noPrice"]}|||—|—|—|—|—|BRL|cdb|`,
+      `CDB1|CDB Bank One|${catalogEn["instruments.noPrice"]}|||—|—|—|—|—|BRL|cdb||`,
       "Stocks · 2",
-      `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
-      "VALE3|Vale ON|61.20||10/10/2026|—|—|—|" + bp(2000) + "|—|BRL||B3SA",
+      `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA|`,
+      "VALE3|Vale ON|61.20||10/10/2026|—|—|—|" + bp(2000) + "|—|BRL||B3SA|",
       "Currencies · 2",
     ]);
   });
@@ -237,7 +237,7 @@ describe("Instrument catalog", () => {
     await waitFor(() => {
       expect(gridRows(grid).slice(1)).toEqual([
         "Stocks · 1",
-        `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA`,
+        `PETR4|Petrobras PN|38.45||10/16/2026|${bp(681)}|${bp(-388)}|—|${bp(2500)}|${bp(986)}|BRL||B3SA|`,
       ]);
     });
   });
@@ -724,7 +724,7 @@ describe("Hidden instruments", () => {
 
     expect(await within(grid).findByText("VALE3")).toBeVisible();
     expect(
-      within(grid).getByText(catalogEn["instrument.hidden"]),
+      within(grid).getByRole("button", { name: "Show VALE3" }),
     ).toBeVisible();
 
     await user.click(
@@ -736,6 +736,30 @@ describe("Hidden instruments", () => {
     await waitFor(() => {
       expect(within(grid).queryByText("VALE3")).toBeNull();
     });
+  });
+
+  it("hides a security with one click on its row, and offers no button for a currency", async () => {
+    const sent: string[] = [];
+    const fetch = api({
+      "PUT /api/v1/instruments/PETR4/hidden": () => {
+        sent.push("PETR4");
+        return new Response(null, { status: 204 });
+      },
+    });
+    await renderApp("/instruments", { fetch });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    const user = userEvent.setup();
+
+    await user.click(
+      await within(grid).findByRole("button", { name: "Hide PETR4" }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual(["PETR4"]);
+    });
+    expect(within(grid).queryByRole("button", { name: "Hide BRL" })).toBeNull();
   });
 
   it("draws no toggle when nothing is hidden", async () => {

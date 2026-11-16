@@ -85,8 +85,10 @@ export const instrumentsEn = {
     "The instrument, its prices and its history of quotes are deleted. This cannot be undone.",
   "instrument.remove.confirm": "Remove instrument",
   "instrument.hide": "Hide",
+  "instrument.hide.row": "Hide {code}",
+  "instrument.show.row": "Show {code}",
+  "instruments.col.actions": "Actions",
   "instrument.show": "Show",
-  "instrument.hidden": "Hidden",
   "instruments.hidden.show": "Show hidden ({count})",
   "instruments.hidden.hide": "Leave hidden out",
   "instrument.edit.description":

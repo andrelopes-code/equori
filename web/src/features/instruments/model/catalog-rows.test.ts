@@ -100,8 +100,20 @@ describe("catalogRows", () => {
   it("A238 HD9: carries the hidden state of each instrument", () => {
     const rows = catalogRows(
       [
-        { ...item("VALE3", "stock"), hidden: true },
-        { ...item("ITUB4", "stock"), hidden: false },
+        {
+          code: "VALE3",
+          type: "stock",
+          name: "VALE3",
+          scale: 2,
+          hidden: true,
+        } as never,
+        {
+          code: "ITUB4",
+          type: "stock",
+          name: "ITUB4",
+          scale: 2,
+          hidden: false,
+        } as never,
       ],
       "BRL",
       [],

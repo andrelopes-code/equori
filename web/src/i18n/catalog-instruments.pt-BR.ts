@@ -85,8 +85,10 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
     "O ativo, seus preços e o histórico de cotações são apagados. Não há como desfazer.",
   "instrument.remove.confirm": "Remover ativo",
   "instrument.hide": "Ocultar",
+  "instrument.hide.row": "Ocultar {code}",
+  "instrument.show.row": "Reexibir {code}",
+  "instruments.col.actions": "Ações",
   "instrument.show": "Reexibir",
-  "instrument.hidden": "Oculto",
   "instruments.hidden.show": "Mostrar ocultos ({count})",
   "instruments.hidden.hide": "Esconder ocultos",
   "instrument.edit.description":

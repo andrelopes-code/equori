@@ -2,12 +2,12 @@ import type { GridQuery } from "@slotted/core/grid";
 import { emptyQuery, withFilter, withSearch } from "@slotted/core/grid";
 import { DataGrid } from "@slotted/react/data-grid";
 import { FilterBar } from "@slotted/react/filter-bar";
-import { Inline } from "@slotted/react/inline";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
+import { VisuallyHidden } from "@slotted/react/visually-hidden";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 
+import { HideInstrumentRowButton } from "@/features/instruments/hide-instrument/hide-instrument-row-button";
 import { ChangeCell } from "@/features/instruments/catalog/change-cell";
 import { PriceCell } from "@/features/instruments/catalog/price-cell";
 import { PriceDateCell } from "@/features/instruments/catalog/price-date-cell";
@@ -46,20 +46,19 @@ export function InstrumentsGrid({
   const cellRenderers = useMemo(
     () => ({
       code: ({ row }: { row: CatalogRow }) => (
-        <Inline align="center" wrap="wrap" gap={4}>
-          <AppLink
-            variant="neutral"
-            underline="hover"
-            to={{ to: "/instruments/$code", params: { code: row.code } }}
-          >
-            {row.code}
-          </AppLink>
-          {row.hidden && (
-            <Tag size="sm" tone="secondary">
-              {t("instrument.hidden")}
-            </Tag>
-          )}
-        </Inline>
+        <AppLink
+          variant="neutral"
+          underline="hover"
+          to={{ to: "/instruments/$code", params: { code: row.code } }}
+        >
+          {row.code}
+        </AppLink>
+      ),
+      // A hidden row reads dimmer; its row button says what a click does.
+      name: ({ row }: { row: CatalogRow }) =>
+        row.hidden ? <Text tone="muted">{row.name}</Text> : row.name,
+      actions: ({ row }: { row: CatalogRow }) => (
+        <HideInstrumentRowButton row={row} />
       ),
       price: ({ row }: { row: CatalogRow }) => (
         <PriceCell row={row} failed={quotesFailed} />
@@ -76,7 +75,17 @@ export function InstrumentsGrid({
         <ChangeCell bp={row.yearToDate} />
       ),
     }),
-    [quotesFailed, t],
+    [quotesFailed],
+  );
+  const renderHeader = useCallback(
+    ({ column }: { column: { id: string; label: string } }) =>
+      // The actions column is named for a screen reader and draws no words over its buttons.
+      column.id === "actions" ? (
+        <VisuallyHidden>{column.label}</VisuallyHidden>
+      ) : (
+        column.label
+      ),
+    [],
   );
   // PC20: every group opens except the currencies, which only a reader who wants them opens.
   const expandedGroups = useMemo(
@@ -122,7 +131,10 @@ export function InstrumentsGrid({
           rowKey="code"
           rowHeight={44}
           // The group rows carry the type, so its own column stays out of sight.
-          defaultColumnState={{ hidden: ["type"] }}
+          defaultColumnState={{
+            hidden: ["type"],
+            pinned: { start: [], end: ["actions"] },
+          }}
           loading={loading}
           query={query}
           onQueryChange={setQuery}
@@ -144,6 +156,7 @@ export function InstrumentsGrid({
           }}
           cellRenderers={cellRenderers}
           renderGroup={renderGroup}
+          renderHeader={renderHeader}
         />
       </div>
     </div>
