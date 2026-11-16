@@ -102,7 +102,7 @@ func Accrue(
 	face := faceUnits(t.FaceValue, quoteScale)
 
 	var out []DatedPrice
-	state := accrualState{index: newFloat().SetInt64(1)}
+	state := newAccrualState(t, isBusinessDay)
 
 	for _, d := range pricedDays(t, byDay, parsed, end, isBusinessDay) {
 		state.advance(t, byDay, parsed, percent, d)
@@ -111,14 +111,7 @@ func Accrue(
 			continue
 		}
 
-		days := int(d.Sub(t.IssuedOn).Hours() / 24)
-		if t.DayCount == DayCountBus252 {
-			days = state.businessDays
-		}
-
-		price := newFloat().Mul(face, state.index)
-		price.Mul(price, power(dayRoot, days))
-		out = append(out, DatedPrice{Date: d, Value: price.Text('f', priceDecimals)})
+		out = append(out, DatedPrice{Date: d, Value: state.price(t, face, dayRoot, d)})
 	}
 
 	return out, nil
@@ -157,63 +150,6 @@ func Anchor(accrued, observed []DatedPrice) ([]DatedPrice, error) {
 	}
 
 	return out, nil
-}
-
-// accrualState is the running index of an accrual: the product of the rates applied so far, the
-// count of business days they cover and the position in the sorted rates.
-type accrualState struct {
-	index        *big.Float
-	businessDays int
-	next         int
-}
-
-// advance applies the rates up to d and counts d when it is a priced day of an index that does
-// not compound by business day.
-func (s *accrualState) advance(
-	t Terms,
-	byDay bool,
-	parsed []parsedRate,
-	percent *big.Float,
-	d time.Time,
-) {
-	if byDay {
-		s.advanceDaily(t, parsed, percent, d)
-
-		return
-	}
-
-	s.advanceMonthly(t, parsed, d)
-
-	if d.After(t.IssuedOn) {
-		s.businessDays++
-	}
-}
-
-// advanceDaily applies the rates of the business days up to d.
-func (s *accrualState) advanceDaily(t Terms, parsed []parsedRate, percent *big.Float, d time.Time) {
-	for s.next < len(parsed) && !parsed[s.next].date.After(d) {
-		if parsed[s.next].date.After(t.IssuedOn) {
-			s.index.Mul(
-				s.index,
-				newFloat().Add(newFloat().SetInt64(1), newFloat().Mul(parsed[s.next].rate, percent)),
-			)
-
-			s.businessDays++
-		}
-
-		s.next++
-	}
-}
-
-// advanceMonthly applies the rates of the months that ended before the day after d.
-func (s *accrualState) advanceMonthly(t Terms, parsed []parsedRate, d time.Time) {
-	for s.next < len(parsed) && monthEnd(parsed[s.next].date).Before(d.AddDate(0, 0, 1)) {
-		if !parsed[s.next].date.Before(t.IssuedOn) {
-			s.index.Mul(s.index, newFloat().Add(newFloat().SetInt64(1), parsed[s.next].rate))
-		}
-
-		s.next++
-	}
 }
 
 type parsedRate struct {
@@ -267,13 +203,21 @@ func pricedDays(
 	}
 
 	for d := t.IssuedOn; !d.After(end); d = d.AddDate(0, 0, 1) {
-		if isBusinessDay != nil && isBusinessDay(d) ||
-			isBusinessDay == nil && d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+		if isPriceable(d, isBusinessDay) {
 			days = append(days, d)
 		}
 	}
 
 	return days
+}
+
+// isPriceable reports whether d is a business day of the calendar, or a weekday without one.
+func isPriceable(d time.Time, isBusinessDay BusinessDay) bool {
+	if isBusinessDay != nil {
+		return isBusinessDay(d)
+	}
+
+	return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday
 }
 
 // faceUnits is the face value in units of the quote currency: minor units over 10^quoteScale.

@@ -37,6 +37,9 @@ type Terms struct {
 	CalendarID     string
 	DailyLiquidity bool
 	RedeemableFrom time.Time // zero: redeemable from the issue date
+
+	// Payments are the dates of interest and principal, sorted by PaysOn (A236 FC6).
+	Payments []Payment
 }
 
 // Validate checks the rules the contract cannot state; the contract bounds the numbers.
@@ -63,5 +66,5 @@ func (t Terms) Validate(daily BusinessDayIndexes) error {
 		return invalid("redeemable_from", "must be between issued_on and matures_on")
 	}
 
-	return nil
+	return t.validatePayments()
 }

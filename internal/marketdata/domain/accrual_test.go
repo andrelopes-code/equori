@@ -534,3 +534,109 @@ func carnivalClosed(d time.Time) bool {
 
 	return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday
 }
+
+func weekday(d time.Time) bool { return d.Weekday() != time.Saturday && d.Weekday() != time.Sunday }
+
+func couponTerms(payments []Payment) Terms {
+	return Terms{
+		IssuedOn: date("2026-01-05"), MaturesOn: date("2027-01-05"), SpreadBP: 1200,
+		DayCount: DayCountBus252, CalendarID: "weekend", FaceValue: 100000, Payments: payments,
+	}
+}
+
+func TestAccrueInterestPayments(t *testing.T) {
+	t.Parallel()
+
+	payments, err := Schedule(date("2026-07-06"), date("2027-01-05"), 6)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	prices, err := Accrue(
+		couponTerms(payments),
+		BusinessDayIndexes{"cdi"},
+		2,
+		nil,
+		date("2026-01-05"),
+		date("2027-01-05"),
+		weekday,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := values(prices)
+	want := map[string]string{
+		"2026-07-06": "1060.205980713929",
+		"2026-07-07": "1000.449818143039",
+		"2027-01-05": "1060.682880599413",
+	}
+
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
+
+func TestAccrueInterestOnASaturday(t *testing.T) {
+	t.Parallel()
+
+	prices, err := Accrue(
+		couponTerms([]Payment{{PaysOn: date("2026-07-04"), PaysInterest: true}}),
+		BusinessDayIndexes{"cdi"},
+		2,
+		nil,
+		date("2026-01-05"),
+		date("2027-01-05"),
+		weekday,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := values(prices)
+	want := map[string]string{
+		"2026-07-06": "1060.205980713929",
+		"2026-07-07": "1000.449818143039",
+	}
+
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
+
+func TestAccrueCDIInterestPayment(t *testing.T) {
+	t.Parallel()
+
+	terms := cdb(10000, 0)
+	terms.Payments = []Payment{{PaysOn: date("2026-01-07"), PaysInterest: true}}
+
+	prices, err := Accrue(
+		terms,
+		BusinessDayIndexes{"cdi"},
+		2,
+		cdiWeek(),
+		date("2026-01-02"),
+		date("2026-01-09"),
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := values(prices)
+	want := map[string]string{
+		"2026-01-07": "1001.654841995715",
+		"2026-01-08": "1000.551310000000",
+		"2026-01-09": "1001.102923942716",
+	}
+
+	for d, v := range want {
+		if got[d] != v {
+			t.Errorf("price on %s = %q, want %q", d, got[d], v)
+		}
+	}
+}
