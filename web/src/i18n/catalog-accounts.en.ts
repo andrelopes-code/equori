@@ -296,9 +296,12 @@ export const accountsEn = {
   "institution.fixedAsset": "Fixed-asset ratio",
   "institution.equity": "Equity",
   "institution.netIncome": "Net income in the period",
-  "institution.note.basel": "Reference capital over risk-weighted assets",
-  "institution.note.principalCapital":
-    "Principal capital over risk-weighted assets",
+  "institution.floor.ok": "Minimum {minimum}, {withBuffer} with buffer",
+  "institution.floor.warning": "Below {withBuffer}, the minimum with buffer",
+  "institution.floor.danger": "Below the minimum of {minimum}",
+  "institution.floorRule":
+    "Minimum and conservation buffer of {rule}. Additionals required of a specific institution are not included.",
+  "institution.trend": "{name}, last {count} quarters",
   "institution.note.fixedAsset": "As reported by the Banco Central",
   "institution.note.equity": "Of the conglomerate",
   "institution.note.netIncome": "Of the conglomerate",

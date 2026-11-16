@@ -6,6 +6,8 @@ import {
   ListItemLabel,
   ListItemLink,
 } from "@slotted/react/list-item";
+import { Stack } from "@slotted/react/stack";
+import { Text } from "@slotted/react/typography";
 import {
   Section,
   SectionBody,
@@ -17,10 +19,9 @@ import {
 
 import type { components } from "@/api/schema.gen";
 import { indicatorFigures } from "@/features/accounts/institution/indicator-figures";
-import type { IndicatorFigure } from "@/features/accounts/institution/indicator-figures";
-import { formatBasisPoints, formatReferenceMonth } from "@/i18n/format";
+import { InstitutionFigure } from "@/features/accounts/institution/institution-figure";
+import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { FigureCard } from "@/ui/display/figure-card";
 import { FigureGrid } from "@/ui/display/figure-grid";
 
 type InstitutionIndicators = components["schemas"]["InstitutionIndicators"];
@@ -36,18 +37,7 @@ export function InstitutionTab({ indicators, scale }: InstitutionTabProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const figures = indicatorFigures(indicators);
-
-  function value(figure: IndicatorFigure) {
-    if (figure.kind === "ratio") {
-      return figure.basisPoints === null
-        ? t("institution.notInformed")
-        : formatBasisPoints(figure.basisPoints, locale);
-    }
-
-    return figure.money === null
-      ? t("institution.notInformed")
-      : { money: figure.money, scale: scale(figure.money.currency) };
-  }
+  const newest = indicators.periods[0]?.period ?? "";
 
   return (
     <Section size="lg">
@@ -57,44 +47,46 @@ export function InstitutionTab({ indicators, scale }: InstitutionTabProps) {
           <SectionDescription>
             {t("institution.description", {
               name: indicators.conglomerate_name,
-              period: formatReferenceMonth(
-                indicators.period.slice(0, 7),
-                locale,
-              ),
+              period: formatReferenceMonth(newest.slice(0, 7), locale),
             })}
           </SectionDescription>
         </SectionTitle>
       </SectionHeader>
 
       <SectionBody>
-        <FigureGrid label={t("institution.title")}>
-          {figures.map((figure) => (
-            <FigureCard
-              key={figure.id}
-              label={t(`institution.${figure.id}`)}
-              value={value(figure)}
-              note={t(`institution.note.${figure.id}`)}
-              goodWhen="none"
-            />
-          ))}
-        </FigureGrid>
+        <Stack gap={6}>
+          <FigureGrid label={t("institution.title")}>
+            {figures.map((figure) => (
+              <InstitutionFigure
+                key={figure.id}
+                figure={figure}
+                currency={indicators.currency}
+                scale={scale}
+              />
+            ))}
+          </FigureGrid>
 
-        <List aria-label={t("institution.title")} variant="framed">
-          <ListItem>
-            <ListItemLink
-              href={indicators.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ListItemBody>
-                <ListItemLabel>{t("institution.link")}</ListItemLabel>
-                <ListItemDescription>
-                  {t("institution.link.job")}
-                </ListItemDescription>
-              </ListItemBody>
-            </ListItemLink>
-          </ListItem>
-        </List>
+          <Text size="sm" tone="muted">
+            {t("institution.floorRule", { rule: indicators.limits.rule })}
+          </Text>
+
+          <List aria-label={t("institution.title")} variant="framed">
+            <ListItem>
+              <ListItemLink
+                href={indicators.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ListItemBody>
+                  <ListItemLabel>{t("institution.link")}</ListItemLabel>
+                  <ListItemDescription>
+                    {t("institution.link.job")}
+                  </ListItemDescription>
+                </ListItemBody>
+              </ListItemLink>
+            </ListItem>
+          </List>
+        </Stack>
       </SectionBody>
     </Section>
   );
