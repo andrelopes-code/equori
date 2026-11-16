@@ -18,8 +18,8 @@ type regionDefaults struct{}
 
 func (regionDefaults) ForeignChargeBP(region string) int { return DefaultForeignChargeBP(region) }
 
-func (regionDefaults) WithholdingBP(region, incomeType string) int {
-	return DefaultWithholdingBP(region, incomeType)
+func (regionDefaults) WithholdingBP(region, incomeType string, date time.Time) int {
+	return DefaultWithholdingBP(region, incomeType, date)
 }
 
 func (regionDefaults) ReserveYieldPercent(currency money.Currency) int64 {

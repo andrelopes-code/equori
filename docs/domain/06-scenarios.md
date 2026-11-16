@@ -282,7 +282,7 @@ Then: average cost 10.0827 (1,512.40 ÷ 150); cost of the 50 sold = 504.13 (half
 | Income | Postings |
 |---|---|
 | MXRF11 dividend, 100 × 0.10 | XP cash +10.00; Dividends −10.00 |
-| PETR4 JCP, gross 45.00, 15% withheld | XP cash +38.25; Taxes › Income tax +6.75; JCP −45.00 |
+| PETR4 JCP, gross 45.00, 17.5% withheld (15% before 2026, A235) | XP cash +37.12; Taxes › Income tax +7.88; JCP −45.00 |
 
 ## 6.7 Balances, yield and reconciliation
 
@@ -740,7 +740,7 @@ After S21, a `b3_cotahist` price of MXRF11 of 9.36 on 2026-10-29: `GET /position
 
 ### S65 Income events
 
-After S22, `GET /income-events?year=2026` returns the dividend of 10.00, `exempt`, withheld 0.00, and the JCP of 45.00, `exclusive`, withheld 6.75.
+After S22, `GET /income-events?year=2026` returns the dividend of 10.00, `exempt`, withheld 0.00, and the JCP of 45.00, `exclusive`, withheld 7.88.
 
 ### S66 Committed amount in another currency
 
@@ -1095,3 +1095,7 @@ The scenarios of `docs/specs/2026-11-15-fixed-income-lots-design.md`, section 5,
 ### S417–S437 Investment operations (A228)
 
 The scenarios of `docs/specs/2026-11-14-investment-operations-design.md`, section 5, rules IO1 to IO31. An order total of 4504.00 for 15 units sends the unit price 300.266666666667, whose gross is 4504.00 (S417). A trade typed with the odd-lot code PIBB11F lands on the holding PIBB11 (S418); defining PIBB11F on BVMF is 422 `odd_lot_code` (S419). A BVMF trade of 2026-11-19 settles its cash on 2026-11-24, past the holiday of 2026-11-20 (S420); an explicit settlement before the date or more than 30 days after it is 422 `settlement_date` (S421); an exchange without a cycle settles on the trade date (S422). In a Brazilian book a sale first closes the purchases of its date at the same brokerage, the first buy with the first sale, then the earlier stock at its average cost (IN RFB 1.585/2015, art. 65): S423 to S425, with the results split into `day_trade` and `swing`; a book of the neutral profile keeps the average cost of A68 (S426). A brokerage note records its orders as trades, buys first, with its costs apportioned by gross and its withheld tax by the gross of the sales (art. 56, §4): S427 to S430. A split, a reverse split and a bonus of one holding keep or add the cost (art. 58), a bonus with a cost per unit is an exempt `bonus_shares` income, and an action before a later sale is 409 `later_sale_exists`: S431 to S435. A custody transfer moves units to another brokerage with their average cost: S436, S437. Tests in `internal/ledger/trades_test.go`, `day_trades_test.go`, `notes_test.go`, `corporate_actions_test.go`, `custody_test.go`, `internal/marketdata/instruments_test.go`, `internal/portfolio/scenarios_test.go`, `internal/portfolio/bonus_test.go`, and the web tests of `web/src/features/transactions`.
+
+### S456–S464 Brazilian fixed income and income support (A235)
+
+The scenarios of `docs/specs/2026-11-16-brazilian-fixed-income-support-design.md`, section 5. A JCP recorded without `withheld` takes 15% when paid up to 2025-12-31 and 17.5% from 2026-01-01 (S456, S457; S22 and S65 read 7.88 for the JCP of 45.00 dated 2026). Tests in `internal/ledger/income_test.go`.

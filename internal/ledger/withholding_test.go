@@ -3,6 +3,7 @@ package ledger_test
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/ledger"
@@ -12,21 +13,30 @@ import (
 func TestDefaultWithholdingBP(t *testing.T) {
 	t.Parallel()
 
+	// FS-S1 and FS-S2: the JCP rate is 15% up to 2025-12-31 and 17.5% from 2026-01-01 (A235).
 	tests := []struct {
-		region, incomeType string
-		want               int
+		region, incomeType, date string
+		want                     int
 	}{
-		{"BR", "jcp", 1500},
-		{"BR", "dividend", 0},
-		{"PT", "jcp", 0},
-		{"", "jcp", 0},
+		{"BR", "jcp", "2025-12-31", 1500},
+		{"BR", "jcp", "2026-01-01", 1750},
+		{"BR", "jcp", "2026-10-22", 1750},
+		{"BR", "dividend", "2026-10-22", 0},
+		{"PT", "jcp", "2026-10-22", 0},
+		{"", "jcp", "2026-10-22", 0},
 	}
 	for _, tc := range tests {
-		if got := ledger.DefaultWithholdingBP(tc.region, tc.incomeType); got != tc.want {
+		date, err := time.Parse(time.DateOnly, tc.date)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got := ledger.DefaultWithholdingBP(tc.region, tc.incomeType, date); got != tc.want {
 			t.Errorf(
-				"DefaultWithholdingBP(%q, %q) = %d, want %d",
+				"DefaultWithholdingBP(%q, %q, %s) = %d, want %d",
 				tc.region,
 				tc.incomeType,
+				tc.date,
 				got,
 				tc.want,
 			)

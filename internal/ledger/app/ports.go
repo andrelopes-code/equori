@@ -116,7 +116,7 @@ type Profiles interface {
 // currency of its account.
 type RegionDefaults interface {
 	ForeignChargeBP(region string) int
-	WithholdingBP(region, incomeType string) int
+	WithholdingBP(region, incomeType string, date time.Time) int
 	ReserveYieldPercent(currency money.Currency) int64
 	SeparatesDayTrades(region string) bool
 	CostMethod(region, instrumentType string) string

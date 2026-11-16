@@ -84,8 +84,8 @@ func TestS22InvestmentIncome(t *testing.T) {
 	expectPostings(
 		t,
 		jcp.Postings,
-		[3]any{f.cash, int64(3825), int64(3825)},
-		[3]any{f.incomeTax, int64(675), int64(675)},
+		[3]any{f.cash, int64(3712), int64(3712)},
+		[3]any{f.incomeTax, int64(788), int64(788)},
 		[3]any{f.jcp, int64(-4500), int64(-4500)},
 	)
 
@@ -94,7 +94,7 @@ func TestS22InvestmentIncome(t *testing.T) {
 
 	if read.Income == nil || read.Income.IncomeType != "jcp" || read.Income.AccountID != f.petr4 ||
 		read.Income.Gross["amount"] != float64(4500) ||
-		read.Income.Withheld["amount"] != float64(675) {
+		read.Income.Withheld["amount"] != float64(788) {
 		t.Fatalf("income detail = %+v", read.Income)
 	}
 }
@@ -156,4 +156,33 @@ func TestInvestmentIncomeRules(t *testing.T) {
 			apitest.Posting(f.jcp, -100),
 		},
 	}), http.StatusConflict, "investment_transaction", "")
+}
+
+// S456 and S457 (FS-S1, FS-S2): a JCP without withheld takes 15% when paid up to 2025-12-31 and
+// 17.5% from 2026-01-01.
+func TestJCPWithholdingFollowsThePaymentDate(t *testing.T) {
+	t.Parallel()
+	f := newIncomeFixture(t)
+
+	for _, tc := range []struct {
+		date     string
+		withheld int64
+	}{
+		{"2025-12-31", 1500},
+		{"2026-01-01", 1750},
+	} {
+		tx := f.income(t, map[string]any{
+			"account_id":           f.petr4,
+			"cash_account_id":      f.cash,
+			"income_type":          "jcp",
+			"date":                 tc.date,
+			"gross":                apitest.BRL(10000),
+			"category_id":          f.jcp,
+			"withheld_category_id": f.incomeTax,
+		})
+
+		if tx.Income == nil || tx.Income.Withheld["amount"] != float64(tc.withheld) {
+			t.Errorf("%s: income detail = %+v, want withheld %d", tc.date, tx.Income, tc.withheld)
+		}
+	}
 }

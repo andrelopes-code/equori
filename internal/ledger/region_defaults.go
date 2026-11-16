@@ -1,6 +1,8 @@
 package ledger
 
 import (
+	"time"
+
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -37,13 +39,22 @@ func DefaultReserveYieldPercent(currency money.Currency) int64 {
 	return 0
 }
 
-// DefaultWithholdingBP returns the income tax withheld, in basis points, on an income type of a region when none is given (F9).
-func DefaultWithholdingBP(region, incomeType string) int {
-	if region == "BR" && incomeType == "jcp" {
+// jcpRateChange is the first day of the JCP rate of 17.5% in Brazil (Lei Complementar 224/2025).
+var jcpRateChange = time.Date(2026, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+// DefaultWithholdingBP returns the income tax withheld, in basis points, on an income type of a
+// region paid on date when none is given (F9; A235 FS1). BR taxes a JCP at 15% up to 2025-12-31
+// and at 17.5% from 2026-01-01.
+func DefaultWithholdingBP(region, incomeType string, date time.Time) int {
+	if region != "BR" || incomeType != "jcp" {
+		return 0
+	}
+
+	if date.Before(jcpRateChange) {
 		return 1500
 	}
 
-	return 0
+	return 1750
 }
 
 // SeparatesDayTrades reports whether a sale of a book of region separates the day's purchases

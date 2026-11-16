@@ -322,7 +322,7 @@ func TestS65IncomeEvents(t *testing.T) {
 
 	if j.Instrument != "PETR4" || j.IncomeType != "jcp" || j.TaxTreatment != "exclusive" ||
 		j.Gross["amount"] != float64(4500) ||
-		j.Withheld["amount"] != float64(675) {
+		j.Withheld["amount"] != float64(788) {
 		t.Fatalf("JCP = %+v", j)
 	}
 }

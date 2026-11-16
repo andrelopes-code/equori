@@ -138,7 +138,7 @@ func (s *Service) defaultWithholding(
 		return fmt.Errorf("read profile: %w", err)
 	}
 
-	o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type))
+	o.DefaultWithholdingBP = s.defaults.WithholdingBP(profile.Region, string(o.Type), o.Date)
 
 	return nil
 }
