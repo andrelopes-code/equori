@@ -570,3 +570,29 @@ func TestAddInstrumentOwner(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 20", ArchiveVersion)
 	}
 }
+
+// Fixed income complete A236 FC6, ADR 021 V2: a version 20 archive has no payments, and every
+// table carries over unchanged.
+func TestAddFixedIncomePayments(t *testing.T) {
+	t.Parallel()
+
+	v20 := []ArchiveTable{
+		{
+			Name: "marketdata_fixed_income_terms",
+			Rows: [][]byte{[]byte(`{"instrument_code":"CDB1"}`)},
+		},
+	}
+
+	got, err := addFixedIncomePayments(v20)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 1 || string(got[0].Rows[0]) != `{"instrument_code":"CDB1"}` {
+		t.Fatalf("tables = %+v", got)
+	}
+
+	if ArchiveVersion < 21 {
+		t.Fatalf("ArchiveVersion = %d, want at least 21", ArchiveVersion)
+	}
+}

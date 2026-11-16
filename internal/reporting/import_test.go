@@ -729,6 +729,40 @@ func TestS475ArchiveCarriesPublicAndOwnInstruments(t *testing.T) {
 	}
 }
 
+// S495: the archive of a book carries the payments of its own contracts and of no other book's;
+// the import stores them.
+func TestS495ArchiveCarriesPayments(t *testing.T) {
+	t.Parallel()
+	source := apitest.New(t, apitest.Today("2026-10-26"))
+	source.Login("b@example.com")
+	defineOwned(t, source, source.OwnerID(), "RF.280302.CS3YS")
+	defineOwned(t, source, source.BooksIDOf("b@example.com"), "RF.280302.6DAHD")
+
+	content := export(t, source)
+	rows := string(archive(t, content)["tables/marketdata_fixed_income_payment.jsonl"])
+
+	if !strings.Contains(rows, "RF.280302.CS3YS") || strings.Contains(rows, "RF.280302.6DAHD") {
+		t.Fatalf("payments = %s", rows)
+	}
+
+	target := apitest.New(t, apitest.Today("2026-10-26"))
+	if r := target.Upload(importPath, "a.zip", content); r.Status != http.StatusOK {
+		t.Fatalf("import = %d: %s", r.Status, r.Body)
+	}
+
+	var own, other int
+	if err := target.Pool.QueryRow(t.Context(), `SELECT
+		count(*) FILTER (WHERE instrument_code = 'RF.280302.CS3YS'),
+		count(*) FILTER (WHERE instrument_code = 'RF.280302.6DAHD')
+		FROM marketdata_fixed_income_payment`).Scan(&own, &other); err != nil {
+		t.Fatal(err)
+	}
+
+	if own != 2 || other != 0 {
+		t.Fatalf("payments of the contract = %d, of the other book = %d; want 2 and 0", own, other)
+	}
+}
+
 func defineOwned(t *testing.T, h *apitest.Harness, booksID int64, code string) {
 	t.Helper()
 
@@ -748,6 +782,14 @@ func defineOwned(t *testing.T, h *apitest.Harness, booksID int64, code string) {
 		PercentOfIndexBP: 11000,
 		DayCount:         "bus252",
 		FaceValue:        100000,
+		Payments: []marketdata.Payment{
+			{PaysOn: time.Date(2027, 3, 2, 0, 0, 0, 0, time.UTC), PaysInterest: true},
+			{
+				PaysOn:         time.Date(2028, 3, 2, 0, 0, 0, 0, time.UTC),
+				AmortizationBP: 5000,
+				PaysInterest:   true,
+			},
+		},
 	}
 	if _, err := md.PutTerms(t.Context(), code, terms); err != nil {
 		t.Fatal(err)

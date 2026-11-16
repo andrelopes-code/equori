@@ -50,6 +50,13 @@ func (s *Server) putInstrumentTerms(
 		t.RedeemableFrom = b.RedeemableFrom.Time
 	}
 
+	payments, err := paymentsOf(b)
+	if err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
+	t.Payments = payments
+
 	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
 		return FixedIncomeTerms{}, err
 	}
@@ -77,6 +84,41 @@ func (s *Server) getInstrumentTerms(
 	return toTermsAPI(t), nil
 }
 
+// paymentsOf is the payments the body sets: the listed rows, or the expansion of
+// interest_every_months (A236 FC6).
+func paymentsOf(b PutInstrumentTermsJSONRequestBody) ([]domain.Payment, error) {
+	if b.InterestEveryMonths == nil {
+		var out []domain.Payment
+		if b.Payments != nil {
+			for _, p := range *b.Payments {
+				out = append(out, domain.Payment{
+					PaysOn:         p.PaysOn.Time,
+					AmortizationBP: p.AmortizationBp,
+					PaysInterest:   p.PaysInterest,
+				})
+			}
+		}
+
+		return out, nil
+	}
+
+	if b.Payments != nil {
+		return nil, &domain.FieldError{
+			Field:   "payments",
+			Message: "set payments or interest_every_months",
+		}
+	}
+
+	if b.FirstPaymentOn == nil {
+		return nil, &domain.FieldError{
+			Field:   "first_payment_on",
+			Message: "is required with interest_every_months",
+		}
+	}
+
+	return domain.Schedule(b.FirstPaymentOn.Time, b.MaturesOn.Time, int(*b.InterestEveryMonths))
+}
+
 func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 	out := FixedIncomeTerms{
 		IssuedOn: openapi_types.Date{
@@ -88,6 +130,7 @@ func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 		DayCount:         TermsDayCount(t.DayCount),
 		FaceValue:        t.FaceValue,
 		DailyLiquidity:   t.DailyLiquidity,
+		Payments:         make([]FixedIncomePayment, 0, len(t.Payments)),
 	}
 	if t.IndexID != "" {
 		index := t.IndexID
@@ -101,6 +144,14 @@ func toTermsAPI(t domain.Terms) FixedIncomeTerms {
 
 	if !t.RedeemableFrom.IsZero() {
 		out.RedeemableFrom = &openapi_types.Date{Time: t.RedeemableFrom}
+	}
+
+	for _, p := range t.Payments {
+		out.Payments = append(out.Payments, FixedIncomePayment{
+			PaysOn:         openapi_types.Date{Time: p.PaysOn},
+			AmortizationBp: p.AmortizationBP,
+			PaysInterest:   p.PaysInterest,
+		})
 	}
 
 	return out

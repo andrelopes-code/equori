@@ -42,6 +42,30 @@ func (e CalendarWeekend) Valid() bool {
 	}
 }
 
+// Defines values for FixedIncomeTermsInputInterestEveryMonths.
+const (
+	N1  FixedIncomeTermsInputInterestEveryMonths = 1
+	N12 FixedIncomeTermsInputInterestEveryMonths = 12
+	N3  FixedIncomeTermsInputInterestEveryMonths = 3
+	N6  FixedIncomeTermsInputInterestEveryMonths = 6
+)
+
+// Valid indicates whether the value is a known member of the FixedIncomeTermsInputInterestEveryMonths enum.
+func (e FixedIncomeTermsInputInterestEveryMonths) Valid() bool {
+	switch e {
+	case N1:
+		return true
+	case N12:
+		return true
+	case N3:
+		return true
+	case N6:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HolidaySource.
 const (
 	Instance HolidaySource = "instance"
@@ -208,19 +232,29 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
+// FixedIncomePayment defines model for FixedIncomePayment.
+type FixedIncomePayment struct {
+	AmortizationBp int                `json:"amortization_bp"`
+	PaysInterest   bool               `json:"pays_interest"`
+	PaysOn         openapi_types.Date `json:"pays_on"`
+}
+
 // FixedIncomeTerms defines model for FixedIncomeTerms.
 type FixedIncomeTerms struct {
 	// CalendarId Calendar whose business days bus252 counts when the index does not compound by business day.
 	CalendarId *string `json:"calendar_id,omitempty"`
 
 	// DailyLiquidity The security can be redeemed on any business day; false when omitted.
-	DailyLiquidity   bool               `json:"daily_liquidity"`
-	DayCount         TermsDayCount      `json:"day_count"`
-	FaceValue        int64              `json:"face_value"`
-	IndexId          *string            `json:"index_id,omitempty"`
-	IssuedOn         openapi_types.Date `json:"issued_on"`
-	MaturesOn        openapi_types.Date `json:"matures_on"`
-	PercentOfIndexBp int                `json:"percent_of_index_bp"`
+	DailyLiquidity bool               `json:"daily_liquidity"`
+	DayCount       TermsDayCount      `json:"day_count"`
+	FaceValue      int64              `json:"face_value"`
+	IndexId        *string            `json:"index_id,omitempty"`
+	IssuedOn       openapi_types.Date `json:"issued_on"`
+	MaturesOn      openapi_types.Date `json:"matures_on"`
+
+	// Payments The expanded payments, sorted by date; empty when none.
+	Payments         []FixedIncomePayment `json:"payments"`
+	PercentOfIndexBp int                  `json:"percent_of_index_bp"`
 
 	// RedeemableFrom First date of a redemption before maturity; absent when redeemable from issued_on.
 	RedeemableFrom *openapi_types.Date `json:"redeemable_from,omitempty"`
@@ -239,10 +273,19 @@ type FixedIncomeTermsInput struct {
 	// FaceValue Price of one unit on issued_on, in minor units of the quote currency.
 	FaceValue int64 `json:"face_value"`
 
+	// FirstPaymentOn First interest date; required with interest_every_months.
+	FirstPaymentOn *openapi_types.Date `json:"first_payment_on,omitempty"`
+
 	// IndexId The index the security follows; absent for a pre-fixed security.
-	IndexId   *string            `json:"index_id,omitempty"`
-	IssuedOn  openapi_types.Date `json:"issued_on"`
-	MaturesOn openapi_types.Date `json:"matures_on"`
+	IndexId *string `json:"index_id,omitempty"`
+
+	// InterestEveryMonths Interest paid every n months from first_payment_on up to matures_on; expands into payments.
+	InterestEveryMonths *FixedIncomeTermsInputInterestEveryMonths `json:"interest_every_months,omitempty"`
+	IssuedOn            openapi_types.Date                        `json:"issued_on"`
+	MaturesOn           openapi_types.Date                        `json:"matures_on"`
+
+	// Payments Dates of interest and principal; empty when omitted. Excludes interest_every_months.
+	Payments *[]FixedIncomePayment `json:"payments,omitempty"`
 
 	// PercentOfIndexBp 10000 is 100% of the index; 10000 when omitted.
 	PercentOfIndexBp *int `json:"percent_of_index_bp,omitempty"`
@@ -253,6 +296,9 @@ type FixedIncomeTermsInput struct {
 	// SpreadBp Annual spread over the index, or the annual rate of a pre-fixed security; 0 when omitted.
 	SpreadBp *int `json:"spread_bp,omitempty"`
 }
+
+// FixedIncomeTermsInputInterestEveryMonths Interest paid every n months from first_payment_on up to matures_on; expands into payments.
+type FixedIncomeTermsInputInterestEveryMonths int
 
 // Holiday defines model for Holiday.
 type Holiday struct {

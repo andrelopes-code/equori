@@ -93,7 +93,10 @@ func (m *Module) anchoredSeries(
 		return nil, err
 	}
 
-	terms := toTerms(row)
+	terms, err := m.termsWithPayments(ctx, row)
+	if err != nil {
+		return nil, err
+	}
 
 	var isBusinessDay domain.BusinessDay
 	if row.CalendarID != nil {

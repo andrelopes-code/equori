@@ -122,6 +122,11 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"putInstrumentTerms": {
+		"first_payment_on",
+		"interest_every_months",
+		"payments",
+	}, // the tool inputs arrive in plan FI4 task 3
 	"createFixedIncomeApplication": {
 		"application_id",
 		"contract",

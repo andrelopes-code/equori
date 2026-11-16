@@ -6924,6 +6924,18 @@ export interface components {
              * @description First date of a redemption before maturity; absent when redeemable from issued_on.
              */
             redeemable_from?: string;
+            /** @description Dates of interest and principal; empty when omitted. Excludes interest_every_months. */
+            payments?: components["schemas"]["FixedIncomePayment"][];
+            /**
+             * @description Interest paid every n months from first_payment_on up to matures_on; expands into payments.
+             * @enum {integer}
+             */
+            interest_every_months?: 1 | 3 | 6 | 12;
+            /**
+             * Format: date
+             * @description First interest date; required with interest_every_months.
+             */
+            first_payment_on?: string;
         };
         FixedIncomeTerms: {
             /** Format: date */
@@ -6945,6 +6957,14 @@ export interface components {
              * @description First date of a redemption before maturity; absent when redeemable from issued_on.
              */
             redeemable_from?: string;
+            /** @description The expanded payments, sorted by date; empty when none. */
+            payments: components["schemas"]["FixedIncomePayment"][];
+        };
+        FixedIncomePayment: {
+            /** Format: date */
+            pays_on: string;
+            amortization_bp: number;
+            pays_interest: boolean;
         };
         /** @enum {string} */
         TermsDayCount: "bus252" | "act365";

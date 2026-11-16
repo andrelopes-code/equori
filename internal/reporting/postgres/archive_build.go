@@ -26,6 +26,7 @@ var sharedTables = []string{
 	"marketdata_instrument",
 	"marketdata_instrument_symbol",
 	"marketdata_fixed_income_terms",
+	"marketdata_fixed_income_payment",
 	"marketdata_price",
 }
 
@@ -35,10 +36,11 @@ const ownInstruments = `SELECT code FROM marketdata_instrument WHERE books_id IS
 
 // sharedConditions limit a shared table to the rows of the exporting book and of no other book.
 var sharedConditions = map[string]string{
-	"marketdata_instrument":         `(t.books_id IS NULL OR t.books_id = $1)`,
-	"marketdata_instrument_symbol":  `t.instrument IN (` + ownInstruments + `)`,
-	"marketdata_fixed_income_terms": `t.instrument_code IN (` + ownInstruments + `)`,
-	"marketdata_price":              `t.instrument IN (` + ownInstruments + `)`,
+	"marketdata_instrument":           `(t.books_id IS NULL OR t.books_id = $1)`,
+	"marketdata_instrument_symbol":    `t.instrument IN (` + ownInstruments + `)`,
+	"marketdata_fixed_income_terms":   `t.instrument_code IN (` + ownInstruments + `)`,
+	"marketdata_fixed_income_payment": `t.instrument_code IN (` + ownInstruments + `)`,
+	"marketdata_price":                `t.instrument IN (` + ownInstruments + `)`,
 }
 
 // rowExpressions write a row of t without books_id; a table listed here drops more.

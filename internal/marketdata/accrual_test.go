@@ -306,3 +306,41 @@ func accruePreFixed(t *testing.T, calendar string) map[string]accrualPrice {
 
 	return pricesBetween(t, h, "CDBPRE", "2026-01-01", "2026-02-28")
 }
+
+// S487: the price of an interest date carries the coupon and the next priced day restarts at the
+// face value; the values match the domain test of the same terms on the weekend calendar.
+func TestS487AccrualRestartsAfterInterest(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t, apitest.Today("2026-07-07"))
+	defineFixedIncome(t, h, "CDBCUPOM")
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/instruments/CDBCUPOM/terms",
+		map[string]any{
+			"issued_on":             "2026-01-05",
+			"matures_on":            "2027-01-05",
+			"spread_bp":             1200,
+			"day_count":             "bus252",
+			"calendar_id":           "weekend",
+			"face_value":            100000,
+			"interest_every_months": 6,
+			"first_payment_on":      "2026-07-06",
+		},
+		http.StatusOK,
+		nil,
+	)
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	got := pricesBetween(t, h, "CDBCUPOM", "2026-07-01", "2026-07-07")
+	want := map[string]string{
+		"2026-07-06": "1060.205980713929",
+		"2026-07-07": "1000.449818143039",
+	}
+
+	for d, v := range want {
+		if got[d].Value != v || got[d].Source != "accrual" {
+			t.Errorf("price on %s = %+v, want %s from accrual", d, got[d], v)
+		}
+	}
+}

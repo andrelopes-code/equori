@@ -1236,9 +1236,23 @@ schemas:
         type: string
         format: date
         description: First date of a redemption before maturity; absent when redeemable from issued_on.
+      payments:
+        type: array
+        maxItems: 400
+        items:
+          $ref: "#/components/schemas/FixedIncomePayment"
+        description: Dates of interest and principal; empty when omitted. Excludes interest_every_months.
+      interest_every_months:
+        type: integer
+        enum: [1, 3, 6, 12]
+        description: Interest paid every n months from first_payment_on up to matures_on; expands into payments.
+      first_payment_on:
+        type: string
+        format: date
+        description: First interest date; required with interest_every_months.
   FixedIncomeTerms:
     type: object
-    required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value, daily_liquidity]
+    required: [issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value, daily_liquidity, payments]
     properties:
       issued_on:
         type: string
@@ -1269,6 +1283,24 @@ schemas:
         type: string
         format: date
         description: First date of a redemption before maturity; absent when redeemable from issued_on.
+      payments:
+        type: array
+        items:
+          $ref: "#/components/schemas/FixedIncomePayment"
+        description: The expanded payments, sorted by date; empty when none.
+  FixedIncomePayment:
+    type: object
+    required: [pays_on, amortization_bp, pays_interest]
+    properties:
+      pays_on:
+        type: string
+        format: date
+      amortization_bp:
+        type: integer
+        minimum: 0
+        maximum: 10000
+      pays_interest:
+        type: boolean
   TermsDayCount:
     type: string
     enum: [bus252, act365]

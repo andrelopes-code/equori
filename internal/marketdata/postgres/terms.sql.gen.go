@@ -10,6 +10,17 @@ import (
 	"time"
 )
 
+const deletePayments = `-- name: DeletePayments :exec
+DELETE FROM marketdata_fixed_income_payment
+WHERE
+    instrument_code = $1
+`
+
+func (q *Queries) DeletePayments(ctx context.Context, instrumentCode string) error {
+	_, err := q.db.Exec(ctx, deletePayments, instrumentCode)
+	return err
+}
+
 const getTerms = `-- name: GetTerms :one
 SELECT
     instrument_code, issued_on, matures_on, index_id, percent_of_index_bp, spread_bp, day_count, face_value, calendar_id, daily_liquidity, redeemable_from
@@ -36,6 +47,69 @@ func (q *Queries) GetTerms(ctx context.Context, instrumentCode string) (Marketda
 		&i.RedeemableFrom,
 	)
 	return i, err
+}
+
+const insertPayments = `-- name: InsertPayments :exec
+INSERT INTO
+    marketdata_fixed_income_payment (instrument_code, pays_on, amortization_bp, pays_interest)
+SELECT
+    $1,
+    unnest($2::date[]),
+    unnest($3::INTEGER[]),
+    unnest($4::BOOLEAN[])
+`
+
+type InsertPaymentsParams struct {
+	InstrumentCode string
+	PaysOn         []time.Time
+	AmortizationBp []int32
+	PaysInterest   []bool
+}
+
+func (q *Queries) InsertPayments(ctx context.Context, arg InsertPaymentsParams) error {
+	_, err := q.db.Exec(ctx, insertPayments,
+		arg.InstrumentCode,
+		arg.PaysOn,
+		arg.AmortizationBp,
+		arg.PaysInterest,
+	)
+	return err
+}
+
+const listPayments = `-- name: ListPayments :many
+SELECT
+    instrument_code, pays_on, amortization_bp, pays_interest
+FROM
+    marketdata_fixed_income_payment
+WHERE
+    instrument_code = $1
+ORDER BY
+    pays_on
+`
+
+func (q *Queries) ListPayments(ctx context.Context, instrumentCode string) ([]MarketdataFixedIncomePayment, error) {
+	rows, err := q.db.Query(ctx, listPayments, instrumentCode)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MarketdataFixedIncomePayment
+	for rows.Next() {
+		var i MarketdataFixedIncomePayment
+		if err := rows.Scan(
+			&i.InstrumentCode,
+			&i.PaysOn,
+			&i.AmortizationBp,
+			&i.PaysInterest,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listTerms = `-- name: ListTerms :many

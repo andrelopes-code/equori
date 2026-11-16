@@ -15,6 +15,13 @@ type MarketdataFeed struct {
 	Enabled bool
 }
 
+type MarketdataFixedIncomePayment struct {
+	InstrumentCode string
+	PaysOn         time.Time
+	AmortizationBp int32
+	PaysInterest   bool
+}
+
 type MarketdataFixedIncomeTerm struct {
 	InstrumentCode   string
 	IssuedOn         time.Time

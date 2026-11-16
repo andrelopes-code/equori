@@ -270,3 +270,52 @@ func TestSchemaRejectsInvalidInstrumentOwner(t *testing.T) {
 		})
 	}
 }
+
+// A236 FC6: a payment states an amortization of 0 to 10000 bp, pays interest or returns principal,
+// and the amortizations of one instrument sum to at most 10000 bp (checked at commit).
+func TestSchemaRejectsInvalidPayments(t *testing.T) {
+	t.Parallel()
+	pool := pgtest.New(t)
+
+	ctx := t.Context()
+	if _, err := pool.Exec(
+		ctx,
+		`INSERT INTO marketdata_instrument (code, instrument_type, scale, name, quote_currency)
+		VALUES ('CDBXPTO', 'fixed_income', 0, 'CDB', 'BRL');
+		INSERT INTO marketdata_fixed_income_terms (instrument_code, issued_on, matures_on, percent_of_index_bp, spread_bp, day_count, face_value)
+		VALUES ('CDBXPTO', '2026-01-02', '2028-01-02', 10000, 1200, 'act365', 100000)`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	const cols = `INSERT INTO marketdata_fixed_income_payment (instrument_code, pays_on, amortization_bp, pays_interest) VALUES `
+
+	tests := []struct{ name, sql string }{
+		{"amortization above 10000", cols + `('CDBXPTO', '2027-01-04', 10001, true)`},
+		{"negative amortization", cols + `('CDBXPTO', '2027-01-04', -1, true)`},
+		{"neither interest nor principal", cols + `('CDBXPTO', '2027-01-04', 0, false)`},
+		{"unknown instrument", cols + `('NOPE11', '2027-01-04', 0, true)`},
+		{
+			"same date twice",
+			cols + `('CDBXPTO', '2027-01-04', 0, true), ('CDBXPTO', '2027-01-04', 0, true)`,
+		},
+		{
+			"amortizations above 10000 in total",
+			cols + `('CDBXPTO', '2027-01-04', 6000, true), ('CDBXPTO', '2028-01-02', 6000, true)`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if _, err := pool.Exec(ctx, tt.sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+
+	if _, err := pool.Exec(
+		ctx,
+		cols+`('CDBXPTO', '2027-01-04', 6000, true), ('CDBXPTO', '2028-01-02', 4000, true)`,
+	); err != nil {
+		t.Fatalf("amortizations of 10000 in total: %v", err)
+	}
+}

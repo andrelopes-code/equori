@@ -1,6 +1,8 @@
 package marketdata_test
 
 import (
+	"encoding/json"
+	"maps"
 	"net/http"
 	"testing"
 
@@ -19,6 +21,14 @@ type termsAPI struct {
 	CalendarID       string `json:"calendar_id"`
 	DailyLiquidity   bool   `json:"daily_liquidity"`
 	RedeemableFrom   string `json:"redeemable_from"`
+}
+
+type paymentsAPI struct {
+	Payments []struct {
+		PaysOn         string `json:"pays_on"`
+		AmortizationBP int    `json:"amortization_bp"`
+		PaysInterest   bool   `json:"pays_interest"`
+	} `json:"payments"`
 }
 
 func defineFixedIncome(t *testing.T, h *apitest.Harness, code string) {
@@ -313,5 +323,75 @@ func TestS469TermsRefuseCalendarAndGrace(t *testing.T) {
 	if read.CalendarID != "br_banking" || !read.DailyLiquidity ||
 		read.RedeemableFrom != "2026-04-02" {
 		t.Fatalf("read = %+v", read)
+	}
+}
+
+// S486: interest_every_months expands into the payments of the terms; a PUT without a payment field
+// clears them; payments and interest_every_months together are refused.
+func TestS486TermsWithInterestEvery(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	defineFixedIncome(t, h, "CDBXPTO")
+
+	put := func(change map[string]any) apitest.Response {
+		body := map[string]any{
+			"issued_on":   "2026-01-05",
+			"matures_on":  "2027-01-05",
+			"spread_bp":   1200,
+			"day_count":   "bus252",
+			"calendar_id": "weekend",
+			"face_value":  100000,
+		}
+		maps.Copy(body, change)
+
+		return h.Do(http.MethodPut, "/api/v1/instruments/CDBXPTO/terms", body)
+	}
+	every := map[string]any{"interest_every_months": 6, "first_payment_on": "2026-07-06"}
+
+	r := put(every)
+	if r.Status != http.StatusOK {
+		t.Fatalf("PUT = %d: %s", r.Status, r.Body)
+	}
+
+	var got paymentsAPI
+	if err := json.Unmarshal(r.Body, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	want := `[{"pays_on":"2026-07-06","amortization_bp":0,"pays_interest":true},` +
+		`{"pays_on":"2027-01-05","amortization_bp":0,"pays_interest":true}]`
+	if b, _ := json.Marshal(got.Payments); string(b) != want {
+		t.Fatalf("payments = %s, want %s", b, want)
+	}
+
+	var read paymentsAPI
+	h.MustDo(http.MethodGet, "/api/v1/instruments/CDBXPTO/terms", nil, http.StatusOK, &read)
+
+	if b, _ := json.Marshal(read.Payments); string(b) != want {
+		t.Fatalf("read payments = %s, want %s", b, want)
+	}
+
+	h.ExpectProblem(
+		put(map[string]any{
+			"interest_every_months": 6,
+			"first_payment_on":      "2026-07-06",
+			"payments": []map[string]any{
+				{"pays_on": "2026-07-06", "amortization_bp": 0, "pays_interest": true},
+			},
+		}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"payments",
+	)
+
+	if r := put(nil); r.Status != http.StatusOK {
+		t.Fatalf("PUT without payments = %d: %s", r.Status, r.Body)
+	}
+
+	read = paymentsAPI{}
+	h.MustDo(http.MethodGet, "/api/v1/instruments/CDBXPTO/terms", nil, http.StatusOK, &read)
+
+	if len(read.Payments) != 0 {
+		t.Fatalf("payments after a PUT without them = %+v", read.Payments)
 	}
 }

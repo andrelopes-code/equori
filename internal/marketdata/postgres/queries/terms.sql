@@ -55,3 +55,27 @@ FROM
     marketdata_fixed_income_terms
 ORDER BY
     instrument_code;
+
+-- name: DeletePayments :exec
+DELETE FROM marketdata_fixed_income_payment
+WHERE
+    instrument_code = @instrument_code;
+
+-- name: InsertPayments :exec
+INSERT INTO
+    marketdata_fixed_income_payment (instrument_code, pays_on, amortization_bp, pays_interest)
+SELECT
+    @instrument_code,
+    unnest(@pays_on::date[]),
+    unnest(@amortization_bp::INTEGER[]),
+    unnest(@pays_interest::BOOLEAN[]);
+
+-- name: ListPayments :many
+SELECT
+    *
+FROM
+    marketdata_fixed_income_payment
+WHERE
+    instrument_code = @instrument_code
+ORDER BY
+    pays_on;
