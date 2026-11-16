@@ -18,7 +18,7 @@ SQL_FMT := web/node_modules/.bin/sql-formatter
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev web-dev-after-api run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -174,7 +174,20 @@ demo: demo-user
 
 # The app and the Vite dev server together; Ctrl-C stops both.
 run-dev: $(WEB_DEPS)
-	$(MAKE) --no-print-directory -j2 dev web-dev
+	$(MAKE) --no-print-directory -j2 dev web-dev-after-api
+
+# Vite is ready in under a second and `go run` compiles for longer: a browser that opens the
+# Vite address first gets "http proxy error ... ECONNREFUSED 127.0.0.1:8080". Vite starts once
+# the API accepts connections on the port web/vite.config.ts proxies to, for up to 2 minutes.
+web-dev-after-api:
+	@echo "waiting for the API on 127.0.0.1:8080"
+	@tries=240; \
+	until bash -c ': </dev/tcp/127.0.0.1/8080' 2>/dev/null; do \
+		tries=$$((tries - 1)); \
+		[ $$tries -gt 0 ] || { echo "the API did not open 127.0.0.1:8080" >&2; exit 1; }; \
+		sleep 0.5; \
+	done
+	$(MAKE) --no-print-directory web-dev
 
 # The production build on PROD_ADDR beside run-dev: minified web/dist embedded in the binary.
 # An empty EQUORI_WEB_DEV_PORT makes the binary serve web/dist instead of proxying to Vite.
