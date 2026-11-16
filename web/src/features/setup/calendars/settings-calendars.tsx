@@ -28,7 +28,6 @@ import {
 } from "@/features/planning";
 import { CalendarDay } from "@/features/setup/calendars/calendar-day";
 import { CalendarGroups } from "@/features/setup/calendars/calendar-groups";
-import { calendarRegion } from "@/features/setup/calendars/calendar-region";
 import { CalendarShiftExample } from "@/features/setup/calendars/calendar-shift-example";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { maxYear, minYear } from "@/features/setup/model/settings-search";
@@ -37,7 +36,6 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/feedback/query-error";
 import { StepGlyph } from "@/ui/navigation/step-glyph";
-import { RegionLabel } from "@/ui/region/region-label";
 
 type Holiday = components["schemas"]["Holiday"];
 
@@ -133,11 +131,7 @@ export function SettingsCalendars() {
       {chosen !== undefined && (
         <SettingsGroup
           title={t("calendar.holidays.title", { year: String(year) })}
-          description={
-            <RegionLabel region={calendarRegion(chosen.id)} size="md">
-              {calendarLabel(t, chosen.id)}
-            </RegionLabel>
-          }
+          description={calendarLabel(t, chosen.id)}
           actions={
             // CP-04: the year steps like the month and the period of the other screens.
             <ButtonGroup

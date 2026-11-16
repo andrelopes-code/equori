@@ -22,7 +22,7 @@ export function SettingsGroup({
   children,
 }: {
   title?: string;
-  description?: ReactNode;
+  description?: string;
   actions?: ReactNode;
   footer?: ReactNode;
   children: ReactNode;
