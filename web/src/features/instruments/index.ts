@@ -7,3 +7,7 @@ export {
   typeLabel,
 } from "@/features/instruments/model/instrument-labels";
 export { formatRate, parseRate } from "@/features/instruments/model/rate";
+export {
+  bpText,
+  parsePercentBp,
+} from "@/features/instruments/terms/basis-points";
