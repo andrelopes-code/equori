@@ -10,6 +10,6 @@ An amortization is a sell of the amortized part of the quantity at the Price of 
 
 A redemption before maturity is valued at the Price of the day: the gain or loss is the gross less the cost.
 
-Savings accounts and reserves are not Instruments: their yield is a transaction categorized under Yield.
+Unit tax (come-cotas): a corporate action Unit tax with the units cancelled and the tax withheld. The cost stays; the tax is a credit on Prepaid income tax. Savings accounts and reserves are not Instruments: their yield is a transaction categorized under Yield.
 
 The Portfolio screen and get_tax_year list each income with its tax treatment.
