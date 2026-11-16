@@ -84,13 +84,12 @@ describe("AppFrame layout", () => {
     { width: 1280, phone: false },
     { width: 390, phone: true },
   ])(
-    "names the main region for the page transition at $width px",
+    "applies the phone grid rows to the main region only on a phone ($width px)",
     async ({ width, phone }) => {
       await renderApp("/", { width, fetch: newFetch() });
       const main = document.querySelector(
         '[data-ui="app-shell"] > [data-part="main"]',
       );
-      expect(main).toHaveClass(styles.transition ?? "missing");
       expect(main?.classList.contains(styles.main ?? "missing")).toBe(phone);
     },
   );

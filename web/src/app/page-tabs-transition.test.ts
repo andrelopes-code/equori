@@ -1,14 +1,11 @@
-import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { catalogPtBR } from "@/i18n/catalog.pt-BR";
-import { accountsPtBR } from "@/i18n/catalog-accounts.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
-// A tab that changes the route keeps the page in place: only a change of destination cross-fades.
-describe("page transition between tabs", () => {
+// A change of route never starts a view transition: the browser freezes the page and drops input
+// until the new page renders.
+describe("page navigation", () => {
   const start = vi.fn(
     (arg: ViewTransitionUpdateCallback | StartViewTransitionOptions) => {
       const update = typeof arg === "function" ? arg : arg.update;
@@ -26,36 +23,14 @@ describe("page transition between tabs", () => {
     Reflect.deleteProperty(document, "startViewTransition");
   });
 
-  it("cross-fades a change of destination", async () => {
+  it("does not start a view transition on a change of destination", async () => {
     const { router } = await renderApp("/accounts", { fetch: api() });
-    start.mockClear();
 
     await router.navigate({ to: "/reports" });
 
-    expect(start).toHaveBeenCalledTimes(1);
+    expect(router.state.location.pathname).toBe("/reports");
+    expect(start).not.toHaveBeenCalled();
   });
-
-  it.each([
-    [
-      "/accounts",
-      accountsPtBR["accounts.tab.institutions"],
-      "/accounts/institutions",
-    ],
-    ["/categories", catalogPtBR["categories.tab.rules"], "/categories/rules"],
-  ])(
-    "does not cross-fade the tab change from %s to %s",
-    async (from, tab, to) => {
-      const { router } = await renderApp(from, { fetch: api() });
-      start.mockClear();
-
-      await userEvent.click(await screen.findByRole("tab", { name: tab }));
-
-      await waitFor(() => {
-        expect(router.state.location.pathname).toBe(to);
-      });
-      expect(start).not.toHaveBeenCalled();
-    },
-  );
 });
 
 function api() {

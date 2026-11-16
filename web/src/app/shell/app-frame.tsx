@@ -132,9 +132,7 @@ export function AppFrame() {
       )}
       <AppShellMain
         ref={main}
-        className={[styles.transition, wide ? undefined : styles.main]
-          .filter(Boolean)
-          .join(" ")}
+        className={wide ? undefined : styles.main}
         // The page sets --slotted-page-sticky-bottom on this scroller to the height of its sticky
         // footer. A field the browser scrolls into view above the keyboard stops at the scroller's
         // edge, under that footer, unless the scroll padding holds the footer too.

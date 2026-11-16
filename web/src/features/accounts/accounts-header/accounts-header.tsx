@@ -84,11 +84,7 @@ export function AccountsHeader({
               setChosen(value);
               requestAnimationFrame(() => {
                 setTimeout(() => {
-                  // A tab keeps the page in place: only a change of destination cross-fades.
-                  void navigate({
-                    to: routes[value],
-                    viewTransition: false,
-                  }).then(() => {
+                  void navigate({ to: routes[value] }).then(() => {
                     setChosen(null);
                   });
                 }, 0);
