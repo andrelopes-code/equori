@@ -24,6 +24,7 @@ func (fixtureJurisdiction) IncomeTypes() []string { return nil }
 
 func (fixtureJurisdiction) Subtypes(string) []string                { return nil }
 func (fixtureJurisdiction) TaxYear(year int) (time.Time, time.Time) { return CalendarYear(year) }
+func (fixtureJurisdiction) Guarantee() (Guarantee, bool)            { return Guarantee{}, false }
 
 func (fixtureJurisdiction) TaxClass(instrumentType, _, exchange string) string {
 	if instrumentType == "reit" && exchange == "BVMF" {

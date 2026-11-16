@@ -21,6 +21,10 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "lca", "", "fixed_income_exempt"},
 		{"fixed_income", "lc", "", "fixed_income"},
 		{"fixed_income", "lf", "", "fixed_income"},
+		{"fixed_income", "lcd", "", "fixed_income_exempt"},
+		{"fixed_income", "lh", "", "fixed_income_exempt"},
+		{"fixed_income", "cdca", "", "fixed_income_exempt"},
+		{"fixed_income", "lig", "", "fixed_income"},
 		{"fixed_income", "debenture", "", "fixed_income"},
 		{"fixed_income", "xyz_bond", "", "fixed_income"},
 		{"fund", "equity_fund", "", "fund_equity"},
@@ -80,6 +84,13 @@ func TestBR(t *testing.T) {
 		t.Errorf("Subtypes(fund) = %v, want %v", got, want)
 	}
 
+	got := j.Subtypes("fixed_income")
+	for _, subtype := range []string{"cdca", "lcd", "lh", "lig"} {
+		if !slices.Contains(got, subtype) {
+			t.Errorf("Subtypes(fixed_income) = %v, want %q", got, subtype)
+		}
+	}
+
 	if got := j.Subtypes("stock"); len(got) != 0 {
 		t.Errorf("Subtypes(stock) = %v, want none", got)
 	}
@@ -95,5 +106,35 @@ func TestTaxYear(t *testing.T) {
 
 	if want := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC); !to.Equal(want) {
 		t.Errorf("to = %v, want %v", to, want)
+	}
+}
+
+func TestGuarantee(t *testing.T) {
+	t.Parallel()
+
+	g, ok := New().Guarantee()
+	if !ok {
+		t.Fatal("Guarantee() has none")
+	}
+
+	if g.Name != "FGC" || g.PeriodYears != 4 {
+		t.Errorf("Name = %q, PeriodYears = %d", g.Name, g.PeriodYears)
+	}
+
+	if g.LimitPerIssuer.Amount() != 25000000 || g.LimitPerIssuer.Currency() != "BRL" {
+		t.Errorf("LimitPerIssuer = %v", g.LimitPerIssuer)
+	}
+
+	if g.LimitPerPeriod.Amount() != 100000000 || g.LimitPerPeriod.Currency() != "BRL" {
+		t.Errorf("LimitPerPeriod = %v", g.LimitPerPeriod)
+	}
+
+	for subtype, want := range map[string]bool{
+		"cdb": true, "rdb": true, "lc": true, "lh": true, "lci": true, "lca": true, "lcd": true,
+		"lf": false, "debenture": false, "lig": false, "cri": false,
+	} {
+		if got := g.Covered(subtype); got != want {
+			t.Errorf("Covered(%q) = %v, want %v", subtype, got, want)
+		}
 	}
 }

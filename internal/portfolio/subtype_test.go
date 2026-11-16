@@ -90,14 +90,18 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"fixed_income",
 	), []string{
 		"cdb",
+		"cdca",
 		"cra",
 		"cri",
 		"debenture",
 		"debenture_incentivada",
 		"lc",
 		"lca",
+		"lcd",
 		"lci",
 		"lf",
+		"lh",
+		"lig",
 		"rdb",
 		"tesouro",
 	}; !slices.Equal(

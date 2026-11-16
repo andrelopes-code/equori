@@ -19,6 +19,8 @@ type Jurisdiction interface {
 	Subtypes(instrumentType string) []string
 	// TaxYear is the tax year that starts in year: from inclusive, to exclusive, in UTC.
 	TaxYear(year int) (from, to time.Time)
+	// Guarantee is the deposit guarantee of the jurisdiction; false when it has none.
+	Guarantee() (Guarantee, bool)
 }
 
 // CalendarYear is the tax year of an owner without a jurisdiction.
