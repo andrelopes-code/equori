@@ -46,7 +46,7 @@ type indicators struct {
 	NetIncome        *int64  `json:"net_income"`
 }
 
-// A237 I9. S471.
+// A237 I9. S488.
 func TestInstitutionIndicators(t *testing.T) {
 	t.Parallel()
 
@@ -77,7 +77,7 @@ func TestInstitutionIndicators(t *testing.T) {
 	}
 }
 
-// A237 I7. S472.
+// A237 I7. S489.
 func TestInstitutionIndicatorsNullIsNotZero(t *testing.T) {
 	t.Parallel()
 
@@ -98,7 +98,7 @@ func TestInstitutionIndicatorsNullIsNotZero(t *testing.T) {
 	}
 }
 
-// A237 I2, I9. S473.
+// A237 I2, I9. S490.
 func TestInstitutionIndicatorsFeedDisabled(t *testing.T) {
 	t.Parallel()
 
@@ -110,7 +110,7 @@ func TestInstitutionIndicatorsFeedDisabled(t *testing.T) {
 	h.ExpectProblem(r, http.StatusNotFound, "not_found", "")
 }
 
-// A237 I9. S474.
+// A237 I9. S491.
 func TestInstitutionIndicatorsUnknown(t *testing.T) {
 	t.Parallel()
 
@@ -131,7 +131,7 @@ func TestInstitutionIndicatorsUnknown(t *testing.T) {
 	h.ExpectProblem(r, http.StatusBadRequest, "invalid_request", "scheme")
 }
 
-// A237 B2. S475.
+// A237 B2. S492.
 func TestInstitutionIndicatorsAccess(t *testing.T) {
 	t.Parallel()
 
@@ -152,7 +152,7 @@ func TestInstitutionIndicatorsAccess(t *testing.T) {
 	}
 }
 
-// A237 I2, I8. S476.
+// A237 I2, I8. S493.
 func TestInstitutionFeedState(t *testing.T) {
 	t.Parallel()
 
@@ -197,7 +197,7 @@ func TestInstitutionFeedState(t *testing.T) {
 	}
 }
 
-// A237 X2. S477: a book of another region suggests no IF.data feed.
+// A237 X2. S494: a book of another region suggests no IF.data feed.
 func TestInstitutionFeedNotSuggestedOutsideBrazil(t *testing.T) {
 	t.Parallel()
 

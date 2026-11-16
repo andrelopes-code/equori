@@ -63,21 +63,21 @@ The period the net income covers is not stated in the sources read. The screen l
 | D4 | The feed writes public data from the Banco Central. No user data is involved and a repeated tick leaves the same rows. |
 | D5 | Does not apply: no field joins the diagnostic file. |
 | S1 | One operation, `getInstitutionIndicators`, excluded from the tools as `-visual` in `internal/server/tool_exposure_test.go`. |
-| S2 | The tab follows the account page's phone layout: one column of rows with the value end-aligned. A test runs at the phone width of the existing account page tests. |
+| S2 | The tab is outside `phoneAccountTabs` (ADR 027, S5): it is not offered below 600 px. A test at desktop width covers it. |
 | S3 | Guide article `internal/assistant/guide/articles/` of the accounts topic gains the tab. |
 | S4 | The assistant does not read the figures in this change. A tool view is a later change. |
-| X1 | Scenarios S471 to S477 in `docs/domain/06-scenarios.md`, each with a test through `internal/apitest`. |
+| X1 | Scenarios S488 to S494 in `docs/domain/06-scenarios.md`, each with a test through `internal/apitest`. |
 | X2 | A book of region `US` suggests no `br_ifdata`; an unknown scheme is 404; a book of base currency `USD` shows BRL figures. |
 
 ## Scenarios
 
-- S471: with `br_ifdata` enabled and the stored period 2026-06-30, `getInstitutionIndicators` for `br_ispb` `18236120` returns the conglomerate `NU PAGAMENTOS - PRUDENCIAL`, `basel` "0.1550912564", `principal_capital` "0.1175995987", `fixed_asset` "0.0510180761", equity 2334461071736, net income 409304022539, currency `BRL`.
-- S472: a null Basel index in the source is `null` in the response, not `"0"`.
-- S473: with the feed disabled the operation is 404 `not_found`.
-- S474: an `br_ispb` without a row is 404 `not_found`; a scheme `bic` is 404 `not_found`.
-- S475: a member of another book reads the same figures; a request without a session is 401.
-- S477: a book of region `US` has `br_ifdata` listed with `suggested` false.
-- S476: `GET /market-data/feeds` lists `br_ifdata` with `kind` `institution`, `last` 2026-06-30, and `stale` true when today is after 2027-01-28.
+- S488: with `br_ifdata` enabled and the stored period 2026-06-30, `getInstitutionIndicators` for `br_ispb` `18236120` returns the conglomerate `NU PAGAMENTOS - PRUDENCIAL`, `basel` "0.1550912564", `principal_capital` "0.1175995987", `fixed_asset` "0.0510180761", equity 2334461071736, net income 409304022539, currency `BRL`.
+- S489: a null Basel index in the source is `null` in the response, not `"0"`.
+- S490: with the feed disabled the operation is 404 `not_found`.
+- S491: an `br_ispb` without a row is 404 `not_found`; a scheme `bic` is 404 `not_found`.
+- S492: a member reads the same figures; a request without a session is 401.
+- S493: `GET /market-data/feeds` lists `br_ifdata` with `kind` `institution`, `last` 2026-06-30, and `stale` true when today is after 2027-01-28.
+- S494: a book of region `US` has `br_ifdata` listed with `suggested` false.
 
 ## Not covered
 
