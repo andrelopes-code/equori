@@ -908,7 +908,9 @@ func TestManageInstrumentToolHide(t *testing.T) {
 	hide := map[string]any{"action": "hide", "code": "MXRF11"}
 
 	p, r := preview(t, h, "manage_instrument", hide)
-	if r.IsError || p.Action != "manage_instrument.hide" || p.Destructive {
+	if r.IsError || p.Action != "manage_instrument.hide" || p.Destructive || len(p.Changes) != 1 ||
+		p.Changes[0].Field != "status" || p.Changes[0].Before.Text != "shown" ||
+		p.Changes[0].After.Text != "hidden" {
 		t.Fatalf("preview = %+v %s", p, r.Content)
 	}
 

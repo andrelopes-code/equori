@@ -227,7 +227,7 @@ func previewVisibility(
 	}
 
 	p.Changes = []tool.Change{
-		{Field: "lists", Before: tool.TextValue(before), After: tool.TextValue(after)},
+		{Field: "status", Before: tool.TextValue(before), After: tool.TextValue(after)},
 	}
 
 	return p, nil
