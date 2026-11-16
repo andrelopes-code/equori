@@ -96,6 +96,7 @@ export function validateNewTransactionSearch(raw: Record<string, unknown>): {
   account_id?: string;
   to_account_id?: string;
   brokerage_id?: string;
+  instrument?: string;
 } {
   const account_id = uuid(raw.account_id);
   const to_account_id = uuid(raw.to_account_id);
@@ -104,6 +105,9 @@ export function validateNewTransactionSearch(raw: Record<string, unknown>): {
     ...(account_id === undefined ? {} : { account_id }),
     ...(to_account_id === undefined ? {} : { to_account_id }),
     ...(brokerage_id === undefined ? {} : { brokerage_id }),
+    ...(typeof raw.instrument === "string" && raw.instrument !== ""
+      ? { instrument: raw.instrument }
+      : {}),
   };
 }
 

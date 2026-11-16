@@ -11,6 +11,7 @@ export type PostingKind = "expense" | "income" | "transfer" | "advanced";
 // that post by shape.
 export const builtKinds = [
   "trade",
+  "fixed_income",
   "investment_income",
   "brokerage_note",
   "foreign_purchase",

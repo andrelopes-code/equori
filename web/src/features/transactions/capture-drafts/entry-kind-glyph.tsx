@@ -8,6 +8,15 @@ const PATHS: Record<EntryKind, readonly string[]> = {
   income: ["M17 7 7 17", "M17 17H7V7"],
   transfer: ["m8 3-4 4 4 4", "M4 7h16", "m16 21 4-4-4-4", "M20 17H4"],
   trade: ["m3 17 6-6 4 4 8-8", "M14 7h7v7"],
+  // Lucide landmark strokes.
+  fixed_income: [
+    "M3 22h18",
+    "M6 18v-7",
+    "M10 18v-7",
+    "M14 18v-7",
+    "M18 18v-7",
+    "M12 2 3 7h18Z",
+  ],
   investment_income: [
     "M12 2v20",
     "M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",

@@ -42,6 +42,11 @@ const kinds: {
   },
   { value: "trade", label: "entry.kind.trade", hint: "entry.kindHint.trade" },
   {
+    value: "fixed_income",
+    label: "entry.kind.fixed_income",
+    hint: "entry.kindHint.fixed_income",
+  },
+  {
     value: "investment_income",
     label: "entry.kind.investment_income",
     hint: "entry.kindHint.investment_income",

@@ -496,6 +496,21 @@ export function useRecordTrade() {
   });
 }
 
+export function useRecordFixedIncomeApplication() {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      body: components["schemas"]["FixedIncomeApplicationInput"],
+    ) => unwrap(await api.POST("/fixed-income-applications", { body })),
+    onSuccess: () =>
+      Promise.all([
+        transactionMutated(queryClient, []),
+        queryClient.invalidateQueries({ queryKey: setupKeys.instruments }),
+      ]),
+  });
+}
+
 export function useRecordBrokerageNote() {
   const api = useApi();
   const queryClient = useQueryClient();

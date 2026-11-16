@@ -6,6 +6,7 @@ import type {
 import { ActionForm } from "@/features/transactions/action-entry/action-form";
 import { CustodyForm } from "@/features/transactions/custody-entry/custody-form";
 import { ExchangeForm } from "@/features/transactions/exchange-entry/exchange-form";
+import { FixedIncomeForm } from "@/features/transactions/fixed-income-entry/fixed-income-form";
 import { ForeignForm } from "@/features/transactions/foreign-entry/foreign-form";
 import { IncomeForm } from "@/features/transactions/income-entry/income-form";
 import { NoteForm } from "@/features/transactions/note-entry/note-form";
@@ -21,7 +22,14 @@ interface BuiltEntryFormProps {
   payees: readonly components["schemas"]["Payee"][];
   entries: Pick<
     Entries,
-    "trade" | "income" | "note" | "foreign" | "exchange" | "action" | "custody"
+    | "trade"
+    | "fixedIncome"
+    | "income"
+    | "note"
+    | "foreign"
+    | "exchange"
+    | "action"
+    | "custody"
   >;
   onKind: (kind: EntryKind) => void;
 }
@@ -34,7 +42,16 @@ export function BuiltEntryForm({
   entries,
   onKind,
 }: BuiltEntryFormProps) {
-  const { trade, income, note, foreign, exchange, action, custody } = entries;
+  const {
+    trade,
+    fixedIncome,
+    income,
+    note,
+    foreign,
+    exchange,
+    action,
+    custody,
+  } = entries;
 
   return (
     <>
@@ -101,6 +118,17 @@ export function BuiltEntryForm({
           errors={foreign.errors}
           scale={scale}
           payees={payees}
+          onKind={onKind}
+        />
+      )}
+
+      {ready && investment === "fixed_income" && scale !== null && (
+        <FixedIncomeForm
+          draft={fixedIncome.draft}
+          onChange={fixedIncome.setDraft}
+          view={fixedIncome.view}
+          errors={fixedIncome.errors}
+          scale={scale}
           onKind={onKind}
         />
       )}

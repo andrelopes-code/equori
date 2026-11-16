@@ -523,6 +523,7 @@ const newTransactionRoute = createRoute({
     account_id?: string;
     to_account_id?: string;
     brokerage_id?: string;
+    instrument?: string;
     kind?: BuiltKind | "transfer";
   } => ({
     ...validateNewTransactionSearch(search),

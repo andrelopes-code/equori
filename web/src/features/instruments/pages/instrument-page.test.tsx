@@ -935,3 +935,46 @@ async function topDialog() {
 
   return top;
 }
+
+describe("Instrument page: add money", () => {
+  const contract = {
+    code: "RF.280302.CS3YS",
+    type: "fixed_income",
+    scale: 2,
+    name: "CDB Banco Inter",
+    quote_currency: "BRL",
+    subtype: "cdb",
+  };
+
+  it("links the owned contract to the application form", async () => {
+    const fetch = api({
+      "GET /api/v1/instruments/RF.280302.CS3YS": () =>
+        json(200, { ...contract, owned: true }),
+      "GET /api/v1/instruments/RF.280302.CS3YS/terms": () => json(200, null),
+    });
+    await renderApp("/instruments/RF.280302.CS3YS", { fetch });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["fixedIncome.addMoney"],
+    });
+
+    expect(link).toHaveAttribute(
+      "href",
+      "/transactions/new?kind=fixed_income&instrument=RF.280302.CS3YS",
+    );
+  });
+
+  it("draws no action for a contract the book does not own", async () => {
+    const fetch = api({
+      "GET /api/v1/instruments/RF.280302.CS3YS": () =>
+        json(200, { ...contract, owned: false }),
+      "GET /api/v1/instruments/RF.280302.CS3YS/terms": () => json(200, null),
+    });
+    await renderApp("/instruments/RF.280302.CS3YS", { fetch });
+    await screen.findByText("CDB Banco Inter");
+
+    expect(
+      screen.queryByRole("link", { name: catalogEn["fixedIncome.addMoney"] }),
+    ).not.toBeInTheDocument();
+  });
+});

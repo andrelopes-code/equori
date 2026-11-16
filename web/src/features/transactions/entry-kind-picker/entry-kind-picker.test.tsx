@@ -73,6 +73,28 @@ describe("EntryKindPicker", () => {
     ).toBeInTheDocument();
   });
 
+  it("lists the fixed income application with its hint", async () => {
+    renderWithProviders(
+      <EntryKindPicker
+        value="expense"
+        investments
+        onChange={() => undefined}
+      />,
+      { fetch: fakeApi({}) },
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.otherKinds"] }),
+    );
+    const item = await screen.findByRole("menuitemradio", {
+      name: catalogEn["entry.kind.fixed_income"],
+    });
+
+    expect(item).toHaveAccessibleDescription(
+      catalogEn["entry.kindHint.fixed_income"],
+    );
+  });
+
   it("offers the advanced kind as a fourth segment when no investment kind is shown", async () => {
     const chosen: EntryKind[] = [];
     renderWithProviders(

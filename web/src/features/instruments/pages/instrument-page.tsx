@@ -1,3 +1,4 @@
+import { ButtonLink } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
 import {
   PageHeader,
@@ -114,6 +115,20 @@ export function InstrumentPage() {
                     setEditingTerms(true);
                   }}
                 />
+              )}
+              {fixedIncome && i.owned && (
+                <ButtonLink
+                  variant="ghost"
+                  render={(props) => (
+                    <Link
+                      {...props}
+                      to="/transactions/new"
+                      search={{ kind: "fixed_income", instrument: i.code }}
+                    />
+                  )}
+                >
+                  {t("fixedIncome.addMoney")}
+                </ButtonLink>
               )}
               {quote !== null && (
                 <HeaderAction

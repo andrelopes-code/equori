@@ -2,6 +2,7 @@ import type { BuiltKind } from "@/features/transactions/entry-model/entry-kind";
 import { useActionEntry } from "@/features/transactions/action-entry/use-action-entry";
 import { useCustodyEntry } from "@/features/transactions/custody-entry/use-custody-entry";
 import { useExchangeEntry } from "@/features/transactions/exchange-entry/use-exchange-entry";
+import { useFixedIncomeEntry } from "@/features/transactions/fixed-income-entry/use-fixed-income-entry";
 import { useForeignEntry } from "@/features/transactions/foreign-entry/use-foreign-entry";
 import { useIncomeEntry } from "@/features/transactions/income-entry/use-income-entry";
 import { useNoteEntry } from "@/features/transactions/note-entry/use-note-entry";
@@ -10,6 +11,7 @@ import type { MessageKey } from "@/i18n/catalog.en";
 
 const createdKeys: Record<BuiltKind, MessageKey> = {
   trade: "trade.created",
+  fixed_income: "fixedIncome.created",
   investment_income: "income.created",
   brokerage_note: "note.created",
   foreign_purchase: "foreignPurchase.created",
@@ -23,8 +25,10 @@ export function useBuiltEntries(
   investment: BuiltKind | null,
   accountId: string | null,
   brokerageId: string | null,
+  contract: string | null = null,
 ) {
   const trade = useTradeEntry(accountId, brokerageId);
+  const fixedIncome = useFixedIncomeEntry(brokerageId, contract);
   const income = useIncomeEntry(accountId);
   const note = useNoteEntry(brokerageId);
   const foreign = useForeignEntry(accountId);
@@ -34,6 +38,7 @@ export function useBuiltEntries(
 
   const byKind = {
     trade,
+    fixed_income: fixedIncome,
     investment_income: income,
     brokerage_note: note,
     foreign_purchase: foreign,
@@ -46,6 +51,7 @@ export function useBuiltEntries(
 
   const discardAll = () => {
     trade.discard();
+    fixedIncome.discard();
     income.discard();
     note.discard();
     foreign.discard();
@@ -56,6 +62,7 @@ export function useBuiltEntries(
 
   return {
     trade,
+    fixedIncome,
     income,
     note,
     foreign,
