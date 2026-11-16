@@ -19,6 +19,9 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "cdb", "", "fixed_income"},
 		{"fixed_income", "cri", "", "fixed_income_exempt"},
 		{"fixed_income", "lca", "", "fixed_income_exempt"},
+		{"fixed_income", "lc", "", "fixed_income"},
+		{"fixed_income", "lf", "", "fixed_income"},
+		{"fixed_income", "debenture", "", "fixed_income"},
 		{"fixed_income", "xyz_bond", "", "fixed_income"},
 		{"fund", "equity_fund", "", "fund_equity"},
 		{"fund", "multimarket", "", "fund"},
@@ -50,6 +53,9 @@ func TestBR(t *testing.T) {
 		{"coupon", "fixed_income_exempt", "exempt"},
 		{"interest", "fixed_income_exempt", "exempt"},
 		{"jcp", "fixed_income_exempt", "exclusive"},
+		{"distribution", "fii", "exempt"},
+		{"distribution", "fund", "exclusive"},
+		{"distribution", "", "exclusive"},
 		{"coupon", "fixed_income", "exclusive"},
 	} {
 		if got := j.Treatment(c.incomeType, c.taxClass); got != c.want {

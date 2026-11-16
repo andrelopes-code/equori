@@ -23,10 +23,12 @@ func (Jurisdiction) IncomeTypes() []string { return []string{"jcp"} }
 
 // subtypeClass maps the subtypes of an instrument type to the tax class they have for an
 // individual: the interest of the incentivized fixed income securities is exempt (Lei 11.033/2004
-// art. 3 and Lei 12.431/2011 art. 1).
+// art. 3 and Lei 12.431/2011 art. 1). A letter of exchange, a financial letter and a common
+// debenture are taxed like a CDB (Lei 11.033/2004 art. 1).
 var subtypeClass = map[string]map[string]string{
 	"fixed_income": {
 		"cdb": "fixed_income", "rdb": "fixed_income", "tesouro": "fixed_income",
+		"lc": "fixed_income", "lf": "fixed_income", "debenture": "fixed_income",
 		"lci": "fixed_income_exempt", "lca": "fixed_income_exempt", "cri": "fixed_income_exempt",
 		"cra": "fixed_income_exempt", "debenture_incentivada": "fixed_income_exempt",
 	},
@@ -62,7 +64,14 @@ func (Jurisdiction) Treatment(incomeType, taxClass string) string {
 		}
 
 		return "exclusive"
-	case "jcp", "distribution":
+	case "distribution":
+		// A distribution of a listed FII is exempt for an individual (Lei 11.033/2004 art. 3).
+		if taxClass == "fii" {
+			return "exempt"
+		}
+
+		return "exclusive"
+	case "jcp":
 		return "exclusive"
 	}
 

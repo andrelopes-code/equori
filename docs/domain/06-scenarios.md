@@ -1098,4 +1098,4 @@ The scenarios of `docs/specs/2026-11-14-investment-operations-design.md`, sectio
 
 ### S456–S464 Brazilian fixed income and income support (A235)
 
-The scenarios of `docs/specs/2026-11-16-brazilian-fixed-income-support-design.md`, section 5. A JCP recorded without `withheld` takes 15% when paid up to 2025-12-31 and 17.5% from 2026-01-01 (S456, S457; S22 and S65 read 7.88 for the JCP of 45.00 dated 2026). Tests in `internal/ledger/income_test.go`.
+The scenarios of `docs/specs/2026-11-16-brazilian-fixed-income-support-design.md`, section 5. A JCP recorded without `withheld` takes 15% when paid up to 2025-12-31 and 17.5% from 2026-01-01 (S456, S457; S22 and S65 read 7.88 for the JCP of 45.00 dated 2026). The distribution of a listed FII reads `exempt` in the income events; the distribution of another class stays `exclusive` (S458). The fixed income subtypes add `debenture`, `lc` and `lf`, each taxed at source (S459). Tests in `internal/ledger/income_test.go`, `internal/portfolio/subtype_test.go` and `internal/portfolio/jurisdiction/br/br_test.go`.

@@ -4,7 +4,7 @@ dividend. A company dividend. In a Brazilian book, dividends of profits approved
 
 jcp. Interest on equity. It is taxed at source on the gross amount: 15% up to 2025 and 17.5% from 2026 (Lei Complementar 224/2025). equori fills 15% when withheld is absent, so the assistant always passes withheld from the broker notice.
 
-distribution. A distribution of a real estate fund (FII), a Fiagro or another fund. In listed FII and Fiagro the distribution is exempt for an individual who holds less than 10% of the units, under the conditions of Lei 11.033/2004 (a fund traded on an exchange); the informe of the fund states them. withheld is 0 unless the notice shows a withholding. equori labels a distribution exclusive (taxed at source): the label does not change the amount recorded.
+distribution. A distribution of a real estate fund (FII), a Fiagro or another fund. In listed FII and Fiagro the distribution is exempt for an individual who holds less than 10% of the units, under the conditions of Lei 11.033/2004 (a fund traded on an exchange); the informe of the fund states them. withheld is 0 unless the notice shows a withholding. equori labels the distribution of a listed FII exempt and any other distribution exclusive (taxed at source); the label does not change the amount recorded.
 
 coupon and interest. Fixed income payments, as in fixed_income_payments.
 

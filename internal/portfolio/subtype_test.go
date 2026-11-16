@@ -80,6 +80,7 @@ func TestS122SubtypeTaxClass(t *testing.T) {
 	}
 }
 
+// S459 (FS-S4): the fixed income subtypes of a Brazilian book include lc, lf and debenture.
 func TestInstrumentSubtypesList(t *testing.T) {
 	t.Parallel()
 
@@ -91,9 +92,12 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"cdb",
 		"cra",
 		"cri",
+		"debenture",
 		"debenture_incentivada",
+		"lc",
 		"lca",
 		"lci",
+		"lf",
 		"rdb",
 		"tesouro",
 	}; !slices.Equal(
@@ -132,5 +136,27 @@ func TestInstrumentSubtypesList(t *testing.T) {
 
 	if got := f.subtypes(t, "fixed_income"); len(got) != 0 {
 		t.Errorf("fixed_income without a jurisdiction = %v, want none", got)
+	}
+}
+
+// S458 (FS-S3): the distribution of a listed FII is exempt; the distribution of another class is
+// taxed at source (A235 FS2).
+func TestS458FIIDistributionIsExempt(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t)
+	f.income(t, f.mxrf11, "distribution", 1000, f.dividends)
+	f.h.Dispatch()
+
+	var out struct {
+		Items []struct {
+			Instrument   string  `json:"instrument"`
+			TaxTreatment *string `json:"tax_treatment"`
+		} `json:"items"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/income-events?year=2026", nil, http.StatusOK, &out)
+
+	if len(out.Items) != 1 || out.Items[0].TaxTreatment == nil ||
+		*out.Items[0].TaxTreatment != "exempt" {
+		t.Fatalf("income events = %+v, want one exempt distribution", out.Items)
 	}
 }
