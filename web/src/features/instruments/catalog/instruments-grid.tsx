@@ -2,6 +2,8 @@ import type { GridQuery } from "@slotted/core/grid";
 import { emptyQuery, withFilter, withSearch } from "@slotted/core/grid";
 import { DataGrid } from "@slotted/react/data-grid";
 import { FilterBar } from "@slotted/react/filter-bar";
+import { Inline } from "@slotted/react/inline";
+import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
@@ -44,13 +46,20 @@ export function InstrumentsGrid({
   const cellRenderers = useMemo(
     () => ({
       code: ({ row }: { row: CatalogRow }) => (
-        <AppLink
-          variant="neutral"
-          underline="hover"
-          to={{ to: "/instruments/$code", params: { code: row.code } }}
-        >
-          {row.code}
-        </AppLink>
+        <Inline align="center" wrap="wrap" gap={4}>
+          <AppLink
+            variant="neutral"
+            underline="hover"
+            to={{ to: "/instruments/$code", params: { code: row.code } }}
+          >
+            {row.code}
+          </AppLink>
+          {row.hidden && (
+            <Tag size="sm" tone="secondary">
+              {t("instrument.hidden")}
+            </Tag>
+          )}
+        </Inline>
       ),
       price: ({ row }: { row: CatalogRow }) => (
         <PriceCell row={row} failed={quotesFailed} />
@@ -67,7 +76,7 @@ export function InstrumentsGrid({
         <ChangeCell bp={row.yearToDate} />
       ),
     }),
-    [quotesFailed],
+    [quotesFailed, t],
   );
   // PC20: every group opens except the currencies, which only a reader who wants them opens.
   const expandedGroups = useMemo(

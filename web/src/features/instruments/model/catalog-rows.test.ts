@@ -96,4 +96,20 @@ describe("catalogRows", () => {
       });
     }
   });
+
+  it("A238 HD9: carries the hidden state of each instrument", () => {
+    const rows = catalogRows(
+      [
+        { ...item("VALE3", "stock"), hidden: true },
+        { ...item("ITUB4", "stock"), hidden: false },
+      ],
+      "BRL",
+      [],
+    );
+
+    expect(rows.map((r) => [r.code, r.hidden])).toEqual([
+      ["ITUB4", false],
+      ["VALE3", true],
+    ]);
+  });
 });

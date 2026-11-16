@@ -35,7 +35,13 @@ export function settingsQuery(api: Client<paths>) {
 export function instrumentsQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: setupKeys.instruments,
-    queryFn: async () => unwrap(await api.GET("/instruments")),
+    // A238 HD5: labels and pickers read every instrument; the list screen filters on `hidden`.
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/instruments", {
+          params: { query: { include_hidden: true } },
+        }),
+      ),
     staleTime: Infinity,
   });
 }

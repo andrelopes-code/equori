@@ -41,6 +41,7 @@ const yahoo = "https://finance.yahoo.com/quote";
 function stock(code: string, exchange: string): Instrument {
   return {
     owned: false,
+    hidden: false,
     code,
     type: "stock",
     scale: 0,
@@ -130,6 +131,7 @@ const cases: {
     name: "a crypto pairs its code with its quote currency",
     instrument: {
       owned: false,
+      hidden: false,
       code: "BTC",
       type: "crypto",
       scale: 8,
@@ -147,6 +149,7 @@ const cases: {
     name: "a crypto whose code ends with its quote currency has no link",
     instrument: {
       owned: false,
+      hidden: false,
       code: "BTCBRL",
       type: "crypto",
       scale: 8,
@@ -161,6 +164,7 @@ const cases: {
     name: "a currency pairs its code with the base currency",
     instrument: {
       owned: false,
+      hidden: false,
       code: "USD",
       type: "currency",
       scale: 2,
@@ -181,6 +185,7 @@ const cases: {
     name: "a currency of a book with another base has no Brazilian rate",
     instrument: {
       owned: false,
+      hidden: false,
       code: "USD",
       type: "currency",
       scale: 2,
@@ -197,6 +202,7 @@ const cases: {
     name: "the base currency has no link",
     instrument: {
       owned: false,
+      hidden: false,
       code: "BRL",
       type: "currency",
       scale: 2,
@@ -210,6 +216,7 @@ const cases: {
     name: "a Treasury bond holds the two official sources",
     instrument: {
       owned: false,
+      hidden: false,
       code: "TSELIC29",
       type: "fixed_income",
       subtype: "tesouro",
@@ -234,6 +241,7 @@ const cases: {
     name: "a bank certificate has no link",
     instrument: {
       owned: false,
+      hidden: false,
       code: "CDBXP27",
       type: "fixed_income",
       subtype: "cdb",
@@ -249,6 +257,7 @@ const cases: {
     name: "an investment fund holds the regulator register",
     instrument: {
       owned: false,
+      hidden: false,
       code: "FUNDO1",
       type: "fund",
       scale: 2,

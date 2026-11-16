@@ -895,6 +895,76 @@ describe("Remove instrument", () => {
   });
 });
 
+// A238 HD7
+describe("Hide instrument", () => {
+  const petr4 = {
+    code: "PETR4",
+    type: "stock",
+    scale: 0,
+    name: "Petrobras PN",
+    quote_currency: "BRL",
+    exchange: "B3SA",
+  };
+
+  it("hides the security with no confirmation", async () => {
+    const sent: string[] = [];
+    const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        json(200, { ...petr4, hidden: false }),
+      "PUT /api/v1/instruments/PETR4/hidden": () => {
+        sent.push("PUT");
+        return new Response(null, { status: 204 });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["instrument.hide"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual(["PUT"]);
+    });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("shows a hidden security again", async () => {
+    const sent: string[] = [];
+    const fetch = api({
+      "GET /api/v1/instruments/PETR4": () =>
+        json(200, { ...petr4, hidden: true }),
+      "DELETE /api/v1/instruments/PETR4/hidden": () => {
+        sent.push("DELETE");
+        return new Response(null, { status: 204 });
+      },
+    });
+    await renderApp("/instruments/PETR4", { fetch });
+    const user = userEvent.setup();
+
+    await user.click(
+      await screen.findByRole("button", { name: catalogEn["instrument.show"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual(["DELETE"]);
+    });
+    expect(fetch.calls).not.toContain("DELETE /api/v1/instruments/PETR4");
+  });
+
+  it("offers neither action for a currency", async () => {
+    await renderApp("/instruments/USD", { fetch: api() });
+    await screen.findByRole("heading", { name: "Dollar" });
+
+    expect(
+      screen.queryByRole("button", { name: catalogEn["instrument.hide"] }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: catalogEn["instrument.show"] }),
+    ).toBeNull();
+  });
+});
+
 async function openData() {
   await userEvent.setup().click(
     await screen.findByRole("button", {

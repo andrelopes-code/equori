@@ -226,7 +226,7 @@ export const catalogPtBR: Catalog = {
     "O servidor não tem EQUORI_SECRET_KEY e não consegue guardar credenciais.",
   "problem.integration_in_use": "Ainda há conexões que usam esta integração.",
   "problem.instrument_in_use":
-    "Uma posição, conta ou transação ainda usa este ativo. Remova esses registros primeiro.",
+    "Uma posição, conta ou transação ainda usa este ativo. Remova esses registros primeiro ou oculte o ativo para tirá-lo das listas.",
   "settings.assistant.title": "Assistente",
   "settings.assistant.description":
     "Provedores de modelos de linguagem e os modelos que cada função usa.",

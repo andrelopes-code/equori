@@ -13,6 +13,8 @@ export interface CatalogRow {
   subtype: string;
   quoteCurrency: string;
   exchange: string;
+  // The book hides the instrument from its lists (A238 HD9).
+  hidden: boolean;
   // The instrument the latest price is quoted in; "" for the base currency, which has none.
   priceQuote: string;
   // The last price and its date; "" when the instrument has none or the quotes did not load.
@@ -51,6 +53,7 @@ export function catalogRows(
         subtype: i.subtype ?? "",
         quoteCurrency: i.quote_currency ?? "",
         exchange: i.exchange ?? "",
+        hidden: i.hidden,
         priceQuote: quoteOf(i, base) ?? "",
         lastValue: last?.value ?? "",
         lastDate: last?.date ?? "",

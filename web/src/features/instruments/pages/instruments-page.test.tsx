@@ -676,3 +676,72 @@ async function openProbeForm() {
   );
   return dialog;
 }
+
+// A238 HD9
+describe("Hidden instruments", () => {
+  const withHiddenVale = () =>
+    api({
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: [
+            { code: "BRL", type: "currency", scale: 2, name: "Real" },
+            {
+              code: "PETR4",
+              type: "stock",
+              scale: 0,
+              name: "Petrobras PN",
+              quote_currency: "BRL",
+              exchange: "B3SA",
+            },
+            {
+              code: "VALE3",
+              type: "stock",
+              scale: 0,
+              name: "Vale ON",
+              quote_currency: "BRL",
+              exchange: "B3SA",
+              hidden: true,
+            },
+          ],
+        }),
+    });
+
+  it("leaves a hidden instrument out until the toggle shows it, labelled", async () => {
+    await renderApp("/instruments", { fetch: withHiddenVale() });
+    const grid = await screen.findByRole("grid", {
+      name: catalogEn["instruments.caption"],
+    });
+    await within(grid).findByText("PETR4");
+
+    expect(within(grid).queryByText("VALE3")).toBeNull();
+
+    const user = userEvent.setup();
+    await user.click(
+      screen.getByRole("button", {
+        name: catalogEn["instruments.hidden.show"].replace("{count}", "1"),
+      }),
+    );
+
+    expect(await within(grid).findByText("VALE3")).toBeVisible();
+    expect(
+      within(grid).getByText(catalogEn["instrument.hidden"]),
+    ).toBeVisible();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: catalogEn["instruments.hidden.hide"],
+      }),
+    );
+
+    await waitFor(() => {
+      expect(within(grid).queryByText("VALE3")).toBeNull();
+    });
+  });
+
+  it("draws no toggle when nothing is hidden", async () => {
+    await renderApp("/instruments", { fetch: api() });
+    await screen.findByRole("grid", { name: catalogEn["instruments.caption"] });
+
+    expect(screen.queryByRole("button", { name: /Show hidden/ })).toBeNull();
+  });
+});

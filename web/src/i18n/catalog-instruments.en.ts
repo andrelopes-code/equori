@@ -84,6 +84,11 @@ export const instrumentsEn = {
   "instrument.remove.body":
     "The instrument, its prices and its history of quotes are deleted. This cannot be undone.",
   "instrument.remove.confirm": "Remove instrument",
+  "instrument.hide": "Hide",
+  "instrument.show": "Show",
+  "instrument.hidden": "Hidden",
+  "instruments.hidden.show": "Show hidden ({count})",
+  "instruments.hidden.hide": "Leave hidden out",
   "instrument.edit.description":
     "Code, type, decimal places and quote currency stay as defined. The change applies to every user of this installation.",
   "instrument.edit.save": "Save",

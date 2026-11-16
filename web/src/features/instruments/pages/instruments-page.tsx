@@ -36,9 +36,12 @@ export function InstrumentsPage() {
   const api = useApi();
   const instruments = useQuery(instrumentsQuery(api));
   const base = useQuery(settingsQuery(api)).data?.base_currency;
+  const [showHidden, setShowHidden] = useState(false);
+  const all = useMemo(() => instruments.data?.items ?? [], [instruments.data]);
+  const hiddenCount = all.filter((i) => i.hidden).length;
   const items = useMemo(
-    () => instruments.data?.items ?? [],
-    [instruments.data],
+    () => (showHidden ? all : all.filter((i) => !i.hidden)),
+    [all, showHidden],
   );
   const quotes = useQuery({
     ...instrumentQuotesQuery(api, base ?? ""),
@@ -54,6 +57,9 @@ export function InstrumentsPage() {
   const define = () => {
     setDefining(true);
   };
+  const toggleHidden = () => {
+    setShowHidden((shown) => !shown);
+  };
   return (
     <Page width="full" fill>
       <PageHeader size="lg">
@@ -66,6 +72,19 @@ export function InstrumentsPage() {
               </PageHeaderSubheading>
             </PageHeaderTitle>
             <PageHeaderActions>
+              {hiddenCount > 0 && (
+                <HeaderAction
+                  label={t(
+                    showHidden
+                      ? "instruments.hidden.hide"
+                      : "instruments.hidden.show",
+                    { count: hiddenCount },
+                  )}
+                  glyph={showHidden ? "eye-off" : "eye"}
+                  wordsOnly
+                  onClick={toggleHidden}
+                />
+              )}
               <HeaderAction
                 label={t("prices.import")}
                 glyph="upload"

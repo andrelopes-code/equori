@@ -25,7 +25,7 @@
 | HD6 | Removing a hidden instrument that nothing references works as in A223 RM1. The cascade of HD1 deletes its rows of `marketdata_instrument_hidden`. |
 | HD7 | The instrument page shows the header action "Hide instrument" when `hidden` is false and "Show instrument" when it is true. Neither asks for confirmation; both are reversible. A currency has neither action. |
 | HD8 | The text of `problem.instrument_in_use` names the way out: a record references the instrument and the instrument can be hidden. The removal dialog shows it unchanged. |
-| HD9 | The instrument list shows a toggle "Hidden (n)" after the groups when n is above zero. On, the list requests `include_hidden=true` and draws hidden rows with the state label "Hidden". Off, they do not appear. |
+| HD9 | The web client reads `GET /instruments` with `include_hidden=true` (`instrumentsQuery`), so labels and pickers keep every instrument. The instrument list filters on `hidden`: a header action "Show hidden (n)" appears when n is above zero, and on it the list draws hidden rows with the tag "Hidden". |
 | HD10 | The tool `manage_instrument` gains the actions `hide` and `show`, with the errors of HD2. |
 | HD11 | The export carries `marketdata_instrument_hidden` as a fact table (it holds `books_id`). `ArchiveVersion` becomes 22 with the step `addInstrumentHidden`, which adds the empty table to an older archive. |
 

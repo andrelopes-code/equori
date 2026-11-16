@@ -21,6 +21,7 @@ const account = (id: string, change: Partial<Account> = {}): Account => ({
 
 const instrument = (code: string, type: Instrument["type"]): Instrument => ({
   owned: false,
+  hidden: false,
   code,
   type,
   scale: 2,

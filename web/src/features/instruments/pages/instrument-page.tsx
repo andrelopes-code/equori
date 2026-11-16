@@ -26,6 +26,7 @@ import { InstrumentData } from "@/features/instruments/data/instrument-data";
 import { InstrumentPrices } from "@/features/instruments/quote/instrument-prices";
 import { InstrumentSources } from "@/features/instruments/sources/instrument-sources";
 import { EditInstrumentDialog } from "@/features/instruments/edit-instrument/edit-instrument-dialog";
+import { HideInstrumentAction } from "@/features/instruments/hide-instrument/hide-instrument-action";
 import { RemoveInstrumentAction } from "@/features/instruments/remove-instrument/remove-instrument-action";
 import { RecordPriceDialog } from "@/features/instruments/record-price/record-price-dialog";
 import { TermsDialog } from "@/features/instruments/terms/terms-dialog";
@@ -105,6 +106,7 @@ export function InstrumentPage() {
                   }}
                 />
               )}
+              <HideInstrumentAction instrument={i} />
               <RemoveInstrumentAction instrument={i} />
               {fixedIncome && quote !== null && terms.data !== undefined && (
                 <HeaderAction

@@ -169,6 +169,22 @@ export function useDeleteInstrument() {
   });
 }
 
+export function useSetInstrumentHidden() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async ({ code, hidden }: { code: string; hidden: boolean }) =>
+      unwrap(
+        hidden
+          ? await api.PUT("/instruments/{code}/hidden", {
+              params: { path: { code } },
+            })
+          : await api.DELETE("/instruments/{code}/hidden", {
+              params: { path: { code } },
+            }),
+      ),
+  });
+}
+
 export function useEditInstrument() {
   const api = useApi();
   return useMutation({

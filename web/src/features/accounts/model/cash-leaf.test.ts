@@ -7,8 +7,22 @@ type Account = components["schemas"]["Account"];
 type Instrument = components["schemas"]["Instrument"];
 
 const instruments: Instrument[] = [
-  { owned: false, code: "BRL", type: "currency", scale: 2, name: "Real" },
-  { owned: false, code: "AUVP11", type: "fund", scale: 0, name: "AUVP" },
+  {
+    owned: false,
+    hidden: false,
+    code: "BRL",
+    type: "currency",
+    scale: 2,
+    name: "Real",
+  },
+  {
+    owned: false,
+    hidden: false,
+    code: "AUVP11",
+    type: "fund",
+    scale: 0,
+    name: "AUVP",
+  },
 ];
 
 function account(over: Partial<Account>): Account {
