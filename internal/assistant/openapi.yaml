@@ -740,6 +740,28 @@ schemas:
             field: {type: string, pattern: "^[a-z_]{2,40}$"}
             before: {$ref: "#/components/schemas/AssistantValue"}
             after: {$ref: "#/components/schemas/AssistantValue"}
+      items:
+        type: array
+        items: {$ref: "#/components/schemas/AssistantPreviewItem"}
+      recurrence: {$ref: "#/components/schemas/AssistantRecurrence"}
+  AssistantPreviewItem:
+    type: object
+    additionalProperties: false
+    required: [description]
+    properties:
+      description: {type: string}
+      date: {type: string, format: date}
+      amount: {$ref: "#/components/schemas/AssistantValue"}
+      account: {type: string}
+      category: {type: string}
+  AssistantRecurrence:
+    type: object
+    additionalProperties: false
+    required: [frequency, interval]
+    properties:
+      frequency: {type: string, pattern: "^[a-z_]{2,40}$"}
+      interval: {type: integer, minimum: 1}
+      day: {type: integer, minimum: 1, maximum: 31}
   AssistantValue:
     type: object
     additionalProperties: false

@@ -193,8 +193,19 @@ type AssistantPreview struct {
 		Before *AssistantValue `json:"before,omitempty"`
 		Field  string          `json:"field"`
 	} `json:"changes"`
-	Destructive *bool   `json:"destructive,omitempty"`
-	Target      *string `json:"target,omitempty"`
+	Destructive *bool                   `json:"destructive,omitempty"`
+	Items       *[]AssistantPreviewItem `json:"items,omitempty"`
+	Recurrence  *AssistantRecurrence    `json:"recurrence,omitempty"`
+	Target      *string                 `json:"target,omitempty"`
+}
+
+// AssistantPreviewItem defines model for AssistantPreviewItem.
+type AssistantPreviewItem struct {
+	Account     *string             `json:"account,omitempty"`
+	Amount      *AssistantValue     `json:"amount,omitempty"`
+	Category    *string             `json:"category,omitempty"`
+	Date        *openapi_types.Date `json:"date,omitempty"`
+	Description string              `json:"description"`
 }
 
 // AssistantProposal defines model for AssistantProposal.
@@ -217,6 +228,13 @@ type AssistantProposal struct {
 
 // AssistantProposalStatus defines model for AssistantProposal.Status.
 type AssistantProposalStatus string
+
+// AssistantRecurrence defines model for AssistantRecurrence.
+type AssistantRecurrence struct {
+	Day       *int   `json:"day,omitempty"`
+	Frequency string `json:"frequency"`
+	Interval  int    `json:"interval"`
+}
 
 // AssistantTurnInput defines model for AssistantTurnInput.
 type AssistantTurnInput struct {

@@ -4459,6 +4459,21 @@ export interface components {
                 before?: components["schemas"]["AssistantValue"];
                 after?: components["schemas"]["AssistantValue"];
             }[];
+            items?: components["schemas"]["AssistantPreviewItem"][];
+            recurrence?: components["schemas"]["AssistantRecurrence"];
+        };
+        AssistantPreviewItem: {
+            description: string;
+            /** Format: date */
+            date?: string;
+            amount?: components["schemas"]["AssistantValue"];
+            account?: string;
+            category?: string;
+        };
+        AssistantRecurrence: {
+            frequency: string;
+            interval: number;
+            day?: number;
         };
         AssistantValue: {
             text?: string;

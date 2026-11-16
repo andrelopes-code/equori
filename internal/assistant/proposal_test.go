@@ -54,11 +54,19 @@ func (f *noteFake) group() tool.Group {
 	return tool.Group{Tools: []tool.Tool{tool.NewWrite(
 		tool.Spec{Name: "note_for_test", Description: "Notes a text.", Effect: tool.Write},
 		func(_ context.Context, _ int64, in noteIn) (tool.Preview, error) {
-			return tool.Preview{
+			p := tool.Preview{
 				Action:  "note_for_test",
 				Changes: []tool.Change{{Field: "description", After: tool.TextValue(in.Text)}},
 				Basis:   f.basis.Load().(string),
-			}, nil
+			}
+			if in.Text == "with_records" {
+				p.Items = []tool.Item{
+					{Description: "Lunch", Date: "2026-11-15", Account: "Checking"},
+				}
+				p.Recurrence = &tool.Recurrence{Frequency: "monthly", Interval: 1, Day: 15}
+			}
+
+			return p, nil
 		},
 		func(_ context.Context, _ int64, _ noteIn) (noteOut, error) {
 			if f.fail.Load() {
@@ -259,6 +267,43 @@ func TestConfirmStale(t *testing.T) {
 
 	if n := e.note.count.Load(); n != 0 {
 		t.Fatalf("handler ran %d times", n)
+	}
+}
+
+func TestProposalPreviewCarriesItemsAndRecurrence(t *testing.T) {
+	t.Parallel()
+	e := newProposalEnv(t)
+	id := e.propose(t, e.h.OwnerID(), "with_records")
+	r := e.post(id, "reject")
+
+	if r.Status != http.StatusOK {
+		t.Fatalf("reject = %d: %s", r.Status, r.Body)
+	}
+
+	var p struct {
+		Preview struct {
+			Items []struct {
+				Description string `json:"description"`
+				Date        string `json:"date"`
+				Account     string `json:"account"`
+			} `json:"items"`
+			Recurrence struct {
+				Frequency string `json:"frequency"`
+				Interval  int    `json:"interval"`
+				Day       int    `json:"day"`
+			} `json:"recurrence"`
+		} `json:"preview"`
+	}
+	r.Decode(t, &p)
+
+	if len(p.Preview.Items) != 1 || p.Preview.Items[0].Description != "Lunch" ||
+		p.Preview.Items[0].Date != "2026-11-15" || p.Preview.Items[0].Account != "Checking" {
+		t.Errorf("items = %+v", p.Preview.Items)
+	}
+
+	if p.Preview.Recurrence.Frequency != "monthly" || p.Preview.Recurrence.Interval != 1 ||
+		p.Preview.Recurrence.Day != 15 {
+		t.Errorf("recurrence = %+v", p.Preview.Recurrence)
 	}
 }
 
