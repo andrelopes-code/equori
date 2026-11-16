@@ -113,7 +113,7 @@ Anti-goals:
 
 | ID | Decision |
 |---|---|
-| FC25 | The corporate action (A228) gains kind `unit_tax`: a holding of type `fund` loses `quantity` units on `date`; `amount` (tax paid) is posted to the taxes category against nothing in cash: the units leave at the value `amount`, the holding's cost basis stays, no realized result is recorded. A later sale before it is 409 `later_sale_exists`, as other actions. |
+| FC25 | The corporate action (A228) gains kind `unit_tax`: a holding of type `fund` loses `quantity` units on `date`; `amount` (tax paid) is posted to the taxes category against nothing in cash: the units leave at the value `amount`, the holding's cost basis stays, no realized result is recorded. A later sale before it is 409 `later_sale_exists`, as other actions. Amendment of 2026-11-18 (owner): the units leave at the value `amount` against an asset of the book that holds the income tax paid in advance (`prepaid_tax`), not against the taxes category, so the transaction balances and the holding's cost basis stays; the withholding estimate of a later redemption of the fund deducts the credit of its account. |
 | FC26 | The jurisdiction gains `UnitTaxDates(year int) []time.Time`: `br` returns the last business day (`br_banking`) of May and of November for the fund subtypes `fixed_income_fund` and `multimarket`; FC17 lists them as `unit_tax`. A region without a case lists none. |
 
 ### 5.6 Aggregator investments (ingestion)
