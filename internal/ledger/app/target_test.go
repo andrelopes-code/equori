@@ -336,8 +336,17 @@ func newTargetFixture(t *testing.T, pool *pgxpool.Pool, withCash bool) targetFix
 
 	ins := quotes{holdingCode: "BRL", usdQuoted: "USD"}
 	f := targetFixture{
-		pool:    pool,
-		svc:     app.NewService(postgres.NewRepository(pool, ins), nil, nil, ins, nil, nil, nil),
+		pool: pool,
+		svc: app.NewService(
+			postgres.NewRepository(pool, ins),
+			nil,
+			nil,
+			ins,
+			nil,
+			nil,
+			nil,
+			nil,
+		),
 		booksID: booksID,
 	}
 	f.brokerage = f.createAccount(t, domain.Account{Name: "XP", Instrument: "BRL"})

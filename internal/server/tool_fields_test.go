@@ -122,6 +122,10 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"createFixedIncomeApplication": {
+		"application_id",
+		"contract",
+	}, // application_id is generated; the contract fields are flat tool inputs
 	"addBudgetAmount": {
 		"effective_from",
 	}, // read as month

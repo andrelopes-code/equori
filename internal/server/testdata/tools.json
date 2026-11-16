@@ -7766,6 +7766,135 @@
     }
   },
   {
+    "name": "record_fixed_income",
+    "description": "Proposes a fixed income application: a new contract of a private issuer (CDB, LCI, LCA, debenture and others) bought with cash of a brokerage, or more money into a contract the book holds. Use it when the user states an application with its issuer, amount, date, maturity and rate. Do not use it for a public security with a ticker: record_investment does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "brokerage_id": {
+          "type": "string",
+          "description": "Brokerage that holds the contract, from list_accounts"
+        },
+        "cash_account_id": {
+          "type": "string",
+          "description": "Cash of the Brokerage or an open account of its institution; the single candidate when absent"
+        },
+        "applied_on": {
+          "type": "string",
+          "description": "date of the application",
+          "format": "date"
+        },
+        "amount": {
+          "type": "string",
+          "description": "decimal amount applied, in the currency of the Brokerage"
+        },
+        "fees": {
+          "type": "string",
+          "description": "positive fees charged"
+        },
+        "description": {
+          "type": "string",
+          "description": "description of the transaction"
+        },
+        "instrument": {
+          "type": "string",
+          "description": "code of a contract the book holds, to put more money into it; instead of the contract fields"
+        },
+        "subtype": {
+          "type": "string",
+          "description": "new contract: kind, such as cdb, lci, lca or debenture"
+        },
+        "issuer": {
+          "type": "string",
+          "description": "new contract: name of the issuer"
+        },
+        "issuer_scheme": {
+          "type": "string",
+          "description": "new contract: scheme of the issuer identifier, such as br_cnpj"
+        },
+        "issuer_id": {
+          "type": "string",
+          "description": "new contract: identifier of the issuer under the scheme"
+        },
+        "name": {
+          "type": "string",
+          "description": "new contract: name; SUBTYPE issuer maturity when empty"
+        },
+        "issued_on": {
+          "type": "string",
+          "description": "new contract: issue date; the application date when empty",
+          "format": "date"
+        },
+        "matures_on": {
+          "type": "string",
+          "description": "new contract: maturity date",
+          "format": "date"
+        },
+        "index_id": {
+          "type": "string",
+          "description": "new contract: index, such as cdi or ipca; empty for a pre-fixed rate"
+        },
+        "percent_of_index": {
+          "type": "string",
+          "description": "new contract: percent of the index as text with at most 2 decimals, such as 110; 100 when empty"
+        },
+        "spread": {
+          "type": "string",
+          "description": "new contract: spread over the index, or the pre-fixed rate without index, as percent text with at most 2 decimals, such as 6.5"
+        },
+        "day_count": {
+          "type": "string",
+          "description": "new contract: bus252 or act365; derived from the index and the region when empty"
+        },
+        "calendar_id": {
+          "type": "string",
+          "description": "new contract: business day calendar of bus252; the region calendar when empty"
+        },
+        "daily_liquidity": {
+          "type": "boolean",
+          "description": "new contract: true when it can be redeemed any day"
+        },
+        "redeemable_from": {
+          "type": "string",
+          "description": "new contract: first date it can be redeemed",
+          "format": "date"
+        }
+      },
+      "required": [
+        "brokerage_id",
+        "applied_on",
+        "amount"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "instrument": {
+          "type": "string"
+        },
+        "transaction_id": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "string"
+        },
+        "unit_price": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "instrument",
+        "transaction_id",
+        "quantity",
+        "unit_price"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "record_investment",
     "description": "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage, or record income paid on an Investment. A first buy creates the Investment line; a sale or income needs an existing one. A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. Use it when the user reports a trade, a dividend or other investment income. With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. Do not use it to define a new security: manage_instrument does. The user confirms first.",
     "effect": "write",

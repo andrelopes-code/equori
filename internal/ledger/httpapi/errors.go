@@ -38,6 +38,8 @@ func ToProblem(err error) (problem.Details, bool) {
 			code = "currency_unsupported"
 		case errors.Is(err, app.ErrPriceMissing):
 			code = "price_missing"
+		case errors.Is(err, app.ErrContractInvalid):
+			code = "contract_invalid"
 		}
 
 		d := problem.New(http.StatusUnprocessableEntity, code, fe.Error())

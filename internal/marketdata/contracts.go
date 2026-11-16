@@ -152,11 +152,17 @@ func (m *Module) contractParts(ctx context.Context, c Contract) (Instrument, Ter
 		Issuer:        domain.Issuer{Name: c.IssuerName, Scheme: c.IssuerScheme, ID: c.IssuerID},
 	}
 
+	// A pre-fixed contract has no index; the column stores 100% then, as the terms API does.
+	percent := c.PercentOfIndexBP
+	if percent == 0 {
+		percent = defaultPercentBP
+	}
+
 	terms := Terms{
 		IssuedOn:         c.IssuedOn,
 		MaturesOn:        c.MaturesOn,
 		IndexID:          c.IndexID,
-		PercentOfIndexBP: c.PercentOfIndexBP,
+		PercentOfIndexBP: percent,
 		SpreadBP:         c.SpreadBP,
 		DayCount:         c.DayCount,
 		FaceValue:        pow10(quote.Scale),

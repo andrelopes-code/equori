@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
@@ -30,6 +32,8 @@ var (
 		"the account and its sub-accounts hold more than one instrument",
 	)
 	ErrPriceMissing = errors.New("price missing")
+	// ErrContractInvalid wraps the field errors of a fixed income contract (A236 FC14).
+	ErrContractInvalid = errors.New("invalid contract")
 	// ErrLaterSaleExists: the change would alter the cost of a recorded sale (P8 A69).
 	ErrLaterSaleExists = errors.New(
 		"a later sale of the security exists; a day with a purchase after a sale is " +
@@ -76,6 +80,39 @@ type Prices interface {
 		to money.Currency,
 		date time.Time,
 	) (Conversion, error)
+}
+
+// Contracts defines and discards the fixed income contracts of a book (A236 FC14).
+type Contracts interface {
+	// Check validates c for the application and returns it with the defaults of FC12 applied. A
+	// field error wraps ErrContractInvalid.
+	Check(
+		ctx context.Context,
+		booksID int64,
+		c Contract,
+		applicationID uuid.UUID,
+	) (Contract, error)
+	Define(ctx context.Context, booksID int64, c Contract) error
+	// Discard deletes the instrument when no account uses it.
+	Discard(ctx context.Context, booksID int64, code money.Currency) error
+	// Price is the chosen price of the latest date up to date; false when there is none.
+	Price(ctx context.Context, code, quote money.Currency, date time.Time) (money.Rate, bool, error)
+}
+
+// Contract is a fixed income application's security (A236 FC11, FC12).
+type Contract struct {
+	Code                       money.Currency
+	Currency                   money.Currency // the brokerage currency
+	Subtype, Name              string
+	IssuerName, IssuerScheme   string
+	IssuerID                   string
+	IssuedOn, MaturesOn        time.Time
+	IndexID                    string
+	PercentOfIndexBP, SpreadBP int
+	DayCount, CalendarID       string
+	DailyLiquidity             bool
+	RedeemableFrom             time.Time
+	Region                     string // the book's region, for the defaults
 }
 
 // ExternalFlow is money that entered (positive) or left (negative) an account tree on a date,

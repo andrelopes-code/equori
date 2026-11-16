@@ -18,13 +18,14 @@ const (
 var earliestDate = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 
 type Service struct {
-	repo     Repository
-	clock    Clock
-	cal      Calendar
-	ins      Instruments
-	prices   Prices
-	profiles Profiles
-	defaults RegionDefaults
+	repo      Repository
+	clock     Clock
+	cal       Calendar
+	ins       Instruments
+	prices    Prices
+	profiles  Profiles
+	defaults  RegionDefaults
+	contracts Contracts
 }
 
 func NewService(
@@ -35,15 +36,17 @@ func NewService(
 	prices Prices,
 	profiles Profiles,
 	defaults RegionDefaults,
+	contracts Contracts,
 ) *Service {
 	return &Service{
-		repo:     repo,
-		clock:    clock,
-		cal:      cal,
-		ins:      ins,
-		prices:   prices,
-		profiles: profiles,
-		defaults: defaults,
+		repo:      repo,
+		clock:     clock,
+		cal:       cal,
+		ins:       ins,
+		prices:    prices,
+		profiles:  profiles,
+		defaults:  defaults,
+		contracts: contracts,
 	}
 }
 

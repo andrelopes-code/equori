@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
@@ -106,4 +108,20 @@ func optionalMoney(v *int64, cur money.Currency) (*money.Money, error) {
 	}
 
 	return &m, nil
+}
+
+func (r *Repository) FirstBuy(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+) (uuid.UUID, bool, error) {
+	id, err := r.q.FirstBuyOfAccount(
+		ctx,
+		FirstBuyOfAccountParams{BooksID: booksID, AccountID: accountID},
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return uuid.Nil, false, nil
+	}
+
+	return id, err == nil, err
 }

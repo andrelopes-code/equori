@@ -2170,6 +2170,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/fixed-income-applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Define a fixed income contract and buy it with cash of a brokerage, or buy more of a contract the book holds (A236 FC11 to FC15). */
+        post: operations["createFixedIncomeApplication"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/corporate-actions": {
         parameters: {
             query?: never;
@@ -6093,6 +6110,55 @@ export interface components {
         };
         /** @enum {string} */
         TradeSide: "buy" | "sell";
+        /** @description Exactly one of contract (a new contract) and instrument (more money into a contract of the book). */
+        FixedIncomeApplicationInput: {
+            /**
+             * Format: uuid
+             * @description Names the application; the same id again answers 200 with the recorded purchase.
+             */
+            application_id: string;
+            /** Format: uuid */
+            brokerage_id: string;
+            /**
+             * Format: uuid
+             * @description Absent takes the only cash account of the brokerage.
+             */
+            cash_account_id?: string;
+            /** Format: date */
+            applied_on: string;
+            amount: components["schemas"]["Money"];
+            fees?: components["schemas"]["Money"];
+            description?: string;
+            instrument?: string;
+            contract?: components["schemas"]["FixedIncomeContractInput"];
+        };
+        FixedIncomeContractInput: {
+            subtype: string;
+            issuer: string;
+            issuer_scheme?: string;
+            issuer_id?: string;
+            name?: string;
+            /** Format: date */
+            issued_on?: string;
+            /** Format: date */
+            matures_on: string;
+            index_id?: string;
+            percent_of_index_bp?: number;
+            spread_bp?: number;
+            /** @enum {string} */
+            day_count?: "bus252" | "act365";
+            calendar_id?: string;
+            daily_liquidity?: boolean;
+            /** Format: date */
+            redeemable_from?: string;
+        };
+        FixedIncomeApplication: {
+            instrument: string;
+            /** Format: uuid */
+            transaction_id: string;
+            quantity: components["schemas"]["Money"];
+            unit_price: components["schemas"]["Rate"];
+        };
         TradeInput: {
             /**
              * Format: uuid
@@ -11572,6 +11638,45 @@ export interface operations {
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
             409: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    createFixedIncomeApplication: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FixedIncomeApplicationInput"];
+            };
+        };
+        responses: {
+            /** @description The application already ran; nothing was written. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixedIncomeApplication"];
+                };
+            };
+            /** @description Created. */
+            201: {
+                headers: {
+                    /** @description Path of the created purchase. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixedIncomeApplication"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

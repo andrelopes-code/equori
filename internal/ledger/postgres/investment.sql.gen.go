@@ -116,6 +116,36 @@ func (q *Queries) DeleteTrade(ctx context.Context, arg DeleteTradeParams) error 
 	return err
 }
 
+const firstBuyOfAccount = `-- name: FirstBuyOfAccount :one
+SELECT
+    t.transaction_id
+FROM
+    ledger_trade t
+    JOIN ledger_transaction x ON x.id = t.transaction_id
+WHERE
+    t.books_id = $1
+    AND t.account_id = $2
+    AND t.side = 'buy'
+    AND x.voided_at IS NULL
+ORDER BY
+    x.date,
+    x.id
+LIMIT
+    1
+`
+
+type FirstBuyOfAccountParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+}
+
+func (q *Queries) FirstBuyOfAccount(ctx context.Context, arg FirstBuyOfAccountParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, firstBuyOfAccount, arg.BooksID, arg.AccountID)
+	var transaction_id uuid.UUID
+	err := row.Scan(&transaction_id)
+	return transaction_id, err
+}
+
 const holding = `-- name: Holding :one
 SELECT
     coalesce(sum(amount), 0)::bigint AS quantity,

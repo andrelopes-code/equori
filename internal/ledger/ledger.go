@@ -43,6 +43,7 @@ func New(
 		pricesAdapter{md},
 		profiles,
 		regionDefaults{},
+		contracts{md, ins},
 	)
 
 	dispatcher.Subscribe("ledger-provisioning", "identity.books_created.v1", provision)

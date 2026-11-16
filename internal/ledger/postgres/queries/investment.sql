@@ -321,3 +321,20 @@ ORDER BY
     p.booked_on,
     p.transaction_id,
     p.position;
+
+-- name: FirstBuyOfAccount :one
+SELECT
+    t.transaction_id
+FROM
+    ledger_trade t
+    JOIN ledger_transaction x ON x.id = t.transaction_id
+WHERE
+    t.books_id = @books_id
+    AND t.account_id = @account_id
+    AND t.side = 'buy'
+    AND x.voided_at IS NULL
+ORDER BY
+    x.date,
+    x.id
+LIMIT
+    1;

@@ -101,6 +101,7 @@ var exposure = map[string]string{
 	"recordForeignPurchase":            "record_transaction",
 	"exchangeCurrency":                 "record_transaction",
 	"recordTrade":                      "record_investment",
+	"createFixedIncomeApplication":     "record_fixed_income",
 	"recordBrokerageNote":              "-screen",
 	"recordCorporateAction":            "-screen",
 	"recordCustodyTransfer":            "-screen",

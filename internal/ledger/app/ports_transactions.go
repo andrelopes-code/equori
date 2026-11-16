@@ -11,6 +11,8 @@ import (
 
 // transactionStore holds the Repository methods of transactions and their attachments.
 type transactionStore interface {
+	// FirstBuy is the earliest unvoided purchase on the holding account; false when it has none.
+	FirstBuy(ctx context.Context, booksID int64, accountID uuid.UUID) (uuid.UUID, bool, error)
 	Transaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error)
 	LockTransaction(ctx context.Context, booksID int64, id uuid.UUID) (domain.Transaction, error)
 	InsertTransaction(ctx context.Context, t domain.Transaction) (domain.Transaction, error)

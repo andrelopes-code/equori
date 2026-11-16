@@ -25,6 +25,7 @@ type (
 	Price        = domain.Price
 	IndexSummary = domain.IndexSummary
 	IndexRate    = domain.IndexRate
+	FieldError   = domain.FieldError
 )
 
 type Feed = domain.Feed

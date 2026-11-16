@@ -914,6 +914,44 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /fixed-income-applications:
+    post:
+      tags: [ledger]
+      operationId: createFixedIncomeApplication
+      x-book-role: write
+      summary: Define a fixed income contract and buy it with cash of a brokerage, or buy more of a contract the book holds (A236 FC11 to FC15).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedIncomeApplicationInput"
+      responses:
+        "200":
+          description: The application already ran; nothing was written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedIncomeApplication"
+        "201":
+          description: Created.
+          headers:
+            Location:
+              description: Path of the created purchase.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedIncomeApplication"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /corporate-actions:
     post:
       tags: [ledger]
@@ -3529,6 +3567,102 @@ schemas:
   TradeSide:
     type: string
     enum: [buy, sell]
+  FixedIncomeApplicationInput:
+    type: object
+    additionalProperties: false
+    required: [application_id, brokerage_id, applied_on, amount]
+    description: Exactly one of contract (a new contract) and instrument (more money into a contract of the book).
+    properties:
+      application_id:
+        type: string
+        format: uuid
+        description: Names the application; the same id again answers 200 with the recorded purchase.
+      brokerage_id:
+        type: string
+        format: uuid
+      cash_account_id:
+        type: string
+        format: uuid
+        description: Absent takes the only cash account of the brokerage.
+      applied_on:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      fees:
+        $ref: "#/components/schemas/Money"
+      description:
+        type: string
+        maxLength: 200
+      instrument:
+        type: string
+        pattern: "^[A-Z0-9.]{2,20}$"
+      contract:
+        $ref: "#/components/schemas/FixedIncomeContractInput"
+  FixedIncomeContractInput:
+    type: object
+    additionalProperties: false
+    required: [subtype, issuer, matures_on]
+    properties:
+      subtype:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      issuer:
+        type: string
+        minLength: 1
+        maxLength: 80
+      issuer_scheme:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      issuer_id:
+        type: string
+        minLength: 1
+        maxLength: 40
+      name:
+        type: string
+        minLength: 1
+        maxLength: 120
+      issued_on:
+        type: string
+        format: date
+      matures_on:
+        type: string
+        format: date
+      index_id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      percent_of_index_bp:
+        type: integer
+        minimum: 1
+        maximum: 100000
+      spread_bp:
+        type: integer
+        minimum: -10000
+        maximum: 100000
+      day_count:
+        type: string
+        enum: [bus252, act365]
+      calendar_id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      daily_liquidity:
+        type: boolean
+      redeemable_from:
+        type: string
+        format: date
+  FixedIncomeApplication:
+    type: object
+    required: [instrument, transaction_id, quantity, unit_price]
+    properties:
+      instrument:
+        type: string
+      transaction_id:
+        type: string
+        format: uuid
+      quantity:
+        $ref: "#/components/schemas/Money"
+      unit_price:
+        $ref: "#/components/schemas/Rate"
   TradeInput:
     type: object
     additionalProperties: false

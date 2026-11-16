@@ -49,6 +49,7 @@ func provision(ctx context.Context, tx pgx.Tx, e outbox.Delivered) error {
 		nil,
 		nil,
 		nil,
+		nil,
 	)
 
 	return svc.Provision(ctx, p.BooksID, p.BaseCurrency)

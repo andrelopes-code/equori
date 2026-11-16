@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata"
@@ -158,4 +160,53 @@ func (c *instruments) SettlementDate(
 	date time.Time,
 ) (time.Time, error) {
 	return c.md.SettlementDate(ctx, string(code), date)
+}
+
+// contracts adapts the contract methods of Market data to the port of the fixed income
+// application. A discarded contract leaves the instrument cache.
+type contracts struct {
+	md  MarketData
+	ins *instruments
+}
+
+func (c contracts) Check(
+	ctx context.Context,
+	booksID int64,
+	ct app.Contract,
+	applicationID uuid.UUID,
+) (app.Contract, error) {
+	checked, err := c.md.CheckContract(ctx, booksID, marketdata.Contract(ct), applicationID)
+	if fe, ok := errors.AsType[*marketdata.FieldError](err); ok {
+		return app.Contract{}, &domain.FieldError{
+			Field:   fe.Field,
+			Message: fe.Message,
+			Err:     app.ErrContractInvalid,
+		}
+	}
+
+	return app.Contract(checked), err
+}
+
+func (c contracts) Define(ctx context.Context, booksID int64, ct app.Contract) error {
+	return c.md.DefineContract(ctx, booksID, marketdata.Contract(ct))
+}
+
+func (c contracts) Discard(ctx context.Context, booksID int64, code money.Currency) error {
+	err := c.md.DiscardContract(ctx, booksID, code)
+
+	c.ins.mu.Lock()
+	delete(c.ins.cache, code)
+	c.ins.mu.Unlock()
+
+	return err
+}
+
+func (c contracts) Price(
+	ctx context.Context,
+	code, quote money.Currency,
+	date time.Time,
+) (money.Rate, bool, error) {
+	p, ok, err := c.md.PriceOnOrBefore(ctx, code, quote, date)
+
+	return p.Value, ok, err
 }

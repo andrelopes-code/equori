@@ -50,6 +50,7 @@ func newLedgerFixture(t testing.TB) ledgerFixture {
 			pricesAdapter{cal.cal},
 			nil,
 			nil,
+			nil,
 		),
 	}
 	f.booksID = provisionedUser(t, pool, d)

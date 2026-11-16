@@ -163,6 +163,19 @@ type MarketData interface {
 		date time.Time,
 	) (marketdata.Conversion, error)
 	DefaultCalendar(region string) string
+	CheckContract(
+		ctx context.Context,
+		booksID int64,
+		c marketdata.Contract,
+		applicationID uuid.UUID,
+	) (marketdata.Contract, error)
+	DefineContract(ctx context.Context, booksID int64, c marketdata.Contract) error
+	DiscardContract(ctx context.Context, booksID int64, code money.Currency) error
+	PriceOnOrBefore(
+		ctx context.Context,
+		instrument, quote money.Currency,
+		date time.Time,
+	) (marketdata.Price, bool, error)
 }
 
 // Profiles is the part of identity the ledger uses to default a card's calendar.

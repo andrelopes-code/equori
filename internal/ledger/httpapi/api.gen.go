@@ -747,6 +747,24 @@ func (e DisputeResolutionOutcome) Valid() bool {
 	}
 }
 
+// Defines values for FixedIncomeContractInputDayCount.
+const (
+	Act365 FixedIncomeContractInputDayCount = "act365"
+	Bus252 FixedIncomeContractInputDayCount = "bus252"
+)
+
+// Valid indicates whether the value is a known member of the FixedIncomeContractInputDayCount enum.
+func (e FixedIncomeContractInputDayCount) Valid() bool {
+	switch e {
+	case Act365:
+		return true
+	case Bus252:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstallmentPlanStatus.
 const (
 	Active      InstallmentPlanStatus = "active"
@@ -1665,6 +1683,56 @@ type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
 }
+
+// FixedIncomeApplication defines model for FixedIncomeApplication.
+type FixedIncomeApplication struct {
+	Instrument    string             `json:"instrument"`
+	Quantity      Money              `json:"quantity"`
+	TransactionId openapi_types.UUID `json:"transaction_id"`
+
+	// UnitPrice Positive exact decimal with at most 12 decimals (ADR 005).
+	//
+	// Example: 5.4830
+	UnitPrice Rate `json:"unit_price"`
+}
+
+// FixedIncomeApplicationInput Exactly one of contract (a new contract) and instrument (more money into a contract of the book).
+type FixedIncomeApplicationInput struct {
+	Amount Money `json:"amount"`
+
+	// ApplicationId Names the application; the same id again answers 200 with the recorded purchase.
+	ApplicationId openapi_types.UUID `json:"application_id"`
+	AppliedOn     openapi_types.Date `json:"applied_on"`
+	BrokerageId   openapi_types.UUID `json:"brokerage_id"`
+
+	// CashAccountId Absent takes the only cash account of the brokerage.
+	CashAccountId *openapi_types.UUID       `json:"cash_account_id,omitempty"`
+	Contract      *FixedIncomeContractInput `json:"contract,omitempty"`
+	Description   *string                   `json:"description,omitempty"`
+	Fees          *Money                    `json:"fees,omitempty"`
+	Instrument    *string                   `json:"instrument,omitempty"`
+}
+
+// FixedIncomeContractInput defines model for FixedIncomeContractInput.
+type FixedIncomeContractInput struct {
+	CalendarId       *string                           `json:"calendar_id,omitempty"`
+	DailyLiquidity   *bool                             `json:"daily_liquidity,omitempty"`
+	DayCount         *FixedIncomeContractInputDayCount `json:"day_count,omitempty"`
+	IndexId          *string                           `json:"index_id,omitempty"`
+	IssuedOn         *openapi_types.Date               `json:"issued_on,omitempty"`
+	Issuer           string                            `json:"issuer"`
+	IssuerId         *string                           `json:"issuer_id,omitempty"`
+	IssuerScheme     *string                           `json:"issuer_scheme,omitempty"`
+	MaturesOn        openapi_types.Date                `json:"matures_on"`
+	Name             *string                           `json:"name,omitempty"`
+	PercentOfIndexBp *int                              `json:"percent_of_index_bp,omitempty"`
+	RedeemableFrom   *openapi_types.Date               `json:"redeemable_from,omitempty"`
+	SpreadBp         *int                              `json:"spread_bp,omitempty"`
+	Subtype          string                            `json:"subtype"`
+}
+
+// FixedIncomeContractInputDayCount defines model for FixedIncomeContractInput.DayCount.
+type FixedIncomeContractInputDayCount string
 
 // ForeignPurchaseInput defines model for ForeignPurchaseInput.
 type ForeignPurchaseInput struct {
@@ -2638,6 +2706,9 @@ type ResolveDisputeJSONRequestBody = DisputeResolution
 
 // ExchangeCurrencyJSONRequestBody defines body for ExchangeCurrency for application/json ContentType.
 type ExchangeCurrencyJSONRequestBody = ExchangeInput
+
+// CreateFixedIncomeApplicationJSONRequestBody defines body for CreateFixedIncomeApplication for application/json ContentType.
+type CreateFixedIncomeApplicationJSONRequestBody = FixedIncomeApplicationInput
 
 // RecordForeignPurchaseJSONRequestBody defines body for RecordForeignPurchase for application/json ContentType.
 type RecordForeignPurchaseJSONRequestBody = ForeignPurchaseInput
