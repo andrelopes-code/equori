@@ -26,8 +26,8 @@ Guide topics (`navigation-map.json`): `settings_language_and_region`, `privacy_a
 - `members/`: members list, member removal, book creation, leaving and deletion.
 - `invitations/`: book invitations and account invitations.
 - `security/`: password, passkeys, TOTP and recovery codes.
-- `assistant/`: providers, chains and assistant start.
-- `usage/`: language model usage chart, list and limits.
+- `assistant/`: status, providers, chain dialog and assistant start of the assistant pane (`docs/specs/2026-11-16-assistant-settings-design.md`).
+- `usage/`: the route of each function, and the usage card with its rows, chart and limits.
 - `integrations/`: integrations and their sync schedule.
 - `external-access/`: access tokens and client snippets.
 - `market-data/`: market data feeds.

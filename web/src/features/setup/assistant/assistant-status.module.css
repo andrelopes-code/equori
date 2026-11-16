@@ -1,0 +1,28 @@
+@layer app {
+  .status {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .model {
+    font-family: var(--slotted-font-family-mono);
+    /* The monospace face reads larger than the sans beside it at one size. */
+    font-size: 0.9em;
+    font-weight: var(--slotted-font-weight-medium);
+    color: var(--slotted-tone-accent-text);
+    white-space: nowrap;
+  }
+
+  .facts {
+    display: flex;
+    gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 599px) {
+    .facts {
+      display: grid;
+      gap: var(--slotted-space-1);
+    }
+  }
+}

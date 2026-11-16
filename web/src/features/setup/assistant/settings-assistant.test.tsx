@@ -1,5 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
-import { focusManager } from "@tanstack/react-query";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -202,6 +201,10 @@ function api(
       "PUT /chain",
       () => json(200, { ...customChat, default: true }),
     ),
+    "PUT /api/v1/assistant/uses/capture.suggest/chain": record(
+      "PUT /suggest-chain",
+      () => json(200, defaultSuggest),
+    ),
   });
 }
 
@@ -213,7 +216,29 @@ async function section(title = pt["settings.assistant.title"]) {
   return within(root);
 }
 
-// The usage row of a target: its label is also the chain description of the use.
+// The usage card starts closed (spec A8); jsdom draws a closed details as hidden.
+async function openUsage(view: Awaited<ReturnType<typeof section>>) {
+  const summary = (await view.findByText(pt["assistant.usage"])).closest(
+    "summary",
+  );
+  const details = summary?.closest("details");
+  if (details === null || details === undefined)
+    throw new Error("no usage card");
+  details.open = true;
+  return details;
+}
+
+// The row of a use, by the name of the use.
+async function useRow(
+  view: Awaited<ReturnType<typeof section>>,
+  label: string,
+) {
+  const li = (await view.findByText(label)).closest("li");
+  if (li === null) throw new Error(`no row for ${label}`);
+  return li;
+}
+
+// The usage row of a model: the model is also a stop of a route.
 async function usageRow(
   view: Awaited<ReturnType<typeof section>>,
   label: string,
@@ -239,8 +264,15 @@ async function rowAction(
   provider: string,
   action: string,
 ) {
-  const row = (await view.findByText(provider)).closest("li");
-  if (row === null) throw new Error("no provider row");
+  // A usage row names its provider too, and a preset can carry the provider's name: the row is
+  // the one in the providers list, found by its first text, the name.
+  const list = await view.findByRole("list", {
+    name: new RegExp(
+      `^(${pt["assistant.providers"]}|${en["assistant.providers"]})$`,
+    ),
+  });
+  const row = (await within(list).findAllByText(provider))[0]?.closest("li");
+  if (row === null || row === undefined) throw new Error("no provider row");
   await userEvent.click(
     within(row).getByRole("button", {
       name: new RegExp(provider),
@@ -251,13 +283,19 @@ async function rowAction(
 }
 
 describe("assistant settings", () => {
-  it("lists providers with their notice, never a key, and warns on a training provider", async () => {
+  it("lists providers with their notice in words, never a key, and warns on a training provider", async () => {
     await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
-    expect(await view.findByText("Groq")).toBeVisible();
+    const list = within(
+      await view.findByRole("list", { name: pt["assistant.providers"] }),
+    );
+    expect((await list.findAllByText("Groq"))[0]).toBeVisible();
     expect(view.getByText(pt["assistant.provider.instance"])).toBeVisible();
-    // The provider row and the capture.suggest use row each carry the notice.
-    expect(view.getAllByText(pt["assistant.notice.trains"])).toHaveLength(2);
+    // A4: the notice stands once, in words, on the row of the provider that trains.
+    expect(view.getByText(pt["assistant.notice.trains.row"])).toBeVisible();
+    expect(
+      view.getByText(pt["assistant.notice.provider_terms.row"]),
+    ).toBeVisible();
     expect(
       view.getByText(
         `${pt["assistant.preset.groq"]} · ${pt["assistant.provider.keyStored"]}`,
@@ -270,56 +308,89 @@ describe("assistant settings", () => {
     ).toBeVisible();
   });
 
-  it("states per use whether financial data leaves, what it needs and where it goes", async () => {
+  // A2, A3: the status names the model that answers the conversation and its provider.
+  it("states the model that answers the conversation", async () => {
     await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
-    const row = async (label: string) => {
-      const li = (await view.findByText(label)).closest("li");
-      if (li === null) throw new Error(`no row for ${label}`);
-      return within(li);
-    };
-    const suggest = await row(pt["assistant.use.capture.suggest"]);
-    expect(suggest.getByText(pt["assistant.use.sends"])).toBeVisible();
+    const status = within(
+      await view.findByRole("region", { name: pt["assistant.status"] }),
+    );
     expect(
-      suggest.getByText(
-        pt["assistant.chain.needs"].replace(
-          "{list}",
-          pt["assistant.capability.structured_output"],
-        ),
-      ),
+      status.getByRole("heading", {
+        name: `${pt["assistant.status.answers"]} openai/gpt-oss-120b`,
+      }),
     ).toBeVisible();
-    expect(suggest.getByText(pt["assistant.notice.trains"])).toBeVisible();
     expect(
-      suggest.queryByText(
-        pt["assistant.use.trains"].replace("{provider}", "aistudio"),
-      ),
-    ).toBeNull();
-    const chat = await row(pt["assistant.use.assistant.chat"]);
-    expect(chat.queryByText(/camada gratuita/i)).toBeNull();
-    expect(chat.getByText(pt["assistant.notice.provider_terms"])).toBeVisible();
-    const vision = await row("assistant.vision");
-    expect(vision.getByText(pt["assistant.use.local"])).toBeVisible();
-    expect(
-      vision.getByText(
-        pt["assistant.use.lacks"]
-          .replace("{provider}", "Groq")
-          .replace("{list}", pt["assistant.capability.image_input"]),
+      status.getByText(
+        pt["assistant.status.provider"].replace("{name}", "Groq"),
       ),
     ).toBeVisible();
   });
 
-  it("words the use privacy in English for another region and base currency", async () => {
+  // A5 to A7: one note and one route per use, and no tag.
+  it("draws per use its note and its route", async () => {
+    await renderApp("/settings?section=assistant", { fetch: api([]) });
+    const view = await section();
+    const suggest = await useRow(view, pt["assistant.use.capture.suggest"]);
+    expect(
+      within(suggest).getByText(pt["assistant.note.default"]),
+    ).toBeVisible();
+    expect(
+      within(suggest).getByRole("list", {
+        name: pt["assistant.route.label"]
+          .replace("{list}", "1. gemini-3.5-flash-lite")
+          .replace("{model}", "gemini-3.5-flash-lite"),
+      }),
+    ).toBeVisible();
+    expect(
+      within(suggest)
+        .getByText("gemini-3.5-flash-lite")
+        .closest("[data-state]"),
+    ).toHaveAttribute("data-state", "answering");
+    const chat = await useRow(view, pt["assistant.use.assistant.chat"]);
+    expect(within(chat).getByText(pt["assistant.note.custom"])).toBeVisible();
+    const vision = await useRow(view, "assistant.vision");
+    expect(
+      within(vision).getByText(
+        pt["assistant.note.lacks"]
+          .replace("{model}", "llama")
+          .replace("{list}", pt["assistant.capability.image_input"]),
+      ),
+    ).toBeVisible();
+    expect(
+      within(vision).getByText("llama").closest("[data-state]"),
+    ).toHaveAttribute("data-state", "lacking");
+    expect(
+      within(vision).getByRole("list", {
+        name: pt["assistant.route.labelNone"].replace("{list}", "1. llama"),
+      }),
+    ).toBeVisible();
+    expect(view.queryByText(pt["assistant.use.sends"])).toBeNull();
+    for (const row of [suggest, chat, vision])
+      expect(row.querySelector('[data-ui="tag"]')).toBeNull();
+  });
+
+  it("words the notes and the usage in English for another region and base currency", async () => {
     await renderApp("/settings?section=assistant", {
       fetch: api([], { me: { language: "en", region: "DE" } }),
     });
     const view = await section(en["settings.assistant.title"]);
-    expect(await view.findAllByText(en["assistant.use.sends"])).toHaveLength(2);
-    expect(view.getByText(en["assistant.use.local"])).toBeVisible();
+    expect(await view.findByText(en["assistant.note.default"])).toBeVisible();
+    expect(view.getByText(en["assistant.note.custom"])).toBeVisible();
+    const summary = (await view.findByText(en["assistant.usage"])).closest(
+      "details",
+    );
+    if (summary === null) throw new Error("no usage card");
+    summary.open = true;
     expect(
-      await view.findByRole("progressbar", {
-        name: en["assistant.usage.meter.requests"],
+      await view.findByRole("img", {
+        name: `${en["assistant.usage.meter.requests"]}: ${en[
+          "assistant.usage.of"
+        ]
+          .replace("{count}", "80")
+          .replace("{limit}", "100")}`,
       }),
-    ).toHaveAttribute("aria-valuenow", "80");
+    ).toBeVisible();
     expect(
       view.getByText(en["assistant.usage.chart.empty"].replace("{days}", "30")),
     ).toBeVisible();
@@ -331,6 +402,7 @@ describe("assistant settings", () => {
       fetch: api([], { daysQueries, days: true }),
     });
     const view = await section();
+    await openUsage(view);
     // Role queries over the chart's SVG take longer than the test timeout.
     const day = (await view.findByText("16/10/2026")).closest("tr");
     if (day === null) throw new Error("no row for the day");
@@ -346,11 +418,17 @@ describe("assistant settings", () => {
     expect(
       view.getByLabelText(pt["assistant.usage.chart.tokens"]),
     ).toBeInTheDocument();
-    const meter = await view.findByRole("progressbar", {
-      name: pt["assistant.usage.meter.requests"],
-    });
-    expect(meter).toHaveAttribute("aria-valuenow", "80");
-    expect(meter).toHaveAttribute("aria-valuemax", "100");
+    // A8: the value over a meter when a limit is declared, and alone when none is.
+    expect(
+      view.getByRole("img", {
+        name: `${pt["assistant.usage.meter.requests"]}: 80 de 100`,
+      }),
+    ).toBeVisible();
+    expect(
+      view.getByRole("img", {
+        name: `${pt["assistant.usage.meter.tokens"]}: 1.200`,
+      }),
+    ).toBeVisible();
   });
 
   it("shows a refused key at its field and in the summary", async () => {
@@ -483,26 +561,52 @@ describe("assistant settings", () => {
     });
   });
 
-  it("shows today's usage against the limit and a zero row for an unused chain target", async () => {
+  // A8: the closed line states today; the open card holds one row per provider and model.
+  it("keeps the usage closed on a summary and opens on today's figures", async () => {
     await renderApp("/settings?section=assistant", { fetch: api([]) });
     const view = await section();
+    const details = await openUsage(view);
+    details.open = false;
     expect(
-      await view.findByText(
-        "Hoje: 80 de 100 requisições, 1.200 tokens · 2 com erro",
+      view.getByText(
+        pt["assistant.usage.summary.requests"].replace("{count}", "80"),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      view.getByText(
+        pt["assistant.usage.summary.near"].replace("{count}", "1"),
+      ),
+    ).toBeInTheDocument();
+    expect(view.queryByText(/em pausa/)).toBeNull();
+    details.open = true;
+    const row = await usageRow(view, "gemini-3.5-flash-lite");
+    expect(
+      within(row).getByText(
+        `aistudio · ${pt["assistant.usage.errors"].replace("{count}", "2")}`,
       ),
     ).toBeVisible();
+    expect(within(row).getByText(pt["assistant.usage.near"])).toBeVisible();
+    const unused = await usageRow(view, "openai/gpt-oss-120b");
     expect(
-      view.getByText("30 dias: 300 requisições, 9.000 tokens"),
+      within(unused).getByText(pt["assistant.usage.unlimited"]),
     ).toBeVisible();
-    expect(view.getByText(pt["assistant.usage.near"])).toBeVisible();
-    expect(await usageRow(view, "Groq · openai/gpt-oss-120b")).toBeVisible();
+    // The figures of the period moved to the limits of the model.
+    await userEvent.click(
+      within(row).getByRole("button", { name: pt["assistant.usage.limits"] }),
+    );
+    expect(
+      await within(await screen.findByRole("dialog")).findByText(
+        "Últimos 30 dias: 300 requisições, 9.000 tokens",
+      ),
+    ).toBeVisible();
   });
 
   it("sends the declared limits", async () => {
     const sent: Sent[] = [];
     await renderApp("/settings?section=assistant", { fetch: api(sent) });
     const view = await section();
-    const row = await usageRow(view, "Groq · openai/gpt-oss-120b");
+    await openUsage(view);
+    const row = await usageRow(view, "openai/gpt-oss-120b");
     await userEvent.click(
       within(row).getByRole("button", { name: pt["assistant.usage.limits"] }),
     );
@@ -530,87 +634,100 @@ describe("assistant settings", () => {
     });
   });
 
-  // S2: with one provider and default chains, the features, chains, usage and limits stay closed.
-  describe("advanced", () => {
-    const advanced = () =>
-      screen.findByRole("button", { name: pt["assistant.advanced"] });
-
-    it("stays closed with one provider and default chains", async () => {
-      await renderApp("/settings?section=assistant", {
-        fetch: api([], { uses: [defaultSuggest] }),
-      });
-      expect(await advanced()).toHaveAttribute("aria-expanded", "false");
-      expect(screen.queryByText(pt["assistant.uses"])).toBeNull();
+  // A1: the block "Advanced" is gone; the functions always show and only the usage folds.
+  it("shows the functions with one provider and default chains", async () => {
+    await renderApp("/settings?section=assistant", {
+      fetch: api([], { uses: [defaultSuggest] }),
     });
+    const view = await section();
+    expect(
+      await view.findByRole("heading", { name: pt["assistant.uses"] }),
+    ).toBeVisible();
+    expect(view.queryByRole("button", { name: "Avançado" })).toBeNull();
+    expect(
+      (await view.findByText(pt["assistant.usage"])).closest("details"),
+    ).not.toHaveAttribute("open");
+  });
 
-    // Review Focus 3 of phase 5.
-    it("opens on a custom chain", async () => {
-      await renderApp("/settings?section=assistant", {
-        fetch: api([], { uses: [defaultSuggest, customChat] }),
-      });
-      expect(await advanced()).toHaveAttribute("aria-expanded", "true");
-    });
-
-    // Review of phase 5: the disclosure follows data that arrives after it mounted.
-    it("opens when a custom chain arrives later", async () => {
-      let custom = false;
-      const base = api([], { uses: [defaultSuggest] });
-      const fetch = Object.assign(
-        (input: RequestInfo | URL, init?: RequestInit) => {
-          const req = new Request(input, init);
-          if (custom && req.url.endsWith("/api/v1/assistant/uses"))
-            return Promise.resolve(
-              json(200, { items: [defaultSuggest, customChat] }),
-            );
-          return base(input, init);
-        },
-        { calls: base.calls },
-      );
-      await renderApp("/settings?section=assistant", { fetch });
-      expect(await advanced()).toHaveAttribute("aria-expanded", "false");
-      custom = true;
-      // A return to the window refetches stale queries, as after a change made elsewhere.
-      act(() => {
-        focusManager.setFocused(false);
-        focusManager.setFocused(true);
-      });
-      await waitFor(async () => {
-        expect(await advanced()).toHaveAttribute("aria-expanded", "true");
-      });
-    });
-
-    it("opens with two providers", async () => {
-      await renderApp("/settings?section=assistant", {
-        fetch: api([], {
-          uses: [defaultSuggest],
-          providers: [groq, { ...groq, id: "p2", name: "Other" }],
-        }),
-      });
-      expect(await advanced()).toHaveAttribute("aria-expanded", "true");
+  // A9, A11: the dialog of a default use lists the chain it runs and saves it as the default.
+  it("lists the chain of a default use and saves it untouched as the default", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/settings?section=assistant", { fetch: api(sent) });
+    const view = await section();
+    await userEvent.click(
+      within(await useRow(view, pt["assistant.use.capture.suggest"])).getByRole(
+        "button",
+        { name: pt["assistant.use.edit"] },
+      ),
+    );
+    const dialog = within(await screen.findByRole("dialog"));
+    const order = within(
+      dialog.getByRole("list", {
+        name: pt["assistant.chain.title"].replace(
+          "{use}",
+          pt["assistant.use.capture.suggest"],
+        ),
+      }),
+    );
+    expect(order.getByText("gemini-3.5-flash-lite")).toBeVisible();
+    expect(order.getAllByText("aistudio")[0]).toBeInTheDocument();
+    await userEvent.click(
+      dialog.getByRole("button", { name: pt["assistant.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { route: "PUT /suggest-chain", body: { targets: [] } },
+      ]);
     });
   });
 
-  // S3: each capability badge and each Default or Custom badge explains itself.
-  it("explains the badges", async () => {
-    await renderApp("/settings?section=assistant", {
-      fetch: api([], { uses: [defaultSuggest, customChat] }),
-    });
-    const tag = (el: HTMLElement) => el.closest('[data-ui="tag"]');
-    expect(
-      tag(await screen.findByText(pt["assistant.use.custom"])),
-    ).toHaveAccessibleDescription(pt["assistant.use.custom.hint"]);
-    expect(
-      tag(screen.getByText(pt["assistant.use.default"])),
-    ).toHaveAccessibleDescription(pt["assistant.use.default.hint"]);
-    const needs = screen.getAllByText(
-      pt["assistant.chain.needs"].replace(
-        "{list}",
-        pt["assistant.capability.tools"],
+  // A10: a model typed in the combobox and its capabilities marked in the checkboxes.
+  it("adds a model with the capabilities marked", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/settings?section=assistant", { fetch: api(sent) });
+    const view = await section();
+    await userEvent.click(
+      within(await useRow(view, pt["assistant.use.assistant.chat"])).getByRole(
+        "button",
+        { name: pt["assistant.use.edit"] },
       ),
-    )[0];
-    if (needs === undefined) throw new Error("no needs tag");
-    expect(tag(needs)).toHaveAccessibleDescription(
-      pt["assistant.capability.tools.hint"],
     );
+    const dialog = within(await screen.findByRole("dialog"));
+    await userEvent.type(
+      dialog.getByRole("combobox", { name: pt["assistant.chain.model"] }),
+      "llama",
+    );
+    await userEvent.click(
+      dialog.getByRole("checkbox", {
+        name: pt["assistant.capability.image_input"],
+      }),
+    );
+    await userEvent.click(
+      dialog.getByRole("button", { name: pt["assistant.chain.add"] }),
+    );
+    await userEvent.click(
+      dialog.getByRole("button", { name: pt["assistant.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          route: "PUT /chain",
+          body: {
+            targets: [
+              {
+                provider_id: "p1",
+                model: "openai/gpt-oss-120b",
+                capabilities: ["tools"],
+              },
+              {
+                provider_id: "p1",
+                model: "llama",
+                capabilities: ["tools", "image_input"],
+              },
+            ],
+          },
+        },
+      ]);
+    });
   });
 });

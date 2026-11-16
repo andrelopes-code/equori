@@ -1,26 +1,15 @@
-import { Text } from "@slotted/react/typography";
 import { Button } from "@slotted/react/button";
 import {
   Dialog,
   DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Field, FieldLabel } from "@slotted/react/field";
-import { Inline } from "@slotted/react/inline";
-import { List, ListEmpty } from "@slotted/react/list";
-import {
-  ListItem,
-  ListItemActions,
-  ListItemBody,
-  ListItemContent,
-  ListItemDescription,
-  ListItemLabel,
-} from "@slotted/react/list-item";
 import { Stack } from "@slotted/react/stack";
-import { TextField } from "@slotted/react/text-field";
+import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
@@ -30,62 +19,66 @@ import type {
   ModelPreset,
   ModelProvider,
   ModelUse,
+  UsageRow,
 } from "@/features/setup/api";
+import { ChainAdd } from "@/features/setup/assistant/chain-add";
+import styles from "@/features/setup/assistant/chain-dialog.module.css";
+import { ChainItem } from "@/features/setup/assistant/chain-item";
+import { useChainDraft } from "@/features/setup/assistant/use-chain-draft";
 import { catalogLabel } from "@/features/setup/model/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
-import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
-type Capability = ModelUse["needs"][number];
-const capabilities: readonly Capability[] = [
-  "tools",
-  "structured_output",
-  "image_input",
-];
+interface ChainDialogProps {
+  use: ModelUse;
+  providers: readonly ModelProvider[];
+  presets: readonly ModelPreset[];
+  rows: readonly UsageRow[];
+  now: Date;
+  onClose: () => void;
+}
 
-// Orders the models a use tries. A model its preset names takes the preset's capabilities;
-// any other takes the ones the reader marks (ADR 019 D5).
+// Orders the models a use tries (spec A9 to A11). A model its preset names takes the preset's
+// capabilities; any other takes the ones the reader marks (ADR 019 D5).
 export function ChainDialog({
   use,
   providers,
   presets,
+  rows,
+  now,
   onClose,
-}: {
-  use: ModelUse;
-  providers: readonly ModelProvider[];
-  presets: readonly ModelPreset[];
-  onClose: () => void;
-}) {
+}: ChainDialogProps) {
   const t = useT();
   const save = useSetUseChain();
-  const own = providers.filter((p) => !p.instance);
-  const [targets, setTargets] = useState<ChainTargetInput[]>(() =>
-    use.default
-      ? []
-      : use.targets.map((target) => ({
-          provider_id: target.provider_id,
-          model: target.model,
-          capabilities: target.capabilities,
-        })),
-  );
-  const [providerId, setProviderId] = useState<string | null>(
-    own[0]?.id ?? null,
-  );
-  const [model, setModel] = useState("");
-  const [marked, setMarked] = useState<string[]>([...use.needs]);
+  const draft = useChainDraft(use);
   const [error, setError] = useState<string | null>(null);
-  const label = catalogLabel(t, `assistant.use.${use.id}`, use.id);
-  const capabilityLabel = (c: Capability) => t(`assistant.capability.${c}`);
   const change = useStableCallback((open: boolean) => {
     if (!open) onClose();
   });
 
-  const providerName = (id: string) => own.find((p) => p.id === id)?.name ?? id;
-  const presetModels = presets.find(
-    (p) => p.id === own.find((o) => o.id === providerId)?.preset,
-  )?.models;
-  const send = (next: ChainTargetInput[]) => {
+  const own = providers.filter((p) => !p.instance);
+  const label = catalogLabel(t, `assistant.use.${use.id}`, use.id);
+  const title = t("assistant.chain.title", { use: label });
+  const first = t("assistant.chain.first");
+  const needs = t("assistant.chain.needs", {
+    list: use.needs.map((c) => t(`assistant.capability.${c}`)).join(", "),
+  });
+
+  const sends = t(
+    use.sends_financial_data ? "assistant.use.sends" : "assistant.use.local",
+  );
+  const description = `${first} ${needs}. ${sends}.`;
+
+  function providerName(id: string) {
+    return (
+      providers.find((p) => p.id === id)?.name ??
+      use.targets.find((x) => x.provider_id === id)?.provider_name ??
+      id
+    );
+  }
+
+  function send(next: ChainTargetInput[]) {
     setError(null);
     save
       .mutateAsync({ use: use.id, targets: next })
@@ -93,162 +86,62 @@ export function ChainDialog({
       .catch((caught: unknown) => {
         setError(errorText(caught, t));
       });
-  };
-  const move = (from: number, to: number) => {
-    setTargets((current) => {
-      const next = [...current];
-      const [item] = next.splice(from, 1);
-      if (item !== undefined) next.splice(to, 0, item);
-      return next;
-    });
-  };
+  }
 
   return (
     <Dialog open size="md" onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {t("assistant.chain.title", { use: label })}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+
         <DialogBody>
-          <Stack gap={4}>
+          <Stack gap={6}>
             {error !== null && <FormNotice>{error}</FormNotice>}
-            <Text size="sm" tone="muted">
-              {t("assistant.chain.needs", {
-                list: use.needs.map(capabilityLabel).join(", "),
-              })}
-            </Text>
-            <List
-              variant="framed"
-              size="sm"
-              aria-label={t("assistant.chain.title", { use: label })}
-            >
-              {targets.length === 0 && (
-                <ListEmpty>{t("assistant.chain.empty")}</ListEmpty>
+
+            <ol className={styles.order} aria-label={title}>
+              {draft.targets.length === 0 && (
+                <li className={[styles.item, styles.empty].join(" ")}>
+                  <Text size="sm" tone="muted" truncate>
+                    {t("assistant.chain.empty")}
+                  </Text>
+                </li>
               )}
-              {targets.map((target, index) => (
-                <ListItem
+              {draft.targets.map((target, index) => (
+                <ChainItem
                   key={`${target.provider_id}/${target.model}/${String(index)}`}
-                >
-                  <ListItemContent>
-                    <ListItemBody>
-                      <ListItemLabel>{target.model}</ListItemLabel>
-                      <ListItemDescription>
-                        {providerName(target.provider_id)}
-                      </ListItemDescription>
-                    </ListItemBody>
-                  </ListItemContent>
-                  <ListItemActions>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      tone="secondary"
-                      disabled={index === 0}
-                      onClick={() => {
-                        move(index, index - 1);
-                      }}
-                    >
-                      {t("assistant.chain.up")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      tone="secondary"
-                      disabled={index === targets.length - 1}
-                      onClick={() => {
-                        move(index, index + 1);
-                      }}
-                    >
-                      {t("assistant.chain.down")}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      tone="danger"
-                      onClick={() => {
-                        setTargets((current) =>
-                          current.filter((_, i) => i !== index),
-                        );
-                      }}
-                    >
-                      {t("assistant.chain.remove")}
-                    </Button>
-                  </ListItemActions>
-                </ListItem>
+                  use={use}
+                  target={target}
+                  provider={providerName(target.provider_id)}
+                  position={index + 1}
+                  last={index === draft.targets.length - 1}
+                  rows={rows}
+                  now={now}
+                  onUp={() => {
+                    draft.move(index, index - 1);
+                  }}
+                  onDown={() => {
+                    draft.move(index, index + 1);
+                  }}
+                  onRemove={() => {
+                    draft.remove(index);
+                  }}
+                />
               ))}
-            </List>
+            </ol>
+
             {own.length > 0 && (
-              <Stack gap={3}>
-                <Inline gap={3} align="end">
-                  <Field required>
-                    <FieldLabel>{t("assistant.chain.provider")}</FieldLabel>
-                    <ChoiceSelect
-                      label={t("assistant.chain.provider")}
-                      multiple={false}
-                      value={providerId}
-                      choices={own.map((p) => ({ value: p.id, label: p.name }))}
-                      onChange={(value) => {
-                        if (typeof value === "string") setProviderId(value);
-                      }}
-                    />
-                  </Field>
-                  <Field required>
-                    <FieldLabel>{t("assistant.chain.model")}</FieldLabel>
-                    <TextField
-                      value={model}
-                      list={`models-${use.id}`}
-                      onChange={(event) => {
-                        setModel(event.target.value);
-                      }}
-                    />
-                    <datalist id={`models-${use.id}`}>
-                      {presetModels?.map((m) => (
-                        <option key={m.id} value={m.id} />
-                      ))}
-                    </datalist>
-                  </Field>
-                </Inline>
-                <Field>
-                  <FieldLabel>{t("assistant.chain.capabilities")}</FieldLabel>
-                  <ChoiceSelect
-                    label={t("assistant.chain.capabilities")}
-                    multiple
-                    value={marked}
-                    choices={capabilities.map((c) => ({
-                      value: c,
-                      label: capabilityLabel(c),
-                    }))}
-                    onChange={(value) => {
-                      setMarked(Array.isArray(value) ? value : []);
-                    }}
-                  />
-                </Field>
-                <Inline>
-                  <Button
-                    variant="outline"
-                    tone="secondary"
-                    disabled={providerId === null || model.trim() === ""}
-                    onClick={() => {
-                      if (providerId === null) return;
-                      setTargets((current) => [
-                        ...current,
-                        {
-                          provider_id: providerId,
-                          model: model.trim(),
-                          capabilities: marked as Capability[],
-                        },
-                      ]);
-                      setModel("");
-                    }}
-                  >
-                    {t("assistant.chain.add")}
-                  </Button>
-                </Inline>
-              </Stack>
+              <ChainAdd
+                use={use}
+                providers={own}
+                presets={presets}
+                onAdd={draft.add}
+              />
             )}
           </Stack>
         </DialogBody>
+
         <DialogFooter>
           <Button
             variant="ghost"
@@ -266,7 +159,7 @@ export function ChainDialog({
           <Button
             loading={save.isPending}
             onClick={() => {
-              send(targets);
+              send(draft.payload);
             }}
           >
             {t("assistant.save")}

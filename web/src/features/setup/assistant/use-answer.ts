@@ -72,7 +72,7 @@ export function missing(use: ModelUse, target: Target): Capability[] {
 // A target rests while its usage row is over a declared limit or cooling down; a cooling row
 // carries the time it answers again.
 export function resting(
-  target: Target,
+  target: Pick<Target, "provider_id" | "model">,
   rows: readonly UsageRow[],
   now: Date,
 ): { until?: string } | null {

@@ -9,12 +9,14 @@ import {
 } from "@slotted/react/dialog";
 import { Field, FieldDescription, FieldLabel } from "@slotted/react/field";
 import { NumberField } from "@slotted/react/number-field";
+import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
 import { errorText } from "@/api/problem";
 import { useSetUsageLimit } from "@/features/setup/api";
 import type { UsageRow } from "@/features/setup/api";
-import { useT } from "@/i18n/i18n-provider";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { FormLayout } from "@/ui/form-layout/form-layout";
 import { FormRow } from "@/ui/form-layout/form-row";
@@ -30,6 +32,7 @@ export function UsageLimitDialog({
   onClose: () => void;
 }) {
   const t = useT();
+  const [locale] = useAppLocale();
   const save = useSetUsageLimit();
   const [requests, setRequests] = useState<number | null>(
     row.requests_per_day ?? null,
@@ -41,6 +44,19 @@ export function UsageLimitDialog({
   const change = useStableCallback((open: boolean) => {
     if (!open) onClose();
   });
+
+  const number = numberFormatter(locale);
+  // The figures of the period of this provider and model, which the usage row no longer holds.
+  const period = t("assistant.usage.periodTotal", {
+    days: String(row.period_days),
+    figures: [
+      t("assistant.usage.requests", {
+        count: number.format(row.period_requests),
+      }),
+      t("assistant.usage.tokens", { count: number.format(row.period_tokens) }),
+    ].join(", "),
+  });
+
   return (
     <Dialog open size="sm" onOpenChange={change}>
       <DialogContent>
@@ -69,6 +85,10 @@ export function UsageLimitDialog({
           <DialogBody>
             <FormLayout>
               {error !== null && <FormNotice>{error}</FormNotice>}
+
+              <Text size="sm" tone="muted">
+                {period}
+              </Text>
 
               <FormRow>
                 <Field>

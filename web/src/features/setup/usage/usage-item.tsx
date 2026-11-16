@@ -1,18 +1,10 @@
 import { Button } from "@slotted/react/button";
-import {
-  ListItem,
-  ListItemActions,
-  ListItemBody,
-  ListItemContent,
-  ListItemDescription,
-  ListItemEnd,
-  ListItemLabel,
-} from "@slotted/react/list-item";
-import { ProgressBar } from "@slotted/react/progress-indicator";
-import { Stack } from "@slotted/react/stack";
-import { Tag } from "@slotted/react/tag";
+import { Text } from "@slotted/react/typography";
 
 import type { UsageRow } from "@/features/setup/api";
+import card from "@/features/setup/assistant/assistant-card.module.css";
+import styles from "@/features/setup/usage/usage-details.module.css";
+import { UsageGauge } from "@/features/setup/usage/usage-gauge";
 import { usageStatus } from "@/features/setup/usage/usage-rows";
 import type { numberFormatter } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
@@ -27,17 +19,12 @@ interface UsageItemProps {
 
 const tones = {
   reached: "danger",
+  cooling: "danger",
   near: "warning",
-  cooling: "warning",
 } as const;
 
-function meterTone(used: number, limit: number) {
-  if (used >= limit) return "danger";
-  return used >= limit * 0.8 ? "warning" : "accent";
-}
-
-// The usage of one provider and model: today and the period in words, today against each declared
-// limit as a meter, and the state of the limit as a tag.
+// The usage of one provider and model (spec A8): the model over its provider and today's errors,
+// today's requests and tokens against each declared limit, the state in words and the limits.
 export function UsageItem({
   row,
   now,
@@ -46,112 +33,75 @@ export function UsageItem({
   onLimits,
 }: UsageItemProps) {
   const t = useT();
+
   const status = usageStatus(row, now);
-  const today = [
-    t("assistant.usage.today", {
-      figures: figures(t, number, row.today_requests, row.today_tokens, row),
-    }),
-    ...(row.today_errors > 0
-      ? [
-          t("assistant.usage.errors", {
-            count: number.format(row.today_errors),
-          }),
-        ]
-      : []),
-  ].join(" · ");
-  const period = t("assistant.usage.period", {
-    days: String(row.period_days),
-    figures: figures(t, number, row.period_requests, row.period_tokens),
-  });
+  const limited =
+    row.requests_per_day !== undefined || row.tokens_per_day !== undefined;
+  const provider =
+    row.today_errors > 0
+      ? `${row.provider_name} · ${t("assistant.usage.errors", {
+          count: number.format(row.today_errors),
+        })}`
+      : row.provider_name;
+  const state = stateText();
+
+  function stateText() {
+    if (status === "cooling" && row.cooling_until !== undefined)
+      return t("assistant.usage.cooling", {
+        time: time.format(new Date(row.cooling_until)),
+      });
+
+    if (status === "reached") return t("assistant.usage.reached");
+
+    if (status === "near") return t("assistant.usage.near");
+
+    return t(limited ? "assistant.usage.within" : "assistant.usage.unlimited");
+  }
 
   return (
-    <ListItem align="start">
-      <ListItemContent>
-        <ListItemBody>
-          <ListItemLabel>
-            {[row.provider_name, row.model].join(" · ")}
-          </ListItemLabel>
-          <ListItemDescription>{today}</ListItemDescription>
-          <ListItemDescription>{period}</ListItemDescription>
-          {(row.requests_per_day !== undefined ||
-            row.tokens_per_day !== undefined) && (
-            <Stack gap={2}>
-              {row.requests_per_day !== undefined && (
-                <ProgressBar
-                  size="sm"
-                  label={t("assistant.usage.meter.requests")}
-                  value={row.today_requests}
-                  max={row.requests_per_day}
-                  valueText={t("assistant.usage.requestsOf", {
-                    count: number.format(row.today_requests),
-                    limit: number.format(row.requests_per_day),
-                  })}
-                  showValue
-                  tone={meterTone(row.today_requests, row.requests_per_day)}
-                />
-              )}
-              {row.tokens_per_day !== undefined && (
-                <ProgressBar
-                  size="sm"
-                  label={t("assistant.usage.meter.tokens")}
-                  value={row.today_tokens}
-                  max={row.tokens_per_day}
-                  valueText={t("assistant.usage.tokensOf", {
-                    count: number.format(row.today_tokens),
-                    limit: number.format(row.tokens_per_day),
-                  })}
-                  showValue
-                  tone={meterTone(row.today_tokens, row.tokens_per_day)}
-                />
-              )}
-            </Stack>
-          )}
-        </ListItemBody>
-        {status !== null && (
-          <ListItemEnd>
-            <Tag size="sm" tone={tones[status]}>
-              {status === "cooling" && row.cooling_until !== undefined
-                ? t("assistant.usage.cooling", {
-                    time: time.format(new Date(row.cooling_until)),
-                  })
-                : t(
-                    status === "reached"
-                      ? "assistant.usage.reached"
-                      : "assistant.usage.near",
-                  )}
-            </Tag>
-          </ListItemEnd>
-        )}
-      </ListItemContent>
-      <ListItemActions>
-        <Button size="sm" variant="ghost" tone="secondary" onClick={onLimits}>
-          {t("assistant.usage.limits")}
-        </Button>
-      </ListItemActions>
-    </ListItem>
-  );
-}
+    <li className={[card.row, styles.row].join(" ")}>
+      <div className={card.cell}>
+        <Text size="sm" truncate className={card.mono}>
+          {row.model}
+        </Text>
+        <Text size="sm" tone="muted" truncate className={card.desk}>
+          {provider}
+        </Text>
+      </div>
 
-// "12 of 50 requests, 3,000 tokens": a figure takes its limit only where one is declared.
-function figures(
-  t: ReturnType<typeof useT>,
-  number: ReturnType<typeof numberFormatter>,
-  requests: number,
-  tokens: number,
-  row?: UsageRow,
-) {
-  return [
-    row?.requests_per_day === undefined
-      ? t("assistant.usage.requests", { count: number.format(requests) })
-      : t("assistant.usage.requestsOf", {
-          count: number.format(requests),
-          limit: number.format(row.requests_per_day),
-        }),
-    row?.tokens_per_day === undefined
-      ? t("assistant.usage.tokens", { count: number.format(tokens) })
-      : t("assistant.usage.tokensOf", {
-          count: number.format(tokens),
-          limit: number.format(row.tokens_per_day),
-        }),
-  ].join(", ");
+      <UsageGauge
+        label={t("assistant.usage.meter.requests")}
+        used={row.today_requests}
+        limit={row.requests_per_day}
+        number={number}
+        className={styles.requests}
+      />
+
+      <UsageGauge
+        label={t("assistant.usage.meter.tokens")}
+        used={row.today_tokens}
+        limit={row.tokens_per_day}
+        number={number}
+        className={card.desk}
+      />
+
+      <Text
+        size="sm"
+        tone={status === null ? "muted" : tones[status]}
+        truncate
+        className={styles.state}
+      >
+        {state}
+      </Text>
+
+      <Button
+        variant="ghost"
+        tone="secondary"
+        className={card.desk}
+        onClick={onLimits}
+      >
+        {t("assistant.usage.limits")}
+      </Button>
+    </li>
+  );
 }

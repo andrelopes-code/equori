@@ -1,13 +1,4 @@
 import { Text } from "@slotted/react/typography";
-import { Alert, AlertContent, AlertDescription } from "@slotted/react/alert";
-import {
-  Collapsible,
-  CollapsibleHeader,
-  CollapsiblePanel,
-  CollapsibleTrigger,
-} from "@slotted/react/collapsible";
-import { SkeletonText } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -22,16 +13,16 @@ import {
   usesQuery,
 } from "@/features/setup/api";
 import type { ModelProvider, ModelUse, UsageRow } from "@/features/setup/api";
+import { AssistantLoading } from "@/features/setup/assistant/assistant-loading";
 import { AssistantStart } from "@/features/setup/assistant/assistant-start";
 import type { StartPreset } from "@/features/setup/assistant/assistant-start";
+import { AssistantStatus } from "@/features/setup/assistant/assistant-status";
 import { ChainDialog } from "@/features/setup/assistant/chain-dialog";
 import { ProviderDialog } from "@/features/setup/assistant/provider-dialog";
 import { ProviderModelsDialog } from "@/features/setup/assistant/provider-models-dialog";
 import { ProvidersGroup } from "@/features/setup/assistant/providers-group";
-import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { SettingsSection } from "@/features/setup/settings-layout/settings-section";
 import { UsageLimitDialog } from "@/features/setup/usage/usage-limit-dialog";
-import { UsageChart } from "@/features/setup/usage/usage-chart";
 import { UsageList } from "@/features/setup/usage/usage-list";
 import { UsesGroup } from "@/features/setup/usage/uses-group";
 import { mergeUsageRows } from "@/features/setup/usage/usage-rows";
@@ -69,20 +60,15 @@ export function SettingsAssistant() {
     // A limit (retry_at) means a provider serves the reader and is resting.
     chat.data.retry_at === undefined &&
     providerItems.every((p) => p.instance);
-  // S2: open while the reader set more than the default state; it follows data that arrives later.
-  const advancedOpen =
-    providerItems.filter((p) => !p.instance).length > 1 ||
-    (uses.data?.items ?? []).some((use) => !use.default);
-  // The providers whose free tier trains on what a use sends, when that use sends financial data.
-  const training = [
-    ...new Set(
-      (uses.data?.items ?? [])
-        .filter((use) => use.sends_financial_data)
-        .flatMap((use) => use.targets)
-        .filter((target) => target.notice === "trains")
-        .map((target) => target.provider_name),
-    ),
-  ];
+  const useItems = uses.data?.items ?? [];
+  const loading = providers.isPending || uses.isPending;
+  const now = new Date(usage.dataUpdatedAt);
+  // A zero row per chain target not used yet, so a limit can be declared before the first call.
+  const rows = mergeUsageRows(
+    usage.data?.items ?? [],
+    useItems,
+    new Set(providerItems.filter((p) => p.instance).map((p) => p.id)),
+  );
 
   return (
     <SettingsSection
@@ -104,21 +90,13 @@ export function SettingsAssistant() {
           }}
         />
       )}
-      {training.length > 0 && (
-        <Alert tone="warning">
-          <AlertContent>
-            <AlertDescription>
-              {t("assistant.use.trains", { provider: training.join(", ") })}
-            </AlertDescription>
-          </AlertContent>
-        </Alert>
-      )}
-      {providers.isPending || uses.isPending ? (
-        <SettingsGroup>
-          <SkeletonText lines={6} />
-        </SettingsGroup>
-      ) : (
+      {loading && <AssistantLoading />}
+      {!loading && (
         <>
+          {!starting && (
+            <AssistantStatus uses={useItems} rows={rows} now={now} />
+          )}
+
           <ProvidersGroup
             providers={providerItems}
             canAdd={presetItems.length > 0}
@@ -132,40 +110,23 @@ export function SettingsAssistant() {
               setOpen({ kind: "models", provider });
             }}
           />
-          {/* S2: closed while the reader keeps one provider and the default chains. */}
-          <Collapsible
-            mount="active"
-            key={String(advancedOpen)}
-            defaultOpen={advancedOpen}
-          >
-            <CollapsibleHeader>
-              <CollapsibleTrigger>{t("assistant.advanced")}</CollapsibleTrigger>
-            </CollapsibleHeader>
-            <CollapsiblePanel>
-              <Stack gap={7}>
-                <UsesGroup
-                  uses={uses.data?.items ?? []}
-                  onEdit={(use) => {
-                    setOpen({ kind: "chain", use });
-                  }}
-                />
-                <UsageList
-                  rows={mergeUsageRows(
-                    usage.data?.items ?? [],
-                    uses.data?.items ?? [],
-                    new Set(
-                      providerItems.filter((p) => p.instance).map((p) => p.id),
-                    ),
-                  )}
-                  now={new Date(usage.dataUpdatedAt)}
-                  onLimits={(row) => {
-                    setOpen({ kind: "limits", row });
-                  }}
-                />
-                <UsageChart />
-              </Stack>
-            </CollapsiblePanel>
-          </Collapsible>
+
+          <UsesGroup
+            uses={useItems}
+            rows={rows}
+            now={now}
+            onEdit={(use) => {
+              setOpen({ kind: "chain", use });
+            }}
+          />
+
+          <UsageList
+            rows={rows}
+            now={now}
+            onLimits={(row) => {
+              setOpen({ kind: "limits", row });
+            }}
+          />
         </>
       )}
       <Text size="sm" tone="muted">
@@ -190,6 +151,8 @@ export function SettingsAssistant() {
           use={open.use}
           providers={providerItems}
           presets={presetItems}
+          rows={rows}
+          now={now}
           onClose={close}
         />
       )}

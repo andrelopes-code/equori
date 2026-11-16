@@ -1,0 +1,120 @@
+@layer app {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    /* A fixed row: the name line, the 26 px route and 12 px above and below (spec A5). */
+    block-size: 5rem;
+  }
+
+  .body {
+    display: grid;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  .name {
+    flex: none;
+    max-inline-size: 100%;
+  }
+
+  .route {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow: hidden;
+  }
+
+  .stop {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    /* The pill holds the 20 px position circle with 3 px around it, in whole pixels. */
+    block-size: 26px;
+    padding-inline: 3px var(--slotted-space-5);
+    line-height: 1;
+    border-radius: var(--slotted-radius-full);
+    background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+    font-family: var(--slotted-font-family-mono);
+    font-size: var(--slotted-font-size-sm);
+    white-space: nowrap;
+  }
+
+  .position {
+    display: grid;
+    flex: none;
+    place-items: center;
+    /* A circle: equal sides in whole pixels, since a fractional side draws an uneven edge, that
+       the pill never squeezes, and a line box as tall as the digit so the digit sits on the
+       centre. */
+    inline-size: 20px;
+    block-size: 20px;
+    line-height: 1;
+    border-radius: var(--slotted-radius-full);
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    color: var(--slotted-text-muted);
+    font-family: var(--slotted-font-family-sans);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums lining-nums;
+  }
+
+  .stop[data-state="answering"] {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .stop[data-state="answering"] .position {
+    background: var(--slotted-tone-accent-solid);
+    box-shadow: none;
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .stop[data-state="lacking"] .model {
+    color: var(--slotted-text-muted);
+    text-decoration: line-through;
+  }
+
+  .stop[data-state="resting"] .model {
+    color: var(--slotted-text-muted);
+  }
+
+  .link {
+    flex: none;
+    inline-size: var(--slotted-space-5);
+    block-size: var(--slotted-border-width-thin);
+    background: color-mix(in oklab, var(--slotted-text) 22%, transparent);
+  }
+
+  .loading {
+    grid-template-columns: minmax(0, 1fr);
+    block-size: 5rem;
+  }
+
+  @media (forced-colors: active) {
+    .stop {
+      border: var(--slotted-border-width-thin) solid CanvasText;
+    }
+
+    .stop[data-state="answering"] {
+      border-width: var(--slotted-border-width-thick);
+    }
+  }
+
+  @media (max-width: 599px) {
+    .row {
+      block-size: 5.5rem;
+    }
+  }
+}

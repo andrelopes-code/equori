@@ -1,9 +1,11 @@
 import { Button } from "@slotted/react/button";
-import { List, ListEmpty } from "@slotted/react/list";
+import { Text } from "@slotted/react/typography";
 
 import type { ModelProvider } from "@/features/setup/api";
+import { AssistantCard } from "@/features/setup/assistant/assistant-card";
+import card from "@/features/setup/assistant/assistant-card.module.css";
 import { ProviderRow } from "@/features/setup/assistant/provider-row";
-import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
+import styles from "@/features/setup/assistant/provider-row.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
 interface ProvidersGroupProps {
@@ -25,12 +27,11 @@ export function ProvidersGroup({
   const t = useT();
 
   return (
-    <SettingsGroup
+    <AssistantCard
       title={t("assistant.providers")}
       description={t("assistant.providers.description")}
       actions={
         <Button
-          size="sm"
           variant="outline"
           tone="secondary"
           disabled={!canAdd}
@@ -40,23 +41,25 @@ export function ProvidersGroup({
         </Button>
       }
     >
-      <List variant="ruled" aria-label={t("assistant.providers")}>
-        {providers.length === 0 && (
-          <ListEmpty>{t("assistant.providers.empty")}</ListEmpty>
-        )}
-        {providers.map((provider) => (
-          <ProviderRow
-            key={provider.id}
-            provider={provider}
-            onEdit={() => {
-              onEdit(provider);
-            }}
-            onModels={() => {
-              onModels(provider);
-            }}
-          />
-        ))}
-      </List>
-    </SettingsGroup>
+      {providers.length === 0 && (
+        <li className={[card.row, styles.empty].join(" ")}>
+          <Text size="sm" tone="muted" truncate>
+            {t("assistant.providers.empty")}
+          </Text>
+        </li>
+      )}
+      {providers.map((provider) => (
+        <ProviderRow
+          key={provider.id}
+          provider={provider}
+          onEdit={() => {
+            onEdit(provider);
+          }}
+          onModels={() => {
+            onModels(provider);
+          }}
+        />
+      ))}
+    </AssistantCard>
   );
 }

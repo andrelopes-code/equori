@@ -1,0 +1,75 @@
+@layer app {
+  .order {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-radius: var(--slotted-radius-md);
+    /* Items inside an overlay (web.md): the text colour at 8% for the ground, 22% for the edge. */
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      color-mix(in oklab, var(--slotted-text) 22%, transparent);
+    overflow: hidden;
+  }
+
+  .item {
+    display: grid;
+    grid-template-columns: var(--slotted-space-7) minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--slotted-space-5);
+    /* A fixed item: two text lines with 8 px above and below (spec A9). */
+    block-size: 3.25rem;
+    padding-inline: var(--slotted-space-5) var(--slotted-space-4);
+    background: color-mix(in oklab, var(--slotted-text) 8%, transparent);
+  }
+
+  .item + .item {
+    border-block-start: var(--slotted-border-width-thin) solid
+      color-mix(in oklab, var(--slotted-text) 14%, transparent);
+  }
+
+  .empty {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .text {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .mono {
+    font-family: var(--slotted-font-family-mono);
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .add {
+    display: grid;
+    grid-template-columns: 10rem minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--slotted-space-4);
+  }
+
+  .phone {
+    display: none;
+  }
+
+  @media (max-width: 599px) {
+    .item {
+      block-size: 3.75rem;
+    }
+
+    .add {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .desk {
+      display: none;
+    }
+
+    .phone {
+      display: revert;
+    }
+  }
+}

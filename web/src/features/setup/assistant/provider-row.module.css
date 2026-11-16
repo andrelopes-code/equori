@@ -1,0 +1,21 @@
+@layer app {
+  .row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 14rem) auto;
+    /* A fixed row: two text lines with 10 px above and below (spec A4). */
+    block-size: 3.5rem;
+  }
+
+  .empty,
+  .loading {
+    grid-template-columns: minmax(0, 1fr);
+    block-size: 3.5rem;
+  }
+
+  @media (max-width: 599px) {
+    .row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      column-gap: var(--slotted-space-5);
+      block-size: 3.75rem;
+    }
+  }
+}

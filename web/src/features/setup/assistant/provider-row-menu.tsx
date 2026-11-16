@@ -14,16 +14,19 @@ interface ProviderRowMenuProps {
   name: string;
   checking: boolean;
   deleting: boolean;
+  onEdit: () => void;
   onCheck: () => void;
   onModels: () => void;
   onDelete: () => void;
 }
 
-// The actions of a provider that are not its edit: key check, model list and delete.
+// The actions of a provider: edit, key check, model list and delete. Edit stands here too
+// because a phone row holds the menu alone.
 export function ProviderRowMenu({
   name,
   checking,
   deleting,
+  onEdit,
   onCheck,
   onModels,
   onDelete,
@@ -49,6 +52,7 @@ export function ProviderRowMenu({
         )}
       />
       <MenuContent>
+        <MenuItem onSelect={onEdit}>{t("assistant.provider.edit")}</MenuItem>
         <MenuItem onSelect={onCheck}>{t("assistant.key.check")}</MenuItem>
         <MenuItem onSelect={onModels}>
           {t("assistant.provider.models")}

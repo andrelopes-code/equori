@@ -1,0 +1,71 @@
+@layer app {
+  /* The pane's card: the panel material of O18 with rows that run edge to edge. */
+  .card {
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    border: var(--slotted-border-width-thin) solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    box-shadow: var(--slotted-panel-shadow, none);
+    overflow: hidden;
+  }
+
+  .head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    padding: var(--slotted-space-6) var(--slotted-space-6)
+      var(--slotted-space-5);
+  }
+
+  .title {
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+  }
+
+  .rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: grid;
+    align-items: center;
+    column-gap: var(--slotted-space-6);
+    padding-inline: var(--slotted-space-6);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .mono {
+    font-family: var(--slotted-font-family-mono);
+  }
+
+  .cell {
+    display: grid;
+    min-inline-size: 0;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .phone {
+    display: none;
+  }
+
+  @media (max-width: 599px) {
+    /* Two classes, so the rule holds over the display a part sets in its own module. */
+    .card .description,
+    .card .desk {
+      display: none;
+    }
+
+    .phone {
+      display: revert;
+    }
+  }
+}

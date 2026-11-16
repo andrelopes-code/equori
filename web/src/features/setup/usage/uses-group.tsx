@@ -1,35 +1,35 @@
-import { List } from "@slotted/react/list";
-
-import type { ModelUse } from "@/features/setup/api";
-import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
+import type { ModelUse, UsageRow } from "@/features/setup/api";
+import { AssistantCard } from "@/features/setup/assistant/assistant-card";
 import { UseRow } from "@/features/setup/usage/use-row";
 import { useT } from "@/i18n/i18n-provider";
 
 interface UsesGroupProps {
   uses: readonly ModelUse[];
+  rows: readonly UsageRow[];
+  now: Date;
   onEdit: (use: ModelUse) => void;
 }
 
 // The chain of providers each feature of the assistant runs.
-export function UsesGroup({ uses, onEdit }: UsesGroupProps) {
+export function UsesGroup({ uses, rows, now, onEdit }: UsesGroupProps) {
   const t = useT();
 
   return (
-    <SettingsGroup
+    <AssistantCard
       title={t("assistant.uses")}
       description={t("assistant.uses.description")}
     >
-      <List variant="ruled" aria-label={t("assistant.uses")}>
-        {uses.map((use) => (
-          <UseRow
-            key={use.id}
-            use={use}
-            onEdit={() => {
-              onEdit(use);
-            }}
-          />
-        ))}
-      </List>
-    </SettingsGroup>
+      {uses.map((use) => (
+        <UseRow
+          key={use.id}
+          use={use}
+          rows={rows}
+          now={now}
+          onEdit={() => {
+            onEdit(use);
+          }}
+        />
+      ))}
+    </AssistantCard>
   );
 }
