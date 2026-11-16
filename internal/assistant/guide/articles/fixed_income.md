@@ -10,7 +10,7 @@ A bank product or a private security takes one instrument per contract. The code
 - Floating plus a spread: index_id, percent_of_index_bp 10000, and spread_bp a year.
 - Pre-fixed: no index_id, and spread_bp the rate a year (1250 is 12.5%).
 
-An index that compounds by business day counts business days (bus252); another index and a pre-fixed rate count calendar days (act365). A monthly index enters by published month, without pro rata. The accrued Price is gross: tax is not deducted. A Price typed by the user (record_price, after the statement of the issuer) replaces the accrued one.
+An index that compounds by business day counts business days (bus252). A pre-fixed rate or a spread over a monthly index counts the business days of a calendar with day_count bus252 and calendar_id; without calendar_id it counts calendar days (act365). daily_liquidity and redeemable_from (after the issue date, before maturity) are set with the terms. A monthly index enters by published month, without pro rata. The accrued Price is gross: tax is not deducted. A Price typed by the user (record_price, after the statement of the issuer) replaces the accrued one.
 
 Buy. record_investment kind buy, with quantity as the amount applied and unit_price 1.00 on the issue date. A later contribution to a product with the same terms, such as a daily-liquidity deposit, is a buy at the Price of that day. Another rate or maturity is another instrument.
 
