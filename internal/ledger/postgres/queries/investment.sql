@@ -272,3 +272,52 @@ FROM
 WHERE
     books_id = @books_id
     AND transaction_id = ANY (@transaction_ids::UUID[]);
+
+-- name: OpenLotPostings :many
+-- The non-voided postings of a security account up to the end of a date, in the order a holding
+-- is built, without the transaction exclude; when before_tx is set, the postings of that date
+-- recorded before it. A posting that adds units and has a sibling of the same instrument that
+-- removes them in its transaction is a custody transfer in; the sibling's account is the source
+-- (fixed income lots, FL3 and FL4); the nil UUID means no source.
+SELECT
+    p.transaction_id,
+    p.booked_on,
+    p.amount,
+    p.weight,
+    coalesce(src.account_id, '00000000-0000-0000-0000-000000000000'::uuid) AS source_account_id
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.books_id = p.books_id
+    AND a.id = p.account_id
+    LEFT JOIN LATERAL (
+        SELECT
+            sp.account_id
+        FROM
+            ledger_posting sp
+            JOIN ledger_account sa ON sa.books_id = sp.books_id
+            AND sa.id = sp.account_id
+        WHERE
+            sp.books_id = p.books_id
+            AND sp.transaction_id = p.transaction_id
+            AND sp.account_id <> p.account_id
+            AND sp.amount < 0
+            AND p.amount > 0
+            AND sa.instrument = a.instrument
+        LIMIT
+            1
+    ) src ON TRUE
+WHERE
+    p.books_id = @books_id
+    AND p.account_id = @account_id
+    AND NOT p.voided
+    AND p.booked_on <= @on_date
+    AND p.transaction_id <> @exclude
+    AND (
+        sqlc.narg ('before_tx')::uuid IS NULL
+        OR p.booked_on < @on_date
+        OR p.transaction_id < sqlc.narg ('before_tx')::uuid
+    )
+ORDER BY
+    p.booked_on,
+    p.transaction_id,
+    p.position;

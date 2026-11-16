@@ -168,6 +168,11 @@ func (s *Service) buildCustodyTransfer(
 		return domain.Transaction{}, err
 	}
 
+	h, err = s.withCostMethod(ctx, r, booksID, from, h, o.Date, uuid.Nil)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
 	postings, err := domain.BuildCustodyTransfer(o, to.ID, h)
 	if err != nil {
 		return domain.Transaction{}, err

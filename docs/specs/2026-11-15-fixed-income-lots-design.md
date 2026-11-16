@@ -1,6 +1,6 @@
 # Fixed income sales by purchase lot
 
-Status: approved by review of 2026-11-15 (amendment of P8, replaces A68 for the accounts named in FL1)
+Status: approved by review of 2026-11-15 (amendment A234 of P8, replaces A68 for the accounts named in FL1)
 
 ## 1. Intent
 
@@ -51,7 +51,7 @@ Anti-goals:
 | FL7 | `soldCost` and `BuildCustodyTransfer` take the open lots when the method is `fifo` and sum the consumed cost; under `average` they call `averageLot` unchanged. A `fifo` account never receives a `Day`. | One call site for both operations. Day-trade pairing (IN RFB 1.585/2015, art. 65) concerns variable income. |
 | FL8 | When the open lots sum to a quantity other than the holding's, or a lot with units has a cost of zero or less, the operation fails with an internal error that names the account. | A mismatch is a defect of the derivation; a fallback would hide it. |
 | FL9 | A sale already recorded keeps its posted cost. | NG4; the average method behaves the same. |
-| FL10 | For a `fifo` account, `onlyRemovesUnits` does not exempt a change from the later-sale check: a change that removes units and is dated before a later sale returns `ErrLaterSaleExists`, as a change that adds units does. | Under the average, removing units leaves the average of a later sale unchanged. Under FIFO it changes which lots the later sale consumed. |
+| FL10 | No change to the later-sale check. A correction of a sale, or a change dated before a later sale, is refused with `ErrLaterSaleExists` whatever the cost method (A69, A228 IO16); a sale recorded after another of its day reads the lots the first one left, since the replay orders by transaction. | Lots depend on the order of the earlier sales; the check already keeps that order fixed (FL-S6, FL-S9). |
 | FL11 | `GET /api/accounts/{id}/lots?date=` (role `read`) returns `method`, `quantity`, `cost_basis` and `lots` (`acquired_on`, `quantity`, `cost`) from the same `OpenLots` call. The sale entries of the web (`trade-math.ts`, `note-model.ts`, `foreign-math.ts`) get the cost from one function that applies the average when `method` is `average` and the lots when it is `fifo`. Go and TypeScript tests read one fixture file of lots, quantities and expected costs. | The sale form shows the cost the server records (G5) and the rule has one specification (AG3). |
 
 ## 5. Scenarios
@@ -65,10 +65,10 @@ Fixtures: purchases of 10 units at 100.00 on 2026-01-05 and 10 units at 120.00 o
 | FL-S3 | Region `BR`, `stock`, same fixtures, sale of 5 units | Cost 550.00 (average, unchanged) |
 | FL-S4 | Region `NZ`, base currency NZD, `fixed_income`, same fixtures, sale of 5 units | Cost 550.00 |
 | FL-S5 | Region `BR`, `fixed_income`, transfer of 5 units to another brokerage, then sale of 10 units there | The destination holds one lot of 5 units acquired on 2026-01-05 at cost 500.00; the sale of 10 units removes that lot first |
-| FL-S6 | Region `BR`, `fixed_income`, a sale of 5 units on 2026-03-01, then the 2026-01-05 purchase is corrected to 11 units | The correction returns `ErrLaterSaleExists` (FL10 and the later-sale check) |
+| FL-S6 | Region `BR`, `fixed_income`, a sale of 5 units on 2026-03-01, then the 2026-01-05 purchase is corrected to 11 units | The correction returns `ErrLaterSaleExists` (FL10) |
 | FL-S7 | Region `BR`, `fixed_income`, a sale of 5 units posted at the average cost of 550.00 before the change, then a sale of 5 units | The open lots sum to the holding's cost basis; the second sale removes the oldest remaining lot |
-| FL-S8 | Open lots and holding disagree after a direct SQL change | The sale returns an internal error; no posting is written |
-| FL-S9 | A change that removes units, dated before a later sale, on a `fifo` account | `ErrLaterSaleExists` |
+| FL-S8 | Region `BR`, `fixed_income`: the posted cost of an earlier sale is changed by direct SQL so the oldest lot would have a cost of zero or less | The next sale returns an internal error (500); no transaction is written |
+| FL-S9 | Region `BR`, `fixed_income` and `stock`: a sale of 5 units is corrected to 4 units after a second sale of its day | `ErrLaterSaleExists` (409) for both methods |
 | FL-S10 | `GET /api/accounts/{id}/lots` for FL-S1 before the sale; roles `owner`, `write`, `read`; a member of another book | Two lots; 200 for the three roles; 404 for the other book |
 
 ## 6. Cross-cutting questions
@@ -99,7 +99,7 @@ Fixtures: purchases of 10 units at 100.00 on 2026-01-05 and 10 units at 120.00 o
 | S2 | The sale form is an entry kind of `/transactions/new`, a phone route. The cost line keeps one line at 390 px and at desktop width. |
 | S3 | The guide article of the investments topic (`internal/assistant/guide/articles/investments.md`) states that a fixed income sale in Brazil removes the oldest purchase first. |
 | S4 | Does not apply: the assistant reads the realized result through existing tools. |
-| X1 | FL-S1 to FL-S10 receive scenario IDs from the next free number of `docs/domain/06-scenarios.md`, each with a test through `internal/apitest`. |
+| X1 | S447 to S454: FL-S1 is S447, FL-S2 S448, FL-S3 S449, FL-S4 S450, FL-S5 S451, FL-S6 S452, FL-S9 S453. FL-S7 is tested by `TestReplayLots`, FL-S8 is S454, FL-S10 is tested by the task that adds it. Each has a test that carries its ID. |
 | X2 | FL-S4 runs outside Brazil with a base currency other than BRL. |
 
 ## 7. Left to the builder

@@ -49,6 +49,10 @@ type Trade struct {
 // amounts, cost basis the sum of its weights.
 type Holding struct {
 	Quantity, CostBasis money.Money
+	// Method is the cost method of the holding, CostAverage when empty; Lots are its open lots,
+	// read only under CostFIFO.
+	Method string
+	Lots   []Lot
 }
 
 // TradeAccounts are the accounts a trade posts results and taxes to.
@@ -237,9 +241,12 @@ func soldCost(o TradeOrder, h Holding, day *Day) (lot soldLot, err error) {
 		)
 	}
 
-	if day != nil {
+	switch {
+	case h.Method == CostFIFO:
+		lot, err = fifoLot(o.Quantity, h)
+	case day != nil:
 		lot, err = dayLot(o.Quantity, h, *day)
-	} else {
+	default:
 		lot, err = averageLot(o.Quantity, h)
 	}
 
@@ -258,6 +265,29 @@ func soldCost(o TradeOrder, h Holding, day *Day) (lot soldLot, err error) {
 // sells the whole quantity (A68).
 func averageLot(q money.Money, h Holding) (soldLot, error) {
 	cost, err := stockShare(h.CostBasis, q.Amount(), h.Quantity.Amount())
+	if err != nil {
+		return soldLot{}, err
+	}
+
+	zeroQuantity, err := q.Sub(q)
+	if err != nil {
+		return soldLot{}, err
+	}
+
+	zeroCost, err := cost.Sub(cost)
+
+	return soldLot{Cost: cost, DayQuantity: zeroQuantity, DayCost: zeroCost}, err
+}
+
+// fifoLot removes the cost of the oldest lots of the holding; a sale never separates day trades
+// of a holding with lots.
+func fifoLot(q money.Money, h Holding) (soldLot, error) {
+	amount, err := FIFOCost(h.Lots, q.Amount())
+	if err != nil {
+		return soldLot{}, err
+	}
+
+	cost, err := money.New(amount, h.CostBasis.Currency())
 	if err != nil {
 		return soldLot{}, err
 	}

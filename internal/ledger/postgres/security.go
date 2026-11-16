@@ -100,6 +100,32 @@ func (r *Repository) Holding(
 	return row.Quantity, row.CostBasis, err
 }
 
+func (r *Repository) OpenLotPostings(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	date time.Time,
+	beforeTx, exclude uuid.UUID,
+) ([]domain.LotPosting, error) {
+	rows, err := r.q.OpenLotPostings(ctx, OpenLotPostingsParams{
+		BooksID:   booksID,
+		AccountID: accountID,
+		OnDate:    date,
+		Exclude:   exclude,
+		BeforeTx:  uuid.NullUUID{UUID: beforeTx, Valid: beforeTx != uuid.Nil},
+	})
+
+	return mapAll(rows, func(row OpenLotPostingsRow) domain.LotPosting {
+		return domain.LotPosting{
+			TransactionID: row.TransactionID,
+			Date:          row.BookedOn,
+			Quantity:      row.Amount,
+			Cost:          row.Weight,
+			Source:        row.SourceAccountID,
+		}
+	}), err
+}
+
 func (r *Repository) LaterSaleExists(
 	ctx context.Context,
 	booksID int64,

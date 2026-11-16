@@ -531,6 +531,104 @@ func (q *Queries) ListTrades(ctx context.Context, arg ListTradesParams) ([]Ledge
 	return items, nil
 }
 
+const openLotPostings = `-- name: OpenLotPostings :many
+SELECT
+    p.transaction_id,
+    p.booked_on,
+    p.amount,
+    p.weight,
+    coalesce(src.account_id, '00000000-0000-0000-0000-000000000000'::uuid) AS source_account_id
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.books_id = p.books_id
+    AND a.id = p.account_id
+    LEFT JOIN LATERAL (
+        SELECT
+            sp.account_id
+        FROM
+            ledger_posting sp
+            JOIN ledger_account sa ON sa.books_id = sp.books_id
+            AND sa.id = sp.account_id
+        WHERE
+            sp.books_id = p.books_id
+            AND sp.transaction_id = p.transaction_id
+            AND sp.account_id <> p.account_id
+            AND sp.amount < 0
+            AND p.amount > 0
+            AND sa.instrument = a.instrument
+        LIMIT
+            1
+    ) src ON TRUE
+WHERE
+    p.books_id = $1
+    AND p.account_id = $2
+    AND NOT p.voided
+    AND p.booked_on <= $3
+    AND p.transaction_id <> $4
+    AND (
+        $5::uuid IS NULL
+        OR p.booked_on < $3
+        OR p.transaction_id < $5::uuid
+    )
+ORDER BY
+    p.booked_on,
+    p.transaction_id,
+    p.position
+`
+
+type OpenLotPostingsParams struct {
+	BooksID   int64
+	AccountID uuid.UUID
+	OnDate    time.Time
+	Exclude   uuid.UUID
+	BeforeTx  uuid.NullUUID
+}
+
+type OpenLotPostingsRow struct {
+	TransactionID   uuid.UUID
+	BookedOn        time.Time
+	Amount          int64
+	Weight          int64
+	SourceAccountID uuid.UUID
+}
+
+// The non-voided postings of a security account up to the end of a date, in the order a holding
+// is built, without the transaction exclude; when before_tx is set, the postings of that date
+// recorded before it. A posting that adds units and has a sibling of the same instrument that
+// removes them in its transaction is a custody transfer in; the sibling's account is the source
+// (fixed income lots, FL3 and FL4); the nil UUID means no source.
+func (q *Queries) OpenLotPostings(ctx context.Context, arg OpenLotPostingsParams) ([]OpenLotPostingsRow, error) {
+	rows, err := q.db.Query(ctx, openLotPostings,
+		arg.BooksID,
+		arg.AccountID,
+		arg.OnDate,
+		arg.Exclude,
+		arg.BeforeTx,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OpenLotPostingsRow
+	for rows.Next() {
+		var i OpenLotPostingsRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.BookedOn,
+			&i.Amount,
+			&i.Weight,
+			&i.SourceAccountID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const securityIncomes = `-- name: SecurityIncomes :many
 SELECT
     i.transaction_id,

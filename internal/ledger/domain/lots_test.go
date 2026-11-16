@@ -5,6 +5,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestConsumeLots(t *testing.T) {
@@ -120,5 +122,85 @@ func TestConsumeLotsRoundsHalfToEven(t *testing.T) {
 				t.Errorf("share = %d, consumed = %d, want %d", got, consumed[0].Cost, tt.wantCost)
 			}
 		})
+	}
+}
+
+func TestReplayLots(t *testing.T) {
+	jan := time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC)
+	feb := time.Date(2026, 2, 5, 0, 0, 0, 0, time.UTC)
+	mar := time.Date(2026, 3, 5, 0, 0, 0, 0, time.UTC)
+	source := uuid.New()
+
+	sourceLots := func(LotPosting) ([]Lot, error) {
+		return []Lot{
+			{AcquiredOn: jan, Quantity: 10, Cost: 1000},
+			{AcquiredOn: feb, Quantity: 10, Cost: 1200},
+		}, nil
+	}
+
+	tests := []struct {
+		name     string
+		postings []LotPosting
+		want     []Lot
+	}{
+		{
+			name: "sale posted at the average keeps the lots equal to the cost basis",
+			postings: []LotPosting{
+				{Date: jan, Quantity: 10, Cost: 1000},
+				{Date: feb, Quantity: 10, Cost: 1200},
+				{Date: mar, Quantity: -5, Cost: -550},
+			},
+			want: []Lot{
+				{AcquiredOn: jan, Quantity: 5, Cost: 450},
+				{AcquiredOn: feb, Quantity: 10, Cost: 1200},
+			},
+		},
+		{
+			name: "transfer in keeps the acquisition dates of the source",
+			postings: []LotPosting{
+				{Date: mar, Quantity: 15, Cost: 1600, Source: source},
+			},
+			want: []Lot{
+				{AcquiredOn: jan, Quantity: 10, Cost: 1000},
+				{AcquiredOn: feb, Quantity: 5, Cost: 600},
+			},
+		},
+		{
+			name: "transferred lot older than a purchase goes first",
+			postings: []LotPosting{
+				{Date: feb, Quantity: 4, Cost: 480},
+				{Date: mar, Quantity: 5, Cost: 500, Source: source},
+			},
+			want: []Lot{
+				{AcquiredOn: jan, Quantity: 5, Cost: 500},
+				{AcquiredOn: feb, Quantity: 4, Cost: 480},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ReplayLots(tt.postings, sourceLots)
+			if err != nil {
+				t.Fatalf("error = %v", err)
+			}
+
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("lots = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReplayLotsRejectsASaleOfMoreThanHeld(t *testing.T) {
+	day := time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC)
+
+	_, err := ReplayLots([]LotPosting{
+		{Date: day, Quantity: 10, Cost: 1000},
+		{Date: day, Quantity: -11, Cost: -1100},
+	}, nil)
+
+	if !errors.Is(err, ErrLotsInconsistent) {
+		t.Fatalf("error = %v, want %v", err, ErrLotsInconsistent)
 	}
 }

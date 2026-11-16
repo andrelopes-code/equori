@@ -75,6 +75,13 @@ func (s *Service) buildTrade(
 		return domain.Transaction{}, err
 	}
 
+	if o.Side == domain.SideSell {
+		h, err = s.withCostMethod(ctx, r, booksID, security, h, o.Date, exclude)
+		if err != nil {
+			return domain.Transaction{}, err
+		}
+	}
+
 	accts, err := s.tradeAccounts(ctx, r, booksID, o.TaxesCategoryID, "taxes_category_id")
 	if err != nil {
 		return domain.Transaction{}, err

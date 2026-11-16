@@ -61,6 +61,16 @@ type reportStore interface {
 		date time.Time,
 		exclude uuid.UUID,
 	) ([]domain.DayTrade, error)
+	// OpenLotPostings returns the postings of a security account up to date in the order a holding
+	// is built, leaving out the transaction exclude; a beforeTx other than uuid.Nil keeps only
+	// the postings recorded before that transaction on date (fixed income lots).
+	OpenLotPostings(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		date time.Time,
+		beforeTx, exclude uuid.UUID,
+	) ([]domain.LotPosting, error)
 	LaterSaleExists(
 		ctx context.Context,
 		booksID int64,
