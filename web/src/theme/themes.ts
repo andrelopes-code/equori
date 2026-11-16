@@ -16,7 +16,12 @@ import { tone, toneSeed, useTone } from "@/theme/tone";
 import type { Tone } from "@/theme/tone";
 import { typeface, useTypeface } from "@/theme/typeface";
 import type { Typeface } from "@/theme/typeface";
-import { applyVisual, readVisual, useVisual } from "@/theme/visual";
+import {
+  applyVisual,
+  glassAvailable,
+  readVisual,
+  useVisual,
+} from "@/theme/visual";
 import type { Visual } from "@/theme/visual";
 
 // The values a theme holds. Scheme, density, text size and motion are the reader's own and stay
@@ -160,9 +165,10 @@ export const curatedThemes: Readonly<Record<CuratedTheme, ThemeValues>> = {
   },
 };
 
-export const curatedThemeIDs = Object.keys(
-  curatedThemes,
-) as readonly CuratedTheme[];
+// A theme of the glass style is offered only where the style is (visual.ts).
+export const curatedThemeIDs = (
+  Object.keys(curatedThemes) as readonly CuratedTheme[]
+).filter((id) => curatedThemes[id].visual !== "glass" || glassAvailable());
 
 export function currentThemeValues(): ThemeValues {
   return {

@@ -45,6 +45,9 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // The glass style is blocked in a build without this variable (theme/visual.ts); the tests of
+    // the style run with it on.
+    env: { VITE_EXPERIMENTAL_GLASS: "on" },
     // Screens that render a whole page take about 5 s on a loaded machine, the default limit.
     testTimeout: 15_000,
     setupFiles: ["src/testing/setup.ts"],

@@ -16,6 +16,13 @@ const THEME: Readonly<Record<Visual, string>> = {
   glass: "equori-glass",
 };
 
+// The owner blocked the glass style on 2026-11-16 until its defects are fixed. A build offers it
+// only with VITE_EXPERIMENTAL_GLASS=on; without it a stored glass choice stays in storage and reads
+// as the standard style.
+export function glassAvailable(): boolean {
+  return import.meta.env.VITE_EXPERIMENTAL_GLASS === "on";
+}
+
 export function isVisual(value: unknown): value is Visual {
   return value === "standard" || value === "glass";
 }
@@ -23,10 +30,14 @@ export function isVisual(value: unknown): value is Visual {
 export function readVisual(): Visual {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return isVisual(stored) ? stored : defaultVisual;
+    return isVisual(stored) ? offered(stored) : defaultVisual;
   } catch {
     return defaultVisual;
   }
+}
+
+function offered(visual: Visual): Visual {
+  return visual === "glass" && !glassAvailable() ? defaultVisual : visual;
 }
 
 const listeners = new Set<() => void>();
@@ -60,6 +71,8 @@ async function showTheme(visual: Visual): Promise<void> {
 }
 
 export function applyVisual(visual: Visual): void {
+  if (visual === "glass" && !glassAvailable()) return;
+
   try {
     localStorage.setItem(STORAGE_KEY, visual);
     held = undefined;

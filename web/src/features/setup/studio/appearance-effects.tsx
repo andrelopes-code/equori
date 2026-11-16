@@ -5,7 +5,7 @@ import { Tag } from "@slotted/react/tag";
 import { StudioSection } from "@/features/setup/studio/studio-section";
 import { useT } from "@/i18n/i18n-provider";
 import { useMotion } from "@/theme/motion";
-import { useVisual } from "@/theme/visual";
+import { glassAvailable, useVisual } from "@/theme/visual";
 
 export function AppearanceEffects() {
   const t = useT();
@@ -27,21 +27,24 @@ export function AppearanceEffects() {
       >
         {t("settings.motion")}
       </Switch>
-      <Switch
-        labelPlacement="start"
-        checked={visual === "glass"}
-        onCheckedChange={(on) => {
-          setVisual(on ? "glass" : "standard");
-        }}
-        description={t("settings.experimental.glassDescription")}
-      >
-        <Inline align="center" gap={4}>
-          {glassLabel}
-          <Tag size="sm" tone="accent" variant="solid">
-            {t("settings.experimental.tag")}
-          </Tag>
-        </Inline>
-      </Switch>
+
+      {glassAvailable() && (
+        <Switch
+          labelPlacement="start"
+          checked={visual === "glass"}
+          onCheckedChange={(on) => {
+            setVisual(on ? "glass" : "standard");
+          }}
+          description={t("settings.experimental.glassDescription")}
+        >
+          <Inline align="center" gap={4}>
+            {glassLabel}
+            <Tag size="sm" tone="accent" variant="solid">
+              {t("settings.experimental.tag")}
+            </Tag>
+          </Inline>
+        </Switch>
+      )}
     </StudioSection>
   );
 }

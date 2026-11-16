@@ -18,6 +18,25 @@ describe("visual", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("reads the standard style for a stored glass style while the glass is blocked", () => {
+    vi.stubEnv("VITE_EXPERIMENTAL_GLASS", "");
+    localStorage.setItem("equori.visual", "glass");
+
+    expect(readVisual()).toBe("standard");
+    expect(localStorage.getItem("equori.visual")).toBe("glass");
+  });
+
+  it("keeps the standard theme when the glass style is applied while blocked", () => {
+    vi.stubEnv("VITE_EXPERIMENTAL_GLASS", "");
+
+    applyVisual("glass");
+
+    expect(readVisual()).toBe("standard");
+    expect(localStorage.getItem("equori.visual")).toBeNull();
+    expect(html).toHaveAttribute("data-slotted-theme", "equori");
   });
 
   it("defaults to the standard style when storage is empty", () => {

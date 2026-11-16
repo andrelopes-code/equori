@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { writeLocale } from "@/i18n/locale";
@@ -30,7 +30,31 @@ const fetch = () =>
       }),
   });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("experimental glass style", () => {
+  it("offers no switch while the glass is blocked", async () => {
+    vi.stubEnv("VITE_EXPERIMENTAL_GLASS", "");
+    localStorage.setItem("equori.visual", "glass");
+
+    await renderApp("/settings/appearance", { fetch: fetch() });
+    await userEvent.click(
+      await screen.findByRole("tab", {
+        name: catalogPtBR["studio.tab.effects"],
+      }),
+    );
+
+    expect(
+      await screen.findByRole("switch", {
+        name: catalogPtBR["settings.motion"],
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("switch", { name: label })).toBeNull();
+    expect(html).toHaveAttribute("data-slotted-theme", "equori");
+  });
+
   it("is off until the reader turns it on", async () => {
     await renderApp("/settings/appearance", { fetch: fetch() });
     await userEvent.click(
