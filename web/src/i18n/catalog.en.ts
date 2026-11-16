@@ -1842,6 +1842,7 @@ export const catalogEn = {
   "assistant.field.color": "Colour",
   "assistant.field.icon": "Icon",
   "assistant.field.identifier": "Identifier",
+  "assistant.field.issuer": "Issuer",
   "assistant.body.from": "From",
   "assistant.body.to": "To",
   "assistant.body.uncategorized": "Uncategorized",

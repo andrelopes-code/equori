@@ -2982,6 +2982,12 @@
                   "type": "string"
                 }
               },
+              "issuer": {
+                "type": "string"
+              },
+              "owned": {
+                "type": "boolean"
+              },
               "quote_currency": {
                 "type": "string"
               },
@@ -3128,6 +3134,12 @@
               "items": {
                 "type": "string"
               }
+            },
+            "issuer": {
+              "type": "string"
+            },
+            "owned": {
+              "type": "boolean"
             },
             "quote_currency": {
               "type": "string"
@@ -6812,6 +6824,18 @@
             "bus252",
             "act365"
           ]
+        },
+        "issuer": {
+          "type": "string",
+          "description": "for edit: issuer name"
+        },
+        "issuer_scheme": {
+          "type": "string",
+          "description": "for edit: issuer identifier scheme, such as br_cnpj"
+        },
+        "issuer_id": {
+          "type": "string",
+          "description": "for edit: issuer identifier"
         }
       },
       "required": [
@@ -6846,6 +6870,12 @@
               "items": {
                 "type": "string"
               }
+            },
+            "issuer": {
+              "type": "string"
+            },
+            "owned": {
+              "type": "boolean"
             },
             "quote_currency": {
               "type": "string"

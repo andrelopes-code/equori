@@ -66,7 +66,7 @@ The period the net income covers is not stated in the sources read. The screen l
 | S2 | The tab follows the account page's phone layout: one column of rows with the value end-aligned. A test runs at the phone width of the existing account page tests. |
 | S3 | Guide article `internal/assistant/guide/articles/` of the accounts topic gains the tab. |
 | S4 | The assistant does not read the figures in this change. A tool view is a later change. |
-| X1 | Scenarios S471 to S476 in `docs/domain/06-scenarios.md`, each with a test through `internal/apitest`. |
+| X1 | Scenarios S471 to S477 in `docs/domain/06-scenarios.md`, each with a test through `internal/apitest`. |
 | X2 | A book of region `US` suggests no `br_ifdata`; an unknown scheme is 404; a book of base currency `USD` shows BRL figures. |
 
 ## Scenarios
@@ -75,7 +75,8 @@ The period the net income covers is not stated in the sources read. The screen l
 - S472: a null Basel index in the source is `null` in the response, not `"0"`.
 - S473: with the feed disabled the operation is 404 `not_found`.
 - S474: an `br_ispb` without a row is 404 `not_found`; a scheme `bic` is 404 `not_found`.
-- S475: a member of another book reads the same figures; a request without membership is 403.
+- S475: a member of another book reads the same figures; a request without a session is 401.
+- S477: a book of region `US` has `br_ifdata` listed with `suggested` false.
 - S476: `GET /market-data/feeds` lists `br_ifdata` with `kind` `institution`, `last` 2026-06-30, and `stale` true when today is after 2027-01-28.
 
 ## Not covered

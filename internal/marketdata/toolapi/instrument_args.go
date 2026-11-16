@@ -64,16 +64,19 @@ func checkEditArgs(in manageInstrumentIn, fields []field) error {
 
 	if err := required(
 		name,
-		without(fields, "name", "type", "exchange", "subtype", "symbols"),
+		without(
+			fields, "name", "type", "exchange", "subtype", "symbols",
+			"issuer", "issuer_scheme", "issuer_id",
+		),
 	); err != nil {
 		return err
 	}
 
 	if in.Name == "" && in.Type == "" && in.Exchange == "" && in.Subtype == "" &&
-		in.Symbols == nil {
+		in.Symbols == nil && !in.hasIssuer() {
 		return tool.InvalidArgument(
 			"name",
-			"or type, exchange, subtype or symbols is required for edit",
+			"or type, exchange, subtype, symbols or issuer is required for edit",
 		)
 	}
 
@@ -131,6 +134,10 @@ func (in manageInstrumentIn) instrument() (domain.Instrument, error) {
 	}, nil
 }
 
+func (in manageInstrumentIn) hasIssuer() bool {
+	return in.Issuer != "" || in.IssuerScheme != "" || in.IssuerID != ""
+}
+
 // edited applies an edit call to inst: a field the call leaves out keeps its value.
 func (in manageInstrumentIn) edited(inst domain.Instrument) (domain.Instrument, error) {
 	symbols, err := symbolMap(in.Symbols)
@@ -156,6 +163,10 @@ func (in manageInstrumentIn) edited(inst domain.Instrument) (domain.Instrument, 
 
 	if symbols != nil {
 		inst.Symbols = symbols
+	}
+
+	if in.hasIssuer() {
+		inst.Issuer = domain.Issuer{Name: in.Issuer, Scheme: in.IssuerScheme, ID: in.IssuerID}
 	}
 
 	return inst.Validate()
@@ -252,6 +263,9 @@ func presentFields(in manageInstrumentIn) []field {
 		},
 		{"subtype", in.Subtype != ""},
 		{"symbols", in.Symbols != nil},
+		{"issuer", in.Issuer != ""},
+		{"issuer_scheme", in.IssuerScheme != ""},
+		{"issuer_id", in.IssuerID != ""},
 		{"day_count", in.DayCount != ""},
 	}
 }

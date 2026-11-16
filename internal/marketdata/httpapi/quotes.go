@@ -7,6 +7,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -26,9 +27,24 @@ func (s *Server) listInstrumentQuotes(
 		return InstrumentQuoteList{}, err
 	}
 
-	items := make([]InstrumentQuote, len(quotes))
-	for i, q := range quotes {
-		items[i] = toInstrumentQuoteAPI(q)
+	instruments, err := s.svc.ListInstruments(ctx, "")
+	if err != nil {
+		return InstrumentQuoteList{}, err
+	}
+
+	booksID := auth.MustBooksID(ctx)
+	visible := map[money.Currency]bool{}
+
+	for _, in := range instruments {
+		visible[in.Code] = in.VisibleTo(booksID)
+	}
+
+	items := make([]InstrumentQuote, 0, len(quotes))
+
+	for _, q := range quotes {
+		if visible[q.Instrument] {
+			items = append(items, toInstrumentQuoteAPI(q))
+		}
 	}
 
 	return InstrumentQuoteList{Items: items}, nil

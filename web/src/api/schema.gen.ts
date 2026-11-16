@@ -3080,6 +3080,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/market-data/institution-indicators": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The prudential indicators of an institution from the latest period of an enabled source (A237 I9). */
+        get: operations["getInstitutionIndicators"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market-data/feeds": {
         parameters: {
             query?: never;
@@ -6576,6 +6593,37 @@ export interface components {
             survey_date: string;
             items: components["schemas"]["IndexExpectation"][];
         };
+        InstitutionIndicators: {
+            source: string;
+            /** @description The address of the portal of the source, where the figures can be checked. */
+            source_url: string;
+            /**
+             * Format: date
+             * @description The last day of the period the figures refer to.
+             */
+            period: string;
+            /** @description The currency of equity and net_income, whatever the base currency of the book. */
+            currency: string;
+            conglomerate_code: string;
+            /** @description Whose figures these are; the institution is covered by this conglomerate (A237 I6). */
+            conglomerate_name: string;
+            /** @description The Basel index, an exact decimal fraction (0.155 is 15.5%); null when the source does not inform it. */
+            basel: string | null;
+            /** @description The principal capital ratio, an exact decimal fraction; null when not informed. */
+            principal_capital: string | null;
+            /** @description The fixed-asset ratio (imobilização), an exact decimal fraction; null when not informed. */
+            fixed_asset: string | null;
+            /**
+             * Format: int64
+             * @description The equity in minor units of currency; null when not informed.
+             */
+            equity: number | null;
+            /**
+             * Format: int64
+             * @description The net income of the period in minor units of currency; null when not informed.
+             */
+            net_income: number | null;
+        };
         IndexExpectation: {
             /** Format: date */
             date: string;
@@ -6588,7 +6636,7 @@ export interface components {
         MarketDataFeed: {
             id: string;
             /** @enum {string} */
-            kind: "price" | "index" | "expectation";
+            kind: "price" | "index" | "expectation" | "institution";
             enabled: boolean;
             /** @description Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
@@ -6643,12 +6691,21 @@ export interface components {
             type: components["schemas"]["InstrumentType"];
             scale: number;
             name: string;
+            /** @description The instrument belongs to the book and no other book reads it. */
+            owned: boolean;
+            issuer?: components["schemas"]["InstrumentIssuer"];
             /** @description Absent for currencies. */
             quote_currency?: string;
             exchange?: string;
             subtype?: string;
             symbols?: components["schemas"]["InstrumentSymbols"];
             coverage?: components["schemas"]["InstrumentCoverage"];
+        };
+        InstrumentIssuer: {
+            name: string;
+            /** @description Registry of the identifier, such as br_cnpj. */
+            scheme?: string;
+            id?: string;
         };
         InstrumentCoverage: {
             /**
@@ -6758,6 +6815,7 @@ export interface components {
             /** @description Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1). */
             subtype?: string;
             symbols?: components["schemas"]["InstrumentSymbols"];
+            issuer?: components["schemas"]["InstrumentIssuer"];
         };
         InstrumentEdit: {
             type?: components["schemas"]["InstrumentType"];
@@ -6765,6 +6823,7 @@ export interface components {
             exchange?: string;
             subtype?: string;
             symbols?: components["schemas"]["InstrumentSymbols"];
+            issuer?: components["schemas"]["InstrumentIssuer"];
         };
         /** @description The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it. */
         InstrumentSymbols: {
@@ -13119,6 +13178,33 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    getInstitutionIndicators: {
+        parameters: {
+            query: {
+                /** @description The identifier scheme of the institution, for example br_ispb. */
+                scheme: string;
+                identifier: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstitutionIndicators"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listMarketDataFeeds: {

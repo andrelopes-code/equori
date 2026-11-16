@@ -75,6 +75,17 @@ func (m *Module) TickFeeds(ctx context.Context) {
 		}
 	}
 
+	for _, src := range m.feeds.Institutions {
+		if on[src.ID()] {
+			err := m.tickInstitution(ctx, src)
+			if err != nil {
+				m.logFeed(ctx, err, "source", src.ID())
+			}
+
+			m.ran(src.ID(), err)
+		}
+	}
+
 	m.TickAccrual(ctx)
 }
 

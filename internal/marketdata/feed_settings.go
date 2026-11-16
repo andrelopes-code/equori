@@ -82,6 +82,11 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		return nil, err
 	}
 
+	out, err = m.institutionFeeds(ctx, out, fs)
+	if err != nil {
+		return nil, err
+	}
+
 	return out, nil
 }
 
@@ -214,6 +219,10 @@ func (m *Module) feed(
 		if period == index.PeriodMonth {
 			f.Stale = today.After(last.AddDate(0, 2, lags[id]))
 		}
+
+		if period == periodQuarter {
+			f.Stale = today.After(quarterEndAfter(*last).AddDate(0, 0, lags[id]))
+		}
 	}
 
 	m.runsMu.Lock()
@@ -250,6 +259,11 @@ func overdue(last time.Time, lag int, today time.Time) bool {
 	return today.After(last.AddDate(0, 0, 2+lag))
 }
 
+// quarterEndAfter returns the last day of the quarter after the one that ends on last (A237 I8).
+func quarterEndAfter(last time.Time) time.Time {
+	return time.Date(last.Year(), last.Month()+4, 0, 0, 0, 0, 0, time.UTC)
+}
+
 func feedLags() map[string]int {
 	lags := make(map[string]int)
 	for _, e := range sourceEntries() {
@@ -261,6 +275,10 @@ func feedLags() map[string]int {
 	}
 
 	for _, e := range expectationEntries() {
+		lags[e.id] = e.lag
+	}
+
+	for _, e := range institutionEntries() {
 		lags[e.id] = e.lag
 	}
 

@@ -7,9 +7,14 @@ interface MarketDataFeedsProps {
   controls: FeedControls;
 }
 
-const kindOrder = { price: 0, index: 1, expectation: 2 } as const;
+const kindOrder = {
+  price: 0,
+  index: 1,
+  expectation: 2,
+  institution: 3,
+} as const;
 
-// The rows of a region: prices first, then indexes, then expectations.
+// The rows of a region: prices first, then indexes, then expectations, then institutions.
 export function MarketDataFeeds({ feeds, controls }: MarketDataFeedsProps) {
   const ordered = [...feeds].sort(
     (a, b) => kindOrder[a.kind] - kindOrder[b.kind],

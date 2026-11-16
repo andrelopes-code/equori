@@ -4,19 +4,20 @@ package domain
 import "errors"
 
 var (
-	ErrValidation        = errors.New("validation failed")
-	ErrUnknownInstrument = errors.New("unknown instrument")
-	ErrInstrumentExists  = errors.New("instrument exists")
-	ErrInstrumentInUse   = errors.New("instrument in use")
-	ErrPriceMissing      = errors.New("price missing")
-	ErrNoTerms           = errors.New("no terms")
-	ErrUnknownIndex      = errors.New("unknown index")
-	ErrUnknownFeed       = errors.New("unknown feed")
-	ErrAdminRequired     = errors.New("admin required")
-	ErrRefreshRunning    = errors.New("refresh running")
-	ErrNoSource          = errors.New("no source")
-	ErrUnofficialSource  = errors.New("unofficial source")
-	ErrOddLotCode        = errors.New("odd-lot code")
+	ErrValidation         = errors.New("validation failed")
+	ErrUnknownInstrument  = errors.New("unknown instrument")
+	ErrInstrumentExists   = errors.New("instrument exists")
+	ErrInstrumentInUse    = errors.New("instrument in use")
+	ErrPriceMissing       = errors.New("price missing")
+	ErrNoTerms            = errors.New("no terms")
+	ErrUnknownIndex       = errors.New("unknown index")
+	ErrUnknownInstitution = errors.New("unknown institution")
+	ErrUnknownFeed        = errors.New("unknown feed")
+	ErrAdminRequired      = errors.New("admin required")
+	ErrRefreshRunning     = errors.New("refresh running")
+	ErrNoSource           = errors.New("no source")
+	ErrUnofficialSource   = errors.New("unofficial source")
+	ErrOddLotCode         = errors.New("odd-lot code")
 )
 
 // FieldError names the request field that failed validation, as in the API.

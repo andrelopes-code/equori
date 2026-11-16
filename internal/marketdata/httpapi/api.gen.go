@@ -118,6 +118,7 @@ func (e InstrumentType) Valid() bool {
 const (
 	MarketDataFeedKindExpectation MarketDataFeedKind = "expectation"
 	MarketDataFeedKindIndex       MarketDataFeedKind = "index"
+	MarketDataFeedKindInstitution MarketDataFeedKind = "institution"
 	MarketDataFeedKindPrice       MarketDataFeedKind = "price"
 )
 
@@ -127,6 +128,8 @@ func (e MarketDataFeedKind) Valid() bool {
 	case MarketDataFeedKindExpectation:
 		return true
 	case MarketDataFeedKindIndex:
+		return true
+	case MarketDataFeedKindInstitution:
 		return true
 	case MarketDataFeedKindPrice:
 		return true
@@ -322,12 +325,48 @@ type IndexRateList struct {
 	Items []IndexRate `json:"items"`
 }
 
+// InstitutionIndicators defines model for InstitutionIndicators.
+type InstitutionIndicators struct {
+	// Basel The Basel index, an exact decimal fraction (0.155 is 15.5%); null when the source does not inform it.
+	Basel            *string `json:"basel"`
+	ConglomerateCode string  `json:"conglomerate_code"`
+
+	// ConglomerateName Whose figures these are; the institution is covered by this conglomerate (A237 I6).
+	ConglomerateName string `json:"conglomerate_name"`
+
+	// Currency The currency of equity and net_income, whatever the base currency of the book.
+	Currency string `json:"currency"`
+
+	// Equity The equity in minor units of currency; null when not informed.
+	Equity *int64 `json:"equity"`
+
+	// FixedAsset The fixed-asset ratio (imobilização), an exact decimal fraction; null when not informed.
+	FixedAsset *string `json:"fixed_asset"`
+
+	// NetIncome The net income of the period in minor units of currency; null when not informed.
+	NetIncome *int64 `json:"net_income"`
+
+	// Period The last day of the period the figures refer to.
+	Period openapi_types.Date `json:"period"`
+
+	// PrincipalCapital The principal capital ratio, an exact decimal fraction; null when not informed.
+	PrincipalCapital *string `json:"principal_capital"`
+	Source           string  `json:"source"`
+
+	// SourceUrl The address of the portal of the source, where the figures can be checked.
+	SourceUrl string `json:"source_url"`
+}
+
 // Instrument defines model for Instrument.
 type Instrument struct {
 	Code     string              `json:"code"`
 	Coverage *InstrumentCoverage `json:"coverage,omitempty"`
 	Exchange *string             `json:"exchange,omitempty"`
+	Issuer   *InstrumentIssuer   `json:"issuer,omitempty"`
 	Name     string              `json:"name"`
+
+	// Owned The instrument belongs to the book and no other book reads it.
+	Owned bool `json:"owned"`
 
 	// QuoteCurrency Absent for currencies.
 	QuoteCurrency *string `json:"quote_currency,omitempty"`
@@ -357,9 +396,10 @@ type InstrumentCoverage struct {
 
 // InstrumentEdit defines model for InstrumentEdit.
 type InstrumentEdit struct {
-	Exchange *string `json:"exchange,omitempty"`
-	Name     string  `json:"name"`
-	Subtype  *string `json:"subtype,omitempty"`
+	Exchange *string           `json:"exchange,omitempty"`
+	Issuer   *InstrumentIssuer `json:"issuer,omitempty"`
+	Name     string            `json:"name"`
+	Subtype  *string           `json:"subtype,omitempty"`
 
 	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
 	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
@@ -382,11 +422,12 @@ type InstrumentHistoryInput struct {
 
 // InstrumentInput defines model for InstrumentInput.
 type InstrumentInput struct {
-	Code          string  `json:"code"`
-	Exchange      *string `json:"exchange,omitempty"`
-	Name          string  `json:"name"`
-	QuoteCurrency string  `json:"quote_currency"`
-	Scale         int     `json:"scale"`
+	Code          string            `json:"code"`
+	Exchange      *string           `json:"exchange,omitempty"`
+	Issuer        *InstrumentIssuer `json:"issuer,omitempty"`
+	Name          string            `json:"name"`
+	QuoteCurrency string            `json:"quote_currency"`
+	Scale         int               `json:"scale"`
 
 	// Subtype Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
 	Subtype *string `json:"subtype,omitempty"`
@@ -394,6 +435,15 @@ type InstrumentInput struct {
 	// Symbols The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.
 	Symbols *InstrumentSymbols `json:"symbols,omitempty"`
 	Type    InstrumentType     `json:"type"`
+}
+
+// InstrumentIssuer defines model for InstrumentIssuer.
+type InstrumentIssuer struct {
+	Id   *string `json:"id,omitempty"`
+	Name string  `json:"name"`
+
+	// Scheme Registry of the identifier, such as br_cnpj.
+	Scheme *string `json:"scheme,omitempty"`
 }
 
 // InstrumentList defines model for InstrumentList.
@@ -683,6 +733,13 @@ type ListInstrumentsParams struct {
 // SearchInstrumentCatalogParams defines parameters for SearchInstrumentCatalog.
 type SearchInstrumentCatalogParams struct {
 	Q string `form:"q" json:"q"`
+}
+
+// GetInstitutionIndicatorsParams defines parameters for GetInstitutionIndicators.
+type GetInstitutionIndicatorsParams struct {
+	// Scheme The identifier scheme of the institution, for example br_ispb.
+	Scheme     string `form:"scheme" json:"scheme"`
+	Identifier string `form:"identifier" json:"identifier"`
 }
 
 // ListPricesParams defines parameters for ListPrices.

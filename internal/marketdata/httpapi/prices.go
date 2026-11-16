@@ -111,6 +111,10 @@ func (s *Server) importPricesFile(
 func (s *Server) recordInstrumentPrices(
 	ctx context.Context, r *http.Request, b RecordInstrumentPricesJSONRequestBody,
 ) (InstrumentPricesResult, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return InstrumentPricesResult{}, err
+	}
+
 	points := make([]domain.PricePoint, len(b.Prices))
 	for i, p := range b.Prices {
 		value, err := money.ParseRate(p.Value)
@@ -150,6 +154,10 @@ func (s *Server) listPrices(
 ) (PriceList, error) {
 	p, err := httpserver.Query[ListPricesParams](r)
 	if err != nil {
+		return PriceList{}, err
+	}
+
+	if _, err := s.visible(ctx, p.Instrument); err != nil {
 		return PriceList{}, err
 	}
 

@@ -20,11 +20,48 @@ func manageInstrument(svc Service) tool.Tool {
 			"Do not use it to buy or sell: record_investment does. " +
 			"Instruments and prices are shared by every book; the user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, _ int64, in manageInstrumentIn) (tool.Preview, error) {
-		return previewInstrument(ctx, svc, in)
+	}, func(ctx context.Context, booksID int64, in manageInstrumentIn) (tool.Preview, error) {
+		return previewInstrument(ctx, svc, booksID, in)
 	}, func(ctx context.Context, booksID int64, in manageInstrumentIn) (manageInstrumentOut, error) {
 		return applyInstrument(ctx, svc, booksID, in)
 	})
+}
+
+// visibleInstrument returns the instrument of code when booksID may read it (A236 FC1).
+func visibleInstrument(
+	ctx context.Context, svc Service, booksID int64, code string,
+) (domain.Instrument, error) {
+	in, err := svc.Instrument(ctx, code)
+	if err != nil {
+		return domain.Instrument{}, err
+	}
+
+	if !in.VisibleTo(booksID) {
+		return domain.Instrument{}, domain.ErrUnknownInstrument
+	}
+
+	return in, nil
+}
+
+func appendIssuerChange(changes []tool.Change, before, after domain.Issuer) []tool.Change {
+	if before == after {
+		return changes
+	}
+
+	return append(changes, tool.Change{
+		Field:  "issuer",
+		Before: tool.TextValue(issuerText(before)),
+		After:  tool.TextValue(issuerText(after)),
+	})
+}
+
+func issuerText(i domain.Issuer) string {
+	text := i.Name
+	if i.Scheme != "" {
+		text += ", " + i.Scheme + " " + i.ID
+	}
+
+	return text
 }
 
 func termsText(t domain.Terms) string {
@@ -68,7 +105,7 @@ func (in manageInstrumentIn) symbolsForEdit(after domain.Instrument) map[string]
 	return after.Symbols
 }
 
-// instrumentFactChanges lists the exchange, subtype, name and symbols that differ between two states.
+// instrumentFactChanges lists the exchange, subtype, issuer, name and symbols that differ between two states.
 func instrumentFactChanges(before, after domain.Instrument) []tool.Change {
 	var changes []tool.Change
 
@@ -104,6 +141,8 @@ func instrumentFactChanges(before, after domain.Instrument) []tool.Change {
 			tool.Change{Field: "subtype", Before: text(before.Subtype), After: text(after.Subtype)},
 		)
 	}
+
+	changes = appendIssuerChange(changes, before.Issuer, after.Issuer)
 
 	if !maps.Equal(before.Symbols, after.Symbols) {
 		changes = append(

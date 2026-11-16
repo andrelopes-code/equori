@@ -57,6 +57,8 @@ type instrumentView struct {
 	Subtype       string    `json:"subtype,omitzero"`
 	Exchange      string    `json:"exchange,omitzero"`
 	Symbols       []string  `json:"symbols,omitzero"`
+	Issuer        string    `json:"issuer,omitzero"`
+	Owned         bool      `json:"owned,omitzero"`
 	QuoteCurrency string    `json:"quote_currency,omitzero"`
 	Scale         int       `json:"scale"`
 	Terms         termsView `json:"terms,omitzero"`
@@ -144,6 +146,8 @@ func toInstrumentView(in domain.Instrument) instrumentView {
 		Exchange:      in.Exchange,
 		QuoteCurrency: string(in.QuoteCurrency),
 		Scale:         in.Scale,
+		Issuer:        issuerText(in.Issuer),
+		Owned:         in.BooksID != 0,
 	}
 	for _, k := range slices.Sorted(maps.Keys(in.Symbols)) {
 		v.Symbols = append(v.Symbols, k+"="+in.Symbols[k])

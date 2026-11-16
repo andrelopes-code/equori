@@ -11,6 +11,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
@@ -36,6 +37,8 @@ func (s *Server) defineInstrument(
 	if b.Symbols != nil {
 		in.Symbols = *b.Symbols
 	}
+
+	in.Issuer = issuerOf(b.Issuer)
 
 	out, err := s.svc.DefineInstrument(ctx, in)
 	if err != nil {
@@ -65,9 +68,13 @@ func (s *Server) listInstruments(
 		return InstrumentList{}, err
 	}
 
-	items := make([]Instrument, len(ins))
-	for i, in := range ins {
-		items[i] = toInstrumentAPI(in)
+	booksID := auth.MustBooksID(ctx)
+	items := make([]Instrument, 0, len(ins))
+
+	for _, in := range ins {
+		if in.VisibleTo(booksID) {
+			items = append(items, toInstrumentAPI(in))
+		}
 	}
 
 	return InstrumentList{Items: items}, nil
@@ -78,7 +85,7 @@ func (s *Server) getInstrument(
 	r *http.Request,
 	_ httpserver.None,
 ) (Instrument, error) {
-	in, err := s.svc.Instrument(ctx, r.PathValue("code"))
+	in, err := s.visible(ctx, r.PathValue("code"))
 	if err != nil {
 		return Instrument{}, err
 	}
@@ -103,6 +110,12 @@ func (s *Server) requestInstrumentHistory(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if _, err := s.visible(r.Context(), r.PathValue("code")); err != nil {
+		s.errs.Write(w, r, err)
+
+		return
+	}
+
 	if err := s.svc.RequestHistory(r.Context(), r.PathValue("code"), b.From.Time); err != nil {
 		s.errs.Write(w, r, err)
 
@@ -115,6 +128,10 @@ func (s *Server) requestInstrumentHistory(w http.ResponseWriter, r *http.Request
 func (s *Server) editInstrument(
 	ctx context.Context, r *http.Request, b EditInstrumentJSONRequestBody,
 ) (Instrument, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return Instrument{}, err
+	}
+
 	var typ, exchange, subtype string
 	if b.Type != nil {
 		typ = string(*b.Type)
@@ -135,7 +152,7 @@ func (s *Server) editInstrument(
 	}
 
 	out, err := s.svc.EditInstrument(
-		ctx, r.PathValue("code"), typ, b.Name, exchange, subtype, symbols, domain.Issuer{},
+		ctx, r.PathValue("code"), typ, b.Name, exchange, subtype, symbols, issuerOf(b.Issuer),
 	)
 	if err != nil {
 		return Instrument{}, err
@@ -147,6 +164,10 @@ func (s *Server) editInstrument(
 func (s *Server) deleteInstrument(
 	ctx context.Context, r *http.Request, _ httpserver.None,
 ) (httpserver.None, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return httpserver.None{}, err
+	}
+
 	if err := s.svc.DeleteInstrument(ctx, r.PathValue("code")); err != nil {
 		return httpserver.None{}, err
 	}
@@ -160,7 +181,12 @@ func toInstrumentAPI(in domain.Instrument) Instrument {
 		Type:  InstrumentType(in.Type),
 		Scale: in.Scale,
 		Name:  in.Name,
+		Owned: in.BooksID != 0,
 	}
+	if in.Issuer.Name != "" {
+		out.Issuer = issuerAPI(in.Issuer)
+	}
+
 	if in.QuoteCurrency != "" {
 		q := string(in.QuoteCurrency)
 		out.QuoteCurrency = &q
@@ -179,6 +205,36 @@ func toInstrumentAPI(in domain.Instrument) Instrument {
 	if len(in.Symbols) > 0 {
 		symbols := InstrumentSymbols(in.Symbols)
 		out.Symbols = &symbols
+	}
+
+	return out
+}
+
+func issuerOf(i *InstrumentIssuer) domain.Issuer {
+	if i == nil {
+		return domain.Issuer{}
+	}
+
+	out := domain.Issuer{Name: i.Name}
+	if i.Scheme != nil {
+		out.Scheme = *i.Scheme
+	}
+
+	if i.Id != nil {
+		out.ID = *i.Id
+	}
+
+	return out
+}
+
+func issuerAPI(i domain.Issuer) *InstrumentIssuer {
+	out := &InstrumentIssuer{Name: i.Name}
+	if i.Scheme != "" {
+		out.Scheme = &i.Scheme
+	}
+
+	if i.ID != "" {
+		out.Id = &i.ID
 	}
 
 	return out

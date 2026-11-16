@@ -1868,6 +1868,7 @@ export const catalogPtBR: Catalog = {
   "assistant.field.color": "Cor",
   "assistant.field.icon": "Ícone",
   "assistant.field.identifier": "Identificador",
+  "assistant.field.issuer": "Emissor",
   "assistant.body.from": "De",
   "assistant.body.to": "Para",
   "assistant.body.uncategorized": "Sem categoria",

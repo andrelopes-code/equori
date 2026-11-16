@@ -5181,6 +5181,38 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /market-data/institution-indicators:
+    get:
+      tags: [marketdata]
+      operationId: getInstitutionIndicators
+      x-book-role: read
+      summary: The prudential indicators of an institution from the latest period of an enabled source (A237 I9).
+      parameters:
+        - name: scheme
+          in: query
+          required: true
+          description: The identifier scheme of the institution, for example br_ispb.
+          schema:
+            type: string
+            pattern: "^[a-z0-9_]{2,40}$"
+        - name: identifier
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstitutionIndicators"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /market-data/feeds:
     get:
       tags: [marketdata]
@@ -11887,6 +11919,63 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IndexExpectation"
+    InstitutionIndicators:
+      type: object
+      additionalProperties: false
+      required:
+        - source
+        - source_url
+        - period
+        - currency
+        - conglomerate_code
+        - conglomerate_name
+        - basel
+        - principal_capital
+        - fixed_asset
+        - equity
+        - net_income
+      properties:
+        source:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+        source_url:
+          type: string
+          description: The address of the portal of the source, where the figures can be checked.
+        period:
+          type: string
+          format: date
+          description: The last day of the period the figures refer to.
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          description: The currency of equity and net_income, whatever the base currency of the book.
+        conglomerate_code:
+          type: string
+        conglomerate_name:
+          type: string
+          description: Whose figures these are; the institution is covered by this conglomerate (A237 I6).
+        basel:
+          type: string
+          nullable: true
+          description: The Basel index, an exact decimal fraction (0.155 is 15.5%); null when the source does not inform it.
+        principal_capital:
+          type: string
+          nullable: true
+          description: The principal capital ratio, an exact decimal fraction; null when not informed.
+        fixed_asset:
+          type: string
+          nullable: true
+          description: The fixed-asset ratio (imobilização), an exact decimal fraction; null when not informed.
+        equity:
+          type: integer
+          format: int64
+          nullable: true
+          description: The equity in minor units of currency; null when not informed.
+        net_income:
+          type: integer
+          format: int64
+          nullable: true
+          description: The net income of the period in minor units of currency; null when not informed.
     IndexExpectation:
       type: object
       additionalProperties: false
@@ -11909,7 +11998,7 @@ components:
           pattern: "^[a-z0-9_]{2,40}$"
         kind:
           type: string
-          enum: [price, index, expectation]
+          enum: [price, index, expectation, institution]
         enabled:
           type: boolean
         suggested:
@@ -11986,7 +12075,7 @@ components:
     Instrument:
       type: object
       additionalProperties: false
-      required: [code, type, scale, name]
+      required: [code, type, scale, name, owned]
       properties:
         code:
           type: string
@@ -11996,6 +12085,11 @@ components:
           type: integer
         name:
           type: string
+        owned:
+          type: boolean
+          description: The instrument belongs to the book and no other book reads it.
+        issuer:
+          $ref: "#/components/schemas/InstrumentIssuer"
         quote_currency:
           type: string
           description: Absent for currencies.
@@ -12009,6 +12103,23 @@ components:
           $ref: "#/components/schemas/InstrumentSymbols"
         coverage:
           $ref: "#/components/schemas/InstrumentCoverage"
+    InstrumentIssuer:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+        scheme:
+          type: string
+          pattern: "^[a-z0-9_]{2,40}$"
+          description: Registry of the identifier, such as br_cnpj.
+        id:
+          type: string
+          minLength: 1
+          maxLength: 40
     InstrumentCoverage:
       type: object
       additionalProperties: false
@@ -12243,6 +12354,8 @@ components:
           description: Refines the type for the owner's jurisdiction, such as cri, cdb or equity_fund (investments design 4.1).
         symbols:
           $ref: "#/components/schemas/InstrumentSymbols"
+        issuer:
+          $ref: "#/components/schemas/InstrumentIssuer"
     InstrumentEdit:
       type: object
       additionalProperties: false
@@ -12262,6 +12375,8 @@ components:
           pattern: "^[a-z0-9_]{2,40}$"
         symbols:
           $ref: "#/components/schemas/InstrumentSymbols"
+        issuer:
+          $ref: "#/components/schemas/InstrumentIssuer"
     InstrumentSymbols:
       type: object
       description: The symbol a source requests for the instrument, by source ID (A222 MQ20). In an edit, absent keeps the stored set and an empty object clears it.

@@ -50,6 +50,10 @@ func (s *Server) putInstrumentTerms(
 		t.RedeemableFrom = b.RedeemableFrom.Time
 	}
 
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
 	out, err := s.svc.PutTerms(ctx, r.PathValue("code"), t)
 	if err != nil {
 		return FixedIncomeTerms{}, err
@@ -61,6 +65,10 @@ func (s *Server) putInstrumentTerms(
 func (s *Server) getInstrumentTerms(
 	ctx context.Context, r *http.Request, _ httpserver.None,
 ) (FixedIncomeTerms, error) {
+	if _, err := s.visible(ctx, r.PathValue("code")); err != nil {
+		return FixedIncomeTerms{}, err
+	}
+
 	t, err := s.svc.Terms(ctx, r.PathValue("code"))
 	if err != nil {
 		return FixedIncomeTerms{}, err

@@ -17,6 +17,12 @@ func applyInstrument(
 		return manageInstrumentOut{}, err
 	}
 
+	if in.Action != "define" {
+		if _, err := visibleInstrument(ctx, svc, booksID, in.Code); err != nil {
+			return manageInstrumentOut{}, err
+		}
+	}
+
 	switch in.Action {
 	case "define":
 		return applyDefine(ctx, svc, in)

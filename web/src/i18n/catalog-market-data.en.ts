@@ -52,6 +52,7 @@ export const marketDataEn = {
   "marketData.kind.price": "Price",
   "marketData.kind.index": "Index",
   "marketData.kind.expectation": "Expectation",
+  "marketData.kind.institution": "Institution",
   "marketData.status.upToDate": "Up to date",
   "marketData.status.overdue": "Overdue",
   "marketData.status.failed": "Failed",

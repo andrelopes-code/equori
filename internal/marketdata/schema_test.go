@@ -156,6 +156,45 @@ func TestSchemaRejectsInvalidExpectations(t *testing.T) {
 	}
 }
 
+// A237 I5.
+func TestSchemaRejectsInvalidInstitutionIndicators(t *testing.T) {
+	t.Parallel()
+
+	const row = `INSERT INTO marketdata_institution_indicator ` +
+		`(scheme, identifier, source, period, currency, conglomerate_code, conglomerate_name) VALUES `
+
+	pool := pgtest.New(t)
+	for name, sql := range map[string]string{
+		"scheme outside the pattern": row + `('BR', '18236120', 'br_ifdata', '2026-06-30', 'BRL', 'C1', 'NU')`,
+		"empty identifier":           row + `('br_ispb', '', 'br_ifdata', '2026-06-30', 'BRL', 'C1', 'NU')`,
+		"source outside the pattern": row + `('br_ispb', '18236120', 'IFData', '2026-06-30', 'BRL', 'C1', 'NU')`,
+		"currency in lower case":     row + `('br_ispb', '18236120', 'br_ifdata', '2026-06-30', 'brl', 'C1', 'NU')`,
+		"empty conglomerate code":    row + `('br_ispb', '18236120', 'br_ifdata', '2026-06-30', 'BRL', '', 'NU')`,
+		"empty conglomerate name":    row + `('br_ispb', '18236120', 'br_ifdata', '2026-06-30', 'BRL', 'C1', '')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+
+	if _, err := pool.Exec(
+		t.Context(),
+		row+`('br_ispb', '18236120', 'br_ifdata', '2026-06-30', 'BRL', 'C1', 'NU')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	// The same identifier of a scheme is one row.
+	if _, err := pool.Exec(
+		t.Context(),
+		row+`('br_ispb', '18236120', 'br_ifdata', '2026-03-31', 'BRL', 'C1', 'NU')`,
+	); err == nil {
+		t.Fatal("duplicate accepted")
+	}
+}
+
 // A222 MQ20.
 func TestSchemaRejectsInvalidSymbols(t *testing.T) {
 	t.Parallel()

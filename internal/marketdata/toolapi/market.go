@@ -21,8 +21,8 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			"Do not use it for the book's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
 		Idempotent: true,
-	}, func(ctx context.Context, _ int64, in getMarketDataIn) (getMarketDataOut, error) {
-		return readMarketData(ctx, svc, cals, in)
+	}, func(ctx context.Context, booksID int64, in getMarketDataIn) (getMarketDataOut, error) {
+		return readMarketData(ctx, svc, cals, booksID, in)
 	})
 }
 
@@ -30,6 +30,7 @@ func readMarketData(
 	ctx context.Context,
 	svc Service,
 	cals Calendars,
+	booksID int64,
 	in getMarketDataIn,
 ) (getMarketDataOut, error) {
 	if err := checkMarketDataArgs(in); err != nil {
@@ -38,11 +39,11 @@ func readMarketData(
 
 	switch in.View {
 	case "instruments":
-		return marketInstruments(ctx, svc)
+		return marketInstruments(ctx, svc, booksID)
 	case "instrument":
-		return marketInstrument(ctx, svc, in)
+		return marketInstrument(ctx, svc, booksID, in)
 	case "prices":
-		return marketPrices(ctx, svc, in)
+		return marketPrices(ctx, svc, booksID, in)
 	case "catalog":
 		return marketCatalog(ctx, svc, in)
 	case "indexes":
@@ -110,12 +111,18 @@ func checkMarketDataArgs(in getMarketDataIn) error {
 	return err
 }
 
-func marketInstruments(ctx context.Context, svc Service) (getMarketDataOut, error) {
+func marketInstruments(
+	ctx context.Context,
+	svc Service,
+	booksID int64,
+) (getMarketDataOut, error) {
 	rows, err := svc.ListInstruments(ctx, "")
 
 	out := getMarketDataOut{Instruments: []instrumentView{}}
 	for _, r := range rows {
-		out.Instruments = append(out.Instruments, toInstrumentView(r))
+		if r.VisibleTo(booksID) {
+			out.Instruments = append(out.Instruments, toInstrumentView(r))
+		}
 	}
 
 	return out, err
@@ -124,9 +131,10 @@ func marketInstruments(ctx context.Context, svc Service) (getMarketDataOut, erro
 func marketInstrument(
 	ctx context.Context,
 	svc Service,
+	booksID int64,
 	in getMarketDataIn,
 ) (getMarketDataOut, error) {
-	r, err := svc.Instrument(ctx, in.Code)
+	r, err := visibleInstrument(ctx, svc, booksID, in.Code)
 	if err != nil {
 		return getMarketDataOut{}, err
 	}
@@ -154,8 +162,14 @@ func marketInstrument(
 func marketPrices(
 	ctx context.Context,
 	svc Service,
+	booksID int64,
 	in getMarketDataIn,
 ) (getMarketDataOut, error) {
+	// An unknown code keeps its empty list; a code of another book is as absent as an unknown one.
+	if r, err := svc.Instrument(ctx, in.Code); err == nil && !r.VisibleTo(booksID) {
+		return getMarketDataOut{}, domain.ErrUnknownInstrument
+	}
+
 	if in.To.Before(in.From.Time) || in.To.Sub(in.From.Time) > domain.MaxPriceRange*24*time.Hour {
 		return getMarketDataOut{}, tool.InvalidArgument(
 			"to",

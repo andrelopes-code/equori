@@ -890,3 +890,78 @@ func TestManageInstrumentToolEditType(t *testing.T) {
 		"type",
 	)
 }
+
+// toolAs calls a tool as the member with email in the books that member logs in to.
+func toolAs(t *testing.T, h *apitest.Harness, email, name string, args map[string]any) tool.Result {
+	t.Helper()
+
+	b, err := json.Marshal(args)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := auth.WithIdentity(
+		t.Context(), h.MemberIDOf(email), h.BooksIDOf(email), auth.RoleOwner,
+	)
+
+	r, err := h.App.Tools.Call(ctx, name, b)
+	if err != nil {
+		t.Fatalf("call tool %s: %v", name, err)
+	}
+
+	return r
+}
+
+func TestManageInstrumentOfAnotherBook(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	ownedByA(t, h)
+	h.Login("other@example.com")
+
+	const code = "RF.280302.CS3YS"
+
+	calls := []struct {
+		tool string
+		args map[string]any
+	}{
+		{"manage_instrument", map[string]any{
+			"action": "set_terms", "code": code, "issued_on": "2026-03-02",
+			"matures_on": "2028-03-02", "face_value": "1000",
+		}},
+		{"manage_instrument", map[string]any{
+			"action": "record_price", "code": code, "date": "2026-10-22", "price": "101",
+		}},
+		{"manage_instrument", map[string]any{"action": "edit", "code": code, "name": "Other"}},
+		{"manage_instrument", map[string]any{"action": "delete", "code": code}},
+		{"get_market_data", map[string]any{"view": "instrument", "code": code}},
+	}
+	for _, c := range calls {
+		h.ExpectToolError(toolAs(t, h, "other@example.com", c.tool, c.args), "not_found", "")
+	}
+
+	var list struct {
+		Instruments []struct {
+			Code string `json:"code"`
+		} `json:"instruments"`
+	}
+
+	r := toolAs(t, h, "other@example.com", "get_market_data", map[string]any{"view": "instruments"})
+	if err := json.Unmarshal(r.Content, &list); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, in := range list.Instruments {
+		if in.Code == code {
+			t.Errorf("get_market_data lists %s for another book", code)
+		}
+	}
+
+	p, pr := preview(t, h, "manage_instrument", map[string]any{
+		"action": "edit", "code": code, "issuer": "Banco X",
+		"issuer_scheme": "br_cnpj", "issuer_id": "11222333000181",
+	})
+	if pr.IsError || len(p.Changes) != 1 || p.Changes[0].Field != "issuer" ||
+		p.Changes[0].After.Text != "Banco X, br_cnpj 11222333000181" {
+		t.Fatalf("preview = %+v %s", p, pr.Content)
+	}
+}

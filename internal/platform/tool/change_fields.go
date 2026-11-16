@@ -58,4 +58,5 @@ var ChangeFields = []string{
 	"color",
 	"icon",
 	"identifier",
+	"issuer",
 }

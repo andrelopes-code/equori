@@ -59,6 +59,10 @@ type manageInstrumentIn struct {
 	Subtype  string                   `json:"subtype,omitzero"   jsonschema:"for define and edit: refines the type, such as cdb or fii_papel"`
 	Symbols  []string                 `json:"symbols,omitzero"   jsonschema:"for define and edit: source=symbol entries, such as yahoo=PETR4.SA; an empty list clears them"`
 	DayCount manageInstrumentDayCount `json:"day_count,omitzero" jsonschema:"for set_terms: bus252 needs a daily index or calendar_id; follows the index when absent"`
+
+	Issuer       string `json:"issuer,omitzero"        jsonschema:"for edit: issuer name"`
+	IssuerScheme string `json:"issuer_scheme,omitzero" jsonschema:"for edit: issuer identifier scheme, such as br_cnpj"`
+	IssuerID     string `json:"issuer_id,omitzero"     jsonschema:"for edit: issuer identifier"`
 }
 
 type manageInstrumentOut struct {

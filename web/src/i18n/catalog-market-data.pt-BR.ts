@@ -57,6 +57,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.kind.price": "Preço",
   "marketData.kind.index": "Índice",
   "marketData.kind.expectation": "Expectativa",
+  "marketData.kind.institution": "Instituição",
   "marketData.status.upToDate": "Em dia",
   "marketData.status.overdue": "Atrasada",
   "marketData.status.failed": "Falhou",

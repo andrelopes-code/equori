@@ -320,6 +320,7 @@ func newFeedConfig(
 		Sources:      sources,
 		Indexes:      indexSources,
 		Expectations: marketdata.NewExpectationSources(cfg.FeedURLs, feedClient),
+		Institutions: marketdata.NewInstitutionSources(cfg.FeedURLs, feedClient),
 		Seed:         slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
 		Client:       feedClient,
 		Clock:        clk,

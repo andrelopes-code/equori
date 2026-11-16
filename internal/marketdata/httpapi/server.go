@@ -10,6 +10,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
@@ -50,6 +51,9 @@ type Service interface {
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
+	InstitutionIndicators(
+		ctx context.Context, scheme, identifier string,
+	) (domain.InstitutionIndicators, error)
 	Feeds(ctx context.Context) ([]domain.Feed, error)
 	SetFeed(ctx context.Context, id string, enabled, acceptUnofficial bool) (domain.Feed, error)
 	Refresh(ctx context.Context) error
@@ -95,6 +99,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listIndexRates))
 	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/expectations",
 		httpserver.Handle(s.errs, http.StatusOK, s.listIndexExpectations))
+	mux.HandleFunc("GET "+BaseURL+"/market-data/institution-indicators",
+		httpserver.Handle(s.errs, http.StatusOK, s.getInstitutionIndicators))
 	mux.HandleFunc("GET "+BaseURL+"/market-data/feeds",
 		httpserver.Handle(s.errs, http.StatusOK, s.listMarketDataFeeds))
 	mux.HandleFunc("PUT "+BaseURL+"/market-data/feeds/{id}",
@@ -128,6 +134,20 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/prices",
 		httpserver.Handle(s.errs, http.StatusCreated, s.recordPrice))
 	mux.HandleFunc("POST "+BaseURL+"/prices/import", s.importPrices)
+}
+
+// visible returns the instrument of code when the book of ctx may read it (A236 FC1).
+func (s *Server) visible(ctx context.Context, code string) (domain.Instrument, error) {
+	in, err := s.svc.Instrument(ctx, code)
+	if err != nil {
+		return domain.Instrument{}, err
+	}
+
+	if !in.VisibleTo(auth.MustBooksID(ctx)) {
+		return domain.Instrument{}, domain.ErrUnknownInstrument
+	}
+
+	return in, nil
 }
 
 func (s *Server) listHolidays(
@@ -180,17 +200,11 @@ func ToProblem(err error) (problem.Details, bool) {
 		return d, true
 	}
 
+	if d, ok := notFoundProblem(err); ok {
+		return d, true
+	}
+
 	switch {
-	case errors.Is(err, ErrNotFound):
-		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
-	case errors.Is(err, domain.ErrUnknownInstrument):
-		return problem.New(http.StatusNotFound, "not_found", "unknown instrument"), true
-	case errors.Is(err, domain.ErrUnknownIndex):
-		return problem.New(http.StatusNotFound, "not_found", "unknown index"), true
-	case errors.Is(err, domain.ErrNoTerms):
-		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
-	case errors.Is(err, domain.ErrUnknownFeed):
-		return problem.New(http.StatusNotFound, "not_found", "unknown feed"), true
 	case errors.Is(err, domain.ErrAdminRequired):
 		return problem.New(
 			http.StatusForbidden,
@@ -219,6 +233,26 @@ func ToProblem(err error) (problem.Details, bool) {
 	case errors.Is(err, domain.ErrInstrumentInUse):
 		return problem.New(http.StatusConflict, "instrument_in_use",
 			"a position, an account or a transaction still uses the instrument"), true
+	}
+
+	return problem.Details{}, false
+}
+
+// notFoundProblem maps the errors of an absent resource to 404 not_found.
+func notFoundProblem(err error) (problem.Details, bool) {
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return problem.New(http.StatusNotFound, "not_found", "unknown calendar"), true
+	case errors.Is(err, domain.ErrUnknownInstrument):
+		return problem.New(http.StatusNotFound, "not_found", "unknown instrument"), true
+	case errors.Is(err, domain.ErrUnknownIndex):
+		return problem.New(http.StatusNotFound, "not_found", "unknown index"), true
+	case errors.Is(err, domain.ErrUnknownInstitution):
+		return problem.New(http.StatusNotFound, "not_found", "unknown institution"), true
+	case errors.Is(err, domain.ErrNoTerms):
+		return problem.New(http.StatusNotFound, "not_found", "the instrument has no terms"), true
+	case errors.Is(err, domain.ErrUnknownFeed):
+		return problem.New(http.StatusNotFound, "not_found", "unknown feed"), true
 	}
 
 	return problem.Details{}, false

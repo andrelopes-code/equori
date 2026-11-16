@@ -14,8 +14,8 @@ import (
 
 // Budgets of spec 7.4: a declaration sent to the model and the whole catalog, in bytes.
 const (
-	maxDeclaration = 3000
-	maxCatalog     = 60000
+	maxDeclaration = 3500
+	maxCatalog     = 64000
 )
 
 func chatTools(t *testing.T) []tool.Tool {

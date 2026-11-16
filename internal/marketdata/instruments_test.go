@@ -1,9 +1,11 @@
 package marketdata_test
 
 import (
+	"encoding/json"
 	"errors"
 	"maps"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -12,6 +14,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
 )
@@ -965,4 +968,321 @@ func TestS474BookDeletionRemovesItsInstruments(t *testing.T) {
 	if instruments != 0 || terms != 0 || prices != 0 || brl != 1 {
 		t.Fatalf("rows = %d %d %d, BRL = %d; want 0 0 0 and 1", instruments, terms, prices, brl)
 	}
+}
+
+type ownedInstrumentAPI struct {
+	Code   string `json:"code"`
+	Owned  bool   `json:"owned"`
+	Issuer struct {
+		Name   string `json:"name"`
+		Scheme string `json:"scheme"`
+		ID     string `json:"id"`
+	} `json:"issuer"`
+}
+
+// ownedByA defines the contract of the owner's book with its terms.
+func ownedByA(t *testing.T, h *apitest.Harness) {
+	t.Helper()
+
+	if _, err := h.App.Marketdata.DefineOwnInstrument(
+		t.Context(), h.OwnerID(), ownContract("RF.280302.CS3YS"),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := h.App.Marketdata.PutTerms(t.Context(), "RF.280302.CS3YS", marketdata.Terms{
+		IssuedOn:         day("2026-03-02"),
+		MaturesOn:        day("2028-03-02"),
+		IndexID:          "cdi",
+		PercentOfIndexBP: 11000,
+		DayCount:         "bus252",
+		FaceValue:        100000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// S471: a book reads, edits, prices and deletes only the contracts it can see.
+func TestS471AnotherBooksInstrumentIsAbsent(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	ownedByA(t, h)
+
+	csv := func(code string) string {
+		return "instrument,quote_instrument,date,value\n" + code + ",BRL,2026-10-30,101.5\n"
+	}
+	terms := map[string]any{
+		"issued_on": "2026-03-02", "matures_on": "2028-03-02", "day_count": "bus252",
+		"face_value": 100000, "index_id": "cdi", "percent_of_index_bp": 11000,
+	}
+	rows := []struct {
+		operation string
+		status    int
+		do        func(c *http.Client, code string) apitest.Response
+	}{
+		{"getInstrument", http.StatusOK, func(c *http.Client, code string) apitest.Response {
+			return h.Call(c, http.MethodGet, "/api/v1/instruments/"+code, nil)
+		}},
+		{"editInstrument", http.StatusOK, func(c *http.Client, code string) apitest.Response {
+			return h.Call(
+				c,
+				http.MethodPatch,
+				"/api/v1/instruments/"+code,
+				map[string]any{"name": "CDB"},
+			)
+		}},
+		{"getInstrumentTerms", http.StatusOK, func(c *http.Client, code string) apitest.Response {
+			return h.Call(c, http.MethodGet, "/api/v1/instruments/"+code+"/terms", nil)
+		}},
+		{"putInstrumentTerms", http.StatusOK, func(c *http.Client, code string) apitest.Response {
+			return h.Call(c, http.MethodPut, "/api/v1/instruments/"+code+"/terms", terms)
+		}},
+		{
+			"requestInstrumentHistory",
+			http.StatusUnprocessableEntity,
+			func(c *http.Client, code string) apitest.Response {
+				return h.Call(
+					c,
+					http.MethodPost,
+					"/api/v1/instruments/"+code+"/history",
+					map[string]any{"from": "2026-03-02"},
+				)
+			},
+		},
+		{
+			"recordInstrumentPrices",
+			http.StatusOK,
+			func(c *http.Client, code string) apitest.Response {
+				return h.Call(
+					c,
+					http.MethodPost,
+					"/api/v1/instruments/"+code+"/prices",
+					map[string]any{
+						"quote_instrument": "BRL",
+						"prices": []map[string]any{
+							{"date": "2026-10-29", "value": "101"},
+						},
+					},
+				)
+			},
+		},
+		{"listPrices", http.StatusOK, func(c *http.Client, code string) apitest.Response {
+			return h.Call(c, http.MethodGet,
+				"/api/v1/prices?instrument="+code+"&quote_instrument=BRL"+
+					"&from=2026-10-01&to=2026-10-31", nil)
+		}},
+		{"recordPrice", http.StatusCreated, func(c *http.Client, code string) apitest.Response {
+			return h.Call(c, http.MethodPost, "/api/v1/prices", map[string]any{
+				"instrument": code, "quote_instrument": "BRL",
+				"date": "2026-10-28", "value": "100",
+			})
+		}},
+		{"importPrices", http.StatusOK, func(c *http.Client, code string) apitest.Response {
+			return h.UploadAs(c, "/api/v1/prices/import", nil, "prices.csv", []byte(csv(code)))
+		}},
+		{
+			"deleteInstrument",
+			http.StatusNoContent,
+			func(c *http.Client, code string) apitest.Response {
+				return h.Call(c, http.MethodDelete, "/api/v1/instruments/"+code, nil)
+			},
+		},
+	}
+
+	covered := map[string]bool{}
+	for _, row := range rows {
+		covered[row.operation] = true
+	}
+
+	for _, op := range codeOperations(t) {
+		if !covered[op] {
+			t.Errorf("operation %s has a {code} and no row in the table", op)
+		}
+	}
+
+	other := h.Login("other@example.com")
+
+	// The gate answers for another book's contract as for a code that does not exist.
+	for _, row := range rows {
+		want := row.do(other, "RF.999999.ZZZZZ")
+		got := row.do(other, "RF.280302.CS3YS")
+
+		if got.Status != want.Status || problemCode(got) != problemCode(want) {
+			t.Errorf("%s of another book's contract = %d %q, want %d %q of an unknown code",
+				row.operation, got.Status, problemCode(got), want.Status, problemCode(want))
+		}
+
+		if want.Status < 400 {
+			t.Errorf("%s of an unknown code = %d, want an error", row.operation, want.Status)
+		}
+	}
+
+	for _, row := range rows {
+		if got := row.do(h.Client, "RF.280302.CS3YS"); got.Status != row.status {
+			t.Errorf("%s by the owning book = %d, want %d: %s",
+				row.operation, got.Status, row.status, got.Body)
+		}
+	}
+}
+
+func problemCode(r apitest.Response) string {
+	var p struct {
+		Code string `json:"code"`
+	}
+
+	_ = json.Unmarshal(r.Body, &p)
+
+	return p.Code
+}
+
+// codeOperations lists the operation IDs of the paths of openapi.yaml that hold {code}.
+func codeOperations(t *testing.T) []string {
+	t.Helper()
+
+	content, err := os.ReadFile("openapi.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var ops []string
+
+	inCodePath := false
+
+	for _, line := range strings.Split(string(content), "\n") {
+		switch {
+		case strings.HasPrefix(line, "  /"):
+			inCodePath = strings.Contains(line, "{code}")
+		case strings.HasPrefix(line, "schemas:"):
+			inCodePath = false
+		case inCodePath && strings.HasPrefix(line, "      operationId: "):
+			ops = append(ops, strings.TrimPrefix(line, "      operationId: "))
+		}
+	}
+
+	if len(ops) == 0 {
+		t.Fatal("openapi.yaml has no operation with {code}")
+	}
+
+	return ops
+}
+
+// S472: a book lists the public instruments and its own.
+func TestS472BookListsPublicAndOwn(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	ownedByA(t, h)
+	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument": "RF.280302.CS3YS", "quote_instrument": "BRL",
+		"date": "2026-10-28", "value": "100",
+	}, http.StatusCreated, nil)
+
+	list := func(c *http.Client) map[string]bool {
+		var out struct {
+			Items []ownedInstrumentAPI `json:"items"`
+		}
+
+		r := h.Call(c, http.MethodGet, "/api/v1/instruments", nil)
+		if r.Status != http.StatusOK {
+			t.Fatalf("status %d: %s", r.Status, r.Body)
+		}
+
+		r.Decode(t, &out)
+
+		got := map[string]bool{}
+		for _, in := range out.Items {
+			got[in.Code] = in.Owned
+		}
+
+		return got
+	}
+
+	a := list(h.Client)
+	if owned, ok := a["RF.280302.CS3YS"]; !ok || !owned {
+		t.Errorf("book A lists RF.280302.CS3YS owned = %v, %v; want true, true", owned, ok)
+	}
+
+	if owned, ok := a["BRL"]; !ok || owned {
+		t.Errorf("book A lists BRL owned = %v, %v; want false, true", owned, ok)
+	}
+
+	other := h.Login("other@example.com")
+
+	b := list(other)
+	if _, ok := b["RF.280302.CS3YS"]; ok {
+		t.Error("book B lists the contract of book A")
+	}
+
+	if _, ok := b["BRL"]; !ok {
+		t.Error("book B does not list BRL")
+	}
+
+	quotes := func(c *http.Client) []string {
+		var out struct {
+			Items []struct {
+				Instrument string `json:"instrument"`
+			} `json:"items"`
+		}
+
+		r := h.Call(c, http.MethodGet, "/api/v1/instrument-quotes?base=BRL", nil)
+		if r.Status != http.StatusOK {
+			t.Fatalf("status %d: %s", r.Status, r.Body)
+		}
+
+		r.Decode(t, &out)
+
+		codes := []string{}
+		for _, q := range out.Items {
+			codes = append(codes, q.Instrument)
+		}
+
+		return codes
+	}
+
+	if !slices.Contains(quotes(h.Client), "RF.280302.CS3YS") {
+		t.Error("book A has no quote row of its contract")
+	}
+
+	if slices.Contains(quotes(other), "RF.280302.CS3YS") {
+		t.Error("book B has a quote row of the contract of book A")
+	}
+}
+
+// S476: the issuer of a contract is stored with its identifier in canonical form.
+func TestS476InstrumentIssuer(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	ownedByA(t, h)
+
+	var got ownedInstrumentAPI
+	h.MustDo(http.MethodPatch, "/api/v1/instruments/RF.280302.CS3YS", map[string]any{
+		"name": "RF.280302.CS3YS",
+		"issuer": map[string]any{
+			"name": "Banco X", "scheme": "br_cnpj", "id": "11.222.333/0001-81",
+		},
+	}, http.StatusOK, &got)
+
+	if got.Issuer.Name != "Banco X" || got.Issuer.Scheme != "br_cnpj" ||
+		got.Issuer.ID != "11222333000181" {
+		t.Errorf("issuer = %+v, want Banco X br_cnpj 11222333000181", got.Issuer)
+	}
+
+	h.ExpectProblem(
+		h.Do(http.MethodPatch, "/api/v1/instruments/RF.280302.CS3YS", map[string]any{
+			"name":   "RF.280302.CS3YS",
+			"issuer": map[string]any{"name": "Banco X", "scheme": "us_ein", "id": "12-3456789"},
+		}),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"issuer.scheme",
+	)
+
+	de := apitest.New(t, apitest.As(apitest.Profile{
+		Name:   "germany",
+		Locale: locale.Locale{Language: "de", Region: "DE"},
+		Base:   "EUR",
+	}))
+	de.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "DE0001102580", "type": "fixed_income", "scale": 0, "name": "Bund",
+		"quote_currency": "EUR", "issuer": map[string]any{"name": "Bund"},
+	}, http.StatusCreated, nil)
 }

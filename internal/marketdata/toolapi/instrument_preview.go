@@ -11,10 +11,17 @@ import (
 func previewInstrument(
 	ctx context.Context,
 	svc Service,
+	booksID int64,
 	in manageInstrumentIn,
 ) (tool.Preview, error) {
 	if err := checkInstrumentArgs(in); err != nil {
 		return tool.Preview{}, err
+	}
+
+	if in.Action != "define" {
+		if _, err := visibleInstrument(ctx, svc, booksID, in.Code); err != nil {
+			return tool.Preview{}, err
+		}
 	}
 
 	p := tool.Preview{
