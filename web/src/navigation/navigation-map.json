@@ -32,7 +32,9 @@
       "transfers",
       "installments",
       "foreign_purchases_and_exchange",
-      "investment_operations"
+      "investment_operations",
+      "fixed_income_payments",
+      "investment_income"
     ],
     "screen": "New transaction",
     "tasks": [
@@ -294,7 +296,7 @@
   },
   {
     "path": "/instruments",
-    "topics": ["investments"],
+    "topics": ["investments", "fixed_income"],
     "screen": "Instruments",
     "tasks": [
       "list the currencies and securities by type with their latest price",
@@ -304,7 +306,7 @@
   },
   {
     "path": "/instruments/$code",
-    "topics": ["investments"],
+    "topics": ["investments", "fixed_income"],
     "screen": "Instrument",
     "tasks": [
       "see the price history of an instrument over up to 366 days",
