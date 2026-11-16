@@ -766,7 +766,7 @@ paths:
       description: |
         Each month holds the income received, the real amount of each bucket in method order and the spending
         outside the split. A bucket's real amount is the own spending of its categories; the bucket that takes
-        savings adds what the month left, the income received less every expense.
+        savings adds what went into the book's savings, reserve and brokerage accounts in the month.
       parameters:
         - $ref: "#/components/parameters/PlanMonth"
       responses:

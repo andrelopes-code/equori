@@ -124,18 +124,19 @@ func (s *Service) planBuckets(
 		out.OutsideSpent += spent
 	}
 
-	var spent int64
-	for _, c := range categories {
-		spent += own[c.ID][out.Month]
-	}
-
 	for i, b := range method {
 		out.Buckets[i].Bucket = b
-		if b.TakesSavings {
-			// What the month left, the rule of the savings rate indicator (A233).
-			out.Buckets[i].Planned, out.Buckets[i].Spent = out.Savings, out.Received-spent
-			out.Reference.TargetBP, out.Reference.HasTarget = b.ShareBP, true
+		if !b.TakesSavings {
+			continue
 		}
+
+		saved, err := s.monthSavings(ctx, booksID, out.Month)
+		if err != nil {
+			return err
+		}
+
+		out.Buckets[i].Planned, out.Buckets[i].Spent = out.Savings, saved
+		out.Reference.TargetBP, out.Reference.HasTarget = b.ShareBP, true
 	}
 
 	for _, r := range out.Rows {
@@ -149,4 +150,25 @@ func (s *Service) planBuckets(
 	}
 
 	return nil
+}
+
+// monthSavings returns what went into the book's savings accounts in month (A233).
+func (s *Service) monthSavings(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+) (int64, error) {
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
+	if err != nil {
+		return 0, err
+	}
+
+	base, err := s.ledger.BaseCurrency(ctx, booksID)
+	if err != nil {
+		return 0, err
+	}
+
+	got, err := s.savingsInflows(ctx, booksID, facts, base, month, month.AddDate(0, 1, 0))
+
+	return got[month], err
 }

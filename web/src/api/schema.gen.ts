@@ -3760,7 +3760,7 @@ export interface paths {
          * The income split of a month and the five before it (income buckets A233).
          * @description Each month holds the income received, the real amount of each bucket in method order and the spending
          *     outside the split. A bucket's real amount is the own spending of its categories; the bucket that takes
-         *     savings adds what the month left, the income received less every expense.
+         *     savings adds what went into the book's savings, reserve and brokerage accounts in the month.
          */
         get: operations["getBudgetBucketHistory"];
         put?: never;

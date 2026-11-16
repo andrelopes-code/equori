@@ -208,10 +208,10 @@ func TestS442SavingsBucket(t *testing.T) {
 	got := f.bucketPlan("2026-11")
 
 	freedom := got.Buckets[1]
-	// A233: the savings bucket holds what the month left, 3,000.00 received less 400.00 spent.
-	if freedom.Planned.Amount != 80000 || freedom.Spent.Amount != 260000 ||
+	// A233: the savings bucket holds what went into the savings accounts, the 500.00 paid.
+	if freedom.Planned.Amount != 80000 || freedom.Spent.Amount != 50000 ||
 		amountOf(freedom.Target) != 250000 {
-		t.Errorf("freedom = %+v, want planned 80000 spent 260000 target 250000", freedom)
+		t.Errorf("freedom = %+v, want planned 80000 spent 50000 target 250000", freedom)
 	}
 
 	if got.SavingsTargetBP == nil || *got.SavingsTargetBP != 2500 ||
@@ -436,7 +436,8 @@ type bucketHistoryView struct {
 }
 
 // S446: six months end at the month asked; each holds the income received, the spending of
-// each bucket and outside the split, and the savings bucket holds what was left (A233).
+// each bucket and outside the split, and the savings bucket holds what went into the savings
+// accounts (A233).
 func TestS446BucketHistory(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-12")
@@ -452,6 +453,7 @@ func TestS446BucketHistory(t *testing.T) {
 	f.pay("2026-10-07", 30000, fun, "")
 	f.pay("2026-10-08", 10000, gym, "")
 	f.pay("2026-11-03", 20000, food, "")
+	f.pay("2026-10-25", 340000, f.savings, "")
 	f.saveBuckets(
 		bucket("Needs", 5000, false, food),
 		bucket("Fun", 3000, false, fun),
@@ -481,8 +483,8 @@ func TestS446BucketHistory(t *testing.T) {
 	}
 
 	november := got.Months[5]
-	if november.Buckets[0].Real.Amount != 20000 || november.Buckets[2].Real.Amount != -20000 {
-		t.Errorf("november = %+v, want needs 20000 and freedom -20000", november.Buckets)
+	if november.Buckets[0].Real.Amount != 20000 || november.Buckets[2].Real.Amount != 0 {
+		t.Errorf("november = %+v, want needs 20000 and freedom 0", november.Buckets)
 	}
 
 	var empty bucketHistoryView
@@ -520,6 +522,7 @@ func TestS447GoalsBucket(t *testing.T) {
 		apitest.Posting(reserve, 900),
 		apitest.Posting(f.salary, -900),
 	)
+	f.pay("2026-10-12", 100000, f.savings, "")
 
 	goals := bucket("Goals", 2000, false)
 	goals["takes_goals"] = true
@@ -544,13 +547,68 @@ func TestS447GoalsBucket(t *testing.T) {
 	var got bucketHistoryView
 	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
 
-	// Received 5000.00 and the 9.00 yield; 1300.00 spent; 800.00 into the goal.
+	// Received 5000.00 and the 9.00 yield; 1300.00 spent; 800.00 into the goal and 1000.00 into
+	// savings, outside the goal.
 	october := got.Months[4]
 
-	want := []int64{100000, 80000, 30000, 500900 - 130000 - 80000}
+	want := []int64{100000, 80000, 30000, 100000}
 	for i, w := range want {
 		if october.Buckets[i].Real.Amount != w {
 			t.Errorf("october bucket %d = %d, want %d", i, october.Buckets[i].Real.Amount, w)
+		}
+	}
+}
+
+// S448: the bucket that takes savings holds what went into the book's savings, reserve and
+// brokerage accounts, not what the month left: a month that spent its whole income still counts
+// the transfer, a withdrawal counts against its month and a move between two such accounts
+// counts nothing (A233).
+func TestS448SavingsBucketCountsTransfers(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	reserve := f.h.Account("Reserve", "asset", "savings", nil)
+	spare := f.h.Account("Spare", "asset", "reserve", nil)
+	f.h.Record(
+		"2026-08-03",
+		apitest.Posting(f.checking, 500000),
+		apitest.Posting(f.salary, -500000),
+	)
+	f.h.Record(
+		"2026-08-10",
+		apitest.Posting(reserve, 30000),
+		apitest.Posting(f.checking, -30000),
+	)
+	f.h.Record(
+		"2026-09-10",
+		apitest.Posting(f.checking, 20000),
+		apitest.Posting(reserve, -20000),
+	)
+	f.h.Record(
+		"2026-09-11",
+		apitest.Posting(spare, 10000),
+		apitest.Posting(reserve, -10000),
+	)
+	f.h.Record(
+		"2026-10-05",
+		apitest.Posting(f.checking, 500000),
+		apitest.Posting(f.salary, -500000),
+	)
+	f.pay("2026-10-06", 500000, f.rent, "")
+	f.h.Record(
+		"2026-10-20",
+		apitest.Posting(reserve, 80000),
+		apitest.Posting(f.checking, -80000),
+	)
+	f.saveBuckets(bucket("Needs", 5000, false, f.rent), bucket("Freedom", 5000, true))
+
+	var got bucketHistoryView
+	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
+
+	// Months run from 2026-06: August is index 2, September 3, October 4.
+	want := map[int]int64{2: 30000, 3: -20000, 4: 80000}
+	for i, w := range want {
+		if freedom := got.Months[i].Buckets[1].Real.Amount; freedom != w {
+			t.Errorf("month %d freedom = %d, want %d", i, freedom, w)
 		}
 	}
 }

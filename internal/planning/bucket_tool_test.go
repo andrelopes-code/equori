@@ -110,6 +110,7 @@ func TestSplitHistoryTool(t *testing.T) {
 		apitest.Posting(f.salary, -100000),
 	)
 	f.pay("2026-11-06", 70000, f.rent, "")
+	f.pay("2026-11-08", 30000, f.savings, "")
 	f.saveBuckets(bucket("Needs", 5000, false, f.rent), bucket("Freedom", 5000, true))
 
 	var out struct {

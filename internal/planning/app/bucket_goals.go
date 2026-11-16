@@ -27,6 +27,20 @@ func (s *Service) goalInflows(
 		return nil, err
 	}
 
+	return s.inflows(ctx, booksID, facts, base, held, from, to)
+}
+
+// inflows returns, by first day of month in [from, to), what went into the accounts of held from
+// the book's asset and liability accounts in base outside held. A transaction counts through its
+// postings in those other accounts, so a move out of held counts against its month.
+func (s *Service) inflows(
+	ctx context.Context,
+	booksID int64,
+	facts []Account,
+	base money.Currency,
+	held map[uuid.UUID]bool,
+	from, to time.Time,
+) (map[time.Time]int64, error) {
 	var ids []uuid.UUID
 	for id := range held {
 		got, err := s.ledger.AccountTransactionsBetween(
