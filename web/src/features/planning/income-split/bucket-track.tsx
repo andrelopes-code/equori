@@ -1,6 +1,13 @@
-import { Card, CardBody, CardHeader } from "@slotted/react/card";
+import {
+  Section,
+  SectionBody,
+  SectionDescription,
+  SectionHeader,
+  SectionHeading,
+  SectionTitle,
+} from "@slotted/react/section";
 import { Skeleton } from "@slotted/react/skeleton";
-import { Heading, Text } from "@slotted/react/typography";
+import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -56,11 +63,19 @@ export function BucketTrack({ month }: BucketTrackProps) {
     history.data.months.find((m) => m.month === month)?.outside.amount ?? 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <Heading level={2} size="sm">
-          {t("buckets.title")}
-        </Heading>
+    <Section size="lg" ground="surface">
+      <SectionHeader>
+        <SectionTitle>
+          <SectionHeading>{t("buckets.title")}</SectionHeading>
+          {track.received > 0 && (
+            <SectionDescription>
+              {t("track.received", { amount: money(track.received) })}
+            </SectionDescription>
+          )}
+        </SectionTitle>
+      </SectionHeader>
+
+      <SectionBody>
         <Text size="md" weight="medium">
           {t(verdict.key, {
             month: monthName,
@@ -68,14 +83,6 @@ export function BucketTrack({ month }: BucketTrackProps) {
             total: String(track.rows.length),
           })}
         </Text>
-        {track.received > 0 && (
-          <Text size="sm" tone="muted">
-            {t("track.received", { amount: money(track.received) })}
-          </Text>
-        )}
-      </CardHeader>
-
-      <CardBody>
         <div className={styles.rows}>
           {track.rows.map((row) => (
             <BucketTrackRow
@@ -94,7 +101,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
           </Text>
         )}
         <BucketTrackLegend />
-      </CardBody>
-    </Card>
+      </SectionBody>
+    </Section>
   );
 }

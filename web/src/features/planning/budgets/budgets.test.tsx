@@ -22,7 +22,7 @@ describe("PlanningPage budgets", () => {
     await renderApp("/planning?tab=budgets&view=track&month=2026-12", {
       fetch: budgetApi(),
     });
-    const food = await screen.findByRole("article", { name: "Food" });
+    const food = await screen.findByRole("row", { name: "Food" });
     expect(within(food).getByText("R$0.00")).toBeInTheDocument();
     expect(
       within(food).getByText(
@@ -41,7 +41,7 @@ describe("PlanningPage budgets", () => {
 
   it("marks a budget whose spending passed planned plus carried", async () => {
     await renderApp(november, { fetch: budgetApi() });
-    const food = await screen.findByRole("article", { name: "Food" });
+    const food = await screen.findByRole("row", { name: "Food" });
     expect(
       within(food).getByText(catalogEn["budget.overspent"]),
     ).toBeInTheDocument();
@@ -58,7 +58,7 @@ describe("PlanningPage budgets", () => {
         name: words("budget.meter", { name: "Food" }),
       }),
     ).toHaveAttribute("aria-valuetext", catalogEn["budget.overspent"]);
-    const fuel = screen.getByRole("article", { name: "Fuel" });
+    const fuel = screen.getByRole("row", { name: "Fuel" });
     expect(
       within(fuel).getByText(words("budget.left", { amount: "R$300.00" })),
     ).toBeInTheDocument();
@@ -71,19 +71,21 @@ describe("PlanningPage budgets", () => {
 
   it("groups the budgets under their top category with a subtotal", async () => {
     await renderApp(november, { fetch: budgetApi() });
-    const transport = await screen.findByRole("region", { name: "Transport" });
+    await screen.findByRole("row", { name: "Food" });
+    const rows = screen.getAllByRole("row");
+    const transport = rows.findIndex((r) => within(r).queryByText("Transport"));
     expect(
-      within(transport)
-        .getAllByRole("article")
-        .map((card) => card.getAttribute("aria-label")),
+      rows
+        .slice(transport + 1, transport + 3)
+        .map((row) => row.getAttribute("aria-label")),
     ).toEqual(["Fuel", "Parking"]);
     expect(
-      within(transport).getByText(
+      within(rows[transport] ?? document.body).getByText(
         words("budget.groupTotal", { spent: "R$150.00", room: "R$500.00" }),
       ),
     ).toBeInTheDocument();
-    // A budget that starts after the month has no card.
-    expect(screen.queryByRole("article", { name: "Gifts" })).toBeNull();
+    // A budget that starts after the month has no line.
+    expect(screen.queryByRole("row", { name: "Gifts" })).toBeNull();
   });
 
   it("sums the month over the budgets without counting a nested one twice", async () => {
@@ -123,6 +125,15 @@ describe("PlanningPage budgets", () => {
 
   it("lists the spending of categories no budget covers, each with a way to budget it", async () => {
     await renderApp(november, { fetch: budgetApi() });
+    // The block stays closed until asked for; its trigger carries the total.
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: words("budget.groupLine", {
+          name: catalogEn["budget.unbudgeted"],
+          amount: "R$120.00",
+        }),
+      }),
+    );
     const list = await screen.findByRole("list", {
       name: catalogEn["budget.unbudgeted"],
     });
@@ -170,7 +181,7 @@ describe("PlanningPage budgets", () => {
     ).toBeInTheDocument();
   });
 
-  it("changes a budget's amount from its card", async () => {
+  it("changes a budget's amount from its line", async () => {
     const sent: unknown[] = [];
     await renderApp(november, {
       fetch: budgetApi({
@@ -180,7 +191,7 @@ describe("PlanningPage budgets", () => {
         },
       }),
     });
-    const food = await screen.findByRole("article", { name: "Food" });
+    const food = await screen.findByRole("row", { name: "Food" });
     await userEvent.click(
       within(food).getByRole("button", {
         name: words("budget.actions", { name: "Food" }),
@@ -206,7 +217,7 @@ describe("PlanningPage budgets", () => {
     });
   });
 
-  it("deletes a budget from its card after a confirmation (S144)", async () => {
+  it("deletes a budget from its line after a confirmation (S144)", async () => {
     const deleted: string[] = [];
     await renderApp(november, {
       fetch: budgetApi({
@@ -216,7 +227,7 @@ describe("PlanningPage budgets", () => {
         },
       }),
     });
-    const food = await screen.findByRole("article", { name: "Food" });
+    const food = await screen.findByRole("row", { name: "Food" });
     await userEvent.click(
       within(food).getByRole("button", {
         name: words("budget.actions", { name: "Food" }),
@@ -238,7 +249,7 @@ describe("PlanningPage budgets", () => {
   });
 });
 
-// The figure a StatCard shows, symbol and minor digits included.
-function figureValue(card: HTMLElement) {
-  return card.querySelector('[data-part="value"]')?.textContent;
+// The value a figure of the month strip shows, symbol and minor digits included.
+function figureValue(figure: HTMLElement) {
+  return figure.querySelector("[data-figure=value]")?.textContent;
 }

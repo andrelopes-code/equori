@@ -184,4 +184,11 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "buckets.follows": "segue {name}",
   "buckets.noneOutside": "Toda categoria tem um pote.",
   "buckets.inBucket": "em {name}",
+  "budget.title": "Orçamentos",
+  "budget.col.budget": "Orçamento",
+  "budget.col.progress": "Progresso",
+  "budget.col.spent": "Gasto",
+  "budget.col.status": "Situação",
+  "budget.col.actions": "Ações",
+  "budget.groupLine": "{name} · {amount}",
 };

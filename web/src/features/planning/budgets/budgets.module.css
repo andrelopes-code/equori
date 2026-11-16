@@ -5,10 +5,27 @@
     gap: var(--slotted-space-6);
   }
 
-  .groups {
+  /* The four figures of the month on one line, each set apart by a rule; they wrap two by two on
+     a narrow section. */
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    row-gap: var(--slotted-space-4);
+    padding-block-end: var(--slotted-space-4);
+  }
+
+  .figure {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-5);
+    gap: var(--slotted-space-1);
+    min-width: 0;
+    padding-inline: var(--slotted-space-4);
+    border-inline-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .figure:first-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
   }
 
   .title {
@@ -22,48 +39,26 @@
     white-space: nowrap;
   }
 
-  .group {
-    display: flex;
-    flex-direction: column;
+  /* The bar and its share on one line; the share takes the tone of the budget's state. */
+  .bar {
+    --budget-tone: var(--slotted-tone-accent-text);
+    display: grid;
+    grid-template-columns: minmax(6rem, 1fr) 3.5rem;
+    align-items: center;
     gap: var(--slotted-space-3);
   }
 
-  .progress {
-    --budget-tone: var(--slotted-tone-accent-text);
-    display: flex;
-    flex-direction: column;
-    gap: var(--slotted-space-2);
-  }
-
-  .progress[data-state="near"] {
+  .bar[data-state="near"] {
     --budget-tone: var(--slotted-tone-warning-text);
   }
 
-  .progress[data-state="over"] {
+  .bar[data-state="over"] {
     --budget-tone: var(--slotted-tone-danger-text);
   }
 
-  /* The figure, what it is out of, and the share at the line's end, on one baseline. */
-  .spent {
-    display: flex;
-    align-items: baseline;
-    gap: var(--slotted-space-2);
-  }
-
-  .spent > :last-child {
-    margin-inline-start: auto;
-  }
-
-  .percent {
+  .bar > :last-child {
     color: var(--budget-tone);
-  }
-
-  /* Cards of one row keep one height: a status longer than the card is cut, and read whole from
-     its title. */
-  .status {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-align: end;
   }
 
   /* A price that valued another currency, on a line of its own under the committed parts. */

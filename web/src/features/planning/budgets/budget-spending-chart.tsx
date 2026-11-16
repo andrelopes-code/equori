@@ -39,13 +39,13 @@ export function BudgetSpendingChart({
   ];
   return (
     <Chart
-      variant="card"
+      variant="plain"
       size="sm"
       orientation="horizontal"
       loading={loading}
       data={spendingBars(slices, locale)}
       series={series}
-      title={t("budget.spendingChart")}
+      aria-label={t("budget.spendingChart")}
       description={t("budget.spentTotal", { amount: money(total) })}
       x={{ field: "label" }}
       y={{ format: money }}

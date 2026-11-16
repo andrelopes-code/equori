@@ -186,4 +186,11 @@ export const budgetPlanEn = {
   "buckets.follows": "follows {name}",
   "buckets.noneOutside": "Every category has a bucket.",
   "buckets.inBucket": "in {name}",
+  "budget.title": "Budgets",
+  "budget.col.budget": "Budget",
+  "budget.col.progress": "Progress",
+  "budget.col.spent": "Spent",
+  "budget.col.status": "Status",
+  "budget.col.actions": "Actions",
+  "budget.groupLine": "{name} · {amount}",
 };

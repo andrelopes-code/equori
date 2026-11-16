@@ -11,8 +11,7 @@ import { formatDate, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { FigureCard } from "@/ui/display/figure-card";
-import { FigureGrid } from "@/ui/display/figure-grid";
+import { BudgetFigure } from "@/features/planning/budgets/budget-figure";
 
 type Money = components["schemas"]["Money"];
 type Committed = components["schemas"]["Committed"];
@@ -27,7 +26,7 @@ export interface BudgetSummaryProps {
   scale: (code: string) => number;
 }
 
-// RP-02, OV-06: the month over every budget as four peer figures: what went out of the room, what
+// RP-02, OV-06: the month over every budget as one strip of four figures: what went out of the room, what
 // is left, what installments and expected occurrences still commit, and how many budgets ran over.
 export function BudgetSummary({
   figures,
@@ -44,7 +43,6 @@ export function BudgetSummary({
   if (figures === undefined) return null;
 
   const money = (m: Money) => fmt.money(m, scale(m.currency));
-  const amount = (m: Money) => ({ money: m, scale: scale(m.currency) });
   const number = numberFormatter(locale);
   const state = budgetState(figures);
   const share = usedShare(figures);
@@ -80,11 +78,10 @@ export function BudgetSummary({
     });
 
   return (
-    <FigureGrid label={t("budget.summary")}>
-      <FigureCard
+    <section aria-label={t("budget.summary")} className={styles.strip}>
+      <BudgetFigure
         label={t("budget.figure.spent")}
-        value={amount(figures.spent)}
-        goodWhen="none"
+        value={money(figures.spent)}
         note={t("budget.figure.share", {
           share: numberFormatter(locale, { style: "percent" }).format(
             share / 100,
@@ -93,20 +90,17 @@ export function BudgetSummary({
         })}
       />
 
-      <FigureCard
+      <BudgetFigure
         label={t(
           state === "over" ? "budget.figure.over" : "budget.figure.left",
         )}
-        value={amount(left)}
-        goodWhen="none"
+        value={money(left)}
         note={when}
       />
 
-      <FigureCard
+      <BudgetFigure
         label={t("budget.figure.committed")}
-        value={committed === undefined ? undefined : amount(committed.total)}
-        goodWhen="none"
-        loading={committed === undefined}
+        value={committed === undefined ? undefined : money(committed.total)}
         note={
           committed !== undefined && (
             <>
@@ -127,15 +121,14 @@ export function BudgetSummary({
         }
       />
 
-      <FigureCard
+      <BudgetFigure
         label={t("budget.figure.overspent")}
         value={number.format(states.over)}
-        goodWhen="none"
         note={[
           count(states.near, "budget.nearOne", "budget.nearMany"),
           count(states.within, "budget.withinOne", "budget.withinMany"),
         ].join(" · ")}
       />
-    </FigureGrid>
+    </section>
   );
 }
