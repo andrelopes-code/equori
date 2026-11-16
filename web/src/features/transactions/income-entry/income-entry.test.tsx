@@ -142,6 +142,29 @@ describe("investment income entry", () => {
     });
   });
 
+  // FC20: a link of the instrument page starts the form from its income type, gross and date.
+  it("starts from the income type, gross and date of the route", async () => {
+    const sent: unknown[] = [];
+    await renderApp(`${path}&income_type=coupon&gross=60206&date=2026-07-06`, {
+      fetch: api(sent),
+    });
+    expect(
+      await screen.findByRole("textbox", { name: catalogEn["income.gross"] }),
+    ).toHaveValue("602.06");
+    await pick(catalogEn["income.category"], "Dividends");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      income_type: "coupon",
+      date: "2026-07-06",
+      gross: brl(60206),
+    });
+  });
+
   it("refuses a withheld amount that is not below the gross", async () => {
     const sent: unknown[] = [];
     await renderApp(path, { fetch: api(sent) });

@@ -27,6 +27,7 @@ import {
   emptyTrade,
   isTradeDraft,
   storedTrade,
+  tradePreset,
 } from "@/features/transactions/trade-entry/trade-draft";
 import type { TradeDraft } from "@/features/transactions/trade-entry/trade-draft";
 import { unitPriceOfTotal } from "@/features/transactions/trade-entry/unit-price-of-total";
@@ -38,6 +39,7 @@ import {
   grossOf,
   soldCost,
 } from "@/features/transactions/entry-model/trade-math";
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -87,6 +89,7 @@ export function useTradeEntry(
   accountId: string | null,
   brokerageId: string | null = null,
   correction?: TradeCorrection,
+  presets: NewTransactionSearch = {},
 ) {
   const t = useT();
   const api = useApi();
@@ -108,6 +111,7 @@ export function useTradeEntry(
     return {
       ...start,
       brokerageId: brokerageId ?? start.brokerageId,
+      ...tradePreset(presets),
     };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});

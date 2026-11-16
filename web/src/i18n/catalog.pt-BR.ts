@@ -1014,6 +1014,7 @@ export const catalogPtBR: Catalog = {
   "trade.averageCost": "Preço médio",
   "trade.estimatedResult": "Resultado estimado",
   "trade.estimatedTax": "Imposto retido estimado",
+  "trade.useEstimate": "Usar estimativa",
   "trade.noPosition": "Sem posição nesta data.",
   "trade.exceedsPosition": "A posição nesta data é {quantity}.",
   "trade.required.price":

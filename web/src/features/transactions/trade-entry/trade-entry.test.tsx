@@ -602,6 +602,59 @@ describe("trade entry", () => {
     expect(await screen.findByText(moneyValue(/73\.65/))).toBeInTheDocument();
   });
 
+  // FC20: a link of the instrument page starts the sale form from its presets.
+  it("starts from the side, quantity, unit price and date of the route", async () => {
+    const sent: unknown[] = [];
+    await renderApp(
+      `${path}&side=sell&quantity=50&unit_price=10.5&date=2026-10-10`,
+      { fetch: api(sent, { held: { quantity: 150, cost: 151240 } }) },
+    );
+    expect(
+      await screen.findByRole("radio", { name: catalogEn["trade.side.sell"] }),
+    ).toBeChecked();
+    expect(
+      await screen.findByRole("textbox", {
+        name: catalogEn["trade.unitPrice"],
+      }),
+    ).toHaveValue("10.5");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      side: "sell",
+      date: "2026-10-10",
+      quantity: { amount: 50, currency: "MXRF11" },
+    });
+  });
+
+  // A235: the estimate never fills the taxes by itself; "Use estimate" copies it.
+  it("copies the estimated tax into the taxes field on request", async () => {
+    await renderApp(path, {
+      fetch: api([], {
+        held: { quantity: 150, cost: 151240 },
+        lots: [{ acquired_on: "2026-01-05", quantity: 150, cost: 151240 }],
+        withholding: { incomeTax: 765, iof: 6600 },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("radio", { name: catalogEn["trade.side.sell"] }),
+    );
+    await type(catalogEn["trade.quantity"], "50");
+    await type(catalogEn["trade.unitPrice"], "10.80");
+    const use = await screen.findByRole("button", {
+      name: catalogEn["trade.useEstimate"],
+    });
+    const taxes = screen.getByRole("textbox", {
+      name: optionalName(catalogEn["trade.taxes"]),
+    });
+    expect(taxes).toHaveValue("0.00");
+    await userEvent.click(use);
+    expect(taxes).toHaveValue("73.65");
+  });
+
   it("shows no estimated tax where the server has no estimate", async () => {
     await renderApp(path, {
       fetch: api([], { held: { quantity: 150, cost: 151240 } }),

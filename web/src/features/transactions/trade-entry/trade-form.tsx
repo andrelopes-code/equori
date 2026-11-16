@@ -53,8 +53,21 @@ export function TradeForm({
   const sell = draft.side === "sell";
   const baseScale = base === undefined ? 0 : scale(base);
 
+  function handleUseEstimate() {
+    if (view.withheld !== null) set({ taxes: view.withheld });
+  }
+
   return (
-    <FormLayout aside={<TradeAside view={view} sell={sell} scale={scale} />}>
+    <FormLayout
+      aside={
+        <TradeAside
+          view={view}
+          sell={sell}
+          scale={scale}
+          onUseEstimate={handleUseEstimate}
+        />
+      }
+    >
       {onKind !== undefined && (
         <EntryKindPicker value="trade" onChange={onKind} investments />
       )}

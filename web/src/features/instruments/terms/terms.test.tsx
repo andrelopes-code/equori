@@ -17,6 +17,58 @@ const termsRow = (term: string) =>
     ?.nextElementSibling?.textContent;
 
 describe("Fixed income terms", () => {
+  // FC35: the issuer, the rate in words and the next payment of a contract.
+  it("shows the issuer, the rate and the next payment of a contract", async () => {
+    const fetch = api({
+      "GET /api/v1/instruments/CDB1": () =>
+        json(200, {
+          code: "CDB1",
+          type: "fixed_income",
+          scale: 2,
+          name: "CDB Bank One",
+          quote_currency: "BRL",
+          subtype: "cdb",
+          issuer: { name: "Banco X", scheme: "br_cnpj", id: "11222333000181" },
+        }),
+      "GET /api/v1/fixed-income-events": () =>
+        json(200, {
+          items: [
+            {
+              account_id: "a0000000-0000-4000-8000-000000000001",
+              instrument: "OTHER",
+              date: "2026-06-01",
+              kind: "maturity",
+              quantity: { amount: 1, currency: "OTHER" },
+              gross: { amount: 100, currency: "BRL" },
+              rate_missing: false,
+              state: "upcoming",
+            },
+            {
+              account_id: "a0000000-0000-4000-8000-000000000001",
+              instrument: "CDB1",
+              date: "2026-07-06",
+              kind: "interest",
+              quantity: { amount: 1000, currency: "CDB1" },
+              gross: { amount: 60206, currency: "BRL" },
+              rate_missing: false,
+              state: "upcoming",
+            },
+          ],
+        }),
+    });
+    await renderApp("/instruments/CDB1", { fetch });
+    await screen.findByText("110%");
+    await waitFor(() => {
+      expect(termsRow(catalogEn["terms.nextPayment"])).toBe(
+        "Interest · 07/06/2026 · R$602.06",
+      );
+    });
+    expect(termsRow(catalogEn["terms.issuer"])).toBe(
+      "Banco X · 11222333000181",
+    );
+    expect(termsRow(catalogEn["terms.rate"])).toBe("110% of CDI");
+  });
+
   it("shows the terms of a fixed income instrument (S123)", async () => {
     await renderApp("/instruments/CDB1", { fetch: api() });
     await screen.findByText("110%");

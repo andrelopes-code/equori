@@ -18,12 +18,14 @@ import {
   interestKeys,
   interestPeriodOf,
 } from "@/features/instruments/terms/payments-draft";
+import { rateInWords } from "@/features/instruments/terms/rate-in-words";
 import { TermProgress } from "@/features/instruments/terms/term-progress";
 import { usePriceFormat } from "@/features/instruments/model/use-price-format";
 import { indexName } from "@/features/calculators";
 import { calendarLabel } from "@/features/planning";
+import { fixedIncomeEventsQuery } from "@/features/portfolio";
 import { useScale } from "@/features/setup";
-import { formatDate, formatSignedBasisPoints } from "@/i18n/format";
+import { formatDate, formatSignedBasisPoints, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT, type TFunction } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MASK } from "@/privacy/mask";
@@ -37,15 +39,25 @@ import {
 } from "@slotted/react/section";
 
 type Terms = components["schemas"]["FixedIncomeTerms"];
+type Issuer = components["schemas"]["InstrumentIssuer"];
+type FixedIncomeEvent = components["schemas"]["FixedIncomeEvent"];
+
+const nextPaymentDays = 400;
 
 interface TermsSectionProps {
   code: string;
   terms: Terms | null;
   quote: string;
+  issuer?: Issuer | undefined;
 }
 
 // The terms the accrual of prices reads, how far the term has run, and the note that none are set.
-export function TermsSection({ code, terms, quote }: TermsSectionProps) {
+export function TermsSection({
+  code,
+  terms,
+  quote,
+  issuer,
+}: TermsSectionProps) {
   const t = useT();
   const api = useApi();
   const today = useToday();
@@ -57,10 +69,15 @@ export function TermsSection({ code, terms, quote }: TermsSectionProps) {
     ...latestPriceQuery(api, code, quote, today),
     enabled: terms !== null,
   }).data;
+  const next = useQuery({
+    ...fixedIncomeEventsQuery(api, today, shiftDate(today, nextPaymentDays)),
+    enabled: terms !== null,
+  }).data?.items.find((e) => e.instrument === code && e.state !== "recorded");
   const rows: [string, string][] =
     terms === null || scale === null
       ? []
       : [
+          [t("terms.issuer"), issuerText(issuer)],
           [t("terms.issuedOn"), formatDate(terms.issued_on, locale)],
           [t("terms.maturesOn"), formatDate(terms.matures_on, locale)],
           [t("terms.index"), indexName(terms.index_id ?? "")],
@@ -90,7 +107,14 @@ export function TermsSection({ code, terms, quote }: TermsSectionProps) {
               ? ""
               : formatDate(terms.redeemable_from, locale),
           ],
+          [t("terms.rate"), rateInWords(terms, t, locale)],
           [t("terms.payments"), paymentsText(t, terms)],
+          [
+            t("terms.nextPayment"),
+            next === undefined
+              ? ""
+              : nextPaymentText(t, next, scale, fmt, locale),
+          ],
           [
             t("terms.faceValue"),
             fmt.money(
@@ -155,4 +179,31 @@ function paymentsText(t: TFunction, terms: Terms): string {
   if (terms.payments.length === 0) return "";
 
   return t("terms.paymentsCount", { count: String(terms.payments.length) });
+}
+
+function issuerText(issuer: Issuer | undefined): string {
+  if (issuer === undefined) return "";
+
+  return issuer.id === undefined
+    ? issuer.name
+    : `${issuer.name} · ${issuer.id}`;
+}
+
+function nextPaymentText(
+  t: TFunction,
+  event: FixedIncomeEvent,
+  scale: (code: string) => number,
+  fmt: ReturnType<typeof useMoneyFormat>,
+  locale: string,
+): string {
+  const amount =
+    event.gross === undefined
+      ? ""
+      : fmt.money(event.gross, scale(event.gross.currency));
+
+  return t("terms.nextPayment.value", {
+    kind: t(`terms.event.${event.kind as "interest"}`),
+    date: formatDate(event.date, locale),
+    amount,
+  });
 }

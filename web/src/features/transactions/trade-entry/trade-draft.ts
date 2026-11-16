@@ -1,4 +1,5 @@
 import { parseRate } from "@/features/instruments";
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
 
 export interface TradeDraft {
   side: "buy" | "sell";
@@ -43,6 +44,18 @@ export function emptyTrade(
     taxes: 0,
     taxesCategoryId: null,
     description: "",
+  };
+}
+
+// The initial values a link of the entry route gives the fields of the form (FC20).
+export function tradePreset(search: NewTransactionSearch): Partial<TradeDraft> {
+  const { side, date, quantity, unit_price: unitPrice } = search;
+
+  return {
+    ...(side === undefined ? {} : { side }),
+    ...(date === undefined ? {} : { date }),
+    ...(quantity === undefined ? {} : { quantity }),
+    ...(unitPrice === undefined ? {} : { unitPrice }),
   };
 }
 

@@ -158,7 +158,12 @@ export function InstrumentPage() {
             />
           )}
           {fixedIncome && quote !== null && terms.data !== undefined && (
-            <TermsSection code={i.code} terms={terms.data} quote={quote} />
+            <TermsSection
+              code={i.code}
+              terms={terms.data}
+              quote={quote}
+              issuer={i.issuer}
+            />
           )}
           <InstrumentData
             instrument={i}

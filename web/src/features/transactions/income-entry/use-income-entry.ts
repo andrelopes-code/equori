@@ -19,10 +19,12 @@ import {
 } from "@/features/transactions/entry-model/form-draft";
 import {
   emptyIncome,
+  incomePreset,
   isIncomeDraft,
 } from "@/features/transactions/income-entry/income-draft";
 import type { IncomeDraft } from "@/features/transactions/income-entry/income-draft";
 import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 
@@ -44,6 +46,7 @@ export interface IncomeCorrection {
 export function useIncomeEntry(
   accountId: string | null,
   correction?: IncomeCorrection,
+  presets: NewTransactionSearch = {},
 ) {
   const t = useT();
   const api = useApi();
@@ -58,7 +61,7 @@ export function useIncomeEntry(
     if (correction !== undefined) return correction.start;
     const stored = readStored(draftKey);
     const start = isIncomeDraft(stored) ? stored : emptyIncome(today);
-    return start;
+    return { ...start, ...incomePreset(presets) };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);

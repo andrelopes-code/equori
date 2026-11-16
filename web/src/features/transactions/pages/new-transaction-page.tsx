@@ -38,10 +38,8 @@ export function NewTransactionPage() {
   const api = useApi();
   const today = useToday();
   const navigate = useNavigate();
-  const { account_id, to_account_id, brokerage_id, instrument, kind } =
-    useSearch({
-      from: "/_authed/transactions/new",
-    });
+  const search = useSearch({ from: "/_authed/transactions/new" });
+  const { account_id, to_account_id, brokerage_id, instrument, kind } = search;
   const accounts = useQuery(accountsQuery(api));
   const payees = useQuery(payeesQuery(api));
   const tags = useQuery(tagsQuery(api));
@@ -63,6 +61,7 @@ export function NewTransactionPage() {
     account_id ?? null,
     brokerage_id ?? null,
     instrument ?? null,
+    search,
   );
   const { entry } = built;
   const { submit, errors, summary, creating } = useSubmitEntry({

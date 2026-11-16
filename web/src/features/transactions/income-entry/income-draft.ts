@@ -1,3 +1,5 @@
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
+
 export interface IncomeDraft {
   brokerageId: string | null;
   instrument: string | null;
@@ -27,6 +29,19 @@ export function emptyIncome(
     categoryId: null,
     withheldCategoryId: null,
     description: "",
+  };
+}
+
+// The initial values a link of the entry route gives the fields of the form (FC20).
+export function incomePreset(
+  search: NewTransactionSearch,
+): Partial<IncomeDraft> {
+  const { income_type: incomeType, gross, date } = search;
+
+  return {
+    ...(incomeType === undefined ? {} : { incomeType }),
+    ...(gross === undefined ? {} : { gross }),
+    ...(date === undefined ? {} : { date }),
   };
 }
 

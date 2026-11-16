@@ -7,6 +7,7 @@ import { useForeignEntry } from "@/features/transactions/foreign-entry/use-forei
 import { useIncomeEntry } from "@/features/transactions/income-entry/use-income-entry";
 import { useNoteEntry } from "@/features/transactions/note-entry/use-note-entry";
 import { useTradeEntry } from "@/features/transactions/trade-entry/use-trade-entry";
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
 import type { MessageKey } from "@/i18n/catalog.en";
 
 const createdKeys: Record<BuiltKind, MessageKey> = {
@@ -26,10 +27,11 @@ export function useBuiltEntries(
   accountId: string | null,
   brokerageId: string | null,
   contract: string | null = null,
+  presets: NewTransactionSearch = {},
 ) {
-  const trade = useTradeEntry(accountId, brokerageId);
+  const trade = useTradeEntry(accountId, brokerageId, undefined, presets);
   const fixedIncome = useFixedIncomeEntry(brokerageId, contract);
-  const income = useIncomeEntry(accountId);
+  const income = useIncomeEntry(accountId, undefined, presets);
   const note = useNoteEntry(brokerageId);
   const foreign = useForeignEntry(accountId);
   const exchange = useExchangeEntry(accountId);

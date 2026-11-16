@@ -1,3 +1,5 @@
+import { Button } from "@slotted/react/button";
+
 import { formatRate } from "@/features/instruments";
 import type { TradeView } from "@/features/transactions/trade-entry/use-trade-entry";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
@@ -11,10 +13,16 @@ interface TradeAsideProps {
   view: TradeView;
   sell: boolean;
   scale: (code: string) => number;
+  onUseEstimate: () => void;
 }
 
 // The figures of the trade beside the form: gross, cash effect and, for a sale, the position.
-export function TradeAside({ view, sell, scale }: TradeAsideProps) {
+export function TradeAside({
+  view,
+  sell,
+  scale,
+  onUseEstimate,
+}: TradeAsideProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
@@ -72,6 +80,16 @@ export function TradeAside({ view, sell, scale }: TradeAsideProps) {
               label={t("trade.estimatedTax")}
               value={figure(view.withheld)}
               note={null}
+              action={
+                <Button
+                  size="sm"
+                  variant="outline"
+                  tone="secondary"
+                  onClick={onUseEstimate}
+                >
+                  {t("trade.useEstimate")}
+                </Button>
+              }
             />
           )}
         </>
