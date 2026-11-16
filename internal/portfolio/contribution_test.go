@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/marketdata"
 )
 
 const contributionPath = "/api/v1/contribution-plan"
@@ -689,6 +690,40 @@ func TestContributionProblems(t *testing.T) {
 			f.h.ExpectProblem(f.h.Do(tt.method, tt.path, body), tt.status, tt.code, "")
 		})
 	}
+}
+
+// S478 (A236 FC1): a plan member never names a contract of another book.
+func TestS478ContributionMemberOfAnotherBook(t *testing.T) {
+	t.Parallel()
+	f := newContributionFixture(t)
+	f.h.Login("other@example.com")
+
+	_, err := f.h.App.Marketdata.DefineOwnInstrument(
+		t.Context(),
+		f.h.BooksIDOf("other@example.com"),
+		marketdata.Instrument{
+			Code:          "RF.280302.CS3YS",
+			Type:          "fixed_income",
+			Name:          "CDB Banco X",
+			QuoteCurrency: "BRL",
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := map[string]any{
+		"classes": []any{
+			contributionClass("Fixed income", 10000, instrumentMember("RF.280302.CS3YS")),
+		},
+	}
+
+	f.h.ExpectProblem(
+		f.h.Do(http.MethodPut, contributionPath, body),
+		http.StatusUnprocessableEntity,
+		"contribution_member_invalid",
+		"",
+	)
 }
 
 // S405: read members read and preview the plan; write members save it.

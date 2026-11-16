@@ -194,6 +194,7 @@ func (s *Service) PreviewSavedContribution(
 
 // accountBook is the accounts of a book indexed for the member rules of CN3 and CN6.
 type accountBook struct {
+	booksID  int64
 	accounts []Account
 	byID     map[uuid.UUID]Account
 	hasChild map[uuid.UUID]bool
@@ -207,6 +208,7 @@ func (s *Service) loadAccountBook(ctx context.Context, booksID int64) (accountBo
 	}
 
 	ab := accountBook{
+		booksID:  booksID,
 		accounts: accounts,
 		byID:     make(map[uuid.UUID]Account, len(accounts)),
 		hasChild: map[uuid.UUID]bool{},
@@ -233,6 +235,10 @@ func (s *Service) instrumentType(
 	info, err := s.md.InstrumentOf(ctx, code)
 	if err != nil {
 		return "", err
+	}
+
+	if info.BooksID != 0 && info.BooksID != ab.booksID {
+		return "", ErrUnknownInstrument
 	}
 
 	ab.types[code] = info.Type

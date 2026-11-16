@@ -32,7 +32,11 @@ func (p marketPort) InstrumentOf(
 		return app.InstrumentInfo{}, fmt.Errorf("%w: %w", app.ErrUnknownInstrument, err)
 	}
 
-	return app.InstrumentInfo{Type: in.Type, QuoteCurrency: in.QuoteCurrency}, err
+	return app.InstrumentInfo{
+		Type:          in.Type,
+		QuoteCurrency: in.QuoteCurrency,
+		BooksID:       in.BooksID,
+	}, err
 }
 
 func (p marketPort) QuoteState(
