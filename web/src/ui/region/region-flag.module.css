@@ -1,0 +1,60 @@
+@layer app {
+  /* The flag keeps the 4:3 of a flag at three heights, one per text size beside it: 14, 18 and
+     24 px. No token holds them. */
+  .flag {
+    --flag-height: 1.125rem;
+
+    position: relative;
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    block-size: var(--flag-height);
+    inline-size: calc(var(--flag-height) * 4 / 3);
+    overflow: hidden;
+    border-radius: var(--slotted-radius-sm);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .flag[data-size="sm"] {
+    --flag-height: 0.875rem;
+  }
+
+  .flag[data-size="lg"] {
+    --flag-height: 1.5rem;
+  }
+
+  .flag svg {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  /* The hairline keeps a flag of the page's own colour, the white of Japan or the blue of the
+     euro area, from melting into the surface under it. */
+  .flag::after {
+    position: absolute;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 var(--slotted-border-width-thin)
+      color-mix(in srgb, var(--slotted-text) 22%, transparent);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .flag[data-art="global"] {
+    color: var(--slotted-text-muted);
+  }
+
+  .flag[data-art="global"] svg {
+    inline-size: 64%;
+    block-size: auto;
+  }
+
+  .flag[data-art="plate"] {
+    color: var(--slotted-text-muted);
+    font-size: calc(var(--flag-height) * 0.46);
+    font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+}
