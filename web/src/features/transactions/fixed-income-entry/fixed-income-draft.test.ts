@@ -56,6 +56,42 @@ describe("applicationBody", () => {
     });
   });
 
+  it("adds the payments of the draft to the contract", () => {
+    const result = applicationBody(
+      draft({ payments: { every: 6, first: "2026-09-02", amortizations: [] } }),
+      t,
+    );
+
+    expect(result).toMatchObject({
+      body: {
+        contract: { interest_every_months: 6, first_payment_on: "2026-09-02" },
+      },
+    });
+  });
+
+  it("names the missing first payment date without a body", () => {
+    const result = applicationBody(
+      draft({ payments: { every: 6, first: "", amortizations: [] } }),
+      t,
+    );
+
+    expect(result).toEqual({
+      errors: { first_payment_on: catalogEn["instruments.required"] },
+    });
+  });
+
+  it("sends no payments with an existing contract", () => {
+    const result = applicationBody(
+      draft({
+        instrument: "RF.1",
+        payments: { every: 6, first: "2026-09-02", amortizations: [] },
+      }),
+      t,
+    );
+
+    expect(JSON.stringify(result)).not.toContain("interest_every_months");
+  });
+
   it("sends the chosen cash account of the brokerage", () => {
     const result = applicationBody(draft({ cashAccountId: "cash-2" }), t);
 

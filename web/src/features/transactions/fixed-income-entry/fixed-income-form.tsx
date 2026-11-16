@@ -1,5 +1,6 @@
 import { Field, FieldError, FieldLabel } from "@slotted/react/field";
 
+import { PaymentsFields } from "@/features/instruments";
 import { BrokerageFields } from "@/features/transactions/brokerage-account/brokerage-fields";
 import type { EntryKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
@@ -114,6 +115,14 @@ export function FixedIncomeForm({
           />
 
           <FixedIncomeTermFields draft={draft} errors={errors} onChange={set} />
+
+          <PaymentsFields
+            draft={draft.payments}
+            errors={errors}
+            onChange={(payments) => {
+              set({ payments });
+            }}
+          />
         </>
       )}
     </FormLayout>

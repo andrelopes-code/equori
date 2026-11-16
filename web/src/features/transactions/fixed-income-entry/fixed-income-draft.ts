@@ -1,5 +1,11 @@
 import { indexName } from "@/features/calculators";
-import { bpText, parsePercentBp } from "@/features/instruments";
+import {
+  bpText,
+  noPayments,
+  parsePercentBp,
+  paymentsBody,
+} from "@/features/instruments";
+import type { PaymentsDraft } from "@/features/instruments";
 import { formatDate } from "@/i18n/format";
 import type { TFunction } from "@/i18n/i18n-provider";
 import type { MoneyFormat } from "@/privacy/use-money-format";
@@ -31,6 +37,8 @@ export interface FixedIncomeDraft {
   maturesOn: string;
   dailyLiquidity: boolean;
   redeemableFrom: string | null;
+  // The interest schedule and amortizations of a new contract.
+  payments: PaymentsDraft;
 }
 
 export type ApplicationBodyResult =
@@ -59,6 +67,7 @@ export function emptyFixedIncomeDraft(
     maturesOn: "",
     dailyLiquidity: false,
     redeemableFrom: null,
+    payments: noPayments,
   };
 }
 
@@ -91,7 +100,15 @@ export function applicationBody(
   if (draft.instrument !== null)
     return { body: { ...body, instrument: draft.instrument } };
 
-  return { body: { ...body, contract: contractOf(draft, bp ?? 0) } };
+  const payments = paymentsBody(draft.payments, t);
+  if (payments.errors !== undefined) return { errors: payments.errors };
+
+  return {
+    body: {
+      ...body,
+      contract: { ...contractOf(draft, bp ?? 0), ...payments.body },
+    },
+  };
 }
 
 export function contractSummary(

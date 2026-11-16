@@ -133,6 +133,50 @@ describe("fixed income entry", () => {
     });
   });
 
+  // A236 FC33
+  it("sends the interest period chosen in the payments section", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: api(sent) });
+    await chooseSubtype("CDB");
+    await userEvent.type(
+      await screen.findByRole("combobox", {
+        name: catalogEn["fixedIncome.issuer"],
+      }),
+      "Banco Inter",
+    );
+    await type(catalogEn["fixedIncome.amount"], "100000");
+    await type(catalogEn["fixedIncome.percentOfIndex"], "110");
+    await typeMaturity("01152028");
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["terms.payments"] }),
+    );
+    await userEvent.click(
+      await screen.findByRole("combobox", {
+        name: catalogEn["terms.interestEvery"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("option", {
+        name: catalogEn["terms.interestEvery.6"],
+      }),
+    );
+    const first = await screen.findByRole("group", {
+      name: new RegExp(catalogEn["terms.firstPaymentOn"]),
+    });
+    await userEvent.click(
+      within(first).getByRole("spinbutton", { name: "month" }),
+    );
+    await userEvent.keyboard("09022028");
+    await save();
+
+    await waitFor(() => {
+      expect(sent).toHaveLength(1);
+    });
+    expect(sent[0]).toMatchObject({
+      contract: { interest_every_months: 6, first_payment_on: "2028-09-02" },
+    });
+  });
+
   it("sends the instrument and no contract for an existing contract", async () => {
     const sent: unknown[] = [];
     await renderApp(`${path}&instrument=${owned.code}`, { fetch: api(sent) });
