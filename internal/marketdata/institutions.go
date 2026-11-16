@@ -2,13 +2,11 @@ package marketdata
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
@@ -73,7 +71,8 @@ func NewInstitutionSources(urls map[string]string, hc *http.Client) []institutio
 }
 
 // InstitutionIndicators returns the indicators an enabled source stored for an identifier of a
-// scheme; domain.ErrUnknownInstitution when the source is disabled or holds no row.
+// scheme, by quarter, newest first; domain.ErrUnknownInstitution when the source is disabled or
+// holds no row.
 func (m *Module) InstitutionIndicators(
 	ctx context.Context, scheme, identifier string,
 ) (InstitutionIndicators, error) {
@@ -82,28 +81,33 @@ func (m *Module) InstitutionIndicators(
 		return InstitutionIndicators{}, err
 	}
 
-	row, err := m.q.GetInstitutionIndicator(ctx, postgres.GetInstitutionIndicatorParams{
+	rows, err := m.q.ListInstitutionIndicators(ctx, postgres.ListInstitutionIndicatorsParams{
 		Scheme: scheme, Identifier: identifier,
 	})
-	if errors.Is(err, pgx.ErrNoRows) {
-		return InstitutionIndicators{}, domain.ErrUnknownInstitution
-	}
-
 	if err != nil {
 		return InstitutionIndicators{}, fmt.Errorf("read the indicators of %s: %w", identifier, err)
 	}
 
-	src, ok := m.institutionSource(row.Source)
-	if !ok || !on[row.Source] {
+	if len(rows) == 0 {
 		return InstitutionIndicators{}, domain.ErrUnknownInstitution
 	}
 
-	return indicatorsOf(row, src.URL())
+	src, ok := m.institutionSource(rows[0].Source)
+	if !ok || !on[rows[0].Source] {
+		return InstitutionIndicators{}, domain.ErrUnknownInstitution
+	}
+
+	return indicatorsOf(rows, src)
 }
 
-// tickInstitution replaces the stored indicators of the source with its latest period.
+// tickInstitution stores the periods the source read and keeps the latest ones.
 func (m *Module) tickInstitution(ctx context.Context, src institution.Source) error {
-	snap, err := src.Fetch(ctx, m.feeds.Clock.Today(ctx))
+	have, err := m.q.ListInstitutionPeriods(ctx, src.ID())
+	if err != nil {
+		return fmt.Errorf("list the periods of %s: %w", src.ID(), err)
+	}
+
+	snap, err := src.Fetch(ctx, m.feeds.Clock.Today(ctx), have)
 	if err != nil {
 		return err
 	}
@@ -116,19 +120,18 @@ func (m *Module) tickInstitution(ctx context.Context, src institution.Source) er
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	q := m.q.WithTx(tx)
-	if err := q.DeleteInstitutionIndicators(ctx, src.ID()); err != nil {
-		return fmt.Errorf("delete the indicators of %s: %w", src.ID(), err)
-	}
 
-	for _, e := range snap.Entries {
-		params, err := insertParams(src.ID(), snap, e)
-		if err != nil {
+	for _, p := range snap.Periods {
+		if err := storePeriod(ctx, q, src.ID(), snap.Currency, p); err != nil {
 			return err
 		}
+	}
 
-		if err := q.InsertInstitutionIndicator(ctx, params); err != nil {
-			return fmt.Errorf("store the indicators of %s: %w", e.Identifier, err)
-		}
+	err = q.DeleteInstitutionPeriodsBeyond(ctx, postgres.DeleteInstitutionPeriodsBeyondParams{
+		Source: src.ID(), Kept: institution.KeptPeriods,
+	})
+	if err != nil {
+		return fmt.Errorf("delete the old periods of %s: %w", src.ID(), err)
 	}
 
 	return tx.Commit(ctx)
@@ -177,12 +180,42 @@ func (m *Module) institutionSource(id string) (institution.Source, bool) {
 	return m.feeds.Institutions[i], true
 }
 
+// storePeriod replaces the rows of one period of the source.
+func storePeriod(
+	ctx context.Context, q *postgres.Queries, source, currency string, p institution.Period,
+) error {
+	err := q.DeleteInstitutionPeriod(ctx, postgres.DeleteInstitutionPeriodParams{
+		Source: source, Period: p.End,
+	})
+	if err != nil {
+		return fmt.Errorf(
+			"delete the period %s of %s: %w",
+			p.End.Format(time.DateOnly),
+			source,
+			err,
+		)
+	}
+
+	for _, e := range p.Entries {
+		params, err := insertParams(source, currency, p.End, e)
+		if err != nil {
+			return err
+		}
+
+		if err := q.InsertInstitutionIndicator(ctx, params); err != nil {
+			return fmt.Errorf("store the indicators of %s: %w", e.Identifier, err)
+		}
+	}
+
+	return nil
+}
+
 func insertParams(
-	source string, snap institution.Snapshot, e institution.Entry,
+	source, currency string, period time.Time, e institution.Entry,
 ) (postgres.InsertInstitutionIndicatorParams, error) {
 	p := postgres.InsertInstitutionIndicatorParams{
 		Scheme: e.Scheme, Identifier: e.Identifier, Source: source,
-		Period: snap.Period, Currency: snap.Currency,
+		Period: period, Currency: currency,
 		ConglomerateCode: e.ConglomerateCode, ConglomerateName: e.ConglomerateName,
 		Equity: e.Equity, NetIncome: e.NetIncome,
 	}
@@ -206,31 +239,45 @@ func insertParams(
 }
 
 func indicatorsOf(
-	row postgres.GetInstitutionIndicatorRow, url string,
+	rows []postgres.ListInstitutionIndicatorsRow, src institution.Source,
 ) (InstitutionIndicators, error) {
+	limits := src.Limits()
 	out := InstitutionIndicators{
-		Source: row.Source, SourceURL: url, Period: row.Period, Currency: row.Currency,
-		ConglomerateCode: row.ConglomerateCode, ConglomerateName: row.ConglomerateName,
-		Equity: row.Equity, NetIncome: row.NetIncome,
+		Source: rows[0].Source, SourceURL: src.URL(), Currency: rows[0].Currency,
+		ConglomerateCode: rows[0].ConglomerateCode, ConglomerateName: rows[0].ConglomerateName,
+		Limits: domain.InstitutionLimits{
+			Basel:            domain.InstitutionFloor(limits.Basel),
+			PrincipalCapital: domain.InstitutionFloor(limits.PrincipalCapital),
+			Rule:             limits.Rule,
+		},
+		Periods: make([]domain.InstitutionPeriod, len(rows)),
 	}
 
-	for _, f := range []struct {
-		from pgtype.Numeric
-		to   **string
-	}{
-		{row.Basel, &out.Basel}, {row.PrincipalCapital, &out.PrincipalCapital},
-		{row.FixedAsset, &out.FixedAsset},
-	} {
-		text, err := numericText(f.from)
-		if err != nil {
-			return InstitutionIndicators{}, fmt.Errorf(
-				"indicator of %s: %w",
-				row.ConglomerateCode,
-				err,
-			)
+	for i, row := range rows {
+		p := domain.InstitutionPeriod{
+			Period:    row.Period,
+			Equity:    row.Equity,
+			NetIncome: row.NetIncome,
 		}
 
-		*f.to = text
+		for _, f := range []struct {
+			from pgtype.Numeric
+			to   **string
+		}{
+			{row.Basel, &p.Basel}, {row.PrincipalCapital, &p.PrincipalCapital},
+			{row.FixedAsset, &p.FixedAsset},
+		} {
+			text, err := numericText(f.from)
+			if err != nil {
+				return InstitutionIndicators{}, fmt.Errorf(
+					"indicator of %s: %w", row.ConglomerateCode, err,
+				)
+			}
+
+			*f.to = text
+		}
+
+		out.Periods[i] = p
 	}
 
 	return out, nil

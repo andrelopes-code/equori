@@ -12,70 +12,50 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const deleteInstitutionIndicators = `-- name: DeleteInstitutionIndicators :exec
+const deleteInstitutionPeriod = `-- name: DeleteInstitutionPeriod :exec
 DELETE FROM marketdata_institution_indicator
 WHERE
     source = $1
+    AND period = $2
 `
 
-func (q *Queries) DeleteInstitutionIndicators(ctx context.Context, source string) error {
-	_, err := q.db.Exec(ctx, deleteInstitutionIndicators, source)
+type DeleteInstitutionPeriodParams struct {
+	Source string
+	Period time.Time
+}
+
+func (q *Queries) DeleteInstitutionPeriod(ctx context.Context, arg DeleteInstitutionPeriodParams) error {
+	_, err := q.db.Exec(ctx, deleteInstitutionPeriod, arg.Source, arg.Period)
 	return err
 }
 
-const getInstitutionIndicator = `-- name: GetInstitutionIndicator :one
-SELECT
-    source,
-    period,
-    currency,
-    conglomerate_code,
-    conglomerate_name,
-    basel,
-    principal_capital,
-    fixed_asset,
-    equity,
-    net_income
-FROM
-    marketdata_institution_indicator
+const deleteInstitutionPeriodsBeyond = `-- name: DeleteInstitutionPeriodsBeyond :exec
+DELETE FROM marketdata_institution_indicator AS stored
 WHERE
-    scheme = $1
-    AND identifier = $2
+    stored.source = $1
+    AND stored.period NOT IN (
+        SELECT DISTINCT
+            latest.period
+        FROM
+            marketdata_institution_indicator AS latest
+        WHERE
+            latest.source = $1
+        ORDER BY
+            latest.period DESC
+        LIMIT
+            $2::int
+    )
 `
 
-type GetInstitutionIndicatorParams struct {
-	Scheme     string
-	Identifier string
+type DeleteInstitutionPeriodsBeyondParams struct {
+	Source string
+	Kept   int32
 }
 
-type GetInstitutionIndicatorRow struct {
-	Source           string
-	Period           time.Time
-	Currency         string
-	ConglomerateCode string
-	ConglomerateName string
-	Basel            pgtype.Numeric
-	PrincipalCapital pgtype.Numeric
-	FixedAsset       pgtype.Numeric
-	Equity           *int64
-	NetIncome        *int64
-}
-
-func (q *Queries) GetInstitutionIndicator(ctx context.Context, arg GetInstitutionIndicatorParams) (GetInstitutionIndicatorRow, error) {
-	row := q.db.QueryRow(ctx, getInstitutionIndicator, arg.Scheme, arg.Identifier)
-	var i GetInstitutionIndicatorRow
-	err := row.Scan(
-		&i.Source,
-		&i.Period,
-		&i.Currency,
-		&i.ConglomerateCode,
-		&i.ConglomerateName,
-		&i.Basel,
-		&i.PrincipalCapital,
-		&i.FixedAsset,
-		&i.Equity,
-		&i.NetIncome,
-	)
-	return i, err
+// Keeps the @kept latest periods of the source.
+func (q *Queries) DeleteInstitutionPeriodsBeyond(ctx context.Context, arg DeleteInstitutionPeriodsBeyondParams) error {
+	_, err := q.db.Exec(ctx, deleteInstitutionPeriodsBeyond, arg.Source, arg.Kept)
+	return err
 }
 
 const insertInstitutionIndicator = `-- name: InsertInstitutionIndicator :exec
@@ -165,4 +145,106 @@ func (q *Queries) LatestInstitutionPeriod(ctx context.Context, source string) (L
 	var i LatestInstitutionPeriodRow
 	err := row.Scan(&i.Latest, &i.Found)
 	return i, err
+}
+
+const listInstitutionIndicators = `-- name: ListInstitutionIndicators :many
+SELECT
+    source,
+    period,
+    currency,
+    conglomerate_code,
+    conglomerate_name,
+    basel,
+    principal_capital,
+    fixed_asset,
+    equity,
+    net_income
+FROM
+    marketdata_institution_indicator
+WHERE
+    scheme = $1
+    AND identifier = $2
+ORDER BY
+    period DESC
+`
+
+type ListInstitutionIndicatorsParams struct {
+	Scheme     string
+	Identifier string
+}
+
+type ListInstitutionIndicatorsRow struct {
+	Source           string
+	Period           time.Time
+	Currency         string
+	ConglomerateCode string
+	ConglomerateName string
+	Basel            pgtype.Numeric
+	PrincipalCapital pgtype.Numeric
+	FixedAsset       pgtype.Numeric
+	Equity           *int64
+	NetIncome        *int64
+}
+
+// Newest period first.
+func (q *Queries) ListInstitutionIndicators(ctx context.Context, arg ListInstitutionIndicatorsParams) ([]ListInstitutionIndicatorsRow, error) {
+	rows, err := q.db.Query(ctx, listInstitutionIndicators, arg.Scheme, arg.Identifier)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListInstitutionIndicatorsRow
+	for rows.Next() {
+		var i ListInstitutionIndicatorsRow
+		if err := rows.Scan(
+			&i.Source,
+			&i.Period,
+			&i.Currency,
+			&i.ConglomerateCode,
+			&i.ConglomerateName,
+			&i.Basel,
+			&i.PrincipalCapital,
+			&i.FixedAsset,
+			&i.Equity,
+			&i.NetIncome,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInstitutionPeriods = `-- name: ListInstitutionPeriods :many
+SELECT DISTINCT
+    period
+FROM
+    marketdata_institution_indicator
+WHERE
+    source = $1
+ORDER BY
+    period DESC
+`
+
+func (q *Queries) ListInstitutionPeriods(ctx context.Context, source string) ([]time.Time, error) {
+	rows, err := q.db.Query(ctx, listInstitutionPeriods, source)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []time.Time
+	for rows.Next() {
+		var period time.Time
+		if err := rows.Scan(&period); err != nil {
+			return nil, err
+		}
+		items = append(items, period)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

@@ -1,7 +1,36 @@
--- name: DeleteInstitutionIndicators :exec
+-- name: DeleteInstitutionPeriod :exec
 DELETE FROM marketdata_institution_indicator
 WHERE
-    source = @source;
+    source = @source
+    AND period = @period;
+
+-- name: DeleteInstitutionPeriodsBeyond :exec
+-- Keeps the @kept latest periods of the source.
+DELETE FROM marketdata_institution_indicator AS stored
+WHERE
+    stored.source = @source
+    AND stored.period NOT IN (
+        SELECT DISTINCT
+            latest.period
+        FROM
+            marketdata_institution_indicator AS latest
+        WHERE
+            latest.source = @source
+        ORDER BY
+            latest.period DESC
+        LIMIT
+            @kept::int
+    );
+
+-- name: ListInstitutionPeriods :many
+SELECT DISTINCT
+    period
+FROM
+    marketdata_institution_indicator
+WHERE
+    source = @source
+ORDER BY
+    period DESC;
 
 -- name: InsertInstitutionIndicator :exec
 INSERT INTO
@@ -35,7 +64,8 @@ VALUES
         @net_income
     );
 
--- name: GetInstitutionIndicator :one
+-- name: ListInstitutionIndicators :many
+-- Newest period first.
 SELECT
     source,
     period,
@@ -51,7 +81,9 @@ FROM
     marketdata_institution_indicator
 WHERE
     scheme = @scheme
-    AND identifier = @identifier;
+    AND identifier = @identifier
+ORDER BY
+    period DESC;
 
 -- name: LatestInstitutionPeriod :one
 -- found is false, and latest meaningless, when the source stored no indicator.

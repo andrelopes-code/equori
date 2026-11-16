@@ -371,17 +371,49 @@ type IndexRateList struct {
 	Items []IndexRate `json:"items"`
 }
 
+// InstitutionFloor defines model for InstitutionFloor.
+type InstitutionFloor struct {
+	// Minimum The minimum the rule sets, an exact decimal fraction.
+	Minimum string `json:"minimum"`
+
+	// WithBuffer The minimum plus the conservation buffer, an exact decimal fraction.
+	WithBuffer string `json:"with_buffer"`
+}
+
 // InstitutionIndicators defines model for InstitutionIndicators.
 type InstitutionIndicators struct {
-	// Basel The Basel index, an exact decimal fraction (0.155 is 15.5%); null when the source does not inform it.
-	Basel            *string `json:"basel"`
-	ConglomerateCode string  `json:"conglomerate_code"`
+	ConglomerateCode string `json:"conglomerate_code"`
 
-	// ConglomerateName Whose figures these are; the institution is covered by this conglomerate (A237 I6).
+	// ConglomerateName Whose figures these are, as of the newest period; the institution is covered by this conglomerate (A237 I6).
 	ConglomerateName string `json:"conglomerate_name"`
 
 	// Currency The currency of equity and net_income, whatever the base currency of the book.
 	Currency string `json:"currency"`
+
+	// Limits The regulatory floors of the jurisdiction of the source (A237 L1).
+	Limits InstitutionLimits `json:"limits"`
+
+	// Periods One item per quarter the source holds, newest first (A237 H3).
+	Periods []InstitutionPeriod `json:"periods"`
+	Source  string              `json:"source"`
+
+	// SourceUrl The address of the portal of the source, where the figures can be checked.
+	SourceUrl string `json:"source_url"`
+}
+
+// InstitutionLimits The regulatory floors of the jurisdiction of the source (A237 L1).
+type InstitutionLimits struct {
+	Basel            InstitutionFloor `json:"basel"`
+	PrincipalCapital InstitutionFloor `json:"principal_capital"`
+
+	// Rule The rule that sets the floors.
+	Rule string `json:"rule"`
+}
+
+// InstitutionPeriod defines model for InstitutionPeriod.
+type InstitutionPeriod struct {
+	// Basel The Basel index, an exact decimal fraction (0.155 is 15.5%); null when the source does not inform it.
+	Basel *string `json:"basel"`
 
 	// Equity The equity in minor units of currency; null when not informed.
 	Equity *int64 `json:"equity"`
@@ -392,15 +424,11 @@ type InstitutionIndicators struct {
 	// NetIncome The net income of the period in minor units of currency; null when not informed.
 	NetIncome *int64 `json:"net_income"`
 
-	// Period The last day of the period the figures refer to.
+	// Period The last day of the quarter the figures refer to.
 	Period openapi_types.Date `json:"period"`
 
 	// PrincipalCapital The principal capital ratio, an exact decimal fraction; null when not informed.
 	PrincipalCapital *string `json:"principal_capital"`
-	Source           string  `json:"source"`
-
-	// SourceUrl The address of the portal of the source, where the figures can be checked.
-	SourceUrl string `json:"source_url"`
 }
 
 // Instrument defines model for Instrument.

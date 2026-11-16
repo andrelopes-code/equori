@@ -6701,16 +6701,21 @@ export interface components {
             source: string;
             /** @description The address of the portal of the source, where the figures can be checked. */
             source_url: string;
-            /**
-             * Format: date
-             * @description The last day of the period the figures refer to.
-             */
-            period: string;
             /** @description The currency of equity and net_income, whatever the base currency of the book. */
             currency: string;
             conglomerate_code: string;
-            /** @description Whose figures these are; the institution is covered by this conglomerate (A237 I6). */
+            /** @description Whose figures these are, as of the newest period; the institution is covered by this conglomerate (A237 I6). */
             conglomerate_name: string;
+            limits: components["schemas"]["InstitutionLimits"];
+            /** @description One item per quarter the source holds, newest first (A237 H3). */
+            periods: components["schemas"]["InstitutionPeriod"][];
+        };
+        InstitutionPeriod: {
+            /**
+             * Format: date
+             * @description The last day of the quarter the figures refer to.
+             */
+            period: string;
             /** @description The Basel index, an exact decimal fraction (0.155 is 15.5%); null when the source does not inform it. */
             basel: string | null;
             /** @description The principal capital ratio, an exact decimal fraction; null when not informed. */
@@ -6727,6 +6732,19 @@ export interface components {
              * @description The net income of the period in minor units of currency; null when not informed.
              */
             net_income: number | null;
+        };
+        /** @description The regulatory floors of the jurisdiction of the source (A237 L1). */
+        InstitutionLimits: {
+            basel: components["schemas"]["InstitutionFloor"];
+            principal_capital: components["schemas"]["InstitutionFloor"];
+            /** @description The rule that sets the floors. */
+            rule: string;
+        };
+        InstitutionFloor: {
+            /** @description The minimum the rule sets, an exact decimal fraction. */
+            minimum: string;
+            /** @description The minimum plus the conservation buffer, an exact decimal fraction. */
+            with_buffer: string;
         };
         IndexExpectation: {
             /** Format: date */

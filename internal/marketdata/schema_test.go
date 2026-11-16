@@ -186,10 +186,17 @@ func TestSchemaRejectsInvalidInstitutionIndicators(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// The same identifier of a scheme is one row.
+	// Another period of the same identifier is another row; the same period is a duplicate (H2).
 	if _, err := pool.Exec(
 		t.Context(),
 		row+`('br_ispb', '18236120', 'br_ifdata', '2026-03-31', 'BRL', 'C1', 'NU')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := pool.Exec(
+		t.Context(),
+		row+`('br_ispb', '18236120', 'br_ifdata', '2026-06-30', 'BRL', 'C1', 'NU')`,
 	); err == nil {
 		t.Fatal("duplicate accepted")
 	}

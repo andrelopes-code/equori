@@ -6,6 +6,7 @@ import (
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
+	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 )
 
@@ -19,17 +20,39 @@ func (s *Server) getInstitutionIndicators(
 		return InstitutionIndicators{}, err
 	}
 
+	periods := make([]InstitutionPeriod, len(x.Periods))
+	for i, p := range x.Periods {
+		periods[i] = InstitutionPeriod{
+			Period:           openapi_types.Date{Time: p.Period},
+			Basel:            p.Basel,
+			PrincipalCapital: p.PrincipalCapital,
+			FixedAsset:       p.FixedAsset,
+			Equity:           p.Equity,
+			NetIncome:        p.NetIncome,
+		}
+	}
+
 	return InstitutionIndicators{
 		Source:           x.Source,
 		SourceUrl:        x.SourceURL,
-		Period:           openapi_types.Date{Time: x.Period},
 		Currency:         x.Currency,
 		ConglomerateCode: x.ConglomerateCode,
 		ConglomerateName: x.ConglomerateName,
-		Basel:            x.Basel,
-		PrincipalCapital: x.PrincipalCapital,
-		FixedAsset:       x.FixedAsset,
-		Equity:           x.Equity,
-		NetIncome:        x.NetIncome,
+		Limits:           limitsOf(x.Limits),
+		Periods:          periods,
 	}, nil
+}
+
+func limitsOf(l domain.InstitutionLimits) InstitutionLimits {
+	return InstitutionLimits{
+		Basel: InstitutionFloor{
+			Minimum:    l.Basel.Minimum,
+			WithBuffer: l.Basel.WithBuffer,
+		},
+		PrincipalCapital: InstitutionFloor{
+			Minimum:    l.PrincipalCapital.Minimum,
+			WithBuffer: l.PrincipalCapital.WithBuffer,
+		},
+		Rule: l.Rule,
+	}
 }

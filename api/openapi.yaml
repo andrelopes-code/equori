@@ -12128,15 +12128,11 @@ components:
       required:
         - source
         - source_url
-        - period
         - currency
         - conglomerate_code
         - conglomerate_name
-        - basel
-        - principal_capital
-        - fixed_asset
-        - equity
-        - net_income
+        - limits
+        - periods
       properties:
         source:
           type: string
@@ -12144,10 +12140,6 @@ components:
         source_url:
           type: string
           description: The address of the portal of the source, where the figures can be checked.
-        period:
-          type: string
-          format: date
-          description: The last day of the period the figures refer to.
         currency:
           type: string
           pattern: "^[A-Z]{3}$"
@@ -12156,7 +12148,24 @@ components:
           type: string
         conglomerate_name:
           type: string
-          description: Whose figures these are; the institution is covered by this conglomerate (A237 I6).
+          description: Whose figures these are, as of the newest period; the institution is covered by this conglomerate (A237 I6).
+        limits:
+          $ref: "#/components/schemas/InstitutionLimits"
+        periods:
+          type: array
+          description: One item per quarter the source holds, newest first (A237 H3).
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/InstitutionPeriod"
+    InstitutionPeriod:
+      type: object
+      additionalProperties: false
+      required: [period, basel, principal_capital, fixed_asset, equity, net_income]
+      properties:
+        period:
+          type: string
+          format: date
+          description: The last day of the quarter the figures refer to.
         basel:
           type: string
           nullable: true
@@ -12179,6 +12188,30 @@ components:
           format: int64
           nullable: true
           description: The net income of the period in minor units of currency; null when not informed.
+    InstitutionLimits:
+      type: object
+      additionalProperties: false
+      required: [basel, principal_capital, rule]
+      description: The regulatory floors of the jurisdiction of the source (A237 L1).
+      properties:
+        basel:
+          $ref: "#/components/schemas/InstitutionFloor"
+        principal_capital:
+          $ref: "#/components/schemas/InstitutionFloor"
+        rule:
+          type: string
+          description: The rule that sets the floors.
+    InstitutionFloor:
+      type: object
+      additionalProperties: false
+      required: [minimum, with_buffer]
+      properties:
+        minimum:
+          type: string
+          description: The minimum the rule sets, an exact decimal fraction.
+        with_buffer:
+          type: string
+          description: The minimum plus the conservation buffer, an exact decimal fraction.
     IndexExpectation:
       type: object
       additionalProperties: false

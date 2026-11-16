@@ -79,6 +79,24 @@ The period the net income covers is not stated in the sources read. The screen l
 - S493: `GET /market-data/feeds` lists `br_ifdata` with `kind` `institution`, `last` 2026-06-30, and `stale` true when today is after 2027-01-28.
 - S494: a book of region `US` has `br_ifdata` listed with `suggested` false.
 
+## Amendment: floors and history (owner review of 2026-11-16)
+
+The first screen drew five figures with no reading of them and no past. This amendment adds both.
+
+| ID | Decision | Reason |
+|---|---|---|
+| H1 | The source keeps the latest eight quarters. A tick reads the latest period again and every kept period the table lacks; a period already stored is not read again. Rows of older periods are deleted. | Two years show a trend and cost one fetch of eight periods once, then one a quarter. |
+| H2 | Table `marketdata_institution_indicator` has primary key `(scheme, identifier, period)`. | Migration `00108`; applied migrations are never edited. |
+| H3 | `getInstitutionIndicators` returns `periods`, newest first, each with `period`, the three ratios and the two amounts; `conglomerate_*` and `currency` stay at the top and come from the newest period. | One request draws the figures and their trend. |
+| H4 | An institution with rows only in older periods answers with those periods; the screen writes the newest base date. | The base date is always visible, so an old figure is never read as current. |
+| L1 | The source declares the floors of its jurisdiction: `Limits()` returns for the Basel index and the principal capital ratio a `minimum` and a `with_buffer`, decimal fractions, and the `rule` that sets them. `br_ifdata` returns Basel 0.08 and 0.105, principal capital 0.045 and 0.07, rule "Resolução CMN 4.958/2021". The response carries them as `limits`. | Resolution CMN 4.958 states 8% of RWA for the reference capital, 4.5% for the principal capital and 2.5% for the conservation buffer (official English text at bcb.gov.br). |
+| L2 | A ratio below its `minimum` is drawn with attention `danger`; a ratio from the `minimum` to below `with_buffer` is `warning`. The note under the figure names the floor in words. The fixed-asset ratio, equity and net income have no floor and no attention. | The 50% limit of the fixed-asset ratio was not found in the sources read; a floor without a source is not drawn. |
+| L3 | A floor is the minimum the rule sets for every institution. An institution with a systemic or countercyclical additional owes more; the screen states "minimum plus conservation buffer" and no other. | Those additionals were not read. |
+| L4 | The trend of a figure is a `Sparkline` of its non-null values, oldest first, drawn from two values on. | A null is never drawn as zero and a gap is never bridged. |
+| L5 | Regions: `Limits()` is part of the institution source (extension point row of `docs/contributing/regions.md`). A region without a source has no tab. | R1, R2. |
+
+New scenarios: S495 (history newest first, nulls kept), S496 (`limits` of `br_ifdata`), S497 (a second tick reads no stored period again), S498 (rows older than eight quarters are deleted).
+
 ## Not covered
 
 - The assistant tool (S4).

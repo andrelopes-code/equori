@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -58,32 +59,71 @@ func New(hc *http.Client, base string) Source { return Source{hc: hc, base: base
 func (Source) ID() string  { return "br_ifdata" }
 func (Source) URL() string { return portal }
 
-func (s Source) Fetch(ctx context.Context, today time.Time) (institution.Snapshot, error) {
-	period, err := s.latestPeriod(ctx, today)
+// Limits are the floors of Resolução CMN 4.958/2021: 8% of the RWA for the reference capital,
+// 4.5% for the principal capital and 2.5% of conservation buffer on top of both minimums.
+func (Source) Limits() institution.Limits {
+	return institution.Limits{
+		Basel:            institution.Floor{Minimum: "0.08", WithBuffer: "0.105"},
+		PrincipalCapital: institution.Floor{Minimum: "0.045", WithBuffer: "0.07"},
+		Rule:             "Resolução CMN 4.958/2021",
+	}
+}
+
+func (s Source) Fetch(
+	ctx context.Context, today time.Time, have []time.Time,
+) (institution.Snapshot, error) {
+	latest, err := s.latestPeriod(ctx, today)
 	if err != nil {
 		return institution.Snapshot{}, err
 	}
 
-	register, err := s.cadastro(ctx, period)
+	register, err := s.cadastro(ctx, latest)
 	if err != nil {
 		return institution.Snapshot{}, err
 	}
 
-	values := map[string]*institution.Figures{}
+	out := institution.Snapshot{Currency: "BRL"}
 
-	for _, report := range []string{summaryReport, capitalReport} {
-		if err := s.readReport(ctx, period, report, values); err != nil {
-			return institution.Snapshot{}, err
+	for i, period := range keptPeriods(latest) {
+		end := periodEnd(period)
+		if i > 0 && slices.ContainsFunc(have, end.Equal) {
+			continue
+		}
+
+		values := map[string]*institution.Figures{}
+
+		for _, report := range []string{summaryReport, capitalReport} {
+			if err := s.readReport(ctx, period, report, values); err != nil {
+				return institution.Snapshot{}, err
+			}
+		}
+
+		if len(values) > 0 {
+			out.Periods = append(out.Periods, institution.Period{
+				End: end, Entries: entries(register, values),
+			})
 		}
 	}
 
-	end := time.Date(period/100, time.Month(period%100)+1, 0, 0, 0, 0, 0, time.UTC)
+	return out, nil
+}
 
-	return institution.Snapshot{
-		Period:   end,
-		Currency: "BRL",
-		Entries:  entries(register, values),
-	}, nil
+// keptPeriods returns the AnoMes of latest and of the quarters before it, newest first.
+func keptPeriods(latest int) []int {
+	end := periodEnd(latest)
+	out := make([]int, 0, institution.KeptPeriods)
+
+	for range institution.KeptPeriods {
+		out = append(out, end.Year()*100+int(end.Month()))
+		end = previousQuarterEnd(end)
+	}
+
+	return out
+}
+
+// periodEnd is the last day of the month an AnoMes names.
+func periodEnd(period int) time.Time {
+	return time.Date(period/100, time.Month(period%100)+1, 0, 0, 0, 0, 0, time.UTC)
 }
 
 type register struct {

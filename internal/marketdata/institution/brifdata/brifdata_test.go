@@ -36,8 +36,16 @@ const (
 	capital = `{"value":[
 {"CodInst":"C0084693","Conta":"79659","NomeColuna":"Índice de Capital Principal \n(l) = (a) / (j)","Saldo":0.117599598739514}]}`
 
+	// The quarter before: Nu Pagamentos with a null Basel index.
+	resumoMarch = `{"value":[
+{"CodInst":"C0084693","Conta":"140246","NomeColuna":"Patrimônio Líquido","Saldo":21000000000.5},
+{"CodInst":"C0084693","Conta":"141870","NomeColuna":"Lucro Líquido","Saldo":1420540594.15},
+{"CodInst":"C0084693","Conta":"79664","NomeColuna":"Índice de Basileia \n(n)","Saldo":null}]}`
+
 	empty = `{"value":[]}`
 )
+
+var today = time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
@@ -46,24 +54,29 @@ func TestFetch(t *testing.T) {
 
 	srv := newService(t, &queries, resumo)
 
-	today := time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)
-
-	got, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today)
+	got, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if got.Period.Format(time.DateOnly) != "2026-06-30" || got.Currency != "BRL" {
-		t.Fatalf("period %s currency %s", got.Period.Format(time.DateOnly), got.Currency)
+	if got.Currency != "BRL" || len(got.Periods) != 2 {
+		t.Fatalf("currency %s periods %d", got.Currency, len(got.Periods))
+	}
+
+	// Newest first: 2026-06-30, then 2026-03-31.
+	june, march := got.Periods[0], got.Periods[1]
+	if june.End.Format(time.DateOnly) != "2026-06-30" ||
+		march.End.Format(time.DateOnly) != "2026-03-31" {
+		t.Fatalf("periods %s %s", june.End, march.End)
 	}
 
 	// 18236120 reaches its conglomerate; 00000001 reaches itself; the inactive institution and the
 	// one whose conglomerate has no figures have no entry.
-	if len(got.Entries) != 2 {
-		t.Fatalf("entries %+v", got.Entries)
+	if len(june.Entries) != 2 {
+		t.Fatalf("entries %+v", june.Entries)
 	}
 
-	nu := entry(t, got, "18236120")
+	nu := entry(t, june, "18236120")
 	if nu.Scheme != "br_ispb" || nu.ConglomerateCode != "C0084693" ||
 		nu.ConglomerateName != "NU PAGAMENTOS - PRUDENCIAL" {
 		t.Fatalf("nu %+v", nu)
@@ -76,7 +89,7 @@ func TestFetch(t *testing.T) {
 	assertMinor(t, "net income", nu.NetIncome, 409304022539)
 
 	// A null stays nil, a renamed column is ignored and a negative amount keeps its sign.
-	solo := entry(t, got, "00000001")
+	solo := entry(t, june, "00000001")
 	if solo.ConglomerateCode != "00000001" || solo.ConglomerateName != "BANCO INDEPENDENTE S.A." {
 		t.Fatalf("solo %+v", solo)
 	}
@@ -88,11 +101,62 @@ func TestFetch(t *testing.T) {
 
 	assertMinor(t, "solo equity", solo.Equity, -50050)
 
+	// The earlier quarter keeps the null Basel index of the register.
+	earlier := entry(t, march, "18236120")
+	if earlier.Basel != nil || earlier.PrincipalCapital != nil {
+		t.Fatalf("march %+v", earlier.Figures)
+	}
+
+	assertMinor(t, "march equity", earlier.Equity, 2100000000050)
+
 	// Olinda answers 400 to a space written as "+".
 	for _, q := range queries {
 		if strings.Contains(q, "+") {
 			t.Fatalf("query %s", q)
 		}
+	}
+}
+
+// A period already stored is not read again; the latest one always is (A237 H1).
+func TestFetchSkipsStoredPeriods(t *testing.T) {
+	t.Parallel()
+
+	var queries []string
+
+	srv := newService(t, &queries, resumo)
+	have := []time.Time{
+		time.Date(2026, 6, 30, 0, 0, 0, 0, time.UTC),
+		time.Date(2026, 3, 31, 0, 0, 0, 0, time.UTC),
+	}
+
+	got, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today, have)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got.Periods) != 1 || got.Periods[0].End.Format(time.DateOnly) != "2026-06-30" {
+		t.Fatalf("periods %+v", got.Periods)
+	}
+
+	for _, q := range queries {
+		if strings.Contains(q, "AnoMes=202603") {
+			t.Fatalf("read the stored period: %s", q)
+		}
+	}
+}
+
+func TestLimits(t *testing.T) {
+	t.Parallel()
+
+	got := brifdata.New(http.DefaultClient, "").Limits()
+	want := institution.Limits{
+		Basel:            institution.Floor{Minimum: "0.08", WithBuffer: "0.105"},
+		PrincipalCapital: institution.Floor{Minimum: "0.045", WithBuffer: "0.07"},
+		Rule:             "Resolução CMN 4.958/2021",
+	}
+
+	if got != want {
+		t.Fatalf("limits %+v, want %+v", got, want)
 	}
 }
 
@@ -104,9 +168,7 @@ func TestFetchNoPeriod(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	today := time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)
-
-	_, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today)
+	_, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today, nil)
 	if err == nil || !strings.Contains(err.Error(), feed.ErrNoData.Error()) {
 		t.Fatalf("error %v", err)
 	}
@@ -121,14 +183,13 @@ func TestFetchRoundsToCent(t *testing.T) {
 {"CodInst":"C0084693","Conta":"140246","NomeColuna":"Patrimônio Líquido","Saldo":-1252985.11999999},
 {"CodInst":"C0084693","Conta":"141870","NomeColuna":"Lucro Líquido","Saldo":10.005}]}`
 	srv := newService(t, new([]string), body)
-	today := time.Date(2026, 11, 16, 0, 0, 0, 0, time.UTC)
 
-	got, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today)
+	got, err := brifdata.New(srv.Client(), srv.URL).Fetch(t.Context(), today, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	nu := entry(t, got, "18236120")
+	nu := entry(t, got.Periods[0], "18236120")
 	assertMinor(t, "equity", nu.Equity, -125298512)
 	assertMinor(t, "net income", nu.NetIncome, 1001)
 }
@@ -153,8 +214,12 @@ func newService(t *testing.T, queries *[]string, resumoBody string) *httptest.Se
 			_, _ = w.Write([]byte(resumoBody))
 		case strings.Contains(path, "AnoMes=202606") && strings.Contains(path, "Relatorio='5'"):
 			_, _ = w.Write([]byte(capital))
+		case strings.Contains(path, "AnoMes=202603") && strings.Contains(path, "Relatorio='1'"):
+			_, _ = w.Write([]byte(resumoMarch))
+		case strings.Contains(path, "Relatorio='5'"):
+			_, _ = w.Write([]byte(empty))
 		default:
-			http.NotFound(w, r)
+			_, _ = w.Write([]byte(empty))
 		}
 	}))
 	t.Cleanup(srv.Close)
@@ -162,16 +227,16 @@ func newService(t *testing.T, queries *[]string, resumoBody string) *httptest.Se
 	return srv
 }
 
-func entry(t *testing.T, s institution.Snapshot, identifier string) institution.Entry {
+func entry(t *testing.T, p institution.Period, identifier string) institution.Entry {
 	t.Helper()
 
-	for _, e := range s.Entries {
+	for _, e := range p.Entries {
 		if e.Identifier == identifier {
 			return e
 		}
 	}
 
-	t.Fatalf("no entry for %s in %+v", identifier, s.Entries)
+	t.Fatalf("no entry for %s in %+v", identifier, p.Entries)
 
 	return institution.Entry{}
 }
