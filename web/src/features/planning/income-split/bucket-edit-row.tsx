@@ -1,11 +1,12 @@
 import { IconButton } from "@slotted/react/button";
-import { Checkbox } from "@slotted/react/checkbox";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { TextField } from "@slotted/react/text-field";
 
 import styles from "@/features/planning/income-split/bucket-dialog.module.css";
+import { bucketMeasures } from "@/features/planning/income-split/bucket-draft";
 import type { DraftBucket } from "@/features/planning/income-split/bucket-draft";
 import { useT } from "@/i18n/i18n-provider";
+import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 
 interface BucketEditRowProps {
   bucket: DraftBucket;
@@ -13,7 +14,7 @@ interface BucketEditRowProps {
   onRemove: () => void;
 }
 
-// One bucket of the dialog on one line: name, share, whether it takes the savings, remove.
+// One bucket of the dialog on one line: name, share, how it counts its target, remove.
 export function BucketEditRow({
   bucket,
   onChange,
@@ -41,18 +42,22 @@ export function BucketEditRow({
           onChange({ share: event.target.value });
         }}
       />
-      <Checkbox
-        className={styles.savings}
-        checked={bucket.takesSavings}
-        onCheckedChange={(checked) => {
-          onChange({ takesSavings: checked });
+      <ChoiceSelect
+        label={t("buckets.field.measure", { name: label })}
+        multiple={false}
+        value={bucket.measure}
+        choices={bucketMeasures.map((m) => ({
+          value: m,
+          label: t(`buckets.measure.${m}`),
+        }))}
+        onChange={(next) => {
+          const measure = bucketMeasures.find((m) => m === next);
+          if (measure !== undefined) onChange({ measure });
         }}
-      >
-        {t("buckets.field.savings")}
-      </Checkbox>
+      />
       <IconButton
         variant="ghost"
-        tone="secondary"
+        tone="danger"
         aria-label={t("buckets.remove", { name: label })}
         onClick={onRemove}
       >

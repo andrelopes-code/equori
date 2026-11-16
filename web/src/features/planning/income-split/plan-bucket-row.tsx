@@ -2,13 +2,15 @@ import { Inline } from "@slotted/react/inline";
 import { TableCell, TableRow, TableRowHeader } from "@slotted/react/table";
 import { Text } from "@slotted/react/typography";
 
+import type { BucketMeasure } from "@/features/planning/income-split/bucket-draft";
 import { bucketStatus } from "@/features/planning/income-split/bucket-figures";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
 
 interface PlanBucketRowProps {
   name: string;
-  withSavings: boolean;
+  // Undefined for the categories outside the split.
+  measure: BucketMeasure | undefined;
   // The share as a percentage; undefined for the categories outside the split.
   share: string | undefined;
   target: number | undefined;
@@ -17,17 +19,17 @@ interface PlanBucketRowProps {
 }
 
 // A bucket's plan on one line; the status says in words what is left to plan or how far it is
-// over, in the danger tone when over.
+// over, in the danger tone when over a ceiling (income buckets A234).
 export function PlanBucketRow({
   name,
-  withSavings,
+  measure,
   share,
   target,
   planned,
   format,
 }: PlanBucketRowProps) {
   const t = useT();
-  const status = bucketStatus(target, planned);
+  const status = bucketStatus(target, planned, measure ?? "ceiling");
   const dash = t("plan.dash");
 
   return (
@@ -37,9 +39,14 @@ export function PlanBucketRow({
           <Text size="sm" weight="medium">
             {name}
           </Text>
-          {withSavings && (
+          {measure === "savings" && (
             <Text size="sm" tone="muted">
               {t("buckets.withSavings")}
+            </Text>
+          )}
+          {measure === "goals" && (
+            <Text size="sm" tone="muted">
+              {t("buckets.withGoals")}
             </Text>
           )}
         </Inline>
@@ -54,6 +61,11 @@ export function PlanBucketRow({
         {status?.kind === "toPlan" && (
           <Text size="sm">
             {t("buckets.plan.toPlan", { amount: format.money(status.amount) })}
+          </Text>
+        )}
+        {status?.kind === "above" && (
+          <Text size="sm">
+            {t("buckets.plan.above", { amount: format.money(status.amount) })}
           </Text>
         )}
         {status?.kind === "over" && (

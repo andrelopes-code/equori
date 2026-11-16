@@ -50,6 +50,8 @@ function bucket(
     name: id,
     share_bp: share,
     takes_savings: savings,
+    takes_goals: false,
+    at_least: false,
     category_ids: categories,
     planned: brl(0),
     spent: brl(id === "needs" ? 700 : 300),
@@ -126,11 +128,13 @@ describe("bucketGroups", () => {
 
 describe("bucketStatus", () => {
   it.each([
-    [1000, 600, { kind: "toPlan", amount: 400 }],
-    [1000, 1200, { kind: "over", amount: 200 }],
-    [1000, 1000, { kind: "toPlan", amount: 0 }],
-    [undefined, 600, undefined],
-  ] as const)("target %s, planned %s", (target, planned, want) => {
-    expect(bucketStatus(target, planned)).toEqual(want);
+    [1000, 600, "ceiling", { kind: "toPlan", amount: 400 }],
+    [1000, 1200, "ceiling", { kind: "over", amount: 200 }],
+    [1000, 1200, "floor", { kind: "above", amount: 200 }],
+    [1000, 1200, "goals", { kind: "above", amount: 200 }],
+    [1000, 1000, "ceiling", { kind: "toPlan", amount: 0 }],
+    [undefined, 600, "ceiling", undefined],
+  ] as const)("target %s, planned %s, %s", (target, planned, measure, want) => {
+    expect(bucketStatus(target, planned, measure)).toEqual(want);
   });
 });

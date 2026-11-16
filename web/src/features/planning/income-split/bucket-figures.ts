@@ -6,6 +6,8 @@ import type {
 } from "@/features/planning/budget-plan/plan-groups";
 import { largestRemainder } from "@/features/planning/budget-plan/plan-math";
 import type { PlanDraftRow } from "@/features/planning/budget-plan/plan-math";
+import { measureOf } from "@/features/planning/income-split/bucket-draft";
+import type { BucketMeasure } from "@/features/planning/income-split/bucket-draft";
 
 type Bucket = components["schemas"]["BudgetPlanBucket"];
 type MethodBucket = components["schemas"]["BudgetBucket"];
@@ -14,7 +16,7 @@ export interface BucketFigure {
   id: string;
   name: string;
   shareBp: number;
-  takesSavings: boolean;
+  measure: BucketMeasure;
   // Absent without a reference.
   target: number | undefined;
   planned: number;
@@ -81,7 +83,7 @@ export function bucketFigures(
       id: b.id,
       name: b.name,
       shareBp: b.share_bp,
-      takesSavings: b.takes_savings,
+      measure: measureOf(b),
       target: targets?.[i],
       planned: (planned.get(b.id) ?? 0) + (b.takes_savings ? savings : 0),
       spent: b.spent.amount,
@@ -127,7 +129,7 @@ export function bucketGroups(
 }
 
 export interface BucketStatus {
-  kind: "toPlan" | "over";
+  kind: "toPlan" | "over" | "above";
   amount: number;
 }
 
@@ -136,9 +138,13 @@ export interface BucketStatus {
 export function bucketStatus(
   target: number | undefined,
   planned: number,
+  measure: BucketMeasure,
 ): BucketStatus | undefined {
   if (target === undefined) return undefined;
-  return planned > target
-    ? { kind: "over", amount: planned - target }
-    : { kind: "toPlan", amount: target - planned };
+  if (planned > target)
+    return {
+      kind: measure === "ceiling" ? "over" : "above",
+      amount: planned - target,
+    };
+  return { kind: "toPlan", amount: target - planned };
 }

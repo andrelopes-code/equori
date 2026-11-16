@@ -16,6 +16,8 @@ const buckets = [
     name: "Needs",
     share_bp: 6000,
     takes_savings: false,
+    takes_goals: false,
+    at_least: false,
     category_ids: [],
   },
   {
@@ -23,6 +25,8 @@ const buckets = [
     name: "Freedom",
     share_bp: 4000,
     takes_savings: true,
+    takes_goals: false,
+    at_least: false,
     category_ids: [],
   },
 ];

@@ -53,7 +53,7 @@ export function PlanBucketsTable({ totals, format }: PlanBucketsTableProps) {
             <PlanBucketRow
               key={b.id}
               name={b.name}
-              withSavings={b.takesSavings}
+              measure={b.measure}
               share={format.share(b.shareBp)}
               target={b.target}
               planned={b.planned}
@@ -63,7 +63,7 @@ export function PlanBucketsTable({ totals, format }: PlanBucketsTableProps) {
           {outside && (
             <PlanBucketRow
               name={t("buckets.outside")}
-              withSavings={false}
+              measure={undefined}
               share={undefined}
               target={undefined}
               planned={totals.outsidePlanned}

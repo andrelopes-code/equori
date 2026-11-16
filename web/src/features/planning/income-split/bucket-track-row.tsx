@@ -1,6 +1,7 @@
 import { Text } from "@slotted/react/typography";
 
 import { BucketGauge } from "@/features/planning/income-split/bucket-gauge";
+import { targetKey } from "@/features/planning/income-split/bucket-history";
 import type { TrackRow } from "@/features/planning/income-split/bucket-history";
 import { BucketMonthStrip } from "@/features/planning/income-split/bucket-month-strip";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
@@ -24,7 +25,10 @@ export function BucketTrackRow({
   share,
 }: BucketTrackRowProps) {
   const t = useT();
-  const missed = row.status?.kind === "over" || row.status?.kind === "short";
+  const missed =
+    row.status?.kind === "over" ||
+    row.status?.kind === "short" ||
+    row.status?.kind === "toGo";
   const status =
     row.status === undefined
       ? t("plan.dash")
@@ -41,9 +45,7 @@ export function BucketTrackRow({
           {row.name}
         </Text>
         <Text size="xs" tone="muted">
-          {row.takesSavings
-            ? t("track.targetSavings", { share: share(row.targetBp) })
-            : t("track.target", { share: share(row.targetBp) })}
+          {t(targetKey(row.measure), { share: share(row.targetBp) })}
         </Text>
       </div>
 

@@ -1,23 +1,9 @@
 @layer app {
   .bucketRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 6rem auto auto;
+    grid-template-columns: minmax(0, 1fr) 6rem 15rem auto;
     align-items: center;
     gap: var(--slotted-space-3);
-  }
-
-  /* Workaround for Slotted issue #114: the hover halo is the box size plus the label gap, not
-     the control height. A label gap of the control height less the box size makes the halo as
-     tall as the TextFields beside it, in every density. */
-  .savings {
-    --slotted-control-label-gap-md: calc(
-      var(--slotted-control-height-md) - var(--slotted-selection-size-md)
-    );
-
-    /* Workaround for Slotted issue #115: the halo paints half the label gap before the box and
-       1.5 times that after the label, outside the root; the margins keep the row gap visible. */
-    margin-inline: calc(var(--slotted-control-label-gap-md) / 2)
-      calc(var(--slotted-control-label-gap-md) * 0.75);
   }
 
   .categoryRow {

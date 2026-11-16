@@ -1,11 +1,22 @@
 import type { components } from "@/api/schema.gen";
 import { largestRemainder } from "@/features/planning/budget-plan/plan-math";
+import { measureOf } from "@/features/planning/income-split/bucket-draft";
+import type { BucketMeasure } from "@/features/planning/income-split/bucket-draft";
+import type { MessageKey } from "@/i18n/catalog.en";
 
 type History = components["schemas"]["BudgetBucketHistory"];
 
+const targetKeys: Record<BucketMeasure, MessageKey> = {
+  ceiling: "track.target",
+  floor: "track.targetFloor",
+  savings: "track.targetSavings",
+  goals: "track.targetGoals",
+};
+
 export type TrackStatus =
   | { kind: "left" | "over"; amount: number }
-  | { kind: "saved" | "short"; amount: number };
+  | { kind: "saved" | "short"; amount: number }
+  | { kind: "reached" | "toGo"; amount: number };
 
 export interface TrackCell {
   month: string;
@@ -20,7 +31,7 @@ export interface TrackRow {
   id: string;
   name: string;
   targetBp: number;
-  takesSavings: boolean;
+  measure: BucketMeasure;
   target: number | undefined;
   real: number;
   // The real amount as basis points of the income received; undefined without income.
@@ -37,8 +48,9 @@ export interface TrackMonth {
 }
 
 // Each bucket of month against its share of the income received (income buckets A233): the
-// target splits the income by largest remainder; an expense bucket keeps it at or below, the
-// savings bucket at or above; the six months of the history give each bucket its strip.
+// target splits the income by largest remainder; a ceiling bucket keeps it at or below, the
+// savings bucket and a floor bucket at or above (A234); the six months of the history give each
+// bucket its strip.
 export function trackMonth(history: History, month: string): TrackMonth {
   const cells = history.months.map((m) => monthCells(history, m));
   const at = history.months.findIndex((m) => m.month === month);
@@ -50,12 +62,12 @@ export function trackMonth(history: History, month: string): TrackMonth {
       id: b.id,
       name: b.name,
       targetBp: b.share_bp,
-      takesSavings: b.takes_savings,
+      measure: measureOf(b),
       target: cell.target,
       real: cell.real,
       shareBp:
         received > 0 ? Math.round((cell.real * 10000) / received) : undefined,
-      status: statusOf(b.takes_savings, cell),
+      status: statusOf(measureOf(b), cell),
       months,
     };
   });
@@ -84,27 +96,40 @@ function monthCells(
   return history.buckets.map((b, i) => {
     const real = m.buckets.find((x) => x.id === b.id)?.real.amount ?? 0;
     const target = targets?.[i];
-    const kept = keptOf(b.takes_savings, real, target);
+    const kept = keptOf(measureOf(b), real, target);
     return { month: m.month, target, real, kept, state: stateOf(kept) };
   });
 }
 
-// An expense bucket keeps its target at or below it, the savings bucket at or above it.
+// The line under a bucket's name: its target share and what the bucket draws besides its
+// categories.
+export function targetKey(measure: BucketMeasure): MessageKey {
+  return targetKeys[measure];
+}
+
+// A ceiling bucket keeps its target at or below it; any other at or above it.
 function keptOf(
-  savings: boolean,
+  measure: BucketMeasure,
   real: number,
   target: number | undefined,
 ): boolean | undefined {
   if (target === undefined) return undefined;
-  return savings ? real >= target : real <= target;
+  return measure === "ceiling" ? real <= target : real >= target;
 }
 
-function statusOf(savings: boolean, cell: TrackCell): TrackStatus | undefined {
+function statusOf(
+  measure: BucketMeasure,
+  cell: TrackCell,
+): TrackStatus | undefined {
   if (cell.target === undefined) return undefined;
-  if (savings)
+  if (measure === "savings")
     return cell.real >= cell.target
       ? { kind: "saved", amount: cell.real }
       : { kind: "short", amount: cell.target - cell.real };
+  if (measure !== "ceiling")
+    return cell.real >= cell.target
+      ? { kind: "reached", amount: cell.real }
+      : { kind: "toGo", amount: cell.target - cell.real };
   return cell.real <= cell.target
     ? { kind: "left", amount: cell.target - cell.real }
     : { kind: "over", amount: cell.real - cell.target };

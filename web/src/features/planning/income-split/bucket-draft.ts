@@ -14,8 +14,16 @@ export interface DraftBucket {
   name: string;
   // The share as the reader types it, a percentage with one decimal.
   share: string;
-  takesSavings: boolean;
+  measure: BucketMeasure;
 }
+
+// How a bucket reads its target (income buckets A234): a ceiling to stay under, a floor to reach,
+// the month's savings, or what went into the goals (a floor too).
+export const bucketMeasures = ["ceiling", "floor", "savings", "goals"] as const;
+export type BucketMeasure = (typeof bucketMeasures)[number];
+
+// The measures one bucket of a method holds at most.
+const singleMeasures: readonly BucketMeasure[] = ["savings", "goals"];
 
 // A category's choice: a bucket key, outsideChoice (roots only) or sameChoice (subcategories
 // only, following the parent).
@@ -34,20 +42,20 @@ export type PresetName = "503020" | "six" | "scratch";
 // The starting points of income buckets A232: catalog name keys and shares in basis points.
 export const presets: Record<
   PresetName,
-  readonly { name: MessageKey; share: number; savings?: true }[]
+  readonly { name: MessageKey; share: number; measure?: BucketMeasure }[]
 > = {
   "503020": [
     { name: "buckets.name.needs", share: 5000 },
     { name: "buckets.name.wants", share: 3000 },
-    { name: "buckets.name.savings", share: 2000, savings: true },
+    { name: "buckets.name.savings", share: 2000, measure: "savings" },
   ],
   six: [
     { name: "buckets.name.fixed", share: 3000 },
     { name: "buckets.name.comfort", share: 1500 },
-    { name: "buckets.name.goals", share: 1500 },
+    { name: "buckets.name.goals", share: 1500, measure: "goals" },
     { name: "buckets.name.pleasures", share: 1000 },
-    { name: "buckets.name.freedom", share: 2500, savings: true },
-    { name: "buckets.name.knowledge", share: 500 },
+    { name: "buckets.name.freedom", share: 2500, measure: "savings" },
+    { name: "buckets.name.knowledge", share: 500, measure: "floor" },
   ],
   scratch: [{ name: "buckets.name.essentials", share: 10000 }],
 };
@@ -73,7 +81,7 @@ export function initialDraft(
       key: b.id,
       name: b.name,
       share: textFromBp(b.share_bp),
-      takesSavings: b.takes_savings,
+      measure: measureOf(b),
     })),
     choices,
     roots,
@@ -97,7 +105,7 @@ export function applyPreset(
       key: byName.get(label.toLowerCase()) ?? newKey(),
       name: label,
       share: textFromBp(p.share),
-      takesSavings: p.savings === true,
+      measure: p.measure ?? "ceiling",
     };
   });
   return { ...draft, buckets, choices: keepChoices(draft, buckets) };
@@ -118,6 +126,32 @@ export function keepChoices(
     out.set(id, kept ? choice : fallback);
   }
   return out;
+}
+
+// The buckets with change applied to the bucket of key; a measure one bucket holds at most
+// returns the bucket that held it before to a ceiling.
+export function changeBucket(
+  buckets: readonly DraftBucket[],
+  key: string,
+  change: Partial<DraftBucket>,
+): DraftBucket[] {
+  const single =
+    change.measure !== undefined && singleMeasures.includes(change.measure);
+  return buckets.map((b) => {
+    if (b.key === key) return { ...b, ...change };
+    return single && b.measure === change.measure
+      ? { ...b, measure: "ceiling" }
+      : b;
+  });
+}
+
+// The measure of a stored bucket; the savings take precedence, then the goals.
+export function measureOf(
+  b: Pick<Bucket, "takes_savings" | "takes_goals" | "at_least">,
+): BucketMeasure {
+  if (b.takes_savings) return "savings";
+  if (b.takes_goals) return "goals";
+  return b.at_least ? "floor" : "ceiling";
 }
 
 // The sum of the shares in basis points; undefined when a share is not a number.
@@ -146,11 +180,20 @@ export function bucketsPayload(draft: BucketDraft): BucketsInput {
     buckets: draft.buckets.map((b) => ({
       name: b.name.trim(),
       share_bp: bpFromText(b.share) ?? 0,
-      takes_savings: b.takesSavings,
+      ...measureFlags(b.measure),
       category_ids: [...draft.choices]
         .filter(([, choice]) => choice === b.key)
         .map(([id]) => id),
     })),
+  };
+}
+
+// The flags of saveBudgetBuckets for a measure: the goals bucket is a floor.
+function measureFlags(measure: BucketMeasure) {
+  return {
+    takes_savings: measure === "savings",
+    takes_goals: measure === "goals",
+    at_least: measure === "goals" || measure === "floor",
   };
 }
 
@@ -214,6 +257,8 @@ export function withChoice(
         name: b.name,
         share_bp: b.share_bp,
         takes_savings: b.takes_savings,
+        takes_goals: b.takes_goals,
+        at_least: b.at_least,
         category_ids: b.id === choice ? [...others, categoryId] : others,
       };
     }),

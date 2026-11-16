@@ -11,7 +11,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
     row-gap: var(--slotted-space-4);
-    padding-block-end: var(--slotted-space-4);
+    margin-block-end: var(--slotted-space-8);
   }
 
   .figure {

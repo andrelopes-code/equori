@@ -9,6 +9,7 @@ import {
   applyPreset,
   bucketsPayload,
   canSave,
+  changeBucket,
   initialDraft,
   keepChoices,
   maxBuckets,
@@ -37,15 +38,7 @@ export function useBucketDraft(
   const [failure, setFailure] = useState<string | null>(null);
 
   const setBucket = (key: string, change: Partial<DraftBucket>) => {
-    const savings = change.takesSavings === true;
-    setDraft({
-      ...draft,
-      buckets: draft.buckets.map((b) => {
-        if (b.key === key) return { ...b, ...change };
-        // One bucket takes the savings at most.
-        return savings ? { ...b, takesSavings: false } : b;
-      }),
-    });
+    setDraft({ ...draft, buckets: changeBucket(draft.buckets, key, change) });
   };
 
   const removeBucket = (key: string) => {
@@ -59,7 +52,7 @@ export function useBucketDraft(
       key: crypto.randomUUID(),
       name: "",
       share: "0",
-      takesSavings: false,
+      measure: "ceiling" as const,
     };
     setDraft({ ...draft, buckets: [...draft.buckets, bucket] });
   };

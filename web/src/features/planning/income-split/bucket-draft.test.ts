@@ -7,6 +7,7 @@ import {
   bucketsPayload,
   bucketCounts,
   canSave,
+  changeBucket,
   checkState,
   choiceOf,
   expenseBranches,
@@ -42,6 +43,8 @@ const stored: Bucket[] = [
     name: "Needs",
     share_bp: 6000,
     takes_savings: false,
+    takes_goals: false,
+    at_least: false,
     category_ids: ["food"],
     planned: brl,
     spent: brl,
@@ -51,6 +54,8 @@ const stored: Bucket[] = [
     name: "Fun",
     share_bp: 4000,
     takes_savings: true,
+    takes_goals: false,
+    at_least: false,
     category_ids: ["market"],
     planned: brl,
     spent: brl,
@@ -62,8 +67,8 @@ describe("initialDraft", () => {
     const draft = initialDraft(stored, entries);
 
     expect(draft.buckets).toEqual([
-      { key: "b1", name: "Needs", share: "60", takesSavings: false },
-      { key: "b2", name: "Fun", share: "40", takesSavings: true },
+      { key: "b1", name: "Needs", share: "60", measure: "ceiling" },
+      { key: "b2", name: "Fun", share: "40", measure: "savings" },
     ]);
     expect([...draft.choices]).toEqual([
       ["food", "b1"],
@@ -85,15 +90,59 @@ describe("applyPreset", () => {
       () => `new${String(++n)}`,
     );
 
-    expect(
-      got.buckets.map((b) => [b.key, b.name, b.share, b.takesSavings]),
-    ).toEqual([
-      ["b1", "Needs", "50", false],
-      ["new1", "buckets.name.wants", "30", false],
-      ["new2", "buckets.name.savings", "20", true],
-    ]);
+    expect(got.buckets.map((b) => [b.key, b.name, b.share, b.measure])).toEqual(
+      [
+        ["b1", "Needs", "50", "ceiling"],
+        ["new1", "buckets.name.wants", "30", "ceiling"],
+        ["new2", "buckets.name.savings", "20", "savings"],
+      ],
+    );
     expect(got.choices.get("food")).toBe("b1");
     expect(got.choices.get("market")).toBe("same");
+  });
+});
+
+describe("changeBucket", () => {
+  const buckets = [
+    { key: "a", name: "A", share: "50", measure: "goals" as const },
+    { key: "b", name: "B", share: "30", measure: "floor" as const },
+    { key: "c", name: "C", share: "20", measure: "savings" as const },
+  ];
+
+  it("moves a measure one bucket holds to the new bucket", () => {
+    const got = changeBucket(buckets, "b", { measure: "goals" });
+
+    expect(got.map((b) => b.measure)).toEqual(["ceiling", "goals", "savings"]);
+  });
+
+  it("leaves the other buckets on a floor or a ceiling", () => {
+    const got = changeBucket(buckets, "c", { measure: "floor" });
+
+    expect(got.map((b) => b.measure)).toEqual(["goals", "floor", "floor"]);
+  });
+});
+
+describe("bucketsPayload", () => {
+  it("writes the flags of each measure; the goals bucket is a floor", () => {
+    const draft = {
+      buckets: [
+        { key: "a", name: "A", share: "50", measure: "goals" as const },
+        { key: "b", name: "B", share: "50", measure: "floor" as const },
+      ],
+      choices: new Map<string, string>(),
+      roots: new Set<string>(),
+    };
+
+    expect(
+      bucketsPayload(draft).buckets.map((b) => [
+        b.takes_savings,
+        b.takes_goals,
+        b.at_least,
+      ]),
+    ).toEqual([
+      [false, true, true],
+      [false, false, true],
+    ]);
   });
 });
 
@@ -116,11 +165,11 @@ describe("totalBp and canSave", () => {
     expect(
       canSave({
         ...draft,
-        buckets: [{ key: "x", name: "x", share: "99,9", takesSavings: false }],
+        buckets: [{ key: "x", name: "x", share: "99,9", measure: "ceiling" }],
       }),
     ).toBe(false);
     expect(
-      totalBp([{ key: "x", name: "x", share: "abc", takesSavings: false }]),
+      totalBp([{ key: "x", name: "x", share: "abc", measure: "ceiling" }]),
     ).toBeUndefined();
     expect(canSave({ ...draft, buckets: [] })).toBe(false);
   });
@@ -135,12 +184,16 @@ describe("bucketsPayload", () => {
         name: "Needs",
         share_bp: 6000,
         takes_savings: false,
+        takes_goals: false,
+        at_least: false,
         category_ids: ["food"],
       },
       {
         name: "Fun",
         share_bp: 4000,
         takes_savings: true,
+        takes_goals: false,
+        at_least: false,
         category_ids: ["market"],
       },
     ]);

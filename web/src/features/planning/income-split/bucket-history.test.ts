@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
+  targetKey,
   trackMonth,
   trackVerdict,
 } from "@/features/planning/income-split/bucket-history";
@@ -15,6 +16,8 @@ const buckets = [
     name: "Needs",
     share_bp: 6000,
     takes_savings: false,
+    takes_goals: false,
+    at_least: false,
     category_ids: [],
   },
   {
@@ -22,6 +25,8 @@ const buckets = [
     name: "Freedom",
     share_bp: 4000,
     takes_savings: true,
+    takes_goals: false,
+    at_least: false,
     category_ids: [],
   },
 ];
@@ -87,6 +92,28 @@ describe("trackMonth", () => {
     ]);
     // 100,001 at 60% is 60,000.6: the largest remainder gives the unit to Needs.
     expect(got.rows[0]?.months[3]?.target).toBe(60001);
+  });
+
+  it("judges a floor bucket by reaching its target", () => {
+    // Needs as a floor: 50% of R$1,000.00 is R$500.00 in October; R$900.00 reached it, and in
+    // November R$200.00 falls R$300.00 short.
+    const floor: History = {
+      ...history,
+      buckets: history.buckets.map((b, i) =>
+        i === 0
+          ? { ...b, share_bp: 5000, at_least: true }
+          : { ...b, share_bp: 5000 },
+      ),
+    };
+
+    const october = trackMonth(floor, "2026-10").rows[0];
+    const november = trackMonth(floor, "2026-11").rows[0];
+
+    expect(october?.status).toEqual({ kind: "reached", amount: 90000 });
+    expect(october?.months[4]?.state).toBe("kept");
+    expect(november?.status).toEqual({ kind: "toGo", amount: 30000 });
+    expect(november?.months[5]?.state).toBe("missed");
+    expect(targetKey(october?.measure ?? "ceiling")).toBe("track.targetFloor");
   });
 
   it("gives no target and no verdict without income", () => {
