@@ -56,13 +56,20 @@ function section() {
   return screen.getByRole("region", { name: catalogEn["calendar.title"] });
 }
 
+// The rows that choose a calendar: a region section is a list item too, and holds them.
+function optionsOf(list: HTMLElement) {
+  return within(list)
+    .getAllByRole("listitem")
+    .filter((item) => item.querySelector("li") === null);
+}
+
 describe("Calendars section", () => {
   it("lists the region's calendar first with its weekend days named by the locale", async () => {
     await renderApp("/settings?section=calendars", { fetch: api().fetch });
     const list = await within(section()).findByRole("list", {
       name: catalogEn["calendar.title"],
     });
-    const items = within(list).getAllByRole("listitem");
+    const items = optionsOf(list);
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent(catalogEn["calendar.weekend"]);
     expect(items[0]).toHaveTextContent(catalogEn["calendar.regionMark"]);
@@ -86,10 +93,7 @@ describe("Calendars section", () => {
     const list = within(section()).getByRole("list", {
       name: catalogEn["calendar.title"],
     });
-    expect(within(list).getAllByRole("listitem")[0]).toHaveAttribute(
-      "aria-current",
-      "true",
-    );
+    expect(optionsOf(list)[0]).toHaveAttribute("aria-current", "true");
   });
 
   it("lists the holidays of the chosen calendar by month and marks the ones set on the instance", async () => {
@@ -167,5 +171,29 @@ describe("Calendars section", () => {
     });
     expect(await screen.findByText("Winter Day")).toBeInTheDocument();
     expect(years).toEqual(["2026"]);
+  });
+
+  it("groups the calendars by region, the global one named and flagged", async () => {
+    await renderApp("/settings?section=calendars", { fetch: api().fetch });
+    const list = await within(section()).findByRole("list", {
+      name: catalogEn["calendar.title"],
+    });
+
+    expect(
+      within(list).getByRole("heading", { name: catalogEn["region.global"] }),
+    ).toBeVisible();
+    expect(list.querySelector('[data-art="global"]')).not.toBeNull();
+  });
+
+  it("marks the calendar on show with a word, not by colour alone", async () => {
+    await renderApp("/settings?section=calendars", { fetch: api().fetch });
+    const list = await within(section()).findByRole("list", {
+      name: catalogEn["calendar.title"],
+    });
+
+    expect(optionsOf(list)[0]).toHaveTextContent(catalogEn["calendar.showing"]);
+    expect(optionsOf(list)[1]).not.toHaveTextContent(
+      catalogEn["calendar.showing"],
+    );
   });
 });

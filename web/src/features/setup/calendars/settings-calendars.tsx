@@ -8,7 +8,6 @@ import {
   ListItemDescription,
   ListItemEnd,
   ListItemLabel,
-  ListItemLink,
   ListItemStart,
   ListItemContent,
 } from "@slotted/react/list-item";
@@ -28,6 +27,8 @@ import {
   holidaysQuery,
 } from "@/features/planning";
 import { CalendarDay } from "@/features/setup/calendars/calendar-day";
+import { CalendarGroups } from "@/features/setup/calendars/calendar-groups";
+import { calendarRegion } from "@/features/setup/calendars/calendar-region";
 import { CalendarShiftExample } from "@/features/setup/calendars/calendar-shift-example";
 import { SettingsGroup } from "@/features/setup/settings-layout/settings-group";
 import { maxYear, minYear } from "@/features/setup/model/settings-search";
@@ -36,22 +37,9 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { QueryError } from "@/ui/feedback/query-error";
 import { StepGlyph } from "@/ui/navigation/step-glyph";
-import { routeTo } from "@/ui/navigation/route-to";
+import { RegionLabel } from "@/ui/region/region-label";
 
 type Holiday = components["schemas"]["Holiday"];
-
-// The API names the days in this order; the reference dates below start on a Sunday.
-const weekdayOrder = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
-const sunday = Date.UTC(2023, 0, 1);
-const dayMs = 86_400_000;
 
 export function SettingsCalendars() {
   const t = useT();
@@ -72,19 +60,11 @@ export function SettingsCalendars() {
 
   const fmt = useMemo(() => {
     const utc = { timeZone: "UTC" } as const;
-    const day = new Intl.DateTimeFormat(tag, { weekday: "long", ...utc });
     const short = new Intl.DateTimeFormat(tag, { weekday: "short", ...utc });
     const number = new Intl.DateTimeFormat(tag, { day: "numeric", ...utc });
     const month = new Intl.DateTimeFormat(tag, { month: "long", ...utc });
     const date = new Intl.DateTimeFormat(tag, { dateStyle: "full", ...utc });
-    const list = new Intl.ListFormat(tag, { type: "conjunction" });
     return {
-      weekend: (days: readonly string[]) =>
-        list.format(
-          days.map((d) =>
-            day.format(new Date(sunday + weekdayOrder.indexOf(d) * dayMs)),
-          ),
-        ),
       month: (iso: string) => {
         const name = month.format(new Date(`${iso.slice(0, 7)}-01`));
         return name.charAt(0).toLocaleUpperCase(tag) + name.slice(1);
@@ -96,12 +76,6 @@ export function SettingsCalendars() {
       }),
     };
   }, [tag]);
-
-  const ordered = useMemo(() => {
-    const items = calendars.data?.items ?? [];
-    const first = items.filter((c) => c.id === calendars.data?.default);
-    return [...first, ...items.filter((c) => c.id !== calendars.data?.default)];
-  }, [calendars.data]);
 
   const months = useMemo(() => {
     const out: { key: string; items: Holiday[] }[] = [];
@@ -148,42 +122,22 @@ export function SettingsCalendars() {
             onRetry={() => void calendars.refetch()}
           />
         ) : (
-          <List variant="separated" aria-label={t("calendar.title")}>
-            {ordered.map((c) => (
-              <ListItem key={c.id} current={c.id === chosen?.id}>
-                <ListItemLink
-                  render={routeTo({
-                    to: "/settings",
-                    search: { ...search, calendar: c.id },
-                    replace: true,
-                  })}
-                >
-                  <ListItemBody>
-                    <ListItemLabel>{calendarLabel(t, c.id)}</ListItemLabel>
-                    <ListItemDescription>
-                      {t("calendar.weekendDays", {
-                        days: fmt.weekend(c.weekend),
-                      })}
-                    </ListItemDescription>
-                  </ListItemBody>
-                  {c.id === calendars.data.default && (
-                    <ListItemEnd>
-                      <Tag size="sm" tone="accent">
-                        {t("calendar.regionMark")}
-                      </Tag>
-                    </ListItemEnd>
-                  )}
-                </ListItemLink>
-              </ListItem>
-            ))}
-          </List>
+          <CalendarGroups
+            calendars={calendars.data.items}
+            defaultId={calendars.data.default}
+            chosenId={chosen?.id}
+          />
         )}
       </SettingsGroup>
 
       {chosen !== undefined && (
         <SettingsGroup
           title={t("calendar.holidays.title", { year: String(year) })}
-          description={calendarLabel(t, chosen.id)}
+          description={
+            <RegionLabel region={calendarRegion(chosen.id)} size="sm">
+              {calendarLabel(t, chosen.id)}
+            </RegionLabel>
+          }
           actions={
             // CP-04: the year steps like the month and the period of the other screens.
             <ButtonGroup

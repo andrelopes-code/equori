@@ -1,0 +1,8 @@
+@layer app {
+  .label {
+    display: inline-flex;
+    min-inline-size: 0;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+}

@@ -1963,6 +1963,7 @@ export const catalogEn = {
   "calendar.holiday.black_consciousness_day": "Black Consciousness Day",
   "calendar.title": "Calendars",
   "calendar.regionMark": "Your region",
+  "calendar.showing": "Showing",
   "calendar.weekendDays": "Weekend: {days}",
   "calendar.holidaysOf": "Holidays of {name} in {year}",
   "calendar.year.previous": "Previous year",

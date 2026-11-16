@@ -1,0 +1,10 @@
+@layer app {
+  /* On a phone the row keeps its check and gives its name the width: the region tag and the word
+     beside the check leave. The section above the row already names the region. 600 px is the
+     page's phone width; no token holds it. */
+  @media (max-width: 600px) {
+    .wide {
+      display: none;
+    }
+  }
+}

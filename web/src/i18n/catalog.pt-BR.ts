@@ -1987,6 +1987,7 @@ export const catalogPtBR: Catalog = {
   "calendar.holiday.black_consciousness_day": "Dia da Consciência Negra",
   "calendar.title": "Calendários",
   "calendar.regionMark": "Sua região",
+  "calendar.showing": "Em exibição",
   "calendar.weekendDays": "Fim de semana: {days}",
   "calendar.holidaysOf": "Feriados de {name} em {year}",
   "calendar.year.previous": "Ano anterior",
