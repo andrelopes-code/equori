@@ -23,6 +23,7 @@ export const accountKeys = {
     ["accounts", "balance", id, basis] as const,
   series: (id: string) => ["accounts", "series", id] as const,
   lots: (id: string) => ["accounts", "lots", id] as const,
+  withholding: (id: string) => ["accounts", "withholding", id] as const,
 };
 
 export const balanceKeys = {
@@ -258,6 +259,32 @@ export function accountLotsQuery(
                 : { exclude_transaction_id: exclude }),
             },
           },
+        }),
+      ),
+  });
+}
+
+// A235: the income tax and IOF a sale of a taxed fixed income security would withhold. The
+// server answers 422 for any other security, so a failure is no estimate and is not retried.
+export function accountWithholdingQuery(
+  api: Client<paths>,
+  id: string,
+  date: string,
+  quantity: number,
+  proceeds: number,
+) {
+  return queryOptions({
+    queryKey: [
+      ...accountKeys.withholding(id),
+      date,
+      quantity,
+      proceeds,
+    ] as const,
+    retry: false,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/accounts/{id}/withholding", {
+          params: { path: { id }, query: { date, quantity, proceeds } },
         }),
       ),
   });

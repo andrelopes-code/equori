@@ -7,6 +7,7 @@ import type { components } from "@/api/schema.gen";
 import {
   accountLotsQuery,
   accountsQuery,
+  accountWithholdingQuery,
   balanceQuery,
   positionsQuery,
 } from "@/features/accounts";
@@ -73,6 +74,8 @@ export interface TradeView {
   gross: number | null;
   cashEffect: number | null;
   result: number | null;
+  // Income tax plus IOF a sale of a taxed fixed income security withholds, an estimate (A235).
+  withheld: number | null;
   ready: boolean;
 }
 
@@ -200,6 +203,28 @@ export function useTradeEntry(
         )
       : null;
 
+  const withholding = useQuery({
+    ...accountWithholdingQuery(
+      api,
+      state.held?.id ?? "",
+      draft.date,
+      draft.quantity,
+      gross ?? 0,
+    ),
+    enabled:
+      correction === undefined &&
+      sell &&
+      state.held !== undefined &&
+      gross !== null &&
+      draft.quantity > 0 &&
+      draft.quantity <= heldQuantity &&
+      lots.data?.method === "fifo",
+  });
+  const withheld =
+    withholding.data === undefined
+      ? null
+      : withholding.data.income_tax.amount + withholding.data.iof.amount;
+
   // A sale is limited to the position of the date; before the position loads nothing is refused.
   const limit: string | null =
     draft.side === "sell" &&
@@ -236,6 +261,7 @@ export function useTradeEntry(
       gross === null || cost === null
         ? null
         : estimatedResult(gross, draft.fees, cost),
+    withheld,
     ready: accounts.data !== undefined && base !== undefined && scale !== null,
   };
   const shown = limit === null ? errors : { ...errors, quantity: limit };

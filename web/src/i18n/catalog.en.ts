@@ -975,6 +975,7 @@ export const catalogEn = {
   "trade.position": "Position on the date",
   "trade.averageCost": "Average cost",
   "trade.estimatedResult": "Estimated result",
+  "trade.estimatedTax": "Estimated tax withheld",
   "trade.noPosition": "No position on this date.",
   "trade.exceedsPosition": "The position on this date is {quantity}.",
   "trade.required.price":

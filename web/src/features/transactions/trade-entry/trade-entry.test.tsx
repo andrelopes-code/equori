@@ -582,6 +582,43 @@ describe("trade entry", () => {
     ).not.toHaveLength(0);
   });
 
+  // S460, the sale form: the tax a broker withholds on a redemption is estimated beside the result.
+  it("shows the estimated tax of a sale of a taxed fixed income security", async () => {
+    await renderApp(path, {
+      fetch: api([], {
+        held: { quantity: 150, cost: 151240 },
+        lots: [{ acquired_on: "2026-01-05", quantity: 150, cost: 151240 }],
+        withholding: { incomeTax: 765, iof: 6600 },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("radio", { name: catalogEn["trade.side.sell"] }),
+    );
+    await type(catalogEn["trade.quantity"], "50");
+    await type(catalogEn["trade.unitPrice"], "10.80");
+    expect(
+      await screen.findByText(catalogEn["trade.estimatedTax"]),
+    ).toBeInTheDocument();
+    expect(await screen.findByText(moneyValue(/73\.65/))).toBeInTheDocument();
+  });
+
+  it("shows no estimated tax where the server has no estimate", async () => {
+    await renderApp(path, {
+      fetch: api([], { held: { quantity: 150, cost: 151240 } }),
+    });
+    await userEvent.click(
+      await screen.findByRole("radio", { name: catalogEn["trade.side.sell"] }),
+    );
+    await type(catalogEn["trade.quantity"], "50");
+    await type(catalogEn["trade.unitPrice"], "10.80");
+    expect(await screen.findAllByText(moneyValue(/540\.00/))).not.toHaveLength(
+      0,
+    );
+    expect(
+      screen.queryByText(catalogEn["trade.estimatedTax"]),
+    ).not.toBeInTheDocument();
+  });
+
   // S21, sale: 50 of 150 held at cost 1,512.40 sold at 10.80 with 2.10 in fees leave a result of 33.77.
   it("shows the position, average cost and estimated result of a sale", async () => {
     const sent: unknown[] = [];

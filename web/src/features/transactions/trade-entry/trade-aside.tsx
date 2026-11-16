@@ -67,6 +67,13 @@ export function TradeAside({ view, sell, scale }: TradeAsideProps) {
             value={view.result === null ? undefined : figure(view.result, true)}
             note={null}
           />
+          {view.withheld !== null && (
+            <FigureCard
+              label={t("trade.estimatedTax")}
+              value={figure(view.withheld)}
+              note={null}
+            />
+          )}
         </>
       )}
     </FigureGrid>

@@ -114,6 +114,8 @@ export interface InvestmentOptions {
   // Open purchase lots of the security account, oldest first: the account then sells by lot
   // (A234). Without it the account sells at the average cost.
   lots?: { acquired_on: string; quantity: number; cost: number }[];
+  // The tax a sale of the security withholds (A235); without it the account has no estimate.
+  withholding?: { incomeTax: number; iof: number };
   // Booked balances of other accounts by id, in minor units of BRL.
   balances?: Record<string, number>;
   answer?: () => Response;
@@ -140,6 +142,21 @@ export function investmentRoutes(
     ...sharedRoutes,
     "GET /api/v1/accounts": () =>
       json(200, { items: [...accounts, ...(options.extraAccounts ?? [])] }),
+    [`GET /api/v1/accounts/${securityID}/withholding`]: (req: Request) =>
+      options.withholding === undefined
+        ? json(422, {
+            type: "about:blank",
+            title: "Unprocessable Entity",
+            status: 422,
+            code: "validation_failed",
+          })
+        : json(200, {
+            account_id: securityID,
+            date: new URL(req.url).searchParams.get("date"),
+            income_tax: brl(options.withholding.incomeTax),
+            iof: brl(options.withholding.iof),
+            net: brl(0),
+          }),
     [`GET /api/v1/accounts/${securityID}/lots`]: (req: Request) =>
       json(200, {
         account_id: securityID,

@@ -982,6 +982,7 @@ export const catalogPtBR: Catalog = {
   "trade.position": "Posição na data",
   "trade.averageCost": "Preço médio",
   "trade.estimatedResult": "Resultado estimado",
+  "trade.estimatedTax": "Imposto retido estimado",
   "trade.noPosition": "Sem posição nesta data.",
   "trade.exceedsPosition": "A posição nesta data é {quantity}.",
   "trade.required.price":
