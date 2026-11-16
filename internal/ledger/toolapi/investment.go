@@ -18,7 +18,7 @@ func (recordInvestmentKind) Values() []string { return []string{"buy", "sell", "
 type recordInvestmentIn struct {
 	Kind          recordInvestmentKind `json:"kind"                     jsonschema:"operation to propose"`
 	BrokerageID   string               `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment, from list_accounts; with instrument, instead of account_id"`
-	Instrument    string               `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4; its line in the Brokerage is created by the first buy"`
+	Instrument    string               `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4"`
 	AccountID     string               `json:"account_id,omitzero"      jsonschema:"Investment line inside a Brokerage, from list_accounts; instead of brokerage_id and instrument"`
 	CashAccountID string               `json:"cash_account_id,omitzero" jsonschema:"Cash of the Brokerage or an open account of its institution; the single candidate when absent"`
 	Date          tool.Date            `json:"date"                     jsonschema:"trade or payment date"`
@@ -31,11 +31,11 @@ type recordInvestmentIn struct {
 	IncomeType    string               `json:"income_type,omitzero"     jsonschema:"for income: type from get_portfolio with view income_types"`
 	CategoryID    string               `json:"category_id,omitzero"     jsonschema:"for income: income category from list_accounts"`
 
-	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; an empty description is shown as a title derived from the kind and the investment"`
+	Description        string `json:"description,omitzero"          jsonschema:"description of the transaction; a title derived from the kind and the investment when empty"`
 	TaxesCategoryID    string `json:"taxes_category_id,omitzero"    jsonschema:"for buy and sell: expense category of the taxes; the taxes account when absent"`
 	WithheldCategoryID string `json:"withheld_category_id,omitzero" jsonschema:"for income: expense category of the tax withheld; the taxes account when absent"`
 
-	TransactionID string `json:"transaction_id,omitzero" jsonschema:"trade or income to correct, from get_transactions; the proposal replaces its whole order, so repeat every field that stays"`
+	TransactionID string `json:"transaction_id,omitzero" jsonschema:"trade or income to correct, from get_transactions; the proposal replaces the whole order: repeat every field that stays"`
 	Reason        string `json:"reason,omitzero"         jsonschema:"with transaction_id: why the transaction changes, kept in its history"`
 }
 
@@ -46,10 +46,9 @@ type recordInvestmentOut struct {
 func recordInvestment(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "record_investment",
-		Description: "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage at average cost, or record income paid on an Investment. " +
-			"Name the Investment by brokerage_id and instrument, or by account_id. " +
+		Description: "Proposes an investment transaction in a Brokerage: buy or sell an Investment for the Cash of the same Brokerage, or record income paid on an Investment. " +
 			"A first buy creates the Investment line; a sale or income needs an existing one. " +
-			"A Brokerage without a Cash account in the base currency is refused: create a Cash account in it first with manage_accounts_and_payees. " +
+			"A Brokerage with no Cash account in the base currency is refused: create one first with manage_accounts_and_payees. " +
 			"Use it when the user reports a trade, a dividend or other investment income. " +
 			"With transaction_id and reason it corrects that trade or income instead of recording one: change_transaction does not correct them. " +
 			"Do not use it to define a new security: manage_instrument does. " +
