@@ -33,6 +33,7 @@ var topics = []string{
 	"fixed_income",
 	"fixed_income_payments",
 	"investment_income",
+	"investments_br",
 	"contribution_plan",
 	"reports",
 	"privacy_and_the_assistant",

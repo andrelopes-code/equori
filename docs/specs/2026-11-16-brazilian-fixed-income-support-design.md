@@ -49,7 +49,9 @@ Anti-goals:
 | FS4 | `Jurisdiction` gains `Withholding(taxClass string) (WithholdingTable, bool)`; `br` returns the regressive table for class `fixed_income` and none for any other class. The domain function `EstimateWithholding(table, lots, proceeds, date)` takes the consumed lots of a sale (A234), splits `proceeds` over them by units (half to even, the cents left to the oldest lot), and for each lot with a gain returns IOF = gain × IOF rate of the days, then income tax = (gain − IOF) × rate of the days. Days count from the acquisition date of the lot to the sale date. | The tax of each lot depends on its own period. |
 | FS5 | `GET /api/v1/accounts/{id}/withholding?date=&quantity=&proceeds=` (role `read`; `quantity` in minor units of the security and `proceeds` in minor units of the base currency) returns `income_tax`, `iof` and `net` for a sale of `quantity` units for `proceeds`, or `404` for an account outside the book and `422` when the account holds no fixed income security taxed at source. | The sale form and the assistant read one estimate. |
 | FS6 | The assistant tool `estimate_redemption` returns the same estimate. | Same estimate for the assistant (S1). |
-| FS7 | The guide articles state the dated rules and the estimate. | S3. |
+| FS7 | `GET /accounts/{id}/lots` returns `estimates_withholding`, true when FS5 answers for the account. The sale form reads it to ask for the estimate; the web holds no rule of a region. | AG2; a screen never infers a regional rule from the cost method. |
+| FS8 | The guide holds the mechanics in region-neutral articles (`fixed_income`, `fixed_income_payments`, `investment_income`) and the rules of Brazil in the article `investments_br`, dated by its first line. The chat prompt names `investments_br` when the book's region is `BR`; the MCP instructions name it for a Brazilian book. | CONTRIBUTING, Regions: a tax rule lives in the implementation of its region. |
+| FS9 | A region adds its rules as an article `investments_<region>` in `internal/assistant/guide/articles` and a topic in `guide.go`; a region without one has the neutral articles only. | R4. |
 
 ## 5. Scenarios
 
@@ -64,6 +66,7 @@ Anti-goals:
 | FS-S7 | A sale at a loss | Income tax 0, IOF 0 |
 | FS-S8 | An account of a stock, a `lci` or a book outside Brazil | 422 |
 | FS-S9 | Roles `owner`, `write`, `read`; a member of another book | 200 for the three roles; 404 |
+| FS-S10 | `GET /accounts/{id}/lots` of a CDB and of an LCI sold by lot | `estimates_withholding` true for the CDB, false for the LCI |
 
 ## 6. Cross-cutting questions
 
@@ -72,7 +75,7 @@ Anti-goals:
 | R1 | The JCP rate, the treatment of a distribution, the subtypes and the withholding table vary by country: `internal/ledger/region_defaults.go` (`DefaultWithholdingBP`) and `internal/portfolio/jurisdiction/br/br.go` (`Treatment`, `Subtypes`, `Withholding`). |
 | R2 | A region without a case gets withholding 0, no estimate (422) and the universal subtypes. |
 | R3 | `subtype` is `^[a-z0-9_]{2,40}$` already; the new subtypes add no `enum`. |
-| R4 | One row "Fixed income withholding" in `docs/contributing/regions.md`; the row "Income withholding" names the date. |
+| R4 | Two rows in `docs/contributing/regions.md`: "Fixed income withholding" and "Guide article of a region's investment rules"; the row "Income withholding" names the date. |
 | R5 | No new text on a screen beyond the estimate line of the sale form: catalog keys in `pt-BR` and `en`. |
 | R6 | The estimate line writes amounts through `useMoneyFormat()`. |
 | C1 | Income tax, IOF and net are integers of the cash currency's minor units, rounded half to even per lot. |
@@ -91,9 +94,9 @@ Anti-goals:
 | D5 | No diagnostic field. |
 | S1 | One operation: `GET /accounts/{id}/withholding`. The tool `estimate_redemption` covers it. No new `Problem.code`. |
 | S2 | The sale form is a phone route; the estimate line keeps one line at 390 px. |
-| S3 | The articles `fixed_income`, `fixed_income_payments` and `investment_income` change. |
+| S3 | The articles `fixed_income`, `fixed_income_payments`, `investment_income` and `investments_br` change. |
 | S4 | The tool `estimate_redemption`. |
-| X1 | S456 to S464 map FS-S1 to FS-S9 in order; S465 is the tool of FS6. FS-S4 is S459. Each test carries its ID. |
+| X1 | S456 to S464 map FS-S1 to FS-S9 in order except FS-S3 (S458) and FS-S4 (S459); S465 is the tool of FS6 and S466 is FS-S10. Each test carries its ID. |
 | X2 | FS-S1, FS-S2, FS-S3, FS-S5 and FS-S8 run with region `BR`; a region without a table is covered by `TestFixedIncomeWithholding`. |
 
 ## 7. Left to the builder
