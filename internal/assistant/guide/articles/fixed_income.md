@@ -12,4 +12,4 @@ A public security with a code of its own, such as a government bond, is defined 
 
 An index that compounds by business day counts business days (bus252). A pre-fixed rate or a spread over a monthly index counts the business days of the calendar of the region; without one it counts calendar days (act365). A monthly index enters by published month, without pro rata. The accrued Price is gross: tax is not deducted. A Price typed by the user (record_price, after the statement of the issuer) replaces the accrued one. manage_instrument edit sets the issuer identifier (issuer_scheme, issuer_id) and set_terms corrects the terms.
 
-A security that pays coupons or returns principal takes no terms: terms compound the interest and count it twice. Its Price is the unit price of the issuer, recorded with record_price. Payments are in the article fixed_income_payments.
+A security that pays coupons or returns principal takes its payment dates with the terms, and the accrual prices the coupons. Payments are in the article fixed_income_payments.
