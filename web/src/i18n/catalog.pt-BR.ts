@@ -260,6 +260,7 @@ export const catalogPtBR: Catalog = {
   "assistant.preset.groq": "Groq",
   "assistant.preset.openrouter": "OpenRouter",
   "assistant.preset.mistral": "Mistral",
+  "assistant.preset.anthropic": "Anthropic Claude",
   "assistant.preset.ollama": "Ollama (local)",
   "assistant.preset.lmstudio": "LM Studio (local)",
   "assistant.preset.custom": "Outra API compatível com a OpenAI",

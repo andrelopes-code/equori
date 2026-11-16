@@ -106,6 +106,7 @@ func TestCreateProviderA1(t *testing.T) {
 		"groq":       "k2",
 		"openrouter": "k3",
 		"mistral":    "k4",
+		"anthropic":  "k5",
 		"ollama":     "",
 		"lmstudio":   "",
 		"custom":     "",

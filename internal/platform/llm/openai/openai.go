@@ -24,6 +24,8 @@ type Provider struct {
 	baseURL string
 	apiKey  string
 	client  *http.Client
+
+	header http.Header
 }
 
 // New returns the provider for the API at baseURL, the only address it contacts (N17). An
@@ -33,6 +35,17 @@ func New(baseURL, apiKey string, client *http.Client) *Provider {
 }
 
 func (p *Provider) Name() string { return name }
+
+// WithHeader adds a header to every request, for a compatible host that requires one.
+func (p *Provider) WithHeader(key, value string) *Provider {
+	if p.header == nil {
+		p.header = http.Header{}
+	}
+
+	p.header.Set(key, value)
+
+	return p
+}
 
 func (p *Provider) Generate(
 	ctx context.Context,
@@ -260,6 +273,10 @@ func (p *Provider) do(
 
 	if p.apiKey != "" {
 		httpReq.Header.Set("Authorization", "Bearer "+p.apiKey)
+	}
+
+	for key, values := range p.header {
+		httpReq.Header[key] = values
 	}
 
 	resp, err := p.client.Do(httpReq)

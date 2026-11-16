@@ -33,6 +33,12 @@ func TestPresets(t *testing.T) {
 		t.Fatalf("gemini preset = %+v", gemini)
 	}
 
+	anthropic, ok := FindPreset("anthropic")
+	if !ok || anthropic.API != APIAnthropic || !anthropic.KeyRequired ||
+		anthropic.BaseURL != "https://api.anthropic.com/v1" {
+		t.Fatalf("anthropic preset = %+v", anthropic)
+	}
+
 	for _, model := range []string{"gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"} {
 		if got := ModelCapabilities(
 			"gemini",

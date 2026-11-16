@@ -253,6 +253,7 @@ export const catalogEn = {
   "assistant.preset.groq": "Groq",
   "assistant.preset.openrouter": "OpenRouter",
   "assistant.preset.mistral": "Mistral",
+  "assistant.preset.anthropic": "Anthropic Claude",
   "assistant.preset.ollama": "Ollama (local)",
   "assistant.preset.lmstudio": "LM Studio (local)",
   "assistant.preset.custom": "Other OpenAI-compatible API",

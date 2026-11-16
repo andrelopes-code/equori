@@ -8,6 +8,8 @@ type API string
 const (
 	APIGemini API = "gemini"
 	APIOpenAI API = "openai"
+	// APIAnthropic is the OpenAI wire protocol plus the version header Anthropic requires.
+	APIAnthropic API = "anthropic"
 )
 
 // Notice tells the owner what happens to submitted data (ADR 019).
@@ -62,6 +64,13 @@ func Presets() []Preset {
 				{"gemini-3.5-flash-lite", toolsAndStructured},
 				{"gemini-3.1-flash-lite", toolsAndStructured},
 			},
+		},
+		{
+			ID:          "anthropic",
+			API:         APIAnthropic,
+			BaseURL:     "https://api.anthropic.com/v1",
+			KeyRequired: true,
+			Notice:      NoticeProviderTerms,
 		},
 		{
 			ID:          "groq",
