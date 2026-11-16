@@ -64,7 +64,7 @@ export function useFixedIncomeEntry(
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
 
-  const state = useBrokerages(draft.brokerageId, null);
+  const state = useBrokerages(draft.brokerageId, draft.cashAccountId);
   const payer = state.payer;
   const balanceRead = useQuery({
     ...balanceQuery(api, payer?.id ?? "", draft.appliedOn, "booked"),
@@ -101,6 +101,7 @@ export function useFixedIncomeEntry(
       {
         ...draft,
         brokerageId: brokerage?.id ?? null,
+        cashAccountId: payer?.id ?? null,
         currency: brokerage?.currency ?? base ?? "",
         indexId,
       },

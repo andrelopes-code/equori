@@ -55,9 +55,11 @@ export function FixedIncomeForm({
         errors={errors}
         scale={scale}
         onBrokerage={(id) => {
-          set({ brokerageId: id });
+          set({ brokerageId: id, cashAccountId: null });
         }}
-        onCash={() => undefined}
+        onCash={(id) => {
+          set({ cashAccountId: id });
+        }}
       />
 
       <FixedIncomeWhatFields

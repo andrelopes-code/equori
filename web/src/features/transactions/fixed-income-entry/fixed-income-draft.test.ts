@@ -56,6 +56,19 @@ describe("applicationBody", () => {
     });
   });
 
+  it("sends the chosen cash account of the brokerage", () => {
+    const result = applicationBody(draft({ cashAccountId: "cash-2" }), t);
+
+    expect(result).toMatchObject({ body: { cash_account_id: "cash-2" } });
+  });
+
+  it("starts with no cash account and no currency", () => {
+    const empty = emptyFixedIncomeDraft(APPLICATION, BROKERAGE, "2026-03-02");
+
+    expect(empty.cashAccountId).toBeNull();
+    expect(empty.currency).toBe("");
+  });
+
   it("sends a fixed rate as the spread with no index", () => {
     const result = applicationBody(
       draft({ returnKind: "fixed", percent: "12" }),

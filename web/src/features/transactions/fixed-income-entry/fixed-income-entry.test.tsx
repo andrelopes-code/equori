@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
-import { brokerID, investmentRoutes } from "@/testing/investment-api";
+import { brokerID, cashID, investmentRoutes } from "@/testing/investment-api";
 import { renderApp } from "@/testing/render-app";
 
 const path = `/transactions/new?kind=fixed_income&brokerage_id=${brokerID}`;
@@ -114,6 +114,7 @@ describe("fixed income entry", () => {
     expect(sent[0]).toEqual({
       application_id: anyUuid,
       brokerage_id: brokerID,
+      cash_account_id: cashID,
       applied_on: anyDate,
       amount: { amount: 100000, currency: "BRL" },
       contract: {
@@ -144,6 +145,7 @@ describe("fixed income entry", () => {
     expect(sent[0]).toEqual({
       application_id: anyUuid,
       brokerage_id: brokerID,
+      cash_account_id: cashID,
       applied_on: anyDate,
       amount: { amount: 50000, currency: "BRL" },
       instrument: owned.code,
