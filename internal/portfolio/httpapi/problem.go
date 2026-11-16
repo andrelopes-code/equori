@@ -106,6 +106,17 @@ func contributionProblem(err error) (problem.Details, bool) {
 
 func rangeProblem(err error) (problem.Details, bool) {
 	switch {
+	case errors.Is(err, app.ErrInvalidEventRange):
+		d := problem.New(
+			http.StatusUnprocessableEntity,
+			"validation_failed",
+			"from must not be after to, and the range must not exceed 400 days",
+		)
+		d.Errors = []problem.FieldError{
+			{Field: "to", Message: "must be on or after from and at most 400 days after it"},
+		}
+
+		return d, true
 	case errors.Is(err, app.ErrInvalidReturnRange):
 		d := problem.New(
 			http.StatusBadRequest,

@@ -45,6 +45,27 @@ func (e ContributionPlanStatus) Valid() bool {
 	}
 }
 
+// Defines values for FixedIncomeEventState.
+const (
+	Due      FixedIncomeEventState = "due"
+	Recorded FixedIncomeEventState = "recorded"
+	Upcoming FixedIncomeEventState = "upcoming"
+)
+
+// Valid indicates whether the value is a known member of the FixedIncomeEventState enum.
+func (e FixedIncomeEventState) Valid() bool {
+	switch e {
+	case Due:
+		return true
+	case Recorded:
+		return true
+	case Upcoming:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstrumentType.
 const (
 	InstrumentTypeCrypto            InstrumentType = "crypto"
@@ -241,6 +262,32 @@ type ContributionPreviewInput struct {
 type FieldError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
+}
+
+// FixedIncomeEvent defines model for FixedIncomeEvent.
+type FixedIncomeEvent struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+
+	// Date The payment date, adjusted to the next business day.
+	Date       openapi_types.Date `json:"date"`
+	Gross      *Money             `json:"gross,omitempty"`
+	Instrument string             `json:"instrument"`
+
+	// Kind interest, amortization or maturity.
+	Kind     string `json:"kind"`
+	Quantity Money  `json:"quantity"`
+
+	// RateMissing The rate of the index is not published, so gross is absent.
+	RateMissing bool                  `json:"rate_missing"`
+	State       FixedIncomeEventState `json:"state"`
+}
+
+// FixedIncomeEventState defines model for FixedIncomeEvent.State.
+type FixedIncomeEventState string
+
+// FixedIncomeEventList defines model for FixedIncomeEventList.
+type FixedIncomeEventList struct {
+	Items []FixedIncomeEvent `json:"items"`
 }
 
 // IncomeEvent defines model for IncomeEvent.
@@ -531,6 +578,12 @@ type TagName = string
 
 // Year defines model for Year.
 type Year = int
+
+// ListFixedIncomeEventsParams defines parameters for ListFixedIncomeEvents.
+type ListFixedIncomeEventsParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
 
 // ListIncomeEventsParams defines parameters for ListIncomeEvents.
 type ListIncomeEventsParams struct {

@@ -34,6 +34,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listRealizedResults))
 	mux.HandleFunc("GET "+BaseURL+"/income-events",
 		httpserver.Handle(s.errs, http.StatusOK, s.listIncomeEvents))
+	mux.HandleFunc("GET "+BaseURL+"/fixed-income-events",
+		httpserver.Handle(s.errs, http.StatusOK, s.listFixedIncomeEvents))
 	mux.HandleFunc("GET "+BaseURL+"/investment-income-types",
 		httpserver.Handle(s.errs, http.StatusOK, s.listInvestmentIncomeTypes))
 	mux.HandleFunc("GET "+BaseURL+"/reports/return",

@@ -171,3 +171,30 @@ func (p marketPort) rates(
 
 	return out, nil
 }
+
+func (p marketPort) Coupons(ctx context.Context, code money.Currency) ([]app.Coupon, error) {
+	cs, err := p.md.Coupons(ctx, string(code))
+	if errors.Is(err, marketdata.ErrNoTerms) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]app.Coupon, len(cs))
+	for i, c := range cs {
+		out[i] = app.Coupon(c)
+	}
+
+	return out, nil
+}
+
+func (p marketPort) Maturity(ctx context.Context, code money.Currency) (time.Time, bool, error) {
+	t, err := p.md.Terms(ctx, string(code))
+	if errors.Is(err, marketdata.ErrNoTerms) {
+		return time.Time{}, false, nil
+	}
+
+	return t.MaturesOn, err == nil, err
+}

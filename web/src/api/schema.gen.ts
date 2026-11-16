@@ -3860,6 +3860,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/fixed-income-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Payments dated in a range of the fixed income securities the book holds (A236 FC17).
+         * @description Interest, amortization and maturity events with their gross amount and state. 422 validation_failed on field to when to is before from or the range exceeds 400 days.
+         */
+        get: operations["listFixedIncomeEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/investment-income-types": {
         parameters: {
             query?: never;
@@ -7672,6 +7692,27 @@ export interface components {
              */
             to: string;
             items: components["schemas"]["IncomeEvent"][];
+        };
+        FixedIncomeEventList: {
+            items: components["schemas"]["FixedIncomeEvent"][];
+        };
+        FixedIncomeEvent: {
+            /** Format: uuid */
+            account_id: string;
+            instrument: string;
+            /**
+             * Format: date
+             * @description The payment date, adjusted to the next business day.
+             */
+            date: string;
+            /** @description interest, amortization or maturity. */
+            kind: string;
+            quantity: components["schemas"]["Money"];
+            gross?: components["schemas"]["Money"];
+            /** @description The rate of the index is not published, so gross is absent. */
+            rate_missing: boolean;
+            /** @enum {string} */
+            state: "upcoming" | "due" | "recorded";
         };
         ContributionPlan: {
             amount?: components["schemas"]["Money"];
@@ -14839,6 +14880,32 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+        };
+    };
+    listFixedIncomeEvents: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FixedIncomeEventList"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     listInvestmentIncomeTypes: {

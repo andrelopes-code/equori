@@ -92,6 +92,11 @@ type MarketData interface {
 		ctx context.Context,
 		code money.Currency,
 	) (first, last *time.Time, stale bool, err error)
+	// Coupons returns the per-unit coupon of each payment of a fixed income instrument, in date
+	// order (A236 FC8).
+	Coupons(ctx context.Context, code money.Currency) ([]Coupon, error)
+	// Maturity returns the maturity date of the terms of code; false when it has none.
+	Maturity(ctx context.Context, code money.Currency) (time.Time, bool, error)
 }
 
 // Repository stores the portfolio tables; postgres/ implements it.
