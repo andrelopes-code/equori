@@ -158,10 +158,6 @@ var uncoveredFields = map[string][]string{
 		"expected_version",
 		"income",
 	}, // expected_version is the version the preview read; the fields of income are flat inputs
-	"createAccount": {
-		"color",
-		"icon",
-	}, // color and icon are visual (-visual)
 	"createBalanceAssertion": {
 		"source",
 	}, // the tool records source manual
@@ -180,8 +176,7 @@ var uncoveredFields = map[string][]string{
 	}, // card_account_id is from_account_id and installment_count is installments; first_statement, installment_amounts and interest are not offered
 	"createInstitution": {
 		"code",
-		"identifier",
-	}, // code and identifier are visual (-visual)
+	}, // code is not offered; the identifier is read as scheme and identifier
 	"createSchedule": {
 		"calendar",
 		"recurrence",

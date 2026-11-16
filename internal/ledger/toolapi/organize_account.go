@@ -21,6 +21,11 @@ func (c organizeCall) planUpdateAccount(
 		return nil, err
 	}
 
+	color, icon, err := c.appearance()
+	if err != nil {
+		return nil, err
+	}
+
 	a, err := c.svc.Account(ctx, c.booksID, c.accountID)
 	if err != nil {
 		return nil, err
@@ -46,6 +51,7 @@ func (c organizeCall) planUpdateAccount(
 	}
 
 	c.patchSettings(pv, &patch, a)
+	patchAppearance(pv, &patch, a, color, icon)
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		updated, err := c.svc.UpdateAccount(ctx, c.booksID, a.ID, patch)
@@ -67,6 +73,8 @@ func (c organizeCall) checkUpdateFields() error {
 		"opened_on",
 		"yield_mode",
 		"excluded_from_liquidity",
+		"color",
+		"icon",
 	)
 	if err != nil {
 		return err
@@ -76,7 +84,7 @@ func (c organizeCall) checkUpdateFields() error {
 		!c.settingsGiven() {
 		return tool.InvalidArgument(
 			"name",
-			"one of name, parent_id, institution_id, opened_on, yield_mode or excluded_from_liquidity is required for update_account",
+			"one of name, parent_id, institution_id, opened_on, yield_mode, excluded_from_liquidity, color or icon is required for update_account",
 		)
 	}
 
@@ -84,7 +92,8 @@ func (c organizeCall) checkUpdateFields() error {
 }
 
 func (c organizeCall) settingsGiven() bool {
-	return c.given["opened_on"] || c.given["yield_mode"] || c.given["excluded_from_liquidity"]
+	return c.given["opened_on"] || c.given["yield_mode"] || c.given["excluded_from_liquidity"] ||
+		c.given["color"] || c.given["icon"]
 }
 
 // patchSettings sets the opening date, the yield mode and the liquidity flag that the call gave.

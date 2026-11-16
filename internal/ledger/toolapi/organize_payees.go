@@ -13,12 +13,29 @@ func (c organizeCall) planCreatePayeeOrInstitution(
 ) (organizeRun, error) {
 	text := tool.TextValue
 
-	if err := c.check([]string{"name"}); err != nil {
+	var optional []string
+	if c.in.Action == "create_institution" {
+		optional = []string{"scheme", "identifier"}
+	}
+
+	if err := c.check([]string{"name"}, optional...); err != nil {
+		return nil, err
+	}
+
+	ident, err := c.institutionIdentifier()
+	if err != nil {
 		return nil, err
 	}
 
 	pv.Target = c.in.Name
 	pv.Changes = []tool.Change{{Field: "name", After: text(c.in.Name)}}
+
+	if ident != (app.InstitutionIdentifier{}) {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "identifier", After: text(identifierText(ident))},
+		)
+	}
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		if c.in.Action == "create_payee" {
@@ -31,7 +48,11 @@ func (c organizeCall) planCreatePayeeOrInstitution(
 			}, err
 		}
 
-		i, err := c.svc.CreateInstitution(ctx, c.booksID, app.Institution{Name: c.in.Name})
+		i, err := c.svc.CreateInstitution(
+			ctx,
+			c.booksID,
+			app.Institution{Name: c.in.Name, Identifier: ident},
+		)
 
 		return manageAccountsAndPayeesOut{Action: c.action, ID: i.ID.String(), Name: i.Name}, err
 	}, nil

@@ -55,4 +55,7 @@ var ChangeFields = []string{
 	"role",
 	"member",
 	"invitation",
+	"color",
+	"icon",
+	"identifier",
 }

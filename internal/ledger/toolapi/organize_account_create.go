@@ -18,6 +18,11 @@ func (c organizeCall) planCreateAccount(
 		return nil, err
 	}
 
+	color, icon, err := c.appearance()
+	if err != nil {
+		return nil, err
+	}
+
 	settings, err := c.svc.Settings(ctx, c.booksID)
 	if err != nil {
 		return nil, err
@@ -38,11 +43,15 @@ func (c organizeCall) planCreateAccount(
 		OpenedOn:      c.in.OpenedOn.Time,
 		YieldMode:     domain.YieldMode(c.in.YieldMode),
 	}
+	setAppearance(&a, color, icon)
+
 	pv.Target = c.in.Name
 
 	if err := c.describeNewAccount(ctx, pv, currency); err != nil {
 		return nil, err
 	}
+
+	pv.Changes = append(pv.Changes, newAppearanceChanges(color, icon)...)
 
 	return func() (manageAccountsAndPayeesOut, error) {
 		created, err := c.svc.CreateAccount(ctx, c.booksID, a)
@@ -69,6 +78,8 @@ func (c organizeCall) checkCreateFields() error {
 		"institution_id",
 		"opened_on",
 		"yield_mode",
+		"color",
+		"icon",
 	)
 }
 

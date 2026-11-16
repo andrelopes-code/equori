@@ -27,6 +27,7 @@ func (manageAccountsAndPayeesAction) Values() []string {
 		"rename_tag",
 		"merge_tag",
 		"delete_tag",
+		"set_institution_identifier",
 	}
 }
 
@@ -61,21 +62,26 @@ func (manageAccountsAndPayeesYield) Values() []string { return []string{"none", 
 type manageAccountsAndPayeesIn struct {
 	Action        manageAccountsAndPayeesAction `json:"action"                  jsonschema:"operation to propose"`
 	AccountID     string                        `json:"account_id,omitzero"     jsonschema:"account or category to change or merge, from list_accounts"`
-	Name          string                        `json:"name,omitzero"           jsonschema:"name of the new or renamed account, category, payee, institution or tag"`
-	Class         manageAccountsAndPayeesClass  `json:"class,omitzero"          jsonschema:"for create_account: class of the new account; income and expense create categories"`
+	Name          string                        `json:"name,omitzero"           jsonschema:"new or renamed name"`
+	Class         manageAccountsAndPayeesClass  `json:"class,omitzero"          jsonschema:"for create_account: class; income and expense create categories"`
 	Kind          manageAccountsAndPayeesKind   `json:"kind,omitzero"           jsonschema:"for create_account of an asset or liability: kind of account"`
-	Currency      string                        `json:"currency,omitzero"       jsonschema:"for create_account: ISO currency code; the base currency when absent; never an Investment code, which the first buy creates"`
+	Currency      string                        `json:"currency,omitzero"       jsonschema:"for create_account: ISO currency code, default the base currency"`
 	ParentID      string                        `json:"parent_id,omitzero"      jsonschema:"for create_account and update_account: parent account or category"`
-	InstitutionID string                        `json:"institution_id,omitzero" jsonschema:"for create_account, update_account and delete_institution: institution from list_payees_and_tags"`
+	InstitutionID string                        `json:"institution_id,omitzero" jsonschema:"institution from list_payees_and_tags"`
 	Date          tool.Date                     `json:"date,omitzero"           jsonschema:"for close_account: closing date; today when absent"`
-	IntoID        string                        `json:"into_id,omitzero"        jsonschema:"for merge_category and merge_payee: category or payee that remains"`
-	PayeeID       string                        `json:"payee_id,omitzero"       jsonschema:"for rename_payee and merge_payee: payee to change, from list_payees_and_tags"`
-	Tag           string                        `json:"tag,omitzero"            jsonschema:"for rename_tag, merge_tag and delete_tag: tag to change, from list_payees_and_tags"`
+	IntoID        string                        `json:"into_id,omitzero"        jsonschema:"for merge_category and merge_payee: the one that remains"`
+	PayeeID       string                        `json:"payee_id,omitzero"       jsonschema:"for rename_payee and merge_payee: payee from list_payees_and_tags"`
+	Tag           string                        `json:"tag,omitzero"            jsonschema:"tag from list_payees_and_tags"`
 	IntoTag       string                        `json:"into_tag,omitzero"       jsonschema:"for merge_tag: tag that remains"`
 
-	OpenedOn              tool.Date                    `json:"opened_on,omitzero"               jsonschema:"for create_account: opening date; for update_account: an earlier opening date"`
-	YieldMode             manageAccountsAndPayeesYield `json:"yield_mode,omitzero"              jsonschema:"for create_account and update_account: auto books the yield of the account"`
-	ExcludedFromLiquidity tool.OptionalBool            `json:"excluded_from_liquidity,omitzero" jsonschema:"for update_account: leave the account out of the liquidity indicator"`
+	OpenedOn              tool.Date                    `json:"opened_on,omitzero"               jsonschema:"opening date; update_account moves it earlier only"`
+	YieldMode             manageAccountsAndPayeesYield `json:"yield_mode,omitzero"              jsonschema:"for create_account and update_account: auto books the account's yield"`
+	ExcludedFromLiquidity tool.OptionalBool            `json:"excluded_from_liquidity,omitzero" jsonschema:"for update_account: leave the account out of liquidity"`
+
+	Color      tool.OptionalInt `json:"color,omitzero"      jsonschema:"for create_account and update_account: colour slot 1 to 8; 0 clears it"`
+	Icon       string           `json:"icon,omitzero"       jsonschema:"for create_account and update_account: icon key such as utensils; none clears it"`
+	Scheme     string           `json:"scheme,omitzero"     jsonschema:"for institution identifiers: scheme, given with identifier"`
+	Identifier string           `json:"identifier,omitzero" jsonschema:"for institution identifiers: code in the scheme; omit both to clear"`
 }
 
 type manageAccountsAndPayeesOut struct {
@@ -103,8 +109,8 @@ type organizeCall struct {
 func manageAccountsAndPayees(svc *app.Service) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_accounts_and_payees",
-		Description: "Proposes a change to accounts, categories, payees or institutions: create, rename or move an account or category, close or reopen it, merge a category or payee into another, create or rename a payee, create an institution, delete an institution no account uses, rename, merge or delete a tag. " +
-			"Use it when the user asks to organize accounts, categories, payees or tags. " +
+		Description: "Proposes a change to accounts, categories, payees, institutions or tags: create, rename, move, close, reopen, merge or delete them, set an account's colour and icon, or an institution's identifier. " +
+			"Use it to organize accounts, categories, payees or tags. " +
 			"Do not use it for card settings: manage_card does. " +
 			"Merging cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
@@ -200,6 +206,10 @@ func givenFields(in manageAccountsAndPayeesIn) map[string]bool {
 		"opened_on":               !in.OpenedOn.IsZero(),
 		"yield_mode":              in.YieldMode != "",
 		"excluded_from_liquidity": in.ExcludedFromLiquidity.Set,
+		"color":                   in.Color.Set,
+		"icon":                    in.Icon != "",
+		"scheme":                  in.Scheme != "",
+		"identifier":              in.Identifier != "",
 	}
 }
 
@@ -225,6 +235,8 @@ func (c organizeCall) plan(ctx context.Context, pv *tool.Preview) (organizeRun, 
 		return c.planMergeTag(ctx, pv)
 	case "delete_tag":
 		return c.planDeleteTag(ctx, pv)
+	case "set_institution_identifier":
+		return c.planSetInstitutionIdentifier(ctx, pv)
 	default:
 		return c.planMergePayee(ctx, pv)
 	}
@@ -256,22 +268,33 @@ func institutionName(
 	booksID int64,
 	id uuid.UUID,
 ) (string, error) {
+	i, err := institutionByID(ctx, svc, booksID, id)
+
+	return i.Name, err
+}
+
+func institutionByID(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	id uuid.UUID,
+) (app.Institution, error) {
 	all, err := allPages(
 		func(p page.Request[app.InstitutionKey]) ([]app.Institution, *app.InstitutionKey, error) {
 			return svc.ListInstitutions(ctx, booksID, p)
 		},
 	)
 	if err != nil {
-		return "", err
+		return app.Institution{}, err
 	}
 
 	for _, i := range all {
 		if i.ID == id {
-			return i.Name, nil
+			return i, nil
 		}
 	}
 
-	return "", app.ErrNotFound
+	return app.Institution{}, app.ErrNotFound
 }
 
 func payeeByID(

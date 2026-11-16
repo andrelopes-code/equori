@@ -1754,6 +1754,8 @@ export const catalogEn = {
   "assistant.action.manage_book.change_member_role": "Change a member role",
   "assistant.action.manage_book.remove_member": "Remove a member",
   "assistant.action.manage_book.delete_invitation": "Revoke an invitation",
+  "assistant.action.manage_accounts_and_payees.set_institution_identifier":
+    "Set institution identifier",
   "assistant.action.manage_occurrence.realize": "Link payment to occurrence",
   "assistant.action.manage_occurrence.skip": "Skip occurrence",
   "assistant.action.manage_occurrence.move": "Move occurrence",
@@ -1836,6 +1838,9 @@ export const catalogEn = {
   "assistant.field.role": "Role",
   "assistant.field.member": "Member",
   "assistant.field.invitation": "Invitation",
+  "assistant.field.color": "Colour",
+  "assistant.field.icon": "Icon",
+  "assistant.field.identifier": "Identifier",
   "assistant.body.from": "From",
   "assistant.body.to": "To",
   "assistant.body.uncategorized": "Uncategorized",

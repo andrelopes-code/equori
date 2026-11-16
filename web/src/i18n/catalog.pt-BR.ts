@@ -1775,6 +1775,8 @@ export const catalogPtBR: Catalog = {
     "Alterar o papel de um membro",
   "assistant.action.manage_book.remove_member": "Remover um membro",
   "assistant.action.manage_book.delete_invitation": "Revogar um convite",
+  "assistant.action.manage_accounts_and_payees.set_institution_identifier":
+    "Definir identificador da instituição",
   "assistant.action.manage_occurrence.realize":
     "Vincular pagamento à ocorrência",
   "assistant.action.manage_occurrence.skip": "Pular ocorrência",
@@ -1862,6 +1864,9 @@ export const catalogPtBR: Catalog = {
   "assistant.field.role": "Papel",
   "assistant.field.member": "Membro",
   "assistant.field.invitation": "Convite",
+  "assistant.field.color": "Cor",
+  "assistant.field.icon": "Ícone",
+  "assistant.field.identifier": "Identificador",
   "assistant.body.from": "De",
   "assistant.body.to": "Para",
   "assistant.body.uncategorized": "Sem categoria",

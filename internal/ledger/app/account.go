@@ -24,6 +24,9 @@ type AccountPatch struct {
 	YieldMode             *domain.YieldMode
 	ExcludedFromLiquidity *bool
 	OpenedOn              *time.Time
+	// Color is a theme data slot 1..8, 0 clears it; Icon is a key of domain.AccountIcons, "" clears it.
+	Color *int
+	Icon  *string
 }
 
 func (s *Service) CreateAccount(
@@ -31,6 +34,10 @@ func (s *Service) CreateAccount(
 	booksID int64,
 	a domain.Account,
 ) (domain.Account, error) {
+	if err := domain.ValidateIcon(a.Icon); err != nil {
+		return domain.Account{}, err
+	}
+
 	a.BooksID = booksID
 	if a.OpenedOn.IsZero() {
 		a.OpenedOn = earliestDate
@@ -130,6 +137,18 @@ func applyAccountPatch(a *domain.Account, p AccountPatch) error {
 		a.ExcludedFromLiquidity = *p.ExcludedFromLiquidity
 	}
 
+	if p.Color != nil {
+		a.Color = *p.Color
+	}
+
+	if p.Icon != nil {
+		if err := domain.ValidateIcon(*p.Icon); err != nil {
+			return err
+		}
+
+		a.Icon = *p.Icon
+	}
+
 	// A210: a later opening date could strand postings before it.
 	if p.OpenedOn != nil && p.OpenedOn.After(a.OpenedOn) {
 		return validationError("opened_on", "can only move earlier")
@@ -150,6 +169,10 @@ func (s *Service) SetAppearance(
 	color int,
 	icon string,
 ) (domain.Account, error) {
+	if err := domain.ValidateIcon(icon); err != nil {
+		return domain.Account{}, err
+	}
+
 	var updated domain.Account
 	err := s.repo.InTx(ctx, func(r Repository) error {
 		a, err := r.Account(ctx, booksID, id)
