@@ -397,3 +397,56 @@ func TestGetPortfolioToolContribution(t *testing.T) {
 		t.Fatalf("amount accepted by view positions: %s", r.Content)
 	}
 }
+
+// S510 through the tool.
+func TestGetPortfolioToolFixedIncomeEvents(t *testing.T) {
+	t.Parallel()
+	f := newFIFixture(t, "2026-06-30", nil)
+
+	var got struct {
+		FixedIncomeEvents []struct {
+			AccountName string      `json:"account_name"`
+			Instrument  string      `json:"instrument"`
+			Date        string      `json:"date"`
+			Kind        string      `json:"kind"`
+			Quantity    tool.Money  `json:"quantity"`
+			Gross       *tool.Money `json:"gross"`
+			State       string      `json:"state"`
+		} `json:"fixed_income_events"`
+	}
+	toolOutput(
+		t,
+		f.h,
+		"get_portfolio",
+		map[string]any{"view": "fixed_income_events", "from": "2026-06-01", "to": "2027-02-01"},
+		&got,
+	)
+
+	if len(got.FixedIncomeEvents) != 3 {
+		t.Fatalf("events = %+v", got.FixedIncomeEvents)
+	}
+
+	e := got.FixedIncomeEvents[0]
+	if e.AccountName != "XP CDB" || e.Instrument != fiCode || e.Date != "2026-07-06" ||
+		e.Kind != "interest" || e.Quantity.Amount != "10.000000" ||
+		e.Gross == nil || e.Gross.Amount != "602.06" || e.State != "upcoming" {
+		t.Errorf("first event = %+v", e)
+	}
+
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"get_portfolio",
+			map[string]any{"view": "fixed_income_events", "from": "2026-01-01", "to": "2027-02-06"},
+		),
+		"invalid_arguments",
+		"to",
+	)
+	f.h.ExpectToolError(
+		f.h.Tool(
+			"get_portfolio",
+			map[string]any{"view": "fixed_income_events", "from": "2026-01-01"},
+		),
+		"invalid_arguments",
+		"to",
+	)
+}

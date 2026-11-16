@@ -19,6 +19,7 @@ func (getPortfolioView) Values() []string {
 		"income_types",
 		"subtypes",
 		"contribution",
+		"fixed_income_events",
 	}
 }
 
@@ -46,8 +47,8 @@ type getPortfolioIn struct {
 	Date           tool.Date                  `json:"date,omitzero"            jsonschema:"for positions, allocation and net_worth: valuation date; today when absent"`
 	By             getPortfolioBy             `json:"by,omitzero"              jsonschema:"for allocation: grouping"`
 	AccountID      string                     `json:"account_id,omitzero"      jsonschema:"for return: account or brokerage from list_accounts"`
-	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return: first date"`
-	To             tool.Date                  `json:"to,omitzero"              jsonschema:"for return: last date"`
+	From           tool.Date                  `json:"from,omitzero"            jsonschema:"for return and fixed_income_events: first date"`
+	To             tool.Date                  `json:"to,omitzero"              jsonschema:"for return and fixed_income_events: last date"`
 	InstrumentType getPortfolioInstrumentType `json:"instrument_type,omitzero" jsonschema:"for subtypes: instrument type"`
 	Amount         string                     `json:"amount,omitzero"          jsonschema:"for contribution: amount to contribute as a decimal in the base currency, such as 4000.00; absent returns the saved plan without a split"`
 }
@@ -133,6 +134,8 @@ type getPortfolioOut struct {
 	Subtypes    []string       `json:"subtypes,omitzero"`
 
 	Contribution contributionView `json:"contribution,omitzero" jsonschema:"for contribution: the saved target split valued today, with the split of amount when given"`
+
+	FixedIncomeEvents []fixedIncomeEventView `json:"fixed_income_events,omitzero" jsonschema:"for fixed_income_events: interest, amortization and maturity payments dated in the range, with their state"`
 }
 
 func getPortfolio(
@@ -182,6 +185,8 @@ func validatePortfolioIn(in getPortfolioIn) error {
 		}
 	case "return":
 		err = required(name, fields, "account_id", "from", "to")
+	case "fixed_income_events":
+		err = required(name, fields, "from", "to")
 	case "subtypes":
 		err = required(name, fields, "instrument_type")
 	case "contribution":
@@ -221,6 +226,8 @@ func portfolioView(
 		return returnView(ctx, svc, booksID, in)
 	case "contribution":
 		return contributionResult(ctx, svc, booksID, in)
+	case "fixed_income_events":
+		return fixedIncomeEventsView(ctx, svc, names, booksID, in)
 	case "income_types":
 		types, err := svc.IncomeTypes(ctx, booksID)
 		return getPortfolioOut{IncomeTypes: nonNil(types)}, err
@@ -283,72 +290,6 @@ func returnView(
 		Reason:    r.UnavailableReason,
 		Excluded:  excludedViewOf(r.Excluded),
 	}, nil
-}
-
-func excludedViewOf(e *app.Excluded) excludedView {
-	if e == nil {
-		return excludedView{}
-	}
-
-	part := func(t *app.ExcludedTotal) excludedPartView {
-		if t == nil {
-			return excludedPartView{}
-		}
-
-		return excludedPartView{Amount: tool.MoneyOf(t.Amount), Categories: t.Categories}
-	}
-
-	return excludedView{Income: part(e.Income), Expense: part(e.Expense)}
-}
-
-func inflationOf(i *app.Inflation) inflationView {
-	if i == nil {
-		return inflationView{}
-	}
-
-	return inflationView{
-		Index:    i.Index,
-		From:     i.From.Format(time.DateOnly),
-		Until:    i.Until.Format(time.DateOnly),
-		IndexBP:  i.IndexBP,
-		ReturnBP: i.ReturnBP,
-		RealBP:   i.RealBP,
-	}
-}
-
-func benchmarkOf(b *app.Benchmark) benchmarkView {
-	if b == nil {
-		return benchmarkView{}
-	}
-
-	return benchmarkView{
-		Index:     b.Index,
-		From:      b.From.Format(time.DateOnly),
-		Until:     b.Until.Format(time.DateOnly),
-		ReturnBP:  valueOf(b.ReturnBP),
-		IndexBP:   b.IndexBP,
-		PercentBP: valueOf(b.PercentBP),
-
-		AnnualBP:      valueOf(b.AnnualBP),
-		IndexAnnualBP: valueOf(b.IndexAnnualBP),
-		ExcessBP:      valueOf(b.ExcessBP),
-		Days:          b.Days,
-		Skipped:       b.Skipped,
-
-		Credits:        b.Credits,
-		Restarted:      b.Restarted,
-		StartedLate:    b.StartedLate,
-		PercentErrorBP: valueOf(b.PercentErrorBP),
-	}
-}
-
-// valueOf is the integer p points to, or 0; a tool schema has no null (ADR 012 T4).
-func valueOf(p *int) int {
-	if p == nil {
-		return 0
-	}
-
-	return *p
 }
 
 func nonNil(s []string) []string {

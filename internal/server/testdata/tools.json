@@ -3527,7 +3527,8 @@
             "return",
             "income_types",
             "subtypes",
-            "contribution"
+            "contribution",
+            "fixed_income_events"
           ]
         },
         "date": {
@@ -3550,12 +3551,12 @@
         },
         "from": {
           "type": "string",
-          "description": "for return: first date",
+          "description": "for return and fixed_income_events: first date",
           "format": "date"
         },
         "to": {
           "type": "string",
-          "description": "for return: last date",
+          "description": "for return and fixed_income_events: last date",
           "format": "date"
         },
         "instrument_type": {
@@ -4372,6 +4373,78 @@
             "missing"
           ],
           "additionalProperties": false
+        },
+        "fixed_income_events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "account_name": {
+                "type": "string"
+              },
+              "instrument": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "quantity": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "gross": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "rate_missing": {
+                "type": "boolean"
+              },
+              "state": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "account_name",
+              "instrument",
+              "date",
+              "kind",
+              "quantity",
+              "state"
+            ],
+            "additionalProperties": false
+          },
+          "description": "for fixed_income_events: interest, amortization and maturity payments dated in the range, with their state"
         }
       },
       "additionalProperties": false
