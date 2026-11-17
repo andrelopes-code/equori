@@ -3766,6 +3766,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budget-buckets/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every version of the income bucket method, by start month ascending (income buckets A240). */
+        get: operations["getBudgetBucketVersions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/budget-buckets/versions/{from}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete the version of the income bucket method that starts in a month; its months fall to the version before it (A240). */
+        delete: operations["deleteBudgetBucketVersion"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/budget-buckets/history": {
         parameters: {
             query?: never;
@@ -7394,6 +7428,9 @@ export interface components {
         BudgetBucketVersion: {
             from: string;
             buckets: components["schemas"]["BudgetBucket"][];
+        };
+        BudgetBucketVersions: {
+            versions: components["schemas"]["BudgetBucketVersion"][];
         };
         BudgetBucketHistory: {
             currency: string;
@@ -14880,6 +14917,52 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBudgetBucketVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetBucketVersions"];
+                };
+            };
+            401: components["responses"]["Problem"];
+        };
+    };
+    deleteBudgetBucketVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The first month of the version. */
+                from: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };

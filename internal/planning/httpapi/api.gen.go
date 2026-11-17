@@ -240,6 +240,11 @@ type BudgetBucketVersion struct {
 	From    string         `json:"from"`
 }
 
+// BudgetBucketVersions defines model for BudgetBucketVersions.
+type BudgetBucketVersions struct {
+	Versions []BudgetBucketVersion `json:"versions"`
+}
+
 // BudgetBuckets defines model for BudgetBuckets.
 type BudgetBuckets struct {
 	Buckets []BudgetBucket `json:"buckets"`

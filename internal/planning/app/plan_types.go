@@ -26,8 +26,10 @@ type Plan struct {
 	Rows                                     []domain.PlanRow
 	Prices                                   []Price
 
-	// Buckets is the book's bucket method; nil without one (A229, A230).
+	// Buckets is the book's bucket method; nil without one (A229, A230). BucketsFrom is the
+	// start month of its version.
 	Buckets                      []PlanBucket
+	BucketsFrom                  time.Time
 	OutsidePlanned, OutsideSpent int64
 }
 

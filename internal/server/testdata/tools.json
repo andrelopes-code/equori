@@ -1789,6 +1789,9 @@
                 ],
                 "additionalProperties": false
               }
+            },
+            "buckets_from": {
+              "type": "string"
             }
           },
           "required": [
@@ -1890,6 +1893,41 @@
             "required": [
               "month",
               "received",
+              "buckets"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "buckets": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "share_bp": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "share_bp"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "from",
               "buckets"
             ],
             "additionalProperties": false

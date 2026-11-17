@@ -42,7 +42,7 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 			"savings_target_bp",
 		)
 	case "save_buckets":
-		err = required(name, fields, []string{"buckets"})
+		err = required(name, fields, []string{"buckets"}, "month")
 	}
 
 	return err

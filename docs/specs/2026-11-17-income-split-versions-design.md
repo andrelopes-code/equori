@@ -90,7 +90,7 @@ The history of M (A233) reads each month of its window through the method of tha
   - `getBudgetBucketHistory`: `BudgetBucketHistory` replaces `buckets` by `methods`; `BudgetBucketMonth` adds `from` (optional).
   - `getBudgetBucketEntries` (`GET /budget-buckets/entries?month=YYYY-MM&bucket=<id>`, `read`): `BudgetBucketEntries` with `currency`, `total` and `entries` (A243).
 - **Ledger.** `ledger.OwnCategoryPostings` returns the non-voided own postings of the categories of a class booked in a period, each with its transaction id, category, booked date, weight, description and payee name.
-- **Tools.** `manage_budget_or_goal`: `save_buckets` accepts `from` and an `id` per bucket. `get_budgets_and_goals`: kind `split` reads each month through its method and adds `from` to each month; kind `buckets` adds `from` and the list `versions` (`from` and each bucket's name and share).
+- **Tools.** `manage_budget_or_goal`: `save_buckets` reads the start of the version from its input `month`, the current month when absent, and continues the bucket of the method of that month that holds the same name, ignoring case; the tool catalog has no room for two new inputs. `get_budgets_and_goals`: kind `split` reads each month through its method, adds `from` to each month and returns the list `versions` (`from` and each bucket's name and share); kind `plan` adds `buckets_from`.
 
 ## 5. Web
 

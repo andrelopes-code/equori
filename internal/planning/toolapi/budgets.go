@@ -71,6 +71,8 @@ type planView struct {
 	Rows           []planRowView `json:"rows"`
 	// Buckets is the income split with each bucket's target, planned and spent amounts (A230).
 	Buckets []planBucketView `json:"buckets,omitzero"`
+	// BucketsFrom is the start month of the version that holds Buckets (A240).
+	BucketsFrom string `json:"buckets_from,omitzero"`
 }
 
 type getBudgetsAndGoalsOut struct {
@@ -79,6 +81,8 @@ type getBudgetsAndGoalsOut struct {
 	Goals   []goalView   `json:"goals"`
 	Plan    planView     `json:"plan,omitzero"`
 	Split   []splitMonth `json:"split,omitzero"`
+	// Versions lists every version of the bucket method with kind split (A240).
+	Versions []bucketVersionView `json:"versions,omitzero"`
 }
 
 // toPlanView leaves a figure the plan does not have at its zero value, which the output omits.
@@ -129,6 +133,10 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 
 	if out.Buckets, err = planBucketViews(p, accounts); err != nil {
 		return planView{}, err
+	}
+
+	if len(out.Buckets) > 0 {
+		out.BucketsFrom = p.BucketsFrom.Format(monthLayout)
 	}
 
 	return out, nil
@@ -215,6 +223,11 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 
 		if in.Kind == "split" {
 			out.Split, err = splitMonths(ctx, svc, booksID, month)
+			if err != nil {
+				return out, err
+			}
+
+			out.Versions, err = bucketVersionViews(ctx, svc, booksID)
 
 			return out, err
 		}

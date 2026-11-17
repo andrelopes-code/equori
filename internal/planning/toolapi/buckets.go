@@ -84,7 +84,12 @@ func loadBuckets(
 	accounts map[uuid.UUID]Account,
 	p *budgetGoalPlan,
 ) error {
-	stored, err := svc.BudgetBuckets(ctx, booksID, nil)
+	var month *time.Time
+	if !p.month.IsZero() {
+		month = &p.month
+	}
+
+	stored, err := svc.BudgetBuckets(ctx, booksID, month)
 	if err != nil {
 		return err
 	}
@@ -93,7 +98,26 @@ func loadBuckets(
 		p.storedNames = append(p.storedNames, b.Name)
 	}
 
-	return decodeBuckets(in, accounts, p)
+	if err := decodeBuckets(in, accounts, p); err != nil {
+		return err
+	}
+
+	continueBuckets(p.buckets, stored.Buckets)
+
+	return nil
+}
+
+// continueBuckets gives each bucket the id of the stored bucket with the same name, ignoring
+// case and surrounding spaces; the tool continues a bucket by its name.
+func continueBuckets(buckets, stored []domain.Bucket) {
+	byName := make(map[string]uuid.UUID, len(stored))
+	for _, b := range stored {
+		byName[strings.ToLower(strings.TrimSpace(b.Name))] = b.ID
+	}
+
+	for i := range buckets {
+		buckets[i].ID = byName[strings.ToLower(strings.TrimSpace(buckets[i].Name))]
+	}
 }
 
 // decodeBuckets reads the bucket method of a save_buckets call into p; the service checks it.
@@ -132,6 +156,13 @@ func previewBuckets(pv *tool.Preview, p budgetGoalPlan) {
 		}
 
 		return
+	}
+
+	if !p.month.IsZero() {
+		pv.Changes = append(
+			pv.Changes,
+			tool.Change{Field: "date", After: tool.DateValue(p.month)},
+		)
 	}
 
 	for i, b := range p.buckets {
@@ -241,4 +272,41 @@ func methodBuckets(methods []domain.Method, from time.Time) []domain.Bucket {
 	}
 
 	return nil
+}
+
+// bucketVersionView is a version of the bucket method: its start month and each bucket's share.
+type bucketVersionView struct {
+	From    string `json:"from"`
+	Buckets []struct {
+		Name    string `json:"name"`
+		ShareBP int    `json:"share_bp"`
+	} `json:"buckets"`
+}
+
+// bucketVersionViews returns every version of the bucket method by start month; nil without one.
+func bucketVersionViews(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+) ([]bucketVersionView, error) {
+	versions, err := svc.BucketVersions(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	var out []bucketVersionView
+
+	for _, v := range versions {
+		view := bucketVersionView{From: v.From.Format(monthLayout)}
+		for _, b := range v.Buckets {
+			view.Buckets = append(view.Buckets, struct {
+				Name    string `json:"name"`
+				ShareBP int    `json:"share_bp"`
+			}{b.Name, b.ShareBP})
+		}
+
+		out = append(out, view)
+	}
+
+	return out, nil
 }

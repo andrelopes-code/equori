@@ -6579,6 +6579,46 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /budget-buckets/versions:
+    get:
+      tags: [planning]
+      operationId: getBudgetBucketVersions
+      x-book-role: read
+      summary: Every version of the income bucket method, by start month ascending (income buckets A240).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetBucketVersions"
+        "401":
+          $ref: "#/components/responses/Problem"
+  /budget-buckets/versions/{from}:
+    delete:
+      tags: [planning]
+      operationId: deleteBudgetBucketVersion
+      x-book-role: write
+      summary: Delete the version of the income bucket method that starts in a month; its months fall to the version before it (A240).
+      parameters:
+        - name: from
+          in: path
+          required: true
+          description: The first month of the version.
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+      responses:
+        "204":
+          description: Deleted.
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /budget-buckets/history:
     get:
       tags: [planning]
@@ -13422,6 +13462,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BudgetBucket"
+    BudgetBucketVersions:
+      type: object
+      required: [versions]
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetBucketVersion"
     BudgetBucketHistory:
       type: object
       required: [currency, methods, months]

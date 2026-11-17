@@ -165,6 +165,7 @@ func (s *Service) planBuckets(
 	}
 
 	method := found.Buckets
+	out.BucketsFrom = found.From
 
 	parents := make(map[uuid.UUID]uuid.UUID, len(categories))
 	for _, c := range categories {
