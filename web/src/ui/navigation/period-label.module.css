@@ -1,13 +1,22 @@
 @layer app {
-  /* The mark of the period that holds today, beside the label. Its box is always in the row,
-     so the label does not move when the mark goes out. */
+  /* The label of a period inside its trigger. The text stays centred in the trigger whether
+     the mark shows or not: the mark hangs before the text, out of the flow, and the box keeps
+     the same room on both sides for it. */
   .period-label {
     display: flex;
     align-items: center;
-    gap: var(--slotted-space-3);
+    padding-inline: var(--slotted-space-3);
   }
 
+  .text {
+    position: relative;
+  }
+
+  /* The mark of the period that holds today. */
   .mark {
+    position: absolute;
+    inset-block-start: calc(50% - 3px); /* literal: half of the 6 px dot */
+    inset-inline-end: calc(100% + var(--slotted-space-3));
     inline-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
     block-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
     border-radius: var(--slotted-radius-full);

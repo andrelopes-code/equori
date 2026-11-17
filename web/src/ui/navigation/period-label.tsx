@@ -17,12 +17,16 @@ interface PeriodLabelProps {
 export function PeriodLabel({ current, widest, children }: PeriodLabelProps) {
   return (
     <span className={styles["period-label"]}>
-      <span
-        className={styles.mark}
-        data-on={current ? "" : undefined}
-        aria-hidden="true"
-      />
-      <SteadyLabel widest={widest}>{children}</SteadyLabel>
+      <SteadyLabel widest={widest}>
+        <span className={styles.text}>
+          <span
+            className={styles.mark}
+            data-on={current ? "" : undefined}
+            aria-hidden="true"
+          />
+          {children}
+        </span>
+      </SteadyLabel>
     </span>
   );
 }

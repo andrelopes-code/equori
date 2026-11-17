@@ -63,9 +63,9 @@ describe("period control", () => {
       { fetch: fakeApi({}), today: "2026-10-17" },
     );
 
-    const label = screen.getByText("May 2026");
+    const label = screen.getByText("May 2026").closest("[data-widest]");
 
-    expect(label.getAttribute("data-widest")?.split("\n")).toContain(
+    expect(label?.getAttribute("data-widest")?.split("\n")).toContain(
       "September 2026",
     );
   });
