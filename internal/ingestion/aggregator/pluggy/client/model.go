@@ -131,6 +131,36 @@ type Bill struct {
 	MinimumPaymentAmount Decimal `json:"minimumPaymentAmount"`
 }
 
+// Investment is an investment of an item; only the fields the port reads.
+type Investment struct {
+	ID              string  `json:"id"`
+	Type            string  `json:"type"`
+	Subtype         string  `json:"subtype"`
+	Name            string  `json:"name"`
+	CurrencyCode    string  `json:"currencyCode"`
+	Balance         Decimal `json:"balance"`
+	Quantity        Decimal `json:"quantity"`
+	Date            string  `json:"date"`
+	DueDate         *string `json:"dueDate"`
+	IssueDate       *string `json:"issueDate"`
+	Issuer          string  `json:"issuer"`
+	IssuerCNPJ      string  `json:"issuerCNPJ"`
+	Rate            Decimal `json:"rate"`
+	RateType        string  `json:"rateType"`
+	FixedAnnualRate Decimal `json:"fixedAnnualRate"`
+}
+
+// InvestmentTransaction is a movement of an investment; TradeDate is the day it was traded
+// when it differs from Date.
+type InvestmentTransaction struct {
+	ID        string  `json:"id"`
+	Type      string  `json:"type"`
+	Date      string  `json:"date"`
+	TradeDate *string `json:"tradeDate"`
+	Quantity  Decimal `json:"quantity"`
+	Amount    Decimal `json:"amount"`
+}
+
 // Item statuses that allow a sync (P6 A43).
 const StatusUpdated = "UPDATED"
 
@@ -142,3 +172,6 @@ const (
 	SubtypeCard     = "CREDIT_CARD"
 	SubtypeReserve  = "RESERVED_BALANCE"
 )
+
+// TypeFixedIncome is the investment type the port reads.
+const TypeFixedIncome = "FIXED_INCOME"

@@ -80,6 +80,16 @@ type Aggregator interface {
 	Forget(integrationID uuid.UUID)
 }
 
+// InvestmentReader is the optional part of an Aggregator that reads investments (A236 FC27).
+type InvestmentReader interface {
+	Investments(
+		ctx context.Context,
+		integrationID uuid.UUID,
+		c domain.Credentials,
+		itemID string,
+	) ([]domain.ExternalInvestment, error)
+}
+
 // Ledger is the part of package ledger an import uses; the module root adapts it. Each call
 // is one database transaction of the ledger (ADR 002).
 type Ledger interface {

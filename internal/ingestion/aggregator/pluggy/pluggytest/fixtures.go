@@ -219,6 +219,39 @@ func (s *Server) RemoveTransaction(accountID, id string) {
 	)
 }
 
+// AddInvestment adds an investment to an item.
+func (s *Server) AddInvestment(itemID string, inv client.Investment) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.investments[itemID] = append(s.investments[itemID], inv)
+}
+
+// AddInvestmentTransaction adds a movement to an investment.
+func (s *Server) AddInvestmentTransaction(investmentID string, t client.InvestmentTransaction) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.movements[investmentID] = append(s.movements[investmentID], t)
+}
+
+// FailInvestments answers the investment list requests with status until it is called with 0.
+func (s *Server) FailInvestments(status int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.failInvest = status
+}
+
+// FailInvestmentTransactions answers the movement requests of an investment with status
+// until it is called again with 0.
+func (s *Server) FailInvestmentTransactions(investmentID string, status int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.failMoves[investmentID] = status
+}
+
 // FailNext answers the next n requests with status; 429 carries Retry-After: 7.
 func (s *Server) FailNext(status, n int) {
 	s.mu.Lock()

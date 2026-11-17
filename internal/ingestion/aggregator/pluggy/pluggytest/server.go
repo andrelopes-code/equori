@@ -31,10 +31,14 @@ type Server struct {
 	accounts     map[string][]client.Account
 	transactions map[string][]client.Transaction
 	bills        map[string][]client.Bill
+	investments  map[string][]client.Investment
+	movements    map[string][]client.InvestmentTransaction
 	requests     map[string]int
 	failStatus   int
 	failCount    int
 	failing      map[string]int // account id → status of its transaction requests
+	failInvest   int
+	failMoves    map[string]int // investment id → status of its movement requests
 	next         string
 	pageSize     int
 }
@@ -49,6 +53,9 @@ func New(t testing.TB, clientID, secret string) *Server {
 		accounts:     map[string][]client.Account{},
 		transactions: map[string][]client.Transaction{},
 		bills:        map[string][]client.Bill{},
+		investments:  map[string][]client.Investment{},
+		movements:    map[string][]client.InvestmentTransaction{},
+		failMoves:    map[string]int{},
 		requests:     map[string]int{},
 		failing:      map[string]int{},
 		pageSize:     500,
@@ -170,9 +177,35 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request, app string) {
 		)
 	case r.URL.Path == "/v2/transactions":
 		s.transactionPage(w, q)
+	case r.URL.Path == "/investments":
+		cursorPage(s, w, q, s.failInvest, s.investments[q.Get("itemId")])
+	case strings.HasPrefix(r.URL.Path, "/investments/"):
+		id := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/investments/"), "/transactions")
+		cursorPage(s, w, q, s.failMoves[id], s.movements[id])
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+// cursorPage answers a listing in the results and next shape, or status when it is not 0.
+func cursorPage[T any](s *Server, w http.ResponseWriter, q url.Values, status int, all []T) {
+	if status != 0 {
+		w.WriteHeader(status)
+		return
+	}
+
+	start, _ := strconv.Atoi(q.Get("after"))
+	end := min(start+s.pageSize, len(all))
+
+	var next *string
+	if end < len(all) {
+		v := q
+		v.Set("after", strconv.Itoa(end))
+		n := "?" + v.Encode()
+		next = &n
+	}
+
+	write(w, map[string]any{"results": nonNil(all[start:end]), "next": next})
 }
 
 func (s *Server) transactionPage(w http.ResponseWriter, q url.Values) {

@@ -272,14 +272,47 @@ func (s *Session) TransactionsCreatedSince(
 }
 
 func (s *Session) transactions(ctx context.Context, q url.Values) ([]Transaction, error) {
-	const label, path = "GET /v2/transactions", "/v2/transactions"
-	target := s.c.base.String() + path + "?" + q.Encode()
+	return listCursor[Transaction](ctx, s, "GET /v2/transactions", "/v2/transactions", q)
+}
 
-	var out []Transaction
+// Investments lists the investments of an item.
+func (s *Session) Investments(ctx context.Context, itemID string) ([]Investment, error) {
+	return listCursor[Investment](
+		ctx, s, "GET /investments", "/investments", url.Values{"itemId": {itemID}},
+	)
+}
+
+// InvestmentTransactions lists the movements of an investment.
+func (s *Session) InvestmentTransactions(
+	ctx context.Context,
+	investmentID string,
+) ([]InvestmentTransaction, error) {
+	return listCursor[InvestmentTransaction](
+		ctx,
+		s,
+		"GET /investments/{id}/transactions",
+		"/investments/"+url.PathEscape(investmentID)+"/transactions",
+		url.Values{},
+	)
+}
+
+// listCursor follows the cursor of a listing that answers results and next.
+func listCursor[T any](
+	ctx context.Context,
+	s *Session,
+	label, path string,
+	q url.Values,
+) ([]T, error) {
+	target := s.c.base.String() + path
+	if len(q) > 0 {
+		target += "?" + q.Encode()
+	}
+
+	var out []T
 	for {
 		var p struct {
-			Results []Transaction `json:"results"`
-			Next    *string       `json:"next"`
+			Results []T     `json:"results"`
+			Next    *string `json:"next"`
 		}
 		if err := s.c.do(ctx, http.MethodGet, label, target, s.key, nil, &p); err != nil {
 			return nil, err
