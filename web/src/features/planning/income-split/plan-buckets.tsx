@@ -47,8 +47,7 @@ export function PlanBuckets({
   outside,
 }: PlanBucketsProps) {
   const t = useT();
-  // "outside" opens the dialog on the categories without a bucket.
-  const [editing, setEditing] = useState<"split" | "outside" | null>(null);
+  const [editing, setEditing] = useState(false);
 
   return (
     <Section>
@@ -69,7 +68,7 @@ export function PlanBuckets({
             variant="outline"
             tone="secondary"
             onClick={() => {
-              setEditing("split");
+              setEditing(true);
             }}
           >
             {totals === undefined ? t("buckets.setUp") : t("buckets.edit")}
@@ -83,19 +82,18 @@ export function PlanBuckets({
           <PlanBucketsOutside
             count={outside}
             onPlace={() => {
-              setEditing("outside");
+              setEditing(true);
             }}
           />
         </SectionBody>
       )}
-      {editing !== null && (
+      {editing && (
         <BucketDialog
           stored={stored}
           entries={entries}
           month={month}
-          outsideFirst={editing === "outside"}
           onClose={() => {
-            setEditing(null);
+            setEditing(false);
           }}
         />
       )}

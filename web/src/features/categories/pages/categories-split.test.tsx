@@ -147,11 +147,10 @@ describe("Categories under an income split", () => {
       screen.getByRole("button", { name: catalogEn["buckets.manage"] }),
     );
     const dialog = await screen.findByRole("dialog");
-    // Fun has no bucket: the last entry of the bucket list counts it.
-    const unplaced = within(dialog).getByRole("button", {
-      name: new RegExp(`^${catalogEn["buckets.unplaced"]}`),
-    });
-    expect(unplaced).toHaveTextContent(catalogEn["buckets.count.one"]);
+    // Fun has no bucket: the status of the categories counts it (dialog spec A250).
+    expect(
+      within(dialog).getByText(catalogEn["buckets.unplaced.one"]),
+    ).toBeVisible();
 
     await userEvent.click(
       within(dialog).getByRole("button", {
@@ -177,7 +176,8 @@ describe("Categories under an income split", () => {
     });
   });
 
-  it("checks what goes in the chosen bucket", async () => {
+  // Dialog spec A250: a row per category, a radio per bucket.
+  it("gives a category the bucket of the column it is clicked in", async () => {
     const sent: unknown[] = [];
     await renderApp("/categories", { fetch: api(sent) });
     await screen.findByText("Needs");
@@ -185,25 +185,26 @@ describe("Categories under an income split", () => {
       screen.getByRole("button", { name: catalogEn["buckets.manage"] }),
     );
     const dialog = await screen.findByRole("dialog");
+    const radio = (category: string, bucket: string) =>
+      within(
+        within(dialog).getByRole("radiogroup", { name: category }),
+      ).getByRole("radio", { name: bucket });
 
-    // Needs is chosen first: Groceries follows Food and stays fixed while Food is in it.
-    const groceries = within(dialog).getByRole("checkbox", {
-      name: "Groceries",
-    });
-    expect(groceries).toBeChecked();
-    expect(groceries).toBeDisabled();
-    expect(
-      within(dialog).getByText(
-        catalogEn["buckets.follows"].replace("{name}", "Food"),
-      ),
-    ).toBeVisible();
+    // Groceries follows Food, which is in Needs.
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: catalogEn["buckets.matrix.open"].replace("{name}", "Food"),
+      }),
+    );
 
-    await userEvent.click(
-      within(dialog).getByRole("button", { name: /^Wants/ }),
-    );
-    await userEvent.click(
-      within(dialog).getByRole("checkbox", { name: "Fun" }),
-    );
+    expect(radio("Food", "Needs")).toBeChecked();
+    expect(radio("Groceries", "Needs")).toBeChecked();
+    expect(radio("Fun", catalogEn["buckets.unplaced"])).toBeChecked();
+
+    await userEvent.click(radio("Fun", "Wants"));
+
+    expect(radio("Fun", "Wants")).toBeChecked();
+
     await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["buckets.save"] }),
     );

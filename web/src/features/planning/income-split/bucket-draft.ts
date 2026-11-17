@@ -62,6 +62,8 @@ export const presets: Record<
   scratch: [{ name: "buckets.name.essentials", share: 10000 }],
 };
 
+export const presetNames: readonly PresetName[] = ["503020", "six", "scratch"];
+
 export const maxBuckets = 10;
 
 // The draft of a stored method: every root of the tree starts outside and every

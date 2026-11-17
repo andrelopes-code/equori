@@ -10,7 +10,6 @@ const RAW_GROUND = [
   "src/features/assistant/proposal/results.module.css",
   "src/features/categories/category-mark/category-avatar.module.css",
   "src/features/planning/budget-plan/budget-plan.module.css",
-  "src/features/planning/income-split/bucket-categories.module.css",
   "src/features/setup/pages/settings-page.module.css",
   "src/features/setup/previews/appearance-previews.module.css",
   "src/features/setup/studio/appearance-preview.module.css",

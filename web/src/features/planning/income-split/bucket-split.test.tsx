@@ -121,9 +121,13 @@ describe("Income split", () => {
       screen.getByRole("button", { name: catalogEn["buckets.outsideAction"] }),
     );
 
+    // Dialog spec A250: transport, leisure, health, pets, gifts and the shared fixture's
+    // Mercado are in no bucket.
     const dialog = await screen.findByRole("dialog");
     expect(
-      within(dialog).getByText(catalogEn["buckets.unplacedHint"]),
+      within(dialog).getByText(
+        catalogEn["buckets.unplaced.many"].replace("{count}", "6"),
+      ),
     ).toBeVisible();
   });
 
@@ -156,9 +160,12 @@ describe("Income split", () => {
     await userEvent.clear(share(0));
     await userEvent.type(share(0), "50");
 
+    // Dialog spec A249: 50% and 40% leave 10% missing.
     expect(
       within(dialog).getByText(
-        catalogEn["buckets.totalWrong"].replace("{total}", "90.0%"),
+        catalogEn["buckets.sum.missing"]
+          .replace("{total}", "90%")
+          .replace("{off}", "10%"),
       ),
     ).toBeVisible();
     expect(save).toBeDisabled();
@@ -193,6 +200,44 @@ describe("Income split", () => {
         ],
       });
     });
+  });
+
+  // Dialog spec A252: a book without buckets starts from a model.
+  it("fills the buckets from a model when the book has no split", async () => {
+    await renderApp(november, { fetch: budgetPlanApi(), today });
+    await userEvent.click(
+      await screen.findByRole("button", { name: catalogEn["buckets.setUp"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+
+    expect(
+      within(dialog).getByText(catalogEn["buckets.presets.title"]),
+    ).toBeVisible();
+    expect(
+      within(dialog).queryByRole("textbox", {
+        name: catalogEn["buckets.field.name"],
+      }),
+    ).toBeNull();
+
+    await userEvent.click(
+      within(dialog).getByRole("button", {
+        name: new RegExp(`^${catalogEn["buckets.preset.503020"]}`),
+      }),
+    );
+
+    const names = within(dialog)
+      .getAllByRole("textbox", { name: catalogEn["buckets.field.name"] })
+      .map((field) => (field as HTMLInputElement).value);
+    expect(names).toEqual([
+      catalogEn["buckets.name.needs"],
+      catalogEn["buckets.name.wants"],
+      catalogEn["buckets.name.savings"],
+    ]);
+    expect(
+      within(dialog).getByText(
+        catalogEn["buckets.sum.whole"].replace("{total}", "100%"),
+      ),
+    ).toBeVisible();
   });
 
   describe("with a version stored", () => {
