@@ -1487,6 +1487,8 @@ export const catalogEn = {
   "coverage.totalNote": "transactions in {month}",
   "month.previous": "Previous month",
   "month.next": "Next month",
+  "period.today": "Today",
+  "period.current": "{label}, current period",
   "categories.subtitle.categories":
     "Where the money of the month went, by category and group.",
   "categories.subtitle.rules":

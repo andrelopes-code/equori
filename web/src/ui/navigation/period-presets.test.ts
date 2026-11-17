@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  holdsToday,
   periodKind,
   periodLabel,
   periodPresets,
+  periodWidest,
   stepPeriod,
 } from "@/ui/navigation/period-presets";
 
@@ -81,7 +83,8 @@ describe("periodLabel", () => {
     ["2026-10-01", "2026-10-31", "Outubro de 2026"],
     ["2025-01-01", "2025-12-31", "2025"],
     ["2026-10-01", "2026-10-10", "1 out – 10 out"],
-    ["2025-12-20", "2026-01-05", "20/12/2025 – 05/01/2026"],
+    // PC5 of docs/specs/2026-11-17-period-controls-design.md: two-digit years.
+    ["2025-12-20", "2026-01-05", "20/12/25 – 05/01/26"],
   ])("names %s to %s as %s", (from, to, label) => {
     expect(periodLabel(from, to, "2026-10-21", "pt-BR")).toBe(label);
   });
@@ -124,5 +127,41 @@ describe("quarters", () => {
       from: "2025-10-01",
       to: "2025-12-31",
     });
+  });
+});
+
+describe("periodWidest", () => {
+  it("lists the twelve months of the year for a month", () => {
+    const widest = periodWidest("2026-10-01", "2026-10-31", "2026-10-17", "en");
+
+    expect(widest).toHaveLength(12);
+    expect(widest[0]).toBe("January 2026");
+    expect(widest[8]).toBe("September 2026");
+  });
+
+  it("lists a two-digit day in each month for a run of days", () => {
+    const widest = periodWidest("2026-10-01", "2026-10-10", "2026-10-17", "en");
+
+    expect(widest).toHaveLength(12);
+    expect(widest[8]).toBe(
+      periodLabel("2026-09-28", "2026-09-28", "2026-10-17", "en"),
+    );
+  });
+
+  it("lists nothing for a year", () => {
+    expect(
+      periodWidest("2026-01-01", "2026-12-31", "2026-10-17", "en"),
+    ).toEqual([]);
+  });
+});
+
+describe("holdsToday", () => {
+  it.each([
+    ["2026-10-01", "2026-10-31", "2026-10-01", true],
+    ["2026-10-01", "2026-10-31", "2026-10-31", true],
+    ["2026-10-01", "2026-10-31", "2026-11-01", false],
+    ["2026-10-01", "2026-10-31", "2026-09-30", false],
+  ])("%s to %s on %s is %s", (from, to, today, expected) => {
+    expect(holdsToday(from, to, today)).toBe(expected);
   });
 });

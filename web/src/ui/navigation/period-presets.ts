@@ -1,10 +1,14 @@
 import type { MessageKey } from "@/i18n/catalog.en";
 import {
-  formatDate,
+  formatDateShortYear,
   formatDayMonth,
   formatMonthTitle,
   shiftDate,
 } from "@/i18n/format";
+
+const MONTHS = Array.from({ length: 12 }, (_, index) =>
+  String(index + 1).padStart(2, "0"),
+);
 
 export interface PeriodPreset {
   key: string;
@@ -141,7 +145,8 @@ export function stepPeriod(
   }
 }
 
-// "Outubro de 2026", "2025", "1 out – 10 out"; a run outside this year writes its years.
+// "Outubro de 2026", "2025", "1 out – 10 out"; a run outside this year writes its years with
+// two digits ("28/12/25 – 26/01/26"), so the control fits the action row of a phone.
 export function periodLabel(
   from: string,
   to: string,
@@ -158,8 +163,41 @@ export function periodLabel(
       const year = today.slice(0, 4);
       const short = from.startsWith(year) && to.startsWith(year);
       const day = (iso: string) =>
-        short ? formatDayMonth(iso, locale) : formatDate(iso, locale);
+        short ? formatDayMonth(iso, locale) : formatDateShortYear(iso, locale);
       return `${day(from)} – ${day(to)}`;
     }
   }
+}
+
+// The labels a step can reach from this period, for a trigger that reserves the width of the
+// widest: the twelve months of the year, or a two-digit day in each month for a run of days.
+// A year always has four digits and reserves nothing.
+export function periodWidest(
+  from: string,
+  to: string,
+  today: string,
+  locale: string,
+): string[] {
+  const kind = periodKind(from, to);
+  if (kind === "year") return [];
+  if (kind === "month") return monthTitles(from.slice(0, 4), locale);
+
+  return MONTHS.map((month) =>
+    periodLabel(
+      `${from.slice(0, 4)}-${month}-28`,
+      `${to.slice(0, 4)}-${month}-28`,
+      today,
+      locale,
+    ),
+  );
+}
+
+// "Janeiro de 2026" to "Dezembro de 2026".
+export function monthTitles(year: string, locale: string): string[] {
+  return MONTHS.map((month) => formatMonthTitle(`${year}-${month}`, locale));
+}
+
+// ISO dates compare as text.
+export function holdsToday(from: string, to: string, today: string): boolean {
+  return from <= today && today <= to;
 }

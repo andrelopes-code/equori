@@ -252,6 +252,15 @@ export function formatDate(iso: string, locale: string): string {
   }).format(utcDate(iso));
 }
 
+// "28/12/25" / "12/28/25".
+export function formatDateShortYear(iso: string, locale: string): string {
+  return dateFormat(locale, {
+    year: "2-digit",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(utcDate(iso));
+}
+
 export function todayISO(now: Date = new Date()): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");

@@ -1,7 +1,5 @@
-import { parseISODate, toISODate } from "@slotted/core/date";
 import { Button, IconButton } from "@slotted/react/button";
 import { ButtonGroup } from "@slotted/react/button-group";
-import { Calendar } from "@slotted/react/calendar";
 import type { CalendarValue } from "@slotted/react/calendar";
 import { Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
@@ -14,13 +12,15 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@slotted/react/popover";
-import { Stack } from "@slotted/react/stack";
-import { Text } from "@slotted/react/typography";
 import { useState } from "react";
 
+import { PeriodChoices } from "@/ui/navigation/period-choices";
+import { PeriodLabel } from "@/ui/navigation/period-label";
 import {
+  holdsToday,
   periodLabel,
   periodPresets,
+  periodWidest,
   stepPeriod,
 } from "@/ui/navigation/period-presets";
 import type { PeriodPreset } from "@/ui/navigation/period-presets";
@@ -36,7 +36,9 @@ export interface Period {
 // CP-04: a period is read and moved as one thing — the month on screen, a step to its neighbour,
 // a preset or a run of days — where the filter bar's date field offers an operator and two inputs.
 // The steps move a month by a month, a year by a year and any run by its own length; with no
-// period, they open on the current month.
+// period, they open on the current month. The label keeps the width of the widest text a step
+// reaches, a mark names the period that holds today and Today returns to its month
+// (docs/specs/2026-11-17-period-controls-design.md).
 export function PeriodControl({
   value,
   onChange,
@@ -56,138 +58,122 @@ export function PeriodControl({
   const t = useT();
   const [locale] = useAppLocale();
   const today = useToday();
+
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<CalendarValue>(null);
+
   const common = periodPresets(today, quarters);
   const presets = [...extraPresets, ...common];
   const [thisMonth] = common;
-
-  const step = (direction: -1 | 1) => {
-    if (value === undefined) {
-      if (thisMonth !== undefined) onChange(thisMonth);
-      return;
-    }
-    onChange(stepPeriod(value.from, value.to, direction));
-  };
-  const choose = (next: Period | undefined) => {
-    setOpen(false);
-    onChange(next);
-  };
-  const current = presets.find(
-    (p) => p.from === value?.from && p.to === value.to,
-  );
   const label =
     value === undefined
       ? t("transactions.period.all")
       : periodLabel(value.from, value.to, today, locale);
-  const range: CalendarValue =
+  const current =
+    value !== undefined && holdsToday(value.from, value.to, today);
+  const widest =
     value === undefined
-      ? null
-      : { start: parseISODate(value.from), end: parseISODate(value.to) };
+      ? []
+      : periodWidest(value.from, value.to, today, locale);
+
+  function handleToday() {
+    if (thisMonth === undefined) return;
+
+    onChange({ from: thisMonth.from, to: thisMonth.to });
+  }
+
+  function step(direction: -1 | 1) {
+    if (value === undefined) {
+      handleToday();
+      return;
+    }
+
+    onChange(stepPeriod(value.from, value.to, direction));
+  }
+
+  function choose(next: Period | undefined) {
+    setOpen(false);
+    onChange(next);
+  }
 
   return (
-    <ButtonGroup
-      aria-label={t("transactions.filter.period")}
-      variant="outline"
-      tone="secondary"
-    >
-      <IconButton
-        aria-label={t("transactions.period.previous")}
-        onClick={() => {
-          step(-1);
-        }}
+    <Inline gap={4} wrap="nowrap">
+      <ButtonGroup
+        aria-label={t("transactions.filter.period")}
+        variant="outline"
+        tone="secondary"
       >
-        <Icon>
-          <StepGlyph direction="previous" />
-        </Icon>
-      </IconButton>
-      <Popover
-        open={open}
-        onOpenChange={(next) => {
-          setDraft(null);
-          setOpen(next);
-        }}
-        size="lg"
-        align="end"
-      >
-        <PopoverTrigger
-          render={(props) => <Button {...props}>{label}</Button>}
-        />
-        <PopoverLayer>
-          <PopoverContent>
-            <PopoverHeader>
-              <PopoverTitle>{t("transactions.period.choose")}</PopoverTitle>
-            </PopoverHeader>
-            <PopoverBody>
-              <Stack gap={4}>
-                <Inline gap={2} wrap="wrap">
-                  {allowAll && (
-                    <Button
-                      size="sm"
-                      variant={value === undefined ? "solid" : "outline"}
-                      tone={value === undefined ? "accent" : "secondary"}
-                      aria-pressed={value === undefined}
-                      onClick={() => {
-                        choose(undefined);
-                      }}
-                    >
-                      {t("transactions.period.all")}
-                    </Button>
-                  )}
-                  {presets.map((preset) => {
-                    const on = preset.key === current?.key;
-                    return (
-                      <Button
-                        key={preset.key}
-                        size="sm"
-                        variant={on ? "solid" : "outline"}
-                        tone={on ? "accent" : "secondary"}
-                        aria-pressed={on}
-                        onClick={() => {
-                          choose({ from: preset.from, to: preset.to });
-                        }}
-                      >
-                        {t(preset.label)}
-                      </Button>
-                    );
-                  })}
-                </Inline>
-                <Text size="sm" tone="muted">
-                  {t("transactions.period.custom")}
-                </Text>
-                <Calendar
-                  selectionMode="range"
-                  value={draft ?? range}
-                  onValueChange={(next) => {
-                    setDraft(next);
-                    if (
-                      next !== null &&
-                      "start" in next &&
-                      next.start !== null &&
-                      next.end !== null
-                    ) {
-                      choose({
-                        from: toISODate(next.start),
-                        to: toISODate(next.end),
-                      });
-                    }
-                  }}
+        <IconButton
+          aria-label={t("transactions.period.previous")}
+          onClick={() => {
+            step(-1);
+          }}
+        >
+          <Icon>
+            <StepGlyph direction="previous" />
+          </Icon>
+        </IconButton>
+        <Popover
+          open={open}
+          onOpenChange={(next) => {
+            setDraft(null);
+            setOpen(next);
+          }}
+          size="lg"
+          align="end"
+        >
+          <PopoverTrigger
+            render={(props) => (
+              <Button
+                {...props}
+                aria-label={
+                  current ? t("period.current", { label }) : undefined
+                }
+              >
+                <PeriodLabel current={current} widest={widest}>
+                  {label}
+                </PeriodLabel>
+              </Button>
+            )}
+          />
+          <PopoverLayer>
+            <PopoverContent>
+              <PopoverHeader>
+                <PopoverTitle>{t("transactions.period.choose")}</PopoverTitle>
+              </PopoverHeader>
+              <PopoverBody>
+                <PeriodChoices
+                  value={value}
+                  presets={presets}
+                  allowAll={allowAll}
+                  draft={draft}
+                  onDraftChange={setDraft}
+                  onChoose={choose}
                 />
-              </Stack>
-            </PopoverBody>
-          </PopoverContent>
-        </PopoverLayer>
-      </Popover>
-      <IconButton
-        aria-label={t("transactions.period.next")}
-        onClick={() => {
-          step(1);
-        }}
+              </PopoverBody>
+            </PopoverContent>
+          </PopoverLayer>
+        </Popover>
+        <IconButton
+          aria-label={t("transactions.period.next")}
+          onClick={() => {
+            step(1);
+          }}
+        >
+          <Icon>
+            <StepGlyph direction="next" />
+          </Icon>
+        </IconButton>
+      </ButtonGroup>
+
+      <Button
+        variant="ghost"
+        tone="secondary"
+        disabled={current}
+        onClick={handleToday}
       >
-        <Icon>
-          <StepGlyph direction="next" />
-        </Icon>
-      </IconButton>
-    </ButtonGroup>
+        {t("period.today")}
+      </Button>
+    </Inline>
   );
 }

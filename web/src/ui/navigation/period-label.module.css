@@ -1,0 +1,21 @@
+@layer app {
+  /* The mark of the period that holds today, beside the label. Its box is always in the row,
+     so the label does not move when the mark goes out. */
+  .period-label {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+  }
+
+  .mark {
+    inline-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
+    block-size: 6px; /* literal: a whole-pixel circle; no token holds a dot size */
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-solid);
+    visibility: hidden;
+  }
+
+  .mark[data-on] {
+    visibility: visible;
+  }
+}

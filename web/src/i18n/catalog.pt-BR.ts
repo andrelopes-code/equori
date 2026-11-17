@@ -1493,6 +1493,8 @@ export const catalogPtBR: Catalog = {
   "coverage.totalNote": "transações em {month}",
   "month.previous": "Mês anterior",
   "month.next": "Próximo mês",
+  "period.today": "Hoje",
+  "period.current": "{label}, período atual",
   "categories.subtitle.categories":
     "Para onde foi o dinheiro do mês, por categoria e grupo.",
   "categories.subtitle.rules":

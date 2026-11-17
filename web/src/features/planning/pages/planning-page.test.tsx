@@ -355,9 +355,15 @@ describe("PlanningPage agenda", () => {
     await user.click(
       within(dialog).getByRole("button", { name: /^(choose|change) date/i }),
     );
-    await user.click(
-      await screen.findByRole("button", { name: catalogEn["day.today"] }),
-    );
+    // PC4 of docs/specs/2026-11-17-period-controls-design.md: the header's month control also
+    // holds a button named Today; the date shortcut is the one outside the page header.
+    const shortcuts = await screen.findAllByRole("button", {
+      name: catalogEn["day.today"],
+    });
+    const shortcut = shortcuts.find((b) => b.closest("header") === null);
+    if (shortcut === undefined) throw new Error("no date shortcut");
+
+    await user.click(shortcut);
     await user.click(
       within(dialog).getByRole("button", {
         name: catalogEn["occurrence.move"],

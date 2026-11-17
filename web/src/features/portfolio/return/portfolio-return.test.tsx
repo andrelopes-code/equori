@@ -283,7 +283,8 @@ describe("Portfolio return", () => {
 
     await user.click(
       await within(section).findByRole("button", {
-        name: /25\/10\/2025|10\/25\/2025|Oct 25|25 Oct/,
+        // PC5 of docs/specs/2026-11-17-period-controls-design.md: two-digit years.
+        name: /25\/10\/25|10\/25\/25|Oct 25|25 Oct/,
       }),
     );
     await user.click(
