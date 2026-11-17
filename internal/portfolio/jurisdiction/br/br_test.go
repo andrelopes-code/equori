@@ -138,3 +138,24 @@ func TestGuarantee(t *testing.T) {
 		}
 	}
 }
+
+func TestUnitTax(t *testing.T) {
+	t.Parallel()
+
+	u, ok := New().UnitTax()
+	if !ok {
+		t.Fatal("UnitTax() has none")
+	}
+
+	if u.Calendar != "br_banking" {
+		t.Errorf("Calendar = %q", u.Calendar)
+	}
+
+	if !slices.Equal(u.Months, []time.Month{time.May, time.November}) {
+		t.Errorf("Months = %v", u.Months)
+	}
+
+	if !slices.Equal(u.Subtypes, []string{"fixed_income_fund", "multimarket"}) {
+		t.Errorf("Subtypes = %v", u.Subtypes)
+	}
+}

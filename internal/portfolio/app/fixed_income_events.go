@@ -35,7 +35,7 @@ type FixedIncomeEvent struct {
 	AccountID   uuid.UUID
 	Instrument  money.Currency
 	Date        time.Time
-	Kind        string // interest, amortization, maturity
+	Kind        string // interest, amortization, maturity, unit_tax, unit_tax
 	Quantity    money.Money
 	Gross       *money.Money // nil with RateMissing
 	RateMissing bool
@@ -75,6 +75,13 @@ func (s *Service) FixedIncomeEvents(
 		}
 	}
 
+	unitTax, err := s.unitTaxEvents(ctx, booksID, from, to, today, &positions)
+	if err != nil {
+		return nil, err
+	}
+
+	out = append(out, unitTax...)
+
 	slices.SortFunc(out, compareEvents)
 
 	return out, nil
@@ -87,16 +94,29 @@ type holding struct {
 
 // fixedIncomeHoldings are the accounts holding a fixed income instrument the day before from or
 // at to.
-// shortcut: a position bought and sold inside the range has no event listed; upgrade when
-// positions carry their first and last day.
 func (s *Service) fixedIncomeHoldings(
 	ctx context.Context,
 	booksID int64,
 	from, to time.Time,
 ) ([]holding, error) {
+	return s.heldInstruments(ctx, booksID, from, to, func(info InstrumentInfo) bool {
+		return info.Type == typeFixedIncome
+	})
+}
+
+// heldInstruments are the accounts holding an instrument that keep accepts, the day before from
+// or at to.
+// shortcut: a position bought and sold inside the range has no event listed; upgrade when
+// positions carry their first and last day.
+func (s *Service) heldInstruments(
+	ctx context.Context,
+	booksID int64,
+	from, to time.Time,
+	keep func(InstrumentInfo) bool,
+) ([]holding, error) {
 	var out []holding
 
-	types := map[money.Currency]bool{}
+	keeps := map[money.Currency]bool{}
 
 	for _, day := range []time.Time{from.AddDate(0, 0, -1), to} {
 		rows, err := s.repo.PositionsAt(ctx, booksID, day)
@@ -105,19 +125,19 @@ func (s *Service) fixedIncomeHoldings(
 		}
 
 		for _, r := range rows {
-			isFixed, known := types[r.Instrument]
+			kept, known := keeps[r.Instrument]
 			if !known {
 				info, err := s.md.InstrumentOf(ctx, r.Instrument)
 				if err != nil {
 					return nil, err
 				}
 
-				isFixed = info.Type == typeFixedIncome
-				types[r.Instrument] = isFixed
+				kept = keep(info)
+				keeps[r.Instrument] = kept
 			}
 
 			h := holding{r.AccountID, r.Instrument}
-			if isFixed && r.Quantity > 0 && !slices.Contains(out, h) {
+			if kept && r.Quantity > 0 && !slices.Contains(out, h) {
 				out = append(out, h)
 			}
 		}
@@ -136,7 +156,10 @@ func compareEvents(a, b FixedIncomeEvent) int {
 
 func kindOrder(kind string) int {
 	return slices.Index(
-		[]string{domain.EventInterest, domain.EventAmortization, domain.EventMaturity},
+		[]string{
+			domain.EventInterest, domain.EventAmortization, domain.EventMaturity,
+			domain.EventUnitTax,
+		},
 		kind,
 	)
 }

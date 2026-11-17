@@ -163,6 +163,37 @@ func appendActivity(out *domain.Facts, f ledger.InvestmentFacts) {
 	}
 }
 
+// prepaidTaxRole is the system role a unit tax credits (A236 FC25).
+const prepaidTaxRole = "prepaid_tax"
+
+func (p ledgerPort) UnitTaxDates(
+	ctx context.Context,
+	booksID int64,
+	accountID uuid.UUID,
+	from, to time.Time,
+) ([]time.Time, error) {
+	ids, err := p.l.AccountTransactionsBetween(ctx, booksID, accountID, from, to)
+	if err != nil || len(ids) == 0 {
+		return nil, err
+	}
+
+	facts, err := p.l.TransactionFacts(ctx, booksID, ids)
+
+	var out []time.Time
+
+	for _, f := range facts {
+		for _, posting := range f.Postings {
+			if posting.SystemRole == prepaidTaxRole {
+				out = append(out, f.Date)
+
+				break
+			}
+		}
+	}
+
+	return out, err
+}
+
 func (p ledgerPort) ValuedBalance(
 	ctx context.Context,
 	booksID int64,

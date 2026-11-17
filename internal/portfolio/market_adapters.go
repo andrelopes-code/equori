@@ -202,3 +202,16 @@ func (p marketPort) Maturity(ctx context.Context, code money.Currency) (time.Tim
 
 	return t.MaturesOn, err == nil, err
 }
+
+func (p marketPort) Adjust(
+	ctx context.Context,
+	calendar string,
+	d time.Time,
+	preceding bool,
+) (time.Time, error) {
+	if preceding {
+		return p.md.Adjust(ctx, calendar, d, marketdata.AdjustPreceding)
+	}
+
+	return p.md.Adjust(ctx, calendar, d, marketdata.AdjustFollowing)
+}

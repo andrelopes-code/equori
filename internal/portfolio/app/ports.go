@@ -50,6 +50,13 @@ type Ledger interface {
 	// Balances is the balance of every asset and liability account at the end of date, each in
 	// its own instrument and counting its own postings only.
 	Balances(ctx context.Context, booksID int64, date time.Time) ([]AccountBalance, error)
+	// UnitTaxDates are the dates of the unit taxes recorded on the account in [from, to].
+	UnitTaxDates(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		from, to time.Time,
+	) ([]time.Time, error)
 	// EstimateWithholding is the income tax and IOF a sale of units of the security for
 	// proceedsMinor would withhold on date; ok is false when the account has no withholding table.
 	EstimateWithholding(
@@ -106,6 +113,8 @@ type MarketData interface {
 	Coupons(ctx context.Context, code money.Currency) ([]Coupon, error)
 	// Maturity returns the maturity date of the terms of code; false when it has none.
 	Maturity(ctx context.Context, code money.Currency) (time.Time, bool, error)
+	// Adjust moves d to a business day of the calendar: the preceding one, else the following.
+	Adjust(ctx context.Context, calendar string, d time.Time, preceding bool) (time.Time, error)
 }
 
 // Repository stores the portfolio tables; postgres/ implements it.

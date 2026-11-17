@@ -17,6 +17,7 @@ const (
 	EventInterest     = "interest"
 	EventAmortization = "amortization"
 	EventMaturity     = "maturity"
+	EventUnitTax      = "unit_tax"
 )
 
 // Event states (A236 FC18).

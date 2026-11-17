@@ -37,6 +37,15 @@ func (Jurisdiction) TaxYear(year int) (time.Time, time.Time) { return domain.Cal
 
 func (Jurisdiction) Guarantee() (domain.Guarantee, bool) { return fgc, true }
 
+// UnitTax is the come-cotas of the open funds: Lei 14.754/2023, art. 17 to 19.
+func (Jurisdiction) UnitTax() (domain.UnitTax, bool) {
+	return domain.UnitTax{
+		Calendar: "br_banking",
+		Months:   []time.Month{time.May, time.November},
+		Subtypes: []string{"fixed_income_fund", "multimarket"},
+	}, true
+}
+
 func (Jurisdiction) IncomeTypes() []string { return []string{"jcp"} }
 
 // subtypeClass maps the subtypes of an instrument type to the tax class they have for an

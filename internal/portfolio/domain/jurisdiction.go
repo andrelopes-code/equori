@@ -21,6 +21,16 @@ type Jurisdiction interface {
 	TaxYear(year int) (from, to time.Time)
 	// Guarantee is the deposit guarantee of the jurisdiction; false when it has none.
 	Guarantee() (Guarantee, bool)
+	// UnitTax is the unit tax calendar of the funds of the jurisdiction; false when it has none.
+	UnitTax() (UnitTax, bool)
+}
+
+// UnitTax is when a fund of the listed subtypes cancels units to withhold income tax: on the last
+// business day of each month of Months in Calendar (A236 FC26).
+type UnitTax struct {
+	Calendar string
+	Months   []time.Month
+	Subtypes []string
 }
 
 // CalendarYear is the tax year of an owner without a jurisdiction.
