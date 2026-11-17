@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { exposureTracks } from "@/features/portfolio/fixed-income/exposure-tracks";
 import { maturityLadder } from "@/features/portfolio/fixed-income/maturity-ladder";
 import { returnShares } from "@/features/portfolio/fixed-income/return-shares";
-import { timelinePoints } from "@/features/portfolio/fixed-income/timeline-points";
+import {
+  timelineFrom,
+  timelinePoints,
+} from "@/features/portfolio/fixed-income/timeline-points";
 import { fixedIncomeVerdict } from "@/features/portfolio/fixed-income/verdict";
 import { catalogEn } from "@/i18n/catalog.en";
 import type { TFunction } from "@/i18n/i18n-provider";
@@ -127,6 +130,32 @@ describe("timelinePoints", () => {
       [77.09, false],
       [92.18, false],
     ]);
+  });
+});
+
+describe("timelineFrom", () => {
+  it("leaves ten days before today so that today sits at 10% of the window", () => {
+    const from = timelineFrom("2026-11-18");
+
+    expect(from).toBe("2026-11-08");
+    expect(timelinePoints(events, from, "2027-02-16")[0]?.left).toBeLessThan(
+      10,
+    );
+    expect(
+      timelinePoints(
+        [{ instrument: "", date: "2026-11-18", kind: "", state: "" }],
+        from,
+        "2027-02-16",
+      )[0]?.left,
+    ).toBe(10);
+  });
+
+  it("clamps an event older than the window to the start", () => {
+    const old = [
+      { instrument: "A", date: "2026-08-01", kind: "interest", state: "due" },
+    ];
+
+    expect(timelinePoints(old, "2026-11-08", "2027-02-16")[0]?.left).toBe(0);
   });
 });
 

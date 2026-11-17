@@ -1,11 +1,4 @@
 import {
-  DescriptionList,
-  DescriptionListDescription,
-  DescriptionListItem,
-  DescriptionListTerm,
-} from "@slotted/react/description-list";
-import { Link } from "@slotted/react/link";
-import {
   Section,
   SectionBody,
   SectionDescription,
@@ -13,19 +6,19 @@ import {
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
-import { recordSearch } from "@/features/instruments";
+import { PaymentRows } from "@/features/portfolio/fixed-income/payment-rows";
 import kinds from "@/features/portfolio/fixed-income/kind-fill.module.css";
 import styles from "@/features/portfolio/fixed-income/payments-timeline.module.css";
 import type { ReturnKind } from "@/features/portfolio/fixed-income/return-kind";
-import { timelinePoints } from "@/features/portfolio/fixed-income/timeline-points";
+import {
+  timelineFrom,
+  timelinePoints,
+} from "@/features/portfolio/fixed-income/timeline-points";
 import { formatDate, formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useMoneyFormat } from "@/privacy/use-money-format";
-import { routeTo } from "@/ui/navigation/route-to";
 
 type Event = components["schemas"]["FixedIncomeEvent"];
 
@@ -49,10 +42,9 @@ export function PaymentsTimeline({
   scale,
 }: PaymentsTimelineProps) {
   const t = useT();
-  const fmt = useMoneyFormat();
   const [locale] = useAppLocale();
 
-  const from = events.reduce((min, e) => (e.date < min ? e.date : min), today);
+  const from = timelineFrom(today);
   const points = timelinePoints(events, from, until);
   const todayAt = timelinePoints(
     [{ instrument: "", date: today, kind: "", state: "" }],
@@ -107,46 +99,7 @@ export function PaymentsTimeline({
         )}
 
         {events.length > 0 && (
-          <DescriptionList variant="ruled">
-            {events.map((e) => {
-              const label = `${t(`terms.event.${e.kind}` as "terms.event.interest")} · ${names.get(e.instrument) ?? e.instrument} · ${formatDayMonthNumeric(e.date, locale)}`;
-
-              return (
-                <DescriptionListItem key={`${e.instrument}${e.date}${e.kind}`}>
-                  <DescriptionListTerm>
-                    {e.state === "due" ? (
-                      <Link
-                        render={routeTo({
-                          to: "/transactions/new",
-                          search: recordSearch(e, scale) as never,
-                        })}
-                      >
-                        {label}
-                      </Link>
-                    ) : (
-                      label
-                    )}
-                  </DescriptionListTerm>
-                  <DescriptionListDescription>
-                    <span className={styles.value}>
-                      {e.state === "due" && (
-                        <Tag tone="danger" size="sm">
-                          {t("fixedIncome.next.due")}
-                        </Tag>
-                      )}
-                      {e.gross === undefined ? (
-                        <Text tone="muted">
-                          {t("fixedIncome.next.rateMissing")}
-                        </Text>
-                      ) : (
-                        fmt.money(e.gross, scale(e.gross.currency))
-                      )}
-                    </span>
-                  </DescriptionListDescription>
-                </DescriptionListItem>
-              );
-            })}
-          </DescriptionList>
+          <PaymentRows events={events} names={names} scale={scale} />
         )}
       </SectionBody>
     </Section>
