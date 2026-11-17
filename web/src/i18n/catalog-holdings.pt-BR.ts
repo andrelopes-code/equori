@@ -79,6 +79,8 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.list": "Investimentos",
   "holdings.list.note":
     "Do maior para o menor. Quantidade, preço médio e outros dados ficam em Colunas.",
+  "holdings.quote.partial": "{time} · parcial",
+  "holdings.quote.at": "Cotação de {time}",
   "holdings.columns": "Colunas",
   "holdings.col.price": "Preço",
   "holdings.col.trend": "Últimos 3 meses",

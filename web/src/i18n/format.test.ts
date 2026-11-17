@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   formatDate,
+  formatTime,
   formatDayHeader,
   formatDayMonth,
   formatDayOfMonth,
@@ -441,5 +442,17 @@ describe("week of the locale", () => {
     ["en-US", 1, ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]],
   ] as const)("weekday labels of %s from day %i", (locale, first, want) => {
     expect(weekdayLabels(locale, first)).toEqual(want);
+  });
+});
+
+describe("formatTime", () => {
+  it.each([
+    ["pt-BR", "America/Sao_Paulo", "11:58"],
+    ["pt-BR", "UTC", "14:58"],
+    ["en", "America/New_York", "09:58 AM"],
+  ] as const)("formats an instant in %s at %s as %s", (locale, zone, want) => {
+    const got = formatTime("2026-11-03T14:58:00Z", locale, zone);
+
+    expect(got.replace(/\s/g, " ")).toBe(want);
   });
 });

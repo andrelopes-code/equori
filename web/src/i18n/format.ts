@@ -252,6 +252,19 @@ export function formatDate(iso: string, locale: string): string {
   }).format(utcDate(iso));
 }
 
+// "11:58" / "09:58 AM": the hour of an instant in the viewer's zone; timeZone fixes it in a test.
+export function formatTime(
+  instant: string,
+  locale: string,
+  timeZone?: string,
+): string {
+  return dateFormat(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone,
+  }).format(new Date(instant));
+}
+
 // "28/12/25" / "12/28/25".
 export function formatDateShortYear(iso: string, locale: string): string {
   return dateFormat(locale, {
