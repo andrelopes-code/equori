@@ -14,6 +14,9 @@ type member struct {
 	weight int
 }
 
+// fixedIncomeGroup is the group the contracts of applications count in.
+const fixedIncomeGroup = 0
+
 // groups are the classes of a moderate investor who builds wealth: growth assets dominate, fixed income steadies the rest.
 var groups = []group{
 	{

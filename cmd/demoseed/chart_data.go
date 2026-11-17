@@ -258,6 +258,7 @@ var incomeCategories = []category{
 			leaf("income.dividends", "Dividendos", "landmark"),
 			leaf("income.fii", "Rendimentos de fundos imobiliários", "building-2"),
 			leaf("income.jcp", "Juros sobre capital próprio", "hand-coins"),
+			leaf("income.coupons", "Juros de renda fixa", "percent"),
 		},
 	},
 }

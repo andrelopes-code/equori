@@ -269,6 +269,7 @@ func (s *seeder) cashflow() {
 	s.transfers()
 	s.contributions()
 	s.earmarked()
+	s.applyFixedIncome()
 	s.trims()
 	s.income()
 	s.snapshots()

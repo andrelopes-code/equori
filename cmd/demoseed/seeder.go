@@ -31,6 +31,7 @@ type seeder struct {
 	px      map[string][]float64
 	quotes  map[string][]quote // prices read back from the instance, by security code
 	hold    map[string]int64   // units held by security code
+	applied []applied          // fixed income contracts of the book, in the order of applications
 	snap    map[string]map[string]int64
 	entries []entry
 	events  []event
@@ -61,6 +62,7 @@ func newSeeder(ctx context.Context, base string, c *http.Client) *seeder {
 		quotes:  map[string][]quote{},
 		pending: map[string][]ofxLine{},
 		hold:    map[string]int64{},
+		applied: make([]applied, len(applications)),
 		snap:    map[string]map[string]int64{},
 	}
 }

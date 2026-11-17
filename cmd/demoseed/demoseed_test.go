@@ -19,7 +19,11 @@ const testToday = "2026-11-05"
 
 func seedHarness(t *testing.T, date string) (*seeder, config, *apitest.Harness) {
 	t.Helper()
-	h := apitest.New(t, apitest.Today(date))
+	h := apitest.New(
+		t,
+		apitest.Today(date),
+		apitest.IndexFeeds([]string{"br_cdi", "br_ipca"}, nil),
+	)
 	c := h.LoginAs("demo@equori.local", locale.Locale{Language: "pt", Region: "BR"}, "BRL")
 
 	today, err := time.Parse(time.DateOnly, date)
@@ -27,7 +31,33 @@ func seedHarness(t *testing.T, date string) (*seeder, config, *apitest.Harness) 
 		t.Fatal(err)
 	}
 
+	storeIndexRates(t, h, today)
+
 	return newSeeder(context.Background(), h.URL(), c), config{today: today}, h
+}
+
+// storeIndexRates gives the instance the rates its feeds would hold: the CDI of every weekday and the IPCA of every
+// month of the investment history. The contracts of the applications accrue on them.
+func storeIndexRates(t *testing.T, h *apitest.Harness, today time.Time) {
+	t.Helper()
+
+	const insert = `INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ($1, $2, $3, 'test')`
+
+	from := firstOfMonth(today).AddDate(0, -investMonths, 0)
+
+	for d := from; !d.After(today); d = d.AddDate(0, 0, 1) {
+		if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+			if _, err := h.Pool.Exec(t.Context(), insert, "cdi", d, "0.00045"); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		if d.Day() == 1 && d.Before(firstOfMonth(today)) {
+			if _, err := h.Pool.Exec(t.Context(), insert, "ipca", d, "0.004"); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
 }
 
 // Prices are shared by every book of the instance and a manual price outranks the feeds (MQ1): the
@@ -336,8 +366,84 @@ func TestSeed(t *testing.T) {
 
 		slices.Sort(got)
 
-		if want := []string{"Banco XP", "Tesouro Nacional"}; !slices.Equal(got, want) {
+		want := []string{
+			"Banco ABC Brasil",
+			"Banco BMG",
+			"Banco Daycoval",
+			"Banco Inter",
+			"Banco XP",
+			"Eletrobras",
+			"Tesouro Nacional",
+		}
+		if !slices.Equal(got, want) {
 			t.Errorf("issuers = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("fixed income pays and matures in the next 90 days", func(t *testing.T) {
+		// The panel of the Portfolio screen lists the payments of the next 90 days: the coupon of the debenture and the maturity of the LCA.
+		var out struct {
+			Items []struct {
+				Kind  string `json:"kind"`
+				State string `json:"state"`
+			} `json:"items"`
+		}
+
+		path := "/fixed-income-events?from=" + iso(
+			s.today,
+		) + "&to=" + iso(
+			s.today.AddDate(0, 0, 90),
+		)
+		s.do(http.MethodGet, path, nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		got := make([]string, len(out.Items))
+		for i, item := range out.Items {
+			got[i] = item.Kind + " " + item.State
+		}
+
+		slices.Sort(got)
+
+		if want := []string{"interest upcoming", "maturity upcoming"}; !slices.Equal(got, want) {
+			t.Errorf("events = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("no payment of fixed income waits to be recorded", func(t *testing.T) {
+		var out struct {
+			Items []struct {
+				State string `json:"state"`
+			} `json:"items"`
+		}
+
+		path := "/fixed-income-events?from=" + iso(
+			s.today.AddDate(0, 0, -399),
+		) + "&to=" + iso(
+			s.today,
+		)
+		s.do(http.MethodGet, path, nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		if len(out.Items) != 2 {
+			t.Fatalf("payments of the last 399 days = %d, want 2", len(out.Items))
+		}
+
+		for _, item := range out.Items {
+			if item.State != "recorded" {
+				t.Errorf("state = %q, want recorded", item.State)
+			}
+		}
+	})
+
+	t.Run("the brokerage cash stays above zero", func(t *testing.T) {
+		if got := s.balanceOn("xp.cash", iso(s.today)); got < 0 {
+			t.Errorf("balance of xp.cash = %d, want 0 or more", got)
 		}
 	})
 

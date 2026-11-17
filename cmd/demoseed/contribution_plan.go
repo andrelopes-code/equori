@@ -14,6 +14,13 @@ func (s *seeder) saveContributionPlan() {
 		}
 	}
 
+	fixed, _ := classes[fixedIncomeGroup]["members"].([]map[string]any)
+	for _, c := range s.applied {
+		fixed = append(fixed, map[string]any{"instrument": c.code})
+	}
+
+	classes[fixedIncomeGroup]["members"] = fixed
+
 	s.do(http.MethodPut, "/contribution-plan", map[string]any{
 		"amount":  brl(monthlyContribution(investMonths)),
 		"classes": classes,

@@ -118,6 +118,7 @@ func (s *seeder) orders(d time.Time, cents int64) []order {
 // groupValues is the value of each group on d, in cents.
 func (s *seeder) groupValues(d time.Time) []int64 {
 	out := make([]int64, len(groups))
+	out[fixedIncomeGroup] = s.appliedValue(d)
 
 	for i, g := range groups {
 		for _, m := range g.members {
