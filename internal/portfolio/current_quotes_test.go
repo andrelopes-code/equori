@@ -5,11 +5,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
+	"github.com/andrelopes-code/equori/internal/marketdata"
+	"github.com/andrelopes-code/equori/internal/platform/locale"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
 const (
@@ -185,6 +189,83 @@ func TestS563TotalsStateTheirCurrentQuotes(t *testing.T) {
 	if days.Items[1].Assets["amount"] != assets+1500 ||
 		!reflect.DeepEqual(days.Items[1].Current, want) {
 		t.Errorf("second day = %+v, want assets %v with %+v", days.Items[1], assets+1500, want)
+	}
+}
+
+// S564: a book in another currency values a holding through the current quote of the instrument
+// and of the currency, or through the close of the currency when no source reports it (A248 C2,
+// C3, X2).
+func TestS564ABookInAnotherCurrency(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		answer func(w http.ResponseWriter)
+		amount float64
+		want   []legOut
+	}{
+		{
+			name: "currency quote",
+			answer: func(w http.ResponseWriter) {
+				body := currentBody("USD", "Europe/London", "0.1729")
+				body = strings.ReplaceAll(body, "1793710800", "1793664000")
+				body = strings.ReplaceAll(body, "1793736000", "1793750340")
+				_, _ = w.Write([]byte(body))
+			},
+			amount: 15993,
+			want: []legOut{
+				{Instrument: "MXRF11", Quote: "BRL", Value: "9.25", At: "2026-11-03T14:58:00Z"},
+				{Instrument: "BRL", Quote: "USD", Value: "0.1729", At: "2026-11-03T14:58:00Z"},
+			},
+		},
+		{
+			name:   "no currency quote",
+			answer: func(w http.ResponseWriter) { w.WriteHeader(http.StatusNotFound) },
+			amount: 16818,
+			want: []legOut{
+				{Instrument: "MXRF11", Quote: "BRL", Value: "9.25", At: "2026-11-03T14:58:00Z"},
+				{Instrument: "USD", Quote: "BRL", Value: "5.5"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := foreignBaseFixture(t, tt.answer)
+
+			var out struct {
+				Items []struct {
+					MarketValue map[string]any `json:"market_value"`
+					Prices      []legOut       `json:"prices"`
+				} `json:"items"`
+			}
+			f.h.MustDo(
+				http.MethodGet,
+				"/api/v1/positions?date=2026-11-03",
+				nil,
+				http.StatusOK,
+				&out,
+			)
+
+			if len(out.Items) != 1 {
+				t.Fatalf("positions = %+v, want one", out.Items)
+			}
+
+			mv := out.Items[0].MarketValue
+			if mv["amount"] != tt.amount || mv["currency"] != "USD" {
+				t.Errorf("market_value = %+v, want %v USD", mv, tt.amount)
+			}
+
+			got := out.Items[0].Prices
+			for i := range got {
+				got[i].Date, got[i].Source, got[i].Open = "", "", false
+			}
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("prices = %+v, want %+v", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -370,4 +451,82 @@ func allocationAt(t *testing.T, f fixture, date string) allocationCurrentOut {
 	)
 
 	return out
+}
+
+// legOut is one price of a position as the API states it.
+type legOut struct {
+	Instrument string `json:"instrument"`
+	Quote      string `json:"quote_instrument"`
+	Value      string `json:"value"`
+	Date       string `json:"date"`
+	Source     string `json:"source"`
+	At         string `json:"at"`
+	Open       bool   `json:"open"`
+}
+
+// foreignBaseFixture is a book of region NZ and base USD that holds 100 MXRF11 bought with a
+// manual USD/BRL price; the chart source answers the currency pair with answer.
+func foreignBaseFixture(t *testing.T, answer func(w http.ResponseWriter)) fixture {
+	t.Helper()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/yahoo/MXRF11.SA":
+			_, _ = w.Write([]byte(currentBody("BRL", "America/Sao_Paulo", "9.25")))
+		case "/yahoo/BRLUSD=X":
+			answer(w)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	profile := apitest.Profile{
+		Name:   "nz_usd",
+		Locale: locale.Locale{Language: "en", Region: "NZ"},
+		Base:   "USD",
+	}
+	f := newFixture(
+		t,
+		apitest.As(profile),
+		apitest.Clock(func() time.Time { return time.Date(2026, 11, 3, 15, 13, 0, 0, time.UTC) }),
+		apitest.PriceFeeds(
+			[]string{"yahoo_chart"},
+			map[string]string{"yahoo_chart": srv.URL + "/yahoo"},
+		),
+	)
+
+	rate, err := money.ParseRate("5.50")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	manual := marketdata.Price{
+		Instrument: "USD",
+		Quote:      "BRL",
+		Date:       time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC),
+		Value:      rate,
+		Source:     "manual",
+	}
+	if err := f.h.App.Marketdata.RecordPrices(
+		t.Context(),
+		0,
+		[]marketdata.Price{manual},
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	// A trade requires a cash account in the base currency (USD).
+	f.cash = f.h.Account(
+		"XP cash USD",
+		"asset",
+		"brokerage",
+		map[string]any{"institution_id": f.institution, "currency": "USD"},
+	)
+
+	f.trade(t, "buy", "2026-10-05", 100, "10.05", 0)
+	f.h.Dispatch()
+	recordMXRF11(t, f, "2026-10-30", "9.10", "b3_consolidated")
+
+	return f
 }
