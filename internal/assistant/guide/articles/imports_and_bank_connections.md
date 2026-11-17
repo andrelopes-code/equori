@@ -11,3 +11,5 @@ A line that moves money between two of your connected accounts becomes a transfe
 An account the institution stopped listing is marked on Links and the connection's other accounts keep syncing. Linking its new entry to the same account replaces it, and a line read again creates no second transaction.
 
 A file line with the date and amount of a recorded line that the file no longer holds, under another name or id, waits for review instead of creating a second transaction: discard it if it is the same, create it if there were two. A bank connection line that repeats a line of an imported file waits the same way.
+
+A connection also reads fixed income investments. Each movement waits on Links until you confirm it (application, contribution, redemption, interest) or dismiss it; a confirmation has an undo.

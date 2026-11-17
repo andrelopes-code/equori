@@ -418,6 +418,25 @@ classDiagram
     name
     sealedCredentials
   }
+  class ExternalInvestment {
+    externalId
+    type
+    subtype
+    issuer
+    terms
+    balance
+    balanceDate
+    brokerage
+    instrument
+  }
+  class InvestmentMovement {
+    externalId
+    kind
+    date
+    amount
+    state
+    transaction
+  }
   class Connection {
     <<aggregate>>
     id
@@ -473,12 +492,15 @@ classDiagram
   }
   Integration "1" --> "*" Connection
   Connection *-- ExternalAccount
+  Connection *-- ExternalInvestment
+  ExternalInvestment *-- InvestmentMovement
   ImportBatch "1" --> "*" ExternalRecord
   ExternalRecord *-- NormalizedRecord
 ```
 
 | Rule | Statement |
 |---|---|
+| Aggregator investment | A sync stores each fixed income investment of a connection and each of its movements once, by external id. A movement is a proposal (application, contribution, sale with its taxes, income) that writes to the ledger only when confirmed, and a confirmation has an undo; the balance of a linked investment with no pending movement becomes a price at its date (A236 FC27, FC28). |
 | Deduplication key | SHA-256 of the account, the source and the source external id when the source provides a stable one (Pluggy transaction id, OFX FITID, a CSV id column); otherwise of the account, date, amount, normalized description (lowercase, trimmed, inner spaces collapsed) and the ordinal of identical records in the same file. Line keys leave the source out, so a line seen in a CSV export and in an OFX file without FITID is one record. |
 | Ledger link | A created or matched transaction stores the external record id, unique per user (P4 amendment A11). |
 | Matching | Ingestion reads the account's postings whose transaction is not voided and carries no external record, within ±10 days, of the record's sign and within 20% of its amount (A98), and scores each: amount identical +6, within 1% +3, otherwise −2; same day +3, 1–3 days +2, 4–10 days −1; same payee +4, other payee −6, without a payee on one side description words overlapping by half +2 (A99). Lines are settled best score first, one posting per line; zones: link, probable, ambiguous, new (A100). Entries the institution never confirmed are listed per account (A103). |
