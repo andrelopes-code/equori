@@ -54,6 +54,10 @@ The price source `b3_consolidated` reads the B3 consolidated trades file, which 
 
 `docs/specs/2026-11-16-institution-indicators-design.md` adds a fourth kind of feed, `institution`: the prudential indicators of an institution, read from IF.data of the Banco Central do Brasil. F1 to F10 apply to it. `br_ifdata` is the only source; `SuggestedFeeds("BR")` names it. Its period is a quarter: `last` is the last day of the stored quarter, and the feed is stale when today is later than the last day of the next quarter plus 120 days. `GET /market-data/feeds` lists it with `kind` `institution`.
 
+## Amendment of 2026-11-17 (indexer comparison)
+
+`docs/specs/2026-11-17-indexer-comparison-design.md` (IC10) adds a fifth kind of feed, `curve`: the annual rates a market pays by maturity on a base date. F1 to F10 apply to it. `br_tesouro` is the only source; `SuggestedFeeds("BR")` names it. Its period is a day, its lag 5 days, and its `last` is the base date of the stored points.
+
 ## Revisit criterion
 
 An instance whose users need different feed sets, or a feed whose publication delay varies beyond its `Lag`.

@@ -51,7 +51,11 @@ func TestEveryReadNameIsMapped(t *testing.T) {
 		}
 	}
 
-	for _, name := range []string{"EQUORI_AGGREGATOR_PLUGGY_URL", "EQUORI_FEED_BCB_PTAX_URL"} {
+	for _, name := range []string{
+		"EQUORI_AGGREGATOR_PLUGGY_URL",
+		"EQUORI_FEED_BCB_PTAX_URL",
+		"EQUORI_FEED_BR_TESOURO_URL",
+	} {
 		if !slices.Contains(read, name) {
 			t.Errorf("%s: not read", name)
 		}
