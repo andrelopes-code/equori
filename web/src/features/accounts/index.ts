@@ -14,7 +14,10 @@ export { positionsQuery, quoteWarningsQuery } from "@/features/accounts/api";
 export { averageCostText } from "@/features/accounts/positions/position-figures";
 export { AccountLink } from "@/features/accounts/account-mark/account-link";
 export { shapeOf } from "@/features/accounts/model/account-shape";
-export { AccountMark } from "@/features/accounts/account-mark/account-mark";
+export {
+  AccountMark,
+  monogram,
+} from "@/features/accounts/account-mark/account-mark";
 export { AccountCard } from "@/features/accounts/account-card/account-card";
 export {
   accountCardColor,

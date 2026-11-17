@@ -1,0 +1,493 @@
+@layer app {
+  /* The face is a physical object on its own material: its ground, ink, chip metal and edge are
+     literals of its specification, as account-card.module.css precedes. The colour arrives as
+     --card-face-color and the ink as --card-face-ink, both set inline. Every length is a
+     multiple of --u, one container-width percent, so the face keeps its proportions at any width.
+     The face is not an ancestor of a blurred surface (O11): filter, mask and mix-blend-mode are
+     allowed on its descendants. */
+  .box {
+    container-type: inline-size;
+    inline-size: 100%;
+    perspective: 1100px;
+  }
+
+  .face {
+    --u: 1cqw;
+    --card-face-color: #2b2d33;
+    --card-face-ink: #fff;
+    --ink-2: color-mix(in srgb, var(--card-face-ink) 76%, transparent);
+    --ink-line: color-mix(in srgb, var(--card-face-ink) 18%, transparent);
+    --emboss: 0 calc(var(--u) * 0.25) calc(var(--u) * 0.3) rgb(0 0 0 / 28%);
+    --rx: 0deg;
+    --ry: 0deg;
+    --mx: 30%;
+    --my: 20%;
+    --pad: calc(var(--u) * 6.5);
+
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    inline-size: 100%;
+    aspect-ratio: 1.586;
+    overflow: hidden;
+    isolation: isolate;
+    border-radius: calc(var(--u) * 4.4);
+    background: linear-gradient(
+      135deg,
+      oklch(from var(--card-face-color) calc(l + 0.07) c h) 0%,
+      var(--card-face-color) 46%,
+      oklch(from var(--card-face-color) calc(l - 0.11) c h) 100%
+    );
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 25%),
+      0 calc(var(--u) * 5) calc(var(--u) * 9) calc(var(--u) * -4)
+        oklch(from var(--card-face-color) 0.28 c h / 60%);
+    color: var(--card-face-ink);
+    font-family: var(--slotted-font-family-sans);
+    font-variant-numeric: tabular-nums;
+    text-align: start;
+    text-decoration: none;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transition:
+      transform 500ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 200ms var(--slotted-easing-standard);
+  }
+
+  .face[data-ink="dark"] {
+    --emboss: 0 calc(var(--u) * 0.25) 0 rgb(255 255 255 / 35%);
+  }
+
+  button.face {
+    padding: 0;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .face[data-vertical] {
+    --u: 1.586cqw;
+
+    aspect-ratio: 1 / 1.586;
+  }
+
+  .face:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* The edge of the plastic: a lit top edge, a hairline all round and a shaded lower edge. */
+  .face::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 30%),
+      inset 0 0 0 1px rgb(255 255 255 / 9%),
+      inset 0 calc(var(--u) * -1.2) calc(var(--u) * 2.4) calc(var(--u) * -1.2)
+        rgb(0 0 0 / 35%);
+    pointer-events: none;
+  }
+
+  /* The grain of the plastic: fractal noise at 22%, overlaid. */
+  .face::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    opacity: 0.22;
+    pointer-events: none;
+  }
+
+  .art,
+  .glare {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .art {
+    z-index: -1;
+    color: var(--card-face-ink);
+  }
+
+  .glare {
+    z-index: 2;
+    background: radial-gradient(
+      calc(var(--u) * 60) circle at var(--mx) var(--my),
+      rgb(255 255 255 / 32%),
+      transparent 62%
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0;
+    transition: opacity 240ms var(--slotted-easing-standard);
+  }
+
+  /* Anatomy: four groups on one margin (--pad). Who issued it (top left), how it pays (top
+     right), the chip (left, optical middle), whose it is (bottom left), the network (bottom
+     right). */
+  .top {
+    position: absolute;
+    inset: var(--pad) var(--pad) auto;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 2.6);
+    block-size: calc(var(--u) * 9);
+  }
+
+  .tile {
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: calc(var(--u) * 9);
+    block-size: calc(var(--u) * 9);
+    overflow: hidden;
+    border-radius: calc(var(--u) * 2.2);
+    font-size: calc(var(--u) * 3.4);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .tile[data-kind="plate"] {
+    background: #fff;
+    box-shadow:
+      0 calc(var(--u) * 0.3) calc(var(--u) * 0.8) rgb(0 0 0 / 22%),
+      inset 0 0 0 1px rgb(0 0 0 / 6%);
+    color: #17171a;
+  }
+
+  .tile[data-kind="plate"][data-tone="dark"] {
+    background: #141416;
+    box-shadow:
+      0 calc(var(--u) * 0.3) calc(var(--u) * 0.8) rgb(0 0 0 / 22%),
+      inset 0 0 0 1px rgb(255 255 255 / 12%);
+    color: #fff;
+  }
+
+  .tile[data-kind="bare"] {
+    overflow: visible;
+  }
+
+  .logo {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
+  .tile[data-kind="plate"] .logo {
+    inline-size: 78%;
+    block-size: 78%;
+  }
+
+  .brandName,
+  .name {
+    min-inline-size: 0;
+    overflow: hidden;
+    font-size: calc(var(--u) * 4);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    text-shadow: var(--emboss);
+    white-space: nowrap;
+  }
+
+  .brandName {
+    flex: none;
+    max-inline-size: 40%;
+  }
+
+  .name {
+    flex: 1;
+  }
+
+  .peek {
+    margin-inline-end: calc(var(--u) * 2.4);
+    font: 500 calc(var(--u) * 3.8) var(--slotted-font-family-mono);
+    letter-spacing: 0.08em;
+  }
+
+  .tag {
+    display: grid;
+    flex: none;
+    place-items: center;
+    padding: 0 calc(var(--u) * 2.2);
+    block-size: calc(var(--u) * 5.6);
+    border: 1px solid var(--ink-line);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card-face-ink) 8%, transparent);
+    color: var(--card-face-ink);
+    font-size: calc(var(--u) * 2.5);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .contactless {
+    flex: none;
+    inline-size: calc(var(--u) * 6.4);
+    block-size: calc(var(--u) * 6.4);
+    color: var(--ink-2);
+  }
+
+  .chip {
+    position: absolute;
+    inset-block-start: 37.5%;
+    inset-inline-start: var(--pad);
+    inline-size: calc(var(--u) * 12.6);
+    block-size: calc(var(--u) * 9.6);
+    filter: drop-shadow(
+      0 calc(var(--u) * 0.3) calc(var(--u) * 0.4) rgb(0 0 0 / 30%)
+    );
+  }
+
+  .id {
+    position: absolute;
+    inset: auto auto var(--pad) var(--pad);
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--u) * 1);
+    max-inline-size: 60%;
+  }
+
+  .digits {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--u) * 2.4);
+    font: 500 calc(var(--u) * 4.8) / 1 var(--slotted-font-family-mono);
+    letter-spacing: 0.1em;
+    text-shadow: var(--emboss);
+    white-space: nowrap;
+  }
+
+  .dots {
+    display: flex;
+    gap: calc(var(--u) * 1.1);
+  }
+
+  .dots i {
+    inline-size: calc(var(--u) * 1.15);
+    block-size: calc(var(--u) * 1.15);
+    border-radius: 50%;
+    background: currentcolor;
+    opacity: 0.8;
+  }
+
+  .holder {
+    margin-block-end: calc(var(--u) * -0.7);
+    overflow: hidden;
+    color: var(--card-face-ink);
+    font-size: calc(var(--u) * 2.8);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .net {
+    position: absolute;
+    inset: auto var(--pad) var(--pad) auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+  }
+
+  /* Vertical: the name takes its own line under the logo, the chip moves up. */
+  .face[data-vertical] .top {
+    flex-wrap: wrap;
+    row-gap: calc(var(--u) * 2.6);
+    justify-content: space-between;
+    block-size: auto;
+  }
+
+  .face[data-vertical] .name {
+    flex: 0 0 100%;
+    order: 3;
+  }
+
+  .face[data-vertical] .chip {
+    inset-block-start: 34%;
+  }
+
+  .face[data-vertical] .id {
+    inset-block-end: calc(var(--pad) + var(--u) * 14);
+    inset-inline-end: var(--pad);
+    max-inline-size: none;
+  }
+
+  /* Sizes: the face scales with its container and drops detail below two widths instead of
+     shrinking type. Under 260 px: no holder, no contactless symbol, a larger name and digits.
+     Under 130 px: the logo and the digits only. */
+  @container (max-width: 260px) {
+    .holder,
+    .contactless {
+      display: none;
+    }
+
+    .top {
+      block-size: calc(var(--u) * 11);
+    }
+
+    .tile {
+      inline-size: calc(var(--u) * 11);
+      block-size: calc(var(--u) * 11);
+    }
+
+    .brandName,
+    .name {
+      font-size: calc(var(--u) * 5.2);
+    }
+
+    .peek {
+      font-size: calc(var(--u) * 5);
+    }
+
+    .tag {
+      block-size: calc(var(--u) * 7.4);
+      font-size: calc(var(--u) * 3.3);
+    }
+
+    .chip {
+      inset-block-start: 41%;
+      inline-size: calc(var(--u) * 14.4);
+      block-size: calc(var(--u) * 11);
+    }
+
+    .digits {
+      font-size: calc(var(--u) * 6.2);
+    }
+  }
+
+  @container (max-width: 130px) {
+    .face {
+      border-radius: calc(var(--u) * 7);
+    }
+
+    .brandName,
+    .name,
+    .chip,
+    .tag,
+    .net,
+    .dots {
+      display: none;
+    }
+
+    .top {
+      block-size: calc(var(--u) * 24);
+    }
+
+    .tile {
+      inline-size: calc(var(--u) * 24);
+      block-size: calc(var(--u) * 24);
+      border-radius: calc(var(--u) * 6);
+    }
+
+    .digits {
+      font-size: calc(var(--u) * 14);
+      letter-spacing: 0.04em;
+    }
+  }
+
+  /* An inactive card drops its colour and its art. */
+  .face[data-inactive] {
+    filter: grayscale(1) brightness(0.8);
+  }
+
+  .face[data-inactive] .art {
+    display: none;
+  }
+
+  /* The placeholder has the anatomy of the face: no edge, no grain, no text. */
+  .face[data-loading] {
+    background: var(--slotted-tone-neutral-surface);
+    box-shadow: none;
+  }
+
+  .face[data-loading]::before,
+  .face[data-loading]::after {
+    display: none;
+  }
+
+  .skLogo,
+  .skTitle,
+  .skChip,
+  .skDigits,
+  .skHolder,
+  .skMark {
+    position: absolute;
+    border-radius: calc(var(--u) * 1.4);
+  }
+
+  .skLogo {
+    inset: calc(var(--u) * 6.5) auto auto calc(var(--u) * 6.5);
+    inline-size: calc(var(--u) * 9);
+    block-size: calc(var(--u) * 9);
+  }
+
+  .skTitle {
+    inset: calc(var(--u) * 9.2) auto auto calc(var(--u) * 18.1);
+    inline-size: calc(var(--u) * 32);
+    block-size: calc(var(--u) * 3.6);
+  }
+
+  .skChip {
+    inset: 37.5% auto auto calc(var(--u) * 6.5);
+    inline-size: calc(var(--u) * 12.6);
+    block-size: calc(var(--u) * 9.6);
+  }
+
+  .skDigits {
+    inset: auto auto calc(var(--u) * 11) calc(var(--u) * 6.5);
+    inline-size: calc(var(--u) * 30);
+    block-size: calc(var(--u) * 4.8);
+  }
+
+  .skHolder {
+    inset: auto auto calc(var(--u) * 6.5) calc(var(--u) * 6.5);
+    inline-size: calc(var(--u) * 22);
+    block-size: calc(var(--u) * 2.8);
+  }
+
+  .skMark {
+    inset: auto calc(var(--u) * 6.5) calc(var(--u) * 6.5) auto;
+    inline-size: calc(var(--u) * 15);
+    block-size: calc(var(--u) * 9.6);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .face {
+      transform: none;
+      transition: none;
+    }
+
+    .glare {
+      display: none;
+    }
+  }
+
+  /* Under forced colors the face keeps its border and its text and drops its finish. */
+  @media (forced-colors: active) {
+    .face {
+      border: 1px solid CanvasText;
+      background: Canvas;
+      color: CanvasText;
+      forced-color-adjust: auto;
+
+      --card-face-ink: CanvasText;
+    }
+
+    .art,
+    .glare {
+      display: none;
+    }
+  }
+}
