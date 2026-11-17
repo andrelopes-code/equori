@@ -5,7 +5,7 @@ import styles from "@/ui/card-face/card-face.module.css";
 import amex from "@/ui/card-face/network/amex.svg";
 import { EloMark } from "@/ui/card-face/network/elo";
 import hipercard from "@/ui/card-face/network/hipercard.svg";
-import mastercard from "@/ui/card-face/network/mastercard.svg";
+import { MastercardMark } from "@/ui/card-face/network/mastercard";
 import { VisaMark } from "@/ui/card-face/network/visa";
 
 interface CardFaceNetworkProps {
@@ -30,7 +30,7 @@ const marks = new Map<string, Mark>([
     {
       label: "cardFace.network.mastercard",
       height: 9.6,
-      mark: <img alt="" src={mastercard} />,
+      mark: <MastercardMark />,
     },
   ],
   [
