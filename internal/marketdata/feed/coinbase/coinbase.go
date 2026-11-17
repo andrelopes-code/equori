@@ -172,7 +172,7 @@ func (s Source) fetchCode(
 			return out, fmt.Errorf("fetch Coinbase candles: %w", err)
 		}
 
-		got, err := parse(body, code, quote, from, to)
+		got, err := parse(body, code, quote, from, to, s.now())
 		out = append(out, got...)
 
 		if err != nil {
@@ -185,7 +185,10 @@ func (s Source) fetchCode(
 	return out, nil
 }
 
-func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.Quote, error) {
+// parse skips a candle whose 24 hours have not passed at now: its close is still moving (A248 CQ3).
+func parse(
+	body []byte, code, quote money.Currency, from, to, now time.Time,
+) ([]feed.Quote, error) {
 	var answer struct {
 		Candles []struct {
 			Start string `json:"start"`
@@ -203,6 +206,10 @@ func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.
 		secs, err := strconv.ParseInt(c.Start, 10, 64)
 		if err != nil {
 			return out, fmt.Errorf("read candle start %q: %w", c.Start, err)
+		}
+
+		if time.Unix(secs, 0).Add(24 * time.Hour).After(now) {
+			continue
 		}
 
 		date := time.Unix(secs, 0).UTC().Truncate(24 * time.Hour)

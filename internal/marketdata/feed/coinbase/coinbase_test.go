@@ -180,6 +180,60 @@ func TestFetch(t *testing.T) {
 	}
 }
 
+// A248 CQ3: a candle is a close once its 24 hours have passed.
+func TestFetchDropsRunningCandle(t *testing.T) {
+	t.Parallel()
+
+	const (
+		first  = "ETH USD 2026-11-07 3001.5"
+		second = "ETH USD 2026-11-08 3050.12"
+		third  = "ETH USD 2026-11-09 3088.45"
+	)
+
+	tests := []struct {
+		name   string
+		now    string
+		quotes []string
+	}{
+		{"day running", "2026-11-09T00:20:00Z", []string{first, second}},
+		{"last second", "2026-11-09T23:59:59Z", []string{first, second}},
+		{"day ended", "2026-11-10T00:00:00Z", []string{first, second, third}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					_, _ = w.Write([]byte(ethCandles))
+				}),
+			)
+			t.Cleanup(srv.Close)
+
+			src := coinbase.New(srv.Client(), srv.URL, at(tc.now))
+			src.Codes([]feed.Instrument{{Code: "ETH", Type: "crypto", QuoteCurrency: "USD"}})
+
+			got, err := src.Fetch(
+				t.Context(), []money.Currency{"ETH"}, day("2026-11-01"), day("2026-11-09"),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var lines []string
+			for _, q := range got {
+				lines = append(lines, fmt.Sprintf("%s %s %s %s",
+					q.Instrument, q.Quote, q.Date.Format(time.DateOnly), q.Value.String()))
+			}
+
+			if !slices.Equal(lines, tc.quotes) {
+				t.Fatalf("quotes = %v, want %v", lines, tc.quotes)
+			}
+		})
+	}
+}
+
 func day(s string) time.Time {
 	d, err := time.Parse(time.DateOnly, s)
 	if err != nil {
