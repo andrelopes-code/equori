@@ -66,6 +66,16 @@ var applications = []application{
 		spreadBP:   1260,
 	},
 	{
+		// Matured six months ago: redeemed on the day, with the income tax of a holding above 720 days.
+		subtype:    "cdb",
+		issuer:     "Banco Pine",
+		name:       "CDB Pine 11,80% ao ano",
+		cents:      150000,
+		monthsAgo:  30,
+		termMonths: 24,
+		spreadBP:   1180,
+	},
+	{
 		subtype:    "lci",
 		issuer:     "Banco Inter",
 		name:       "LCI Inter 94% do CDI",

@@ -430,8 +430,9 @@ func TestSeed(t *testing.T) {
 			t.Fatal(s.err)
 		}
 
-		if len(out.Items) != 2 {
-			t.Fatalf("payments of the last 399 days = %d, want 2", len(out.Items))
+		// Two coupons of the debenture and the maturity of the CDB redeemed six months ago.
+		if len(out.Items) != 3 {
+			t.Fatalf("payments of the last 399 days = %d, want 3", len(out.Items))
 		}
 
 		for _, item := range out.Items {

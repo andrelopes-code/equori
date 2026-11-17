@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -15,10 +16,17 @@ const assumedInflation = 0.048
 
 // applied is a contract of the book: the code the application returned and what went into it.
 type applied struct {
-	code  string
-	date  time.Time
-	cents int64
+	code     string
+	date     time.Time
+	cents    int64
+	quantity money
+	price    float64 // of one unit on the day of the application
+
+	redeemed bool
 }
+
+// redemptionTaxBP is the income tax of a gain held above 720 days, in basis points.
+const redemptionTaxBP = 1500
 
 // applyFixedIncome schedules each application and the interest dates that have passed since.
 func (s *seeder) applyFixedIncome() {
@@ -27,6 +35,10 @@ func (s *seeder) applyFixedIncome() {
 		d := s.businessDay(month, 10)
 
 		s.investAt(d, func() { s.apply(i, a, d) })
+
+		if matured := d.AddDate(0, a.termMonths, 0); !matured.After(s.today) {
+			s.investAt(matured, func() { s.redeem(i, a, matured) })
+		}
 
 		if a.couponEvery == 0 {
 			continue
@@ -65,6 +77,7 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 	var out struct {
 		Instrument string `json:"instrument"`
 		UnitPrice  string `json:"unit_price"`
+		Quantity   money  `json:"quantity"`
 	}
 
 	s.do(http.MethodPost, "/fixed-income-applications", map[string]any{
@@ -87,7 +100,51 @@ func (s *seeder) apply(i int, a application, d time.Time) {
 	}, nil)
 
 	s.bal[s.id("xp.cash")] -= a.cents
-	s.applied[i] = applied{code: out.Instrument, date: d, cents: a.cents}
+	price, err := strconv.ParseFloat(out.UnitPrice, 64)
+	if err != nil && s.err == nil {
+		s.fail("unit price of %s: %v", a.name, err)
+	}
+
+	s.applied[i] = applied{
+		code:     out.Instrument,
+		date:     d,
+		cents:    a.cents,
+		quantity: out.Quantity,
+		price:    price,
+	}
+}
+
+// redeem sells the whole contract on the business day on or after its maturity d, at the price a pre-fixed rate
+// accrued, less the income tax on the gain.
+func (s *seeder) redeem(i int, a application, d time.Time) {
+	d = s.onOrAfter(d)
+	c := s.applied[i]
+	factor := math.Pow(1+float64(a.spreadBP)/10000, float64(a.termMonths)/12)
+	gross := int64(math.Round(float64(c.cents) * factor))
+	tax := (gross - c.cents) * redemptionTaxBP / 10000
+
+	s.do(http.MethodPost, "/trades", map[string]any{
+		"brokerage_id": s.id("xp"),
+		"instrument":   c.code,
+		"side":         "sell",
+		"date":         iso(d),
+		"quantity":     c.quantity,
+		"unit_price":   strconv.FormatFloat(c.price*factor, 'f', 8, 64),
+		"taxes":        brl(tax),
+		"description":  "Resgate no vencimento de " + a.name,
+	}, nil)
+
+	s.bal[s.id("xp.cash")] += gross - tax
+	s.applied[i].redeemed = true
+}
+
+// onOrAfter is the first business day on or after d.
+func (s *seeder) onOrAfter(d time.Time) time.Time {
+	for d.Weekday() == time.Saturday || d.Weekday() == time.Sunday || s.holidays[d] {
+		d = d.AddDate(0, 0, 1)
+	}
+
+	return d
 }
 
 // hasRate reports whether the instance holds a rate of the index for the month of d; a contract without it has no price.
@@ -137,28 +194,43 @@ func (a application) contract(d time.Time) map[string]any {
 	return c
 }
 
-// receiveInterest records the interest the contract paid on the business day on or after d. The gross is what the
-// contract accrued since the last payment at the rates the persona assumes; the notice of the broker states it.
+// receiveInterest records the interest the contract paid on the business day on or after d, with the gross the
+// instance expects. An instance that states none takes what the contract accrued since the last payment at the
+// rates the persona assumes; the notice of the broker states the amount either way.
 func (s *seeder) receiveInterest(a application, code string, d time.Time) {
-	for d.Weekday() == time.Saturday || d.Weekday() == time.Sunday || s.holidays[d] {
-		d = d.AddDate(0, 0, 1)
-	}
+	d = s.onOrAfter(d)
 
 	years := float64(a.couponEvery) / 12
 	factor := math.Pow(1+assumedInflation, years) * math.Pow(1+float64(a.spreadBP)/10000, years)
-	gross := int64(math.Round(float64(a.cents) * (factor - 1)))
+	gross := brl(int64(math.Round(float64(a.cents) * (factor - 1))))
+
+	var out struct {
+		Items []struct {
+			Instrument string `json:"instrument"`
+			Kind       string `json:"kind"`
+			Gross      *money `json:"gross"`
+		} `json:"items"`
+	}
+
+	s.do(http.MethodGet, "/fixed-income-events?from="+iso(d)+"&to="+iso(d), nil, &out)
+
+	for _, e := range out.Items {
+		if e.Instrument == code && e.Kind == "interest" && e.Gross != nil {
+			gross = *e.Gross
+		}
+	}
 
 	s.do(http.MethodPost, "/investment-income", map[string]any{
 		"brokerage_id": s.id("xp"),
 		"instrument":   code,
 		"income_type":  "coupon",
 		"date":         iso(d),
-		"gross":        brl(gross),
+		"gross":        gross,
 		"category_id":  s.id("income.coupons"),
 		"description":  "Juros de " + a.name,
 	}, nil)
 
-	s.bal[s.id("xp.cash")] += gross
+	s.bal[s.id("xp.cash")] += gross.Amount
 }
 
 // appliedValue is what the contracts are worth on d, in cents, at the rate the persona assumes.
@@ -166,7 +238,7 @@ func (s *seeder) appliedValue(d time.Time) int64 {
 	var total float64
 
 	for _, c := range s.applied {
-		if c.code == "" || c.date.After(d) {
+		if c.code == "" || c.redeemed || c.date.After(d) {
 			continue
 		}
 

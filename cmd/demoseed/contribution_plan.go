@@ -16,6 +16,10 @@ func (s *seeder) saveContributionPlan() {
 
 	fixed, _ := classes[fixedIncomeGroup]["members"].([]map[string]any)
 	for _, c := range s.applied {
+		if c.redeemed {
+			continue
+		}
+
 		fixed = append(fixed, map[string]any{"instrument": c.code})
 	}
 
