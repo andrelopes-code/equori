@@ -104,7 +104,7 @@ The rows reproduce the rules in force at the date of this document; the implemen
 
 `GET /reports/return?account_id=&from=&to=&value_in=` returns `{annual_bp, flows, opening, closing}` where `annual_bp` is the internal rate of return of the dated flows and the closing value, annualized, rounded half to even to an integer of basis points. It returns 422 `return_undefined` when the opening value and the flows are all zero, or when the solver does not converge. The solver may use floating point internally (AG2). A period longer than 366 days is a 400.
 
-**Allocation.** `GET /reports/allocation?date=&by=type|currency|institution&value_in=` returns the valued balance of every open asset account grouped by the dimension, with the share in basis points that sums to 10000 (the last group takes the rounding remainder), at the base currency by default.
+**Allocation.** `GET /reports/allocation?date=&by=type|currency|institution&value_in=` returns the valued balance of every open asset account grouped by the dimension, with the share in basis points that sums to 10000 (the last group takes the rounding remainder), at the base currency by default. Amendment of 2026-11-17: the shares divide the sum of the positive groups, and a group that is not positive has share 0; a cash balance below zero in the base gave the other groups shares above 10000.
 
 **Net worth.** `GET /reports/net-worth?date=&value_in=` returns assets, liabilities and their difference, valued. Liabilities include card statements owed and loans.
 

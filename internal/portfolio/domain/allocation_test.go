@@ -24,6 +24,21 @@ func TestAllocate(t *testing.T) {
 			[]Holding{{"b", 10}, {"a", 10}, {"c", 20}},
 			[]Group{{"c", 20, 5000}, {"a", 10, 2500}, {"b", 10, 2500}},
 		},
+		{
+			"a negative group has no share and leaves the base of the others",
+			[]Holding{{"fixed", 300}, {"stock", 100}, {"currency", -350}},
+			[]Group{{"fixed", 300, 7500}, {"stock", 100, 2500}, {"currency", -350, 0}},
+		},
+		{
+			"the last positive group takes the rounding remainder",
+			[]Holding{{"a", 2}, {"b", 1}, {"c", 0}, {"d", -1}},
+			[]Group{{"a", 2, 6666}, {"b", 1, 3334}, {"c", 0, 0}, {"d", -1, 0}},
+		},
+		{
+			"a negative total still shares the positive groups",
+			[]Holding{{"a", 100}, {"b", -300}},
+			[]Group{{"a", 100, 10000}, {"b", -300, 0}},
+		},
 		{"zero total has no share", []Holding{{"a", 0}}, []Group{{"a", 0, 0}}},
 		{"nothing held", nil, nil},
 	}

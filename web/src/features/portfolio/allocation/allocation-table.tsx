@@ -41,6 +41,9 @@ interface AllocationTableProps {
 
 const columns = 4;
 
+// A value below zero is no part of the whole the shares divide.
+const noShare = "—";
+
 // D3: a proportion is read as a length beside its exact value and share, one table that replaces
 // a chart and the table repeating its figures.
 export function AllocationTable({
@@ -58,6 +61,8 @@ export function AllocationTable({
 
   const money = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
   const percent = (bp: number) => formatBasisPoints(bp, tag);
+  const share = (row: AllocationRow) =>
+    row.value.amount < 0 ? noShare : percent(row.share);
 
   return (
     <Table
@@ -90,7 +95,7 @@ export function AllocationTable({
                     <ShareBar share={row.share} />
                   </TableCell>
                   <TableCell numeric>{money(row.value)}</TableCell>
-                  <TableCell numeric>{percent(row.share)}</TableCell>
+                  <TableCell numeric>{share(row)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

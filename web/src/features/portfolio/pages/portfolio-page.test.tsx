@@ -133,6 +133,23 @@ describe("Portfolio page", () => {
     ]);
   });
 
+  it("PC6: a cash balance below zero has no share and leaves the base of the others", async () => {
+    const fetch = portfolioApi({
+      [`GET /api/v1/accounts/${cashID}/balance`]: () =>
+        json(200, { balance: brl(-5000), value: brl(-5000) }),
+    });
+    await renderApp("/portfolio", { fetch });
+    const table = await where();
+
+    await within(table).findByText(catalogEn["instruments.type.cash"]);
+    expect(tableRows(table).slice(1)).toEqual([
+      "REITs||R$105.00|74.46%",
+      "Stocks||R$36.00|25.54%",
+      `${catalogEn["instruments.type.cash"]}||−R$50.00|—`,
+      "Total|R$91.00|100.00%",
+    ]);
+  });
+
   it("PC5: one control groups the bars and the list, from the address", async () => {
     const fetch = portfolioApi({
       "GET /api/v1/accounts": () =>

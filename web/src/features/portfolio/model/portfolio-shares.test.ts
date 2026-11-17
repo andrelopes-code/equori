@@ -22,6 +22,18 @@ describe("sharesBP", () => {
       [0, 0],
     ],
     [[], []],
+    [
+      [300, 100, -350],
+      [7500, 2500, 0],
+    ],
+    [
+      [2, -1, 1],
+      [6666, 0, 3334],
+    ],
+    [
+      [100, -300],
+      [10000, 0],
+    ],
   ])("splits %j into %j", (amounts, expected) => {
     expect(sharesBP(amounts)).toEqual(expected);
   });

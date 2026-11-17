@@ -7053,8 +7053,9 @@ paths:
         Each account counts its own balance, valued in value_in (the base currency by default) with the stored prices
         of the date. type groups by the type of the instrument held (currency for cash); currency by the quotation
         currency of a security or the currency itself; institution by the institution id, empty without one. Groups are
-        ordered by value, largest first; shares are in basis points, rounded down, and the last group takes the
-        remainder so they add up to 10000. A total that is not positive has no shares.
+        ordered by value, largest first; shares are in basis points of the sum of the positive groups, rounded down,
+        and the last positive group takes the remainder so they add up to 10000. A group that is not positive (a
+        cash balance below zero) has share 0.
       parameters:
         - name: date
           in: query
