@@ -54,7 +54,8 @@ export function useSubmitEntry({
       await submitBuilt(next, built.entry);
       return;
     }
-    const problems = draftProblems(draft);
+    if (base === undefined) return;
+    const problems = draftProblems(draft, accountsById, base);
     if (Object.keys(problems).length > 0) {
       setErrors(
         Object.fromEntries(
@@ -64,7 +65,6 @@ export function useSubmitEntry({
       setSummary(t("entry.fixFields"));
       return;
     }
-    if (base === undefined) return;
     setErrors({});
     setSummary(null);
     try {

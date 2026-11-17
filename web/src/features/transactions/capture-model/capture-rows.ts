@@ -35,6 +35,7 @@ export function readRows(
   keys: readonly string[],
   overrides: Readonly<Record<string, LineOverride>>,
   accountsById: Map<string, Account>,
+  base: string | undefined,
 ): ReadRow[] {
   return lines.map((line, i) => {
     const override = overrides[keys[i] ?? ""];
@@ -47,7 +48,7 @@ export function readRows(
       draft,
       issues,
       edited: override?.edited !== undefined,
-      problems: issues.length > 0 ? [] : problemsOf(draft, accountsById),
+      problems: issues.length > 0 ? [] : problemsOf(draft, accountsById, base),
     };
   });
 }

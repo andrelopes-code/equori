@@ -32,7 +32,13 @@ describe("readRows", () => {
     const lines = [line(), line({ description: "Padaria" })];
     const edited = { ...draftOf(line()), description: "Feira" };
 
-    const rows = readRows(lines, ["a", "b"], { b: { edited } }, accounts);
+    const rows = readRows(
+      lines,
+      ["a", "b"],
+      { b: { edited } },
+      accounts,
+      "BRL",
+    );
 
     expect(rows.map((r) => [r.key, r.draft.description, r.edited])).toEqual([
       ["a", "Mercado", false],
@@ -41,7 +47,7 @@ describe("readRows", () => {
   });
 
   it("keys a line without a key by its index", () => {
-    const rows = readRows([line()], [], {}, accounts);
+    const rows = readRows([line()], [], {}, accounts, "BRL");
 
     expect(rows[0]?.key).toBe("0");
   });
@@ -54,7 +60,7 @@ describe("readRows", () => {
       line({ amount: zero, issues: [issue] as never }),
     ];
 
-    const rows = readRows(lines, ["a", "b"], {}, accounts);
+    const rows = readRows(lines, ["a", "b"], {}, accounts, "BRL");
 
     expect(rows.map((r) => r.problems)).toEqual([
       ["capture.problem.amount"],
@@ -65,7 +71,7 @@ describe("readRows", () => {
 
 describe("suggestedRows", () => {
   it("fills an empty category of an unedited row", () => {
-    const read = readRows([line()], ["a"], {}, accounts);
+    const read = readRows([line()], ["a"], {}, accounts, "BRL");
     const suggestions = [
       { description: "Mercado", kind: "expense", categoryId: "food" },
     ];
@@ -83,6 +89,7 @@ describe("suggestedRows", () => {
       ["a", "b"],
       { b: { edited } },
       accounts,
+      "BRL",
     );
     const suggestions = [
       { description: "Mercado", kind: "expense", categoryId: "food" },

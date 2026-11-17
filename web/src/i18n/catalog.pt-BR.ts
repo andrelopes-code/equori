@@ -867,6 +867,15 @@ export const catalogPtBR: Catalog = {
   "entry.balanced": "Equilibrado",
   "entry.unbalanced": "Diferença de {amount}",
   "entry.required.amount": "Informe um valor.",
+  "entry.baseAmount": "Valor em {currency}",
+  "entry.baseAmount.priced":
+    "Pela cotação de {date}: 1 {code} = {rate} {currency}. Ajuste se o valor real foi outro.",
+  "entry.baseAmount.unpriced":
+    "Sem cotação de {code} em {currency} até {date}. Informe o valor.",
+  "entry.required.baseAmount": "Informe o valor na moeda base.",
+  "entry.transfer.currencies":
+    "As contas têm moedas diferentes. Registre um câmbio.",
+  "entry.row.baseAmount": "Valor em {currency} do lançamento {index}",
   "entry.kind.fixed_income": "Aplicação em renda fixa",
   "entry.kindHint.fixed_income": "CDB, LCI, LCA, debêntures",
   "fixedIncome.what": "O quê",
@@ -1566,6 +1575,7 @@ export const catalogPtBR: Catalog = {
   "capture.problem.installments":
     "Parcelamento só vale para despesa no cartão.",
   "capture.problem.rows": "Os lançamentos precisam citar uma conta e fechar.",
+  "capture.problem.baseAmount": "Informe o valor na moeda base.",
   "offline.title": "Sem conexão com o servidor",
   "offline.subheading":
     "Escreva o que gastou; o equori lê quando o servidor responder de novo.",

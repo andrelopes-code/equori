@@ -2,6 +2,7 @@ import type { components } from "@/api/schema.gen";
 import {
   imbalance,
   inputFromDraft,
+  isForeign,
 } from "@/features/transactions/entry-model/entry-kind";
 import type { EntryDraft } from "@/features/transactions/entry-model/entry-kind";
 import type { MessageKey } from "@/i18n/catalog.en";
@@ -90,22 +91,36 @@ export function overrideWithChoice(
 }
 
 // What keeps a draft from being recorded, beyond the issues of its reading. A category is
-// never required: a line without one records as uncategorized (A113).
+// never required: a line without one records as uncategorized (A113). base is the book's base
+// currency, absent until the settings load.
 export function problemsOf(
   draft: LineDraft,
   accounts: Map<string, Account>,
+  base: string | undefined,
 ): MessageKey[] {
+  // An account in another currency needs the value of its amount in the base currency (DM1).
+  const unvalued = (id: string | null, value: number | undefined) =>
+    base !== undefined && isForeign(id, accounts, base) && (value ?? 0) <= 0;
+
   if (draft.kind === "advanced") {
     const complete = draft.rows.every(
-      (r) => r.accountId !== null && r.amount !== 0,
+      (r) =>
+        r.accountId !== null &&
+        r.amount !== 0 &&
+        !unvalued(r.accountId, r.baseAmount),
     );
-    return complete && draft.rows.length >= 2 && imbalance(draft.rows) === 0
+    const balanced = imbalance(draft.rows, accounts, base ?? "") === 0;
+
+    return complete && draft.rows.length >= 2 && balanced
       ? []
       : ["capture.problem.rows"];
   }
   const problems: MessageKey[] = [];
   if (draft.amount <= 0) problems.push("capture.problem.amount");
   if (draft.accountId === null) problems.push("capture.problem.account");
+  if (unvalued(draft.accountId, draft.baseAmount)) {
+    problems.push("capture.problem.baseAmount");
+  }
   if (draft.kind === "transfer") {
     if (draft.toAccountId === null)
       problems.push("capture.problem.destination");

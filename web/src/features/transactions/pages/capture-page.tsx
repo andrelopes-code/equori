@@ -57,6 +57,7 @@ export function CapturePage() {
     capturedOn: capture.entry?.capturedOn ?? null,
     accountsById,
     accountsLoaded: accounts.data !== undefined,
+    base: settings.data?.base_currency,
   });
   const setup = captureSetup(
     accounts.data,

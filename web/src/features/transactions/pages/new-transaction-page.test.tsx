@@ -280,6 +280,45 @@ describe("NewTransactionPage", () => {
     ).toMatchObject({ brokerageId: brokerID });
   });
 
+  it("records the date the owner sets", async () => {
+    const sent: unknown[] = [];
+    await renderApp("/transactions/new", { fetch: api(sent) });
+    await userEvent.type(
+      await screen.findByRole("textbox", { name: catalogEn["entry.amount"] }),
+      "12000",
+    );
+    await chooseAccount(catalogEn["entry.payWith"], "Itau");
+    await pick(catalogEn["category.label"], "Mercado");
+
+    const date = screen.getByRole("group", {
+      name: new RegExp(`^${catalogEn["entry.date"]}`),
+    });
+    await userEvent.click(
+      within(date).getByRole("spinbutton", { name: "month" }),
+    );
+    await userEvent.keyboard("09");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toMatchObject([{ date: "2026-09-17" }]);
+    });
+  });
+
+  it("offers the postings in the advanced kind", async () => {
+    await renderApp("/transactions/new", { fetch: api([]) });
+    await screen.findByRole("textbox", { name: catalogEn["entry.amount"] });
+
+    await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.advanced"]);
+
+    expect(
+      await screen.findByRole("spinbutton", {
+        name: catalogEn["entry.row.amount"].replace("{index}", "1"),
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("names the missing fields before sending anything", async () => {
     const sent: unknown[] = [];
     await renderApp("/transactions/new", { fetch: api(sent) });
@@ -350,5 +389,178 @@ describe("NewTransactionPage", () => {
         name: optionalName(catalogEn["facts.description"]),
       }),
     ).toHaveValue("Half done");
+  });
+});
+
+// An account in a currency other than the base: the entry carries its value in the base currency,
+// taken from the stored price until the owner types another (DM1; feature-design C2, C3).
+describe("NewTransactionPage on an account in another currency", () => {
+  const walletID = "99999999-9999-4999-8999-999999999999";
+  const cashbackID = "66666666-6666-4666-8666-666666666666";
+  const valueIn = catalogEn["entry.baseAmount"].replace("{currency}", "BRL");
+
+  function foreignApi(sent: unknown[], price: string | undefined) {
+    return fakeApi({
+      ...sharedRoutes,
+      "GET /api/v1/instruments": () =>
+        json(200, {
+          items: [
+            { code: "BRL", type: "currency", scale: 2, name: "Real" },
+            { code: "USD", type: "currency", scale: 2, name: "US Dollar" },
+          ],
+        }),
+      "GET /api/v1/accounts": () =>
+        json(200, {
+          items: [
+            ...accounts,
+            {
+              id: walletID,
+              name: "Meli",
+              class: "asset",
+              kind: "wallet",
+              currency: "USD",
+            },
+            {
+              id: cashbackID,
+              name: "Cashback",
+              class: "income",
+              currency: "BRL",
+            },
+          ],
+        }),
+      "GET /api/v1/prices": (req) => {
+        const query = new URL(req.url).searchParams;
+        return json(200, {
+          items:
+            price === undefined
+              ? []
+              : [
+                  {
+                    instrument: query.get("instrument"),
+                    quote_instrument: query.get("quote_instrument"),
+                    date: "2026-10-16",
+                    value: price,
+                    source: "bcb_ptax",
+                  },
+                ],
+        });
+      },
+      "POST /api/v1/transactions": async (req) => {
+        sent.push(await req.json());
+        return json(201, transactionFixture());
+      },
+    });
+  }
+
+  async function fillIncome() {
+    await chooseEntryKind(userEvent.setup(), catalogEn["entry.kind.income"]);
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["entry.amount"] }),
+      "235",
+    );
+    await chooseAccount(catalogEn["entry.receiveIn"], "Meli");
+    await pick(catalogEn["category.label"], "Cashback");
+  }
+
+  it("records an income valued by the stored price", async () => {
+    const sent: unknown[] = [];
+    await renderApp("/transactions/new", { fetch: foreignApi(sent, "5.4830") });
+
+    await fillIncome();
+    await screen.findByText(/1 USD = 5[.,]4830 BRL/);
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          date: "2026-10-17",
+          postings: [
+            {
+              account_id: walletID,
+              amount: { amount: 235, currency: "USD" },
+              weight: money(1289),
+            },
+            { account_id: cashbackID, amount: money(-1289) },
+          ],
+        },
+      ]);
+    });
+  });
+
+  it("asks for the value when no price is stored, and sends the typed one", async () => {
+    const sent: unknown[] = [];
+    await renderApp("/transactions/new", {
+      fetch: foreignApi(sent, undefined),
+    });
+
+    await fillIncome();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+
+    expect(
+      await screen.findByText(catalogEn["entry.required.baseAmount"]),
+    ).toBeInTheDocument();
+    expect(sent).toEqual([]);
+
+    await userEvent.type(
+      screen.getByRole("textbox", { name: valueIn }),
+      "1300",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          date: "2026-10-17",
+          postings: [
+            {
+              account_id: walletID,
+              amount: { amount: 235, currency: "USD" },
+              weight: money(1300),
+            },
+            { account_id: cashbackID, amount: money(-1300) },
+          ],
+        },
+      ]);
+    });
+  });
+
+  it("keeps a typed value when the amount changes", async () => {
+    const sent: unknown[] = [];
+    await renderApp("/transactions/new", { fetch: foreignApi(sent, "5.4830") });
+
+    await fillIncome();
+    await screen.findByText(/1 USD = 5[.,]4830 BRL/);
+    const value = screen.getByRole("textbox", { name: valueIn });
+    await userEvent.clear(value);
+    await userEvent.type(value, "1250");
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["entry.amount"] }),
+      "0",
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["entry.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          date: "2026-10-17",
+          postings: [
+            {
+              account_id: walletID,
+              amount: { amount: 2350, currency: "USD" },
+              weight: money(1250),
+            },
+            { account_id: cashbackID, amount: money(-1250) },
+          ],
+        },
+      ]);
+    });
   });
 });

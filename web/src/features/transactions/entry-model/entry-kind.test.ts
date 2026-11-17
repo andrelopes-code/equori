@@ -125,10 +125,14 @@ describe("inputFromDraft", () => {
 describe("imbalance", () => {
   it("sums the advanced rows", () => {
     expect(
-      imbalance([
-        { accountId: "a", amount: -900, memo: "" },
-        { accountId: "b", amount: 800, memo: "" },
-      ]),
+      imbalance(
+        [
+          { accountId: "a", amount: -900, memo: "" },
+          { accountId: "b", amount: 800, memo: "" },
+        ],
+        accounts,
+        "BRL",
+      ),
     ).toBe(-100);
   });
 });
@@ -212,6 +216,162 @@ describe("draftFromTransaction", () => {
         { accountId: "checking", amount: -900, memo: "" },
         { accountId: "food", amount: 600, memo: "" },
         { accountId: "salary", amount: 300, memo: "" },
+      ],
+    });
+  });
+});
+
+// An account in a currency other than the base: each posting on it carries its value in the base
+// currency as the weight, and the category takes that value (DM1).
+describe("an account in another currency", () => {
+  const foreign = new Map([
+    ...accounts,
+    ["wallet", { ...account("wallet", "asset"), currency: "USD" }],
+    ["vault", { ...account("vault", "asset"), currency: "USD" }],
+  ]);
+  const usd = (amount: number) => ({ amount, currency: "USD" });
+
+  it("sends an income with its value in the base currency", () => {
+    const draft = {
+      ...emptyDraft("2026-10-10"),
+      kind: "income" as const,
+      amount: 235,
+      baseAmount: 1288,
+      accountId: "wallet",
+      categoryId: "salary",
+    };
+
+    const input = inputFromDraft(draft, foreign, "BRL");
+
+    expect(input.postings).toEqual([
+      { account_id: "wallet", amount: usd(235), weight: money(1288) },
+      { account_id: "salary", amount: money(-1288) },
+    ]);
+  });
+
+  it("sends an expense with its value in the base currency", () => {
+    const draft = {
+      ...emptyDraft("2026-10-10"),
+      amount: 1000,
+      baseAmount: 5483,
+      accountId: "wallet",
+      categoryId: "food",
+    };
+
+    const input = inputFromDraft(draft, foreign, "BRL");
+
+    expect(input.postings).toEqual([
+      { account_id: "wallet", amount: usd(-1000), weight: money(-5483) },
+      { account_id: "food", amount: money(5483) },
+    ]);
+  });
+
+  it("sends a transfer between two accounts of that currency with one value", () => {
+    const draft = {
+      ...emptyDraft("2026-10-10"),
+      kind: "transfer" as const,
+      amount: 1000,
+      baseAmount: 5483,
+      accountId: "wallet",
+      toAccountId: "vault",
+    };
+
+    const input = inputFromDraft(draft, foreign, "BRL");
+
+    expect(input.postings).toEqual([
+      { account_id: "wallet", amount: usd(-1000), weight: money(-5483) },
+      { account_id: "vault", amount: usd(1000), weight: money(5483) },
+    ]);
+  });
+
+  it("sends an advanced row with its value signed as its amount", () => {
+    const draft = {
+      ...emptyDraft("2026-10-10"),
+      kind: "advanced" as const,
+      rows: [
+        { accountId: "wallet", amount: -1000, baseAmount: 5483, memo: "" },
+        { accountId: "food", amount: 5483, memo: "" },
+      ],
+    };
+
+    const input = inputFromDraft(draft, foreign, "BRL");
+
+    expect(input.postings).toEqual([
+      { account_id: "wallet", amount: usd(-1000), weight: money(-5483) },
+      { account_id: "food", amount: money(5483) },
+    ]);
+  });
+
+  it("balances advanced rows by their value in the base currency", () => {
+    const rows = [
+      { accountId: "wallet", amount: -1000, baseAmount: 5483, memo: "" },
+      { accountId: "food", amount: 5000, memo: "" },
+    ];
+
+    expect(imbalance(rows, foreign, "BRL")).toBe(-483);
+  });
+
+  it("reads a recorded income back with its value", () => {
+    const recorded: Transaction = {
+      ...tx([]),
+      postings: [
+        {
+          id: "0",
+          account_id: "wallet",
+          amount: usd(235),
+          weight: money(1288),
+          status: "cleared",
+        },
+        {
+          id: "1",
+          account_id: "salary",
+          amount: money(-1288),
+          weight: money(-1288),
+          status: "cleared",
+        },
+      ],
+    };
+
+    const draft = draftFromTransaction(recorded, foreign);
+
+    expect(draft).toMatchObject({
+      kind: "income",
+      amount: 235,
+      baseAmount: 1288,
+      baseAmountTyped: true,
+      accountId: "wallet",
+      categoryId: "salary",
+    });
+  });
+
+  it("opens an exchange between two currencies in the advanced editor", () => {
+    const exchange: Transaction = {
+      ...tx([]),
+      postings: [
+        {
+          id: "0",
+          account_id: "checking",
+          amount: money(-5483),
+          weight: money(-5483),
+          status: "cleared",
+        },
+        {
+          id: "1",
+          account_id: "wallet",
+          amount: usd(1000),
+          weight: money(5483),
+          status: "cleared",
+        },
+      ],
+    };
+
+    const draft = draftFromTransaction(exchange, foreign);
+
+    expect(draft).toMatchObject({
+      kind: "advanced",
+      rows: [
+        { accountId: "checking", amount: -5483, memo: "" },
+        { accountId: "wallet", amount: 1000, baseAmount: 5483, memo: "" },
       ],
     });
   });

@@ -858,6 +858,15 @@ export const catalogEn = {
   "entry.balanced": "Balanced",
   "entry.unbalanced": "Off by {amount}",
   "entry.required.amount": "Enter an amount.",
+  "entry.baseAmount": "Value in {currency}",
+  "entry.baseAmount.priced":
+    "At the price of {date}: 1 {code} = {rate} {currency}. Adjust it if the real value was another.",
+  "entry.baseAmount.unpriced":
+    "No price of {code} in {currency} up to {date}. Enter the value.",
+  "entry.required.baseAmount": "Enter the value in the base currency.",
+  "entry.transfer.currencies":
+    "The accounts hold different currencies. Record an exchange.",
+  "entry.row.baseAmount": "Value in {currency} of posting {index}",
   "entry.kind.fixed_income": "Fixed income application",
   "entry.kindHint.fixed_income": "CDB, LCI, LCA, debentures",
   "fixedIncome.what": "What",
@@ -1558,6 +1567,7 @@ export const catalogEn = {
   "capture.problem.sameAccount": "Source and destination are the same account.",
   "capture.problem.installments": "Installments apply to card expenses only.",
   "capture.problem.rows": "The postings must name an account and balance.",
+  "capture.problem.baseAmount": "Enter the value in the base currency.",
   "offline.title": "No connection to the server",
   "offline.subheading":
     "Write what you spent; equori reads it when the server answers again.",

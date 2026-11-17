@@ -35,6 +35,8 @@ interface CaptureReadingInput {
   capturedOn: string | null;
   accountsById: Map<string, Account>;
   accountsLoaded: boolean;
+  // The book's base currency, absent until the settings load.
+  base: string | undefined;
 }
 
 // The drafts the server reads from the text, with the owner's changes and the categories a
@@ -47,6 +49,7 @@ export function useCaptureReading({
   capturedOn,
   accountsById,
   accountsLoaded,
+  base,
 }: CaptureReadingInput) {
   const api = useApi();
   const settled = useDebounced(text, readDelay);
@@ -82,7 +85,7 @@ export function useCaptureReading({
     setOverrides((o) => pruneOverrides(o, keys));
   }
 
-  const read = readRows(lines, keys, overrides, accountsById);
+  const read = readRows(lines, keys, overrides, accountsById, base);
   const suggestions = useQuery(
     captureSuggestionsQuery(api, current && still ? suggestionItems(read) : []),
   );

@@ -1,10 +1,7 @@
-import { Button, IconButton } from "@slotted/react/button";
-import { CurrencyField } from "@slotted/react/currency-field";
-import { EntityPicker } from "@slotted/react/entity-picker";
+import { Button } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
-import { TextField } from "@slotted/react/text-field";
 import { Text } from "@slotted/react/typography";
 import { useMemo } from "react";
 
@@ -12,13 +9,23 @@ import type { components } from "@/api/schema.gen";
 import { useCategoryEntries } from "@/features/categories";
 import { imbalance } from "@/features/transactions/entry-model/entry-kind";
 import type { EntryRow } from "@/features/transactions/entry-model/entry-kind";
-import styles from "@/features/transactions/transaction-form/postings-editor.module.css";
+import { PostingRow } from "@/features/transactions/transaction-form/posting-row";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 type Account = components["schemas"]["Account"];
 
-// Advanced entry: any number of postings on any accounts; the sum per currency must be zero.
+export interface PostingsEditorProps {
+  rows: readonly EntryRow[];
+  onChange: (rows: EntryRow[]) => void;
+  accounts: readonly Account[];
+  baseCurrency: string;
+  scale: (code: string) => number;
+  errors: Record<string, string>;
+}
+
+// Advanced entry: any number of postings on any accounts; their values in the base currency must
+// add up to zero.
 export function PostingsEditor({
   rows,
   onChange,
@@ -26,18 +33,12 @@ export function PostingsEditor({
   baseCurrency,
   scale,
   errors,
-}: {
-  rows: readonly EntryRow[];
-  onChange: (rows: EntryRow[]) => void;
-  accounts: readonly Account[];
-  baseCurrency: string;
-  scale: (code: string) => number;
-  errors: Record<string, string>;
-}) {
+}: PostingsEditorProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const entries = useCategoryEntries(accounts);
+
   const byId = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
     [accounts],
@@ -60,80 +61,50 @@ export function PostingsEditor({
       }))
       .sort((a, b) => collator.compare(a.label, b.label));
   }, [accounts, entries, locale, t]);
+  const left = imbalance(rows, byId, baseCurrency);
 
   const set = (index: number, patch: Partial<EntryRow>) => {
     onChange(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
-  const left = imbalance(rows);
-  const currency =
-    (rows[0]?.accountId === null || rows[0] === undefined
-      ? undefined
-      : byId.get(rows[0].accountId)?.currency) ?? baseCurrency;
 
   return (
     <Stack gap={3}>
       {rows.map((row, index) => {
-        const rowCurrency =
-          (row.accountId === null
-            ? undefined
-            : byId.get(row.accountId)?.currency) ?? baseCurrency;
-        const digits = scale(rowCurrency);
-        const accountError = errors[`postings[${String(index)}].account_id`];
-        const amountError = errors[`postings[${String(index)}].amount`];
+        const field = `postings[${String(index)}]`;
+        const accountError = errors[`${field}.account_id`];
+        const amountError = errors[`${field}.amount`];
+        const baseError = errors[`${field}.weight`];
+
         return (
-          <div key={index} className={styles.row}>
-            <EntityPicker
-              aria-label={t("entry.row.account", { index: index + 1 })}
-              items={items}
-              value={row.accountId}
-              media="none"
-              openOn="focus"
-              invalid={accountError !== undefined}
-              onValueChange={(id) => {
-                set(index, { accountId: id });
-              }}
-            />
-            <CurrencyField
-              aria-label={t("entry.row.amount", { index: index + 1 })}
-              currency={rowCurrency}
-              unit="minor"
-              fractionDigits={digits}
-              value={row.amount}
-              invalid={amountError !== undefined}
-              onValueChange={(value: number | null) => {
-                set(index, { amount: value ?? 0 });
-              }}
-            />
-            <TextField
-              aria-label={t("entry.row.memo", { index: index + 1 })}
-              placeholder={t("entry.row.memoPlaceholder")}
-              value={row.memo}
-              maxLength={500}
-              onChange={(event) => {
-                set(index, { memo: event.target.value });
-              }}
-            />
-            <IconButton
-              aria-label={t("entry.row.remove", { index: index + 1 })}
-              variant="ghost"
-              tone="secondary"
-              disabled={rows.length <= 2}
-              onClick={() => {
-                onChange(rows.filter((_, i) => i !== index));
-              }}
-            >
-              <Icon>
-                <Glyph name="x" />
-              </Icon>
-            </IconButton>
-            {(accountError ?? amountError) !== undefined && (
-              <Text size="sm" tone="danger" className={styles.error}>
-                {accountError ?? amountError}
-              </Text>
-            )}
-          </div>
+          <PostingRow
+            key={index}
+            position={index + 1}
+            row={row}
+            items={items}
+            currency={
+              (row.accountId === null
+                ? undefined
+                : byId.get(row.accountId)?.currency) ?? baseCurrency
+            }
+            baseCurrency={baseCurrency}
+            scale={scale}
+            removable={rows.length > 2}
+            error={accountError ?? amountError ?? baseError}
+            invalid={{
+              account: accountError !== undefined,
+              amount: amountError !== undefined,
+              baseAmount: baseError !== undefined,
+            }}
+            onChange={(patch) => {
+              set(index, patch);
+            }}
+            onRemove={() => {
+              onChange(rows.filter((_, i) => i !== index));
+            }}
+          />
         );
       })}
+
       <Inline gap={3} justify="between">
         <Button
           size="sm"
@@ -150,6 +121,7 @@ export function PostingsEditor({
         >
           {t("entry.row.add")}
         </Button>
+
         <Text
           size="sm"
           numeric="tabular"
@@ -159,7 +131,10 @@ export function PostingsEditor({
           {left === 0
             ? t("entry.balanced")
             : t("entry.unbalanced", {
-                amount: fmt.money({ amount: left, currency }, scale(currency)),
+                amount: fmt.money(
+                  { amount: left, currency: baseCurrency },
+                  scale(baseCurrency),
+                ),
               })}
         </Text>
       </Inline>

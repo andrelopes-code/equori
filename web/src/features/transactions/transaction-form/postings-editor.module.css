@@ -8,6 +8,11 @@
     gap: var(--slotted-space-2);
   }
 
+  /* The value in the base currency sits under the amount it values. */
+  .base {
+    grid-column: 2;
+  }
+
   .error {
     grid-column: 1 / -1;
   }

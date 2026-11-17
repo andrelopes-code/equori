@@ -1,42 +1,26 @@
-import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { TextField } from "@slotted/react/text-field";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { AccountField } from "@/features/transactions/account-field/account-field";
 import { groupOf } from "@/features/transactions/model/account-groups";
-import { EntryAmountField } from "@/features/transactions/transaction-form/entry-amount-field";
+import { BaseAmountField } from "@/features/transactions/transaction-form/base-amount-field";
 import { EntryClassificationFields } from "@/features/transactions/transaction-form/entry-classification-fields";
+import { EntryDateField } from "@/features/transactions/transaction-form/entry-date-field";
+import { EntryDetailFields } from "@/features/transactions/transaction-form/entry-detail-fields";
 import { isBuiltKind } from "@/features/transactions/entry-model/entry-kind";
 import { EntryKindPicker } from "@/features/transactions/entry-kind-picker/entry-kind-picker";
 import type {
   EntryDraft,
   EntryKind,
 } from "@/features/transactions/entry-model/entry-kind";
-import { PostingsEditor } from "@/features/transactions/transaction-form/postings-editor";
+import { PostingsField } from "@/features/transactions/transaction-form/postings-field";
+import { SimpleEntryFields } from "@/features/transactions/transaction-form/simple-entry-fields";
 import { StatementChoice } from "@/features/transactions/transaction-form/statement-choice";
-import { TagsField } from "@/features/transactions/transaction-form/tags-field";
-import { useT } from "@/i18n/i18n-provider";
-import { DateInput } from "@/ui/form-fields/date-input";
-import { FieldTitle } from "@/ui/form-fields/field-title";
 import { FormLayout } from "@/ui/form-layout/form-layout";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
 
-export function TransactionForm({
-  draft,
-  onChange,
-  accounts,
-  payees,
-  tags,
-  baseCurrency,
-  scale,
-  errors,
-  autoFocusAmount = false,
-  onInvestment,
-  children,
-}: {
+export interface TransactionFormProps {
   draft: EntryDraft;
   onChange: (draft: EntryDraft) => void;
   accounts: readonly Account[];
@@ -51,25 +35,31 @@ export function TransactionForm({
   onInvestment?: (kind: EntryKind) => void;
   // Fields only one of the forms has, such as the reason of a correction.
   children?: ReactNode;
-}) {
-  const t = useT();
-  const set = (patch: Partial<EntryDraft>) => {
-    onChange({ ...draft, ...patch });
-  };
+}
+
+export function TransactionForm({
+  draft,
+  onChange,
+  accounts,
+  payees,
+  tags,
+  baseCurrency,
+  scale,
+  errors,
+  autoFocusAmount = false,
+  onInvestment,
+  children,
+}: TransactionFormProps) {
   const account =
     draft.accountId === null
       ? undefined
       : accounts.find((a) => a.id === draft.accountId);
   const currency = account?.currency ?? baseCurrency;
-  const digits = scale(currency);
-  const error = (name: string) => errors[name];
   const simpleKind = draft.kind === "advanced" ? null : draft.kind;
-  const accountLabel =
-    draft.kind === "transfer"
-      ? t("entry.from")
-      : draft.kind === "income"
-        ? t("entry.receiveIn")
-        : t("entry.payWith");
+
+  const set = (patch: Partial<EntryDraft>) => {
+    onChange({ ...draft, ...patch });
+  };
 
   return (
     <FormLayout>
@@ -86,84 +76,53 @@ export function TransactionForm({
       />
 
       {simpleKind !== null && (
-        <EntryAmountField
+        <SimpleEntryFields
           kind={simpleKind}
-          value={draft.amount}
+          draft={draft}
+          accounts={accounts}
           currency={currency}
-          scale={digits}
-          error={error("amount")}
-          autoFocus={autoFocusAmount}
-          onChange={(amount) => {
+          scale={scale}
+          errors={errors}
+          autoFocusAmount={autoFocusAmount}
+          onAmount={(amount) => {
             set({ amount });
           }}
-        />
-      )}
-
-      {simpleKind !== null && (
-        <Field required invalid={error("account") !== undefined}>
-          <FieldLabel>{accountLabel}</FieldLabel>
-          <AccountField
-            name="account"
-            title={accountLabel}
-            accounts={accounts}
-            value={draft.accountId}
-            exclude={draft.kind === "transfer" ? draft.toAccountId : null}
-            amount={draft.amount}
-            direction={draft.kind === "income" ? "in" : "out"}
-            date={draft.date}
-            categoryId={draft.kind === "transfer" ? null : draft.categoryId}
-            payeeId={draft.kind === "transfer" ? null : draft.payeeId}
-            kind={simpleKind}
-            currency={currency}
-            scale={scale}
-            onChange={(id) => {
-              set({ accountId: id, statement: null });
-            }}
-          />
-          {error("account") !== undefined && (
-            <FieldError>{error("account")}</FieldError>
-          )}
-        </Field>
-      )}
-
-      {draft.kind === "transfer" && (
-        <Field required invalid={error("to") !== undefined}>
-          <FieldLabel>{t("entry.to")}</FieldLabel>
-          <AccountField
-            name="to"
-            title={t("entry.to")}
-            accounts={accounts}
-            value={draft.toAccountId}
-            exclude={draft.accountId}
-            amount={draft.amount}
-            direction="in"
-            date={draft.date}
-            categoryId={null}
-            payeeId={null}
-            kind="transfer"
-            currency={currency}
-            scale={scale}
-            onChange={(id) => {
-              set({ toAccountId: id });
-            }}
-          />
-          {error("to") !== undefined && <FieldError>{error("to")}</FieldError>}
-        </Field>
-      )}
-
-      <Field required invalid={error("date") !== undefined}>
-        <FieldLabel>{t("entry.date")}</FieldLabel>
-        <DateInput
-          name="date"
-          value={draft.date}
-          onChange={(date) => {
-            set({ date, statement: null });
+          onAccount={(id) => {
+            // The value in the base currency belongs to the account's currency.
+            set({
+              accountId: id,
+              statement: null,
+              baseAmount: 0,
+              baseAmountTyped: false,
+            });
+          }}
+          onTo={(id) => {
+            set({ toAccountId: id });
           }}
         />
-        {error("date") !== undefined && (
-          <FieldError>{error("date")}</FieldError>
-        )}
-      </Field>
+      )}
+
+      <EntryDateField
+        value={draft.date}
+        error={errors.date}
+        onChange={(date) => {
+          set({ date, statement: null });
+        }}
+      />
+
+      <BaseAmountField
+        account={simpleKind === null ? undefined : account}
+        baseCurrency={baseCurrency}
+        scale={scale}
+        amount={draft.amount}
+        date={draft.date}
+        value={draft.baseAmount ?? 0}
+        typed={draft.baseAmountTyped ?? false}
+        error={errors.baseAmount}
+        onChange={(baseAmount, baseAmountTyped) => {
+          set({ baseAmount, baseAmountTyped });
+        }}
+      />
 
       {draft.kind === "expense" &&
         account !== undefined &&
@@ -195,53 +154,30 @@ export function TransactionForm({
       )}
 
       {draft.kind === "advanced" && (
-        <Field>
-          <FieldTitle
-            label={t("detail.postings")}
-            help={t("detail.postingsHelp")}
-          />
-          <PostingsEditor
-            rows={draft.rows}
-            onChange={(rows) => {
-              set({ rows });
-            }}
-            accounts={accounts}
-            baseCurrency={baseCurrency}
-            scale={scale}
-            errors={errors}
-          />
-        </Field>
+        <PostingsField
+          rows={draft.rows}
+          onChange={(rows) => {
+            set({ rows });
+          }}
+          accounts={accounts}
+          baseCurrency={baseCurrency}
+          scale={scale}
+          errors={errors}
+        />
       )}
 
-      <Field invalid={error("description") !== undefined}>
-        <FieldLabel>{t("facts.description")}</FieldLabel>
-        <TextField
-          name="description"
-          value={draft.description}
-          maxLength={500}
-          onChange={(event) => {
-            set({ description: event.target.value });
-          }}
-        />
-        {error("description") !== undefined && (
-          <FieldError>{error("description")}</FieldError>
-        )}
-      </Field>
-
-      <Field invalid={error("tags") !== undefined}>
-        <FieldTitle label={t("facts.tags")} help={t("facts.tagsHelp")} />
-        <TagsField
-          placeholder={t("entry.tagsPlaceholder")}
-          tags={tags}
-          value={draft.tags}
-          onChange={(value) => {
-            set({ tags: value });
-          }}
-        />
-        {error("tags") !== undefined && (
-          <FieldError>{error("tags")}</FieldError>
-        )}
-      </Field>
+      <EntryDetailFields
+        description={draft.description}
+        value={draft.tags}
+        tags={tags}
+        errors={errors}
+        onDescription={(description) => {
+          set({ description });
+        }}
+        onTags={(value) => {
+          set({ tags: value });
+        }}
+      />
 
       {children}
     </FormLayout>

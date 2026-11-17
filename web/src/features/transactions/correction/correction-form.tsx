@@ -93,7 +93,7 @@ export function CorrectionForm({
   const [conflict, setConflict] = useState<Conflict | null>(null);
 
   const send = async (expected: number) => {
-    const problems = draftProblems(draft);
+    const problems = draftProblems(draft, accountsById, baseCurrency);
     const local: Record<string, string> = Object.fromEntries(
       Object.entries(problems).map(([field, key]) => [field, t(key)]),
     );

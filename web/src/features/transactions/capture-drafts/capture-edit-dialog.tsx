@@ -31,6 +31,7 @@ type Payee = components["schemas"]["Payee"];
 const fieldOfProblem: Partial<Record<MessageKey, string>> = {
   "capture.problem.amount": "amount",
   "capture.problem.account": "account",
+  "capture.problem.baseAmount": "baseAmount",
   "capture.problem.destination": "to",
   "capture.problem.sameAccount": "to",
   "capture.problem.installments": "installments",
@@ -71,7 +72,7 @@ export function CaptureEditDialog({
 
   const apply = () => {
     const next = installable ? draft : { ...draft, installments: 0 };
-    const problems = problemsOf(next, accountsById);
+    const problems = problemsOf(next, accountsById, baseCurrency);
     if (problems.length > 0) {
       setErrors(
         Object.fromEntries(

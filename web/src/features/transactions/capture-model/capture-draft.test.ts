@@ -188,27 +188,36 @@ describe("problemsOf", () => {
   const base = draftOf(line());
 
   it("accepts a complete line without a category", () => {
-    expect(problemsOf(base, accounts)).toEqual([]);
+    expect(problemsOf(base, accounts, "BRL")).toEqual([]);
   });
 
   it("names what an edited line lacks", () => {
     expect(
-      problemsOf({ ...base, amount: 0, accountId: null }, accounts),
+      problemsOf({ ...base, amount: 0, accountId: null }, accounts, "BRL"),
     ).toEqual(["capture.problem.amount", "capture.problem.account"]);
     expect(
       problemsOf(
         { ...base, kind: "transfer", toAccountId: "checking" },
         accounts,
+        "BRL",
       ),
     ).toEqual(["capture.problem.sameAccount"]);
     expect(
-      problemsOf({ ...base, kind: "transfer", toAccountId: null }, accounts),
+      problemsOf(
+        { ...base, kind: "transfer", toAccountId: null },
+        accounts,
+        "BRL",
+      ),
     ).toEqual(["capture.problem.destination"]);
-    expect(problemsOf({ ...base, installments: 3 }, accounts)).toEqual([
+    expect(problemsOf({ ...base, installments: 3 }, accounts, "BRL")).toEqual([
       "capture.problem.installments",
     ]);
     expect(
-      problemsOf({ ...base, installments: 3, accountId: "visa" }, accounts),
+      problemsOf(
+        { ...base, installments: 3, accountId: "visa" },
+        accounts,
+        "BRL",
+      ),
     ).toEqual([]);
   });
 
@@ -224,6 +233,7 @@ describe("problemsOf", () => {
           ],
         },
         accounts,
+        "BRL",
       ),
     ).toEqual(["capture.problem.rows"]);
   });
@@ -344,5 +354,28 @@ describe("suggestionItems", () => {
       { description: "Padaria", kind: "expense" },
       { description: "Freela", kind: "income" },
     ]);
+  });
+});
+
+// An account in a currency other than the base needs the value of its amount in the base
+// currency before the line records (DM1).
+describe("problemsOf on an account in another currency", () => {
+  const foreign = new Map([
+    ...accounts,
+    ["wallet", account("wallet", "asset", { currency: "USD" })],
+  ]);
+  const draft = { ...draftOf(line()), accountId: "wallet" };
+
+  it("asks for the value in the base currency", () => {
+    expect(problemsOf(draft, foreign, "BRL")).toEqual([
+      "capture.problem.baseAmount",
+    ]);
+    expect(problemsOf({ ...draft, baseAmount: 5483 }, foreign, "BRL")).toEqual(
+      [],
+    );
+  });
+
+  it("asks nothing before the base currency is known", () => {
+    expect(problemsOf(draft, foreign, undefined)).toEqual([]);
   });
 });
