@@ -3,7 +3,7 @@ declare module "node:fs" {
   export function readFileSync(path: URL | string, encoding: "utf8"): string;
   export function readdirSync(
     path: URL | string,
-    options: { recursive: true },
+    options?: { recursive: true; encoding?: "utf8" },
   ): string[];
 }
 
@@ -28,7 +28,7 @@ declare module "node:assert/strict" {
     deepEqual(actual: unknown, expected: unknown, message?: string): void;
     match(actual: string, expected: RegExp, message?: string): void;
     doesNotMatch(actual: string, expected: RegExp, message?: string): void;
-    ok(value: unknown, message?: string): void;
+    ok(value: unknown, message?: string): asserts value;
   };
   export default assert;
 }

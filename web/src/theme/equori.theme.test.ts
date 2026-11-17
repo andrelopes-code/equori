@@ -259,9 +259,9 @@ test("card actions span the header's text rows, so a tall control does not push 
 });
 
 test("a card header keeps no gap between its title and its description", () => {
-  assert.equal(theme.components["--slotted-card-header-gap"], "0");
-  assert.equal(theme.components["--slotted-list-item-body-gap"], "0");
-  assert.equal(theme.components["--slotted-stepper-description-gap"], "0");
+  assert.equal(theme.components?.["--slotted-card-header-gap"], "0");
+  assert.equal(theme.components?.["--slotted-list-item-body-gap"], "0");
+  assert.equal(theme.components?.["--slotted-stepper-description-gap"], "0");
 });
 
 test("a chart header takes the gap between its title and its description back", () => {
