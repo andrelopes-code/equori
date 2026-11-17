@@ -90,7 +90,11 @@ export function OverviewPage() {
     spending: placement("spending", t("overview.spending.title"), 4, 5),
     upcoming: placement("upcoming", t("overview.upcoming.title"), 4, 5),
     budgets: placement("budgets", t("overview.budgets.title"), 4, 5),
-    cards: placement("cards", t("overview.cards.title"), 6, 4),
+    // The wallet and its detail stand side by side from six columns (cards design, CW11).
+    cards: {
+      ...placement("cards", t("overview.cards.title"), 6, 4),
+      minColumns: 6,
+    },
     goals: placement("goals", t("overview.goals.title"), 6, 4),
     pace: placement("pace", t("overview.pace.title"), 4, 2),
   };

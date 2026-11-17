@@ -7,3 +7,5 @@ On Cards, each credit card is a card face with a ticket under it. The ticket sho
 On Card, the settings hold the card's appearance, billing cycle and credit limit. The appearance is the colour (from a set or any colour), the art, the chip, the orientation and how the issuer's brand is drawn; it shows on the card in every screen. Each plastic card has a network (Visa, Mastercard, American Express and, by region, others), chosen when the card is added or edited; a plastic card can have none. The form that creates a credit card offers the appearance and the network of each plastic card too, and both can be changed later in the card's settings.
 
 See cards on Cards, a card's statements and settings on Card, and a statement's lines, payment and financing on Statement.
+
+The Overview draws the cards that owe something as a wallet: the total to pay with its deadline, the amount each card owes on its face, and, for the card chosen, what it owes, its open statement with the closing date and its free limit.

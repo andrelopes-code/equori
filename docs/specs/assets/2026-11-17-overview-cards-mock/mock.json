@@ -185,8 +185,12 @@
     "reason": "Regra de cardTotals"
    },
    {
-    "decision": "A largura da face cai com 4, 5 e 6 cartões",
-    "reason": "O corpo não rola na altura padrão do widget (dono, 2026-11-17)"
+    "decision": "Na mesa a face e a faixa se ajustam ao tamanho do widget: a face tão larga quanto a altura e a coluna do detalhe permitem (de 140 a 280 px) e as faixas dividem a altura que sobra",
+    "reason": "A carteira ocupa o widget sem sobra embaixo e sem rolagem até 6 cartões na altura padrão (dono, 2026-11-17); o app mede o widget e escreve --face e --strip, o estilo guarda as medidas de antes da medição"
+   },
+   {
+    "decision": "O widget não encolhe abaixo de 6 colunas",
+    "reason": "A carteira e o detalhe lado a lado pedem essa largura"
    },
    {
     "decision": "A animação de entrada move cada cartão, não o bolso",

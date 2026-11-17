@@ -15,6 +15,8 @@ export interface Placement {
   defaultColumns: number;
   defaultRows: number;
   removable: boolean;
+  // The fewest columns a resize leaves, for a block whose form needs a width.
+  minColumns?: number;
 }
 
 // Columns are of the twelve at the desk; rows are the grid's, 4.5rem each. A block that holds

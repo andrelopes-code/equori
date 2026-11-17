@@ -1,5 +1,5 @@
 import type { LinkOptions } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { useT } from "@/i18n/i18n-provider";
 import { artKey, CardFaceArt } from "@/ui/card-face/art";
@@ -30,6 +30,9 @@ export interface CardFaceProps {
   virtual?: boolean;
   active?: boolean;
   peek?: boolean;
+  // What stands at the end of the top strip, in the place of the contactless symbol: an amount
+  // the card owes, in a wallet. It inherits the face's ink and its unit (--u).
+  note?: ReactNode;
   link?: LinkOptions;
   onActivate?: () => void;
   pressed?: boolean;
@@ -94,6 +97,7 @@ export function CardFace(props: CardFaceProps) {
         virtual={props.virtual === true}
         active={active}
         peek={props.peek === true}
+        note={props.note}
       />
 
       <CardFaceChip tone={props.chip ?? "gold"} />

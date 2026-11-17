@@ -1,3 +1,4 @@
+export { AccountFace } from "@/features/cards/account-face/account-face";
 export { CardPage } from "@/features/cards/pages/card-page";
 export { CardFacePreview } from "@/features/cards/pages/card-face-preview";
 export { CardsPage } from "@/features/cards/pages/cards-page";

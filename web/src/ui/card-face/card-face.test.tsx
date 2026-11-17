@@ -29,6 +29,17 @@ describe("CardFace", () => {
     expect(element.hasAttribute("data-inactive")).toBe(false);
   });
 
+  it("draws a note at the end of its top strip, in the place of the contactless symbol", () => {
+    face({ note: <span>R$ 10</span> });
+
+    const top = screen
+      .getByRole("img", { name: "Itaú Visa, ending 4821" })
+      .querySelector('[data-part="top"]');
+
+    expect(top?.lastElementChild?.textContent).toBe("R$ 10");
+    expect(top?.querySelector("svg")).toBeNull();
+  });
+
   it("names a virtual card and draws the Virtual tag", () => {
     face({ virtual: true });
 

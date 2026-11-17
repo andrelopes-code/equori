@@ -1,90 +1,65 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useId } from "react";
 
-import { useApi } from "@/api/api-context";
-import { accountsQuery } from "@/features/accounts";
-import { currentAndUnpaid, statementsQuery } from "@/features/cards";
-import { owedStatements } from "@/features/overview/model/open-statements";
+import { WalletSlot } from "@/features/overview/cards/wallet-slot";
+import { WalletTotals } from "@/features/overview/cards/wallet-totals";
+import styles from "@/features/overview/cards/wallet.module.css";
+import { useWallet } from "@/features/overview/cards/use-wallet";
+import { useWalletFit } from "@/features/overview/cards/use-wallet-fit";
 import {
   OverviewBlock,
   type Placement,
 } from "@/features/overview/overview-block/overview-block";
-import { OverviewRows } from "@/features/overview/overview-block/overview-rows";
-import { useBase } from "@/features/overview/model/use-base";
-import { shiftMonth } from "@/features/overview/model/forecast";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
-import { MoneyFigure } from "@/ui/money/money-figure";
+import { useT } from "@/i18n/i18n-provider";
 
-// Twelve months back hold every closed statement still owing in practice.
-const lookBackMonths = 12;
-
+// Families read: radio-group, card, carousel, accordion. A radio group draws a mark and a label
+// per option; a card is a surface for content; a carousel keeps one item in view; an accordion
+// draws a header and a panel per item. The wallet stacks the faces of the cards, pulls the
+// chosen one out whole and details it (docs/specs/2026-11-17-overview-cards-design.md, CW13).
+// The choice is a radio group and the layout answers it through :has(), so the block holds no
+// state. It is a form of this widget, not a Slotted finding.
 export function CardsBlock(placement: Placement) {
   const t = useT();
-  const api = useApi();
-  const [locale] = useAppLocale();
-  const { scale } = useBase();
-  const from = shiftMonth(useToday().slice(0, 7), -lookBackMonths);
-  const accounts = useQuery(accountsQuery(api));
-  const cards = (accounts.data ?? []).filter(
-    (account) =>
-      account.kind === "credit_card" && account.closed_on === undefined,
-  );
-  const statements = useQueries({
-    queries: cards.map((card) => statementsQuery(api, card.id, from)),
-  });
-  const error =
-    accounts.error ??
-    statements.find((query) => query.error !== null)?.error ??
-    null;
-  const loading =
-    accounts.data === undefined ||
-    scale === null ||
-    statements.some((query) => query.data === undefined);
-  const rows =
-    loading || error !== null
-      ? []
-      : owedStatements(
-          cards.map((account, i) => ({
-            account,
-            ...currentAndUnpaid(statements[i]?.data ?? []),
-          })),
-        ).map((owed) => ({
-          key: owed.statement.id,
-          title: owed.account.name,
-          line: t(owed.open ? "overview.cards.dueOpen" : "overview.cards.due", {
-            date: formatDate(owed.statement.due_date, locale),
-          }),
-          end: (
-            <MoneyFigure
-              amount={owed.amount.amount}
-              currency={owed.amount.currency}
-              scale={scale(owed.amount.currency)}
-            />
-          ),
-          to: {
-            to: "/cards/$accountId/statements/$statementId" as const,
-            params: {
-              accountId: owed.account.id,
-              statementId: owed.statement.id,
-            },
-          },
-        }));
+  const group = useId();
+  const { view, scale, error, retry } = useWallet();
+
+  const [fit, wallet] = useWalletFit(view?.cards.length ?? 0);
+
+  const loaded = view !== undefined && scale !== null;
+  const empty = loaded && view.cards.length === 0;
+
   return (
     <OverviewBlock
       placement={placement}
       link={{ label: t("overview.cards.open"), options: { to: "/cards" } }}
-      loading={loading && error === null}
+      loading={!loaded && error === null}
       error={error}
-      onRetry={() => {
-        if (accounts.isError) void accounts.refetch();
-        for (const query of statements) {
-          if (query.isError) void query.refetch();
-        }
-      }}
-      empty={rows.length === 0 ? t("overview.cards.empty") : undefined}
+      onRetry={retry}
+      empty={empty ? t("overview.cards.empty") : undefined}
     >
-      <OverviewRows label={t("overview.cards.title")} rows={rows} />
+      {loaded && !empty && (
+        <div className={styles.wallet} data-part="cards" ref={wallet}>
+          <div className={styles.walletGrid} style={fit}>
+            <WalletTotals due={view.due} open={view.open} scale={scale} />
+
+            <div
+              className={styles.pocket}
+              role="radiogroup"
+              aria-label={t("overview.cards.choose")}
+            >
+              {view.cards.map((card) => (
+                <WalletSlot
+                  key={card.account.id}
+                  card={card}
+                  group={group}
+                  chosen={card.account.id === view.chosen}
+                  scale={scale}
+                />
+              ))}
+              <span className={styles.lip} aria-hidden="true" />
+            </div>
+          </div>
+        </div>
+      )}
     </OverviewBlock>
   );
 }

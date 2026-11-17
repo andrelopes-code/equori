@@ -460,14 +460,31 @@ describe("overview page", () => {
       expect(region).toHaveTextContent(/Entering\s*R\$\s*5,000\.00/);
     });
 
-    it("lists the open and the unpaid closed statements with amount and due date", async () => {
+    it("stacks the cards as a wallet, totals what is due and details the chosen card", async () => {
       await renderApp("/", { fetch: full() });
       const region = await screen.findByRole("article", { name: "Cards" });
-      await waitFor(() => {
-        expect(within(region).getAllByRole("listitem")).toHaveLength(2);
+      // Today is 2026-10-17: October's statement owes 1,800.00 and is due in 8 days.
+      const radio = await within(region).findByRole("radio", {
+        name: "Itaú Visa, R$1,800.00 to pay, due 10/25",
       });
-      expect(region).toHaveTextContent("1,800.00");
-      expect(region).toHaveTextContent("2,500.00");
+
+      expect((radio as HTMLInputElement).checked).toBe(true);
+      expect(region).toHaveTextContent("To pay · all cards");
+      expect(region).toHaveTextContent("1 statement · due 10/25");
+      expect(region).toHaveTextContent("closes 11/05");
+      // 8,000.00 of limit and 5,500.00 free: 2,500.00 in use, 31%.
+      expect(region).toHaveTextContent("31% used");
+      expect(region).toHaveTextContent("5,500.00");
+      expect(
+        within(region)
+          .getByRole("link", { name: /1,800\.00/ })
+          .getAttribute("href"),
+      ).toBe(`/cards/${cardID}/statements/${closedStatementID}`);
+      expect(
+        within(region)
+          .getByRole("link", { name: /2,500\.00/ })
+          .getAttribute("href"),
+      ).toBe(`/cards/${cardID}/statements/${openStatementID}`);
     });
 
     it("lists the overspent and the near-limit budgets only", async () => {

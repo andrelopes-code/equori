@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { useT } from "@/i18n/i18n-provider";
 import type { Brand } from "@/ui/card-face/brand";
 import styles from "@/ui/card-face/card-face.module.css";
@@ -15,6 +17,7 @@ interface CardFaceTopProps {
   virtual: boolean;
   active: boolean;
   peek: boolean;
+  note: ReactNode;
 }
 
 const mask = "••";
@@ -30,6 +33,7 @@ export function CardFaceTop({
   virtual,
   active,
   peek,
+  note,
 }: CardFaceTopProps) {
   const t = useT();
 
@@ -59,7 +63,8 @@ export function CardFaceTop({
       {active && virtual && (
         <span className={styles.tag}>{t("cardFace.virtual")}</span>
       )}
-      {active && !virtual && <CardFaceContactless />}
+      {active && !virtual && note === undefined && <CardFaceContactless />}
+      {note}
     </span>
   );
 }
