@@ -1,5 +1,6 @@
 import {
   Section,
+  SectionActions,
   SectionBody,
   SectionDescription,
   SectionHeader,
@@ -11,11 +12,14 @@ import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
+import { accountsQuery } from "@/features/accounts";
+import { useCategoryEntries } from "@/features/categories";
 import { budgetBucketHistoryQuery } from "@/features/planning/api";
 import {
   trackMonth,
   trackVerdict,
 } from "@/features/planning/income-split/bucket-history";
+import { BucketHistoryAction } from "@/features/planning/income-split/bucket-history-action";
 import { BucketTrackLegend } from "@/features/planning/income-split/bucket-track-legend";
 import { BucketTrackRow } from "@/features/planning/income-split/bucket-track-row";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
@@ -37,6 +41,8 @@ export function BucketTrack({ month }: BucketTrackProps) {
   const t = useT();
   const api = useApi();
   const history = useQuery(budgetBucketHistoryQuery(api, month));
+  const accounts = useQuery(accountsQuery(api));
+  const entries = useCategoryEntries(accounts.data);
   const scale = useScale();
   const fmt = useMoneyFormat();
   const share = useShareText();
@@ -73,6 +79,9 @@ export function BucketTrack({ month }: BucketTrackProps) {
             </SectionDescription>
           )}
         </SectionTitle>
+        <SectionActions>
+          <BucketHistoryAction month={month} entries={entries} />
+        </SectionActions>
       </SectionHeader>
 
       <SectionBody>

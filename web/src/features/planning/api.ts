@@ -313,6 +313,20 @@ export function useSaveBudgetBuckets() {
   });
 }
 
+// Deletes the version of the income bucket method that starts in from (YYYY-MM); its months
+// fall to the version before it (A240).
+export function useDeleteBudgetBucketVersion() {
+  const api = useApi();
+  return useMutation({
+    mutationFn: async (from: string) => {
+      const result = await api.DELETE("/budget-buckets/versions/{from}", {
+        params: { path: { from } },
+      });
+      if (result.error !== undefined) await unwrap(result);
+    },
+  });
+}
+
 export function goalsQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: planningKeys.goals,
