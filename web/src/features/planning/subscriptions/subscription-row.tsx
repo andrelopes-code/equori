@@ -11,6 +11,7 @@ import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { AppLink } from "@/ui/navigation/app-link";
+import { cx } from "@/ui/cx";
 
 interface SubscriptionRowProps {
   line: SubscriptionLine;
@@ -69,9 +70,9 @@ export function SubscriptionRow({
             {t("subscriptions.outOfTotal")}
           </Text>
         ) : (
-          <span className={styles.share}>
+          <span className={cx(styles.share)}>
             <ShareRing bp={line.shareBp} />
-            <Text size="sm" numeric="tabular">
+            <Text className="text-trim" size="sm" numeric="tabular">
               {formatBasisPoints(line.shareBp, locale)}
             </Text>
           </span>
