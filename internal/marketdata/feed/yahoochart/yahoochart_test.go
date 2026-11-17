@@ -241,6 +241,81 @@ func TestFetch(t *testing.T) {
 	}
 }
 
+// A bar of the day of `now` is a close only 30 minutes after the end of its session (A248 CQ2).
+func TestFetchDropsRunningBar(t *testing.T) {
+	t.Parallel()
+
+	const (
+		today = `,"currentTradingPeriod":{"regular":{"start":1794493800,"end":1794517200}}`
+		next  = `,"currentTradingPeriod":{"regular":{"start":1794580200,"end":1794603600}}`
+
+		firstClose  = "AAPL USD 2026-11-11 173.73"
+		secondClose = "AAPL USD 2026-11-12 160.25"
+	)
+
+	tests := []struct {
+		name   string
+		now    string
+		period string
+		quotes []string
+	}{
+		{"after the open", "2026-11-12T14:47:00Z", today, []string{firstClose}},
+		{"before the margin", "2026-11-12T21:29:59Z", today, []string{firstClose}},
+		{"at the margin", "2026-11-12T21:30:00Z", today, []string{firstClose, secondClose}},
+		{
+			"same local day, after midnight UTC",
+			"2026-11-13T03:00:00Z",
+			today,
+			[]string{firstClose, secondClose},
+		},
+		{"next local day", "2026-11-13T14:00:00Z", next, []string{firstClose, secondClose}},
+		{"period of another day", "2026-11-12T21:30:00Z", next, []string{firstClose}},
+		{"no period", "2026-11-12T22:00:00Z", "", []string{firstClose}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			body := fmt.Sprintf(
+				`{"chart":{"result":[{"meta":{"currency":"USD",`+
+					`"exchangeTimezoneName":"America/New_York"%s},`+
+					`"timestamp":[1794407400,1794493800],`+
+					`"indicators":{"quote":[{"close":[173.73,160.25]}]}}]}}`,
+				tc.period,
+			)
+
+			srv := httptest.NewServer(
+				http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					_, _ = w.Write([]byte(body))
+				}),
+			)
+			t.Cleanup(srv.Close)
+
+			src := yahoochart.New(srv.Client(), srv.URL, at(tc.now))
+			src.Codes(
+				[]feed.Instrument{
+					{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
+				},
+			)
+
+			got, err := src.Fetch(
+				t.Context(),
+				[]money.Currency{"AAPL"},
+				day("2026-11-01"),
+				day("2026-11-12"),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if got := lines(got); !slices.Equal(got, tc.quotes) {
+				t.Fatalf("quotes = %v, want %v", got, tc.quotes)
+			}
+		})
+	}
+}
+
 func TestFetchRateLimited(t *testing.T) {
 	t.Parallel()
 

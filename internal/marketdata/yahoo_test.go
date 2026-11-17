@@ -7,7 +7,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/locale"
@@ -181,6 +183,91 @@ func TestS364UnofficialConfirmation(t *testing.T) {
 
 	if got.Enabled {
 		t.Fatalf("feed = %+v, want disabled", got)
+	}
+}
+
+// S553: a tick during the session stores no bar of that day. S554: the first tick 30 minutes
+// after the end of the session stores it (A248 CQ2).
+func TestS553S554YahooRunningBar(t *testing.T) {
+	t.Parallel()
+
+	var now atomic.Pointer[time.Time]
+
+	setNow := func(s string) {
+		at, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		now.Store(&at)
+	}
+	setNow("2026-11-12T14:47:00Z")
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/yahoo/") {
+			http.NotFound(w, r)
+			return
+		}
+
+		_, _ = w.Write([]byte(
+			`{"chart":{"result":[{"meta":{"currency":"USD",` +
+				`"exchangeTimezoneName":"America/New_York",` +
+				`"currentTradingPeriod":{"regular":{"start":1794493800,"end":1794517200}}},` +
+				`"timestamp":[1794407400,1794493800],` +
+				`"indicators":{"quote":[{"close":[173.73,160.25]}]}}]}}`,
+		))
+	}))
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(
+		t,
+		apitest.As(usProfile()),
+		apitest.Clock(func() time.Time { return *now.Load() }),
+		apitest.PriceFeeds(
+			[]string{"yahoo_chart"},
+			map[string]string{"yahoo_chart": srv.URL + "/yahoo"},
+		),
+	)
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "AAPL", "type": "stock", "scale": 0, "name": "Apple",
+		"quote_currency": "USD", "exchange": "XNAS",
+	}, http.StatusCreated, nil)
+
+	closeOf := func(date, value string) priceAPI {
+		return priceAPI{
+			Instrument:      "AAPL",
+			QuoteInstrument: "USD",
+			Date:            date,
+			Value:           value,
+			Source:          "yahoo_chart",
+		}
+	}
+	prices := func() []priceAPI {
+		var list struct {
+			Items []priceAPI `json:"items"`
+		}
+
+		h.MustDo(http.MethodGet,
+			"/api/v1/prices?instrument=AAPL&quote_instrument=USD&from=2026-11-01&to=2026-11-12",
+			nil, http.StatusOK, &list)
+
+		return list.Items
+	}
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	want := []priceAPI{closeOf("2026-11-11", "173.73")}
+	if got := prices(); !slices.Equal(got, want) {
+		t.Fatalf("prices during the session = %+v, want %+v", got, want)
+	}
+
+	setNow("2026-11-12T21:30:00Z")
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	want = append(want, closeOf("2026-11-12", "160.25"))
+	if got := prices(); !slices.Equal(got, want) {
+		t.Fatalf("prices after the session = %+v, want %+v", got, want)
 	}
 }
 

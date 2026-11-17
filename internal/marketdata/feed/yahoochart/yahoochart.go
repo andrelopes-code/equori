@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -215,7 +214,7 @@ func (s Source) fetchCode(
 		return nil, err
 	}
 
-	return parse(body, code, t.quote, from, to)
+	return parse(body, code, t.quote, from, to, s.now())
 }
 
 // noBars reports whether err is the 400 answer of Yahoo to a range without bars, such as a start
@@ -255,125 +254,4 @@ func quoteCurrencies(ins []feed.Instrument) map[money.Currency]bool {
 	}
 
 	return out
-}
-
-func parse(body []byte, code, quote money.Currency, from, to time.Time) ([]feed.Quote, error) {
-	var answer struct {
-		Chart struct {
-			Result []struct {
-				Meta struct {
-					Currency             string `json:"currency"`
-					ExchangeTimezoneName string `json:"exchangeTimezoneName"`
-				} `json:"meta"`
-				Timestamp  []int64 `json:"timestamp"`
-				Indicators struct {
-					Quote []series `json:"quote"`
-				} `json:"indicators"`
-			} `json:"result"`
-		} `json:"chart"`
-	}
-
-	if err := json.Unmarshal(body, &answer); err != nil {
-		return nil, fmt.Errorf("decode Yahoo chart: %w", err)
-	}
-
-	if len(answer.Chart.Result) == 0 || len(answer.Chart.Result[0].Indicators.Quote) == 0 {
-		return nil, nil
-	}
-
-	result := answer.Chart.Result[0]
-
-	if result.Meta.Currency != string(quote) {
-		return nil, fmt.Errorf("quoted in %s, want %s", result.Meta.Currency, quote)
-	}
-
-	loc, err := time.LoadLocation(result.Meta.ExchangeTimezoneName)
-	if err != nil {
-		return nil, fmt.Errorf(
-			"load exchange time zone %q: %w",
-			result.Meta.ExchangeTimezoneName,
-			err,
-		)
-	}
-
-	return closeQuotes(
-		result.Indicators.Quote[0],
-		result.Timestamp,
-		loc,
-		code,
-		quote,
-		from,
-		to,
-	)
-}
-
-func closeQuotes(
-	bars series,
-	timestamps []int64,
-	loc *time.Location,
-	code, quote money.Currency,
-	from, to time.Time,
-) ([]feed.Quote, error) {
-	var out []feed.Quote
-
-	for i, closing := range bars.Close {
-		if i >= len(timestamps) || closing == nil || *closing <= 0 || bars.untraded(i) {
-			continue
-		}
-
-		local := time.Unix(timestamps[i], 0).In(loc)
-
-		date := time.Date(local.Year(), local.Month(), local.Day(), 0, 0, 0, 0, time.UTC)
-		if date.Before(from) || date.After(to) {
-			continue
-		}
-
-		value, err := money.ParseRate(closeText(*closing))
-		if err != nil {
-			return out, fmt.Errorf("read close %v: %w", *closing, err)
-		}
-
-		out = append(out, feed.Quote{Instrument: code, Quote: quote, Date: date, Value: value})
-	}
-
-	return out, nil
-}
-
-// series holds the daily bars of a quote. A series without volume or without the open, high and
-// low keeps every close.
-type series struct {
-	Open   []*float64 `json:"open"`
-	High   []*float64 `json:"high"`
-	Low    []*float64 `json:"low"`
-	Close  []*float64 `json:"close"`
-	Volume []*float64 `json:"volume"`
-}
-
-// untraded reports whether bar i is a day without a trade: Yahoo repeats the last close with
-// volume 0 and the open, high and low equal to it (B5P211 repeated 71.25 for 959 days).
-func (s series) untraded(i int) bool {
-	if i >= len(s.Volume) || s.Volume[i] == nil || *s.Volume[i] != 0 {
-		return false
-	}
-
-	for _, v := range [][]*float64{s.Open, s.High, s.Low} {
-		if i >= len(v) || v[i] == nil || *v[i] != *s.Close[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
-// closeText returns the decimal text of a close. Yahoo publishes float32 values, so the shortest
-// float32 text (`349.51` for 349.510009765625) is the price; a text over 12 decimals falls back
-// to 12 decimals (plan 2 D15).
-func closeText(v float64) string {
-	text := strconv.FormatFloat(float64(float32(v)), 'f', -1, 32)
-
-	if i := strings.IndexByte(text, '.'); i >= 0 && len(text)-i-1 > 12 {
-		text = strings.TrimSuffix(strings.TrimRight(strconv.FormatFloat(v, 'f', 12, 64), "0"), ".")
-	}
-
-	return text
 }
