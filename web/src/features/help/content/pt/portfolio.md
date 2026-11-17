@@ -10,7 +10,7 @@ A [carteira](/portfolio) responde a três perguntas: quanto você tem investido,
 
 ## Onde está o dinheiro
 
-Divide a carteira por tipo, moeda ou instituição. A mesma escolha agrupa a lista de investimentos. O patrimônio inteiro, com bancos e poupança, fica em [Relatórios](/reports).
+Divide a carteira por tipo, moeda ou instituição. A mesma escolha agrupa a lista de investimentos. O saldo de corretora fica negativo quando uma compra ou aplicação foi registrada sem a transferência do dinheiro para a corretora: essa linha mostra um traço no lugar da participação, as demais somam 100%, e registrar a transferência corrige o saldo. O patrimônio inteiro, com bancos e poupança, fica em [Relatórios](/reports).
 
 ## Os investimentos
 

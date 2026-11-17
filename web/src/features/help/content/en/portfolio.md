@@ -10,7 +10,7 @@ The [portfolio](/portfolio) answers three questions: how much you have invested,
 
 ## Where the money is
 
-Splits the portfolio by type, currency or institution. The same choice groups the list of investments. Your whole net worth, with banks and savings, is on [Reports](/reports).
+Splits the portfolio by type, currency or institution. The same choice groups the list of investments. The brokerage cash goes below zero when a purchase was recorded without the transfer of the money to the brokerage: that row shows a dash in place of the share, the others add up to 100%, and recording the transfer corrects the balance. Your whole net worth, with banks and savings, is on [Reports](/reports).
 
 ## The investments
 
