@@ -1,3 +1,4 @@
+import { restoreDraft } from "@/features/accounts/model/account-draft";
 import type { AccountDraft } from "@/features/accounts/model/account-draft";
 
 export interface PendingSetup {
@@ -15,7 +16,9 @@ export function readPendingSetup(accountId: string): PendingSetup | null {
     const raw = sessionStorage.getItem(prefix + accountId);
     if (raw === null) return null;
     const value = JSON.parse(raw) as PendingSetup;
-    return typeof value.done === "number" ? value : null;
+    return typeof value.done === "number"
+      ? { ...value, draft: restoreDraft(value.draft) }
+      : null;
   } catch {
     return null;
   }

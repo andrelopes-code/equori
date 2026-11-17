@@ -9,6 +9,7 @@ import {
 } from "@/features/accounts/model/create-account-steps";
 import { fakeApi, json } from "@/testing/fake-api";
 import { testClient } from "@/testing/test-client";
+import { emptyFace } from "@/ui/card-face/studio/face-draft";
 
 const opening = "e0000000-0000-4000-8000-000000000001";
 const created = "e0000000-0000-4000-8000-000000000002";
@@ -40,6 +41,7 @@ function recorder() {
       [`POST /api/v1/accounts/${created}/billing-cycle-rules`]: record("rule"),
       [`POST /api/v1/accounts/${created}/credit-limits`]: record("limit"),
       [`POST /api/v1/accounts/${created}/cards`]: record("card"),
+      [`PUT /api/v1/accounts/${created}/card-face`]: record("face"),
       [`GET /api/v1/accounts/${created}/statement-placement`]: () =>
         json(200, {
           reference: "2026-11",
@@ -61,9 +63,10 @@ const cardSetup: AccountDraft["card"] = {
   assignment: "next",
   limit: 800000,
   cards: [
-    { holder: "Ana", lastFour: "1234", virtual: false },
-    { holder: "Ana", lastFour: "9876", virtual: true },
+    { holder: "Ana", lastFour: "1234", virtual: false, network: null },
+    { holder: "Ana", lastFour: "9876", virtual: true, network: null },
   ],
+  face: emptyFace,
 };
 
 const card: Partial<AccountDraft> = {
@@ -194,6 +197,79 @@ describe("createAccountSteps", () => {
               amount: { amount: 110000, currency: "BRL" },
             },
           ],
+        },
+      },
+    ]);
+  });
+
+  it("sends the network of a plastic card that has one", async () => {
+    const steps = createAccountSteps(
+      draft({
+        ...card,
+        card: {
+          ...cardSetup,
+          limit: 0,
+          cards: [
+            {
+              holder: "Ana",
+              lastFour: "1234",
+              virtual: false,
+              network: "visa",
+            },
+          ],
+        },
+        opening: 0,
+      }),
+      { openingBalances: opening, cashName: "Cash" },
+    );
+    const { api, sent } = recorder();
+    for (const step of steps) await step.run(api, created);
+
+    expect(sent[1]).toEqual({
+      route: "card",
+      body: {
+        holder: "Ana",
+        last_four: "1234",
+        virtual: false,
+        network: "visa",
+      },
+    });
+  });
+
+  it("sets the card's appearance after its cards, only when one is chosen", async () => {
+    const plain = createAccountSteps(draft(card), {
+      openingBalances: opening,
+      cashName: "Cash",
+    });
+    expect(plain.map((s) => s.key)).not.toContain("face");
+
+    const steps = createAccountSteps(
+      draft({
+        ...card,
+        card: { ...cardSetup, face: { ...emptyFace, color: "#fce300" } },
+      }),
+      { openingBalances: opening, cashName: "Cash" },
+    );
+    expect(steps.map((s) => s.key)).toEqual([
+      "rule",
+      "limit",
+      "card",
+      "card",
+      "face",
+      "opening",
+    ]);
+
+    const { api, sent } = recorder();
+    await steps[4]?.run(api, created);
+    expect(sent).toEqual([
+      {
+        route: "face",
+        body: {
+          color: "#fce300",
+          art: null,
+          chip: null,
+          orientation: null,
+          brand: null,
         },
       },
     ]);

@@ -79,6 +79,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountSetup.step.rule": "Ciclo da fatura",
   "accountSetup.step.limit": "Limite",
   "accountSetup.step.card": "Cartão",
+  "accountSetup.step.face": "Aparência do cartão",
   "brokerage.cashName": "Caixa",
   "brokerage.create": "Criar uma corretora",
   "brokerage.cashLeafNotice":
@@ -119,6 +120,10 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "accountForm.virtual": "Virtual",
   "accountForm.removeCard": "Remover cartão {n}",
   "accountForm.addCard": "Adicionar cartão",
+  "accountForm.cardAppearance": "Aparência do cartão",
+  "accountForm.cardAppearance.customize": "Personalizar a aparência do cartão",
+  "accountForm.cardAppearance.hint":
+    "Cor, arte e acabamento. Pode ser alterada depois nas configurações do cartão.",
   "accountForm.identity": "Conta",
   "accountForm.kind": "Tipo",
   "accountForm.changeKind": "Trocar tipo",

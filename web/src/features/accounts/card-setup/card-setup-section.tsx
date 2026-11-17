@@ -30,7 +30,10 @@ export function CardSetupSection({
   function handleAddCard() {
     onChange({
       ...value,
-      cards: [...value.cards, { holder: "", lastFour: "", virtual: false }],
+      cards: [
+        ...value.cards,
+        { holder: "", lastFour: "", virtual: false, network: null },
+      ],
     });
   }
 

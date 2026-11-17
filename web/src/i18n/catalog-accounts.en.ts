@@ -78,6 +78,7 @@ export const accountsEn = {
   "accountSetup.step.rule": "Billing cycle",
   "accountSetup.step.limit": "Credit limit",
   "accountSetup.step.card": "Card",
+  "accountSetup.step.face": "Card appearance",
   "brokerage.cashName": "Cash",
   "brokerage.create": "Create a brokerage",
   "brokerage.cashLeafNotice":
@@ -120,6 +121,10 @@ export const accountsEn = {
   "accountForm.virtual": "Virtual",
   "accountForm.removeCard": "Remove card {n}",
   "accountForm.addCard": "Add card",
+  "accountForm.cardAppearance": "Card appearance",
+  "accountForm.cardAppearance.customize": "Customize the card's look",
+  "accountForm.cardAppearance.hint":
+    "Colour, art and finish. It can be changed later in the card's settings.",
   "accountForm.identity": "Account",
   "accountForm.kind": "Kind",
   "accountForm.changeKind": "Change kind",

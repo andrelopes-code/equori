@@ -6,6 +6,7 @@ import { classOf } from "@/features/accounts/model/account-kinds";
 import { CashModeField } from "@/features/accounts/account-form/cash-mode-field";
 import { defaultCashMode } from "@/features/accounts/model/cash-mode";
 import { AccountOpeningSection } from "@/features/accounts/account-form/account-opening-section";
+import { CardAppearanceSection } from "@/features/accounts/card-setup/card-appearance-section";
 import { CardSetupSection } from "@/features/accounts/card-setup/card-setup-section";
 import { parentCandidates } from "@/features/accounts/account-form/parent-candidates";
 
@@ -109,15 +110,24 @@ export function AccountForm({
       )}
 
       {mode === "create" && kind === "credit_card" && (
-        <CardSetupSection
-          value={draft.card}
-          onChange={(card) => {
-            patch({ card });
-          }}
-          errors={errors}
-          currency={draft.currency}
-          scale={scale(draft.currency)}
-        />
+        <>
+          <CardSetupSection
+            value={draft.card}
+            onChange={(card) => {
+              patch({ card });
+            }}
+            errors={errors}
+            currency={draft.currency}
+            scale={scale(draft.currency)}
+          />
+
+          <CardAppearanceSection
+            draft={draft}
+            onChange={(face) => {
+              patch({ card: { ...draft.card, face } });
+            }}
+          />
+        </>
       )}
     </>
   );

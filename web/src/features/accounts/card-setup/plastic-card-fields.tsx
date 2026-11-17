@@ -6,7 +6,8 @@ import { Inline } from "@slotted/react/inline";
 import { TextField } from "@slotted/react/text-field";
 
 import type { CardSetupDraft } from "@/features/accounts/model/account-draft";
-import { useT } from "@/i18n/i18n-provider";
+import { useAppLocaleState, useT } from "@/i18n/i18n-provider";
+import { NetworkField } from "@/ui/card-face/network/network-field";
 import { FormRow } from "@/ui/form-layout/form-row";
 
 type PlasticCard = CardSetupDraft["cards"][number];
@@ -28,6 +29,7 @@ export function PlasticCardFields({
   errors,
 }: PlasticCardFieldsProps) {
   const t = useT();
+  const { locale } = useAppLocaleState();
 
   const holderError = errors[`cards.${String(index)}.holder`];
   const lastFourError = errors[`cards.${String(index)}.last_four`];
@@ -62,6 +64,16 @@ export function PlasticCardFields({
           )}
         </Field>
       </FormRow>
+
+      <NetworkField
+        name={`card-network-${String(index)}`}
+        value={value.network ?? ""}
+        region={locale.region}
+        stored={undefined}
+        onChange={(network) => {
+          onChange({ network: network === "" ? null : network });
+        }}
+      />
 
       <Inline gap={2} align="center" justify="between">
         <Checkbox

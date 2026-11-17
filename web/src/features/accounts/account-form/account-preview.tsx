@@ -1,9 +1,8 @@
 import { Card, CardBody } from "@slotted/react/card";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
-import { useQuery } from "@tanstack/react-query";
 
-import { useApi } from "@/api/api-context";
+import { useDraftInstitution } from "@/features/accounts/account-form/use-draft-institution";
 import type { AccountDraft } from "@/features/accounts/model/account-draft";
 import {
   kindGroupLabel,
@@ -15,11 +14,6 @@ import { AccountMark } from "@/features/accounts/account-mark/account-mark";
 import { shapeOf } from "@/features/accounts/model/account-shape";
 import { billingPreview } from "@/features/accounts/card-setup/billing-preview";
 import { billingRuleBody } from "@/features/accounts/model/create-account-steps";
-import {
-  logoIndexQuery,
-  logoOf,
-} from "@/features/accounts/model/institution-logo";
-import { institutionsQuery } from "@/features/setup";
 import { formatDate, formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
@@ -38,14 +32,8 @@ export function AccountPreview({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const today = useToday();
-  const institutions = useQuery(institutionsQuery(useApi()));
-  const index = useQuery(logoIndexQuery);
   const kind = draft.kind ?? "checking";
-  const institution = institutions.data?.find(
-    (i) => i.id === draft.institutionId,
-  );
-  const chosen = institution ?? draft.pendingInstitution;
-  const logo = logoOf(chosen?.identifier, index.data);
+  const { chosen, logo } = useDraftInstitution(draft);
   const group =
     kindGroups.find((g) => g.kinds.includes(kind))?.key ?? "accounts";
   const card = draft.card;

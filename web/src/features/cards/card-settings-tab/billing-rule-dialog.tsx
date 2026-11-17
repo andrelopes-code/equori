@@ -22,6 +22,7 @@ import {
 import { formatMonthTitle } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { emptyFace } from "@/ui/card-face/studio/face-draft";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { FormLayout } from "@/ui/form-layout/form-layout";
@@ -80,7 +81,10 @@ export function BillingRuleDialog({
             create
               .mutateAsync({
                 accountId,
-                rule: billingRuleBody({ ...fields, limit: 0, cards: [] }, from),
+                rule: billingRuleBody(
+                  { ...fields, limit: 0, cards: [], face: emptyFace },
+                  from,
+                ),
               })
               .then(onDone)
               .catch((caught: unknown) => {

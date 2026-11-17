@@ -5,6 +5,7 @@ import {
   emptyFace,
   faceAppearance,
   faceBody,
+  faceIsEmpty,
   faceOf,
   faceProps,
   presetColors,
@@ -137,5 +138,21 @@ describe("faceAppearance", () => {
     expect(
       faceAppearance({ color: "#fce300", art: null, chip: null }, 1, undefined),
     ).toEqual({ color: "#fce300" });
+  });
+});
+
+describe("faceIsEmpty", () => {
+  it("is true when every value is null", () => {
+    expect(faceIsEmpty(emptyFace)).toBe(true);
+  });
+
+  it.each([
+    { color: "#fce300" },
+    { art: "waves" },
+    { chip: "silver" as const },
+    { orientation: "vertical" as const },
+    { brand: "none" as const },
+  ])("is false when %o is set", (patch) => {
+    expect(faceIsEmpty({ ...emptyFace, ...patch })).toBe(false);
   });
 });

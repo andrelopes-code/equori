@@ -7,6 +7,7 @@ import {
   readAccountDraft,
   writeAccountDraft,
 } from "@/features/accounts/model/account-draft";
+import { emptyFace } from "@/ui/card-face/studio/face-draft";
 
 beforeEach(() => {
   sessionStorage.clear();
@@ -23,6 +24,27 @@ describe("account draft", () => {
     expect(readAccountDraft("new")).toEqual(draft);
     clearAccountDraft("new");
     expect(readAccountDraft("new")).toBeNull();
+  });
+
+  it("restores a draft saved before the card's face and network existed", () => {
+    const old = emptyAccountDraft("2026-10-17", "BRL");
+    const card: Partial<typeof old.card> = { ...old.card };
+    delete card.face;
+    sessionStorage.setItem(
+      "equori.accountDraft.new",
+      JSON.stringify({
+        ...old,
+        card: {
+          ...card,
+          cards: [{ holder: "Ana", lastFour: "1234", virtual: false }],
+        },
+      }),
+    );
+
+    expect(readAccountDraft("new")?.card.face).toEqual(emptyFace);
+    expect(readAccountDraft("new")?.card.cards).toEqual([
+      { holder: "Ana", lastFour: "1234", virtual: false, network: null },
+    ]);
   });
 
   it("reads a stored value of another shape as no draft", () => {
@@ -46,7 +68,9 @@ describe("account draft", () => {
             ...base.card,
             closingDay: null,
             dueDay: null,
-            cards: [{ holder: "", lastFour: "12", virtual: false }],
+            cards: [
+              { holder: "", lastFour: "12", virtual: false, network: null },
+            ],
           },
         },
         "create",

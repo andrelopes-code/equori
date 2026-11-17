@@ -456,6 +456,98 @@ describe("New account", () => {
     expect(sent.map((s) => s.route)).toEqual(["POST /accounts", "rule"]);
   }, 30_000);
 
+  it("offers the card's appearance when creating a credit card", async () => {
+    await renderApp("/accounts/new?kind=credit_card", { fetch: api([]) });
+    const customize = await screen.findByRole("switch", {
+      name: catalogEn["accountForm.cardAppearance.customize"],
+    });
+    expect(
+      screen.queryByRole("radio", { name: catalogEn["cardFace.color.yellow"] }),
+    ).not.toBeInTheDocument();
+    await userEvent.click(customize);
+    expect(
+      await screen.findByRole("radio", {
+        name: catalogEn["cardFace.color.yellow"],
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("does not offer the card's appearance for a checking account", async () => {
+    await renderApp("/accounts/new?kind=checking", { fetch: api([]) });
+    await screen.findByRole("textbox", { name: catalogEn["accountForm.name"] });
+    expect(
+      screen.queryByRole("switch", {
+        name: catalogEn["accountForm.cardAppearance.customize"],
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("sends the chosen appearance after the account is created", async () => {
+    const sent: Sent[] = [];
+    await renderApp("/accounts/new?kind=credit_card", {
+      fetch: api(sent, {
+        [`POST /api/v1/accounts/${createdID}/billing-cycle-rules`]: async (
+          req,
+        ) => {
+          sent.push({ route: "rule", body: await req.json() });
+          return json(201, {});
+        },
+        [`PUT /api/v1/accounts/${createdID}/card-face`]: async (req) => {
+          sent.push({ route: "PUT card-face", body: await req.json() });
+          return json(200, {});
+        },
+      }),
+    });
+    await userEvent.type(
+      await screen.findByRole("textbox", {
+        name: catalogEn["accountForm.name"],
+      }),
+      "Itaú Visa",
+    );
+    const billing = screen.getByRole("group", {
+      name: catalogEn["accountForm.billing"],
+    });
+    await userEvent.click(
+      within(billing).getByRole("combobox", {
+        name: catalogEn["accountForm.closingDay"],
+      }),
+    );
+    await userEvent.click(await screen.findByRole("option", { name: "25" }));
+    await userEvent.click(
+      within(billing).getByRole("combobox", {
+        name: catalogEn["accountForm.dueDay"],
+      }),
+    );
+    await userEvent.click(await screen.findByRole("option", { name: "5" }));
+    await userEvent.click(
+      screen.getByRole("switch", {
+        name: catalogEn["accountForm.cardAppearance.customize"],
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["cardFace.color.yellow"],
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["accountForm.create"] }),
+    );
+    await waitFor(() => {
+      expect(sent.map((s) => s.route)).toEqual([
+        "POST /accounts",
+        "rule",
+        "PUT card-face",
+      ]);
+    });
+    expect(sent[2]?.body).toEqual({
+      color: "#fce300",
+      art: null,
+      chip: null,
+      orientation: null,
+      brand: null,
+    });
+  }, 30_000);
+
   it("keeps what was typed after leaving the form", async () => {
     const { router } = await renderApp("/accounts/new?kind=checking", {
       fetch: api([]),

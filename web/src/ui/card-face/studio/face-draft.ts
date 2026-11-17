@@ -86,6 +86,10 @@ export function suggestedColor(
   return logoColor ?? slotHex(slot) ?? graphite;
 }
 
+export function faceIsEmpty(draft: FaceDraft): boolean {
+  return Object.values(draft).every((value) => value === null);
+}
+
 export function faceBody(draft: FaceDraft): FaceAPI {
   return { ...draft, color: draft.color?.toLowerCase() ?? null };
 }

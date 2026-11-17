@@ -6,11 +6,12 @@ import type { AccountDraft } from "@/features/accounts/model/account-draft";
 import { classOf, yieldCapable } from "@/features/accounts/model/account-kinds";
 import { openingBalanceBody } from "@/features/accounts/api";
 import type { MessageKey } from "@/i18n/catalog.en";
+import { faceBody, faceIsEmpty } from "@/ui/card-face/studio/face-draft";
 
 type AccountInput = components["schemas"]["AccountInput"];
 type BillingCycleRule = components["schemas"]["BillingCycleRule"];
 
-export type StepKey = "rule" | "limit" | "card" | "cash" | "opening";
+export type StepKey = "rule" | "limit" | "card" | "face" | "cash" | "opening";
 
 export interface Step {
   key: StepKey;
@@ -21,6 +22,7 @@ export const stepLabel: Record<StepKey, MessageKey> = {
   rule: "accountSetup.step.rule",
   limit: "accountSetup.step.limit",
   card: "accountSetup.step.card",
+  face: "accountSetup.step.face",
   cash: "accountSetup.step.cash",
   opening: "accountSetup.step.opening",
 };
@@ -117,7 +119,21 @@ export function createAccountSteps(
                 holder: row.holder.trim(),
                 last_four: row.lastFour,
                 virtual: row.virtual,
+                ...(row.network === null ? {} : { network: row.network }),
               },
+            }),
+          );
+        },
+      });
+    }
+    if (!faceIsEmpty(card.face)) {
+      steps.push({
+        key: "face",
+        run: async (api, id) => {
+          await unwrap(
+            await api.PUT("/accounts/{id}/card-face", {
+              params: { path: { id } },
+              body: faceBody(card.face),
             }),
           );
         },

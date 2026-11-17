@@ -3,6 +3,8 @@ import type { Kind } from "@/features/accounts/model/account-kinds";
 import type { CashMode } from "@/features/accounts/model/cash-mode";
 import type { PendingInstitution } from "@/features/accounts/institutions/institution-field";
 import type { MessageKey } from "@/i18n/catalog.en";
+import { emptyFace } from "@/ui/card-face/studio/face-draft";
+import type { FaceDraft } from "@/ui/card-face/studio/face-draft";
 
 type Account = components["schemas"]["Account"];
 
@@ -13,6 +15,8 @@ export interface CardDraft {
   holder: string;
   lastFour: string;
   virtual: boolean;
+  // "" is never stored: null is no network.
+  network: string | null;
 }
 
 export interface CardSetupDraft {
@@ -26,6 +30,8 @@ export interface CardSetupDraft {
   // Minor units of the account's currency; zero records no limit.
   limit: number;
   cards: CardDraft[];
+  // The appearance set after the card is created; every value null leaves it unset.
+  face: FaceDraft;
 }
 
 export interface AccountDraft {
@@ -58,6 +64,7 @@ export function emptyCardSetup(): CardSetupDraft {
     assignment: "next",
     limit: 0,
     cards: [],
+    face: emptyFace,
   };
 }
 
@@ -108,10 +115,28 @@ export function readAccountDraft(key: string): AccountDraft | null {
     const raw = sessionStorage.getItem(prefix + key);
     if (raw === null) return null;
     const value: unknown = JSON.parse(raw);
-    return isDraft(value) ? value : null;
+    return isDraft(value) ? restoreDraft(value) : null;
   } catch {
     return null;
   }
+}
+
+// A draft stored before the card's face and network existed lacks them.
+export function restoreDraft(draft: AccountDraft): AccountDraft {
+  const card = draft.card;
+  const stored: Partial<CardSetupDraft> = card;
+
+  return {
+    ...draft,
+    card: {
+      ...card,
+      face: stored.face ?? emptyFace,
+      cards: card.cards.map((row) => ({
+        ...row,
+        network: row.network ?? null,
+      })),
+    },
+  };
 }
 
 export function writeAccountDraft(key: string, draft: AccountDraft): void {
