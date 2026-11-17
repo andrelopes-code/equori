@@ -2,7 +2,7 @@
   .timeline {
     position: relative;
     block-size: var(--slotted-space-11);
-    margin: var(--slotted-space-4) 0 var(--slotted-space-5);
+    margin: var(--slotted-space-7) 0 var(--slotted-space-5);
   }
 
   .axis {
@@ -18,6 +18,15 @@
     inset-block: var(--slotted-space-3) var(--slotted-space-7);
     inline-size: var(--slotted-border-width-medium);
     background: var(--slotted-text);
+  }
+
+  .todayLabel {
+    position: absolute;
+    inset-block-start: calc(var(--slotted-space-5) * -1);
+    transform: translateX(-50%);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    white-space: nowrap;
   }
 
   .dot {
@@ -53,10 +62,38 @@
 
   .label {
     flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+    white-space: nowrap;
+  }
+
+  /* One width for every date, so the marks and the names share a vertical line. */
+  .day,
+  .dayDue {
+    flex: none;
+    inline-size: 5ch;
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    color: var(--slotted-text-muted);
+  }
+
+  .dayDue {
+    color: var(--slotted-tone-danger-text);
+  }
+
+  .mark {
+    flex: none;
+    inline-size: var(--slotted-space-4);
+    block-size: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-full);
+  }
+
+  .name {
     min-inline-size: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .value {

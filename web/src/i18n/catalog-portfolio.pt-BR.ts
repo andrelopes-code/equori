@@ -156,7 +156,7 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "fixedIncome.next": "Próximos 90 dias",
   "fixedIncome.next.description": "Pagamentos esperados até {date}",
   "fixedIncome.next.none": "Nenhum pagamento nos próximos 90 dias",
-  "fixedIncome.next.due": "A registrar",
+  "fixedIncome.next.due": "Registrar",
   "fixedIncome.next.rateMissing": "Taxa não publicada",
   "fixedIncome.issuers": "Por emissor e garantia",
   "fixedIncome.issuers.limit": "{guarantee}: {amount} por emissor",

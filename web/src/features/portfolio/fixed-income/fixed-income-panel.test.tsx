@@ -184,18 +184,18 @@ describe("Fixed income panel", () => {
     const next = await panel("Próximos 90 dias");
     const rows = [...next.querySelectorAll("dt")];
     expect(texts(rows)).toEqual([
-      "Juros · LF Banco X · 10/11",
-      "Juros · Debênture Y · 02/12",
-      "Vencimento · CDB Banco Z · 15/12",
-      "Juros · CDB Banco X · 05/01",
-      "Juros · Tesouro IPCA+ 2035 · 01/02",
+      "10/11LF Banco XJuros",
+      "02/12Debênture YJuros",
+      "15/12CDB Banco ZVencimento",
+      "05/01CDB Banco XJuros",
+      "01/02Tesouro IPCA+ 2035Juros",
     ]);
-    expect(rows[0]?.querySelector("a")).toHaveAttribute(
-      "href",
-      expect.stringContaining("/transactions/new?"),
-    );
+    expect(
+      within(next).getByRole("link", { name: "Registrar · LF Banco X" }),
+    ).toHaveAttribute("href", expect.stringContaining("/transactions/new?"));
+    expect(within(next).queryByText("A registrar")).not.toBeInTheDocument();
     expect(texts(next.querySelectorAll("dd"))).toEqual([
-      "A registrarR$ 820,00",
+      "RegistrarR$ 820,00",
       "R$ 1.580,00",
       "R$ 13.420,00",
       "R$ 606,83",

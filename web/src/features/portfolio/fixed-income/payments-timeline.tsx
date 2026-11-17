@@ -76,6 +76,12 @@ export function PaymentsTimeline({
               className={styles.today}
               style={{ left: `${String(todayAt)}%` }}
             />
+            <span
+              className={styles.todayLabel}
+              style={{ left: `${String(todayAt)}%` }}
+            >
+              {t("day.today")}
+            </span>
             {points.map((p, i) => (
               <span key={i}>
                 <span

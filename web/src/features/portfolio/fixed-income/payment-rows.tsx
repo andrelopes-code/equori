@@ -5,11 +5,11 @@ import {
   DescriptionListTerm,
 } from "@slotted/react/description-list";
 import { Link } from "@slotted/react/link";
-import { Tag } from "@slotted/react/tag";
 import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { recordSearch } from "@/features/instruments";
+import kinds from "@/features/portfolio/fixed-income/kind-fill.module.css";
 import styles from "@/features/portfolio/fixed-income/payments-timeline.module.css";
 import type { ReturnKind } from "@/features/portfolio/fixed-income/return-kind";
 import { formatDayMonthNumeric } from "@/i18n/format";
@@ -39,7 +39,8 @@ export function PaymentRows({
   return (
     <DescriptionList variant="ruled">
       {events.map((e) => {
-        const label = `${t(`terms.event.${e.kind}` as "terms.event.interest")} · ${names.get(e.instrument) ?? e.instrument} · ${formatDayMonthNumeric(e.date, locale)}`;
+        const name = names.get(e.instrument) ?? e.instrument;
+        const due = e.state === "due";
 
         // A fixed rate is never published: its payment without a value writes no rate notice.
         const indexed = kindOf.get(e.instrument) !== "fixed";
@@ -50,25 +51,33 @@ export function PaymentRows({
             className={styles.row}
           >
             <DescriptionListTerm className={styles.label}>
-              {e.state === "due" ? (
-                <Link
-                  render={routeTo({
-                    to: "/transactions/new",
-                    search: recordSearch(e, scale) as never,
-                  })}
-                >
-                  {label}
-                </Link>
-              ) : (
-                label
-              )}
+              <span className={due ? styles.dayDue : styles.day}>
+                {formatDayMonthNumeric(e.date, locale)}
+              </span>
+              <span
+                className={[
+                  styles.mark,
+                  due ? styles.due : kinds[kindOf.get(e.instrument) ?? "none"],
+                ].join(" ")}
+              />
+              <span className={styles.name}>{name}</span>
+              <Text size="sm" tone="muted">
+                {t(`terms.event.${e.kind}` as "terms.event.interest")}
+              </Text>
             </DescriptionListTerm>
             <DescriptionListDescription>
               <span className={styles.value}>
-                {e.state === "due" && (
-                  <Tag tone="danger" size="sm">
+                {due && (
+                  <Link
+                    size="sm"
+                    aria-label={`${t("fixedIncome.next.due")} · ${name}`}
+                    render={routeTo({
+                      to: "/transactions/new",
+                      search: recordSearch(e, scale) as never,
+                    })}
+                  >
                     {t("fixedIncome.next.due")}
-                  </Tag>
+                  </Link>
                 )}
                 {e.gross === undefined && indexed && (
                   <Text tone="muted">{t("fixedIncome.next.rateMissing")}</Text>

@@ -152,7 +152,7 @@ export const portfolioEn = {
   "fixedIncome.next": "Next 90 days",
   "fixedIncome.next.description": "Payments expected until {date}",
   "fixedIncome.next.none": "No payment in the next 90 days",
-  "fixedIncome.next.due": "To record",
+  "fixedIncome.next.due": "Record",
   "fixedIncome.next.rateMissing": "Rate not published",
   "fixedIncome.issuers": "By issuer and guarantee",
   "fixedIncome.issuers.limit": "{guarantee}: {amount} per issuer",
