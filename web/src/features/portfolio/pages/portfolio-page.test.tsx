@@ -148,6 +148,7 @@ describe("Portfolio page", () => {
       `${catalogEn["instruments.type.cash"]}||−R$50.00|—`,
       "Total|R$91.00|100.00%",
     ]);
+    expect(gridRows(await list())).toContain("XP cash||−R$50.00||");
   });
 
   it("PC5: one control groups the bars and the list, from the address", async () => {

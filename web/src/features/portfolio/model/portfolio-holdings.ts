@@ -261,5 +261,9 @@ function withShares(rows: readonly Holding[]): Holding[] {
   const shares = sharesBP(valued.map((r) => r.value ?? 0));
   const shareOf = new Map(valued.map((r, i) => [r, shares[i]]));
 
-  return rows.map((r) => ({ ...r, share: shareOf.get(r) }));
+  // A value below zero is no part of the whole, so its row states no share.
+  return rows.map((r) => ({
+    ...r,
+    share: (r.value ?? 0) < 0 ? undefined : shareOf.get(r),
+  }));
 }
