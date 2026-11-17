@@ -156,6 +156,32 @@ func TestSchemaRejectsInvalidExpectations(t *testing.T) {
 	}
 }
 
+// Indexer comparison IC12.
+func TestSchemaRejectsInvalidCurvePoints(t *testing.T) {
+	t.Parallel()
+
+	pool := pgtest.New(t)
+	if _, err := pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_curve_point (curve_id, maturity, rate, base_date, source) `+
+			`VALUES ('br_tesouro_prefixed', '2030-01-01', 0.13, '2026-11-16', 'br_tesouro')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, sql := range map[string]string{
+		"curve outside the pattern":  `INSERT INTO marketdata_curve_point (curve_id, maturity, rate, base_date, source) VALUES ('BR', '2030-01-01', 0.13, '2026-11-16', 'br_tesouro')`,
+		"source outside the pattern": `INSERT INTO marketdata_curve_point (curve_id, maturity, rate, base_date, source) VALUES ('br_tesouro_prefixed', '2030-01-01', 0.13, '2026-11-16', 'BR_TESOURO')`,
+		"rate at -100%":              `INSERT INTO marketdata_curve_point (curve_id, maturity, rate, base_date, source) VALUES ('br_tesouro_prefixed', '2030-01-01', -1, '2026-11-16', 'br_tesouro')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // A237 I5.
 func TestSchemaRejectsInvalidInstitutionIndicators(t *testing.T) {
 	t.Parallel()
