@@ -36,3 +36,4 @@ export { CaptureQueuePage } from "@/features/transactions/pages/capture-queue-pa
 export { useCaptureQueueNotice } from "@/features/transactions/offline-queue/use-capture-queue-notice";
 export { validateCaptureSearch } from "@/features/transactions/model/search";
 export { BulkVoidDialog } from "@/features/transactions/selection/bulk-void-dialog";
+export { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";

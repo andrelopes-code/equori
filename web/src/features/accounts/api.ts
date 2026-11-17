@@ -775,6 +775,54 @@ export function connectionSyncsQuery(api: Client<paths>, id: string) {
   });
 }
 
+export function connectionInvestmentsQuery(api: Client<paths>, id: string) {
+  return queryOptions({
+    queryKey: ["connections", id, "investments"] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/connections/{id}/investments", {
+          params: { path: { id } },
+        }),
+      ),
+  });
+}
+
+type ConfirmMovementBody =
+  paths["/investment-movements/{id}/confirm"]["post"]["requestBody"]["content"]["application/json"];
+
+// The body is required: `{}` confirms a movement that needs no field.
+export function useConfirmInvestmentMovement() {
+  return useApiMutation(
+    async (api, { id, body }: { id: string; body: ConfirmMovementBody }) =>
+      unwrap(
+        await api.POST("/investment-movements/{id}/confirm", {
+          params: { path: { id } },
+          body,
+        }),
+      ),
+  );
+}
+
+export function useDismissInvestmentMovement() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(
+      await api.POST("/investment-movements/{id}/dismiss", {
+        params: { path: { id } },
+      }),
+    ),
+  );
+}
+
+export function useUndoInvestmentMovement() {
+  return useApiMutation(async (api, id: string) =>
+    unwrap(
+      await api.POST("/investment-movements/{id}/undo", {
+        params: { path: { id } },
+      }),
+    ),
+  );
+}
+
 export function goalsQuery(api: Client<paths>) {
   return queryOptions({
     queryKey: ["goals", "list"] as const,

@@ -13,6 +13,7 @@ import { ConnectionAccountsTable } from "@/features/accounts/connections/connect
 import type { ConnectionMessage } from "@/features/accounts/connections/connection-account-actions";
 import { ConnectionBatches } from "@/features/accounts/connections/connection-batches";
 import { ConnectionDeleteDialog } from "@/features/accounts/connections/connection-delete-dialog";
+import { ConnectionInvestments } from "@/features/accounts/connections/connection-investments";
 import { ConnectionSyncs } from "@/features/accounts/connections/connection-syncs";
 import { ConnectionStateAlert } from "@/features/accounts/connections/connection-state-alert";
 import { ConnectionTimesList } from "@/features/accounts/connections/connection-times-list";
@@ -153,6 +154,7 @@ export function ConnectionLinks({
         onMessage={setMessage}
       />
       <ConnectionSyncs connection={connection} accounts={accounts} />
+      <ConnectionInvestments connection={connection} />
     </Stack>
   );
 }
