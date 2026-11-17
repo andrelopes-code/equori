@@ -8,7 +8,6 @@ import {
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
-import { Skeleton } from "@slotted/react/skeleton";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +25,7 @@ import type {
   PortfolioSearch,
   SearchPatch,
 } from "@/features/portfolio/model/portfolio-search";
+import { ReturnPending } from "@/features/portfolio/return/return-pending";
 import { ReturnView } from "@/features/portfolio/return/return-view";
 import {
   useReturnOptions,
@@ -190,7 +190,7 @@ export function PortfolioReturn({
           />
         )}
 
-        {reading && !report.isError && !ready && <Skeleton />}
+        {reading && !report.isError && !ready && <ReturnPending />}
 
         {reading && !report.isError && ready && (
           <ReturnView

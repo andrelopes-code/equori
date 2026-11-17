@@ -29,9 +29,7 @@ export const holdingsEn = {
   "holdings.method.layer.description":
     "How the return was computed: the balances, the rates and the flows of the period.",
   "holdings.method.open": "View details and method",
-  "holdings.method.summary":
-    "Closing {closing}. Period {period}. Annual {annual}.",
-  "holdings.method.summaryNoPeriod": "Closing {closing}. Annual {annual}.",
+  "holdings.method.annual": "Annual rate {annual}",
   "holdings.method.reconciliation": "Reconciliation",
   "holdings.method.deposits": "Deposits",
   "holdings.method.withdrawals": "Withdrawals",
@@ -136,10 +134,10 @@ export const holdingsEn = {
   "return.bar.portfolio": "Portfolio",
   "return.bar.account": "Account",
   "return.bars.label": "{subject} {value}, {index} {indexValue}",
-  "return.money.title": "In money",
+  "return.lead.gain": "Gain in the period",
   "return.money.opening": "Opening balance",
   "return.money.deposits": "Net deposits",
   "return.money.gain": "Gain",
   "return.money.closing": "Closing balance",
-  "return.growth.title": "Where the growth came from",
+  "return.origin.title": "Where the closing balance came from",
 };

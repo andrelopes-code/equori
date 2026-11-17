@@ -120,7 +120,9 @@ export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
                       numeric="tabular"
                       className={cx(
                         styles.value,
-                        bar.bp < 0 ? styles.before : styles.after,
+                        geometry.anchor === "insetInlineEnd"
+                          ? styles.before
+                          : styles.after,
                       )}
                       style={{ [geometry.anchor]: `${String(geometry.edge)}%` }}
                     >
@@ -157,8 +159,10 @@ interface BarGeometry {
   zero: number;
   start: number;
   size: number;
-  // The side the value is anchored on and the percent from it: right of a positive bar's end,
-  // left of a negative bar's start.
+  // The side the value is anchored on and the percent from it: right of a positive bar's end;
+  // for a negative bar, right of the zero line when the axis has a positive side (RK5), where
+  // the row is empty, and left of the bar's start otherwise. Left of the start, the value of a
+  // short track reaches the row label.
   anchor: "insetInlineStart" | "insetInlineEnd";
   edge: number;
 }
@@ -166,6 +170,16 @@ interface BarGeometry {
 function barGeometry(axis: ReturnAxis, bp: number): BarGeometry {
   const zero = axisPosition(axis, 0);
   const size = (Math.abs(bp) * 100) / (axis.max - axis.min);
+
+  if (bp < 0 && axis.max > 0) {
+    return {
+      zero,
+      start: zero - size,
+      size,
+      anchor: "insetInlineStart",
+      edge: zero,
+    };
+  }
 
   if (bp < 0) {
     return {

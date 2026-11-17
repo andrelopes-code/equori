@@ -26,7 +26,7 @@ Guide topic (`navigation-map.json`): `investments`.
 - `summary/`: portfolio header, summary and income hook.
 - `notices/`: problem, missing price and quote warning notices.
 - `return/`: return panel, period, view, bars, method, yield group list and options hook.
-- `return-money/`: money panel, money figures and growth bar.
+- `return-money/`: origin of the closing balance: its list, its bar (`origin-parts`) and the money figures.
 - `account-yield/`: account yield, its section, hook and measured tops.
 - `income-events/`: income events tab, table and charts.
 - `realized-results/`: realized results tab and sales table.

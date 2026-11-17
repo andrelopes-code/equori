@@ -1,0 +1,145 @@
+{
+ "GET /api/v1/reports/return": {
+  "annual_bp": 4059,
+  "benchmark": {
+   "credits": 0,
+   "days": 248,
+   "excess_bp": 2676,
+   "from": "2025-11-17",
+   "index": "cdi",
+   "index_annual_bp": 1438,
+   "index_bp": 1414,
+   "restarted": false,
+   "return_bp": 4090,
+   "skipped": 0,
+   "started_late": false,
+   "until": "2026-11-13"
+  },
+  "closing": {
+   "amount": 12735657,
+   "currency": "BRL"
+  },
+  "flows": [
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "USD"
+    },
+    "date": "2025-12-08"
+   },
+   {
+    "amount": {
+     "amount": 150000,
+     "currency": "BRL"
+    },
+    "date": "2025-12-22"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-01-09"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-02-09"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-03-09"
+   },
+   {
+    "amount": {
+     "amount": 600000,
+     "currency": "BRL"
+    },
+    "date": "2026-03-16"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-04-09"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-05-11"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-06-09"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-07-08"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-08-10"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-09-09"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-10-08"
+   },
+   {
+    "amount": {
+     "amount": 80000,
+     "currency": "BRL"
+    },
+    "date": "2026-11-07"
+   },
+   {
+    "amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "date": "2026-11-10"
+   }
+  ],
+  "index": "cdi",
+  "inflation": {
+   "from": "2025-12-01",
+   "index": "ipca",
+   "index_bp": 444,
+   "real_bp": 3120,
+   "return_bp": 3703,
+   "until": "2026-10-31"
+  },
+  "opening": {
+   "amount": 7200522,
+   "currency": "BRL"
+  },
+  "period_bp": 4004,
+  "profile": "market"
+ }
+}

@@ -1,0 +1,134 @@
+@layer app {
+  .layout {
+    display: grid;
+    row-gap: var(--slotted-space-7);
+  }
+
+  /* The gain in money beside the verdict sentence. */
+  .lead {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-7);
+  }
+
+  .gain {
+    display: grid;
+    row-gap: var(--slotted-space-1);
+  }
+
+  /* The rule stands only between the gain and the verdict; either one can be absent. */
+  .gain + .verdict {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
+    padding-inline-start: var(--slotted-space-7);
+    border-inline-start: var(--slotted-border-width-thin) solid
+      var(--slotted-border-subtle);
+  }
+
+  .gainAmount {
+    font-size: var(--slotted-font-size-4xl);
+    line-height: 1.15; /* literal: the amount is one line of display type */
+    white-space: nowrap;
+  }
+
+  .columns {
+    display: grid;
+    /* literal: the narrowest column that keeps a comparison window on one line */
+    grid-template-columns: repeat(
+      auto-fit,
+      minmax(28rem, 1fr)
+    ); /* literal: see above */
+    gap: var(--slotted-space-7) var(--slotted-space-9);
+    align-items: start;
+  }
+
+  /* A lone column: values stay near their terms. */
+  .columns > :only-child {
+    max-inline-size: 40rem; /* literal: the measure of one column at 1440 px */
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-7);
+  }
+
+  .footNotes {
+    display: grid;
+    row-gap: var(--slotted-space-1);
+  }
+
+  .footEnd {
+    flex: none;
+  }
+
+  /* Loading: one line for the lead, one block per column. */
+  .pendingLead {
+    inline-size: 24rem; /* literal: the length of the lead line */
+  }
+
+  .pendingBlock {
+    block-size: 11rem; /* literal: the height of a loaded column */
+  }
+}
+
+@layer app {
+  .origin {
+    display: grid;
+    row-gap: var(--slotted-space-4);
+  }
+
+  /* The height of the two text lines that head each comparison, so the bar starts level with
+     the first pair of bars. */
+  .originHead {
+    display: flex;
+    align-items: center;
+    min-block-size: var(--slotted-space-10);
+  }
+
+  .originBar {
+    display: flex;
+    gap: var(--slotted-border-width-thick);
+    block-size: var(--slotted-space-5);
+    border-radius: var(--slotted-radius-xs);
+    overflow: hidden;
+  }
+
+  .originSegment {
+    flex-basis: 0;
+    min-inline-size: var(--slotted-space-1);
+  }
+
+  .swatch {
+    display: inline-block;
+    inline-size: 8px; /* literal: whole pixels at the 14 px root */
+    block-size: 8px; /* literal: whole pixels at the 14 px root */
+    margin-inline-end: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .opening {
+    background: var(--slotted-border-strong);
+  }
+
+  .deposits {
+    background: var(--slotted-text-muted);
+  }
+
+  .gainPart {
+    background: var(--slotted-tone-accent-solid);
+  }
+
+  @media (forced-colors: active) {
+    .opening,
+    .deposits {
+      background: GrayText;
+    }
+
+    .gainPart {
+      background: Highlight;
+    }
+  }
+}

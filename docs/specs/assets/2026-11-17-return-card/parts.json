@@ -1,0 +1,8 @@
+{
+  "heading": "h2",
+  "lead": "[data-return=\"lead\"]",
+  "against": "[data-return=\"against\"]",
+  "origin": "[data-return=\"origin\"]",
+  "foot": "[data-return=\"foot\"]",
+  "method": "button[aria-haspopup=\"dialog\"]"
+}

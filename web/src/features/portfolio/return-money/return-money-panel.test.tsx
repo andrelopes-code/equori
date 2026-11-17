@@ -11,7 +11,6 @@ import {
 import { renderWithProviders } from "@/testing/render-app";
 
 import { ReturnMoneyPanel } from "@/features/portfolio/return-money/return-money-panel";
-import type { ReturnSubject } from "@/features/portfolio/model/return-summary";
 
 type ReturnReport = components["schemas"]["ReturnReport"];
 
@@ -19,7 +18,7 @@ const opening = catalogEn["return.money.opening"];
 const deposits = catalogEn["return.money.deposits"];
 const gain = catalogEn["return.money.gain"];
 const closing = catalogEn["return.money.closing"];
-const growth = catalogEn["return.growth.title"];
+const title = catalogEn["return.origin.title"];
 
 const plain: ReturnReport = { ...plainReturn, profile: "rate" };
 const contribution: ReturnReport = { ...contributionReturn, profile: "rate" };
@@ -27,20 +26,22 @@ const contribution: ReturnReport = { ...contributionReturn, profile: "rate" };
 describe("ReturnMoneyPanel", () => {
   it.each([
     {
-      name: "a plain return on an account",
+      name: "a plain return",
       report: plain,
-      surface: "account",
       rows: [
         [opening, "R$1,000.00"],
         [gain, "R$50.00"],
         [closing, "R$1,050.00"],
       ],
-      absent: [deposits, growth],
+      absent: [deposits],
+      segments: [
+        ["opening", "100000"],
+        ["gain", "5000"],
+      ],
     },
     {
-      name: "a contribution on the portfolio",
+      name: "a contribution",
       report: contribution,
-      surface: "portfolio",
       rows: [
         [opening, "R$1,000.00"],
         [deposits, "R$1,000.00"],
@@ -48,31 +49,22 @@ describe("ReturnMoneyPanel", () => {
         [closing, "R$2,050.00"],
       ],
       absent: [],
-      present: [growth],
-    },
-    {
-      name: "a contribution on an account",
-      report: contribution,
-      surface: "account",
-      rows: [
-        [opening, "R$1,000.00"],
-        [deposits, "R$1,000.00"],
-        [gain, "R$50.00"],
-        [closing, "R$2,050.00"],
+      segments: [
+        ["opening", "100000"],
+        ["deposits", "100000"],
+        ["gain", "5000"],
       ],
-      absent: [growth],
     },
   ] satisfies {
     name: string;
     report: ReturnReport;
-    surface: ReturnSubject;
     rows: [string, string][];
     absent: string[];
-    present?: string[];
-  }[])("draws $name", async ({ report, surface, rows, absent, present }) => {
-    renderPanel(report, surface);
+    segments: [string, string][];
+  }[])("RK3, RK4: draws $name", async ({ report, rows, absent, segments }) => {
+    const { container } = renderPanel(report);
 
-    await screen.findByText(catalogEn["return.money.title"]);
+    await screen.findByText(title);
 
     for (const [term, value] of rows) {
       await waitFor(() => {
@@ -84,15 +76,13 @@ describe("ReturnMoneyPanel", () => {
       expect(screen.queryByText(term)).toBeNull();
     }
 
-    for (const term of present ?? []) {
-      expect(screen.getByText(term)).toBeTruthy();
-    }
+    expect(drawnSegments(container)).toEqual(segments);
   });
 
   it("gives every term a help button (return honesty HR6)", async () => {
-    renderPanel(plain, "portfolio");
+    renderPanel(plain);
 
-    await screen.findByText(catalogEn["return.money.title"]);
+    await screen.findByText(title);
 
     for (const key of ["opening", "gain", "closing"] as const) {
       const term = catalogEn[`return.money.${key}`];
@@ -103,13 +93,13 @@ describe("ReturnMoneyPanel", () => {
     }
   });
 
-  it("draws a negative gain in the danger tone and no growth bar", async () => {
-    renderPanel(
-      { ...plain, closing: { amount: 90000, currency: "BRL" } },
-      "portfolio",
-    );
+  it("RK4: draws a negative gain in the danger tone and no bar", async () => {
+    const { container } = renderPanel({
+      ...plain,
+      closing: { amount: 90000, currency: "BRL" },
+    });
 
-    await screen.findByText(catalogEn["return.money.title"]);
+    await screen.findByText(title);
 
     await waitFor(() => {
       expect(row(gain).textContent).toBe(`${gain}−R$100.00`);
@@ -117,7 +107,17 @@ describe("ReturnMoneyPanel", () => {
     expect(screen.getByText("−R$100.00").getAttribute("data-tone")).toBe(
       "danger",
     );
-    expect(screen.queryByText(growth)).toBeNull();
+    expect(drawnSegments(container)).toEqual([]);
+  });
+
+  it("hides the bar from assistive technology", async () => {
+    const { container } = renderPanel(contribution);
+
+    await screen.findByText(title);
+
+    const bar = container.querySelector("[data-segment]")?.parentElement;
+
+    expect(bar?.getAttribute("aria-hidden")).toBe("true");
   });
 
   it("draws nothing when an amount is in another currency", () => {
@@ -126,7 +126,7 @@ describe("ReturnMoneyPanel", () => {
       closing: { amount: 105000, currency: "USD" },
     };
 
-    const { container } = renderPanel(report, "portfolio");
+    const { container } = renderPanel(report);
 
     expect(container.textContent).toBe("");
   });
@@ -135,11 +135,10 @@ describe("ReturnMoneyPanel", () => {
     localStorage.setItem("equori.privacy", "hidden");
 
     try {
-      const { container } = renderPanel(contribution, "portfolio");
+      const { container } = renderPanel(contribution);
 
-      await screen.findByText(catalogEn["return.money.title"]);
+      await screen.findByText(title);
 
-      expect(screen.getByText(growth)).toBeTruthy();
       expect(container.textContent).not.toMatch(/\d/u);
     } finally {
       localStorage.removeItem("equori.privacy");
@@ -147,11 +146,10 @@ describe("ReturnMoneyPanel", () => {
   });
 });
 
-function renderPanel(report: ReturnReport, surface: ReturnSubject) {
-  return renderWithProviders(
-    <ReturnMoneyPanel report={report} surface={surface} />,
-    { fetch: portfolioApi() },
-  );
+function renderPanel(report: ReturnReport) {
+  return renderWithProviders(<ReturnMoneyPanel report={report} />, {
+    fetch: portfolioApi(),
+  });
 }
 
 function row(term: string): HTMLElement {
@@ -159,4 +157,10 @@ function row(term: string): HTMLElement {
   if (item === null) throw new Error(`no row for ${term}`);
 
   return item;
+}
+
+function drawnSegments(container: HTMLElement): [string, string][] {
+  return [...container.querySelectorAll<HTMLElement>("[data-segment]")].map(
+    (segment) => [segment.dataset.segment ?? "", segment.style.flexGrow],
+  );
 }

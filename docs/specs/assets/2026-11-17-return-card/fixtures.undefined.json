@@ -1,0 +1,13 @@
+{
+ "GET /api/v1/reports/return": {
+  "$status": 422,
+  "$body": {
+   "type": "about:blank",
+   "title": "Unprocessable Entity",
+   "status": 422,
+   "detail": "no money was invested in the period, or the return has no solution",
+   "code": "return_undefined",
+   "request_id": "YRJKFH3LDQGS3TFOBNE2RWIE3M"
+  }
+ }
+}

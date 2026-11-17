@@ -103,6 +103,17 @@ describe("ReturnBars", () => {
     expect(style.insetInlineStart).toBe(`${String(zero - size)}%`);
   });
 
+  // RK5: the axis runs from −1600 to 800, so the zero line sits at 1600 of 2400.
+  it("writes the value of a negative bar after the zero line", () => {
+    renderBars();
+
+    const pair = screen.getByRole("img", { name: pairNames[0] });
+    const style = within(pair).getByText("−10.00%").style;
+
+    expect(style.insetInlineStart).toBe(`${String((1600 * 100) / 2400)}%`);
+    expect(style.insetInlineEnd).toBe("");
+  });
+
   it("draws a positive bar from the zero line", () => {
     renderBars();
 

@@ -86,11 +86,24 @@ describe("ReturnView", () => {
       screen.getByRole("heading", { name: sectionTitle, level: 1 }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", {
-        name: catalogEn["return.money.title"],
-        level: 2,
-      }),
+      screen.getByText(catalogEn["return.origin.title"]),
     ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+  });
+
+  // Fixture: plainReturn opens at 100000, closes at 105000 and holds no flow, so the gain is
+  // 105000 - 100000 = 5000; this harness serves no instrument, so the scale is 0 and the amount
+  // reads R$5,000. annual_bp is 500.
+  it("RK1, RK6: leads with the gain in money and writes the annual rate beside the button", async () => {
+    renderView(market, "portfolio");
+
+    const lead = (
+      await screen.findByText(catalogEn["return.lead.gain"])
+    ).closest("div");
+
+    expect(lead?.textContent).toBe(`${catalogEn["return.lead.gain"]}R$5,000`);
+    expect(screen.getByText("Annual rate 5.00%")).toBeInTheDocument();
+    expect(screen.queryByText(/Closing R\$/)).not.toBeInTheDocument();
   });
 
   it("RC1: states the verdict of a compared return and keeps the profile sentence", () => {

@@ -31,9 +31,7 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "holdings.method.layer.description":
     "Como o retorno foi calculado: os saldos, as taxas e os fluxos do período.",
   "holdings.method.open": "Ver detalhes e método",
-  "holdings.method.summary":
-    "Fechamento {closing}. Período {period}. Anual {annual}.",
-  "holdings.method.summaryNoPeriod": "Fechamento {closing}. Anual {annual}.",
+  "holdings.method.annual": "Taxa anual {annual}",
   "holdings.method.reconciliation": "Conferência",
   "holdings.method.deposits": "Aportes",
   "holdings.method.withdrawals": "Retiradas",
@@ -138,10 +136,10 @@ export const holdingsPtBR: Record<keyof typeof holdingsEn, string> = {
   "return.bar.portfolio": "Carteira",
   "return.bar.account": "Conta",
   "return.bars.label": "{subject} {value}, {index} {indexValue}",
-  "return.money.title": "Em dinheiro",
+  "return.lead.gain": "Rendimento no período",
   "return.money.opening": "Saldo inicial",
   "return.money.deposits": "Aportes líquidos",
   "return.money.gain": "Rendimento",
   "return.money.closing": "Saldo final",
-  "return.growth.title": "De onde veio o crescimento",
+  "return.origin.title": "De onde veio o saldo final",
 };

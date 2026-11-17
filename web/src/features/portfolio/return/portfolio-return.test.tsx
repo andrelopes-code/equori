@@ -197,30 +197,12 @@ describe("Portfolio return", () => {
     ]);
   });
 
-  // Fixture: plainReturn closes at 105000 units (R$1,050.00) with annual_bp 500; period_bp 480 is
-  // 4.80%.
-  it("L3: summarizes the closing value and both rates beside the button", async () => {
-    const fetch = portfolioApi({
-      "GET /api/v1/reports/return": () =>
-        json(200, { ...plainReturn, period_bp: 480 }),
-    });
-    await renderApp("/portfolio", { fetch });
-    await performance();
-
-    expect(
-      await screen.findByText(
-        "Closing R$1,050.00. Period 4.80%. Annual 5.00%.",
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("L3: summarizes the closing value and the annual rate of a report without a period return", async () => {
+  // Fixture: plainReturn holds annual_bp 500.
+  it("RK6: writes the annual rate beside the button", async () => {
     await renderApp("/portfolio", { fetch: portfolioApi() });
     await performance();
 
-    expect(
-      await screen.findByText("Closing R$1,050.00. Annual 5.00%."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Annual rate 5.00%")).toBeInTheDocument();
   });
 
   // Fixture: contributionReturn opens at 100000, closes at 205000 and holds one flow of +100000, so

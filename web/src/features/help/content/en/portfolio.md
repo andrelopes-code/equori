@@ -28,12 +28,12 @@ Record buys, sales and income with the buttons above the list.
 
 ## How it performed
 
-Under **How it performed**, choose the whole portfolio or one account and a period of up to 366 days. The section opens with one sentence that states the result, such as "In the period, the portfolio returned 4.20%: 104.30% of the CDI". Two comparisons follow, each a pair of bars on one axis with a chip:
+Under **How it performed**, choose the whole portfolio or one account and a period of up to 366 days. The section opens with the **Gain in the period** in money, beside one sentence that states the result, such as "In the period, the portfolio returned 4.20%.". Two comparisons follow, each a pair of bars on one axis with a chip:
 
 - **Against the CDI**: the return of the period beside the CDI over the same days. The chip shows the percent of the CDI, or the difference in percentage points.
 - **Against inflation**: the return beside the inflation index. The chip shows the real return.
 
-A region without these indexes shows the return of the period alone. The **In money** panel lists the **Opening balance**, the **Net deposits** (when the period has deposits or withdrawals), the **Gain** and the **Closing balance**. A bar splits the growth into deposits and gain. Notes under the comparisons say what the figures leave out. The closed block **Details and method** holds the rate a year, the percent of the index, the index, the yield credits, the opening and closing values, the time-weighted return, the personal rate and the list of deposits and withdrawals.
+A region without these indexes shows the return of the period alone. The block **Where the closing balance came from** lists the **Opening balance**, the **Net deposits** (when the period has deposits or withdrawals), the **Gain** and the **Closing balance**. When the gain is positive and no part is negative, a bar splits the closing balance into these parts. Notes at the foot say what the figures leave out, beside the annual rate. The button **View details and method** opens the percent of the index, the percent of the index, the index, the yield credits, the opening and closing values, the time-weighted return, the personal rate and the list of deposits and withdrawals.
 
 ## The year
 
