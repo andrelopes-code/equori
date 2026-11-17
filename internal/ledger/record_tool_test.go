@@ -293,3 +293,138 @@ func TestRecordTransactionExchangeFee(t *testing.T) {
 		"fee_category_id",
 	)
 }
+
+// An income or an expense on an account in a currency other than the base: to_amount is the
+// amount in the currency of to_account_id, and the posting on the account carries its value in
+// the base currency as the weight (DM1, issue #53).
+func TestRecordTransactionCategoryInAnotherCurrency(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-10-23"))
+	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
+
+	var income writeOut
+	toolOutput(t, f.h, "record_transaction", map[string]any{
+		"date":            "2026-10-14",
+		"description":     "Cashback",
+		"amount":          "12.89",
+		"from_account_id": f.salary,
+		"to_account_id":   wise,
+		"to_amount":       "2.35",
+	}, &income)
+
+	wantWeights(t, f.h, income.TransactionID, []postingWeight{
+		{f.salary, -1289, "BRL", -1289},
+		{wise, 235, "USD", 1289},
+	})
+
+	var expense writeOut
+	toolOutput(t, f.h, "record_transaction", map[string]any{
+		"date":            "2026-10-14",
+		"description":     "Lunch abroad",
+		"amount":          "10.00",
+		"from_account_id": wise,
+		"to_account_id":   f.food,
+		"to_amount":       "54.83",
+	}, &expense)
+
+	wantWeights(t, f.h, expense.TransactionID, []postingWeight{
+		{wise, -1000, "USD", -5483},
+		{f.food, 5483, "BRL", 5483},
+	})
+
+	// A fee belongs to an exchange between two accounts, not to an income or an expense.
+	f.h.ExpectToolError(f.h.Tool("record_transaction", map[string]any{
+		"date":            "2026-10-14",
+		"description":     "Lunch abroad",
+		"amount":          "10.00",
+		"from_account_id": wise,
+		"to_account_id":   f.food,
+		"to_amount":       "54.83",
+		"fee":             "1.00",
+	}), "invalid_arguments", "fee")
+
+	previewTool(t, f.h, "record_transaction", map[string]any{
+		"date":            "2026-10-14",
+		"description":     "Cashback",
+		"amount":          "12.89",
+		"from_account_id": f.salary,
+		"to_account_id":   wise,
+		"to_amount":       "2.35",
+	})
+}
+
+// A transfer between two accounts of one currency other than the base takes its value in the
+// base currency from the stored price of the date; without a price it is refused (M6).
+func TestRecordTransactionTransferInAnotherCurrency(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, apitest.Today("2026-10-23"))
+	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
+	vault := f.h.Account("Vault USD", "asset", "savings", map[string]any{"currency": "USD"})
+	args := map[string]any{
+		"date":            "2026-10-14",
+		"description":     "To the vault",
+		"amount":          "10.00",
+		"from_account_id": wise,
+		"to_account_id":   vault,
+	}
+
+	f.h.ExpectToolError(f.h.Tool("record_transaction", args), "price_missing", "")
+
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "USD",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-14",
+			"value":            "5.4830",
+		},
+		http.StatusCreated,
+		nil,
+	)
+
+	var out writeOut
+	toolOutput(t, f.h, "record_transaction", args, &out)
+
+	wantWeights(t, f.h, out.TransactionID, []postingWeight{
+		{wise, -1000, "USD", -5483},
+		{vault, 1000, "USD", 5483},
+	})
+}
+
+type postingWeight struct {
+	account  string
+	amount   int64
+	currency string
+	weight   int64
+}
+
+// wantWeights compares the postings of a transaction, in order, with their weights.
+func wantWeights(t *testing.T, h *apitest.Harness, id string, want []postingWeight) {
+	t.Helper()
+	var out struct {
+		Postings []struct {
+			AccountID string `json:"account_id"`
+			Amount    struct {
+				Amount   int64  `json:"amount"`
+				Currency string `json:"currency"`
+			} `json:"amount"`
+			Weight struct {
+				Amount int64 `json:"amount"`
+			} `json:"weight"`
+		} `json:"postings"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/transactions/"+id, nil, http.StatusOK, &out)
+
+	var got []postingWeight
+	for _, p := range out.Postings {
+		got = append(
+			got,
+			postingWeight{p.AccountID, p.Amount.Amount, p.Amount.Currency, p.Weight.Amount},
+		)
+	}
+
+	if !slices.Equal(got, want) {
+		t.Errorf("postings = %v, want %v", got, want)
+	}
+}

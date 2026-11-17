@@ -270,7 +270,7 @@ func planExchangeFee(
 	}
 
 	switch {
-	case !p.exchange:
+	case !p.exchange || p.categorized():
 		return tool.InvalidArgument(
 			"fee",
 			"is used only by an exchange between accounts in two currencies",

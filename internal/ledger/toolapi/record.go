@@ -186,7 +186,7 @@ func recordByKind(
 			AccountID: p.from.ID, CategoryID: p.dests[0].account.ID, PayeeID: p.payeeID,
 			Date: in.Date.Time, Description: in.Description, Original: p.original, Rate: p.rate,
 		})
-	case p.exchange:
+	case p.exchange && !p.categorized():
 		t, err = svc.Exchange(ctx, booksID, app.Exchange{
 			FromAccountID: p.from.ID,
 			ToAccountID:   p.dests[0].account.ID,
@@ -198,22 +198,32 @@ func recordByKind(
 			FeeCategoryID: p.feeID,
 		})
 	default:
-		postings := []domain.Posting{{AccountID: p.from.ID, Amount: p.amount.Neg()}}
-		for _, d := range p.dests {
-			postings = append(postings, domain.Posting{AccountID: d.account.ID, Amount: d.amount})
-		}
-
-		t, err = svc.RecordTransaction(ctx, booksID, domain.Transaction{
-			Date:        in.Date.Time,
-			Description: in.Description,
-			PayeeID:     p.payeeID,
-			Tags:        in.Tags,
-			Postings:    postings,
-			Origin:      domain.OriginManual,
-		})
+		t, err = recordPosted(ctx, svc, booksID, in, p)
 	}
 
 	return t, err
+}
+
+func recordPosted(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in recordTransactionIn,
+	p recordPlan,
+) (domain.Transaction, error) {
+	postings, err := recordPostings(ctx, svc, booksID, in, p)
+	if err != nil {
+		return domain.Transaction{}, err
+	}
+
+	return svc.RecordTransaction(ctx, booksID, domain.Transaction{
+		Date:        in.Date.Time,
+		Description: in.Description,
+		PayeeID:     p.payeeID,
+		Tags:        in.Tags,
+		Postings:    postings,
+		Origin:      domain.OriginManual,
+	})
 }
 
 func recordInstallments(
