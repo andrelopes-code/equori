@@ -59,7 +59,7 @@ const history: History = {
 
 describe("trackMonth", () => {
   it("states each bucket against its share of the income received", () => {
-    const got = trackMonth(history, "2026-10");
+    const got = trackMonth(history, "2026-10", "2026-06");
 
     expect(got.received).toBe(100000);
     expect(got.missed).toBe(2);
@@ -71,7 +71,7 @@ describe("trackMonth", () => {
   });
 
   it("reads what is left and what was kept", () => {
-    const got = trackMonth(history, "2026-11");
+    const got = trackMonth(history, "2026-11", "2026-06");
 
     expect(got.missed).toBe(0);
     expect(got.rows.map((r) => r.status)).toEqual([
@@ -81,7 +81,7 @@ describe("trackMonth", () => {
   });
 
   it("marks the six months, a month without income having no target", () => {
-    const got = trackMonth(history, "2026-10");
+    const got = trackMonth(history, "2026-10", "2026-06");
 
     expect(got.rows[0]?.months.map((m) => m.kept)).toEqual([
       true,
@@ -112,8 +112,8 @@ describe("trackMonth", () => {
       ],
     };
 
-    const october = trackMonth(floor, "2026-10").rows[0];
-    const november = trackMonth(floor, "2026-11").rows[0];
+    const october = trackMonth(floor, "2026-10", "2026-06").rows[0];
+    const november = trackMonth(floor, "2026-11", "2026-06").rows[0];
 
     expect(october?.status).toEqual({ kind: "reached", amount: 90000 });
     expect(october?.months[4]?.state).toBe("kept");
@@ -123,7 +123,7 @@ describe("trackMonth", () => {
   });
 
   it("gives no target and no verdict without income", () => {
-    const got = trackMonth(history, "2026-08");
+    const got = trackMonth(history, "2026-08", "2026-06");
 
     expect(got.received).toBe(0);
     expect(got.missed).toBeUndefined();
@@ -181,7 +181,7 @@ describe("trackMonth across versions", () => {
   };
 
   it("marks a bucket absent in the months before it joined the split", () => {
-    const extra = trackMonth(across, "2026-11").rows[2];
+    const extra = trackMonth(across, "2026-11", "2026-06").rows[2];
 
     expect(extra?.id).toBe("extra");
     expect(extra?.months.map((m) => m.state).slice(0, 3)).toEqual([
@@ -195,12 +195,13 @@ describe("trackMonth across versions", () => {
       real: 0,
       kept: undefined,
       state: "absent",
+      changed: false,
     });
     expect(extra?.months[3]?.target).toBe(20000);
   });
 
   it("judges each month against the share of its own version", () => {
-    const needs = trackMonth(across, "2026-11").rows[0];
+    const needs = trackMonth(across, "2026-11", "2026-06").rows[0];
 
     expect(needs?.months[0]?.target).toBe(60000);
     expect(needs?.months[5]?.target).toBe(50000);
@@ -220,7 +221,7 @@ describe("trackMonth across versions", () => {
       ],
     };
 
-    expect(trackMonth(ended, "2026-11")).toEqual({
+    expect(trackMonth(ended, "2026-11", "2026-06")).toEqual({
       received: 100000,
       rows: [],
       missed: undefined,
@@ -228,19 +229,61 @@ describe("trackMonth across versions", () => {
   });
 });
 
+describe("trackMonth since and changed", () => {
+  const second = { from: "2026-11", buckets };
+  const two: History = {
+    ...history,
+    methods: [{ from: "2026-09", buckets }, second],
+    months: [
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10",
+      "2026-11",
+    ].map((m) => ({
+      ...month(m, 100000, 0, 0),
+      from: m >= "2026-11" ? "2026-11" : "2026-09",
+    })),
+  };
+
+  it("marks only the month a later version starts in", () => {
+    const got = trackMonth(two, "2026-11", "2026-09");
+
+    expect(got.since).toEqual({ from: "2026-11", first: false });
+    expect(got.rows[0]?.months.map((c) => c.changed)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  it("names the first version and marks nothing for one method", () => {
+    const got = trackMonth(history, "2026-11", "2026-06");
+
+    expect(got.since).toEqual({ from: "2026-06", first: true });
+    expect(got.rows[0]?.months.some((c) => c.changed)).toBe(false);
+  });
+});
+
 describe("trackVerdict", () => {
   it("names the buckets that missed, or why nothing is judged", () => {
-    expect(trackVerdict(trackMonth(history, "2026-10"))).toEqual({
+    expect(trackVerdict(trackMonth(history, "2026-10", "2026-06"))).toEqual({
       key: "track.verdict.missed",
       count: 2,
     });
-    expect(trackVerdict(trackMonth(history, "2026-11"))).toEqual({
+    expect(trackVerdict(trackMonth(history, "2026-11", "2026-06"))).toEqual({
       key: "track.verdict.kept",
     });
-    expect(trackVerdict(trackMonth(history, "2026-08"))).toEqual({
+    expect(trackVerdict(trackMonth(history, "2026-08", "2026-06"))).toEqual({
       key: "track.verdict.noIncome",
     });
-    expect(trackVerdict({ received: 1, rows: [], missed: 1 })).toEqual({
+    expect(
+      trackVerdict({ received: 1, rows: [], missed: 1, since: undefined }),
+    ).toEqual({
       key: "track.verdict.one",
     });
   });

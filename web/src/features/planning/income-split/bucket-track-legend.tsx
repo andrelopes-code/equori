@@ -3,8 +3,13 @@ import { Text } from "@slotted/react/typography";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
+interface BucketTrackLegendProps {
+  // Whether a mark of the strips carries the tick of a changed split.
+  changed: boolean;
+}
+
 // What the gauge's mark and the strip's squares mean.
-export function BucketTrackLegend() {
+export function BucketTrackLegend({ changed }: BucketTrackLegendProps) {
   const t = useT();
 
   return (
@@ -27,6 +32,14 @@ export function BucketTrackLegend() {
           {t("track.legend.none")}
         </Text>
       </span>
+      {changed && (
+        <span className={styles.key}>
+          <span className={styles.changedTick} />
+          <Text size="xs" tone="muted">
+            {t("track.legend.changed")}
+          </Text>
+        </span>
+      )}
       <span className={styles.key}>
         <span className={styles.legendTick} />
         <Text size="xs" tone="muted">

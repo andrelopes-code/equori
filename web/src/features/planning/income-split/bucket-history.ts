@@ -27,6 +27,8 @@ export interface TrackCell {
   // Undefined in a month without income: no target to keep.
   kept: boolean | undefined;
   state: "kept" | "missed" | "none" | "absent";
+  // The month is the start of a version that is not the first.
+  changed: boolean;
 }
 
 export interface TrackRow {
@@ -47,20 +49,29 @@ export interface TrackMonth {
   rows: TrackRow[];
   // Buckets that missed their target; undefined without income.
   missed: number | undefined;
+  // The version of the month on screen; first when it is the first version of the book.
+  since: { from: string; first: boolean } | undefined;
 }
 
 // Each bucket of the method of month against its share of the income received (income buckets
 // A233): the target splits the income by largest remainder; a ceiling bucket keeps it at or
 // below, the savings bucket and a floor bucket at or above (A234); the six months of the history
 // give each bucket its strip, each month read through its own version (A242).
-export function trackMonth(history: History, month: string): TrackMonth {
+export function trackMonth(
+  history: History,
+  month: string,
+  firstFrom: string | undefined,
+): TrackMonth {
   const at = history.months.findIndex((m) => m.month === month);
   const entry = history.months[at];
   const received = entry?.received.amount ?? 0;
   const method = entry === undefined ? undefined : methodOf(history, entry);
-  if (method === undefined) return { received, rows: [], missed: undefined };
+  if (method === undefined)
+    return { received, rows: [], missed: undefined, since: undefined };
   const rows = method.buckets.map((b) => {
-    const months = history.months.map((m) => monthCell(history, m, b.id));
+    const months = history.months.map((m) =>
+      monthCell(history, m, b.id, firstFrom),
+    );
     const cell = months[at] ?? emptyCell();
     return {
       id: b.id,
@@ -82,6 +93,7 @@ export function trackMonth(history: History, month: string): TrackMonth {
       received > 0
         ? rows.filter((r) => r.months[at]?.kept === false).length
         : undefined,
+    since: { from: method.from, first: method.from === firstFrom },
   };
 }
 
@@ -91,7 +103,12 @@ function methodOf(history: History, m: Entry): Method | undefined {
 
 // The cell of bucket id in month m, computed with the method of m; absent when that method
 // holds no such bucket.
-function monthCell(history: History, m: Entry, id: string): TrackCell {
+function monthCell(
+  history: History,
+  m: Entry,
+  id: string,
+  firstFrom: string | undefined,
+): TrackCell {
   const method = methodOf(history, m);
   const i = method?.buckets.findIndex((b) => b.id === id) ?? -1;
   const bucket = method?.buckets[i];
@@ -106,7 +123,12 @@ function monthCell(history: History, m: Entry, id: string): TrackCell {
       : undefined;
   const real = m.buckets.find((x) => x.id === id)?.real.amount ?? 0;
   const kept = keptOf(measureOf(bucket), real, target);
-  return { month: m.month, target, real, kept, state: stateOf(kept) };
+  // Without the list of versions the first one is unknown: no month is marked.
+  const changed =
+    firstFrom !== undefined &&
+    m.month === method.from &&
+    method.from !== firstFrom;
+  return { month: m.month, target, real, kept, state: stateOf(kept), changed };
 }
 
 // The line under a bucket's name: its target share and what the bucket draws besides its
@@ -155,6 +177,7 @@ function absentCell(month: string): TrackCell {
     real: 0,
     kept: undefined,
     state: "absent",
+    changed: false,
   };
 }
 
@@ -165,6 +188,7 @@ function emptyCell(): TrackCell {
     real: 0,
     kept: undefined,
     state: "none",
+    changed: false,
   };
 }
 

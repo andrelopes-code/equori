@@ -14,7 +14,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { useCategoryEntries } from "@/features/categories";
-import { budgetBucketHistoryQuery } from "@/features/planning/api";
+import {
+  budgetBucketHistoryQuery,
+  budgetBucketVersionsQuery,
+} from "@/features/planning/api";
 import {
   trackMonth,
   trackVerdict,
@@ -41,6 +44,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
   const t = useT();
   const api = useApi();
   const history = useQuery(budgetBucketHistoryQuery(api, month));
+  const versions = useQuery(budgetBucketVersionsQuery(api));
   const accounts = useQuery(accountsQuery(api));
   const entries = useCategoryEntries(accounts.data);
   const scale = useScale();
@@ -61,7 +65,11 @@ export function BucketTrack({ month }: BucketTrackProps) {
   const currency = history.data.currency;
   const money = (amount: number) =>
     fmt.money({ amount, currency }, scale(currency));
-  const track = trackMonth(history.data, month);
+  const track = trackMonth(
+    history.data,
+    month,
+    versions.data?.versions[0]?.from,
+  );
   if (track.rows.length === 0) return null;
   const verdict = trackVerdict(track);
   const monthName = names.long(month);
@@ -92,6 +100,13 @@ export function BucketTrack({ month }: BucketTrackProps) {
             total: String(track.rows.length),
           })}
         </Text>
+        {track.since !== undefined && versions.data !== undefined && (
+          <Text size="sm" tone="muted">
+            {track.since.first
+              ? t("track.sinceStart")
+              : t("track.since", { month: names.longYear(track.since.from) })}
+          </Text>
+        )}
         <div className={styles.rows}>
           {track.rows.map((row) => (
             <BucketTrackRow
@@ -109,7 +124,9 @@ export function BucketTrack({ month }: BucketTrackProps) {
             {t("track.outside", { amount: money(outside), month: monthName })}
           </Text>
         )}
-        <BucketTrackLegend />
+        <BucketTrackLegend
+          changed={track.rows.some((r) => r.months.some((c) => c.changed))}
+        />
       </SectionBody>
     </Section>
   );

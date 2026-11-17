@@ -24,13 +24,16 @@ export function BucketMonthStrip({
       {cells.map((c, i) => {
         const month = names[i] ?? c.month;
         const current = c.month === shown;
+        const text = t(`track.cell.${c.state}`, { month });
+        const label = c.changed ? t("track.cell.changed", { text }) : text;
         return (
           <span
             key={c.month}
             role="listitem"
             className={styles.month}
-            aria-label={t(`track.cell.${c.state}`, { month })}
-            title={t(`track.cell.${c.state}`, { month })}
+            aria-label={label}
+            title={label}
+            {...(c.changed ? { "data-changed": "" } : {})}
           >
             <span
               className={styles.cell}

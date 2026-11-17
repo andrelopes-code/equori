@@ -104,6 +104,27 @@ describe("Income split in Track", () => {
     ]);
   });
 
+  it("states the version of the month on screen", async () => {
+    await renderApp(october, {
+      fetch: budgetApi({
+        "GET /api/v1/budget-buckets/history": () => json(200, history),
+        "GET /api/v1/budget-buckets/versions": () =>
+          json(200, {
+            versions: [
+              { from: "2026-03", buckets },
+              { from: "2026-05", buckets },
+            ],
+          }),
+      }),
+      today,
+    });
+    await section();
+
+    expect(
+      await screen.findByText("Split in force since May 2026."),
+    ).toBeVisible();
+  });
+
   it("draws nothing while the book has no split", async () => {
     await renderApp(october, {
       fetch: budgetApi({
