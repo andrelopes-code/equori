@@ -90,6 +90,7 @@ var exposure = map[string]string{
 	"closeAccount":                     "manage_accounts_and_payees",
 	"reopenAccount":                    "manage_accounts_and_payees",
 	"setAccountAppearance":             "manage_accounts_and_payees",
+	"setAccountCardFace":               "-screen",
 	"setAccountParent":                 "manage_accounts_and_payees",
 	"mergeAccount":                     "manage_accounts_and_payees",
 	"getAccountBalance":                "get_balances",
