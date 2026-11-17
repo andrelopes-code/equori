@@ -1,11 +1,14 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 
+import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import type { CardSearch, CardTab } from "@/features/cards/model/card-search";
 import { CardSettingsTab } from "@/features/cards/card-settings-tab/card-settings-tab";
 import { PlansTab } from "@/features/cards/plans-tab/plans-tab";
 import { PlasticCardsTab } from "@/features/cards/plastic-cards-tab/plastic-cards-tab";
 import { StatementsTab } from "@/features/cards/statements-tab/statements-tab";
+import { institutionsQuery } from "@/features/setup";
 
 type Account = components["schemas"]["Account"];
 type Statement = components["schemas"]["StatementSummary"];
@@ -33,6 +36,7 @@ export function CardTabPanel({
   scale,
 }: CardTabPanelProps) {
   const navigate = useNavigate();
+  const institutions = useQuery(institutionsQuery(useApi()));
 
   function openRule(open: boolean) {
     const merged: CardSearch = { ...search };
@@ -66,7 +70,14 @@ export function CardTabPanel({
         />
       )}
 
-      {tab === "cards" && <PlasticCardsTab accountId={account.id} />}
+      {tab === "cards" && (
+        <PlasticCardsTab
+          account={account}
+          institution={institutions.data?.find(
+            (i) => i.id === account.institution_id,
+          )}
+        />
+      )}
 
       {tab === "settings" && (
         <CardSettingsTab

@@ -1,0 +1,99 @@
+@layer app {
+  /* The wallet is a container: it stacks the two columns by the width it is given, not the screen's. */
+  .tab {
+    container-type: inline-size;
+  }
+
+  /* The stack column up to 380 px, the detail the rest. */
+  .wallet {
+    display: grid;
+    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
+    gap: 2.5rem;
+    align-items: start;
+  }
+
+  .stackCol {
+    display: grid;
+    gap: var(--slotted-space-6);
+  }
+
+  .detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+    padding-block-start: var(--slotted-space-4);
+  }
+
+  .eyebrow {
+    display: block;
+    block-size: 18px;
+    margin-block-end: var(--slotted-space-4);
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .title {
+    display: block;
+    overflow: hidden;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rows {
+    display: grid;
+    border-block-end: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+  }
+
+  /* A row is 44 px tall: the label at the start, the value at the end on one line. */
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    block-size: 44px;
+    min-inline-size: 0;
+    border-block-start: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    white-space: nowrap;
+  }
+
+  .label {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .holderLabel {
+    flex: none;
+  }
+
+  .holder {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-align: end;
+    text-overflow: ellipsis;
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--slotted-space-4);
+  }
+
+  @container (max-width: 720px) {
+    .wallet {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--slotted-space-6);
+    }
+  }
+}

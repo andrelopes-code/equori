@@ -247,16 +247,41 @@ describe("CardPage", () => {
     });
   });
 
+  it("draws the account's cards as a stack", async () => {
+    await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api() });
+    const stack = await findStack();
+
+    expect(within(stack).getAllByRole("button")).toHaveLength(2);
+    expect(faceOf(stack, "1234")).toBeInTheDocument();
+    expect(faceOf(stack, "9876")).toBeInTheDocument();
+  });
+
+  it("shows the selected card in the detail", async () => {
+    await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api() });
+    const stack = await findStack();
+
+    expect(
+      screen.getByText(catalogEn["card.ending"].replace("{digits}", "1234")),
+    ).toBeInTheDocument();
+
+    await userEvent.click(faceOf(stack, "9876"));
+
+    expect(
+      await screen.findByText(
+        catalogEn["card.ending"].replace("{digits}", "9876"),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("adds a card and switches one off", async () => {
     const sent: Sent[] = [];
     await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api(sent) });
-    const table = await screen.findByRole("table", {
-      name: catalogEn["card.plastics"],
-    });
+    const stack = await findStack();
+    await userEvent.click(faceOf(stack, "9876"));
     await userEvent.click(
-      within(await within(table).findByRole("row", { name: /9876/ })).getByRole(
-        "switch",
-      ),
+      await screen.findByRole("switch", {
+        name: catalogEn["card.activeOf"].replace("{digits}", "9876"),
+      }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: catalogEn["card.addCard"] }),
@@ -296,13 +321,11 @@ describe("CardPage", () => {
   it("edits and removes a card", async () => {
     const sent: Sent[] = [];
     await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api(sent) });
-    const table = await screen.findByRole("table", {
-      name: catalogEn["card.plastics"],
-    });
+    const stack = await findStack();
     const openMenu = async () => {
-      const row = await within(table).findByRole("row", { name: /9876/ });
+      await userEvent.click(faceOf(stack, "9876"));
       await userEvent.click(
-        within(row).getByRole("button", {
+        await screen.findByRole("button", {
           name: catalogEn["card.actionsOf"].replace("{digits}", "9876"),
         }),
       );
@@ -689,3 +712,11 @@ describe("Card tabs on a phone (ADR 027, S5)", () => {
     ).toBeNull();
   });
 });
+
+function findStack() {
+  return screen.findByRole("group", { name: catalogEn["cardFace.stack"] });
+}
+
+function faceOf(stack: HTMLElement, digits: string) {
+  return within(stack).getByRole("button", { name: new RegExp(digits) });
+}
