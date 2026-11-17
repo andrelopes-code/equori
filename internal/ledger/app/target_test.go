@@ -9,10 +9,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	//nolint:depguard // the test runs the service on the real repository of pgtest
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
 	"github.com/andrelopes-code/equori/internal/ledger/domain"
+
+	//nolint:depguard // the test runs the service on the real repository of pgtest
 	"github.com/andrelopes-code/equori/internal/ledger/postgres"
 	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/postgres/pgtest"
