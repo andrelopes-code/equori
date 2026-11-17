@@ -45,6 +45,8 @@ export const marketDataEn = {
   "marketData.feed.br_ifdata":
     "IF.data institution indicators (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
+  "settings.feeds.current": "Current quotes",
+  "settings.feeds.currentFailed": "Current quotes failed: {error}",
   "settings.feeds.covers.none": "Covers no instrument",
   "settings.feeds.covers.one": "Covers 1 instrument",
   "settings.feeds.covers.other": "Covers {count} instruments",

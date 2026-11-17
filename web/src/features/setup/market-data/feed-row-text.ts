@@ -21,6 +21,8 @@ export function feedRowText(f: Feed, t: TFunction, tag: string): FeedRowText {
     (part) => part !== "",
   );
 
+  if (f.current) detail.push(t("settings.feeds.current"));
+
   return {
     detail: detail.join(" · "),
     coverage: f.kind === "price" ? coverage(f.covers, t, count) : null,
@@ -46,6 +48,11 @@ function issue(
 ): FeedRowText["issue"] {
   if (f.error !== null)
     return { tone: "danger", text: t("marketData.failed", { error: f.error }) };
+  if (f.current_error !== null)
+    return {
+      tone: "danger",
+      text: t("settings.feeds.currentFailed", { error: f.current_error }),
+    };
   if (f.history_pending === 1)
     return { tone: "muted", text: t("settings.feeds.historyPending.one") };
   if (f.history_pending > 1)

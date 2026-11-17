@@ -49,6 +49,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.br_ifdata":
     "Indicadores de instituições do IF.data (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
+  "settings.feeds.current": "Cotação atual",
+  "settings.feeds.currentFailed": "Cotação atual falhou: {error}",
   "settings.feeds.covers.none": "Não cobre nenhum ativo",
   "settings.feeds.covers.one": "Cobre 1 ativo",
   "settings.feeds.covers.other": "Cobre {count} ativos",

@@ -85,4 +85,46 @@ describe("feedRowText", () => {
         ?.tone,
     ).toBe("danger");
   });
+
+  it("ends the detail of a feed that reports current quotes with its mark", () => {
+    expect(feedRowText(feed({ current: true }), t, "en-US").detail).toBe(
+      "B3 · Price · Current quotes",
+    );
+  });
+
+  it("leaves the detail of a feed without current quotes unchanged", () => {
+    expect(feedRowText(feed({ current: false }), t, "en-US").detail).toBe(
+      "B3 · Price",
+    );
+  });
+
+  it("states the failure of the current quote in the danger tone", () => {
+    expect(
+      feedRowText(
+        feed({ current: true, error: null, current_error: "status 500" }),
+        t,
+        "en-US",
+      ).issue,
+    ).toEqual({ tone: "danger", text: "Current quotes failed: status 500" });
+  });
+
+  it("puts the failure of the feed before the failure of the current quote", () => {
+    expect(
+      feedRowText(
+        feed({ error: "boom", current_error: "status 500" }),
+        t,
+        "en-US",
+      ).issue?.text,
+    ).toBe("Last update failed: boom");
+  });
+
+  it("puts the failure of the current quote before a pending history", () => {
+    expect(
+      feedRowText(
+        feed({ current_error: "status 500", history_pending: 2 }),
+        t,
+        "en-US",
+      ).issue?.text,
+    ).toBe("Current quotes failed: status 500");
+  });
 });
