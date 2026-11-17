@@ -44,7 +44,23 @@
     white-space: nowrap;
   }
 
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-6);
+  }
+
+  .label {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .value {
+    flex: none;
     display: flex;
     align-items: center;
     justify-self: end;

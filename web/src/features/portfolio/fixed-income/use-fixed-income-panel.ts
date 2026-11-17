@@ -32,6 +32,12 @@ export function useFixedIncomePanel(
       ? [{ code: h.code, name: h.name, currency: h.currency, value: h.value }]
       : [],
   );
+  // Names come from every contract of the book, priced or not: a payment row names its contract.
+  const names = new Map(
+    holdings
+      .filter((h) => h.type === "fixed_income")
+      .map((h) => [h.code, h.name]),
+  );
   const codes = [...new Set(fixed.map((h) => h.code))];
   const held = codes.length > 0;
 
@@ -59,6 +65,7 @@ export function useFixedIncomePanel(
 
   return {
     fixed,
+    names,
     today,
     until: shiftDate(today, windowDays),
     terms: terms.byCode,

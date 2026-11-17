@@ -63,8 +63,8 @@ export function ReturnShareBar({
 
         <DescriptionList variant="ruled">
           {shares.map((s) => (
-            <DescriptionListItem key={s.kind}>
-              <DescriptionListTerm>
+            <DescriptionListItem key={s.kind} className={styles.row}>
+              <DescriptionListTerm className={styles.term}>
                 <i className={[styles.key, kinds[s.kind]].join(" ")} />
                 {t(`fixedIncome.kind.${s.kind}`)}
               </DescriptionListTerm>

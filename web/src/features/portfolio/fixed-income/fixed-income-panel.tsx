@@ -52,7 +52,6 @@ export function FixedIncomePanel({ holdings, date }: FixedIncomePanelProps) {
       returnKind(data.terms.get(h.code), data.indexes),
     ]),
   );
-  const names = new Map(data.fixed.map((h) => [h.code, h.name]));
   const verdict = fixedIncomeVerdict(data.report, data.events, t, {
     money,
     day: (iso) => formatDayMonthNumeric(iso, locale),
@@ -110,7 +109,7 @@ export function FixedIncomePanel({ holdings, date }: FixedIncomePanelProps) {
 
             <PaymentsTimeline
               events={data.events}
-              names={names}
+              names={data.names}
               kindOf={kindOf}
               today={data.today}
               until={data.until}

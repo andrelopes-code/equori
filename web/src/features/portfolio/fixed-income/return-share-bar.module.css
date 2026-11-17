@@ -17,7 +17,21 @@
     vertical-align: -0.1em;
   }
 
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-6);
+  }
+
+  .term {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    white-space: nowrap;
+  }
+
   .value {
+    flex: none;
     justify-self: end;
     text-align: end;
     font-variant-numeric: tabular-nums;

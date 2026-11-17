@@ -289,4 +289,28 @@ describe("Fixed income panel", () => {
       await within(next).findByText(catalogEn["fixedIncome.next.rateMissing"]),
     ).toBeInTheDocument();
   });
+
+  it("FC36: names a payment of a holding that has no market value", async () => {
+    await renderApp("/portfolio", {
+      today: "2026-11-18",
+      fetch: fixedIncomeApi({
+        "GET /api/v1/positions": () =>
+          json(200, {
+            quote_warnings: [],
+            items: contracts.map(([code, , value]) => ({
+              account_id: cashID,
+              instrument: code,
+              quantity: { amount: value, currency: code },
+              cost_basis: brl(value),
+              average_cost: "1.0000",
+              ...(code === "LFX" ? {} : { market_value: brl(value) }),
+            })),
+          }),
+      }),
+    });
+    const next = await panel(catalogEn["fixedIncome.next"]);
+
+    expect(await within(next).findByText(/LF Banco X/)).toBeInTheDocument();
+    expect(within(next).queryByText(/LFX/)).not.toBeInTheDocument();
+  });
 });

@@ -35,8 +35,11 @@ export function PaymentRows({ events, names, scale }: PaymentRowsProps) {
         const label = `${t(`terms.event.${e.kind}` as "terms.event.interest")} · ${names.get(e.instrument) ?? e.instrument} · ${formatDayMonthNumeric(e.date, locale)}`;
 
         return (
-          <DescriptionListItem key={`${e.instrument}${e.date}${e.kind}`}>
-            <DescriptionListTerm>
+          <DescriptionListItem
+            key={`${e.instrument}${e.date}${e.kind}`}
+            className={styles.row}
+          >
+            <DescriptionListTerm className={styles.label}>
               {e.state === "due" ? (
                 <Link
                   render={routeTo({

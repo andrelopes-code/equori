@@ -1,4 +1,8 @@
 @layer app {
+  .line {
+    display: block;
+  }
+
   .list {
     display: grid;
     grid-template-columns: minmax(0, 9rem) 1fr auto;

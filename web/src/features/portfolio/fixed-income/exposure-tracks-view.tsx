@@ -42,22 +42,22 @@ export function ExposureTracks({ report, scale }: ExposureTracksProps) {
           <SectionHeading>{t("fixedIncome.issuers")}</SectionHeading>
           {guarantee !== undefined && (
             <SectionDescription>
-              {t("fixedIncome.issuers.limit", {
-                guarantee: guarantee.name,
-                amount: money(guarantee.limit_per_issuer),
-              })}
-            </SectionDescription>
-          )}
-          {guarantee !== undefined && (
-            <SectionDescription>
-              {t("fixedIncome.issuers.period", {
-                used: money({
-                  amount: used,
-                  currency: guarantee.limit_per_period.currency,
-                }),
-                limit: money(guarantee.limit_per_period),
-                years: guarantee.period_years,
-              })}
+              <span className={styles.line}>
+                {t("fixedIncome.issuers.limit", {
+                  guarantee: guarantee.name,
+                  amount: money(guarantee.limit_per_issuer),
+                })}
+              </span>
+              <span className={styles.line}>
+                {t("fixedIncome.issuers.period", {
+                  used: money({
+                    amount: used,
+                    currency: guarantee.limit_per_period.currency,
+                  }),
+                  limit: money(guarantee.limit_per_period),
+                  years: guarantee.period_years,
+                })}
+              </span>
             </SectionDescription>
           )}
         </SectionTitle>

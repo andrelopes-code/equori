@@ -150,6 +150,33 @@ describe("timelineFrom", () => {
     ).toBe(10);
   });
 
+  it("hides the label of a dot within 4 points of the last visible label", () => {
+    const close = [
+      {
+        instrument: "A",
+        date: "2027-01-04",
+        kind: "interest",
+        state: "upcoming",
+      },
+      {
+        instrument: "B",
+        date: "2027-01-05",
+        kind: "interest",
+        state: "upcoming",
+      },
+      {
+        instrument: "C",
+        date: "2027-02-01",
+        kind: "interest",
+        state: "upcoming",
+      },
+    ];
+
+    expect(
+      timelinePoints(close, "2026-11-08", "2027-02-16").map((p) => p.labelled),
+    ).toEqual([true, false, true]);
+  });
+
   it("clamps an event older than the window to the start", () => {
     const old = [
       { instrument: "A", date: "2026-08-01", kind: "interest", state: "due" },

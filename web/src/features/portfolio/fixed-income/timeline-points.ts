@@ -3,6 +3,8 @@ import { shiftDate } from "@/i18n/format";
 // Days drawn before today: today sits at 10% of the 90-day window, as in the mock.
 const leadDays = 10;
 
+const labelGap = 4;
+
 export interface TimelineEvent {
   instrument: string;
   date: string;
@@ -16,6 +18,8 @@ export interface TimelinePoint {
   date: string;
   instrument: string;
   due: boolean;
+  // False when the label would overlap the previous visible one (within labelGap points).
+  labelled: boolean;
 }
 
 export function timelineFrom(today: string): string {
@@ -31,13 +35,22 @@ export function timelinePoints(
   const start = Date.parse(from);
   const span = Date.parse(to) - start;
 
-  return events.map((e) => ({
-    left: Math.max(
+  let shown = -Infinity;
+
+  return events.map((e) => {
+    const left = Math.max(
       0,
       Math.round(((Date.parse(e.date) - start) * 10000) / span) / 100,
-    ),
-    date: e.date,
-    instrument: e.instrument,
-    due: e.state === "due",
-  }));
+    );
+    const labelled = left - shown >= labelGap;
+    if (labelled) shown = left;
+
+    return {
+      left,
+      date: e.date,
+      instrument: e.instrument,
+      due: e.state === "due",
+      labelled,
+    };
+  });
 }

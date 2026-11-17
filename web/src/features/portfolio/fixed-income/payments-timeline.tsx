@@ -87,12 +87,14 @@ export function PaymentsTimeline({
                   ].join(" ")}
                   style={{ left: `${String(p.left)}%` }}
                 />
-                <span
-                  className={styles.date}
-                  style={{ left: `${String(p.left)}%` }}
-                >
-                  {formatDayMonthNumeric(p.date, locale)}
-                </span>
+                {p.labelled && (
+                  <span
+                    className={styles.date}
+                    style={{ left: `${String(p.left)}%` }}
+                  >
+                    {formatDayMonthNumeric(p.date, locale)}
+                  </span>
+                )}
               </span>
             ))}
           </div>
