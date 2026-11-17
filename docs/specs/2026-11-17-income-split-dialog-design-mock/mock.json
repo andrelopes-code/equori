@@ -1,0 +1,365 @@
+{
+  "title": "Orçamentos e planejamento · dialog Divisão da renda",
+  "slug": "income-split-dialog",
+  "status": "approved",
+  "round": 2,
+  "approved": "2026-11-17",
+  "source": {
+    "url": "http://127.0.0.1:5173/planning?tab=budgets&view=plan",
+    "root": "[role=\"dialog\"]",
+    "commit": "5b562fdc"
+  },
+  "schemeAttr": "data-slotted-scheme",
+  "schemes": [
+    "light",
+    "dark"
+  ],
+  "themeAttr": "",
+  "themes": [],
+  "widths": {
+    "desktop": 1440,
+    "phone": 640
+  },
+  "stageBackground": "var(--slotted-surface)",
+  "concepts": [
+    {
+      "id": "a",
+      "name": "Matriz",
+      "organizes": "Por categoria e por pote ao mesmo tempo: uma linha por categoria, uma coluna por pote",
+      "answers": "Em qual pote cada categoria cai, quantas cada pote tem e quais ficaram sem pote, em uma leitura; um clique move uma categoria",
+      "costs": "Elemento próprio (grade de rádios com cabeçalho fixo); com mais de seis potes ou em 640 px o cabeçalho mostra só o número do pote",
+      "recommended": true
+    },
+    {
+      "id": "b",
+      "name": "Painel por pote",
+      "organizes": "Por pote: o pote escolhido à esquerda, suas categorias primeiro à direita",
+      "answers": "O que há no pote escolhido e o que falta colocar; as categorias dos outros potes ficam abaixo",
+      "costs": "Reusa Checkbox e o seletor atual; a visão do conjunto exige trocar de pote, e mover uma categoria ainda pede escolher o pote de destino antes"
+    }
+  ],
+  "chosen": "a",
+  "states": [
+    {
+      "id": "data",
+      "name": "With data"
+    },
+    {
+      "id": "loading",
+      "name": "Loading"
+    },
+    {
+      "id": "empty",
+      "name": "Empty"
+    },
+    {
+      "id": "error",
+      "name": "Failure"
+    },
+    {
+      "id": "hard",
+      "name": "Hard data",
+      "hard": true
+    },
+    {
+      "id": "wrong",
+      "name": "Soma errada e categoria sem pote"
+    },
+    {
+      "id": "ending",
+      "name": "Encerrar divisão"
+    }
+  ],
+  "overlays": [],
+  "notes": {
+    "priority": {
+      "order": [
+        "Potes e fatias, com a soma de 100% visível",
+        "Categorias: em qual pote cada uma cai e quais ficaram sem pote",
+        "Vigência, como linha curta junto de Salvar",
+        "Começar de um modelo: ação secundária, em destaque só sem divisão"
+      ],
+      "confirmed": "Dono, 2026-11-17, pela pergunta de prioridade; incômodo principal declarado: o componente que liga categorias a potes"
+    },
+    "questions": [
+      {
+        "question": "Quanto da renda vai para cada pote, e a soma fecha 100%?",
+        "decision": "Ajustar a fatia, o nome e o modo de contar de cada pote",
+        "block": "Potes: barra de composição e tabela editável"
+      },
+      {
+        "question": "Em qual pote cada categoria cai, e alguma ficou sem pote?",
+        "decision": "Mover uma categoria ou subcategoria para outro pote",
+        "block": "Categorias"
+      },
+      {
+        "question": "A partir de qual mês a mudança vale?",
+        "decision": "Salvar como versão nova ou corrigir a versão em vigor",
+        "block": "Rodapé: Vale a partir de, ao lado de Salvar"
+      }
+    ],
+    "inventory": [
+      {
+        "datum": "Título e descrição do dialog",
+        "now": "Cabeçalho",
+        "destination": "Cabeçalho, sem mudança",
+        "reason": ""
+      },
+      {
+        "datum": "Vale a partir de (escolhas: desde o início, versão em vigor, mês)",
+        "now": "Seletor de largura total no topo do corpo",
+        "destination": "Rodapé, à esquerda de Cancelar e Salvar",
+        "reason": ""
+      },
+      {
+        "datum": "Período coberto (Vale de X em diante / até Y)",
+        "now": "Linha abaixo do seletor",
+        "destination": "Rodapé, texto ao lado do seletor",
+        "reason": ""
+      },
+      {
+        "datum": "Os meses anteriores mantêm a divisão",
+        "now": "Segunda linha abaixo do seletor",
+        "destination": "removed",
+        "reason": "O período coberto já diz o primeiro mês da versão; a frase repete a mesma informação"
+      },
+      {
+        "datum": "Começar de (50/30/20, Seis potes, Do zero)",
+        "now": "Seletor de largura total, sempre visível",
+        "destination": "Com divisão: botão Usar modelo no título de Potes. Sem divisão: três escolhas com a barra de cada modelo",
+        "reason": ""
+      },
+      {
+        "datum": "Nome do pote",
+        "now": "Campo sem rótulo",
+        "destination": "Coluna Pote da tabela de potes",
+        "reason": ""
+      },
+      {
+        "datum": "Fatia do pote",
+        "now": "Campo sem rótulo e sem unidade",
+        "destination": "Coluna Fatia, com % no campo e o segmento na barra",
+        "reason": ""
+      },
+      {
+        "datum": "Como o pote conta a meta",
+        "now": "Seletor sem rótulo",
+        "destination": "Coluna Meta conta como, com rótulos curtos",
+        "reason": ""
+      },
+      {
+        "datum": "Remover pote",
+        "now": "Botão de lixeira por linha",
+        "destination": "Botão de lixeira por linha, sem mudança",
+        "reason": ""
+      },
+      {
+        "datum": "Adicionar pote (até dez)",
+        "now": "Botão abaixo das linhas",
+        "destination": "Botão abaixo da tabela; com dez potes fica desativado e diz o limite",
+        "reason": ""
+      },
+      {
+        "datum": "Total das fatias, ou soma errada",
+        "now": "Texto pequeno abaixo do botão",
+        "destination": "Ao lado do título Potes e no fim da barra: quanto falta ou quanto passa, em palavras",
+        "reason": ""
+      },
+      {
+        "datum": "Quantas categorias cada pote tem",
+        "now": "Segunda linha de cada pote no seletor",
+        "destination": "Coluna Categorias da tabela de potes",
+        "reason": ""
+      },
+      {
+        "datum": "Sem pote: quantas categorias",
+        "now": "Última entrada do seletor, em tom de perigo",
+        "destination": "Texto de estado ao lado do título Categorias, em tom de perigo",
+        "reason": ""
+      },
+      {
+        "datum": "Categoria marcada no pote escolhido",
+        "now": "Caixa de seleção em lista de 65 linhas",
+        "destination": "Marca com o número e a cor do pote, na coluna do pote",
+        "reason": ""
+      },
+      {
+        "datum": "Subcategoria segue a categoria-mãe",
+        "now": "Caixa fixa e texto segue X",
+        "destination": "Marca só com o contorno do pote, na coluna da mãe, dentro da categoria aberta",
+        "reason": ""
+      },
+      {
+        "datum": "Categoria em outro pote (em X)",
+        "now": "Texto ao fim de cada linha",
+        "destination": "A posição e o número da marca na linha da categoria",
+        "reason": ""
+      },
+      {
+        "datum": "Subcategorias em pote diferente da mãe",
+        "now": "Só visível percorrendo as 65 linhas",
+        "destination": "Texto +N na coluna do outro pote, na linha da mãe",
+        "reason": ""
+      },
+      {
+        "datum": "Lista das categorias sem pote e a frase de orientação",
+        "now": "Painel à direita ao escolher Sem pote",
+        "destination": "Linhas com a marca tracejada na coluna Sem pote; a frase de orientação sai porque a coluna tem título",
+        "reason": ""
+      },
+      {
+        "datum": "Toda categoria tem um pote",
+        "now": "Painel à direita ao escolher Sem pote",
+        "destination": "Linha de estado do bloco Categorias",
+        "reason": ""
+      },
+      {
+        "datum": "Confirmação de encerrar (termina em X / apaga todos os meses)",
+        "now": "Alerta no topo do corpo",
+        "destination": "Alerta no topo do corpo, sem mudança",
+        "reason": ""
+      },
+      {
+        "datum": "Falha ao salvar",
+        "now": "Alerta no topo do corpo",
+        "destination": "Alerta no topo do corpo, sem mudança",
+        "reason": ""
+      },
+      {
+        "datum": "Encerrar divisão",
+        "now": "Botão no rodapé",
+        "destination": "Botão fantasma em tom de perigo no fim do corpo, abaixo de Categorias",
+        "reason": ""
+      },
+      {
+        "datum": "Cancelar e Salvar divisão",
+        "now": "Rodapé",
+        "destination": "Rodapé, sem mudança",
+        "reason": ""
+      }
+    ],
+    "responsive": [
+      {
+        "block": "Dialog inteiro",
+        "desktop": "786 px de largura em 1440 px",
+        "phone": "Sem forma de telefone: /planning só é servida a partir de 600 px (ADR 027, S3 e S7). A segunda largura do mock é 640 px, a mais estreita servida",
+        "leaves": "Nada"
+      },
+      {
+        "block": "Tabela de potes",
+        "desktop": "Número, nome, fatia, conta como, remover",
+        "phone": "Em 640 px: as mesmas colunas, a de conta como mais estreita",
+        "leaves": "Nada"
+      },
+      {
+        "block": "Categorias",
+        "desktop": "Coluna de 5,5rem por pote, com número e nome",
+        "phone": "Em 640 px ou com mais de seis potes: coluna de 2,5rem só com o número do pote",
+        "leaves": "O nome do pote no cabeçalho; continua na tabela de potes, com o mesmo número"
+      },
+      {
+        "block": "Rodapé",
+        "desktop": "Vale a partir de, período, Cancelar, Salvar em uma linha",
+        "phone": "Em 640 px: o período escrito sai da linha",
+        "leaves": "O período escrito; a escolha do seletor já nomeia o mês inicial"
+      }
+    ],
+    "reused": [
+      {
+        "component": "Dialog (Slotted)",
+        "draws": "Painel, cabeçalho com régua, corpo com rolagem, rodapé com régua",
+        "nesting": "Uma superfície: o painel"
+      },
+      {
+        "component": "TextField, Select, Button, IconButton, Checkbox, Alert (Slotted)",
+        "draws": "Cada controle com a própria borda",
+        "nesting": "Controles dentro do painel; nenhum quadro em volta deles"
+      }
+    ],
+    "decisions": [
+      {
+        "decision": "Cada pote recebe um número (ordem da divisão) e uma cor da paleta de gráficos",
+        "reason": "O número liga a linha do pote, o segmento da barra e a coluna da matriz sem depender da cor; a paleta tem oito cores e os potes vão até dez, então a cor repete e o número não"
+      },
+      {
+        "decision": "Começar de vira botão Usar modelo",
+        "reason": "Aplicar um modelo substitui os potes; um seletor permanente no topo dá a essa ação o peso de um campo do formulário"
+      },
+      {
+        "decision": "Vigência no rodapé",
+        "reason": "A escolha decide o que Salvar grava; fica ao lado do botão que a executa (prioridade 3 confirmada)"
+      },
+      {
+        "decision": "Encerrar divisão sai do rodapé",
+        "reason": "O rodapé de 640 px não comporta o seletor de vigência e três botões em uma linha; a ação destrutiva e rara fica no fim do corpo"
+      },
+      {
+        "decision": "Subcategorias fechadas por padrão",
+        "reason": "15 categorias de primeiro nível em vez de 65 linhas; a linha da mãe diz quantas subcategorias estão em outro pote"
+      },
+      {
+        "decision": "O quadro com borda em volta de Categorias sai",
+        "reason": "A medição da tela atual acusa superfície aninhada (painel dentro do painel do dialog)"
+      },
+      {
+        "decision": "A marca de uma categoria é o próprio número do pote, preenchido com a cor do pote",
+        "reason": "A linha diz o pote sem que o olho suba ao cabeçalho; posição, número e cor dizem a mesma coisa"
+      },
+      {
+        "decision": "Célula vazia é um ponto; o contorno do pote aparece ao passar o ponteiro",
+        "reason": "98 anéis vazios competiam com as 14 marcas; o ponto mantém a grade legível e a prévia mostra o que o clique faz"
+      },
+      {
+        "decision": "Subcategorias em outro pote aparecem como +N",
+        "reason": "Um número sozinho se confundiria com o número do pote"
+      },
+      {
+        "decision": "Coluna Sem pote separada por um fio",
+        "reason": "Não é um pote: é a ausência dele"
+      },
+      {
+        "decision": "Rótulos de Meta conta como encurtados: Teto de gasto, Mínimo a usar, Poupança do mês, Aportes em metas",
+        "reason": "Os rótulos atuais não cabem na coluna sem reticências; o título da coluna dá o contexto"
+      },
+      {
+        "decision": "Lixeira em tom neutro",
+        "reason": "Seis ícones vermelhos pesavam mais que os dados; a ação continua nomeada no rótulo acessível"
+      },
+      {
+        "decision": "Soma escrita como 100% distribuídos",
+        "reason": "A frase diz o estado; com erro diz quanto falta ou sobra"
+      },
+      {
+        "decision": "A contagem de subcategorias ao lado do nome sai",
+        "reason": "Um número sem rótulo; a seta indica que a categoria abre"
+      }
+    ],
+    "derivations": [
+      {
+        "value": "Largura de cada segmento da barra",
+        "rule": "share_bp / 10000 da largura; resto vazio quando a soma é menor que 100%; acima de 100% a barra enche e o texto diz o excesso",
+        "test": "Função pura nova com teste de valores calculados à mão"
+      },
+      {
+        "value": "Falta ou excesso da soma",
+        "rule": "10000 menos a soma das fatias em pontos-base (totalBp de bucket-draft.ts)",
+        "test": "bucket-draft.test.ts"
+      },
+      {
+        "value": "Subcategorias em outro pote, por categoria-mãe e por pote",
+        "rule": "effectiveChoice de cada subcategoria diferente do da mãe (bucket-draft.ts)",
+        "test": "Função pura nova com teste"
+      },
+      {
+        "value": "Contagem de categorias por pote",
+        "rule": "bucketCounts de bucket-draft.ts, sem mudança",
+        "test": "bucket-draft.test.ts"
+      },
+      {
+        "value": "Texto da soma",
+        "rule": "Soma das fatias com até uma casa decimal; diferença para 100% como faltam X ou X a mais",
+        "test": "Função pura nova com teste"
+      }
+    ]
+  }
+}

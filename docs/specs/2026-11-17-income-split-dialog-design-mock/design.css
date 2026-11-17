@@ -1,0 +1,512 @@
+/* The income split dialog: the pots with their shares, the pot of each category, and the
+   month the version starts in. */
+@layer app {
+  /* The dialog is wider than the xl measure: six pot names and the category names fit. */
+  .splitDialog {
+    --slotted-dialog-measure-xl: 62rem; /* literal: six columns of 6rem beside the names */
+  }
+
+  .split {
+    display: grid;
+    gap: var(--slotted-space-9);
+    container: split / inline-size;
+  }
+
+  .block {
+    display: grid;
+    gap: var(--slotted-space-6);
+    min-inline-size: 0;
+  }
+
+  .blockHead {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    min-block-size: var(--slotted-control-height-sm);
+  }
+
+  /* A ghost button at the edge of a block: its label, not its padding, meets the edge. */
+  .blockAction {
+    margin-inline: auto calc(-1 * var(--slotted-control-padding-inline-sm));
+  }
+
+  /* The colour of a pot: its place in the split, on the data palette. The number carries
+     the identity; the palette repeats after eight pots. */
+  [data-color="1"] {
+    --pot: var(--slotted-data-1);
+    --pot-on: var(--slotted-data-1-on);
+  }
+
+  [data-color="2"] {
+    --pot: var(--slotted-data-2);
+    --pot-on: var(--slotted-data-2-on);
+  }
+
+  [data-color="3"] {
+    --pot: var(--slotted-data-3);
+    --pot-on: var(--slotted-data-3-on);
+  }
+
+  [data-color="4"] {
+    --pot: var(--slotted-data-4);
+    --pot-on: var(--slotted-data-4-on);
+  }
+
+  [data-color="5"] {
+    --pot: var(--slotted-data-5);
+    --pot-on: var(--slotted-data-5-on);
+  }
+
+  [data-color="6"] {
+    --pot: var(--slotted-data-6);
+    --pot-on: var(--slotted-data-6-on);
+  }
+
+  [data-color="7"] {
+    --pot: var(--slotted-data-7);
+    --pot-on: var(--slotted-data-7-on);
+  }
+
+  [data-color="8"] {
+    --pot: var(--slotted-data-8);
+    --pot-on: var(--slotted-data-8-on);
+  }
+
+  .badge,
+  .mark {
+    display: grid;
+    flex: none;
+    place-items: center;
+    box-sizing: border-box;
+    inline-size: 20px; /* literal: whole pixels at the 14 px root */
+    block-size: 20px; /* literal: whole pixels at the 14 px root */
+    border-radius: var(--slotted-radius-sm);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .badge {
+    background: color-mix(in oklch, var(--pot, transparent) 30%, transparent);
+    color: var(--slotted-text);
+  }
+
+  .badge[data-none] {
+    border: 1px dashed color-mix(in oklch, var(--slotted-text) 40%, transparent);
+    background: transparent;
+  }
+
+  /* The split as one bar: a segment per pot, the missing share hatched. */
+  .bar {
+    display: flex;
+    gap: 2px; /* literal: a hairline between segments, below the space scale */
+    block-size: 8px; /* literal: whole pixels; the space scale gives 7 or 10.5 px */
+  }
+
+  .bar[data-mini] {
+    block-size: 6px; /* literal: whole pixels; a preview of the bar */
+  }
+
+  .segment,
+  .rest {
+    flex: var(--share, 1) 1 0;
+    min-inline-size: 0;
+    border-radius: var(--slotted-radius-xs);
+  }
+
+  .segment {
+    background: var(--pot, transparent);
+  }
+
+  .rest {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--slotted-tone-danger-solid) 0 2px,
+      /* literal: hatch stroke */ transparent 2px 5px /* literal: hatch period */
+    );
+  }
+
+  .potTable {
+    display: grid;
+    gap: var(--slotted-space-3);
+  }
+
+  .potHead,
+  .potRow {
+    display: grid;
+    grid-template-columns:
+      20px /* literal: the badge */
+      minmax(0, 1fr)
+      5.5rem /* literal: a share of five characters and its sign */
+      12rem /* literal: the longest way of counting */
+      4.5rem /* literal: the heading of the count */
+      var(--slotted-control-height-md);
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  .potHead {
+    padding-block-start: var(--slotted-space-4);
+  }
+
+  .share {
+    text-align: end;
+  }
+
+  .end {
+    justify-self: end;
+  }
+
+  /* The button that adds a pot starts where the names start. */
+  .potAdd {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    padding-inline-start: calc(20px + var(--slotted-space-4)); /* literal: the badge */
+  }
+
+  /* Categories by pot: a row per category, a column per pot, one mark per row. */
+  .matrix {
+    --col: 6rem; /* literal: a pot name of twelve characters */
+    --none-col: 4.25rem; /* literal: the words Sem pote */
+
+    display: grid;
+  }
+
+  .matrix[data-dense] {
+    --col: 2.5rem; /* literal: the mark and its room */
+    --none-col: 2.5rem; /* literal: the mark and its room */
+  }
+
+  .mHead,
+  .mRow {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      repeat(var(--cols, 1), var(--col, 6rem)) /* literal: fallback of --col */
+      var(--none-col, 4.25rem); /* literal: fallback of --none-col */
+  }
+
+  .mHead {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    block-size: 4rem; /* literal: fixed header height, badge and name */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    background: var(--slotted-surface-raised);
+  }
+
+  .matrix[data-dense] .mHead {
+    block-size: 3rem; /* literal: fixed header height, badge only */
+  }
+
+  .mCorner {
+    align-self: end;
+    padding-block-end: var(--slotted-space-4);
+  }
+
+  .mCol {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: var(--slotted-space-3);
+    min-inline-size: 0;
+    padding-inline: var(--slotted-space-1);
+  }
+
+  .mColName,
+  .mLabel {
+    max-inline-size: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .matrix[data-dense] .mColName {
+    display: none;
+  }
+
+  .mRow {
+    block-size: 2.5rem; /* literal: fixed row height */
+    border-block-end: 1px solid var(--slotted-border-subtle);
+  }
+
+  .mRow:last-child {
+    border-block-end: 0;
+  }
+
+  /* The subcategories of an open category read as one group under it. */
+  .mRow[data-depth="1"] {
+    background: color-mix(in oklch, var(--slotted-text) 3%, transparent);
+  }
+
+  .mRow:hover {
+    background: color-mix(in oklch, var(--slotted-text) 6%, transparent);
+  }
+
+  .mName {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+    padding-inline-end: var(--slotted-space-5);
+  }
+
+  .mRow[data-depth="1"] .mName {
+    padding-inline-start: calc(20px + var(--slotted-space-4)); /* literal: the twist */
+  }
+
+  .twist {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    inline-size: 20px; /* literal: whole pixels at the 14 px root */
+    block-size: 20px; /* literal: whole pixels at the 14 px root */
+    padding: 0;
+    border: 0;
+    border-radius: var(--slotted-radius-sm);
+    background: transparent;
+    color: var(--slotted-text-muted);
+    font-size: 14px; /* literal: a 14 px icon beside 12 to 13 px text */
+  }
+
+  button.twist {
+    cursor: pointer;
+  }
+
+  button.twist:hover {
+    background: color-mix(in oklch, var(--slotted-text) 8%, transparent);
+    color: var(--slotted-text);
+  }
+
+  .cell {
+    position: relative;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  /* The categories without a pot stand apart from the pots. */
+  :is(.cell, .mCol)[data-none] {
+    border-inline-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .cell > * {
+    grid-area: 1 / 1;
+  }
+
+  /* The radio fills its cell and draws nothing; the mark beside it shows the state. */
+  .pick {
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    outline: 0;
+    appearance: none;
+    cursor: pointer;
+  }
+
+  .mark {
+    position: relative;
+    color: transparent;
+    pointer-events: none;
+  }
+
+  .mark::before {
+    position: absolute;
+    inset: 0;
+    inline-size: 4px; /* literal: the dot of an empty cell */
+    block-size: 4px; /* literal: the dot of an empty cell */
+    margin: auto;
+    border-radius: var(--slotted-radius-full);
+    background: color-mix(in oklch, var(--slotted-text) 24%, transparent);
+    content: "";
+  }
+
+  .cell[data-more] .mark::before {
+    content: none;
+  }
+
+  /* Over an empty cell: the pot it would take. */
+  .cell:hover .pick:not(:checked) + .mark {
+    background: color-mix(in oklch, var(--pot, var(--slotted-text)) 18%, transparent);
+    color: var(--slotted-text-muted);
+  }
+
+  .cell:hover .pick:not(:checked) + .mark::before {
+    content: none;
+  }
+
+  .cell:hover .pick:not(:checked) ~ .more {
+    visibility: hidden;
+  }
+
+  :is(.pick:checked + .mark, .mark[data-checked]) {
+    background: var(--pot, transparent);
+    color: var(--pot-on, var(--slotted-text));
+  }
+
+  :is(.pick:checked + .mark, .mark[data-checked])::before {
+    content: none;
+  }
+
+  /* A subcategory that follows its parent: the outline of the pot, without the fill. */
+  :is(.pick:checked + .mark, .mark[data-checked])[data-inherited] {
+    border: 2px solid var(--pot, transparent); /* literal: the outline of a followed mark */
+    background: transparent;
+    color: var(--slotted-text);
+  }
+
+  .pick:checked + .mark[data-none] {
+    border: 1px dashed color-mix(in oklch, var(--slotted-text) 55%, transparent);
+    background: color-mix(in oklch, var(--slotted-text) 8%, transparent);
+  }
+
+  .pick:checked + .mark[data-none]::before {
+    background: var(--slotted-text-muted);
+    content: "";
+  }
+
+  .pick:checked + .mark[data-none][data-inherited] {
+    border-color: color-mix(in oklch, var(--slotted-text) 30%, transparent);
+    background: transparent;
+  }
+
+  .more {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: var(--slotted-font-weight-medium);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-8);
+    padding-block-start: var(--slotted-space-5);
+    border-block-start: 1px solid var(--slotted-border-subtle);
+  }
+
+  .key {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+  }
+
+  /* The starting points of a book without a split. */
+  .presets {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .preset {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr); /* literal: the longest model name */
+    align-content: center;
+    align-items: center;
+    gap: var(--slotted-space-4) var(--slotted-space-6);
+    block-size: 4.5rem; /* literal: fixed row height, two lines */
+    padding-inline: var(--slotted-space-6);
+    border: 1px solid color-mix(in oklch, var(--slotted-text) 22%, transparent);
+    border-radius: var(--slotted-radius-md);
+    background: transparent;
+    color: var(--slotted-text);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .preset:hover {
+    border-color: color-mix(in oklch, var(--slotted-text) 40%, transparent);
+    background: color-mix(in oklch, var(--slotted-text) 6%, transparent);
+  }
+
+  .presetDetail {
+    grid-column: 1 / -1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .endRow {
+    display: flex;
+    margin-inline-start: calc(-1 * var(--slotted-control-padding-inline-sm));
+  }
+
+  /* The start of the version, beside the button that saves it. */
+  .validFrom {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    min-inline-size: 0;
+    margin-inline-end: auto;
+  }
+
+  .validSelect,
+  .pending {
+    inline-size: 20rem; /* literal: the longest choice of the start */
+  }
+
+  .pending {
+    block-size: var(--slotted-control-height-md);
+    border-radius: var(--slotted-control-radius);
+    background: color-mix(in oklch, var(--slotted-text) 8%, transparent);
+  }
+
+  .until {
+    white-space: nowrap;
+  }
+
+  :is(.preset, .twist):focus-visible,
+  .pick:focus-visible + .mark {
+    outline: var(--slotted-focus-ring-width) solid var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  @container split (max-width: 42rem) { /* literal: width below which the columns tighten */
+    .matrix {
+      --col: 2.5rem; /* literal: the mark and its room */
+      --none-col: 2.5rem; /* literal: the mark and its room */
+    }
+
+    .matrix .mHead {
+      block-size: 3rem; /* literal: fixed header height, badge only */
+    }
+
+    .matrix .mColName {
+      display: none;
+    }
+
+    .potHead,
+    .potRow {
+      gap: var(--slotted-space-3);
+    }
+  }
+
+  @container (max-width: 50rem) { /* literal: width below which the footer drops the period */
+    .until {
+      display: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    :is(.pick:checked + .mark, .mark[data-checked]) {
+      background: Highlight;
+      color: HighlightText;
+    }
+
+    :is(.pick:checked + .mark, .mark[data-checked])[data-inherited] {
+      border-color: Highlight;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .segment {
+      border: 1px solid CanvasText;
+    }
+  }
+}
