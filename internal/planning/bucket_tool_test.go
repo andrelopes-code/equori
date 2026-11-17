@@ -35,6 +35,13 @@ func TestSaveBucketsTool(t *testing.T) {
 			{Field: "category", After: tool.TextValue("Rent, Food")},
 			{Field: "name", After: tool.TextValue("Freedom")},
 			{Field: "rate", After: tool.TextValue("3000 bp of the reference and the savings")},
+			// A236: the system expense categories of a new book sit in no bucket of this call.
+			{
+				Field: "category",
+				After: tool.TextValue(
+					"Outside the split: Fees, Interest, Realized losses, Taxes",
+				),
+			},
 		},
 	}
 	if !reflect.DeepEqual(p, want) {

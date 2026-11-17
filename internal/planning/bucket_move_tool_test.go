@@ -45,12 +45,13 @@ func TestS534MoveCategory(t *testing.T) {
 		t.Fatalf("preview = error %s", r.Content)
 	}
 
+	// The count holds the four system expense categories of a new book, in no bucket here.
 	want := tool.Preview{
 		Action: "manage_budget_or_goal.move_category",
 		Target: "Gym",
 		Changes: []tool.Change{
 			{Field: "name", Before: tool.TextValue("Needs"), After: tool.TextValue("Wants")},
-			{Field: "count", After: tool.TextValue("0 categories outside the split")},
+			{Field: "count", After: tool.TextValue("4 categories outside the split")},
 		},
 	}
 	if !reflect.DeepEqual(p, want) {
@@ -98,7 +99,7 @@ func TestS534MoveCategory(t *testing.T) {
 
 	wantNone := []tool.Change{
 		{Field: "name", Before: tool.TextValue("Wants")},
-		{Field: "count", After: tool.TextValue("1 category outside the split")},
+		{Field: "count", After: tool.TextValue("5 categories outside the split")},
 	}
 	if !reflect.DeepEqual(p.Changes, wantNone) {
 		t.Errorf("preview of none = %+v, want %+v", p.Changes, wantNone)

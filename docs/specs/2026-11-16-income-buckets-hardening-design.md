@@ -52,9 +52,9 @@ The history of A233 carries `unallocated` in each month. The plan of a month doe
 
 ### A236 Categories outside the method
 
-A category is **outside** when it is an open expense category with no `system_role`, and neither it nor any ancestor sits in a bucket of the method of the plan's month (A240). The plan of M carries the list when M has a split: `outside_category_ids`, in category name order, empty when none is outside. A month without a split has no list.
+A category is **outside** when it is an open expense category other than the one with `system_role` `uncategorized_expense`, and neither it nor any ancestor sits in a bucket of the method of the plan's month (A240). The plan of M carries the list when M has a split: `outside_category_ids`, in category name order, empty when none is outside. A month without a split has no list.
 
-The category with `system_role` `uncategorized_expense` is not listed. Its spending already shows in `outside_spent`. A closed category is not listed.
+The category with `system_role` `uncategorized_expense` is not listed: no bucket takes it, and its spending already shows in `outside_spent`. Every other system category (fees, interest, taxes, realized losses) is listed while no bucket holds it: the split dialog places it like any category, and its spending counts in `outside_spent`. A closed category is not listed.
 
 `save_buckets` previews the list that results from the call, as one row "Outside the split".
 

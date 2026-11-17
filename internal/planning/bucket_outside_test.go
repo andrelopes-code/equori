@@ -2,11 +2,9 @@ package planning_test
 
 import (
 	"net/http"
-	"reflect"
 	"slices"
+	"strings"
 	"testing"
-
-	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
 type outsidePlanView struct {
@@ -21,6 +19,28 @@ func (f fixture) outside(month string) *[]string {
 	return out.OutsideCategoryIDs
 }
 
+// systemExpenseCategories is the number of expense categories a new book holds besides the
+// uncategorized one (fees, interest, taxes, realized losses): a bucket can take each, so each is
+// outside the split until one does.
+const systemExpenseCategories = 4
+
+// among returns the ids of got that are in own, in the order of got.
+func among(got *[]string, own ...string) []string {
+	var out []string
+
+	if got == nil {
+		return nil
+	}
+
+	for _, id := range *got {
+		if slices.Contains(own, id) {
+			out = append(out, id)
+		}
+	}
+
+	return out
+}
+
 // S532: an open expense category that neither sits in a bucket nor has an ancestor in one is
 // outside the method of the plan's month, in name order; a subcategory of a placed root is not
 // (A236).
@@ -32,8 +52,13 @@ func TestS532CategoriesOutsideTheMethod(t *testing.T) {
 	f.h.Account("Utilities", "expense", "", map[string]any{"parent_id": f.rent})
 	f.saveBuckets(bucket("Needs", 10000, false, f.rent))
 
-	if got := f.outside("2026-11"); got == nil || !slices.Equal(*got, []string{gym, pets}) {
+	got := f.outside("2026-11")
+	if !slices.Equal(among(got, gym, pets, f.rent), []string{gym, pets}) {
 		t.Fatalf("outside = %v, want Gym then Pets", got)
+	}
+
+	if len(*got) != 2+systemExpenseCategories {
+		t.Errorf("outside holds %d categories, want Gym, Pets and the system ones", len(*got))
 	}
 
 	var out struct {
@@ -52,14 +77,22 @@ func TestS532CategoriesOutsideTheMethod(t *testing.T) {
 		&out,
 	)
 
-	if o := out.Plan.OutsideCategories; len(o) != 2 || o[0].ID != gym || o[0].Name != "Gym" ||
-		o[1].Name != "Pets" {
+	o := out.Plan.OutsideCategories
+
+	at := slices.IndexFunc(o, func(c struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	},
+	) bool {
+		return c.ID == gym
+	})
+	if len(o) != 2+systemExpenseCategories || at < 0 || o[at].Name != "Gym" {
 		t.Errorf("tool outside categories = %+v", o)
 	}
 
 	f.saveBuckets(bucket("Needs", 10000, false, f.rent, gym))
 
-	if got := f.outside("2026-11"); got == nil || !slices.Equal(*got, []string{pets}) {
+	if got := f.outside("2026-11"); !slices.Equal(among(got, gym, pets), []string{pets}) {
 		t.Errorf("outside after placing Gym = %v, want Pets", got)
 	}
 }
@@ -87,11 +120,13 @@ func TestS533OutsideListBounds(t *testing.T) {
 	f.saveBucketsFrom("2026-09", bucket("Needs", 10000, false, f.rent))
 	f.saveBucketsFrom("2026-11", bucket("Needs", 10000, false, f.rent, gym))
 
-	if got := f.outside("2026-11"); got == nil || len(*got) != 0 {
-		t.Errorf("outside in 2026-11 = %v, want an empty list", got)
+	// The uncategorized expense category is not one of the system ones listed.
+	if got := f.outside("2026-11"); got == nil || len(*got) != systemExpenseCategories ||
+		len(among(got, gym, old)) != 0 {
+		t.Errorf("outside in 2026-11 = %v, want the system categories only", got)
 	}
 
-	if got := f.outside("2026-10"); got == nil || !slices.Equal(*got, []string{gym}) {
+	if got := f.outside("2026-10"); !slices.Equal(among(got, gym, old), []string{gym}) {
 		t.Errorf("outside in 2026-10 = %v, want Gym", got)
 	}
 
@@ -105,7 +140,7 @@ func TestS533OutsideListBounds(t *testing.T) {
 	var seen outsidePlanView
 	r.Decode(t, &seen)
 
-	if seen.OutsideCategoryIDs == nil || !slices.Equal(*seen.OutsideCategoryIDs, []string{gym}) {
+	if !slices.Equal(among(seen.OutsideCategoryIDs, gym, old), []string{gym}) {
 		t.Errorf("reader outside = %v, want Gym", seen.OutsideCategoryIDs)
 	}
 }
@@ -128,13 +163,12 @@ func TestSaveBucketsPreviewsTheOutsideCategories(t *testing.T) {
 		t.Fatalf("preview = error %s", r.Content)
 	}
 
-	want := []tool.Change{
-		{Field: "name", After: tool.TextValue("Needs")},
-		{Field: "rate", After: tool.TextValue("10000 bp of the reference")},
-		{Field: "category", After: tool.TextValue("Rent")},
-		{Field: "category", After: tool.TextValue("Outside the split: Gym, Pets")},
-	}
-	if !reflect.DeepEqual(p.Changes, want) {
-		t.Errorf("changes = %+v, want %+v", p.Changes, want)
+	// The row names the categories of the test among the ones the call leaves outside.
+	last := p.Changes[len(p.Changes)-1]
+	if len(p.Changes) != 4 || last.Field != "category" ||
+		!strings.HasPrefix(last.After.Text, "Outside the split: ") ||
+		!strings.Contains(last.After.Text, "Gym") || !strings.Contains(last.After.Text, "Pets") ||
+		strings.Contains(last.After.Text, "Rent") {
+		t.Errorf("changes = %+v, want a last row with the categories outside the split", p.Changes)
 	}
 }

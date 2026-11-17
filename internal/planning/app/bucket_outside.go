@@ -10,6 +10,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 )
 
+// uncategorizedExpense is the system role of the category no bucket can take: its spending
+// already shows as spending outside the split (A236).
+const uncategorizedExpense = "uncategorized_expense"
+
 // OutsideCategories returns the categories that buckets would leave outside the split (A236).
 func (s *Service) OutsideCategories(
 	ctx context.Context,
@@ -24,15 +28,15 @@ func (s *Service) OutsideCategories(
 	return outsideCategories(facts, buckets), nil
 }
 
-// outsideCategories returns the open expense categories without a system role that resolve to
-// no bucket, by name; an empty list when none is outside (A236).
+// outsideCategories returns the open expense categories, the uncategorized one excepted, that
+// resolve to no bucket, by name; an empty list when none is outside (A236).
 func outsideCategories(facts []Account, buckets []domain.Bucket) []uuid.UUID {
 	resolve := domain.BucketResolver(buckets, expenseParents(facts))
 
 	var outside []Account
 
 	for _, a := range facts {
-		if a.Class != "expense" || a.Closed || a.SystemRole != "" {
+		if a.Class != "expense" || a.Closed || a.SystemRole == uncategorizedExpense {
 			continue
 		}
 
