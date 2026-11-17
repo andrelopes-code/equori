@@ -644,3 +644,125 @@ func TestAddCardFace(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 24", ArchiveVersion)
 	}
 }
+
+// Income split versions A240, D1: a version 24 archive without planning_bucket_method gains one
+// version from the month of its earliest bucket row; each bucket keeps its id as lineage_id.
+func TestAddBucketVersions(t *testing.T) {
+	t.Parallel()
+
+	const (
+		first  = "019a84cf-c400-7000-8000-000000000001" // 2025-11-15T00:00:00Z
+		second = "019a89f6-2000-7000-8000-000000000002" // 2025-11-16T00:00:00Z
+	)
+
+	v24 := []ArchiveTable{
+		{Name: "ledger_payee", Rows: [][]byte{[]byte(`{"id":"p"}`)}},
+		{Name: "planning_bucket", Rows: [][]byte{
+			[]byte(`{"id":"` + second + `","name":"B"}`),
+			[]byte(`{"id":"` + first + `","name":"A"}`),
+		}},
+		{Name: "planning_bucket_category", Rows: [][]byte{[]byte(`{"bucket_id":"` + first + `"}`)}},
+	}
+
+	got, err := addBucketVersions(v24)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []ArchiveTable{
+		{Name: "ledger_payee", Rows: [][]byte{[]byte(`{"id":"p"}`)}},
+		{Name: "planning_bucket_method", Rows: [][]byte{[]byte(`{"effective_from":"2025-11-01"}`)}},
+		{Name: "planning_bucket", Rows: [][]byte{
+			[]byte(`{"effective_from":"2025-11-01","id":"` + second + `","lineage_id":"` + second +
+				`","name":"B"}`),
+			[]byte(`{"effective_from":"2025-11-01","id":"` + first + `","lineage_id":"` + first +
+				`","name":"A"}`),
+		}},
+		{Name: "planning_bucket_category", Rows: [][]byte{
+			[]byte(`{"bucket_id":"` + first + `","effective_from":"2025-11-01"}`),
+		}},
+	}
+	assertTables(t, got, want)
+
+	if string(v24[1].Rows[0]) != `{"id":"`+second+`","name":"B"}` {
+		t.Fatalf("the step changed its input: %s", v24[1].Rows[0])
+	}
+
+	if ArchiveVersion < 25 {
+		t.Fatalf("ArchiveVersion = %d, want at least 25", ArchiveVersion)
+	}
+}
+
+// A bucket id that is not a UUIDv7 carries no timestamp: the version starts in 1970-01.
+func TestAddBucketVersionsWithoutTimestamp(t *testing.T) {
+	t.Parallel()
+
+	v24 := []ArchiveTable{{Name: "planning_bucket", Rows: [][]byte{
+		[]byte(`{"id":"00000000-0000-4000-8000-000000000001"}`),
+	}}}
+
+	got, err := addBucketVersions(v24)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertTables(t, got, []ArchiveTable{
+		{Name: "planning_bucket_method", Rows: [][]byte{[]byte(`{"effective_from":"1970-01-01"}`)}},
+		{Name: "planning_bucket", Rows: [][]byte{[]byte(
+			`{"effective_from":"1970-01-01","id":"00000000-0000-4000-8000-000000000001",` +
+				`"lineage_id":"00000000-0000-4000-8000-000000000001"}`,
+		)}},
+	})
+}
+
+// An archive without buckets, or one that already holds the versions, carries over unchanged.
+func TestAddBucketVersionsCarriesOver(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string][]ArchiveTable{
+		"no buckets": {{Name: "planning_bucket"}, {Name: "ledger_payee"}},
+		"versions present": {
+			{
+				Name: "planning_bucket_method",
+				Rows: [][]byte{[]byte(`{"effective_from":"2026-09-01"}`)},
+			},
+			{
+				Name: "planning_bucket",
+				Rows: [][]byte{[]byte(`{"effective_from":"2026-09-01","id":"a"}`)},
+			},
+		},
+	}
+	for name, tables := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			got, err := addBucketVersions(tables)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assertTables(t, got, tables)
+		})
+	}
+}
+
+func assertTables(t *testing.T, got, want []ArchiveTable) {
+	t.Helper()
+
+	if len(got) != len(want) {
+		t.Fatalf("tables = %+v, want %+v", got, want)
+	}
+
+	for i, w := range want {
+		if got[i].Name != w.Name || len(got[i].Rows) != len(w.Rows) {
+			t.Fatalf("table %d = %s with %d rows, want %s with %d",
+				i, got[i].Name, len(got[i].Rows), w.Name, len(w.Rows))
+		}
+
+		for j, row := range w.Rows {
+			if string(got[i].Rows[j]) != string(row) {
+				t.Errorf("%s row %d = %s, want %s", w.Name, j, got[i].Rows[j], row)
+			}
+		}
+	}
+}
