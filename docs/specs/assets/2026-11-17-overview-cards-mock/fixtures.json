@@ -1,0 +1,3432 @@
+{
+ "GET /api/v1/accounts": {
+  "items": [
+   {
+    "class": "asset",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d0e9-708e-a926-446366f71e8a",
+    "kind": "receivable",
+    "name": "A receber: Rafael",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d0c3-793d-9921-dccf84fa8cd4",
+    "institution_id": "01a1d64b-d051-7e86-a4ee-c2295b6dc4ea",
+    "kind": "benefit",
+    "name": "Alelo Refeição",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d097-7193-be1f-9df04503c527",
+    "institution_id": "01a1d64b-d04d-71e0-bea9-661cc8185c7e",
+    "kind": "reserve",
+    "name": "Caixinha reserva de emergência",
+    "opened_on": "2024-11-01",
+    "parent_id": "01a1d64b-d07a-7357-aea2-82250a2360d1",
+    "yield_mode": "auto"
+   },
+   {
+    "class": "asset",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d0d7-7786-a764-783ca4750407",
+    "kind": "cash",
+    "name": "Carteira",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "institution_id": "01a1d64b-d049-775b-95ca-9fb5ceb33f37",
+    "kind": "checking",
+    "name": "Conta corrente Itaú",
+    "opened_on": "2024-11-01",
+    "parent_id": "01a1d64b-d054-760c-a5f5-cc8251dd0ad1",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d08c-752d-a944-2bcca407a195",
+    "institution_id": "01a1d64b-d04d-71e0-bea9-661cc8185c7e",
+    "kind": "checking",
+    "name": "Conta Nubank",
+    "opened_on": "2024-11-01",
+    "parent_id": "01a1d64b-d07a-7357-aea2-82250a2360d1",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d054-760c-a5f5-cc8251dd0ad1",
+    "institution_id": "01a1d64b-d049-775b-95ca-9fb5ceb33f37",
+    "kind": "checking",
+    "name": "Itaú",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d07a-7357-aea2-82250a2360d1",
+    "institution_id": "01a1d64b-d04d-71e0-bea9-661cc8185c7e",
+    "kind": "checking",
+    "name": "Nubank",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d06b-7793-9104-17979c1414f6",
+    "institution_id": "01a1d64b-d049-775b-95ca-9fb5ceb33f37",
+    "kind": "savings",
+    "name": "Poupança Itaú",
+    "opened_on": "2024-11-01",
+    "parent_id": "01a1d64b-d054-760c-a5f5-cc8251dd0ad1",
+    "yield_mode": "auto"
+   },
+   {
+    "class": "asset",
+    "currency": "RF.261220.P8775",
+    "excluded_from_liquidity": false,
+    "id": "01a1e8fd-0a2e-7a99-9a76-656fe90b5213",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "RF.261220.P8775",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "currency": "RF.270915.TVFD8",
+    "excluded_from_liquidity": false,
+    "id": "01a1e8fd-08ce-7d37-bf92-ef399a9c9020",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "RF.270915.TVFD8",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "currency": "RF.280302.TSBKA",
+    "excluded_from_liquidity": false,
+    "id": "01a1e8fd-0855-77bb-9fd3-3bcd63eabda0",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "RF.280302.TSBKA",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "currency": "RF.300620.GM22G",
+    "excluded_from_liquidity": false,
+    "id": "01a1e8fd-0948-7bdb-bcd2-7f666a18fc55",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "RF.300620.GM22G",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "currency": "RF.320515.TCT95",
+    "excluded_from_liquidity": false,
+    "id": "01a1e8fd-09a1-7835-9835-88b57052a2b2",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "RF.320515.TCT95",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "currency": "RF.350515.H2PFM",
+    "excluded_from_liquidity": false,
+    "id": "01a1e8fd-09e1-7b3f-b900-649fd1b05b7f",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "RF.350515.H2PFM",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d0b6-78d6-ba2e-6efa4e1abced",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "Saldo em conta XP",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "ABEV3",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6b1-7eb5-a99b-781895df92a6",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp ABEV3",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "B5P211",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d73b-7fa8-95b0-6f4951873384",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp B5P211",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "BBAS3",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d69e-7146-846c-18164a42ea99",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp BBAS3",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "BOVA11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6d6-7bbf-b9a0-5c29107f5c44",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp BOVA11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "BPAC11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6cd-7eae-945a-4b09e62717fa",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp BPAC11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "CDBXP27",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d780-7f1f-bc91-0dbc184feb86",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp CDBXP27",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "GOLD11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d710-7e88-9cbb-3578d19f7e86",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp GOLD11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "HASH11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d730-756f-8304-c11df22899b3",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp HASH11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "HGLG11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d744-7ad8-9313-3342dd293bf9",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp HGLG11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "XP Investimentos",
+    "opened_on": "2021-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "ITSA4",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6a6-75a1-89b5-236eb3a1e81a",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp ITSA4",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "ITUB4",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d66b-73cf-95fa-0a68caf6870c",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp ITUB4",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "IVVB11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6df-75a2-bc94-3c8a8470ea5f",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp IVVB11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "KNRI11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d74d-7864-8137-5f61369b8287",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp KNRI11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "MXRF11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d760-7828-8abe-10c7148358ea",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp MXRF11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "NASD11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6ea-7276-83c5-379bea2d4c22",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp NASD11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "PETR4",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d694-7ba0-b4b8-2526b9f5e38c",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp PETR4",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "SBSP3",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6c3-7c99-ae61-c5fb184ce351",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp SBSP3",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "TIPCA35",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d7a8-7f82-82b3-c28fc930047b",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp TIPCA35",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "TSELIC29",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d773-7889-9e6b-5d6fe1cc5e26",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp TSELIC29",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "WEGE3",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d68b-7415-bcca-ad79d1a18d8d",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp WEGE3",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "asset",
+    "color": 4,
+    "currency": "WRLD11",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d6f2-73e1-8d9e-4412b972c7e7",
+    "institution_id": "01a1d64b-d04f-7a1b-899a-e8c3838d9f42",
+    "kind": "brokerage",
+    "name": "xp WRLD11",
+    "opened_on": "2021-11-01",
+    "parent_id": "01a1d64b-d0a6-708d-a4ad-61cae02489ff",
+    "yield_mode": "none"
+   },
+   {
+    "class": "equity",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c4fb-7fdc-b6e9-a8509fa16a65",
+    "name": "Ajustes",
+    "opened_on": "1900-01-01",
+    "system_role": "adjustments",
+    "yield_mode": "none"
+   },
+   {
+    "class": "equity",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c4f8-7ac5-a04a-122dc4eeccb8",
+    "name": "Saldos iniciais",
+    "opened_on": "1900-01-01",
+    "system_role": "opening_balances",
+    "yield_mode": "none"
+   },
+   {
+    "class": "equity",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c4fc-7f8e-8e23-886b576587dc",
+    "name": "Transferências em trânsito",
+    "opened_on": "1900-01-01",
+    "system_role": "transfers_in_transit",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "dumbbell",
+    "id": "01a1d64b-d344-746d-8189-ff43fbf37cd1",
+    "name": "Academia",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "utensils",
+    "id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "name": "Alimentação",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "key-round",
+    "id": "01a1d64b-d1d3-761e-94e0-12d3c9d5bc3b",
+    "name": "Aluguel",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "credit-card",
+    "id": "01a1d64b-d51e-745a-adb2-fcf5b09e6923",
+    "name": "Anuidade de cartão",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-c500-7f36-9972-9073361f2c89",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "car-taxi-front",
+    "id": "01a1d64b-d2b5-757b-afb3-0d9c76cf5c9e",
+    "name": "Aplicativo de transporte",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2b0-715a-8c55-9d97d766aabd",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "smartphone",
+    "id": "01a1d64b-d469-725b-82c2-aade13b64af7",
+    "name": "Aplicativos e armazenamento",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "briefcase",
+    "id": "01a1d64b-d4b9-7dcf-aa36-9a3bfc529d48",
+    "name": "Associações e comunidades",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4ad-7c2a-b060-6fd71ba8467a",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "beer",
+    "id": "01a1d64b-d274-7d7a-b045-05f22310000d",
+    "name": "Bares",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "bike",
+    "id": "01a1d64b-d2d6-7c7f-ab40-7294dced822d",
+    "name": "Bicicleta compartilhada",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2b0-715a-8c55-9d97d766aabd",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "coffee",
+    "id": "01a1d64b-d26e-7da9-b5f9-bd66fc00fe60",
+    "name": "Café e lanches",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "sofa",
+    "id": "01a1d64b-d224-7afc-a7d0-fb739cbd57d5",
+    "name": "Casa e decoração",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "smartphone",
+    "id": "01a1d64b-d21a-778d-bdac-c7758bf65714",
+    "name": "Celular",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "ticket",
+    "id": "01a1d64b-d367-7a15-be73-ef07bd80e2af",
+    "name": "Cinema, shows e eventos",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "shopping-bag",
+    "id": "01a1d64b-d482-7a88-a107-b8734ce5e3f4",
+    "name": "Compras",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "building-2",
+    "id": "01a1d64b-d1d9-7f73-bd26-c7c4d38b18b1",
+    "name": "Condomínio",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "stethoscope",
+    "id": "01a1d64b-d2f6-719f-908f-ef9d2042c85b",
+    "name": "Consultas",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "scissors",
+    "id": "01a1d64b-d4a8-7517-8e93-b9b942b6e718",
+    "name": "Cuidados pessoais",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d482-7a88-a107-b8734ce5e3f4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "school",
+    "id": "01a1d64b-d4b1-782c-8b3b-9f23f31ca390",
+    "name": "Cursos",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4ad-7c2a-b060-6fd71ba8467a",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "pizza",
+    "id": "01a1d64b-d268-7c96-8aee-6e953f3d007b",
+    "name": "Delivery",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "smile",
+    "id": "01a1d64b-d352-721e-88dc-dc91509acdb6",
+    "name": "Dentista",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c4fd-7f59-8c2b-9e63a52ef9de",
+    "name": "Despesa sem categoria",
+    "opened_on": "1900-01-01",
+    "system_role": "uncategorized_expense",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "hand-coins",
+    "id": "01a1d64b-d4d0-7216-95fc-68523f87c192",
+    "name": "Doações",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "graduation-cap",
+    "id": "01a1d64b-d4ad-7c2a-b060-6fd71ba8467a",
+    "name": "Educação",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "laptop",
+    "id": "01a1d64b-d498-78db-a1c2-01e5074fc7a2",
+    "name": "Eletrônicos",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d482-7a88-a107-b8734ce5e3f4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "zap",
+    "id": "01a1d64b-d1e5-7130-9436-df85a1804d7b",
+    "name": "Energia elétrica",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "hospital",
+    "id": "01a1d64b-d30c-7999-bb5a-238cc239b871",
+    "name": "Exames",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "pill",
+    "id": "01a1d64b-d2fe-7869-90bf-06f515c7555b",
+    "name": "Farmácia",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "apple",
+    "id": "01a1d64b-d250-715a-ae0a-88cfc363da70",
+    "name": "Feira e hortifrúti",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "flame",
+    "id": "01a1d64b-d20b-7d1d-b7ee-b198d17c3dc1",
+    "name": "Gás",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "palette",
+    "id": "01a1d64b-d463-7b41-b099-04a0939ab6ad",
+    "name": "Hobbies",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "hotel",
+    "id": "01a1d64b-d477-7671-bcfc-aaec7f29ae31",
+    "name": "Hospedagem",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d46d-7d8b-8532-4c56f8ec4774",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c4ff-7fbb-bf41-7ee77d08cfd0",
+    "name": "Impostos",
+    "opened_on": "1900-01-01",
+    "system_role": "taxes",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "landmark",
+    "id": "01a1d64b-d50c-74a1-8511-10e59720aeee",
+    "name": "INSS",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-c4ff-7fbb-bf41-7ee77d08cfd0",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "wifi",
+    "id": "01a1d64b-d212-7f6d-ad17-5dd8b2a8b708",
+    "name": "Internet",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "receipt",
+    "id": "01a1d64b-d515-7593-a9b7-02d82d26691d",
+    "name": "IOF",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-c4ff-7fbb-bf41-7ee77d08cfd0",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "landmark",
+    "id": "01a1d64b-d510-7c05-9ebf-29e739ec73dd",
+    "name": "IRRF",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-c4ff-7fbb-bf41-7ee77d08cfd0",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "gamepad-2",
+    "id": "01a1d64b-d436-75e0-b936-c747e676d84d",
+    "name": "Jogos",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c4ff-711f-900f-b366b95ea63d",
+    "name": "Juros",
+    "opened_on": "1900-01-01",
+    "system_role": "interest",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "gamepad-2",
+    "id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "name": "Lazer",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "book-open",
+    "id": "01a1d64b-d45e-74d6-95a7-6108352f9792",
+    "name": "Livros",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "wrench",
+    "id": "01a1d64b-d21f-7ce3-b57f-4eaefe3b69a7",
+    "name": "Manutenção e reparos",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "shopping-cart",
+    "id": "01a1d64b-d24b-77e5-ada2-19a48bb61e1e",
+    "name": "Mercado",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "house",
+    "id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "name": "Moradia",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "music",
+    "id": "01a1d64b-d3c4-727e-a19b-1fb33e0f6d25",
+    "name": "Música",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "croissant",
+    "id": "01a1d64b-d25c-7619-9d55-4abcdb0573cf",
+    "name": "Padaria",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "plane",
+    "id": "01a1d64b-d472-76af-817a-84227a3068a0",
+    "name": "Passagens",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d46d-7d8b-8532-4c56f8ec4774",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "map",
+    "id": "01a1d64b-d47c-7d69-b512-88307f5c02b0",
+    "name": "Passeios",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d46d-7d8b-8532-4c56f8ec4774",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c501-7c27-86bd-d7b3180f1db1",
+    "name": "Perdas realizadas",
+    "opened_on": "1900-01-01",
+    "system_role": "realized_losses",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "paw-print",
+    "id": "01a1d64b-d4c0-7311-898d-383108176b4d",
+    "name": "Pets",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "shield",
+    "id": "01a1d64b-d2e4-7db9-80c9-be0411211642",
+    "name": "Plano de saúde",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "gift",
+    "id": "01a1d64b-d4a2-775f-9ca3-de7d04edd8ea",
+    "name": "Presentes",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d482-7a88-a107-b8734ce5e3f4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "cat",
+    "id": "01a1d64b-d4c4-7da5-8dcb-8fa8d3cd27e6",
+    "name": "Ração, areia e petshop",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4c0-7311-898d-383108176b4d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "utensils",
+    "id": "01a1d64b-d263-795f-84f5-1e3be75e97cc",
+    "name": "Restaurantes",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d23f-71b4-b309-8c136f99a56d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "shirt",
+    "id": "01a1d64b-d48a-73bd-9fbd-584c46964407",
+    "name": "Roupas e calçados",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d482-7a88-a107-b8734ce5e3f4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "heart-pulse",
+    "id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "name": "Saúde",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "tv",
+    "id": "01a1d64b-d3b8-7cf7-9827-a400b6560b34",
+    "name": "Streaming",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d35d-73a7-9984-26c1e2c87ee4",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c500-7f36-9972-9073361f2c89",
+    "name": "Tarifas",
+    "opened_on": "1900-01-01",
+    "system_role": "fees",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "credit-card",
+    "id": "01a1d64b-d519-781c-8e73-ef4042c3d260",
+    "name": "Tarifas bancárias",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-c500-7f36-9972-9073361f2c89",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "heart",
+    "id": "01a1d64b-d33a-7c92-8017-b8707b77cf8d",
+    "name": "Terapia",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2df-786b-8f0c-706009cae3fb",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "car-taxi-front",
+    "id": "01a1d64b-d2b0-715a-8c55-9d97d766aabd",
+    "name": "Transporte",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "bus",
+    "id": "01a1d64b-d2ba-71b6-82a4-59f03cdad9e5",
+    "name": "Transporte público",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2b0-715a-8c55-9d97d766aabd",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "stethoscope",
+    "id": "01a1d64b-d4c9-7999-905a-9f5fa6d4cfac",
+    "name": "Veterinário",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4c0-7311-898d-383108176b4d",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "luggage",
+    "id": "01a1d64b-d46d-7d8b-8532-4c56f8ec4774",
+    "name": "Viagens",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "train-front",
+    "id": "01a1d64b-d2d0-7b57-95fd-6988aa6c5335",
+    "name": "Viagens de ônibus",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d2b0-715a-8c55-9d97d766aabd",
+    "yield_mode": "none"
+   },
+   {
+    "class": "expense",
+    "color": 1,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "droplet",
+    "id": "01a1d64b-d1f9-7fac-a979-14e6c0ba8698",
+    "name": "Água e esgoto",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d1c3-792a-9581-4f61103124e8",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "banknote",
+    "id": "01a1d64b-d4dd-709f-b6b9-f8470ee493c7",
+    "name": "13º salário",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "percent",
+    "id": "01a1d64b-d4f5-700d-a78e-8cba04ee49fb",
+    "name": "Cashback",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 7,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c504-71f5-bb68-e5c7fa9ffa84",
+    "name": "Descontos",
+    "opened_on": "1900-01-01",
+    "system_role": "discounts",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "landmark",
+    "id": "01a1d64b-d4fd-7646-a63e-fefc64ae4b43",
+    "name": "Dividendos",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4f9-7092-8d0d-fde6e74191c7",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "luggage",
+    "id": "01a1d64b-d4e1-72f1-8bac-0190bf773d51",
+    "name": "Férias",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c504-7e4c-8c94-75a87c1e0b23",
+    "name": "Ganhos realizados",
+    "opened_on": "1900-01-01",
+    "system_role": "realized_gains",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "hand-coins",
+    "id": "01a1d64b-d507-7d05-8ff8-bd3223f7c637",
+    "name": "Juros sobre capital próprio",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4f9-7092-8d0d-fde6e74191c7",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "coins",
+    "id": "01a1d64b-d4e6-7362-a596-91396cd372bf",
+    "name": "PLR e bônus",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 8,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c502-7839-b833-a6be4924a1a6",
+    "name": "Receita sem categoria",
+    "opened_on": "1900-01-01",
+    "system_role": "uncategorized_income",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 5,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "receipt",
+    "id": "01a1d64b-d4f1-732a-a2fd-593439671430",
+    "name": "Reembolsos",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-c503-7514-a02a-2966ecd8d9c3",
+    "name": "Rendimento de contas",
+    "opened_on": "1900-01-01",
+    "system_role": "yield",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "trending-up",
+    "id": "01a1d64b-d4f9-7092-8d0d-fde6e74191c7",
+    "name": "Rendimentos",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "building-2",
+    "id": "01a1d64b-d502-737c-b718-f8cc29b7b334",
+    "name": "Rendimentos de fundos imobiliários",
+    "opened_on": "1900-01-01",
+    "parent_id": "01a1d64b-d4f9-7092-8d0d-fde6e74191c7",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "banknote",
+    "id": "01a1d64b-d4d8-793c-9fbf-9db6b0d64bd9",
+    "name": "Salário",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 4,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "laptop",
+    "id": "01a1d64b-d4e9-7d75-bf5d-85fe82e1a361",
+    "name": "Trabalhos extras",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "income",
+    "color": 3,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "icon": "utensils",
+    "id": "01a1d64b-d4ed-77b9-a59c-6bbfa85279a7",
+    "name": "Vale-refeição",
+    "opened_on": "1900-01-01",
+    "yield_mode": "none"
+   },
+   {
+    "card": {
+     "available_limit": {
+      "amount": 2330760,
+      "currency": "BRL"
+     },
+     "credit_limit": {
+      "amount": 2400000,
+      "currency": "BRL"
+     }
+    },
+    "class": "liability",
+    "color": 2,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "institution_id": "01a1d64b-d049-775b-95ca-9fb5ceb33f37",
+    "kind": "credit_card",
+    "name": "Itaú Visa Platinum",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "card": {
+     "available_limit": {
+      "amount": 996742,
+      "currency": "BRL"
+     },
+     "credit_limit": {
+      "amount": 1400000,
+      "currency": "BRL"
+     }
+    },
+    "class": "liability",
+    "color": 6,
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "institution_id": "01a1d64b-d04d-71e0-bea9-661cc8185c7e",
+    "kind": "credit_card",
+    "name": "Nubank Mastercard",
+    "opened_on": "2024-11-01",
+    "yield_mode": "none"
+   },
+   {
+    "class": "liability",
+    "currency": "BRL",
+    "excluded_from_liquidity": false,
+    "face": {
+     "art": "aurora",
+     "chip": "silver",
+     "color": "#820ad1"
+    },
+    "id": "01a1e7cc-5d53-7175-a8b0-5d182b2cc352",
+    "kind": "credit_card",
+    "name": "Nubank Ultravioleta",
+    "opened_on": "2026-11-17",
+    "yield_mode": "none"
+   }
+  ]
+ },
+ "GET /api/v1/accounts/01a1d64b-d0f7-7be6-a112-adffe32cb185/statements": {
+  "items": [
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 69222,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "closing_date": "2025-11-03",
+    "confirmed_amount": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2025-11-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-1f65-7981-b4dd-847a2474e493",
+    "open_amount": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 171194,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 171194,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2025-11",
+    "settled": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 129906,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "closing_date": "2025-12-03",
+    "confirmed_amount": {
+     "amount": 10171,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2025-12-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-1f66-76d0-ad94-8d1b4814ffdc",
+    "open_amount": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 240416,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2025-12",
+    "settled": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -73942,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-01-03",
+    "confirmed_amount": {
+     "amount": 81416,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-01-12",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-1f67-73f7-af69-c63d840a934a",
+    "open_amount": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 380493,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-01",
+    "settled": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -179239,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-02-03",
+    "confirmed_amount": {
+     "amount": 2097,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-02-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5ccf-74a0-b166-ca3a33ae44a2",
+    "open_amount": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 387967,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-02",
+    "settled": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 203650,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-03-03",
+    "confirmed_amount": {
+     "amount": 23995,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-03-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd0-79a6-90af-cda9ba84c901",
+    "open_amount": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 210825,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-03",
+    "settled": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -121616,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-04-03",
+    "confirmed_amount": {
+     "amount": 2755,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-04-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd1-796c-bc9f-6cd8d3efb45b",
+    "open_amount": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 438470,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-04",
+    "settled": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -26585,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-05-03",
+    "confirmed_amount": {
+     "amount": 10936,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-05-11",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd2-7b22-a01d-f267bb97e17b",
+    "open_amount": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 319609,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-05",
+    "settled": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -73346,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-06-03",
+    "confirmed_amount": {
+     "amount": 15176,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-06-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd3-7f29-bf32-61b38b1f40fa",
+    "open_amount": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 303960,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-06",
+    "settled": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -52467,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-07-03",
+    "confirmed_amount": {
+     "amount": 2060,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-07-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd5-7153-9b89-940d122c0874",
+    "institution": {
+     "closing_date": "2026-07-03",
+     "due_date": "2026-07-10",
+     "source": "owner",
+     "total": {
+      "amount": 195383,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 245790,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-07",
+    "settled": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 8882,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-08-03",
+    "confirmed_amount": {
+     "amount": 19440,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-08-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd6-72e7-bd73-40ed77b148bc",
+    "institution": {
+     "closing_date": "2026-08-03",
+     "due_date": "2026-08-10",
+     "source": "owner",
+     "total": {
+      "amount": 223705,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 195383,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-08",
+    "settled": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 124116,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-09-03",
+    "confirmed_amount": {
+     "amount": 18080,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-09-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd7-740f-9e2c-1f8ed5619655",
+    "institution": {
+     "closing_date": "2026-09-03",
+     "due_date": "2026-09-10",
+     "source": "owner",
+     "total": {
+      "amount": 365901,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 223705,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-09",
+    "settled": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 139385,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -259346,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 139385,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 218543,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-10-03",
+    "confirmed_amount": {
+     "amount": 32830,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 79158,
+     "currency": "BRL"
+    },
+    "due_date": "2026-10-13",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd8-73cc-a596-8b8abec0cfec",
+    "institution": {
+     "closing_date": "2026-10-03",
+     "due_date": "2026-10-13",
+     "source": "owner",
+     "total": {
+      "amount": 139385,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 139385,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 365901,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-10",
+    "settled": {
+     "amount": 139385,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 145482,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -57385,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 145482,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 224640,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-11-03",
+    "confirmed_amount": {
+     "amount": 63482,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 79158,
+     "currency": "BRL"
+    },
+    "due_date": "2026-11-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5cd9-7406-a69b-da50a16563ad",
+    "institution": {
+     "closing_date": "2026-11-03",
+     "due_date": "2026-11-10",
+     "source": "owner",
+     "total": {
+      "amount": 145482,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 145482,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 139385,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 139385,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-11",
+    "settled": {
+     "amount": 145482,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "amount_due": {
+     "amount": 69240,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -145482,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 69240,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 69240,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-12-03",
+    "confirmed_amount": {
+     "amount": 69240,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-12-10",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-c18d-73ed-92ef-cb53f93a66f9",
+    "open_amount": {
+     "amount": 69240,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 145482,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 145482,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-12",
+    "settled": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "status": "open",
+    "unpaid": {
+     "amount": 69240,
+     "currency": "BRL"
+    }
+   }
+  ]
+ },
+ "GET /api/v1/accounts/01a1d64b-d14d-7a6b-8d85-02a1b0e741ce/statements": {
+  "items": [
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 126624,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -128026,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 126624,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 187824,
+     "currency": "BRL"
+    },
+    "closing_date": "2025-11-05",
+    "confirmed_amount": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 61200,
+     "currency": "BRL"
+    },
+    "due_date": "2025-11-12",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-4b5a-7866-977d-c12bf2dc1f2e",
+    "open_amount": {
+     "amount": 126624,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 254650,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 254650,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2025-11",
+    "settled": {
+     "amount": 126624,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -22074,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "closing_date": "2025-12-05",
+    "confirmed_amount": {
+     "amount": 28450,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2025-12-12",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-556c-7ae0-a542-c8d1f9aa6705",
+    "open_amount": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 126624,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 126624,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2025-12",
+    "settled": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 38588,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-01-05",
+    "confirmed_amount": {
+     "amount": 17998,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-01-12",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-5edf-7a6b-8a21-0a97564dcd33",
+    "open_amount": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 133000,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-01",
+    "settled": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -101899,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-02-05",
+    "confirmed_amount": {
+     "amount": 27767,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-02-12",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-67fa-7b8e-bd03-9e6f620fe881",
+    "open_amount": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 189586,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-02",
+    "settled": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -42524,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-03-05",
+    "confirmed_amount": {
+     "amount": 4298,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-03-12",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-70db-7d5b-8477-a00ac6cba1d8",
+    "open_amount": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 115454,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-03",
+    "settled": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 201503,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-04-10",
+    "confirmed_amount": {
+     "amount": 13904,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-04-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-77f9-7bf6-a069-bad9828098b3",
+    "open_amount": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 77228,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-04",
+    "settled": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -48326,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-05-10",
+    "confirmed_amount": {
+     "amount": 40011,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-05-18",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-77fb-7952-8f18-23a0677e34d1",
+    "open_amount": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 292635,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-05",
+    "settled": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -130999,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-06-10",
+    "confirmed_amount": {
+     "amount": 50053,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-06-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-77fd-7346-bfea-98857632908f",
+    "open_amount": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 284320,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-06",
+    "settled": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -35975,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-07-10",
+    "confirmed_amount": {
+     "amount": 31675,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-07-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-77fe-7796-ae3d-149716059bdc",
+    "institution": {
+     "closing_date": "2026-07-10",
+     "due_date": "2026-07-17",
+     "source": "owner",
+     "total": {
+      "amount": 199074,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 203374,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-07",
+    "settled": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -3850,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-08-10",
+    "confirmed_amount": {
+     "amount": 48235,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-08-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-9be6-7b66-a519-a6a7de7f994e",
+    "institution": {
+     "closing_date": "2026-08-10",
+     "due_date": "2026-08-17",
+     "source": "owner",
+     "total": {
+      "amount": 243459,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 199074,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-08",
+    "settled": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -17591,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-09-10",
+    "confirmed_amount": {
+     "amount": 58558,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-09-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-a3f4-7602-914d-297626902a2e",
+    "institution": {
+     "closing_date": "2026-09-10",
+     "due_date": "2026-09-17",
+     "source": "owner",
+     "total": {
+      "amount": 284426,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 243459,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-09",
+    "settled": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -67859,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-10-10",
+    "confirmed_amount": {
+     "amount": 32987,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-10-19",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-a3f7-75b3-9c09-77227dc45196",
+    "institution": {
+     "closing_date": "2026-10-10",
+     "due_date": "2026-10-19",
+     "source": "owner",
+     "total": {
+      "amount": 249554,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 284426,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-10",
+    "settled": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "status": "paid",
+    "unpaid": {
+     "amount": 0,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_difference": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "amount_due": {
+     "amount": 291838,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": -31963,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 291838,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 291838,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-11-10",
+    "confirmed_amount": {
+     "amount": 74247,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-11-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-a3f8-7a03-ac25-d9004ae1f974",
+    "institution": {
+     "closing_date": "2026-11-10",
+     "due_date": "2026-11-17",
+     "source": "owner",
+     "total": {
+      "amount": 291838,
+      "currency": "BRL"
+     }
+    },
+    "open_amount": {
+     "amount": 291838,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 249554,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": true,
+    "reference": "2026-11",
+    "settled": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "status": "closed",
+    "unpaid": {
+     "amount": 291838,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 348425,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 54833,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 348425,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 56587,
+     "currency": "BRL"
+    },
+    "closing_date": "2026-12-10",
+    "confirmed_amount": {
+     "amount": 1754,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2026-12-17",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-a3f9-7e43-b3fc-d7281fe37dff",
+    "open_amount": {
+     "amount": 56587,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 291838,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2026-12",
+    "settled": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "status": "open",
+    "unpaid": {
+     "amount": 348425,
+     "currency": "BRL"
+    }
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "amount_due": {
+     "amount": 403258,
+     "currency": "BRL"
+    },
+    "awaiting_amount": {
+     "amount": 54833,
+     "currency": "BRL"
+    },
+    "billed_amount": {
+     "amount": 403258,
+     "currency": "BRL"
+    },
+    "charges": {
+     "amount": 54833,
+     "currency": "BRL"
+    },
+    "closing_date": "2027-01-10",
+    "confirmed_amount": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "due_date": "2027-01-18",
+    "early_payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "id": "01a1d64c-a3fa-7fd4-bea3-8d7a3436aad9",
+    "open_amount": {
+     "amount": 403258,
+     "currency": "BRL"
+    },
+    "opening": {
+     "amount": 348425,
+     "currency": "BRL"
+    },
+    "payments": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "prior_credits": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "reconciled": false,
+    "reference": "2027-01",
+    "settled": {
+     "amount": 0,
+     "currency": "BRL"
+    },
+    "status": "open",
+    "unpaid": {
+     "amount": 403258,
+     "currency": "BRL"
+    }
+   }
+  ]
+ },
+ "GET /api/v1/accounts/01a1e7cc-5d53-7175-a8b0-5d182b2cc352/statements": {
+  "items": []
+ }
+}
