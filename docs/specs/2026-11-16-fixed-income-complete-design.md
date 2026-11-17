@@ -181,7 +181,7 @@ Each plan follows `docs/contributing/agents.md` and is written after the previou
 | D4 | Expected events and aggregator records are proposals; equori writes them only on confirmation; a repeated sync creates nothing. |
 | D5 | No diagnostic field. |
 | S1 | Operations: `createFixedIncomeApplication` (tool `record_fixed_income`), `listFixedIncomeEvents` and `getIssuerExposure` (tool `get_portfolio`), plus the aggregator review operations of FI7. Problem codes of FC15 not yet tested get a test through the HTTP API. |
-| S2 | The application form, the events list and the panel are phone routes; each row keeps one line at 390 px. |
+| S2 | The application form and the events list are phone routes; each row keeps one line at 390 px. The panel of FC36 sits on `/portfolio`, which is not a phone route of ADR 027 (S3): it is drawn and checked at 768, 1024 and 1440 px, and its 390 px captures apply when the route is promoted (amendment of 2026-11-17, owner). |
 | S3 | Articles `fixed_income`, `fixed_income_payments`, `investments_br`, `investments`, `investment_operations`, `imports_and_bank_connections` change in the plan that changes their screen. |
 | S4 | Tools `record_fixed_income`, `get_portfolio` views of FC30, `manage_instrument` fields of FC16, MCP prompts of FC31. |
 | X1 | Scenarios S467 onward, assigned by each plan in order, each with its test in `internal/apitest` or the module's black-box tests. |
