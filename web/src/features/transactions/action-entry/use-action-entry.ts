@@ -5,8 +5,8 @@ import { useApi } from "@/api/api-context";
 import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery, positionsQuery } from "@/features/accounts";
-import { parseRate } from "@/features/instruments";
 import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
+import { actionOrder } from "@/features/transactions/action-entry/action-order";
 import { actionPreview } from "@/features/transactions/action-entry/action-preview";
 import {
   actionPreset,
@@ -105,9 +105,7 @@ export function useActionEntry(
   const submit = async (): Promise<
     components["schemas"]["Transaction"] | null
   > => {
-    const bonus = draft.kind === "bonus";
     const unitTax = draft.kind === "unit_tax";
-    const unitCost = bonus ? parseRate(draft.unitCost) : null;
     const problems: Record<string, string> = {};
     if (brokerage === undefined)
       problems.brokerage_id = t("entry.required.account");
@@ -136,31 +134,12 @@ export function useActionEntry(
     }
     setErrors({});
     setSummary(null);
-    const description = draft.description.trim();
-    const order: components["schemas"]["CorporateActionInput"] = unitTax
-      ? {
-          ...(state.held === undefined ? {} : { account_id: state.held.id }),
-          kind: draft.kind,
-          date: draft.date,
-          ratio_from: 1,
-          ratio_to: 1,
-          quantity: { amount: draft.quantity, currency: instrument },
-          amount: { amount: draft.amount, currency: base ?? "" },
-          ...(description === "" ? {} : { description }),
-        }
-      : {
-          brokerage_id: brokerage.id,
-          instrument,
-          kind: draft.kind,
-          date: draft.date,
-          ratio_from: draft.ratioFrom ?? 0,
-          ratio_to: draft.ratioTo ?? 0,
-          ...(unitCost === null ? {} : { unit_cost: unitCost }),
-          ...(bonus && draft.categoryId !== null
-            ? { category_id: draft.categoryId }
-            : {}),
-          ...(description === "" ? {} : { description }),
-        };
+    const order = actionOrder(draft, {
+      brokerageID: brokerage.id,
+      instrument,
+      heldID: state.held?.id,
+      base: base ?? "",
+    });
     try {
       const created = await record.mutateAsync(order);
       clearDraft(draftKey);
