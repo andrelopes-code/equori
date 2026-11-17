@@ -63,11 +63,7 @@ export function AccountRow({
     >
       <span className={styles.mark}>
         {choice.group === "cards" ? (
-          <CardThumb
-            color={account.color}
-            logo={choice.logo}
-            disabled={disabled}
-          />
+          <CardThumb account={account} logo={choice.logo} disabled={disabled} />
         ) : (
           <AccountMark
             shape={choice.shape}

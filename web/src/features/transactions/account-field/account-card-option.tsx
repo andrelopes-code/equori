@@ -1,6 +1,9 @@
-import type { CSSProperties, KeyboardEvent } from "react";
+import { Glyph, Icon } from "@slotted/react/icon";
+import { useQuery } from "@tanstack/react-query";
+import type { KeyboardEvent } from "react";
 
-import { accountCardColor } from "@/features/accounts";
+import { useApi } from "@/api/api-context";
+import { cardsQuery } from "@/features/cards";
 import { rowTextOf } from "@/features/transactions/account-field/account-row-text";
 import {
   litSegments,
@@ -9,7 +12,8 @@ import {
 import type { AccountChoice } from "@/features/transactions/account-field/use-account-choices";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
-import { Glyph, Icon } from "@slotted/react/icon";
+import { CardFace } from "@/ui/card-face/card-face";
+import { useFaceAppearance } from "@/ui/card-face/use-face-appearance";
 
 import styles from "@/features/transactions/account-field/account-card-option.module.css";
 
@@ -25,9 +29,9 @@ interface AccountCardOptionProps {
 const segments = Array.from({ length: meterSegments }, (_, n) => n);
 
 // Families read: card, listbox. A card family draws a container for content, not a choice of a
-// listbox; the picker needs the wallet card of the Cards page (account-card.module.css) as an
-// option with role option, which no family draws. The element belongs to AccountSectionList
-// (Slotted issues #94 and #95).
+// listbox; the picker needs the card face of the Cards page (ui/card-face) as an option with role
+// option, with what the choice costs under it, which no family draws. The element belongs to
+// AccountSectionList (Slotted issues #94 and #95).
 export function AccountCardOption({
   choice,
   chosen,
@@ -39,6 +43,13 @@ export function AccountCardOption({
   const [locale] = useAppLocale();
   const fmt = useMoneyFormat();
   const { account } = choice;
+  const plastics = useQuery(cardsQuery(useApi(), account.id));
+  const appearance = useFaceAppearance(
+    account.face,
+    account.color,
+    choice.logo,
+  );
+  const plastic = plastics.data?.find((card) => card.active);
 
   const disabled = choice.unavailable !== null;
   const text = rowTextOf(choice, {
@@ -55,11 +66,6 @@ export function AccountCardOption({
         );
   const note = text.fact?.note ?? null;
   const lit = litSegments(choice.creditLimit, choice.freeLimit);
-  const ground = accountCardColor(account.color);
-  const style = (
-    ground === undefined ? undefined : { "--account-card-color": ground }
-  ) as CSSProperties | undefined;
-
   function handlePick() {
     if (!disabled) onPick(account.id);
   }
@@ -74,28 +80,41 @@ export function AccountCardOption({
 
   return (
     <div
-      className={styles.card}
-      style={style}
+      className={styles.option}
       role="option"
       tabIndex={tabStop ? 0 : -1}
       aria-selected={chosen}
       aria-disabled={disabled || undefined}
       data-key={account.id}
-      data-colour={ground === undefined ? undefined : ""}
       data-lit={lit ?? undefined}
       onClick={handlePick}
       onKeyDown={handleKeyDown}
     >
-      <span className={styles.head}>
-        {choice.logo !== undefined && (
-          <span className={styles.tile}>
-            <img className={styles.logo} src={choice.logo} alt="" />
+      <span className={styles.face}>
+        <CardFace
+          title={account.name}
+          {...(choice.logo === undefined ? {} : { logo: choice.logo })}
+          {...(choice.institution === undefined
+            ? {}
+            : { institutionName: choice.institution })}
+          holder=""
+          {...(plastic === undefined ? {} : { lastFour: plastic.last_four })}
+          {...(plastic?.network === undefined
+            ? {}
+            : { network: plastic.network })}
+          {...appearance.props}
+        />
+
+        {chosen && (
+          <span className={styles.check}>
+            <Icon size="sm">
+              <Glyph name="check" />
+            </Icon>
           </span>
         )}
-        <span className={styles.name}>{account.name}</span>
       </span>
 
-      <span className={styles.foot}>
+      <span className={styles.caption}>
         <span className={styles.fact}>
           <span className={styles.ellipsis}>{text.fact?.short}</span>
           {note !== null && <span>{note}</span>}
@@ -125,14 +144,6 @@ export function AccountCardOption({
           </span>
         )}
       </span>
-
-      {chosen && (
-        <span className={styles.check}>
-          <Icon size="sm">
-            <Glyph name="check" />
-          </Icon>
-        </span>
-      )}
     </div>
   );
 }
