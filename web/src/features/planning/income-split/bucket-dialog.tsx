@@ -61,7 +61,7 @@ export function BucketDialog({
   });
 
   return (
-    <Dialog open size="lg" fullScreen="never" onOpenChange={change}>
+    <Dialog open size="xl" fullScreen="never" onOpenChange={change}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("buckets.title")}</DialogTitle>

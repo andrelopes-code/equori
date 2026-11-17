@@ -56,7 +56,6 @@ export function BucketChecklist({
       </div>
     );
 
-  const name = draft.buckets.find((b) => b.key === selected)?.name ?? "";
   const all = branches.flatMap((b) => [b.root, ...b.subcategories]);
   const byId = new Map(all.map((e) => [e.id, e]));
   const nameOf = (key: string | undefined) =>
@@ -64,9 +63,6 @@ export function BucketChecklist({
 
   return (
     <div className={styles.list}>
-      <Text size="sm" tone="muted">
-        {t("buckets.checklist", { name })}
-      </Text>
       {all.map((e) => {
         const state = checkState(draft, parents, e.id, selected);
         const parentName =

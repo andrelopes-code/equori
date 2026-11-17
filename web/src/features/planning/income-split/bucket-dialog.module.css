@@ -1,7 +1,7 @@
 @layer app {
   .bucketRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 6rem 15rem auto;
+    grid-template-columns: minmax(0, 1fr) 6rem 20rem auto;
     align-items: center;
     gap: var(--slotted-space-3);
   }
