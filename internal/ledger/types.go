@@ -165,6 +165,12 @@ type MarketData interface {
 		to money.Currency,
 		date time.Time,
 	) (marketdata.Conversion, error)
+	WarmCurrent(ctx context.Context, codes []money.Currency)
+	ConvertCurrent(
+		ctx context.Context,
+		q money.Money,
+		to money.Currency,
+	) (marketdata.Conversion, error)
 	DefaultCalendar(region string) string
 	CheckContract(
 		ctx context.Context,

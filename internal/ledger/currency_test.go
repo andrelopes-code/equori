@@ -1,7 +1,9 @@
 package ledger_test
 
 import (
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -362,4 +364,102 @@ func TestValuedBalanceOfMixedParent(t *testing.T) {
 		bal.Prices[0].Instrument != "MXRF11" {
 		t.Fatalf("valued XP = %+v", bal)
 	}
+}
+
+func TestValuedBalanceTakesTheCurrentQuote(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(currentBody("BRL", "America/Sao_Paulo", "9.25")))
+	}))
+	t.Cleanup(srv.Close)
+
+	f := newInvestFixture(
+		t,
+		apitest.Clock(func() time.Time { return time.Date(2026, 11, 3, 15, 13, 0, 0, time.UTC) }),
+		apitest.PriceFeeds(
+			[]string{"yahoo_chart"},
+			map[string]string{"yahoo_chart": srv.URL + "/yahoo"},
+		),
+	)
+	h := f.h
+	h.Record(
+		"2026-10-05",
+		apitest.Posting(f.cash, -151240),
+		map[string]any{
+			"account_id": f.mxrf11,
+			"amount":     units(150, "MXRF11"),
+			"weight":     apitest.BRL(151240),
+		},
+	)
+	h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "MXRF11",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-29",
+			"value":            "9.36",
+		},
+		http.StatusCreated,
+		nil,
+	)
+
+	type valued struct {
+		Value  map[string]any `json:"value"`
+		Prices []struct {
+			Instrument string  `json:"instrument"`
+			Date       string  `json:"date"`
+			Source     string  `json:"source"`
+			At         *string `json:"at"`
+			Open       *bool   `json:"open"`
+		} `json:"prices"`
+	}
+
+	var before valued
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+f.xp+"/balance?date=2026-11-02&value_in=BRL",
+		nil,
+		http.StatusOK,
+		&before,
+	)
+
+	if before.Value["amount"] != float64(-10840) || len(before.Prices) != 1 ||
+		before.Prices[0].Instrument != "MXRF11" || before.Prices[0].At != nil ||
+		before.Prices[0].Open != nil {
+		t.Fatalf("valued XP at 2026-11-02 = %+v", before)
+	}
+
+	var today valued
+	h.MustDo(
+		http.MethodGet,
+		"/api/v1/accounts/"+f.xp+"/balance?date=2026-11-03&value_in=BRL",
+		nil,
+		http.StatusOK,
+		&today,
+	)
+
+	if today.Value["amount"] != float64(-12490) || today.Value["currency"] != "BRL" ||
+		len(today.Prices) != 1 {
+		t.Fatalf("valued XP at 2026-11-03 = %+v", today)
+	}
+
+	p := today.Prices[0]
+	if p.Instrument != "MXRF11" || p.Date != "2026-11-03" || p.Source != "yahoo_chart" ||
+		p.At == nil || *p.At != "2026-11-03T14:58:00Z" || p.Open == nil || !*p.Open {
+		t.Fatalf("price at 2026-11-03 = %+v", p)
+	}
+}
+
+// currentBody is the chart answer of a session that opened at 13:00 and closes at 20:00 UTC on
+// 2026-11-03, with the last trade at 14:58 UTC.
+func currentBody(currency, zone, price string) string {
+	return fmt.Sprintf(
+		`{"chart":{"result":[{"meta":{"currency":"%s","exchangeTimezoneName":"%s",`+
+			`"regularMarketPrice":%s,"regularMarketTime":1793717880,`+
+			`"currentTradingPeriod":{"regular":{"start":1793710800,"end":1793736000}}},`+
+			`"timestamp":[],"indicators":{"quote":[{}]}}]}}`,
+		currency, zone, price,
+	)
 }

@@ -50,6 +50,26 @@ func (p pricesAdapter) Convert(
 	date time.Time,
 ) (app.Conversion, error) {
 	c, err := p.md.Convert(ctx, q, to, date)
+
+	return conversion(c, err)
+}
+
+func (p pricesAdapter) WarmCurrent(ctx context.Context, codes []money.Currency) {
+	p.md.WarmCurrent(ctx, codes)
+}
+
+func (p pricesAdapter) ConvertCurrent(
+	ctx context.Context,
+	q money.Money,
+	to money.Currency,
+) (app.Conversion, error) {
+	c, err := p.md.ConvertCurrent(ctx, q, to)
+
+	return conversion(c, err)
+}
+
+// conversion maps the answer of a marketdata conversion to the port types.
+func conversion(c marketdata.Conversion, err error) (app.Conversion, error) {
 	if errors.Is(err, marketdata.ErrPriceMissing) {
 		return app.Conversion{}, fmt.Errorf("%w: %w", app.ErrPriceMissing, err)
 	}
@@ -66,6 +86,8 @@ func (p pricesAdapter) Convert(
 			Date:       x.Date,
 			Value:      x.Value,
 			Source:     x.Source,
+			At:         x.At,
+			Open:       x.Open,
 		}
 	}
 

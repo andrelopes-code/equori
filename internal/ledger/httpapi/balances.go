@@ -78,6 +78,10 @@ func (s *Server) valuedBalance(
 			Date:            apiDate(p.Date),
 			Value:           p.Value.Reduced().String(),
 			Source:          p.Source,
+			At:              p.At,
+		}
+		if p.At != nil {
+			prices[i].Open = &p.Open
 		}
 	}
 

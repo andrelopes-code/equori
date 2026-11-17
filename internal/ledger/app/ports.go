@@ -80,6 +80,10 @@ type Prices interface {
 		to money.Currency,
 		date time.Time,
 	) (Conversion, error)
+	// WarmCurrent asks for the current quotes of codes and waits a bounded time (A248 CQ18).
+	WarmCurrent(ctx context.Context, codes []money.Currency)
+	// ConvertCurrent values q in to now; it returns the errors of Convert (A248 CQ16).
+	ConvertCurrent(ctx context.Context, q money.Money, to money.Currency) (Conversion, error)
 }
 
 // Contracts defines and discards the fixed income contracts of a book (A236 FC14).
@@ -151,6 +155,8 @@ type Price struct {
 	Date              time.Time
 	Value             money.Rate
 	Source            string
+	At                *time.Time
+	Open              bool
 }
 
 // Calendar shifts due dates to business days (marketdata, P2 amendment A2).
