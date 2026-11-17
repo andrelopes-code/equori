@@ -118,6 +118,7 @@ FROM
     marketdata_price
 WHERE
     source = @source
+    AND date >= @from_date
     AND (
         instrument = @instrument
         OR quote_instrument = @instrument

@@ -142,19 +142,21 @@ FROM
     marketdata_price
 WHERE
     source = $1
+    AND date >= $2
     AND (
-        instrument = $2
-        OR quote_instrument = $2
+        instrument = $3
+        OR quote_instrument = $3
     )
 `
 
 type EarliestSourceDateParams struct {
 	Source     string
+	FromDate   time.Time
 	Instrument string
 }
 
 func (q *Queries) EarliestSourceDate(ctx context.Context, arg EarliestSourceDateParams) (time.Time, error) {
-	row := q.db.QueryRow(ctx, earliestSourceDate, arg.Source, arg.Instrument)
+	row := q.db.QueryRow(ctx, earliestSourceDate, arg.Source, arg.FromDate, arg.Instrument)
 	var earliest time.Time
 	err := row.Scan(&earliest)
 	return earliest, err

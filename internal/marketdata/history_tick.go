@@ -47,17 +47,9 @@ func (m *Module) tickHistory(ctx context.Context, src feed.Source) error {
 			continue
 		}
 
-		earliest, err := m.q.EarliestSourceDate(
-			ctx,
-			postgres.EarliestSourceDateParams{Source: src.ID(), Instrument: row.Instrument},
-		)
+		end, err := m.historyEnd(ctx, src.ID(), row, today)
 		if err != nil {
-			return fmt.Errorf("read the earliest price of %s from %s: %w", code, src.ID(), err)
-		}
-
-		end := earliest.AddDate(0, 0, -1)
-		if end.After(today) {
-			end = today
+			return err
 		}
 
 		if row.FromDate.After(end) {
@@ -69,6 +61,39 @@ func (m *Module) tickHistory(ctx context.Context, src feed.Source) error {
 	}
 
 	return m.fetchHistory(ctx, src, jobs)
+}
+
+// historyEnd is the last day to fetch for row: the day before the earliest price of source stored
+// on or after its start, or today when none is stored from there on (A248 CQ4a).
+func (m *Module) historyEnd(
+	ctx context.Context,
+	source string,
+	row postgres.MarketdataHistory,
+	today time.Time,
+) (time.Time, error) {
+	earliest, err := m.q.EarliestSourceDate(
+		ctx,
+		postgres.EarliestSourceDateParams{
+			Source:     source,
+			Instrument: row.Instrument,
+			FromDate:   row.FromDate,
+		},
+	)
+	if err != nil {
+		return time.Time{}, fmt.Errorf(
+			"read the earliest price of %s from %s: %w",
+			row.Instrument,
+			source,
+			err,
+		)
+	}
+
+	end := earliest.AddDate(0, 0, -1)
+	if end.After(today) {
+		end = today
+	}
+
+	return end, nil
 }
 
 // fetchHistory makes one Fetch of src over the jobs and finishes each row (D6 to D9).

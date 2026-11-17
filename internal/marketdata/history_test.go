@@ -340,6 +340,61 @@ func TestRequestHistoryRoles(t *testing.T) {
 	)
 }
 
+// A248 CQ4a, S556: a history request that starts after an older stored price is fetched, because
+// its end is the day before the earliest price on or after its start.
+func TestS556HistoryRefillsAfterAnOlderPrice(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/cb/products/ETH-USD/candles" {
+			http.NotFound(w, r)
+			return
+		}
+
+		_, _ = w.Write([]byte(coinbaseETH))
+	}))
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(t,
+		apitest.Clock(func() time.Time { return time.Date(2026, 12, 20, 12, 0, 0, 0, time.UTC) }),
+		apitest.PriceFeeds(nil, map[string]string{"coinbase": srv.URL + "/cb"}))
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": "ETH", "type": "crypto", "scale": 8, "name": "Ether", "quote_currency": "USD",
+	}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPut, "/api/v1/market-data/feeds/coinbase",
+		map[string]any{"enabled": true}, http.StatusOK, nil)
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	assertRows(t, coinbaseETHDates(h), "2026-11-07", "2026-11-08", "2026-11-09")
+
+	for _, statement := range []string{
+		`DELETE FROM marketdata_price
+		WHERE source = 'coinbase' AND instrument = 'ETH' AND date >= '2026-11-08'`,
+		`INSERT INTO marketdata_history (source, instrument, from_date, requested_at)
+		VALUES ('coinbase', 'ETH', '2026-11-08', now())
+		ON CONFLICT (source, instrument) DO UPDATE
+		SET from_date = EXCLUDED.from_date, requested_at = EXCLUDED.requested_at,
+			done_at = NULL, error = NULL`,
+	} {
+		if _, err := h.Pool.Exec(t.Context(), statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	assertRows(t, coinbaseETHDates(h), "2026-11-07")
+
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	want := []priceAPI{
+		{"ETH", "USD", "2026-11-07", "3001.5", "coinbase"},
+		{"ETH", "USD", "2026-11-08", "3050.12", "coinbase"},
+		{"ETH", "USD", "2026-11-09", "3088.45", "coinbase"},
+	}
+	requirePrices(t, cryptoPrices(t, h, "ETH", "USD"), want)
+	assertRows(t, historyRow(h, "coinbase", "ETH"), "2026-11-08 true ")
+}
+
 // ptaxHarness runs an instance whose PTAX source answers the fixture of S357.
 func ptaxHarness(t *testing.T) (*apitest.Harness, *ptaxFixture) {
 	t.Helper()
@@ -385,6 +440,13 @@ func historyRow(h *apitest.Harness, source, instrument string) []string {
 		"SELECT from_date::text, done_at IS NOT NULL, coalesce(error, '') FROM marketdata_history WHERE source = $1 AND instrument = $2",
 		source,
 		instrument,
+	)
+}
+
+func coinbaseETHDates(h *apitest.Harness) []string {
+	return h.Rows(
+		`SELECT date::text FROM marketdata_price
+		WHERE source = 'coinbase' AND instrument = 'ETH' ORDER BY date`,
 	)
 }
 
