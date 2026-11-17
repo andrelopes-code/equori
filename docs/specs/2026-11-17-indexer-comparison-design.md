@@ -28,7 +28,7 @@ Non-goals:
 - Credit risk, liquidity and deposit guarantee of an issuer.
 - Scenarios above and below the survey median, and a path typed by the user (ADR 026, "Not covered").
 - Coupon-paying securities: every security pays once, at maturity.
-- Storing a comparison. The inputs live in the address of the page or in the dialog's state.
+- Storing a comparison, in the database or in the address.
 
 Anti-goals:
 
@@ -64,7 +64,7 @@ The index choices are the indexes of `GET /indexes` with `expected` true whose c
 
 **IC3 Result of a security.** `fixedIncome({ amount, annualRate, days, taxBp })` of `fixed-income-math.ts`, unchanged: gross yield, tax, net yield, net annual rate. `taxBp` is `fixedIncomeRules(region).taxBp(days)` when `taxed`, 0 otherwise; in a region without rules the investor types one tax rate for the taxed securities, as in the fixed-income calculator. With `days` below `minimumDays` the comparison shows the calculator's existing note and no result.
 
-**IC4 Break-even rate.** For a floating security `j` and the reference `ref`, the break-even rate is the constant annual rate `x` of the index of `j` at which `net_j(x) = net_ref`. `net_j` is IC3 with the annual rate of `j` under an index constant at `x`: a daily index repeats `d = (1 + x)^(1/n) − 1` over the `n` stored days of its trailing year; a monthly index repeats `(1 + x)^(1/12) − 1`. `net_j` is increasing in `x`; the root is found by bisection on [−0.5, 5] to 1e-9 with `model/solve.ts`. No root in the interval gives no break-even rate. When `ref` floats on the same index as `j`, the pair has no break-even rate. When `ref` floats on another index, `net_ref` is its result under its expected path, and the text says so.
+**IC4 Break-even rate.** For a floating security `j` and the reference `ref`, the break-even rate is the constant annual rate `x` of the index of `j` at which `net_j(x) = net_ref`. `net_j` is IC3 with the annual rate of `j` under an index constant at `x`: a daily index repeats `d = (1 + x)^(1/n) − 1` over the `n` stored days of its trailing year; a monthly index repeats `(1 + x)^(1/12) − 1`. `net_j` is increasing in `x`; the nets are compared unrounded, and the root is found on [−0.5, 5] by `bisect` of `model/solve.ts`, at its tolerance. No root in the interval gives no break-even rate. When `ref` floats on the same index as `j`, the pair has no break-even rate. When `ref` floats on another index, `net_ref` is its result under its expected path, and the text says so.
 
 **IC5 Expected average rate.** The annual rate of 100% of the index over `months` under its expected path: `expectedOverDaily` with the identity per-day function, or `expectedOverMonthly`. It is the figure the break-even rate is read against.
 
@@ -122,7 +122,7 @@ The rate is `Taxa Compra Manha` over 100, the rate the investor buys at. Rows wi
 
 ### Comparison (shared component)
 
-`IndexerComparison` in `web/src/features/calculators/indexer-comparison/`, exported by the feature `index.ts`. Props: amount, currency, and the place the inputs are kept (address or local state).
+`IndexerComparison` in `web/src/features/calculators/indexer-comparison/`, exported by the feature `index.ts`. Props: the initial amount and the currency. The inputs live in the component's state in both places; the address holds nothing, because a list of securities has no form in the flat search string of the calculators.
 
 - Inputs: the amount (`ui/money/money-input`), the maturity date, and one row per security: form, index (hidden for `fixed`), rate, the switch "Isento de imposto". "Adicionar título" up to six; a row is removed by its remove button; the first two rows cannot be removed.
 - Results table, one row per security in typed order, fixed row height, values end-aligned: the security in words ("Prefixado 8,00% a.a.", "140% do CDI", "IPCA + 6,50% a.a."), gross yield, tax, net yield, net annual rate.
@@ -134,11 +134,11 @@ The rate is `Taxa Compra Manha` over 100, the rate the investor buys at. Rows wi
 
 ### Calculators
 
-A new calculator `indexer-comparison` in `model/calculators.ts`, route beside the others, inputs in the address. Listed only when IC1 offers at least one index.
+A new calculator `indexer-comparison` in `model/calculators.ts`, route beside the others. Listed only when IC1 offers at least one index.
 
 ### Contribution plan ("This month")
 
-In the purchase table, a row that is cash-like (CN17: an account member, a group without member ideals) or whose instrument is of type `fixed_income` gains a text button "Comparar indexadores". It opens a dialog that holds `IndexerComparison` with the amount of the row and the base currency; the inputs live in the dialog's state and are dropped on close. The dialog changes nothing in the plan or the split. The button is absent when IC1 offers no index for the base currency, and while the plan is in edit mode. The row height does not change.
+In the purchase table, a row bought by its amount (CN17: an account member, a group without instruments; `byValue` of the shopping list) gains a text button "Comparar indexadores". It opens a dialog that holds `IndexerComparison` with the amount of the row and the base currency; the inputs live in the dialog's state and are dropped on close. The dialog changes nothing in the plan or the split. The button is absent when IC1 offers no index for the base currency, and while the plan is in edit mode. The row height does not change.
 
 ## Cross-cutting questions
 
