@@ -20,6 +20,10 @@ import { useT } from "@/i18n/i18n-provider";
 
 type Plan = components["schemas"]["ContributionPlan"];
 
+// The rows reserved while the plan loads: one line per group at the pitch of a group row (a 14 px
+// line and the gap of 2rem), each of its own length as the names and bars are.
+const pendingRows = ["72%", "58%", "66%", "49%", "61%"];
+
 interface IdealSectionProps {
   // Undefined while the plan loads.
   view: Plan | undefined;
@@ -62,9 +66,14 @@ export function IdealSection({ view, pending, memberName }: IdealSectionProps) {
       <SectionBody>
         <Stack gap={3}>
           {view === undefined && (
-            <Stack gap={2}>
-              {[0, 1, 2, 3].map((n) => (
-                <Skeleton key={n} shape="block" blockSize="3.25rem" />
+            <Stack gap={9}>
+              {pendingRows.map((inlineSize) => (
+                <Skeleton
+                  key={inlineSize}
+                  shape="block"
+                  inlineSize={inlineSize}
+                  blockSize={14}
+                />
               ))}
             </Stack>
           )}
