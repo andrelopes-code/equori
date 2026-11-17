@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -103,6 +103,26 @@ const portfolio = {
 };
 
 describe("GoalsPage", () => {
+  it("reserves the goal cards while the goals load", async () => {
+    await renderApp("/goals", {
+      fetch: fakeApi(
+        accountRoutes({
+          "GET /api/v1/goals": () => new Promise<Response>(() => undefined),
+          "GET /api/v1/schedules": () => json(200, { items: [] }),
+        }),
+      ),
+    });
+
+    await waitFor(() => {
+      expect(document.querySelectorAll('[data-ui="card"]')).toHaveLength(2);
+    });
+
+    const cards = document.querySelectorAll('[data-ui="card"]');
+
+    expect(cards[0]?.querySelectorAll('[data-ui="skeleton"]')).toHaveLength(5);
+    expect(cards[0]?.closest('[aria-busy="true"]')).not.toBeNull();
+  });
+
   it("shows the progress, the amounts and the due date of a goal", async () => {
     await renderApp("/goals", { fetch: api([emergency]) });
     const card = await screen.findByRole("article", { name: "Emergency fund" });

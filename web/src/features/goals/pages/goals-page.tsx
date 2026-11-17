@@ -30,6 +30,7 @@ import { GoalCard } from "@/features/goals/goal-card/goal-card";
 import { DeleteGoalDialog } from "@/features/goals/goal-dialog/delete-goal-dialog";
 import { GoalDialog } from "@/features/goals/goal-dialog/goal-dialog";
 import type { Goal } from "@/features/goals/goal-card/goal-line";
+import { GoalCardPlaceholder } from "@/features/goals/goal-card/goal-card-placeholder";
 import { GoalsFigures } from "@/features/goals/goals-figures/goals-figures";
 import styles from "@/features/goals/pages/goals.module.css";
 import { useScale } from "@/features/setup";
@@ -40,6 +41,9 @@ import { HeaderProgress } from "@/ui/navigation/header-progress";
 import { QueryError } from "@/ui/feedback/query-error";
 import { RefreshButton } from "@/ui/feedback/refresh-button";
 import { useRefresh } from "@/ui/feedback/use-refresh";
+
+// The cards reserved while the goals load: the count is unknown, so the smaller grid is drawn.
+const pendingCards = [0, 1];
 
 // The savings goals: how far each one is, what is left and what each month's saving does to
 // the month it completes.
@@ -122,7 +126,13 @@ export function GoalsPage() {
           <div className={styles.page}>
             <GoalsFigures goals={items} loading={loading} />
 
-            <div className={styles.grid}>
+            <div
+              className={styles.grid}
+              aria-busy={goals.isPending || undefined}
+            >
+              {goals.isPending &&
+                pendingCards.map((n) => <GoalCardPlaceholder key={n} />)}
+
               {scale !== null &&
                 items.map((goal) => (
                   <GoalCard
