@@ -472,6 +472,8 @@ export const catalogEn = {
   "goals.accounts": "Accounts",
   "goals.accountsHint": "Choose the accounts that hold the savings",
   "goals.countsAsSavings": "Count deposits as savings in the income split",
+  "goals.countsAsSavingsHint":
+    "Check it when this goal is your savings or investment, such as an emergency reserve. What you put into its accounts then counts in the savings bucket, not in the goals bucket.",
   "goals.problem.name": "Enter a name.",
   "goals.problem.target": "Enter an amount above zero.",
   "goals.problem.accounts": "Choose at least one account.",

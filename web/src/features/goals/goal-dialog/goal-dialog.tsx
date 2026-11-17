@@ -202,6 +202,7 @@ export function GoalDialog({
 
               <Checkbox
                 checked={countsAsSavings}
+                description={t("goals.countsAsSavingsHint")}
                 onCheckedChange={setCountsAsSavings}
               >
                 {t("goals.countsAsSavings")}

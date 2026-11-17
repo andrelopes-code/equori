@@ -481,6 +481,8 @@ export const catalogPtBR: Catalog = {
   "goals.accountsHint": "Escolha as contas que guardam a reserva",
   "goals.countsAsSavings":
     "Contar os depósitos como poupança na divisão da renda",
+  "goals.countsAsSavingsHint":
+    "Marque quando esta meta for sua poupança ou investimento, como uma reserva de emergência. O que você guardar nas contas dela passa a contar no pote de poupança, e não no pote de metas.",
   "goals.problem.name": "Informe um nome.",
   "goals.problem.target": "Informe um valor maior que zero.",
   "goals.problem.accounts": "Escolha ao menos uma conta.",

@@ -48,6 +48,9 @@ describe("GoalDialog", () => {
     await userEvent.click(
       await screen.findByRole("option", { name: /Reserva de emergência/u }),
     );
+    expect(
+      within(dialog).getByText(catalogEn["goals.countsAsSavingsHint"]),
+    ).toBeInTheDocument();
     await userEvent.click(
       within(dialog).getByRole("checkbox", {
         name: catalogEn["goals.countsAsSavings"],
