@@ -57,6 +57,7 @@ import {
 import { HelpIndexPage, HelpPage, isHelpPage } from "@/features/help";
 import { OverviewPage } from "@/features/overview";
 import {
+  CardFacePreview,
   CardPage,
   CardsPage,
   StatementPage,
@@ -575,6 +576,11 @@ const previewRoutes = import.meta.env.DEV
         getParentRoute: () => rootRoute,
         path: "/preview/account-card",
         component: AccountCardPreview,
+      }),
+      createRoute({
+        getParentRoute: () => rootRoute,
+        path: "/preview/card-face",
+        component: CardFacePreview,
       }),
     ]
   : [];

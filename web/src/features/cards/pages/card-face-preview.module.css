@@ -1,0 +1,33 @@
+@layer app {
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-6);
+    align-items: start;
+  }
+
+  /* The pixel widths below are literals of the preview: each checks the face at one width. */
+  .w96 {
+    inline-size: 96px;
+  }
+
+  .w200 {
+    inline-size: 200px;
+  }
+
+  .w220 {
+    inline-size: 220px;
+  }
+
+  .w320 {
+    inline-size: 320px;
+  }
+
+  .w380 {
+    inline-size: 380px;
+  }
+
+  .w420 {
+    inline-size: 420px;
+  }
+}

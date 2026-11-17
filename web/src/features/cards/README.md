@@ -7,6 +7,7 @@ Credit cards, their statements, installment plans and plastic cards.
 - `/cards`: `CardsPage`
 - `/cards/$accountId`: `CardPage` (search: `validateCardSearch`)
 - `/cards/$accountId/statements/$statementId`: `StatementPage` (search: `validateStatementSearch`)
+- `/preview/card-face`: `CardFacePreview` (development only)
 
 Guide topics (navigation-map.json): `credit_cards_and_statements`, `installments`, `refunds_reimbursements_and_disputes`.
 

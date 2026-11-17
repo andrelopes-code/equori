@@ -1,0 +1,21 @@
+@layer app {
+  .stack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* A slot that is not the last shows the top 28.5% of its face; the last shows it whole. */
+  .slot {
+    position: relative;
+    aspect-ratio: 1.586 / 0.285;
+  }
+
+  .slot:last-child {
+    aspect-ratio: 1.586;
+  }
+
+  .slot > :first-child {
+    position: absolute;
+    inset: 0 0 auto;
+  }
+}
