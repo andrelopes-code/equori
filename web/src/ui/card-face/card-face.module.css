@@ -1,3 +1,15 @@
+@property --mx {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 30%;
+}
+
+@property --my {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 20%;
+}
+
 @layer app {
   /* The face is a physical object on its own material: its ground, ink, chip metal and edge are
      literals of its specification, as account-card.module.css precedes. The colour arrives as
@@ -53,6 +65,10 @@
       box-shadow 200ms var(--slotted-easing-standard);
   }
 
+  .face[data-live] {
+    transition: transform 60ms linear;
+  }
+
   .face[data-ink="dark"] {
     --emboss: 0 calc(var(--u) * 0.25) 0 rgb(255 255 255 / 35%);
   }
@@ -105,16 +121,171 @@
   }
 
   .art,
-  .glare {
+  .glare,
+  .foil,
+  .foil2 {
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
   }
 
-  .art {
+  .art,
+  .foil,
+  .foil2 {
     z-index: -1;
+  }
+
+  /* The line and shape arts are vector drawings in the ink: antialiased at every size. */
+  .art {
     color: var(--card-face-ink);
+  }
+
+  .art svg {
+    position: absolute;
+    inset: 0;
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+
+  .face[data-art="aurora"] .art {
+    background:
+      radial-gradient(
+        70% 90% at 12% 8%,
+        oklch(
+            from var(--card-face-color) calc(l + 0.16) calc(c * 1.1)
+              calc(h + 38)
+          )
+          0%,
+        transparent 62%
+      ),
+      radial-gradient(
+        80% 90% at 96% 100%,
+        oklch(
+            from var(--card-face-color) calc(l - 0.06) calc(c * 1.15)
+              calc(h - 46)
+          )
+          0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        50% 60% at 78% 12%,
+        oklch(from var(--card-face-color) calc(l + 0.1) c calc(h - 22) / 0.7) 0%,
+        transparent 70%
+      );
+  }
+
+  .face[data-art="brushed"] .art {
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgb(255 255 255 / 5%) 0 1px,
+        transparent 1px 3px
+      ),
+      linear-gradient(
+        100deg,
+        transparent 20%,
+        rgb(255 255 255 / 20%) 42%,
+        rgb(255 255 255 / 4%) 52%,
+        transparent 70%
+      );
+  }
+
+  /* Holographic foil: three layers that move against each other as the light moves. The foil is
+     a spectrum cut into narrow bands by a diffraction grating that travels the other way,
+     strongest around the light (overlay: it tints the ground instead of bleaching it). The
+     foil2 is the same spectrum as light (screen) in a fine cross-hatch, so the foil shows on a
+     dark ground. The grain of the plastic is the third layer, dodged into glitter. The stops
+     move with the light (no tiling, so no seam); without a pointer the light drifts. */
+  .foil,
+  .foil2 {
+    --o: calc(var(--mx) * 0.45);
+    --g: calc(var(--mx) * -0.3);
+
+    display: none;
+  }
+
+  .foil {
+    background: repeating-linear-gradient(
+      115deg,
+      hsl(350 100% 66%) calc(var(--o) + 0%),
+      hsl(35 100% 60%) calc(var(--o) + 6%),
+      hsl(62 100% 58%) calc(var(--o) + 12%),
+      hsl(140 90% 58%) calc(var(--o) + 18%),
+      hsl(185 100% 58%) calc(var(--o) + 24%),
+      hsl(225 100% 66%) calc(var(--o) + 30%),
+      hsl(285 100% 68%) calc(var(--o) + 36%),
+      hsl(350 100% 66%) calc(var(--o) + 42%)
+    );
+    filter: saturate(1.5);
+    mask:
+      repeating-linear-gradient(
+        128deg,
+        transparent calc(var(--g) + 0%),
+        transparent calc(var(--g) + 1.5%),
+        #000 calc(var(--g) + 4%),
+        #000 calc(var(--g) + 5.5%),
+        transparent calc(var(--g) + 8%),
+        transparent calc(var(--g) + 10%)
+      ),
+      radial-gradient(
+        95% 130% at var(--mx) var(--my),
+        #000 8%,
+        rgb(0 0 0 / 45%) 75%
+      );
+    mask-composite: intersect;
+    mix-blend-mode: overlay;
+  }
+
+  .foil2 {
+    background: repeating-linear-gradient(
+      115deg,
+      hsl(350 100% 66%) calc(var(--o) * -1.5 + 0%),
+      hsl(35 100% 60%) calc(var(--o) * -1.5 + 6%),
+      hsl(62 100% 58%) calc(var(--o) * -1.5 + 12%),
+      hsl(140 90% 58%) calc(var(--o) * -1.5 + 18%),
+      hsl(185 100% 58%) calc(var(--o) * -1.5 + 24%),
+      hsl(225 100% 66%) calc(var(--o) * -1.5 + 30%),
+      hsl(285 100% 68%) calc(var(--o) * -1.5 + 36%),
+      hsl(350 100% 66%) calc(var(--o) * -1.5 + 42%)
+    );
+    mask:
+      repeating-linear-gradient(128deg, #000 0 1px, rgb(0 0 0 / 30%) 1px 3px),
+      radial-gradient(
+        75% 100% at var(--mx) var(--my),
+        #000 0%,
+        rgb(0 0 0 / 10%) 85%
+      );
+    mask-composite: intersect;
+    mix-blend-mode: screen;
+    opacity: 0.34;
+  }
+
+  .face[data-art="holo"] .foil,
+  .face[data-art="holo"] .foil2 {
+    display: block;
+  }
+
+  .face[data-art="holo"]::after {
+    mix-blend-mode: color-dodge;
+    opacity: 0.5;
+  }
+
+  .face[data-art="holo"]:not([data-live]) {
+    animation: drift 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift {
+    from {
+      --mx: 12%;
+      --my: 18%;
+    }
+
+    to {
+      --mx: 88%;
+      --my: 74%;
+    }
   }
 
   .glare {
@@ -127,6 +298,10 @@
     mix-blend-mode: soft-light;
     opacity: 0;
     transition: opacity 240ms var(--slotted-easing-standard);
+  }
+
+  .face[data-live] .glare {
+    opacity: 1;
   }
 
   /* Anatomy: four groups on one margin (--pad). Who issued it (top left), how it pays (top
@@ -301,6 +476,18 @@
     justify-content: flex-end;
   }
 
+  .mark {
+    display: block;
+  }
+
+  .mark svg,
+  .mark img {
+    display: block;
+    inline-size: auto;
+    block-size: calc(var(--u) * var(--h, 9));
+    overflow: visible;
+  }
+
   /* Vertical: the name takes its own line under the logo, the chip moves up. */
   .face[data-vertical] .top {
     flex-wrap: wrap;
@@ -356,6 +543,11 @@
       font-size: calc(var(--u) * 3.3);
     }
 
+    .mark svg,
+    .mark img {
+      block-size: calc(var(--u) * var(--h, 9) * 1.2);
+    }
+
     .chip {
       inset-block-start: 41%;
       inline-size: calc(var(--u) * 14.4);
@@ -402,7 +594,9 @@
     filter: grayscale(1) brightness(0.8);
   }
 
-  .face[data-inactive] .art {
+  .face[data-inactive] .art,
+  .face[data-inactive] .foil,
+  .face[data-inactive] .foil2 {
     display: none;
   }
 
@@ -469,6 +663,10 @@
       transition: none;
     }
 
+    .face[data-art="holo"]:not([data-live]) {
+      animation: none;
+    }
+
     .glare {
       display: none;
     }
@@ -485,8 +683,7 @@
       --card-face-ink: CanvasText;
     }
 
-    .art,
-    .glare {
+    .face[data-art] :is(.art, .foil, .foil2, .glare) {
       display: none;
     }
   }

@@ -120,4 +120,40 @@ describe("CardFace", () => {
     expect(top?.textContent).toContain("Ana Souza");
     expect(top?.textContent).not.toContain("Itaú Visa");
   });
+
+  it("draws no art and sets data-art plain for an unknown art", () => {
+    face({ art: "nope" });
+
+    const element = screen.getByRole("img", { name: /Itaú Visa/ });
+
+    expect(element.getAttribute("data-art")).toBe("plain");
+    expect(element.querySelector("[data-part='art'] svg")).toBeNull();
+  });
+
+  it.each(["waves", "orbits", "band", "contour", "dots", "carbon"])(
+    "draws one hidden svg in the art slot for the art %s",
+    (art) => {
+      face({ art });
+
+      const element = screen.getByRole("img", { name: /Itaú Visa/ });
+      const drawings = element.querySelectorAll("[data-part='art'] svg");
+
+      expect(element.getAttribute("data-art")).toBe(art);
+      expect(drawings).toHaveLength(1);
+      expect(drawings[0]?.getAttribute("aria-hidden")).toBe("true");
+    },
+  );
+
+  it("draws the mark of the network as an image named by the network", () => {
+    face({ network: "visa" });
+
+    expect(screen.getByRole("img", { name: "Visa" })).toBeDefined();
+  });
+
+  it("draws no mark for an unknown network", () => {
+    face({ network: "nope" });
+
+    expect(screen.queryByRole("img", { name: "Visa" })).toBeNull();
+    expect(screen.getAllByRole("img")).toHaveLength(1);
+  });
 });
