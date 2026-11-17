@@ -335,5 +335,6 @@ func newFeedConfig(
 		Log:          log,
 		CatalogBound: cfg.CatalogBound,
 		ProbeBound:   cfg.ProbeBound,
+		CurrentBound: cfg.CurrentBound,
 	}, nil
 }

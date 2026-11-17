@@ -26,17 +26,34 @@ func (m *Module) Convert(
 	to money.Currency,
 	date time.Time,
 ) (Conversion, error) {
+	return m.convert(ctx, q, to, date, m.leg)
+}
+
+// legFunc returns the leg from one currency to another at date and the price it used.
+type legFunc func(
+	ctx context.Context,
+	from, to money.Currency,
+	date time.Time,
+) (money.Leg, Price, bool, error)
+
+func (m *Module) convert(
+	ctx context.Context,
+	q money.Money,
+	to money.Currency,
+	date time.Time,
+	leg legFunc,
+) (Conversion, error) {
 	from := q.Currency()
 	if from == to {
 		return Conversion{Value: q}, nil
 	}
 
-	leg, p, ok, err := m.leg(ctx, from, to, date)
+	direct, p, ok, err := leg(ctx, from, to, date)
 	if err != nil {
 		return Conversion{}, err
 	}
 
-	legs, prices := []money.Leg{leg}, []Price{p}
+	legs, prices := []money.Leg{direct}, []Price{p}
 	if !ok {
 		x, found, err := m.intermediate(ctx, from, to, date)
 		if err != nil {
@@ -47,12 +64,12 @@ func (m *Module) Convert(
 			return Conversion{}, missing(from, to, date)
 		}
 
-		first, p1, ok1, err := m.leg(ctx, from, x, date)
+		first, p1, ok1, err := leg(ctx, from, x, date)
 		if err != nil {
 			return Conversion{}, err
 		}
 
-		second, p2, ok2, err := m.leg(ctx, x, to, date)
+		second, p2, ok2, err := leg(ctx, x, to, date)
 		if err != nil {
 			return Conversion{}, err
 		}

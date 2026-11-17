@@ -52,6 +52,9 @@ type Config struct {
 	// CatalogBound and ProbeBound bound one source in a catalog search and in a probe; zero keeps
 	// the defaults of marketdata.WithFeeds (A222 MQ27, MQ29).
 	CatalogBound, ProbeBound time.Duration
+	// CurrentBound bounds the wait of a read for current quotes; zero keeps the default of
+	// marketdata.WithFeeds (A248 CQ14).
+	CurrentBound time.Duration
 	// ExtraTools join the registry and the chat set; production passes none.
 	ExtraTools []tool.Group
 	// Instance configures backups and the encrypted copy; New sets Version, the keys, Clock, Admins,

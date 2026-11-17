@@ -136,6 +136,11 @@ func FeedBounds(catalog, probe time.Duration) Option {
 	return func(o *options) { o.cfg.CatalogBound, o.cfg.ProbeBound = catalog, probe }
 }
 
+// CurrentBound bounds the wait of a read for current quotes.
+func CurrentBound(d time.Duration) Option {
+	return func(o *options) { o.cfg.CurrentBound = d }
+}
+
 // IndexFeeds enables the index feeds ids against the base URLs of a test server.
 func IndexFeeds(ids []string, urls map[string]string) Option {
 	return func(o *options) {

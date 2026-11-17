@@ -33,6 +33,9 @@ type FeedConfig struct {
 	// CatalogBound and ProbeBound bound one source in a catalog search and in a probe; WithFeeds
 	// sets 3 and 5 seconds when zero (A222 MQ27, MQ29).
 	CatalogBound, ProbeBound time.Duration
+	// CurrentBound bounds the wait of a read for current quotes; WithFeeds sets 3 seconds when
+	// zero (A248 CQ14).
+	CurrentBound time.Duration
 
 	Client *http.Client
 	Clock  clock.Clock
@@ -57,6 +60,10 @@ func (m *Module) WithFeeds(cfg FeedConfig) *Module {
 
 	if cfg.ProbeBound == 0 {
 		cfg.ProbeBound = 5 * time.Second
+	}
+
+	if cfg.CurrentBound == 0 {
+		cfg.CurrentBound = 3 * time.Second
 	}
 
 	m.feeds = cfg

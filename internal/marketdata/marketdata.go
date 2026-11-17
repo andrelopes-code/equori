@@ -47,6 +47,9 @@ type Module struct {
 	stop   context.CancelFunc
 	runsMu sync.Mutex
 	runs   map[string]feedRun
+
+	// spot holds the current quotes the sources reported (A248 CQ6).
+	spot *spotCache
 }
 
 func New(pool *pgxpool.Pool) *Module {
@@ -62,6 +65,6 @@ func New(pool *pgxpool.Pool) *Module {
 
 	return &Module{
 		pool: pool, q: postgres.New(pool), calendars: calendars, businessDays: businessDayIndexes(),
-		unofficial: unofficialSources(), kick: make(chan struct{}, 1),
+		unofficial: unofficialSources(), kick: make(chan struct{}, 1), spot: newSpotCache(),
 	}
 }
