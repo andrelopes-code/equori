@@ -114,6 +114,10 @@ func (s *Service) syncItem(
 		return batches, err
 	}
 
+	if err := s.syncInvestments(ctx, agg, c, creds); err != nil {
+		return batches, err
+	}
+
 	now := s.now()
 	c.LastSyncedAt, c.LastItemUpdateAt = &now, updatedAt
 

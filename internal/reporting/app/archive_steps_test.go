@@ -766,3 +766,24 @@ func assertTables(t *testing.T, got, want []ArchiveTable) {
 		}
 	}
 }
+
+// A version 25 archive holds no investment of an aggregator; the step leaves its rows as they
+// are (migration 00113).
+func TestAddExternalInvestments(t *testing.T) {
+	t.Parallel()
+
+	v25 := []ArchiveTable{
+		{Name: "ingestion_external_account", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addExternalInvestments(v25)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertTables(t, got, v25)
+
+	if ArchiveVersion < 26 {
+		t.Fatalf("ArchiveVersion = %d, want at least 26", ArchiveVersion)
+	}
+}

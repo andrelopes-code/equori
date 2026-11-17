@@ -102,6 +102,32 @@ type IngestionExternalAccount struct {
 	HolderDigest      []byte
 }
 
+type IngestionExternalInvestment struct {
+	ID               uuid.UUID
+	BooksID          int64
+	ConnectionID     uuid.UUID
+	ExternalID       string
+	Type             string
+	Subtype          string
+	Name             string
+	Issuer           string
+	IssuerScheme     string
+	IssuerID         string
+	IndexID          string
+	PercentOfIndexBp int32
+	SpreadBp         int32
+	HasTerms         bool
+	IssuedOn         *time.Time
+	MaturesOn        *time.Time
+	Quantity         string
+	Balance          int64
+	Currency         string
+	BalanceDate      time.Time
+	BrokerageID      uuid.NullUUID
+	AccountID        uuid.NullUUID
+	Instrument       *string
+}
+
 type IngestionExternalRecord struct {
 	ID                uuid.UUID
 	BooksID           int64
@@ -143,4 +169,18 @@ type IngestionIntegration struct {
 	Name                 string
 	CredentialCiphertext []byte
 	UpdatedAt            time.Time
+}
+
+type IngestionInvestmentMovement struct {
+	ID            uuid.UUID
+	BooksID       int64
+	InvestmentID  uuid.UUID
+	ExternalID    string
+	Kind          string
+	MovedOn       time.Time
+	Quantity      string
+	Amount        int64
+	State         string
+	TransactionID uuid.NullUUID
+	ApplicationID uuid.UUID
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -409,5 +410,96 @@ func TestInstanceSettingsSchema(t *testing.T) {
 		case tt.code != "" && (!ok || pgErr.Code != tt.code):
 			t.Errorf("%s: error = %v, want code %s", tt.sql, err, tt.code)
 		}
+	}
+}
+
+// B1 (A236): a row of either investment table names its book, and a movement belongs to an
+// investment of its own book.
+func TestInvestmentSchemaInvariants(t *testing.T) {
+	t.Parallel()
+	h := apitest.New(t)
+	h.Login("other@example.com")
+	uid, otherID := h.OwnerID(), h.BooksIDOf("other@example.com")
+	ctx := t.Context()
+	exec := func(sql string, args ...any) error {
+		_, err := h.Pool.Exec(ctx, sql, args...)
+		return err
+	}
+
+	var integration, connection, investment string
+
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_integration (id, books_id, aggregator, name, credential_ciphertext) VALUES (uuidv7(), $1, 'pluggy', 'Meu Pluggy', '\x01') RETURNING id`, uid).
+		Scan(&integration); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.Pool.QueryRow(ctx, `INSERT INTO ingestion_connection (books_id, integration_id, external_id, name, provider_status) VALUES ($1, $2, 'item-1', 'Nubank', 'UPDATED') RETURNING id`, uid, integration).
+		Scan(&connection); err != nil {
+		t.Fatal(err)
+	}
+
+	inv := func(books any, ext string) error {
+		return exec(
+			`INSERT INTO ingestion_external_investment (books_id, connection_id, external_id, type, name, balance, currency, balance_date)
+			VALUES ($1, $2, $3, 'fixed_income', 'CDB', 100, 'BRL', '2026-11-10')`,
+			books,
+			connection,
+			ext,
+		)
+	}
+	if err := inv(uid, "inv-1"); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := h.Pool.QueryRow(ctx, `SELECT id FROM ingestion_external_investment WHERE external_id = 'inv-1'`).
+		Scan(&investment); err != nil {
+		t.Fatal(err)
+	}
+
+	move := func(books any, ext, kind, state string, tx any) error {
+		return exec(
+			`INSERT INTO ingestion_investment_movement (books_id, investment_id, external_id, kind, moved_on, amount, state, transaction_id)
+			VALUES ($1, $2, $3, $4, '2026-01-10', 100, $5, $6)`,
+			books,
+			investment,
+			ext,
+			kind,
+			state,
+			tx,
+		)
+	}
+	if err := move(uid, "m-1", "buy", "pending", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		err  error
+	}{
+		{"an investment without books_id", inv(nil, "inv-2")},
+		{"an investment of a connection of another book", inv(otherID, "inv-3")},
+		{"an investment external id once per connection", inv(uid, "inv-1")},
+		{"a movement without books_id", move(nil, "m-2", "buy", "pending", nil)},
+		{
+			"a movement of an investment of another book",
+			move(otherID, "m-3", "buy", "pending", nil),
+		},
+		{"a movement external id once per investment", move(uid, "m-1", "buy", "pending", nil)},
+		{"a confirmed movement names its transaction", move(uid, "m-4", "buy", "confirmed", nil)},
+		{"a pending movement names no transaction", move(uid, "m-5", "buy", "pending", uuid.New())},
+		{"a movement state is closed", move(uid, "m-6", "buy", "later", nil)},
+		{"a movement kind is a code", move(uid, "m-7", "Buy", "pending", nil)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var pgErr *pgconn.PgError
+			if !errors.As(tt.err, &pgErr) {
+				t.Fatalf("err = %v, want a database rejection", tt.err)
+			}
+		})
+	}
+
+	if err := move(uid, "m-8", "tax", "confirmed", nil); err != nil {
+		t.Fatalf("a confirmed tax holds no transaction: %v", err)
 	}
 }

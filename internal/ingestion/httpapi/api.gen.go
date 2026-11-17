@@ -134,19 +134,19 @@ func (e CsvProfileDelimiter) Valid() bool {
 
 // Defines values for ExternalAccountState.
 const (
-	Ignored ExternalAccountState = "ignored"
-	Mapped  ExternalAccountState = "mapped"
-	Pending ExternalAccountState = "pending"
+	ExternalAccountStateIgnored ExternalAccountState = "ignored"
+	ExternalAccountStateMapped  ExternalAccountState = "mapped"
+	ExternalAccountStatePending ExternalAccountState = "pending"
 )
 
 // Valid indicates whether the value is a known member of the ExternalAccountState enum.
 func (e ExternalAccountState) Valid() bool {
 	switch e {
-	case Ignored:
+	case ExternalAccountStateIgnored:
 		return true
-	case Mapped:
+	case ExternalAccountStateMapped:
 		return true
-	case Pending:
+	case ExternalAccountStatePending:
 		return true
 	default:
 		return false
@@ -282,6 +282,27 @@ func (e ImportBatchSource) Valid() bool {
 	case ImportBatchSourceCsv:
 		return true
 	case ImportBatchSourceOfx:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InvestmentMovementState.
+const (
+	InvestmentMovementStateConfirmed InvestmentMovementState = "confirmed"
+	InvestmentMovementStateDismissed InvestmentMovementState = "dismissed"
+	InvestmentMovementStatePending   InvestmentMovementState = "pending"
+)
+
+// Valid indicates whether the value is a known member of the InvestmentMovementState enum.
+func (e InvestmentMovementState) Valid() bool {
+	switch e {
+	case InvestmentMovementStateConfirmed:
+		return true
+	case InvestmentMovementStateDismissed:
+		return true
+	case InvestmentMovementStatePending:
 		return true
 	default:
 		return false
@@ -612,6 +633,34 @@ type ExternalAccount struct {
 // ExternalAccountState defines model for ExternalAccount.State.
 type ExternalAccountState string
 
+// ExternalInvestment An investment of an item with its movements (A236 FC27).
+type ExternalInvestment struct {
+	Balance     Money               `json:"balance"`
+	BalanceDate openapi_types.Date  `json:"balance_date"`
+	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
+
+	// HasTerms False when the aggregator gave no rate to read the terms from.
+	HasTerms bool               `json:"has_terms"`
+	Id       openapi_types.UUID `json:"id"`
+
+	// IndexId Empty when the rate has no index.
+	IndexId string `json:"index_id"`
+
+	// Instrument The instrument of the application, absent until it is confirmed.
+	Instrument       *string              `json:"instrument,omitempty"`
+	IssuedOn         *openapi_types.Date  `json:"issued_on,omitempty"`
+	Issuer           string               `json:"issuer"`
+	MaturesOn        *openapi_types.Date  `json:"matures_on,omitempty"`
+	Movements        []InvestmentMovement `json:"movements"`
+	Name             string               `json:"name"`
+	PercentOfIndexBp int                  `json:"percent_of_index_bp"`
+	SpreadBp         int                  `json:"spread_bp"`
+
+	// Subtype Empty when the aggregator's subtype has no equivalent.
+	Subtype string `json:"subtype"`
+	Type    string `json:"type"`
+}
+
 // ExternalRecord defines model for ExternalRecord.
 type ExternalRecord struct {
 	AccountId openapi_types.UUID `json:"account_id"`
@@ -770,6 +819,31 @@ type IntegrationList struct {
 	// NextCursor Absent on the last page.
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
+
+// InvestmentList defines model for InvestmentList.
+type InvestmentList struct {
+	Investments []ExternalInvestment `json:"investments"`
+}
+
+// InvestmentMovement defines model for InvestmentMovement.
+type InvestmentMovement struct {
+	Amount       Money              `json:"amount"`
+	Date         openapi_types.Date `json:"date"`
+	Id           openapi_types.UUID `json:"id"`
+	InvestmentId openapi_types.UUID `json:"investment_id"`
+
+	// Kind buy, sell, income, tax, amortization or transfer.
+	Kind string `json:"kind"`
+
+	// Proposal application, contribution, sale, income, tax_of_sale or none.
+	Proposal      string                  `json:"proposal"`
+	State         InvestmentMovementState `json:"state"`
+	Taxes         *Money                  `json:"taxes,omitempty"`
+	TransactionId *openapi_types.UUID     `json:"transaction_id,omitempty"`
+}
+
+// InvestmentMovementState defines model for InvestmentMovement.State.
+type InvestmentMovementState string
 
 // Money defines model for Money.
 type Money struct {

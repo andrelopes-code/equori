@@ -234,6 +234,22 @@ type Repository interface {
 		key []byte,
 		planID uuid.UUID,
 	) error
+	// StoreInvestments stores, in one database transaction, the investments an aggregator
+	// reports for the connection: a known investment gets the new source columns and keeps its
+	// link to the ledger, a known movement stays as stored (A236 FC28).
+	StoreInvestments(
+		ctx context.Context,
+		booksID int64,
+		connectionID uuid.UUID,
+		invs []domain.ExternalInvestment,
+	) error
+	// ConnectionInvestments lists the connection's investments by name with their movements by
+	// date then external id.
+	ConnectionInvestments(
+		ctx context.Context,
+		booksID int64,
+		connectionID uuid.UUID,
+	) ([]domain.StoredInvestment, error)
 	// AllConnections lists every book's connections, for the scheduler.
 	AllConnections(ctx context.Context) ([]ConnectionRef, error)
 }

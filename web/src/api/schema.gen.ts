@@ -1587,6 +1587,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/connections/{id}/investments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The investments the item reports, with the movements to review (A236 FC28).
+         * @description Ordered by name. Each movement lists, in proposal, what confirming it would do. A sync
+         *     stores the investments; an aggregator that does not read investments leaves the list empty.
+         */
+        get: operations["listConnectionInvestments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/connections/{id}/accounts/{external_account_id}": {
         parameters: {
             query?: never;
@@ -5321,6 +5342,55 @@ export interface components {
         SyncResult: {
             connection: components["schemas"]["Connection"];
             batches: components["schemas"]["ImportBatch"][];
+        };
+        InvestmentList: {
+            investments: components["schemas"]["ExternalInvestment"][];
+        };
+        /** @description An investment of an item with its movements (A236 FC27). */
+        ExternalInvestment: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            type: string;
+            /** @description Empty when the aggregator's subtype has no equivalent. */
+            subtype: string;
+            issuer: string;
+            /** @description Empty when the rate has no index. */
+            index_id: string;
+            percent_of_index_bp: number;
+            spread_bp: number;
+            /** @description False when the aggregator gave no rate to read the terms from. */
+            has_terms: boolean;
+            /** Format: date */
+            issued_on?: string;
+            /** Format: date */
+            matures_on?: string;
+            balance: components["schemas"]["Money"];
+            /** Format: date */
+            balance_date: string;
+            /** @description The instrument of the application, absent until it is confirmed. */
+            instrument?: string;
+            /** Format: uuid */
+            brokerage_id?: string;
+            movements: components["schemas"]["InvestmentMovement"][];
+        };
+        InvestmentMovement: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            investment_id: string;
+            /** @description buy, sell, income, tax, amortization or transfer. */
+            kind: string;
+            /** Format: date */
+            date: string;
+            amount: components["schemas"]["Money"];
+            /** @enum {string} */
+            state: "pending" | "confirmed" | "dismissed";
+            /** @description application, contribution, sale, income, tax_of_sale or none. */
+            proposal: string;
+            taxes?: components["schemas"]["Money"];
+            /** Format: uuid */
+            transaction_id?: string;
         };
         SyncRunList: {
             items: components["schemas"]["SyncRun"][];
@@ -10848,6 +10918,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SyncRunList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    listConnectionInvestments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestmentList"];
                 };
             };
             401: components["responses"]["Problem"];

@@ -84,6 +84,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.syncConnection))
 	mux.HandleFunc("GET "+BaseURL+"/connections/{id}/syncs",
 		httpserver.Handle(s.errs, http.StatusOK, s.listConnectionSyncs))
+	mux.HandleFunc("GET "+BaseURL+"/connections/{id}/investments",
+		httpserver.Handle(s.errs, http.StatusOK, s.listConnectionInvestments))
 	mux.HandleFunc("PUT "+BaseURL+"/connections/{id}/accounts/{external_account_id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.mapExternalAccount))
 }

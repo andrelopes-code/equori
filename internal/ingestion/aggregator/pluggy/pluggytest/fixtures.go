@@ -219,10 +219,19 @@ func (s *Server) RemoveTransaction(accountID, id string) {
 	)
 }
 
-// AddInvestment adds an investment to an item.
+// AddInvestment adds an investment to an item, or replaces the one with its id.
 func (s *Server) AddInvestment(itemID string, inv client.Investment) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	list := s.investments[itemID]
+	if i := slices.IndexFunc(
+		list,
+		func(x client.Investment) bool { return x.ID == inv.ID },
+	); i >= 0 {
+		list[i] = inv
+		return
+	}
 
 	s.investments[itemID] = append(s.investments[itemID], inv)
 }

@@ -651,6 +651,28 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /connections/{id}/investments:
+    get:
+      tags: [ingestion]
+      operationId: listConnectionInvestments
+      x-book-role: read
+      summary: The investments the item reports, with the movements to review (A236 FC28).
+      description: |
+        Ordered by name. Each movement lists, in proposal, what confirming it would do. A sync
+        stores the investments; an aggregator that does not read investments leaves the list empty.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
   /connections/{id}/accounts/{external_account_id}:
     put:
       tags: [ingestion]
@@ -848,6 +870,95 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/ImportBatch"
+  InvestmentList:
+    type: object
+    required: [investments]
+    properties:
+      investments:
+        type: array
+        items:
+          $ref: "#/components/schemas/ExternalInvestment"
+  ExternalInvestment:
+    type: object
+    description: An investment of an item with its movements (A236 FC27).
+    required:
+      [id, name, type, subtype, issuer, index_id, percent_of_index_bp, spread_bp, has_terms, balance, balance_date, movements]
+    properties:
+      id:
+        type: string
+        format: uuid
+      name:
+        type: string
+      type:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      subtype:
+        type: string
+        description: Empty when the aggregator's subtype has no equivalent.
+      issuer:
+        type: string
+      index_id:
+        type: string
+        description: Empty when the rate has no index.
+      percent_of_index_bp:
+        type: integer
+      spread_bp:
+        type: integer
+      has_terms:
+        type: boolean
+        description: False when the aggregator gave no rate to read the terms from.
+      issued_on:
+        type: string
+        format: date
+      matures_on:
+        type: string
+        format: date
+      balance:
+        $ref: "#/components/schemas/Money"
+      balance_date:
+        type: string
+        format: date
+      instrument:
+        type: string
+        description: The instrument of the application, absent until it is confirmed.
+      brokerage_id:
+        type: string
+        format: uuid
+      movements:
+        type: array
+        items:
+          $ref: "#/components/schemas/InvestmentMovement"
+  InvestmentMovement:
+    type: object
+    required: [id, investment_id, kind, date, amount, state, proposal]
+    properties:
+      id:
+        type: string
+        format: uuid
+      investment_id:
+        type: string
+        format: uuid
+      kind:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: buy, sell, income, tax, amortization or transfer.
+      date:
+        type: string
+        format: date
+      amount:
+        $ref: "#/components/schemas/Money"
+      state:
+        type: string
+        enum: [pending, confirmed, dismissed]
+      proposal:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: application, contribution, sale, income, tax_of_sale or none.
+      taxes:
+        $ref: "#/components/schemas/Money"
+      transaction_id:
+        type: string
+        format: uuid
   SyncRunList:
     type: object
     required: [items]
