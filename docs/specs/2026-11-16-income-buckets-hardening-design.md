@@ -1,6 +1,6 @@
 # Income buckets hardening: visible leftovers, visible gaps, one-category moves
 
-Amends `docs/specs/2026-11-15-income-buckets-design.md` (A229 to A234). Commit `bcf11e7b` changed A233 so that the bucket that takes savings counts transfers into savings accounts. This spec closes the gaps that change left open.
+Amends `docs/specs/2026-11-15-income-buckets-design.md` (A229 to A234). The method of a month is the version of A240 (`docs/specs/2026-11-17-income-split-versions-design.md`, section 9). Commit `bcf11e7b` changed A233 so that the bucket that takes savings counts transfers into savings accounts. This spec closes the gaps that change left open.
 
 ## 1. Intent
 
@@ -39,8 +39,9 @@ Anti-goals:
 `unallocated(M) = received(M) - spent(M) - goals(M) - savings(M)`.
 
 - `received(M)` and `spent(M)`: the sums of A233, `spent` over every expense category, own postings.
-- `goals(M)`: the amount of A234, subtracted only when a bucket takes goals.
-- `savings(M)`: the amount of A233, subtracted only when a bucket takes savings.
+- `goals(M)`: the amount of A234, subtracted only when the method of M (A240) holds a bucket that takes goals.
+- `savings(M)`: the amount of A233, subtracted only when the method of M holds a bucket that takes savings.
+- A month without a split subtracts neither.
 - The value is an integer of minor units of the base currency and can be negative.
 
 The real amounts of the buckets, `outside(M)` and `unallocated(M)` sum to `received(M)`. A positive value is income that stayed in accounts outside the savings and goal accounts. A negative value is spending paid from balances: a goal withdrawal counts in `goals(M)` with its sign and does not enter `unallocated(M)` a second time.
@@ -51,7 +52,7 @@ The history of A233 carries `unallocated` in each month. The plan of a month doe
 
 ### A236 Categories outside the method
 
-A category is **outside** when it is an open expense category with no `system_role`, and neither it nor any ancestor sits in a bucket. The plan carries the list when the book has a method: `outside_category_ids`, in category name order, empty when none is outside. A book without a method has no list.
+A category is **outside** when it is an open expense category with no `system_role`, and neither it nor any ancestor sits in a bucket of the method of the plan's month (A240). The plan of M carries the list when M has a split: `outside_category_ids`, in category name order, empty when none is outside. A month without a split has no list.
 
 The category with `system_role` `uncategorized_expense` is not listed. Its spending already shows in `outside_spent`. A closed category is not listed.
 
@@ -61,14 +62,13 @@ The category with `system_role` `uncategorized_expense` is not listed. Its spend
 
 `manage_budget_or_goal` gains the action `move_category`, with inputs `category_id` and `bucket`.
 
-- `bucket` is a bucket name of the stored method, or the text `none`.
+- `bucket` is a bucket name of the method of the current month (A240), ignoring case, or the text `none`.
 - A name places the category in that bucket and removes it from any other.
 - `none` removes the placement. The category then follows its nearest ancestor in a bucket, or is outside.
-- The action reads the stored method, applies the one change and saves through the service operation of `saveBudgetBuckets`. Every validation of A229 applies.
+- The action reads the method of the current month, applies the one change and saves through the service operation of `saveBudgetBuckets` with `from` equal to the current month (A240, implicit writes). Each bucket continues the bucket of the same name, as `save_buckets` does (A241). Every validation of A229 applies.
 - An unknown bucket name is a 422 on `bucket`. A category that is not an expense category of the book is a 422 on `category_id`.
 - The preview shows the bucket before and after for the category, and the count of categories outside the split after the change.
-- A method that does not exist makes the action a 422 on `bucket`: the action does not create a method.
-- The read and the save are not one transaction. A concurrent save of the method between them is overwritten. `save_buckets` has the same property.
+- A current month without a split makes the action a 422 on `bucket`: the action does not create a method.
 
 ### A238 Brokerage rules under test
 
@@ -82,13 +82,13 @@ A233 and A234 stay as written. The rule of the set of savings accounts applies t
   - `BudgetPlan` adds `outside_category_ids: array of ID`, present with `buckets`.
   - The contract validator rejects a `description` beside a `$ref` (error "extra sibling fields: [description]", verified on 2026-11-16). A property that is a `$ref` carries its description in the parent schema.
   - The description of `getBudgetBucketHistory` states the sum of A235.
-- **Tools.** `get_budgets_and_goals` kind `split` adds `unallocated` to each month. Kind `plan` adds `outside_categories`, a list of `{ id, name }`. `manage_budget_or_goal` adds the action `move_category`. `internal/server/testdata/tools.json` is regenerated by the update path the plan finds.
+- **Tools.** `get_budgets_and_goals` kind `split` adds `unallocated` to each month. Kind `plan` adds `outside_categories`, a list of `{ id, name }`. `manage_budget_or_goal` adds the action `move_category`. `internal/server/testdata/tools.json` is regenerated by the update path the plan finds. The tool catalog stays under its ceiling of 72,000 bytes (A247).
 - **Code.**
   - `internal/planning/app/bucket_history.go`: `BucketMonth.Unallocated`, set in `bucketMonth` and reduced in `addInflows` only for a bucket that takes the amount.
   - `internal/planning/app/plan_types.go` and `buckets.go`: `Plan.OutsideCategories`.
   - `internal/planning/httpapi/buckets.go`: both fields in the views.
   - `internal/planning/toolapi/buckets.go`: both fields and the action.
-- **Guide.** `internal/assistant/guide/articles/budgets.md` states the unallocated figure, the notice and the action.
+- **Guide.** `internal/assistant/guide/articles/income_split.md` states the unallocated figure, the notice and the action.
 
 ## 5. Interface
 
@@ -126,7 +126,7 @@ Planning is desktop-only (A233 spec, section 6, S2).
 - D5: Does not apply: the diagnostic file is unchanged.
 - S1: `getBudgetBucketHistory` and `getBudgetPlan` keep their tool entries in `internal/server/tool_exposure_test.go`. `move_category` adds no operation. No new `Problem.code`; the 422 fields of A237 use the existing validation code.
 - S2: Does not apply: Planning is desktop-only (ADR 027).
-- S3: The guide article `budgets.md` changes in the commit of each slice that changes what a screen shows or a tool does.
+- S3: The guide article `income_split.md` (at most 6,000 bytes, A245) changes in the commit of each slice that changes what a screen shows or a tool does.
 - S4: The assistant reads `unallocated` and `outside_categories` through `get_budgets_and_goals`, and moves a category through `manage_budget_or_goal`.
 - X1: S530 to S536, section 8.
 - X2: Does not apply: no regional value; the base currency rule is the one S448 and S446 already test.
@@ -148,7 +148,7 @@ The plan reads these files before it writes a task:
 - `internal/planning/{httpapi,toolapi}/buckets.go` and `internal/planning/toolapi` tests of the plan tool
 - `internal/planning/{buckets_test,bucket_tool_test}.go` for the fixture and the `bucketHistoryView` type
 - `internal/server/{tool_exposure_test.go,testdata/tools.json}` for the regeneration path
-- `web/src/features/planning/income-split/{bucket-track,bucket-history,plan-buckets,income-split-action,bucket-dialog,bucket-checklist}.tsx` and their tests
+- `web/src/features/planning/income-split/{bucket-track,plan-buckets,income-split-action,bucket-dialog,bucket-checklist}.tsx`, `bucket-history.ts`, the subfolders `versions/` and `entries/`, and their tests
 - `web/src/i18n/catalog-budget-plan.{en,pt-BR}.ts`
 - `internal/apitest` for the shape of a brokerage trade and a unit account
 
@@ -157,8 +157,8 @@ The plan reads these files before it writes a task:
 - S530. October: 5,000.00 received, 3,000.00 on Needs, 800.00 moved from checking into a savings account. `unallocated` is 1,200.00. November: nothing received, 200.00 withdrawn from the savings account into checking. `unallocated` is 200.00.
 - S531. In every month of a history with a savings bucket, a goals bucket and spending outside the split, the real amounts, `outside` and `unallocated` sum to `received`. A month with a goal withdrawal of 1,582.00, 4,249.00 spent and 2,880.00 received has `unallocated` 213.00.
 - S532. A new root expense category with no bucket appears in `outside_category_ids`. After a bucket takes it, the list no longer holds it. A subcategory of a placed root is not listed.
-- S533. A closed category and the `uncategorized_expense` category are not listed. A book without a method has no `outside_category_ids`. A reader can read the field.
-- S534. `move_category` places a category in the named bucket and removes it from the previous one. A subcategory placement overrides its root. `none` returns the category to its ancestor's bucket. An unknown bucket name and an income category are each a 422 and store nothing. A book without a method gives a 422 on `bucket`. A read token has no such action.
+- S533. A closed category and the `uncategorized_expense` category are not listed. A month without a split has no `outside_category_ids`. A category placed from 2026-11 on is outside in the plan of 2026-10. A reader can read the field.
+- S534. `move_category` places a category in the named bucket and removes it from the previous one. A subcategory placement overrides its root. `none` returns the category to its ancestor's bucket. An unknown bucket name and an income category are each a 422 and store nothing. A current month without a split gives a 422 on `bucket`. The move stores the version of the current month and leaves the earlier version as it was. A read token has no such action.
 - S535. A deposit of 1,000.00 from checking into the `Caixa` sub-account of a brokerage institution counts 1,000.00 in the savings bucket. A withdrawal of 300.00 back to checking counts -300.00. A move between `Caixa` and the institution account counts 0.
 - S536. A purchase of units of an instrument in a non-base unit account, paid from `Caixa`, counts 0. The same purchase paid from checking counts its cost in base currency.
 - Web: the Track line is drawn for a positive and a negative value and is absent at zero. The Plan line is drawn for one and for several categories and is absent at zero. The action opens the dialog with the outside categories first.
