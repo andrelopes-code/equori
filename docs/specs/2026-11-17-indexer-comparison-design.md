@@ -1,7 +1,8 @@
 # Indexer comparison
 
 - Date: 2026-11-17
-- Status: draft, awaiting the owner's approval
+- Status: approved on 2026-11-17 (the owner delegated the approval to the planning session)
+- Issue: #55
 - Amends: ADR 025 (a fifth kind of feed, `curve`), ADR 026 (expectations of a monthly index), `docs/specs/2026-11-12-contribution-plan-design.md` ("This month")
 
 ## Intent
@@ -88,7 +89,7 @@ The index choices are the indexes of `GET /indexes` with `expected` true whose c
 
 **IC10 Curve source.** A new extension point of `marketdata` (ADR 016): interface `Source` in `internal/marketdata/curve/curve.go` (`ID`, `Fetch` returning the curves it serves), one package per implementation under `internal/marketdata/curve/<id>/`, entries in `curveEntries` in `internal/marketdata/curves.go`. A curve source is a feed of ADR 025 with `kind` `curve`, enabled on the settings screen, suggested, ticked, refreshed and marked stale as the others; `last` is its base date.
 
-**IC11 `br_tesouro`.** It reads the file of the price source `tesouro_direto` (`PrecoTaxaTesouroDireto.csv`, same address setting) and keeps the rows of the latest `Data Base`:
+**IC11 `br_tesouro`.** It reads the file the price source `tesouro_direto` reads (`PrecoTaxaTesouroDireto.csv`; its own address setting `EQUORI_FEED_BR_TESOURO_URL` with the same default) and keeps the rows of the latest `Data Base`:
 
 | Curve | Rows (`Tipo Titulo`) | Kind | Index |
 |---|---|---|---|
@@ -97,7 +98,7 @@ The index choices are the indexes of `GET /indexes` with `expected` true whose c
 
 The rate is `Taxa Compra Manha` over 100, the rate the investor buys at. Rows with coupons (`com Juros Semestrais`), `Tesouro Selic`, `Educa+` and `Renda+` are not read: their rate is not the rate of one payment at maturity. A row with a blank or zero rate is skipped. Checked on 2026-11-17: the header holds `Taxa Compra Manha` and `Data Base` 16/11/2026. Currency `BRL`; period a business day of `br_banking`; lag as `tesouro_direto`. `SuggestedFeeds("BR")` adds it.
 
-**IC12 Storage and API.** Table `marketdata_curve_point (curve_id, maturity, rate, base_date, source)`, primary key `(curve_id, maturity)`, no `books_id`: market data shared by the instance, as `marketdata_index_expectation` (E3). A fetch replaces every point of the curve. Table `marketdata_curve (curve_id, kind, index_id, currency, source)` holds the curve. `GET /curves` (`listCurves`) returns each stored curve of an enabled source with its kind, index, currency, base date, source and points, oldest maturity first; an empty list without curves.
+**IC12 Storage and API.** Table `marketdata_curve_point (curve_id, maturity, rate, base_date, source)`, primary key `(curve_id, maturity)`, no `books_id`: market data shared by the instance, as `marketdata_index_expectation` (E3). A fetch replaces every point of the curve. The kind, index and currency of a curve are stated by its source in code, as an expectation source states its index; no second table. `GET /curves` (`listCurves`) returns each stored curve of an enabled source with its kind, index, currency, base date, source and points, oldest maturity first; an empty list without curves.
 
 **IC13 Market rate for the horizon.** The rate of a curve at the maturity of IC1: linear in the rate by calendar days between the two points that surround it; the rate of a point when the dates are equal. A maturity before the first point or after the last has no market rate: no extrapolation.
 
@@ -153,11 +154,11 @@ In the purchase table, a row that is cash-like (CN17: an account member, a group
 - C4: The currency is the book's base currency in the plan, the calculator's currency field elsewhere; amounts through `useMoneyFormat()`.
 - T1: The purchase date is today from the book's time zone; the maturity is a calendar date.
 - T2: `days` are calendar days (calculators design §5). The curve source's period uses `br_banking` from the calendar registry.
-- B1: Does not apply: the two tables are instance market data without `books_id`, as E3; the schema test of shared tables lists them.
+- B1: Does not apply: the table is instance market data without `books_id`, as E3.
 - B2: `listCurves` needs `read`; an HTTP test covers a member, and a request without a session.
 - B3: No setting beyond the feed switches of ADR 025.
-- D1: Both tables are classified as left out of the export: refetched market data, as `marketdata_index_expectation`.
-- D2: One goose migration for the two tables.
+- D1: The table is classified as left out of the export: refetched market data, as `marketdata_index_expectation`.
+- D2: One goose migration for the table.
 - D3: Does not apply: no recorded fact changes.
 - D4: Does not apply: public market data, replaced whole on each fetch.
 - D5: Does not apply: the diagnostic file gains no field.
