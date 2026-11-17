@@ -441,6 +441,25 @@ describe("overview page", () => {
       expect(region).toHaveTextContent("Salary");
     });
 
+    it("groups the overdue occurrences, writes each deadline and totals the window", async () => {
+      await renderApp("/", { fetch: full() });
+      const region = await screen.findByRole("article", { name: "Upcoming" });
+      const late = await within(region).findByRole("list", { name: "Overdue" });
+      const next = within(region).getByRole("list", { name: "Next 7 days" });
+
+      // Today is 2026-10-17: the rents of 2026-09-05 and 2026-10-05 are 42 and 12 days late.
+      expect(within(late).getAllByRole("listitem")).toHaveLength(2);
+      expect(late).toHaveTextContent("overdue 42 days ago");
+      expect(late).toHaveTextContent("overdue 12 days ago");
+      expect(region).toHaveTextContent("Overdue · 2");
+      expect(region).toHaveTextContent("until 10/24");
+      expect(within(next).getAllByRole("listitem")).toHaveLength(1);
+      expect(next).toHaveTextContent("in 3 days · income");
+      expect(next).toHaveTextContent("+R$");
+      expect(region).toHaveTextContent(/Leaving\s*R\$\s*4,200\.00/);
+      expect(region).toHaveTextContent(/Entering\s*R\$\s*5,000\.00/);
+    });
+
     it("lists the open and the unpaid closed statements with amount and due date", async () => {
       await renderApp("/", { fetch: full() });
       const region = await screen.findByRole("article", { name: "Cards" });

@@ -367,6 +367,16 @@ export function formatWeekdayDayMonth(iso: string, locale: string): string {
   return `${weekday}, ${formatDayMonth(iso, locale)}`;
 }
 
+// "05": the day of the month in two digits, the column of an agenda.
+export function formatDayOfMonth(iso: string, locale: string): string {
+  return dateParts(iso, locale, { day: "2-digit" }).day ?? "";
+}
+
+// "qua" / "Wed".
+export function formatWeekdayShort(iso: string, locale: string): string {
+  return dateParts(iso, locale, { weekday: "short" }).weekday ?? "";
+}
+
 function capitalize(text: string): string {
   return text.charAt(0).toLocaleUpperCase() + text.slice(1);
 }

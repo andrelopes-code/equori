@@ -1,73 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
-
-import { useApi } from "@/api/api-context";
 import {
   OverviewBlock,
   type Placement,
 } from "@/features/overview/overview-block/overview-block";
-import { OverviewRows } from "@/features/overview/overview-block/overview-rows";
-import {
-  upcomingDays,
-  upcomingWindow,
-} from "@/features/overview/upcoming/upcoming";
-import { useBase } from "@/features/overview/model/use-base";
-import {
-  OccurrenceActions,
-  occurrencesQuery,
-  schedulesQuery,
-} from "@/features/planning";
-import { formatDate, shiftDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
-import { useToday } from "@/i18n/today";
-import { MoneyFigure } from "@/ui/money/money-figure";
+import { UpcomingGroup } from "@/features/overview/upcoming/upcoming-group";
+import { UpcomingTotals } from "@/features/overview/upcoming/upcoming-totals";
+import styles from "@/features/overview/upcoming/upcoming.module.css";
+import { useUpcoming } from "@/features/overview/upcoming/use-upcoming";
+import { useT } from "@/i18n/i18n-provider";
 
-// The read reaches 180 days back for overdue occurrences; the contract allows 366 days.
-const lookBackDays = 180;
-
+// What is overdue, what falls in the next 7 days and what the window adds up to
+// (docs/specs/2026-11-17-overview-upcoming-design.md).
 export function UpcomingBlock(placement: Placement) {
   const t = useT();
-  const api = useApi();
-  const [locale] = useAppLocale();
-  const today = useToday();
-  const { scale } = useBase();
-  const occurrences = useQuery(
-    occurrencesQuery(
-      api,
-      shiftDate(today, -lookBackDays),
-      shiftDate(today, upcomingDays),
-    ),
-  );
-  const schedules = useQuery(schedulesQuery(api));
-  const error = occurrences.error ?? schedules.error;
-  const loading =
-    occurrences.data === undefined ||
-    schedules.data === undefined ||
-    scale === null;
-  const rows =
-    loading || error !== null
-      ? []
-      : upcomingWindow(occurrences.data, today).map((occurrence) => {
-          const name =
-            schedules.data.find((s) => s.id === occurrence.schedule_id)
-              ?.description ?? t("ledger.untitled");
-          const date = formatDate(occurrence.expected_on, locale);
-          return {
-            key: occurrence.id,
-            title: name,
-            line:
-              occurrence.state === "overdue"
-                ? t("overview.upcoming.overdue", { date })
-                : date,
-            end: (
-              <MoneyFigure
-                amount={occurrence.expected_amount.amount}
-                currency={occurrence.expected_amount.currency}
-                scale={scale(occurrence.expected_amount.currency)}
-              />
-            ),
-            actions: <OccurrenceActions occurrence={occurrence} name={name} />,
-          };
-        });
+  const { view, base, scale, error, retry } = useUpcoming();
+
+  const loaded = view !== undefined && base !== undefined && scale !== null;
+  const rows = loaded ? view.late.length + view.next.length : 0;
+
   return (
     <OverviewBlock
       placement={placement}
@@ -75,15 +24,39 @@ export function UpcomingBlock(placement: Placement) {
         label: t("overview.upcoming.open"),
         options: { to: "/planning" },
       }}
-      loading={loading && error === null}
+      loading={!loaded && error === null}
       error={error}
-      onRetry={() => {
-        if (occurrences.isError) void occurrences.refetch();
-        if (schedules.isError) void schedules.refetch();
-      }}
-      empty={rows.length === 0 ? t("overview.upcoming.empty") : undefined}
+      onRetry={retry}
+      empty={loaded && rows === 0 ? t("overview.upcoming.empty") : undefined}
+      footer={
+        loaded && rows > 0 ? (
+          <UpcomingTotals
+            leaving={view.leaving}
+            entering={view.entering}
+            scale={scale}
+          />
+        ) : undefined
+      }
     >
-      <OverviewRows label={t("overview.upcoming.title")} rows={rows} />
+      {loaded && (
+        <div className={styles.agenda} data-part="agenda">
+          <UpcomingGroup
+            kind="late"
+            entries={view.late}
+            sum={{ amount: view.lateSum, currency: base }}
+            until={view.until}
+            scale={scale}
+          />
+
+          <UpcomingGroup
+            kind="next"
+            entries={view.next}
+            sum={{ amount: view.lateSum, currency: base }}
+            until={view.until}
+            scale={scale}
+          />
+        </div>
+      )}
     </OverviewBlock>
   );
 }

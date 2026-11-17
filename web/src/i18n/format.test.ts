@@ -4,7 +4,9 @@ import {
   formatDate,
   formatDayHeader,
   formatDayMonth,
+  formatDayOfMonth,
   formatWeekdayDayMonth,
+  formatWeekdayShort,
   firstDayOfWeek,
   weekdayLabels,
   formatDayMonthLong,
@@ -217,6 +219,15 @@ describe("short dates", () => {
     ["2026-09-30", "pt-BR", "qua, 30 set"],
   ] as const)("day header of %s in %s", (iso, locale, want) => {
     expect(formatDayHeader(iso, "2026-10-16", locale, words)).toBe(want);
+  });
+
+  it.each([
+    ["2026-11-05", "pt-BR", "05", "qui"],
+    ["2026-11-18", "pt-BR", "18", "qua"],
+    ["2026-11-05", "en", "05", "Thu"],
+  ] as const)("day and weekday of %s in %s", (iso, locale, day, weekday) => {
+    expect(formatDayOfMonth(iso, locale)).toBe(day);
+    expect(formatWeekdayShort(iso, locale)).toBe(weekday);
   });
 
   it.each([

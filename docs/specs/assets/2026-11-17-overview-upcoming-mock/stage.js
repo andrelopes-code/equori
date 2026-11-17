@@ -62,7 +62,11 @@
 
     // A template without data-concept serves every concept. A template with data-width
     // ("phone" or "desktop") serves one width, for an app that changes its markup by width.
-    const form = `[data-width="${innerWidth <= mock.widths.phone ? "phone" : "desktop"}"]`;
+    // The form follows the nearest measured width, as the container and the root size do: a real
+    // phone is 393, 412 or 430 px wide, and the desktop form at the phone container is wrong.
+    const { phone, desktop } = mock.widths;
+    const narrow = Math.abs(innerWidth - phone) <= Math.abs(innerWidth - desktop);
+    const form = `[data-width="${narrow ? "phone" : "desktop"}"]`;
     const pick = (attr) =>
       source.querySelector(`template[data-concept="${concept}"]${attr}${form}`) ??
       source.querySelector(`template[data-concept="${concept}"]${attr}:not([data-width])`) ??
