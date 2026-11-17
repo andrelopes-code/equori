@@ -49,6 +49,9 @@ export function NetworkField({
               onChange(network);
             }}
           >
+            {network === "" && (
+              <span className={styles.none} aria-hidden="true" />
+            )}
             {network !== "" && (
               <span className={styles.mark}>
                 <CardFaceNetwork network={network} />

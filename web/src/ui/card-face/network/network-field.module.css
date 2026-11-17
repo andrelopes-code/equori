@@ -22,4 +22,13 @@
     background: #17171a;
     color: #fff;
   }
+
+  /* The option without a network: an empty outline at the size of a mark's plate. */
+  .none {
+    box-sizing: border-box;
+    inline-size: 46px;
+    block-size: 31px;
+    border: var(--slotted-border-width-thin) dashed var(--slotted-border-strong);
+    border-radius: 6px;
+  }
 }

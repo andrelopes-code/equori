@@ -85,8 +85,22 @@
     text-overflow: ellipsis;
   }
 
+  /* The selected card's title with its actions at the end of the same row. */
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    min-inline-size: 0;
+  }
+
+  .heading {
+    min-inline-size: 0;
+  }
+
   .actions {
     display: flex;
+    flex: none;
     gap: var(--slotted-space-4);
   }
 

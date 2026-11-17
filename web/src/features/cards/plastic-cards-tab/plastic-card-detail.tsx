@@ -32,14 +32,18 @@ export function PlasticCardDetail({
 
   return (
     <div className={styles.detail}>
-      <div>
-        <Text className={styles.eyebrow}>
-          {t("card.selected", { n: position, count })}
-        </Text>
+      <div className={styles.head}>
+        <div className={styles.heading}>
+          <Text className={styles.eyebrow}>
+            {t("card.selected", { n: position, count })}
+          </Text>
 
-        <Text size="xl" weight="semibold" className={styles.title}>
-          {t("card.ending", { digits: card.last_four })}
-        </Text>
+          <Text size="xl" weight="semibold" className={styles.title}>
+            {t("card.ending", { digits: card.last_four })}
+          </Text>
+        </div>
+
+        <div className={styles.actions}>{actions}</div>
       </div>
 
       <div className={styles.rows}>
@@ -84,8 +88,6 @@ export function PlasticCardDetail({
           {toggle}
         </div>
       </div>
-
-      <div className={styles.actions}>{actions}</div>
     </div>
   );
 }
