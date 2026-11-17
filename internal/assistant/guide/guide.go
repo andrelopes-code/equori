@@ -27,6 +27,7 @@ var topics = []string{
 	"reconciliation",
 	"schedules_and_occurrences",
 	"budgets",
+	"income_split",
 	"goals",
 	"investments",
 	"investment_operations",

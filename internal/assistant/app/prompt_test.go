@@ -98,7 +98,12 @@ func TestInstructions(t *testing.T) {
 		}
 	}
 
-	for _, want := range []string{"get_help", "relative to the address of the MCP endpoint", "Amounts in tool inputs are decimal strings"} {
+	for _, want := range []string{
+		"get_help",
+		"relative to the address of the MCP endpoint",
+		"Amounts in tool inputs are decimal strings",
+		"Never invent a step, a screen or a setting.",
+	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("instructions lack %q", want)
 		}

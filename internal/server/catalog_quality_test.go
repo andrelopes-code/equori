@@ -12,10 +12,11 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-// Budgets of spec 7.4: a declaration sent to the model and the whole catalog, in bytes.
+// Budgets of spec 7.4: a declaration sent to the model and the whole catalog, in bytes
+// (assistant grounding A247 for the catalog).
 const (
 	maxDeclaration = 3500
-	maxCatalog     = 64000
+	maxCatalog     = 72000
 )
 
 func chatTools(t *testing.T) []tool.Tool {

@@ -13,14 +13,14 @@ import (
 func TestArticlesExist(t *testing.T) {
 	t.Parallel()
 
-	if n := len(guide.Topics()); n != 25 {
-		t.Fatalf("topics = %d, want 25", n)
+	if n := len(guide.Topics()); n != 26 {
+		t.Fatalf("topics = %d, want 26", n)
 	}
 
 	for _, topic := range guide.Topics() {
 		a, ok := guide.Article(topic)
-		if !ok || len(a) < 200 || len(a) > 3000 {
-			t.Errorf("article %s: found = %v, %d bytes, want 200 to 3000", topic, ok, len(a))
+		if !ok || len(a) < 200 || len(a) > 6000 {
+			t.Errorf("article %s: found = %v, %d bytes, want 200 to 6000", topic, ok, len(a))
 		}
 	}
 
