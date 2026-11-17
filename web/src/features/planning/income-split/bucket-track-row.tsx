@@ -49,6 +49,7 @@ export function BucketTrackRow({
           size="sm"
           variant="ghost"
           tone="secondary"
+          className={styles.name}
           onClick={() => {
             onOpen(row.id);
           }}

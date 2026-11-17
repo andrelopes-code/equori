@@ -40,6 +40,9 @@ export function BucketValidFrom({
 
   return (
     <Stack gap={2}>
+      <Text size="sm" weight="medium">
+        {t("buckets.from.label")}
+      </Text>
       <ChoiceSelect
         label={t("buckets.from.label")}
         multiple={false}

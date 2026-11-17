@@ -10,6 +10,7 @@ import {
 import { Button } from "@slotted/react/button";
 import { Inline } from "@slotted/react/inline";
 import { Skeleton } from "@slotted/react/skeleton";
+import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
 
@@ -98,20 +99,25 @@ export function BucketTrack({ month }: BucketTrackProps) {
       </SectionHeader>
 
       <SectionBody>
-        <Text size="md" weight="medium">
-          {t(verdict.key, {
-            month: monthName,
-            count: "count" in verdict ? String(verdict.count) : "",
-            total: String(track.rows.length),
-          })}
-        </Text>
-        {track.since !== undefined && versions.data !== undefined && (
-          <Text size="sm" tone="muted">
-            {track.since.first
-              ? t("track.sinceStart")
-              : t("track.since", { month: names.longYear(track.since.from) })}
+        <Stack gap={1}>
+          <Text size="md" weight="medium">
+            {t(verdict.key, {
+              month: monthName,
+              count: "count" in verdict ? String(verdict.count) : "",
+              total: String(track.rows.length),
+            })}
           </Text>
-        )}
+          {track.since !== undefined && versions.data !== undefined && (
+            <Text size="sm" tone="muted">
+              {track.since.first
+                ? t("track.sinceStart")
+                : t("track.since", {
+                    month: names.longYear(track.since.from),
+                  })}
+            </Text>
+          )}
+        </Stack>
+
         <div className={styles.rows}>
           {track.rows.map((row) => (
             <BucketTrackRow

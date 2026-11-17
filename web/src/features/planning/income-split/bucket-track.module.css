@@ -27,9 +27,17 @@
   }
 
   .stack > * {
+    justify-self: start;
+    max-inline-size: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* Workaround for Slotted issue #134: a ghost button has no flush alignment, so the name
+     steps back by its own padding to share the start edge of the line under it. */
+  .name {
+    margin-inline-start: calc(-1 * var(--slotted-control-padding-inline-sm));
   }
 
   .endStack {
@@ -64,6 +72,7 @@
 
   .entryRow {
     grid-template-columns: 4rem minmax(0, 1fr) 9rem;
+    inline-size: 100%;
   }
 
   .sumRow > *,
