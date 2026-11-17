@@ -20,6 +20,7 @@ func (r *Repository) InsertCard(ctx context.Context, c domain.Card) (domain.Card
 			LastFour:        c.LastFour,
 			Virtual:         c.Virtual,
 			ForeignChargeBp: int32(c.ForeignChargeBP),
+			Network:         nullString(c.Network),
 		},
 	)
 	if err != nil {
@@ -43,6 +44,7 @@ func (r *Repository) UpdateCard(
 			Holder:   e.Holder,
 			LastFour: e.LastFour,
 			Active:   e.Active,
+			Network:  e.Network,
 		},
 	)
 	if err != nil {

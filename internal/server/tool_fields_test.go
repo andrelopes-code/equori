@@ -174,6 +174,12 @@ var uncoveredFields = map[string][]string{
 	"createBudget": {
 		"effective_from",
 	}, // read as month
+	"createCard": {
+		"network",
+	}, // the network is drawn on the card face and is set through the API (card faces spec 4.6)
+	"updateCard": {
+		"network",
+	}, // the network is drawn on the card face and is set through the API (card faces spec 4.6)
 	"createGoal": {
 		"target",
 	}, // read as amount

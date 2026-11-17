@@ -18,6 +18,8 @@ type Card struct {
 	Active    bool
 	// ForeignChargeBP is the charge, in basis points, on purchases in another currency.
 	ForeignChargeBP int
+	// Network is the key of the card network (visa, mastercard, ...); "" is unset.
+	Network string
 }
 
 // CardEdit holds the fields of a card a caller changes; a nil field stays as it is.
@@ -25,9 +27,14 @@ type CardEdit struct {
 	Holder   *string
 	LastFour *string
 	Active   *bool
+	// Network sets the network key; "" clears it.
+	Network *string
 }
 
-var lastFourPattern = regexp.MustCompile(`^[0-9]{4}$`)
+var (
+	lastFourPattern = regexp.MustCompile(`^[0-9]{4}$`)
+	networkPattern  = regexp.MustCompile(`^[a-z0-9_]{2,40}$`)
+)
 
 func NewCard(c Card) (Card, error) {
 	holder, err := cardHolder(c.Holder)
@@ -36,6 +43,10 @@ func NewCard(c Card) (Card, error) {
 	}
 
 	if err := validLastFour(c.LastFour); err != nil {
+		return Card{}, err
+	}
+
+	if err := validNetwork(c.Network); err != nil {
 		return Card{}, err
 	}
 
@@ -76,6 +87,12 @@ func NewCardEdit(e CardEdit) (CardEdit, error) {
 		}
 	}
 
+	if e.Network != nil {
+		if err := validNetwork(*e.Network); err != nil {
+			return CardEdit{}, err
+		}
+	}
+
 	return e, nil
 }
 
@@ -91,6 +108,14 @@ func cardHolder(holder string) (string, error) {
 func validLastFour(digits string) error {
 	if !lastFourPattern.MatchString(digits) {
 		return invalid("last_four", "must be the last four digits")
+	}
+
+	return nil
+}
+
+func validNetwork(key string) error {
+	if key != "" && !networkPattern.MatchString(key) {
+		return invalid("network", "must be 2 to 40 characters of a-z, 0-9 and _")
 	}
 
 	return nil

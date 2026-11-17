@@ -440,9 +440,17 @@ func (q *Queries) InsertBillingRule(ctx context.Context, arg InsertBillingRulePa
 
 const insertCard = `-- name: InsertCard :one
 INSERT INTO
-    ledger_card (books_id, account_id, holder, last_four, virtual, foreign_charge_bp)
+    ledger_card (books_id, account_id, holder, last_four, virtual, foreign_charge_bp, network)
 VALUES
-    ($1, $2, $3, $4, $5, $6)
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7
+    )
 RETURNING
     id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp, network
 `
@@ -454,6 +462,7 @@ type InsertCardParams struct {
 	LastFour        string
 	Virtual         bool
 	ForeignChargeBp int32
+	Network         *string
 }
 
 func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerCard, error) {
@@ -464,6 +473,7 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 		arg.LastFour,
 		arg.Virtual,
 		arg.ForeignChargeBp,
+		arg.Network,
 	)
 	var i LedgerCard
 	err := row.Scan(
@@ -1380,10 +1390,14 @@ UPDATE ledger_card
 SET
     holder = coalesce($1, holder),
     last_four = coalesce($2, last_four),
-    active = coalesce($3, active)
+    active = coalesce($3, active),
+    network = CASE
+        WHEN $4::text IS NULL THEN network
+        ELSE nullif($4::text, '')
+    END
 WHERE
-    books_id = $4
-    AND id = $5
+    books_id = $5
+    AND id = $6
 RETURNING
     id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp, network
 `
@@ -1392,6 +1406,7 @@ type UpdateCardParams struct {
 	Holder   *string
 	LastFour *string
 	Active   *bool
+	Network  *string
 	BooksID  int64
 	ID       uuid.UUID
 }
@@ -1401,6 +1416,7 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LedgerC
 		arg.Holder,
 		arg.LastFour,
 		arg.Active,
+		arg.Network,
 		arg.BooksID,
 		arg.ID,
 	)

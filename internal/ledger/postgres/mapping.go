@@ -249,6 +249,7 @@ func toCard(row LedgerCard) domain.Card {
 		Virtual:         row.Virtual,
 		Active:          row.Active,
 		ForeignChargeBP: int(row.ForeignChargeBp),
+		Network:         deref(row.Network),
 	}
 }
 

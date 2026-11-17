@@ -327,3 +327,17 @@ func TestDBRequiresCardForeignChargeWithoutDefault(t *testing.T) {
 		INSERT INTO ledger_card (books_id, account_id, holder, last_four) VALUES ($1, $2, 'Ana', '1234')`, f.booksID, f.card)
 	requireViolation(t, err, notNullViolation, "foreign_charge_bp")
 }
+
+func TestDBRejectsCardNetworkOutsideKeyPattern(t *testing.T) {
+	t.Parallel()
+
+	f := newCardFixture(t)
+	for _, network := range []string{"VISA", "v", "visa!", "has space", ""} {
+		_, err := f.pool.Exec(t.Context(), `
+			INSERT INTO ledger_card (books_id, account_id, holder, last_four, foreign_charge_bp, network)
+			VALUES ($1, $2, 'Ana', '1234', 0, $3)`, f.booksID, f.card, network)
+		t.Run(network, func(t *testing.T) {
+			requireViolation(t, err, checkViolation, "ledger_card_network_check")
+		})
+	}
+}

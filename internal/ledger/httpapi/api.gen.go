@@ -1571,7 +1571,10 @@ type Card struct {
 	Holder          string             `json:"holder"`
 	Id              openapi_types.UUID `json:"id"`
 	LastFour        string             `json:"last_four"`
-	Virtual         *bool              `json:"virtual,omitempty"`
+
+	// Network Key of the card network (visa, mastercard, ...); card faces spec 4.6.
+	Network *string `json:"network,omitempty"`
+	Virtual *bool   `json:"virtual,omitempty"`
 }
 
 // CardFace An absent or null value clears it; the face then applies its default.
@@ -1598,7 +1601,10 @@ type CardInput struct {
 	ForeignChargeBp *int   `json:"foreign_charge_bp,omitempty"`
 	Holder          string `json:"holder"`
 	LastFour        string `json:"last_four"`
-	Virtual         *bool  `json:"virtual,omitempty"`
+
+	// Network Key of the card network (visa, mastercard, ...); card faces spec 4.6.
+	Network *string `json:"network,omitempty"`
+	Virtual *bool   `json:"virtual,omitempty"`
 }
 
 // CardList defines model for CardList.
@@ -1617,6 +1623,9 @@ type CardUpdate struct {
 	Active   *bool   `json:"active,omitempty"`
 	Holder   *string `json:"holder,omitempty"`
 	LastFour *string `json:"last_four,omitempty"`
+
+	// Network An empty string clears it.
+	Network *string `json:"network,omitempty"`
 }
 
 // CategorizeInput defines model for CategorizeInput.

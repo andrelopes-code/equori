@@ -182,8 +182,14 @@ func (s *Server) createCreditLimit(
 func toCardAPI(c domain.Card) Card {
 	virtual := c.Virtual
 
+	var network *string
+	if c.Network != "" {
+		network = &c.Network
+	}
+
 	return Card{
 		Id:              c.ID,
+		Network:         network,
 		Holder:          c.Holder,
 		LastFour:        c.LastFour,
 		Virtual:         &virtual,
@@ -230,7 +236,13 @@ func (s *Server) createCard(
 	c, err := s.svc.AddCard(
 		ctx,
 		auth.MustBooksID(ctx),
-		domain.Card{AccountID: id, Holder: in.Holder, LastFour: in.LastFour, Virtual: virtual},
+		domain.Card{
+			AccountID: id,
+			Holder:    in.Holder,
+			LastFour:  in.LastFour,
+			Virtual:   virtual,
+			Network:   optString(in.Network),
+		},
 		in.ForeignChargeBp,
 	)
 	if err != nil {
@@ -256,7 +268,12 @@ func (s *Server) updateCard(
 		ctx,
 		auth.MustBooksID(ctx),
 		id,
-		domain.CardEdit{Holder: b.Holder, LastFour: b.LastFour, Active: b.Active},
+		domain.CardEdit{
+			Holder:   b.Holder,
+			LastFour: b.LastFour,
+			Active:   b.Active,
+			Network:  b.Network,
+		},
 	)
 	if err != nil {
 		return Card{}, err

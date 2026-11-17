@@ -3083,6 +3083,10 @@ schemas:
         minimum: 0
         maximum: 10000
         description: Default from the region of the owner.
+      network:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: Key of the card network (visa, mastercard, ...); card faces spec 4.6.
   Card:
     allOf:
       - $ref: "#/components/schemas/CardInput"
@@ -3112,6 +3116,10 @@ schemas:
         pattern: "^[0-9]{4}$"
       active:
         type: boolean
+      network:
+        type: string
+        pattern: "^([a-z0-9_]{2,40})?$"
+        description: An empty string clears it.
   CardList:
     type: object
     required: [items]

@@ -5977,6 +5977,8 @@ export interface components {
             virtual?: boolean;
             /** @description Default from the region of the owner. */
             foreign_charge_bp?: number;
+            /** @description Key of the card network (visa, mastercard, ...); card faces spec 4.6. */
+            network?: string;
         };
         Card: components["schemas"]["CardInput"] & {
             foreign_charge_bp: number;
@@ -5988,6 +5990,8 @@ export interface components {
             holder?: string;
             last_four?: string;
             active?: boolean;
+            /** @description An empty string clears it. */
+            network?: string;
         };
         CardList: {
             items: components["schemas"]["Card"][];

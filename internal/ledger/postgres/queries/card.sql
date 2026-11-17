@@ -67,9 +67,17 @@ ORDER BY
 
 -- name: InsertCard :one
 INSERT INTO
-    ledger_card (books_id, account_id, holder, last_four, virtual, foreign_charge_bp)
+    ledger_card (books_id, account_id, holder, last_four, virtual, foreign_charge_bp, network)
 VALUES
-    ($1, $2, $3, $4, $5, $6)
+    (
+        @books_id,
+        @account_id,
+        @holder,
+        @last_four,
+        @virtual,
+        @foreign_charge_bp,
+        sqlc.narg (network)
+    )
 RETURNING
     *;
 
@@ -90,7 +98,11 @@ UPDATE ledger_card
 SET
     holder = coalesce(sqlc.narg (holder), holder),
     last_four = coalesce(sqlc.narg (last_four), last_four),
-    active = coalesce(sqlc.narg (active), active)
+    active = coalesce(sqlc.narg (active), active),
+    network = CASE
+        WHEN sqlc.narg (network)::text IS NULL THEN network
+        ELSE nullif(sqlc.narg (network)::text, '')
+    END
 WHERE
     books_id = @books_id
     AND id = @id
