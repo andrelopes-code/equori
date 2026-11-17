@@ -10,6 +10,7 @@ import {
   bucketCounts,
   expenseBranches,
   outsideChoice,
+  outsideCount,
   outsideRoots,
 } from "@/features/planning/income-split/bucket-draft";
 import type { BucketDraft } from "@/features/planning/income-split/bucket-draft";
@@ -52,7 +53,7 @@ export function BucketCategories({
         <BucketChooser
           buckets={draft.buckets}
           counts={counts}
-          outside={outside.length}
+          outside={outsideCount(counts, branches)}
           selected={selected}
           onSelect={setChosen}
         />

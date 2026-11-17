@@ -13,6 +13,7 @@ import {
   expenseBranches,
   initialDraft,
   keepChoices,
+  outsideCount,
   outsideRoots,
   toggleChoice,
   totalBp,
@@ -311,5 +312,15 @@ describe("checklist choices", () => {
       ["b1", 1],
       ["b2", 1],
     ]);
+  });
+
+  it("counts every category outside the split, subcategories included", () => {
+    const draft = initialDraft(stored, entries);
+    const branches = expenseBranches(entries);
+
+    expect(outsideCount(bucketCounts(draft, parents, branches), branches)).toBe(
+      1,
+    );
+    expect(outsideCount(new Map(), branches)).toBe(3);
   });
 });

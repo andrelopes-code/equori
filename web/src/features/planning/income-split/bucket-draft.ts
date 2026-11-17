@@ -357,3 +357,14 @@ export function bucketCounts(
     }
   return counts;
 }
+
+// The number of open expense categories that draw from no bucket, subcategories included: the
+// count the plan states for the categories outside the split (A236).
+export function outsideCount(
+  counts: ReadonlyMap<string, number>,
+  branches: readonly CategoryBranch[],
+): number {
+  let rest = branches.reduce((n, b) => n + 1 + b.subcategories.length, 0);
+  for (const n of counts.values()) rest -= n;
+  return rest;
+}
