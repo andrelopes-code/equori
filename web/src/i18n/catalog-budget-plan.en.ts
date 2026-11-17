@@ -224,6 +224,7 @@ export const budgetPlanEn = {
   "buckets.version.start": "From the start",
   "buckets.version.since": "Since {month}",
   "buckets.version.inForce": "In force",
+  "buckets.version.actions": "Version actions",
   "buckets.version.edit": "Edit",
   "buckets.version.delete": "Delete",
   "buckets.version.deleteConfirm":

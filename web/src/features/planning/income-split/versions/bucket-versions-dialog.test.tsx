@@ -40,11 +40,6 @@ const withBuckets = (month: string) =>
     outside_spent: money(0),
   });
 
-const deleteButtons = (dialog: HTMLElement) =>
-  within(dialog).getAllByRole("button", {
-    name: catalogEn["buckets.version.delete"],
-  });
-
 async function open(deleted: string[] = []) {
   const fetch = budgetPlanApi(withBuckets, {
     "GET /api/v1/budget-buckets/versions": () => json(200, { versions }),
@@ -80,15 +75,24 @@ describe("Versions of the income split", () => {
     const deleted: string[] = [];
     const dialog = await open(deleted);
 
-    await userEvent.click(deleteButtons(dialog)[0] ?? dialog);
+    const menus = within(dialog).getAllByRole("button", {
+      name: catalogEn["buckets.version.actions"],
+    });
+    await userEvent.click(menus[0] ?? dialog);
+    await userEvent.click(
+      await screen.findByRole("menuitem", {
+        name: catalogEn["buckets.version.delete"],
+      }),
+    );
     expect(
       within(dialog).getByText(
         "Its months return to the version of September 2026.",
       ),
     ).toBeVisible();
     await userEvent.click(
-      // The confirmation sits in the first block, above the other block's Delete.
-      deleteButtons(dialog)[0] ?? dialog,
+      within(dialog).getByRole("button", {
+        name: catalogEn["buckets.version.delete"],
+      }),
     );
 
     await waitFor(() => {

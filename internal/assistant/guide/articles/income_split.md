@@ -15,7 +15,7 @@ Setting it up: "Set up split" or "Edit split", in the split section of the Plan 
 
 Versions: the split can change over time. A change starts in the month chosen in the field "Valid from" of the dialog: the start of the version in force, the month on screen or the current month. Earlier months keep the split they had, with their shares and the bucket of each category, so a category can sit in one bucket in one period and in another bucket later. The first version also covers the months before it. A category moved on the Categories screen starts a version in the current month. "End split" ends the split from the chosen month on; earlier months keep it.
 
-History: the History button of the split section, in Plan and in Track, lists each version, the latest first, with its start, the share of each bucket and what changed against the version before: a share, a name, a bucket added or removed, a category moved. Edit opens the dialog on that version. Delete returns its months to the version before.
+History: the History button of the split section, in Plan and in Track, lists each version, the latest first, with its start, the share of each bucket and what changed against the version before: a share, a name, a bucket added or removed, a category moved. The actions menu of a version holds Edit and Delete: Edit opens the dialog on that version. Delete returns its months to the version before.
 
 Plan view: lists each bucket with its share, its target on the amount to distribute, what the budgets of its categories plan and what was spent, and groups the plan by bucket.
 

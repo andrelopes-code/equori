@@ -223,6 +223,7 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "buckets.version.start": "Desde o início",
   "buckets.version.since": "Desde {month}",
   "buckets.version.inForce": "Em vigor",
+  "buckets.version.actions": "Ações da versão",
   "buckets.version.edit": "Editar",
   "buckets.version.delete": "Excluir",
   "buckets.version.deleteConfirm": "Os meses dela voltam à versão de {month}.",

@@ -1,5 +1,3 @@
-import { Badge } from "@slotted/react/badge";
-import { Button } from "@slotted/react/button";
 import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
 import { Divider } from "@slotted/react/divider";
 import { Inline } from "@slotted/react/inline";
@@ -9,6 +7,7 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
+import { BucketVersionMenu } from "@/features/planning/income-split/versions/bucket-version-menu";
 import { BucketVersionDelete } from "@/features/planning/income-split/versions/bucket-version-delete";
 import { versionChanges } from "@/features/planning/income-split/versions/bucket-version-changes";
 import { BucketVersionRow } from "@/features/planning/income-split/versions/bucket-version-row";
@@ -55,30 +54,25 @@ export function BucketVersionBlock({
   return (
     <Card size="sm">
       <CardHeader>
-        <Inline gap={2} align="center" wrap="nowrap">
+        <Inline gap={2} align="baseline" wrap="nowrap">
           <Text size="md" weight="medium">
             {title}
           </Text>
           {inForce && (
-            <Badge tone="accent">{t("buckets.version.inForce")}</Badge>
+            <Text size="sm" tone="muted">
+              {t("buckets.version.inForce")}
+            </Text>
           )}
         </Inline>
 
         {!deleting && (
           <CardActions>
-            <Button size="sm" variant="ghost" tone="secondary" onClick={onEdit}>
-              {t("buckets.version.edit")}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              tone="secondary"
-              onClick={() => {
+            <BucketVersionMenu
+              onEdit={onEdit}
+              onDelete={() => {
                 setDeleting(true);
               }}
-            >
-              {t("buckets.version.delete")}
-            </Button>
+            />
           </CardActions>
         )}
       </CardHeader>
