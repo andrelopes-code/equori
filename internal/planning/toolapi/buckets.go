@@ -203,12 +203,14 @@ func categoryNames(ids []uuid.UUID, accounts map[uuid.UUID]Account) []string {
 }
 
 // splitMonth is one month of the income split: the income received and each bucket's target
-// on it, its real amount and whether it kept to the target (income buckets A233).
+// on it, its real amount and whether it kept to the target (income buckets A233). Unallocated
+// is the income that no bucket and no spending took (A235).
 type splitMonth struct {
-	Month    string        `json:"month"`
-	From     string        `json:"from,omitzero"`
-	Received tool.Money    `json:"received"`
-	Buckets  []splitBucket `json:"buckets"`
+	Month       string        `json:"month"`
+	From        string        `json:"from,omitzero"`
+	Received    tool.Money    `json:"received"`
+	Unallocated tool.Money    `json:"unallocated"`
+	Buckets     []splitBucket `json:"buckets"`
 }
 
 type splitBucket struct {
@@ -238,7 +240,16 @@ func splitMonths(
 			return nil, err
 		}
 
-		out[i] = splitMonth{Month: m.Month.Format(monthLayout), Received: received}
+		rest, err := moneyOf(m.Unallocated, h.Currency)
+		if err != nil {
+			return nil, err
+		}
+
+		out[i] = splitMonth{
+			Month:       m.Month.Format(monthLayout),
+			Received:    received,
+			Unallocated: rest,
+		}
 		if m.HasMethod {
 			out[i].From = m.From.Format(monthLayout)
 		}

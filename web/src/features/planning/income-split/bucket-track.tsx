@@ -150,6 +150,22 @@ export function BucketTrack({ month }: BucketTrackProps) {
             </Button>
           </Inline>
         )}
+        {track.unallocated > 0 && (
+          <Text size="sm" tone="muted">
+            {t("track.unallocated", {
+              amount: money(track.unallocated),
+              month: monthName,
+            })}
+          </Text>
+        )}
+        {track.unallocated < 0 && (
+          <Text size="sm" tone="muted">
+            {t("track.unallocatedNegative", {
+              amount: money(-track.unallocated),
+              month: monthName,
+            })}
+          </Text>
+        )}
         <BucketTrackLegend
           changed={track.rows.some((r) => r.months.some((c) => c.changed))}
         />

@@ -3885,7 +3885,9 @@ export interface paths {
          *     `buckets` holds the real amount of each bucket of that method in its order. `methods` lists the versions
          *     that are the method of at least one month. A month also holds the income received and the spending outside
          *     the split. A bucket's real amount is the own spending of its categories; the bucket that takes savings adds
-         *     what went into the book's savings, reserve and brokerage accounts in the month.
+         *     what went into the book's savings, reserve and brokerage accounts in the month. `unallocated` is the income
+         *     that no bucket and no spending took: the real amounts, `outside` and `unallocated` sum to `received`, and a
+         *     negative value is spending paid from balances (A235).
          */
         get: operations["getBudgetBucketHistory"];
         put?: never;
@@ -7617,6 +7619,7 @@ export interface components {
             from?: string;
             received: components["schemas"]["Money"];
             outside: components["schemas"]["Money"];
+            unallocated: components["schemas"]["Money"];
             buckets: components["schemas"]["BudgetBucketReal"][];
         };
         BudgetBucketReal: {

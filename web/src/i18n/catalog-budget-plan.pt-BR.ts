@@ -186,6 +186,10 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.legend.none": "sem renda",
   "track.legend.target": "meta",
   "track.outside": "{amount} gastos fora da divisão em {month}.",
+  "track.unallocated":
+    "{amount} ficaram nas contas em {month}, fora de todos os potes.",
+  "track.unallocatedNegative":
+    "{amount} foram pagos com saldo em {month}, além da renda recebida.",
   "buckets.plan.description":
     "A fatia de cada pote no valor a distribuir e quanto os orçamentos planejam para ele. A aba Acompanhar compara com o que foi gasto.",
   "buckets.plan.toPlan": "{amount} a planejar",

@@ -46,6 +46,8 @@ export interface TrackRow {
 
 export interface TrackMonth {
   received: number;
+  // The income that no bucket and no spending took; negative when balances paid spending (A235).
+  unallocated: number;
   rows: TrackRow[];
   // Buckets that missed their target; undefined without income.
   missed: number | undefined;
@@ -65,9 +67,16 @@ export function trackMonth(
   const at = history.months.findIndex((m) => m.month === month);
   const entry = history.months[at];
   const received = entry?.received.amount ?? 0;
+  const unallocated = entry?.unallocated.amount ?? 0;
   const method = entry === undefined ? undefined : methodOf(history, entry);
   if (method === undefined)
-    return { received, rows: [], missed: undefined, since: undefined };
+    return {
+      received,
+      unallocated,
+      rows: [],
+      missed: undefined,
+      since: undefined,
+    };
   const rows = method.buckets.map((b) => {
     const months = history.months.map((m) =>
       monthCell(history, m, b.id, firstFrom),
@@ -88,6 +97,7 @@ export function trackMonth(
   });
   return {
     received,
+    unallocated,
     rows,
     missed:
       received > 0

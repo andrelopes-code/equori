@@ -7,7 +7,7 @@ Each bucket has a name, a share and how it counts. The shares sum to 100%. A buc
 - Take what goes into savings: the bucket counts the money moved into the savings, reserve and brokerage accounts that are not goal accounts, and into the accounts of the goals marked as savings. One bucket at most.
 - Deposit into goals: the bucket counts the money moved into the accounts of the goals from other accounts. One bucket at most.
 
-A transfer counts in one bucket: a deposit into a goal account counts in the goals bucket, a deposit into another savings account in the savings bucket, and a withdrawal counts against its month. Yields and price changes do not count. Income not spent and not transferred counts in no bucket.
+A transfer counts in one bucket: a deposit into a goal account counts in the goals bucket, a deposit into another savings account in the savings bucket, and a withdrawal counts against its month. Yields and price changes do not count. Income not spent and not transferred counts in no bucket: it is the unallocated income of the month. The buckets, the spending outside the split and the unallocated income sum to the income received.
 
 Each expense category goes in one bucket. A subcategory follows its category unless it gets a bucket of its own. A category in no bucket counts as spending outside the split.
 
@@ -19,7 +19,7 @@ History: the History button of the split section, in Plan and in Track, lists ea
 
 Plan view: lists each bucket with its share, its target on the amount to distribute, what the budgets of its categories plan and what was spent, and groups the plan by bucket.
 
-Track view: says how many buckets missed their target in the month. Each bucket shows what is left or over against its share of the income received in that month, and a strip of six months that says whether it kept its target in each one. A tick over a month marks the month in which the split changed. A line states since when the split of the month is in force.
+Track view: says how many buckets missed their target in the month. Each bucket shows what is left or over against its share of the income received in that month, and a strip of six months that says whether it kept its target in each one. A tick over a month marks the month in which the split changed. A line states since when the split of the month is in force. Below the buckets, one line states the spending outside the split and one line the unallocated income: the amount that stayed in the accounts, outside every bucket, or the amount paid from balances beyond the income received.
 
 Entries of a bucket: on Track, the name of a bucket opens a panel with the amount counted, the target and the difference, then the entries of the month grouped by category with the subtotal of each group, the largest first. Each entry opens its transaction. A month choice moves over the six months. "See entries" on the line of the spending outside the split opens the same panel.
 

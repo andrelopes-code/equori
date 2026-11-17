@@ -264,10 +264,11 @@ type BudgetBucketMonth struct {
 	Buckets []BudgetBucketReal `json:"buckets"`
 
 	// From First month of the version that is the method of this month; absent without a split.
-	From     *string `json:"from,omitempty"`
-	Month    string  `json:"month"`
-	Outside  Money   `json:"outside"`
-	Received Money   `json:"received"`
+	From        *string `json:"from,omitempty"`
+	Month       string  `json:"month"`
+	Outside     Money   `json:"outside"`
+	Received    Money   `json:"received"`
+	Unallocated Money   `json:"unallocated"`
 }
 
 // BudgetBucketReal defines model for BudgetBucketReal.

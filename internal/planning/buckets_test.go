@@ -458,7 +458,9 @@ type bucketHistoryView struct {
 		From     *string `json:"from"`
 		Received money   `json:"received"`
 		Outside  money   `json:"outside"`
-		Buckets  []struct {
+		// Unallocated is a pointer: a response without the field fails the test.
+		Unallocated *money `json:"unallocated"`
+		Buckets     []struct {
 			ID   string `json:"id"`
 			Real money  `json:"real"`
 		} `json:"buckets"`

@@ -187,6 +187,10 @@ export const budgetPlanEn = {
   "track.legend.none": "no income",
   "track.legend.target": "target",
   "track.outside": "{amount} spent outside the split in {month}.",
+  "track.unallocated":
+    "{amount} stayed in the accounts in {month}, outside every bucket.",
+  "track.unallocatedNegative":
+    "{amount} was paid from balances in {month}, beyond the income received.",
   "buckets.plan.description":
     "Each bucket's share of the amount to distribute and what the budgets plan for it. The Track view compares it with what was spent.",
   "buckets.plan.toPlan": "{amount} to plan",

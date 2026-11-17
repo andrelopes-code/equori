@@ -23,11 +23,14 @@ type BucketHistory struct {
 
 // BucketMonth holds the income received in a month, the real amount of each bucket in the order
 // of the month's method and the spending outside the split. From is zero without a split.
+// Unallocated is the income that no bucket and no spending took: with Real and Outside it sums
+// to Received (A235).
 type BucketMonth struct {
 	Month             time.Time
 	From              time.Time
 	HasMethod         bool
 	Received, Outside int64
+	Unallocated       int64
 	Real              []int64
 }
 
@@ -112,6 +115,7 @@ func (s *Service) addBucketMonths(
 		}
 
 		addInflows(&month, wm.method.Buckets, goals[wm.month], savings[wm.month])
+		month.Unallocated = unallocated(month)
 		out.Months = append(out.Months, month)
 	}
 
@@ -186,6 +190,17 @@ func addInflows(month *BucketMonth, method []domain.Bucket, goals, savings int64
 			month.Real[i] += savings
 		}
 	}
+}
+
+// unallocated returns the income received less the spending and the inflows the month's method
+// takes (A235).
+func unallocated(month BucketMonth) int64 {
+	rest := month.Received - month.Outside
+	for _, real := range month.Real {
+		rest -= real
+	}
+
+	return rest
 }
 
 // bucketMonth splits the month's own expense postings over the buckets. Income postings are

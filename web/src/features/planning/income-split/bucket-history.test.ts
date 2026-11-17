@@ -38,6 +38,7 @@ function month(m: string, received: number, needs: number, free: number) {
     from: "2026-06",
     received: brl(received),
     outside: brl(0),
+    unallocated: brl(received - needs - free),
     buckets: [
       { id: "needs", real: brl(needs) },
       { id: "free", real: brl(free) },
@@ -170,6 +171,7 @@ describe("trackMonth across versions", () => {
         from: "2026-09",
         received: brl(100000),
         outside: brl(0),
+        unallocated: brl(25000),
         buckets: [
           { id: "needs", real: brl(40000) },
           { id: "free", real: brl(30000) },
@@ -217,6 +219,7 @@ describe("trackMonth across versions", () => {
           month: "2026-11",
           received: brl(100000),
           outside: brl(0),
+          unallocated: brl(100000),
           buckets: [],
         },
       ],
@@ -224,9 +227,24 @@ describe("trackMonth across versions", () => {
 
     expect(trackMonth(ended, "2026-11", "2026-06")).toEqual({
       received: 100000,
+      unallocated: 100000,
       rows: [],
       missed: undefined,
     });
+  });
+});
+
+describe("trackMonth unallocated", () => {
+  it("returns the unallocated income of the month on screen", () => {
+    const rest: History = {
+      ...history,
+      months: history.months.map((m) =>
+        m.month === "2026-10" ? { ...m, unallocated: brl(-21300) } : m,
+      ),
+    };
+
+    expect(trackMonth(rest, "2026-10", "2026-06").unallocated).toBe(-21300);
+    expect(trackMonth(rest, "2026-11", "2026-06").unallocated).toBe(0);
   });
 });
 
@@ -283,7 +301,13 @@ describe("trackVerdict", () => {
       key: "track.verdict.noIncome",
     });
     expect(
-      trackVerdict({ received: 1, rows: [], missed: 1, since: undefined }),
+      trackVerdict({
+        received: 1,
+        unallocated: 0,
+        rows: [],
+        missed: 1,
+        since: undefined,
+      }),
     ).toEqual({
       key: "track.verdict.one",
     });

@@ -170,10 +170,11 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 		}
 
 		out.Months[i] = BudgetBucketMonth{
-			Month:    month.Month.Format(monthLayout),
-			Received: m(month.Received),
-			Outside:  m(month.Outside),
-			Buckets:  reals,
+			Month:       month.Month.Format(monthLayout),
+			Received:    m(month.Received),
+			Outside:     m(month.Outside),
+			Unallocated: m(month.Unallocated),
+			Buckets:     reals,
 		}
 
 		if month.HasMethod {

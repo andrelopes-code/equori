@@ -38,6 +38,7 @@ function month(m: string, received: number, needs: number, free: number) {
     from: "2026-05",
     received: money(received),
     outside: money(m === "2026-10" ? 1500 : 0),
+    unallocated: money(received - needs - free - (m === "2026-10" ? 1500 : 0)),
     buckets: [
       { id: buckets[0]?.id ?? "", real: money(needs) },
       { id: buckets[1]?.id ?? "", real: money(free) },
@@ -103,6 +104,55 @@ describe("Income split in Track", () => {
       "Sep: kept to the target",
       "Oct: missed the target",
     ]);
+  });
+
+  it("states the unallocated income of the month, positive, negative or absent at zero", async () => {
+    const withRest = (unallocated: number) => ({
+      ...history,
+      months: history.months.map((m) =>
+        m.month === "2026-10" ? { ...m, unallocated: money(unallocated) } : m,
+      ),
+    });
+    const view = await renderApp(october, {
+      fetch: budgetApi({
+        "GET /api/v1/budget-buckets/history": () => json(200, withRest(120000)),
+      }),
+      today,
+    });
+    await section();
+
+    expect(
+      screen.getByText(
+        "R$1,200.00 stayed in the accounts in October, outside every bucket.",
+      ),
+    ).toBeVisible();
+    view.unmount();
+
+    const negative = await renderApp(october, {
+      fetch: budgetApi({
+        "GET /api/v1/budget-buckets/history": () => json(200, withRest(-21300)),
+      }),
+      today,
+    });
+    await section();
+
+    expect(
+      screen.getByText(
+        "R$213.00 was paid from balances in October, beyond the income received.",
+      ),
+    ).toBeVisible();
+    negative.unmount();
+
+    await renderApp(october, {
+      fetch: budgetApi({
+        "GET /api/v1/budget-buckets/history": () => json(200, withRest(0)),
+      }),
+      today,
+    });
+    await section();
+
+    expect(screen.queryByText(/stayed in the accounts/)).toBeNull();
+    expect(screen.queryByText(/paid from balances/)).toBeNull();
   });
 
   it("states the version of the month on screen", async () => {
