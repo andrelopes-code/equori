@@ -59,7 +59,7 @@ export function BucketVersionsDialog({
               {t("buckets.history.empty")}
             </Text>
           )}
-          <Stack gap={6}>
+          <Stack gap={4}>
             {versions
               .map((version, i) => ({ version, prev: versions[i - 1] }))
               .reverse()

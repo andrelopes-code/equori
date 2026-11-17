@@ -78,19 +78,27 @@ export function BucketVersionRow({
 
   return (
     <Inline gap={4} align="center" justify="between" wrap="nowrap">
-      <Inline gap={4} align="center" wrap="nowrap">
-        <Text size="sm" weight="medium" truncate>
+      <Inline gap={2} align="center" wrap="nowrap">
+        <Text size="sm" truncate>
           {bucket.name}
         </Text>
-        {own !== undefined && (
+        {own !== undefined && own.kind !== "share" && (
           <Text size="sm" tone="muted" truncate>
             {text(own)}
           </Text>
         )}
       </Inline>
-      <Text size="sm" numeric="tabular">
-        {share(bucket.share_bp)}
-      </Text>
+
+      <Inline gap={2} align="center" wrap="nowrap">
+        {own?.kind === "share" && (
+          <Text size="sm" tone="muted" numeric="tabular">
+            {text(own)}
+          </Text>
+        )}
+        <Text size="sm" weight="medium" numeric="tabular">
+          {share(bucket.share_bp)}
+        </Text>
+      </Inline>
     </Inline>
   );
 }

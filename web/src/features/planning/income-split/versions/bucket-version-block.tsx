@@ -1,5 +1,7 @@
 import { Badge } from "@slotted/react/badge";
 import { Button } from "@slotted/react/button";
+import { Card, CardActions, CardBody, CardHeader } from "@slotted/react/card";
+import { Divider } from "@slotted/react/divider";
 import { Inline } from "@slotted/react/inline";
 import { Stack } from "@slotted/react/stack";
 import { Text } from "@slotted/react/typography";
@@ -51,9 +53,9 @@ export function BucketVersionBlock({
     : t("buckets.version.since", { month: names.longYear(version.from) });
 
   return (
-    <Stack gap={2}>
-      <Inline gap={4} align="center" justify="between" wrap="nowrap">
-        <Inline gap={4} align="center" wrap="nowrap">
+    <Card size="sm">
+      <CardHeader>
+        <Inline gap={2} align="center" wrap="nowrap">
           <Text size="md" weight="medium">
             {title}
           </Text>
@@ -61,8 +63,9 @@ export function BucketVersionBlock({
             <Badge tone="accent">{t("buckets.version.inForce")}</Badge>
           )}
         </Inline>
+
         {!deleting && (
-          <Inline gap={2} align="center" wrap="nowrap">
+          <CardActions>
             <Button size="sm" variant="ghost" tone="secondary" onClick={onEdit}>
               {t("buckets.version.edit")}
             </Button>
@@ -76,36 +79,42 @@ export function BucketVersionBlock({
             >
               {t("buckets.version.delete")}
             </Button>
-          </Inline>
+          </CardActions>
         )}
-      </Inline>
+      </CardHeader>
 
-      {deleting && (
-        <BucketVersionDelete
-          versions={versions}
-          from={version.from}
-          onKeep={() => {
-            setDeleting(false);
-          }}
-        />
-      )}
+      <Divider decorative />
 
-      {version.buckets.map((bucket) => (
-        <BucketVersionRow
-          key={bucket.id}
-          bucket={bucket}
-          changes={changes}
-          categories={categories}
-        />
-      ))}
-      {lines.map((change, i) => (
-        <BucketVersionRow
-          key={`${change.kind}-${String(i)}`}
-          change={change}
-          categories={categories}
-        />
-      ))}
-      {none && <BucketVersionRow categories={categories} />}
-    </Stack>
+      <CardBody>
+        <Stack gap={2}>
+          {deleting && (
+            <BucketVersionDelete
+              versions={versions}
+              from={version.from}
+              onKeep={() => {
+                setDeleting(false);
+              }}
+            />
+          )}
+
+          {version.buckets.map((bucket) => (
+            <BucketVersionRow
+              key={bucket.id}
+              bucket={bucket}
+              changes={changes}
+              categories={categories}
+            />
+          ))}
+          {lines.map((change, i) => (
+            <BucketVersionRow
+              key={`${change.kind}-${String(i)}`}
+              change={change}
+              categories={categories}
+            />
+          ))}
+          {none && <BucketVersionRow categories={categories} />}
+        </Stack>
+      </CardBody>
+    </Card>
   );
 }
