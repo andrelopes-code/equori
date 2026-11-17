@@ -116,8 +116,8 @@ The colour a new appearance starts from is the dominant colour of the institutio
 | Neither | None | No statement | neutral | none |
 
 - Closed (default) the ticket draws the word, the reference month, the amount (`owedAmount(unpaid)` or `open_amount`), the time phrase and the limit meter. The limit meter has 24 segments, the last fifth tinted as the risk zone, with the free amount (or the amount over the limit, in the danger tone) and the used share of the limit.
-- A lead that is a closed statement keeps the "Pay" button of the present stub; it opens the statement with `pay: true`. With more than one closed statement owing the reference reads "{count} statements open".
-- A toggle (`aria-expanded`) opens the evidence: the amount paid of the total, the cycle track, the other statement in one line, and the week's purchases. The cycle track places the closing date at 55% and the due date at 92% of its length; `cyclePosition(from, closing, due, today)` returns today's place: proportional before the closing date, proportional between closing and due, 97 past the due date.
+- A lead that is a closed statement keeps the "Pay" button of the present stub; it opens the statement with `pay: true`. With more than one closed statement owing the reference reads "{count} statements open". The ticket keeps the group name, the status attribute and the texts of the present stub (`cards.stub.*`), and the limit keeps the texts of `accountCardMeter`.
+- A toggle (`aria-expanded`) opens the evidence: the amount paid of the total, the cycle track, the other statement in one line, and the week's purchases. The cycle track places the closing date at 55% and the due date at 92% of its length; `cyclePosition(closing, due, today)` returns today's place: proportional before the closing date over a cycle that starts one calendar month before it (a derivation of the client, since a statement carries no opening date), proportional between closing and due, 97 past the due date.
 - Every amount goes through `useMoneyFormat()`; every date and relative day through `i18n/format.ts`.
 
 ### 4.9 Stored appearance
