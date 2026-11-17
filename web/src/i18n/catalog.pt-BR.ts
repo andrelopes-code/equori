@@ -479,6 +479,8 @@ export const catalogPtBR: Catalog = {
   "goals.name": "Nome",
   "goals.accounts": "Contas",
   "goals.accountsHint": "Escolha as contas que guardam a reserva",
+  "goals.countsAsSavings":
+    "Contar os depósitos como poupança na divisão da renda",
   "goals.problem.name": "Informe um nome.",
   "goals.problem.target": "Informe um valor maior que zero.",
   "goals.problem.accounts": "Escolha ao menos uma conta.",

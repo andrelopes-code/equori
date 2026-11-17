@@ -22,11 +22,12 @@ func (r *Repository) InsertGoal(
 	row, err := r.q.InsertGoal(
 		ctx,
 		InsertGoalParams{
-			BooksID:  booksID,
-			Name:     g.Name,
-			Target:   g.Target,
-			Currency: string(g.Currency),
-			DueOn:    g.DueOn,
+			BooksID:         booksID,
+			Name:            g.Name,
+			Target:          g.Target,
+			Currency:        string(g.Currency),
+			DueOn:           g.DueOn,
+			CountsAsSavings: g.CountsAsSavings,
 		},
 	)
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
@@ -59,12 +60,13 @@ func (r *Repository) UpdateGoal(
 	row, err := r.q.UpdateGoal(
 		ctx,
 		UpdateGoalParams{
-			BooksID:  booksID,
-			ID:       g.ID,
-			Name:     g.Name,
-			Target:   g.Target,
-			Currency: string(g.Currency),
-			DueOn:    g.DueOn,
+			BooksID:         booksID,
+			ID:              g.ID,
+			Name:            g.Name,
+			Target:          g.Target,
+			Currency:        string(g.Currency),
+			DueOn:           g.DueOn,
+			CountsAsSavings: g.CountsAsSavings,
 		},
 	)
 	if pe, ok := errors.AsType[*pgconn.PgError](err); ok && pe.Code == uniqueViolation {
@@ -124,11 +126,12 @@ func (r *Repository) completeGoals(
 	for i, row := range rows {
 		ids[i] = row.ID
 		out[i] = domain.Goal{
-			ID:       row.ID,
-			Name:     row.Name,
-			Target:   row.Target,
-			Currency: money.Currency(row.Currency),
-			DueOn:    row.DueOn,
+			ID:              row.ID,
+			Name:            row.Name,
+			Target:          row.Target,
+			Currency:        money.Currency(row.Currency),
+			DueOn:           row.DueOn,
+			CountsAsSavings: row.CountsAsSavings,
 		}
 		byID[row.ID] = &out[i]
 	}

@@ -51,7 +51,7 @@ func (q *Queries) DeleteGoalAccounts(ctx context.Context, arg DeleteGoalAccounts
 
 const getGoal = `-- name: GetGoal :one
 SELECT
-    id, books_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at, counts_as_savings
 FROM
     planning_goal
 WHERE
@@ -75,25 +75,27 @@ func (q *Queries) GetGoal(ctx context.Context, arg GetGoalParams) (PlanningGoal,
 		&i.Currency,
 		&i.DueOn,
 		&i.CreatedAt,
+		&i.CountsAsSavings,
 	)
 	return i, err
 }
 
 const insertGoal = `-- name: InsertGoal :one
 INSERT INTO
-    planning_goal (books_id, name, target, currency, due_on)
+    planning_goal (books_id, name, target, currency, due_on, counts_as_savings)
 VALUES
-    ($1, $2, $3, $4, $5)
+    ($1, $2, $3, $4, $5, $6)
 RETURNING
-    id, books_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at, counts_as_savings
 `
 
 type InsertGoalParams struct {
-	BooksID  int64
-	Name     string
-	Target   int64
-	Currency string
-	DueOn    time.Time
+	BooksID         int64
+	Name            string
+	Target          int64
+	Currency        string
+	DueOn           time.Time
+	CountsAsSavings bool
 }
 
 func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (PlanningGoal, error) {
@@ -103,6 +105,7 @@ func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (Plannin
 		arg.Target,
 		arg.Currency,
 		arg.DueOn,
+		arg.CountsAsSavings,
 	)
 	var i PlanningGoal
 	err := row.Scan(
@@ -113,6 +116,7 @@ func (q *Queries) InsertGoal(ctx context.Context, arg InsertGoalParams) (Plannin
 		&i.Currency,
 		&i.DueOn,
 		&i.CreatedAt,
+		&i.CountsAsSavings,
 	)
 	return i, err
 }
@@ -183,7 +187,7 @@ func (q *Queries) ListGoalAccounts(ctx context.Context, arg ListGoalAccountsPara
 
 const listGoals = `-- name: ListGoals :many
 SELECT
-    id, books_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at, counts_as_savings
 FROM
     planning_goal
 WHERE
@@ -221,6 +225,7 @@ func (q *Queries) ListGoals(ctx context.Context, arg ListGoalsParams) ([]Plannin
 			&i.Currency,
 			&i.DueOn,
 			&i.CreatedAt,
+			&i.CountsAsSavings,
 		); err != nil {
 			return nil, err
 		}
@@ -238,21 +243,23 @@ SET
     name = $1,
     target = $2,
     currency = $3,
-    due_on = $4
+    due_on = $4,
+    counts_as_savings = $5
 WHERE
-    books_id = $5
-    AND id = $6
+    books_id = $6
+    AND id = $7
 RETURNING
-    id, books_id, name, target, currency, due_on, created_at
+    id, books_id, name, target, currency, due_on, created_at, counts_as_savings
 `
 
 type UpdateGoalParams struct {
-	Name     string
-	Target   int64
-	Currency string
-	DueOn    time.Time
-	BooksID  int64
-	ID       uuid.UUID
+	Name            string
+	Target          int64
+	Currency        string
+	DueOn           time.Time
+	CountsAsSavings bool
+	BooksID         int64
+	ID              uuid.UUID
 }
 
 func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (PlanningGoal, error) {
@@ -261,6 +268,7 @@ func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (Plannin
 		arg.Target,
 		arg.Currency,
 		arg.DueOn,
+		arg.CountsAsSavings,
 		arg.BooksID,
 		arg.ID,
 	)
@@ -273,6 +281,7 @@ func (q *Queries) UpdateGoal(ctx context.Context, arg UpdateGoalParams) (Plannin
 		&i.Currency,
 		&i.DueOn,
 		&i.CreatedAt,
+		&i.CountsAsSavings,
 	)
 	return i, err
 }

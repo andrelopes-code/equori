@@ -13,9 +13,23 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 	case "delete_budget":
 		err = required(name, fields, []string{"budget_id"})
 	case "create_goal":
-		err = required(name, fields, []string{"name", "amount", "due_on", "account_ids"})
+		err = required(
+			name,
+			fields,
+			[]string{"name", "amount", "due_on", "account_ids"},
+			"counts_as_savings",
+		)
 	case "update_goal":
-		err = required(name, fields, []string{"goal_id"}, "name", "amount", "due_on", "account_ids")
+		err = required(
+			name,
+			fields,
+			[]string{"goal_id"},
+			"name",
+			"amount",
+			"due_on",
+			"account_ids",
+			"counts_as_savings",
+		)
 	case "delete_goal":
 		err = required(name, fields, []string{"goal_id"})
 	case "save_plan":
@@ -51,6 +65,7 @@ func budgetGoalFields(in manageBudgetOrGoalIn) []field {
 		{"name", in.Name != ""},
 		{"due_on", !in.DueOn.IsZero()},
 		{"account_ids", len(in.AccountIDs) > 0},
+		{"counts_as_savings", in.CountsAsSavings.Set},
 		{
 			"source",
 			in.Source != "",

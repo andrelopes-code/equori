@@ -283,7 +283,7 @@ type FixedIncomeEvent struct {
 	Gross      *Money             `json:"gross,omitempty"`
 	Instrument string             `json:"instrument"`
 
-	// Kind interest, amortization or maturity.
+	// Kind interest, amortization, maturity or unit_tax.
 	Kind     string `json:"kind"`
 	Quantity Money  `json:"quantity"`
 

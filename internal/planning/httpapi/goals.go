@@ -12,11 +12,12 @@ import (
 
 func toGoalAPI(g app.GoalView) Goal {
 	out := Goal{
-		Id:         g.ID,
-		Name:       g.Name,
-		Target:     toMoneyAPI(g.Target, g.Currency),
-		DueOn:      apiDate(g.DueOn),
-		AccountIds: g.AccountIDs,
+		Id:              g.ID,
+		Name:            g.Name,
+		Target:          toMoneyAPI(g.Target, g.Currency),
+		DueOn:           apiDate(g.DueOn),
+		AccountIds:      g.AccountIDs,
+		CountsAsSavings: g.CountsAsSavings,
 		Current: toMoneyAPI(
 			g.Progress.Current,
 			g.Currency,
@@ -78,7 +79,11 @@ func (s *Server) updateGoal(
 		return Goal{}, err
 	}
 
-	patch := app.GoalPatch{Name: in.Name, AccountIDs: in.AccountIds}
+	patch := app.GoalPatch{
+		Name:            in.Name,
+		AccountIDs:      in.AccountIds,
+		CountsAsSavings: in.CountsAsSavings,
+	}
 	if in.Target != nil {
 		target, err := fromMoneyAPI("target", *in.Target)
 		if err != nil {
@@ -174,5 +179,6 @@ func (s *Server) addGoal(ctx context.Context, in CreateGoalJSONRequestBody) (app
 		target,
 		in.DueOn.Time,
 		in.AccountIds,
+		in.CountsAsSavings != nil && *in.CountsAsSavings,
 	)
 }

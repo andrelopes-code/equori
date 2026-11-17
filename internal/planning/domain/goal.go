@@ -9,14 +9,17 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
-// Goal is a target balance over balance accounts by a date (P7 amendment A55).
+// Goal is a target balance over balance accounts by a date (P7 amendment A55). CountsAsSavings
+// sends what goes into its accounts to the bucket that takes savings instead of the one that takes
+// goals (income buckets A239).
 type Goal struct {
-	ID         uuid.UUID
-	Name       string
-	Target     int64
-	Currency   money.Currency
-	DueOn      time.Time
-	AccountIDs []uuid.UUID
+	ID              uuid.UUID
+	Name            string
+	Target          int64
+	Currency        money.Currency
+	DueOn           time.Time
+	AccountIDs      []uuid.UUID
+	CountsAsSavings bool
 }
 
 func (g Goal) Validate() error {

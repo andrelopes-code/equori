@@ -48,10 +48,11 @@ func (s *Service) withReturn(ctx context.Context, booksID int64, v GoalView) (Go
 
 // GoalPatch holds the fields of a goal to change; nil fields stay as they are.
 type GoalPatch struct {
-	Name       *string
-	Target     *money.Money
-	DueOn      *time.Time
-	AccountIDs *[]uuid.UUID
+	Name            *string
+	Target          *money.Money
+	DueOn           *time.Time
+	AccountIDs      *[]uuid.UUID
+	CountsAsSavings *bool
 }
 
 // vetGoal validates g and measures it, so a goal that cannot be measured is never stored.
@@ -111,13 +112,15 @@ func (s *Service) CreateGoal(
 	target money.Money,
 	dueOn time.Time,
 	accounts []uuid.UUID,
+	countsAsSavings bool,
 ) (GoalView, error) {
 	g := domain.Goal{
-		Name:       name,
-		Target:     target.Amount(),
-		Currency:   target.Currency(),
-		DueOn:      dueOn,
-		AccountIDs: accounts,
+		Name:            name,
+		Target:          target.Amount(),
+		Currency:        target.Currency(),
+		DueOn:           dueOn,
+		AccountIDs:      accounts,
+		CountsAsSavings: countsAsSavings,
 	}
 
 	view, err := s.vetGoal(ctx, booksID, g)
@@ -163,6 +166,10 @@ func (s *Service) UpdateGoal(
 
 	if patch.AccountIDs != nil {
 		g.AccountIDs = *patch.AccountIDs
+	}
+
+	if patch.CountsAsSavings != nil {
+		g.CountsAsSavings = *patch.CountsAsSavings
 	}
 
 	view, err := s.vetGoal(ctx, booksID, g)

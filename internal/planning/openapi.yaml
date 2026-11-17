@@ -1402,6 +1402,11 @@ schemas:
         items:
           type: string
           format: uuid
+      counts_as_savings:
+        type: boolean
+        description: |
+          What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+          takes goals (income buckets A239). False when absent.
   GoalPatch:
     type: object
     additionalProperties: false
@@ -1424,9 +1429,23 @@ schemas:
         items:
           type: string
           format: uuid
+      counts_as_savings:
+        type: boolean
+        description: |
+          What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+          takes goals (income buckets A239).
   Goal:
     type: object
-    required: [id, name, target, due_on, account_ids, current, remaining, progress_bp]
+    required:
+      - id
+      - name
+      - target
+      - due_on
+      - account_ids
+      - counts_as_savings
+      - current
+      - remaining
+      - progress_bp
     description: |
       current is the sum of the booked balances of the accounts today, valued in the target currency with
       stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
@@ -1447,6 +1466,11 @@ schemas:
         items:
           type: string
           format: uuid
+      counts_as_savings:
+        type: boolean
+        description: |
+          What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+          takes goals (income buckets A239).
       current:
         $ref: "#/components/schemas/Money"
       remaining:

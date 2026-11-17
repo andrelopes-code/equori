@@ -807,7 +807,7 @@ schemas:
       kind:
         type: string
         pattern: ^[a-z0-9_]{2,40}$
-        description: interest, amortization or maturity.
+        description: interest, amortization, maturity or unit_tax.
       quantity:
         $ref: "#/components/schemas/Money"
       gross:

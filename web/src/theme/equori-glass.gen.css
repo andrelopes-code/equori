@@ -2071,6 +2071,11 @@
     &[data-slotted-scheme="dark"] [data-ui="card"],
     &[data-slotted-scheme="dark"] [data-ui="stat-card"],
     &[data-slotted-scheme="dark"] [data-ui="section"],
+    &[data-slotted-scheme="dark"] [data-ui="collapsible"],
+    &[data-slotted-scheme="dark"] [data-ui="accordion"],
+    &[data-slotted-scheme="dark"] [data-ui="toolbar"],
+    &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+    &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
     &[data-slotted-scheme="dark"] [data-ui="menu"],
     &[data-slotted-scheme="dark"] [data-ui="popover"],
     &[data-slotted-scheme="dark"] [data-ui="tooltip"],
@@ -2117,6 +2122,7 @@
       --glass-fill-frost: color-mix(in oklab, var(--slotted-surface) var(--glass-alpha-frost), transparent);
       --glass-fill-modal: color-mix(in oklab, var(--slotted-surface-raised) var(--glass-alpha-modal), transparent);
       --glass-ring: color-mix(in oklab, var(--glass-light) var(--glass-edge), transparent);
+      --glass-ring-lit: color-mix(in oklab, var(--glass-light) 16.3%, transparent);
       --glass-lit: inset 0 1px 0 color-mix(in oklab, var(--glass-light) var(--glass-top), transparent);
       --glass-shadow-1: 0 0 0 0.5px color-mix(in oklab, var(--glass-shade) 55%, transparent), var(--glass-lit), 0 1px 2px 0 color-mix(in oklab, var(--glass-shade) 30%, transparent), 0 6px 14px -6px color-mix(in oklab, var(--glass-shade) 50%, transparent);
       --glass-shadow-2: 0 0 0 0.5px color-mix(in oklab, var(--glass-shade) 55%, transparent), var(--glass-lit), 0 2px 4px 0 color-mix(in oklab, var(--glass-shade) 20%, transparent), 0 18px 40px -18px color-mix(in oklab, var(--glass-shade) 62%, transparent);
@@ -2168,6 +2174,49 @@
 
     &[data-slotted-scheme="dark"] [data-ui="section"] {
       --slotted-section-surface: var(--glass-fill-card);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="collapsible"] {
+      --slotted-collapsible-surface: var(--glass-fill-card);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="collapsible"][data-variant="framed"] {
+      --glass-lit: 0 0 transparent;
+      border-color: var(--glass-ring);
+      border-block-start-color: var(--glass-ring-lit);
+      box-shadow: var(--glass-shadow-1);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="accordion"] {
+      --slotted-accordion-surface: var(--glass-fill-card);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="accordion"][data-variant="framed"] {
+      --glass-lit: 0 0 transparent;
+      border-color: var(--glass-ring);
+      border-block-start-color: var(--glass-ring-lit);
+      box-shadow: var(--glass-shadow-1);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="toolbar"] {
+      --slotted-toolbar-background: var(--glass-fill-card);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="toolbar"][data-variant="outline"] {
+      --glass-lit: 0 0 transparent;
+      border-color: var(--glass-ring);
+      border-block-start-color: var(--glass-ring-lit);
+      box-shadow: var(--glass-shadow-1);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"] {
+      --slotted-dashboard-grid-edit-bar-background: var(--glass-fill-overlay);
+      --slotted-dashboard-grid-edit-bar-border: var(--glass-ring);
+    }
+
+    &[data-slotted-scheme="dark"] [data-ui="media-viewer"] {
+      --slotted-media-viewer-step-surface: var(--glass-fill-overlay);
+      --slotted-media-viewer-zoom-surface: var(--glass-fill-overlay);
     }
 
     &[data-slotted-scheme="dark"] [data-ui="menu"] {
@@ -2357,6 +2406,11 @@
     &[data-slotted-scheme="dark"] [data-ui="card"],
     &[data-slotted-scheme="dark"] [data-ui="stat-card"],
     &[data-slotted-scheme="dark"] [data-ui="section"],
+    &[data-slotted-scheme="dark"] [data-ui="collapsible"],
+    &[data-slotted-scheme="dark"] [data-ui="accordion"],
+    &[data-slotted-scheme="dark"] [data-ui="toolbar"],
+    &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+    &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
     &[data-slotted-scheme="dark"] [data-ui="menu"],
     &[data-slotted-scheme="dark"] [data-ui="popover"],
     &[data-slotted-scheme="dark"] [data-ui="tooltip"],
@@ -2540,6 +2594,11 @@
       &[data-slotted-scheme="dark"] [data-ui="card"],
       &[data-slotted-scheme="dark"] [data-ui="stat-card"],
       &[data-slotted-scheme="dark"] [data-ui="section"],
+      &[data-slotted-scheme="dark"] [data-ui="collapsible"],
+      &[data-slotted-scheme="dark"] [data-ui="accordion"],
+      &[data-slotted-scheme="dark"] [data-ui="toolbar"],
+      &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+      &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
       &[data-slotted-scheme="dark"] [data-ui="menu"],
       &[data-slotted-scheme="dark"] [data-ui="popover"],
       &[data-slotted-scheme="dark"] [data-ui="tooltip"],
@@ -2572,6 +2631,11 @@
       &[data-slotted-scheme="dark"] [data-ui="card"],
       &[data-slotted-scheme="dark"] [data-ui="stat-card"],
       &[data-slotted-scheme="dark"] [data-ui="section"],
+      &[data-slotted-scheme="dark"] [data-ui="collapsible"],
+      &[data-slotted-scheme="dark"] [data-ui="accordion"],
+      &[data-slotted-scheme="dark"] [data-ui="toolbar"],
+      &[data-slotted-scheme="dark"] [data-ui="dashboard-grid"],
+      &[data-slotted-scheme="dark"] [data-ui="media-viewer"],
       &[data-slotted-scheme="dark"] [data-ui="menu"],
       &[data-slotted-scheme="dark"] [data-ui="popover"],
       &[data-slotted-scheme="dark"] [data-ui="tooltip"],

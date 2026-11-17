@@ -1464,6 +1464,9 @@
               },
               "trailing_return_bp": {
                 "type": "integer"
+              },
+              "counts_as_savings": {
+                "type": "boolean"
               }
             },
             "required": [
@@ -6587,7 +6590,7 @@
         },
         "savings_target_bp": {
           "type": "integer",
-          "description": "for save_plan: share of the reference to save in basis points; the stored one when absent"
+          "description": "for save_plan: share of the reference to save, in bp; the stored one when absent"
         },
         "amounts": {
           "type": "array",
@@ -6617,11 +6620,11 @@
         },
         "name": {
           "type": "string",
-          "description": "for create_goal and update_goal: goal name"
+          "description": "goals: name"
         },
         "due_on": {
           "type": "string",
-          "description": "for create_goal and update_goal: target date",
+          "description": "goals: target date",
           "format": "date"
         },
         "account_ids": {
@@ -6629,7 +6632,11 @@
           "items": {
             "type": "string"
           },
-          "description": "for create_goal and update_goal: accounts whose balance counts toward the goal"
+          "description": "goals: accounts whose balance counts toward it"
+        },
+        "counts_as_savings": {
+          "type": "boolean",
+          "description": "goals: deposits count in the savings bucket"
         },
         "buckets": {
           "type": "array",

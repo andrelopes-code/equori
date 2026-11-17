@@ -49,6 +49,11 @@ describe("GoalDialog", () => {
       await screen.findByRole("option", { name: /Reserva de emergência/u }),
     );
     await userEvent.click(
+      within(dialog).getByRole("checkbox", {
+        name: catalogEn["goals.countsAsSavings"],
+      }),
+    );
+    await userEvent.click(
       within(dialog).getByRole("button", { name: catalogEn["goals.create"] }),
     );
     await waitFor(() => {
@@ -58,6 +63,7 @@ describe("GoalDialog", () => {
           target: money(3000000),
           due_on: "2027-10-17",
           account_ids: [reserveID],
+          counts_as_savings: true,
         },
       ]);
     });

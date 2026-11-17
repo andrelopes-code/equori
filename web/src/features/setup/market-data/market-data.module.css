@@ -2,11 +2,12 @@
   /* The surface of the pane, as in the approved mock: the regions are bands of one card, edge to
      edge. It is the container the rows and bands ask their width of. */
   .surface {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
+    position: relative;
     overflow: hidden;
-    border: var(--slotted-border-width-thin) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface-raised);
-    box-shadow: var(--slotted-shadow-sm);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, var(--slotted-shadow-sm));
     container-type: inline-size;
   }
 
@@ -20,11 +21,7 @@
     padding-inline: var(--slotted-space-7);
     border-block-start: var(--slotted-border-width-thin) solid
       var(--slotted-border-subtle);
-    background: color-mix(
-      in srgb,
-      var(--slotted-text) 4%,
-      var(--slotted-surface-raised)
-    );
+    background: color-mix(in srgb, var(--slotted-text) 4%, transparent);
     column-gap: var(--slotted-space-6);
     grid-template-columns: minmax(0, 1fr) 7rem 2.5rem;
   }

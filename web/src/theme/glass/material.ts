@@ -84,6 +84,10 @@ const elevations: Readonly<Record<1 | 2 | 3, Elevation>> = {
   },
 };
 
+// The top edge of a card is the lit line with the hairline over it: two layers of one colour, whose
+// alphas compose into this one. A surface with a real border paints it on the border's top side.
+const litEdge = edge + top - (edge * top) / 100;
+
 const percent = (value: number) => `${String(value)}%`;
 const px = (value: number) => (value === 0 ? "0" : `${String(value)}px`);
 const shade = (opacity: number) => mix("var(--glass-shade)", opacity);
@@ -137,6 +141,7 @@ const entries: Entry[] = [
     ];
   }),
   ["--glass-ring", mix("var(--glass-light)", "var(--glass-edge)")],
+  ["--glass-ring-lit", mix("var(--glass-light)", percent(litEdge))],
   [
     "--glass-lit",
     `inset 0 1px 0 ${mix("var(--glass-light)", "var(--glass-top)")}`,
@@ -151,5 +156,6 @@ export const material: Declarations = Object.fromEntries(entries);
 
 export const fill = (role: Role) => `var(--glass-fill-${role})`;
 export const ringColor = "var(--glass-ring)";
+export const litRingColor = "var(--glass-ring-lit)";
 export const elevation = (level: 1 | 2 | 3) =>
   `var(--glass-shadow-${String(level)})`;

@@ -1,8 +1,8 @@
 -- name: InsertGoal :one
 INSERT INTO
-    planning_goal (books_id, name, target, currency, due_on)
+    planning_goal (books_id, name, target, currency, due_on, counts_as_savings)
 VALUES
-    (@books_id, @name, @target, @currency, @due_on)
+    (@books_id, @name, @target, @currency, @due_on, @counts_as_savings)
 RETURNING
     *;
 
@@ -58,7 +58,8 @@ SET
     name = @name,
     target = @target,
     currency = @currency,
-    due_on = @due_on
+    due_on = @due_on,
+    counts_as_savings = @counts_as_savings
 WHERE
     books_id = @books_id
     AND id = @id

@@ -1,15 +1,18 @@
 @layer app {
   /* The mock's .sheet: radius 18, raised surface, 1 px border, shadow and an inner top highlight. */
   .sheet {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
+    position: relative;
     overflow: hidden;
     box-sizing: border-box;
     inline-size: 100%;
-    border: 1px solid var(--slotted-border-subtle);
     border-radius: 18px;
-    background: var(--slotted-surface-raised);
-    box-shadow:
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(
+      --slotted-panel-shadow,
       var(--slotted-shadow-md),
-      inset 0 1px 0 color-mix(in oklab, var(--slotted-text) 6%, transparent);
+      inset 0 1px 0 color-mix(in oklab, var(--slotted-text) 6%, transparent)
+    );
   }
 
   .header {
@@ -195,11 +198,7 @@
     padding-inline: 16px 12px;
     border-block-start: 1px solid
       color-mix(in oklab, var(--slotted-text) 7%, transparent);
-    background: color-mix(
-      in oklab,
-      var(--slotted-surface) 50%,
-      var(--slotted-surface-raised)
-    );
+    background: color-mix(in oklab, var(--slotted-surface) 50%, transparent);
   }
 
   .summary {

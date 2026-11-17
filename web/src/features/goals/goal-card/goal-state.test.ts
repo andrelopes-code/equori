@@ -9,6 +9,7 @@ const goal = (remaining: number, due_on: string) => ({
   target: money(3000000),
   due_on,
   account_ids: ["a1"],
+  counts_as_savings: false,
   current: money(3000000 - remaining),
   remaining: money(remaining),
   progress_bp: 0,

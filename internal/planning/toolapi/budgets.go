@@ -43,6 +43,7 @@ type goalView struct {
 	ProgressBP       int        `json:"progress_bp"`
 	DueOn            tool.Date  `json:"due_on"`
 	TrailingReturnBP int        `json:"trailing_return_bp,omitzero"`
+	CountsAsSavings  bool       `json:"counts_as_savings,omitzero"`
 }
 
 type planRowView struct {
@@ -163,10 +164,11 @@ func planRowViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planRowView, er
 
 func toGoalView(g app.GoalView) (goalView, error) {
 	v := goalView{
-		GoalID:     g.ID.String(),
-		Name:       g.Name,
-		ProgressBP: g.Progress.ProgressBP,
-		DueOn:      tool.DateOf(g.DueOn),
+		GoalID:          g.ID.String(),
+		Name:            g.Name,
+		ProgressBP:      g.Progress.ProgressBP,
+		DueOn:           tool.DateOf(g.DueOn),
+		CountsAsSavings: g.CountsAsSavings,
 	}
 	for _, f := range []struct {
 		amount int64

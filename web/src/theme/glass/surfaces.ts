@@ -4,7 +4,12 @@
 
 import type { Declarations } from "./css.ts";
 import { family, part } from "./css.ts";
-import { elevation, fill, ringColor as ring } from "./material.ts";
+import {
+  elevation,
+  fill,
+  litRingColor as litRing,
+  ringColor as ring,
+} from "./material.ts";
 
 export interface Surface {
   readonly family: string;
@@ -52,6 +57,27 @@ const picker = (name: string): Surface => ({
 // A drawer over the page: an inline drawer is part of the layout and blurs nothing.
 const OVERLAY_DRAWER = `${family("drawer")}[data-mode="overlay"] > [data-part="panel"]`;
 
+// Workaround for Slotted issue #126: a framed collapsible, a framed accordion and an outlined
+// toolbar read no token for the frame's colour or shadow, so the frame is painted by selector.
+// Such a region stands on the page as a card does. The card draws its hairline over the box, with the lit line under it;
+// a frame is a real border, and the inset lit line would sit one border width below it and read as
+// a thicker top. The frame's top side takes both lines as one colour and the shadow drops its own.
+const framed = (name: string, token: string, variant: string): Surface => ({
+  family: name,
+  tokens: { [`--slotted-${name}-${token}`]: fill("card") },
+  paint: [
+    {
+      select: `${family(name)}[data-variant="${variant}"]`,
+      declarations: {
+        "--glass-lit": "0 0 transparent",
+        "border-color": ring,
+        "border-block-start-color": litRing,
+        "box-shadow": elevation(1),
+      },
+    },
+  ],
+});
+
 const NOT_PALETTE = ':not(:has(> [data-ui="command-palette"]))';
 
 export const surfaces: readonly Surface[] = [
@@ -75,6 +101,18 @@ export const surfaces: readonly Surface[] = [
     "shadow-elevated": elevation(2),
   }),
   byToken("section", { surface: fill("card") }),
+  framed("collapsible", "surface", "framed"),
+  framed("accordion", "surface", "framed"),
+  framed("toolbar", "background", "outline"),
+  // The bar that opens over the grid while editing, and the controls a viewer lays over its media.
+  byToken("dashboard-grid", {
+    "edit-bar-background": fill("overlay"),
+    "edit-bar-border": ring,
+  }),
+  byToken("media-viewer", {
+    "step-surface": fill("overlay"),
+    "zoom-surface": fill("overlay"),
+  }),
   {
     family: "menu",
     tokens: {

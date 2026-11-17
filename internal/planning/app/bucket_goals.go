@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"time"
 
@@ -13,8 +14,9 @@ import (
 )
 
 // goalInflows returns, by first day of month in [from, to), what went into the accounts of the
-// book's goals and their sub-accounts from its other asset and liability accounts in base: money
-// moved, not yields or prices (income buckets A234). A withdrawal counts against its month.
+// book's goals that do not count as savings and their sub-accounts from its other asset and
+// liability accounts in base: money moved, not yields or prices (income buckets A234, A239). A
+// withdrawal counts against its month.
 func (s *Service) goalInflows(
 	ctx context.Context,
 	booksID int64,
@@ -22,7 +24,7 @@ func (s *Service) goalInflows(
 	base money.Currency,
 	from, to time.Time,
 ) (map[time.Time]int64, error) {
-	held, err := s.goalAccounts(ctx, booksID, facts)
+	held, _, err := s.goalAccounts(ctx, booksID, facts)
 	if err != nil {
 		return nil, err
 	}
@@ -82,24 +84,31 @@ func (s *Service) inflows(
 	return out, nil
 }
 
-// goalAccounts returns the accounts of every goal of the book and their sub-accounts.
+// goalAccounts returns two disjoint sets with their sub-accounts: the accounts of the goals that
+// do not count as savings, and the accounts held only by goals that do (income buckets A239). An
+// account of both kinds of goal is in the first set, so its deposits count once.
 func (s *Service) goalAccounts(
 	ctx context.Context,
 	booksID int64,
 	facts []Account,
-) (map[uuid.UUID]bool, error) {
-	held := make(map[uuid.UUID]bool)
+) (goals, savings map[uuid.UUID]bool, err error) {
+	goals, savings = make(map[uuid.UUID]bool), make(map[uuid.UUID]bool)
 
 	r := page.Request[IDKey]{Limit: page.MaxLimit}
 	for {
-		goals, next, err := s.repo.ListGoals(ctx, booksID, r)
+		got, next, err := s.repo.ListGoals(ctx, booksID, r)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		for _, g := range goals {
+		for _, g := range got {
+			into := goals
+			if g.CountsAsSavings {
+				into = savings
+			}
+
 			for _, id := range g.AccountIDs {
-				held[id] = true
+				into[id] = true
 			}
 		}
 
@@ -110,7 +119,16 @@ func (s *Service) goalAccounts(
 		r.After = next
 	}
 
-	// A sub-account sits under its goal account at any depth; facts come in no set order.
+	withSubAccounts(goals, facts)
+	withSubAccounts(savings, facts)
+	maps.DeleteFunc(savings, func(id uuid.UUID, _ bool) bool { return goals[id] })
+
+	return goals, savings, nil
+}
+
+// withSubAccounts adds to held every account under one of its accounts, at any depth; facts come
+// in no set order.
+func withSubAccounts(held map[uuid.UUID]bool, facts []Account) {
 	for grew := true; grew; {
 		grew = false
 		for _, a := range facts {
@@ -119,6 +137,4 @@ func (s *Service) goalAccounts(
 			}
 		}
 	}
-
-	return held, nil
 }

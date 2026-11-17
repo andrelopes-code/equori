@@ -59,11 +59,15 @@ func previewGoalCreate(
 	accounts tool.Value,
 ) {
 	pv.Target = in.Name
+
 	pv.Changes = []tool.Change{
 		{Field: "goal", After: tool.TextValue(in.Name)},
 		{Field: "target", After: tool.MoneyValue(*p.amount)},
 		{Field: "due_on", After: tool.DateValue(in.DueOn.Time)},
 		{Field: "accounts", After: accounts},
+	}
+	if in.CountsAsSavings.B {
+		pv.Changes = append(pv.Changes, tool.Change{Field: "counts_in", After: countsIn(true)})
 	}
 }
 
@@ -132,7 +136,28 @@ func previewGoalUpdate(
 		pv.Changes = append(pv.Changes, tool.Change{Field: "accounts", After: accounts})
 	}
 
+	if in.CountsAsSavings.Set {
+		pv.Changes = append(pv.Changes, countsInChange(p.goal.CountsAsSavings, in))
+	}
+
 	return nil
+}
+
+func countsInChange(before bool, in manageBudgetOrGoalIn) tool.Change {
+	return tool.Change{
+		Field:  "counts_in",
+		Before: countsIn(before),
+		After:  countsIn(in.CountsAsSavings.B),
+	}
+}
+
+// countsIn names the bucket that draws the deposits of a goal (income buckets A239).
+func countsIn(savings bool) tool.Value {
+	if savings {
+		return tool.TextValue("the bucket that takes savings")
+	}
+
+	return tool.TextValue("the bucket that takes goals")
 }
 
 func previewPlanSave(pv *tool.Preview, in manageBudgetOrGoalIn, p budgetGoalPlan) error {

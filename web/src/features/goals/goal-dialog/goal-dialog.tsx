@@ -1,4 +1,5 @@
 import { Button } from "@slotted/react/button";
+import { Checkbox } from "@slotted/react/checkbox";
 import {
   Dialog,
   DialogBody,
@@ -69,6 +70,9 @@ export function GoalDialog({
   const [accountIDs, setAccountIDs] = useState<readonly string[]>(
     goal?.account_ids ?? [],
   );
+  const [countsAsSavings, setCountsAsSavings] = useState(
+    goal?.counts_as_savings ?? false,
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
   const change = useStableCallback((open: boolean) => {
@@ -104,6 +108,7 @@ export function GoalDialog({
               target: { amount: target, currency },
               due_on: dueOn,
               account_ids: [...accountIDs],
+              counts_as_savings: countsAsSavings,
             };
             (goal === undefined
               ? create.mutateAsync(body)
@@ -194,6 +199,13 @@ export function GoalDialog({
                   <FieldError>{errors.account_ids}</FieldError>
                 )}
               </Field>
+
+              <Checkbox
+                checked={countsAsSavings}
+                onCheckedChange={setCountsAsSavings}
+              >
+                {t("goals.countsAsSavings")}
+              </Checkbox>
             </FormLayout>
           </DialogBody>
           <DialogFooter>

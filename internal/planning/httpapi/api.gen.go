@@ -386,10 +386,14 @@ type FieldError struct {
 // in basis points, rounded down, between 0 and 10000.
 type Goal struct {
 	AccountIds []openapi_types.UUID `json:"account_ids"`
-	Current    Money                `json:"current"`
-	DueOn      openapi_types.Date   `json:"due_on"`
-	Id         openapi_types.UUID   `json:"id"`
-	Name       string               `json:"name"`
+
+	// CountsAsSavings What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+	// takes goals (income buckets A239).
+	CountsAsSavings bool               `json:"counts_as_savings"`
+	Current         Money              `json:"current"`
+	DueOn           openapi_types.Date `json:"due_on"`
+	Id              openapi_types.UUID `json:"id"`
+	Name            string             `json:"name"`
 
 	// Parts What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
 	// non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
@@ -410,9 +414,13 @@ type Goal struct {
 // GoalInput defines model for GoalInput.
 type GoalInput struct {
 	AccountIds []openapi_types.UUID `json:"account_ids"`
-	DueOn      openapi_types.Date   `json:"due_on"`
-	Name       string               `json:"name"`
-	Target     Money                `json:"target"`
+
+	// CountsAsSavings What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+	// takes goals (income buckets A239). False when absent.
+	CountsAsSavings *bool              `json:"counts_as_savings,omitempty"`
+	DueOn           openapi_types.Date `json:"due_on"`
+	Name            string             `json:"name"`
+	Target          Money              `json:"target"`
 }
 
 // GoalPage defines model for GoalPage.
@@ -434,9 +442,13 @@ type GoalPart struct {
 // GoalPatch defines model for GoalPatch.
 type GoalPatch struct {
 	AccountIds *[]openapi_types.UUID `json:"account_ids,omitempty"`
-	DueOn      *openapi_types.Date   `json:"due_on,omitempty"`
-	Name       *string               `json:"name,omitempty"`
-	Target     *Money                `json:"target,omitempty"`
+
+	// CountsAsSavings What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+	// takes goals (income buckets A239).
+	CountsAsSavings *bool               `json:"counts_as_savings,omitempty"`
+	DueOn           *openapi_types.Date `json:"due_on,omitempty"`
+	Name            *string             `json:"name,omitempty"`
+	Target          *Money              `json:"target,omitempty"`
 }
 
 // Money defines model for Money.

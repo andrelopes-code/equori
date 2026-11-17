@@ -257,7 +257,16 @@ func runBudgetOrGoal(
 			p.budgetID,
 		)
 	case "create_goal":
-		g, err := svc.CreateGoal(ctx, booksID, in.Name, *p.amount, in.DueOn.Time, p.accountIDs)
+		g, err := svc.CreateGoal(
+			ctx,
+			booksID,
+			in.Name,
+			*p.amount,
+			in.DueOn.Time,
+			p.accountIDs,
+			in.CountsAsSavings.B,
+		)
+
 		return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err
 	case "save_plan":
 		return savePlan(ctx, svc, booksID, in, p)
@@ -341,6 +350,10 @@ func updateGoal(
 
 	if len(p.accountIDs) > 0 {
 		patch.AccountIDs = &p.accountIDs
+	}
+
+	if in.CountsAsSavings.Set {
+		patch.CountsAsSavings = &in.CountsAsSavings.B
 	}
 
 	_, err := svc.UpdateGoal(ctx, booksID, p.goalID, patch)

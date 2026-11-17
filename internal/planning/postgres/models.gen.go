@@ -36,13 +36,14 @@ type PlanningBudgetReference struct {
 }
 
 type PlanningGoal struct {
-	ID        uuid.UUID
-	BooksID   int64
-	Name      string
-	Target    int64
-	Currency  string
-	DueOn     time.Time
-	CreatedAt time.Time
+	ID              uuid.UUID
+	BooksID         int64
+	Name            string
+	Target          int64
+	Currency        string
+	DueOn           time.Time
+	CreatedAt       time.Time
+	CountsAsSavings bool
 }
 
 type PlanningOccurrence struct {

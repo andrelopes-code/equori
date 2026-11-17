@@ -1,12 +1,12 @@
 @layer app {
   .panel {
+    composes: edge from "../../../ui/display/panel-edge.module.css";
     position: sticky;
     inset-block-start: 0;
     padding: var(--slotted-space-5);
-    border: var(--slotted-border-width) solid var(--slotted-border-subtle);
     border-radius: var(--slotted-radius-lg);
-    background: var(--slotted-surface-raised);
-    box-shadow: var(--slotted-shadow-sm);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, var(--slotted-shadow-sm));
   }
 
   /* One column that never grows past the panel: a long line is cut, the scene keeps its width. */

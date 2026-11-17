@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { flattenTheme } from "@slotted/theme";
 import { themeConformance } from "@slotted/theme/conformance";
@@ -292,3 +292,86 @@ test("a table's sticky column is filled only while content passes under it", () 
     /@container scroll-state\(scrollable: inline-start\) \{[^@]*\[data-sticky="start"\] \{\s*--slotted-table-sticky-surface: var\(--glass-fill-sticky\);/,
   );
 });
+
+// A family that paints the raised surface behind a token stands as a card or an overlay. Under the
+// glass each such token of a family the application imports is written by surfaces.ts, so no
+// family keeps an opaque slab beside the translucent cards.
+test("every raised surface of a family the application uses is glass", () => {
+  const tokens = raisedSurfaceTokens().filter(({ family }) =>
+    usedFamilies().has(family),
+  );
+  assert.ok(tokens.length > 0);
+
+  const opaque = tokens
+    .filter(({ token }) => !PAINTED_BY_SELECTOR.has(token))
+    .filter(({ token }) => !glassOnly.includes(`${token}:`))
+    .map(({ token }) => token);
+
+  assert.deepEqual(opaque, []);
+});
+
+// The card draws its hairline over the box and the lit line under it. A frame is a real border: its
+// top side carries both lines, and its shadow carries no lit line of its own.
+test("a framed region draws the top edge of a card", () => {
+  for (const selector of [
+    '[data-ui="collapsible"][data-variant="framed"]',
+    '[data-ui="accordion"][data-variant="framed"]',
+    '[data-ui="toolbar"][data-variant="outline"]',
+  ]) {
+    const body = glassOnly.split(`${selector} {`)[1]?.split("}")[0] ?? "";
+
+    assert.match(body, /--glass-lit: 0 0 transparent;/, selector);
+    assert.match(body, /border-color: var\(--glass-ring\);/, selector);
+    assert.match(
+      body,
+      /border-block-start-color: var\(--glass-ring-lit\);/,
+      selector,
+    );
+  }
+
+  assert.match(
+    glassOnly,
+    /--glass-ring-lit: color-mix\(in oklab, var\(--glass-light\) 16\.3%, transparent\)/,
+  );
+});
+
+// The dialog's content is painted by a selector that leaves the command palette out.
+const PAINTED_BY_SELECTOR = new Set(["--slotted-dialog-surface"]);
+
+const SRC = new URL("../", import.meta.url);
+const STYLES = new URL(
+  "../../node_modules/@slotted/react/dist/styles/",
+  import.meta.url,
+);
+
+function raisedSurfaceTokens(): { family: string; token: string }[] {
+  const found = new Map<string, string>();
+  const paint =
+    /\[data-ui-([a-z-]+)\][^{}]*\{[^{}]*background(?:-color)?:var\((--slotted-[a-z-]+),var\(--slotted-surface-raised/g;
+
+  for (const file of readdirSync(STYLES)) {
+    if (!file.endsWith(".css") || file === "index.css") continue;
+
+    const sheet = readFileSync(new URL(file, STYLES), "utf8");
+    for (const [, family, token] of sheet.matchAll(paint)) {
+      if (family !== undefined && token !== undefined) found.set(token, family);
+    }
+  }
+
+  return [...found].map(([token, family]) => ({ family, token })).sort();
+}
+
+function usedFamilies(): Set<string> {
+  const used = new Set<string>();
+
+  for (const file of readdirSync(SRC, { recursive: true, encoding: "utf8" })) {
+    if (!/\.tsx?$/.test(file)) continue;
+
+    const source = readFileSync(new URL(file, SRC), "utf8");
+    for (const [, family] of source.matchAll(/@slotted\/react\/([a-z-]+)/g)) {
+      if (family !== undefined) used.add(family);
+    }
+  }
+
+  return used;
+}

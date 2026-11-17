@@ -596,3 +596,23 @@ func TestAddFixedIncomePayments(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 21", ArchiveVersion)
 	}
 }
+
+// Income buckets A239, ADR 021 V2: a version 22 goal counts in the bucket that takes goals.
+func TestAddGoalSavings(t *testing.T) {
+	t.Parallel()
+
+	v22 := []ArchiveTable{{Name: "planning_goal", Rows: [][]byte{[]byte(`{"name":"Trip"}`)}}}
+
+	got, err := addGoalSavings(v22)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got[0].Rows[0]) != `{"counts_as_savings":false,"name":"Trip"}` {
+		t.Fatalf("row = %s", got[0].Rows[0])
+	}
+
+	if ArchiveVersion < 23 {
+		t.Fatalf("ArchiveVersion = %d, want at least 23", ArchiveVersion)
+	}
+}

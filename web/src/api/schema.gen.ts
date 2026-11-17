@@ -7421,6 +7421,11 @@ export interface components {
             /** Format: date */
             due_on: string;
             account_ids: string[];
+            /**
+             * @description What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+             *     takes goals (income buckets A239). False when absent.
+             */
+            counts_as_savings?: boolean;
         };
         GoalPatch: {
             name?: string;
@@ -7428,6 +7433,11 @@ export interface components {
             /** Format: date */
             due_on?: string;
             account_ids?: string[];
+            /**
+             * @description What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+             *     takes goals (income buckets A239).
+             */
+            counts_as_savings?: boolean;
         };
         /**
          * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
@@ -7442,6 +7452,11 @@ export interface components {
             /** Format: date */
             due_on: string;
             account_ids: string[];
+            /**
+             * @description What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
+             *     takes goals (income buckets A239).
+             */
+            counts_as_savings: boolean;
             current: components["schemas"]["Money"];
             remaining: components["schemas"]["Money"];
             progress_bp: number;
@@ -7732,7 +7747,7 @@ export interface components {
              * @description The payment date, adjusted to the next business day.
              */
             date: string;
-            /** @description interest, amortization or maturity. */
+            /** @description interest, amortization, maturity or unit_tax. */
             kind: string;
             quantity: components["schemas"]["Money"];
             gross?: components["schemas"]["Money"];

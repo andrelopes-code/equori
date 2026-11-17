@@ -6,15 +6,11 @@ import { describe, expect, it } from "vitest";
 // leaves it when its ground reads `--slotted-panel-surface` (docs/contributing/web.md, O18).
 const RAW_GROUND = [
   "src/features/accounts/kind-chooser/kind-chooser.module.css",
-  "src/features/accounts/kind-chooser/kind-panel.module.css",
-  "src/features/assistant/message/answer-blocks.module.css",
   "src/features/assistant/message/turn-activity.module.css",
-  "src/features/assistant/proposal/decision-sheet.module.css",
   "src/features/assistant/proposal/results.module.css",
   "src/features/categories/category-mark/category-avatar.module.css",
   "src/features/planning/budget-plan/budget-plan.module.css",
   "src/features/planning/income-split/bucket-categories.module.css",
-  "src/features/setup/market-data/market-data.module.css",
   "src/features/setup/pages/settings-page.module.css",
   "src/features/setup/previews/appearance-previews.module.css",
   "src/features/setup/studio/appearance-preview.module.css",

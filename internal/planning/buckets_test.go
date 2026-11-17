@@ -612,3 +612,117 @@ func TestS448SavingsBucketCountsTransfers(t *testing.T) {
 		}
 	}
 }
+
+// S538: a goal that counts as savings sends what went into its accounts to the bucket that takes
+// savings, in the history and in the month's plan, and nothing to the bucket that takes goals; the
+// goal set back counts in the goals bucket again (A239).
+func TestS538GoalCountsAsSavings(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	wallet := f.h.Account("Wallet", "asset", "checking", nil)
+	f.h.Record(
+		"2026-10-05",
+		apitest.Posting(f.checking, 500000),
+		apitest.Posting(f.salary, -500000),
+	)
+	f.pay("2026-10-06", 100000, f.rent, "")
+	f.h.Record(
+		"2026-10-10",
+		apitest.Posting(wallet, 80000),
+		apitest.Posting(f.checking, -80000),
+	)
+	f.pay("2026-10-12", 100000, f.savings, "")
+
+	goals := bucket("Goals", 2000, false)
+	goals["takes_goals"] = true
+	f.saveBuckets(bucket("Needs", 6000, false, f.rent), goals, bucket("Freedom", 2000, true))
+
+	var created struct {
+		ID              string `json:"id"`
+		CountsAsSavings bool   `json:"counts_as_savings"`
+	}
+	f.h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{
+		"name":              "Emergency",
+		"target":            apitest.BRL(1000000),
+		"due_on":            "2027-06-30",
+		"account_ids":       []string{wallet},
+		"counts_as_savings": true,
+	}, http.StatusCreated, &created)
+
+	if !created.CountsAsSavings {
+		t.Fatalf("created = %+v, want counts_as_savings", created)
+	}
+
+	if got := f.octoberReal(); got[1] != 0 || got[2] != 180000 {
+		t.Errorf("as savings: goals %d freedom %d, want 0 and 180000", got[1], got[2])
+	}
+
+	if spent := f.bucketPlan("2026-10").Buckets[2].Spent.Amount; spent != 180000 {
+		t.Errorf("plan spent of the savings bucket = %d, want 180000", spent)
+	}
+
+	f.h.MustDo(
+		http.MethodPatch,
+		"/api/v1/goals/"+created.ID,
+		map[string]any{"counts_as_savings": false},
+		http.StatusOK,
+		&created,
+	)
+
+	if created.CountsAsSavings {
+		t.Fatalf("patched = %+v, want counts_as_savings false", created)
+	}
+
+	if got := f.octoberReal(); got[1] != 80000 || got[2] != 100000 {
+		t.Errorf("as a goal: goals %d freedom %d, want 80000 and 100000", got[1], got[2])
+	}
+}
+
+// S539: an account held by a goal that counts as savings and by one that does not counts once, in
+// the bucket that takes goals; a goal created without the field does not count as savings (A239).
+func TestS539SharedGoalAccountCountsOnce(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	reserve := f.h.Account("Reserve", "asset", "savings", nil)
+	f.h.Record(
+		"2026-10-05",
+		apitest.Posting(f.checking, 500000),
+		apitest.Posting(f.salary, -500000),
+	)
+	f.h.Record(
+		"2026-10-10",
+		apitest.Posting(reserve, 80000),
+		apitest.Posting(f.checking, -80000),
+	)
+
+	goals := bucket("Goals", 2000, false)
+	goals["takes_goals"] = true
+	f.saveBuckets(bucket("Needs", 6000, false, f.rent), goals, bucket("Freedom", 2000, true))
+	f.goal("Trip", 500000, reserve)
+	f.h.MustDo(http.MethodPost, "/api/v1/goals", map[string]any{
+		"name":              "Emergency",
+		"target":            apitest.BRL(1000000),
+		"due_on":            "2027-06-30",
+		"account_ids":       []string{reserve},
+		"counts_as_savings": true,
+	}, http.StatusCreated, nil)
+
+	if got := f.octoberReal(); got[1] != 80000 || got[2] != 0 {
+		t.Errorf("goals %d freedom %d, want 80000 and 0", got[1], got[2])
+	}
+}
+
+// octoberReal returns the real amount of each bucket in October 2026, in method order.
+func (f fixture) octoberReal() []int64 {
+	f.h.T().Helper()
+
+	var got bucketHistoryView
+	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
+
+	out := make([]int64, len(got.Months[4].Buckets))
+	for i, b := range got.Months[4].Buckets {
+		out[i] = b.Real.Amount
+	}
+
+	return out
+}

@@ -14,6 +14,7 @@ const emergency = {
   target: money(3000000),
   due_on: "2027-06-30",
   account_ids: [reserveID],
+  counts_as_savings: true,
   current: money(1008341),
   remaining: money(1991659),
   progress_bp: 3361,
@@ -79,6 +80,7 @@ describe("goal actions", () => {
             target: money(3000000),
             due_on: "2027-06-30",
             account_ids: [reserveID],
+            counts_as_savings: true,
           },
         },
       ]);
