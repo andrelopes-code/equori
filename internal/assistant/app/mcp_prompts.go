@@ -23,7 +23,7 @@ var monthPattern = regexp.MustCompile(`^\d{4}-(0[1-9]|1[0-2])$`)
 
 // MCPPrompts returns the prompts beside the guide of guide.tmpl.
 func MCPPrompts() []MCPPrompt {
-	return []MCPPrompt{
+	prompts := []MCPPrompt{
 		{
 			Name:        "monthly_review",
 			Description: "Review the income, expenses and balances of one month.",
@@ -68,6 +68,51 @@ func MCPPrompts() []MCPPrompt {
 					"get_account_details and get_account_history for its balance and recent movements, and search_transactions " +
 					"for the transactions not yet reconciled. Ask me for the closing balance and date of the statement, show the " +
 					"difference, and call reconcile_account only after I confirm.", nil
+			},
+		},
+	}
+
+	return append(prompts, fixedIncomePrompts()...)
+}
+
+// fixedIncomePrompts returns the prompts of fixed income (spec 2026-11-16 FC31).
+func fixedIncomePrompts() []MCPPrompt {
+	return []MCPPrompt{
+		{
+			Name:        "record_fixed_income",
+			Description: "Record a fixed income application from its description.",
+			Arguments: []MCPPromptArgument{
+				{
+					Name: "description",
+					Description: "The application as you would tell it: kind, issuer, amount, date, " +
+						"maturity and rate.",
+					Required: true,
+				},
+			},
+			Render: func(args map[string]string) (string, error) {
+				description := strings.TrimSpace(args["description"])
+				if description == "" {
+					return "", errors.New("description is required")
+				}
+
+				return "Record this fixed income application: " + description + ". Call get_help with the " +
+					"topic fixed_income, list_accounts for the brokerage and its cash account, and " +
+					"get_portfolio to see whether I already hold this contract. If the kind, the issuer, " +
+					"the amount, the date, the maturity, the rate, the liquidity or whether interest is " +
+					"paid out is missing, ask me for all of them in one message. Then call " +
+					"record_fixed_income and wait for my confirmation; for a contract I already hold, " +
+					"record a contribution to it.", nil
+			},
+		},
+		{
+			Name:        "fixed_income_review",
+			Description: "Review the fixed income payments due and ahead, and the exposure per issuer.",
+			Render: func(map[string]string) (string, error) {
+				return "Review my fixed income. Call get_portfolio with the view fixed_income_events for " +
+					"the payments due and those of the next 30 days, and with the view issuer_exposure " +
+					"for the value per issuer against the deposit guarantee. List the payments due first, " +
+					"with what to record for each, then the payments ahead by date, then each issuer " +
+					"above the guarantee with the amount above it. Change nothing.", nil
 			},
 		},
 	}

@@ -593,7 +593,13 @@ func TestMCPPrompts(t *testing.T) {
 
 	slices.Sort(names)
 
-	if !slices.Equal(names, []string{"categorize_pending", "monthly_review", "reconcile_account"}) {
+	if !slices.Equal(names, []string{
+		"categorize_pending",
+		"fixed_income_review",
+		"monthly_review",
+		"reconcile_account",
+		"record_fixed_income",
+	}) {
 		t.Fatalf("prompts = %v", names)
 	}
 
@@ -615,8 +621,53 @@ func TestMCPPrompts(t *testing.T) {
 		}
 	}
 
-	for _, p := range []string{"monthly_review", "categorize_pending", "reconcile_account"} {
-		args := map[string]string{"month": "2026-09", "account": "Nubank"}
+	fixedIncome := "CDB Banco X 1000 110% CDI 2028"
+
+	got, err = s.GetPrompt(
+		t.Context(),
+		&mcp.GetPromptParams{
+			Name:      "record_fixed_income",
+			Arguments: map[string]string{"description": fixedIncome},
+		},
+	)
+	if err != nil || len(got.Messages) != 1 || got.Messages[0].Role != "user" {
+		t.Fatalf("record_fixed_income = %+v, %v", got, err)
+	}
+
+	text = got.Messages[0].Content.(*mcp.TextContent).Text
+	for _, want := range []string{fixedIncome, "record_fixed_income", "get_portfolio"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("record_fixed_income lacks %q: %s", want, text)
+		}
+	}
+
+	got, err = s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: "fixed_income_review"})
+	if err != nil || len(got.Messages) != 1 || got.Messages[0].Role != "user" {
+		t.Fatalf("fixed_income_review = %+v, %v", got, err)
+	}
+
+	text = got.Messages[0].Content.(*mcp.TextContent).Text
+	for _, want := range []string{"fixed_income_events", "issuer_exposure", "30 days"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("fixed_income_review lacks %q: %s", want, text)
+		}
+	}
+
+	// A guide topic and the values of a tool argument are not tools.
+	notTools := []string{"fixed_income", "fixed_income_events", "issuer_exposure"}
+
+	for _, p := range []string{
+		"monthly_review",
+		"categorize_pending",
+		"reconcile_account",
+		"record_fixed_income",
+		"fixed_income_review",
+	} {
+		args := map[string]string{
+			"month":       "2026-09",
+			"account":     "Nubank",
+			"description": fixedIncome,
+		}
 
 		r, err := s.GetPrompt(t.Context(), &mcp.GetPromptParams{Name: p, Arguments: args})
 		if err != nil {
@@ -627,7 +678,8 @@ func TestMCPPrompts(t *testing.T) {
 		for _, word := range strings.FieldsFunc(r.Messages[0].Content.(*mcp.TextContent).Text, func(r rune) bool {
 			return r != '_' && (r < 'a' || r > 'z')
 		}) {
-			if _, ok := h.App.Tools.Tool(word); strings.Contains(word, "_") && !ok {
+			if _, ok := h.App.Tools.Tool(word); strings.Contains(word, "_") && !ok &&
+				!slices.Contains(notTools, word) {
 				t.Errorf("%s names %s, not a registry tool", p, word)
 			}
 		}
@@ -648,6 +700,13 @@ func TestMCPPrompts(t *testing.T) {
 		&mcp.GetPromptParams{Name: "reconcile_account", Arguments: map[string]string{}},
 	); err == nil {
 		t.Error("reconcile_account accepts no account")
+	}
+
+	if _, err := s.GetPrompt(
+		t.Context(),
+		&mcp.GetPromptParams{Name: "record_fixed_income", Arguments: map[string]string{}},
+	); err == nil {
+		t.Error("record_fixed_income accepts no description")
 	}
 }
 
