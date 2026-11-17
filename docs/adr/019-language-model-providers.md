@@ -36,6 +36,8 @@ ADR 009 reads one Gemini key from the environment, and every use names its chain
 
 Amended by ADR 020 (P14): daily limits are enforced at resolution, for every use; a target whose limit is reached is skipped.
 
+Amended on 2026-11-17 (P2, P8): the preset `anthropic` states the API `anthropic`, served by `internal/platform/llm/anthropic` over the Anthropic Messages API (`POST /messages`). The key travels as `X-Api-Key` with the header `Anthropic-Version`. Every request sets the top-level `cache_control`, so a later request reads the shared prompt prefix at the cache price. `Request.Thinking` of `low` is sent as `output_config.effort`. A thinking block of an answer returns unchanged in the next request of the same tool loop, as a `Signature`. Input tokens of the usage are the whole prompt: uncached, cache writes and cache reads. Failures are classified as in P8; status 529 is transient.
+
 ## Revisit criterion
 
 A provider whose API is neither Gemini nor chat completions, or an administrator who must set providers for every book.

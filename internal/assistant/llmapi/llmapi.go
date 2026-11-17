@@ -14,11 +14,9 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/llm"
 	"github.com/andrelopes-code/equori/internal/platform/llm/aistudio"
+	"github.com/andrelopes-code/equori/internal/platform/llm/anthropic"
 	"github.com/andrelopes-code/equori/internal/platform/llm/openai"
 )
-
-// anthropicVersion is the API version Anthropic requires on every request.
-const anthropicVersion = "2023-06-01"
 
 // Factory builds the provider of an API at baseURL with key.
 type Factory func(api, baseURL, key string) llm.Provider
@@ -36,7 +34,7 @@ func NewFactory() Factory {
 		case domain.APIGemini:
 			return aistudio.New(baseURL, key, hc)
 		case domain.APIAnthropic:
-			return openai.New(baseURL, key, hc).WithHeader("anthropic-version", anthropicVersion)
+			return anthropic.New(baseURL, key, hc)
 		default:
 			return openai.New(baseURL, key, hc)
 		}

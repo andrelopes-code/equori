@@ -8,7 +8,7 @@ type API string
 const (
 	APIGemini API = "gemini"
 	APIOpenAI API = "openai"
-	// APIAnthropic is the OpenAI wire protocol plus the version header Anthropic requires.
+	// APIAnthropic is the Anthropic Messages API, which caches the prompt between requests.
 	APIAnthropic API = "anthropic"
 )
 
