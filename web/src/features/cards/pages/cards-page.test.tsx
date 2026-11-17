@@ -177,9 +177,9 @@ describe("CardsPage", () => {
     ).toBeInTheDocument();
     expect(within(stub).getByText("R$1,800.00")).toBeInTheDocument();
     expect(
-      within(stub).getByText(
-        words("cards.stub.dates", { closing: "Oct 5", due: "Oct 25" }),
-      ),
+      within(stub).getByRole("img", {
+        name: words("cards.ticket.cycle", { closing: "Oct 5", due: "Oct 25" }),
+      }),
     ).toBeInTheDocument();
     expect(within(stub).queryByRole("progressbar")).toBeNull();
     await userEvent.click(

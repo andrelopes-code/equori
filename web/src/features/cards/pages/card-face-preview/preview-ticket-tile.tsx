@@ -17,14 +17,16 @@ export function PreviewTicketTile({ sample }: PreviewTicketTileProps) {
         <CardFace {...face} />
       </div>
 
-      <StatementTicket
-        account={account}
-        current={current}
-        unpaid={unpaid}
-        signal={signal}
-        scale={2}
-        loading={loading}
-      />
+      <div className={styles.ticket}>
+        <StatementTicket
+          account={account}
+          current={current}
+          unpaid={unpaid}
+          signal={signal}
+          scale={2}
+          loading={loading}
+        />
+      </div>
     </article>
   );
 }

@@ -59,6 +59,7 @@ export function TicketLead({
           month: formatReferenceMonthCompact(statement.reference, locale),
         });
   const when = formatRelativeDays(lead.days, locale);
+  const whenTone = status === "neutral" ? "muted" : status;
 
   function handlePay() {
     void navigate({
@@ -98,18 +99,18 @@ export function TicketLead({
       </div>
 
       <div className={styles.figure}>
-        <Text size="2xl" weight="semibold" numeric="tabular" wrap="nowrap">
-          {money.full(amount)}
-        </Text>
-        {keys.time !== undefined && (
-          <Text size="md" weight="semibold" wrap="nowrap">
-            {t(keys.time, { when })}
+        <div className={styles.amount}>
+          <Text size="2xl" weight="semibold" numeric="tabular" wrap="nowrap">
+            {money.full(amount)}
           </Text>
-        )}
-      </div>
+          {keys.time !== undefined && (
+            <Text size="sm" weight="medium" tone={whenTone} wrap="nowrap">
+              {t(keys.time, { when })}
+            </Text>
+          )}
+        </div>
 
-      {closed && (
-        <div className={styles.pay}>
+        {closed && (
           <Button
             size="sm"
             tone={status === "info" ? "accent" : status}
@@ -117,8 +118,8 @@ export function TicketLead({
           >
             {t("cards.pay")}
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       <TicketEvidence
         lead={lead}

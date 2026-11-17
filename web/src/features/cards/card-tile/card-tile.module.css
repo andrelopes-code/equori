@@ -13,12 +13,21 @@
     min-inline-size: 0;
   }
 
-  /* The face sits above the ticket tucked under it. */
+  /* The face sits above the ticket tucked under it. The card is dealt first; the ticket stays
+     out of sight until the card has landed, then slides out from under its lower edge, so its
+     tucked upper edge is never seen. */
   .face {
     position: relative;
     z-index: 1;
     animation: deal 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
     animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .ticket {
+    display: flex;
+    flex-direction: column;
+    animation: emerge 520ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms + 380ms);
   }
 
   @keyframes deal {
@@ -29,8 +38,16 @@
     }
   }
 
+  @keyframes emerge {
+    from {
+      opacity: 0;
+      translate: 0 -28px;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .face {
+    .face,
+    .ticket {
       animation: none;
     }
   }

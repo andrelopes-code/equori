@@ -156,4 +156,14 @@ describe("CardFace", () => {
     expect(screen.queryByRole("img", { name: "Visa" })).toBeNull();
     expect(screen.getAllByRole("img")).toHaveLength(1);
   });
+
+  it("names the institution before the title only when the title does not hold it", () => {
+    face({ brand: "name", institutionName: "Nubank", title: "Ultravioleta" });
+    expect(screen.getByText("Nubank")).toBeDefined();
+  });
+
+  it("does not repeat an institution the title already names", () => {
+    face({ brand: "name", institutionName: "Itaú" });
+    expect(screen.queryByText("Itaú")).toBeNull();
+  });
 });

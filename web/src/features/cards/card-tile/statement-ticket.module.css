@@ -57,17 +57,25 @@
     min-inline-size: 0;
   }
 
+  /* The amount with its time phrase under it; the action sits at the end, centred on both. */
   .figure {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: var(--slotted-space-5);
     min-inline-size: 0;
   }
 
-  .pay {
-    display: flex;
-    justify-content: flex-end;
+  .amount {
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+  }
+
+  /* The placeholder of a loading ticket: the family's region fills the slip. */
+  .skeleton {
+    display: grid;
+    gap: var(--slotted-space-4);
   }
 
   .emptyText {

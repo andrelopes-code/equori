@@ -346,6 +346,7 @@ export function cardRoutes(): Record<string, Route> {
             last_four: "1234",
             virtual: false,
             active: true,
+            foreign_charge_bp: 438,
           },
           {
             id: "pc2",
@@ -353,6 +354,7 @@ export function cardRoutes(): Record<string, Route> {
             last_four: "9876",
             virtual: true,
             active: true,
+            foreign_charge_bp: 438,
           },
         ],
       }),

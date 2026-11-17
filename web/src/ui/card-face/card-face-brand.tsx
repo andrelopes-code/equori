@@ -27,7 +27,15 @@ export function CardFaceBrand({
   }
 
   if (drawing.kind === "name") {
-    return <span className={styles.brandName}>{institutionName ?? title}</span>;
+    // A title that already names the institution is not preceded by the same name.
+    if (
+      institutionName === undefined ||
+      title.toLowerCase().includes(institutionName.toLowerCase())
+    ) {
+      return null;
+    }
+
+    return <span className={styles.brandName}>{institutionName}</span>;
   }
 
   if (drawing.kind === "plate") {

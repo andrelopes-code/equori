@@ -9,25 +9,31 @@
   /* The pixel widths below are literals of the preview: each checks the face at one width. */
   .w96 {
     inline-size: 96px;
+    max-inline-size: 100%;
   }
 
   .w200 {
     inline-size: 200px;
+    max-inline-size: 100%;
   }
 
   .w220 {
     inline-size: 220px;
+    max-inline-size: 100%;
   }
 
   .w320 {
     inline-size: 320px;
+    max-inline-size: 100%;
   }
 
   .w380 {
     inline-size: 380px;
+    max-inline-size: 100%;
   }
 
   .w420 {
     inline-size: 420px;
+    max-inline-size: 100%;
   }
 }

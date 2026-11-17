@@ -48,12 +48,12 @@ export function useLogoTraits(url: string | undefined): LogoTraits | undefined {
 }
 
 function readTraits(image: HTMLImageElement): LogoTraits | undefined {
-  const canvas = document.createElement("canvas");
+  // An environment without an offscreen canvas (a test's document) has no pixels to read.
+  if (typeof OffscreenCanvas === "undefined") {
+    return undefined;
+  }
 
-  canvas.width = size;
-  canvas.height = size;
-
-  const context = canvas.getContext("2d");
+  const context = new OffscreenCanvas(size, size).getContext("2d");
 
   if (!context) {
     return undefined;

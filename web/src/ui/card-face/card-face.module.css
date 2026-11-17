@@ -480,6 +480,14 @@
     display: block;
   }
 
+  /* A mark drawn for a light ground sits on a light plate: its colours stay as published. */
+  .mark img[data-plate] {
+    box-sizing: content-box;
+    padding: calc(var(--u) * 1) calc(var(--u) * 1.4);
+    border-radius: calc(var(--u) * 1.4);
+    background: white;
+  }
+
   .mark svg,
   .mark img {
     display: block;

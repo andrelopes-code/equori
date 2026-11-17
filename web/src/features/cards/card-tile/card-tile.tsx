@@ -63,8 +63,12 @@ export function CardTile({
       : weekOutflows(monday, elapsed, flows.data);
 
   return (
-    <article className={styles.tile} aria-label={account.name}>
-      <div className={styles.face} style={{ "--i": index } as CSSProperties}>
+    <article
+      className={styles.tile}
+      style={{ "--i": index } as CSSProperties}
+      aria-label={account.name}
+    >
+      <div className={styles.face}>
         <CardFace
           title={account.name}
           {...optional}
@@ -79,14 +83,16 @@ export function CardTile({
         />
       </div>
 
-      <StatementTicket
-        account={account}
-        current={current}
-        unpaid={unpaid}
-        signal={signal}
-        scale={scale(unpaid[0]?.unpaid.currency ?? account.currency)}
-        loading={loading}
-      />
+      <div className={styles.ticket}>
+        <StatementTicket
+          account={account}
+          current={current}
+          unpaid={unpaid}
+          signal={signal}
+          scale={scale(unpaid[0]?.unpaid.currency ?? account.currency)}
+          loading={loading}
+        />
+      </div>
     </article>
   );
 }

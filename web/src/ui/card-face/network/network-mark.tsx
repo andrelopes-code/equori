@@ -47,7 +47,7 @@ const marks = new Map<string, Mark>([
     {
       label: "cardFace.network.hipercard",
       height: 8,
-      mark: <img alt="" src={hipercard} />,
+      mark: <img alt="" src={hipercard} data-plate="" />,
     },
   ],
 ]);

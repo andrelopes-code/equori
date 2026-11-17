@@ -50,15 +50,6 @@ export function TicketEvidence({
   return (
     <div className={styles.more} data-open={open || undefined}>
       <div className={styles.evidence} inert={!open}>
-        {closed && unpaid.length === 1 && (
-          <Text size="xs" tone="muted">
-            {t("cards.stub.dates", {
-              closing: formatDayMonth(statement.closing_date, locale),
-              due: formatDayMonth(statement.due_date, locale),
-            })}
-          </Text>
-        )}
-
         {share.paid > 0 && (
           <ProgressBar
             size="sm"
