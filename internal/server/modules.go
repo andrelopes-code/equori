@@ -176,15 +176,23 @@ func (m *modules) addCapture(pool *pgxpool.Pool, _ Config, log *slog.Logger) err
 }
 
 func (m *modules) addIngestion(pool *pgxpool.Pool, cfg Config, log *slog.Logger) error {
-	module, err := ingestion.New(pool, m.dispatcher, m.ledger, m.classification, ingestion.Config{
-		SecretKey:         cfg.SecretKey,
-		PreviousSecretKey: cfg.PreviousSecretKey,
-		URLs:              cfg.AggregatorURLs,
-		Clock:             m.clock,
-		InBooks:           m.identity.InBooks,
-		Admins:            m.identity,
-		Router:            m.router,
-	}, log)
+	module, err := ingestion.New(
+		pool,
+		m.dispatcher,
+		m.ledger,
+		m.classification,
+		m.marketdata,
+		ingestion.Config{
+			SecretKey:         cfg.SecretKey,
+			PreviousSecretKey: cfg.PreviousSecretKey,
+			URLs:              cfg.AggregatorURLs,
+			Clock:             m.clock,
+			InBooks:           m.identity.InBooks,
+			Admins:            m.identity,
+			Router:            m.router,
+		},
+		log,
+	)
 	if err != nil {
 		return err
 	}

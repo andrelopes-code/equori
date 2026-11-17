@@ -98,3 +98,35 @@ WHERE
 ORDER BY
     moved_on,
     external_id;
+
+-- name: InvestmentMovement :one
+-- The investment that holds the movement.
+SELECT
+    i.*
+FROM
+    ingestion_investment_movement m
+    JOIN ingestion_external_investment i ON i.books_id = m.books_id
+    AND i.id = m.investment_id
+WHERE
+    m.books_id = @books_id
+    AND m.id = @id;
+
+-- name: SetInvestmentMovementState :exec
+UPDATE ingestion_investment_movement
+SET
+    state = @state,
+    transaction_id = sqlc.narg (transaction_id),
+    application_id = @application_id
+WHERE
+    books_id = @books_id
+    AND id = @id;
+
+-- name: LinkExternalInvestment :exec
+UPDATE ingestion_external_investment
+SET
+    brokerage_id = sqlc.narg (brokerage_id),
+    account_id = sqlc.narg (account_id),
+    instrument = sqlc.narg (instrument)
+WHERE
+    books_id = @books_id
+    AND id = @id;

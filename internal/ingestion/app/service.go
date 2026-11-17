@@ -44,6 +44,7 @@ type Service struct {
 	inBooks func(ctx context.Context, booksID int64) (context.Context, error)
 	admins  Admins
 	columns ColumnSuggester
+	prices  Prices
 }
 
 // Integrations are what aggregator integrations need; the zero value leaves them unavailable.
@@ -58,6 +59,8 @@ type Integrations struct {
 	Admins  Admins
 	// Columns is nil when no language model is wired: a column suggestion is unavailable.
 	Columns ColumnSuggester
+	// Prices is nil in tests that do not store balance prices.
+	Prices Prices
 }
 
 func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
@@ -71,6 +74,7 @@ func NewService(repo Repository, ledger Ledger, in Integrations) *Service {
 		inBooks: in.InBooks,
 		admins:  in.Admins,
 		columns: in.Columns,
+		prices:  in.Prices,
 	}
 }
 

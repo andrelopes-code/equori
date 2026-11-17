@@ -247,6 +247,25 @@ type Ledger interface {
 	// PairLine makes txID the transfer of the record's line on accountID and returns the version
 	// it gave the transaction (A218 rule 1); ErrNotPairable when the ledger refuses.
 	PairLine(ctx context.Context, booksID int64, txID, accountID, recordID uuid.UUID) (int, error)
+	// ApplyInvestment records the first application or a contribution of an investment.
+	ApplyInvestment(
+		ctx context.Context,
+		booksID int64,
+		a InvestmentApplication,
+	) (AppliedInvestment, error)
+	// SellInvestment records the redemption of an amount of an investment.
+	SellInvestment(ctx context.Context, booksID int64, s InvestmentSale) (uuid.UUID, error)
+	// InvestmentIncome records interest paid on an investment.
+	InvestmentIncome(ctx context.Context, booksID int64, i InvestmentIncome) (uuid.UUID, error)
+	// VoidInvestment voids a transaction of an investment.
+	VoidInvestment(ctx context.Context, booksID int64, txID uuid.UUID) error
+	// HeldUnits is the quantity the account holds at the end of the date.
+	HeldUnits(
+		ctx context.Context,
+		booksID int64,
+		accountID uuid.UUID,
+		on time.Time,
+	) (money.Money, error)
 	// UnpairLine returns txID, paired at version, to its previous postings as a new version
 	// (A220 rule 2); ErrNotUnpairable when it changed since or the ledger refuses.
 	UnpairLine(ctx context.Context, booksID int64, txID, recordID uuid.UUID, version int) error

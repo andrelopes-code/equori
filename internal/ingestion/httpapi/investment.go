@@ -35,6 +35,68 @@ func (s *Server) listConnectionInvestments(
 	return out, nil
 }
 
+func (s *Server) confirmInvestmentMovement(
+	ctx context.Context, r *http.Request, b ConfirmInvestmentMovementJSONRequestBody,
+) (InvestmentMovement, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return InvestmentMovement{}, err
+	}
+
+	v, err := s.svc.ConfirmMovement(
+		ctx,
+		auth.MustBooksID(ctx),
+		id,
+		optionalID(b.BrokerageId),
+		optionalID(b.CashAccountId),
+		optionalID(b.CategoryId),
+	)
+
+	return movementOf(v, err)
+}
+
+func (s *Server) dismissInvestmentMovement(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (InvestmentMovement, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return InvestmentMovement{}, err
+	}
+
+	v, err := s.svc.DismissMovement(ctx, auth.MustBooksID(ctx), id)
+
+	return movementOf(v, err)
+}
+
+func (s *Server) undoInvestmentMovement(
+	ctx context.Context, r *http.Request, _ httpserver.None,
+) (InvestmentMovement, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return InvestmentMovement{}, err
+	}
+
+	v, err := s.svc.UndoMovement(ctx, auth.MustBooksID(ctx), id)
+
+	return movementOf(v, err)
+}
+
+func movementOf(v app.MovementView, err error) (InvestmentMovement, error) {
+	if err != nil {
+		return InvestmentMovement{}, err
+	}
+
+	return toInvestmentMovementAPI(v.InvestmentID, v.Movement, v.Proposal), nil
+}
+
+func optionalID(id *uuid.UUID) uuid.UUID {
+	if id == nil {
+		return uuid.Nil
+	}
+
+	return *id
+}
+
 func toInvestmentAPI(v app.InvestmentView) ExternalInvestment {
 	src := v.Source
 	out := ExternalInvestment{

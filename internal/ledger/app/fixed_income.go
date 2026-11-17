@@ -349,3 +349,22 @@ func divHalfEven(num, den *big.Int) (int64, bool) {
 func pow10(n int) *big.Int {
 	return new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(n)), nil)
 }
+
+// FixedIncomeUnitPrice is the price a contribution to the contract of a book reads on a date.
+func (s *Service) FixedIncomeUnitPrice(
+	ctx context.Context,
+	booksID int64,
+	code money.Currency,
+	on time.Time,
+) (money.Rate, error) {
+	in, err := s.ins.Instrument(ctx, code)
+	if errors.Is(err, ErrUnknownInstrument) || (err == nil && !ownedContract(in, booksID)) {
+		return money.Rate{}, fmt.Errorf("%w: %w", ErrUnknownInstrument, ErrNotFound)
+	}
+
+	if err != nil {
+		return money.Rate{}, err
+	}
+
+	return s.unitPrice(ctx, in.Code, in.QuoteCurrency, on)
+}

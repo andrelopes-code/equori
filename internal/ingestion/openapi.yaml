@@ -673,6 +673,87 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /investment-movements/{id}/confirm:
+    post:
+      tags: [ingestion]
+      operationId: confirmInvestmentMovement
+      x-book-role: write
+      summary: Record what a movement of an investment proposes in the ledger (A236 FC28).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentConfirmation"
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: The movement after the operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentMovement"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /investment-movements/{id}/dismiss:
+    post:
+      tags: [ingestion]
+      operationId: dismissInvestmentMovement
+      x-book-role: write
+      summary: Dismiss a pending movement of an investment; nothing is recorded.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: The movement after the operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentMovement"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
+  /investment-movements/{id}/undo:
+    post:
+      tags: [ingestion]
+      operationId: undoInvestmentMovement
+      x-book-role: write
+      summary: Void what a confirmed movement recorded, or reopen a dismissed one.
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      responses:
+        "200":
+          description: The movement after the operation.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentMovement"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "403":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "409":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /connections/{id}/accounts/{external_account_id}:
     put:
       tags: [ingestion]
@@ -870,6 +951,20 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/ImportBatch"
+  InvestmentConfirmation:
+    type: object
+    description: brokerage_id is required for the first application of an investment and category_id for an income.
+    properties:
+      brokerage_id:
+        type: string
+        format: uuid
+      cash_account_id:
+        type: string
+        format: uuid
+      category_id:
+        type: string
+        format: uuid
+        description: The income category of an income movement; required for it.
   InvestmentList:
     type: object
     required: [investments]

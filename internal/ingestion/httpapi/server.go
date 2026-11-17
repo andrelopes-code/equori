@@ -86,6 +86,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listConnectionSyncs))
 	mux.HandleFunc("GET "+BaseURL+"/connections/{id}/investments",
 		httpserver.Handle(s.errs, http.StatusOK, s.listConnectionInvestments))
+	mux.HandleFunc("POST "+BaseURL+"/investment-movements/{id}/confirm",
+		httpserver.Handle(s.errs, http.StatusOK, s.confirmInvestmentMovement))
+	mux.HandleFunc("POST "+BaseURL+"/investment-movements/{id}/dismiss",
+		httpserver.Handle(s.errs, http.StatusOK, s.dismissInvestmentMovement))
+	mux.HandleFunc("POST "+BaseURL+"/investment-movements/{id}/undo",
+		httpserver.Handle(s.errs, http.StatusOK, s.undoInvestmentMovement))
 	mux.HandleFunc("PUT "+BaseURL+"/connections/{id}/accounts/{external_account_id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.mapExternalAccount))
 }
@@ -111,6 +117,15 @@ func ToProblem(err error) (problem.Details, bool) {
 		return d, true
 	}
 
+	if lr, ok := errors.AsType[*app.LedgerRefusal](err); ok {
+		d := problem.New(http.StatusUnprocessableEntity, lr.Code, lr.Message)
+		if lr.Field != "" {
+			d.Errors = []problem.FieldError{{Field: lr.Field, Message: lr.Message}}
+		}
+
+		return d, true
+	}
+
 	if fe, ok := errors.AsType[*domain.FieldError](err); ok {
 		d := problem.New(http.StatusUnprocessableEntity, "validation_failed", fe.Error())
 		d.Errors = []problem.FieldError{{Field: fe.Field, Message: fe.Message}}
@@ -121,6 +136,12 @@ func ToProblem(err error) (problem.Details, bool) {
 	switch {
 	case errors.Is(err, app.ErrNotFound):
 		return problem.New(http.StatusNotFound, "not_found", "resource not found"), true
+	case errors.Is(err, app.ErrMovementResolved):
+		return problem.New(http.StatusConflict, "investment_movement_resolved", err.Error()), true
+	case errors.Is(err, app.ErrInvestmentNotApplied):
+		return problem.New(http.StatusConflict, "investment_not_applied", err.Error()), true
+	case errors.Is(err, app.ErrLaterMovementConfirmed):
+		return problem.New(http.StatusConflict, "later_movement_confirmed", err.Error()), true
 	case errors.Is(err, app.ErrAdminRequired):
 		return problem.New(http.StatusForbidden, "admin_required", err.Error()), true
 	case errors.Is(err, app.ErrRecordResolved):

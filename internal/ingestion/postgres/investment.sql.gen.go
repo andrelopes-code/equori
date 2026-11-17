@@ -44,6 +44,85 @@ func (q *Queries) InsertInvestmentMovement(ctx context.Context, arg InsertInvest
 	return err
 }
 
+const investmentMovement = `-- name: InvestmentMovement :one
+SELECT
+    i.id, i.books_id, i.connection_id, i.external_id, i.type, i.subtype, i.name, i.issuer, i.issuer_scheme, i.issuer_id, i.index_id, i.percent_of_index_bp, i.spread_bp, i.has_terms, i.issued_on, i.matures_on, i.quantity, i.balance, i.currency, i.balance_date, i.brokerage_id, i.account_id, i.instrument
+FROM
+    ingestion_investment_movement m
+    JOIN ingestion_external_investment i ON i.books_id = m.books_id
+    AND i.id = m.investment_id
+WHERE
+    m.books_id = $1
+    AND m.id = $2
+`
+
+type InvestmentMovementParams struct {
+	BooksID int64
+	ID      uuid.UUID
+}
+
+// The investment that holds the movement.
+func (q *Queries) InvestmentMovement(ctx context.Context, arg InvestmentMovementParams) (IngestionExternalInvestment, error) {
+	row := q.db.QueryRow(ctx, investmentMovement, arg.BooksID, arg.ID)
+	var i IngestionExternalInvestment
+	err := row.Scan(
+		&i.ID,
+		&i.BooksID,
+		&i.ConnectionID,
+		&i.ExternalID,
+		&i.Type,
+		&i.Subtype,
+		&i.Name,
+		&i.Issuer,
+		&i.IssuerScheme,
+		&i.IssuerID,
+		&i.IndexID,
+		&i.PercentOfIndexBp,
+		&i.SpreadBp,
+		&i.HasTerms,
+		&i.IssuedOn,
+		&i.MaturesOn,
+		&i.Quantity,
+		&i.Balance,
+		&i.Currency,
+		&i.BalanceDate,
+		&i.BrokerageID,
+		&i.AccountID,
+		&i.Instrument,
+	)
+	return i, err
+}
+
+const linkExternalInvestment = `-- name: LinkExternalInvestment :exec
+UPDATE ingestion_external_investment
+SET
+    brokerage_id = $1,
+    account_id = $2,
+    instrument = $3
+WHERE
+    books_id = $4
+    AND id = $5
+`
+
+type LinkExternalInvestmentParams struct {
+	BrokerageID uuid.NullUUID
+	AccountID   uuid.NullUUID
+	Instrument  *string
+	BooksID     int64
+	ID          uuid.UUID
+}
+
+func (q *Queries) LinkExternalInvestment(ctx context.Context, arg LinkExternalInvestmentParams) error {
+	_, err := q.db.Exec(ctx, linkExternalInvestment,
+		arg.BrokerageID,
+		arg.AccountID,
+		arg.Instrument,
+		arg.BooksID,
+		arg.ID,
+	)
+	return err
+}
+
 const listConnectionInvestments = `-- name: ListConnectionInvestments :many
 SELECT
     id, books_id, connection_id, external_id, type, subtype, name, issuer, issuer_scheme, issuer_id, index_id, percent_of_index_bp, spread_bp, has_terms, issued_on, matures_on, quantity, balance, currency, balance_date, brokerage_id, account_id, instrument
@@ -154,6 +233,36 @@ func (q *Queries) ListInvestmentMovements(ctx context.Context, arg ListInvestmen
 		return nil, err
 	}
 	return items, nil
+}
+
+const setInvestmentMovementState = `-- name: SetInvestmentMovementState :exec
+UPDATE ingestion_investment_movement
+SET
+    state = $1,
+    transaction_id = $2,
+    application_id = $3
+WHERE
+    books_id = $4
+    AND id = $5
+`
+
+type SetInvestmentMovementStateParams struct {
+	State         string
+	TransactionID uuid.NullUUID
+	ApplicationID uuid.UUID
+	BooksID       int64
+	ID            uuid.UUID
+}
+
+func (q *Queries) SetInvestmentMovementState(ctx context.Context, arg SetInvestmentMovementStateParams) error {
+	_, err := q.db.Exec(ctx, setInvestmentMovementState,
+		arg.State,
+		arg.TransactionID,
+		arg.ApplicationID,
+		arg.BooksID,
+		arg.ID,
+	)
+	return err
 }
 
 const upsertExternalInvestment = `-- name: UpsertExternalInvestment :one

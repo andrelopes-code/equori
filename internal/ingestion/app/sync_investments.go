@@ -33,5 +33,16 @@ func (s *Service) syncInvestments(
 		return fmt.Errorf("store investments: %w", err)
 	}
 
+	stored, err := s.repo.ConnectionInvestments(ctx, c.BooksID, c.ID)
+	if err != nil {
+		return fmt.Errorf("list investments: %w", err)
+	}
+
+	for _, inv := range stored {
+		if err := s.balancePrice(ctx, c.BooksID, inv, agg.ID()); err != nil {
+			return fmt.Errorf("store balance price: %w", err)
+		}
+	}
+
 	return nil
 }

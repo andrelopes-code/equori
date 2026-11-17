@@ -83,6 +83,22 @@ type Repository interface {
 		connectionID uuid.UUID,
 		limit int,
 	) ([]domain.SyncRun, error)
+	// LockInvestment serializes the reviews of one investment until unlock runs.
+	LockInvestment(ctx context.Context, investmentID uuid.UUID) (unlock func(), err error)
+	// InvestmentOfMovement returns the investment holding the movement with all its movements;
+	// ErrNotFound for a movement of another book.
+	InvestmentOfMovement(
+		ctx context.Context,
+		booksID int64,
+		movementID uuid.UUID,
+	) (domain.StoredInvestment, error)
+	// ResolveMovements writes the changes and the link (nil: none) in one database transaction.
+	ResolveMovements(
+		ctx context.Context,
+		booksID int64,
+		changes []MovementChange,
+		link *InvestmentLink,
+	) error
 	// LockAccountImports serializes the imports of one account until unlock runs.
 	LockAccountImports(ctx context.Context, accountID uuid.UUID) (unlock func(), err error)
 

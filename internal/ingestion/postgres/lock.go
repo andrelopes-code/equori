@@ -48,3 +48,25 @@ func (r *Repository) LockBookPairing(ctx context.Context, booksID int64) (func()
 		conn.Release()
 	}, nil
 }
+
+// LockInvestment serializes the reviews of one investment until unlock runs.
+func (r *Repository) LockInvestment(ctx context.Context, investmentID uuid.UUID) (func(), error) {
+	conn, err := r.pool.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	key := "investment:" + investmentID.String()
+
+	q := New(conn)
+	if err := q.LockAccountImports(ctx, key); err != nil {
+		conn.Release()
+		return nil, err
+	}
+
+	return func() {
+		_ = q.UnlockAccountImports(context.WithoutCancel(ctx), key)
+
+		conn.Release()
+	}, nil
+}

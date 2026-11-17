@@ -17,6 +17,7 @@ import (
 	"github.com/andrelopes-code/equori/internal/ingestion/postgres"
 	"github.com/andrelopes-code/equori/internal/ingestion/toolapi"
 	"github.com/andrelopes-code/equori/internal/ledger"
+	"github.com/andrelopes-code/equori/internal/marketdata"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
 	"github.com/andrelopes-code/equori/internal/platform/outbox"
 	"github.com/andrelopes-code/equori/internal/platform/registry"
@@ -36,6 +37,7 @@ func New(
 	dispatcher *outbox.Dispatcher,
 	l *ledger.Module,
 	c *classification.Module,
+	md *marketdata.Module,
 	cfg Config,
 	log *slog.Logger,
 ) (*Module, error) {
@@ -44,6 +46,7 @@ func New(
 		Today:   cfg.Clock.Today,
 		InBooks: cfg.InBooks,
 		Admins:  cfg.Admins,
+		Prices:  pricePort{md},
 	}
 	if cfg.SecretKey != "" {
 		var previous []byte

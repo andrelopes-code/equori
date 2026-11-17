@@ -820,6 +820,15 @@ type IntegrationList struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
+// InvestmentConfirmation brokerage_id is required for the first application of an investment and category_id for an income.
+type InvestmentConfirmation struct {
+	BrokerageId   *openapi_types.UUID `json:"brokerage_id,omitempty"`
+	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
+
+	// CategoryId The income category of an income movement; required for it.
+	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
+}
+
 // InvestmentList defines model for InvestmentList.
 type InvestmentList struct {
 	Investments []ExternalInvestment `json:"investments"`
@@ -1049,3 +1058,6 @@ type CreateIntegrationJSONRequestBody = IntegrationInput
 
 // UpdateIntegrationCredentialsJSONRequestBody defines body for UpdateIntegrationCredentials for application/json ContentType.
 type UpdateIntegrationCredentialsJSONRequestBody = IntegrationCredentials
+
+// ConfirmInvestmentMovementJSONRequestBody defines body for ConfirmInvestmentMovement for application/json ContentType.
+type ConfirmInvestmentMovementJSONRequestBody = InvestmentConfirmation
