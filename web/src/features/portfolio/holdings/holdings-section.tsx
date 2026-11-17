@@ -22,6 +22,7 @@ import { useMemo } from "react";
 import type { components } from "@/api/schema.gen";
 import { accountLabel } from "@/features/portfolio/model/account-label";
 import { allocationLabel } from "@/features/portfolio/model/allocation-label";
+import { CurrentQuotesLine } from "@/features/portfolio/holdings/current-quotes-line";
 import {
   defaultColumnState,
   holdingsColumns,
@@ -148,6 +149,8 @@ export function HoldingsSection({
       </SectionHeader>
       <SectionBody>
         <Stack gap={3}>
+          <CurrentQuotesLine holdings={holdings} />
+
           {unpriced > 0 && (
             <Inline gap={2} align="center">
               <Text size="sm" tone="muted">
