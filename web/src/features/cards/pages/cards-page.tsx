@@ -141,9 +141,10 @@ export function CardsPage() {
               className={styles.grid}
               aria-busy={closedShown !== showClosed || undefined}
             >
-              {states.map((state) => (
+              {states.map((state, index) => (
                 <CardTile
                   key={state.account.id}
+                  index={index}
                   account={state.account}
                   institution={institutions.data?.find(
                     (i) => i.id === state.account.institution_id,

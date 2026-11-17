@@ -1,24 +1,20 @@
-import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
+import type { CSSProperties } from "react";
 
 import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
-import {
-  AccountCard,
-  accountCardColor,
-  logoIndexQuery,
-  logoOf,
-} from "@/features/accounts";
-import { flowsQuery } from "@/features/cards/api";
-import { limitMeter } from "@/features/cards/model/card-totals";
-import { StatementStub } from "@/features/cards/card-tile/statement-stub";
+import { logoIndexQuery, logoOf } from "@/features/accounts";
+import { cardsQuery, flowsQuery } from "@/features/cards/api";
+import styles from "@/features/cards/card-tile/card-tile.module.css";
+import { StatementTicket } from "@/features/cards/card-tile/statement-ticket";
 import {
   daysSinceMonday,
   weekOutflows,
 } from "@/features/cards/card-tile/week-outflows";
-import { formatDayMonth, shiftDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { shiftDate } from "@/i18n/format";
 import { useToday } from "@/i18n/today";
+import { CardFace } from "@/ui/card-face/card-face";
+import { faceColor } from "@/ui/card-face/face-color";
 
 type Account = components["schemas"]["Account"];
 type Institution = components["schemas"]["Institution"];
@@ -31,10 +27,12 @@ interface CardTileProps {
   unpaid: Statement[];
   loading: boolean;
   scale: (code: string) => number;
+  // The position in the list; it staggers the entrance of the face.
+  index: number;
 }
 
-// One credit card: the account card with the statement purchases go on, the limit and the
-// week's purchases, and below it a closed statement still owing.
+// One credit card: the face of the account, linked to its page, with the statement ticket tucked
+// under it.
 export function CardTile({
   account,
   institution,
@@ -42,57 +40,53 @@ export function CardTile({
   unpaid,
   loading,
   scale,
+  index,
 }: CardTileProps) {
-  const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const today = useToday();
   const elapsed = daysSinceMonday(today);
   const monday = shiftDate(today, -elapsed);
   const flows = useQuery(flowsQuery(api, account.id, monday, today));
-  const index = useQuery(logoIndexQuery);
+  const logos = useQuery(logoIndexQuery);
+  const cards = useQuery(cardsQuery(api, account.id));
 
+  const plastic = cards.data?.find((card) => card.active);
+  const logo = logoOf(institution?.identifier, logos.data);
+  const optional = {
+    ...(logo !== undefined && { logo }),
+    ...(institution !== undefined && { institutionName: institution.name }),
+    ...(plastic !== undefined && { lastFour: plastic.last_four }),
+  };
   const signal =
     flows.data === undefined
       ? undefined
       : weekOutflows(monday, elapsed, flows.data);
-  const context =
-    current === undefined
-      ? undefined
-      : t("accountCard.due", {
-          date: formatDayMonth(current.due_date, locale),
-        });
 
   return (
-    <AccountCard
-      kind="credit"
-      color={accountCardColor(account.color)}
-      title={account.name}
-      link={{
-        to: "/cards/$accountId",
-        params: { accountId: account.id },
-      }}
-      institutionName={institution?.name}
-      logo={logoOf(institution?.identifier, index.data)}
-      currency={account.currency}
-      scale={scale(account.currency)}
-      value={current?.open_amount.amount}
-      context={context}
-      meter={limitMeter(account.card)}
-      signal={signal}
-      loading={loading}
-    >
-      <StatementStub
-        accountId={account.id}
-        unpaid={unpaid}
-        scale={scale(unpaid[0]?.unpaid.currency ?? account.currency)}
-      />
+    <article className={styles.tile} aria-label={account.name}>
+      <div className={styles.face} style={{ "--i": index } as CSSProperties}>
+        <CardFace
+          title={account.name}
+          {...optional}
+          color={faceColor(undefined, account.color)}
+          holder={plastic?.holder ?? ""}
+          active={account.closed_on === undefined}
+          link={{
+            to: "/cards/$accountId",
+            params: { accountId: account.id },
+          }}
+          loading={loading}
+        />
+      </div>
 
-      {!loading && current === undefined && (
-        <Text size="sm" tone="muted">
-          {t("cards.noStatement")}
-        </Text>
-      )}
-    </AccountCard>
+      <StatementTicket
+        account={account}
+        current={current}
+        unpaid={unpaid}
+        signal={signal}
+        scale={scale(unpaid[0]?.unpaid.currency ?? account.currency)}
+        loading={loading}
+      />
+    </article>
   );
 }

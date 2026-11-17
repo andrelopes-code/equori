@@ -1,9 +1,37 @@
 @layer app {
-  /* As many cards per line as fit at the account card's smallest width, 280 px. */
+  /* As many tiles per line as fit at 300 px. */
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-    gap: var(--slotted-space-6);
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--slotted-space-8) var(--slotted-space-6);
     align-items: start;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  /* The face sits above the ticket tucked under it. */
+  .face {
+    position: relative;
+    z-index: 1;
+    animation: deal 620ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  @keyframes deal {
+    from {
+      opacity: 0;
+      translate: 0 18px;
+      rotate: x 14deg;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .face {
+      animation: none;
+    }
   }
 }

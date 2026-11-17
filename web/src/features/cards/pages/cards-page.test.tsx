@@ -116,9 +116,10 @@ describe("CardsPage", () => {
   it("shows each card's statement and limit on the card face only", async () => {
     await renderApp("/cards", { fetch: api() });
     const tile = await screen.findByRole("article", { name: "Itaú Visa" });
-    // Spec 2026-10-21-account-card-design: the card's meter replaces the limit progress bar.
+    // Spec 2026-11-16-card-faces-design, 4.8 and 7: the limit meter sits on the ticket and the
+    // link is named by the face.
     const face = await within(tile).findByRole("link", {
-      name: "Itaú Visa, credit, open statement · due Nov 12: R$2,500.00",
+      name: "Itaú Visa, ending 1234",
     });
     expect(
       within(tile).queryByText(catalogEn["statement.status.open"]),
@@ -129,11 +130,24 @@ describe("CardsPage", () => {
       ),
     ).toBeNull();
     expect(face).toHaveAttribute("href", `/cards/${cardID}`);
-    expect(within(face).getByRole("meter")).toHaveAttribute(
+    expect(within(tile).getByRole("meter")).toHaveAttribute(
       "aria-valuetext",
       "31% of the limit, R$5,500 free",
     );
     expect(within(tile).queryByRole("progressbar")).toBeNull();
+  });
+
+  it("keeps the evidence of a statement closed until asked", async () => {
+    await renderApp("/cards", { fetch: api() });
+    const tile = await screen.findByRole("article", { name: "Itaú Visa" });
+    const toggle = await within(tile).findByRole("button", {
+      name: words("cards.ticket.details", { title: "Itaú Visa" }),
+    });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
   });
 
   it("draws the week's purchases from Monday to today on the card", async () => {

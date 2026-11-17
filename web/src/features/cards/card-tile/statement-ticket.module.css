@@ -1,0 +1,367 @@
+@layer app {
+  /* The slip tucked 16 px under the face. The tone follows the lead's status. */
+  .ticket {
+    --ticket-tone: var(--slotted-text);
+    --ticket-tone-text: var(--slotted-text);
+    --ticket-border: var(
+      --slotted-panel-border-color,
+      var(--slotted-border-subtle)
+    );
+    --ticket-surface: var(
+      --slotted-panel-surface,
+      var(--slotted-surface-raised)
+    );
+
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-4);
+    margin: -16px var(--slotted-space-6) 0;
+    padding: calc(16px + var(--slotted-space-6)) var(--slotted-space-6)
+      var(--slotted-space-6);
+    border: var(--slotted-border-width-thin) solid var(--ticket-border);
+    border-block-start: 0;
+    border-radius: 0 0 var(--slotted-radius-lg) var(--slotted-radius-lg);
+    background: var(--ticket-surface);
+    box-shadow: var(--slotted-panel-shadow, none);
+  }
+
+  .ticket[data-status="info"] {
+    --ticket-tone: var(--slotted-tone-accent-solid);
+    --ticket-tone-text: var(--slotted-tone-accent-text);
+  }
+
+  .ticket[data-status="warning"] {
+    --ticket-tone: var(--slotted-tone-warning-solid);
+    --ticket-tone-text: var(--slotted-tone-warning-text);
+  }
+
+  .ticket[data-status="danger"] {
+    --ticket-tone: var(--slotted-tone-danger-text);
+    --ticket-tone-text: var(--slotted-tone-danger-text);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    min-block-size: 22px;
+    min-inline-size: 0;
+  }
+
+  .headEnd {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+  }
+
+  .figure {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    min-inline-size: 0;
+  }
+
+  .pay {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .emptyText {
+    display: flex;
+    align-items: center;
+    block-size: 36px;
+  }
+
+  /* Closed by default; the toggle opens the evidence. The row grows from 0fr to 1fr. */
+  .more {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .more[data-open] {
+    grid-template-rows: 1fr;
+  }
+
+  .evidence {
+    display: grid;
+    gap: var(--slotted-space-5);
+    min-block-size: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: visibility 320ms;
+  }
+
+  .more[data-open] .evidence {
+    visibility: visible;
+  }
+
+  .toggle {
+    all: unset;
+    position: relative;
+    display: grid;
+    flex: none;
+    place-items: center;
+    inline-size: 22px;
+    block-size: 22px;
+    border-radius: var(--slotted-radius-sm);
+    color: var(--slotted-text-muted);
+    cursor: pointer;
+  }
+
+  /* The hit area: 44 px on a side (rule M5). */
+  .toggle::before {
+    content: "";
+    position: absolute;
+    inset: -11px;
+  }
+
+  .toggle:hover {
+    background: var(--slotted-tone-neutral-surface);
+    color: var(--slotted-text);
+  }
+
+  .toggle:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .toggle svg {
+    inline-size: 14px;
+    block-size: 14px;
+    transition: rotate 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ticket[data-open] .toggle svg {
+    rotate: 180deg;
+  }
+
+  /* Cycle track: ticks at the closing (55%) and the due date (92%). */
+  .cycle {
+    position: relative;
+    block-size: 34px;
+    margin-block-start: var(--slotted-space-2);
+  }
+
+  .cycleLine,
+  .cycleLate,
+  .cycleFill {
+    position: absolute;
+    inset-block-start: 5px;
+    block-size: 2px;
+    border-radius: 2px;
+  }
+
+  .cycleLine {
+    inset-inline: 0 8%;
+    background: var(--ticket-border);
+  }
+
+  .cycleLate {
+    inset-inline: 92% 0;
+    background: repeating-linear-gradient(
+      to right,
+      var(--slotted-border-strong) 0 3px,
+      transparent 3px 6px
+    );
+  }
+
+  .cycle[data-status="danger"] .cycleLate {
+    background: repeating-linear-gradient(
+      to right,
+      var(--slotted-tone-danger-text) 0 3px,
+      transparent 3px 6px
+    );
+  }
+
+  .cycleFill {
+    inset-inline-start: 0;
+    inline-size: var(--at);
+    background: var(--ticket-tone);
+  }
+
+  .cycleTick {
+    position: absolute;
+    inset-block-start: 1px;
+    inset-inline-start: var(--at);
+    inline-size: 2px;
+    block-size: 10px;
+    margin-inline-start: -1px;
+    border-radius: 1px;
+    background: var(--slotted-border-strong);
+  }
+
+  .cycleTick[data-passed] {
+    background: var(--ticket-tone);
+  }
+
+  .cycleNow {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: var(--at);
+    box-sizing: border-box;
+    inline-size: 12px;
+    block-size: 12px;
+    margin-inline-start: -6px;
+    border: 3px solid var(--ticket-tone);
+    border-radius: 50%;
+    background: var(--ticket-surface);
+  }
+
+  .cycleLabel {
+    position: absolute;
+    inset-block-start: 16px;
+    white-space: nowrap;
+  }
+
+  .cycleLabel[data-end="closing"] {
+    inset-inline-end: 45%;
+  }
+
+  .cycleLabel[data-end="due"] {
+    inset-inline-end: 8%;
+  }
+
+  /* The perforation, with a notch at each edge. */
+  .perforation {
+    position: relative;
+    block-size: 0;
+    margin-inline: calc(var(--slotted-space-6) * -1);
+    border-block-start: 1.5px dashed var(--ticket-border);
+  }
+
+  .perforation::before,
+  .perforation::after {
+    content: "";
+    position: absolute;
+    inset-block-start: -8px;
+    box-sizing: border-box;
+    inline-size: 14px;
+    block-size: 14px;
+    border: 1px solid var(--ticket-border);
+    border-radius: 50%;
+    background: var(--slotted-page-ground, var(--slotted-surface-sunken));
+  }
+
+  .perforation::before {
+    inset-inline-start: -8px;
+    clip-path: inset(0 0 0 50%);
+  }
+
+  .perforation::after {
+    inset-inline-end: -8px;
+    clip-path: inset(0 50% 0 0);
+  }
+
+  .other {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+    min-inline-size: 0;
+  }
+
+  .week {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-5);
+  }
+
+  .weekBars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    inline-size: 56px;
+    block-size: 28px;
+  }
+
+  .weekBar {
+    flex: 1;
+    border-radius: 2px;
+    background: var(--slotted-border-strong);
+  }
+
+  .weekBar[data-last] {
+    background: var(--ticket-tone);
+  }
+
+  .weekText {
+    display: flex;
+    flex-direction: column;
+    min-inline-size: 0;
+  }
+
+  /* The limit: two readings above a segmented bar of 24 segments. */
+  .limit {
+    display: grid;
+    gap: var(--slotted-space-4);
+    margin-block-start: var(--slotted-space-4);
+    padding-block-start: var(--slotted-space-6);
+    border-block-start: var(--slotted-border-width-thin) solid
+      var(--ticket-border);
+  }
+
+  .limitHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+  }
+
+  /* The last fifth is the risk zone. */
+  .segments {
+    --segment-count: 24;
+
+    position: relative;
+    block-size: 8px;
+    background: linear-gradient(
+      to right,
+      var(--slotted-tone-neutral-surface) 0 80%,
+      color-mix(
+          in srgb,
+          var(--slotted-tone-warning-solid) 30%,
+          var(--slotted-tone-neutral-surface)
+        )
+        80%
+    );
+    mask: linear-gradient(to right, #000 calc(100% - 2px), transparent 0) 0 0 /
+      calc(100% / var(--segment-count)) 100%;
+  }
+
+  .segments span {
+    display: block;
+    block-size: 100%;
+    background: var(--slotted-text);
+  }
+
+  .segments[data-state="alert"] span {
+    background: var(--slotted-tone-warning-solid);
+  }
+
+  .segments[data-state="over"] span {
+    background: var(--slotted-tone-danger-text);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .more,
+    .evidence,
+    .toggle svg {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .ticket {
+      border-color: CanvasText;
+    }
+
+    .segments span {
+      background: Highlight;
+    }
+  }
+}
