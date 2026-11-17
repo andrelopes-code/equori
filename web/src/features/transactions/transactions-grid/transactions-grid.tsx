@@ -229,6 +229,7 @@ export function TransactionsGrid({
       defaultColumnState={{ hidden: ["date"] }}
       defaultQuery={{ ...emptyQuery(), group: ["date"] }}
       variant="framed"
+      columnOverflow="popin"
       rowHeight={56}
       rows={list.rows}
       rowKey="id"

@@ -56,6 +56,7 @@ import { useToday } from "@/i18n/today";
 import { HeaderAction } from "@/ui/navigation/header-action";
 import { QueryError } from "@/ui/feedback/query-error";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { usePageWide } from "@/ui/runtime/use-page-wide";
 import { useServed } from "@/ui/navigation/use-served";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -71,6 +72,8 @@ export function AccountsPage() {
   const navigate = useNavigate();
   const served = useServed();
   const compact = useMediaQuery(compactQuery);
+  // The tables keep a measure of up to 62rem: a page under the desktop width lists rows.
+  const pageWide = usePageWide();
   const search = useSearch({ from: "/_authed/accounts/" });
   const date = search.date ?? today;
   const basis = search.basis ?? "booked";
@@ -333,7 +336,7 @@ export function AccountsPage() {
                     onToggleParent: sheetView.toggleParent,
                     onTogglePositions: sheetView.togglePositions,
                   };
-                  return compact ? (
+                  return compact || !pageWide ? (
                     <BalanceGroupList key={section.key} {...props} />
                   ) : (
                     <BalanceGroupTable key={section.key} {...props} />

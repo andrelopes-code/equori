@@ -20,6 +20,7 @@ import { SheetPositionsRow } from "@/features/accounts/balance-sheet/sheet-posit
 import { institutionNote } from "@/features/accounts/balance-sheet/institution-note";
 import { useMeasuredTops } from "@/features/portfolio";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 // A group of the list holds a household's accounts: a bounded set, so a table (LP-14). Its
 // title, share and total stand in the caption, a parent folds its children and the positions
@@ -58,7 +59,10 @@ export function BalanceGroupTable({
             <SheetShareBar share={section.share} />
           )}
           <Table columns={yieldColumn ? 4 : 3} variant="framed">
-            <TableContent aria-label={label} className={styles.fixed}>
+            <TableContent
+              aria-label={label}
+              className={cx(styles.fixed, yieldColumn && styles.fixedYield)}
+            >
               <TableHead>
                 <TableRow>
                   <TableColumnHeader>

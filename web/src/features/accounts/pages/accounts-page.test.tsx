@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
@@ -16,6 +16,7 @@ import {
 import { fakeApi, json, problem } from "@/testing/fake-api";
 import { moneyValue } from "@/testing/money-value";
 import { profileRoutes, profiles } from "@/testing/profiles";
+import { regionObserver } from "@/testing/region-observer";
 import { renderApp } from "@/testing/render-app";
 
 function api(queries: URLSearchParams[] = [], overrides = {}) {
@@ -676,6 +677,25 @@ describe("AccountsPage", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  // The assistant pane beside the page leaves it narrower than the tables' measure on a desktop
+  // viewport: the balance would scroll out of the frame.
+  it("lists rows instead of tables while the page region is narrower than 1024 px", async () => {
+    vi.stubGlobal("ResizeObserver", regionObserver(676));
+
+    try {
+      await renderApp("/accounts", { fetch: api(), width: 1280 });
+
+      expect(
+        await screen.findByRole("list", {
+          name: catalogEn["home.group.available"],
+        }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
 

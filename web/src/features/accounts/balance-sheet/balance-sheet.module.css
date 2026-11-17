@@ -18,6 +18,12 @@
     min-inline-size: 52rem;
   }
 
+  /* With the yield column the three fixed columns take 43rem; the account keeps 19rem for its
+     toggle, its mark, a name and the count of its sub-accounts. */
+  .fixedYield {
+    min-inline-size: 62rem;
+  }
+
   .statusColumn {
     inline-size: 11rem;
     white-space: nowrap;

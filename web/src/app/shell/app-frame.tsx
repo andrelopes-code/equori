@@ -29,6 +29,7 @@ import {
   useKeyShortcut,
 } from "@/app/shell/frame-state/use-entry";
 import { useNavPreference } from "@/app/shell/desktop-nav/use-nav-preference";
+import { useAsideLimit } from "@/app/shell/frame-state/use-aside-limit";
 import { useExtent } from "@/app/shell/frame-state/use-extent";
 import { useRegionWide } from "@/app/shell/frame-state/use-region-wide";
 import { useScrollState } from "@/app/shell/frame-state/use-scroll-state";
@@ -47,6 +48,10 @@ const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
 // beside it leaves a stretch of the drag where the pointer moves and the pane does not.
 const ASIDE_MIN_EXTENT = 0.3;
 
+// The family's own largest share of the shell for the pane; useAsideLimit lowers it where the
+// page would keep less than 600 px.
+const ASIDE_MAX_EXTENT = 0.6;
+
 // One AppShell holds both layouts, so the routed page keeps its place in the tree when the
 // width crosses the desktop step: the regions of the other layout render as null beside it.
 export function AppFrame() {
@@ -58,6 +63,7 @@ export function AppFrame() {
   const palette = useRef<CommandPaletteHandle>(null);
   const scroll = useScrollState(main);
   const regionWide = useRegionWide(main);
+  const asideLimit = useAsideLimit(main, ASIDE_MIN_EXTENT, ASIDE_MAX_EXTENT);
   const [barExtent, barRef] = useExtent();
   const [dockExtent, dockRef] = useExtent();
   const [assistantOpen, setAssistantOpen] = useState(false);
@@ -107,6 +113,7 @@ export function AppFrame() {
       asideMode="inline"
       defaultAsideExtent={ASIDE_MIN_EXTENT}
       minAsideExtent={ASIDE_MIN_EXTENT}
+      maxAsideExtent={asideLimit}
       asideOpen={beside && assistantOpen}
       onAsideOpenChange={setAssistantOpen}
       messages={{

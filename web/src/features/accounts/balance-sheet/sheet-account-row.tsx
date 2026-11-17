@@ -91,7 +91,7 @@ export function SheetAccountRow({
                 </Tag>
               )}
               {parent && (
-                <Text size="xs" tone="muted">
+                <Text size="xs" tone="muted" wrap="nowrap">
                   {t(
                     row.childCount === 1
                       ? "balanceSheet.subAccountsOne"

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi, json, problem } from "@/testing/fake-api";
+import { regionObserver } from "@/testing/region-observer";
 import { renderApp } from "@/testing/render-app";
 import {
   accounts,
@@ -625,25 +626,3 @@ describe("TransactionsPage voided filter", () => {
     expect(screen.queryByRole("button", { name: label })).toBeNull();
   });
 });
-
-// A ResizeObserver that reports the shell's page region at the given width and nothing else:
-// jsdom lays nothing out.
-function regionObserver(width: number): typeof ResizeObserver {
-  return class extends ResizeObserver {
-    private readonly notify: () => void;
-
-    constructor(callback: ResizeObserverCallback) {
-      super(callback);
-      this.notify = () => {
-        callback([], this);
-      };
-    }
-
-    override observe(element: Element) {
-      if (!element.matches("main[data-part='main']")) return;
-
-      element.getBoundingClientRect = () => new DOMRect(0, 0, width, 600);
-      this.notify();
-    }
-  };
-}
