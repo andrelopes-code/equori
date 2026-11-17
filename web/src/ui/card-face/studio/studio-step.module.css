@@ -1,0 +1,43 @@
+@layer app {
+  .step {
+    min-inline-size: 0;
+    padding-block: var(--slotted-space-8);
+    border-block-start: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+  }
+
+  .step:first-child {
+    border-block-start: 0;
+    padding-block-start: 0;
+  }
+
+  .head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--slotted-space-5);
+    block-size: 24px;
+    margin-block-end: var(--slotted-space-6);
+    white-space: nowrap;
+  }
+
+  .number {
+    font-family: var(--slotted-font-family-mono);
+    letter-spacing: 0.08em;
+  }
+
+  .value {
+    flex: 1;
+    min-inline-size: 0;
+    overflow: hidden;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    text-align: end;
+    text-overflow: ellipsis;
+  }
+
+  @container studio (max-width: 719.98px) {
+    .step {
+      padding-block: var(--slotted-space-6);
+    }
+  }
+}

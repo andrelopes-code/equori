@@ -43,6 +43,13 @@ const widths: PreviewWidth[] = ["w420", "w320", "w220", "w96"];
 
 const base: CardFaceProps = { title, holder, lastFour, color: purple };
 
+export const studioFace: CardFaceProps = {
+  title,
+  holder,
+  lastFour,
+  network: "mastercard",
+};
+
 function item(key: string, width: PreviewWidth, face: CardFaceProps) {
   return { key, width, face };
 }

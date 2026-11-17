@@ -1,0 +1,18 @@
+@layer app {
+  .thumb {
+    container-type: inline-size;
+    display: block;
+    border-radius: 8px;
+  }
+
+  .thumb > span {
+    border-radius: calc(var(--u) * 5);
+  }
+
+  .thumb svg {
+    inset-inline-start: calc(var(--u) * 8);
+    inset-block-start: 36%;
+    inline-size: calc(var(--u) * 15);
+    block-size: calc(var(--u) * 11.4);
+  }
+}

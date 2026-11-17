@@ -1,0 +1,194 @@
+@layer app {
+  .input {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .plastic,
+  .thumb,
+  .vis {
+    position: relative;
+    box-sizing: border-box;
+    min-inline-size: 0;
+    cursor: pointer;
+  }
+
+  /* A preset: the colour as a small plastic with its chip. */
+  .plastic {
+    display: block;
+    inline-size: 60px;
+    block-size: 38px;
+    border-radius: 7px;
+    background: linear-gradient(
+      135deg,
+      oklch(from var(--card-face-color) calc(l + 0.07) c h),
+      var(--card-face-color) 50%,
+      oklch(from var(--card-face-color) calc(l - 0.1) c h)
+    );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 28%),
+      inset 0 0 0 1px rgb(128 128 128 / 22%),
+      0 1px 2px rgb(0 0 0 / 18%);
+    transition: translate var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .plastic::after {
+    content: "";
+    position: absolute;
+    inset: 14px auto auto 8px;
+    inline-size: 10px;
+    block-size: 8px;
+    border-radius: 2px;
+    background: linear-gradient(135deg, #f6e3a6, #b4862a);
+    box-shadow: 0 0 0 0.5px rgb(0 0 0 / 30%);
+  }
+
+  .plastic:hover {
+    translate: 0 -2px;
+  }
+
+  .plastic:has(.input:checked) {
+    outline: 2px solid var(--slotted-text);
+    outline-offset: 3px;
+  }
+
+  .plastic:has(.input:focus-visible) {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: 3px;
+  }
+
+  /* An art: the thumbnail of the plastic with its name and a dot. */
+  .thumb {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .thumb [data-part="preview"] {
+    transition: translate var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .thumb:hover [data-part="preview"] {
+    translate: 0 -2px;
+  }
+
+  .thumb:has(.input:checked) [data-part="preview"] {
+    outline: 2px solid var(--slotted-text);
+    outline-offset: 3px;
+  }
+
+  .thumb:has(.input:focus-visible) [data-part="preview"] {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: 3px;
+  }
+
+  .thumb .caption {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-3);
+    block-size: 18px;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: 500;
+    line-height: 18px;
+    white-space: nowrap;
+  }
+
+  .thumb .caption::before {
+    content: "";
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px var(--slotted-border-strong);
+  }
+
+  .thumb:has(.input:checked) .caption {
+    color: var(--slotted-text);
+    font-weight: 600;
+  }
+
+  .thumb:has(.input:checked) .caption::before {
+    background: var(--slotted-tone-accent-solid);
+    box-shadow: none;
+  }
+
+  /* A finish: a drawing of the choice with its name under it. */
+  .vis {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: var(--slotted-space-4);
+    block-size: 84px;
+    border: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: 10px;
+    background: var(--slotted-surface-sunken);
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-xs);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .vis:has(.input:checked) {
+    border-color: var(--slotted-tone-accent-solid);
+    background: color-mix(
+      in srgb,
+      var(--slotted-tone-accent-solid) 12%,
+      transparent
+    );
+    box-shadow: inset 0 0 0 1px var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-text);
+    font-weight: 600;
+  }
+
+  .vis:has(.input:focus-visible) {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: 2px;
+  }
+
+  @container studio (max-width: 719.98px) {
+    .plastic {
+      block-size: 44px;
+    }
+
+    .plastic::after {
+      inset-block-start: 17px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .plastic,
+    .thumb [data-part="preview"] {
+      transition: none;
+    }
+
+    .plastic:hover,
+    .thumb:hover [data-part="preview"] {
+      translate: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .plastic {
+      forced-color-adjust: none;
+    }
+
+    .plastic:has(.input:checked),
+    .thumb:has(.input:checked) [data-part="preview"] {
+      outline-color: Highlight;
+    }
+
+    .vis:has(.input:checked) {
+      border-color: Highlight;
+    }
+  }
+}

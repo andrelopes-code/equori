@@ -1,0 +1,36 @@
+@layer app {
+  .studio {
+    container: studio / inline-size;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-6);
+  }
+
+  .side {
+    display: grid;
+    gap: var(--slotted-space-6);
+    align-content: start;
+    min-inline-size: 0;
+  }
+
+  .steps {
+    display: grid;
+    align-content: start;
+    min-inline-size: 0;
+  }
+
+  @container studio (min-width: 720px) {
+    .layout {
+      grid-template-columns: 420px minmax(0, 1fr);
+      gap: var(--slotted-space-8);
+    }
+
+    .side {
+      position: sticky;
+      inset-block-start: var(--slotted-space-6);
+    }
+  }
+}

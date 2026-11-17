@@ -1,0 +1,86 @@
+@layer app {
+  /* The stage takes the colour of the card: a glow behind it and its shadow on the floor. */
+  .stage {
+    --card-face-color: #2b2d33;
+
+    position: relative;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    block-size: 380px;
+    padding: var(--slotted-space-8);
+    overflow: hidden;
+    border: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    background:
+      radial-gradient(
+        58% 46% at 50% 44%,
+        oklch(from var(--card-face-color) l c h / 30%),
+        transparent 72%
+      ),
+      radial-gradient(
+        120% 90% at 50% 0%,
+        color-mix(in srgb, var(--slotted-text) 7%, transparent),
+        transparent 70%
+      ),
+      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    transition: background var(--slotted-duration-medium)
+      var(--slotted-easing-standard);
+  }
+
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.5;
+    background-image: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--slotted-text) 14%, transparent) 1px,
+      transparent 1.4px
+    );
+    background-size: 18px 18px;
+    mask: radial-gradient(70% 60% at 50% 45%, transparent 35%, #000);
+  }
+
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: auto 22% 15%;
+    block-size: 22px;
+    border-radius: 50%;
+    background: oklch(from var(--card-face-color) 0.25 c h / 55%);
+    filter: blur(16px);
+  }
+
+  .face {
+    position: relative;
+    z-index: 1;
+    inline-size: 100%;
+    max-inline-size: 340px;
+  }
+
+  .face[data-vertical] {
+    max-inline-size: 172px;
+  }
+
+  @container studio (max-width: 719.98px) {
+    .stage {
+      block-size: 300px;
+      padding: var(--slotted-space-6);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stage {
+      transition: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .stage::before,
+    .stage::after {
+      display: none;
+    }
+  }
+}

@@ -1,0 +1,62 @@
+@layer app {
+  .thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: var(--slotted-space-6) var(--slotted-space-5);
+  }
+
+  .finish {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--slotted-space-6);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--slotted-space-4);
+    min-inline-size: 0;
+    align-content: start;
+  }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--slotted-space-4);
+  }
+
+  .drawing {
+    display: grid;
+    place-items: center;
+    block-size: 30px;
+  }
+
+  .drawing svg {
+    position: static;
+    display: block;
+    inset: auto;
+    inline-size: auto;
+    block-size: 30px;
+  }
+
+  .outline {
+    box-sizing: border-box;
+    border: 1.5px solid currentcolor;
+    border-radius: 3px;
+  }
+
+  .outline[data-orientation="horizontal"] {
+    inline-size: 44px;
+    block-size: 28px;
+  }
+
+  .outline[data-orientation="vertical"] {
+    inline-size: 20px;
+    block-size: 30px;
+  }
+
+  @container studio (max-width: 719.98px) {
+    .thumbs {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}
