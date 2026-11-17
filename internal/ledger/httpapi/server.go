@@ -113,6 +113,10 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.setAccountAppearance),
 	)
 	mux.HandleFunc(
+		"PUT "+BaseURL+"/accounts/{id}/card-face",
+		httpserver.Handle(s.errs, http.StatusOK, s.setAccountCardFace),
+	)
+	mux.HandleFunc(
 		"PUT "+BaseURL+"/accounts/{id}/parent",
 		httpserver.Handle(s.errs, http.StatusOK, s.setAccountParent),
 	)

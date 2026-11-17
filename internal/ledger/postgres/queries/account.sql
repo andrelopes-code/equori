@@ -14,7 +14,12 @@ INSERT INTO
         yield_mode,
         system_role,
         color,
-        icon
+        icon,
+        face_color,
+        face_art,
+        face_chip,
+        face_orientation,
+        face_brand
     )
 VALUES
     (
@@ -31,7 +36,12 @@ VALUES
         @yield_mode,
         sqlc.narg (system_role),
         sqlc.narg (color),
-        sqlc.narg (icon)
+        sqlc.narg (icon),
+        sqlc.narg (face_color),
+        sqlc.narg (face_art),
+        sqlc.narg (face_chip),
+        sqlc.narg (face_orientation),
+        sqlc.narg (face_brand)
     )
 RETURNING
     *;
@@ -47,6 +57,11 @@ SET
     yield_mode = @yield_mode,
     color = sqlc.narg (color),
     icon = sqlc.narg (icon),
+    face_color = sqlc.narg (face_color),
+    face_art = sqlc.narg (face_art),
+    face_chip = sqlc.narg (face_chip),
+    face_orientation = sqlc.narg (face_orientation),
+    face_brand = sqlc.narg (face_brand),
     excluded_from_liquidity = @excluded_from_liquidity,
     updated_at = now()
 WHERE

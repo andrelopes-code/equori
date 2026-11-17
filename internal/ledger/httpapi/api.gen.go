@@ -441,6 +441,66 @@ func (e BulkVoidItemResultStatus) Valid() bool {
 	}
 }
 
+// Defines values for CardFaceBrand.
+const (
+	CardFaceBrandAuto  CardFaceBrand = "auto"
+	CardFaceBrandName  CardFaceBrand = "name"
+	CardFaceBrandNone  CardFaceBrand = "none"
+	CardFaceBrandPlate CardFaceBrand = "plate"
+)
+
+// Valid indicates whether the value is a known member of the CardFaceBrand enum.
+func (e CardFaceBrand) Valid() bool {
+	switch e {
+	case CardFaceBrandAuto:
+		return true
+	case CardFaceBrandName:
+		return true
+	case CardFaceBrandNone:
+		return true
+	case CardFaceBrandPlate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CardFaceChip.
+const (
+	Gold   CardFaceChip = "gold"
+	Silver CardFaceChip = "silver"
+)
+
+// Valid indicates whether the value is a known member of the CardFaceChip enum.
+func (e CardFaceChip) Valid() bool {
+	switch e {
+	case Gold:
+		return true
+	case Silver:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CardFaceOrientation.
+const (
+	Horizontal CardFaceOrientation = "horizontal"
+	Vertical   CardFaceOrientation = "vertical"
+)
+
+// Valid indicates whether the value is a known member of the CardFaceOrientation enum.
+func (e CardFaceOrientation) Valid() bool {
+	switch e {
+	case Horizontal:
+		return true
+	case Vertical:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CategoryIcon.
 const (
 	CategoryIconApple          CategoryIcon = "apple"
@@ -1167,6 +1227,9 @@ type Account struct {
 	// ExcludedFromLiquidity Leaves the account out of the liquidity indicator (analytics design 4.3).
 	ExcludedFromLiquidity *bool `json:"excluded_from_liquidity,omitempty"`
 
+	// Face An absent or null value clears it; the face then applies its default.
+	Face *CardFace `json:"face,omitempty"`
+
 	// Icon Kebab-case name of a lucide-react icon of the curated category set (A83).
 	Icon          *CategoryIcon       `json:"icon,omitempty"`
 	Id            openapi_types.UUID  `json:"id"`
@@ -1510,6 +1573,24 @@ type Card struct {
 	LastFour        string             `json:"last_four"`
 	Virtual         *bool              `json:"virtual,omitempty"`
 }
+
+// CardFace An absent or null value clears it; the face then applies its default.
+type CardFace struct {
+	Art         *string              `json:"art,omitempty"`
+	Brand       *CardFaceBrand       `json:"brand,omitempty"`
+	Chip        *CardFaceChip        `json:"chip,omitempty"`
+	Color       *string              `json:"color,omitempty"`
+	Orientation *CardFaceOrientation `json:"orientation,omitempty"`
+}
+
+// CardFaceBrand defines model for CardFace.Brand.
+type CardFaceBrand string
+
+// CardFaceChip defines model for CardFace.Chip.
+type CardFaceChip string
+
+// CardFaceOrientation defines model for CardFace.Orientation.
+type CardFaceOrientation string
 
 // CardInput defines model for CardInput.
 type CardInput struct {
@@ -2715,6 +2796,9 @@ type CreateBalanceAssertionJSONRequestBody = BalanceAssertionInput
 
 // CreateBillingCycleRuleJSONRequestBody defines body for CreateBillingCycleRule for application/json ContentType.
 type CreateBillingCycleRuleJSONRequestBody = BillingCycleRule
+
+// SetAccountCardFaceJSONRequestBody defines body for SetAccountCardFace for application/json ContentType.
+type SetAccountCardFaceJSONRequestBody = CardFace
 
 // CreateCardJSONRequestBody defines body for CreateCard for application/json ContentType.
 type CreateCardJSONRequestBody = CardInput

@@ -186,6 +186,32 @@ func (s *Server) setAccountAppearance(
 	return toAccountAPI(a), nil
 }
 
+func (s *Server) setAccountCardFace(
+	ctx context.Context,
+	r *http.Request,
+	in SetAccountCardFaceJSONRequestBody,
+) (Account, error) {
+	id, err := httpserver.PathUUID(r, "id")
+	if err != nil {
+		return Account{}, err
+	}
+
+	face := domain.CardFace{
+		Color:       deref(in.Color),
+		Art:         deref(in.Art),
+		Chip:        string(deref(in.Chip)),
+		Orientation: string(deref(in.Orientation)),
+		Brand:       string(deref(in.Brand)),
+	}
+
+	a, err := s.svc.SetCardFace(ctx, auth.MustBooksID(ctx), id, face)
+	if err != nil {
+		return Account{}, err
+	}
+
+	return toAccountAPI(a), nil
+}
+
 func (s *Server) setAccountParent(
 	ctx context.Context,
 	r *http.Request,
@@ -248,4 +274,14 @@ func (s *Server) reopenAccount(
 	}
 
 	return toAccountAPI(a), nil
+}
+
+func deref[T any](p *T) T {
+	if p == nil {
+		var zero T
+
+		return zero
+	}
+
+	return *p
 }

@@ -170,6 +170,8 @@ type Account struct {
 	// Color is a theme data slot 1..8 and Icon a key of the API icon set; zero values mean none (A83).
 	Color int
 	Icon  string
+	// Face is the appearance of a credit card account (card faces spec 4.9).
+	Face CardFace
 	// QuoteCurrency is the currency a security is quoted in; set by the application
 	// from Market data, empty for a currency account (P8 amendment A63).
 	QuoteCurrency money.Currency

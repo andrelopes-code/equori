@@ -315,7 +315,7 @@ func (q *Queries) GetStatementByDueDate(ctx context.Context, arg GetStatementByD
 
 const getSystemAccount = `-- name: GetSystemAccount :one
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 FROM
     ledger_account
 WHERE
@@ -350,6 +350,11 @@ func (q *Queries) GetSystemAccount(ctx context.Context, arg GetSystemAccountPara
 		&i.Color,
 		&i.Icon,
 		&i.ExcludedFromLiquidity,
+		&i.FaceColor,
+		&i.FaceArt,
+		&i.FaceChip,
+		&i.FaceOrientation,
+		&i.FaceBrand,
 	)
 	return i, err
 }
@@ -439,7 +444,7 @@ INSERT INTO
 VALUES
     ($1, $2, $3, $4, $5, $6)
 RETURNING
-    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp, network
 `
 
 type InsertCardParams struct {
@@ -471,6 +476,7 @@ func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) (LedgerC
 		&i.Active,
 		&i.CreatedAt,
 		&i.ForeignChargeBp,
+		&i.Network,
 	)
 	return i, err
 }
@@ -707,7 +713,7 @@ func (q *Queries) ListBillingRules(ctx context.Context, arg ListBillingRulesPara
 
 const listCards = `-- name: ListCards :many
 SELECT
-    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp, network
 FROM
     ledger_card
 WHERE
@@ -742,6 +748,7 @@ func (q *Queries) ListCards(ctx context.Context, arg ListCardsParams) ([]LedgerC
 			&i.Active,
 			&i.CreatedAt,
 			&i.ForeignChargeBp,
+			&i.Network,
 		); err != nil {
 			return nil, err
 		}
@@ -1378,7 +1385,7 @@ WHERE
     books_id = $4
     AND id = $5
 RETURNING
-    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp
+    id, books_id, account_id, holder, last_four, virtual, active, created_at, foreign_charge_bp, network
 `
 
 type UpdateCardParams struct {
@@ -1408,6 +1415,7 @@ func (q *Queries) UpdateCard(ctx context.Context, arg UpdateCardParams) (LedgerC
 		&i.Active,
 		&i.CreatedAt,
 		&i.ForeignChargeBp,
+		&i.Network,
 	)
 	return i, err
 }

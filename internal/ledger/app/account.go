@@ -193,6 +193,37 @@ func (s *Service) SetAppearance(
 	return updated, err
 }
 
+// SetCardFace replaces the appearance of a credit card account; zero values clear it (card faces
+// spec 4.9).
+func (s *Service) SetCardFace(
+	ctx context.Context,
+	booksID int64,
+	id uuid.UUID,
+	face domain.CardFace,
+) (domain.Account, error) {
+	var updated domain.Account
+	err := s.repo.InTx(ctx, func(r Repository) error {
+		a, err := r.Account(ctx, booksID, id)
+		if err != nil {
+			return err
+		}
+
+		if err = domain.RequireCard(a); err != nil {
+			return err
+		}
+
+		if a.Face, err = domain.NewCardFace(face); err != nil {
+			return err
+		}
+
+		updated, err = r.UpdateAccount(ctx, a)
+
+		return err
+	})
+
+	return updated, err
+}
+
 func (s *Service) Account(
 	ctx context.Context,
 	booksID int64,

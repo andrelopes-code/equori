@@ -9,7 +9,7 @@ import (
 
 // ArchiveVersion is the archive_version this instance writes and the highest it reads
 // (ADR 021). It is the number of steps in archiveSteps plus 1.
-const ArchiveVersion = 23
+const ArchiveVersion = 24
 
 // ArchiveStep migrates the tables of an archive from one version to the next; it is pure and
 // leaves its input unchanged (ADR 021, V3).
@@ -40,6 +40,7 @@ var archiveSteps = []ArchiveStep{
 	addFixedIncomePayments,
 	addInstrumentHidden,
 	addGoalSavings,
+	addCardFace,
 }
 
 // migrateArchive applies the steps from version from to the last one, in order.
@@ -379,4 +380,31 @@ func addInstrumentHidden(tables []ArchiveTable) ([]ArchiveTable, error) {
 // A239).
 func addGoalSavings(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return withField(tables, "planning_goal", "counts_as_savings", jsontext.Value("false"))
+}
+
+// addCardFace writes null into the five face columns of every version 23 row of ledger_account
+// and into network of every version 23 row of ledger_card (migration 00112): an account and a
+// plastic card saved before have no stored appearance (card faces spec 4.9).
+func addCardFace(tables []ArchiveTable) ([]ArchiveTable, error) {
+	columns := map[string][]string{
+		"ledger_account": {
+			"face_color",
+			"face_art",
+			"face_chip",
+			"face_orientation",
+			"face_brand",
+		},
+		"ledger_card": {"network"},
+	}
+
+	for _, table := range []string{"ledger_account", "ledger_card"} {
+		for _, column := range columns[table] {
+			var err error
+			if tables, err = withField(tables, table, column, jsontext.Value("null")); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return tables, nil
 }

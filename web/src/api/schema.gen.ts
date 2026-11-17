@@ -1995,6 +1995,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/card-face": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or clear the appearance of a credit card account's face (card faces spec 4.9). */
+        put: operations["setAccountCardFace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/parent": {
         parameters: {
             query?: never;
@@ -6059,6 +6076,7 @@ export interface components {
             card?: components["schemas"]["CardSummary"];
             /** @description Leaves the account out of the liquidity indicator (analytics design 4.3). */
             excluded_from_liquidity?: boolean;
+            face?: components["schemas"]["CardFace"];
         };
         AccountList: {
             items: components["schemas"]["Account"][];
@@ -6090,6 +6108,17 @@ export interface components {
         AccountAppearance: {
             color: number | null;
             icon: components["schemas"]["CategoryIcon"] | null;
+        };
+        /** @description An absent or null value clears it; the face then applies its default. */
+        CardFace: {
+            color?: string | null;
+            art?: string | null;
+            /** @enum {string|null} */
+            chip?: "gold" | "silver" | null;
+            /** @enum {string|null} */
+            orientation?: "horizontal" | "vertical" | null;
+            /** @enum {string|null} */
+            brand?: "auto" | "plate" | "name" | "none" | null;
         };
         /** @description null makes the account top level (A84). */
         AccountParent: {
@@ -11489,6 +11518,35 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["AccountAppearance"];
+            };
+        };
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Account"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    setAccountCardFace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardFace"];
             };
         };
         responses: {

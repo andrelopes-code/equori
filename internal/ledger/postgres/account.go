@@ -77,6 +77,11 @@ func (r *Repository) ListAccounts(
 				SystemRole:            row.SystemRole,
 				Color:                 row.Color,
 				Icon:                  row.Icon,
+				FaceColor:             row.FaceColor,
+				FaceArt:               row.FaceArt,
+				FaceChip:              row.FaceChip,
+				FaceOrientation:       row.FaceOrientation,
+				FaceBrand:             row.FaceBrand,
 				ExcludedFromLiquidity: row.ExcludedFromLiquidity,
 				CreatedAt:             row.CreatedAt,
 				UpdatedAt:             row.UpdatedAt,
@@ -107,6 +112,11 @@ func (r *Repository) InsertAccount(ctx context.Context, a domain.Account) (domai
 		SystemRole:          nullString(string(a.SystemRole)),
 		Color:               nullColor(a.Color),
 		Icon:                nullString(a.Icon),
+		FaceColor:           nullString(a.Face.Color),
+		FaceArt:             nullString(a.Face.Art),
+		FaceChip:            nullString(a.Face.Chip),
+		FaceOrientation:     nullString(a.Face.Orientation),
+		FaceBrand:           nullString(a.Face.Brand),
 	})
 	if err != nil {
 		return domain.Account{}, referenceError(err)
@@ -131,6 +141,11 @@ func (r *Repository) UpdateAccount(ctx context.Context, a domain.Account) (domai
 			a.Color,
 		),
 		Icon:                  nullString(a.Icon),
+		FaceColor:             nullString(a.Face.Color),
+		FaceArt:               nullString(a.Face.Art),
+		FaceChip:              nullString(a.Face.Chip),
+		FaceOrientation:       nullString(a.Face.Orientation),
+		FaceBrand:             nullString(a.Face.Brand),
 		ExcludedFromLiquidity: a.ExcludedFromLiquidity,
 	})
 	if err != nil {

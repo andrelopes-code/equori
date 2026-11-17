@@ -30,6 +30,11 @@ type LedgerAccount struct {
 	Color                 *int16
 	Icon                  *string
 	ExcludedFromLiquidity bool
+	FaceColor             *string
+	FaceArt               *string
+	FaceChip              *string
+	FaceOrientation       *string
+	FaceBrand             *string
 }
 
 type LedgerAttachment struct {
@@ -77,6 +82,7 @@ type LedgerCard struct {
 	Active          bool
 	CreatedAt       time.Time
 	ForeignChargeBp int32
+	Network         *string
 }
 
 type LedgerCorporateAction struct {

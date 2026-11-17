@@ -124,6 +124,13 @@ func toAccount(row LedgerAccount) domain.Account {
 		),
 		Color: colorOf(row.Color),
 		Icon:  deref(row.Icon),
+		Face: domain.CardFace{
+			Color:       deref(row.FaceColor),
+			Art:         deref(row.FaceArt),
+			Chip:        deref(row.FaceChip),
+			Orientation: deref(row.FaceOrientation),
+			Brand:       deref(row.FaceBrand),
+		},
 	}
 }
 

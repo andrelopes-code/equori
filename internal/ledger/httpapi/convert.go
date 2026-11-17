@@ -128,7 +128,38 @@ func toAccountAPI(a domain.Account) Account {
 		out.Icon = &i
 	}
 
+	out.Face = toCardFaceAPI(a.Face)
+
 	return out
+}
+
+// toCardFaceAPI returns nil when no value is set and only the set values otherwise.
+func toCardFaceAPI(f domain.CardFace) *CardFace {
+	if f == (domain.CardFace{}) {
+		return nil
+	}
+
+	out := CardFace{
+		Color: apiOptString(f.Color),
+		Art:   apiOptString(f.Art),
+	}
+
+	if f.Chip != "" {
+		chip := CardFaceChip(f.Chip)
+		out.Chip = &chip
+	}
+
+	if f.Orientation != "" {
+		orientation := CardFaceOrientation(f.Orientation)
+		out.Orientation = &orientation
+	}
+
+	if f.Brand != "" {
+		brand := CardFaceBrand(f.Brand)
+		out.Brand = &brand
+	}
+
+	return &out
 }
 
 func fromAccountInput(in AccountInput) domain.Account {

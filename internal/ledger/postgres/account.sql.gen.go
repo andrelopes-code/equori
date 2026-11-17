@@ -126,7 +126,7 @@ func (q *Queries) AccountTransactionsBetween(ctx context.Context, arg AccountTra
 
 const getAccount = `-- name: GetAccount :one
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 FROM
     ledger_account
 WHERE
@@ -161,13 +161,18 @@ func (q *Queries) GetAccount(ctx context.Context, arg GetAccountParams) (LedgerA
 		&i.Color,
 		&i.Icon,
 		&i.ExcludedFromLiquidity,
+		&i.FaceColor,
+		&i.FaceArt,
+		&i.FaceChip,
+		&i.FaceOrientation,
+		&i.FaceBrand,
 	)
 	return i, err
 }
 
 const getAccountForUpdate = `-- name: GetAccountForUpdate :one
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 FROM
     ledger_account
 WHERE
@@ -203,13 +208,18 @@ func (q *Queries) GetAccountForUpdate(ctx context.Context, arg GetAccountForUpda
 		&i.Color,
 		&i.Icon,
 		&i.ExcludedFromLiquidity,
+		&i.FaceColor,
+		&i.FaceArt,
+		&i.FaceChip,
+		&i.FaceOrientation,
+		&i.FaceBrand,
 	)
 	return i, err
 }
 
 const getAccountsByIDs = `-- name: GetAccountsByIDs :many
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 FROM
     ledger_account
 WHERE
@@ -250,6 +260,11 @@ func (q *Queries) GetAccountsByIDs(ctx context.Context, arg GetAccountsByIDsPara
 			&i.Color,
 			&i.Icon,
 			&i.ExcludedFromLiquidity,
+			&i.FaceColor,
+			&i.FaceArt,
+			&i.FaceChip,
+			&i.FaceOrientation,
+			&i.FaceBrand,
 		); err != nil {
 			return nil, err
 		}
@@ -277,7 +292,12 @@ INSERT INTO
         yield_mode,
         system_role,
         color,
-        icon
+        icon,
+        face_color,
+        face_art,
+        face_chip,
+        face_orientation,
+        face_brand
     )
 VALUES
     (
@@ -294,10 +314,15 @@ VALUES
         $11,
         $12,
         $13,
-        $14
+        $14,
+        $15,
+        $16,
+        $17,
+        $18,
+        $19
     )
 RETURNING
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 `
 
 type InsertAccountParams struct {
@@ -315,6 +340,11 @@ type InsertAccountParams struct {
 	SystemRole          *string
 	Color               *int16
 	Icon                *string
+	FaceColor           *string
+	FaceArt             *string
+	FaceChip            *string
+	FaceOrientation     *string
+	FaceBrand           *string
 }
 
 func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (LedgerAccount, error) {
@@ -333,6 +363,11 @@ func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (L
 		arg.SystemRole,
 		arg.Color,
 		arg.Icon,
+		arg.FaceColor,
+		arg.FaceArt,
+		arg.FaceChip,
+		arg.FaceOrientation,
+		arg.FaceBrand,
 	)
 	var i LedgerAccount
 	err := row.Scan(
@@ -354,13 +389,18 @@ func (q *Queries) InsertAccount(ctx context.Context, arg InsertAccountParams) (L
 		&i.Color,
 		&i.Icon,
 		&i.ExcludedFromLiquidity,
+		&i.FaceColor,
+		&i.FaceArt,
+		&i.FaceChip,
+		&i.FaceOrientation,
+		&i.FaceBrand,
 	)
 	return i, err
 }
 
 const listAccounts = `-- name: ListAccounts :many
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity,
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand,
     lower(name)::text AS sort_name
 FROM
     ledger_account
@@ -409,6 +449,11 @@ type ListAccountsRow struct {
 	Color                 *int16
 	Icon                  *string
 	ExcludedFromLiquidity bool
+	FaceColor             *string
+	FaceArt               *string
+	FaceChip              *string
+	FaceOrientation       *string
+	FaceBrand             *string
 	SortName              string
 }
 
@@ -446,6 +491,11 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]L
 			&i.Color,
 			&i.Icon,
 			&i.ExcludedFromLiquidity,
+			&i.FaceColor,
+			&i.FaceArt,
+			&i.FaceChip,
+			&i.FaceOrientation,
+			&i.FaceBrand,
 			&i.SortName,
 		); err != nil {
 			return nil, err
@@ -460,7 +510,7 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]L
 
 const listChildAccounts = `-- name: ListChildAccounts :many
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 FROM
     ledger_account
 WHERE
@@ -504,6 +554,11 @@ func (q *Queries) ListChildAccounts(ctx context.Context, arg ListChildAccountsPa
 			&i.Color,
 			&i.Icon,
 			&i.ExcludedFromLiquidity,
+			&i.FaceColor,
+			&i.FaceArt,
+			&i.FaceChip,
+			&i.FaceOrientation,
+			&i.FaceBrand,
 		); err != nil {
 			return nil, err
 		}
@@ -517,7 +572,7 @@ func (q *Queries) ListChildAccounts(ctx context.Context, arg ListChildAccountsPa
 
 const listInstitutionAccounts = `-- name: ListInstitutionAccounts :many
 SELECT
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 FROM
     ledger_account
 WHERE
@@ -563,6 +618,11 @@ func (q *Queries) ListInstitutionAccounts(ctx context.Context, arg ListInstituti
 			&i.Color,
 			&i.Icon,
 			&i.ExcludedFromLiquidity,
+			&i.FaceColor,
+			&i.FaceArt,
+			&i.FaceChip,
+			&i.FaceOrientation,
+			&i.FaceBrand,
 		); err != nil {
 			return nil, err
 		}
@@ -645,13 +705,18 @@ SET
     yield_mode = $6,
     color = $7,
     icon = $8,
-    excluded_from_liquidity = $9,
+    face_color = $9,
+    face_art = $10,
+    face_chip = $11,
+    face_orientation = $12,
+    face_brand = $13,
+    excluded_from_liquidity = $14,
     updated_at = now()
 WHERE
-    books_id = $10
-    AND id = $11
+    books_id = $15
+    AND id = $16
 RETURNING
-    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity
+    id, books_id, name, account_class, kind, instrument, parent_id, institution_id, counterparty_payee_id, opened_on, closed_on, yield_mode, system_role, created_at, updated_at, color, icon, excluded_from_liquidity, face_color, face_art, face_chip, face_orientation, face_brand
 `
 
 type UpdateAccountParams struct {
@@ -663,6 +728,11 @@ type UpdateAccountParams struct {
 	YieldMode             string
 	Color                 *int16
 	Icon                  *string
+	FaceColor             *string
+	FaceArt               *string
+	FaceChip              *string
+	FaceOrientation       *string
+	FaceBrand             *string
 	ExcludedFromLiquidity bool
 	BooksID               int64
 	ID                    uuid.UUID
@@ -678,6 +748,11 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (L
 		arg.YieldMode,
 		arg.Color,
 		arg.Icon,
+		arg.FaceColor,
+		arg.FaceArt,
+		arg.FaceChip,
+		arg.FaceOrientation,
+		arg.FaceBrand,
 		arg.ExcludedFromLiquidity,
 		arg.BooksID,
 		arg.ID,
@@ -702,6 +777,11 @@ func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (L
 		&i.Color,
 		&i.Icon,
 		&i.ExcludedFromLiquidity,
+		&i.FaceColor,
+		&i.FaceArt,
+		&i.FaceChip,
+		&i.FaceOrientation,
+		&i.FaceBrand,
 	)
 	return i, err
 }

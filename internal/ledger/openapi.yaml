@@ -509,6 +509,33 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /accounts/{id}/card-face:
+    put:
+      tags: [ledger]
+      operationId: setAccountCardFace
+      x-book-role: write
+      summary: Set or clear the appearance of a credit card account's face (card faces spec 4.9).
+      parameters:
+        - $ref: "#/components/parameters/ID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardFace"
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /accounts/{id}/parent:
     put:
       tags: [ledger]
@@ -3284,6 +3311,8 @@ schemas:
           excluded_from_liquidity:
             type: boolean
             description: Leaves the account out of the liquidity indicator (analytics design 4.3).
+          face:
+            $ref: "#/components/schemas/CardFace"
   AccountList:
     type: object
     required: [items]
@@ -3416,6 +3445,31 @@ schemas:
       icon:
         allOf:
           - $ref: "#/components/schemas/CategoryIcon"
+        nullable: true
+  CardFace:
+    type: object
+    additionalProperties: false
+    description: An absent or null value clears it; the face then applies its default.
+    properties:
+      color:
+        type: string
+        pattern: "^#[0-9a-f]{6}$"
+        nullable: true
+      art:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        nullable: true
+      chip:
+        type: string
+        enum: [gold, silver]
+        nullable: true
+      orientation:
+        type: string
+        enum: [horizontal, vertical]
+        nullable: true
+      brand:
+        type: string
+        enum: [auto, plate, name, none]
         nullable: true
   AccountParent:
     type: object

@@ -616,3 +616,31 @@ func TestAddGoalSavings(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 23", ArchiveVersion)
 	}
 }
+
+func TestAddCardFace(t *testing.T) {
+	t.Parallel()
+
+	v23 := []ArchiveTable{
+		{Name: "ledger_account", Rows: [][]byte{[]byte(`{"name":"Card"}`)}},
+		{Name: "ledger_card", Rows: [][]byte{[]byte(`{"holder":"Ana"}`)}},
+	}
+
+	got, err := addCardFace(v23)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantAccount := `{"face_art":null,"face_brand":null,"face_chip":null,"face_color":null,` +
+		`"face_orientation":null,"name":"Card"}`
+	if string(got[0].Rows[0]) != wantAccount {
+		t.Fatalf("account row = %s", got[0].Rows[0])
+	}
+
+	if string(got[1].Rows[0]) != `{"holder":"Ana","network":null}` {
+		t.Fatalf("card row = %s", got[1].Rows[0])
+	}
+
+	if ArchiveVersion < 24 {
+		t.Fatalf("ArchiveVersion = %d, want at least 24", ArchiveVersion)
+	}
+}
