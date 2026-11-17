@@ -1,6 +1,10 @@
 export { InstrumentsPage } from "@/features/instruments/pages/instruments-page";
 export { InstrumentPage } from "@/features/instruments/pages/instrument-page";
-export { pricesQuery, subtypesQuery } from "@/features/instruments/api";
+export {
+  pricesQuery,
+  subtypesQuery,
+  termsQuery,
+} from "@/features/instruments/api";
 export { TrendLine } from "@/features/instruments/price-trend/trend-line";
 export {
   sourceLabel,

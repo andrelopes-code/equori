@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useApi } from "@/api/api-context";
+import { FixedIncomePanel } from "@/features/portfolio/fixed-income/fixed-income-panel";
 import { HoldingsSection } from "@/features/portfolio/holdings/holdings-section";
 import { PortfolioHeader } from "@/features/portfolio/summary/portfolio-header";
 import { PortfolioEmpty } from "@/features/portfolio/notices/portfolio-empty";
@@ -110,6 +111,10 @@ export function PortfolioPage() {
                 change({ by: next === "type" ? undefined : next });
               }}
             />
+          )}
+
+          {!empty && !positions.isError && (
+            <FixedIncomePanel holdings={holdings} date={date} />
           )}
 
           {!empty && !positions.isError && (

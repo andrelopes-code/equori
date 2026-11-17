@@ -1,0 +1,102 @@
+@layer app {
+  .list {
+    display: grid;
+    grid-template-columns: minmax(0, 9rem) 1fr auto;
+    align-items: center;
+    gap: var(--slotted-space-4) var(--slotted-space-5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+    align-items: center;
+  }
+
+  .name {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track {
+    position: relative;
+    block-size: var(--slotted-space-5);
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .track > span {
+    position: absolute;
+    inset-block: 0;
+  }
+
+  .covered {
+    border-radius: var(--slotted-radius-xs) 0 0 var(--slotted-radius-xs);
+    background: var(--slotted-tone-success-text);
+  }
+
+  .excess {
+    background: var(--slotted-tone-danger-text);
+  }
+
+  .uncovered {
+    background: color-mix(in oklch, var(--slotted-text-muted) 45%, transparent);
+  }
+
+  .limit {
+    inset-block: calc(var(--slotted-space-2) * -1) !important;
+    inline-size: var(--slotted-border-width-medium);
+    background: var(--slotted-text);
+  }
+
+  .figure {
+    justify-self: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-3) var(--slotted-space-6);
+    margin: var(--slotted-space-5) 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--slotted-font-size-xs);
+    color: var(--slotted-text-muted);
+  }
+
+  .key {
+    display: inline-block;
+    inline-size: var(--slotted-space-5);
+    block-size: var(--slotted-space-5);
+    margin-inline-end: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-xs);
+    vertical-align: -0.1em;
+  }
+
+  .keyLimit {
+    inline-size: var(--slotted-border-width-medium);
+  }
+
+  @media (max-width: 47.99rem) {
+    .list {
+      grid-template-columns: minmax(0, 6rem) 1fr auto;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .covered,
+    .excess,
+    .uncovered,
+    .limit {
+      background: CanvasText;
+      forced-color-adjust: none;
+    }
+  }
+}

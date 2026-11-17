@@ -1,0 +1,26 @@
+@layer app {
+  .bar {
+    display: flex;
+    gap: var(--slotted-space-1);
+    block-size: var(--slotted-space-5);
+    margin-block-end: var(--slotted-space-5);
+    border-radius: var(--slotted-radius-sm);
+    overflow: hidden;
+  }
+
+  .key {
+    display: inline-block;
+    inline-size: var(--slotted-space-5);
+    block-size: var(--slotted-space-5);
+    margin-inline-end: var(--slotted-space-4);
+    border-radius: var(--slotted-radius-xs);
+    vertical-align: -0.1em;
+  }
+
+  .value {
+    justify-self: end;
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+}

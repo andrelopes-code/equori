@@ -1,0 +1,23 @@
+@layer app {
+  .body {
+    display: grid;
+    gap: var(--slotted-space-9);
+  }
+
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--slotted-space-9);
+  }
+
+  .body > *,
+  .pair > * {
+    min-inline-size: 0;
+  }
+
+  @media (min-width: 48rem) {
+    .pair {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}

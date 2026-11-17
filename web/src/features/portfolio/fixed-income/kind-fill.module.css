@@ -1,0 +1,41 @@
+@layer app {
+  .rate {
+    background-color: var(--slotted-data-1);
+  }
+
+  .inflation {
+    background-color: var(--slotted-data-2);
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 3px,
+      color-mix(in oklch, var(--slotted-surface) 45%, transparent) 3px 5px
+    );
+  }
+
+  .fixed {
+    background-color: var(--slotted-data-3);
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent 0 4px,
+      color-mix(in oklch, var(--slotted-surface) 40%, transparent) 4px 6px
+    );
+  }
+
+  .none {
+    background-color: color-mix(
+      in oklch,
+      var(--slotted-text-muted) 45%,
+      transparent
+    );
+  }
+
+  @media (forced-colors: active) {
+    .rate,
+    .inflation,
+    .fixed,
+    .none {
+      background: CanvasText;
+      forced-color-adjust: none;
+    }
+  }
+}
