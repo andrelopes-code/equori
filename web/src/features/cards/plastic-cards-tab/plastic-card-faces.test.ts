@@ -68,4 +68,37 @@ describe("plasticFaces", () => {
 
     expect(face?.face.virtual).toBe(true);
   });
+
+  it("draws the network of a card", () => {
+    const [face] = plasticFaces(
+      [
+        {
+          id: "d",
+          holder: "Ana",
+          last_four: "0002",
+          active: true,
+          network: "visa",
+          foreign_charge_bp: 0,
+        },
+      ],
+      base,
+    );
+
+    expect(face?.face.network).toBe("visa");
+  });
+
+  it("carries the appearance props to every face", () => {
+    const faces = plasticFaces(
+      [
+        { id: "a", holder: "A", last_four: "1", active: true },
+        { id: "b", holder: "B", last_four: "2", active: true },
+      ].map((card) => ({ ...card, foreign_charge_bp: 0 })),
+      { ...base, art: "waves", chip: "gold" },
+    );
+
+    expect(faces.map(({ face }) => [face.art, face.chip])).toEqual([
+      ["waves", "gold"],
+      ["waves", "gold"],
+    ]);
+  });
 });

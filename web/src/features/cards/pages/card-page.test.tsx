@@ -256,6 +256,44 @@ describe("CardPage", () => {
     expect(faceOf(stack, "9876")).toBeInTheDocument();
   });
 
+  it("shows the network of the selected card", async () => {
+    await renderApp(`/cards/${cardID}?tab=cards`, {
+      fetch: api([], {
+        [`GET /api/v1/accounts/${cardID}/cards`]: () =>
+          json(200, {
+            items: [
+              {
+                id: "pc1",
+                holder: "Ana",
+                last_four: "1234",
+                virtual: false,
+                active: true,
+                network: "visa",
+                foreign_charge_bp: 438,
+              },
+              {
+                id: "pc2",
+                holder: "Ana",
+                last_four: "9876",
+                virtual: true,
+                active: true,
+                foreign_charge_bp: 438,
+              },
+            ],
+          }),
+      }),
+    });
+    const stack = await findStack();
+
+    expect(await screen.findByText("Visa")).toBeInTheDocument();
+
+    await userEvent.click(faceOf(stack, "9876"));
+
+    expect(
+      await screen.findByText(catalogEn["card.network.none"]),
+    ).toBeInTheDocument();
+  });
+
   it("shows the selected card in the detail", async () => {
     await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api() });
     const stack = await findStack();

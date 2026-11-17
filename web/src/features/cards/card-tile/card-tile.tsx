@@ -14,7 +14,7 @@ import {
 import { shiftDate } from "@/i18n/format";
 import { useToday } from "@/i18n/today";
 import { CardFace } from "@/ui/card-face/card-face";
-import { faceColor } from "@/ui/card-face/face-color";
+import { useFaceAppearance } from "@/ui/card-face/use-face-appearance";
 
 type Account = components["schemas"]["Account"];
 type Institution = components["schemas"]["Institution"];
@@ -52,10 +52,12 @@ export function CardTile({
 
   const plastic = cards.data?.find((card) => card.active);
   const logo = logoOf(institution?.identifier, logos.data);
+  const appearance = useFaceAppearance(account.face, account.color, logo);
   const optional = {
     ...(logo !== undefined && { logo }),
     ...(institution !== undefined && { institutionName: institution.name }),
     ...(plastic !== undefined && { lastFour: plastic.last_four }),
+    ...(plastic?.network !== undefined && { network: plastic.network }),
   };
   const signal =
     flows.data === undefined
@@ -72,7 +74,7 @@ export function CardTile({
         <CardFace
           title={account.name}
           {...optional}
-          color={faceColor(undefined, account.color)}
+          {...appearance.props}
           holder={plastic?.holder ?? ""}
           active={account.closed_on === undefined}
           link={{

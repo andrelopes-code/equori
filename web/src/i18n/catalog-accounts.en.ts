@@ -815,6 +815,8 @@ export const accountsEn = {
   "card.plastics": "Physical and virtual cards",
   "card.number": "Card",
   "card.type": "Type",
+  "card.network": "Network",
+  "card.network.none": "No network",
   "card.active": "Active",
   "card.noPlastics": "No card recorded for this account.",
   "card.masked": "•••• {digits}",

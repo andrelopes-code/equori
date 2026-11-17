@@ -137,6 +137,28 @@ describe("CardsPage", () => {
     expect(within(tile).queryByRole("progressbar")).toBeNull();
   });
 
+  it("draws the stored appearance of a card", async () => {
+    await renderApp("/cards", {
+      fetch: api({
+        "GET /api/v1/accounts": () =>
+          json(200, {
+            items: accountFixtures.map((a) =>
+              a.id === cardID
+                ? { ...a, face: { color: "#fce300", art: "waves" } }
+                : a,
+            ),
+          }),
+      }),
+    });
+    const tile = await screen.findByRole("article", { name: "Itaú Visa" });
+    const face = await within(tile).findByRole("link", {
+      name: "Itaú Visa, ending 1234",
+    });
+
+    expect(face).toHaveAttribute("data-art", "waves");
+    expect(face).toHaveAttribute("data-ink", "dark");
+  });
+
   it("keeps the evidence of a statement closed until asked", async () => {
     await renderApp("/cards", { fetch: api() });
     const tile = await screen.findByRole("article", { name: "Itaú Visa" });

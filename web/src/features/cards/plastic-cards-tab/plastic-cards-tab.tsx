@@ -19,7 +19,7 @@ import styles from "@/features/cards/plastic-cards-tab/plastic-cards-tab.module.
 import { useT } from "@/i18n/i18n-provider";
 import { CardFace } from "@/ui/card-face/card-face";
 import { CardFaceStack } from "@/ui/card-face/card-face-stack";
-import { faceColor } from "@/ui/card-face/face-color";
+import { useFaceAppearance } from "@/ui/card-face/use-face-appearance";
 import { Presence } from "@/ui/dialogs/presence";
 
 type Account = components["schemas"]["Account"];
@@ -51,9 +51,10 @@ export function PlasticCardsTab({
   const list = cards.data ?? [];
   const selected = list.find((card) => card.id === selectedId) ?? list[0];
   const logo = logoOf(institution?.identifier, logos.data);
+  const appearance = useFaceAppearance(account.face, account.color, logo);
   const base = {
     title: account.name,
-    color: faceColor(undefined, account.color),
+    ...appearance.props,
     ...(logo !== undefined && { logo }),
     ...(institution !== undefined && { institutionName: institution.name }),
   };

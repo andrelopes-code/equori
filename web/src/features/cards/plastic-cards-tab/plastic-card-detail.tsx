@@ -6,6 +6,7 @@ import type { components } from "@/api/schema.gen";
 import styles from "@/features/cards/plastic-cards-tab/plastic-cards-tab.module.css";
 import { formatBasisPoints } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { networkName } from "@/ui/card-face/network/network-name";
 
 type Card = components["schemas"]["Card"];
 
@@ -58,6 +59,13 @@ export function PlasticCardDetail({
           <Tag size="sm" tone="secondary">
             {card.virtual === true ? t("card.virtual") : t("card.physical")}
           </Tag>
+        </div>
+
+        <div className={styles.row}>
+          <Text size="sm" tone="muted" className={styles.label}>
+            {t("card.network")}
+          </Text>
+          <Text weight="semibold">{networkName(card.network, t)}</Text>
         </div>
 
         <div className={styles.row}>

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { graphite } from "@/ui/card-face/face-color";
 import {
   emptyFace,
+  faceAppearance,
   faceBody,
   faceOf,
   faceProps,
@@ -85,5 +87,55 @@ describe("presetColors", () => {
     expect(presetColors.every(({ hex }) => /^#[0-9a-f]{6}$/.test(hex))).toBe(
       true,
     );
+  });
+});
+
+describe("faceAppearance", () => {
+  it("lets a stored colour win over the logo colour", () => {
+    expect(faceAppearance({ color: "#fce300" }, 1, "#111111").color).toBe(
+      "#fce300",
+    );
+  });
+
+  it("takes the logo colour when no colour is stored", () => {
+    expect(faceAppearance({ color: null }, 1, "#111111").color).toBe("#111111");
+  });
+
+  it("takes the slot colour when the logo has none", () => {
+    expect(faceAppearance(undefined, 1, undefined).color).toBe("#7368d4");
+  });
+
+  it("takes graphite when neither a logo nor a slot gives a colour", () => {
+    expect(faceAppearance(undefined, undefined, undefined)).toEqual({
+      color: graphite,
+    });
+  });
+
+  it("passes the stored art, chip, orientation and brand through", () => {
+    expect(
+      faceAppearance(
+        {
+          color: "#fce300",
+          art: "waves",
+          chip: "gold",
+          orientation: "vertical",
+          brand: "plate",
+        },
+        undefined,
+        undefined,
+      ),
+    ).toEqual({
+      color: "#fce300",
+      art: "waves",
+      chip: "gold",
+      orientation: "vertical",
+      brand: "plate",
+    });
+  });
+
+  it("leaves a null value out", () => {
+    expect(
+      faceAppearance({ color: "#fce300", art: null, chip: null }, 1, undefined),
+    ).toEqual({ color: "#fce300" });
   });
 });

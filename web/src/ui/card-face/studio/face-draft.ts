@@ -1,5 +1,6 @@
 import type { Brand } from "@/ui/card-face/brand";
 import type { CardFaceProps } from "@/ui/card-face/card-face";
+import { graphite, slotHex } from "@/ui/card-face/face-color";
 
 export interface FaceAPI {
   color?: string | null;
@@ -54,7 +55,9 @@ export const presetColors: readonly { key: PresetKey; hex: string }[] = [
   { key: "gold", hex: "#b8923a" },
 ];
 
-export function faceOf(account: { face?: FaceAPI | null }): FaceDraft {
+export function faceOf(account: {
+  face?: FaceAPI | null | undefined;
+}): FaceDraft {
   const face = account.face;
 
   return {
@@ -64,6 +67,23 @@ export function faceOf(account: { face?: FaceAPI | null }): FaceDraft {
     orientation: face?.orientation ?? null,
     brand: face?.brand ?? null,
   };
+}
+
+// The appearance props of a stored face; a colour not stored is the logo's, then the slot's,
+// then graphite (spec 4.7).
+export function faceAppearance(
+  face: FaceAPI | undefined,
+  slot: number | undefined,
+  logoColor: string | undefined,
+): Pick<CardFaceProps, "color" | "art" | "chip" | "orientation" | "brand"> {
+  return faceProps(faceOf({ face }), suggestedColor(slot, logoColor));
+}
+
+export function suggestedColor(
+  slot: number | undefined,
+  logoColor: string | undefined,
+): string {
+  return logoColor ?? slotHex(slot) ?? graphite;
 }
 
 export function faceBody(draft: FaceDraft): FaceAPI {
