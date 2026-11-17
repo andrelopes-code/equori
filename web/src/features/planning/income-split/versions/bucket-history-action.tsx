@@ -7,7 +7,7 @@ import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
 import { budgetBucketVersionsQuery } from "@/features/planning/api";
 import { BucketDialog } from "@/features/planning/income-split/bucket-dialog";
-import { BucketVersionsDialog } from "@/features/planning/income-split/bucket-versions-dialog";
+import { BucketVersionsDialog } from "@/features/planning/income-split/versions/bucket-versions-dialog";
 import { useT } from "@/i18n/i18n-provider";
 
 type Version = components["schemas"]["BudgetBucketVersion"];

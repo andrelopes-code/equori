@@ -4,8 +4,8 @@ import { Text } from "@slotted/react/typography";
 import {
   fromLabelKey,
   periodKey,
-} from "@/features/planning/income-split/bucket-versions";
-import type { FromChoice } from "@/features/planning/income-split/bucket-versions";
+} from "@/features/planning/income-split/versions/bucket-versions";
+import type { FromChoice } from "@/features/planning/income-split/versions/bucket-versions";
 import { useMonthNames } from "@/features/planning/income-split/use-month-names";
 import { useT } from "@/i18n/i18n-provider";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";

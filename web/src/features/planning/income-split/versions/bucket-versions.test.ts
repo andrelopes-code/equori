@@ -8,7 +8,7 @@ import {
   periodKey,
   versionAt,
   versionRecordAt,
-} from "@/features/planning/income-split/bucket-versions";
+} from "@/features/planning/income-split/versions/bucket-versions";
 
 const bucket = {
   id: "b1",

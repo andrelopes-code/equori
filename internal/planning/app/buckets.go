@@ -167,12 +167,7 @@ func (s *Service) planBuckets(
 	method := found.Buckets
 	out.BucketsFrom = found.From
 
-	parents := make(map[uuid.UUID]uuid.UUID, len(categories))
-	for _, c := range categories {
-		parents[c.ID] = c.ParentID
-	}
-
-	resolve := domain.BucketResolver(method, parents)
+	resolve := domain.BucketResolver(method, planParents(categories))
 	out.Buckets = make([]PlanBucket, len(method))
 	add := func(category uuid.UUID, planned, spent int64) {
 		if i, ok := resolve(category); ok {
@@ -212,6 +207,16 @@ func (s *Service) planBuckets(
 	}
 
 	return nil
+}
+
+// planParents maps each category of the plan to its parent.
+func planParents(categories []domain.PlanCategory) map[uuid.UUID]uuid.UUID {
+	parents := make(map[uuid.UUID]uuid.UUID, len(categories))
+	for _, c := range categories {
+		parents[c.ID] = c.ParentID
+	}
+
+	return parents
 }
 
 // monthSavings returns what went into the book's savings accounts in month (A233).

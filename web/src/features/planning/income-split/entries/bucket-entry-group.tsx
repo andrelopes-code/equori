@@ -1,8 +1,8 @@
 import { Text } from "@slotted/react/typography";
 
 import type { CategoryEntry } from "@/features/categories";
-import type { EntryGroup } from "@/features/planning/income-split/bucket-entries";
-import { BucketEntryRow } from "@/features/planning/income-split/bucket-entry-row";
+import type { EntryGroup } from "@/features/planning/income-split/entries/bucket-entries";
+import { BucketEntryRow } from "@/features/planning/income-split/entries/bucket-entry-row";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
 import { useT } from "@/i18n/i18n-provider";
 

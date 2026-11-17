@@ -7,9 +7,9 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
-import { BucketVersionDelete } from "@/features/planning/income-split/bucket-version-delete";
-import { versionChanges } from "@/features/planning/income-split/bucket-version-changes";
-import { BucketVersionRow } from "@/features/planning/income-split/bucket-version-row";
+import { BucketVersionDelete } from "@/features/planning/income-split/versions/bucket-version-delete";
+import { versionChanges } from "@/features/planning/income-split/versions/bucket-version-changes";
+import { BucketVersionRow } from "@/features/planning/income-split/versions/bucket-version-row";
 import { useMonthNames } from "@/features/planning/income-split/use-month-names";
 import { useT } from "@/i18n/i18n-provider";
 

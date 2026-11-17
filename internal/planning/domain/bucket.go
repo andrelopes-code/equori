@@ -62,15 +62,8 @@ func CheckBuckets(
 
 		ids[b.ID] = true
 
-		if b.TakesSavings && savings {
-			return nil, invalid(prefix+"takes_savings", "is set on another bucket")
-		}
-
-		if b.TakesGoals && (goals || b.TakesSavings) {
-			return nil, invalid(
-				prefix+"takes_goals",
-				"is set on another bucket or with takes_savings",
-			)
+		if err := checkSingleMeasures(*b, prefix, savings, goals); err != nil {
+			return nil, err
 		}
 
 		savings = savings || b.TakesSavings
@@ -164,6 +157,20 @@ func BucketTargets(reference int64, buckets []Bucket) []int64 {
 	}
 
 	return out
+}
+
+// checkSingleMeasures rejects a second bucket that takes the savings or the goals, and a bucket
+// that takes both; savings and goals report whether an earlier bucket takes each.
+func checkSingleMeasures(b Bucket, prefix string, savings, goals bool) error {
+	if b.TakesSavings && savings {
+		return invalid(prefix+"takes_savings", "is set on another bucket")
+	}
+
+	if b.TakesGoals && (goals || b.TakesSavings) {
+		return invalid(prefix+"takes_goals", "is set on another bucket or with takes_savings")
+	}
+
+	return nil
 }
 
 // checkBucket trims the name of b and checks it against the names already seen, then its share.

@@ -27,6 +27,14 @@ type BucketEntries struct {
 	Entries  []BucketEntry
 }
 
+// CategoryPosting is one own posting of a category; Amount is its weight in the base currency.
+type CategoryPosting struct {
+	TransactionID, CategoryID uuid.UUID
+	BookedOn                  time.Time
+	Amount                    int64
+	Description, Payee        string
+}
+
 // BucketEntries returns the entries that sum to the real amount of bucket in month, or to the
 // spending outside the split when bucket is nil (income split versions A243). A bucket that is
 // not in the method of the month is ErrNotFound.

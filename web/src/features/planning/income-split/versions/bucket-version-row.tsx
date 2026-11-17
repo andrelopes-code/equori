@@ -3,7 +3,7 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
-import type { VersionChange } from "@/features/planning/income-split/bucket-version-changes";
+import type { VersionChange } from "@/features/planning/income-split/versions/bucket-version-changes";
 import { useShareText } from "@/features/planning/income-split/use-share-text";
 import { useT } from "@/i18n/i18n-provider";
 

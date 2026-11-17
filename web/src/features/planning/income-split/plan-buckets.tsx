@@ -13,7 +13,7 @@ import { useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
-import { BucketHistoryAction } from "@/features/planning/income-split/bucket-history-action";
+import { BucketHistoryAction } from "@/features/planning/income-split/versions/bucket-history-action";
 import { BucketDialog } from "@/features/planning/income-split/bucket-dialog";
 import type { BucketTotals } from "@/features/planning/income-split/bucket-figures";
 import { PlanBucketsTable } from "@/features/planning/income-split/plan-buckets-table";

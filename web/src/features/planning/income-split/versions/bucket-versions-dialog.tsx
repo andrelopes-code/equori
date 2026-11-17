@@ -12,8 +12,8 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import type { CategoryEntry } from "@/features/categories";
-import { BucketVersionBlock } from "@/features/planning/income-split/bucket-version-block";
-import { versionAt } from "@/features/planning/income-split/bucket-versions";
+import { BucketVersionBlock } from "@/features/planning/income-split/versions/bucket-version-block";
+import { versionAt } from "@/features/planning/income-split/versions/bucket-versions";
 import { useT } from "@/i18n/i18n-provider";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 

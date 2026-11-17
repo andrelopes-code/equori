@@ -106,16 +106,8 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 		return planView{}, err
 	}
 
-	if ref, ok := p.ReferenceAmount(); ok {
-		rest, _ := p.Unassigned()
-
-		if out.Reference, err = optional(&ref); err != nil {
-			return planView{}, err
-		}
-
-		if out.Unassigned, err = optional(&rest); err != nil {
-			return planView{}, err
-		}
+	if out.Reference, out.Unassigned, err = planReference(p); err != nil {
+		return planView{}, err
 	}
 
 	for _, f := range []struct {
@@ -135,11 +127,37 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 		return planView{}, err
 	}
 
-	if len(out.Buckets) > 0 {
-		out.BucketsFrom = p.BucketsFrom.Format(monthLayout)
-	}
+	out.BucketsFrom = planBucketsFrom(p)
 
 	return out, nil
+}
+
+// planReference returns the reference amount of the plan and what is left to assign; zero
+// values without a reference.
+func planReference(p app.Plan) (reference, unassigned tool.Money, err error) {
+	ref, ok := p.ReferenceAmount()
+	if !ok {
+		return tool.Money{}, tool.Money{}, nil
+	}
+
+	rest, _ := p.Unassigned()
+
+	if reference, err = moneyOf(ref, p.Currency); err != nil {
+		return tool.Money{}, tool.Money{}, err
+	}
+
+	unassigned, err = moneyOf(rest, p.Currency)
+
+	return reference, unassigned, err
+}
+
+// planBucketsFrom returns the first month of the plan's bucket method; empty without one.
+func planBucketsFrom(p app.Plan) string {
+	if len(p.Buckets) == 0 {
+		return ""
+	}
+
+	return p.BucketsFrom.Format(monthLayout)
 }
 
 func planRowViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planRowView, error) {

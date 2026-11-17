@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { versionChanges } from "@/features/planning/income-split/bucket-version-changes";
+import { versionChanges } from "@/features/planning/income-split/versions/bucket-version-changes";
 
 const bucket = (
   id: string,

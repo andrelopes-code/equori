@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
-import { entryGroups } from "@/features/planning/income-split/bucket-entries";
+import { entryGroups } from "@/features/planning/income-split/entries/bucket-entries";
 
 type Entry = components["schemas"]["BudgetBucketEntry"];
 

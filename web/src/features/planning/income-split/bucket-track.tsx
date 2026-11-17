@@ -25,12 +25,12 @@ import {
   trackMonth,
   trackVerdict,
 } from "@/features/planning/income-split/bucket-history";
-import { BucketEntriesDrawer } from "@/features/planning/income-split/bucket-entries-drawer";
-import { BucketHistoryAction } from "@/features/planning/income-split/bucket-history-action";
+import { BucketEntriesDrawer } from "@/features/planning/income-split/entries/bucket-entries-drawer";
+import { BucketHistoryAction } from "@/features/planning/income-split/versions/bucket-history-action";
 import { BucketTrackLegend } from "@/features/planning/income-split/bucket-track-legend";
 import { BucketTrackRow } from "@/features/planning/income-split/bucket-track-row";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
-import { useBucketEntries } from "@/features/planning/income-split/use-bucket-entries";
+import { useBucketEntries } from "@/features/planning/income-split/entries/use-bucket-entries";
 import { useMonthNames } from "@/features/planning/income-split/use-month-names";
 import { useShareText } from "@/features/planning/income-split/use-share-text";
 import { useScale } from "@/features/setup";

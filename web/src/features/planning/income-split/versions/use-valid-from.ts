@@ -6,7 +6,7 @@ import { budgetBucketVersionsQuery } from "@/features/planning/api";
 import {
   fromChoices,
   lastMonthOf,
-} from "@/features/planning/income-split/bucket-versions";
+} from "@/features/planning/income-split/versions/bucket-versions";
 import { useToday } from "@/i18n/today";
 
 // The field Valid from of the dialog (A240): the versions of the book, the choices for the

@@ -17,6 +17,30 @@ const (
 	bucketMethodTable   = "planning_bucket_method"
 )
 
+// addBuckets moves a version 16 archive to version 17, which adds planning_bucket and
+// planning_bucket_category (migration 00101). Version 16 has no bucket rows, so every table
+// carries over unchanged.
+func addBuckets(tables []ArchiveTable) ([]ArchiveTable, error) {
+	out := make([]ArchiveTable, len(tables))
+	for i, t := range tables {
+		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
+	}
+
+	return out, nil
+}
+
+// addBucketDirections writes false into at_least and takes_goals of every version 17 row of
+// planning_bucket (migration 00102): a bucket saved before keeps its target as a ceiling and draws
+// no goal deposits (income buckets A234).
+func addBucketDirections(tables []ArchiveTable) ([]ArchiveTable, error) {
+	tables, err := withField(tables, "planning_bucket", "at_least", jsontext.Value("false"))
+	if err != nil {
+		return nil, err
+	}
+
+	return withField(tables, "planning_bucket", "takes_goals", jsontext.Value("false"))
+}
+
 // addBucketVersions moves a version 24 archive to version 25, which keeps one bucket method per
 // start month (migration 00111, income split versions A240, A241). The buckets of the archive
 // become one version that starts in the month of the earliest bucket row; each bucket keeps its

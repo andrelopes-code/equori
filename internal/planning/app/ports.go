@@ -393,11 +393,3 @@ type Repository interface {
 	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the book's.
 	DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error
 }
-
-// CategoryPosting is one own posting of a category; Amount is its weight in the base currency.
-type CategoryPosting struct {
-	TransactionID, CategoryID uuid.UUID
-	BookedOn                  time.Time
-	Amount                    int64
-	Description, Payee        string
-}

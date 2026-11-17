@@ -292,30 +292,6 @@ func addCorporateActions(tables []ArchiveTable) ([]ArchiveTable, error) {
 	return out, nil
 }
 
-// addBuckets moves a version 16 archive to version 17, which adds planning_bucket and
-// planning_bucket_category (migration 00101). Version 16 has no bucket rows, so every table
-// carries over unchanged.
-func addBuckets(tables []ArchiveTable) ([]ArchiveTable, error) {
-	out := make([]ArchiveTable, len(tables))
-	for i, t := range tables {
-		out[i] = ArchiveTable{Name: t.Name, Rows: slices.Clone(t.Rows)}
-	}
-
-	return out, nil
-}
-
-// addBucketDirections writes false into at_least and takes_goals of every version 17 row of
-// planning_bucket (migration 00102): a bucket saved before keeps its target as a ceiling and draws
-// no goal deposits (income buckets A234).
-func addBucketDirections(tables []ArchiveTable) ([]ArchiveTable, error) {
-	tables, err := withField(tables, "planning_bucket", "at_least", jsontext.Value("false"))
-	if err != nil {
-		return nil, err
-	}
-
-	return withField(tables, "planning_bucket", "takes_goals", jsontext.Value("false"))
-}
-
 // addTermsLiquidity writes null into calendar_id and redeemable_from and false into
 // daily_liquidity of every version 18 row of marketdata_fixed_income_terms (migration 00103): terms
 // saved before count calendar days, redeem from the issue date and carry no daily liquidity (fixed
