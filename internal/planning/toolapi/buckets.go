@@ -35,12 +35,6 @@ type planBucketView struct {
 	Spent        tool.Money `json:"spent"`
 }
 
-// outsideCategory is an expense category in no bucket of the split.
-type outsideCategory struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 // planBucketViews returns the bucket method of the plan; nil without one.
 func planBucketViews(p app.Plan, accounts map[uuid.UUID]Account) ([]planBucketView, error) {
 	targets, hasTargets := p.BucketTargets()
@@ -111,25 +105,6 @@ func loadBuckets(
 	continueBuckets(p.buckets, stored.Buckets)
 
 	return loadOutsideNames(ctx, svc, booksID, accounts, p)
-}
-
-// loadOutsideNames reads into p the names of the categories its buckets leave outside the split;
-// none when the call ends the split.
-func loadOutsideNames(
-	ctx context.Context,
-	svc *app.Service,
-	booksID int64,
-	accounts map[uuid.UUID]Account,
-	p *budgetGoalPlan,
-) error {
-	if len(p.buckets) == 0 {
-		return nil
-	}
-
-	outside, err := svc.OutsideCategories(ctx, booksID, p.buckets)
-	p.outsideNames = categoryNames(outside, accounts)
-
-	return err
 }
 
 // continueBuckets gives each bucket the id of the stored bucket with the same name, ignoring
@@ -222,6 +197,25 @@ func previewBuckets(pv *tool.Preview, p budgetGoalPlan) {
 			Field: "category",
 			After: tool.TextValue("Outside the split: " + strings.Join(p.outsideNames, ", ")),
 		})
+	}
+}
+
+// previewMove shows the bucket of the category before and after the move and how many
+// categories the move leaves outside the split (A237).
+func previewMove(pv *tool.Preview, p budgetGoalPlan) {
+	outside := fmt.Sprintf("%d categories outside the split", p.move.Outside)
+	if p.move.Outside == 1 {
+		outside = "1 category outside the split"
+	}
+
+	pv.Target = p.categoryName
+	pv.Changes = []tool.Change{
+		{
+			Field:  "name",
+			Before: tool.TextValue(p.move.Before),
+			After:  tool.TextValue(p.move.After),
+		},
+		{Field: "count", After: tool.TextValue(outside)},
 	}
 }
 

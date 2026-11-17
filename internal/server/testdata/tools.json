@@ -6619,7 +6619,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others). Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -6636,7 +6636,8 @@
             "update_goal",
             "delete_goal",
             "save_plan",
-            "save_buckets"
+            "save_buckets",
+            "move_category"
           ]
         },
         "budget_id": {
@@ -6649,7 +6650,7 @@
         },
         "category_id": {
           "type": "string",
-          "description": "for create_budget: expense category from list_accounts"
+          "description": "for create_budget and move_category: expense category from list_accounts"
         },
         "amount": {
           "type": "string",
@@ -6758,6 +6759,10 @@
             "additionalProperties": false
           },
           "description": "for save_buckets: whole split; empty removes it"
+        },
+        "bucket": {
+          "type": "string",
+          "description": "for move_category: bucket name of the current split, or none"
         }
       },
       "required": [

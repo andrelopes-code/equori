@@ -130,12 +130,7 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 	}
 
 	out.BucketsFrom = planBucketsFrom(p)
-	for _, id := range p.OutsideCategories {
-		out.OutsideCategories = append(
-			out.OutsideCategories,
-			outsideCategory{ID: id.String(), Name: accountName(accounts, id)},
-		)
-	}
+	out.OutsideCategories = outsideCategoryViews(p, accounts)
 
 	return out, nil
 }

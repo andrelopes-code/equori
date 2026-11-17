@@ -23,6 +23,7 @@ func (manageBudgetOrGoalAction) Values() []string {
 		"delete_goal",
 		"save_plan",
 		"save_buckets",
+		"move_category",
 	}
 }
 
@@ -45,7 +46,7 @@ type manageBudgetOrGoalIn struct {
 	Action          manageBudgetOrGoalAction `json:"action"                     jsonschema:"operation to propose"`
 	BudgetID        string                   `json:"budget_id,omitzero"         jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
 	GoalID          string                   `json:"goal_id,omitzero"           jsonschema:"for update_goal and delete_goal: goal from get_budgets_and_goals"`
-	CategoryID      string                   `json:"category_id,omitzero"       jsonschema:"for create_budget: expense category from list_accounts"`
+	CategoryID      string                   `json:"category_id,omitzero"       jsonschema:"for create_budget and move_category: expense category from list_accounts"`
 	Amount          string                   `json:"amount,omitzero"            jsonschema:"positive monthly amount (budgets), target (goals) or fixed reference income (save_plan)"`
 	Month           string                   `json:"month,omitzero"             jsonschema:"first month it applies, YYYY-MM"`
 	Source          planSource               `json:"source,omitzero"            jsonschema:"for save_plan: reference income; the stored one when absent"`
@@ -57,6 +58,7 @@ type manageBudgetOrGoalIn struct {
 	AccountIDs      []string                 `json:"account_ids,omitzero"       jsonschema:"goals: accounts whose balance counts toward it"`
 	CountsAsSavings tool.OptionalBool        `json:"counts_as_savings,omitzero" jsonschema:"goals: deposits count in the savings bucket"`
 	Buckets         []bucketIn               `json:"buckets,omitzero"           jsonschema:"for save_buckets: whole split; empty removes it"`
+	Bucket          string                   `json:"bucket,omitzero"            jsonschema:"for move_category: bucket name of the current split, or none"`
 }
 
 type manageBudgetOrGoalOut struct {
@@ -82,4 +84,5 @@ type budgetGoalPlan struct {
 	bucketNames                  [][]string
 	storedNames                  []string
 	outsideNames                 []string
+	move                         app.CategoryMove
 }

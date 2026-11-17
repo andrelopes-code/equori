@@ -23,4 +23,4 @@ Track view: says how many buckets missed their target in the month. Each bucket 
 
 Entries of a bucket: on Track, the name of a bucket opens a panel with the amount counted, the target and the difference, then the entries of the month grouped by category with the subtotal of each group, the largest first. Each entry opens its transaction. A month choice moves over the six months. "See entries" on the line of the spending outside the split opens the same panel.
 
-The assistant reads the split of each month and its versions, and saves a version from a month on.
+The assistant reads the split of each month, its versions, the unallocated income and the categories outside the split. It saves a version from a month on, and moves one category to another bucket, or out of every bucket, from the current month on. Every change asks for confirmation.

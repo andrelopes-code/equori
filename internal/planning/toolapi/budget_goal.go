@@ -134,6 +134,10 @@ func resolveBudgetGoalCurrency(
 		return loadBudgetPlan(ctx, svc, l, booksID, in, p, accounts)
 	case "save_buckets":
 		err = loadBuckets(ctx, svc, booksID, in.Buckets, accounts, p)
+	case "move_category":
+		p.categoryName = accounts[p.categoryID].Name
+		p.move, err = svc.PlanCategoryMove(ctx, booksID, p.categoryID, in.Bucket)
+		p.buckets = p.move.Buckets
 	case "update_goal", "delete_goal":
 		if p.goal, err = svc.Goal(ctx, booksID, p.goalID); err == nil {
 			currency = p.goal.Currency
@@ -212,7 +216,7 @@ func parseBudgetGoalAmount(amount string, currency money.Currency) (*money.Money
 func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
-		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others). " +
+		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. " +
 			"Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. " +
 			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
@@ -270,7 +274,8 @@ func runBudgetOrGoal(
 		return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err
 	case "save_plan":
 		return savePlan(ctx, svc, booksID, in, p)
-	case "save_buckets":
+	case "save_buckets", "move_category":
+		// move_category takes no month: its version starts in the current month (A237).
 		var from *time.Time
 		if !p.month.IsZero() {
 			from = &p.month

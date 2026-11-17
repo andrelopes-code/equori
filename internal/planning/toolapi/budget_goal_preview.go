@@ -47,6 +47,8 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 		}
 	case "save_buckets":
 		previewBuckets(&pv, p)
+	case "move_category":
+		previewMove(&pv, p)
 	}
 
 	return pv, nil

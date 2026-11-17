@@ -43,6 +43,8 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 		)
 	case "save_buckets":
 		err = required(name, fields, []string{"buckets"}, "month")
+	case "move_category":
+		err = required(name, fields, []string{"category_id", "bucket"})
 	}
 
 	return err
@@ -74,5 +76,6 @@ func budgetGoalFields(in manageBudgetOrGoalIn) []field {
 		{"savings_target_bp", in.SavingsTargetBP.Set},
 		// An empty list removes the split, so presence is the field set, not its length.
 		{"buckets", in.Buckets != nil},
+		{"bucket", in.Bucket != ""},
 	}
 }

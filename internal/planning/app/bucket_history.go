@@ -115,7 +115,6 @@ func (s *Service) addBucketMonths(
 		}
 
 		addInflows(&month, wm.method.Buckets, goals[wm.month], savings[wm.month])
-		month.Unallocated = unallocated(month)
 		out.Months = append(out.Months, month)
 	}
 
@@ -179,7 +178,7 @@ func expenseParents(facts []Account) map[uuid.UUID]uuid.UUID {
 
 // addInflows adds what went into the goals in the month to the bucket that takes the goals and
 // what went into the savings to the bucket that takes savings (A233, A234). A bucket that takes
-// neither adds nothing.
+// neither adds nothing. The unallocated income is what the month has left after them (A235).
 func addInflows(month *BucketMonth, method []domain.Bucket, goals, savings int64) {
 	for i, b := range method {
 		if b.TakesGoals {
@@ -190,6 +189,8 @@ func addInflows(month *BucketMonth, method []domain.Bucket, goals, savings int64
 			month.Real[i] += savings
 		}
 	}
+
+	month.Unallocated = unallocated(*month)
 }
 
 // unallocated returns the income received less the spending and the inflows the month's method
