@@ -31,6 +31,11 @@ interface ScheduleRowProps {
   ended?: boolean;
 }
 
+const flowSign: Partial<Record<Schedule["kind"], number>> = {
+  income: 1,
+  transfer: 0,
+};
+
 // One schedule: where its money goes and how often, its next occurrence and end, its amount and
 // the change of terms already set (spec B3, B4).
 export function ScheduleRow({
@@ -54,6 +59,8 @@ export function ScheduleRow({
   ]
     .filter((part) => part !== undefined)
     .join(" · ");
+  // Income adds, a transfer moves between own accounts, every other kind takes (spec B3).
+  const sign = flowSign[s.kind] ?? -1;
   const monthly =
     terms === undefined ||
     (terms.recurrence.frequency === "monthly" &&
@@ -121,8 +128,15 @@ export function ScheduleRow({
       <TableCell numeric>
         {terms !== undefined && (
           <Stack gap={0}>
-            <Text size="sm" numeric="tabular">
-              {fmt.money(terms.amount, scale(terms.amount.currency))}
+            <Text
+              size="sm"
+              numeric="tabular"
+              tone={sign > 0 ? "success" : undefined}
+            >
+              {fmt.signed(
+                { ...terms.amount, amount: sign * terms.amount.amount },
+                scale(terms.amount.currency),
+              )}
             </Text>
             {change !== undefined && (
               <Text size="xs" tone="info">

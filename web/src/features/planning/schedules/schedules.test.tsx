@@ -98,7 +98,7 @@ describe("Schedules tab", () => {
       "Salary",
     ]);
     expect(within(rentRow).getByText("Nubank · Mercado")).toBeInTheDocument();
-    expect(within(rentRow).getByText("R$2,100.00")).toBeInTheDocument();
+    expect(within(rentRow).getByText("\u2212R$2,100.00")).toBeInTheDocument();
     expect(
       within(rentRow).getByText(
         "Every month, on day 5, moved to the next business day, from 01/05/2026",
@@ -111,10 +111,14 @@ describe("Schedules tab", () => {
     expect(
       within(salaryRow).getByText("in 3 days · Oct 20"),
     ).toBeInTheDocument();
+    expect(within(salaryRow).getByText("+R$5,000.00")).toHaveAttribute(
+      "data-tone",
+      "success",
+    );
     const streamingRow = within(table).getByRole("row", {
       name: /^Streaming/,
     });
-    expect(within(streamingRow).getByText("R$39.90")).toBeInTheDocument();
+    expect(within(streamingRow).getByText("\u2212R$39.90")).toBeInTheDocument();
     expect(
       within(streamingRow).getByText(
         words("schedules.rises", { amount: "R$44.90", date: "01/01/2027" }),
