@@ -98,12 +98,7 @@ func (s Source) Codes(ins []feed.Instrument) []money.Currency {
 			continue
 		}
 
-		quote := in.QuoteCurrency
-		if in.Type == "currency" {
-			quote = "USD"
-		}
-
-		s.targets.byID[in.Code] = target{symbol: symbol, quote: quote}
+		s.targets.byID[in.Code] = target{symbol: symbol, quote: quoteOf(in)}
 		out = append(out, in.Code)
 	}
 
@@ -254,4 +249,13 @@ func quoteCurrencies(ins []feed.Instrument) map[money.Currency]bool {
 	}
 
 	return out
+}
+
+// quoteOf returns the currency Yahoo quotes in: USD for a currency, the quote currency otherwise.
+func quoteOf(in feed.Instrument) money.Currency {
+	if in.Type == "currency" {
+		return "USD"
+	}
+
+	return in.QuoteCurrency
 }

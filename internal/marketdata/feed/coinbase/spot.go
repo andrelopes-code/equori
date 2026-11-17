@@ -28,7 +28,7 @@ func (s Source) Current(ctx context.Context, ins []feed.Instrument) ([]feed.Spot
 		}
 
 		quote, err := s.currentQuote(ctx, in)
-		if rateLimited(err) {
+		if feed.RateLimited(err) {
 			return out, err
 		}
 
@@ -104,10 +104,4 @@ func parseTicker(body []byte, code, quote money.Currency) (*feed.SpotQuote, erro
 		Date:       last.Truncate(24 * time.Hour),
 		Open:       true,
 	}, nil
-}
-
-func rateLimited(err error) bool {
-	var status *feed.StatusError
-
-	return errors.As(err, &status) && status.Code == http.StatusTooManyRequests
 }

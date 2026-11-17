@@ -2,9 +2,7 @@ package marketdata
 
 import (
 	"cmp"
-	"errors"
 	"math"
-	"net/http"
 	"sync"
 	"time"
 
@@ -127,8 +125,7 @@ func (c *spotCache) finish(
 		c.entries[spotKey{source: source, instrument: q.Instrument}] = spotEntry{quote: q, at: now}
 	}
 
-	var status *feed.StatusError
-	if errors.As(err, &status) && status.Code == http.StatusTooManyRequests {
+	if feed.RateLimited(err) {
 		c.paused[source] = now.Add(spotPause)
 	}
 

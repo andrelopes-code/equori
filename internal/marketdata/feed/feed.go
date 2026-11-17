@@ -81,6 +81,13 @@ type StatusError struct {
 
 func (e *StatusError) Error() string { return fmt.Sprintf("status %d", e.Code) }
 
+// RateLimited reports whether err holds a 429 answer: the source asked to slow down.
+func RateLimited(err error) bool {
+	var status *StatusError
+
+	return errors.As(err, &status) && status.Code == http.StatusTooManyRequests
+}
+
 // Incremental reports whether [from, to] spans at most 31 days, the tick's window (A222 MQ14).
 func Incremental(from, to time.Time) bool { return !from.Before(to.AddDate(0, 0, -31)) }
 

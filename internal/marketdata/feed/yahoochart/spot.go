@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"sync"
 	"time"
@@ -49,7 +48,7 @@ func (s Source) Current(ctx context.Context, ins []feed.Instrument) ([]feed.Spot
 			defer func() { <-slots }()
 
 			results[i] = s.currentResult(ctx, in, symbol)
-			if rateLimited(results[i].err) {
+			if feed.RateLimited(results[i].err) {
 				cancel()
 			}
 		})
@@ -62,7 +61,7 @@ func (s Source) Current(ctx context.Context, ins []feed.Instrument) ([]feed.Spot
 
 func (s Source) currentResult(ctx context.Context, in feed.Instrument, symbol string) spotResult {
 	quote, err := s.currentQuote(ctx, in, symbol)
-	if err != nil && !rateLimited(err) {
+	if err != nil && !feed.RateLimited(err) {
 		err = &feed.ScopeError{Key: "instrument", Value: string(in.Code), Err: err}
 	}
 
@@ -85,12 +84,7 @@ func (s Source) currentQuote(
 		return nil, err
 	}
 
-	quote := in.QuoteCurrency
-	if in.Type == "currency" {
-		quote = "USD"
-	}
-
-	return parseSpot(body, in.Code, quote, s.now())
+	return parseSpot(body, in.Code, quoteOf(in), s.now())
 }
 
 func parseSpot(body []byte, code, quote money.Currency, now time.Time) (*feed.SpotQuote, error) {
@@ -147,7 +141,7 @@ func collectSpot(results []spotResult) ([]feed.SpotQuote, error) {
 	)
 
 	for _, r := range results {
-		if rateLimited(r.err) {
+		if feed.RateLimited(r.err) {
 			return out, r.err
 		}
 
@@ -161,10 +155,4 @@ func collectSpot(results []spotResult) ([]feed.SpotQuote, error) {
 	}
 
 	return out, errors.Join(errs...)
-}
-
-func rateLimited(err error) bool {
-	var status *feed.StatusError
-
-	return errors.As(err, &status) && status.Code == http.StatusTooManyRequests
 }
