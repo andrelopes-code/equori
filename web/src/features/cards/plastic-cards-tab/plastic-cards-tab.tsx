@@ -130,6 +130,7 @@ export function PlasticCardsTab({
           {() => (
             <AddCardDialog
               accountId={account.id}
+              base={base}
               onCancel={() => {
                 setAdding(false);
               }}
@@ -145,6 +146,7 @@ export function PlasticCardsTab({
           {(card) => (
             <AddCardDialog
               accountId={account.id}
+              base={base}
               card={card}
               onCancel={() => {
                 setEditing(null);

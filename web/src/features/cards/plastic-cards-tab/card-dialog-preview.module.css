@@ -1,0 +1,15 @@
+@layer app {
+  .stage {
+    display: grid;
+    place-items: center;
+    padding: var(--slotted-space-6);
+    border: 1px solid var(--slotted-border-subtle);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-surface-sunken);
+  }
+
+  .face {
+    inline-size: 100%;
+    max-inline-size: 280px;
+  }
+}

@@ -12,10 +12,13 @@ export function expectNoAmounts(
   container: HTMLElement,
   known: readonly string[],
 ): void {
-  // Coordinates of a drawing and machine-readable dates look like amounts and are not.
+  // Coordinates of a drawing, machine-readable dates, the bounds of a slider and the colours of
+  // its track look like amounts and are not.
   const markup = container.innerHTML
     .replace(/<svg[\s\S]*?<\/svg>/g, "")
-    .replace(/datetime="[^"]*"/g, "");
+    .replace(/datetime="[^"]*"/g, "")
+    .replace(/ (?:min|max|step)="[^"]*"/g, "")
+    .replace(/oklch\([^)]*\)/g, "");
   const leaks = [
     ...known.filter((text) => markup.includes(text)),
     ...[...markup.matchAll(amountPattern)].map((m) => {

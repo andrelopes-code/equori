@@ -815,6 +815,11 @@ export const accountsEn = {
   "card.plastics": "Physical and virtual cards",
   "card.number": "Card",
   "card.type": "Type",
+  "card.appearance": "Appearance",
+  "card.appearance.description":
+    "The colour, art and finish of this card on every screen.",
+  "card.appearance.save": "Save appearance",
+  "card.appearance.saved": "Appearance saved",
   "card.network": "Network",
   "card.network.none": "No network",
   "card.active": "Active",

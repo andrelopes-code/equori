@@ -1,0 +1,25 @@
+@layer app {
+  .field {
+    display: grid;
+    gap: var(--slotted-space-4);
+  }
+
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    gap: var(--slotted-space-4);
+  }
+
+  /* The marks are drawn for the dark ground of a card face: they sit on a plate of one, in the
+     unit the face gives them. */
+  .mark {
+    --u: 2px;
+
+    display: grid;
+    place-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #17171a;
+    color: #fff;
+  }
+}

@@ -1,5 +1,4 @@
 import { Button } from "@slotted/react/button";
-import { Checkbox } from "@slotted/react/checkbox";
 import {
   Dialog,
   DialogBody,
@@ -8,137 +7,58 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@slotted/react/dialog";
-import { Field, FieldError, FieldLabel } from "@slotted/react/field";
-import { TextField } from "@slotted/react/text-field";
-import { useState } from "react";
 
-import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
-import { useCreateCard, useUpdateCard } from "@/features/cards/api";
+import { CardDialogFields } from "@/features/cards/plastic-cards-tab/card-dialog-fields";
+import type { FaceBase } from "@/features/cards/plastic-cards-tab/plastic-card-faces";
+import { useCardForm } from "@/features/cards/plastic-cards-tab/use-card-form";
 import { useT } from "@/i18n/i18n-provider";
-import { FormNotice } from "@/ui/form-layout/form-notice";
-import { FormLayout } from "@/ui/form-layout/form-layout";
-import { FormRow } from "@/ui/form-layout/form-row";
-import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 import { useOverlayOpen } from "@/ui/dialogs/use-overlay-open";
+import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
 type Card = components["schemas"]["Card"];
 
-// Adds a card to the account; given a card, edits its holder and last four digits.
-export function AddCardDialog({
-  accountId,
-  card,
-  onDone,
-  onCancel,
-}: {
+interface AddCardDialogProps {
   accountId: string;
+  base: FaceBase;
   card?: Card;
   onDone: () => void;
   onCancel: () => void;
-}) {
+}
+
+// Adds a card to the account; given a card, edits its holder, last four digits and network.
+export function AddCardDialog({
+  accountId,
+  base,
+  card,
+  onDone,
+  onCancel,
+}: AddCardDialogProps) {
   const t = useT();
   const overlayOpen = useOverlayOpen();
-  const create = useCreateCard();
-  const update = useUpdateCard();
-  const [holder, setHolder] = useState(card?.holder ?? "");
-  const [lastFour, setLastFour] = useState(card?.last_four ?? "");
-  const [virtual, setVirtual] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [summary, setSummary] = useState<string | null>(null);
+  const form = useCardForm(accountId, card, onDone);
   const change = useStableCallback((open: boolean) => {
     if (!open) onCancel();
   });
   const label = t(card === undefined ? "card.addCard" : "card.editCard");
+
   return (
     <Dialog open={overlayOpen} size="sm" onOpenChange={change}>
       <DialogContent>
-        <form
-          noValidate
-          onSubmit={(event) => {
-            event.preventDefault();
-            const next: Record<string, string> = {};
-            if (holder.trim() === "")
-              next.holder = t("accountForm.problem.holder");
-            if (!/^\d{4}$/u.test(lastFour))
-              next.last_four = t("accountForm.problem.lastFour");
-            setErrors(next);
-            setSummary(null);
-            if (Object.keys(next).length > 0) return;
-            const request: Promise<unknown> =
-              card === undefined
-                ? create.mutateAsync({
-                    accountId,
-                    card: {
-                      holder: holder.trim(),
-                      last_four: lastFour,
-                      virtual,
-                    },
-                  })
-                : update.mutateAsync({
-                    id: card.id,
-                    holder: holder.trim(),
-                    last_four: lastFour,
-                  });
-            request.then(onDone).catch((caught: unknown) => {
-              if (caught instanceof ProblemError)
-                setErrors(fieldErrors(caught.problem));
-              setSummary(errorText(caught, t));
-            });
-          }}
-        >
+        <form noValidate onSubmit={form.submit}>
           <DialogHeader>
             <DialogTitle>{label}</DialogTitle>
           </DialogHeader>
+
           <DialogBody>
-            <FormLayout>
-              {summary !== null && <FormNotice>{summary}</FormNotice>}
-
-              <FormRow>
-                <Field invalid={errors.holder !== undefined} required>
-                  <FieldLabel>{t("accountForm.holder")}</FieldLabel>
-                  <TextField
-                    value={holder}
-                    maxLength={120}
-                    onChange={(event) => {
-                      setHolder(event.target.value);
-                    }}
-                  />
-                  {errors.holder !== undefined && (
-                    <FieldError>{errors.holder}</FieldError>
-                  )}
-                </Field>
-
-                <Field invalid={errors.last_four !== undefined} required>
-                  <FieldLabel>{t("accountForm.lastFour")}</FieldLabel>
-                  <TextField
-                    value={lastFour}
-                    inputMode="numeric"
-                    maxLength={4}
-                    onChange={(event) => {
-                      setLastFour(event.target.value.replace(/\D/gu, ""));
-                    }}
-                  />
-                  {errors.last_four !== undefined && (
-                    <FieldError>{errors.last_four}</FieldError>
-                  )}
-                </Field>
-              </FormRow>
-
-              {card === undefined && (
-                <Checkbox checked={virtual} onCheckedChange={setVirtual}>
-                  {t("accountForm.virtual")}
-                </Checkbox>
-              )}
-            </FormLayout>
+            <CardDialogFields form={form} card={card} base={base} />
           </DialogBody>
+
           <DialogFooter>
             <Button variant="ghost" tone="secondary" onClick={onCancel}>
               {t("detail.cancel")}
             </Button>
-            <Button
-              type="submit"
-              loading={create.isPending || update.isPending}
-            >
+            <Button type="submit" loading={form.pending}>
               {card === undefined ? label : t("detail.save")}
             </Button>
           </DialogFooter>

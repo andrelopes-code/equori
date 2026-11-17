@@ -10,6 +10,11 @@
     align-items: start;
   }
 
+  /* The studio takes the frame's full width. */
+  .appearance {
+    grid-column: 1 / -1;
+  }
+
   /* The cycle's table holds four columns and the limit's two, so the cycle takes two thirds once
      both fit beside each other. */
   @container (min-width: 60rem) {

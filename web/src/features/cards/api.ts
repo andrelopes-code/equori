@@ -228,6 +228,21 @@ export function useUpdateCard() {
   );
 }
 
+export function useSetCardFace() {
+  return useApiMutation(
+    async (
+      api,
+      { id, face }: { id: string; face: components["schemas"]["CardFace"] },
+    ) =>
+      unwrap(
+        await api.PUT("/accounts/{id}/card-face", {
+          params: { path: { id } },
+          body: face,
+        }),
+      ),
+  );
+}
+
 export function useDeleteCard() {
   return useApiMutation(async (api, id: string) =>
     unwrap(await api.DELETE("/cards/{id}", { params: { path: { id } } })),

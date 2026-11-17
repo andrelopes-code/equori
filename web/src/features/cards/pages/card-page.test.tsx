@@ -356,6 +356,104 @@ describe("CardPage", () => {
     });
   });
 
+  it("sets the network of a new card", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api(sent) });
+    await findStack();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["card.addCard"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.type(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["accountForm.holder"],
+      }),
+      "Bia",
+    );
+    await userEvent.type(
+      within(dialog).getByRole("textbox", {
+        name: catalogEn["accountForm.lastFour"],
+      }),
+      "5555",
+    );
+    await userEvent.click(
+      within(dialog).getByRole("radio", {
+        name: catalogEn["cardFace.network.visa"],
+      }),
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["card.addCard"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          route: "card",
+          body: {
+            holder: "Bia",
+            last_four: "5555",
+            virtual: false,
+            network: "visa",
+          },
+        },
+      ]);
+    });
+  });
+
+  it("clears the network of a card", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/cards/${cardID}?tab=cards`, {
+      fetch: api(sent, {
+        [`GET /api/v1/accounts/${cardID}/cards`]: () =>
+          json(200, {
+            items: [
+              {
+                id: "pc2",
+                holder: "Ana",
+                last_four: "9876",
+                virtual: false,
+                active: true,
+                network: "visa",
+                foreign_charge_bp: 438,
+              },
+            ],
+          }),
+      }),
+    });
+    await findStack();
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["card.actionsOf"].replace("{digits}", "9876"),
+      }),
+    );
+    await userEvent.click(
+      await screen.findByRole("menuitem", { name: catalogEn["card.edit"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByRole("radio", {
+        name: catalogEn["cardFace.network.visa"],
+      }),
+    ).toBeChecked();
+    await userEvent.click(
+      within(dialog).getByRole("radio", {
+        name: catalogEn["card.network.none"],
+      }),
+    );
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: catalogEn["detail.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          route: "patch pc2",
+          body: { holder: "Ana", last_four: "9876", network: "" },
+        },
+      ]);
+    });
+  });
+
   it("edits and removes a card", async () => {
     const sent: Sent[] = [];
     await renderApp(`/cards/${cardID}?tab=cards`, { fetch: api(sent) });
@@ -403,6 +501,63 @@ describe("CardPage", () => {
     await waitFor(() => {
       expect(sent.at(-1)).toEqual({ route: "delete pc2" });
     });
+  });
+
+  it("saves the appearance of a card", async () => {
+    const sent: Sent[] = [];
+    await renderApp(`/cards/${cardID}?tab=settings`, {
+      fetch: api(sent, {
+        [`PUT /api/v1/accounts/${cardID}/card-face`]: async (req) => {
+          const face: unknown = await req.json();
+          sent.push({ route: "face", body: face });
+          return json(200, { id: cardID, face });
+        },
+      }),
+    });
+    await userEvent.click(
+      await screen.findByRole("radio", {
+        name: catalogEn["cardFace.color.yellow"],
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["cardFace.art.waves"] }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["card.appearance.save"] }),
+    );
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          route: "face",
+          body: {
+            color: "#fce300",
+            art: "waves",
+            chip: null,
+            orientation: null,
+            brand: null,
+          },
+        },
+      ]);
+    });
+    expect(
+      (await screen.findAllByText(catalogEn["card.appearance.saved"])).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("keeps the save disabled until the appearance changes", async () => {
+    await renderApp(`/cards/${cardID}?tab=settings`, { fetch: api() });
+    const save = await screen.findByRole("button", {
+      name: catalogEn["card.appearance.save"],
+    });
+
+    expect(save).toBeDisabled();
+
+    await userEvent.click(
+      screen.getByRole("radio", { name: catalogEn["cardFace.color.yellow"] }),
+    );
+
+    expect(save).toBeEnabled();
   });
 
   it("adds a billing cycle version and a limit version", async () => {
@@ -483,6 +638,7 @@ describe("CardPage", () => {
         .getAllByRole("heading", { level: 2 })
         .map((heading) => heading.textContent),
     ).toEqual([
+      catalogEn["card.appearance"],
       catalogEn["accountForm.billing"],
       catalogEn["accountForm.limitGroup"],
     ]);

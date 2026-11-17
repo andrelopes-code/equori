@@ -5,6 +5,7 @@ import { useApi } from "@/api/api-context";
 import type { components } from "@/api/schema.gen";
 import { logoIndexQuery, logoOf } from "@/features/accounts";
 import { cardsQuery, flowsQuery } from "@/features/cards/api";
+import { previewFace } from "@/features/cards/card-appearance/preview-face";
 import styles from "@/features/cards/card-tile/card-tile.module.css";
 import { StatementTicket } from "@/features/cards/card-tile/statement-ticket";
 import {
@@ -53,12 +54,7 @@ export function CardTile({
   const plastic = cards.data?.find((card) => card.active);
   const logo = logoOf(institution?.identifier, logos.data);
   const appearance = useFaceAppearance(account.face, account.color, logo);
-  const optional = {
-    ...(logo !== undefined && { logo }),
-    ...(institution !== undefined && { institutionName: institution.name }),
-    ...(plastic !== undefined && { lastFour: plastic.last_four }),
-    ...(plastic?.network !== undefined && { network: plastic.network }),
-  };
+  const identity = previewFace(account.name, institution, logo, plastic);
   const signal =
     flows.data === undefined
       ? undefined
@@ -72,10 +68,8 @@ export function CardTile({
     >
       <div className={styles.face}>
         <CardFace
-          title={account.name}
-          {...optional}
+          {...identity}
           {...appearance.props}
-          holder={plastic?.holder ?? ""}
           active={account.closed_on === undefined}
           link={{
             to: "/cards/$accountId",

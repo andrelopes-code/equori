@@ -814,6 +814,11 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "card.plastics": "Cartões físicos e virtuais",
   "card.number": "Cartão",
   "card.type": "Tipo",
+  "card.appearance": "Aparência",
+  "card.appearance.description":
+    "A cor, a arte e o acabamento deste cartão em todas as telas.",
+  "card.appearance.save": "Salvar aparência",
+  "card.appearance.saved": "Aparência salva",
   "card.network": "Bandeira",
   "card.network.none": "Sem bandeira",
   "card.active": "Ativo",

@@ -37,6 +37,9 @@ export function CardTabPanel({
 }: CardTabPanelProps) {
   const navigate = useNavigate();
   const institutions = useQuery(institutionsQuery(useApi()));
+  const institution = institutions.data?.find(
+    (i) => i.id === account.institution_id,
+  );
 
   function openRule(open: boolean) {
     const merged: CardSearch = { ...search };
@@ -71,17 +74,13 @@ export function CardTabPanel({
       )}
 
       {tab === "cards" && (
-        <PlasticCardsTab
-          account={account}
-          institution={institutions.data?.find(
-            (i) => i.id === account.institution_id,
-          )}
-        />
+        <PlasticCardsTab account={account} institution={institution} />
       )}
 
       {tab === "settings" && (
         <CardSettingsTab
           account={account}
+          institution={institution}
           ruleOpen={search.rule === true}
           onRuleOpen={openRule}
           scale={scale}
