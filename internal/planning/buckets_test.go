@@ -452,11 +452,12 @@ func TestS445GetBucketMethod(t *testing.T) {
 }
 
 type bucketHistoryView struct {
-	Buckets []bucketView `json:"buckets"`
+	Methods []methodView `json:"methods"`
 	Months  []struct {
-		Month    string `json:"month"`
-		Received money  `json:"received"`
-		Outside  money  `json:"outside"`
+		Month    string  `json:"month"`
+		From     *string `json:"from"`
+		Received money   `json:"received"`
+		Outside  money   `json:"outside"`
 		Buckets  []struct {
 			ID   string `json:"id"`
 			Real money  `json:"real"`
@@ -492,7 +493,8 @@ func TestS446BucketHistory(t *testing.T) {
 	var got bucketHistoryView
 	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
 
-	if len(got.Buckets) != 3 || len(got.Months) != 6 || got.Months[0].Month != "2026-06" ||
+	if len(got.Methods) != 1 || len(got.Methods[0].Buckets) != 3 || len(got.Months) != 6 ||
+		got.Months[0].Month != "2026-06" ||
 		got.Months[5].Month != "2026-11" {
 		t.Fatalf("history = %+v", got)
 	}
@@ -501,7 +503,8 @@ func TestS446BucketHistory(t *testing.T) {
 
 	want := []int64{120000, 30000, 500000 - 160000}
 	for i, w := range want {
-		if october.Buckets[i].ID != got.Buckets[i].ID || october.Buckets[i].Real.Amount != w {
+		if october.Buckets[i].ID != got.Methods[0].Buckets[i].ID ||
+			october.Buckets[i].Real.Amount != w {
 			t.Errorf("october bucket %d = %+v, want %d", i, october.Buckets[i], w)
 		}
 	}
@@ -520,7 +523,7 @@ func TestS446BucketHistory(t *testing.T) {
 	g := newFixture(t, "2026-11-12")
 	g.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &empty)
 
-	if len(empty.Buckets) != 0 || len(empty.Months) != 6 {
+	if len(empty.Methods) != 0 || len(empty.Months) != 6 {
 		t.Errorf("history without a method = %+v", empty)
 	}
 }

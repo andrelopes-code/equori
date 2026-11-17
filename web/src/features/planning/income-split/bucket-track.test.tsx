@@ -34,6 +34,7 @@ const buckets = [
 function month(m: string, received: number, needs: number, free: number) {
   return {
     month: m,
+    from: "2026-05",
     received: money(received),
     outside: money(m === "2026-10" ? 1500 : 0),
     buckets: [
@@ -45,7 +46,7 @@ function month(m: string, received: number, needs: number, free: number) {
 
 const history = {
   currency: "BRL",
-  buckets,
+  methods: [{ from: "2026-05", buckets }],
   months: [
     month("2026-05", 500000, 250000, 250000),
     month("2026-06", 500000, 350000, 150000),
@@ -107,7 +108,7 @@ describe("Income split in Track", () => {
     await renderApp(october, {
       fetch: budgetApi({
         "GET /api/v1/budget-buckets/history": () =>
-          json(200, { ...history, buckets: [] }),
+          json(200, { ...history, methods: [] }),
       }),
       today,
     });

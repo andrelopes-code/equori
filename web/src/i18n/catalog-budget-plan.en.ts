@@ -168,6 +168,7 @@ export const budgetPlanEn = {
   "track.cell.kept": "{month}: kept to the target",
   "track.cell.missed": "{month}: missed the target",
   "track.cell.none": "{month}: no income",
+  "track.cell.absent": "{month}: not in the split",
   "track.legend.kept": "kept to the target",
   "track.legend.missed": "missed the target",
   "track.legend.none": "no income",

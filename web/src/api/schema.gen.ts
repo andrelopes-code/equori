@@ -3775,9 +3775,11 @@ export interface paths {
         };
         /**
          * The income split of a month and the five before it (income buckets A233).
-         * @description Each month holds the income received, the real amount of each bucket in method order and the spending
-         *     outside the split. A bucket's real amount is the own spending of its categories; the bucket that takes
-         *     savings adds what went into the book's savings, reserve and brokerage accounts in the month.
+         * @description Each month reads the method in force in it (A242): `from` names its version, absent without a split, and
+         *     `buckets` holds the real amount of each bucket of that method in its order. `methods` lists the versions
+         *     that are the method of at least one month. A month also holds the income received and the spending outside
+         *     the split. A bucket's real amount is the own spending of its categories; the bucket that takes savings adds
+         *     what went into the book's savings, reserve and brokerage accounts in the month.
          */
         get: operations["getBudgetBucketHistory"];
         put?: never;
@@ -7385,13 +7387,19 @@ export interface components {
             from?: string;
             buckets: components["schemas"]["BudgetBucket"][];
         };
+        BudgetBucketVersion: {
+            from: string;
+            buckets: components["schemas"]["BudgetBucket"][];
+        };
         BudgetBucketHistory: {
             currency: string;
-            buckets: components["schemas"]["BudgetBucket"][];
+            methods: components["schemas"]["BudgetBucketVersion"][];
             months: components["schemas"]["BudgetBucketMonth"][];
         };
         BudgetBucketMonth: {
             month: string;
+            /** @description First month of the version that is the method of this month; absent without a split. */
+            from?: string;
             received: components["schemas"]["Money"];
             outside: components["schemas"]["Money"];
             buckets: components["schemas"]["BudgetBucketReal"][];

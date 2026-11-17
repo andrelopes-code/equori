@@ -17,14 +17,16 @@ const bucketHistoryMonths = 6
 // BucketHistory is the income split of the months of the window (income buckets A233).
 type BucketHistory struct {
 	Currency money.Currency
-	Buckets  []domain.Bucket
+	Methods  []domain.Method // the methods of the window's months, by From, each once
 	Months   []BucketMonth
 }
 
-// BucketMonth holds the income received in a month, the real amount of each bucket in method
-// order and the spending outside the split.
+// BucketMonth holds the income received in a month, the real amount of each bucket in the order
+// of the month's method and the spending outside the split. From is zero without a split.
 type BucketMonth struct {
 	Month             time.Time
+	From              time.Time
+	HasMethod         bool
 	Received, Outside int64
 	Real              []int64
 }
@@ -49,13 +51,13 @@ func (s *Service) BucketHistory(
 		return BucketHistory{}, err
 	}
 
-	method, _, err := s.methodOf(ctx, booksID, month)
+	versions, err := s.repo.BucketMethods(ctx, booksID)
 	if err != nil {
 		return BucketHistory{}, err
 	}
 
-	out := BucketHistory{Currency: base, Buckets: method.Buckets}
-	err = s.addBucketMonths(ctx, booksID, month, &out)
+	out := BucketHistory{Currency: base}
+	err = s.addBucketMonths(ctx, booksID, month, versions, &out)
 
 	return out, err
 }
@@ -65,6 +67,7 @@ func (s *Service) addBucketMonths(
 	ctx context.Context,
 	booksID int64,
 	month time.Time,
+	versions []domain.Method,
 	out *BucketHistory,
 ) error {
 	facts, err := s.ledger.AccountFacts(ctx, booksID)
@@ -84,29 +87,82 @@ func (s *Service) addBucketMonths(
 		return err
 	}
 
+	months := windowMethods(versions, from, to)
+	out.Methods = distinctMethods(months)
+
 	var goals, savings map[time.Time]int64
-	if slices.ContainsFunc(out.Buckets, func(b domain.Bucket) bool { return b.TakesGoals }) {
+	if holdsBucket(out.Methods, func(b domain.Bucket) bool { return b.TakesGoals }) {
 		goals, err = s.goalInflows(ctx, booksID, facts, out.Currency, from, to)
 		if err != nil {
 			return err
 		}
 	}
 
-	if slices.ContainsFunc(out.Buckets, func(b domain.Bucket) bool { return b.TakesSavings }) {
+	if holdsBucket(out.Methods, func(b domain.Bucket) bool { return b.TakesSavings }) {
 		savings, err = s.savingsInflows(ctx, booksID, facts, out.Currency, from, to)
 		if err != nil {
 			return err
 		}
 	}
 
-	resolve := domain.BucketResolver(out.Buckets, expenseParents(facts))
-	for m := from; m.Before(to); m = m.AddDate(0, 1, 0) {
-		month := bucketMonth(m, out.Buckets, resolve, expense, income)
-		addInflows(&month, out.Buckets, goals[m], savings[m])
+	parents := expenseParents(facts)
+	for _, wm := range months {
+		resolve := domain.BucketResolver(wm.method.Buckets, parents)
+		month := bucketMonth(wm.month, wm.method.Buckets, resolve, expense, income)
+		month.HasMethod = wm.ok
+
+		if wm.ok {
+			month.From = wm.method.From
+		}
+
+		addInflows(&month, wm.method.Buckets, goals[wm.month], savings[wm.month])
 		out.Months = append(out.Months, month)
 	}
 
 	return nil
+}
+
+// windowMethod is the method in force in one month of the window; ok is false without a split.
+type windowMethod struct {
+	month  time.Time
+	method domain.Method
+	ok     bool
+}
+
+// windowMethods returns the method of each month in [from, to).
+func windowMethods(versions []domain.Method, from, to time.Time) []windowMethod {
+	var out []windowMethod
+
+	for m := from; m.Before(to); m = m.AddDate(0, 1, 0) {
+		method, ok := domain.MethodAt(versions, m)
+		if !ok {
+			method = domain.Method{}
+		}
+
+		out = append(out, windowMethod{month: m, method: method, ok: ok})
+	}
+
+	return out
+}
+
+// distinctMethods returns the methods of the months with a split, by From, each once.
+func distinctMethods(months []windowMethod) []domain.Method {
+	var out []domain.Method
+
+	for _, wm := range months {
+		if wm.ok && (len(out) == 0 || !out[len(out)-1].From.Equal(wm.method.From)) {
+			out = append(out, wm.method)
+		}
+	}
+
+	return out
+}
+
+// holdsBucket reports whether a bucket of any method satisfies match.
+func holdsBucket(methods []domain.Method, match func(domain.Bucket) bool) bool {
+	return slices.ContainsFunc(methods, func(m domain.Method) bool {
+		return slices.ContainsFunc(m.Buckets, match)
+	})
 }
 
 // expenseParents maps each expense category of facts to its parent.

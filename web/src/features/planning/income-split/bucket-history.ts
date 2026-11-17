@@ -5,6 +5,8 @@ import type { BucketMeasure } from "@/features/planning/income-split/bucket-draf
 import type { MessageKey } from "@/i18n/catalog.en";
 
 type History = components["schemas"]["BudgetBucketHistory"];
+type Method = History["methods"][number];
+type Entry = History["months"][number];
 
 const targetKeys: Record<BucketMeasure, MessageKey> = {
   ceiling: "track.target",
@@ -24,7 +26,7 @@ export interface TrackCell {
   real: number;
   // Undefined in a month without income: no target to keep.
   kept: boolean | undefined;
-  state: "kept" | "missed" | "none";
+  state: "kept" | "missed" | "none" | "absent";
 }
 
 export interface TrackRow {
@@ -47,16 +49,18 @@ export interface TrackMonth {
   missed: number | undefined;
 }
 
-// Each bucket of month against its share of the income received (income buckets A233): the
-// target splits the income by largest remainder; a ceiling bucket keeps it at or below, the
-// savings bucket and a floor bucket at or above (A234); the six months of the history give each
-// bucket its strip.
+// Each bucket of the method of month against its share of the income received (income buckets
+// A233): the target splits the income by largest remainder; a ceiling bucket keeps it at or
+// below, the savings bucket and a floor bucket at or above (A234); the six months of the history
+// give each bucket its strip, each month read through its own version (A242).
 export function trackMonth(history: History, month: string): TrackMonth {
-  const cells = history.months.map((m) => monthCells(history, m));
   const at = history.months.findIndex((m) => m.month === month);
-  const received = history.months[at]?.received.amount ?? 0;
-  const rows = history.buckets.map((b, i) => {
-    const months = cells.map((c) => c[i] ?? emptyCell());
+  const entry = history.months[at];
+  const received = entry?.received.amount ?? 0;
+  const method = entry === undefined ? undefined : methodOf(history, entry);
+  if (method === undefined) return { received, rows: [], missed: undefined };
+  const rows = method.buckets.map((b) => {
+    const months = history.months.map((m) => monthCell(history, m, b.id));
     const cell = months[at] ?? emptyCell();
     return {
       id: b.id,
@@ -81,24 +85,28 @@ export function trackMonth(history: History, month: string): TrackMonth {
   };
 }
 
-function monthCells(
-  history: History,
-  m: History["months"][number],
-): TrackCell[] {
+function methodOf(history: History, m: Entry): Method | undefined {
+  return history.methods.find((v) => v.from === m.from);
+}
+
+// The cell of bucket id in month m, computed with the method of m; absent when that method
+// holds no such bucket.
+function monthCell(history: History, m: Entry, id: string): TrackCell {
+  const method = methodOf(history, m);
+  const i = method?.buckets.findIndex((b) => b.id === id) ?? -1;
+  const bucket = method?.buckets[i];
+  if (method === undefined || bucket === undefined) return absentCell(m.month);
   const income = m.received.amount;
-  const targets =
+  const target =
     income > 0
       ? largestRemainder(
           income,
-          history.buckets.map((b) => b.share_bp),
-        )
+          method.buckets.map((b) => b.share_bp),
+        )[i]
       : undefined;
-  return history.buckets.map((b, i) => {
-    const real = m.buckets.find((x) => x.id === b.id)?.real.amount ?? 0;
-    const target = targets?.[i];
-    const kept = keptOf(measureOf(b), real, target);
-    return { month: m.month, target, real, kept, state: stateOf(kept) };
-  });
+  const real = m.buckets.find((x) => x.id === id)?.real.amount ?? 0;
+  const kept = keptOf(measureOf(bucket), real, target);
+  return { month: m.month, target, real, kept, state: stateOf(kept) };
 }
 
 // The line under a bucket's name: its target share and what the bucket draws besides its
@@ -138,6 +146,16 @@ function statusOf(
 function stateOf(kept: boolean | undefined): TrackCell["state"] {
   if (kept === undefined) return "none";
   return kept ? "kept" : "missed";
+}
+
+function absentCell(month: string): TrackCell {
+  return {
+    month,
+    target: undefined,
+    real: 0,
+    kept: undefined,
+    state: "absent",
+  };
 }
 
 function emptyCell(): TrackCell {

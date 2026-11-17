@@ -144,6 +144,97 @@ func TestS547BucketIdentity(t *testing.T) {
 	)
 }
 
+// S543: a category that moves to another bucket in a later version is read in each month through
+// the version of that month (A242).
+func TestS543CategoryChangesBucket(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-17")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.saveBucketsFrom("2026-09", bucket("Needs", 6000, false, food), bucket("Fun", 4000, false))
+
+	needs := f.method("2026-09").Buckets[0].ID
+	fun := f.method("2026-09").Buckets[1].ID
+	f.saveBucketsFrom(
+		"2026-11",
+		withBucketID(needs, bucket("Needs", 6000, false)),
+		withBucketID(fun, bucket("Fun", 4000, false, food)),
+	)
+	f.pay("2026-10-06", 10000, food, "")
+	f.pay("2026-11-03", 4000, food, "")
+
+	got := f.history("2026-11")
+
+	october, november := got.Months[4], got.Months[5]
+	if october.From == nil || *october.From != "2026-09" ||
+		october.Buckets[0].Real.Amount != 10000 || october.Buckets[1].Real.Amount != 0 {
+		t.Errorf("october = %+v, want from 2026-09 and [10000 0]", october)
+	}
+
+	if november.From == nil || *november.From != "2026-11" ||
+		november.Buckets[0].Real.Amount != 0 || november.Buckets[1].Real.Amount != 4000 {
+		t.Errorf("november = %+v, want from 2026-11 and [0 4000]", november)
+	}
+}
+
+func TestS548HistoryAcrossVersions(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-17")
+	food := f.h.Account("Food", "expense", "", nil)
+	f.saveBucketsFrom("2026-09", bucket("Needs", 6000, false, food), bucket("Fun", 4000, false))
+	f.saveBucketsFrom("2026-11", bucket("Needs", 5000, false, food), bucket("Fun", 5000, false))
+	f.pay("2026-11-03", 4000, food, "")
+
+	got := f.history("2026-11")
+	if len(got.Methods) != 2 || *got.Methods[0].From != "2026-09" ||
+		*got.Methods[1].From != "2026-11" {
+		t.Fatalf("methods = %+v, want 2026-09 and 2026-11", got.Methods)
+	}
+
+	for _, m := range got.Months {
+		wantFrom := "2026-09"
+		if m.Month >= "2026-11" {
+			wantFrom = "2026-11"
+		}
+
+		if m.From == nil || *m.From != wantFrom {
+			t.Fatalf("month %s from = %v, want %s", m.Month, m.From, wantFrom)
+		}
+
+		method := got.Methods[0]
+		if wantFrom == "2026-11" {
+			method = got.Methods[1]
+		}
+
+		for i, b := range m.Buckets {
+			if b.ID != method.Buckets[i].ID {
+				t.Errorf(
+					"month %s bucket %d id = %s, want %s",
+					m.Month,
+					i,
+					b.ID,
+					method.Buckets[i].ID,
+				)
+			}
+		}
+	}
+
+	g := newFixture(t, "2026-11-17")
+	gfood := g.h.Account("Food", "expense", "", nil)
+	g.saveBucketsFrom("2026-09", bucket("Needs", 10000, false, gfood))
+	g.saveBucketsFrom("2026-11")
+	g.pay("2026-11-03", 4000, gfood, "")
+
+	ended := g.history("2026-11")
+	if len(ended.Methods) != 1 {
+		t.Errorf("methods with an end version = %+v, want 1", ended.Methods)
+	}
+
+	november := ended.Months[5]
+	if november.From != nil || len(november.Buckets) != 0 || november.Outside.Amount != 4000 {
+		t.Errorf("november = %+v, want no from, no bucket and outside 4000", november)
+	}
+}
+
 func (f fixture) saveBucketsFrom(from string, buckets ...map[string]any) {
 	f.h.T().Helper()
 
@@ -172,4 +263,19 @@ func (f fixture) method(month string) methodView {
 	f.h.MustDo(http.MethodGet, path, nil, http.StatusOK, &out)
 
 	return out
+}
+
+func (f fixture) history(month string) bucketHistoryView {
+	f.h.T().Helper()
+
+	var out bucketHistoryView
+	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month="+month, nil, http.StatusOK, &out)
+
+	return out
+}
+
+func withBucketID(id string, b map[string]any) map[string]any {
+	b["id"] = id
+
+	return b
 }

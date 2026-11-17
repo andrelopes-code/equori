@@ -166,6 +166,7 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.cell.kept": "{month}: dentro da meta",
   "track.cell.missed": "{month}: fora da meta",
   "track.cell.none": "{month}: sem renda",
+  "track.cell.absent": "{month}: fora da divisão",
   "track.legend.kept": "dentro da meta",
   "track.legend.missed": "fora da meta",
   "track.legend.none": "sem renda",

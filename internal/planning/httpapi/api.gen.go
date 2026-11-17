@@ -190,9 +190,9 @@ type BudgetBucket struct {
 
 // BudgetBucketHistory defines model for BudgetBucketHistory.
 type BudgetBucketHistory struct {
-	Buckets  []BudgetBucket      `json:"buckets"`
-	Currency string              `json:"currency"`
-	Months   []BudgetBucketMonth `json:"months"`
+	Currency string                `json:"currency"`
+	Methods  []BudgetBucketVersion `json:"methods"`
+	Months   []BudgetBucketMonth   `json:"months"`
 }
 
 // BudgetBucketInput defines model for BudgetBucketInput.
@@ -219,16 +219,25 @@ type BudgetBucketInput struct {
 
 // BudgetBucketMonth defines model for BudgetBucketMonth.
 type BudgetBucketMonth struct {
-	Buckets  []BudgetBucketReal `json:"buckets"`
-	Month    string             `json:"month"`
-	Outside  Money              `json:"outside"`
-	Received Money              `json:"received"`
+	Buckets []BudgetBucketReal `json:"buckets"`
+
+	// From First month of the version that is the method of this month; absent without a split.
+	From     *string `json:"from,omitempty"`
+	Month    string  `json:"month"`
+	Outside  Money   `json:"outside"`
+	Received Money   `json:"received"`
 }
 
 // BudgetBucketReal defines model for BudgetBucketReal.
 type BudgetBucketReal struct {
 	Id   openapi_types.UUID `json:"id"`
 	Real Money              `json:"real"`
+}
+
+// BudgetBucketVersion defines model for BudgetBucketVersion.
+type BudgetBucketVersion struct {
+	Buckets []BudgetBucket `json:"buckets"`
+	From    string         `json:"from"`
 }
 
 // BudgetBuckets defines model for BudgetBuckets.

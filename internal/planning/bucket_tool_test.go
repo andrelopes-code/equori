@@ -145,6 +145,50 @@ func TestSplitHistoryTool(t *testing.T) {
 	}
 }
 
+// A242 through the assistant: kind split holds the version of each month; the targets of a month
+// use the shares of its own version.
+func TestSplitHistoryAcrossVersionsTool(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-11-12")
+	f.h.Record(
+		"2026-10-05",
+		apitest.Posting(f.checking, 100000),
+		apitest.Posting(f.salary, -100000),
+	)
+	f.saveBucketsFrom("2026-09", bucket("Needs", 6000, false, f.rent), bucket("Rest", 4000, false))
+	f.saveBucketsFrom("2026-11", bucket("Needs", 5000, false, f.rent), bucket("Rest", 5000, false))
+
+	var out struct {
+		Split []struct {
+			Month   string `json:"month"`
+			From    string `json:"from"`
+			Buckets []struct {
+				Target toolAmount `json:"target"`
+			} `json:"buckets"`
+		} `json:"split"`
+	}
+	toolOutput(
+		t,
+		f.h,
+		"get_budgets_and_goals",
+		map[string]any{"month": "2026-11", "kind": "split"},
+		&out,
+	)
+
+	if len(out.Split) != 6 {
+		t.Fatalf("split = %+v", out.Split)
+	}
+
+	october, november := out.Split[4], out.Split[5]
+	if october.From != "2026-09" || october.Buckets[0].Target.Amount != "600.00" {
+		t.Errorf("october = %+v, want from 2026-09 and target 600.00", october)
+	}
+
+	if november.From != "2026-11" || len(november.Buckets) != 2 {
+		t.Errorf("november = %+v, want from 2026-11", november)
+	}
+}
+
 // toolAmount is a tool's money: a decimal string with its currency.
 type toolAmount struct {
 	Amount   string `json:"amount"`

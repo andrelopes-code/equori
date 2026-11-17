@@ -51,12 +51,12 @@ export function BucketTrack({ month }: BucketTrackProps) {
     );
   if (history.data === undefined || scale === null)
     return <Skeleton shape="block" blockSize="18rem" />;
-  if (history.data.buckets.length === 0) return null;
 
   const currency = history.data.currency;
   const money = (amount: number) =>
     fmt.money({ amount, currency }, scale(currency));
   const track = trackMonth(history.data, month);
+  if (track.rows.length === 0) return null;
   const verdict = trackVerdict(track);
   const monthName = names.long(month);
   const outside =

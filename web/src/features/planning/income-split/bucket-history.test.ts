@@ -34,6 +34,7 @@ const buckets = [
 function month(m: string, received: number, needs: number, free: number) {
   return {
     month: m,
+    from: "2026-06",
     received: brl(received),
     outside: brl(0),
     buckets: [
@@ -45,7 +46,7 @@ function month(m: string, received: number, needs: number, free: number) {
 
 const history: History = {
   currency: "BRL",
-  buckets,
+  methods: [{ from: "2026-06", buckets }],
   months: [
     month("2026-06", 100000, 50000, 50000),
     month("2026-07", 100000, 70000, 30000),
@@ -99,11 +100,16 @@ describe("trackMonth", () => {
     // November R$200.00 falls R$300.00 short.
     const floor: History = {
       ...history,
-      buckets: history.buckets.map((b, i) =>
-        i === 0
-          ? { ...b, share_bp: 5000, at_least: true }
-          : { ...b, share_bp: 5000 },
-      ),
+      methods: [
+        {
+          from: "2026-06",
+          buckets: buckets.map((b, i) =>
+            i === 0
+              ? { ...b, share_bp: 5000, at_least: true }
+              : { ...b, share_bp: 5000 },
+          ),
+        },
+      ],
     };
 
     const october = trackMonth(floor, "2026-10").rows[0];
@@ -125,6 +131,100 @@ describe("trackMonth", () => {
       [undefined, undefined, undefined],
       [undefined, undefined, undefined],
     ]);
+  });
+});
+
+describe("trackMonth across versions", () => {
+  const first = buckets.map((b) => ({
+    ...b,
+    share_bp: b.id === "needs" ? 6000 : 4000,
+  }));
+  const second = [
+    ...buckets.map((b) => ({
+      ...b,
+      share_bp: b.id === "needs" ? 5000 : 3000,
+    })),
+    {
+      id: "extra",
+      name: "Extra",
+      share_bp: 2000,
+      takes_savings: false,
+      takes_goals: false,
+      at_least: false,
+      category_ids: [],
+    },
+  ];
+  const across: History = {
+    currency: "BRL",
+    methods: [
+      { from: "2026-06", buckets: first },
+      { from: "2026-09", buckets: second },
+    ],
+    months: [
+      month("2026-06", 100000, 50000, 50000),
+      month("2026-07", 100000, 70000, 30000),
+      month("2026-08", 100000, 10000, 10000),
+      {
+        month: "2026-09",
+        from: "2026-09",
+        received: brl(100000),
+        outside: brl(0),
+        buckets: [
+          { id: "needs", real: brl(40000) },
+          { id: "free", real: brl(30000) },
+          { id: "extra", real: brl(5000) },
+        ],
+      },
+      { ...month("2026-10", 100000, 0, 0), from: "2026-09" },
+      { ...month("2026-11", 100000, 0, 0), from: "2026-09" },
+    ],
+  };
+
+  it("marks a bucket absent in the months before it joined the split", () => {
+    const extra = trackMonth(across, "2026-11").rows[2];
+
+    expect(extra?.id).toBe("extra");
+    expect(extra?.months.map((m) => m.state).slice(0, 3)).toEqual([
+      "absent",
+      "absent",
+      "absent",
+    ]);
+    expect(extra?.months[0]).toEqual({
+      month: "2026-06",
+      target: undefined,
+      real: 0,
+      kept: undefined,
+      state: "absent",
+    });
+    expect(extra?.months[3]?.target).toBe(20000);
+  });
+
+  it("judges each month against the share of its own version", () => {
+    const needs = trackMonth(across, "2026-11").rows[0];
+
+    expect(needs?.months[0]?.target).toBe(60000);
+    expect(needs?.months[5]?.target).toBe(50000);
+  });
+
+  it("returns no row for a month without a split", () => {
+    const ended: History = {
+      ...across,
+      months: [
+        ...across.months.slice(0, 5),
+        {
+          month: "2026-11",
+          received: brl(100000),
+          outside: brl(0),
+          buckets: [],
+        },
+      ],
+    };
+
+    expect(trackMonth(ended, "2026-11")).toEqual({
+      received: 100000,
+      rows: [],
+      missed: undefined,
+    });
   });
 });
 

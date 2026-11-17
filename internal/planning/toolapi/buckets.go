@@ -175,6 +175,7 @@ func categoryNames(ids []uuid.UUID, accounts map[uuid.UUID]Account) []string {
 // on it, its real amount and whether it kept to the target (income buckets A233).
 type splitMonth struct {
 	Month    string        `json:"month"`
+	From     string        `json:"from,omitzero"`
 	Received tool.Money    `json:"received"`
 	Buckets  []splitBucket `json:"buckets"`
 }
@@ -186,7 +187,8 @@ type splitBucket struct {
 	Kept   bool       `json:"kept"`
 }
 
-// splitMonths returns the income split of month and the five before; nil without a method.
+// splitMonths returns the income split of month and the five before, each month read through the
+// method in force in it; nil when no month of the window has a method.
 func splitMonths(
 	ctx context.Context,
 	svc *app.Service,
@@ -194,7 +196,7 @@ func splitMonths(
 	month time.Time,
 ) ([]splitMonth, error) {
 	h, err := svc.BucketHistory(ctx, booksID, month)
-	if err != nil || len(h.Buckets) == 0 {
+	if err != nil || len(h.Methods) == 0 {
 		return nil, err
 	}
 
@@ -206,9 +208,14 @@ func splitMonths(
 		}
 
 		out[i] = splitMonth{Month: m.Month.Format(monthLayout), Received: received}
+		if m.HasMethod {
+			out[i].From = m.From.Format(monthLayout)
+		}
 
-		targets := domain.BucketTargets(m.Received, h.Buckets)
-		for j, b := range h.Buckets {
+		buckets := methodBuckets(h.Methods, m.From)
+		targets := domain.BucketTargets(m.Received, buckets)
+
+		for j, b := range buckets {
 			v := splitBucket{Name: b.Name, Kept: domain.KeptTarget(b, m.Real[j], targets[j])}
 			if v.Target, err = moneyOf(targets[j], h.Currency); err != nil {
 				return nil, err
@@ -223,4 +230,15 @@ func splitMonths(
 	}
 
 	return out, nil
+}
+
+// methodBuckets returns the buckets of the method that starts at from; none for a zero from.
+func methodBuckets(methods []domain.Method, from time.Time) []domain.Bucket {
+	for _, m := range methods {
+		if m.From.Equal(from) {
+			return m.Buckets
+		}
+	}
+
+	return nil
 }

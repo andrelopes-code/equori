@@ -1808,6 +1808,9 @@
               "month": {
                 "type": "string"
               },
+              "from": {
+                "type": "string"
+              },
               "received": {
                 "type": "object",
                 "properties": {

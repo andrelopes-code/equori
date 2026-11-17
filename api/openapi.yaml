@@ -6586,9 +6586,11 @@ paths:
       x-book-role: read
       summary: The income split of a month and the five before it (income buckets A233).
       description: |
-        Each month holds the income received, the real amount of each bucket in method order and the spending
-        outside the split. A bucket's real amount is the own spending of its categories; the bucket that takes
-        savings adds what went into the book's savings, reserve and brokerage accounts in the month.
+        Each month reads the method in force in it (A242): `from` names its version, absent without a split, and
+        `buckets` holds the real amount of each bucket of that method in its order. `methods` lists the versions
+        that are the method of at least one month. A month also holds the income received and the spending outside
+        the split. A bucket's real amount is the own spending of its categories; the bucket that takes savings adds
+        what went into the book's savings, reserve and brokerage accounts in the month.
       parameters:
         - $ref: "#/components/parameters/PlanMonth"
       responses:
@@ -13401,16 +13403,27 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BudgetBucket"
-    BudgetBucketHistory:
+    BudgetBucketVersion:
       type: object
-      required: [currency, buckets, months]
+      required: [from, buckets]
       properties:
-        currency:
+        from:
           type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
         buckets:
           type: array
           items:
             $ref: "#/components/schemas/BudgetBucket"
+    BudgetBucketHistory:
+      type: object
+      required: [currency, methods, months]
+      properties:
+        currency:
+          type: string
+        methods:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetBucketVersion"
         months:
           type: array
           items:
@@ -13421,6 +13434,10 @@ components:
       properties:
         month:
           type: string
+        from:
+          type: string
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          description: First month of the version that is the method of this month; absent without a split.
         received:
           $ref: "#/components/schemas/Money"
         outside:

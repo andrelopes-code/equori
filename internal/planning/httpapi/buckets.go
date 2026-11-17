@@ -150,11 +150,48 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 	m := func(amount int64) Money { return toMoneyAPI(amount, h.Currency) }
 	out := BudgetBucketHistory{
 		Currency: string(h.Currency),
-		Buckets:  make([]BudgetBucket, len(h.Buckets)),
+		Methods:  make([]BudgetBucketVersion, len(h.Methods)),
 		Months:   make([]BudgetBucketMonth, len(h.Months)),
 	}
 
-	for i, b := range h.Buckets {
+	for i, method := range h.Methods {
+		out.Methods[i] = toBucketVersionAPI(method)
+	}
+
+	buckets := make(map[time.Time][]domain.Bucket, len(h.Methods))
+	for _, method := range h.Methods {
+		buckets[method.From] = method.Buckets
+	}
+
+	for i, month := range h.Months {
+		reals := make([]BudgetBucketReal, len(month.Real))
+		for j, real := range month.Real {
+			reals[j] = BudgetBucketReal{Id: buckets[month.From][j].ID, Real: m(real)}
+		}
+
+		out.Months[i] = BudgetBucketMonth{
+			Month:    month.Month.Format(monthLayout),
+			Received: m(month.Received),
+			Outside:  m(month.Outside),
+			Buckets:  reals,
+		}
+
+		if month.HasMethod {
+			from := month.From.Format(monthLayout)
+			out.Months[i].From = &from
+		}
+	}
+
+	return out
+}
+
+func toBucketVersionAPI(method domain.Method) BudgetBucketVersion {
+	out := BudgetBucketVersion{
+		From:    method.From.Format(monthLayout),
+		Buckets: make([]BudgetBucket, len(method.Buckets)),
+	}
+
+	for i, b := range method.Buckets {
 		out.Buckets[i] = BudgetBucket{
 			Id:           b.ID,
 			Name:         b.Name,
@@ -163,20 +200,6 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 			TakesGoals:   b.TakesGoals,
 			AtLeast:      b.AtLeast,
 			CategoryIds:  b.Categories,
-		}
-	}
-
-	for i, month := range h.Months {
-		reals := make([]BudgetBucketReal, len(month.Real))
-		for j, real := range month.Real {
-			reals[j] = BudgetBucketReal{Id: h.Buckets[j].ID, Real: m(real)}
-		}
-
-		out.Months[i] = BudgetBucketMonth{
-			Month:    month.Month.Format(monthLayout),
-			Received: m(month.Received),
-			Outside:  m(month.Outside),
-			Buckets:  reals,
 		}
 	}
 
