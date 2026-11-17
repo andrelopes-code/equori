@@ -37,6 +37,20 @@ const oldCard = {
 };
 
 describe("CardsPage", () => {
+  it("reserves the cards while the accounts load", async () => {
+    await renderApp("/cards", {
+      fetch: api({
+        "GET /api/v1/accounts": () => new Promise<Response>(() => undefined),
+      }),
+    });
+
+    const faces = await screen.findAllByRole("group", {
+      name: catalogEn["cardFace.loading"],
+    });
+
+    expect(faces).toHaveLength(2);
+  });
+
   it("adds up the open statements, what is due and the free limit", async () => {
     await renderApp("/cards", { fetch: api() });
     const figures = await screen.findByRole("region", {

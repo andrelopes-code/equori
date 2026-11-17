@@ -27,6 +27,7 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery } from "@/features/accounts";
 import { cardTotals } from "@/features/cards/model/card-totals";
 import { CardTile } from "@/features/cards/card-tile/card-tile";
+import { CardTilePlaceholder } from "@/features/cards/card-tile/card-tile-placeholder";
 import { CardsFigures } from "@/features/cards/cards-figures/cards-figures";
 import styles from "@/features/cards/card-tile/card-tile.module.css";
 import { useCardStatements } from "@/features/cards/cards-figures/use-card-statements";
@@ -41,6 +42,9 @@ const newCard = {
   to: "/accounts/new",
   search: { kind: "credit_card" },
 } as const;
+
+// The tiles reserved while the accounts load: the count is unknown, so the smaller grid is drawn.
+const pendingTiles = [0, 1];
 
 export function CardsPage() {
   const t = useT();
@@ -139,8 +143,15 @@ export function CardsPage() {
             </Switch>
             <div
               className={styles.grid}
-              aria-busy={closedShown !== showClosed || undefined}
+              aria-busy={
+                accounts.isPending || closedShown !== showClosed || undefined
+              }
             >
+              {accounts.isPending &&
+                pendingTiles.map((index) => (
+                  <CardTilePlaceholder key={index} index={index} />
+                ))}
+
               {states.map((state, index) => (
                 <CardTile
                   key={state.account.id}
