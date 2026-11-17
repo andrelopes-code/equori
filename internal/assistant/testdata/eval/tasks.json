@@ -166,5 +166,23 @@
     "text": "Lança 250 no posto Shell hoje no cartão Itaú.",
     "confirm": false,
     "graders": "one proposal `record_transaction`; no suggestion"
+  },
+  {
+    "id": "E29",
+    "text": "Como emito um boleto para cobrar um cliente pelo equori?",
+    "confirm": false,
+    "graders": "the turn called `get_help`; the answer says the guide does not cover the question; no proposal"
+  },
+  {
+    "id": "E30",
+    "text": "Onde eu escolho o pote de uma categoria na divisão da renda?",
+    "confirm": false,
+    "graders": "the turn called `get_help`; the answer has a link to `/planning` or `/categories`; no proposal"
+  },
+  {
+    "id": "E31",
+    "text": "Se eu mudar a divisão da renda este mês, os meses anteriores mudam também?",
+    "confirm": false,
+    "graders": "the turn called `get_help`; the answer says the earlier months keep their split; no proposal"
   }
 ]

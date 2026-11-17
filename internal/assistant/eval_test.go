@@ -1329,6 +1329,39 @@ var graders = map[string]func(g *grading) string{
 
 		return ""
 	},
+	// E29 to E31 measure A244: the assistant states a step, a screen or a rule only when an article
+	// of get_help states it. E29 asks for a function equori does not have.
+	"E29": func(g *grading) string {
+		return first(
+			g.calledHelp(),
+			g.names("não cobre", "nao cobre", "does not cover", "não abrange", "não trata"),
+			g.noProposal(),
+		)
+	},
+	"E30": func(g *grading) string {
+		link := g.contains("](/planning")
+		if link != "" {
+			link = g.contains("](/categories")
+		}
+
+		return first(g.calledHelp(), link, g.noProposal())
+	},
+	"E31": func(g *grading) string {
+		return first(
+			g.calledHelp(),
+			g.names("mantêm", "mantém", "continuam", "permanecem", "não mudam", "keep"),
+			g.noProposal(),
+		)
+	},
+}
+
+// calledHelp reports whether the turn called get_help.
+func (g *grading) calledHelp() string {
+	if !slices.Contains(g.tools, "get_help") {
+		return fmt.Sprintf("tools %v, want get_help", g.tools)
+	}
+
+	return ""
 }
 
 func asSlice(v any) []any {
