@@ -8,6 +8,7 @@ type security struct {
 	start, drift, vol                  float64
 	terms                              map[string]any
 	accrual                            float64 // annual rate of a fixed income security; zero for a random walk
+	issuer                             string  // who owes a fixed income security; the Portfolio screen groups by it
 }
 
 var securities = []security{
@@ -197,6 +198,7 @@ var securities = []security{
 		typ:     "fixed_income",
 		subtype: "tesouro",
 		scale:   2,
+		issuer:  "Tesouro Nacional",
 		holder:  "xp",
 		start:   10050,
 		accrual: 0.142,
@@ -215,6 +217,7 @@ var securities = []security{
 		typ:     "fixed_income",
 		subtype: "cdb",
 		scale:   2,
+		issuer:  "Banco XP",
 		holder:  "xp",
 		start:   678,
 		accrual: 0.152,
@@ -233,6 +236,7 @@ var securities = []security{
 		typ:     "fixed_income",
 		subtype: "tesouro",
 		scale:   2,
+		issuer:  "Tesouro Nacional",
 		holder:  "xp",
 		start:   734,
 		drift:   0.12,

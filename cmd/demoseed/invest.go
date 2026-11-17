@@ -45,6 +45,15 @@ func (s *seeder) createSecurities() {
 			"instrument_exists",
 		) // instruments are shared by the whole instance, so a second seeding finds them.
 
+		if sec.issuer != "" {
+			// An instrument a previous seeding created keeps what it had, so the issuer is written as an edit.
+			s.do(http.MethodPatch, "/instruments/"+sec.code, map[string]any{
+				"name":    sec.name,
+				"subtype": sec.subtype,
+				"issuer":  map[string]any{"name": sec.issuer},
+			}, nil)
+		}
+
 		if sec.terms != nil {
 			s.do(http.MethodPut, "/instruments/"+sec.code+"/terms", sec.terms, nil)
 		}

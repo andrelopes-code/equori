@@ -315,6 +315,32 @@ func TestSeed(t *testing.T) {
 		}
 	})
 
+	t.Run("every fixed income holding names its issuer", func(t *testing.T) {
+		// The panel of the Portfolio screen groups the holdings by issuer; one without an issuer is a row with no name.
+		var out struct {
+			Issuers []struct {
+				Issuer string `json:"issuer"`
+			} `json:"issuers"`
+		}
+
+		s.do(http.MethodGet, "/issuer-exposure", nil, &out)
+
+		if s.err != nil {
+			t.Fatal(s.err)
+		}
+
+		got := make([]string, len(out.Issuers))
+		for i, issuer := range out.Issuers {
+			got[i] = issuer.Issuer
+		}
+
+		slices.Sort(got)
+
+		if want := []string{"Banco XP", "Tesouro Nacional"}; !slices.Equal(got, want) {
+			t.Errorf("issuers = %q, want %q", got, want)
+		}
+	})
+
 	t.Run("reimbursements and rule suggestions", func(t *testing.T) {
 		// Rafael repays half of some dinners as a reimbursement of the expense, and two corrections of one payee suggest a rule.
 		var out struct {
