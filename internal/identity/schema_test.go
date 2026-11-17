@@ -309,13 +309,17 @@ func TestEveryBooksColumnReachesBooks(t *testing.T) {
 	t.Parallel()
 	pool := pgtest.New(t)
 
-	for _, tt := range []struct{ name, query string }{
-		{"tables with user_id", `SELECT table_name FROM information_schema.columns WHERE table_schema = current_schema() AND column_name = 'user_id'`},
-		{"nullable books_id", `SELECT table_name FROM information_schema.columns WHERE table_schema = current_schema() AND column_name = 'books_id' AND is_nullable = 'YES'`},
-		{"books_id not reaching identity_books", unreachedBooksTables},
+	for _, tt := range []struct {
+		name  string
+		want  []string
+		query string
+	}{
+		{"tables with user_id", nil, `SELECT table_name FROM information_schema.columns WHERE table_schema = current_schema() AND column_name = 'user_id'`},
+		{"nullable books_id", optionalBooksTables, `SELECT table_name FROM information_schema.columns WHERE table_schema = current_schema() AND column_name = 'books_id' AND is_nullable = 'YES'`},
+		{"books_id not reaching identity_books", optionalBooksTables, unreachedBooksTables},
 	} {
-		if got := tableNames(t, pool, tt.query); len(got) != 0 {
-			t.Errorf("%s: %v; want none", tt.name, got)
+		if got := tableNames(t, pool, tt.query); !slices.Equal(got, tt.want) {
+			t.Errorf("%s: %v; want %v", tt.name, got, tt.want)
 		}
 	}
 }
@@ -337,11 +341,15 @@ func TestBooksReachDetectsMissingKey(t *testing.T) {
 		unreachedBooksTables,
 	); !slices.Equal(
 		got,
-		[]string{"ledger_settings"},
+		append([]string{"ledger_settings"}, optionalBooksTables...),
 	) {
-		t.Errorf("unreached tables = %v; want [ledger_settings]", got)
+		t.Errorf("unreached tables = %v; want ledger_settings and the optional ones", got)
 	}
 }
+
+// optionalBooksTables hold shared rows with a null books_id beside the rows a book owns: a
+// public instrument and the contract of a book (A236 FC1).
+var optionalBooksTables = []string{"marketdata_instrument"}
 
 // unreachedBooksTables lists the tables whose books_id has no chain of not-null foreign keys to identity_books (id).
 const unreachedBooksTables = `WITH RECURSIVE fk AS (
