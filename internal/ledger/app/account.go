@@ -240,40 +240,6 @@ func (s *Service) ListAccounts(
 	return s.repo.ListAccounts(ctx, booksID, p)
 }
 
-// ReopenAccount reopens the account and its closed ancestors, so an open account never has a
-// closed parent (A74).
-func (s *Service) ReopenAccount(
-	ctx context.Context,
-	booksID int64,
-	id uuid.UUID,
-) (domain.Account, error) {
-	var reopened domain.Account
-	err := s.repo.InTx(ctx, func(r Repository) error {
-		a, err := r.Account(ctx, booksID, id)
-		if err != nil {
-			return err
-		}
-
-		if a.SystemRole != "" {
-			return ErrSystemAccount
-		}
-
-		if a.ClosedOn == nil {
-			return &domain.FieldError{
-				Field:   "id",
-				Message: "account is open",
-				Err:     domain.ErrValidation,
-			}
-		}
-
-		reopened, err = reopenChain(ctx, r, booksID, id, a)
-
-		return err
-	})
-
-	return reopened, err
-}
-
 func (s *Service) checkParent(ctx context.Context, r Repository, a domain.Account) error {
 	if a.ParentID == uuid.Nil {
 		return nil
@@ -330,53 +296,6 @@ func subtreeOf(root domain.Account, all []domain.Account) []domain.Account {
 	}
 
 	return out
-}
-
-func reopenChain(
-	ctx context.Context,
-	r Repository,
-	booksID int64,
-	id uuid.UUID,
-	a domain.Account,
-) (domain.Account, error) {
-	var reopened domain.Account
-
-	for {
-		a.ClosedOn = nil
-
-		updated, err := r.UpdateAccount(ctx, a)
-		if err != nil {
-			return reopened, err
-		}
-
-		if updated.ID == id {
-			reopened = updated
-		}
-
-		if err := r.Publish(
-			ctx,
-			outbox.Event{
-				Type:        EventAccountReopened,
-				BooksID:     booksID,
-				AggregateID: a.ID.String(),
-				Payload:     accountEvent{a.ID},
-			},
-		); err != nil {
-			return reopened, err
-		}
-
-		if a.ParentID == uuid.Nil {
-			return reopened, nil
-		}
-
-		if a, err = r.Account(ctx, booksID, a.ParentID); err != nil {
-			return reopened, err
-		}
-
-		if a.ClosedOn == nil {
-			return reopened, nil
-		}
-	}
 }
 
 func checkParentEmpty(
