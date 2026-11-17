@@ -29,11 +29,14 @@ type chartAnswer struct {
 }
 
 type chartMeta struct {
-	Currency             string `json:"currency"`
-	ExchangeTimezoneName string `json:"exchangeTimezoneName"`
+	Currency             string  `json:"currency"`
+	ExchangeTimezoneName string  `json:"exchangeTimezoneName"`
+	RegularMarketPrice   float64 `json:"regularMarketPrice"`
+	RegularMarketTime    int64   `json:"regularMarketTime"`
 	CurrentTradingPeriod struct {
 		Regular struct {
-			End int64 `json:"end"`
+			Start int64 `json:"start"`
+			End   int64 `json:"end"`
 		} `json:"regular"`
 	} `json:"currentTradingPeriod"`
 }
