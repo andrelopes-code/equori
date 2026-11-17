@@ -142,13 +142,6 @@
     outline-offset: calc(var(--slotted-focus-ring-width) * -1);
   }
 
-  .placeholderHeader {
-    display: flex;
-    align-items: center;
-    gap: var(--slotted-space-5);
-    padding: var(--slotted-space-6) var(--slotted-space-7);
-  }
-
   /* A row has one height per state, so the status words of every row stand on the same lines. The
      heights, 3.75, 5.125 and 4.875 rem, fit two text lines, three, and the phone's two; none has
      a token. */
