@@ -32,6 +32,9 @@ type Price struct {
 	Date              time.Time
 	Value             money.Rate
 	Source            string
+	// At and Open state a current quote: its instant and whether its session runs (A248 CQ23).
+	At   *time.Time
+	Open bool
 }
 
 type Service struct {
@@ -200,6 +203,8 @@ func (s *Service) Positions(
 		return nil, err
 	}
 
+	s.warm(ctx, date, positionCodes(rows, base, in))
+
 	out := make([]Position, 0, len(rows))
 	for _, row := range rows {
 		p, err := s.position(ctx, booksID, row, base, date, in)
@@ -241,7 +246,7 @@ func (s *Service) position(
 		p.AverageCost = &avg
 	}
 
-	value, prices, err := s.md.Convert(ctx, p.Quantity, base, date)
+	value, prices, err := s.value(ctx, p.Quantity, base, date)
 	switch {
 	case errors.Is(err, ErrPriceMissing):
 	case err != nil:
@@ -255,7 +260,7 @@ func (s *Service) position(
 
 		if value.Currency() != in && in != "" {
 			var more []Price
-			if value, more, err = s.md.Convert(ctx, value, in, date); err != nil {
+			if value, more, err = s.value(ctx, value, in, date); err != nil {
 				return Position{}, fmt.Errorf("value the position of %s: %w", row.AccountID, err)
 			}
 

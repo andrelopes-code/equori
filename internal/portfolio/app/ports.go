@@ -86,6 +86,15 @@ type MarketData interface {
 		to money.Currency,
 		date time.Time,
 	) (money.Money, []Price, error)
+	// WarmCurrent asks for the current quotes of codes and of their quote currencies, and waits a
+	// bounded time; it never fails (A248 CQ18).
+	WarmCurrent(ctx context.Context, codes []money.Currency)
+	// ConvertCurrent values q in to now; it returns the errors of Convert (A248 CQ16).
+	ConvertCurrent(
+		ctx context.Context,
+		q money.Money,
+		to money.Currency,
+	) (money.Money, []Price, error)
 	// IndexRates returns the rates of a daily index in [from, to], oldest first: ErrUnknownIndex
 	// when the index is not enabled or has no rate, ErrIndexNotDaily when its period is not a day.
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]IndexRate, error)

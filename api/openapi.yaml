@@ -7737,6 +7737,13 @@ components:
         source:
           type: string
           pattern: "^[a-z0-9_]{2,40}$"
+        at:
+          type: string
+          format: date-time
+          description: Instant of a current quote; absent for a close (A248 CQ23).
+        open:
+          type: boolean
+          description: The session of a current quote is running; absent for a close.
     Money:
       type: object
       additionalProperties: false

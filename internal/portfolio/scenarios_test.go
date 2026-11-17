@@ -144,9 +144,11 @@ type positionOut struct {
 	AverageCost string         `json:"average_cost"`
 	MarketValue map[string]any `json:"market_value"`
 	Prices      []struct {
-		Value  string `json:"value"`
-		Date   string `json:"date"`
-		Source string `json:"source"`
+		Value  string  `json:"value"`
+		Date   string  `json:"date"`
+		Source string  `json:"source"`
+		At     *string `json:"at"`
+		Open   *bool   `json:"open"`
 	} `json:"prices"`
 }
 

@@ -1,0 +1,265 @@
+package portfolio_test
+
+import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/andrelopes-code/equori/internal/apitest"
+)
+
+const (
+	answerOK      = "ok"
+	answerFailing = "500"
+	answerLimited = "429"
+	answerBlocked = "blocked"
+)
+
+// wantPrice is the price of a position as the API states it; at is empty for a close.
+type wantPrice struct {
+	value, date, source, at string
+	open                    bool
+}
+
+var (
+	currentQuote = wantPrice{
+		value: "9.25", date: "2026-11-03", source: "yahoo_chart",
+		at: "2026-11-03T14:58:00Z", open: true,
+	}
+	lastClose = wantPrice{value: "9.1", date: "2026-10-30", source: "b3_consolidated"}
+)
+
+// S557: a position at today of the book takes the current quote (A248 CQ20 to CQ23).
+func TestS557PositionsTakeTheCurrentQuote(t *testing.T) {
+	t.Parallel()
+
+	f, _ := currentFixture(t, answerOK)
+
+	assertPosition(t, f.positions(t, "2026-11-03"), 92500, currentQuote)
+}
+
+// S558: a disabled, failing, rate limited or slow source leaves the close (A248 CQ18).
+func TestS558PositionsFallBackToTheClose(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		answer  string
+		disable bool
+		opts    []apitest.Option
+	}{
+		{name: "disabled", answer: answerOK, disable: true},
+		{name: "failing", answer: answerFailing},
+		{name: "rate limited", answer: answerLimited},
+		{
+			name:   "slow",
+			answer: answerBlocked,
+			opts:   []apitest.Option{apitest.CurrentBound(50 * time.Millisecond)},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f, _ := currentFixture(t, tt.answer, tt.opts...)
+			if tt.disable {
+				f.h.MustDo(
+					http.MethodPut,
+					"/api/v1/market-data/feeds/yahoo_chart",
+					map[string]any{"enabled": false},
+					http.StatusOK,
+					nil,
+				)
+			}
+
+			assertPosition(t, f.positions(t, "2026-11-03"), 91000, lastClose)
+		})
+	}
+}
+
+// S559: a manual price of today wins over the current quote (A248 CQ20).
+func TestS559AManualPriceOfTodayWins(t *testing.T) {
+	t.Parallel()
+
+	f, _ := currentFixture(t, answerOK)
+	recordMXRF11(t, f, "2026-11-03", "9.00", "manual")
+
+	want := wantPrice{value: "9", date: "2026-11-03", source: "manual"}
+	assertPosition(t, f.positions(t, "2026-11-03"), 90000, want)
+}
+
+// S560: a read at an earlier date takes the close and asks no source (A248 CQ20).
+func TestS560PositionsAtAnEarlierDate(t *testing.T) {
+	t.Parallel()
+
+	f, srv := currentFixture(t, answerOK)
+
+	assertPosition(t, f.positions(t, "2026-11-02"), 91000, lastClose)
+
+	if got := srv.requested(); len(got) != 0 {
+		t.Errorf("paths requested = %v, want none", got)
+	}
+}
+
+// S565: the warning of a late close survives a fresh current quote (A248 CQ22).
+func TestS565AWarningSurvivesACurrentQuote(t *testing.T) {
+	t.Parallel()
+
+	f, _ := currentFixtureWithClose(
+		t,
+		answerOK,
+		"2026-10-20",
+		"9.02",
+		[]string{"b3_consolidated", "yahoo_chart"},
+	)
+	f.h.Dispatch()
+
+	var out struct {
+		Items    []positionOut     `json:"items"`
+		Warnings []quoteWarningOut `json:"quote_warnings"`
+	}
+	f.h.MustDo(http.MethodGet, "/api/v1/positions?date=2026-11-03", nil, http.StatusOK, &out)
+
+	assertPosition(t, out.Items, 92500, currentQuote)
+
+	want := []quoteWarningOut{{Instrument: "MXRF11", Last: ptr("2026-10-20")}}
+	if !reflect.DeepEqual(out.Warnings, want) {
+		t.Errorf("quote_warnings = %+v, want %+v", out.Warnings, want)
+	}
+}
+
+type currentServer struct {
+	mu    sync.Mutex
+	paths []string
+}
+
+func (s *currentServer) requested() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return append([]string(nil), s.paths...)
+}
+
+func currentFixture(
+	t *testing.T,
+	answer string,
+	opts ...apitest.Option,
+) (fixture, *currentServer) {
+	t.Helper()
+
+	return currentFixtureWithClose(
+		t,
+		answer,
+		"2026-10-30",
+		"9.10",
+		[]string{"yahoo_chart"},
+		opts...,
+	)
+}
+
+func currentFixtureWithClose(
+	t *testing.T,
+	answer, closeDate, closeValue string,
+	feeds []string,
+	opts ...apitest.Option,
+) (fixture, *currentServer) {
+	t.Helper()
+
+	var (
+		rec     = &currentServer{}
+		release = make(chan struct{})
+		once    sync.Once
+	)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec.mu.Lock()
+		rec.paths = append(rec.paths, r.URL.Path)
+		rec.mu.Unlock()
+
+		switch answer {
+		case answerBlocked:
+			select {
+			case <-release:
+			case <-r.Context().Done():
+			}
+		case answerFailing:
+			w.WriteHeader(http.StatusInternalServerError)
+		case answerLimited:
+			w.WriteHeader(http.StatusTooManyRequests)
+		default:
+			if r.URL.Path == "/yahoo/MXRF11.SA" {
+				_, _ = w.Write([]byte(currentBody("BRL", "America/Sao_Paulo", "9.25")))
+				return
+			}
+
+			http.NotFound(w, r)
+		}
+	}))
+
+	t.Cleanup(srv.Close)
+	t.Cleanup(func() { once.Do(func() { close(release) }) })
+
+	all := append([]apitest.Option{
+		apitest.Clock(func() time.Time { return time.Date(2026, 11, 3, 15, 13, 0, 0, time.UTC) }),
+		apitest.PriceFeeds(feeds, map[string]string{"yahoo_chart": srv.URL + "/yahoo"}),
+	}, opts...)
+
+	f := newFixture(t, all...)
+	f.trade(t, "buy", "2026-10-05", 100, "10.05", 0)
+	f.h.Dispatch()
+	recordMXRF11(t, f, closeDate, closeValue, "b3_consolidated")
+
+	return f, rec
+}
+
+// currentBody is the chart answer of a session that opened at 13:00 and closes at 20:00 UTC on
+// 2026-11-03, with the last trade at 14:58 UTC.
+func currentBody(currency, zone, price string) string {
+	return fmt.Sprintf(
+		`{"chart":{"result":[{"meta":{"currency":"%s","exchangeTimezoneName":"%s",`+
+			`"regularMarketPrice":%s,"regularMarketTime":1793717880,`+
+			`"currentTradingPeriod":{"regular":{"start":1793710800,"end":1793736000}}},`+
+			`"timestamp":[],"indicators":{"quote":[{}]}}]}}`,
+		currency, zone, price,
+	)
+}
+
+func assertPosition(t *testing.T, ps []positionOut, amount float64, want wantPrice) {
+	t.Helper()
+
+	if len(ps) != 1 {
+		t.Fatalf("positions = %+v, want one", ps)
+	}
+
+	mv := ps[0].MarketValue
+	if mv["amount"] != amount || mv["currency"] != "BRL" {
+		t.Errorf("market_value = %+v, want %v BRL", mv, amount)
+	}
+
+	if len(ps[0].Prices) != 1 {
+		t.Fatalf("prices = %+v, want one", ps[0].Prices)
+	}
+
+	p := ps[0].Prices[0]
+	got := wantPrice{value: p.Value, date: p.Date, source: p.Source}
+
+	if p.At != nil {
+		got.at = *p.At
+	}
+
+	if p.Open != nil {
+		got.open = *p.Open
+	}
+
+	if want.at == "" && (p.At != nil || p.Open != nil) {
+		t.Errorf("close has at = %v, open = %v, want neither", p.At, p.Open)
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("price = %+v, want %+v", got, want)
+	}
+}

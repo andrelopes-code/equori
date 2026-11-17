@@ -113,6 +113,10 @@ func positionItems(ps []app.Position) []Position {
 					Date:            date(x.Date),
 					Value:           x.Value.Reduced().String(),
 					Source:          x.Source,
+					At:              x.At,
+				}
+				if x.At != nil {
+					prices[j].Open = &x.Open
 				}
 			}
 

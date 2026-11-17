@@ -4466,6 +4466,13 @@ export interface components {
             date: string;
             value: components["schemas"]["Rate"];
             source: string;
+            /**
+             * Format: date-time
+             * @description Instant of a current quote; absent for a close (A248 CQ23).
+             */
+            at?: string;
+            /** @description The session of a current quote is running; absent for a close. */
+            open?: boolean;
         };
         Money: {
             /**

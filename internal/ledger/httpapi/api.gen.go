@@ -2168,10 +2168,15 @@ type PostingInputStatus string
 
 // Price defines model for Price.
 type Price struct {
-	Date            openapi_types.Date `json:"date"`
-	Instrument      string             `json:"instrument"`
-	QuoteInstrument string             `json:"quote_instrument"`
-	Source          string             `json:"source"`
+	// At Instant of a current quote; absent for a close (A248 CQ23).
+	At         *time.Time         `json:"at,omitempty"`
+	Date       openapi_types.Date `json:"date"`
+	Instrument string             `json:"instrument"`
+
+	// Open The session of a current quote is running; absent for a close.
+	Open            *bool  `json:"open,omitempty"`
+	QuoteInstrument string `json:"quote_instrument"`
+	Source          string `json:"source"`
 
 	// Value Positive exact decimal with at most 12 decimals (ADR 005).
 	//
