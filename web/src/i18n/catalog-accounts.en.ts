@@ -1090,6 +1090,7 @@ export const accountsEn = {
   "cardFacePreview.brand": "Brand",
   "cardFacePreview.sizes": "Sizes",
   "cardFacePreview.stack": "Stack",
+  "cardFacePreview.tickets": "Tickets",
   "accountCard.signal.checking": "spent in 7 days",
   "accountCard.signal.credit": "spent this week",
   "accountCard.signal.savings": "latest deposits",

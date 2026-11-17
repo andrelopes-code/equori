@@ -1087,6 +1087,7 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
   "cardFacePreview.brand": "Marca do emissor",
   "cardFacePreview.sizes": "Tamanhos",
   "cardFacePreview.stack": "Pilha",
+  "cardFacePreview.tickets": "Réguas",
   "accountCard.signal.checking": "gastos em 7 dias",
   "accountCard.signal.credit": "gastos na semana",
   "accountCard.signal.savings": "últimos aportes",

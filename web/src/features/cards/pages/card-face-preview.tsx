@@ -3,6 +3,7 @@ import { Stack } from "@slotted/react/stack";
 import { useState } from "react";
 
 import { PreviewSection } from "@/features/cards/pages/card-face-preview/preview-section";
+import { PreviewTickets } from "@/features/cards/pages/card-face-preview/preview-tickets";
 import {
   sections,
   stackFaces,
@@ -44,6 +45,8 @@ export function CardFacePreview() {
               />
             </div>
           </PreviewSection>
+
+          <PreviewTickets />
         </Stack>
       </PageBody>
     </Page>
