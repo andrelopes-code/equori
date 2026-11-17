@@ -7,6 +7,8 @@ import {
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
+import { Button } from "@slotted/react/button";
+import { Inline } from "@slotted/react/inline";
 import { Skeleton } from "@slotted/react/skeleton";
 import { Text } from "@slotted/react/typography";
 import { useQuery } from "@tanstack/react-query";
@@ -22,10 +24,12 @@ import {
   trackMonth,
   trackVerdict,
 } from "@/features/planning/income-split/bucket-history";
+import { BucketEntriesDrawer } from "@/features/planning/income-split/bucket-entries-drawer";
 import { BucketHistoryAction } from "@/features/planning/income-split/bucket-history-action";
 import { BucketTrackLegend } from "@/features/planning/income-split/bucket-track-legend";
 import { BucketTrackRow } from "@/features/planning/income-split/bucket-track-row";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
+import { useBucketEntries } from "@/features/planning/income-split/use-bucket-entries";
 import { useMonthNames } from "@/features/planning/income-split/use-month-names";
 import { useShareText } from "@/features/planning/income-split/use-share-text";
 import { useScale } from "@/features/setup";
@@ -50,6 +54,7 @@ export function BucketTrack({ month }: BucketTrackProps) {
   const scale = useScale();
   const fmt = useMoneyFormat();
   const share = useShareText();
+  const drawer = useBucketEntries();
   const names = useMonthNames(history.data?.months.map((m) => m.month) ?? []);
 
   if (history.isError)
@@ -116,18 +121,45 @@ export function BucketTrack({ month }: BucketTrackProps) {
               monthNames={names.short}
               money={money}
               share={share}
+              onOpen={(id) => {
+                drawer.open(id, month);
+              }}
             />
           ))}
         </div>
         {outside > 0 && (
-          <Text size="sm" tone="muted">
-            {t("track.outside", { amount: money(outside), month: monthName })}
-          </Text>
+          <Inline align="center" gap={3}>
+            <Text size="sm" tone="muted">
+              {t("track.outside", { amount: money(outside), month: monthName })}
+            </Text>
+            <Button
+              size="sm"
+              variant="ghost"
+              tone="secondary"
+              onClick={() => {
+                drawer.open("outside", month);
+              }}
+            >
+              {t("track.entries.see")}
+            </Button>
+          </Inline>
         )}
         <BucketTrackLegend
           changed={track.rows.some((r) => r.months.some((c) => c.changed))}
         />
       </SectionBody>
+
+      {drawer.target !== undefined && (
+        <BucketEntriesDrawer
+          target={drawer.target}
+          rows={track.rows}
+          months={history.data.months.map((m) => m.month)}
+          categories={entries}
+          money={money}
+          onMonth={drawer.setMonth}
+          onClose={drawer.close}
+        />
+      )}
     </Section>
   );
 }

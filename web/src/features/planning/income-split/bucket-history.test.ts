@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { components } from "@/api/schema.gen";
 import {
+  cellStatus,
   targetKey,
   trackMonth,
   trackVerdict,
@@ -286,5 +287,43 @@ describe("trackVerdict", () => {
     ).toEqual({
       key: "track.verdict.one",
     });
+  });
+});
+
+describe("cellStatus", () => {
+  const cell = (target: number | undefined, real: number) => ({
+    month: "2026-10",
+    target,
+    real,
+    kept: undefined,
+    state: "none" as const,
+    changed: false,
+  });
+
+  it("reads a cell the way the row reads its month", () => {
+    expect(cellStatus("ceiling", cell(3000, 2800))).toEqual({
+      kind: "left",
+      amount: 200,
+    });
+    expect(cellStatus("ceiling", cell(3000, 3200))).toEqual({
+      kind: "over",
+      amount: 200,
+    });
+    expect(cellStatus("savings", cell(2000, 1800))).toEqual({
+      kind: "short",
+      amount: 200,
+    });
+    expect(cellStatus("floor", cell(2000, 2500))).toEqual({
+      kind: "reached",
+      amount: 2500,
+    });
+    expect(cellStatus("goals", cell(2000, 500))).toEqual({
+      kind: "toGo",
+      amount: 1500,
+    });
+  });
+
+  it("has no status without a target", () => {
+    expect(cellStatus("ceiling", cell(undefined, 100))).toBeUndefined();
   });
 });

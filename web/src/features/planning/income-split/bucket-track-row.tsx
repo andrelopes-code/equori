@@ -1,3 +1,5 @@
+import { Button, IconButton } from "@slotted/react/button";
+import { Glyph, Icon } from "@slotted/react/icon";
 import { Text } from "@slotted/react/typography";
 
 import { BucketGauge } from "@/features/planning/income-split/bucket-gauge";
@@ -13,6 +15,7 @@ interface BucketTrackRowProps {
   monthNames: readonly string[];
   money: (amount: number) => string;
   share: (bp: number) => string;
+  onOpen: (id: string) => void;
 }
 
 // One bucket on one line: its name and target share, the gauge of the month, what is left or
@@ -23,6 +26,7 @@ export function BucketTrackRow({
   monthNames,
   money,
   share,
+  onOpen,
 }: BucketTrackRowProps) {
   const t = useT();
   const missed =
@@ -41,9 +45,16 @@ export function BucketTrackRow({
   return (
     <div className={styles.row}>
       <div className={styles.stack}>
-        <Text size="sm" weight="medium">
+        <Button
+          size="sm"
+          variant="ghost"
+          tone="secondary"
+          onClick={() => {
+            onOpen(row.id);
+          }}
+        >
           {row.name}
-        </Text>
+        </Button>
         <Text size="xs" tone="muted">
           {t(targetKey(row.measure), { share: share(row.targetBp) })}
         </Text>
@@ -75,6 +86,20 @@ export function BucketTrackRow({
       </div>
 
       <BucketMonthStrip cells={row.months} shown={month} names={monthNames} />
+
+      <IconButton
+        size="sm"
+        variant="ghost"
+        tone="secondary"
+        aria-label={t("track.entries.open", { name: row.name })}
+        onClick={() => {
+          onOpen(row.id);
+        }}
+      >
+        <Icon>
+          <Glyph name="chevron-right" />
+        </Icon>
+      </IconButton>
     </div>
   );
 }

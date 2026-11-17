@@ -82,7 +82,7 @@ export function trackMonth(
       real: cell.real,
       shareBp:
         received > 0 ? Math.round((cell.real * 10000) / received) : undefined,
-      status: statusOf(measureOf(b), cell),
+      status: cellStatus(measureOf(b), cell),
       months,
     };
   });
@@ -147,7 +147,9 @@ function keptOf(
   return measure === "ceiling" ? real <= target : real >= target;
 }
 
-function statusOf(
+// What a bucket left, spent over, saved or still owes in the month of a cell; undefined without a
+// target.
+export function cellStatus(
   measure: BucketMeasure,
   cell: TrackCell,
 ): TrackStatus | undefined {

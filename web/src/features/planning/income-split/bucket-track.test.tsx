@@ -1,5 +1,6 @@
 import { screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { money } from "@/testing/account-api";
@@ -138,5 +139,76 @@ describe("Income split in Track", () => {
     expect(
       screen.queryByRole("heading", { name: catalogEn["buckets.title"] }),
     ).toBeNull();
+  });
+});
+
+describe("Entries of a bucket", () => {
+  const entries = {
+    currency: "BRL",
+    total: money(3000),
+    entries: [
+      ["t1", "Market", "2026-10-03", 1200],
+      ["t2", "", "2026-10-09", 800],
+    ]
+      .map(([id, payee, date, amount]) => ({
+        transaction_id: `e0000000-0000-4000-8000-00000000000${String(id).slice(1)}`,
+        kind: "savings",
+        date,
+        description: `${String(id)} description`,
+        ...(payee === "" ? {} : { payee }),
+        amount: money(Number(amount)),
+      }))
+      .concat([
+        {
+          transaction_id: "e0000000-0000-4000-8000-000000000003",
+          kind: "expense",
+          date: "2026-10-11",
+          description: "Rent",
+          amount: money(1000),
+        },
+      ] as never),
+  };
+
+  function setup() {
+    const urls: string[] = [];
+    const fetch = budgetApi({
+      "GET /api/v1/budget-buckets/history": () => json(200, history),
+      "GET /api/v1/budget-buckets/entries": (req) => {
+        urls.push(new URL(req.url).search);
+        return json(200, entries);
+      },
+    });
+    return { fetch, urls };
+  }
+
+  it("opens the entries of a bucket from its name", async () => {
+    const { fetch, urls } = setup();
+    await renderApp(october, { fetch, today });
+    await section();
+
+    await userEvent.click(screen.getByRole("button", { name: "Needs" }));
+    const drawer = await screen.findByRole("dialog");
+
+    expect(await within(drawer).findByText("Savings")).toBeVisible();
+    expect(within(drawer).getByText("R$20.00")).toBeVisible();
+    expect(within(drawer).getByText("2 entries")).toBeVisible();
+    expect(within(drawer).getByText("R$30.00")).toBeVisible();
+    expect(within(drawer).getByText("R$200.00 over")).toBeVisible();
+    expect(urls).toEqual([`?month=2026-10&bucket=${buckets[0]?.id ?? ""}`]);
+  });
+
+  it("opens the spending outside the split without a bucket", async () => {
+    const { fetch, urls } = setup();
+    await renderApp(october, { fetch, today });
+    await section();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["track.entries.see"] }),
+    );
+    await screen.findByRole("dialog");
+
+    await vi.waitFor(() => {
+      expect(urls).toEqual(["?month=2026-10"]);
+    });
   });
 });

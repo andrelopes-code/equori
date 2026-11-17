@@ -304,6 +304,31 @@ export function budgetBucketHistoryQuery(api: Client<paths>, month: string) {
   });
 }
 
+// The entries that sum to the real amount of a bucket in month; without bucket, those of the
+// spending outside the split (income buckets A243).
+export function budgetBucketEntriesQuery(
+  api: Client<paths>,
+  month: string,
+  bucket: string | undefined,
+) {
+  return queryOptions({
+    queryKey: [
+      "planning",
+      "bucket-entries",
+      month,
+      bucket ?? "outside",
+    ] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/budget-buckets/entries", {
+          params: {
+            query: { month, ...(bucket === undefined ? {} : { bucket }) },
+          },
+        }),
+      ),
+  });
+}
+
 // Replaces the book's income bucket method; an empty list removes it (income buckets A229).
 export function useSaveBudgetBuckets() {
   const api = useApi();
