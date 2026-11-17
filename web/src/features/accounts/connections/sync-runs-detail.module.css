@@ -11,7 +11,7 @@
     min-inline-size: 0;
   }
 
-  @media (min-width: 1024px) {
+  @container slotted-page (min-width: 1024px) {
     .split {
       /* Two fifths for the runs, three fifths for the lines. */
       grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);

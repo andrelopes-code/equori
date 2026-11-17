@@ -1,5 +1,5 @@
 @layer app {
-  /* The panel keeps one measure and the canvas takes the rest; under 60 rem of viewport the canvas
+  /* The panel keeps one measure and the canvas takes the rest; under 60 rem of page the canvas
      stands above the panel (spec A7). The panel's measure has no token. */
   .workspace {
     display: flex;
@@ -7,7 +7,7 @@
     gap: var(--slotted-space-8);
   }
 
-  @media (min-width: 60rem) {
+  @container slotted-page (min-width: 60rem) {
     .workspace {
       display: grid;
       align-items: start;

@@ -16,11 +16,8 @@ import styles from "@/features/transactions/pages/transactions-page.module.css";
 import type { CategorizeActions } from "@/features/transactions/selection/use-categorize-actions";
 import type { TransactionList } from "@/features/transactions/transactions-grid/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
-import {
-  compactQuery,
-  useMediaQuery,
-  wideQuery,
-} from "@/ui/runtime/use-media-query";
+import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
+import { usePageWide } from "@/ui/runtime/use-page-wide";
 
 interface TransactionsListingProps {
   list: TransactionList;
@@ -53,8 +50,8 @@ export function TransactionsListing({
   const pageSearch = useSearch({ from: "/_authed/transactions" });
   const scale = useScale();
   const compact = useMediaQuery(compactQuery);
-  const wide = useMediaQuery(wideQuery);
-  // The pane opens beside the list on a desktop; narrower, the record is its own page.
+  const wide = usePageWide();
+  // The pane opens beside the list on a desktop-wide page; narrower, the record is its own page.
   const selected = wide ? pageSearch.selected : undefined;
   const closePane = () => {
     void navigate({ search: search, replace: true });

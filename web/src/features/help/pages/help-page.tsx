@@ -17,15 +17,15 @@ import styles from "@/features/help/pages/help-page.module.css";
 import { useHelpPage } from "@/features/help/model/use-help-page";
 import { useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/navigation/page-back";
-import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
+import { usePageWide } from "@/ui/runtime/use-page-wide";
 
-// One help page: its title and kind in the header; from 1024 px the pages of the help beside
-// it, as the settings page lays its panes.
+// One help page: its title and kind in the header; from 1024 px of page the pages of the help
+// beside it, as the settings page lays its panes.
 export function HelpPage() {
   const t = useT();
   const { page } = useParams({ from: "/_authed/help/$page" });
   const query = useHelpPage(page);
-  const wide = useMediaQuery(wideQuery);
+  const wide = usePageWide();
 
   const text = query.data == null ? null : splitHelpPage(query.data);
   const kind = helpPages.find((p) => p.id === page)?.kind;

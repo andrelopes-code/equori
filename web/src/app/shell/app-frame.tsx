@@ -30,6 +30,7 @@ import {
 } from "@/app/shell/frame-state/use-entry";
 import { useNavPreference } from "@/app/shell/desktop-nav/use-nav-preference";
 import { useExtent } from "@/app/shell/frame-state/use-extent";
+import { useRegionWide } from "@/app/shell/frame-state/use-region-wide";
 import { useScrollState } from "@/app/shell/frame-state/use-scroll-state";
 import { useWide } from "@/app/shell/phone-gate/use-wide";
 import { AssistantPanel, useBeside } from "@/features/assistant";
@@ -38,6 +39,7 @@ import { useCaptureQueueNotice } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
 import { ProfileLocale } from "@/i18n/profile-locale";
 import { applyDensity, readDensity } from "@/theme/density";
+import { PageRegionWide } from "@/ui/runtime/use-page-wide";
 
 const stickyFooter = "var(--slotted-page-sticky-bottom, 0px)";
 
@@ -55,6 +57,7 @@ export function AppFrame() {
   const [navOpen, setNavOpen] = useNavPreference();
   const palette = useRef<CommandPaletteHandle>(null);
   const scroll = useScrollState(main);
+  const regionWide = useRegionWide(main);
   const [barExtent, barRef] = useExtent();
   const [dockExtent, dockRef] = useExtent();
   const [assistantOpen, setAssistantOpen] = useState(false);
@@ -153,15 +156,17 @@ export function AppFrame() {
         <ReadOnlyNotice />
 
         {/* 32 px beside a column, 16 px on a phone. */}
-        <PageDefaultsProvider inset={wide ? 9 : 6}>
-          <PageHeaderDefaultsProvider variant="plain" material>
-            <SectionDefaultsProvider size="sm">
-              <PhoneGate>
-                <Outlet />
-              </PhoneGate>
-            </SectionDefaultsProvider>
-          </PageHeaderDefaultsProvider>
-        </PageDefaultsProvider>
+        <PageRegionWide value={regionWide}>
+          <PageDefaultsProvider inset={wide ? 9 : 6}>
+            <PageHeaderDefaultsProvider variant="plain" material>
+              <SectionDefaultsProvider size="sm">
+                <PhoneGate>
+                  <Outlet />
+                </PhoneGate>
+              </SectionDefaultsProvider>
+            </PageHeaderDefaultsProvider>
+          </PageDefaultsProvider>
+        </PageRegionWide>
       </AppShellMain>
       {wide || editing ? null : (
         // A div: the dock is navigation, not the page's contentinfo.

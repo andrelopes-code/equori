@@ -15,7 +15,7 @@
     min-inline-size: 0;
   }
 
-  @media (min-width: 48rem) {
+  @container slotted-page (min-width: 48rem) {
     .pair {
       grid-template-columns: 1fr 1fr;
     }

@@ -5,9 +5,9 @@
     gap: var(--slotted-space-8);
   }
 
-  /* 1024 px is the guidelines' desktop size class (ui/use-media-query wideQuery); a media
-     query cannot read a custom property, so the number is written here. */
-  @media (min-width: 1024px) {
+  /* 1024 px of the page is the guidelines' desktop size class (ui/use-media-query wideQuery); a
+     container query cannot read a custom property, so the number is written here. */
+  @container slotted-page (min-width: 1024px) {
     .layout {
       grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
       align-items: start;

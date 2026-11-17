@@ -20,7 +20,7 @@
     grid-area: results;
   }
 
-  @media (min-width: 1024px) {
+  @container slotted-page (min-width: 1024px) {
     .work {
       grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
       grid-template-rows: auto 1fr;
@@ -51,7 +51,7 @@
     gap: var(--slotted-space-6);
   }
 
-  @media (min-width: 1024px) {
+  @container slotted-page (min-width: 1024px) {
     .pair {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       align-items: start;

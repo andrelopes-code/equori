@@ -9,7 +9,7 @@
     grid-template-columns: 14rem minmax(0, 56rem);
   }
 
-  @media (max-width: 1023px) {
+  @container slotted-page (max-width: 1023px) {
     .layout {
       gap: var(--slotted-space-7);
       grid-template-columns: 12rem minmax(0, 1fr);

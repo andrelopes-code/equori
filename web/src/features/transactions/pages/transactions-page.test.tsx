@@ -217,6 +217,29 @@ describe("TransactionsPage", () => {
     ).toBeNull();
   });
 
+  // The assistant pane beside the page leaves it a tablet's width on a desktop viewport: the
+  // record is its own page there, not a pane beside the list.
+  it("opens no pane while the page region is narrower than 1024 px", async () => {
+    vi.stubGlobal("ResizeObserver", regionObserver(676));
+
+    try {
+      await renderApp(`/transactions?selected=${String(groceries.id)}`, {
+        width: 1280,
+        fetch: api({ queries: [] }),
+        today: "2026-10-17",
+      });
+      await screen.findByText("Year end");
+
+      expect(
+        screen.queryByRole("separator", {
+          name: catalogEn["transactions.paneResize"],
+        }),
+      ).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   // A refresh reads the whole page again, so the header's bar waits on it, not the button.
   it("shows a refresh on its button and the page header's bar and keeps the rows", async () => {
     const seen: Seen = { queries: [] };
@@ -602,3 +625,25 @@ describe("TransactionsPage voided filter", () => {
     expect(screen.queryByRole("button", { name: label })).toBeNull();
   });
 });
+
+// A ResizeObserver that reports the shell's page region at the given width and nothing else:
+// jsdom lays nothing out.
+function regionObserver(width: number): typeof ResizeObserver {
+  return class extends ResizeObserver {
+    private readonly notify: () => void;
+
+    constructor(callback: ResizeObserverCallback) {
+      super(callback);
+      this.notify = () => {
+        callback([], this);
+      };
+    }
+
+    override observe(element: Element) {
+      if (!element.matches("main[data-part='main']")) return;
+
+      element.getBoundingClientRect = () => new DOMRect(0, 0, width, 600);
+      this.notify();
+    }
+  };
+}

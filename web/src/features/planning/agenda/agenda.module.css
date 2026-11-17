@@ -15,7 +15,7 @@
   }
 
   /* Below 1200 px the rows of the list need the whole width: the second column moves under. */
-  @media (max-width: 1199px) {
+  @container slotted-page (max-width: 1199px) {
     .columns {
       grid-template-columns: minmax(0, 1fr);
     }

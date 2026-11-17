@@ -8,14 +8,16 @@
   }
 
   /* Below 1200 px the ranking needs the whole width: the second column moves under. */
-  @media (max-width: 1199px) {
+  @container slotted-page (max-width: 1199px) {
     .columns {
       grid-template-columns: minmax(0, 1fr);
     }
   }
 
+  /* One track that may shrink below its content: the table fits the column instead of widening it. */
   .column {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--slotted-space-6);
     align-content: start;
     min-inline-size: 0;

@@ -8,7 +8,7 @@
     grid-template-columns: 14rem minmax(0, 1fr);
   }
 
-  @media (max-width: 1023px) {
+  @container slotted-page (max-width: 1023px) {
     .layout {
       gap: var(--slotted-space-7);
       grid-template-columns: 12rem minmax(0, 1fr);
@@ -34,7 +34,7 @@
   /* The list follows the text, not the page's far edge. The text's track is 44 rem, the reading
      measure of the body's type; the measure token counts in ch, which a grid track reads in the
      article's own font. */
-  @media (min-width: 1280px) {
+  @container slotted-page (min-width: 1280px) {
     .article {
       grid-template-columns: minmax(0, 44rem) 13rem;
       justify-content: start;

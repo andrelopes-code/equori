@@ -88,7 +88,7 @@
     inline-size: var(--slotted-border-width-medium);
   }
 
-  @media (max-width: 47.99rem) {
+  @container slotted-page (max-width: 47.99rem) {
     .list {
       grid-template-columns: minmax(0, 6rem) 1fr auto;
     }
