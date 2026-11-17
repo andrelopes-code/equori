@@ -23,6 +23,7 @@ type Source struct {
 	client  *http.Client
 	baseURL string
 	targets *targets
+	now     func() time.Time
 }
 
 // target is what Fetch requests for one code: the symbol and the quote currency of its answer.
@@ -38,8 +39,13 @@ type targets struct {
 }
 
 // New returns a Source that reads the charts under baseURL.
-func New(c *http.Client, baseURL string) Source {
-	return Source{client: c, baseURL: baseURL, targets: &targets{byID: map[money.Currency]target{}}}
+func New(c *http.Client, baseURL string, now func() time.Time) Source {
+	return Source{
+		client:  c,
+		baseURL: baseURL,
+		targets: &targets{byID: map[money.Currency]target{}},
+		now:     now,
+	}
 }
 
 func (Source) ID() string { return id }

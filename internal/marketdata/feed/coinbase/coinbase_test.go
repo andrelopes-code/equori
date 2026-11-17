@@ -27,7 +27,7 @@ const (
 func TestCodes(t *testing.T) {
 	t.Parallel()
 
-	src := coinbase.New(http.DefaultClient, "")
+	src := coinbase.New(http.DefaultClient, "", at("2026-12-01T00:00:00Z"))
 
 	tests := []struct {
 		name string
@@ -145,7 +145,7 @@ func TestFetch(t *testing.T) {
 			)
 			t.Cleanup(srv.Close)
 
-			src := coinbase.New(srv.Client(), srv.URL)
+			src := coinbase.New(srv.Client(), srv.URL, at("2026-12-01T00:00:00Z"))
 			src.Codes([]feed.Instrument{
 				{Code: "BTC", Type: "crypto", QuoteCurrency: "BRL"},
 				{Code: "ETH", Type: "crypto", QuoteCurrency: "USD"},
@@ -214,7 +214,7 @@ func TestSearch(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	src := coinbase.New(srv.Client(), srv.URL)
+	src := coinbase.New(srv.Client(), srv.URL, at("2026-12-01T00:00:00Z"))
 
 	got, err := src.Search(t.Context(), "bit", 20)
 	if err != nil {
@@ -254,7 +254,17 @@ func TestSearchFailsOnAServerError(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	if _, err := coinbase.New(srv.Client(), srv.URL).Search(t.Context(), "bit", 20); err == nil {
+	if _, err := coinbase.New(srv.Client(), srv.URL, at("2026-12-01T00:00:00Z")).
+		Search(t.Context(), "bit", 20); err == nil {
 		t.Fatal("Search succeeded on a 500")
 	}
+}
+
+func at(s string) func() time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+
+	return func() time.Time { return t }
 }

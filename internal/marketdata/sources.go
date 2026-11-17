@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
@@ -28,7 +29,7 @@ type sourceEntry struct {
 	// requests prices (A222 MQ6).
 	historyYears int
 	// build receives the URL of every source, the override or the default.
-	build func(hc *http.Client, urls map[string]string) feed.Source
+	build func(hc *http.Client, urls map[string]string, now func() time.Time) feed.Source
 }
 
 func sourceEntries() []sourceEntry {
@@ -39,7 +40,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: 5,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return b3cotahist.New(hc, urls["b3_cotahist"])
 			},
 		},
@@ -49,7 +50,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: 5,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return b3consolidated.New(
 					hc,
 					urls["b3_consolidated"],
@@ -63,7 +64,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: indexHistoryYears,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return bcbptax.New(hc, urls["bcb_ptax"])
 			},
 		},
@@ -73,7 +74,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: indexHistoryYears,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return ecb.New(hc, urls["ecb"])
 			},
 		},
@@ -83,7 +84,7 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     true,
 			historyYears: indexHistoryYears,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return tesourodireto.New(hc, urls["tesouro_direto"])
 			},
 		},
@@ -93,7 +94,7 @@ func sourceEntries() []sourceEntry {
 			lag:          10,
 			official:     true,
 			historyYears: 5,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
+			build: func(hc *http.Client, urls map[string]string, _ func() time.Time) feed.Source {
 				return cvmfunds.New(hc, urls["cvm_funds"])
 			},
 		},
@@ -103,8 +104,8 @@ func sourceEntries() []sourceEntry {
 			lag:          2,
 			official:     true,
 			historyYears: indexHistoryYears,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
-				return coinbase.New(hc, urls["coinbase"])
+			build: func(hc *http.Client, urls map[string]string, now func() time.Time) feed.Source {
+				return coinbase.New(hc, urls["coinbase"], now)
 			},
 		},
 		{
@@ -113,8 +114,8 @@ func sourceEntries() []sourceEntry {
 			lag:          5,
 			official:     false,
 			historyYears: indexHistoryYears,
-			build: func(hc *http.Client, urls map[string]string) feed.Source {
-				return yahoochart.New(hc, urls["yahoo_chart"])
+			build: func(hc *http.Client, urls map[string]string, now func() time.Time) feed.Source {
+				return yahoochart.New(hc, urls["yahoo_chart"], now)
 			},
 		},
 	}
@@ -148,7 +149,12 @@ func SourceIDs() []string {
 }
 
 // NewSources builds the sources named by ids; urls overrides a source's default base URL.
-func NewSources(ids []string, urls map[string]string, hc *http.Client) ([]feed.Source, error) {
+func NewSources(
+	ids []string,
+	urls map[string]string,
+	hc *http.Client,
+	now func() time.Time,
+) ([]feed.Source, error) {
 	byID := make(map[string]sourceEntry)
 	for _, e := range sourceEntries() {
 		byID[e.id] = e
@@ -169,7 +175,7 @@ func NewSources(ids []string, urls map[string]string, hc *http.Client) ([]feed.S
 			return nil, fmt.Errorf("unknown price feed %q", id)
 		}
 
-		out = append(out, e.build(hc, all))
+		out = append(out, e.build(hc, all, now))
 	}
 
 	return out, nil

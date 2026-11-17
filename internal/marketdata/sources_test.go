@@ -22,6 +22,7 @@ func TestNewSources(t *testing.T) {
 		[]string{"nope"},
 		nil,
 		hc,
+		at("2026-12-01T00:00:00Z"),
 	); err == nil ||
 		err.Error() != `unknown price feed "nope"` {
 		t.Fatalf("err = %v", err)
@@ -31,6 +32,7 @@ func TestNewSources(t *testing.T) {
 		[]string{"bcb_ptax"},
 		map[string]string{"bcb_ptax": srv.URL + "/ptax"},
 		hc,
+		at("2026-12-01T00:00:00Z"),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -62,4 +64,13 @@ func TestSourceIDs(t *testing.T) {
 	); got != "b3_cotahist,b3_consolidated,bcb_ptax,ecb,tesouro_direto,cvm_funds,coinbase,yahoo_chart" {
 		t.Fatalf("ids = %s", got)
 	}
+}
+
+func at(s string) func() time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+
+	return func() time.Time { return t }
 }

@@ -24,6 +24,7 @@ type Source struct {
 	baseURL string
 	quotes  *quotes
 	list    *feed.ListCache
+	now     func() time.Time
 }
 
 // quotes maps a code to its quote currency (plan 2 D12).
@@ -33,12 +34,13 @@ type quotes struct {
 }
 
 // New returns a Source that reads the products under baseURL.
-func New(c *http.Client, baseURL string) Source {
+func New(c *http.Client, baseURL string, now func() time.Time) Source {
 	return Source{
 		client:  c,
 		baseURL: baseURL,
 		quotes:  &quotes{byID: map[money.Currency]money.Currency{}},
-		list:    feed.NewListCache(time.Now),
+		list:    feed.NewListCache(now),
+		now:     now,
 	}
 }
 

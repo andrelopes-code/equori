@@ -102,7 +102,7 @@ func TestSymbol(t *testing.T) {
 		},
 	}
 
-	src := yahoochart.New(http.DefaultClient, "")
+	src := yahoochart.New(http.DefaultClient, "", at("2026-12-01T00:00:00Z"))
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestSymbol(t *testing.T) {
 func TestCodes(t *testing.T) {
 	t.Parallel()
 
-	src := yahoochart.New(http.DefaultClient, "")
+	src := yahoochart.New(http.DefaultClient, "", at("2026-12-01T00:00:00Z"))
 
 	got := src.Codes([]feed.Instrument{
 		{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
@@ -201,7 +201,7 @@ func TestFetch(t *testing.T) {
 			)
 			t.Cleanup(srv.Close)
 
-			src := yahoochart.New(srv.Client(), srv.URL)
+			src := yahoochart.New(srv.Client(), srv.URL, at("2026-12-01T00:00:00Z"))
 			src.Codes(
 				[]feed.Instrument{
 					{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
@@ -259,7 +259,7 @@ func TestFetchRateLimited(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	src := yahoochart.New(srv.Client(), srv.URL)
+	src := yahoochart.New(srv.Client(), srv.URL, at("2026-12-01T00:00:00Z"))
 	src.Codes([]feed.Instrument{
 		{Code: "AAPL", Type: "stock", Exchange: "XNAS", QuoteCurrency: "USD"},
 		{Code: "PETR4", Type: "stock", Exchange: "BVMF", QuoteCurrency: "BRL"},
@@ -315,7 +315,11 @@ func TestSearch(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	src := yahoochart.New(srv.Client(), srv.URL+"/yahoo/v8/finance/chart")
+	src := yahoochart.New(
+		srv.Client(),
+		srv.URL+"/yahoo/v8/finance/chart",
+		at("2026-12-01T00:00:00Z"),
+	)
 
 	got, err := src.Search(t.Context(), "vw ce", 20)
 	if err != nil {
@@ -393,8 +397,13 @@ func TestSearchTypesTheListingsOfTheB3ByName(t *testing.T) {
 	}))
 	t.Cleanup(srv.Close)
 
-	got, err := yahoochart.New(srv.Client(), srv.URL+"/yahoo/v8/finance/chart").
-		Search(t.Context(), "11", 20)
+	src := yahoochart.New(
+		srv.Client(),
+		srv.URL+"/yahoo/v8/finance/chart",
+		at("2026-12-01T00:00:00Z"),
+	)
+
+	got, err := src.Search(t.Context(), "11", 20)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,4 +416,13 @@ func TestSearchTypesTheListingsOfTheB3ByName(t *testing.T) {
 	if want := []string{"BOVA11 etf", "MXRF11 reit", "PETR4 stock"}; !slices.Equal(types, want) {
 		t.Fatalf("types = %v, want %v", types, want)
 	}
+}
+
+func at(s string) func() time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+
+	return func() time.Time { return t }
 }

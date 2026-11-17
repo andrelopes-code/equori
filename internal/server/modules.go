@@ -302,7 +302,7 @@ func newFeedConfig(
 	feedClient := marketdata.FeedClient(version)
 	// Config.PriceFeeds and Config.IndexFeeds are validated here and seed the stored feed settings
 	// (ADR 025 F2, F4); production passes none (BK25).
-	if _, err := marketdata.NewSources(cfg.PriceFeeds, nil, feedClient); err != nil {
+	if _, err := marketdata.NewSources(cfg.PriceFeeds, nil, feedClient, clk.Now); err != nil {
 		return marketdata.FeedConfig{}, err
 	}
 
@@ -310,7 +310,7 @@ func newFeedConfig(
 		return marketdata.FeedConfig{}, err
 	}
 
-	sources, err := marketdata.NewSources(marketdata.SourceIDs(), cfg.FeedURLs, feedClient)
+	sources, err := marketdata.NewSources(marketdata.SourceIDs(), cfg.FeedURLs, feedClient, clk.Now)
 	if err != nil {
 		return marketdata.FeedConfig{}, err
 	}
