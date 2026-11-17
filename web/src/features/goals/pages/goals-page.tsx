@@ -26,18 +26,15 @@ import {
   scheduledContribution,
 } from "@/features/goals/model/goal-contribution";
 import { goalsQuery, schedulesQuery } from "@/features/planning";
-import { goalState } from "@/features/goals/goal-card/goal-state";
 import { GoalCard } from "@/features/goals/goal-card/goal-card";
 import { DeleteGoalDialog } from "@/features/goals/goal-dialog/delete-goal-dialog";
 import { GoalDialog } from "@/features/goals/goal-dialog/goal-dialog";
 import type { Goal } from "@/features/goals/goal-card/goal-line";
+import { GoalsFigures } from "@/features/goals/goals-figures/goals-figures";
 import styles from "@/features/goals/pages/goals.module.css";
 import { useScale } from "@/features/setup";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
-import { FigureCard } from "@/ui/display/figure-card";
-import { FigureGrid } from "@/ui/display/figure-grid";
 import { HeaderAction } from "@/ui/navigation/header-action";
 import { HeaderProgress } from "@/ui/navigation/header-progress";
 import { QueryError } from "@/ui/feedback/query-error";
@@ -48,7 +45,6 @@ import { useRefresh } from "@/ui/feedback/use-refresh";
 // the month it completes.
 export function GoalsPage() {
   const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const today = useToday();
   const queryClient = useQueryClient();
@@ -60,12 +56,6 @@ export function GoalsPage() {
   const [editing, setEditing] = useState<Goal | null>(null);
   const [deleting, setDeleting] = useState<Goal | null>(null);
   const items = goals.data ?? [];
-  const states = items.map((g) => goalState(g, today));
-  const reached = states.filter((s) => s === "reached").length;
-  const nextDue = items
-    .filter((g, i) => states[i] === "open")
-    .map((g) => g.due_on)
-    .sort()[0];
   const names = new Map((accounts.data ?? []).map((a) => [a.id, a.name]));
   const loading = goals.isPending || scale === null;
   const refresh = useRefresh(() =>
@@ -130,32 +120,8 @@ export function GoalsPage() {
           </ResultState>
         ) : (
           <div className={styles.page}>
-            <FigureGrid label={t("goals.figures")}>
-              <FigureCard
-                label={t("goals.figure.count")}
-                value={loading ? undefined : String(items.length)}
-                note={t("goals.countNote")}
-                loading={loading}
-              />
-              <FigureCard
-                label={t("goals.figure.reached")}
-                value={loading ? undefined : String(reached)}
-                note={t("goals.reachedNote")}
-                loading={loading}
-              />
-              <FigureCard
-                label={t("goals.figure.next")}
-                value={
-                  loading
-                    ? undefined
-                    : nextDue === undefined
-                      ? t("goals.nothingDue")
-                      : formatDate(nextDue, locale)
-                }
-                note={t("goals.nextNote")}
-                loading={loading}
-              />
-            </FigureGrid>
+            <GoalsFigures goals={items} loading={loading} />
+
             <div className={styles.grid}>
               {scale !== null &&
                 items.map((goal) => (
