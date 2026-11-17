@@ -33,30 +33,25 @@ import {
   balancesQuery,
   connectionsListQuery,
 } from "@/features/accounts/api";
-import { BalanceGroupList } from "@/features/accounts/balance-sheet/balance-group-list";
-import { BalanceGroupTable } from "@/features/accounts/balance-sheet/balance-group-table";
 import { groupBalances } from "@/features/accounts/balance-sheet/balance-groups";
 import { sides } from "@/features/accounts/balance-sheet/balance-sheet";
 import styles from "@/features/accounts/balance-sheet/balance-sheet.module.css";
+import { SheetGroups } from "@/features/accounts/balance-sheet/sheet-groups";
 import { BalanceSheetFigures } from "@/features/accounts/balance-sheet/balance-sheet-figures";
 import {
   arrangeSheet,
   type GroupBy,
   type Order,
 } from "@/features/accounts/balance-sheet/sheet-layout";
-import { sectionLabel } from "@/features/accounts/balance-sheet/sheet-section-label";
 import { SheetControls } from "@/features/accounts/balance-sheet/sheet-controls";
 import { useDifferingAccounts } from "@/features/accounts/balance-sheet/use-differing-accounts";
 import { useSheetPreference } from "@/features/accounts/balance-sheet/use-sheet-preference";
-import { useSheetView } from "@/features/accounts/balance-sheet/use-sheet-view";
 import { institutionsQuery, settingsQuery, useScale } from "@/features/setup";
 import { formatDate, shiftDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { HeaderAction } from "@/ui/navigation/header-action";
 import { QueryError } from "@/ui/feedback/query-error";
-import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
-import { usePageWide } from "@/ui/runtime/use-page-wide";
 import { useServed } from "@/ui/navigation/use-served";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
@@ -71,9 +66,7 @@ export function AccountsPage() {
   const today = useToday();
   const navigate = useNavigate();
   const served = useServed();
-  const compact = useMediaQuery(compactQuery);
   // The tables keep a measure of up to 62rem: a page under the desktop width lists rows.
-  const pageWide = usePageWide();
   const search = useSearch({ from: "/_authed/accounts/" });
   const date = search.date ?? today;
   const basis = search.basis ?? "booked";
@@ -137,7 +130,6 @@ export function AccountsPage() {
           }),
     [groups, base, group, order, locale, byInstitution, differing],
   );
-  const sheetView = useSheetView();
   const pending = (connections.data?.items ?? []).reduce(
     (sum, c) => sum + c.accounts.filter((a) => a.state === "pending").length,
     0,
@@ -322,28 +314,13 @@ export function AccountsPage() {
                 </Switch>
               </Inline>
             </div>
-            {ready && sections !== undefined && (
-              <div className={styles.groups}>
-                {sections.map((section) => {
-                  const props = {
-                    section,
-                    label: sectionLabel(section, byInstitution, t),
-                    view: sheetView.view,
-                    institutions: byInstitution,
-                    showInstitution: group !== "institution",
-                    date: shown.date,
-                    scale,
-                    onToggleParent: sheetView.toggleParent,
-                    onTogglePositions: sheetView.togglePositions,
-                  };
-                  return compact || !pageWide ? (
-                    <BalanceGroupList key={section.key} {...props} />
-                  ) : (
-                    <BalanceGroupTable key={section.key} {...props} />
-                  );
-                })}
-              </div>
-            )}
+            <SheetGroups
+              sections={ready ? sections : undefined}
+              institutions={byInstitution}
+              showInstitution={group !== "institution"}
+              date={shown.date}
+              scale={scale}
+            />
           </Stack>
         )}
       </PageBody>

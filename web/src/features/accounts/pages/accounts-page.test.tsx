@@ -125,6 +125,24 @@ describe("AccountsPage", () => {
     },
   );
 
+  it("reserves the account rows while the balances load", async () => {
+    await renderApp("/accounts", {
+      fetch: api([], {
+        "GET /api/v1/balances": () => new Promise<Response>(() => undefined),
+      }),
+    });
+
+    await waitFor(() => {
+      expect(
+        document.querySelectorAll('[aria-busy="true"] tbody tr'),
+      ).toHaveLength(4);
+    });
+
+    const row = document.querySelector('[aria-busy="true"] tbody tr');
+
+    expect(row?.querySelectorAll('[data-ui="skeleton"]')).toHaveLength(5);
+  });
+
   it("compares with the balances of 30 days earlier", async () => {
     const queries: URLSearchParams[] = [];
     await renderApp("/accounts", { fetch: api(queries) });
