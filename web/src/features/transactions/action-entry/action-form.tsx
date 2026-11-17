@@ -97,7 +97,7 @@ export function ActionForm({
       </Field>
 
       <Field required invalid={errors.date !== undefined}>
-        <FieldLabel>{t("action.date")}</FieldLabel>
+        <FieldLabel>{t(unitTax ? "entry.date" : "action.date")}</FieldLabel>
         <DateInput
           name="date"
           value={draft.date}
