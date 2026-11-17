@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="pt-BR" data-slotted-theme="equori" data-slotted-scheme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Painel de renda fixa — conceito A</title>
+<link rel="stylesheet" href="../../../../web/src/theme/equori.gen.css">
+<style>
+  /* Every measure, color and type step reads a token of the equori theme. Each block is named
+     after the component that draws it in the implementation. */
+  body { margin: 0; background: var(--slotted-surface); color: var(--slotted-text);
+    font-family: var(--slotted-font-family-sans); font-size: var(--slotted-font-size-md);
+    line-height: var(--slotted-line-height-md); }
+  .page { max-width: 72rem; margin: 0 auto; padding: var(--slotted-space-8) var(--slotted-space-6) var(--slotted-space-12); }
+  .tools { display: flex; gap: var(--slotted-space-4); margin-bottom: var(--slotted-space-8); }
+  .tools button { font: inherit; font-size: var(--slotted-font-size-sm); padding: var(--slotted-space-3) var(--slotted-space-5);
+    border-radius: var(--slotted-radius-md); border: var(--slotted-border-width-thin, 1px) solid var(--slotted-border-subtle);
+    background: var(--slotted-surface-raised); color: var(--slotted-text); cursor: pointer; }
+
+  /* Section size="lg" ground="surface" */
+  .section { background: var(--slotted-section-surface, var(--slotted-panel-surface, var(--slotted-surface-raised)));
+    border: var(--slotted-border-width-thin, 1px) solid var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    box-shadow: var(--slotted-panel-shadow, none);
+    border-radius: var(--slotted-section-radius, var(--slotted-radius-lg)); padding: var(--slotted-section-inset, var(--slotted-space-7)); }
+  .heading { margin: 0; font-size: var(--slotted-font-size-sm); font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: 0.06em; text-transform: uppercase; }
+  .description { margin: var(--slotted-space-1) 0 0; color: var(--slotted-text-muted); font-size: var(--slotted-font-size-sm); }
+  .body { display: grid; gap: var(--slotted-space-9); margin-top: var(--slotted-space-7); }
+
+  /* nested Section size="sm": mixed-case heading in the muted tone */
+  .sub-heading { margin: 0; font-size: var(--slotted-font-size-md); font-weight: var(--slotted-font-weight-semibold); color: var(--slotted-text-muted); }
+  .sub-description { margin: var(--slotted-space-1) 0 var(--slotted-space-5); color: var(--slotted-text-muted); font-size: var(--slotted-font-size-sm); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--slotted-space-9); }
+  .pair > *, .body > * { min-width: 0; }
+
+  /* Text weight="semibold" tone="danger": the verdict of the panel */
+  .verdict { margin: 0; font-size: var(--slotted-font-size-xl); font-weight: var(--slotted-font-weight-semibold); color: var(--slotted-tone-danger-text); }
+  .verdict-detail { margin: var(--slotted-space-1) 0 0; color: var(--slotted-text-muted); font-size: var(--slotted-font-size-sm); }
+
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .muted { color: var(--slotted-text-muted); }
+
+  /* own element: share bar of the return kinds, one data slot and one texture per kind */
+  .s1 { --c: var(--slotted-data-1); } .s2 { --c: var(--slotted-data-2); } .s3 { --c: var(--slotted-data-3); }
+  .fill { background-color: var(--c); }
+  .s2.fill { background-image: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in oklch, var(--slotted-surface) 45%, transparent) 3px 5px); }
+  .s3.fill { background-image: repeating-linear-gradient(90deg, transparent 0 4px, color-mix(in oklch, var(--slotted-surface) 40%, transparent) 4px 6px); }
+  .sharebar { display: flex; gap: var(--slotted-space-1); block-size: var(--slotted-space-5); border-radius: var(--slotted-radius-sm); overflow: hidden; margin-bottom: var(--slotted-space-5); }
+  .key { display: inline-block; inline-size: var(--slotted-space-5); block-size: var(--slotted-space-5); border-radius: var(--slotted-radius-xs); margin-inline-end: var(--slotted-space-4); vertical-align: -0.1em; }
+
+  /* DescriptionList variant="ruled", values end-aligned */
+  .dl { margin: 0; }
+  .dl-row { display: flex; align-items: center; justify-content: space-between; gap: var(--slotted-space-6);
+    min-block-size: var(--slotted-target-comfortable, 2.25rem); border-bottom: var(--slotted-border-width-thin, 1px) solid var(--slotted-border-subtle); }
+  .dl-row:last-child { border-bottom: 0; }
+  .dl-term { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1 1 auto; }
+  .dl-value { flex: none; display: flex; align-items: center; gap: var(--slotted-space-4); }
+
+  /* own element: maturity ladder, one row per year */
+  .ladder { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--slotted-space-3) var(--slotted-space-5); }
+  .ladder .bar { block-size: var(--slotted-space-4); border-radius: var(--slotted-radius-xs); }
+
+  /* own element: timeline of the next 90 days */
+  .timeline { position: relative; block-size: var(--slotted-space-11); margin: var(--slotted-space-4) 0 var(--slotted-space-5); }
+  .axis { position: absolute; inset-inline: 0; inset-block-start: var(--slotted-space-6); block-size: var(--slotted-border-width-thin, 1px); background: var(--slotted-border-subtle); }
+  .today { position: absolute; inset-block: var(--slotted-space-3) var(--slotted-space-7); inline-size: var(--slotted-border-width-medium, 2px); background: var(--slotted-text); }
+  .dot { position: absolute; inset-block-start: calc(var(--slotted-space-6) - var(--slotted-space-3)); inline-size: var(--slotted-space-5); block-size: var(--slotted-space-5);
+    margin-inline-start: calc(var(--slotted-space-5) / -2); border-radius: var(--slotted-radius-full); border: var(--slotted-border-width-medium, 2px) solid var(--slotted-section-surface, var(--slotted-surface-raised)); }
+  .dot.due { background: var(--slotted-tone-danger-text); }
+  .date { position: absolute; inset-block-start: var(--slotted-space-8); transform: translateX(-50%); font-size: var(--slotted-font-size-xs); color: var(--slotted-text-muted); white-space: nowrap; }
+
+  /* Tag tone="danger" size="sm" */
+  .tag { font-size: var(--slotted-font-size-xs); padding: 0 var(--slotted-space-4); border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-danger-surface); color: var(--slotted-tone-danger-text); white-space: nowrap; }
+  a { color: var(--slotted-tone-accent-text); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* own element: exposure per issuer against the guarantee limit */
+  .expo { display: grid; grid-template-columns: minmax(0, 9rem) 1fr auto; align-items: center; gap: var(--slotted-space-4) var(--slotted-space-5); }
+  .expo .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track { position: relative; block-size: var(--slotted-space-5); background: var(--slotted-surface-sunken); border-radius: var(--slotted-radius-xs); }
+  .track > span { position: absolute; inset-block: 0; }
+  .covered { background: var(--slotted-tone-success-text); border-radius: var(--slotted-radius-xs) 0 0 var(--slotted-radius-xs); }
+  .excess { background: var(--slotted-tone-danger-text); }
+  .uncovered { background: color-mix(in oklch, var(--slotted-text-muted) 45%, transparent); }
+  .limit { inset-block: calc(var(--slotted-space-2) * -1) !important; inline-size: var(--slotted-border-width-medium, 2px); background: var(--slotted-text); }
+  .legend { display: flex; flex-wrap: wrap; gap: var(--slotted-space-3) var(--slotted-space-6); margin-top: var(--slotted-space-5); font-size: var(--slotted-font-size-xs); color: var(--slotted-text-muted); }
+  .danger { color: var(--slotted-tone-danger-text); }
+
+  @media (max-width: 47.99rem) {
+    .page { padding-inline: var(--slotted-space-6); }
+    .section { padding: var(--slotted-space-6); }
+    .pair { grid-template-columns: 1fr; }
+    .expo { grid-template-columns: minmax(0, 6rem) 1fr auto; }
+  }
+  @media (forced-colors: active) {
+    .fill, .bar, .dot, .covered, .excess, .uncovered, .limit, .today { background: CanvasText; forced-color-adjust: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="tools"><button id="scheme" aria-pressed="false">Escuro</button></div>
+
+  <section class="section" aria-labelledby="fi">
+    <h2 class="heading" id="fi">Renda fixa</h2>
+    <p class="description">R$ 412.300,00 em 6 contratos · em 18/11/2026</p>
+
+    <div class="body">
+      <div>
+        <p class="verdict">R$ 50.000,00 acima do FGC no Banco X</p>
+        <p class="verdict-detail">1 pagamento a registrar · vence em 15/12: R$ 13.420,00</p>
+      </div>
+
+      <div class="pair">
+        <section aria-labelledby="kind">
+          <h3 class="sub-heading" id="kind">Como rende</h3>
+          <p class="sub-description">Parte do valor por tipo de rentabilidade</p>
+          <div class="sharebar" aria-hidden="true">
+            <span class="fill s1" style="flex:330000"></span><span class="fill s2" style="flex:70000"></span><span class="fill s3" style="flex:12300"></span>
+          </div>
+          <dl class="dl">
+            <div class="dl-row"><dt class="dl-term"><i class="key fill s1"></i>Taxa (CDI)</dt><dd class="dl-value num" style="margin:0">R$ 330.000,00 · 80%</dd></div>
+            <div class="dl-row"><dt class="dl-term"><i class="key fill s2"></i>Inflação + taxa</dt><dd class="dl-value num" style="margin:0">R$ 70.000,00 · 17%</dd></div>
+            <div class="dl-row"><dt class="dl-term"><i class="key fill s3"></i>Prefixado</dt><dd class="dl-value num" style="margin:0">R$ 12.300,00 · 3%</dd></div>
+          </dl>
+        </section>
+
+        <section aria-labelledby="ladder">
+          <h3 class="sub-heading" id="ladder">Quando volta</h3>
+          <p class="sub-description">Valor por ano de vencimento</p>
+          <div class="ladder">
+            <span class="num">2026</span><span class="bar fill s3" style="width:6.2%"></span><span class="num">R$ 12.300,00</span>
+            <span class="num">2027</span><span class="bar fill s1" style="width:50%"></span><span class="num">R$ 100.000,00</span>
+            <span class="num">2028</span><span class="bar fill s1" style="width:100%"></span><span class="num">R$ 200.000,00</span>
+            <span class="num">2030</span><span class="bar fill s1" style="width:15%"></span><span class="num">R$ 30.000,00</span>
+            <span class="num">2032</span><span class="bar fill s2" style="width:25%"></span><span class="num">R$ 50.000,00</span>
+            <span class="num">2035</span><span class="bar fill s2" style="width:10%"></span><span class="num">R$ 20.000,00</span>
+          </div>
+        </section>
+      </div>
+
+      <section aria-labelledby="next">
+        <h3 class="sub-heading" id="next">Próximos 90 dias</h3>
+        <p class="sub-description">Pagamentos esperados até 16/02/2027</p>
+        <div class="timeline" aria-hidden="true">
+          <div class="axis"></div>
+          <span class="dot due" style="left:2%"></span><span class="date" style="left:2%">10/11</span>
+          <span class="today" style="left:9%"></span>
+          <span class="dot fill s2" style="left:20%"></span><span class="date" style="left:20%">02/12</span>
+          <span class="dot fill s3" style="left:34%"></span><span class="date" style="left:34%">15/12</span>
+          <span class="dot fill s1" style="left:56%"></span><span class="date" style="left:56%">05/01</span>
+          <span class="dot fill s2" style="left:83%"></span><span class="date" style="left:83%">01/02</span>
+        </div>
+        <dl class="dl">
+          <div class="dl-row"><dt class="dl-term"><a href="#">Juros · LF Banco X · 10/11</a></dt><dd class="dl-value num" style="margin:0"><span class="tag">A registrar</span>R$ 820,00</dd></div>
+          <div class="dl-row"><dt class="dl-term">Juros · Debênture Y · 02/12</dt><dd class="dl-value num" style="margin:0">R$ 1.580,00</dd></div>
+          <div class="dl-row"><dt class="dl-term">Vencimento · CDB Banco Z · 15/12</dt><dd class="dl-value num" style="margin:0">R$ 13.420,00</dd></div>
+          <div class="dl-row"><dt class="dl-term">Juros · CDB Banco X · 05/01</dt><dd class="dl-value num" style="margin:0">R$ 606,83</dd></div>
+          <div class="dl-row"><dt class="dl-term">Juros · Tesouro IPCA+ 2035 · 01/02</dt><dd class="dl-value muted" style="margin:0">Taxa não publicada</dd></div>
+        </dl>
+      </section>
+
+      <section aria-labelledby="issuers">
+        <h3 class="sub-heading" id="issuers">Por emissor e garantia</h3>
+        <p class="sub-description" style="margin-bottom:0">FGC: R$ 250.000,00 por emissor</p>
+        <p class="sub-description">Usados R$ 312.300,00 de R$ 1.000.000,00 em 4 anos</p>
+        <div class="expo">
+          <span class="name">Banco X</span>
+          <div class="track"><span class="covered" style="left:0;width:68%"></span><span class="excess" style="left:68%;width:13.6%"></span><span class="uncovered" style="left:81.6%;width:8.2%"></span><span class="limit" style="left:68%"></span></div>
+          <span class="num danger">+R$ 50.000,00</span>
+          <span class="name">Debênture Y</span>
+          <div class="track"><span class="uncovered" style="left:0;width:13.6%"></span><span class="limit" style="left:68%"></span></div>
+          <span class="num muted">Sem garantia</span>
+          <span class="name">Tesouro</span>
+          <div class="track"><span class="uncovered" style="left:0;width:5.4%"></span><span class="limit" style="left:68%"></span></div>
+          <span class="num muted">Sem garantia</span>
+          <span class="name">Banco Z</span>
+          <div class="track"><span class="covered" style="left:0;width:3.3%"></span><span class="limit" style="left:68%"></span></div>
+          <span class="num">Coberto</span>
+        </div>
+        <div class="legend">
+          <span><i class="key" style="background:var(--slotted-tone-success-text)"></i>Coberto</span>
+          <span><i class="key" style="background:var(--slotted-tone-danger-text)"></i>Acima do limite</span>
+          <span><i class="key uncovered"></i>Sem garantia</span>
+          <span><i class="key" style="background:var(--slotted-text);inline-size:var(--slotted-border-width-medium,2px)"></i>Limite por emissor</span>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>
+<script>
+  const b = document.getElementById('scheme');
+  const set = (dark) => { document.documentElement.dataset.slottedScheme = dark ? 'dark' : 'light'; b.textContent = dark ? 'Claro' : 'Escuro'; b.setAttribute('aria-pressed', String(dark)); };
+  b.addEventListener('click', () => set(document.documentElement.dataset.slottedScheme !== 'dark'));
+  if (new URLSearchParams(location.search).get('s') === 'dark') set(true);
+</script>
+</body>
+</html>
