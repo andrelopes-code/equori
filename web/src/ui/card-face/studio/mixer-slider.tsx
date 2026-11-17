@@ -14,6 +14,7 @@ interface MixerSliderProps {
   onMove: (axis: Axis, value: number) => void;
 }
 
+// Workaround for Slotted issue #133: the slider family has no track that shows a gradient scale.
 // Families read: slider, color-picker. The slider family styles its track from the theme and has
 // no token or documented part that takes a gradient, so the track of each axis, painted with the
 // colours it produces, is a native range input with the app's own track and thumb.
