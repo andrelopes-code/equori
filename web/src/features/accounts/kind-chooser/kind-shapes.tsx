@@ -1,5 +1,6 @@
 import type { ArtShape } from "@/features/accounts/kind-chooser/kind-art";
 import styles from "@/features/accounts/kind-chooser/kind-art.module.css";
+import { cx } from "@/ui/cx";
 
 interface KindShapesProps {
   shapes: readonly ArtShape[];
@@ -7,7 +8,7 @@ interface KindShapesProps {
 
 export function KindShapes({ shapes }: KindShapesProps) {
   return shapes.map((shape, index) => {
-    const className = shape.paint.map((paint) => styles[paint]).join(" ");
+    const className = cx(...shape.paint.map((paint) => styles[paint]));
 
     if (shape.el === "rect") {
       return (

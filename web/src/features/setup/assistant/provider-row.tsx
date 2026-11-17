@@ -10,6 +10,7 @@ import styles from "@/features/setup/assistant/provider-row.module.css";
 import { catalogLabel } from "@/features/setup/model/catalog-label";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface ProviderRowProps {
   provider: ModelProvider;
@@ -52,7 +53,7 @@ export function ProviderRow({ provider, onEdit, onModels }: ProviderRowProps) {
   }
 
   return (
-    <li className={[card.row, styles.row].join(" ")}>
+    <li className={cx(card.row, styles.row)}>
       <div className={card.cell}>
         <Text size="md" weight="medium" truncate>
           {provider.name}

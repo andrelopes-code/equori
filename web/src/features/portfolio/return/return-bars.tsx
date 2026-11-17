@@ -17,6 +17,7 @@ import type {
   ReturnChip,
   ReturnComparison,
 } from "@/features/portfolio/model/return-summary";
+import { cx } from "@/ui/cx";
 
 const chipGlyph = {
   up: "arrow-up",
@@ -107,7 +108,7 @@ export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
                     />
                     <div
                       data-bar={bar.key}
-                      className={[styles.bar, styles[bar.key]].join(" ")}
+                      className={cx(styles.bar, styles[bar.key])}
                       style={{
                         insetInlineStart: `${String(geometry.start)}%`,
                         inlineSize: `${String(geometry.size)}%`,
@@ -117,10 +118,10 @@ export function ReturnBars({ comparisons, axis }: ReturnBarsProps) {
                       size="sm"
                       weight="semibold"
                       numeric="tabular"
-                      className={[
+                      className={cx(
                         styles.value,
                         bar.bp < 0 ? styles.before : styles.after,
-                      ].join(" ")}
+                      )}
                       style={{ [geometry.anchor]: `${String(geometry.edge)}%` }}
                     >
                       {formatBasisPoints(bar.bp, tag)}

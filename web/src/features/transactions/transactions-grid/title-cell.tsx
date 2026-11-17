@@ -8,6 +8,7 @@ import { CategorizationMark } from "@/features/transactions/transactions-grid/ca
 import styles from "@/features/transactions/transactions-grid/transactions-grid.module.css";
 import type { ListRow } from "@/features/transactions/transactions-grid/use-transaction-list";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 // The row's mark is its category's; the payee leads, and the line under it says what else the
 // reader needs to place the entry: the description when it adds to the payee, and the accounts.
@@ -51,9 +52,7 @@ export function TitleCell({
         <span className={styles.line}>
           <Text
             weight="medium"
-            className={[styles.cut, row.voided ? styles.struck : undefined]
-              .filter(Boolean)
-              .join(" ")}
+            className={cx(styles.cut, row.voided ? styles.struck : undefined)}
           >
             {title}
           </Text>

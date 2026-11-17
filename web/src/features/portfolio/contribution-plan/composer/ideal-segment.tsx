@@ -4,6 +4,7 @@ import { slotClass } from "@/features/portfolio/contribution-plan/composer/slot-
 import { useSegmentLabel } from "@/features/portfolio/contribution-plan/composer/use-segment-label";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import { useAppLocale } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface IdealSegmentProps {
   group: CompositionGroup;
@@ -25,7 +26,7 @@ export function IdealSegment({ group, barWidth }: IdealSegmentProps) {
   return (
     <div
       data-segment=""
-      className={[styles.segment, slotClass(group.colour)].join(" ")}
+      className={cx(styles.segment, slotClass(group.colour))}
       style={{ flexGrow: group.targetBp }}
     >
       <span data-measure="room" ref={room} className={styles.room}>

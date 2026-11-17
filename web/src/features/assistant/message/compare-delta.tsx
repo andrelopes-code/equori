@@ -3,6 +3,7 @@ import { Text } from "@slotted/react/typography";
 import styles from "@/features/assistant/message/answer-blocks.module.css";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface CompareDeltaProps {
   first: number;
@@ -26,11 +27,7 @@ export function CompareDelta({ first, second }: CompareDeltaProps) {
   const key = deltaKey(first, second);
 
   return (
-    <Text
-      size="xs"
-      weight="semibold"
-      className={[styles.delta, tone[key]].join(" ")}
-    >
+    <Text size="xs" weight="semibold" className={cx(styles.delta, tone[key])}>
       {t(key, { percent: numberFormatter(locale).format(percent) })}
     </Text>
   );

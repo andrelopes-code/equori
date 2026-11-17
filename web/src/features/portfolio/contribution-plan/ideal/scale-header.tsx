@@ -1,4 +1,5 @@
 import styles from "@/features/portfolio/contribution-plan/ideal/scale-header.module.css";
+import { cx } from "@/ui/cx";
 
 const ticks = [0, 25, 50, 75, 100];
 
@@ -11,11 +12,11 @@ export function ScaleHeader() {
         {ticks.map((tick) => (
           <span
             key={tick}
-            className={[
+            className={cx(
               styles.tick,
               tick === 0 ? styles.first : "",
               tick === 100 ? styles.last : "",
-            ].join(" ")}
+            )}
             style={{ insetInlineStart: `${String(tick)}%` }}
           >
             {tick === 100 ? "100%" : tick}

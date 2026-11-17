@@ -3,6 +3,7 @@ import { Text } from "@slotted/react/typography";
 import styles from "@/features/setup/usage/usage-details.module.css";
 import type { numberFormatter } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface UsageGaugeProps {
   label: string;
@@ -36,7 +37,7 @@ export function UsageGauge({
 
   return (
     <div
-      className={[styles.gauge, className].filter(Boolean).join(" ")}
+      className={cx(styles.gauge, className)}
       role="img"
       aria-label={`${label}: ${value}`}
     >

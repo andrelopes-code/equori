@@ -9,6 +9,7 @@ import {
 import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 type Preview = components["schemas"]["AssistantPreview"];
 
@@ -67,7 +68,7 @@ export function InvestmentBody({ preview }: InvestmentBodyProps) {
               {EQUALS}
             </span>
 
-            <span className={[styles.eqCell, styles.eqTotal].join(" ")}>
+            <span className={cx(styles.eqCell, styles.eqTotal)}>
               <Text weight="semibold" className={styles.eqValue}>
                 {total}
               </Text>

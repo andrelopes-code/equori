@@ -8,6 +8,7 @@ import { UsageGauge } from "@/features/setup/usage/usage-gauge";
 import { usageStatus } from "@/features/setup/usage/usage-rows";
 import type { numberFormatter } from "@/i18n/format";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface UsageItemProps {
   row: UsageRow;
@@ -59,7 +60,7 @@ export function UsageItem({
   }
 
   return (
-    <li className={[card.row, styles.row].join(" ")}>
+    <li className={cx(card.row, styles.row)}>
       <div className={card.cell}>
         <Text size="sm" truncate className={card.mono}>
           {row.model}

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import styles from "@/ui/form-layout/form-layout.module.css";
+import { cx } from "@/ui/cx";
 
 interface FormLayoutProps {
   children: ReactNode;
@@ -14,11 +15,7 @@ interface FormLayoutProps {
 export function FormLayout({ children, aside, fill = false }: FormLayoutProps) {
   return (
     <div className={styles.frame}>
-      <div
-        className={[styles.layout, fill ? styles.fill : undefined]
-          .filter(Boolean)
-          .join(" ")}
-      >
+      <div className={cx(styles.layout, fill ? styles.fill : undefined)}>
         <div className={styles.fields}>{children}</div>
         {aside !== undefined && <aside className={styles.aside}>{aside}</aside>}
       </div>

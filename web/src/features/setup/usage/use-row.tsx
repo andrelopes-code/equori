@@ -8,6 +8,7 @@ import { UseNote } from "@/features/setup/usage/use-note";
 import styles from "@/features/setup/usage/use-route.module.css";
 import { UseRoute } from "@/features/setup/usage/use-route";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface UseRowProps {
   use: ModelUse;
@@ -22,7 +23,7 @@ export function UseRow({ use, rows, now, onEdit }: UseRowProps) {
   const t = useT();
 
   return (
-    <li className={[card.row, styles.row].join(" ")}>
+    <li className={cx(card.row, styles.row)}>
       <div className={styles.body}>
         <div className={styles.top}>
           <Text size="md" weight="medium" truncate className={styles.name}>

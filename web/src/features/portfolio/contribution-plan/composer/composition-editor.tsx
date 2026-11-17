@@ -4,6 +4,7 @@ import { ContributionBar } from "@/features/portfolio/contribution-plan/composer
 import { IdealBar } from "@/features/portfolio/contribution-plan/composer/ideal-bar";
 import { TodayBar } from "@/features/portfolio/contribution-plan/composer/today-bar";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 export interface CompositionEditorProps {
   groups: CompositionGroup[];
@@ -28,17 +29,17 @@ export function CompositionEditor({
 
   return (
     <div className={styles.editor}>
-      <span className={[styles.rowLabel, styles.tallRow].join(" ")}>
+      <span className={cx(styles.rowLabel, styles.tallRow)}>
         {t("contributionPlan.barIdeal")}
       </span>
       <IdealBar groups={groups} onTargets={onTargets} />
 
-      <span className={[styles.rowLabel, styles.thinRow].join(" ")}>
+      <span className={cx(styles.rowLabel, styles.thinRow)}>
         {t("contributionPlan.barToday")}
       </span>
       <TodayBar groups={groups} />
 
-      <span className={[styles.rowLabel, styles.thinRow].join(" ")}>
+      <span className={cx(styles.rowLabel, styles.thinRow)}>
         {t("contributionPlan.barContribution")}
       </span>
       <ContributionBar groups={groups} pending={pending} state={state} />

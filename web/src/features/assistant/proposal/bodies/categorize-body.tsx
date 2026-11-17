@@ -11,6 +11,7 @@ import {
 import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 type Preview = components["schemas"]["AssistantPreview"];
 
@@ -35,7 +36,7 @@ export function CategorizeBody({ preview }: CategorizeBodyProps) {
       <div className={styles.move}>
         <div className={styles.moveRow}>
           <Text className={styles.key}>{t("assistant.body.from")}</Text>
-          <span className={[styles.chip, styles.chipFrom].join(" ")}>
+          <span className={cx(styles.chip, styles.chipFrom)}>
             <Text size="sm" className={styles.chipText}>
               {valueText({ text: from })}
             </Text>
@@ -44,7 +45,7 @@ export function CategorizeBody({ preview }: CategorizeBodyProps) {
 
         <div className={styles.moveRow}>
           <Text className={styles.key}>{t("assistant.body.to")}</Text>
-          <span className={[styles.chip, styles.chipTo].join(" ")}>
+          <span className={cx(styles.chip, styles.chipTo)}>
             <span className={styles.icon14}>
               <AssistantIcon name="tag" />
             </span>

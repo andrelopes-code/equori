@@ -5,6 +5,7 @@ import type { NavigateOptions } from "@tanstack/react-router";
 import styles from "@/features/overview/attention/attention-bars.module.css";
 import { routeTo } from "@/ui/navigation/route-to";
 import { useServed } from "@/ui/navigation/use-served";
+import { cx } from "@/ui/cx";
 
 export interface ReviewLegendEntry {
   label: string;
@@ -26,10 +27,7 @@ export function ReviewLegend({
       {entries.map((entry, i) => (
         <span key={entry.label} className={styles.legendRow}>
           <Text size="sm" tone="muted" className={styles.legendLabel}>
-            <span
-              className={[styles.fill, styles.swatch].join(" ")}
-              data-segment={i}
-            />
+            <span className={cx(styles.fill, styles.swatch)} data-segment={i} />
 
             {served(entry.to) ? (
               <Link render={routeTo(entry.to)}>{entry.label}</Link>

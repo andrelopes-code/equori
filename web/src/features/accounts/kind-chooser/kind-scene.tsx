@@ -5,6 +5,7 @@ import {
 import styles from "@/features/accounts/kind-chooser/kind-art.module.css";
 import { KindShapes } from "@/features/accounts/kind-chooser/kind-shapes";
 import { classOf, type Kind } from "@/features/accounts/model/account-kinds";
+import { cx } from "@/ui/cx";
 
 interface KindSceneProps {
   kind: Kind;
@@ -24,7 +25,7 @@ export function KindScene({ kind, tone, enter, interactive }: KindSceneProps) {
 
   return (
     <svg
-      className={[styles.ill, styles.scene].join(" ")}
+      className={cx(styles.ill, styles.scene)}
       data-tone={dataTone}
       data-enter={enter ? "" : undefined}
       data-interactive={interactive ? "" : undefined}

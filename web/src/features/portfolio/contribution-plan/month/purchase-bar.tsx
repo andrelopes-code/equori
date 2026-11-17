@@ -5,6 +5,7 @@ import { Text } from "@slotted/react/typography";
 import styles from "@/features/portfolio/contribution-plan/month/purchase-bar.module.css";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 export interface PurchaseSegment {
   key: string;
@@ -49,7 +50,7 @@ export function PurchaseBar({ segments, total, active }: PurchaseBarProps) {
         {segments.map((s) => (
           <span
             key={s.key}
-            className={[styles.segment, fillOf(s.group)].join(" ")}
+            className={cx(styles.segment, fillOf(s.group))}
             data-current={s.key === active}
             style={{ flexGrow: s.amount }}
           />

@@ -10,6 +10,7 @@ import { UsageItem } from "@/features/setup/usage/usage-item";
 import { UsageSummaryLine } from "@/features/setup/usage/usage-summary-line";
 import { numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface UsageListProps {
   rows: readonly UsageRow[];
@@ -34,7 +35,7 @@ export function UsageList({ rows, now, onLimits }: UsageListProps) {
   const days = rows[0]?.period_days ?? 30;
 
   return (
-    <details className={[card.card, styles.details].join(" ")}>
+    <details className={cx(card.card, styles.details)}>
       <summary className={styles.summary}>
         <Text size="md" weight="medium" truncate>
           {t("assistant.usage")}

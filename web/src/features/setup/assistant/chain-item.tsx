@@ -11,6 +11,7 @@ import styles from "@/features/setup/assistant/chain-dialog.module.css";
 import { ChainItemMenu } from "@/features/setup/assistant/chain-item-menu";
 import { resting } from "@/features/setup/assistant/use-answer";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface ChainItemProps {
   use: ModelUse;
@@ -104,7 +105,7 @@ export function ChainItem({
         </Text>
       </div>
 
-      <div className={[styles.actions, styles.desk].join(" ")}>
+      <div className={cx(styles.actions, styles.desk)}>
         <IconButton
           variant="ghost"
           tone="secondary"
@@ -139,7 +140,7 @@ export function ChainItem({
         </IconButton>
       </div>
 
-      <div className={[styles.actions, styles.phone].join(" ")}>
+      <div className={cx(styles.actions, styles.phone)}>
         <ChainItemMenu
           model={target.model}
           first={first}

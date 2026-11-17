@@ -3,6 +3,7 @@ import type { CompositionGroup } from "@/features/portfolio/contribution-plan/co
 import { slotClass } from "@/features/portfolio/contribution-plan/composer/slot-class";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface TodayBarProps {
   groups: CompositionGroup[];
@@ -22,13 +23,13 @@ export function TodayBar({ groups }: TodayBarProps) {
       role="img"
       aria-label={`${t("contributionPlan.barToday")}: ${shares}`}
       data-bar="today"
-      className={[styles.thinBar, styles.segments].join(" ")}
+      className={cx(styles.thinBar, styles.segments)}
     >
       {groups.map((group) => (
         <div
           key={group.key}
           data-segment=""
-          className={[styles.segment, slotClass(group.colour)].join(" ")}
+          className={cx(styles.segment, slotClass(group.colour))}
           style={{ flexGrow: group.todayBp ?? 0 }}
         />
       ))}

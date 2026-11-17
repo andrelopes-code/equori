@@ -5,6 +5,7 @@ import status from "@/features/setup/assistant/assistant-status.module.css";
 import providerStyles from "@/features/setup/assistant/provider-row.module.css";
 import routeStyles from "@/features/setup/usage/use-route.module.css";
 import usageStyles from "@/features/setup/usage/usage-details.module.css";
+import { cx } from "@/ui/cx";
 
 const cards = [
   { rows: 2, className: providerStyles.loading },
@@ -31,14 +32,14 @@ export function AssistantLoading() {
           </div>
 
           {Array.from({ length: group.rows }, (_, index) => (
-            <div key={index} className={[card.row, group.className].join(" ")}>
+            <div key={index} className={cx(card.row, group.className)}>
               <Skeleton shape="block" inlineSize="55%" blockSize={14} />
             </div>
           ))}
         </div>
       ))}
 
-      <div className={[card.card, usageStyles.summary].join(" ")}>
+      <div className={cx(card.card, usageStyles.summary)}>
         <Skeleton shape="block" inlineSize={130} blockSize={14} />
       </div>
     </SkeletonRegion>

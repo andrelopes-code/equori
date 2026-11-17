@@ -2,6 +2,7 @@ import styles from "@/features/portfolio/contribution-plan/ideal/share-bar.modul
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import type { TFunction } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface ShareBarProps {
   name: string;
@@ -43,7 +44,7 @@ export function ShareBar({
     <div
       role="img"
       aria-label={label(name, today, after, ideal, tag, t)}
-      className={[styles.bar, slot].join(" ")}
+      className={cx(styles.bar, slot)}
     >
       <div className={styles.track}>
         <div
@@ -67,7 +68,7 @@ export function ShareBar({
       {ideal !== undefined && (
         <>
           <span
-            className={[styles.label, labelEdge].join(" ")}
+            className={cx(styles.label, labelEdge)}
             style={{ insetInlineStart: percent(ideal) }}
           >
             {t("contributionPlan.markerIdeal", {

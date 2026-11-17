@@ -6,6 +6,7 @@ import { initials } from "@/features/assistant/proposal/initials";
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { formatDayMonthNumeric } from "@/i18n/format";
 import { useAppLocale } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 type Item = components["schemas"]["AssistantPreviewItem"];
 
@@ -33,10 +34,7 @@ export function ItemRows({ items, struck = false }: ItemRowsProps) {
           </span>
 
           <span className={styles.txText}>
-            <Text
-              size="sm"
-              className={[styles.txName, styles.ellipsis].join(" ")}
-            >
+            <Text size="sm" className={cx(styles.txName, styles.ellipsis)}>
               {valueText({ text: item.description })}
             </Text>
             <Text size="xs" tone="muted" className={styles.ellipsis}>

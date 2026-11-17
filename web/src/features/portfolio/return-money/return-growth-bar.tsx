@@ -5,6 +5,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 
 import styles from "@/features/portfolio/return-money/return-growth-bar.module.css";
+import { cx } from "@/ui/cx";
 
 interface ReturnGrowthBarProps {
   deposits: number;
@@ -43,7 +44,7 @@ export function ReturnGrowthBar({
           <div
             key={key}
             data-segment={key}
-            className={[styles.segment, styles[key]].join(" ")}
+            className={cx(styles.segment, styles[key])}
             style={{ flexGrow: amounts[key] }}
           />
         ))}
@@ -53,7 +54,7 @@ export function ReturnGrowthBar({
         {parts.map(({ key, label }) => (
           <div key={key} data-legend={key} className={styles.item}>
             <div
-              className={[styles.swatch, styles[key]].join(" ")}
+              className={cx(styles.swatch, styles[key])}
               aria-hidden="true"
             />
             <Text size="sm">{t(label)}</Text>

@@ -1,4 +1,5 @@
 import styles from "@/features/portfolio/contribution-plan/month/group-dot.module.css";
+import { cx } from "@/ui/cx";
 
 interface GroupDotProps {
   // The position of the group in the plan; it picks the colour of the data palette. Without it
@@ -18,10 +19,5 @@ export function GroupDot({ position, shape = "dot" }: GroupDotProps) {
       : styles[`slot${String((position % paletteSize) + 1)}`];
   const corner = shape === "square" ? styles.square : undefined;
 
-  return (
-    <span
-      aria-hidden="true"
-      className={[styles.dot, corner, fill].filter(Boolean).join(" ")}
-    />
-  );
+  return <span aria-hidden="true" className={cx(styles.dot, corner, fill)} />;
 }

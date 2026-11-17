@@ -7,6 +7,7 @@ import card from "@/features/setup/assistant/assistant-card.module.css";
 import { ProviderRow } from "@/features/setup/assistant/provider-row";
 import styles from "@/features/setup/assistant/provider-row.module.css";
 import { useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 interface ProvidersGroupProps {
   providers: readonly ModelProvider[];
@@ -42,7 +43,7 @@ export function ProvidersGroup({
       }
     >
       {providers.length === 0 && (
-        <li className={[card.row, styles.empty].join(" ")}>
+        <li className={cx(card.row, styles.empty)}>
           <Text size="sm" tone="muted" truncate>
             {t("assistant.providers.empty")}
           </Text>

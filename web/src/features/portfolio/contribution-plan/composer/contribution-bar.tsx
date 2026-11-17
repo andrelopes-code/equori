@@ -7,6 +7,7 @@ import { useHeldSplit } from "@/features/portfolio/contribution-plan/composer/us
 import { useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
+import { cx } from "@/ui/cx";
 
 interface ContributionBarProps {
   groups: CompositionGroup[];
@@ -56,7 +57,7 @@ export function ContributionBar({
       <div
         data-bar="contribution"
         ref={barRef}
-        className={[styles.thinBar, styles.segments].join(" ")}
+        className={cx(styles.thinBar, styles.segments)}
       >
         {message !== undefined && (
           <span className={styles.trackMessage}>{t(message)}</span>
@@ -67,7 +68,7 @@ export function ContributionBar({
             <div
               key={part.key}
               data-segment=""
-              className={[styles.segment, slotClass(part.colour)].join(" ")}
+              className={cx(styles.segment, slotClass(part.colour))}
               style={{ flexGrow: part.minor }}
             />
           ))}

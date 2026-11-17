@@ -29,6 +29,7 @@ import { catalogLabel } from "@/features/setup/model/catalog-label";
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
+import { cx } from "@/ui/cx";
 
 interface ChainDialogProps {
   use: ModelUse;
@@ -102,7 +103,7 @@ export function ChainDialog({
 
             <ol className={styles.order} aria-label={title}>
               {draft.targets.length === 0 && (
-                <li className={[styles.item, styles.empty].join(" ")}>
+                <li className={cx(styles.item, styles.empty)}>
                   <Text size="sm" tone="muted" truncate>
                     {t("assistant.chain.empty")}
                   </Text>

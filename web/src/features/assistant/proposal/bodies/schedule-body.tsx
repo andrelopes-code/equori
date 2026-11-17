@@ -12,6 +12,7 @@ import { ProposalChanges } from "@/features/assistant/proposal/proposal-changes"
 import { useValueText } from "@/features/assistant/proposal/use-value-text";
 import { formatDayMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { cx } from "@/ui/cx";
 
 type Preview = components["schemas"]["AssistantPreview"];
 
@@ -65,9 +66,7 @@ export function ScheduleBody({ preview }: ScheduleBodyProps) {
             <li
               key={date}
               className={
-                i === 0
-                  ? [styles.month, styles.monthFirst].join(" ")
-                  : styles.month
+                i === 0 ? cx(styles.month, styles.monthFirst) : styles.month
               }
             >
               <span className={styles.dot} aria-hidden="true" />

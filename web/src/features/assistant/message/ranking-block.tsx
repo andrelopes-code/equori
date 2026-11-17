@@ -3,6 +3,7 @@ import { Text } from "@slotted/react/typography";
 import { AnswerBlockFrame } from "@/features/assistant/message/answer-block-frame";
 import type { BlockRow } from "@/features/assistant/message/answer-blocks";
 import styles from "@/features/assistant/message/answer-blocks.module.css";
+import { cx } from "@/ui/cx";
 
 interface RankingBlockProps {
   head: [string, string];
@@ -20,13 +21,11 @@ export function RankingBlock({ head, rows, numbered }: RankingBlockProps) {
         {rows.map((row, index) => (
           <div
             key={row.label}
-            className={[
+            className={cx(
               styles.rank,
               numbered && styles.numbered,
               row.value === 0 && styles.zero,
-            ]
-              .filter(Boolean)
-              .join(" ")}
+            )}
           >
             {numbered && (
               <Text size="xs" tone="muted" className={styles.index}>
