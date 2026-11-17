@@ -31,4 +31,11 @@ type Feed struct {
 	HistoryPending int
 	// SymbolOverride is true for a source that reads Instrument.Symbols (A222 MQ20).
 	SymbolOverride bool
+
+	// Current is true for a source that reports current quotes (A248 CQ25).
+	Current bool
+	// CurrentAt is the last request for current quotes that returned no error; CurrentError is
+	// the message of the last one that failed.
+	CurrentAt    *time.Time
+	CurrentError *string
 }

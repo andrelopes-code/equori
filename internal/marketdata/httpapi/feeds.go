@@ -63,6 +63,9 @@ func feedOf(f domain.Feed) MarketDataFeed {
 		Covers:         f.Covers,
 		HistoryPending: f.HistoryPending,
 		SymbolOverride: f.SymbolOverride,
+		Current:        f.Current,
+		CurrentAt:      f.CurrentAt,
+		CurrentError:   f.CurrentError,
 	}
 	if f.Last != nil {
 		out.Last = &openapi_types.Date{Time: *f.Last}

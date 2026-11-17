@@ -130,6 +130,16 @@ func (m *Module) priceFeeds(
 		f.Covers = len(src.Codes(feedIns))
 		f.HistoryPending = pending[src.ID()]
 		_, f.SymbolOverride = src.(feed.SymbolOverride)
+		_, f.Current = src.(feed.Spot)
+
+		run := m.spot.run(src.ID())
+		if !run.at.IsZero() {
+			f.CurrentAt = &run.at
+		}
+
+		if run.err != "" {
+			f.CurrentError = &run.err
+		}
 
 		out = append(out, f)
 	}

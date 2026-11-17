@@ -27,6 +27,9 @@ function feed(patch: Partial<Feed> = {}): Feed {
     covers: 28,
     history_pending: 0,
     symbol_override: false,
+    current: false,
+    current_at: null,
+    current_error: null,
     ...patch,
   };
 }

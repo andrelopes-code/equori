@@ -602,8 +602,17 @@ type InstrumentType string
 // MarketDataFeed defines model for MarketDataFeed.
 type MarketDataFeed struct {
 	// Covers The number of defined instruments the source quotes; 0 for an index or expectation feed (A222 MQ25).
-	Covers  int  `json:"covers"`
-	Enabled bool `json:"enabled"`
+	Covers int `json:"covers"`
+
+	// Current The source reports current quotes (A248 CQ25).
+	Current bool `json:"current"`
+
+	// CurrentAt Instant of its last successful request for current quotes.
+	CurrentAt *time.Time `json:"current_at"`
+
+	// CurrentError Message of its last failed request for current quotes.
+	CurrentError *string `json:"current_error"`
+	Enabled      bool    `json:"enabled"`
 
 	// Error The failure of that tick, null when it succeeded.
 	Error *string `json:"error"`

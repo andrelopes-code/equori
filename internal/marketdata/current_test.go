@@ -56,6 +56,38 @@ func TestS562CurrentQuoteIsCachedAndBounded(t *testing.T) {
 	h.expect(t, "USD 150.00", []string{"AAPL/USD 2026-11-12 150 manual"}, 2)
 }
 
+// S566: the feed listing states whether a source reports current quotes, the instant of its last
+// successful request and its last failure (A248 CQ25).
+func TestS566FeedsReportCurrentQuotes(t *testing.T) {
+	t.Parallel()
+
+	fake := newCurrentFake(t, false)
+	h := newCurrentHarness(t, usProfile(), fake, apitest.PriceFeeds(
+		[]string{"yahoo_chart", "coinbase"},
+		map[string]string{"yahoo_chart": fake.srv.URL + "/yahoo", "coinbase": fake.srv.URL + "/cb"},
+	))
+
+	h.expectCurrentFeeds(t, "yahoo_chart", true, "", "")
+	h.expectCurrentFeeds(t, "coinbase", true, "", "")
+	h.expectCurrentFeeds(t, "b3_cotahist", false, "", "")
+
+	h.warm(t, "AAPL")
+	h.expectCurrentFeeds(t, "yahoo_chart", true, "2026-11-12T15:13:00Z", "")
+	h.expectCurrentFeeds(t, "b3_cotahist", false, "", "")
+
+	h.clock.add(61 * time.Second)
+	fake.status.Store(http.StatusInternalServerError)
+	h.warm(t, "AAPL")
+	h.expectCurrentFeeds(t, "yahoo_chart", true, "2026-11-12T15:13:00Z", "failed")
+	h.expectCurrentFeeds(t, "b3_cotahist", false, "", "")
+
+	h.clock.add(61 * time.Second)
+	fake.status.Store(0)
+	h.warm(t, "AAPL")
+	h.expectCurrentFeeds(t, "yahoo_chart", true, "2026-11-12T15:15:02Z", "")
+	h.expectCurrentFeeds(t, "b3_cotahist", false, "", "")
+}
+
 // CQ13: a 429 pauses the source for 15 minutes.
 func TestCurrentQuotePausesAfter429(t *testing.T) {
 	t.Parallel()
@@ -209,6 +241,51 @@ func (h *currentHarness) warm(t *testing.T, codes ...money.Currency) {
 	t.Helper()
 
 	h.App.Marketdata.WarmCurrent(t.Context(), codes)
+}
+
+func (h *currentHarness) expectCurrentFeeds(
+	t *testing.T,
+	id string,
+	current bool,
+	at, failure string,
+) {
+	t.Helper()
+
+	var list struct {
+		Items []struct {
+			ID           string  `json:"id"`
+			Current      bool    `json:"current"`
+			CurrentAt    *string `json:"current_at"`
+			CurrentError *string `json:"current_error"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/market-data/feeds", nil, http.StatusOK, &list)
+
+	for _, f := range list.Items {
+		if f.ID != id {
+			continue
+		}
+
+		if f.Current != current {
+			t.Fatalf("%s current = %v, want %v", id, f.Current, current)
+		}
+
+		if got := deref(f.CurrentAt); got != at {
+			t.Fatalf("%s current_at = %q, want %q", id, got, at)
+		}
+
+		if (failure != "") != (f.CurrentError != nil && *f.CurrentError != "") {
+			t.Fatalf("%s current_error = %v, want failure %q", id, f.CurrentError, failure)
+		}
+
+		if failure == "" && f.CurrentError != nil {
+			t.Fatalf("%s current_error = %q, want null", id, *f.CurrentError)
+		}
+
+		return
+	}
+
+	t.Fatalf("feed %s absent", id)
 }
 
 func (h *currentHarness) amount(t *testing.T) money.Money {

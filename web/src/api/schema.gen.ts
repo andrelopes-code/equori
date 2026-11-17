@@ -7055,6 +7055,15 @@ export interface components {
             history_pending: number;
             /** @description The source reads a symbol set on the instrument (A222 MQ20). */
             symbol_override: boolean;
+            /** @description The source reports current quotes (A248 CQ25). */
+            current: boolean;
+            /**
+             * Format: date-time
+             * @description Instant of its last successful request for current quotes.
+             */
+            current_at: string | null;
+            /** @description Message of its last failed request for current quotes. */
+            current_error: string | null;
         };
         MarketDataFeedList: {
             items: components["schemas"]["MarketDataFeed"][];

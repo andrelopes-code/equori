@@ -12650,7 +12650,7 @@ components:
     MarketDataFeed:
       type: object
       additionalProperties: false
-      required: [id, kind, enabled, suggested, last, stale, last_run, error, official, covers, history_pending, symbol_override]
+      required: [id, kind, enabled, suggested, last, stale, last_run, error, official, covers, history_pending, symbol_override, current, current_at, current_error]
       properties:
         id:
           type: string
@@ -12692,6 +12692,18 @@ components:
         symbol_override:
           type: boolean
           description: The source reads a symbol set on the instrument (A222 MQ20).
+        current:
+          type: boolean
+          description: The source reports current quotes (A248 CQ25).
+        current_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Instant of its last successful request for current quotes.
+        current_error:
+          type: string
+          nullable: true
+          description: Message of its last failed request for current quotes.
     MarketDataFeedList:
       type: object
       required: [items]

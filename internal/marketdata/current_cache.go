@@ -144,6 +144,14 @@ func (c *spotCache) finish(
 	close(claim.done)
 }
 
+// run returns the state of source.
+func (c *spotCache) run(source string) spotRun {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.runs[source]
+}
+
 // fresh returns the fresh entry of the pair (from, to), else of (to, from) with inverse set. With
 // two sources the lower priority wins.
 func (c *spotCache) fresh(
