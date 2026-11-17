@@ -6,6 +6,7 @@ import type { CategoryEntry } from "@/features/categories";
 import { budgetBucketsQuery } from "@/features/planning/api";
 import { BucketDialog } from "@/features/planning/income-split/bucket-dialog";
 import { useT } from "@/i18n/i18n-provider";
+import { useToday } from "@/i18n/today";
 import { HeaderAction } from "@/ui/navigation/header-action";
 
 interface IncomeSplitActionProps {
@@ -17,6 +18,7 @@ interface IncomeSplitActionProps {
 export function IncomeSplitAction({ entries }: IncomeSplitActionProps) {
   const t = useT();
   const api = useApi();
+  const today = useToday();
   const method = useQuery(budgetBucketsQuery(api));
   const [open, setOpen] = useState(false);
 
@@ -35,6 +37,7 @@ export function IncomeSplitAction({ entries }: IncomeSplitActionProps) {
         <BucketDialog
           stored={method.data.buckets}
           entries={entries}
+          month={today.slice(0, 7)}
           onClose={() => {
             setOpen(false);
           }}

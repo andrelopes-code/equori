@@ -11,6 +11,8 @@ type BucketsInput = components["schemas"]["BudgetBucketsInput"];
 
 export interface DraftBucket {
   key: string;
+  // The stored id; absent on a bucket added in the dialog or by a preset (A241).
+  id?: string;
   name: string;
   // The share as the reader types it, a percentage with one decimal.
   share: string;
@@ -79,6 +81,7 @@ export function initialDraft(
   return {
     buckets: (buckets ?? []).map((b) => ({
       key: b.id,
+      id: b.id,
       name: b.name,
       share: textFromBp(b.share_bp),
       measure: measureOf(b),
@@ -174,10 +177,16 @@ export function canSave(draft: BucketDraft): boolean {
   );
 }
 
-// The body of saveBudgetBuckets: each bucket lists the categories whose choice names it.
-export function bucketsPayload(draft: BucketDraft): BucketsInput {
+// The body of saveBudgetBuckets: each bucket lists the categories whose choice names it; from
+// is the first month of the version.
+export function bucketsPayload(
+  draft: BucketDraft,
+  from?: string,
+): BucketsInput {
   return {
+    ...(from === undefined ? {} : { from }),
     buckets: draft.buckets.map((b) => ({
+      ...(b.id === undefined ? {} : { id: b.id }),
       name: b.name.trim(),
       share_bp: bpFromText(b.share) ?? 0,
       ...measureFlags(b.measure),
@@ -254,6 +263,7 @@ export function withChoice(
     buckets: method.map((b) => {
       const others = b.category_ids.filter((id) => id !== categoryId);
       return {
+        id: b.id,
         name: b.name,
         share_bp: b.share_bp,
         takes_savings: b.takes_savings,

@@ -62,6 +62,7 @@ function api(sent: unknown[]) {
         })),
       }),
     "GET /api/v1/budget-buckets": () => json(200, method),
+    "GET /api/v1/budget-buckets/versions": () => json(200, { versions: [] }),
     "PUT /api/v1/budget-buckets": async (req) => {
       sent.push(await req.json());
       return new Response(null, { status: 204 });
@@ -115,6 +116,7 @@ describe("Categories under an income split", () => {
         {
           buckets: [
             {
+              id: "needs",
               name: "Needs",
               share_bp: 6000,
               takes_savings: false,
@@ -123,6 +125,7 @@ describe("Categories under an income split", () => {
               category_ids: ["food"],
             },
             {
+              id: "wants",
               name: "Wants",
               share_bp: 4000,
               takes_savings: false,
@@ -136,7 +139,7 @@ describe("Categories under an income split", () => {
     });
   });
 
-  it("asks before removing the split", async () => {
+  it("asks before ending the split", async () => {
     const sent: unknown[] = [];
     await renderApp("/categories", { fetch: api(sent) });
     await screen.findByText("Needs");
@@ -152,23 +155,25 @@ describe("Categories under an income split", () => {
 
     await userEvent.click(
       within(dialog).getByRole("button", {
-        name: catalogEn["buckets.removeAll"],
+        name: catalogEn["buckets.end"],
       }),
     );
 
     expect(sent).toEqual([]);
     expect(
-      within(dialog).getByText(catalogEn["buckets.removeConfirm"]),
+      within(dialog).getByText(
+        catalogEn["buckets.endConfirm"].replace("{month}", "October 2026"),
+      ),
     ).toBeVisible();
 
     const confirm = within(dialog).getAllByRole("button", {
-      name: catalogEn["buckets.removeAll"],
+      name: catalogEn["buckets.end"],
     })[0];
     if (confirm === undefined) throw new Error("no confirm button");
     await userEvent.click(confirm);
 
     await waitFor(() => {
-      expect(sent).toEqual([{ buckets: [] }]);
+      expect(sent).toEqual([{ buckets: [], from: "2026-10" }]);
     });
   });
 
@@ -206,8 +211,10 @@ describe("Categories under an income split", () => {
     await waitFor(() => {
       expect(sent).toEqual([
         {
+          from: "2026-10",
           buckets: [
             {
+              id: "needs",
               name: "Needs",
               share_bp: 6000,
               takes_savings: false,
@@ -216,6 +223,7 @@ describe("Categories under an income split", () => {
               category_ids: ["food"],
             },
             {
+              id: "wants",
               name: "Wants",
               share_bp: 4000,
               takes_savings: false,

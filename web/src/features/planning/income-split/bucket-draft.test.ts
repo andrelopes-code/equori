@@ -67,8 +67,8 @@ describe("initialDraft", () => {
     const draft = initialDraft(stored, entries);
 
     expect(draft.buckets).toEqual([
-      { key: "b1", name: "Needs", share: "60", measure: "ceiling" },
-      { key: "b2", name: "Fun", share: "40", measure: "savings" },
+      { key: "b1", id: "b1", name: "Needs", share: "60", measure: "ceiling" },
+      { key: "b2", id: "b2", name: "Fun", share: "40", measure: "savings" },
     ]);
     expect([...draft.choices]).toEqual([
       ["food", "b1"],
@@ -181,6 +181,7 @@ describe("bucketsPayload", () => {
 
     expect(got.buckets).toEqual([
       {
+        id: "b1",
         name: "Needs",
         share_bp: 6000,
         takes_savings: false,
@@ -189,6 +190,7 @@ describe("bucketsPayload", () => {
         category_ids: ["food"],
       },
       {
+        id: "b2",
         name: "Fun",
         share_bp: 4000,
         takes_savings: true,
@@ -197,6 +199,26 @@ describe("bucketsPayload", () => {
         category_ids: ["market"],
       },
     ]);
+    expect(got).not.toHaveProperty("from");
+  });
+
+  it("sends from when given and no id for an added bucket", () => {
+    const draft = initialDraft(stored, entries);
+    const added = {
+      key: "new",
+      name: "Extra",
+      share: "0",
+      measure: "ceiling" as const,
+    };
+
+    const got = bucketsPayload(
+      { ...draft, buckets: [...draft.buckets, added] },
+      "2026-09",
+    );
+
+    expect(got.from).toBe("2026-09");
+    expect(got.buckets.map((b) => b.id)).toEqual(["b1", "b2", undefined]);
+    expect(got.buckets[2]).not.toHaveProperty("id");
   });
 });
 
@@ -232,6 +254,8 @@ describe("choiceOf and withChoice", () => {
     expect(
       withChoice(stored, "food", "outside").buckets[0]?.category_ids,
     ).toEqual([]);
+    expect(moved.buckets.map((b) => b.id)).toEqual(["b1", "b2"]);
+    expect(moved).not.toHaveProperty("from");
   });
 });
 

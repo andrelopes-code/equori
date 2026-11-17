@@ -24,7 +24,7 @@ import { useT } from "@/i18n/i18n-provider";
 type Bucket = components["schemas"]["BudgetBucket"];
 
 // The draft of the income split dialog and its save (income buckets spec 5): nothing reaches
-// the server before Save split or Remove split.
+// the server before Save split or End split.
 export function useBucketDraft(
   stored: readonly Bucket[] | undefined,
   entries: readonly CategoryEntry[],
@@ -97,11 +97,11 @@ export function useBucketDraft(
     addBucket,
     setChoices,
     preset,
-    save: () => {
-      write(bucketsPayload(draft), t("buckets.saved"));
+    save: (from: string) => {
+      write(bucketsPayload(draft, from), t("buckets.saved"));
     },
-    remove: () => {
-      write({ buckets: [] }, t("buckets.removed"));
+    end: (from: string) => {
+      write({ buckets: [], from }, t("buckets.ended"));
     },
   };
 }

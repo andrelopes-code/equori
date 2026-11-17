@@ -28,6 +28,8 @@ interface PlanBucketsProps {
   // The stored method, which the dialog edits; undefined while the book has none.
   stored: readonly Bucket[] | undefined;
   entries: readonly CategoryEntry[];
+  // The month on screen.
+  month: string;
 }
 
 // The income split of the month (income buckets spec 5): each bucket's share, target,
@@ -37,6 +39,7 @@ export function PlanBuckets({
   format,
   stored,
   entries,
+  month,
 }: PlanBucketsProps) {
   const t = useT();
   const [editing, setEditing] = useState(false);
@@ -75,6 +78,7 @@ export function PlanBuckets({
         <BucketDialog
           stored={stored}
           entries={entries}
+          month={month}
           onClose={() => {
             setEditing(false);
           }}

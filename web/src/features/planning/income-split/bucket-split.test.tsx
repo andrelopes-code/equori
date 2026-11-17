@@ -10,6 +10,7 @@ import {
   food,
   housing,
 } from "@/testing/budget-plan-api";
+import { json } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 
 const november = "/planning?tab=budgets&view=plan&month=2026-11";
@@ -125,8 +126,10 @@ describe("Income split", () => {
 
     await waitFor(() => {
       expect(sent).toEqual({
+        from: "2026-11",
         buckets: [
           {
+            id: buckets[0]?.id,
             name: "Needs",
             share_bp: 5000,
             takes_savings: false,
@@ -136,6 +139,7 @@ describe("Income split", () => {
             category_ids: [food.id, housing.id],
           },
           {
+            id: buckets[1]?.id,
             name: "Freedom",
             share_bp: 5000,
             takes_savings: true,
@@ -144,6 +148,90 @@ describe("Income split", () => {
             category_ids: [],
           },
         ],
+      });
+    });
+  });
+
+  describe("with a version stored", () => {
+    const versions = [{ from: "2026-09", buckets }];
+
+    async function open() {
+      const sent: unknown[] = [];
+      const fetch = budgetPlanApi(withBuckets, {
+        "GET /api/v1/budget-buckets/versions": () => json(200, { versions }),
+        "PUT /api/v1/budget-buckets": async (req: Request) => {
+          sent.push(await req.json());
+          return new Response(null, { status: 204 });
+        },
+      });
+      await renderApp(november, { fetch, today });
+      await userEvent.click(
+        await screen.findByRole("button", { name: catalogEn["buckets.edit"] }),
+      );
+      const dialog = await screen.findByRole("dialog");
+      await within(dialog).findByRole("combobox", {
+        name: catalogEn["buckets.from.label"],
+      });
+      return { sent, dialog };
+    }
+
+    const save = (dialog: HTMLElement) =>
+      within(dialog).getByRole("button", { name: catalogEn["buckets.save"] });
+
+    it("saves from the month on screen", async () => {
+      const { sent, dialog } = await open();
+
+      await userEvent.click(save(dialog));
+
+      await waitFor(() => {
+        expect(sent).toHaveLength(1);
+      });
+      expect(sent[0]).toMatchObject({ from: "2026-11" });
+    });
+
+    it("saves from the start of the version in force", async () => {
+      const { sent, dialog } = await open();
+
+      await userEvent.click(
+        within(dialog).getByRole("combobox", {
+          name: catalogEn["buckets.from.label"],
+        }),
+      );
+      await userEvent.click(
+        await screen.findByRole("option", {
+          name: catalogEn["buckets.from.start"],
+        }),
+      );
+      await userEvent.click(save(dialog));
+
+      await waitFor(() => {
+        expect(sent).toHaveLength(1);
+      });
+      expect(sent[0]).toMatchObject({ from: "2026-09" });
+    });
+
+    it("ends the split from the chosen month after a confirmation", async () => {
+      const { sent, dialog } = await open();
+
+      await userEvent.click(
+        within(dialog).getByRole("button", { name: catalogEn["buckets.end"] }),
+      );
+
+      expect(sent).toEqual([]);
+      expect(
+        within(dialog).getByText(
+          catalogEn["buckets.endConfirm"].replace("{month}", "November 2026"),
+        ),
+      ).toBeVisible();
+
+      const confirm = within(dialog).getAllByRole("button", {
+        name: catalogEn["buckets.end"],
+      })[0];
+      if (confirm === undefined) throw new Error("no confirm button");
+      await userEvent.click(confirm);
+
+      await waitFor(() => {
+        expect(sent).toEqual([{ buckets: [], from: "2026-11" }]);
       });
     });
   });

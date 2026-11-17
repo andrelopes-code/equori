@@ -139,6 +139,7 @@ export function PlanEditor({
           format={format}
           stored={plan.buckets}
           entries={entries}
+          month={month}
         />
 
         <PlanAnnouncer over={over} figure={figures.figure} />

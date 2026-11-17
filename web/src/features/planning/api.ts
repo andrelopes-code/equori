@@ -269,12 +269,25 @@ export function useSaveBudgetPlan(month: string) {
   });
 }
 
-// The book's income bucket method without a month (income buckets A229); an empty list
-// without one.
-export function budgetBucketsQuery(api: Client<paths>) {
+// The book's income bucket method of month, the current month without one (income buckets
+// A229, A240); an empty list without a split.
+export function budgetBucketsQuery(api: Client<paths>, month?: string) {
   return queryOptions({
-    queryKey: ["planning", "buckets"] as const,
-    queryFn: async () => unwrap(await api.GET("/budget-buckets")),
+    queryKey: ["planning", "buckets", month ?? "current"] as const,
+    queryFn: async () =>
+      unwrap(
+        await api.GET("/budget-buckets", {
+          params: { query: month === undefined ? {} : { month } },
+        }),
+      ),
+  });
+}
+
+// Every version of the income bucket method, by start ascending (A240).
+export function budgetBucketVersionsQuery(api: Client<paths>) {
+  return queryOptions({
+    queryKey: ["planning", "bucket-versions"] as const,
+    queryFn: async () => unwrap(await api.GET("/budget-buckets/versions")),
   });
 }
 

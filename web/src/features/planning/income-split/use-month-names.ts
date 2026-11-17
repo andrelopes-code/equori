@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useAppLocale } from "@/i18n/i18n-provider";
 
 // The names of months written YYYY-MM in the active tag: a short name under a mark and a long
-// name for a sentence.
+// name for a sentence, with or without the year.
 export function useMonthNames(months: readonly string[]) {
   const [locale] = useAppLocale();
   return useMemo(() => {
@@ -12,9 +12,15 @@ export function useMonthNames(months: readonly string[]) {
       new Intl.DateTimeFormat(locale, { month, timeZone: "UTC" });
     const short = format("short");
     const long = format("long");
+    const longYear = new Intl.DateTimeFormat(locale, {
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
     return {
       short: months.map((m) => short.format(date(m))),
       long: (m: string) => long.format(date(m)),
+      longYear: (m: string) => longYear.format(date(m)),
     };
   }, [locale, months]);
 }
