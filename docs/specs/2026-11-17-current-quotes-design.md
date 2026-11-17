@@ -4,7 +4,7 @@
 - Date: 2026-11-17
 - Status: approved. The owner approved the approach on 2026-11-17 ("ok") under four conditions (section 2) and delegated the approval of this text ("você avalia a spec, e procede").
 - Amendment: A248. Scenarios: S553 to S566.
-- Amends: A222 "Non-goals" (intraday quotes), MQ17, MQ18, ADR 025 F5; P8 amendment A62 (what a tick stores).
+- Amends: A222 "Non-goals" (intraday quotes), MQ9, MQ17, MQ18, ADR 025 F5; P8 amendment A62 (what a tick stores).
 - Keeps: N17 (the application contacts only the sources an admin enabled), A60 (one chosen price per date), A61 (conversion path), MQ22 (consent for an unofficial source), MQ24 (`stale`).
 
 ## 1. Context
@@ -62,7 +62,8 @@ Non-goals:
 | CQ1 | A source returns a `feed.Quote` only for a finished period. `Fetch` reads the instant from the clock it receives at construction, never from the wall clock. |
 | CQ2 | `yahoo_chart`: the bar whose local date equals the local date of now in `exchangeTimezoneName` is finished when now is at or after `currentTradingPeriod.regular.end` plus 30 minutes and the bar's date equals the local date of that `end`. Otherwise, or when the answer holds no `currentTradingPeriod`, it is dropped. A bar of an earlier date is finished. Amends MQ18. |
 | CQ3 | `coinbase`: a candle is finished when its `start` plus 24 hours is at or before now. Amends MQ17. |
-| CQ4 | A goose migration requests history again (MQ4, MQ5) for each `(source, instrument)` of `yahoo_chart` and `coinbase` that holds a row with `recorded_at < date + 36 hours` (UTC), from the earliest such date. It runs only for a source that is enabled, as migration 98 does. A60 replaces the value on the next tick. A row loaded as history (`recorded_at` days after `date`) is not touched. |
+| CQ4 | A goose migration finds, for `yahoo_chart` and `coinbase`, each `(instrument, quote_instrument)` that holds a row with `recorded_at < date + 36 hours` (UTC). It deletes the rows of that source and pair from the earliest such date on and requests history (MQ4, MQ5) from that date. It runs only for a source that is enabled, as migration 98 does. A row loaded as history (`recorded_at` days after `date`) before the earliest such date is not touched. Until the next successful tick, the pair is valued at an earlier close or at the close of another source. |
+| CQ4a | Amends MQ9: the end of a history row is the day before the earliest stored price of that source and instrument on or after `from_date`, or today when none is stored from `from_date` on. A request for dates after an older stored price is no longer finished without a fetch. |
 | CQ5 | `feedStart` is unchanged: once CQ1 holds, a stored date is final for its source. |
 
 ### 3.2 Current quote
@@ -137,8 +138,8 @@ No operation is added. `listPositions`, `getAllocation`, `getNetWorth`, `getIssu
 | B2 | No operation is added. The changed operations keep their `x-book-role`. |
 | B3 | No setting is added (CQ10). |
 | D1 | Does not apply: no table. The archive never holds a current quote. |
-| D2 | One goose migration (CQ4). It changes no schema; it inserts or updates rows of `marketdata_history`. |
-| D3 | No recorded fact changes. CQ4 replaces stored prices of a source through A60; the row keeps its key. Facts recorded with a value of G1 are not rewritten (non-goal). |
+| D2 | One goose migration (CQ4). It changes no schema; it deletes rows of `marketdata_price` that a tick refills and inserts or updates rows of `marketdata_history`. |
+| D3 | No recorded fact changes. CQ4 removes prices of a source that the same source refills. Facts recorded with a value of G1 are not rewritten (non-goal). |
 | D4 | A current quote decides nothing and writes nothing. |
 | D5 | The diagnostic file gains, per source, `current` and whether `current_error` is set. No amount, name or message text. |
 | S1 | No operation is added, so no new entry in `tool_exposure_test.go`. The tool catalog changes by CQ26 (`TestToolCatalog`). No new `Problem.code`. |
