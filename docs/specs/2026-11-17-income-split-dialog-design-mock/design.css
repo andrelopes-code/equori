@@ -12,9 +12,9 @@
     container: split / inline-size;
   }
 
-  /* The parts of a block set their own distance: the head keeps a fixed height. */
-  .block {
+  .splitBlock {
     display: grid;
+    gap: var(--slotted-space-6);
     min-inline-size: 0;
   }
 
@@ -253,6 +253,19 @@
     padding-inline-end: var(--slotted-space-5);
   }
 
+  /* The name of a category with subcategories is the control that opens them. */
+  button.mName {
+    block-size: 100%;
+    padding-block: 0;
+    padding-inline-start: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
   .mRow:not([data-depth="0"]) .mName {
     padding-inline-start: calc(var(--depth, 1) * (20px + var(--slotted-space-4))); /* literal: the twist */
   }
@@ -263,19 +276,12 @@
     place-items: center;
     inline-size: 20px; /* literal: whole pixels at the 14 px root */
     block-size: 20px; /* literal: whole pixels at the 14 px root */
-    padding: 0;
-    border: 0;
     border-radius: var(--slotted-radius-sm);
-    background: transparent;
     color: var(--slotted-text-muted);
     font-size: 14px; /* literal: a 14 px icon beside 12 to 13 px text */
   }
 
-  button.twist {
-    cursor: pointer;
-  }
-
-  button.twist:hover {
+  button.mName:hover .twist {
     background: color-mix(in oklch, var(--slotted-text) 8%, transparent);
     color: var(--slotted-text);
   }
@@ -461,7 +467,7 @@
     white-space: nowrap;
   }
 
-  :is(.preset, .twist):focus-visible,
+  :is(.preset, .mName):focus-visible,
   .pick:focus-visible + .mark {
     outline: var(--slotted-focus-ring-width) solid var(--slotted-focus-ring-color);
     outline-offset: var(--slotted-focus-ring-offset);

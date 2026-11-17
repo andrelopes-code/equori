@@ -15,7 +15,7 @@ export function BucketPresets({ onPreset }: BucketPresetsProps) {
   const t = useT();
 
   return (
-    <section className={styles.block}>
+    <section className={styles.splitBlock}>
       <div className={styles.blockHead}>
         <Text size="sm" weight="medium">
           {t("buckets.presets.title")}

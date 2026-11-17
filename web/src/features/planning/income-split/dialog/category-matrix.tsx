@@ -53,7 +53,7 @@ export function CategoryMatrix({
   }
 
   return (
-    <section className={styles.block}>
+    <section className={styles.splitBlock}>
       <div className={styles.blockHead}>
         <Text size="sm" weight="medium">
           {t("buckets.section.categories")}

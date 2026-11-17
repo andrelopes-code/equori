@@ -176,6 +176,35 @@ describe("Categories under an income split", () => {
     });
   });
 
+  // Dialog spec A250: the name of a category opens and closes its subcategories.
+  it("opens the subcategories from the name of the category", async () => {
+    await renderApp("/categories", { fetch: api([]) });
+    await screen.findByText("Needs");
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["buckets.manage"] }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    const food = within(
+      within(dialog).getByRole("radiogroup", { name: "Food" }),
+    ).getByText("Food");
+
+    expect(
+      within(dialog).queryByRole("radiogroup", { name: "Groceries" }),
+    ).toBeNull();
+
+    await userEvent.click(food);
+
+    expect(
+      within(dialog).getByRole("radiogroup", { name: "Groceries" }),
+    ).toBeVisible();
+
+    await userEvent.click(food);
+
+    expect(
+      within(dialog).queryByRole("radiogroup", { name: "Groceries" }),
+    ).toBeNull();
+  });
+
   // Dialog spec A250: a row per category, a radio per bucket.
   it("gives a category the bucket of the column it is clicked in", async () => {
     const sent: unknown[] = [];

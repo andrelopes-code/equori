@@ -42,7 +42,7 @@ The owner confirmed this order on 2026-11-17.
 - One row per top-level expense category of `expenseBranches`, one column per bucket and a last column "Without a bucket", separated by a rule.
 - A row is a radio group. The mark of the chosen column is the number of the bucket on its colour. An empty cell is a dot; under the pointer it previews the bucket.
 - A click on a column of a top-level row gives the category that bucket, or leaves it outside the split.
-- A category with subcategories opens and closes. A subcategory row holds a column per bucket. A subcategory that follows its parent draws the outline of the parent's bucket; a click on another column gives it its own bucket; a click on the parent's column returns it to following the parent (`toggleChoice`).
+- A category with subcategories opens and closes by a click on its name or on the mark beside it. A subcategory row holds a column per bucket. A subcategory that follows its parent draws the outline of the parent's bucket; a click on another column gives it its own bucket; a click on the parent's column returns it to following the parent (`toggleChoice`).
 - A closed or open top-level row writes `+N` in each other column that holds N of its subcategories.
 - The status beside the title states the top-level categories in no bucket, in the danger tone, or that every category has a bucket.
 - With more than six buckets, or in a dialog narrower than 42rem, a column shows the number of the bucket without its name.

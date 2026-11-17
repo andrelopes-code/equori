@@ -54,7 +54,7 @@ export function BucketPots({
   const full = draft.buckets.length >= maxBuckets;
 
   return (
-    <section className={styles.block}>
+    <section className={styles.splitBlock}>
       <div className={styles.blockHead}>
         <Text size="sm" weight="medium">
           {t("buckets.section.buckets")}

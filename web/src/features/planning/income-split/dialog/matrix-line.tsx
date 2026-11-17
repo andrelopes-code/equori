@@ -18,8 +18,8 @@ interface MatrixLineProps {
   onToggle: () => void;
 }
 
-// One category of the matrix (dialog spec A250): its name, the control that opens its
-// subcategories, and a radio per bucket.
+// One category of the matrix (dialog spec A250): its name, which opens its subcategories,
+// and a radio per bucket.
 export function MatrixLine({
   row,
   buckets,
@@ -31,12 +31,24 @@ export function MatrixLine({
 
   const name = row.entry.name;
   const top = row.depth === 0;
+  const opens = top && row.subcategories > 0;
   const bucketName = (b: DraftBucket) =>
     b.name.trim() === "" ? t("buckets.field.name") : b.name;
   const moreLabel = (count: number, bucket: string) =>
     count === 1
       ? t("buckets.matrix.more.one", { name: bucket })
       : t("buckets.matrix.more", { count: String(count), name: bucket });
+
+  // The same element in the control that opens the row and in a row that opens nothing.
+  const label = (
+    <Text
+      size="sm"
+      className={styles.mLabel}
+      {...(top ? { weight: "medium" as const } : {})}
+    >
+      {name}
+    </Text>
+  );
 
   return (
     <div
@@ -46,29 +58,28 @@ export function MatrixLine({
       data-depth={row.depth}
       style={{ "--depth": row.depth } as CSSProperties}
     >
-      <span className={styles.mName}>
-        {top && row.subcategories > 0 && (
-          <button
-            type="button"
-            className={styles.twist}
-            aria-expanded={row.open}
-            aria-label={t("buckets.matrix.open", { name })}
-            onClick={onToggle}
-          >
+      {opens && (
+        <button
+          type="button"
+          className={styles.mName}
+          aria-expanded={row.open}
+          aria-label={t("buckets.matrix.open", { name })}
+          onClick={onToggle}
+        >
+          <span className={styles.twist}>
             <Icon>
               <Glyph name={row.open ? "chevron-down" : "chevron-right"} />
             </Icon>
-          </button>
-        )}
-        {top && row.subcategories === 0 && <span className={styles.twist} />}
-        <Text
-          size="sm"
-          className={styles.mLabel}
-          {...(top ? { weight: "medium" as const } : {})}
-        >
-          {name}
-        </Text>
-      </span>
+          </span>
+          {label}
+        </button>
+      )}
+      {!opens && (
+        <span className={styles.mName}>
+          {top && <span className={styles.twist} />}
+          {label}
+        </span>
+      )}
 
       {buckets.map((b, i) => (
         <MatrixCell
