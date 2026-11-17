@@ -28,6 +28,7 @@ interface BucketVersionBlockProps {
 }
 
 const lineKinds = ["removed", "moved", "started", "ended"];
+const separator = "·";
 
 // One version: its start, its buckets with their shares and what changed against the version
 // before.
@@ -58,6 +59,11 @@ export function BucketVersionBlock({
           <Text size="md" weight="medium">
             {title}
           </Text>
+          {inForce && (
+            <Text size="sm" tone="muted" aria-hidden>
+              {separator}
+            </Text>
+          )}
           {inForce && (
             <Text size="sm" tone="muted">
               {t("buckets.version.inForce")}
