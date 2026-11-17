@@ -33,13 +33,20 @@ The Focus survey is public, free and served by the Olinda API (`ExpectativasMerc
 
 ## Not covered
 
-- Expectations of inflation indexes (the Focus survey also publishes the IPCA).
 - Medians by Copom meeting: year-end points are the resolution of the path.
 - A path typed by the user.
 
 ## Amendment of 2026-10-28 (ADR 025 F9)
 
 E4's lag passes from 7 to 9 days with the amendment of ADR 025 F9. The due date of the next survey moves from 8 to 11 days after `last`: 8 days fell before the weekly publication, 10 days after `last`.
+
+## Amendment of 2026-11-17 (indexer comparison)
+
+| ID | Rule |
+|---|---|
+| E11 | A point of a monthly index is the expected accumulated rate of a calendar year, dated December 31 of that year. The monthly rates after the last stored month follow the points as `docs/specs/2026-11-17-indexer-comparison-design.md` IC6 states. |
+| E12 | `br_focus_ipca` projects `ipca`. It reads the medians of `Indicador eq 'IPCA'` and `baseCalculo eq 0` of `ExpectativasMercadoAnuais` on the latest survey date; each reference year is a point at its median over 100. Lag, staleness and suggestion follow E4. |
+| E13 | The basis `expected` of a monthly index is offered by the comparison only. The other calculators keep their bases for a monthly index. |
 
 ## Revisit criterion
 

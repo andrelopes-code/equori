@@ -33,6 +33,14 @@ func expectationEntries() []expectationEntry {
 			9,
 			func(hc *http.Client, url string) expectation.Source { return brfocus.New(hc, url) },
 		},
+		{
+			"br_focus_ipca",
+			"https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata",
+			9,
+			func(hc *http.Client, url string) expectation.Source {
+				return brfocus.NewIPCA(hc, url)
+			},
+		},
 	}
 }
 

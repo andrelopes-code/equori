@@ -56,6 +56,55 @@ func TestFetch(t *testing.T) {
 	}
 }
 
+// ADR 026 E12: the IPCA medians are the points as they stand, with no spread.
+func TestFetchIPCA(t *testing.T) {
+	t.Parallel()
+
+	const ipcaPage = `{"value":[
+{"Data":"2026-11-13","DataReferencia":"2026","Mediana":5.1082},
+{"Data":"2026-11-13","DataReferencia":"2027","Mediana":5.0000},
+{"Data":"2026-11-13","DataReferencia":"2028","Mediana":4.0000},
+{"Data":"2026-11-12","DataReferencia":"2026","Mediana":5.1000}]}`
+
+	var query string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query = r.URL.Query().Get("$filter")
+
+		_, _ = w.Write([]byte(ipcaPage))
+	}))
+	t.Cleanup(srv.Close)
+
+	src := brfocus.NewIPCA(srv.Client(), srv.URL)
+
+	got, err := src.Fetch(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if query != "Indicador eq 'IPCA' and baseCalculo eq 0" {
+		t.Fatalf("filter %q", query)
+	}
+
+	if src.ID() != "br_focus_ipca" || src.Index() != "ipca" {
+		t.Fatalf("id %q, index %q", src.ID(), src.Index())
+	}
+
+	if got.Date.Format("2006-01-02") != "2026-11-13" || len(got.Points) != 3 {
+		t.Fatalf("survey %+v", got)
+	}
+
+	want := [][2]string{
+		{"2026-12-31", "0.051082000000"},
+		{"2027-12-31", "0.050000000000"},
+		{"2028-12-31", "0.040000000000"},
+	}
+	for i, w := range want {
+		if p := got.Points[i]; p.Date.Format("2006-01-02") != w[0] || p.Rate != w[1] {
+			t.Fatalf("point %d = %+v, want %v", i, p, w)
+		}
+	}
+}
+
 func TestFetchEmpty(t *testing.T) {
 	t.Parallel()
 

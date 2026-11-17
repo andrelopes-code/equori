@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
@@ -26,6 +27,89 @@ func expectationServer(t *testing.T) *httptest.Server {
 	t.Cleanup(srv.Close)
 
 	return srv
+}
+
+// S553, S554 (ADR 026 E12): the Focus medians of the IPCA are the expected path of `ipca`.
+func TestS553IPCAExpectations(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/ExpectativasMercadoAnuais" ||
+			!strings.Contains(r.URL.Query().Get("$filter"), "'IPCA'") {
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
+
+		_, _ = w.Write([]byte(`{"value":[
+{"Data":"2026-11-13","DataReferencia":"2026","Mediana":5.1082},
+{"Data":"2026-11-13","DataReferencia":"2027","Mediana":5.0000},
+{"Data":"2026-11-13","DataReferencia":"2028","Mediana":4.0000},
+{"Data":"2026-11-12","DataReferencia":"2026","Mediana":5.1000}]}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	h := apitest.New(
+		t,
+		apitest.Today("2026-11-17"),
+		apitest.IndexFeeds(
+			[]string{"br_ipca"},
+			map[string]string{"br_ipca": srv.URL, "br_focus_ipca": srv.URL},
+		),
+	)
+	if _, err := h.Pool.Exec(
+		t.Context(),
+		`INSERT INTO marketdata_index_rate (index_id, date, rate, source) VALUES ('ipca', '2026-10-31', 0.0045, 'br_ipca')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	h.MustDo(
+		http.MethodPut,
+		"/api/v1/market-data/feeds/br_focus_ipca",
+		map[string]bool{"enabled": true},
+		http.StatusOK,
+		nil,
+	)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	var list struct {
+		Items []struct {
+			ID       string `json:"id"`
+			Expected bool   `json:"expected"`
+		} `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/indexes", nil, http.StatusOK, &list)
+
+	for _, it := range list.Items {
+		if it.Expected != (it.ID == "ipca") {
+			t.Fatalf("indexes = %+v", list.Items)
+		}
+	}
+
+	type point struct {
+		Date string `json:"date"`
+		Rate string `json:"rate"`
+	}
+	var got struct {
+		SurveyDate string  `json:"survey_date"`
+		Items      []point `json:"items"`
+	}
+	h.MustDo(http.MethodGet, "/api/v1/indexes/ipca/expectations", nil, http.StatusOK, &got)
+
+	want := []point{
+		{"2026-12-31", "0.051082000000"},
+		{"2027-12-31", "0.050000000000"},
+		{"2028-12-31", "0.040000000000"},
+	}
+	if got.SurveyDate != "2026-11-13" || !reflect.DeepEqual(got.Items, want) {
+		t.Fatalf("expectations = %+v", got)
+	}
+
+	f := feedsOf(t, h)["br_focus_ipca"]
+	if f.Kind != "expectation" || !f.Enabled || !f.Suggested || f.Last == nil ||
+		*f.Last != "2026-11-13" {
+		t.Fatalf("br_focus_ipca = %+v", f)
+	}
 }
 
 // ADR 026 E3 to E5.
