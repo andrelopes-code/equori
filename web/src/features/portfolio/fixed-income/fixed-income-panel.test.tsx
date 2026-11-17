@@ -290,6 +290,24 @@ describe("Fixed income panel", () => {
     ).toBeInTheDocument();
   });
 
+  it("FC36: writes no rate notice for a fixed-rate payment without a value", async () => {
+    await renderApp("/portfolio", {
+      today: "2026-11-18",
+      fetch: fixedIncomeApi({
+        "GET /api/v1/fixed-income-events": () =>
+          json(200, {
+            items: [event("CDBZ", "2026-12-15", "maturity", "upcoming")],
+          }),
+      }),
+    });
+    const next = await panel(catalogEn["fixedIncome.next"]);
+
+    expect(await within(next).findByText(/CDB Banco Z/)).toBeInTheDocument();
+    expect(
+      within(next).queryByText(catalogEn["fixedIncome.next.rateMissing"]),
+    ).not.toBeInTheDocument();
+  });
+
   it("FC36: names a payment of a holding that has no market value", async () => {
     await renderApp("/portfolio", {
       today: "2026-11-18",

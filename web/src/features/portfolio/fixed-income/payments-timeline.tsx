@@ -101,7 +101,12 @@ export function PaymentsTimeline({
         )}
 
         {events.length > 0 && (
-          <PaymentRows events={events} names={names} scale={scale} />
+          <PaymentRows
+            events={events}
+            names={names}
+            kindOf={kindOf}
+            scale={scale}
+          />
         )}
       </SectionBody>
     </Section>
