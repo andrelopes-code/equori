@@ -73,7 +73,7 @@ export function BucketEntriesDrawer({
         if (!open) onClose();
       }}
       side="end"
-      size="lg"
+      size="xl"
     >
       <DrawerPanel>
         <DrawerHeader>
@@ -106,25 +106,27 @@ export function BucketEntriesDrawer({
             )}
             {entries.data !== undefined && (
               <>
-                <BucketEntriesSummary
-                  measure={row?.measure}
-                  cell={cell}
-                  real={entries.data.total.amount}
-                  money={money}
-                />
-                {groups.length === 0 && (
-                  <Text size="sm" tone="muted">
-                    {t("track.entries.empty")}
-                  </Text>
-                )}
-                {groups.map((group) => (
-                  <BucketEntryGroup
-                    key={group.key}
-                    group={group}
-                    categories={categories}
+                <Stack gap={10}>
+                  <BucketEntriesSummary
+                    measure={row?.measure}
+                    cell={cell}
+                    real={entries.data.total.amount}
                     money={money}
                   />
-                ))}
+                  {groups.length === 0 && (
+                    <Text size="sm" tone="muted">
+                      {t("track.entries.empty")}
+                    </Text>
+                  )}
+                  {groups.map((group) => (
+                    <BucketEntryGroup
+                      key={group.key}
+                      group={group}
+                      categories={categories}
+                      money={money}
+                    />
+                  ))}
+                </Stack>
               </>
             )}
           </Stack>

@@ -10,12 +10,18 @@ type Entry = components["schemas"]["BudgetBucketEntry"];
 
 interface BucketEntryRowProps {
   entry: Entry;
+  // The title of an entry with neither payee nor description: the name of its group.
+  fallback: string;
   money: (amount: number) => string;
 }
 
 // One entry on one line, a link to its transaction: the day, the payee (the description
-// without one) and the amount.
-export function BucketEntryRow({ entry, money }: BucketEntryRowProps) {
+// without one, the group's name without either) and the amount.
+export function BucketEntryRow({
+  entry,
+  fallback,
+  money,
+}: BucketEntryRowProps) {
   const [locale] = useAppLocale();
   const day = new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -36,7 +42,7 @@ export function BucketEntryRow({ entry, money }: BucketEntryRowProps) {
       <Text size="sm" tone="muted">
         {day}
       </Text>
-      <Text size="sm">{entry.payee ?? entry.description}</Text>
+      <Text size="sm">{entry.payee ?? (entry.description || fallback)}</Text>
       <Text size="sm" numeric="tabular">
         {money(entry.amount.amount)}
       </Text>

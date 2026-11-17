@@ -52,6 +52,7 @@ export function BucketEntryGroup({
         <BucketEntryRow
           key={`${entry.transaction_id}-${entry.date}-${String(entry.amount.amount)}`}
           entry={entry}
+          fallback={name}
           money={money}
         />
       ))}
