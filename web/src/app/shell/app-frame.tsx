@@ -34,7 +34,11 @@ import { useExtent } from "@/app/shell/frame-state/use-extent";
 import { useRegionWide } from "@/app/shell/frame-state/use-region-wide";
 import { useScrollState } from "@/app/shell/frame-state/use-scroll-state";
 import { useWide } from "@/app/shell/phone-gate/use-wide";
-import { AssistantPanel, useBeside } from "@/features/assistant";
+import {
+  AssistantPanel,
+  useAssistantAsk,
+  useBeside,
+} from "@/features/assistant";
 import { AppearanceSync } from "@/features/session";
 import { useCaptureQueueNotice } from "@/features/transactions";
 import { useT } from "@/i18n/i18n-provider";
@@ -81,6 +85,7 @@ export function AppFrame() {
   const openEntry = useEntry();
   useEntryShortcut(openEntry);
   useKeyShortcut("a", openAssistant);
+  useAssistantAsk(openAssistant);
   const openPalette = useCallback(() => {
     palette.current?.open();
   }, []);

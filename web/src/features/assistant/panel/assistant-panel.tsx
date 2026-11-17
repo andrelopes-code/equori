@@ -10,6 +10,7 @@ import {
   chatStateQuery,
   conversationQuery,
 } from "@/features/assistant/api";
+import { useAssistantAsk } from "@/features/assistant/model/ask-assistant";
 import { AssistantAside } from "@/features/assistant/panel/assistant-aside";
 import { AssistantComposer } from "@/features/assistant/panel/assistant-composer";
 import { AssistantDrawer } from "@/features/assistant/panel/assistant-drawer";
@@ -63,6 +64,7 @@ export function AssistantPanel({
   // The composer's text lives here so that a move between the drawer and the pane keeps it.
   const [draftText, setDraftText] = useState("");
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  useAssistantAsk(setDraftText);
   // The element that holds the feed; the dock watches its sheets.
   const [thread, setThread] = useState<HTMLElement | null>(null);
 

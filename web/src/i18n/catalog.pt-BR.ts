@@ -1628,6 +1628,9 @@ export const catalogPtBR: Catalog = {
   "assistant.delete_all": "Apagar todas as conversas",
   "assistant.delete_all_confirm":
     "Apagar todas as conversas e as propostas pendentes delas?",
+  "assistant.ask.title": "Perguntar ao assistente",
+  "assistant.ask.about":
+    "Leva “{question}” e consulta o guia e os dados do seu livro",
   "assistant.composer.placeholder": "Pergunte sobre suas finanças",
   "assistant.composer.send": "Enviar",
   "assistant.composer.stop": "Parar",

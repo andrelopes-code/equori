@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import styles from "@/app/shell/app-frame.module.css";
+import { askAssistant } from "@/features/assistant";
 import { catalogEn } from "@/i18n/catalog.en";
 import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi, json } from "@/testing/fake-api";
@@ -200,6 +201,20 @@ describe("desktop column", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/transactions/new");
     });
+  });
+
+  // Help spec HP12: a question asked from a page opens the panel with it in the composer.
+  it("opens the assistant with a question asked from a page", async () => {
+    await renderApp("/", { fetch: assistantFetch() });
+
+    act(() => {
+      askAssistant("Pay a statement");
+    });
+
+    const input = await screen.findByPlaceholderText(
+      catalogEn["assistant.composer.placeholder"],
+    );
+    expect(input).toHaveValue("Pay a statement");
   });
 
   it("focuses the assistant composer and returns focus on close (U7, P18)", async () => {

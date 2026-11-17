@@ -1620,6 +1620,9 @@ export const catalogEn = {
   "assistant.delete_all": "Delete all conversations",
   "assistant.delete_all_confirm":
     "Delete every conversation and its pending proposals?",
+  "assistant.ask.title": "Ask the assistant",
+  "assistant.ask.about":
+    "Takes “{question}” and reads the guide and the data of your book",
   "assistant.composer.placeholder": "Ask about your finances",
   "assistant.composer.send": "Send",
   "assistant.composer.stop": "Stop",

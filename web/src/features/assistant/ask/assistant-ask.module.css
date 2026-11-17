@@ -1,0 +1,153 @@
+@layer app {
+  .assistantAsk:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  /* The way to the assistant: its mark inside the ring it wears while it answers, on a wash of
+     the same colours. No other control of the help takes this form. */
+  .assistantAsk {
+    position: relative;
+    display: grid;
+    align-items: center;
+    max-inline-size: 36rem; /* literal: the title, the question and the key on one line */
+    padding: var(--slotted-space-4) var(--slotted-space-5);
+    border: 0;
+    border-radius: var(--slotted-radius-lg);
+    background:
+      linear-gradient(
+        100deg,
+        color-mix(in oklab, var(--slotted-data-1) 14%, transparent),
+        color-mix(in oklab, var(--slotted-data-3) 8%, transparent) 55%,
+        transparent
+      ),
+      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+    color: var(--slotted-text);
+    column-gap: var(--slotted-space-5);
+    cursor: pointer;
+    font: inherit;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    inline-size: 100%;
+    text-align: start;
+  }
+
+  .assistantAsk::before,
+  .assistantMark::before {
+    position: absolute;
+    background: conic-gradient(
+      var(--slotted-data-1),
+      var(--slotted-data-3),
+      var(--slotted-data-5),
+      var(--slotted-data-2),
+      var(--slotted-data-1)
+    );
+    content: "";
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+
+  .assistantAsk::before {
+    padding: 1px;
+    border-radius: inherit;
+    inset: 0;
+  }
+
+  .assistantMark {
+    position: relative;
+    display: grid;
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-surface);
+    block-size: 2rem; /* literal: 28 px at the 14 px root, a whole pixel circle */
+    color: var(--slotted-tone-accent-text);
+    inline-size: 2rem; /* literal: 28 px at the 14 px root, a whole pixel circle */
+    place-items: center;
+  }
+
+  .assistantMark::before {
+    padding: 2px; /* literal: the ring of the assistant's mark in the conversation */
+    border-radius: var(--slotted-radius-full);
+    animation: assistantTurn var(--slotted-duration-loop-slow) linear infinite
+      paused;
+    inset: -3px; /* literal: the ring of the assistant's mark in the conversation */
+  }
+
+  .assistantAsk:hover .assistantMark::before,
+  .assistantAsk:focus-visible .assistantMark::before {
+    animation-play-state: running;
+  }
+
+  @keyframes assistantTurn {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .assistantGlyph {
+    display: grid;
+  }
+
+  .assistantGlyph svg {
+    block-size: 16px; /* literal: the icon size beside 14 px text (web.md, Icons with care) */
+    inline-size: 16px; /* literal: the icon size beside 14 px text (web.md, Icons with care) */
+  }
+
+  .assistantText {
+    display: grid;
+    min-inline-size: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .assistantTitle {
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-md);
+  }
+
+  .assistantAbout {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .assistantGo {
+    display: inline-flex;
+    align-items: center;
+    color: var(--slotted-text-muted);
+    gap: var(--slotted-space-3);
+  }
+
+  .assistantGo > :last-child {
+    transition: transform var(--slotted-duration-short);
+  }
+
+  .assistantAsk:hover .assistantGo > :last-child {
+    transform: translateX(2px); /* literal: the arrow leans the way it leads */
+  }
+
+  .assistantAsk[data-size="sm"] {
+    max-inline-size: 19rem; /* literal: the mark, the title and the key */
+    padding: var(--slotted-space-2) var(--slotted-space-4)
+      var(--slotted-space-2) var(--slotted-space-3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .assistantMark::before {
+      animation: none;
+    }
+
+    .assistantGo > :last-child {
+      transition: none;
+    }
+  }
+
+  /* On a phone the question wraps under the title. */
+  @container slotted-page (max-width: 599px) {
+    .assistantAbout {
+      white-space: normal;
+    }
+  }
+}
