@@ -41,6 +41,7 @@ import {
   useCategoryEntries,
 } from "@/features/categories";
 import { periodProblem } from "@/features/portfolio";
+import { reportMaxDays } from "@/features/reports/model/report-period";
 import { CashPaymentsTable } from "@/features/reports/categories/cash-payments-table";
 import { categoryRows } from "@/features/reports/categories/category-rows";
 import type { CategoryRow } from "@/features/reports/categories/category-rows";
@@ -84,7 +85,7 @@ export function CategoriesTab({
   const view = search.view ?? "accrual";
   const compare = search.compare === true;
   const before = previousPeriod(period);
-  const problem = periodProblem(period.from, period.to);
+  const problem = periodProblem(period.from, period.to, reportMaxDays);
   const base = useQuery(settingsQuery(api)).data?.base_currency;
   const accounts = useQuery(accountsQuery(api));
   const entries = useCategoryEntries(accounts.data);

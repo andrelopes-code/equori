@@ -25,8 +25,9 @@ export function periodDays(from: string, to: string): number {
 export function periodProblem(
   from: string,
   to: string,
+  limit = maxDays,
 ): "reversed" | "tooLong" | undefined {
   const days = (utc(to) - utc(from)) / 86_400_000;
   if (days < 0) return "reversed";
-  return days > maxDays ? "tooLong" : undefined;
+  return days > limit ? "tooLong" : undefined;
 }

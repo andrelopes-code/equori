@@ -27,6 +27,7 @@ import { useApi } from "@/api/api-context";
 import { accountsQuery, shapeOf } from "@/features/accounts";
 import { flowsQuery } from "@/features/cards";
 import { periodProblem } from "@/features/portfolio";
+import { reportMaxDays } from "@/features/reports/model/report-period";
 import { flowRows, flowTotals } from "@/features/reports/flows/flow-rows";
 import type { FlowBy, FlowRow } from "@/features/reports/flows/flow-rows";
 import { CompareSwitch } from "@/features/reports/report-controls/compare-switch";
@@ -77,7 +78,7 @@ export function FlowsTab({
   const by: FlowBy = search.by ?? "day";
   const compare = search.compare === true;
   const before = previousPeriod(period);
-  const problem = periodProblem(period.from, period.to);
+  const problem = periodProblem(period.from, period.to, reportMaxDays);
   const accounts = useQuery(accountsQuery(api));
   const offered = useMemo(() => {
     const all = accounts.data ?? [];

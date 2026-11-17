@@ -77,3 +77,7 @@ export function stepPeriod(
 export function previousPeriod(period: ReportPeriod): ReportPeriod {
   return stepPeriod(period, -1);
 }
+
+// The longest period a report accepts, in days between its two ends
+// (`report.period.tooLong`). The return of the portfolio has its own, longer limit.
+export const reportMaxDays = 366;
