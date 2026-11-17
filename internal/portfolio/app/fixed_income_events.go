@@ -35,7 +35,7 @@ type FixedIncomeEvent struct {
 	AccountID   uuid.UUID
 	Instrument  money.Currency
 	Date        time.Time
-	Kind        string // interest, amortization, maturity, unit_tax, unit_tax
+	Kind        string // interest, amortization, maturity, unit_tax
 	Quantity    money.Money
 	Gross       *money.Money // nil with RateMissing
 	RateMissing bool
