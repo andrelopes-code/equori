@@ -1,0 +1,353 @@
+{
+ "title": "Ajuda · índice e página",
+ "slug": "help",
+ "status": "approved",
+ "round": 3,
+ "approved": "2026-11-17",
+ "source": {
+  "url": "http://127.0.0.1:5173/help",
+  "root": "[data-ui=\"page\"]",
+  "commit": "0fbc20a5"
+ },
+ "schemeAttr": "data-slotted-scheme",
+ "schemes": [
+  "dark",
+  "light"
+ ],
+ "themeAttr": "",
+ "themes": [],
+ "widths": {
+  "desktop": 1440,
+  "phone": 390
+ },
+ "stageBackground": "var(--slotted-surface-sunken)",
+ "concepts": [
+  {
+   "id": "a",
+   "name": "Guia",
+   "organizes": "Pela pergunta do leitor: buscar, começar, achar a tarefa pela área do app, resolver um sintoma. Na página, cada passo aponta o lugar na figura ao lado.",
+   "answers": "Como faço isto, o que esta tela mostra, por onde começo. A página de tarefa mostra o passo e o lugar exato na tela, com vídeo de 18 s opcional e a ação Abrir a tela.",
+   "costs": "Elementos próprios: caminho do roteiro, diretório por área, passos com figura fixa e marca. As páginas ganham área e mídia no catálogo; o Markdown ganha figura, marca e vídeo. A lista de todas as páginas sai da página e fica no índice.",
+   "recommended": true
+  }
+ ],
+ "chosen": "a",
+ "states": [
+  {
+   "id": "data",
+   "name": "Índice"
+  },
+  {
+   "id": "loading",
+   "name": "Carregando"
+  },
+  {
+   "id": "empty",
+   "name": "Busca sem resultado"
+  },
+  {
+   "id": "error",
+   "name": "Falha"
+  },
+  {
+   "id": "results",
+   "name": "Busca com resultados"
+  },
+  {
+   "id": "article",
+   "name": "Página de tarefa"
+  },
+  {
+   "id": "hard",
+   "name": "Página difícil",
+   "hard": true
+  }
+ ],
+ "overlays": [],
+ "notes": {
+  "priority": {
+   "order": [
+    "Índice: 1 Busca · 2 Roteiro do primeiro mês · 3 Tarefas por área do app · 4 Sintomas e glossário",
+    "Página: 1 Passos com figura ou vídeo · 2 Abrir a tela · 3 Seções da página · 4 Relacionadas e anterior/próxima · 5 Lista de todas as páginas"
+   ],
+   "confirmed": "Dono, 2026-11-17: índice na ordem recomendada; página em Passos com mídia; mídia decidida pela sessão"
+  },
+  "questions": [
+   {
+    "question": "Como faço esta tarefa?",
+    "decision": "Abrir a página certa e seguir os passos na tela",
+    "block": "Busca; diretório por área; passos com figura"
+   },
+   {
+    "question": "O que esta tela, este número ou este termo significa?",
+    "decision": "Ler a referência ou o termo sem sair do contexto",
+    "block": "Busca (seções e termos); glossário; referência por área"
+   },
+   {
+    "question": "Por onde começo? Algo saiu do esperado.",
+    "decision": "Seguir o roteiro, ou ir ao sintoma",
+    "block": "Caminho do primeiro mês; sintomas"
+   }
+  ],
+  "inventory": [
+   {
+    "datum": "Título e subtítulo da Ajuda",
+    "now": "Cabeçalho do índice",
+    "destination": "Cabeçalho do índice",
+    "reason": ""
+   },
+   {
+    "datum": "Roteiro em destaque: tipo, título, resumo, botão Começar",
+    "now": "Card no topo do índice",
+    "destination": "Bloco Caminho: título, resumo, cinco passos, botão Começar o roteiro",
+    "reason": ""
+   },
+   {
+    "datum": "Tipo de página (Primeiros passos, Como fazer, Referência, Como funciona)",
+    "now": "Título de cada card e etiqueta do cabeçalho da página",
+    "destination": "Palavra ao fim de cada linha do diretório; etiqueta do cabeçalho da página; origem de cada resultado",
+    "reason": ""
+   },
+   {
+    "datum": "Descrição do tipo",
+    "now": "Sob o título de cada card",
+    "destination": "removed",
+    "reason": "O tipo deixa de agrupar o índice; a palavra do tipo na linha basta"
+   },
+   {
+    "datum": "Título de cada página",
+    "now": "Linha do card; navegação lateral; anterior/próxima",
+    "destination": "Linha do diretório; resultado da busca; anterior/próxima",
+    "reason": ""
+   },
+   {
+    "datum": "Resumo de cada página",
+    "now": "Sob o título, 2 a 4 linhas",
+    "destination": "Trecho do resultado da busca; abertura da própria página",
+    "reason": ""
+   },
+   {
+    "datum": "Lista de todas as páginas ao lado do texto",
+    "now": "Coluna esquerda da página",
+    "destination": "Índice (voltar por Ajuda); relacionadas e anterior/próxima na página",
+    "reason": ""
+   },
+   {
+    "datum": "Seções da página (Nesta página)",
+    "now": "Abaixo do texto a 1440 px (defeito); recolhida no celular",
+    "destination": "Coluna esquerda fixa da página; recolhida no celular",
+    "reason": ""
+   },
+   {
+    "datum": "Resumo, corpo, links para telas",
+    "now": "Texto da página",
+    "destination": "Texto da página, com passos, figuras e vídeo",
+    "reason": ""
+   },
+   {
+    "datum": "Anterior e próxima",
+    "now": "Fim da página",
+    "destination": "Fim da página",
+    "reason": ""
+   },
+   {
+    "datum": "Página não encontrada; falha ao carregar",
+    "now": "ResultState",
+    "destination": "ResultState",
+    "reason": ""
+   }
+  ],
+  "responsive": [
+   {
+    "block": "Busca",
+    "desktop": "Campo de 44 rem e buscas comuns numa linha",
+    "phone": "Campo na largura da tela; buscas comuns quebram",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Caminho do roteiro",
+    "desktop": "Cinco paradas numa linha",
+    "phone": "Cinco linhas com o traço vertical",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Diretório por área",
+    "desktop": "Duas colunas; nome da área ao lado das linhas",
+    "phone": "Uma coluna; nome da área acima das linhas de 44 px",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Sintomas e glossário",
+    "desktop": "Lado a lado",
+    "phone": "Empilhados",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Passos com figura",
+    "desktop": "Passos à esquerda; figura fixa à direita troca com o passo",
+    "phone": "Cada passo seguido da sua figura; vídeo acima dos passos",
+    "leaves": "Controle Figuras/Vídeo e anterior/próximo da figura"
+   },
+   {
+    "block": "Abrir a tela",
+    "desktop": "Ação primária do cabeçalho",
+    "phone": "Botão sob o resumo",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Seções da página",
+    "desktop": "Coluna esquerda fixa",
+    "phone": "Recolhida acima do texto",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Resultados da busca",
+    "desktop": "Melhor resultado em card; grupos com título, lugar e trecho; teclas de navegação",
+    "phone": "Título e lugar em duas linhas",
+    "leaves": "Trecho de cada resultado e as teclas"
+   },
+   {
+    "block": "Perguntar ao assistente",
+    "desktop": "Marca, título, pergunta levada e seta",
+    "phone": "Marca, título, pergunta e seta",
+    "leaves": "Nada"
+   },
+   {
+    "block": "Sintoma (Solução de problemas)",
+    "desktop": "Rótulo à esquerda (Causa, Como resolver, Mais detalhes) e texto à direita",
+    "phone": "Rótulo acima do texto",
+    "leaves": "Nada"
+   }
+  ],
+  "reused": [
+   {
+    "component": "Page, PageHeader, PageBack, Tag",
+    "draws": "Cabeçalho com régua, caminho de volta, etiqueta",
+    "nesting": "Nenhuma superfície"
+   },
+   {
+    "component": "TextField (busca, tamanho lg)",
+    "draws": "Campo com ícone, limpar e tecla /",
+    "nesting": "Nenhuma"
+   },
+   {
+    "component": "Section",
+    "draws": "Título, descrição e ações do bloco, sem superfície",
+    "nesting": "Nenhuma"
+   },
+   {
+    "component": "TableOfContents",
+    "draws": "Rótulo, marcador e lista; forma recolhida no celular",
+    "nesting": "Nenhuma"
+   },
+   {
+    "component": "Markdown / Prose",
+    "draws": "Parágrafos, listas, links",
+    "nesting": "Nenhuma"
+   },
+   {
+    "component": "SegmentedControl, ButtonGroup, Button",
+    "draws": "Figuras/Vídeo, passo anterior/próximo, ampliar",
+    "nesting": "Nenhuma"
+   },
+   {
+    "component": "ResultState",
+    "draws": "Busca sem resultado e falha",
+    "nesting": "Nenhuma"
+   },
+   {
+    "component": "MediaViewer (não desenhado nesta rodada)",
+    "draws": "Diálogo de tela cheia da figura e do vídeo",
+    "nesting": "Sobreposição própria da família"
+   },
+   {
+    "component": "Kbd",
+    "draws": "Tecla / do campo, Enter do melhor resultado, ↑ ↓ Esc da busca",
+    "nesting": "Nenhuma"
+   }
+  ],
+  "decisions": [
+   {
+    "decision": "Mídia: capturas da tela (claro e escuro) e vídeo mudo de até 20 s, embutidos no build e carregados sob demanda",
+    "reason": "A instalação é offline e de binário único; texto e figura servem a quem lê em diagonal e busca, o vídeo só mostra movimento. O vídeo nunca toca sozinho e os passos escritos são o seu equivalente em texto (WCAG 1.2.1 e 2.2.2)"
+   },
+   {
+    "decision": "A figura marca o lugar com contorno e número, e escurece o resto",
+    "reason": "O passo e o lugar na tela leem-se juntos, sem procurar na captura"
+   },
+   {
+    "decision": "A busca lê títulos, seções e termos do glossário no cliente",
+    "reason": "14 páginas em Markdown no build; nenhum endpoint novo"
+   },
+   {
+    "decision": "Busca sem resultado leva ao assistente",
+    "reason": "O assistente já consulta o guia e os dados do livro"
+   },
+   {
+    "decision": "As capturas das figuras saem de um roteiro de Playwright sobre o conjunto demo",
+    "reason": "Uma captura feita à mão envelhece a cada mudança de tela; o roteiro refaz todas"
+   },
+   {
+    "decision": "As figuras do mock são capturas reais do app; o vídeo é desenhado pelo primeiro quadro",
+    "reason": "A máquina não tem codificador de vídeo; o arquivo nasce na implementação"
+   },
+   {
+    "decision": "A figura ampliada (MediaViewer) não está desenhada nesta rodada",
+    "reason": "Depende do conceito escolhido"
+   },
+   {
+    "decision": "Sem progresso do roteiro no índice",
+    "reason": "A Visão geral já mostra os primeiros passos com o progresso real; repetir o cálculo aqui duplicaria o dado"
+   },
+   {
+    "decision": "A busca lê também o texto das páginas e tolera acento, caixa e uma letra trocada",
+    "reason": "Pedido do dono, 2026-11-17: uma busca realmente eficiente; o leitor escreve o sintoma com as próprias palavras"
+   },
+   {
+    "decision": "O primeiro resultado é um card com as seções da página; Enter abre, ↑ e ↓ percorrem, Esc limpa, / foca o campo em qualquer página da ajuda",
+    "reason": "O leitor chega à seção certa sem tirar a mão do teclado"
+   },
+   {
+    "decision": "Perguntar ao assistente é um elemento próprio: a marca do assistente dentro do anel que ela usa ao responder, sobre um véu das mesmas cores",
+    "reason": "Pedido do dono, 2026-11-17: destaque visual único; o anel é a identidade que o assistente já tem na conversa"
+   },
+   {
+    "decision": "Uma só linha (altura, recuo, realce) serve o diretório, os sintomas, os resultados e os links ao fim da página; uma régua abre o grupo e as linhas não levam régua",
+    "reason": "Pedido do dono, 2026-11-17: padronização e encaixe"
+   },
+   {
+    "decision": "Texto da página no tamanho lg do Markdown, resumo em xl; passos numerados iguais em toda página",
+    "reason": "Legibilidade: o corpo de 14 px passa a 15 px, o tamanho padrão da família"
+   },
+   {
+    "decision": "Toda página de tarefa termina em Se algo saiu diferente: os sintomas da tarefa, o assistente e as páginas vizinhas",
+    "reason": "Pedido do dono, 2026-11-17: solução de problemas ao alcance de quem seguiu os passos"
+   },
+   {
+    "decision": "O diretório por área não leva ícone: o nome da área em texto, na tinta apagada",
+    "reason": "Dono, 2026-11-17: os ícones no índice ficaram feios"
+   },
+  {
+   "decision": "O botão do assistente não leva tecla de atalho",
+   "reason": "Dono, 2026-11-17, na aprovação"
+  }
+  ],
+  "derivations": [
+   {
+    "value": "Resultados da busca, a ordem e a contagem",
+    "rule": "Casamento sem acento nem caixa, com distância de edição 1 para palavras de 5 letras ou mais; ordem: título, título de seção, termo, texto",
+    "test": "search-help.test.ts com as 14 páginas"
+   },
+   {
+    "value": "Área de cada página",
+    "rule": "Campo novo do catálogo help-pages.ts",
+    "test": "help-pages.test.ts: toda página tem uma área"
+   },
+   {
+    "value": "Sintomas de uma tarefa",
+    "rule": "Campo novo do catálogo: cada sintoma nomeia as páginas a que pertence",
+    "test": "help-pages.test.ts"
+   }
+  ]
+ }
+}

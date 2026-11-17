@@ -1,0 +1,11 @@
+{
+ "ask": "[data-part=\"ask\"]",
+ "path": "[data-part=\"path\"]",
+ "areas": "[data-part=\"areas\"]",
+ "symptoms": "[data-part=\"symptoms\"]",
+ "best": "[data-part=\"best\"]",
+ "assistant": "[data-part=\"assistant\"]",
+ "guide": "[data-part=\"guide\"]",
+ "walk": "[data-part=\"walk\"]",
+ "stage": "[data-part=\"stage\"]"
+}

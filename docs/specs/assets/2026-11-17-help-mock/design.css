@@ -1,0 +1,969 @@
+@layer app {
+  /* ---- Shared: one row, one group head, one way to the assistant -------------------------- */
+
+  .rows {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    grid-template-columns: minmax(0, 1fr);
+    list-style: none;
+  }
+
+  /* Every link of the help that stands as a row: one height, one inset, one hover. */
+  .row {
+    display: grid;
+    align-items: center;
+    margin-inline: calc(-1 * var(--slotted-space-3));
+    padding-inline: var(--slotted-space-3);
+    border-radius: var(--slotted-radius-md);
+    block-size: 2.5rem; /* literal: 35 px, one line of text and 8 px above and below */
+    color: var(--slotted-text);
+    column-gap: var(--slotted-space-4);
+    grid-template-columns: minmax(0, 1fr);
+    text-decoration: none;
+    transition: background-color var(--slotted-duration-short);
+  }
+
+  .row:hover {
+    background: var(--slotted-tone-neutral-subtle-hover);
+  }
+
+  .row:focus-visible,
+  .pathLink:focus-visible,
+  .bestLink:focus-visible,
+  .stepButton:focus-visible,
+  .assistantAsk:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+  }
+
+  .rowTitle {
+    overflow: hidden;
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rowMedia {
+    display: inline-flex;
+    align-items: center;
+    color: var(--slotted-text-muted);
+    gap: var(--slotted-space-1);
+  }
+
+  .rowEnd {
+    min-inline-size: 5rem; /* literal: the longest page kind, Explicação, so the kinds end on one line */
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  /* A rule opens a group; the rows under it carry none. */
+  .groupHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-block-end: var(--slotted-space-2);
+    border-block-end: 1px solid var(--slotted-border-subtle);
+    gap: var(--slotted-space-5);
+  }
+
+  .groupHead > * {
+    margin: 0;
+  }
+
+  /* The way to the assistant: its mark inside the ring it wears while it answers, on a wash of
+     the same colours. No other control of the help takes this form. */
+  .assistantAsk {
+    position: relative;
+    display: grid;
+    align-items: center;
+    max-inline-size: 36rem; /* literal: the title, the question and the key on one line */
+    padding: var(--slotted-space-4) var(--slotted-space-5);
+    border: 0;
+    border-radius: var(--slotted-radius-lg);
+    background:
+      linear-gradient(
+        100deg,
+        color-mix(in oklab, var(--slotted-data-1) 14%, transparent),
+        color-mix(in oklab, var(--slotted-data-3) 8%, transparent) 55%,
+        transparent
+      ),
+      var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+    color: var(--slotted-text);
+    column-gap: var(--slotted-space-5);
+    cursor: pointer;
+    font: inherit;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    inline-size: 100%;
+    text-align: start;
+  }
+
+  .assistantAsk::before,
+  .assistantMark::before {
+    position: absolute;
+    background: conic-gradient(
+      var(--slotted-data-1),
+      var(--slotted-data-3),
+      var(--slotted-data-5),
+      var(--slotted-data-2),
+      var(--slotted-data-1)
+    );
+    content: "";
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+
+  .assistantAsk::before {
+    padding: 1px;
+    border-radius: inherit;
+    inset: 0;
+  }
+
+  .assistantMark {
+    position: relative;
+    display: grid;
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-surface);
+    block-size: 2rem; /* literal: 28 px at the 14 px root, a whole pixel circle */
+    color: var(--slotted-tone-accent-text);
+    inline-size: 2rem; /* literal: 28 px at the 14 px root, a whole pixel circle */
+    place-items: center;
+  }
+
+  .assistantMark::before {
+    padding: 2px; /* literal: the ring of the assistant's mark in the conversation */
+    border-radius: var(--slotted-radius-full);
+    animation: assistantTurn var(--slotted-duration-loop-slow) linear infinite paused;
+    inset: -3px; /* literal: the ring of the assistant's mark in the conversation */
+  }
+
+  .assistantAsk:hover .assistantMark::before,
+  .assistantAsk:focus-visible .assistantMark::before {
+    animation-play-state: running;
+  }
+
+  @keyframes assistantTurn {
+    to {
+      transform: rotate(1turn);
+    }
+  }
+
+  .assistantGlyph {
+    display: grid;
+  }
+
+  .assistantGlyph svg {
+    block-size: 16px; /* literal: the icon size beside 14 px text (web.md, Icons with care) */
+    inline-size: 16px; /* literal: the icon size beside 14 px text (web.md, Icons with care) */
+  }
+
+  .assistantText {
+    display: grid;
+    min-inline-size: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .assistantTitle {
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-md);
+  }
+
+  .assistantAbout {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .assistantGo {
+    display: inline-flex;
+    align-items: center;
+    color: var(--slotted-text-muted);
+    gap: var(--slotted-space-3);
+  }
+
+  .assistantGo > :last-child {
+    transition: transform var(--slotted-duration-short);
+  }
+
+  .assistantAsk:hover .assistantGo > :last-child {
+    transform: translateX(2px); /* literal: the arrow leans the way it leads */
+  }
+
+  .assistantAsk[data-size="sm"] {
+    max-inline-size: 19rem; /* literal: the mark, the title and the key */
+    padding: var(--slotted-space-2) var(--slotted-space-4) var(--slotted-space-2) var(--slotted-space-3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .assistantMark::before {
+      animation: none;
+    }
+
+    .assistantGo > :last-child {
+      transition: none;
+    }
+  }
+
+  /* ---- Help index ---------------------------------------------------------------------- */
+
+  .help {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--equori-page-section-gap);
+  }
+
+  /* The search opens the page: the field at the reading measure, the common searches under it. */
+  .ask {
+    display: grid;
+    max-inline-size: 44rem; /* literal: the reading measure of the help text */
+    gap: var(--slotted-space-3);
+  }
+
+  .askHints {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--slotted-space-5);
+    row-gap: var(--slotted-space-1);
+  }
+
+  /* The walkthrough as a path: five numbered stops on one line. */
+  .pathSteps {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    list-style: none;
+  }
+
+  .pathStep {
+    position: relative;
+  }
+
+  .pathStep:not(:last-child)::after {
+    position: absolute;
+    background: var(--slotted-border-strong);
+    block-size: 1px;
+    content: "";
+    inset-block-start: calc(1rem - 0.5px); /* literal: the centre of the 2 rem number */
+    inset-inline: calc(2rem + var(--slotted-space-3)) var(--slotted-space-3); /* literal: clear of the 2 rem number */
+  }
+
+  .pathLink {
+    display: grid;
+    padding-inline-end: var(--slotted-space-5);
+    border-radius: var(--slotted-radius-md);
+    color: var(--slotted-text);
+    gap: var(--slotted-space-3);
+    text-decoration: none;
+  }
+
+  .pathNumber {
+    display: grid;
+    border: 1px solid var(--slotted-border-strong);
+    border-radius: var(--slotted-radius-full);
+    block-size: 2rem; /* literal: 28 px at the 14 px root, a whole pixel circle */
+    font-size: var(--slotted-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    inline-size: 2rem; /* literal: 28 px at the 14 px root, a whole pixel circle */
+    place-items: center;
+    transition:
+      background-color var(--slotted-duration-short),
+      border-color var(--slotted-duration-short),
+      color var(--slotted-duration-short);
+  }
+
+  .pathLink:hover .pathNumber {
+    border-color: var(--slotted-tone-accent-solid);
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .pathTitle {
+    overflow: hidden;
+    font-size: var(--slotted-font-size-md);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-md);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The pages by area of the app: the area names one column, its pages the rows beside it. */
+  .areas {
+    column-gap: var(--slotted-space-9);
+    columns: 2;
+  }
+
+  .area {
+    display: grid;
+    align-items: start;
+    padding-block: var(--slotted-space-3);
+    border-block-start: 1px solid var(--slotted-border-subtle);
+    break-inside: avoid;
+    column-gap: var(--slotted-space-5);
+    grid-template-columns: 8rem minmax(0, 1fr); /* literal: the longest area name, Planejamento */
+  }
+
+  .areaName {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    block-size: 2.5rem; /* literal: the height of one row, so the name sits on the first row */
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+  }
+
+  .entryLink {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .entryLink .rowEnd {
+    grid-column: 3;
+  }
+
+  /* Ten symptoms in two columns that fill downwards. */
+  .symptoms {
+    display: grid;
+    margin: 0;
+    padding: var(--slotted-space-2) 0 0;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+    column-gap: var(--slotted-space-9);
+    grid-auto-flow: column;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(5, auto);
+    list-style: none;
+  }
+
+  .terms {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: var(--slotted-space-4) 0 0;
+    border-block-start: 1px solid var(--slotted-border-subtle);
+    column-gap: var(--slotted-space-5);
+    list-style: none;
+    row-gap: var(--slotted-space-3);
+  }
+
+  /* ---- Search results ------------------------------------------------------------------- */
+
+  .found {
+    display: grid;
+    max-inline-size: 52rem; /* literal: the search field's measure plus the place of a result */
+    gap: var(--slotted-space-6);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .foundHead,
+  .foundKeys,
+  .foundFoot,
+  .bestEnd {
+    display: flex;
+    align-items: center;
+  }
+
+  .foundHead {
+    justify-content: space-between;
+    gap: var(--slotted-space-5);
+  }
+
+  .foundKeys {
+    gap: var(--slotted-space-2);
+  }
+
+  .foundFoot {
+    padding-block-start: var(--slotted-space-5);
+    border-block-start: 1px solid var(--slotted-border-subtle);
+    gap: var(--slotted-space-4);
+  }
+
+  /* The result Enter opens: a card of the app (O18), with the sections of its page. */
+  .best {
+    display: grid;
+    padding: var(--slotted-space-4) var(--slotted-space-5);
+    border: 1px solid var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+    gap: var(--slotted-space-3);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .best[data-active] {
+    border-color: var(--slotted-tone-accent-solid);
+  }
+
+  .bestLink {
+    display: grid;
+    border-radius: var(--slotted-radius-md);
+    color: var(--slotted-text);
+    gap: var(--slotted-space-1);
+    grid-template-columns: minmax(0, 1fr);
+    text-decoration: none;
+  }
+
+  .bestTitle {
+    overflow: hidden;
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-lg);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bestEnd {
+    flex: none;
+    gap: var(--slotted-space-3);
+    white-space: nowrap;
+  }
+
+  .bestParts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding-block-start: var(--slotted-space-3);
+    border-block-start: 1px solid var(--slotted-border-subtle);
+    column-gap: var(--slotted-space-5);
+    row-gap: var(--slotted-space-1);
+  }
+
+  .resultGroup {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resultGroup .rows {
+    padding-block-start: var(--slotted-space-2);
+  }
+
+  .resultLink {
+    align-content: center;
+    block-size: 3.5rem; /* literal: 49 px, two lines of text and 6 px above and below */
+  }
+
+  .resultTitle {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    min-inline-size: 0;
+    gap: var(--slotted-space-5);
+  }
+
+  .resultTitle > :first-child,
+  .resultExcerpt {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .resultTitle > :last-child {
+    flex: none;
+  }
+
+  .hit {
+    border-radius: var(--slotted-radius-xs);
+    background: var(--slotted-tone-accent-surface);
+    color: inherit;
+  }
+
+  .none {
+    display: grid;
+    gap: var(--slotted-space-3);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .noneTitle {
+    margin: 0;
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-xl);
+  }
+
+  .noneText {
+    max-inline-size: 44rem; /* literal: the reading measure of the help text */
+    margin: 0;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-md);
+    line-height: var(--slotted-line-height-md);
+  }
+
+  /* ---- Help page ------------------------------------------------------------------------ */
+
+  .guide {
+    display: grid;
+    align-items: start;
+    column-gap: var(--slotted-space-9);
+    grid-template-columns: 12rem minmax(0, 1fr); /* literal: the longest section title on two lines */
+  }
+
+  .rail {
+    position: sticky;
+    inset-block-start: calc(var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6));
+  }
+
+  .reading {
+    display: flex;
+    min-inline-size: 0;
+    flex-direction: column;
+    gap: var(--slotted-space-9);
+  }
+
+  .lead {
+    max-inline-size: 44rem; /* literal: the reading measure of the help text */
+    color: var(--slotted-text-muted);
+  }
+
+  .part {
+    display: grid;
+    gap: var(--slotted-space-5);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .part > :not(.walk) {
+    max-inline-size: 44rem; /* literal: the reading measure of the help text */
+  }
+
+  .partTitle {
+    margin: 0;
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-xl);
+    text-wrap: balance;
+  }
+
+  /* The steps beside their figure: the text keeps a narrow measure, the figure takes the rest
+     and stays in view while the steps scroll. */
+  .walk {
+    display: grid;
+    align-items: start;
+    column-gap: var(--slotted-space-8);
+    grid-template-columns: minmax(0, 25rem) minmax(0, 1fr); /* literal: a step reads in two or three lines */
+  }
+
+  /* Numbered steps read the same on every page; a step that is also a button takes an inset. */
+  .steps {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    grid-template-columns: minmax(0, 1fr);
+    list-style: none;
+  }
+
+  .stepsPick .stepLine {
+    padding-inline: var(--slotted-space-3);
+  }
+
+  .stepsPick .step:not(:last-child)::before {
+    inset-inline-start: calc(var(--slotted-space-3) + 0.75rem - 0.5px); /* literal: the centre of the 1.5 rem number */
+  }
+
+  .step {
+    position: relative;
+  }
+
+  .step:not(:last-child)::before {
+    position: absolute;
+    background: var(--slotted-border-subtle);
+    content: "";
+    inline-size: 1px;
+    inset-block: calc(var(--slotted-space-3) + 1.5rem + var(--slotted-space-1)) calc(var(--slotted-space-1) - var(--slotted-space-3)); /* literal: from under the 1.5 rem number to the next one */
+    inset-inline-start: calc(0.75rem - 0.5px); /* literal: the centre of the 1.5 rem number */
+  }
+
+  .stepLine {
+    display: grid;
+    align-items: start;
+    padding: var(--slotted-space-3) 0;
+    color: var(--slotted-text);
+    column-gap: var(--slotted-space-4);
+    grid-template-columns: 1.5rem minmax(0, 1fr); /* literal: the 21 px number */
+  }
+
+  .stepButton {
+    border: 0;
+    border-radius: var(--slotted-radius-md);
+    background: none;
+    color: var(--slotted-text-muted);
+    cursor: pointer;
+    font: inherit;
+    inline-size: 100%;
+    text-align: start;
+    transition:
+      background-color var(--slotted-duration-short),
+      color var(--slotted-duration-short);
+  }
+
+  .stepButton:hover,
+  .stepButton[data-current] {
+    color: var(--slotted-text);
+  }
+
+  .stepButton[data-current] {
+    background: var(--slotted-tone-accent-surface);
+  }
+
+  .stepNumber {
+    display: grid;
+    border: 1px solid var(--slotted-border-strong);
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-surface-sunken);
+    block-size: 1.5rem; /* literal: 21 px at the 14 px root, the height of the step's first line */
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    inline-size: 1.5rem; /* literal: 21 px at the 14 px root, the height of the step's first line */
+    place-items: center;
+  }
+
+  .stepButton[data-current] .stepNumber {
+    border-color: var(--slotted-tone-accent-solid);
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .stepText {
+    font-size: var(--slotted-font-size-lg);
+    line-height: 1.5rem; /* literal: the height of the number, so the first line centres on it */
+  }
+
+  .stepText strong {
+    color: var(--slotted-text);
+    font-weight: var(--slotted-font-weight-semibold);
+  }
+
+  .stage {
+    position: sticky;
+    display: grid;
+    gap: var(--slotted-space-3);
+    grid-template-columns: minmax(0, 1fr);
+    inset-block-start: calc(var(--slotted-page-sticky-top, 0px) + var(--slotted-space-6));
+  }
+
+  .stageBar,
+  .caption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+  }
+
+  .captionText {
+    display: flex;
+    align-items: baseline;
+    min-inline-size: 0;
+    gap: var(--slotted-space-3);
+  }
+
+  .captionCount {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .captionWhat {
+    overflow: hidden;
+    min-inline-size: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .figure {
+    display: grid;
+    margin: 0;
+    gap: var(--slotted-space-3);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* A capture of the app stands as a card of the app (O18). */
+  .shot {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    aspect-ratio: 8 / 5; /* literal: every capture is cut at 640 by 400 */
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+  }
+
+  .shotImage {
+    display: block;
+    block-size: 100%;
+    inline-size: 100%;
+    object-fit: cover;
+  }
+
+  .shotLight,
+  :root[data-slotted-scheme="light"] .shotDark {
+    display: none;
+  }
+
+  :root[data-slotted-scheme="light"] .shotLight {
+    display: block;
+  }
+
+  /* The place a step points at: an outline, its number, and the rest of the capture dimmed. */
+  .spot {
+    position: absolute;
+    border-radius: var(--slotted-radius-md);
+    box-shadow: 0 0 0 100rem color-mix(in oklab, var(--slotted-surface-sunken) 55%, transparent); /* literal: a spread wider than any capture dims everything outside the mark */
+    outline: 2px solid var(--slotted-tone-accent-solid); /* literal: a mark over an image needs 3:1 against any capture */
+  }
+
+  .spotNumber {
+    position: absolute;
+    display: grid;
+    border-radius: var(--slotted-radius-full);
+    background: var(--slotted-tone-accent-solid);
+    block-size: 1.5rem; /* literal: the 21 px number of the step it repeats */
+    color: var(--slotted-tone-accent-on-solid);
+    font-size: var(--slotted-font-size-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--slotted-font-weight-semibold);
+    inline-size: 1.5rem; /* literal: the 21 px number of the step it repeats */
+    inset-block-start: -0.75rem; /* literal: centred on the mark's corner */
+    inset-inline-start: -0.75rem; /* literal: centred on the mark's corner */
+    place-items: center;
+  }
+
+  .spotNumber:empty {
+    display: none;
+  }
+
+  /* Each mark is placed in percent of its capture; the page's Markdown carries these values. */
+  .spotCard {
+    block-size: 53%; /* literal: the first card in the capture of the cards list */
+    inline-size: 51.5%; /* literal: the first card in the capture of the cards list */
+    inset-block-start: 4%; /* literal: the first card in the capture of the cards list */
+    inset-inline-start: 4%; /* literal: the first card in the capture of the cards list */
+  }
+
+  .spotPay {
+    block-size: 7.25%; /* literal: the Pagar button in the capture of the statement */
+    inline-size: 7.7%; /* literal: the Pagar button in the capture of the statement */
+    inset-block-start: 5.25%; /* literal: the Pagar button in the capture of the statement */
+    inset-inline-start: 91.6%; /* literal: the Pagar button in the capture of the statement */
+  }
+
+  .spotTotal {
+    block-size: 8%; /* literal: the total in the capture of the statement */
+    inline-size: 8.5%; /* literal: the total in the capture of the statement */
+    inset-block-start: 16.5%; /* literal: the total in the capture of the statement */
+    inset-inline-start: 32%; /* literal: the total in the capture of the statement */
+  }
+
+  .spotAmount {
+    block-size: 21%; /* literal: the amount field in the capture of the dialog */
+    inline-size: 91.5%; /* literal: the amount field in the capture of the dialog */
+    inset-block-start: 21.5%; /* literal: the amount field in the capture of the dialog */
+    inset-inline-start: 4.25%; /* literal: the amount field in the capture of the dialog */
+  }
+
+  .spotAccount {
+    block-size: 37%; /* literal: the account and the date in the capture of the dialog */
+    inline-size: 91.5%; /* literal: the account and the date in the capture of the dialog */
+    inset-block-start: 41.5%; /* literal: the account and the date in the capture of the dialog */
+    inset-inline-start: 4.25%; /* literal: the account and the date in the capture of the dialog */
+  }
+
+  .spotConfirm {
+    block-size: 10.5%; /* literal: the confirm button in the capture of the dialog */
+    inline-size: 18.3%; /* literal: the confirm button in the capture of the dialog */
+    inset-block-start: 84%; /* literal: the confirm button in the capture of the dialog */
+    inset-inline-start: 76.1%; /* literal: the confirm button in the capture of the dialog */
+  }
+
+  /* What the steps lead to, set apart from them by two rules. */
+  .outcome {
+    margin: 0;
+    padding-block: var(--slotted-space-4);
+    border-block: 1px solid var(--slotted-border-subtle);
+    font-size: var(--slotted-font-size-lg);
+    line-height: var(--slotted-line-height-lg);
+  }
+
+  .inlineFigure {
+    max-inline-size: 36rem; /* literal: a capture of 640 px drawn below its own size */
+    margin-block-start: var(--slotted-space-4);
+  }
+
+  /* A video waits behind its first frame: nothing moves until the reader asks. */
+  .clip {
+    max-inline-size: 36rem; /* literal: a capture of 640 px drawn below its own size */
+    margin-block-end: var(--slotted-space-4);
+  }
+
+  .clip .figure {
+    position: relative;
+  }
+
+  .clipPlay {
+    position: absolute;
+    display: grid;
+    inset: 0;
+    place-items: center;
+  }
+
+  /* What follows a page: the symptoms of its task, the assistant, the pages beside it. */
+  .after {
+    display: grid;
+    gap: var(--slotted-space-6);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .linked {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .linked .rows {
+    padding-block-start: var(--slotted-space-2);
+  }
+
+  /* A symptom reads the same way every time: the cause, the steps, the page with more. */
+  .fix {
+    display: grid;
+    margin: 0;
+    gap: var(--slotted-space-4);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .fixRow {
+    display: grid;
+    align-items: start;
+    column-gap: var(--slotted-space-5);
+    grid-template-columns: 7.5rem minmax(0, 1fr); /* literal: the longest label, Como resolver */
+  }
+
+  .fixLabel {
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: 1.5rem; /* literal: the first line of the text beside it */
+  }
+
+  .fixBody {
+    margin: 0;
+    font-size: var(--slotted-font-size-lg);
+    line-height: 1.5rem; /* literal: the line of a step, so cause and steps share one rhythm */
+  }
+
+  .fixBody .step:first-child .stepLine {
+    padding-block-start: 0;
+  }
+
+  .fixBody .step:first-child::before {
+    inset-block-start: calc(1.5rem + var(--slotted-space-1)); /* literal: from under the 1.5 rem number */
+  }
+
+  .next {
+    margin-inline-start: auto;
+  }
+
+  .openScreen {
+    display: flex;
+  }
+
+  /* ---- Narrow page ----------------------------------------------------------------------- */
+
+  @container slotted-page (max-width: 1023px) { /* literal: the width usePageWide reads */
+    .areas {
+      columns: 1;
+    }
+
+    .guide,
+    .walk {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rail {
+      position: static;
+    }
+  }
+
+  @container slotted-page (max-width: 599px) { /* literal: the phone width of ADR 027 */
+    .row {
+      block-size: var(--slotted-target-comfortable);
+    }
+
+    .resultLink {
+      block-size: 3.5rem; /* literal: 49 px, the title and its place */
+    }
+
+    .pathSteps {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pathStep:not(:last-child)::after {
+      block-size: auto;
+      inline-size: 1px;
+      inset-block: calc(50% + 1rem + var(--slotted-space-1)) calc(-50% + 1rem + var(--slotted-space-1)); /* literal: from under one 2 rem number to the next */
+      inset-inline: calc(1rem - 0.5px) auto; /* literal: the centre of the 2 rem number */
+    }
+
+    .pathLink {
+      align-items: center;
+      padding-inline-end: 0;
+      grid-template-columns: 2rem minmax(0, 1fr); /* literal: the 28 px number */
+      min-block-size: var(--slotted-target-comfortable);
+    }
+
+    .area,
+    .fixRow {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .areaName {
+      block-size: 2rem; /* literal: the area's name above its rows */
+    }
+
+    .symptoms {
+      grid-auto-flow: row;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: none;
+    }
+
+    /* A result keeps its title and its place; the excerpt has no room for a whole sentence, and
+       a phone has no keys to name. */
+    .resultLink .resultExcerpt,
+    .assistantKey {
+      display: none;
+    }
+
+    .resultLink .resultTitle,
+    .bestLink .resultTitle {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0;
+    }
+
+    .bestLink .resultExcerpt,
+    .assistantAbout {
+      white-space: normal;
+    }
+
+    .bestParts {
+      flex-direction: column;
+      row-gap: var(--slotted-space-2);
+    }
+
+    .foundFoot {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--slotted-space-3);
+    }
+
+    .stepFigure {
+      margin-block: 0 var(--slotted-space-4);
+      margin-inline-start: calc(1.5rem + var(--slotted-space-4)); /* literal: under the step's text, clear of its number */
+    }
+  }
+}
