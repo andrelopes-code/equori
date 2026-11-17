@@ -52,6 +52,8 @@ func readMarketData(
 		return marketIndexRates(ctx, svc, in)
 	case "index_expectations":
 		return marketIndexExpectations(ctx, svc, in)
+	case "curves":
+		return marketCurves(ctx, svc)
 	case "calendars":
 		out := getMarketDataOut{Calendars: []calendarView{}}
 		for _, c := range cals.List() {
@@ -268,4 +270,31 @@ func marketIndexExpectations(
 	}
 
 	return getMarketDataOut{IndexExpectations: v}, nil
+}
+
+func marketCurves(ctx context.Context, svc Service) (getMarketDataOut, error) {
+	curves, err := svc.Curves(ctx)
+	if err != nil {
+		return getMarketDataOut{}, err
+	}
+
+	out := getMarketDataOut{Curves: make([]curveView, len(curves))}
+	for i, c := range curves {
+		v := curveView{
+			ID:       c.ID,
+			Kind:     c.Kind,
+			Index:    c.Index,
+			Currency: c.Currency,
+			BaseDate: tool.DateOf(c.Base),
+			Source:   c.Source,
+			Points:   make([]curvePointView, len(c.Points)),
+		}
+		for j, p := range c.Points {
+			v.Points[j] = curvePointView{Maturity: tool.DateOf(p.Maturity), Rate: p.Rate}
+		}
+
+		out.Curves[i] = v
+	}
+
+	return out, nil
 }

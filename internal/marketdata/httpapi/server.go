@@ -54,6 +54,7 @@ type Service interface {
 	Indexes(ctx context.Context) ([]domain.IndexSummary, error)
 	IndexRates(ctx context.Context, id string, from, to time.Time) ([]domain.IndexRate, error)
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
+	Curves(ctx context.Context) ([]domain.Curve, error)
 	InstitutionIndicators(
 		ctx context.Context, scheme, identifier string,
 	) (domain.InstitutionIndicators, error)
@@ -96,12 +97,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listCalendars))
 	mux.HandleFunc("GET "+BaseURL+"/calendars/{name}/holidays",
 		httpserver.Handle(s.errs, http.StatusOK, s.listHolidays))
-	mux.HandleFunc("GET "+BaseURL+"/indexes",
-		httpserver.Handle(s.errs, http.StatusOK, s.listIndexes))
-	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/rates",
-		httpserver.Handle(s.errs, http.StatusOK, s.listIndexRates))
-	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/expectations",
-		httpserver.Handle(s.errs, http.StatusOK, s.listIndexExpectations))
+	s.registerRates(mux)
 	mux.HandleFunc("GET "+BaseURL+"/market-data/institution-indicators",
 		httpserver.Handle(s.errs, http.StatusOK, s.getInstitutionIndicators))
 	mux.HandleFunc("GET "+BaseURL+"/market-data/feeds",
@@ -141,6 +137,18 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/prices",
 		httpserver.Handle(s.errs, http.StatusCreated, s.recordPrice))
 	mux.HandleFunc("POST "+BaseURL+"/prices/import", s.importPrices)
+}
+
+// registerRates adds the routes of the indexes and the curves.
+func (s *Server) registerRates(mux *http.ServeMux) {
+	mux.HandleFunc("GET "+BaseURL+"/indexes",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIndexes))
+	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/rates",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIndexRates))
+	mux.HandleFunc("GET "+BaseURL+"/indexes/{id}/expectations",
+		httpserver.Handle(s.errs, http.StatusOK, s.listIndexExpectations))
+	mux.HandleFunc("GET "+BaseURL+"/curves",
+		httpserver.Handle(s.errs, http.StatusOK, s.listCurves))
 }
 
 // visible returns the instrument of code when the book of ctx may read it (A236 FC1).

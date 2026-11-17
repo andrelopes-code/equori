@@ -22,6 +22,7 @@ func (getMarketDataView) Values() []string {
 		"indexes",
 		"index_rates",
 		"index_expectations",
+		"curves",
 	}
 }
 
@@ -115,6 +116,21 @@ type indexExpectationsView struct {
 	Points     []indexRateView `json:"points"`
 }
 
+type curveView struct {
+	ID       string           `json:"id"`
+	Kind     string           `json:"kind"`
+	Index    string           `json:"index,omitzero"`
+	Currency string           `json:"currency"`
+	BaseDate tool.Date        `json:"base_date"`
+	Source   string           `json:"source"`
+	Points   []curvePointView `json:"points"`
+}
+
+type curvePointView struct {
+	Maturity tool.Date `json:"maturity"`
+	Rate     string    `json:"rate"`
+}
+
 type indexRateView struct {
 	Date tool.Date `json:"date"`
 	Rate string    `json:"rate"`
@@ -142,6 +158,8 @@ type getMarketDataOut struct {
 	IndexRates  []indexRateView  `json:"index_rates,omitzero"`
 	// IndexExpectations holds annual rates expected on each date by the latest survey.
 	IndexExpectations indexExpectationsView `json:"index_expectations,omitzero"`
+	// Curves holds the rates the enabled curve sources report by maturity.
+	Curves []curveView `json:"curves,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {

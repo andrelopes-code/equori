@@ -2993,7 +2993,8 @@
             "holidays",
             "indexes",
             "index_rates",
-            "index_expectations"
+            "index_expectations",
+            "curves"
           ]
         },
         "code": {
@@ -3587,6 +3588,62 @@
             "points"
           ],
           "additionalProperties": false
+        },
+        "curves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "index": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "base_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "source": {
+                "type": "string"
+              },
+              "points": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "maturity": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "rate": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "maturity",
+                    "rate"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "currency",
+              "base_date",
+              "source",
+              "points"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false

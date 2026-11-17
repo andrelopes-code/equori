@@ -140,6 +140,7 @@ func (e InstrumentType) Valid() bool {
 
 // Defines values for MarketDataFeedKind.
 const (
+	MarketDataFeedKindCurve       MarketDataFeedKind = "curve"
 	MarketDataFeedKindExpectation MarketDataFeedKind = "expectation"
 	MarketDataFeedKindIndex       MarketDataFeedKind = "index"
 	MarketDataFeedKindInstitution MarketDataFeedKind = "institution"
@@ -149,6 +150,8 @@ const (
 // Valid indicates whether the value is a known member of the MarketDataFeedKind enum.
 func (e MarketDataFeedKind) Valid() bool {
 	switch e {
+	case MarketDataFeedKindCurve:
+		return true
 	case MarketDataFeedKindExpectation:
 		return true
 	case MarketDataFeedKindIndex:
@@ -224,6 +227,36 @@ type CatalogSearch struct {
 
 	// Unavailable The enabled sources that failed or passed their bound.
 	Unavailable []string `json:"unavailable"`
+}
+
+// Curve defines model for Curve.
+type Curve struct {
+	BaseDate openapi_types.Date `json:"base_date"`
+	Currency string             `json:"currency"`
+	Id       string             `json:"id"`
+
+	// Index The index a real curve is a spread over.
+	Index *string `json:"index"`
+
+	// Kind nominal for a fixed rate, real for a spread over the index.
+	Kind   string       `json:"kind"`
+	Points []CurvePoint `json:"points"`
+	Source string       `json:"source"`
+}
+
+// CurveList defines model for CurveList.
+type CurveList struct {
+	Items []Curve `json:"items"`
+}
+
+// CurvePoint defines model for CurvePoint.
+type CurvePoint struct {
+	Maturity openapi_types.Date `json:"maturity"`
+
+	// Rate Annual rate at the maturity, an exact decimal fraction (0.1310 is 13.10%).
+	//
+	// Example: 0.131000000000
+	Rate string `json:"rate"`
 }
 
 // FieldError defines model for FieldError.

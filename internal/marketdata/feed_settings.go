@@ -36,7 +36,7 @@ func (m *Module) enabledFeeds(ctx context.Context) (map[string]bool, error) {
 	return on, nil
 }
 
-// Feeds lists every feed of the registry, price sources, then index and expectation sources, with
+// Feeds lists every feed of the registry, price sources, then index, expectation and curve sources, with
 // its state (ADR 025 F5).
 func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 	on, err := m.enabledFeeds(ctx)
@@ -72,7 +72,12 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		return nil, err
 	}
 
-	out, err = m.indexFeeds(ctx, out, fs)
+	return m.registryFeeds(ctx, out, fs)
+}
+
+// registryFeeds appends the index, expectation, curve and institution sources to out.
+func (m *Module) registryFeeds(ctx context.Context, out []Feed, fs feedState) ([]Feed, error) {
+	out, err := m.indexFeeds(ctx, out, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -82,12 +87,12 @@ func (m *Module) Feeds(ctx context.Context) ([]Feed, error) {
 		return nil, err
 	}
 
-	out, err = m.institutionFeeds(ctx, out, fs)
+	out, err = m.curveFeeds(ctx, out, fs)
 	if err != nil {
 		return nil, err
 	}
 
-	return out, nil
+	return m.institutionFeeds(ctx, out, fs)
 }
 
 // feedState holds what every feed row of Feeds shares: the enabled ids, the ids suggested for the
@@ -285,6 +290,10 @@ func feedLags() map[string]int {
 	}
 
 	for _, e := range expectationEntries() {
+		lags[e.id] = e.lag
+	}
+
+	for _, e := range curveEntries() {
 		lags[e.id] = e.lag
 	}
 

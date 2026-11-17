@@ -75,6 +75,8 @@ func (m *Module) TickFeeds(ctx context.Context) {
 		}
 	}
 
+	m.tickCurves(ctx, on)
+
 	for _, src := range m.feeds.Institutions {
 		if on[src.ID()] {
 			err := m.tickInstitution(ctx, src)

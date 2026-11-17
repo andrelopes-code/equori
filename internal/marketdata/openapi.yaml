@@ -127,6 +127,21 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+  /curves:
+    get:
+      tags: [marketdata]
+      operationId: listCurves
+      x-book-role: read
+      summary: The stored curves of the enabled curve sources, oldest maturity first (indexer comparison IC12).
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurveList"
+        "401":
+          $ref: "#/components/responses/Problem"
   /market-data/institution-indicators:
     get:
       tags: [marketdata]
@@ -764,6 +779,53 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/IndexExpectation"
+  CurveList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/Curve"
+  Curve:
+    type: object
+    additionalProperties: false
+    required: [id, kind, index, currency, base_date, source, points]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      kind:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: nominal for a fixed rate, real for a spread over the index.
+      index:
+        type: string
+        nullable: true
+        description: The index a real curve is a spread over.
+      currency:
+        type: string
+      base_date:
+        type: string
+        format: date
+      source:
+        type: string
+      points:
+        type: array
+        items:
+          $ref: "#/components/schemas/CurvePoint"
+  CurvePoint:
+    type: object
+    additionalProperties: false
+    required: [maturity, rate]
+    properties:
+      maturity:
+        type: string
+        format: date
+      rate:
+        type: string
+        description: Annual rate at the maturity, an exact decimal fraction (0.1310 is 13.10%).
+        example: "0.131000000000"
   InstitutionIndicators:
     type: object
     additionalProperties: false
@@ -876,7 +938,7 @@ schemas:
         pattern: "^[a-z0-9_]{2,40}$"
       kind:
         type: string
-        enum: [price, index, expectation, institution]
+        enum: [price, index, expectation, curve, institution]
       enabled:
         type: boolean
       suggested:

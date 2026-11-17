@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/marketdata/curve"
 	"github.com/andrelopes-code/equori/internal/marketdata/expectation"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
 	"github.com/andrelopes-code/equori/internal/marketdata/index"
@@ -25,6 +26,8 @@ type FeedConfig struct {
 	Indexes []index.Source
 	// Expectations are the expectation sources (ADR 026).
 	Expectations []expectation.Source
+	// Curves are the curve sources (indexer comparison IC10).
+	Curves []curve.Source
 	// Institutions are the institution sources (A237).
 	Institutions []institution.Source
 	// Seed names the sources enabled while no setting is stored; tests set it through

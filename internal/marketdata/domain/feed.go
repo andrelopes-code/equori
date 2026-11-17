@@ -2,11 +2,12 @@ package domain
 
 import "time"
 
-// Kinds of a feed: a price, index, expectation or institution source.
+// Kinds of a feed: a price, index, expectation, curve or institution source.
 const (
 	FeedPrice       = "price"
 	FeedIndex       = "index"
 	FeedExpectation = "expectation"
+	FeedCurve       = "curve"
 	FeedInstitution = "institution"
 )
 

@@ -3186,6 +3186,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/curves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The stored curves of the enabled curve sources, oldest maturity first (indexer comparison IC12). */
+        get: operations["listCurves"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market-data/institution-indicators": {
         parameters: {
             query?: never;
@@ -6986,6 +7003,30 @@ export interface components {
             survey_date: string;
             items: components["schemas"]["IndexExpectation"][];
         };
+        CurveList: {
+            items: components["schemas"]["Curve"][];
+        };
+        Curve: {
+            id: string;
+            /** @description nominal for a fixed rate, real for a spread over the index. */
+            kind: string;
+            /** @description The index a real curve is a spread over. */
+            index: string | null;
+            currency: string;
+            /** Format: date */
+            base_date: string;
+            source: string;
+            points: components["schemas"]["CurvePoint"][];
+        };
+        CurvePoint: {
+            /** Format: date */
+            maturity: string;
+            /**
+             * @description Annual rate at the maturity, an exact decimal fraction (0.1310 is 13.10%).
+             * @example 0.131000000000
+             */
+            rate: string;
+        };
         InstitutionIndicators: {
             source: string;
             /** @description The address of the portal of the source, where the figures can be checked. */
@@ -7047,7 +7088,7 @@ export interface components {
         MarketDataFeed: {
             id: string;
             /** @enum {string} */
-            kind: "price" | "index" | "expectation" | "institution";
+            kind: "price" | "index" | "expectation" | "curve" | "institution";
             enabled: boolean;
             /** @description Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
@@ -13910,6 +13951,27 @@ export interface operations {
             };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+        };
+    };
+    listCurves: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurveList"];
+                };
+            };
+            401: components["responses"]["Problem"];
         };
     };
     getInstitutionIndicators: {
