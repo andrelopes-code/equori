@@ -29,7 +29,12 @@ export const axes: readonly AxisSpec[] = [
     max: 360,
     step: 1,
     scale: 1,
-    format: { style: "unit", unit: "degree", maximumFractionDigits: 0 },
+    format: {
+      style: "unit",
+      unit: "degree",
+      unitDisplay: "narrow",
+      maximumFractionDigits: 0,
+    },
   },
   {
     axis: "c",
