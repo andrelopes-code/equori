@@ -24,11 +24,13 @@ export function ActionFacts({ action }: ActionFactsProps) {
   return (
     <>
       <FactItem label={t("transaction.facts.action")}>
-        {t("transaction.facts.actionValue", {
-          kind: t(actionKindKeys[action.kind]),
-          from: action.ratio_from,
-          to: action.ratio_to,
-        })}
+        {action.kind === "unit_tax"
+          ? t(actionKindKeys.unit_tax)
+          : t("transaction.facts.actionValue", {
+              kind: t(actionKindKeys[action.kind]),
+              from: action.ratio_from,
+              to: action.ratio_to,
+            })}
       </FactItem>
       <FactItem label={t("transaction.facts.received")}>
         {fmt.number(received, scale(received.currency))}

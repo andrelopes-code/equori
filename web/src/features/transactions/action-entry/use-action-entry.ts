@@ -6,14 +6,16 @@ import { ProblemError, errorText, fieldErrors } from "@/api/problem";
 import type { components } from "@/api/schema.gen";
 import { accountsQuery, positionsQuery } from "@/features/accounts";
 import { parseRate } from "@/features/instruments";
-import { settingsQuery, useScale } from "@/features/setup";
+import { instrumentsQuery, settingsQuery, useScale } from "@/features/setup";
 import { actionPreview } from "@/features/transactions/action-entry/action-preview";
 import {
+  actionPreset,
   emptyAction,
   isActionDraft,
 } from "@/features/transactions/action-entry/action-draft";
 import type { ActionDraft } from "@/features/transactions/action-entry/action-draft";
 import { useRecordCorporateAction } from "@/features/transactions/api";
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
 import { useBrokerages } from "@/features/transactions/brokerage-account/use-brokerages";
 import {
   clearDraft,
@@ -31,6 +33,7 @@ const draftKey = "new-corporate-action";
 export function useActionEntry(
   accountId: string | null,
   brokerageId: string | null = null,
+  presets: NewTransactionSearch = {},
 ) {
   const t = useT();
   const api = useApi();
@@ -39,11 +42,18 @@ export function useActionEntry(
   const record = useRecordCorporateAction();
   const accounts = useQuery(accountsQuery(api));
   const base = useQuery(settingsQuery(api)).data?.base_currency;
+  const instruments = useQuery(instrumentsQuery(api)).data?.items;
 
   const [draft, setDraft] = useState<ActionDraft>(() => {
     const stored = readStored(draftKey);
-    const start = isActionDraft(stored) ? stored : emptyAction(today);
-    return { ...start, brokerageId: brokerageId ?? start.brokerageId };
+    const start = isActionDraft(stored)
+      ? { ...emptyAction(today), ...stored }
+      : emptyAction(today);
+    return {
+      ...start,
+      ...actionPreset(presets),
+      brokerageId: brokerageId ?? start.brokerageId,
+    };
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [summary, setSummary] = useState<string | null>(null);
@@ -84,6 +94,7 @@ export function useActionEntry(
     brokerages: state.brokerages,
     brokerage,
     instrument,
+    fund: instruments?.find((i) => i.code === instrument)?.type === "fund",
     heldCodes: state.holdings.map((a) => a.currency),
     held: held?.quantity.amount,
     quantityScale,
@@ -95,22 +106,29 @@ export function useActionEntry(
     components["schemas"]["Transaction"] | null
   > => {
     const bonus = draft.kind === "bonus";
+    const unitTax = draft.kind === "unit_tax";
     const unitCost = bonus ? parseRate(draft.unitCost) : null;
     const problems: Record<string, string> = {};
     if (brokerage === undefined)
       problems.brokerage_id = t("entry.required.account");
     if (instrument === null)
       problems.instrument = t("trade.required.securityAccount");
-    if ((draft.ratioFrom ?? 0) <= 0)
-      problems.ratio_from = t("action.required.ratio");
-    if ((draft.ratioTo ?? 0) <= 0)
-      problems.ratio_to = t("action.required.ratio");
+    if (unitTax) {
+      if (state.held === undefined)
+        problems.instrument = t("trade.required.securityAccount");
+      if (draft.quantity <= 0) problems.quantity = t("trade.required.quantity");
+      if (draft.amount <= 0) problems.amount = t("entry.required.amount");
+    } else {
+      if ((draft.ratioFrom ?? 0) <= 0)
+        problems.ratio_from = t("action.required.ratio");
+      if ((draft.ratioTo ?? 0) <= 0)
+        problems.ratio_to = t("action.required.ratio");
+    }
     if (
       Object.keys(problems).length > 0 ||
       brokerage === undefined ||
       instrument === null ||
-      draft.ratioFrom === null ||
-      draft.ratioTo === null
+      (!unitTax && (draft.ratioFrom === null || draft.ratioTo === null))
     ) {
       setErrors(problems);
       setSummary(t("entry.fixFields"));
@@ -119,19 +137,30 @@ export function useActionEntry(
     setErrors({});
     setSummary(null);
     const description = draft.description.trim();
-    const order: components["schemas"]["CorporateActionInput"] = {
-      brokerage_id: brokerage.id,
-      instrument,
-      kind: draft.kind,
-      date: draft.date,
-      ratio_from: draft.ratioFrom,
-      ratio_to: draft.ratioTo,
-      ...(unitCost === null ? {} : { unit_cost: unitCost }),
-      ...(bonus && draft.categoryId !== null
-        ? { category_id: draft.categoryId }
-        : {}),
-      ...(description === "" ? {} : { description }),
-    };
+    const order: components["schemas"]["CorporateActionInput"] = unitTax
+      ? {
+          ...(state.held === undefined ? {} : { account_id: state.held.id }),
+          kind: draft.kind,
+          date: draft.date,
+          ratio_from: 1,
+          ratio_to: 1,
+          quantity: { amount: draft.quantity, currency: instrument },
+          amount: { amount: draft.amount, currency: base ?? "" },
+          ...(description === "" ? {} : { description }),
+        }
+      : {
+          brokerage_id: brokerage.id,
+          instrument,
+          kind: draft.kind,
+          date: draft.date,
+          ratio_from: draft.ratioFrom ?? 0,
+          ratio_to: draft.ratioTo ?? 0,
+          ...(unitCost === null ? {} : { unit_cost: unitCost }),
+          ...(bonus && draft.categoryId !== null
+            ? { category_id: draft.categoryId }
+            : {}),
+          ...(description === "" ? {} : { description }),
+        };
     try {
       const created = await record.mutateAsync(order);
       clearDraft(draftKey);

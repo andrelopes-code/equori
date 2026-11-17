@@ -993,6 +993,9 @@ export const catalogEn = {
   "action.kind.split": "Split",
   "action.kind.reverse_split": "Reverse split",
   "action.kind.bonus": "Bonus",
+  "action.kind.unit_tax": "Unit tax (come-cotas)",
+  "action.unitTax.quantity": "Units cancelled",
+  "action.unitTax.amount": "Tax withheld",
   "action.date": "First day without the right",
   "action.ratioFrom": "For each",
   "action.ratioTo": "Holder gets",
@@ -2397,6 +2400,7 @@ export const catalogEn = {
   "overview.attention.fixedIncomeDue.amortization":
     "Amortization of {instrument} due",
   "overview.attention.fixedIncomeDue.maturity": "{instrument} matured",
+  "overview.attention.fixedIncomeDue.unit_tax": "Unit tax of {instrument} due",
   "overview.attention.fixedIncomeWeek":
     "{count} fixed income payments this week · {amount}",
   "overview.attention.record": "Record",

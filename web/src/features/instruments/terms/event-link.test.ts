@@ -46,4 +46,18 @@ describe("recordLink", () => {
         "&quantity=10000000&date=2027-01-05",
     );
   });
+
+  // FC25: the unit tax of a fund opens the corporate action form with its units.
+  it("opens a unit tax for a unit tax event", () => {
+    const tax = {
+      ...event("unit_tax", "2026-11-30"),
+      instrument: "FUND1",
+      quantity: { amount: 250000, currency: "FUND1" },
+    };
+
+    expect(recordLink(tax, scale)).toBe(
+      `/transactions/new?kind=corporate_action&action=unit_tax` +
+        `&account_id=${account_id}&quantity=250000&date=2026-11-30`,
+    );
+  });
 });

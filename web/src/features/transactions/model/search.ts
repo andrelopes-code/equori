@@ -106,6 +106,8 @@ export interface NewTransactionSearch {
   // Minor units of the account currency.
   gross?: number;
   income_type?: string;
+  // The kind of a corporate action.
+  action?: string;
 }
 
 // The presets of the new-entry route: the account that pays, the account that receives, the
@@ -125,6 +127,9 @@ export function validateNewTransactionSearch(
   const type = text(raw.income_type, 40);
   const income_type =
     type !== undefined && incomeTypePattern.test(type) ? type : undefined;
+  const kind = text(raw.action, 40);
+  const action =
+    kind !== undefined && incomeTypePattern.test(kind) ? kind : undefined;
   return {
     ...(raw.side === "buy" || raw.side === "sell" ? { side: raw.side } : {}),
     ...(date === undefined ? {} : { date }),
@@ -132,6 +137,7 @@ export function validateNewTransactionSearch(
     ...(unit_price === undefined ? {} : { unit_price }),
     ...(gross === undefined ? {} : { gross }),
     ...(income_type === undefined ? {} : { income_type }),
+    ...(action === undefined ? {} : { action }),
     ...(account_id === undefined ? {} : { account_id }),
     ...(to_account_id === undefined ? {} : { to_account_id }),
     ...(brokerage_id === undefined ? {} : { brokerage_id }),

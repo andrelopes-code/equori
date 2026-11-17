@@ -35,7 +35,7 @@ export function useBuiltEntries(
   const note = useNoteEntry(brokerageId);
   const foreign = useForeignEntry(accountId);
   const exchange = useExchangeEntry(accountId);
-  const action = useActionEntry(accountId, brokerageId);
+  const action = useActionEntry(accountId, brokerageId, presets);
   const custody = useCustodyEntry(accountId, brokerageId);
 
   const byKind = {

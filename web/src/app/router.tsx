@@ -530,6 +530,7 @@ const newTransactionRoute = createRoute({
     unit_price?: string;
     gross?: number;
     income_type?: string;
+    action?: string;
     kind?: BuiltKind | "transfer";
   } => ({
     ...validateNewTransactionSearch(search),

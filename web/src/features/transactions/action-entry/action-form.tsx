@@ -5,10 +5,11 @@ import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { TextField } from "@slotted/react/text-field";
 
 import {
-  actionKinds,
   actionKindKeys,
+  offeredKinds,
 } from "@/features/transactions/action-entry/action-kind";
 import { ActionBonusFields } from "@/features/transactions/action-entry/action-bonus-fields";
+import { ActionUnitTaxFields } from "@/features/transactions/action-entry/action-unit-tax-fields";
 import type { ActionDraft } from "@/features/transactions/action-entry/action-draft";
 import { ActionPreviewText } from "@/features/transactions/action-entry/action-preview-text";
 import type { useActionEntry } from "@/features/transactions/action-entry/use-action-entry";
@@ -42,6 +43,8 @@ export function ActionForm({
   onKind,
 }: ActionFormProps) {
   const t = useT();
+  const kinds = offeredKinds(view.fund);
+  const unitTax = draft.kind === "unit_tax";
 
   function handleChange(patch: Partial<ActionDraft>) {
     onChange({ ...draft, ...patch });
@@ -80,11 +83,11 @@ export function ActionForm({
             aria-label={t("action.kind")}
             value={draft.kind}
             onValueChange={(kind) => {
-              const next = actionKinds.find((k) => k === kind);
+              const next = kinds.find((k) => k === kind);
               if (next !== undefined) handleChange({ kind: next });
             }}
           >
-            {actionKinds.map((kind) => (
+            {kinds.map((kind) => (
               <Segment key={kind} value={kind}>
                 {t(actionKindKeys[kind])}
               </Segment>
@@ -105,47 +108,64 @@ export function ActionForm({
         {errors.date !== undefined && <FieldError>{errors.date}</FieldError>}
       </Field>
 
-      <FormRow>
-        <Field
-          required
-          width="medium"
-          invalid={errors.ratio_from !== undefined}
-        >
-          <FieldLabel>{t("action.ratioFrom")}</FieldLabel>
-          <NumberField
-            name="ratio_from"
-            value={draft.ratioFrom}
-            min={1}
-            max={1000000}
-            format={wholeNumber}
-            onValueChange={(ratioFrom) => {
-              handleChange({ ratioFrom });
-            }}
-          />
-          {errors.ratio_from !== undefined && (
-            <FieldError>{errors.ratio_from}</FieldError>
-          )}
-        </Field>
+      {unitTax && (
+        <ActionUnitTaxFields
+          draft={draft}
+          instrument={view.instrument}
+          base={view.base}
+          scale={scale}
+          errors={errors}
+          onChange={handleChange}
+        />
+      )}
 
-        <Field required width="medium" invalid={errors.ratio_to !== undefined}>
-          <FieldLabel>{t("action.ratioTo")}</FieldLabel>
-          <NumberField
-            name="ratio_to"
-            value={draft.ratioTo}
-            min={1}
-            max={1000000}
-            format={wholeNumber}
-            onValueChange={(ratioTo) => {
-              handleChange({ ratioTo });
-            }}
-          />
-          {errors.ratio_to !== undefined && (
-            <FieldError>{errors.ratio_to}</FieldError>
-          )}
-        </Field>
-      </FormRow>
+      {!unitTax && (
+        <FormRow>
+          <Field
+            required
+            width="medium"
+            invalid={errors.ratio_from !== undefined}
+          >
+            <FieldLabel>{t("action.ratioFrom")}</FieldLabel>
+            <NumberField
+              name="ratio_from"
+              value={draft.ratioFrom}
+              min={1}
+              max={1000000}
+              format={wholeNumber}
+              onValueChange={(ratioFrom) => {
+                handleChange({ ratioFrom });
+              }}
+            />
+            {errors.ratio_from !== undefined && (
+              <FieldError>{errors.ratio_from}</FieldError>
+            )}
+          </Field>
 
-      <ActionPreviewText view={view} />
+          <Field
+            required
+            width="medium"
+            invalid={errors.ratio_to !== undefined}
+          >
+            <FieldLabel>{t("action.ratioTo")}</FieldLabel>
+            <NumberField
+              name="ratio_to"
+              value={draft.ratioTo}
+              min={1}
+              max={1000000}
+              format={wholeNumber}
+              onValueChange={(ratioTo) => {
+                handleChange({ ratioTo });
+              }}
+            />
+            {errors.ratio_to !== undefined && (
+              <FieldError>{errors.ratio_to}</FieldError>
+            )}
+          </Field>
+        </FormRow>
+      )}
+
+      {!unitTax && <ActionPreviewText view={view} />}
 
       {draft.kind === "bonus" && (
         <ActionBonusFields

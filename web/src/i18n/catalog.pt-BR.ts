@@ -1002,6 +1002,9 @@ export const catalogPtBR: Catalog = {
   "action.kind.split": "Desdobramento",
   "action.kind.reverse_split": "Grupamento",
   "action.kind.bonus": "Bonificação",
+  "action.kind.unit_tax": "Come-cotas",
+  "action.unitTax.quantity": "Cotas canceladas",
+  "action.unitTax.amount": "Imposto retido",
   "action.date": "Data ex",
   "action.ratioFrom": "A cada",
   "action.ratioTo": "O acionista fica com",
@@ -2425,6 +2428,8 @@ export const catalogPtBR: Catalog = {
   "overview.attention.fixedIncomeDue.amortization":
     "Amortização de {instrument} a registrar",
   "overview.attention.fixedIncomeDue.maturity": "{instrument} venceu",
+  "overview.attention.fixedIncomeDue.unit_tax":
+    "Come-cotas de {instrument} a registrar",
   "overview.attention.fixedIncomeWeek":
     "{count} pagamentos de renda fixa nesta semana · {amount}",
   "overview.attention.record": "Registrar",

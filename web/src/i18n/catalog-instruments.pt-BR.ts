@@ -213,6 +213,7 @@ export const instrumentsPtBR: Record<keyof typeof instrumentsEn, string> = {
   "terms.event.interest": "Juros",
   "terms.event.amortization": "Amortização",
   "terms.event.maturity": "Vencimento",
+  "terms.event.unit_tax": "Come-cotas",
   "terms.none":
     "Nenhum termo definido. Sem eles, o preço do título não é calculado dia a dia.",
   "terms.set": "Definir termos",

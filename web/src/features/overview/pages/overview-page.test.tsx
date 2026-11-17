@@ -569,6 +569,33 @@ describe("overview page", () => {
       );
     });
 
+    // FC17: a unit tax past its date and not recorded asks for the entry.
+    it("lists a due unit tax of a fund", async () => {
+      await renderApp("/", {
+        fetch: api({
+          "GET /api/v1/fixed-income-events": () =>
+            json(200, {
+              items: [
+                {
+                  account_id: reserveID,
+                  instrument: "FUND1",
+                  date: "2026-10-15",
+                  kind: "unit_tax",
+                  quantity: { amount: 1000000, currency: "FUND1" },
+                  rate_missing: false,
+                  state: "due",
+                },
+              ],
+            }),
+        }),
+      });
+      const region = await screen.findByRole("article", { name: "Attention" });
+
+      expect(
+        await within(region).findByText("Unit tax of FUND1 due"),
+      ).toBeInTheDocument();
+    });
+
     it("puts an account's unconfirmed count on its difference row", async () => {
       await renderApp("/", {
         fetch: api({

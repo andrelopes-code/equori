@@ -212,6 +212,7 @@ export const instrumentsEn = {
   "terms.event.interest": "Interest",
   "terms.event.amortization": "Amortization",
   "terms.event.maturity": "Maturity",
+  "terms.event.unit_tax": "Unit tax",
   "terms.none":
     "No terms are set. Without them, the bond's price is not calculated day by day.",
   "terms.set": "Set terms",

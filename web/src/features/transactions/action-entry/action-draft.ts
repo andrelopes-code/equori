@@ -1,4 +1,6 @@
+import { actionKinds } from "@/features/transactions/action-entry/action-kind";
 import type { ActionKind } from "@/features/transactions/action-entry/action-kind";
+import type { NewTransactionSearch } from "@/features/transactions/model/search";
 
 export interface ActionDraft {
   brokerageId: string | null;
@@ -11,6 +13,9 @@ export interface ActionDraft {
   ratioTo: number | null;
   // As typed; parsed when the action is sent.
   unitCost: string;
+  // A unit tax: the units cancelled and the tax withheld, in minor units.
+  quantity: number;
+  amount: number;
   categoryId: string | null;
   description: string;
 }
@@ -27,8 +32,24 @@ export function emptyAction(
     ratioFrom: null,
     ratioTo: null,
     unitCost: "",
+    quantity: 0,
+    amount: 0,
     categoryId: null,
     description: "",
+  };
+}
+
+// The initial values a link of the entry route gives the fields of the form (FC20).
+export function actionPreset(
+  search: NewTransactionSearch,
+): Partial<ActionDraft> {
+  const { action, date, quantity } = search;
+  const kind = actionKinds.find((k) => k === action);
+
+  return {
+    ...(kind === undefined ? {} : { kind }),
+    ...(date === undefined ? {} : { date }),
+    ...(quantity === undefined ? {} : { quantity }),
   };
 }
 

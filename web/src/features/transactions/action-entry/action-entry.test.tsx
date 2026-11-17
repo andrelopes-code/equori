@@ -5,8 +5,10 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { catalogEn } from "@/i18n/catalog.en";
 import { chooseEntryKind } from "@/testing/entry-kind";
 import { problem } from "@/testing/fake-api";
+import { fakeApi, json } from "@/testing/fake-api";
 import {
   investmentApi as api,
+  investmentRoutes,
   brokerID,
   securityID,
 } from "@/testing/investment-api";
@@ -31,6 +33,20 @@ async function proportion(from: string, to: string) {
 
 async function chooseAction(name: string) {
   await userEvent.click(await screen.findByRole("radio", { name }));
+}
+
+// The holding MXRF11 of the fixture, typed as a fund.
+function fundApi(sent: unknown[]) {
+  return fakeApi({
+    ...investmentRoutes(sent, { held: { quantity: 1000000, cost: 100000 } }),
+    "GET /api/v1/instruments": () =>
+      json(200, {
+        items: [
+          { code: "BRL", type: "currency", scale: 2, name: "Real" },
+          { code: "MXRF11", type: "fund", scale: 6, name: "MXRF11" },
+        ],
+      }),
+  });
 }
 
 async function save() {
@@ -139,6 +155,59 @@ describe("corporate action entry", () => {
         unit_cost: "5",
       },
     ]);
+  });
+
+  // FC25: the unit tax of a fund cancels units and withholds the tax.
+  it("records the unit tax of a fund", async () => {
+    const sent: unknown[] = [];
+    await renderApp(path, { fetch: fundApi(sent) });
+    await chooseAction(catalogEn["action.kind.unit_tax"]);
+    await userEvent.type(
+      screen.getByRole("textbox", {
+        name: catalogEn["action.unitTax.quantity"],
+      }),
+      "2500000",
+    );
+    await userEvent.type(
+      screen.getByRole("textbox", { name: catalogEn["action.unitTax.amount"] }),
+      "3000",
+    );
+    await save();
+
+    await waitFor(() => {
+      expect(sent).toEqual([
+        {
+          account_id: securityID,
+          kind: "unit_tax",
+          date: "2026-10-17",
+          ratio_from: 1,
+          ratio_to: 1,
+          quantity: { amount: 2500000, currency: "MXRF11" },
+          amount: { amount: 3000, currency: "BRL" },
+        },
+      ]);
+    });
+  });
+
+  it("opens the unit tax from a link with its units and date", async () => {
+    await renderApp(`${path}&action=unit_tax&quantity=250000&date=2026-11-30`, {
+      fetch: fundApi([]),
+    });
+
+    expect(
+      await screen.findByRole("textbox", {
+        name: catalogEn["action.unitTax.quantity"],
+      }),
+    ).toHaveValue("0.250000");
+  });
+
+  it("offers the unit tax for a fund only", async () => {
+    await renderApp(path, { fetch: api([]) });
+    await screen.findByRole("radio", { name: catalogEn["action.kind.bonus"] });
+
+    expect(
+      screen.queryByRole("radio", { name: catalogEn["action.kind.unit_tax"] }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps a request without a proportion out of the API", async () => {

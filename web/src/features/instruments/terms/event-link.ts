@@ -5,7 +5,7 @@ type FixedIncomeEvent = components["schemas"]["FixedIncomeEvent"];
 const unitPriceDecimals = 12;
 
 // The URL of the entry form that records the event: a coupon income for an interest, a sale for
-// an amortization or a maturity (FC20).
+// an amortization or a maturity, a unit tax for a fund (FC20).
 export function recordLink(
   event: FixedIncomeEvent,
   scale: (code: string) => number,
@@ -19,6 +19,16 @@ export function recordSearch(
   scale: (code: string) => number,
 ): Record<string, string> {
   const { gross } = event;
+
+  if (event.kind === "unit_tax") {
+    return {
+      kind: "corporate_action",
+      action: "unit_tax",
+      account_id: event.account_id,
+      quantity: String(event.quantity.amount),
+      date: event.date,
+    };
+  }
 
   if (event.kind === "interest") {
     return {

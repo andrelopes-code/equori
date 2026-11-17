@@ -117,6 +117,7 @@ describe("validateNewTransactionSearch", () => {
         unit_price: "1000.000000000000",
         gross: 60206,
         income_type: "coupon",
+        action: "unit_tax",
       }),
     ).toEqual({
       side: "sell",
@@ -125,6 +126,7 @@ describe("validateNewTransactionSearch", () => {
       unit_price: "1000.000000000000",
       gross: 60206,
       income_type: "coupon",
+      action: "unit_tax",
     });
     expect(
       validateNewTransactionSearch({
