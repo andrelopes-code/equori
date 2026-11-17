@@ -365,10 +365,12 @@ type Repository interface {
 		r domain.Reference,
 		currency money.Currency,
 	) error
-	// Buckets returns the book's bucket method in order; nil without one (A229).
-	Buckets(ctx context.Context, booksID int64) ([]domain.Bucket, error)
-	// SaveBuckets replaces the book's bucket method; an empty list removes it.
-	SaveBuckets(ctx context.Context, booksID int64, buckets []domain.Bucket) error
+	// BucketMethods returns every version of the book's bucket method by From (A240).
+	BucketMethods(ctx context.Context, booksID int64) ([]domain.Method, error)
+	// SaveBucketMethod replaces the version of method.From; a bucket with a nil ID gets a new one.
+	SaveBucketMethod(ctx context.Context, booksID int64, method domain.Method) error
+	// DeleteBucketMethod deletes the version of from; false when the book has none.
+	DeleteBucketMethod(ctx context.Context, booksID int64, from time.Time) (bool, error)
 
 	// InsertGoal stores g with its accounts; a used name is a field error on name.
 	InsertGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)

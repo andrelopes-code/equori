@@ -122,6 +122,9 @@ func collectProperties(s *jsonschema.Schema, into map[string]bool) {
 }
 
 var uncoveredFields = map[string][]string{
+	"saveBudgetBuckets": {
+		"from",
+	}, // the tool input arrives with the version tools (income split versions, plan A task 3)
 	"putInstrumentTerms": {
 		"payments",
 	}, // explicit payment dates exceed the tool budget; set through the API and the terms dialog (A236 FC16 amended)

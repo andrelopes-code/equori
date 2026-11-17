@@ -48,7 +48,7 @@ func (s *Service) SaveBudgetPlan(
 		return Plan{}, err
 	}
 
-	if err := s.keepBucketTarget(ctx, booksID, &ref); err != nil {
+	if err := s.keepBucketTarget(ctx, booksID, month, &ref); err != nil {
 		return Plan{}, err
 	}
 

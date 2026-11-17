@@ -115,7 +115,7 @@ func TestCheckBuckets(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		_, err := CheckBuckets(tt.buckets, expense)
+		_, err := CheckBuckets(tt.buckets, expense, nil)
 
 		field := ""
 
@@ -135,7 +135,7 @@ func TestCheckBuckets(t *testing.T) {
 func TestCheckBucketsTrimsNames(t *testing.T) {
 	t.Parallel()
 
-	got, err := CheckBuckets([]Bucket{{Name: "  Needs ", ShareBP: 10000}}, nil)
+	got, err := CheckBuckets([]Bucket{{Name: "  Needs ", ShareBP: 10000}}, nil, nil)
 	if err != nil || got[0].Name != "Needs" {
 		t.Fatalf("CheckBuckets = %+v %v, want the name Needs", got, err)
 	}

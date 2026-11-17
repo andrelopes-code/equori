@@ -202,7 +202,10 @@ type BudgetBucketInput struct {
 
 	// CategoryIds Expense categories placed in the bucket; a subcategory without a bucket of its own follows its ancestor.
 	CategoryIds []openapi_types.UUID `json:"category_ids"`
-	Name        string               `json:"name"`
+
+	// Id The id of the bucket this one continues; absent for a new bucket (A241).
+	Id   *openapi_types.UUID `json:"id,omitempty"`
+	Name string              `json:"name"`
 
 	// ShareBp The bucket's share of the reference in basis points, from 0 to 10000.
 	ShareBp int `json:"share_bp"`
@@ -231,11 +234,17 @@ type BudgetBucketReal struct {
 // BudgetBuckets defines model for BudgetBuckets.
 type BudgetBuckets struct {
 	Buckets []BudgetBucket `json:"buckets"`
+
+	// From First month of the version in force; absent without a split.
+	From *string `json:"from,omitempty"`
 }
 
 // BudgetBucketsInput defines model for BudgetBucketsInput.
 type BudgetBucketsInput struct {
 	Buckets []BudgetBucketInput `json:"buckets"`
+
+	// From First month of this version; the current month when absent (A240).
+	From *string `json:"from,omitempty"`
 }
 
 // BudgetInput defines model for BudgetInput.
@@ -712,6 +721,12 @@ type TagName = string
 // GetProjectionParams defines parameters for GetProjection.
 type GetProjectionParams struct {
 	To openapi_types.Date `form:"to" json:"to"`
+}
+
+// GetBudgetBucketsParams defines parameters for GetBudgetBuckets.
+type GetBudgetBucketsParams struct {
+	// Month The month to read; the current month when absent.
+	Month *string `form:"month,omitempty" json:"month,omitempty"`
 }
 
 // GetBudgetBucketHistoryParams defines parameters for GetBudgetBucketHistory.

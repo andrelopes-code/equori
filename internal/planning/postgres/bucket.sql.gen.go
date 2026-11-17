@@ -7,43 +7,77 @@ package postgres
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
-const deleteBuckets = `-- name: DeleteBuckets :exec
-DELETE FROM planning_bucket
+const deleteBucketMethod = `-- name: DeleteBucketMethod :execrows
+DELETE FROM planning_bucket_method
 WHERE
     books_id = $1
+    AND effective_from = $2
 `
 
-func (q *Queries) DeleteBuckets(ctx context.Context, booksID int64) error {
-	_, err := q.db.Exec(ctx, deleteBuckets, booksID)
-	return err
+type DeleteBucketMethodParams struct {
+	BooksID       int64
+	EffectiveFrom time.Time
+}
+
+func (q *Queries) DeleteBucketMethod(ctx context.Context, arg DeleteBucketMethodParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteBucketMethod, arg.BooksID, arg.EffectiveFrom)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const insertBucket = `-- name: InsertBucket :one
 INSERT INTO
-    planning_bucket (books_id, position, name, share_bp, takes_savings, takes_goals, at_least)
+    planning_bucket (
+        books_id,
+        effective_from,
+        lineage_id,
+        position,
+        name,
+        share_bp,
+        takes_savings,
+        takes_goals,
+        at_least
+    )
 VALUES
-    ($1, $2, $3, $4, $5, $6, $7)
+    (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9
+    )
 RETURNING
     id
 `
 
 type InsertBucketParams struct {
-	BooksID      int64
-	Position     int32
-	Name         string
-	ShareBp      int32
-	TakesSavings bool
-	TakesGoals   bool
-	AtLeast      bool
+	BooksID       int64
+	EffectiveFrom time.Time
+	LineageID     uuid.UUID
+	Position      int32
+	Name          string
+	ShareBp       int32
+	TakesSavings  bool
+	TakesGoals    bool
+	AtLeast       bool
 }
 
 func (q *Queries) InsertBucket(ctx context.Context, arg InsertBucketParams) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, insertBucket,
 		arg.BooksID,
+		arg.EffectiveFrom,
+		arg.LineageID,
 		arg.Position,
 		arg.Name,
 		arg.ShareBp,
@@ -58,19 +92,42 @@ func (q *Queries) InsertBucket(ctx context.Context, arg InsertBucketParams) (uui
 
 const insertBucketCategory = `-- name: InsertBucketCategory :exec
 INSERT INTO
-    planning_bucket_category (books_id, category_id, bucket_id)
+    planning_bucket_category (books_id, effective_from, category_id, bucket_id)
 VALUES
-    ($1, $2, $3)
+    ($1, $2, $3, $4)
 `
 
 type InsertBucketCategoryParams struct {
-	BooksID    int64
-	CategoryID uuid.UUID
-	BucketID   uuid.UUID
+	BooksID       int64
+	EffectiveFrom time.Time
+	CategoryID    uuid.UUID
+	BucketID      uuid.UUID
 }
 
 func (q *Queries) InsertBucketCategory(ctx context.Context, arg InsertBucketCategoryParams) error {
-	_, err := q.db.Exec(ctx, insertBucketCategory, arg.BooksID, arg.CategoryID, arg.BucketID)
+	_, err := q.db.Exec(ctx, insertBucketCategory,
+		arg.BooksID,
+		arg.EffectiveFrom,
+		arg.CategoryID,
+		arg.BucketID,
+	)
+	return err
+}
+
+const insertBucketMethod = `-- name: InsertBucketMethod :exec
+INSERT INTO
+    planning_bucket_method (books_id, effective_from)
+VALUES
+    ($1, $2)
+`
+
+type InsertBucketMethodParams struct {
+	BooksID       int64
+	EffectiveFrom time.Time
+}
+
+func (q *Queries) InsertBucketMethod(ctx context.Context, arg InsertBucketMethodParams) error {
+	_, err := q.db.Exec(ctx, insertBucketMethod, arg.BooksID, arg.EffectiveFrom)
 	return err
 }
 
@@ -111,9 +168,42 @@ func (q *Queries) ListBucketCategories(ctx context.Context, booksID int64) ([]Li
 	return items, nil
 }
 
+const listBucketMethods = `-- name: ListBucketMethods :many
+SELECT
+    effective_from
+FROM
+    planning_bucket_method
+WHERE
+    books_id = $1
+ORDER BY
+    effective_from
+`
+
+func (q *Queries) ListBucketMethods(ctx context.Context, booksID int64) ([]time.Time, error) {
+	rows, err := q.db.Query(ctx, listBucketMethods, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []time.Time
+	for rows.Next() {
+		var effective_from time.Time
+		if err := rows.Scan(&effective_from); err != nil {
+			return nil, err
+		}
+		items = append(items, effective_from)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBuckets = `-- name: ListBuckets :many
 SELECT
     id,
+    effective_from,
+    lineage_id,
     name,
     share_bp,
     takes_savings,
@@ -124,16 +214,19 @@ FROM
 WHERE
     books_id = $1
 ORDER BY
+    effective_from,
     position
 `
 
 type ListBucketsRow struct {
-	ID           uuid.UUID
-	Name         string
-	ShareBp      int32
-	TakesSavings bool
-	TakesGoals   bool
-	AtLeast      bool
+	ID            uuid.UUID
+	EffectiveFrom time.Time
+	LineageID     uuid.UUID
+	Name          string
+	ShareBp       int32
+	TakesSavings  bool
+	TakesGoals    bool
+	AtLeast       bool
 }
 
 func (q *Queries) ListBuckets(ctx context.Context, booksID int64) ([]ListBucketsRow, error) {
@@ -147,6 +240,8 @@ func (q *Queries) ListBuckets(ctx context.Context, booksID int64) ([]ListBuckets
 		var i ListBucketsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.EffectiveFrom,
+			&i.LineageID,
 			&i.Name,
 			&i.ShareBp,
 			&i.TakesSavings,

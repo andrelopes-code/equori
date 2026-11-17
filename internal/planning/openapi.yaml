@@ -724,7 +724,15 @@ paths:
       tags: [planning]
       operationId: getBudgetBuckets
       x-book-role: read
-      summary: The book's income bucket method in order, without figures; an empty list without one (income buckets A229).
+      summary: The income bucket method in force in a month, in order, without figures; an empty list without one (income buckets A229, A240).
+      parameters:
+        - name: month
+          in: query
+          required: false
+          description: The month to read; the current month when absent.
+          schema:
+            type: string
+            pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
       responses:
         "200":
           description: OK.
@@ -732,13 +740,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BudgetBuckets"
+        "400":
+          $ref: "#/components/responses/Problem"
         "401":
+          $ref: "#/components/responses/Problem"
+        "422":
           $ref: "#/components/responses/Problem"
     put:
       tags: [planning]
       operationId: saveBudgetBuckets
       x-book-role: write
-      summary: Replace the book's income bucket method; an empty list removes it (income buckets A229).
+      summary: Save the version of the income bucket method that starts in a month; an empty list ends the split from that month (A240).
       description: |
         Shares sum to 10000 basis points; names are unique ignoring case; at most one bucket takes savings; a category
         is an expense category of the book listed in one bucket. A broken rule is a 422 on its field.
@@ -1179,6 +1191,10 @@ schemas:
     additionalProperties: false
     required: [name, share_bp, takes_savings, category_ids]
     properties:
+      id:
+        type: string
+        format: uuid
+        description: The id of the bucket this one continues; absent for a new bucket (A241).
       name:
         type: string
         maxLength: 60
@@ -1208,6 +1224,10 @@ schemas:
     additionalProperties: false
     required: [buckets]
     properties:
+      from:
+        type: string
+        pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        description: First month of this version; the current month when absent (A240).
       buckets:
         type: array
         maxItems: 10
@@ -1239,6 +1259,10 @@ schemas:
     type: object
     required: [buckets]
     properties:
+      from:
+        type: string
+        pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+        description: First month of the version in force; absent without a split.
       buckets:
         type: array
         items:

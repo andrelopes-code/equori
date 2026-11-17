@@ -3734,10 +3734,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The book's income bucket method in order, without figures; an empty list without one (income buckets A229). */
+        /** The income bucket method in force in a month, in order, without figures; an empty list without one (income buckets A229, A240). */
         get: operations["getBudgetBuckets"];
         /**
-         * Replace the book's income bucket method; an empty list removes it (income buckets A229).
+         * Save the version of the income bucket method that starts in a month; an empty list ends the split from that month (A240).
          * @description Shares sum to 10000 basis points; names are unique ignoring case; at most one bucket takes savings; a category
          *     is an expense category of the book listed in one bucket. A broken rule is a 422 on its field.
          */
@@ -7313,6 +7313,11 @@ export interface components {
             amounts: components["schemas"]["BudgetPlanAmount"][];
         };
         BudgetBucketInput: {
+            /**
+             * Format: uuid
+             * @description The id of the bucket this one continues; absent for a new bucket (A241).
+             */
+            id?: string;
             name: string;
             /** @description The bucket's share of the reference in basis points, from 0 to 10000. */
             share_bp: number;
@@ -7332,6 +7337,8 @@ export interface components {
             category_ids: string[];
         };
         BudgetBucketsInput: {
+            /** @description First month of this version; the current month when absent (A240). */
+            from?: string;
             buckets: components["schemas"]["BudgetBucketInput"][];
         };
         BudgetBucket: {
@@ -7345,6 +7352,8 @@ export interface components {
             category_ids: string[];
         };
         BudgetBuckets: {
+            /** @description First month of the version in force; absent without a split. */
+            from?: string;
             buckets: components["schemas"]["BudgetBucket"][];
         };
         BudgetBucketHistory: {
@@ -14755,7 +14764,10 @@ export interface operations {
     };
     getBudgetBuckets: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description The month to read; the current month when absent. */
+                month?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -14771,7 +14783,9 @@ export interface operations {
                     "application/json": components["schemas"]["BudgetBuckets"];
                 };
             };
+            400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
         };
     };
     saveBudgetBuckets: {

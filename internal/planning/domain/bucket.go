@@ -31,8 +31,13 @@ type Bucket struct {
 }
 
 // CheckBuckets returns the method with trimmed names, or the first field error of A229. expense
-// reports whether an id is an expense category of the book. An empty method is valid.
-func CheckBuckets(buckets []Bucket, expense func(uuid.UUID) bool) ([]Bucket, error) {
+// reports whether an id is an expense category of the book and known whether an id is a bucket
+// of the book (A241). An empty method is valid.
+func CheckBuckets(
+	buckets []Bucket,
+	expense func(uuid.UUID) bool,
+	known func(uuid.UUID) bool,
+) ([]Bucket, error) {
 	if len(buckets) > maxBuckets {
 		return nil, invalid("buckets", fmt.Sprintf("must hold at most %d buckets", maxBuckets))
 	}
@@ -40,6 +45,7 @@ func CheckBuckets(buckets []Bucket, expense func(uuid.UUID) bool) ([]Bucket, err
 	out := slices.Clone(buckets)
 	names := make(map[string]bool, len(out))
 	placed := make(map[uuid.UUID]bool)
+	ids := make(map[uuid.UUID]bool, len(out))
 	savings, goals, total := false, false, 0
 
 	for i := range out {
@@ -49,6 +55,12 @@ func CheckBuckets(buckets []Bucket, expense func(uuid.UUID) bool) ([]Bucket, err
 		if err := checkBucket(b, prefix, names); err != nil {
 			return nil, err
 		}
+
+		if b.ID != uuid.Nil && (!known(b.ID) || ids[b.ID]) {
+			return nil, invalid(prefix+"id", "must be the id of a bucket of the book, used once")
+		}
+
+		ids[b.ID] = true
 
 		if b.TakesSavings && savings {
 			return nil, invalid(prefix+"takes_savings", "is set on another bucket")

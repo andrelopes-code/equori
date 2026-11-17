@@ -49,12 +49,12 @@ func (s *Service) BucketHistory(
 		return BucketHistory{}, err
 	}
 
-	method, err := s.repo.Buckets(ctx, booksID)
+	method, _, err := s.methodOf(ctx, booksID, month)
 	if err != nil {
 		return BucketHistory{}, err
 	}
 
-	out := BucketHistory{Currency: base, Buckets: method}
+	out := BucketHistory{Currency: base, Buckets: method.Buckets}
 	err = s.addBucketMonths(ctx, booksID, month, &out)
 
 	return out, err

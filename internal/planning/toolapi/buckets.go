@@ -84,12 +84,12 @@ func loadBuckets(
 	accounts map[uuid.UUID]Account,
 	p *budgetGoalPlan,
 ) error {
-	stored, err := svc.BudgetBuckets(ctx, booksID)
+	stored, err := svc.BudgetBuckets(ctx, booksID, nil)
 	if err != nil {
 		return err
 	}
 
-	for _, b := range stored {
+	for _, b := range stored.Buckets {
 		p.storedNames = append(p.storedNames, b.Name)
 	}
 

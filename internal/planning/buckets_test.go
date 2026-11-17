@@ -307,7 +307,8 @@ func bucket(name string, share int, savings bool, categories ...string) map[stri
 
 // The database rejects a bucket without a book, a second savings bucket, a name used twice
 // ignoring case, a category of another book (income buckets B1), and a bucket taking both the
-// goals and the savings or a second goals bucket (A234).
+// goals and the savings or a second goals bucket (A234). A version needs a book and a start on
+// the first of a month; one name may repeat across versions (A240).
 func TestBucketSchema(t *testing.T) {
 	t.Parallel()
 	f := newFixture(t, "2026-11-12")
@@ -317,17 +318,27 @@ func TestBucketSchema(t *testing.T) {
 	other := f.h.BooksIDOf("other@example.com")
 	ctx := t.Context()
 
+	exec := func(query string, args ...any) error {
+		_, err := f.h.Pool.Exec(ctx, query, args...)
+
+		return err
+	}
+	if err := exec(
+		`INSERT INTO planning_bucket_method (books_id, effective_from) VALUES ($1, '2026-11-01')`,
+		other,
+	); err != nil {
+		t.Fatal(err)
+	}
+
 	insert := func(books any, name string, savings bool) error {
-		_, err := f.h.Pool.Exec(
-			ctx,
-			`INSERT INTO planning_bucket (books_id, position, name, share_bp, takes_savings)
-			VALUES ($1, 5, $2, 0, $3)`,
+		return exec(
+			`INSERT INTO planning_bucket
+				(books_id, effective_from, lineage_id, position, name, share_bp, takes_savings)
+			VALUES ($1, '2026-11-01', gen_random_uuid(), 5, $2, 0, $3)`,
 			books,
 			name,
 			savings,
 		)
-
-		return err
 	}
 
 	tests := []struct {
@@ -337,34 +348,52 @@ func TestBucketSchema(t *testing.T) {
 		{"without a book", insert(nil, "Wants", false)},
 		{"second savings bucket", insert(book, "Wants", true)},
 		{"name used twice", insert(book, "NEEDS", false)},
-		{"goals and savings on one bucket", func() error {
-			_, err := f.h.Pool.Exec(ctx, `INSERT INTO planning_bucket
-				(books_id, position, name, share_bp, takes_savings, takes_goals)
-				VALUES ($1, 6, 'Both', 0, true, true)`, other)
-
-			return err
-		}()},
-		{"second goals bucket", func() error {
-			_, err := f.h.Pool.Exec(ctx, `INSERT INTO planning_bucket
-				(books_id, position, name, share_bp, takes_goals)
-				VALUES ($1, 7, 'G1', 0, true), ($1, 8, 'G2', 0, true)`, other)
-
-			return err
-		}()},
-		{"category of another book", func() error {
-			_, err := f.h.Pool.Exec(ctx, `WITH b AS (
-					INSERT INTO planning_bucket (books_id, position, name, share_bp)
-					VALUES ($1, 0, 'Other', 10000) RETURNING id)
-				INSERT INTO planning_bucket_category (books_id, category_id, bucket_id)
-				SELECT $1, $2, id FROM b`, other, f.rent)
-
-			return err
-		}()},
+		{"goals and savings on one bucket", exec(`INSERT INTO planning_bucket
+			(books_id, effective_from, lineage_id, position, name, share_bp, takes_savings, takes_goals)
+			VALUES ($1, '2026-11-01', gen_random_uuid(), 6, 'Both', 0, true, true)`, other)},
+		{"second goals bucket", exec(`INSERT INTO planning_bucket
+			(books_id, effective_from, lineage_id, position, name, share_bp, takes_goals)
+			VALUES ($1, '2026-11-01', gen_random_uuid(), 7, 'G1', 0, true),
+				($1, '2026-11-01', gen_random_uuid(), 8, 'G2', 0, true)`, other)},
+		{"category of another book", exec(`WITH b AS (
+				INSERT INTO planning_bucket
+					(books_id, effective_from, lineage_id, position, name, share_bp)
+				VALUES ($1, '2026-11-01', gen_random_uuid(), 0, 'Other', 10000) RETURNING id)
+			INSERT INTO planning_bucket_category (books_id, effective_from, category_id, bucket_id)
+			SELECT $1, '2026-11-01', $2, id FROM b`, other, f.rent)},
+		{"version without a book", exec(
+			`INSERT INTO planning_bucket_method (books_id, effective_from)
+			VALUES (NULL, '2026-12-01')`,
+		)},
+		{
+			"version not on the first of a month",
+			exec(
+				`INSERT INTO planning_bucket_method (books_id, effective_from) VALUES ($1, '2026-11-02')`,
+				book,
+			),
+		},
 	}
 	for _, tt := range tests {
 		if tt.err == nil {
 			t.Errorf("%s: insert succeeded, want a rejection", tt.name)
 		}
+	}
+
+	if err := exec(
+		`INSERT INTO planning_bucket_method (books_id, effective_from) VALUES ($1, '2026-12-01')`,
+		book,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	err := exec(
+		`INSERT INTO planning_bucket
+			(books_id, effective_from, lineage_id, position, name, share_bp)
+		VALUES ($1, '2026-12-01', gen_random_uuid(), 0, 'Needs', 0)`,
+		book,
+	)
+	if err != nil {
+		t.Errorf("same name in another version: %v, want accepted", err)
 	}
 }
 

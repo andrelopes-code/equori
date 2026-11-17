@@ -17,52 +17,111 @@ type PlanBucket struct {
 	Planned, Spent int64
 }
 
-// SaveBudgetBuckets replaces the book's bucket method (income buckets A229); an empty list
-// removes it.
+// SaveBudgetBuckets replaces the version of the bucket method that starts in from, the current
+// month when nil, or adds it; an empty list ends the split from that month (A240).
 func (s *Service) SaveBudgetBuckets(
 	ctx context.Context,
 	booksID int64,
+	from *time.Time,
 	buckets []domain.Bucket,
 ) error {
-	facts, err := s.ledger.AccountFacts(ctx, booksID)
-	if err != nil {
-		return err
+	start := domain.MonthOf(s.clk.Today(ctx))
+	if from != nil {
+		start = domain.MonthOf(*from)
 	}
 
-	expense := make(map[uuid.UUID]bool, len(facts))
-	for _, a := range facts {
-		expense[a.ID] = a.Class == "expense"
+	if start.After(s.horizon(ctx)) {
+		return &domain.FieldError{
+			Field:   "from",
+			Message: "must be at most today + 12 months",
+			Err:     domain.ErrValidation,
+		}
 	}
 
-	checked, err := domain.CheckBuckets(buckets, func(id uuid.UUID) bool { return expense[id] })
+	expense, err := s.expenseCategories(ctx, booksID)
 	if err != nil {
 		return err
 	}
 
 	return s.repo.InTx(ctx, func(repo Repository) error {
-		return repo.SaveBuckets(ctx, booksID, checked)
+		versions, err := repo.BucketMethods(ctx, booksID)
+		if err != nil {
+			return err
+		}
+
+		checked, err := domain.CheckBuckets(buckets, expense, knownBucketIDs(versions))
+		if err != nil {
+			return err
+		}
+
+		err = repo.SaveBucketMethod(ctx, booksID, domain.Method{From: start, Buckets: checked})
+		if err != nil {
+			return err
+		}
+
+		return dropLeadingEmpty(ctx, repo, booksID)
 	})
 }
 
-// BudgetBuckets returns the book's bucket method in order; empty without one (A229).
-func (s *Service) BudgetBuckets(ctx context.Context, booksID int64) ([]domain.Bucket, error) {
-	return s.repo.Buckets(ctx, booksID)
+// BudgetBuckets returns the method in force in month, the current month when nil; the zero
+// Method without a split (A240).
+func (s *Service) BudgetBuckets(
+	ctx context.Context,
+	booksID int64,
+	month *time.Time,
+) (domain.Method, error) {
+	at := domain.MonthOf(s.clk.Today(ctx))
+	if month != nil {
+		at = domain.MonthOf(*month)
+	}
+
+	if at.After(s.horizon(ctx)) {
+		return domain.Method{}, &domain.FieldError{
+			Field:   "month",
+			Message: "must be at most today + 12 months",
+			Err:     domain.ErrValidation,
+		}
+	}
+
+	method, _, err := s.methodOf(ctx, booksID, at)
+
+	return method, err
 }
 
-// keepBucketTarget replaces the savings target of a plan save with the stored one while a
-// bucket takes the savings: the plan reads the bucket's share then, and a save of that share
+// methodOf returns the method in force in month; false without a split.
+func (s *Service) methodOf(
+	ctx context.Context,
+	booksID int64,
+	month time.Time,
+) (domain.Method, bool, error) {
+	versions, err := s.repo.BucketMethods(ctx, booksID)
+	if err != nil {
+		return domain.Method{}, false, err
+	}
+
+	method, ok := domain.MethodAt(versions, month)
+	if !ok {
+		return domain.Method{}, false, nil
+	}
+
+	return method, true, nil
+}
+
+// keepBucketTarget replaces the savings target of a plan save of month with the stored one while
+// a bucket takes the savings: the plan reads the bucket's share then, and a save of that share
 // would overwrite the target the book returns to without the split (A231).
 func (s *Service) keepBucketTarget(
 	ctx context.Context,
 	booksID int64,
+	month time.Time,
 	ref *domain.Reference,
 ) error {
-	method, err := s.repo.Buckets(ctx, booksID)
+	method, _, err := s.methodOf(ctx, booksID, month)
 	if err != nil {
 		return err
 	}
 
-	if !slices.ContainsFunc(method, func(b domain.Bucket) bool { return b.TakesSavings }) {
+	if !slices.ContainsFunc(method.Buckets, func(b domain.Bucket) bool { return b.TakesSavings }) {
 		return nil
 	}
 
@@ -100,10 +159,12 @@ func (s *Service) planBuckets(
 	categories []domain.PlanCategory,
 	own map[uuid.UUID]map[time.Time]int64,
 ) error {
-	method, err := s.repo.Buckets(ctx, booksID)
-	if err != nil || len(method) == 0 {
+	found, ok, err := s.methodOf(ctx, booksID, out.Month)
+	if err != nil || !ok {
 		return err
 	}
+
+	method := found.Buckets
 
 	parents := make(map[uuid.UUID]uuid.UUID, len(categories))
 	for _, c := range categories {
@@ -171,4 +232,52 @@ func (s *Service) monthSavings(
 	got, err := s.savingsInflows(ctx, booksID, facts, base, month, month.AddDate(0, 1, 0))
 
 	return got[month], err
+}
+
+// expenseCategories returns the expense categories of the book by id.
+func (s *Service) expenseCategories(
+	ctx context.Context,
+	booksID int64,
+) (func(uuid.UUID) bool, error) {
+	facts, err := s.ledger.AccountFacts(ctx, booksID)
+	if err != nil {
+		return nil, err
+	}
+
+	expense := make(map[uuid.UUID]bool, len(facts))
+	for _, a := range facts {
+		expense[a.ID] = a.Class == "expense"
+	}
+
+	return func(id uuid.UUID) bool { return expense[id] }, nil
+}
+
+// knownBucketIDs reports whether an id belongs to a bucket of any version.
+func knownBucketIDs(versions []domain.Method) func(uuid.UUID) bool {
+	known := make(map[uuid.UUID]bool)
+
+	for _, v := range versions {
+		for _, b := range v.Buckets {
+			known[b.ID] = true
+		}
+	}
+
+	return func(id uuid.UUID) bool { return known[id] }
+}
+
+// dropLeadingEmpty deletes each version without buckets that no version with buckets precedes
+// (A240, normal form).
+func dropLeadingEmpty(ctx context.Context, repo Repository, booksID int64) error {
+	versions, err := repo.BucketMethods(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
+	for _, from := range domain.LeadingEmpty(versions) {
+		if _, err := repo.DeleteBucketMethod(ctx, booksID, from); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

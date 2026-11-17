@@ -271,7 +271,7 @@ func runBudgetOrGoal(
 	case "save_plan":
 		return savePlan(ctx, svc, booksID, in, p)
 	case "save_buckets":
-		return manageBudgetOrGoalOut{}, svc.SaveBudgetBuckets(ctx, booksID, p.buckets)
+		return manageBudgetOrGoalOut{}, svc.SaveBudgetBuckets(ctx, booksID, nil, p.buckets)
 	case "update_goal":
 		return updateGoal(ctx, svc, booksID, in, p)
 	}

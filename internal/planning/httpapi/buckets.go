@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
@@ -15,6 +16,17 @@ func (s *Server) saveBudgetBuckets(
 	_ *http.Request,
 	in SaveBudgetBucketsJSONRequestBody,
 ) (httpserver.None, error) {
+	var from *time.Time
+
+	if in.From != nil {
+		month, err := parseMonth("from", *in.From)
+		if err != nil {
+			return httpserver.None{}, err
+		}
+
+		from = &month
+	}
+
 	buckets := make([]domain.Bucket, len(in.Buckets))
 	for i, b := range in.Buckets {
 		buckets[i] = domain.Bucket{
@@ -25,23 +37,47 @@ func (s *Server) saveBudgetBuckets(
 			AtLeast:      b.AtLeast != nil && *b.AtLeast,
 			Categories:   b.CategoryIds,
 		}
+		if b.Id != nil {
+			buckets[i].ID = *b.Id
+		}
 	}
 
-	return httpserver.None{}, s.svc.SaveBudgetBuckets(ctx, auth.MustBooksID(ctx), buckets)
+	return httpserver.None{}, s.svc.SaveBudgetBuckets(ctx, auth.MustBooksID(ctx), from, buckets)
 }
 
 func (s *Server) getBudgetBuckets(
 	ctx context.Context,
-	_ *http.Request,
+	r *http.Request,
 	_ httpserver.None,
 ) (BudgetBuckets, error) {
-	method, err := s.svc.BudgetBuckets(ctx, auth.MustBooksID(ctx))
+	params, err := httpserver.Query[GetBudgetBucketsParams](r)
 	if err != nil {
 		return BudgetBuckets{}, err
 	}
 
-	out := BudgetBuckets{Buckets: make([]BudgetBucket, len(method))}
-	for i, b := range method {
+	var month *time.Time
+
+	if params.Month != nil {
+		m, err := parseMonth("month", *params.Month)
+		if err != nil {
+			return BudgetBuckets{}, err
+		}
+
+		month = &m
+	}
+
+	method, err := s.svc.BudgetBuckets(ctx, auth.MustBooksID(ctx), month)
+	if err != nil {
+		return BudgetBuckets{}, err
+	}
+
+	out := BudgetBuckets{Buckets: make([]BudgetBucket, len(method.Buckets))}
+	if !method.From.IsZero() {
+		from := method.From.Format(monthLayout)
+		out.From = &from
+	}
+
+	for i, b := range method.Buckets {
 		out.Buckets[i] = BudgetBucket{
 			Id:           b.ID,
 			Name:         b.Name,
