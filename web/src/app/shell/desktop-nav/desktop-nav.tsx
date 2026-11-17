@@ -5,9 +5,8 @@ import {
   AppShellNavToggle,
   useAppShell,
 } from "@slotted/react/app-shell";
-import { Button, IconButton } from "@slotted/react/button";
+import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { Shortcut } from "@slotted/react/kbd";
 import {
   SideNavigation,
   SideNavigationCount,
@@ -21,6 +20,7 @@ import {
 import { AccountMenu } from "@/app/shell/account-menu/account-menu";
 import { BrandMark } from "@/ui/display/brand-mark";
 import styles from "@/app/shell/desktop-nav/desktop-nav.module.css";
+import { NavCommand } from "@/app/shell/desktop-nav/nav-command";
 import { destinations } from "@/app/shell/destinations/destinations";
 import { ShellIcon } from "@/app/shell/destinations/shell-icon";
 import { useDestinationPress } from "@/app/shell/destinations/use-destination-press";
@@ -36,17 +36,11 @@ const paletteChord = /Mac|iPhone|iPad/.test(navigator.userAgent)
 // Settings is reached from the account menu; the column lists the rest.
 const listed = destinations.filter((d) => d.key !== "settings");
 
-// A command's key legend. It is decoration: aria-keyshortcuts on the command names the key.
-function keys(shortcut: string) {
-  return (
-    <Shortcut
-      className={styles.keys}
-      keys={shortcut}
-      size="xs"
-      variant="soft"
-      aria-hidden="true"
-    />
-  );
+interface DesktopNavProps {
+  onSearch: () => void;
+  onAssistant: () => void;
+  onCalculator: () => void;
+  onReselect: () => void;
 }
 
 // The desktop column: the brand and the control that narrows the column, the two commands the
@@ -54,12 +48,9 @@ function keys(shortcut: string) {
 export function DesktopNav({
   onSearch,
   onAssistant,
+  onCalculator,
   onReselect,
-}: {
-  onSearch: () => void;
-  onAssistant: () => void;
-  onReselect: () => void;
-}) {
+}: DesktopNavProps) {
   const t = useT();
   const { open } = useAppShell();
   const openEntry = useEntry();
@@ -67,6 +58,7 @@ export function DesktopNav({
   const { selected, press } = useDestinationPress(onReselect);
   const entryKey = t("nav.entry.key");
   const assistantKey = t("assistant.key");
+  const calculatorKey = t("calculator.key");
 
   return (
     <>
@@ -91,88 +83,41 @@ export function DesktopNav({
       </AppShellNavHeader>
       <AppShellNavBody>
         <div className={styles.commands} data-open={open || undefined}>
-          {open ? (
-            <>
-              <Button
-                fullWidth
-                justify="between"
-                aria-keyshortcuts={entryKey}
-                start={
-                  <Icon size="sm">
-                    <ShellIcon name="plus" />
-                  </Icon>
-                }
-                end={keys(entryKey)}
-                onClick={openEntry}
-              >
-                {t("nav.entry.long")}
-              </Button>
-              <Button
-                fullWidth
-                justify="between"
-                tone="secondary"
-                variant="outline"
-                aria-keyshortcuts={paletteChord}
-                start={
-                  <Icon size="sm">
-                    <ShellIcon name="search" />
-                  </Icon>
-                }
-                end={keys("mod+k")}
-                onClick={onSearch}
-              >
-                {t("nav.search")}
-              </Button>
-              <Button
-                fullWidth
-                justify="between"
-                tone="secondary"
-                variant="outline"
-                aria-keyshortcuts={assistantKey}
-                start={
-                  <Icon size="sm">
-                    <ShellIcon name="assistant" />
-                  </Icon>
-                }
-                end={keys(assistantKey)}
-                onClick={onAssistant}
-              >
-                {t("assistant.title")}
-              </Button>
-            </>
-          ) : (
-            <>
-              <IconButton
-                aria-label={t("nav.entry.long")}
-                aria-keyshortcuts={entryKey}
-                tone="accent"
-                variant="solid"
-                onClick={openEntry}
-              >
-                <Icon>
-                  <ShellIcon name="plus" />
-                </Icon>
-              </IconButton>
-              <IconButton
-                aria-label={t("nav.search")}
-                aria-keyshortcuts={paletteChord}
-                onClick={onSearch}
-              >
-                <Icon>
-                  <ShellIcon name="search" />
-                </Icon>
-              </IconButton>
-              <IconButton
-                aria-label={t("assistant.open")}
-                aria-keyshortcuts={assistantKey}
-                onClick={onAssistant}
-              >
-                <Icon>
-                  <ShellIcon name="assistant" />
-                </Icon>
-              </IconButton>
-            </>
-          )}
+          <NavCommand
+            open={open}
+            primary
+            icon="plus"
+            label={t("nav.entry.long")}
+            shortcut={entryKey}
+            legend={entryKey}
+            onClick={openEntry}
+          />
+          <NavCommand
+            open={open}
+            icon="search"
+            label={t("nav.search")}
+            shortcut={paletteChord}
+            legend="mod+k"
+            onClick={onSearch}
+          />
+          <NavCommand
+            open={open}
+            icon="assistant"
+            label={t("assistant.title")}
+            railLabel={t("assistant.open")}
+            shortcut={assistantKey}
+            legend={assistantKey}
+            onClick={onAssistant}
+          />
+          <NavCommand
+            open={open}
+            icon="calculator"
+            label={t("calculator.title")}
+            railLabel={t("calculator.open")}
+            shortcut={calculatorKey}
+            legend={calculatorKey}
+            onClick={onCalculator}
+          />
         </div>
         <SideNavigation value={selected ?? null}>
           <SideNavigationList>

@@ -28,9 +28,12 @@ import { schemes, useScheme } from "@/theme/scheme";
 export function CommandMenu({
   ref,
   onAssistant,
+  onCalculator,
 }: {
   ref: Ref<CommandPaletteHandle>;
   onAssistant?: () => void;
+  // Absent where the calculator does not exist (below 1024 px).
+  onCalculator?: (() => void) | undefined;
 }) {
   const t = useT();
   const navigate = useNavigate();
@@ -140,6 +143,18 @@ export function CommandMenu({
               onSelect: onAssistant,
             },
           ]),
+      ...(onCalculator === undefined
+        ? []
+        : [
+            {
+              id: "calculator",
+              label: t("calculator.title"),
+              group: "actions",
+              icon: icon("calculator"),
+              shortcut: "c",
+              onSelect: onCalculator,
+            },
+          ]),
       {
         id: "account.new",
         label: t("palette.newAccount"),
@@ -221,6 +236,7 @@ export function CommandMenu({
     chooseLanguage,
     logout,
     onAssistant,
+    onCalculator,
   ]);
 
   return (

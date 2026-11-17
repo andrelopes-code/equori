@@ -39,13 +39,14 @@ Non-goals: resizing, minimizing, a history of accounts, sending a result to a fi
 - K6. The window is a `section` with the name "Calculator". It is not a dialog: it draws no scrim, traps no focus and leaves the keys `N` and `A` of the shell working.
 - K7. The first place is the bottom end corner, `--slotted-space-8` from each edge.
 - K8. The bar is the handle. A press on the bar that moves drags the window. The grip of the bar takes the focus; an arrow key moves the window 16 px, and 64 px with `Shift`.
-- K9. The window stays whole inside the visible area: during a drag, after a keyboard move, when the browser window changes size and when a stored place is read.
+- K9. The window stays whole inside the visible area. A drag and a keyboard move hold the place in code (`clampPlace`). A stored place and a browser window that became smaller are held by the stylesheet: the place is a translation limited to the area minus the window's own size.
 
 ### Account
 
-- K10. The account is a text field of at most 60 characters. It accepts digits, the decimal separator of the active tag, `+`, `-`, `*`, `/`, `(`, `)` and `%`. It writes `*` as `×`, `/` as `÷` and `-` as `−`. Any other character is dropped, the grouping separator of the tag included, so a pasted `1.200,50` reads as the number it is.
-- K11. The digits of each number are grouped as the tag groups them, on every change, and the caret keeps its place between the same two characters.
-- K12. The decimal key of the numeric keypad writes the decimal separator of the tag.
+- K10. The account is a text field of at most 60 characters. It accepts digits, the decimal separator of the active tag, `+`, `-`, `*`, `x`, `/`, `(`, `)` and `%`. It writes `*` and `x` as `×`, `/` as `÷` and `-` as `−`. Any other character is dropped, the grouping separator of the tag included, so a pasted `1.200,50` reads as the number it is.
+- K11. The integer digits of each number are written in groups of three with the grouping separator of the tag, and an operator between two values stands between two spaces, on every change. The caret keeps its place after the same character. A separator or a space is decoration: erasing one erases the digit or the operator beside it.
+- K12. A typed `.` writes the decimal separator of the tag, so the decimal key of a numeric keypad works in every tag.
+- K12a. The account is always one the result can read. An operator typed after an operator replaces it; a minus stays after `×`, `÷` and `(` as the sign of the next number. A closing parenthesis is accepted only for one that is open and has a value. A number holds one decimal separator and no leading zero. A number or an opening parenthesis written after a value multiplies it: `2(3 + 4)` is written `2 × (3 + 4)`.
 - K13. `Enter` or `=` replaces the account by its result, when the result is a number. The next key continues from it.
 
 ### Result
@@ -60,7 +61,7 @@ Non-goals: resizing, minimizing, a history of accounts, sending a result to a fi
 
 ### Keys and copy
 
-- K21. A key of the window writes its character at the caret and leaves the focus on the account. `C` empties the account. The erase key removes the selection or the character before the caret.
+- K21. A key of the window writes its character at the caret, in place of the selection. `C` empties the account. The erase key removes the selection or the character before the caret. A press with the pointer anywhere in the window but the account leaves the focus on the account, with its caret and selection.
 - K22. The parenthesis key opens a parenthesis when none is open or when the character before the caret is an operator or an opening parenthesis; otherwise it closes one.
 - K23. The copy button, drawn when the result is a number, copies the result without grouping separators. Its icon becomes a check until the result changes.
 
@@ -74,24 +75,30 @@ Non-goals: resizing, minimizing, a history of accounts, sending a result to a fi
 
 | File | Content |
 |---|---|
-| `rational.ts` | Exact fractions over `BigInt`: parse a decimal, add, subtract, multiply, divide, round to a decimal text. |
-| `evaluate.ts` | Tokens and a recursive descent parser over `rational.ts` (K14 to K16). |
-| `account-text.ts` | The typed text: filter, signs, grouping with the caret (K10, K11), the result text (K17, K18), the parenthesis choice (K22). |
-| `window-place.ts` | Clamp of a place to the visible area; read and write of the stored place (K5, K7, K9). |
-| `use-account.ts` | State of the account and its commands (K13, K21 to K23). |
+| `rational.ts` | Exact fractions over `BigInt`: read a decimal, add, subtract, multiply, divide, write a rounded decimal (K17). |
+| `evaluate.ts` | A recursive descent parser over `rational.ts` (K14 to K16, K18). |
+| `account-text.ts` | The two forms of the account, logical and drawn: read, normalize (K10, K12a), draw with the caret (K11), the edit of the field (K12), the result text (K17), the parenthesis choice (K22). |
+| `window-place.ts` | Clamp of a place to the visible area; read and write of the stored place (K5, K9). |
+| `use-account.ts` | State of the account and the commands of the keys (K13, K21 to K23). |
 | `use-window-drag.ts` | Pointer and keyboard moves (K8, K9). |
-| `calculator-window.tsx`, `calculator-display.tsx`, `calculator-keys.tsx`, `calculator-bar.tsx` | The element, drawn as the approved mock. |
+| `use-open-focus.ts` | Focus on opening and on closing (K3). |
+| `use-calculator-open.ts` | The open state and the key `C` (K1, K4). |
+| `key-rows.ts` | The twenty keys, in reading order. |
+| `calculator-window.tsx`, `calculator-bar.tsx`, `calculator-display.tsx`, `calculator-keys.tsx`, `calculator.module.css` | The element, drawn as the approved mock. |
+
+`desktop-nav/nav-command.tsx` draws one command of the navigation column, open or narrowed; the four commands use it.
 
 The window is an element of the application's own. The families read and what each lacks: `Dialog` (`modal={false}`) centres its panel and has no handle to move it; `Popover` is anchored to its trigger and closes on an outside press; `Drawer` and `DetailPanel` are fixed to an edge.
 
-The approved mock is the contract of the look (`docs/superpowers/plans/assets/floating-calculator/`, local): 20rem wide, a bar of 2rem, the account on one line of md text, the result on one line of 4xl, twenty keys of 3rem in four columns, the panel fill with the strong border and `--slotted-shadow-lg`.
+The approved mock is the contract of the look (`docs/superpowers/plans/assets/floating-calculator/`, local): 20rem wide, a bar of 2rem, the account on one line of md text, the result on one line of 4xl, twenty keys of 3rem in four columns, the panel fill with the strong border and `--slotted-shadow-lg`. The account is a native field, so its text has one colour: the mock of round 1 tinted the operators, and round 2 removed the tint.
 
 ## 6. Tests
 
 - `rational.test.ts`, `evaluate.test.ts`: each rule K14 to K18 with exact expected texts, among them `0,1 + 0,2 = 0,3`, `1 ÷ 3 × 3 = 1` and `1.234.567,89 × 12 ÷ 7 − 98.765,43 = 2.017.636,66714286`.
-- `account-text.test.ts`: K10, K11, K17, K22 in the tags `pt-BR` and `en-US`.
-- `window-place.test.ts`: K7, K9 and the stored place.
-- `calculator-window.test.tsx`: K3, K8, K12, K13, K19, K21, K23.
+- `account-text.test.ts`: K10, K11, K12, K12a, K17, K22 in the tags `pt-BR` and `en-US`.
+- `window-place.test.ts`: K9 and the stored place.
+- `calculator-window.test.tsx`: K3, K5, K8, K11, K13, K18 to K23.
+- Browser check of 2026-11-17 on the running application: K7, the pointer drag of K8, and K9 against a smaller browser window. jsdom lays nothing out, so no unit test measures them.
 - `app-frame.test.tsx`: K1, K2, K4, K5, K6.
 
 ## 7. Cross-cutting questions

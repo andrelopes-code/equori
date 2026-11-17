@@ -1,0 +1,213 @@
+@layer app {
+  /* The floating calculator: a window above the page that holds nobody (non-modal). */
+  .window {
+    position: fixed;
+    inset-block-end: var(--slotted-space-8);
+    inset-inline-end: var(--slotted-space-8);
+    z-index: var(--slotted-z-index-popover);
+    box-sizing: border-box;
+    display: grid;
+    inline-size: 20rem; /* literal: four keys of 3.75rem and their gaps; no token holds a window width */
+    padding: var(--slotted-space-4) var(--slotted-space-6)
+      var(--slotted-space-6);
+    /* No scrim stands behind the window, so its edge is the strong border, one step above a card. */
+    border: var(--slotted-border-width-thin) solid var(--slotted-border-strong);
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    /* A translucent panel (the glass theme) blurs the page under it, as the shell's materials do. */
+    -webkit-backdrop-filter: var(--slotted-material-backdrop);
+    backdrop-filter: var(--slotted-material-backdrop);
+    box-shadow: var(--slotted-shadow-lg);
+    color: var(--slotted-text);
+    font-family: var(--slotted-font-family-sans);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A moved window stands where it was left, held whole inside the visible area (K9): inside a
+     translation a percentage is the window's own size. */
+  .window[data-placed] {
+    inset: 0 auto auto 0;
+    translate: clamp(0px, var(--calculator-x), calc(100vw - 100%))
+      clamp(0px, var(--calculator-y), calc(100dvh - 100%));
+  }
+
+  /* The bar is the handle of the drag. */
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: var(--slotted-space-4);
+    block-size: 2rem; /* literal: the height of the sm icon button it holds */
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .bar[data-dragging] {
+    cursor: grabbing;
+  }
+
+  .grip {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 0.875rem; /* literal: the 14 px mark beside 13 px text */
+    block-size: 0.875rem; /* literal: the 14 px mark beside 13 px text */
+    padding: 0;
+    border: 0;
+    border-radius: var(--slotted-radius-xs);
+    background: none;
+    color: var(--slotted-text-muted);
+    cursor: inherit;
+  }
+
+  .title {
+    flex: 1;
+    color: var(--slotted-text-muted);
+    font-size: var(--slotted-font-size-sm);
+    font-weight: var(--slotted-font-weight-medium);
+    line-height: var(--slotted-line-height-sm);
+  }
+
+  .display {
+    display: grid;
+    gap: var(--slotted-space-2);
+    padding-block: var(--slotted-space-5) var(--slotted-space-6);
+  }
+
+  /* The account is a field without a frame: its caret marks the focus. */
+  .expression {
+    box-sizing: border-box;
+    inline-size: 100%;
+    block-size: 1.25rem; /* literal: one line of md text, kept when the account is empty */
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: none;
+    caret-color: var(--slotted-text);
+    color: var(--slotted-text-muted);
+    font: inherit;
+    font-size: var(--slotted-font-size-md);
+    line-height: 1.25rem; /* literal: equals the block size of the line */
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .expression:focus {
+    color: var(--slotted-text);
+  }
+
+  .answer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--slotted-space-4);
+    block-size: 2.5rem; /* literal: one line of 4xl text, equal in every state */
+  }
+
+  .result {
+    flex: 1;
+    font-size: var(--slotted-font-size-4xl);
+    font-weight: var(--slotted-font-weight-semibold);
+    letter-spacing: -0.01em; /* literal: the tracking the wordmark uses for large figures */
+    line-height: 2.5rem; /* literal: equals the block size of the answer row */
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  /* A result above 12 characters steps down so it stays on its line. */
+  .result[data-long] {
+    font-size: var(--slotted-font-size-3xl);
+  }
+
+  .result[data-idle] {
+    color: var(--slotted-text-muted);
+  }
+
+  /* A failure is written in words, in the danger tone. */
+  .result[data-invalid] {
+    color: var(--slotted-tone-danger-text);
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-medium);
+    letter-spacing: 0;
+  }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--slotted-space-3);
+  }
+
+  .key {
+    display: grid;
+    place-items: center;
+    block-size: 3rem; /* literal: 42 px key, above the 34 px control; no token holds a key size */
+    padding: 0;
+    border: 0;
+    border-radius: var(--slotted-radius-md);
+    background: color-mix(in oklab, var(--slotted-text) 6%, transparent);
+    color: var(--slotted-text);
+    font: inherit;
+    font-size: var(--slotted-font-size-xl);
+    font-weight: var(--slotted-font-weight-medium);
+    cursor: pointer;
+    transition: background var(--slotted-duration-short)
+      var(--slotted-easing-standard);
+  }
+
+  .key:hover {
+    background: color-mix(in oklab, var(--slotted-text) 11%, transparent);
+  }
+
+  .key:active {
+    background: color-mix(in oklab, var(--slotted-text) 16%, transparent);
+  }
+
+  /* Focus is drawn as a control draws it: an outline of the ring under the focus shadow. */
+  .key:focus-visible,
+  .grip:focus-visible {
+    outline: var(--slotted-focus-ring-width) solid
+      var(--slotted-focus-ring-color);
+    outline-offset: var(--slotted-focus-ring-offset);
+    box-shadow: var(--slotted-control-shadow-focus-geometry)
+      var(--slotted-focus-ring-color);
+  }
+
+  /* An operator is a small mark at the size of a digit: it takes the next step. */
+  .key[data-kind="sign"],
+  .key[data-kind="equals"] {
+    font-size: var(--slotted-font-size-2xl);
+  }
+
+  .key[data-kind="sign"] {
+    color: var(--slotted-tone-accent-text);
+  }
+
+  .key[data-kind="clear"] {
+    color: var(--slotted-text-muted);
+  }
+
+  .key[data-kind="equals"] {
+    background: var(--slotted-tone-accent-solid);
+    color: var(--slotted-tone-accent-on-solid);
+  }
+
+  .key[data-kind="equals"]:hover {
+    background: var(--slotted-tone-accent-solid-hover);
+  }
+
+  .key[data-kind="equals"]:active {
+    background: var(--slotted-tone-accent-solid-active);
+  }
+
+  @media (forced-colors: active) {
+    .key {
+      border: var(--slotted-border-width-thin) solid ButtonText;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .key {
+      transition: none;
+    }
+  }
+}

@@ -14,6 +14,8 @@ import type { CommandPaletteHandle } from "@slotted/react/command-palette";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import styles from "@/app/shell/app-frame.module.css";
+import { CalculatorWindow } from "@/app/shell/calculator/calculator-window";
+import { useCalculatorOpen } from "@/app/shell/calculator/use-calculator-open";
 import { CommandMenu } from "@/app/shell/command-menu/command-menu";
 import { DesktopNav } from "@/app/shell/desktop-nav/desktop-nav";
 import { PhoneDock } from "@/app/shell/phone-dock/phone-dock";
@@ -65,6 +67,7 @@ export function AppFrame() {
         : null;
     setAssistantOpen(true);
   }, []);
+  const calculator = useCalculatorOpen(wide);
   const editing = useEditing();
   const openEntry = useEntry();
   useEntryShortcut(openEntry);
@@ -115,6 +118,7 @@ export function AppFrame() {
           <DesktopNav
             onSearch={openPalette}
             onAssistant={openAssistant}
+            onCalculator={calculator.toggle}
             onReselect={scrollToTop}
           />
         </AppShellNav>
@@ -169,7 +173,12 @@ export function AppFrame() {
           <PhoneDock onReselect={scrollToTop} extent={dockExtent} />
         </AppShellFooter>
       )}
-      <CommandMenu ref={palette} onAssistant={openAssistant} />
+      <CommandMenu
+        ref={palette}
+        onAssistant={openAssistant}
+        onCalculator={wide ? calculator.toggle : undefined}
+      />
+      <CalculatorWindow open={calculator.open} onClose={calculator.close} />
       <AssistantPanel
         open={assistantOpen}
         onOpenChange={setAssistantOpen}

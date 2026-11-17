@@ -539,6 +539,103 @@ describe("assistant shortcut", () => {
   });
 });
 
+describe("calculator", () => {
+  const region = () =>
+    screen.queryByRole("region", { name: catalogEn["calculator.title"] });
+
+  it.each(["C", "c"])("opens and closes on %s (K1)", async (key) => {
+    await renderApp("/", { fetch: newFetch() });
+
+    fireEvent.keyDown(document.body, { key });
+
+    expect(region()).toBeInTheDocument();
+
+    fireEvent.keyDown(document.body, { key });
+
+    expect(region()).toBeNull();
+  });
+
+  it("opens from the column, with its key as legend (K2)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    const command = screen.getByRole("button", {
+      name: new RegExp(`^${catalogEn["calculator.title"]}`),
+    });
+
+    await user.click(command);
+
+    expect(command.querySelector("kbd")).toHaveTextContent("C");
+    expect(region()).toBeInTheDocument();
+  });
+
+  it("opens from the palette (K2)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+
+    await user.keyboard("{Control>}k{/Control}");
+    await user.click(
+      // The palette also lists the destination "Calculators".
+      await screen.findByRole("option", {
+        name: new RegExp(`^${catalogEn["calculator.title"]}\\b`),
+      }),
+    );
+
+    await waitFor(() => {
+      expect(region()).toBeInTheDocument();
+    });
+  });
+
+  it("returns the focus to where it was on Escape (K3)", async () => {
+    const user = userEvent.setup();
+    await renderApp("/", { fetch: newFetch() });
+    const command = screen.getByRole("button", {
+      name: new RegExp(`^${catalogEn["calculator.title"]}`),
+    });
+
+    await user.click(command);
+    await user.keyboard("{Escape}");
+
+    expect(region()).toBeNull();
+    expect(command).toHaveFocus();
+  });
+
+  it("keeps the account across a close and a route change (K5)", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderApp("/", { fetch: newFetch() });
+
+    fireEvent.keyDown(document.body, { key: "c" });
+    await user.keyboard("12+3{Escape}");
+    await act(async () => {
+      await router.navigate({ to: "/goals" });
+    });
+    fireEvent.keyDown(document.body, { key: "c" });
+
+    expect(
+      screen.getByRole("textbox", { name: catalogEn["calculator.account"] }),
+    ).toHaveValue("12 + 3");
+  });
+
+  it("leaves the shell's keys working while it is open (K6)", async () => {
+    const { router } = await renderApp("/", { fetch: newFetch() });
+
+    fireEvent.keyDown(document.body, { key: "c" });
+    fireEvent.keyDown(document.body, { key: "n" });
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/transactions/new");
+    });
+    expect(region()).toBeInTheDocument();
+  });
+
+  it("does not exist below 1024 px (K4)", async () => {
+    await renderApp("/", { width: 800, fetch: newFetch() });
+
+    fireEvent.keyDown(document.body, { key: "c" });
+
+    expect(region()).toBeNull();
+  });
+});
+
 describe("entry shortcut", () => {
   it.each(["N", "n"])("opens the new transaction on %s", async (key) => {
     const { router } = await renderApp("/", { fetch: newFetch() });

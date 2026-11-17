@@ -24,12 +24,18 @@ export type ShellIconName =
   | "chevrons"
   | "density"
   | "eye"
-  | "eye-off";
+  | "eye-off"
+  | "erase";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: house, arrow-left-right, tags, credit-card,
 // wallet, target, calendar, shield, calculator, settings, circle-help, plus, square-pen, text, search, layout-grid, arrow-left,
-// moon, globe, log-out, chevrons-up-down, rows-3, eye and eye-off.
+// moon, globe, log-out, chevrons-up-down, rows-3, eye, eye-off and delete.
 const PATHS: Record<ShellIconName, readonly string[]> = {
+  erase: [
+    "M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z",
+    "m12 9 6 6",
+    "m18 9-6 6",
+  ],
   assistant: [
     "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z",
     "M20 3v4",
