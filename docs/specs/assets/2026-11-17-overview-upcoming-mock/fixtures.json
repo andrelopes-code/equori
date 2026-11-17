@@ -1,0 +1,2247 @@
+{
+ "GET /api/v1/occurrences": {
+  "items": [
+   {
+    "actual_amount": {
+     "amount": 10628,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-05-22",
+    "id": "01a1d64b-dc86-7c6d-9e95-5ed8d9859830",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 19,
+    "state": "realized",
+    "transaction_id": "01a1d64c-8ebd-7b57-bb10-3b18a4aad4af"
+   },
+   {
+    "actual_amount": {
+     "amount": 7516,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 7200,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-05-25",
+    "id": "01a1d64b-dcb3-730d-a696-30f990ac5743",
+    "schedule_id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "sequence": 19,
+    "state": "realized",
+    "transaction_id": "01a1d64c-8f32-7cdb-9da7-3edb1ade9286"
+   },
+   {
+    "actual_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-05-28",
+    "id": "01a1d64b-dddd-7c70-bd57-7bc6385ed330",
+    "schedule_id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "sequence": 19,
+    "state": "realized",
+    "transaction_id": "01a1d64c-8fa9-71b0-b9a8-c5d0739d3bfd"
+   },
+   {
+    "actual_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-01",
+    "id": "01a1d64b-dbf6-70d1-955b-49c062df136e",
+    "schedule_id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-8fe6-75e1-987a-d3ca37e445f0"
+   },
+   {
+    "actual_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-03",
+    "id": "01a1d64b-ddc0-738f-a55c-14f1e488d114",
+    "schedule_id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9024-726d-b9e1-d408ed75f724"
+   },
+   {
+    "actual_amount": {
+     "amount": 364000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-05",
+    "id": "01a1d64b-dc14-7039-8785-3bd1d6fc8fc6",
+    "schedule_id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9069-765b-8e6d-d6deff6083e2"
+   },
+   {
+    "actual_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-06",
+    "id": "01a1d64b-dd58-72ee-8826-60d0e36e75f8",
+    "schedule_id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-907b-76f0-abfa-d1f4bc1c8b2f"
+   },
+   {
+    "actual_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-08",
+    "id": "01a1d64b-dbc9-7bcc-b138-6227a59ba736",
+    "schedule_id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-90b8-7653-a37f-f17ebd8b9dad"
+   },
+   {
+    "actual_amount": {
+     "amount": 12990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 11990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-08",
+    "id": "01a1d64b-dd0c-7cda-bbcd-ecab9e704e7b",
+    "schedule_id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-90ce-7698-b470-66d0251849ca"
+   },
+   {
+    "actual_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-09",
+    "id": "01a1d64b-dd97-7282-a3a0-8f53f7bc4dde",
+    "schedule_id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "sequence": 16,
+    "state": "realized",
+    "transaction_id": "01a1d64c-90e6-7bed-bd5e-220ba1aee862"
+   },
+   {
+    "actual_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-09",
+    "id": "01a1d64b-ddfa-7dbc-ac46-c183de4aa7f5",
+    "schedule_id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9177-7106-8089-f5e50997467d"
+   },
+   {
+    "actual_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-09",
+    "id": "01a1d64b-de21-74bf-ab55-bf167777ee89",
+    "schedule_id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9185-71fe-a864-c11b2a526d46"
+   },
+   {
+    "actual_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-10",
+    "id": "01a1d64b-dc45-78ed-8c7a-fb5b3505295b",
+    "schedule_id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-918f-7b71-a2b5-f5fcf1a7f069"
+   },
+   {
+    "actual_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-12",
+    "id": "01a1d64b-dcd1-70d6-8325-260388ef421d",
+    "schedule_id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9402-73dc-b803-87cbfca61c25"
+   },
+   {
+    "actual_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-14",
+    "id": "01a1d64b-dd2a-780c-8a80-413faab1f3d8",
+    "schedule_id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-94e2-73e3-af52-8e9d4603dd2b"
+   },
+   {
+    "expected_amount": {
+     "amount": 3490,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-17",
+    "id": "01a1d64b-dd74-7884-8189-dc62c9c5f5a7",
+    "schedule_id": "01a1d64b-dd6f-74f1-ac1c-e6712eb46835",
+    "sequence": 20,
+    "state": "skipped"
+   },
+   {
+    "actual_amount": {
+     "amount": 21222,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 22000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-18",
+    "id": "01a1d64b-dc63-7718-8cfc-9aa8b0276d11",
+    "schedule_id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9657-7cec-a339-e084c12e9450"
+   },
+   {
+    "actual_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-20",
+    "id": "01a1d64b-dcef-78d5-93c4-4059225b78a0",
+    "schedule_id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-966a-7f05-bfc3-bc4d97ce6214"
+   },
+   {
+    "actual_amount": {
+     "amount": 11149,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-22",
+    "id": "01a1d64b-dc86-7d98-9ee9-200027e97d40",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-973d-7490-ab98-6ff5f5349405"
+   },
+   {
+    "actual_amount": {
+     "amount": 10014,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 7200,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-25",
+    "id": "01a1d64b-dcb3-7433-8beb-dd64d26ef453",
+    "schedule_id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9783-7834-abad-745fd13f5727"
+   },
+   {
+    "actual_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-06-28",
+    "id": "01a1d64b-dddd-7d74-b6ff-05b723612422",
+    "schedule_id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9832-7b50-9700-d2a0572b001f"
+   },
+   {
+    "actual_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-01",
+    "id": "01a1d64b-dbf6-71e7-90e4-0797322a7e4b",
+    "schedule_id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-989d-7dc3-8384-e50780bd23dd"
+   },
+   {
+    "actual_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-03",
+    "id": "01a1d64b-ddc0-7497-8d18-23e3ada12c2d",
+    "schedule_id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-98fe-7804-af53-7530fbd0d9a8"
+   },
+   {
+    "actual_amount": {
+     "amount": 364000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-05",
+    "id": "01a1d64b-dc14-746f-b6b4-ca97154b46d2",
+    "schedule_id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-99ab-7cc3-a233-f403b2ab23c7"
+   },
+   {
+    "actual_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-06",
+    "id": "01a1d64b-dd58-73f1-8ca7-08024be4f917",
+    "schedule_id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-99c8-7835-91d6-b51750c1cc4b"
+   },
+   {
+    "actual_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-07",
+    "id": "01a1d64b-dbca-70c2-bc6b-cce437926838",
+    "schedule_id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-99ed-7c39-b6ea-459aad40a6fc"
+   },
+   {
+    "actual_amount": {
+     "amount": 12990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 11990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-08",
+    "id": "01a1d64b-dd0c-7df7-aa0c-dd92ac53062a",
+    "schedule_id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9a1b-7bb6-8f16-c3b52e3e6c25"
+   },
+   {
+    "actual_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-08",
+    "id": "01a1d64b-ddfa-7ec4-b8f9-65485db893c3",
+    "schedule_id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9a68-7011-bde2-90d62674b331"
+   },
+   {
+    "actual_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-08",
+    "id": "01a1d64b-de21-75ce-a7f2-4b4d9c22a756",
+    "schedule_id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9a75-73b8-b73f-29d82c923aa0"
+   },
+   {
+    "actual_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-09",
+    "id": "01a1d64b-dd97-7386-9789-8b121dc17c55",
+    "schedule_id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "sequence": 17,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9a84-779c-b181-c08c36e60eab"
+   },
+   {
+    "actual_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-10",
+    "id": "01a1d64b-dc45-7acf-9bf8-9e9281e19ed6",
+    "schedule_id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9bd5-7a78-bfd0-ee627bd631ba"
+   },
+   {
+    "actual_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-12",
+    "id": "01a1d64b-dcd1-7210-9b16-296dd2faf99a",
+    "schedule_id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9c73-7a20-9e8e-2ee0ca2aebd6"
+   },
+   {
+    "actual_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-14",
+    "id": "01a1d64b-dd2a-7925-898a-f873cbeb4913",
+    "schedule_id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9ccb-7dfb-b45a-4ab9a85c2e6d"
+   },
+   {
+    "expected_amount": {
+     "amount": 3490,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-17",
+    "id": "01a1d64b-dd74-798f-9ed3-21781b81b4a9",
+    "schedule_id": "01a1d64b-dd6f-74f1-ac1c-e6712eb46835",
+    "sequence": 21,
+    "state": "skipped"
+   },
+   {
+    "actual_amount": {
+     "amount": 23928,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 22000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-18",
+    "id": "01a1d64b-dc63-782a-b8ec-962bd2f68dce",
+    "schedule_id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9ebb-7205-83fa-93daa3b732d0"
+   },
+   {
+    "actual_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-20",
+    "id": "01a1d64b-dcef-7b76-8e56-9d1449719121",
+    "schedule_id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9f1c-7e1d-8873-f67b33d377f7"
+   },
+   {
+    "actual_amount": {
+     "amount": 10974,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-22",
+    "id": "01a1d64b-dc86-7ec7-8552-deb4935fb63a",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9f76-7482-ae49-4b0111f34c43"
+   },
+   {
+    "actual_amount": {
+     "amount": 10326,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 7200,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-25",
+    "id": "01a1d64b-dcb3-754f-890e-9745d6394d46",
+    "schedule_id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9fcc-7ee6-8704-50b645b2f9fd"
+   },
+   {
+    "actual_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-07-28",
+    "id": "01a1d64b-dddd-7e79-a2f5-1cf7ae928f67",
+    "schedule_id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-9ffd-7912-be87-2c5c29fb810f"
+   },
+   {
+    "actual_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-03",
+    "id": "01a1d64b-dbf6-72fb-af0b-3fd9e93bbaaf",
+    "schedule_id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a13e-7916-a3d2-ff98464a48a1"
+   },
+   {
+    "actual_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-03",
+    "id": "01a1d64b-ddc0-75a2-80ea-3fa61f649c5c",
+    "schedule_id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a14d-7c8a-8975-1abf960cfb0c"
+   },
+   {
+    "actual_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-05",
+    "id": "01a1d64b-dc14-75a8-91d2-3203f81426d9",
+    "schedule_id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a1ed-75e7-bc10-06ab32dba979"
+   },
+   {
+    "actual_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-06",
+    "id": "01a1d64b-dd58-74f1-aa68-b96f0ab05146",
+    "schedule_id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a215-7c71-a478-d87a5aaa8c01"
+   },
+   {
+    "actual_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-07",
+    "id": "01a1d64b-dbca-71ec-93e0-472380a7551b",
+    "schedule_id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a271-7d6f-a7f6-2bfba03ec9e8"
+   },
+   {
+    "actual_amount": {
+     "amount": 12990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 11990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-08",
+    "id": "01a1d64b-dd0c-7f1a-bd34-dd7a39d3b94b",
+    "schedule_id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a2b7-7b64-8dae-107ab3487d5d"
+   },
+   {
+    "actual_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-09",
+    "id": "01a1d64b-dd97-748f-b95b-f17336e8eaf0",
+    "schedule_id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "sequence": 18,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a319-74e1-b3a0-944e7c2c53ad"
+   },
+   {
+    "actual_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-10",
+    "id": "01a1d64b-dc45-7bed-832c-5a85478c1d23",
+    "schedule_id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a52d-7a88-b336-46fb1591878b"
+   },
+   {
+    "actual_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-10",
+    "id": "01a1d64b-ddfa-7fc9-839f-bb60eb36645f",
+    "schedule_id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a5dd-761d-80c4-fa11881eb2d3"
+   },
+   {
+    "actual_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-10",
+    "id": "01a1d64b-de21-76d6-af52-dab10484dd70",
+    "schedule_id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a5e9-76dd-b082-b41fe6fc4ec5"
+   },
+   {
+    "actual_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-12",
+    "id": "01a1d64b-dcd1-732b-99dc-75e926eebdcb",
+    "schedule_id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a7b3-742d-a18a-cc10cbf51b6b"
+   },
+   {
+    "actual_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-14",
+    "id": "01a1d64b-dd2a-7a7f-bdb7-2e8ab5422377",
+    "schedule_id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-a8ee-77e2-b70a-bc89e964b355"
+   },
+   {
+    "expected_amount": {
+     "amount": 3490,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-17",
+    "id": "01a1d64b-dd74-7adb-a085-2042f051df0d",
+    "schedule_id": "01a1d64b-dd6f-74f1-ac1c-e6712eb46835",
+    "sequence": 22,
+    "state": "skipped"
+   },
+   {
+    "actual_amount": {
+     "amount": 21873,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 22000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-18",
+    "id": "01a1d64b-dc63-793a-8787-e880e0e4615e",
+    "schedule_id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-aa6a-73a2-bfee-686d11cda5db"
+   },
+   {
+    "actual_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-20",
+    "id": "01a1d64b-dcef-7caa-ae4f-25b1d85e7af0",
+    "schedule_id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-aaa9-7f06-9280-e8de377712fa"
+   },
+   {
+    "actual_amount": {
+     "amount": 10783,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-22",
+    "id": "01a1d64b-dc86-7fe3-bf4a-a1f8bac82294",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-ab54-7bfa-802e-9a1df4ac6138"
+   },
+   {
+    "actual_amount": {
+     "amount": 8903,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 7200,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-25",
+    "id": "01a1d64b-dcb3-7684-b9e2-638bacdbe21b",
+    "schedule_id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-ac2f-78be-a46d-94f668c78a5c"
+   },
+   {
+    "actual_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-08-28",
+    "id": "01a1d64b-dddd-7f7f-9f95-4b4888ca035c",
+    "schedule_id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "sequence": 22,
+    "state": "realized",
+    "transaction_id": "01a1d64c-ad01-7516-9358-20cc6dec438d"
+   },
+   {
+    "actual_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-01",
+    "id": "01a1d64b-dbf6-741a-aebe-3f21ec1c8438",
+    "schedule_id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-ad52-7f12-81dc-9e3886686c22"
+   },
+   {
+    "actual_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-03",
+    "id": "01a1d64b-ddc0-76cf-8621-5422d7afe4ef",
+    "schedule_id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-ae34-7ece-989e-7f44ee3e7f50"
+   },
+   {
+    "actual_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-05",
+    "id": "01a1d64b-dc14-76bc-995e-941e91527487",
+    "schedule_id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-aec6-7554-883f-32031294f131"
+   },
+   {
+    "actual_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-06",
+    "id": "01a1d64b-dd58-75f2-ae0b-3d99707d0925",
+    "schedule_id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-af14-76fc-bade-4f25d6d46ca4"
+   },
+   {
+    "actual_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-08",
+    "id": "01a1d64b-dbca-72f6-8a15-306efcd5d88c",
+    "schedule_id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-af6e-7ccf-857b-2b6760c2482d"
+   },
+   {
+    "actual_amount": {
+     "amount": 12990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 11990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-08",
+    "id": "01a1d64b-dd0d-704b-8cfa-2faf9f22a352",
+    "schedule_id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-af7e-734e-8810-b09bbb48ff08"
+   },
+   {
+    "actual_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-09",
+    "id": "01a1d64b-dd97-7597-b072-493e3db1d9c0",
+    "schedule_id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "sequence": 19,
+    "state": "realized",
+    "transaction_id": "01a1d64c-af95-70f6-b59d-15e2f6a1613f"
+   },
+   {
+    "actual_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-09",
+    "id": "01a1d64b-ddfb-70d8-986f-2ad83f3bb089",
+    "schedule_id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b050-7d84-a736-a188fc9258b1"
+   },
+   {
+    "actual_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-09",
+    "id": "01a1d64b-de21-77f1-9d0d-cd843e664abf",
+    "schedule_id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b063-7d4f-9d7c-94ac7cd0bc02"
+   },
+   {
+    "actual_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-10",
+    "id": "01a1d64b-dc45-7d01-905b-ebd964ed1008",
+    "schedule_id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b06e-7a71-874f-cb76eeac9329"
+   },
+   {
+    "actual_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-12",
+    "id": "01a1d64b-dcd1-7470-888f-894311f13684",
+    "schedule_id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b1ff-7b3f-b2df-a9256c4dff36"
+   },
+   {
+    "actual_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-14",
+    "id": "01a1d64b-dd2a-7ba2-acd2-102b60c0741a",
+    "schedule_id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b287-7ab0-927e-00685de5fd83"
+   },
+   {
+    "expected_amount": {
+     "amount": 3490,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-17",
+    "id": "01a1d64b-dd74-7bf1-a99b-21a245e9fcc9",
+    "schedule_id": "01a1d64b-dd6f-74f1-ac1c-e6712eb46835",
+    "sequence": 23,
+    "state": "skipped"
+   },
+   {
+    "actual_amount": {
+     "amount": 22528,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 22000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-18",
+    "id": "01a1d64b-dc63-7b25-b297-74780b62aaba",
+    "schedule_id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b4e1-78d6-bda5-8b2989307734"
+   },
+   {
+    "actual_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-20",
+    "id": "01a1d64b-dcef-7dc8-96e2-9058786e4df5",
+    "schedule_id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b51f-790c-8548-dc8e9be1b2dd"
+   },
+   {
+    "actual_amount": {
+     "amount": 11227,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-22",
+    "id": "01a1d64b-dc87-72aa-a599-db6ce7f4523e",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b5e0-7102-ab42-5cef8888013a"
+   },
+   {
+    "actual_amount": {
+     "amount": 7645,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 7200,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-25",
+    "id": "01a1d64b-dcb3-779c-9b78-0939eafe9ed0",
+    "schedule_id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b62d-7728-b0a4-a10b41e0586f"
+   },
+   {
+    "actual_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-09-28",
+    "id": "01a1d64b-ddde-7082-b24b-7b6c0cd33571",
+    "schedule_id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "sequence": 23,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b6b8-7a86-b7dc-a9eacb13b375"
+   },
+   {
+    "actual_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-01",
+    "id": "01a1d64b-dbf6-7531-ad11-eb6c0aaadc90",
+    "schedule_id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b6dc-71aa-aa0c-4100362b350f"
+   },
+   {
+    "actual_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-03",
+    "id": "01a1d64b-ddc0-77d9-9c0f-77aefe68f54f",
+    "schedule_id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b774-7ad9-b31f-d17fabb1f541"
+   },
+   {
+    "actual_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-05",
+    "id": "01a1d64b-dc14-77da-bcda-806109ad2ffa",
+    "schedule_id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b848-7748-a06a-8113fff8775e"
+   },
+   {
+    "actual_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-06",
+    "id": "01a1d64b-dd58-76ff-9b99-75d9a5fc841d",
+    "schedule_id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b8b0-7850-a72a-03ed12331bbb"
+   },
+   {
+    "actual_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-07",
+    "id": "01a1d64b-dbca-7428-88d4-eb36fa086c8f",
+    "schedule_id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b8f8-716f-9d4e-0134a2e48b0f"
+   },
+   {
+    "actual_amount": {
+     "amount": 12990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 11990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-08",
+    "id": "01a1d64b-dd0d-7168-887d-d4463533ff15",
+    "schedule_id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b91e-74e1-b4ad-b8696c7cb01e"
+   },
+   {
+    "actual_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-08",
+    "id": "01a1d64b-ddfb-71e2-a819-48b92199d991",
+    "schedule_id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b979-772f-9845-bb70fe9f56b1"
+   },
+   {
+    "actual_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-08",
+    "id": "01a1d64b-de21-78fb-92a1-5852747b2aed",
+    "schedule_id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b987-7e8d-9109-321645b22839"
+   },
+   {
+    "actual_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-09",
+    "id": "01a1d64b-dd97-769f-90d7-a19077ede379",
+    "schedule_id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "sequence": 20,
+    "state": "realized",
+    "transaction_id": "01a1d64c-b994-7683-99f0-2e97b8ab1e1e"
+   },
+   {
+    "actual_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-10",
+    "id": "01a1d64b-dc45-7e3b-98ff-c69081e639fe",
+    "schedule_id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-baed-7ab4-a9c9-a427b4d01fb7"
+   },
+   {
+    "actual_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-12",
+    "id": "01a1d64b-dcd1-7595-8219-5a9d3d7c5e91",
+    "schedule_id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-bbcc-79de-96c4-2bdc2c8f1fe3"
+   },
+   {
+    "actual_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-14",
+    "id": "01a1d64b-dd2a-7cc0-9f40-9bb144dbfaa3",
+    "schedule_id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-bc04-72a8-a496-ef2c67120711"
+   },
+   {
+    "expected_amount": {
+     "amount": 3490,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-17",
+    "id": "01a1d64b-dd74-7cf9-aafe-ee2693e9b02e",
+    "schedule_id": "01a1d64b-dd6f-74f1-ac1c-e6712eb46835",
+    "sequence": 24,
+    "state": "skipped"
+   },
+   {
+    "actual_amount": {
+     "amount": 24555,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 22000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-18",
+    "id": "01a1d64b-dc63-7c3c-aa0d-ddbf07f9ebad",
+    "schedule_id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-be8a-7ee1-822b-c3fd3d434cf1"
+   },
+   {
+    "actual_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-20",
+    "id": "01a1d64b-dcef-7ee6-be65-b7b646fd5e1d",
+    "schedule_id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-bf02-7248-9554-df10ec1ff56e"
+   },
+   {
+    "actual_amount": {
+     "amount": 11474,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-22",
+    "id": "01a1d64b-dc87-73e4-9c4b-880fa7c18caf",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-bf9d-7db2-9ac5-9832bb5f4301"
+   },
+   {
+    "actual_amount": {
+     "amount": 6261,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 7200,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-25",
+    "id": "01a1d64b-dcb3-78b5-a69f-63f4d83e67d2",
+    "schedule_id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c004-793c-a47c-418103f4800f"
+   },
+   {
+    "actual_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 5000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-10-28",
+    "id": "01a1d64b-ddde-718d-aa2f-4a7239aadbf7",
+    "schedule_id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "sequence": 24,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c082-74f9-862f-20e8842a6634"
+   },
+   {
+    "actual_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 143000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-03",
+    "id": "01a1d64b-dbf6-7664-a293-de1ff53b7c1d",
+    "schedule_id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c147-7c6e-a109-a42272e78938"
+   },
+   {
+    "actual_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 20990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-03",
+    "id": "01a1d64b-ddc0-78e5-b610-a64e587809c6",
+    "schedule_id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c153-734d-905f-fb796f06b8a3"
+   },
+   {
+    "actual_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 383000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-05",
+    "id": "01a1d64b-dc14-7b49-8f71-6cf08418daf6",
+    "schedule_id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c174-72d8-8370-b51439640c5f"
+   },
+   {
+    "actual_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 2690,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-06",
+    "id": "01a1d64b-dd58-7808-9597-038d35c7a670",
+    "schedule_id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c18a-7459-b2df-583f0e9534b3"
+   },
+   {
+    "actual_amount": {
+     "amount": 12990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 11990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-08",
+    "id": "01a1d64b-dd0d-7288-93b9-9cc9bfd6f99d",
+    "schedule_id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c1f3-737f-8ba7-b799fa798e4b"
+   },
+   {
+    "actual_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 1133497,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-09",
+    "id": "01a1d64b-dbca-7546-9226-348adda6122c",
+    "schedule_id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c21e-762e-8dad-37d1d2ea448f"
+   },
+   {
+    "actual_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 3390,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-09",
+    "id": "01a1d64b-dd97-77b3-9c9c-d6a21937e48f",
+    "schedule_id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "sequence": 21,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c22b-7919-b7db-c5fc1802365c"
+   },
+   {
+    "actual_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 89000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-10",
+    "id": "01a1d64b-dc45-7f53-8f9f-67748276c8a0",
+    "schedule_id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c2bc-7354-8595-4390ae341de5"
+   },
+   {
+    "actual_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 110000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-10",
+    "id": "01a1d64b-ddfb-72ee-9fc8-9ab2ebf1b55e",
+    "schedule_id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c2e5-76da-8ff5-9e9b1b077d42"
+   },
+   {
+    "actual_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 30000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-10",
+    "id": "01a1d64b-de21-7a4b-9bb4-176bf7f65c39",
+    "schedule_id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c305-7f37-8c3d-16d1c4f3e559"
+   },
+   {
+    "actual_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_amount": {
+     "amount": 13990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-12",
+    "id": "01a1d64b-dcd1-76ba-b6dd-2eb4597caf57",
+    "schedule_id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "sequence": 25,
+    "state": "realized",
+    "transaction_id": "01a1d64c-c383-7ba6-baed-c58813c3a84b"
+   },
+   {
+    "expected_amount": {
+     "amount": 5990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-14",
+    "id": "01a1d64b-dd2a-7df2-b146-ff909c6cd632",
+    "schedule_id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "sequence": 25,
+    "state": "expected"
+   },
+   {
+    "expected_amount": {
+     "amount": 22000,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-18",
+    "id": "01a1d64b-dc63-7d51-806e-19f686de6b6e",
+    "schedule_id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "sequence": 25,
+    "state": "expected"
+   },
+   {
+    "expected_amount": {
+     "amount": 9990,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-20",
+    "id": "01a1d64b-dcf0-7006-a443-6595f52ab5d7",
+    "schedule_id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "sequence": 25,
+    "state": "expected"
+   },
+   {
+    "expected_amount": {
+     "amount": 9800,
+     "currency": "BRL"
+    },
+    "expected_on": "2026-11-22",
+    "id": "01a1d64b-dc87-7526-a6ec-e69cda671a84",
+    "schedule_id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "sequence": 25,
+    "state": "expected"
+   }
+  ]
+ },
+ "GET /api/v1/schedules": {
+  "items": [
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d4d8-793c-9fbf-9db6b0d64bd9",
+    "description": "Salário",
+    "grace_days": 3,
+    "id": "01a1d64b-dbbd-7a4b-bd42-40e2a833ff80",
+    "kind": "income",
+    "match_tolerance_bp": 1500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d522-71ab-84d4-d90651647e4e",
+    "terms": [
+     {
+      "amount": {
+       "amount": 1133497,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "business_day_ordinal": 5,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d0c3-793d-9921-dccf84fa8cd4",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d4ed-77b9-a59c-6bbfa85279a7",
+    "description": "Crédito Alelo Refeição",
+    "grace_days": 3,
+    "id": "01a1d64b-dbee-7abf-b952-1a82e15b2a08",
+    "kind": "income",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d660-7628-b79d-e66d06976228",
+    "terms": [
+     {
+      "amount": {
+       "amount": 143000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "business_day_ordinal": 1,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d1d3-761e-94e0-12d3c9d5bc3b",
+    "description": "Aluguel",
+    "grace_days": 3,
+    "id": "01a1d64b-dc0d-7d7c-8bca-00cf8fb865cd",
+    "kind": "bill",
+    "match_tolerance_bp": 1500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d525-718d-8c31-9fefd3d7c587",
+    "terms": [
+     {
+      "amount": {
+       "amount": 383000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 5,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     },
+     {
+      "amount": {
+       "amount": 402000,
+       "currency": "BRL"
+      },
+      "effective_from": "2027-08-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 5,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d1d9-7f73-bd26-c7c4d38b18b1",
+    "description": "Condomínio",
+    "grace_days": 3,
+    "id": "01a1d64b-dc3f-7dcd-a5d0-0d4b3d86316f",
+    "kind": "bill",
+    "match_tolerance_bp": 1500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d527-774f-8247-17e8144fbce9",
+    "terms": [
+     {
+      "amount": {
+       "amount": 89000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 10,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d1e5-7130-9436-df85a1804d7b",
+    "description": "Conta de luz",
+    "grace_days": 3,
+    "id": "01a1d64b-dc5e-71ee-b9c2-e5e4ddad43e1",
+    "kind": "bill",
+    "match_tolerance_bp": 6500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d52a-748a-a458-e62b41191991",
+    "terms": [
+     {
+      "amount": {
+       "amount": 22000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 18,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d1f9-7fac-a979-14e6c0ba8698",
+    "description": "Conta de água",
+    "grace_days": 3,
+    "id": "01a1d64b-dc7b-788f-b949-47520b02706b",
+    "kind": "bill",
+    "match_tolerance_bp": 3500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d52c-7deb-9235-7b4b3047b9fb",
+    "terms": [
+     {
+      "amount": {
+       "amount": 9800,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 22,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d08c-752d-a944-2bcca407a195",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d20b-7d1d-b7ee-b198d17c3dc1",
+    "description": "Conta de gás",
+    "grace_days": 3,
+    "id": "01a1d64b-dcac-7a3c-9f5f-39c10aa06edb",
+    "kind": "bill",
+    "match_tolerance_bp": 5500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d52f-792c-8092-e54768450d81",
+    "terms": [
+     {
+      "amount": {
+       "amount": 7200,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 25,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d212-7f6d-ad17-5dd8b2a8b708",
+    "description": "Internet fibra 500 mega",
+    "grace_days": 3,
+    "id": "01a1d64b-dccb-7218-996e-2891ddd448a4",
+    "kind": "subscription",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d532-711b-a178-6556d7b9461f",
+    "terms": [
+     {
+      "amount": {
+       "amount": 13990,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 12,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d21a-778d-bdac-c7758bf65714",
+    "description": "Plano de celular",
+    "grace_days": 3,
+    "id": "01a1d64b-dcea-7306-9d92-9082462755d1",
+    "kind": "subscription",
+    "match_tolerance_bp": 1500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d534-7552-80fa-4644a365720d",
+    "terms": [
+     {
+      "amount": {
+       "amount": 9990,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 20,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d344-746d-8189-ff43fbf37cd1",
+    "description": "Mensalidade da academia",
+    "grace_days": 3,
+    "id": "01a1d64b-dd07-722f-9193-5cbb1fa4e1e5",
+    "kind": "subscription",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [
+     {
+      "from": "2025-07-01",
+      "to": "2025-07-31"
+     }
+    ],
+    "payee_id": "01a1d64b-d56f-7e11-8ce6-b594aeca47d9",
+    "terms": [
+     {
+      "amount": {
+       "amount": 11990,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 8,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d3b8-7cf7-9827-a400b6560b34",
+    "description": "Netflix",
+    "grace_days": 3,
+    "id": "01a1d64b-dd25-7036-b194-4d185c222c5c",
+    "kind": "subscription",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d5a1-7c6d-928f-c9e247bb7554",
+    "terms": [
+     {
+      "amount": {
+       "amount": 5990,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 14,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     },
+     {
+      "amount": {
+       "amount": 6490,
+       "currency": "BRL"
+      },
+      "effective_from": "2026-12-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 14,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d3c4-727e-a19b-1fb33e0f6d25",
+    "description": "Spotify Premium",
+    "grace_days": 3,
+    "id": "01a1d64b-dd53-7362-b611-fb70b58c02ba",
+    "kind": "subscription",
+    "match_tolerance_bp": 1500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d5e4-7551-9281-ad751fc6956a",
+    "terms": [
+     {
+      "amount": {
+       "amount": 2690,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 6,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d3b8-7cf7-9827-a400b6560b34",
+    "description": "HBO Max",
+    "ends_on": "2025-10-01",
+    "grace_days": 3,
+    "id": "01a1d64b-dd6f-74f1-ac1c-e6712eb46835",
+    "kind": "subscription",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d5ef-78b8-993b-99c7df30e7bf",
+    "terms": [
+     {
+      "amount": {
+       "amount": 3490,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 17,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d3b8-7cf7-9827-a400b6560b34",
+    "description": "Disney+",
+    "grace_days": 3,
+    "id": "01a1d64b-dd90-7ef5-8fde-8b1e7788d691",
+    "kind": "subscription",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d5ed-70f1-8bc0-a3c9ecb2b135",
+    "terms": [
+     {
+      "amount": {
+       "amount": 3390,
+       "currency": "BRL"
+      },
+      "effective_from": "2025-03-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 9,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2025-03-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d14d-7a6b-8d85-02a1b0e741ce",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d4c4-7da5-8dcb-8fa8d3cd27e6",
+    "description": "Assinatura de ração Petz",
+    "grace_days": 3,
+    "id": "01a1d64b-ddbb-73b9-990d-f3f9d6313468",
+    "kind": "subscription",
+    "match_tolerance_bp": 1500,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d633-70ab-8710-41220e6c4962",
+    "terms": [
+     {
+      "amount": {
+       "amount": 20990,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 3,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d0f7-7be6-a112-adffe32cb185",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d4d0-7216-95fc-68523f87c192",
+    "description": "Doação mensal",
+    "grace_days": 3,
+    "id": "01a1d64b-ddd8-7920-8cb1-d31cac794896",
+    "kind": "subscription",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "payee_id": "01a1d64b-d65b-7254-89bf-4ad69bc34004",
+    "terms": [
+     {
+      "amount": {
+       "amount": 5000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "day_of_month": 28,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d0b6-78d6-ba2e-6efa4e1abced",
+    "description": "Aporte mensal na XP",
+    "grace_days": 3,
+    "id": "01a1d64b-ddf5-7e48-ab60-d120d7c19f5e",
+    "kind": "savings",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "terms": [
+     {
+      "amount": {
+       "amount": 110000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "business_day_ordinal": 6,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   },
+   {
+    "account_id": "01a1d64b-d05d-7b15-aad4-3f06555257d1",
+    "calendar": "br_banking",
+    "counterpart_id": "01a1d64b-d097-7193-be1f-9df04503c527",
+    "description": "Aporte na caixinha de reserva",
+    "grace_days": 3,
+    "id": "01a1d64b-de1a-7252-b5e3-48c80e2d6761",
+    "kind": "savings",
+    "match_tolerance_bp": 1000,
+    "match_window_days": 7,
+    "pauses": [],
+    "terms": [
+     {
+      "amount": {
+       "amount": 30000,
+       "currency": "BRL"
+      },
+      "effective_from": "2024-11-01",
+      "recurrence": {
+       "adjustment": "none",
+       "business_day_ordinal": 6,
+       "frequency": "monthly",
+       "interval": 1,
+       "start": "2024-11-01"
+      }
+     }
+    ]
+   }
+  ]
+ }
+}

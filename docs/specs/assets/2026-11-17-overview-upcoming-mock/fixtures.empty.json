@@ -1,0 +1,5 @@
+{
+ "GET /api/v1/occurrences": {
+  "items": []
+ }
+}
