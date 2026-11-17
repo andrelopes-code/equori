@@ -151,6 +151,33 @@ func (s *Service) OwnCategoryMonthlyTotals(
 	return rows, settings.BaseCurrency, err
 }
 
+// CategoryPosting is one own posting of a category, its weight in minor units of the base
+// currency.
+type CategoryPosting struct {
+	TransactionID, CategoryID uuid.UUID
+	BookedOn                  time.Time
+	Weight                    int64
+	Description, Payee        string
+}
+
+// OwnCategoryPostings returns the non-voided own postings of the categories of class booked in
+// [from, to), the latest first, with the base currency (income split versions A243).
+func (s *Service) OwnCategoryPostings(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+) ([]CategoryPosting, money.Currency, error) {
+	settings, err := s.repo.Settings(ctx, booksID)
+	if err != nil {
+		return nil, "", err
+	}
+
+	rows, err := s.repo.OwnCategoryPostings(ctx, booksID, class, from, to)
+
+	return rows, settings.BaseCurrency, err
+}
+
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
 func (s *Service) CategoryMonthlyTotals(
 	ctx context.Context,

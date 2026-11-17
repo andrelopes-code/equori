@@ -196,6 +196,32 @@ func (p ledgerPort) OwnCategoryMonthlyTotals(
 	return out, nil
 }
 
+func (p ledgerPort) OwnCategoryPostings(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+) ([]app.CategoryPosting, error) {
+	rows, err := p.l.OwnCategoryPostings(ctx, booksID, class, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]app.CategoryPosting, len(rows))
+	for i, r := range rows {
+		out[i] = app.CategoryPosting{
+			TransactionID: r.TransactionID,
+			CategoryID:    r.CategoryID,
+			BookedOn:      r.BookedOn,
+			Amount:        r.Amount.Amount(),
+			Description:   r.Description,
+			Payee:         r.Payee,
+		}
+	}
+
+	return out, nil
+}
+
 func (p ledgerPort) FirstPosting(
 	ctx context.Context,
 	booksID int64,

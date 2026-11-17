@@ -130,4 +130,12 @@ type reportStore interface {
 		class string,
 		from, to time.Time,
 	) ([]CategoryMonth, error)
+	// OwnCategoryPostings returns the non-voided own postings of the categories of class booked in
+	// [from, to), the latest first.
+	OwnCategoryPostings(
+		ctx context.Context,
+		booksID int64,
+		class string,
+		from, to time.Time,
+	) ([]CategoryPosting, error)
 }

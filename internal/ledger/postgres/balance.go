@@ -105,6 +105,40 @@ func (r *Repository) CategoryMonthlyTotals(
 	return out, nil
 }
 
+func (r *Repository) OwnCategoryPostings(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+) ([]app.CategoryPosting, error) {
+	rows, err := r.q.OwnCategoryPostings(
+		ctx,
+		OwnCategoryPostingsParams{
+			BooksID:      booksID,
+			AccountClass: class,
+			FromDate:     from,
+			ToDate:       to,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("own category postings: %w", err)
+	}
+
+	out := make([]app.CategoryPosting, len(rows))
+	for i, row := range rows {
+		out[i] = app.CategoryPosting{
+			TransactionID: row.TransactionID,
+			CategoryID:    row.AccountID,
+			BookedOn:      row.BookedOn,
+			Weight:        row.Weight,
+			Description:   row.Description,
+			Payee:         row.Payee,
+		}
+	}
+
+	return out, nil
+}
+
 func (r *Repository) OwnCategoryMonthlyTotals(
 	ctx context.Context,
 	booksID int64,

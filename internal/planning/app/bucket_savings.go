@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/platform/money"
 )
 
@@ -18,6 +20,21 @@ func (s *Service) savingsInflows(
 	base money.Currency,
 	from, to time.Time,
 ) (map[time.Time]int64, error) {
+	held, err := s.savingsAccounts(ctx, booksID, facts)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.inflows(ctx, booksID, facts, base, held, from, to)
+}
+
+// savingsAccounts returns the accounts that count as savings: the savings, reserve and brokerage
+// accounts outside the goals' accounts, and the accounts of the goals that count as savings.
+func (s *Service) savingsAccounts(
+	ctx context.Context,
+	booksID int64,
+	facts []Account,
+) (map[uuid.UUID]bool, error) {
 	goals, held, err := s.goalAccounts(ctx, booksID, facts)
 	if err != nil {
 		return nil, err
@@ -29,7 +46,7 @@ func (s *Service) savingsInflows(
 		}
 	}
 
-	return s.inflows(ctx, booksID, facts, base, held, from, to)
+	return held, nil
 }
 
 func isSavingsKind(kind string) bool {

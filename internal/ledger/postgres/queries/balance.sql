@@ -663,3 +663,31 @@ WHERE
 GROUP BY
     1,
     2;
+
+-- name: OwnCategoryPostings :many
+-- Income split versions A243: own postings of every category of a class in a period.
+SELECT
+    p.transaction_id,
+    p.account_id,
+    p.booked_on,
+    p.weight,
+    t.description,
+    coalesce(y.name, '') AS payee
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    AND a.books_id = p.books_id
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+    AND t.books_id = p.books_id
+    LEFT JOIN ledger_payee y ON y.id = t.payee_id
+    AND y.books_id = t.books_id
+WHERE
+    p.books_id = @books_id
+    AND a.account_class = @account_class
+    AND NOT p.voided
+    AND p.booked_on >= @from_date
+    AND p.booked_on < @to_date
+ORDER BY
+    p.booked_on DESC,
+    p.transaction_id DESC,
+    p.position;

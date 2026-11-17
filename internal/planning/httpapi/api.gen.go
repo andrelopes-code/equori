@@ -9,6 +9,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for BudgetBucketEntryKind.
+const (
+	BudgetBucketEntryKindExpense BudgetBucketEntryKind = "expense"
+	BudgetBucketEntryKindGoals   BudgetBucketEntryKind = "goals"
+	BudgetBucketEntryKindSavings BudgetBucketEntryKind = "savings"
+)
+
+// Valid indicates whether the value is a known member of the BudgetBucketEntryKind enum.
+func (e BudgetBucketEntryKind) Valid() bool {
+	switch e {
+	case BudgetBucketEntryKindExpense:
+		return true
+	case BudgetBucketEntryKindGoals:
+		return true
+	case BudgetBucketEntryKindSavings:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BudgetPlanSource.
 const (
 	AverageIncome  BudgetPlanSource = "average_income"
@@ -137,25 +158,25 @@ func (e RecurrenceWeekday) Valid() bool {
 
 // Defines values for ScheduleKind.
 const (
-	Bill         ScheduleKind = "bill"
-	Income       ScheduleKind = "income"
-	Savings      ScheduleKind = "savings"
-	Subscription ScheduleKind = "subscription"
-	Transfer     ScheduleKind = "transfer"
+	ScheduleKindBill         ScheduleKind = "bill"
+	ScheduleKindIncome       ScheduleKind = "income"
+	ScheduleKindSavings      ScheduleKind = "savings"
+	ScheduleKindSubscription ScheduleKind = "subscription"
+	ScheduleKindTransfer     ScheduleKind = "transfer"
 )
 
 // Valid indicates whether the value is a known member of the ScheduleKind enum.
 func (e ScheduleKind) Valid() bool {
 	switch e {
-	case Bill:
+	case ScheduleKindBill:
 		return true
-	case Income:
+	case ScheduleKindIncome:
 		return true
-	case Savings:
+	case ScheduleKindSavings:
 		return true
-	case Subscription:
+	case ScheduleKindSubscription:
 		return true
-	case Transfer:
+	case ScheduleKindTransfer:
 		return true
 	default:
 		return false
@@ -187,6 +208,27 @@ type BudgetBucket struct {
 	TakesGoals   bool                 `json:"takes_goals"`
 	TakesSavings bool                 `json:"takes_savings"`
 }
+
+// BudgetBucketEntries defines model for BudgetBucketEntries.
+type BudgetBucketEntries struct {
+	Currency string              `json:"currency"`
+	Entries  []BudgetBucketEntry `json:"entries"`
+	Total    Money               `json:"total"`
+}
+
+// BudgetBucketEntry defines model for BudgetBucketEntry.
+type BudgetBucketEntry struct {
+	Amount        Money                 `json:"amount"`
+	CategoryId    *openapi_types.UUID   `json:"category_id,omitempty"`
+	Date          openapi_types.Date    `json:"date"`
+	Description   string                `json:"description"`
+	Kind          BudgetBucketEntryKind `json:"kind"`
+	Payee         *string               `json:"payee,omitempty"`
+	TransactionId openapi_types.UUID    `json:"transaction_id"`
+}
+
+// BudgetBucketEntryKind defines model for BudgetBucketEntry.Kind.
+type BudgetBucketEntryKind string
 
 // BudgetBucketHistory defines model for BudgetBucketHistory.
 type BudgetBucketHistory struct {
@@ -741,6 +783,12 @@ type GetProjectionParams struct {
 type GetBudgetBucketsParams struct {
 	// Month The month to read; the current month when absent.
 	Month *string `form:"month,omitempty" json:"month,omitempty"`
+}
+
+// GetBudgetBucketEntriesParams defines parameters for GetBudgetBucketEntries.
+type GetBudgetBucketEntriesParams struct {
+	Month  PlanMonth           `form:"month" json:"month"`
+	Bucket *openapi_types.UUID `form:"bucket,omitempty" json:"bucket,omitempty"`
 }
 
 // GetBudgetBucketHistoryParams defines parameters for GetBudgetBucketHistory.

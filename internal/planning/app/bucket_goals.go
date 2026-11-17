@@ -43,6 +43,35 @@ func (s *Service) inflows(
 	held map[uuid.UUID]bool,
 	from, to time.Time,
 ) (map[time.Time]int64, error) {
+	counted, err := s.countedInflows(ctx, booksID, facts, base, held, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[time.Time]int64)
+	for _, c := range counted {
+		out[domain.MonthOf(c.tx.Date)] += c.amount
+	}
+
+	return out, nil
+}
+
+// countedInflow is a transaction and the amount `inflows` counts for it.
+type countedInflow struct {
+	tx     domain.Transaction
+	amount int64
+}
+
+// countedInflows returns the amount `inflows` counts for each non-voided transaction with a
+// posting in the accounts of held dated in [from, to).
+func (s *Service) countedInflows(
+	ctx context.Context,
+	booksID int64,
+	facts []Account,
+	base money.Currency,
+	held map[uuid.UUID]bool,
+	from, to time.Time,
+) ([]countedInflow, error) {
 	var ids []uuid.UUID
 	for id := range held {
 		got, err := s.ledger.AccountTransactionsBetween(
@@ -72,13 +101,20 @@ func (s *Service) inflows(
 			(a.Class == "asset" || a.Class == "liability")
 	}
 
-	out := make(map[time.Time]int64)
+	var out []countedInflow
 	for _, tx := range txs {
+		if tx.Voided {
+			continue
+		}
+
+		c := countedInflow{tx: tx}
 		for _, p := range tx.Postings {
-			if !tx.Voided && sources[p.AccountID] {
-				out[domain.MonthOf(tx.Date)] -= p.Amount
+			if sources[p.AccountID] {
+				c.amount -= p.Amount
 			}
 		}
+
+		out = append(out, c)
 	}
 
 	return out, nil

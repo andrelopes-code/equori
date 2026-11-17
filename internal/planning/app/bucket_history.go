@@ -38,12 +38,8 @@ func (s *Service) BucketHistory(
 	month time.Time,
 ) (BucketHistory, error) {
 	month = domain.MonthOf(month)
-	if month.After(s.horizon(ctx)) {
-		return BucketHistory{}, &domain.FieldError{
-			Field:   "month",
-			Message: "must be at most today + 12 months",
-			Err:     domain.ErrValidation,
-		}
+	if err := s.checkBucketMonth(ctx, month); err != nil {
+		return BucketHistory{}, err
 	}
 
 	base, err := s.ledger.BaseCurrency(ctx, booksID)

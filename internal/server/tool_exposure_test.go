@@ -278,6 +278,7 @@ var exposure = map[string]string{
 	"getBudgetBucketHistory":           "get_budgets_and_goals",
 	"getBudgetBucketVersions":          "get_budgets_and_goals",
 	"deleteBudgetBucketVersion":        "-screen",
+	"getBudgetBucketEntries":           "-visual",
 	"listGoals":                        "get_budgets_and_goals",
 	"createGoal":                       "manage_budget_or_goal",
 	"getGoal":                          "get_budgets_and_goals",

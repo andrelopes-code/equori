@@ -6646,6 +6646,40 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /budget-buckets/entries:
+    get:
+      tags: [planning]
+      operationId: getBudgetBucketEntries
+      x-book-role: read
+      summary: The entries that sum to the real amount of a bucket in a month (A243).
+      description: |
+        Without `bucket`, the entries of the spending outside the split. `bucket` is the id of a bucket of the method
+        of the month; 404 otherwise. An `expense` entry is an own posting of a category that resolves to the bucket; a
+        `savings` or `goals` entry is a transaction that moved money into the savings or the goals. The entries come
+        by date descending, then by `transaction_id` descending, and `total` is their sum.
+      parameters:
+        - $ref: "#/components/parameters/PlanMonth"
+        - name: bucket
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BudgetBucketEntries"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /occurrences/{id}/reopen:
     post:
       tags: [planning]
@@ -13470,6 +13504,40 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BudgetBucketVersion"
+    BudgetBucketEntry:
+      type: object
+      required: [transaction_id, date, description, kind, amount]
+      properties:
+        transaction_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        payee:
+          type: string
+        kind:
+          type: string
+          enum: [expense, savings, goals]
+        amount:
+          $ref: "#/components/schemas/Money"
+    BudgetBucketEntries:
+      type: object
+      required: [currency, total, entries]
+      properties:
+        currency:
+          type: string
+        total:
+          $ref: "#/components/schemas/Money"
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/BudgetBucketEntry"
     BudgetBucketHistory:
       type: object
       required: [currency, methods, months]

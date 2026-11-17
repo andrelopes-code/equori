@@ -60,6 +60,39 @@ func (m *Module) OwnCategoryMonthlyTotals(
 	return out, nil
 }
 
+// OwnCategoryPostings returns the non-voided own postings of the categories of class booked in
+// [from, to), the latest first, in the base currency.
+func (m *Module) OwnCategoryPostings(
+	ctx context.Context,
+	booksID int64,
+	class string,
+	from, to time.Time,
+) ([]CategoryPosting, error) {
+	rows, base, err := m.svc.OwnCategoryPostings(ctx, booksID, class, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]CategoryPosting, len(rows))
+	for i, r := range rows {
+		amount, err := money.New(r.Weight, base)
+		if err != nil {
+			return nil, err
+		}
+
+		out[i] = CategoryPosting{
+			TransactionID: r.TransactionID,
+			CategoryID:    r.CategoryID,
+			BookedOn:      r.BookedOn,
+			Amount:        amount,
+			Description:   r.Description,
+			Payee:         r.Payee,
+		}
+	}
+
+	return out, nil
+}
+
 // CategoryMonthlyTotals is CategoryTotal for each month in [from, to), keyed by its first day.
 func (m *Module) CategoryMonthlyTotals(
 	ctx context.Context,

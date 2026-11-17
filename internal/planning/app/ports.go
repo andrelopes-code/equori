@@ -165,6 +165,14 @@ type Ledger interface {
 		class string,
 		from, to time.Time,
 	) (map[uuid.UUID]map[time.Time]int64, error)
+	// OwnCategoryPostings returns the non-voided own postings of the categories of class booked in
+	// [from, to), the latest first.
+	OwnCategoryPostings(
+		ctx context.Context,
+		booksID int64,
+		class string,
+		from, to time.Time,
+	) ([]CategoryPosting, error)
 	// FirstPosting is the booked date of the earliest posting of the accounts and their
 	// sub-accounts; false when they have none.
 	FirstPosting(
@@ -384,4 +392,12 @@ type Repository interface {
 	UpdateGoal(ctx context.Context, booksID int64, g domain.Goal) (domain.Goal, error)
 	// DeleteGoal removes the goal with its accounts; ErrNotFound when it is not the book's.
 	DeleteGoal(ctx context.Context, booksID int64, id uuid.UUID) error
+}
+
+// CategoryPosting is one own posting of a category; Amount is its weight in the base currency.
+type CategoryPosting struct {
+	TransactionID, CategoryID uuid.UUID
+	BookedOn                  time.Time
+	Amount                    int64
+	Description, Payee        string
 }

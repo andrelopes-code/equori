@@ -196,6 +196,14 @@ type CategoryMonth struct {
 	Total      money.Money
 }
 
+// CategoryPosting is one own posting of a category: its weight in the base currency.
+type CategoryPosting struct {
+	TransactionID, CategoryID uuid.UUID
+	BookedOn                  time.Time
+	Amount                    money.Money
+	Description, Payee        string
+}
+
 // CaptureAccount is a balance account with the names a capture line may use for it.
 type CaptureAccount = app.CaptureAccount
 

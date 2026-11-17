@@ -400,6 +400,83 @@ func (q *Queries) OwnCategoryMonthlyTotals(ctx context.Context, arg OwnCategoryM
 	return items, nil
 }
 
+const ownCategoryPostings = `-- name: OwnCategoryPostings :many
+SELECT
+    p.transaction_id,
+    p.account_id,
+    p.booked_on,
+    p.weight,
+    t.description,
+    coalesce(y.name, '') AS payee
+FROM
+    ledger_posting p
+    JOIN ledger_account a ON a.id = p.account_id
+    AND a.books_id = p.books_id
+    JOIN ledger_transaction t ON t.id = p.transaction_id
+    AND t.books_id = p.books_id
+    LEFT JOIN ledger_payee y ON y.id = t.payee_id
+    AND y.books_id = t.books_id
+WHERE
+    p.books_id = $1
+    AND a.account_class = $2
+    AND NOT p.voided
+    AND p.booked_on >= $3
+    AND p.booked_on < $4
+ORDER BY
+    p.booked_on DESC,
+    p.transaction_id DESC,
+    p.position
+`
+
+type OwnCategoryPostingsParams struct {
+	BooksID      int64
+	AccountClass string
+	FromDate     time.Time
+	ToDate       time.Time
+}
+
+type OwnCategoryPostingsRow struct {
+	TransactionID uuid.UUID
+	AccountID     uuid.UUID
+	BookedOn      time.Time
+	Weight        int64
+	Description   string
+	Payee         string
+}
+
+// Income split versions A243: own postings of every category of a class in a period.
+func (q *Queries) OwnCategoryPostings(ctx context.Context, arg OwnCategoryPostingsParams) ([]OwnCategoryPostingsRow, error) {
+	rows, err := q.db.Query(ctx, ownCategoryPostings,
+		arg.BooksID,
+		arg.AccountClass,
+		arg.FromDate,
+		arg.ToDate,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OwnCategoryPostingsRow
+	for rows.Next() {
+		var i OwnCategoryPostingsRow
+		if err := rows.Scan(
+			&i.TransactionID,
+			&i.AccountID,
+			&i.BookedOn,
+			&i.Weight,
+			&i.Description,
+			&i.Payee,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const treeBalancesByInstrument = `-- name: TreeBalancesByInstrument :many
 WITH RECURSIVE
     tree AS (

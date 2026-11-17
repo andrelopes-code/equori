@@ -3824,6 +3824,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/budget-buckets/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The entries that sum to the real amount of a bucket in a month (A243).
+         * @description Without `bucket`, the entries of the spending outside the split. `bucket` is the id of a bucket of the method
+         *     of the month; 404 otherwise. An `expense` entry is an own posting of a category that resolves to the bucket; a
+         *     `savings` or `goals` entry is a transaction that moved money into the savings or the goals. The entries come
+         *     by date descending, then by `transaction_id` descending, and `total` is their sum.
+         */
+        get: operations["getBudgetBucketEntries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/occurrences/{id}/reopen": {
         parameters: {
             query?: never;
@@ -7431,6 +7454,24 @@ export interface components {
         };
         BudgetBucketVersions: {
             versions: components["schemas"]["BudgetBucketVersion"][];
+        };
+        BudgetBucketEntry: {
+            /** Format: uuid */
+            transaction_id: string;
+            /** Format: uuid */
+            category_id?: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            payee?: string;
+            /** @enum {string} */
+            kind: "expense" | "savings" | "goals";
+            amount: components["schemas"]["Money"];
+        };
+        BudgetBucketEntries: {
+            currency: string;
+            total: components["schemas"]["Money"];
+            entries: components["schemas"]["BudgetBucketEntry"][];
         };
         BudgetBucketHistory: {
             currency: string;
@@ -14988,6 +15029,33 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    getBudgetBucketEntries: {
+        parameters: {
+            query: {
+                month: components["parameters"]["PlanMonth"];
+                bucket?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetBucketEntries"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];
         };
     };
