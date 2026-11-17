@@ -140,6 +140,7 @@ export function PlanEditor({
           stored={plan.buckets}
           entries={entries}
           month={month}
+          outside={plan.outside_category_ids?.length ?? 0}
         />
 
         <PlanAnnouncer over={over} figure={figures.figure} />

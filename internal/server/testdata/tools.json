@@ -1792,6 +1792,25 @@
             },
             "buckets_from": {
               "type": "string"
+            },
+            "outside_categories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              }
             }
           },
           "required": [
@@ -1815,6 +1834,24 @@
                 "type": "string"
               },
               "received": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "unallocated": {
                 "type": "object",
                 "properties": {
                   "amount": {
@@ -1893,6 +1930,7 @@
             "required": [
               "month",
               "received",
+              "unallocated",
               "buckets"
             ],
             "additionalProperties": false

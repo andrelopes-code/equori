@@ -36,6 +36,8 @@ interface BucketDialogProps {
   month: string;
   // A preselected start of the version.
   from?: string;
+  // Opens the categories on the ones without a bucket.
+  outsideFirst?: boolean;
   onClose: () => void;
 }
 
@@ -48,6 +50,7 @@ export function BucketDialog({
   entries,
   month,
   from,
+  outsideFirst = false,
   onClose,
 }: BucketDialogProps) {
   const t = useT();
@@ -127,6 +130,7 @@ export function BucketDialog({
             <BucketCategories
               entries={entries}
               draft={edit.draft}
+              outsideFirst={outsideFirst}
               onChoices={edit.setChoices}
             />
           </Stack>

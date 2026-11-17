@@ -16,6 +16,7 @@ import type { CategoryEntry } from "@/features/categories";
 import { BucketHistoryAction } from "@/features/planning/income-split/versions/bucket-history-action";
 import { BucketDialog } from "@/features/planning/income-split/bucket-dialog";
 import type { BucketTotals } from "@/features/planning/income-split/bucket-figures";
+import { PlanBucketsOutside } from "@/features/planning/income-split/plan-buckets-outside";
 import { PlanBucketsTable } from "@/features/planning/income-split/plan-buckets-table";
 import type { PlanFormat } from "@/features/planning/budget-plan/use-plan-format";
 import { useT } from "@/i18n/i18n-provider";
@@ -31,6 +32,8 @@ interface PlanBucketsProps {
   entries: readonly CategoryEntry[];
   // The month on screen.
   month: string;
+  // The number of categories outside the split of the month.
+  outside: number;
 }
 
 // The income split of the month (income buckets spec 5): each bucket's share, target,
@@ -41,9 +44,11 @@ export function PlanBuckets({
   stored,
   entries,
   month,
+  outside,
 }: PlanBucketsProps) {
   const t = useT();
-  const [editing, setEditing] = useState(false);
+  // "outside" opens the dialog on the categories without a bucket.
+  const [editing, setEditing] = useState<"split" | "outside" | null>(null);
 
   return (
     <Section>
@@ -64,7 +69,7 @@ export function PlanBuckets({
             variant="outline"
             tone="secondary"
             onClick={() => {
-              setEditing(true);
+              setEditing("split");
             }}
           >
             {totals === undefined ? t("buckets.setUp") : t("buckets.edit")}
@@ -75,15 +80,22 @@ export function PlanBuckets({
       {totals !== undefined && (
         <SectionBody>
           <PlanBucketsTable totals={totals} format={format} />
+          <PlanBucketsOutside
+            count={outside}
+            onPlace={() => {
+              setEditing("outside");
+            }}
+          />
         </SectionBody>
       )}
-      {editing && (
+      {editing !== null && (
         <BucketDialog
           stored={stored}
           entries={entries}
           month={month}
+          outsideFirst={editing === "outside"}
           onClose={() => {
-            setEditing(false);
+            setEditing(null);
           }}
         />
       )}

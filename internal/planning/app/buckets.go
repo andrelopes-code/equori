@@ -156,7 +156,7 @@ func (s *Service) planBuckets(
 	ctx context.Context,
 	booksID int64,
 	out *Plan,
-	categories []domain.PlanCategory,
+	accounts planAccounts,
 	own map[uuid.UUID]map[time.Time]int64,
 ) error {
 	found, ok, err := s.methodOf(ctx, booksID, out.Month)
@@ -164,8 +164,9 @@ func (s *Service) planBuckets(
 		return err
 	}
 
-	method := found.Buckets
+	method, categories := found.Buckets, accounts.categories
 	out.BucketsFrom = found.From
+	out.OutsideCategories = outsideCategories(accounts.facts, method)
 
 	resolve := domain.BucketResolver(method, planParents(categories))
 	out.Buckets = make([]PlanBucket, len(method))

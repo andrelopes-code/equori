@@ -81,4 +81,5 @@ type budgetGoalPlan struct {
 	buckets                      []domain.Bucket
 	bucketNames                  [][]string
 	storedNames                  []string
+	outsideNames                 []string
 }

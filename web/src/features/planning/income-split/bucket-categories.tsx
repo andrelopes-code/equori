@@ -18,6 +18,8 @@ import { useT } from "@/i18n/i18n-provider";
 interface BucketCategoriesProps {
   entries: readonly CategoryEntry[];
   draft: BucketDraft;
+  // Starts on the categories without a bucket instead of the first bucket.
+  outsideFirst: boolean;
   onChoices: (choices: Map<string, string>) => void;
 }
 
@@ -26,10 +28,13 @@ interface BucketCategoriesProps {
 export function BucketCategories({
   entries,
   draft,
+  outsideFirst,
   onChoices,
 }: BucketCategoriesProps) {
   const t = useT();
-  const [chosen, setChosen] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<string | null>(
+    outsideFirst ? outsideChoice : null,
+  );
   const branches = expenseBranches(entries);
   const parents = new Map(entries.map((e) => [e.id, e.parentId]));
   const counts = bucketCounts(draft, parents, branches);

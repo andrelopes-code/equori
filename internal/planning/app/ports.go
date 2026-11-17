@@ -77,6 +77,8 @@ type Returns interface {
 type Account struct {
 	ID, ParentID uuid.UUID
 	Class, Kind  string
+	Name         string
+	SystemRole   string
 	Instrument   money.Currency
 	Closed       bool
 }

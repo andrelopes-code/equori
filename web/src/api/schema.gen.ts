@@ -7678,6 +7678,11 @@ export interface components {
             buckets?: components["schemas"]["BudgetPlanBucket"][];
             outside_planned?: components["schemas"]["Money"];
             outside_spent?: components["schemas"]["Money"];
+            /**
+             * @description The open expense categories without a system role that resolve to no bucket of the method of the month,
+             *     by name; present with `buckets` (A236).
+             */
+            outside_category_ids?: string[];
         };
         GoalInput: {
             name: string;

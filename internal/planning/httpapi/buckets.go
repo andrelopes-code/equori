@@ -121,6 +121,7 @@ func setPlanBuckets(out *BudgetPlan, p app.Plan, m func(int64) Money) {
 
 	planned, spent := m(p.OutsidePlanned), m(p.OutsideSpent)
 	out.Buckets, out.OutsidePlanned, out.OutsideSpent = &buckets, &planned, &spent
+	out.OutsideCategoryIds = &p.OutsideCategories
 }
 
 func (s *Server) getBudgetBucketHistory(

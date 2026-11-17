@@ -76,11 +76,12 @@ func (s *Service) addPlanFigures(
 		return err
 	}
 
-	return s.planBuckets(ctx, booksID, out, accounts.categories, totals.own)
+	return s.planBuckets(ctx, booksID, out, accounts, totals.own)
 }
 
 // planAccounts holds the accounts of the book that the plan reads.
 type planAccounts struct {
+	facts      []Account
 	categories []domain.PlanCategory
 	flow       []uuid.UUID
 	expense    map[uuid.UUID]bool
@@ -95,7 +96,7 @@ func (s *Service) classifyAccounts(
 	facts []Account,
 	out *Plan,
 ) (planAccounts, error) {
-	var accounts planAccounts
+	accounts := planAccounts{facts: facts}
 
 	accounts.expense = make(map[uuid.UUID]bool)
 	for _, a := range facts {

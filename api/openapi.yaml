@@ -13889,6 +13889,14 @@ components:
           $ref: "#/components/schemas/Money"
         outside_spent:
           $ref: "#/components/schemas/Money"
+        outside_category_ids:
+          type: array
+          description: |
+            The open expense categories without a system role that resolve to no bucket of the method of the month,
+            by name; present with `buckets` (A236).
+          items:
+            type: string
+            format: uuid
     GoalInput:
       type: object
       additionalProperties: false

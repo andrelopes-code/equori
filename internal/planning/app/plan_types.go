@@ -27,10 +27,12 @@ type Plan struct {
 	Prices                                   []Price
 
 	// Buckets is the book's bucket method; nil without one (A229, A230). BucketsFrom is the
-	// start month of its version.
+	// start month of its version. OutsideCategories holds the open expense categories that
+	// resolve to no bucket, by name; nil without a method (A236).
 	Buckets                      []PlanBucket
 	BucketsFrom                  time.Time
 	OutsidePlanned, OutsideSpent int64
+	OutsideCategories            []uuid.UUID
 }
 
 // PlanIncome is the income a schedule expects in the month.

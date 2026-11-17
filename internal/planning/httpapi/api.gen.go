@@ -335,9 +335,13 @@ type BudgetPlan struct {
 	Fixed          *Money              `json:"fixed,omitempty"`
 	Installments   Money               `json:"installments"`
 	Month          string              `json:"month"`
-	OutsidePlanned *Money              `json:"outside_planned,omitempty"`
-	OutsideSpent   *Money              `json:"outside_spent,omitempty"`
-	Planned        Money               `json:"planned"`
+
+	// OutsideCategoryIds The open expense categories without a system role that resolve to no bucket of the method of the month,
+	// by name; present with `buckets` (A236).
+	OutsideCategoryIds *[]openapi_types.UUID `json:"outside_category_ids,omitempty"`
+	OutsidePlanned     *Money                `json:"outside_planned,omitempty"`
+	OutsideSpent       *Money                `json:"outside_spent,omitempty"`
+	Planned            Money                 `json:"planned"`
 
 	// Prices Prices that value occurrences in another currency at today (P8 amendment A72).
 	Prices         *[]Price        `json:"prices,omitempty"`

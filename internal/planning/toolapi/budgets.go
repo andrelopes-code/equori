@@ -73,6 +73,8 @@ type planView struct {
 	Buckets []planBucketView `json:"buckets,omitzero"`
 	// BucketsFrom is the start month of the version that holds Buckets (A240).
 	BucketsFrom string `json:"buckets_from,omitzero"`
+	// OutsideCategories lists the open expense categories in no bucket of the split (A236).
+	OutsideCategories []outsideCategory `json:"outside_categories,omitzero"`
 }
 
 type getBudgetsAndGoalsOut struct {
@@ -128,6 +130,12 @@ func toPlanView(p app.Plan, accounts map[uuid.UUID]Account) (planView, error) {
 	}
 
 	out.BucketsFrom = planBucketsFrom(p)
+	for _, id := range p.OutsideCategories {
+		out.OutsideCategories = append(
+			out.OutsideCategories,
+			outsideCategory{ID: id.String(), Name: accountName(accounts, id)},
+		)
+	}
 
 	return out, nil
 }

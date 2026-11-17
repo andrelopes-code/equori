@@ -88,6 +88,7 @@ func (s *Service) TransactionFacts(
 type AccountFact struct {
 	ID, ParentID, InstitutionID uuid.UUID
 	Class, Kind, SystemRole     string
+	Name                        string
 	Instrument                  money.Currency
 	OpenedOn                    time.Time
 	ClosedOn                    *time.Time
@@ -108,6 +109,7 @@ func (s *Service) AccountFacts(ctx context.Context, booksID int64) ([]AccountFac
 			Class:         string(a.Class),
 			Kind:          string(a.Kind),
 			SystemRole:    string(a.SystemRole),
+			Name:          a.Name,
 			Instrument:    a.Instrument,
 			OpenedOn:      a.OpenedOn,
 			ClosedOn:      a.ClosedOn,

@@ -84,6 +84,49 @@ describe("Income split", () => {
     expect(outside?.textContent).toContain("R$1,370.00");
   });
 
+  // Hardening spec 5, Plan: the categories outside the split, and the action that places them.
+  it("states the categories outside the split and opens the dialog on them", async () => {
+    const withOutside = (ids: string[]) => (month: string) => ({
+      ...withBuckets(month),
+      outside_category_ids: ids,
+    });
+    const none = await renderApp(november, {
+      fetch: budgetPlanApi(withOutside([])),
+      today,
+    });
+    await splitTable();
+
+    expect(screen.queryByText(/outside the split\.$/)).toBeNull();
+    none.unmount();
+
+    const one = await renderApp(november, {
+      fetch: budgetPlanApi(withOutside(["c1"])),
+      today,
+    });
+    await splitTable();
+
+    expect(screen.getByText("1 category is outside the split.")).toBeVisible();
+    one.unmount();
+
+    await renderApp(november, {
+      fetch: budgetPlanApi(withOutside(["c1", "c2", "c3"])),
+      today,
+    });
+    await splitTable();
+
+    expect(
+      screen.getByText("3 categories are outside the split."),
+    ).toBeVisible();
+    await userEvent.click(
+      screen.getByRole("button", { name: catalogEn["buckets.outsideAction"] }),
+    );
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(catalogEn["buckets.unplacedHint"]),
+    ).toBeVisible();
+  });
+
   it("saves the split only when the shares sum to 100%", async () => {
     let sent: unknown;
     const fetch = budgetPlanApi(withBuckets, {

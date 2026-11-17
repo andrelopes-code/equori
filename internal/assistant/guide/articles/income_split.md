@@ -17,7 +17,7 @@ Versions: the split can change over time. A change starts in the month chosen in
 
 History: the History button of the split section, in Plan and in Track, lists each version, the latest first, with its start, the share of each bucket and what changed against the version before: a share, a name, a bucket added or removed, a category moved. The actions menu of a version holds Edit and Delete: Edit opens the dialog on that version. Delete returns its months to the version before.
 
-Plan view: lists each bucket with its share, its target on the amount to distribute, what the budgets of its categories plan and what was spent, and groups the plan by bucket.
+Plan view: lists each bucket with its share, its target on the amount to distribute, what the budgets of its categories plan and what was spent, and groups the plan by bucket. Below the table, one line states how many open expense categories are outside the split: the ones in no bucket, with no parent category in a bucket. "Place them" opens the dialog on the categories without a bucket.
 
 Track view: says how many buckets missed their target in the month. Each bucket shows what is left or over against its share of the income received in that month, and a strip of six months that says whether it kept its target in each one. A tick over a month marks the month in which the split changed. A line states since when the split of the month is in force. Below the buckets, one line states the spending outside the split and one line the unallocated income: the amount that stayed in the accounts, outside every bucket, or the amount paid from balances beyond the income received.
 

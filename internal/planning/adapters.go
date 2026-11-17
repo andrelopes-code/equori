@@ -28,6 +28,8 @@ func (p ledgerPort) AccountFacts(ctx context.Context, booksID int64) ([]app.Acco
 			ParentID:   a.ParentID,
 			Class:      a.Class,
 			Kind:       a.Kind,
+			Name:       a.Name,
+			SystemRole: a.SystemRole,
 			Instrument: a.Instrument,
 			Closed:     a.ClosedOn != nil,
 		}
