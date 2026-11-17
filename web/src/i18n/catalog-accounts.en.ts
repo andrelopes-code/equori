@@ -825,6 +825,8 @@ export const accountsEn = {
     "The colour, art and finish of this card on every screen.",
   "card.appearance.save": "Save appearance",
   "card.appearance.saved": "Appearance saved",
+  "card.appearance.edit": "Customize",
+  "card.appearance.cancel": "Cancel",
   "card.network": "Network",
   "card.network.none": "No network",
   "card.active": "Active",

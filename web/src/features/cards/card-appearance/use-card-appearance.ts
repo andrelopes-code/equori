@@ -16,7 +16,9 @@ interface CardAppearance {
   changed: boolean;
   saving: boolean;
   setDraft: (draft: FaceDraft) => void;
-  save: () => void;
+  // Drops the edits: the draft is the stored face again.
+  reset: () => void;
+  save: (onSaved: () => void) => void;
 }
 
 // The draft of a card's appearance and its save. The draft belongs to the stored face it was
@@ -29,11 +31,12 @@ export function useCardAppearance(account: Account): CardAppearance {
   const [edit, setEdit] = useState<{ key: string; face: FaceDraft }>();
   const draft = edit?.key === key ? edit.face : stored;
 
-  function save() {
+  function save(onSaved: () => void) {
     setFace
       .mutateAsync({ id: account.id, face: faceBody(draft) })
       .then(() => {
         toast.show({ tone: "success", title: t("card.appearance.saved") });
+        onSaved();
       })
       .catch((caught: unknown) => {
         toast.show({ tone: "danger", title: errorText(caught, t) });
@@ -46,6 +49,9 @@ export function useCardAppearance(account: Account): CardAppearance {
     saving: setFace.isPending,
     setDraft: (face) => {
       setEdit({ key, face });
+    },
+    reset: () => {
+      setEdit(undefined);
     },
     save,
   };

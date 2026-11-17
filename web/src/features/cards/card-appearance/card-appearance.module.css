@@ -1,0 +1,42 @@
+@layer app {
+  /* The closed section: a small face and three facts on one row, about a seventh of the open
+     editor's height, so the billing cycle and the limit stay in view below it. */
+  .summary {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: var(--slotted-space-8);
+    align-items: center;
+  }
+
+  .face {
+    min-inline-size: 0;
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--slotted-space-5) var(--slotted-space-10);
+    margin: 0;
+  }
+
+  .fact {
+    display: grid;
+    gap: var(--slotted-space-1);
+    min-inline-size: 0;
+  }
+
+  .fact dd {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  .hex {
+    font-family: var(--slotted-font-family-mono);
+  }
+
+  @container (max-width: 30rem) {
+    .summary {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}

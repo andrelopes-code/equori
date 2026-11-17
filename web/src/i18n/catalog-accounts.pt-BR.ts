@@ -824,6 +824,8 @@ export const accountsPtBR: { [K in keyof typeof accountsEn]: string } = {
     "A cor, a arte e o acabamento deste cartão em todas as telas.",
   "card.appearance.save": "Salvar aparência",
   "card.appearance.saved": "Aparência salva",
+  "card.appearance.edit": "Personalizar",
+  "card.appearance.cancel": "Cancelar",
   "card.network": "Bandeira",
   "card.network.none": "Sem bandeira",
   "card.active": "Ativo",

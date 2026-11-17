@@ -515,6 +515,11 @@ describe("CardPage", () => {
       }),
     });
     await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["card.appearance.edit"],
+      }),
+    );
+    await userEvent.click(
       await screen.findByRole("radio", {
         name: catalogEn["cardFace.color.yellow"],
       }),
@@ -547,6 +552,16 @@ describe("CardPage", () => {
 
   it("keeps the save disabled until the appearance changes", async () => {
     await renderApp(`/cards/${cardID}?tab=settings`, { fetch: api() });
+
+    // Owner, 2026-11-17: the editor stays closed until asked, so the cycle and the limit show.
+    expect(
+      screen.queryByRole("button", { name: catalogEn["card.appearance.save"] }),
+    ).toBeNull();
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: catalogEn["card.appearance.edit"],
+      }),
+    );
     const save = await screen.findByRole("button", {
       name: catalogEn["card.appearance.save"],
     });
