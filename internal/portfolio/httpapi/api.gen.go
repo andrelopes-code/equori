@@ -161,8 +161,9 @@ func (e GetAllocationParamsBy) Valid() bool {
 
 // Allocation defines model for Allocation.
 type Allocation struct {
-	Groups []AllocationGroup `json:"groups"`
-	Total  Money             `json:"total"`
+	Current *CurrentQuotes    `json:"current,omitempty"`
+	Groups  []AllocationGroup `json:"groups"`
+	Total   Money             `json:"total"`
 }
 
 // AllocationGroup defines model for AllocationGroup.
@@ -256,6 +257,18 @@ type ContributionPlanInput struct {
 type ContributionPreviewInput struct {
 	Amount  Money                    `json:"amount"`
 	Classes []ContributionClassInput `json:"classes"`
+}
+
+// CurrentQuotes defines model for CurrentQuotes.
+type CurrentQuotes struct {
+	// Count Prices of the total that are current quotes (A248 CQ24).
+	Count int `json:"count"`
+
+	// OldestAt The earliest instant among them.
+	OldestAt time.Time `json:"oldest_at"`
+
+	// Open One of them belongs to a running session.
+	Open bool `json:"open"`
 }
 
 // DepositGuarantee defines model for DepositGuarantee.
@@ -372,14 +385,16 @@ type Money struct {
 
 // NetWorth defines model for NetWorth.
 type NetWorth struct {
-	Assets      Money `json:"assets"`
-	Liabilities Money `json:"liabilities"`
-	Net         Money `json:"net"`
+	Assets      Money          `json:"assets"`
+	Current     *CurrentQuotes `json:"current,omitempty"`
+	Liabilities Money          `json:"liabilities"`
+	Net         Money          `json:"net"`
 }
 
 // NetWorthDay defines model for NetWorthDay.
 type NetWorthDay struct {
 	Assets      Money              `json:"assets"`
+	Current     *CurrentQuotes     `json:"current,omitempty"`
 	Date        openapi_types.Date `json:"date"`
 	Liabilities Money              `json:"liabilities"`
 	Net         Money              `json:"net"`

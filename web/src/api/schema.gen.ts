@@ -4474,6 +4474,17 @@ export interface components {
             /** @description The session of a current quote is running; absent for a close. */
             open?: boolean;
         };
+        CurrentQuotes: {
+            /** @description Prices of the total that are current quotes (A248 CQ24). */
+            count: number;
+            /** @description One of them belongs to a running session. */
+            open: boolean;
+            /**
+             * Format: date-time
+             * @description The earliest instant among them.
+             */
+            oldest_at: string;
+        };
         Money: {
             /**
              * Format: int64
@@ -7841,11 +7852,13 @@ export interface components {
         Allocation: {
             total: components["schemas"]["Money"];
             groups: components["schemas"]["AllocationGroup"][];
+            current?: components["schemas"]["CurrentQuotes"];
         };
         NetWorth: {
             assets: components["schemas"]["Money"];
             liabilities: components["schemas"]["Money"];
             net: components["schemas"]["Money"];
+            current?: components["schemas"]["CurrentQuotes"];
         };
         NetWorthDay: {
             /** Format: date */
@@ -7853,6 +7866,7 @@ export interface components {
             assets: components["schemas"]["Money"];
             liabilities: components["schemas"]["Money"];
             net: components["schemas"]["Money"];
+            current?: components["schemas"]["CurrentQuotes"];
         };
         NetWorthDays: {
             items: components["schemas"]["NetWorthDay"][];

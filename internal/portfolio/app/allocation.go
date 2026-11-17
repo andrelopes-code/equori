@@ -50,13 +50,15 @@ type AllocationGroup struct {
 
 // AllocationReport is the value of the assets at a date grouped by a dimension.
 type AllocationReport struct {
-	Total  money.Money
-	Groups []AllocationGroup
+	Total   money.Money
+	Groups  []AllocationGroup
+	Current *CurrentQuotes
 }
 
 // NetWorthReport is the value of the assets and of the liabilities at a date.
 type NetWorthReport struct {
 	Assets, Liabilities, Net money.Money
+	Current                  *CurrentQuotes
 }
 
 // valuedBalance is the balance of an account valued in the report currency.
@@ -64,6 +66,7 @@ type valuedBalance struct {
 	account Account
 	balance AccountBalance
 	value   money.Money
+	prices  []Price
 }
 
 // valuedBalances values the non-zero balance of every asset and liability account in in with the
@@ -89,20 +92,22 @@ func (s *Service) valuedBalances(
 		return nil, err
 	}
 
+	s.warm(ctx, date, balanceCodes(balances, in))
+
 	var out []valuedBalance
 	for _, b := range balances {
 		if b.Amount.IsZero() {
 			continue
 		}
 
-		value := b.Amount
-		if value.Currency() != in {
-			if value, _, err = s.md.Convert(ctx, value, in, date); err != nil {
+		v := valuedBalance{account: byID[b.AccountID], balance: b, value: b.Amount}
+		if v.value.Currency() != in {
+			if v.value, v.prices, err = s.value(ctx, v.value, in, date); err != nil {
 				return nil, fmt.Errorf("value the balance of %s: %w", b.AccountID, err)
 			}
 		}
 
-		out = append(out, valuedBalance{account: byID[b.AccountID], balance: b, value: value})
+		out = append(out, v)
 	}
 
 	return out, nil
@@ -185,7 +190,7 @@ func (s *Service) Allocation(
 		return AllocationReport{}, err
 	}
 
-	report := AllocationReport{Total: total}
+	report := AllocationReport{Total: total, Current: currentQuotes(pricesOf(balances))}
 	for _, g := range domain.Allocate(holdings) {
 		value, err := money.New(g.Value, in)
 		if err != nil {
@@ -258,7 +263,7 @@ func (s *Service) NetWorth(
 		}
 	}
 
-	report := NetWorthReport{}
+	report := NetWorthReport{Current: currentQuotes(pricesOf(balances))}
 	for _, f := range []struct {
 		to     *money.Money
 		amount int64

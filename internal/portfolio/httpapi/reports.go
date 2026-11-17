@@ -6,6 +6,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/httpserver"
+	"github.com/andrelopes-code/equori/internal/portfolio/app"
 )
 
 func (s *Server) getAllocation(
@@ -29,7 +30,11 @@ func (s *Server) getAllocation(
 		return Allocation{}, err
 	}
 
-	out := Allocation{Total: toMoney(res.Total), Groups: make([]AllocationGroup, len(res.Groups))}
+	out := Allocation{
+		Total:   toMoney(res.Total),
+		Groups:  make([]AllocationGroup, len(res.Groups)),
+		Current: toCurrent(res.Current),
+	}
 	for i, g := range res.Groups {
 		out.Groups[i] = AllocationGroup{Key: g.Key, Value: toMoney(g.Value), ShareBp: g.ShareBP}
 	}
@@ -61,6 +66,7 @@ func (s *Server) getNetWorth(
 		Assets:      toMoney(res.Assets),
 		Liabilities: toMoney(res.Liabilities),
 		Net:         toMoney(res.Net),
+		Current:     toCurrent(res.Current),
 	}, nil
 }
 
@@ -92,8 +98,17 @@ func (s *Server) getNetWorthDays(
 			Assets:      toMoney(d.Assets),
 			Liabilities: toMoney(d.Liabilities),
 			Net:         toMoney(d.Net),
+			Current:     toCurrent(d.Current),
 		})
 	}
 
 	return out, nil
+}
+
+func toCurrent(c *app.CurrentQuotes) *CurrentQuotes {
+	if c == nil {
+		return nil
+	}
+
+	return &CurrentQuotes{Count: c.Count, Open: c.Open, OldestAt: c.OldestAt.UTC()}
 }

@@ -7744,6 +7744,22 @@ components:
         open:
           type: boolean
           description: The session of a current quote is running; absent for a close.
+    CurrentQuotes:
+      type: object
+      additionalProperties: false
+      required: [count, open, oldest_at]
+      properties:
+        count:
+          type: integer
+          minimum: 1
+          description: Prices of the total that are current quotes (A248 CQ24).
+        open:
+          type: boolean
+          description: One of them belongs to a running session.
+        oldest_at:
+          type: string
+          format: date-time
+          description: The earliest instant among them.
     Money:
       type: object
       additionalProperties: false
@@ -14199,6 +14215,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AllocationGroup"
+        current:
+          $ref: "#/components/schemas/CurrentQuotes"
     NetWorth:
       type: object
       required: [assets, liabilities, net]
@@ -14209,6 +14227,8 @@ components:
           $ref: "#/components/schemas/Money"
         net:
           $ref: "#/components/schemas/Money"
+        current:
+          $ref: "#/components/schemas/CurrentQuotes"
     NetWorthDay:
       type: object
       required: [date, assets, liabilities, net]
@@ -14222,6 +14242,8 @@ components:
           $ref: "#/components/schemas/Money"
         net:
           $ref: "#/components/schemas/Money"
+        current:
+          $ref: "#/components/schemas/CurrentQuotes"
     NetWorthDays:
       type: object
       required: [items]

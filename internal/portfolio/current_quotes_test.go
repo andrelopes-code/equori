@@ -132,6 +132,62 @@ func TestS565AWarningSurvivesACurrentQuote(t *testing.T) {
 	}
 }
 
+// S563: a total at today of the book states the current quotes it took (A248 CQ21, CQ24).
+func TestS563TotalsStateTheirCurrentQuotes(t *testing.T) {
+	t.Parallel()
+
+	f, _ := currentFixture(t, answerOK)
+	want := &currentOut{Count: 1, Open: true, OldestAt: "2026-11-03T14:58:00Z"}
+
+	before := netWorthAt(t, f, "2026-11-02")
+	if before.Current != nil {
+		t.Errorf("net worth at 2026-11-02 current = %+v, want none", before.Current)
+	}
+
+	assets := before.Assets["amount"].(float64)
+
+	today := netWorthAt(t, f, "2026-11-03")
+	if today.Assets["amount"] != assets+1500 {
+		t.Errorf("assets at 2026-11-03 = %v, want %v", today.Assets["amount"], assets+1500)
+	}
+
+	if !reflect.DeepEqual(today.Current, want) {
+		t.Errorf("net worth current = %+v, want %+v", today.Current, want)
+	}
+
+	if got := allocationAt(t, f, "2026-11-03"); !reflect.DeepEqual(got.Current, want) {
+		t.Errorf("allocation current = %+v, want %+v", got.Current, want)
+	}
+
+	if got := allocationAt(t, f, "2026-11-02"); got.Current != nil {
+		t.Errorf("allocation at 2026-11-02 current = %+v, want none", got.Current)
+	}
+
+	var days struct {
+		Items []netWorthDayOut `json:"items"`
+	}
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/reports/net-worth/days?from=2026-11-02&to=2026-11-03",
+		nil,
+		http.StatusOK,
+		&days,
+	)
+
+	if len(days.Items) != 2 {
+		t.Fatalf("days = %+v, want two", days.Items)
+	}
+
+	if days.Items[0].Current != nil || days.Items[0].Assets["amount"] != assets {
+		t.Errorf("first day = %+v, want assets %v without current", days.Items[0], assets)
+	}
+
+	if days.Items[1].Assets["amount"] != assets+1500 ||
+		!reflect.DeepEqual(days.Items[1].Current, want) {
+		t.Errorf("second day = %+v, want assets %v with %+v", days.Items[1], assets+1500, want)
+	}
+}
+
 type currentServer struct {
 	mu    sync.Mutex
 	paths []string
@@ -262,4 +318,56 @@ func assertPosition(t *testing.T, ps []positionOut, amount float64, want wantPri
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("price = %+v, want %+v", got, want)
 	}
+}
+
+// currentOut is the current of a total as the API states it.
+type currentOut struct {
+	Count    int    `json:"count"`
+	Open     bool   `json:"open"`
+	OldestAt string `json:"oldest_at"`
+}
+
+type netWorthOut struct {
+	Assets  map[string]any `json:"assets"`
+	Current *currentOut    `json:"current"`
+}
+
+type netWorthDayOut struct {
+	Date    string         `json:"date"`
+	Assets  map[string]any `json:"assets"`
+	Current *currentOut    `json:"current"`
+}
+
+type allocationCurrentOut struct {
+	Current *currentOut `json:"current"`
+}
+
+func netWorthAt(t *testing.T, f fixture, date string) netWorthOut {
+	t.Helper()
+
+	var out netWorthOut
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/reports/net-worth?date="+date,
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	return out
+}
+
+func allocationAt(t *testing.T, f fixture, date string) allocationCurrentOut {
+	t.Helper()
+
+	var out allocationCurrentOut
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/reports/allocation?by=type&date="+date,
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	return out
 }

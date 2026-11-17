@@ -466,6 +466,8 @@ schemas:
         type: array
         items:
           $ref: "#/components/schemas/AllocationGroup"
+      current:
+        $ref: "#/components/schemas/CurrentQuotes"
   NetWorth:
     type: object
     required: [assets, liabilities, net]
@@ -476,6 +478,8 @@ schemas:
         $ref: "#/components/schemas/Money"
       net:
         $ref: "#/components/schemas/Money"
+      current:
+        $ref: "#/components/schemas/CurrentQuotes"
   NetWorthDay:
     type: object
     required: [date, assets, liabilities, net]
@@ -489,6 +493,8 @@ schemas:
         $ref: "#/components/schemas/Money"
       net:
         $ref: "#/components/schemas/Money"
+      current:
+        $ref: "#/components/schemas/CurrentQuotes"
   NetWorthDays:
     type: object
     required: [items]

@@ -8,6 +8,13 @@ import (
 	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
+// CurrentQuotes states the current quotes a total took (A248 CQ24).
+type CurrentQuotes struct {
+	Count    int
+	Open     bool
+	OldestAt time.Time
+}
+
 // warm asks for the current quotes of codes when date is today of the book (A248 CQ18, CQ20).
 func (s *Service) warm(ctx context.Context, date time.Time, codes []money.Currency) {
 	if s.today(ctx, date) {
@@ -28,6 +35,52 @@ func (s *Service) value(
 	}
 
 	return s.md.Convert(ctx, q, to, date)
+}
+
+// currentQuotes summarizes the prices of a total; nil when none is a current quote.
+func currentQuotes(prices []Price) *CurrentQuotes {
+	var out *CurrentQuotes
+
+	for _, p := range prices {
+		if p.At == nil {
+			continue
+		}
+
+		if out == nil {
+			out = &CurrentQuotes{OldestAt: *p.At}
+		}
+
+		out.Count++
+		out.Open = out.Open || p.Open
+
+		if p.At.Before(out.OldestAt) {
+			out.OldestAt = *p.At
+		}
+	}
+
+	return out
+}
+
+// pricesOf are the prices of every leg of every valued balance.
+func pricesOf(balances []valuedBalance) []Price {
+	var out []Price
+	for _, v := range balances {
+		out = append(out, v.prices...)
+	}
+
+	return out
+}
+
+// balanceCodes are the instruments valuedBalances values: each non-zero balance and in.
+func balanceCodes(balances []AccountBalance, in money.Currency) []money.Currency {
+	codes := []money.Currency{in}
+	for _, b := range balances {
+		if !b.Amount.IsZero() {
+			codes = append(codes, b.Amount.Currency())
+		}
+	}
+
+	return codes
 }
 
 // positionCodes are the instruments Positions values: each row, base and in when set.
