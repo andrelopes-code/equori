@@ -38,6 +38,10 @@ export const marketDataEn = {
   "marketData.feed.ea_hicp": "Euro area HICP (Eurostat)",
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
   "marketData.feed.br_focus": "Focus market survey (Banco Central do Brasil)",
+  "marketData.feed.br_focus_ipca":
+    "Focus market survey, inflation (Banco Central do Brasil)",
+  "marketData.feed.br_tesouro":
+    "Tesouro Direto rates by maturity (Tesouro Nacional)",
   "marketData.feed.br_ifdata":
     "IF.data institution indicators (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
@@ -54,6 +58,7 @@ export const marketDataEn = {
   "marketData.kind.price": "Price",
   "marketData.kind.index": "Index",
   "marketData.kind.expectation": "Expectation",
+  "marketData.kind.curve": "Curve",
   "marketData.kind.institution": "Institution",
   "marketData.status.upToDate": "Up to date",
   "marketData.status.overdue": "Overdue",
@@ -102,6 +107,10 @@ export const marketDataEn = {
   "marketData.feedSource.us_sofr": "Federal Reserve Bank of New York",
   "marketData.feedName.br_focus": "Focus market survey",
   "marketData.feedSource.br_focus": "Banco Central do Brasil",
+  "marketData.feedName.br_focus_ipca": "Focus market survey, inflation",
+  "marketData.feedSource.br_focus_ipca": "Banco Central do Brasil",
+  "marketData.feedName.br_tesouro": "Tesouro Direto rates by maturity",
+  "marketData.feedSource.br_tesouro": "Tesouro Nacional",
   "marketData.feedName.br_ifdata": "IF.data institution indicators",
   "marketData.feedSource.br_ifdata": "Banco Central do Brasil",
   "marketData.feedName.us_cpi": "CPI-U",

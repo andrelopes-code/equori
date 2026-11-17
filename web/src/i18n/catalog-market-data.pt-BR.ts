@@ -42,6 +42,10 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.us_sofr": "SOFR (Federal Reserve Bank of New York)",
   "marketData.feed.br_focus":
     "Pesquisa Focus de mercado (Banco Central do Brasil)",
+  "marketData.feed.br_focus_ipca":
+    "Pesquisa Focus de mercado, inflação (Banco Central do Brasil)",
+  "marketData.feed.br_tesouro":
+    "Taxas do Tesouro Direto por vencimento (Tesouro Nacional)",
   "marketData.feed.br_ifdata":
     "Indicadores de instituições do IF.data (Banco Central do Brasil)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
@@ -59,6 +63,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.kind.price": "Preço",
   "marketData.kind.index": "Índice",
   "marketData.kind.expectation": "Expectativa",
+  "marketData.kind.curve": "Curva",
   "marketData.kind.institution": "Instituição",
   "marketData.status.upToDate": "Em dia",
   "marketData.status.overdue": "Atrasada",
@@ -107,6 +112,10 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feedSource.us_sofr": "Federal Reserve Bank of New York",
   "marketData.feedName.br_focus": "Pesquisa Focus de mercado",
   "marketData.feedSource.br_focus": "Banco Central do Brasil",
+  "marketData.feedName.br_focus_ipca": "Pesquisa Focus de mercado, inflação",
+  "marketData.feedSource.br_focus_ipca": "Banco Central do Brasil",
+  "marketData.feedName.br_tesouro": "Taxas do Tesouro Direto por vencimento",
+  "marketData.feedSource.br_tesouro": "Tesouro Nacional",
   "marketData.feedName.br_ifdata": "Indicadores de instituições do IF.data",
   "marketData.feedSource.br_ifdata": "Banco Central do Brasil",
   "marketData.feedName.us_cpi": "CPI-U",
