@@ -14,3 +14,4 @@ Import with the alias, for example `@/ui/money/money-input`. A folder has no `in
 | `display/`     | Figures, avatars, brand mark, instrument name, QR code and `withValue`                                                              |
 | `navigation/`  | Links, back button, header actions, speed dial, month and period controls, `useServed`                                              |
 | `runtime/`     | Browser hooks and helpers: debounce, media query, stable callback, copy text, new id                                                |
+| `card-face/`   | The card face: its ink, colour, brand, art, chip, network marks and stack                                                           |
