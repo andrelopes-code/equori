@@ -37,6 +37,7 @@ const unmapped = new Set([
   "/setup",
   "/invite",
   "/preview/account-card",
+  "/preview/card-face",
   "/accounts",
   "",
 ]);
