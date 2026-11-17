@@ -1,0 +1,15 @@
+@layer app {
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--equori-page-block-gap);
+    min-inline-size: 0;
+  }
+
+  /* A section with no surface is set apart by space and its label alone (PS2). */
+  .stack > * + [data-ui-section]:not([data-ground="surface"]) {
+    margin-block-start: calc(
+      var(--equori-page-section-gap) - var(--equori-page-block-gap)
+    );
+  }
+}

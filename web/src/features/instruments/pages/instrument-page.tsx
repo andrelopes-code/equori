@@ -9,7 +9,6 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { useState } from "react";
@@ -41,6 +40,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { HeaderAction } from "@/ui/navigation/header-action";
 import { QueryError } from "@/ui/feedback/query-error";
 import { PageBack } from "@/ui/navigation/page-back";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // PC19: one instrument: what the book holds of it, its price history, its terms and its data, with
 // the manual price form and the edit form of a security.
@@ -147,7 +147,7 @@ export function InstrumentPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           <InstrumentPrices instrument={i} quote={quote} />
 
           <InstrumentPositions code={i.code} quote={quote} />
@@ -175,7 +175,7 @@ export function InstrumentPage() {
           />
 
           <InstrumentSources instrument={i} base={base} />
-        </Stack>
+        </PageStack>
       </PageBody>
       {recording && quote !== null && (
         <RecordPriceDialog

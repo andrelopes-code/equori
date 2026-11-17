@@ -67,6 +67,24 @@
   }
 }
 
+/* The distance between the blocks of a page (spec 2026-11-17-page-spacing, PS1): one step between
+   two blocks, a larger one above a titled section with no surface. Both step down on a phone.
+   Workaround for Slotted issue #140: the page family holds no gap between the blocks of its body,
+   so the app declares the two steps and PageStack applies them. */
+@layer app {
+  :root {
+    --equori-page-block-gap: var(--slotted-space-6);
+    --equori-page-section-gap: var(--slotted-space-8);
+  }
+
+  @media (max-width: 599px) {
+    :root {
+      --equori-page-block-gap: var(--slotted-space-5);
+      --equori-page-section-gap: var(--slotted-space-6);
+    }
+  }
+}
+
 /* The colour an account or a category takes from the owner's choice of one of eight slots. The slots
    are a fixed palette, the spectrum of theme/surface-recipe.ts, and not the chart colours: the chart
    colour mode rewrites --slotted-data-1..8, and a chosen colour must not follow it. */

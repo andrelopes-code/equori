@@ -3,7 +3,6 @@ import {
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -19,6 +18,7 @@ import { catalogLabel, useScale } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/feedback/query-error";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 type Money = components["schemas"]["Money"];
 
@@ -57,7 +57,7 @@ export function IncomeEventsTab({ year }: { year: number }) {
     );
 
   return (
-    <Stack gap={6}>
+    <PageStack>
       {!pending && (
         <YearFigureGrid
           label={t("taxYear.tab.income")}
@@ -114,6 +114,6 @@ export function IncomeEventsTab({ year }: { year: number }) {
       )}
 
       <IncomeEventsTable items={items} pending={pending} />
-    </Stack>
+    </PageStack>
   );
 }

@@ -3,7 +3,7 @@
   .region {
     display: flex;
     flex-direction: column;
-    gap: var(--slotted-space-4);
+    gap: var(--equori-page-block-gap);
     block-size: 100%;
     min-block-size: 0;
   }

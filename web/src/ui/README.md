@@ -9,6 +9,7 @@ Import with the alias, for example `@/ui/money/money-input`. A folder has no `in
 | `money/`       | Amount entry, display, tone, units, rates and priced values (`MoneyInput`, `MoneyValue`, `MoneyFigure`, `PricedValue`, `RateInput`) |
 | `form-fields/` | Single controls of a form: choice cards, select, swatches, date input, date shortcuts, field title, phone fields                    |
 | `form-layout/` | Form structure: layout, row, section, checks and `FormNotice`                                                                       |
+| `page-layout/` | `PageStack`, the column of a page's blocks at the gaps of `app.css` (O19)                                                           |
 | `dialogs/`     | `ConfirmDialog`, `Presence` and the overlay-open context                                                                            |
 | `feedback/`    | Query error, refresh button and hook, bulk outcome notice and its pure rules                                                        |
 | `display/`     | Figures, avatars, brand mark, instrument name, QR code and `withValue`                                                              |

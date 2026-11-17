@@ -4,7 +4,6 @@ import {
   ResultStateContent,
   ResultStateTitle,
 } from "@slotted/react/result-state";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -20,6 +19,7 @@ import { formatMonthName, numberFormatter } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
 import { QueryError } from "@/ui/feedback/query-error";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 type Money = components["schemas"]["Money"];
 
@@ -73,7 +73,7 @@ export function RealizedResultsTab({ year }: { year: number }) {
     );
 
   return (
-    <Stack gap={6}>
+    <PageStack>
       {!pending && (
         <YearFigureGrid
           label={t("taxYear.tab.realized")}
@@ -100,7 +100,7 @@ export function RealizedResultsTab({ year }: { year: number }) {
       )}
 
       {!pending && (
-        <Grid minItemWidth="md" gap={4}>
+        <Grid minItemWidth="md" gap={6}>
           <YearTotalsTable
             caption={t("taxYear.totals.month")}
             headers={[
@@ -137,6 +137,6 @@ export function RealizedResultsTab({ year }: { year: number }) {
       )}
 
       <SalesTable items={items} pending={pending} />
-    </Stack>
+    </PageStack>
   );
 }

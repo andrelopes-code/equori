@@ -15,6 +15,7 @@ import {
 import { formatDayMonth } from "@/i18n/format";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { PageStack } from "@/ui/page-layout/page-stack";
 import {
   Section,
   SectionBody,
@@ -145,7 +146,7 @@ export function AccountCardPreview() {
   return (
     <Page width="full">
       <PageBody>
-        <Stack gap={8}>
+        <PageStack>
           {sections.map((section) => (
             <Section size="lg" key={section.title}>
               <SectionHeader>
@@ -172,7 +173,7 @@ export function AccountCardPreview() {
               </SectionBody>
             </Section>
           ))}
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

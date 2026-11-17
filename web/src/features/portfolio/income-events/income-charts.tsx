@@ -58,7 +58,7 @@ export function IncomeCharts({ items, from, to }: IncomeChartsProps) {
       : t("holdings.income.byInvestment");
 
   return (
-    <Grid minItemWidth="md" gap={4}>
+    <Grid minItemWidth="md" gap={6}>
       <Chart
         variant="card"
         size="sm"

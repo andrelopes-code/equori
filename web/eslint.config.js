@@ -70,6 +70,15 @@ const stackedHeading = {
     "Draw a titled block with Section, SectionHeader and SectionBody (@slotted/react/section), not a Heading inside a Stack (O17).",
 };
 
+// O19: the blocks of a page stand at the page's own gaps (spec 2026-11-17-page-spacing, PS3). A
+// Stack under PageBody picks a step of its own, and the pages drift apart.
+const pageBodyStack = {
+  selector:
+    'JSXElement[openingElement.name.name="PageBody"] > JSXElement[openingElement.name.name="Stack"]',
+  message:
+    "Stack the blocks of a page in PageStack (@/ui/page-layout/page-stack), not in a Stack with a gap of its own (O19).",
+};
+
 // Flat-config rule options replace instead of merging: every block below
 // restates the full option list for its files.
 const restrict = ({ patterns, paths = [] }) => ["error", { patterns, paths }];
@@ -219,6 +228,7 @@ export default defineConfig(
         pageHeaderBack,
         bareInlineMessage,
         stackedHeading,
+        pageBodyStack,
       ],
     },
   },
@@ -239,6 +249,27 @@ export default defineConfig(
         bareRouterLink,
         pageHeaderBack,
         bareInlineMessage,
+      ],
+    },
+  },
+  {
+    // O19, PS5: the column of these pages is a form, its placeholder or a stepper, spaced by the
+    // form's own steps, not a list of blocks.
+    files: [
+      "src/features/accounts/account-form/account-form-placeholder.tsx",
+      "src/features/accounts/pages/import-page.tsx",
+      "src/features/start/start-page.tsx",
+      "src/features/start/start-screen.tsx",
+      "src/features/transactions/correction/correction-form.tsx",
+      "src/features/transactions/correction/correction-page.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        bareRouterLink,
+        pageHeaderBack,
+        bareInlineMessage,
+        stackedHeading,
       ],
     },
   },

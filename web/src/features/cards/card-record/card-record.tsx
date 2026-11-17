@@ -6,7 +6,6 @@ import {
 } from "@slotted/react/alert";
 import { Button } from "@slotted/react/button";
 import { Page, PageBody } from "@slotted/react/page";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -37,6 +36,7 @@ import { useCommitments } from "@/features/cards/card-record/use-commitments";
 import { institutionsQuery } from "@/features/setup";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { PageStack } from "@/ui/page-layout/page-stack";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 type Account = components["schemas"]["Account"];
@@ -117,7 +117,7 @@ export function CardRecord({ account, search, scale }: CardRecordProps) {
       />
 
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           <AccountSetupMessage accountId={account.id} />
           {noRule && (
             <Alert tone="warning">
@@ -155,7 +155,7 @@ export function CardRecord({ account, search, scale }: CardRecordProps) {
             />
           </div>
           {compact && overview}
-        </Stack>
+        </PageStack>
       </PageBody>
 
       <CardDialogs

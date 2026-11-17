@@ -23,7 +23,6 @@ import {
   SectionHeading,
   SectionTitle,
 } from "@slotted/react/section";
-import { Stack } from "@slotted/react/stack";
 
 import {
   calculatorGroups,
@@ -31,6 +30,7 @@ import {
 } from "@/features/calculators/model/calculators";
 import { useT } from "@/i18n/i18n-provider";
 import { routeTo } from "@/ui/navigation/route-to";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // The calculators by group, each with the question it answers (design §4, "Routes").
 export function CalculatorsPage() {
@@ -48,7 +48,7 @@ export function CalculatorsPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           {calculatorGroups.map((group) => (
             <Section key={group}>
               <SectionHeader>
@@ -86,7 +86,7 @@ export function CalculatorsPage() {
               </SectionBody>
             </Section>
           ))}
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

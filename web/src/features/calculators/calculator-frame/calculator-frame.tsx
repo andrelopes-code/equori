@@ -22,6 +22,7 @@ import styles from "@/features/calculators/calculator-frame/calculators.module.c
 import type { CalculatorId } from "@/features/calculators/model/calculators";
 import { useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/navigation/page-back";
+import { PageStack } from "@/ui/page-layout/page-stack";
 import {
   Section,
   SectionBody,
@@ -73,7 +74,7 @@ export function CalculatorFrame({
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={8}>
+        <PageStack>
           {unavailable && (
             <ResultState status="empty" align="start">
               <ResultStateContent>
@@ -130,7 +131,7 @@ export function CalculatorFrame({
           )}
           {details}
           {method}
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

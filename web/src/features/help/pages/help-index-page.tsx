@@ -8,11 +8,11 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
 
 import { HelpFeatured } from "@/features/help/featured/help-featured";
 import { HelpKindCard } from "@/features/help/kind-card/help-kind-card";
 import { useT } from "@/i18n/i18n-provider";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // The walkthrough first, as the way in for a newcomer; then the other pages by kind.
 export function HelpIndexPage() {
@@ -31,7 +31,7 @@ export function HelpIndexPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={8}>
+        <PageStack>
           <HelpFeatured id="first-month" />
 
           <Grid columns={3} minItemWidth="md" gap={6}>
@@ -39,7 +39,7 @@ export function HelpIndexPage() {
             <HelpKindCard kind="reference" />
             <HelpKindCard kind="explanation" />
           </Grid>
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

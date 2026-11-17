@@ -6,7 +6,6 @@ import {
   ResultStateTitle,
 } from "@slotted/react/result-state";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -52,6 +51,7 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { ChoiceSelect } from "@/ui/form-fields/choice-select";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { QueryError } from "@/ui/feedback/query-error";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 const groups = {
   square: "accounts",
@@ -350,9 +350,9 @@ export function FlowsTab({
     return key === "result" ? signed(amount) : money(amount);
   }
   return (
-    <Stack gap={4}>
+    <PageStack>
       {controls}
       {body}
-    </Stack>
+    </PageStack>
   );
 }

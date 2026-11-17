@@ -14,7 +14,6 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -60,6 +59,7 @@ import { MonthControl } from "@/ui/navigation/month-control";
 import { QueryError } from "@/ui/feedback/query-error";
 import { PageBack } from "@/ui/navigation/page-back";
 import type { MoneyAmount } from "@/ui/money/money-value";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // How many months the chart compares, ending at the month the page reads.
 const chartMonths = 6;
@@ -212,7 +212,7 @@ export function BudgetPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           <FigureGrid label={t("budget.monthFigures")}>
             <FigureCard
               label={t("budget.planned")}
@@ -313,7 +313,7 @@ export function BudgetPage() {
               </TableBody>
             </TableContent>
           </Table>
-        </Stack>
+        </PageStack>
       </PageBody>
       {deleting && (
         <DeleteBudgetDialog

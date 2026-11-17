@@ -1,5 +1,4 @@
 import { Grid } from "@slotted/react/grid";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 
 import { useApi } from "@/api/api-context";
@@ -16,6 +15,7 @@ import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { MonthControl } from "@/ui/navigation/month-control";
 import { QueryError } from "@/ui/feedback/query-error";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 interface IndicatorsTabProps {
   month: string;
@@ -44,22 +44,22 @@ export function IndicatorsTab({ month, onMonth }: IndicatorsTabProps) {
 
   if (query.error !== null)
     return (
-      <Stack gap={4}>
+      <PageStack>
         {controls}
         <QueryError error={query.error} onRetry={() => void query.refetch()} />
-      </Stack>
+      </PageStack>
     );
 
   if (report === undefined)
     return (
-      <Stack gap={4}>
+      <PageStack>
         {controls}
         <IndicatorsSkeleton />
-      </Stack>
+      </PageStack>
     );
 
   return (
-    <Stack gap={4}>
+    <PageStack>
       {controls}
 
       <IndicatorVerdictCard
@@ -72,12 +72,12 @@ export function IndicatorsTab({ month, onMonth }: IndicatorsTabProps) {
 
       <ReserveChart report={report} incomplete={incomplete} />
 
-      <Grid columns={2} gap={4} minItemWidth="lg">
+      <Grid columns={2} gap={6} minItemWidth="lg">
         <FlowsChart report={report} incomplete={incomplete} />
         <RateChart report={report} incomplete={incomplete} />
       </Grid>
 
       <IndicatorAudit report={report} incomplete={incomplete} />
-    </Stack>
+    </PageStack>
   );
 }

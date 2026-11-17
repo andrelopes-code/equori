@@ -87,7 +87,7 @@ export function CategoryCharts({
 
   const empty = !months.some((r) => fields.some((s) => Number(r[s.field]) > 0));
   return (
-    <Grid gap={4} minItemWidth="lg">
+    <Grid gap={6} minItemWidth="lg">
       <CompositionChart
         rows={empty ? [] : composition}
         entries={entries}

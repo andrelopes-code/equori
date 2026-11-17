@@ -16,7 +16,6 @@ import {
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
 import { SkeletonText } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -66,6 +65,7 @@ import { AppLink } from "@/ui/navigation/app-link";
 import { HeaderAction } from "@/ui/navigation/header-action";
 import { QueryError } from "@/ui/feedback/query-error";
 import { PageBack } from "@/ui/navigation/page-back";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 type Dialog = "terms" | Exclude<ScheduleMenuChoice, "move">;
 
@@ -169,7 +169,7 @@ export function SchedulePage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           {terms !== undefined && (
             <TermsSuggestionBanner
               terms={terms}
@@ -313,7 +313,7 @@ export function SchedulePage() {
             refreshing={occurrences.isFetching && !occurrences.isPending}
             handleRef={table}
           />
-        </Stack>
+        </PageStack>
       </PageBody>
       {dialog === "terms" && (
         <TermsDialog

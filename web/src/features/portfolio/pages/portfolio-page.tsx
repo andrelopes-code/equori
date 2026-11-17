@@ -1,5 +1,4 @@
 import { Page, PageBody } from "@slotted/react/page";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 
@@ -17,6 +16,7 @@ import { useHoldings } from "@/features/portfolio/holdings/use-holdings";
 import { WhereMoneySection } from "@/features/portfolio/allocation/where-money-section";
 import { institutionsQuery, settingsQuery } from "@/features/setup";
 import { useToday } from "@/i18n/today";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // PC1: how much there is and what it made, how it performed, where it is, then every row.
 export function PortfolioPage() {
@@ -61,7 +61,7 @@ export function PortfolioPage() {
         onChange={change}
       />
       <PageBody>
-        <Stack gap={8}>
+        <PageStack>
           {positions.isError && (
             <PortfolioProblem
               error={positions.error}
@@ -129,7 +129,7 @@ export function PortfolioPage() {
               pending={pending}
             />
           )}
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

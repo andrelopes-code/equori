@@ -1,5 +1,4 @@
 import { Page, PageBody } from "@slotted/react/page";
-import { Stack } from "@slotted/react/stack";
 import { useState } from "react";
 
 import { PreviewSection } from "@/features/cards/pages/card-face-preview/preview-section";
@@ -13,6 +12,7 @@ import styles from "@/features/cards/pages/card-face-preview.module.css";
 import { useT } from "@/i18n/i18n-provider";
 import { CardFace } from "@/ui/card-face/card-face";
 import { CardFaceStack } from "@/ui/card-face/card-face-stack";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // Development only (router.tsx): the card face in each of its cases, with fixed data and no API
 // call, to check art, colour, network, state, brand, width and the stack.
@@ -23,7 +23,7 @@ export function CardFacePreview() {
   return (
     <Page width="full">
       <PageBody>
-        <Stack gap={8}>
+        <PageStack>
           {sections.map((section) => (
             <PreviewSection key={section.title} title={section.title}>
               <div className={styles.grid}>
@@ -52,7 +52,7 @@ export function CardFacePreview() {
           <PreviewSection title="cardFacePreview.studio">
             <PreviewStudio />
           </PreviewSection>
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

@@ -11,7 +11,6 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
 import { Tab, TabList, Tabs } from "@slotted/react/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
@@ -33,6 +32,7 @@ import { formatDate } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
 import { PageBack } from "@/ui/navigation/page-back";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // CP-04: a year is stepped one at a time and typed when far away, so the control is a number
 // field with steppers, limited to the range the contract accepts before any request. The year is
@@ -132,13 +132,13 @@ export function PortfolioYearPage() {
         </PageHeaderTabs>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           {tab === "realized" ? (
             <RealizedResultsTab year={year} />
           ) : (
             <IncomeEventsTab year={year} />
           )}
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

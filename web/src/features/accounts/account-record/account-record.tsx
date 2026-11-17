@@ -1,5 +1,4 @@
 import { Page, PageBody } from "@slotted/react/page";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -31,6 +30,7 @@ import { useInstitutionIndicators } from "@/features/accounts/institution/use-in
 import { useAccountTabs } from "@/features/accounts/account-record/use-account-tabs";
 import { AccountYieldSection, useMeasuredTops } from "@/features/portfolio";
 import { institutionsQuery } from "@/features/setup";
+import { PageStack } from "@/ui/page-layout/page-stack";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 import { useStableCallback } from "@/ui/runtime/use-stable-callback";
 
@@ -143,7 +143,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
         scale={scale}
       />
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           <AccountSetupMessage accountId={account.id} />
 
           <CashLeafNotice account={account} />
@@ -163,7 +163,7 @@ export function AccountRecord({ account, search, scale }: AccountRecordProps) {
             />
           </div>
           {compact && overview}
-        </Stack>
+        </PageStack>
       </PageBody>
       <AccountDialogs
         dialog={dialog}

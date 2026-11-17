@@ -1,6 +1,5 @@
 import type { ChartPoint } from "@slotted/core/chart";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
 import { useQueries } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -26,6 +25,7 @@ import { useScale } from "@/features/setup";
 import { formatReferenceMonth } from "@/i18n/format";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // Assets, liabilities and net at the end of each month of the period, one request per month; the
 // current month ends on today (NP2). A month that cannot be valued stays out of the chart and the
@@ -91,7 +91,7 @@ export function NetWorthTab({
   }
 
   return (
-    <Stack gap={4}>
+    <PageStack>
       <ReportControls
         start={
           <SegmentedControl
@@ -153,6 +153,6 @@ export function NetWorthTab({
         currency={currency}
         digits={digits}
       />
-    </Stack>
+    </PageStack>
   );
 }

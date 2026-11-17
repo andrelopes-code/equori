@@ -4,7 +4,6 @@ import {
   usePersistedDashboardLayout,
 } from "@slotted/react/dashboard-grid";
 import { Page, PageBody } from "@slotted/react/page";
-import { Stack } from "@slotted/react/stack";
 import {
   PageHeader,
   PageHeaderActions,
@@ -44,6 +43,7 @@ import { UpcomingBlock } from "@/features/overview/upcoming/upcoming-block";
 import type { MessageKey } from "@/i18n/catalog.en";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { PageStack } from "@/ui/page-layout/page-stack";
 import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 const desk: [DesktopFigureKind, MessageKey][] = [
@@ -126,7 +126,7 @@ export function OverviewPage() {
         </PageHeaderTitleArea>
       </PageHeader>
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           <ReleaseNotice />
 
           <FirstStepsBlock />
@@ -203,7 +203,7 @@ export function OverviewPage() {
                   <GoalsBlock key="goals" {...at.goals} />,
                 ]}
           </DashboardGrid>
-        </Stack>
+        </PageStack>
       </PageBody>
     </Page>
   );

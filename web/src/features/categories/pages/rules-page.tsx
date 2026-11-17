@@ -7,7 +7,6 @@ import {
   SectionHeader,
   SectionTitle,
 } from "@slotted/react/section";
-import { Stack } from "@slotted/react/stack";
 import { toast } from "@slotted/react/toast";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -40,6 +39,7 @@ import { SuggestionItem } from "@/features/categories/suggestion-item/suggestion
 import { useRuleWords } from "@/features/categories/model/use-rule-words";
 import { useT } from "@/i18n/i18n-provider";
 import { useToday } from "@/i18n/today";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 type Rule = components["schemas"]["Rule"];
 
@@ -169,7 +169,7 @@ export function RulesPage() {
         }
       />
       <PageBody>
-        <Stack gap={8}>
+        <PageStack>
           <Coverage
             statistics={statistics.data}
             loading={statistics.isPending}
@@ -248,7 +248,7 @@ export function RulesPage() {
               </SectionBody>
             </Section>
           )}
-        </Stack>
+        </PageStack>
       </PageBody>
       {deleting !== null && (
         <ConfirmDialog

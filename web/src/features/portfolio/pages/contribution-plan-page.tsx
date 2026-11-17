@@ -9,7 +9,6 @@ import {
   PageHeaderTitleArea,
   PageHeaderTitleRow,
 } from "@slotted/react/page-header";
-import { Stack } from "@slotted/react/stack";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -34,6 +33,7 @@ import { usePlanEditor } from "@/features/portfolio/contribution-plan/editor/use
 import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { PageBack } from "@/ui/navigation/page-back";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // Where this month's money goes, how far the portfolio is from its ideal (spec, Screen).
 export function ContributionPlanPage() {
@@ -118,7 +118,7 @@ export function ContributionPlanPage() {
       </PageHeader>
 
       <PageBody>
-        <Stack gap={6}>
+        <PageStack>
           <PlanIntro key={String(empty)} open={empty} />
 
           {plan.isError && (
@@ -176,7 +176,7 @@ export function ContributionPlanPage() {
               onChoose={editor.addMember}
             />
           )}
-        </Stack>
+        </PageStack>
       </PageBody>
 
       {guard.asking && (

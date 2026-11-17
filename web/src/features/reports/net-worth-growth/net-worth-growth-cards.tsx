@@ -43,7 +43,7 @@ export function NetWorthGrowthCards({
       : undefined;
 
   return (
-    <Grid columns={3} gap={4} minItemWidth="sm">
+    <Grid columns={3} gap={6} minItemWidth="sm">
       <FigureCard
         label={t("report.netWorth.change")}
         value={amount(growth?.change)}

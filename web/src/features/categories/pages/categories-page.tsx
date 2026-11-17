@@ -2,7 +2,6 @@ import { Inline } from "@slotted/react/inline";
 import { Page, PageBody } from "@slotted/react/page";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
 import { Skeleton } from "@slotted/react/skeleton";
-import { Stack } from "@slotted/react/stack";
 import { Switch } from "@slotted/react/switch";
 import { toast } from "@slotted/react/toast";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,6 +53,7 @@ import { MonthControl } from "@/ui/navigation/month-control";
 import { CategoryViewControl } from "@/features/categories/category-view/category-view-control";
 import { CategoryViewNote } from "@/features/categories/category-view/category-view-note";
 import { useToday } from "@/i18n/today";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 type Dialog =
   | { kind: "create"; parent: string | null }
@@ -335,10 +335,10 @@ export function CategoriesPage() {
               />
             )}
             {(scale === null || currency === undefined) && (
-              <Stack gap={4} aria-busy="true">
+              <PageStack aria-busy="true">
                 <Skeleton shape="block" blockSize="6rem" />
                 <Skeleton shape="block" blockSize="16rem" />
-              </Stack>
+              </PageStack>
             )}
           </div>
           <div className={styles.listing}>

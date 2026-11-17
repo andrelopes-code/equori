@@ -15,7 +15,6 @@ import {
   ResultStateTitle,
 } from "@slotted/react/result-state";
 import { Segment, SegmentedControl } from "@slotted/react/segmented-control";
-import { Stack } from "@slotted/react/stack";
 import {
   Table,
   TableBody,
@@ -58,6 +57,7 @@ import { useMoneyFormat } from "@/privacy/use-money-format";
 import { FormNotice } from "@/ui/form-layout/form-notice";
 import { QueryError } from "@/ui/feedback/query-error";
 import { routeTo } from "@/ui/navigation/route-to";
+import { PageStack } from "@/ui/page-layout/page-stack";
 
 // A ranking draws ten bars (RE-08); the table holds every row.
 const chartRows = 10;
@@ -247,7 +247,7 @@ export function CategoriesTab({
       />
     );
   return (
-    <Stack gap={4}>
+    <PageStack>
       <ReportControls
         start={
           <SegmentedControl
@@ -404,6 +404,6 @@ export function CategoriesTab({
           )}
         </>
       )}
-    </Stack>
+    </PageStack>
   );
 }
