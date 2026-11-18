@@ -7,7 +7,7 @@
   .content[data-peek="closed"] {
     max-block-size: 9rem;
     overflow: hidden;
-    mask-image: linear-gradient(to bottom, #000 25%, transparent 92%);
+    mask-image: linear-gradient(to bottom, #000 25%, transparent 72%);
   }
 
   .more {
