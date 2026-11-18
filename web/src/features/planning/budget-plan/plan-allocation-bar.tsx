@@ -109,9 +109,12 @@ export function PlanAllocationBar({
                 <Text size="xs" weight="medium" className={styles.segmentName}>
                   {s.name}
                 </Text>
-                <Text size="xs" numeric="tabular">
-                  {format.money(s.amount)}
-                </Text>
+                {/* The rest is the panel's figure; its label does not repeat it. */}
+                {s.tone !== "rest" && (
+                  <Text size="xs" numeric="tabular">
+                    {format.money(s.amount)}
+                  </Text>
+                )}
                 <Text size="xs" tone="muted" numeric="tabular">
                   {share}
                 </Text>
