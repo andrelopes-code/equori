@@ -357,7 +357,9 @@
     background: var(--slotted-tone-accent-border);
   }
 
-  .panel {
+  /* A box of its own, not .panel: under the page's container that rule lays two columns and
+     the card would fill the first only. */
+  .panelHolder {
     position: relative;
   }
 
