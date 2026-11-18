@@ -109,3 +109,6 @@ The owner rejected the first figures and video: blurred captures, marks beside t
 | R5 | A figure shows the application in the language of the page. |
 | HP4 | Second amendment, 2026-11-18: a figure outside a dialog is cut from the page region held at 640 CSS pixels, so it spans the page's width at full scale (ADR 037, 4). |
 | HP6 | Second amendment, 2026-11-18: the player travels back to the place it grew from before it closes, at once under reduced motion, and the focus returns to the button "Watch the video". A browser that does not play WebM VP9 is offered no video: no control, no button, no word "video" in the index; the steps and their figures stay. |
+| HP4 | Third amendment, 2026-11-18 (owner): the application is captured at 1920 by 1200 CSS pixels, as on a desktop monitor; the narrowing of the second amendment is withdrawn. A figure is a 960 by 600 window of that screen, drawn reduced; reducing the picture is allowed, changing the layout is not (ADR 037, 4). |
+| HP3 | Third amendment, 2026-11-18 (owner): the media is built in the dark scheme only; both schemes of the page show it. A figure is 1920 by 1200 device pixels and a video 2560 by 1600. |
+| HP6 | Third amendment, 2026-11-18 (owner): the video draws no focus ring; the player lists the steps of the video beside it from 1024 px of window, and under it below. |

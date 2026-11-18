@@ -9,6 +9,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { LANGUAGES, SCHEMES } from "./lib/variants.mjs";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const MEDIA = join(here, "../../web/src/features/help/media");
 const CONTENT = join(here, "../../web/src/features/help/content");
@@ -17,8 +19,9 @@ const MODULE = join(MEDIA, "help-media-files.gen.ts");
 // The instance the tape is recorded from (make demo, make run-dev). A build needs none.
 const LIVE = process.env.HELP_MEDIA_BASE ?? "http://127.0.0.1:5173";
 const DIST = join(here, "../../web/dist");
-const SIZE = { width: 1280, height: 800 };
-const MAX_VIDEO_BYTES = 2_500_000;
+const SIZE = { width: 1920, height: 1200 };
+// One scheme and 2560 by 1600: a video may weigh what two of the earlier ones did.
+const MAX_VIDEO_BYTES = 5_000_000;
 // The media is embedded in the binary: the folder as a whole has a ceiling too.
 const MAX_MEDIA_BYTES = 40_000_000;
 // Variants built at once; each takes one core for its encoder and part of one for its page.
@@ -75,7 +78,7 @@ async function record() {
 }
 
 async function build() {
-  const { LANGUAGES, SCHEMES, openApp, withBrowser } = await import("./lib/app.mjs");
+  const { openApp, withBrowser } = await import("./lib/app.mjs");
   const { loadTape, replayTape } = await import("./lib/tape.mjs");
   const { captureBeats } = await import("./lib/capture.mjs");
   const { percent } = await import("./lib/geometry.mjs");
@@ -228,7 +231,7 @@ function check() {
     return bytes;
   };
 
-  for (const language of ["pt", "en"]) {
+  for (const language of LANGUAGES) {
     const ids = named(language);
 
     for (const id of ids.figures) {
@@ -239,9 +242,9 @@ function check() {
       }
 
       const [x, y, width, height] = spot;
-      if (x < 2.5 || y < 4 || x + width > 97.5 || y + height > 96) problems.push(`${id} ${language}: the mark leaves the figure`);
+      if (x < 0 || y < 0 || x + width > 100 || y + height > 100) problems.push(`${id} ${language}: the mark leaves the figure`);
 
-      for (const scheme of ["dark", "light"]) {
+      for (const scheme of SCHEMES) {
         const png = file(`${id}.${language}.${scheme}.png`);
         if (png && (png.readUInt32BE(16) !== SIZE.width || png.readUInt32BE(20) !== SIZE.height)) {
           problems.push(`${id}.${language}.${scheme}.png: not ${SIZE.width}x${SIZE.height}`);
@@ -252,7 +255,7 @@ function check() {
     for (const id of ids.videos) {
       const video = manifest.videos[id];
       if (!video || video.frames !== Math.round(video.frames / 30) * 30 && video.frames < 240) problems.push(`${id}: no video entry`);
-      for (const scheme of ["dark", "light"]) file(`${id}.${language}.${scheme}.webm`);
+      for (const scheme of SCHEMES) file(`${id}.${language}.${scheme}.webm`);
     }
   }
 
@@ -290,7 +293,7 @@ function review() {
   const folders = foldersOf(manifest);
   const figures = Object.entries(manifest.figures).flatMap(([id, languages]) =>
     Object.entries(languages).flatMap(([language, { spot }]) =>
-      ["dark", "light"].map(
+      SCHEMES.map(
         (scheme) =>
           `<figure><div class="shot"><img src="${MEDIA}/${folders[`${id}.${language}.${scheme}.png`]}">` +
           `<i style="left:${spot[0]}%;top:${spot[1]}%;width:${spot[2]}%;height:${spot[3]}%"><b>n</b></i></div>` +

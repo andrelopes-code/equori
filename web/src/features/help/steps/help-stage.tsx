@@ -82,7 +82,7 @@ export function HelpStage({
 
       <figure className={styles.figure}>
         {mode === "video" && video !== undefined && (
-          <HelpVideo video={video} poster={steps[0]?.figure} />
+          <HelpVideo video={video} steps={steps} poster={steps[0]?.figure} />
         )}
         {mode === "figures" && figure !== undefined && (
           <HelpShot figure={figure} number={current + 1} />

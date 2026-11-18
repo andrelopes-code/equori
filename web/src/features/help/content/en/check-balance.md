@@ -25,7 +25,7 @@ The comparison uses the **cleared** balance at the end of the date: pending tran
   - **Record yield**, when the difference is a yield the institution paid;
   - **Record adjustment**, when the difference has no explanation and should be accepted.
 
-![The Reconciliation tab, with the open difference marked](check-difference "The open difference stands at the top of the tab, with the actions that settle it.")
+![The Reconciliation tab, with the actions of the open difference marked](check-difference "The open difference stands at the top of the tab, with the actions that settle it.")
 
 The tab also lists the **transactions without confirmation**: the ones that do not appear in the institution's statement. A duplicated or mistyped transaction is resolved by voiding or correcting it.
 

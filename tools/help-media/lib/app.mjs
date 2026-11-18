@@ -2,11 +2,13 @@
 // clock and motion are set here and nowhere else.
 import { chromium } from "playwright";
 
-export const VIEW = { width: 1280, height: 800 };
-// Every capture holds two device pixels per CSS pixel, so it stays sharp on a dense screen.
+// The screen of a desktop: the application is laid out as on a 1920 px monitor, so no control
+// wraps and no layout for a narrow screen shows (owner, 2026-11-18).
+export const VIEW = { width: 1920, height: 1200 };
+// Device pixels per CSS pixel. It changes the sharpness of a capture and never its layout: a
+// still is 3840 by 2400 device pixels, a figure 1920 by 1200.
 export const RATIO = 2;
-export const LANGUAGES = ["pt", "en"];
-export const SCHEMES = ["dark", "light"];
+export { LANGUAGES, SCHEMES } from "./variants.mjs";
 
 const STILL = `
   *, *::before, *::after {
@@ -16,10 +18,6 @@ const STILL = `
     caret-color: transparent !important;
   }
   ::-webkit-scrollbar { display: none !important; }
-  /* The page region at the width of a figure, as it stands beside the assistant pane. */
-  html[data-help-figure] [data-ui="app-shell"] > [data-part="main"] {
-    max-width: var(--help-figure-width) !important;
-  }
 `;
 
 export async function withBrowser(run) {

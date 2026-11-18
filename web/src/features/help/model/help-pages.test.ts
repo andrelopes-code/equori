@@ -196,7 +196,8 @@ describe("helpNeighbours", () => {
 
         // Each language has its own captures (tools/help-media): none borrows another's.
         expect(figure?.dark, id).toContain(`${id}.${language}.dark`);
-        expect(figure?.light, id).toContain(`${id}.${language}.light`);
+        // One scheme is built (ADR 037, 9): the light scheme shows the same capture.
+        expect(figure?.light, id).toBe(figure?.dark);
         expect(figure?.spot, id).toHaveLength(4);
       }
 

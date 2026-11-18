@@ -6,6 +6,13 @@ import { fileURLToPath } from "node:url";
 const FILE = fileURLToPath(new URL("./files/extrato.csv", import.meta.url));
 
 const account = (page) => page.locator("main").getByRole("link", { name: "Conta corrente Itaú" });
+// The name of the account and its kind under it, the two texts of the row's first cell: the
+// row itself is wider than a figure.
+const row = (page) => {
+  const texts = page.locator("main th").filter({ has: page.getByRole("link", { name: "Conta corrente Itaú" }) }).locator("[data-ui='typography']");
+
+  return [texts.nth(0), texts.nth(1)];
+};
 const open = (page, words) => page.getByRole("button", { name: words("Importar extrato", "Import statement") });
 const field = (page, name) => page.locator("main [data-ui='field']").filter({ has: page.getByRole("combobox", { name }) });
 const cancel = (page, words) => page.locator("main footer").getByRole("button", { name: words("Cancelar", "Cancel") });
@@ -19,7 +26,7 @@ export default {
   beats: [
     {
       figure: "import-account",
-      target: account,
+      target: row,
       act: (page) => account(page).click(),
     },
     {

@@ -19,7 +19,7 @@ export function HelpWalkStacked({ steps, video }: HelpWalkStackedProps) {
     <div className={styles.walk} data-part="walk">
       {video !== undefined && (
         <div className={styles.clip}>
-          <HelpVideo video={video} poster={steps[0]?.figure} />
+          <HelpVideo video={video} steps={steps} poster={steps[0]?.figure} />
         </div>
       )}
 

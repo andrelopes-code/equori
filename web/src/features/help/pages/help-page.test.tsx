@@ -256,6 +256,27 @@ describe("help", () => {
     expect(document.querySelector("video")).toBeNull();
   });
 
+  // Owner, 2026-11-18: the player holds the steps the video shows, beside it.
+  it("lists the steps of the video in the player", async () => {
+    const user = userEvent.setup();
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    await user.click(
+      await screen.findByRole("radio", { name: /^Video · \d+ s$/ }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /^Watch the video · \d+ s$/ }),
+    );
+
+    const player = screen.getByRole("dialog");
+    const steps = within(player).getByRole("list", {
+      name: catalogEn["help.video.steps"],
+    });
+
+    expect(within(steps).getAllByRole("listitem")).toHaveLength(5);
+    expect(steps).toHaveTextContent("Choose how much to pay");
+  });
+
   it("returns the focus to the button of the video when the player closes", async () => {
     const user = userEvent.setup();
     await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
@@ -300,7 +321,10 @@ describe("help", () => {
     const cards = await screen.findByRole("list", {
       name: catalogEn["help.area.cards"],
     });
-    const link = within(cards).getByRole("link", { name: /Pay a statement/ });
+    // The title arrives with the library of the pages; the word would arrive with it.
+    const link = await within(cards).findByRole("link", {
+      name: /Pay a statement/,
+    });
 
     expect(link).not.toHaveTextContent(catalogEn["help.media.video"]);
   });

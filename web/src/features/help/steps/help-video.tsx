@@ -5,7 +5,10 @@ import { useRef, useState } from "react";
 import { HelpShot } from "@/features/help/figure/help-shot";
 import { HelpIcon } from "@/features/help/icon/help-icon";
 import { useHelpMedia } from "@/features/help/media/use-help-media";
-import type { HelpFigure } from "@/features/help/model/parse-help-page";
+import type {
+  HelpFigure,
+  HelpStep,
+} from "@/features/help/model/parse-help-page";
 import { HelpPlayer } from "@/features/help/steps/help-player";
 import styles from "@/features/help/styles/help.module.css";
 import { numberFormatter } from "@/i18n/format";
@@ -13,6 +16,8 @@ import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface HelpVideoProps {
   video: HelpFigure;
+  // The steps the video shows; the player lists them beside it.
+  steps: readonly HelpStep[];
   // The capture the video waits behind.
   poster?: HelpFigure | undefined;
 }
@@ -20,7 +25,7 @@ interface HelpVideoProps {
 // The video of the steps waits behind a capture; pressed, it opens in a player that grows over
 // the page and plays muted, with controls. It never starts alone and loads nothing before the
 // press, and the steps are its text (help spec, HP6).
-export function HelpVideo({ video, poster }: HelpVideoProps) {
+export function HelpVideo({ video, steps, poster }: HelpVideoProps) {
   const t = useT();
   const [locale] = useAppLocale();
   const media = useHelpMedia().video(video.id);
@@ -70,6 +75,7 @@ export function HelpVideo({ video, poster }: HelpVideoProps) {
         <HelpPlayer
           src={playing}
           label={video.alt}
+          steps={steps}
           origin={origin}
           onClose={handleClose}
         />

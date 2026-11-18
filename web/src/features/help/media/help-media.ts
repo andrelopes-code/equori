@@ -33,10 +33,12 @@ export function helpFigure(
   const used = figures[id]?.[language] === undefined ? FALLBACK : language;
   const mark = figures[id]?.[used];
   const dark = files[`${id}.${used}.dark.png`];
-  const light = files[`${id}.${used}.light.png`];
-  if (mark === undefined || dark === undefined || light === undefined) {
+  if (mark === undefined || dark === undefined) {
     return undefined;
   }
+
+  // One capture serves both schemes unless the tool wrote one for the light scheme.
+  const light = files[`${id}.${used}.light.png`] ?? dark;
 
   return { dark, light, spot: mark.spot };
 }
@@ -53,10 +55,11 @@ export function helpVideo(
   const used = own ? language : FALLBACK;
   const entry = videos[id];
   const dark = files[`${id}.${used}.dark.webm`];
-  const light = files[`${id}.${used}.light.webm`];
-  if (entry === undefined || dark === undefined || light === undefined) {
+  if (entry === undefined || dark === undefined) {
     return undefined;
   }
+
+  const light = files[`${id}.${used}.light.webm`] ?? dark;
 
   return { dark, light, seconds: entry.seconds };
 }

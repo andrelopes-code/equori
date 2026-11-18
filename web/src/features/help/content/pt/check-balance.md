@@ -25,7 +25,7 @@ A comparação usa o saldo **efetivado** no fim da data: as transações pendent
   - **Registrar rendimento**, quando a diferença é um rendimento que a instituição pagou;
   - **Registrar ajuste**, quando a diferença não tem explicação e deve ser aceita.
 
-![A aba Conferência de saldo, com a diferença em aberto marcada](check-difference "A diferença em aberto fica no alto da aba, com as ações que a resolvem.")
+![A aba Conferência de saldo, com as ações da diferença em aberto marcadas](check-difference "A diferença em aberto fica no alto da aba, com as ações que a resolvem.")
 
 A aba também lista as **transações sem confirmação**: as que não aparecem no extrato da instituição. Uma transação duplicada ou digitada errada se resolve anulando ou corrigindo a transação.
 

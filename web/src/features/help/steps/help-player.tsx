@@ -2,6 +2,8 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { useEffect, useRef } from "react";
 
+import type { HelpStep } from "@/features/help/model/parse-help-page";
+import { HelpStepLine } from "@/features/help/steps/help-step-line";
 import { shrinkTo, useGrow } from "@/features/help/steps/use-grow";
 import styles from "@/features/help/styles/help.module.css";
 import { useT } from "@/i18n/i18n-provider";
@@ -9,6 +11,8 @@ import { useT } from "@/i18n/i18n-provider";
 interface HelpPlayerProps {
   src: string;
   label: string;
+  // The steps the video shows, listed beside it.
+  steps: readonly HelpStep[];
   // The place of the element the reader pressed; the player grows from it.
   origin: DOMRect | null;
   onClose: () => void;
@@ -18,7 +22,13 @@ interface HelpPlayerProps {
 // the video), dialog (a panel with a header and a footer). The video of the steps at the size of
 // the window, grown from where it stood on the page, so the whole screen of the app stays
 // legible (owner, 2026-11-18); this screen's form.
-export function HelpPlayer({ src, label, origin, onClose }: HelpPlayerProps) {
+export function HelpPlayer({
+  src,
+  label,
+  steps,
+  origin,
+  onClose,
+}: HelpPlayerProps) {
   const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -64,16 +74,36 @@ export function HelpPlayer({ src, label, origin, onClose }: HelpPlayerProps) {
         if (event.target === dialog.current) handleClose();
       }}
     >
-      <div className={styles.playerPanel} ref={panel}>
-        <video
-          className={styles.playerVideo}
-          src={src}
-          aria-label={label}
-          autoPlay
-          controls
-          muted
-          playsInline
-        />
+      <div className={styles.playerLayout}>
+        <div className={styles.playerPanel} ref={panel}>
+          <video
+            className={styles.playerVideo}
+            src={src}
+            aria-label={label}
+            autoPlay
+            controls
+            muted
+            playsInline
+          />
+        </div>
+
+        <ol
+          className={[styles.steps, styles.playerSteps].join(" ")}
+          aria-label={t("help.video.steps")}
+        >
+          {steps.map((step, index) => (
+            <li className={styles.step} key={step.markdown}>
+              <span className={styles.stepLine}>
+                <HelpStepLine
+                  number={index + 1}
+                  markdown={step.markdown}
+                  links={false}
+                />
+              </span>
+            </li>
+          ))}
+        </ol>
+
         <span className={styles.playerClose}>
           <IconButton
             variant="solid"

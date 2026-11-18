@@ -2,12 +2,17 @@
 // for the elements of the step, never from a number typed by hand.
 import { VIEW } from "./app.mjs";
 
-// Every figure is this window of the page, in CSS pixels, never scaled: text keeps its size.
-export const CLIP = { width: 640, height: 400 };
-// The number of a mark is a 21 px circle centred on its corner; this margin keeps it whole.
-export const MARGIN = 16;
-// The mark stands this far from the element it points at.
-const PAD = 6;
+// Every figure is this window of the screen, in CSS pixels: half the width of the screen. The
+// page draws it at two thirds of its size, from three device pixels for each of its own; the
+// layout it shows is the one of the whole screen.
+export const CLIP = { width: 960, height: 600 };
+// A figure is drawn at two thirds of its size, so 3 px here are 2 px on the page.
+// The number of a mark is a 21 px circle of the page centred on its corner, 32 px here; this
+// margin keeps it whole.
+export const MARGIN = 24;
+// The mark stands this far from the element it points at: 8 px on the page, which keeps most
+// of the number clear of a label at the corner of the element.
+const PAD = 12;
 
 export function union(boxes) {
   const x = Math.min(...boxes.map((b) => b.x));
@@ -31,30 +36,43 @@ export function clipAround(target, frame) {
 }
 
 function along(targetStart, targetSize, frameStart, frameSize, clip, view) {
-  const hold = (value, low, high) => Math.round(Math.max(low, Math.min(Math.max(low, high), value)));
+  const between = (value, low, high) => Math.max(low, Math.min(Math.max(low, high), value));
   const centred = (start, size) => start + size / 2 - clip / 2;
+  // The room of the mark: its pad and its margin on each side of the element. It comes before
+  // the frame, so a mark is never pushed onto the element it surrounds.
+  const room = PAD + MARGIN;
+  const roomy = (value) => between(value, targetStart + targetSize + room - clip, targetStart - room);
+  const whole = (value) => Math.round(between(value, 0, view - clip));
 
-  if (frameStart === undefined) return hold(centred(targetStart, targetSize), 0, view - clip);
-  if (frameSize <= clip) return hold(centred(frameStart, frameSize), 0, view - clip);
+  if (frameStart === undefined) return whole(centred(targetStart, targetSize));
+  if (frameSize <= clip) return whole(roomy(centred(frameStart, frameSize)));
 
   const low = Math.max(0, frameStart);
   const high = Math.min(view, frameStart + frameSize) - clip;
 
-  return hold(centred(targetStart, targetSize), low, high);
+  return whole(roomy(between(centred(targetStart, targetSize), low, high)));
 }
 
-// The width to ask of the page region so that its box, borders included, is as wide as a figure:
-// a figure then spans the region and never shows a slice of the page's width.
-export function regionWidth(measured) {
-  return CLIP.width - (measured - CLIP.width);
-}
-
-// The mark in CSS pixels of the clip, grown by the pad and held inside the margin.
+// The mark in CSS pixels of the clip: the element grown by the pad. The margin holds it only as
+// far as the edge of the element, so a mark never stands on what it surrounds.
 export function markIn(target, clip) {
-  const left = Math.max(MARGIN, target.x - clip.x - PAD);
-  const top = Math.max(MARGIN, target.y - clip.y - PAD);
-  const right = Math.min(clip.width - MARGIN, target.x - clip.x + target.width + PAD);
-  const bottom = Math.min(clip.height - MARGIN, target.y - clip.y + target.height + PAD);
+  const x = target.x - clip.x;
+  const y = target.y - clip.y;
+  const left = Math.min(x, Math.max(MARGIN, x - PAD));
+  const top = Math.min(y, Math.max(MARGIN, y - PAD));
+  const right = Math.max(x + target.width, Math.min(clip.width - MARGIN, x + target.width + PAD));
+  const bottom = Math.max(y + target.height, Math.min(clip.height - MARGIN, y + target.height + PAD));
+
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+// The mark of the video: the element grown by its pad on the whole screen. No window of a
+// figure bounds it.
+export function markOnScreen(target) {
+  const left = Math.max(0, target.x - PAD);
+  const top = Math.max(0, target.y - PAD);
+  const right = Math.min(VIEW.width, target.x + target.width + PAD);
+  const bottom = Math.min(VIEW.height, target.y + target.height + PAD);
 
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
@@ -70,6 +88,12 @@ export function markProblems(target, clip, mark) {
     target.y + target.height <= clip.y + clip.height;
 
   if (!inside) problems.push("the target does not fit in the figure");
+  // A mark held by the margin stands on its element instead of around it.
+  const around = mark.x <= target.x - clip.x && mark.y <= target.y - clip.y;
+  const beyond =
+    mark.x + mark.width >= target.x - clip.x + target.width &&
+    mark.y + mark.height >= target.y - clip.y + target.height;
+  if (inside && !(around && beyond)) problems.push("the mark does not surround the target");
   if (mark.width < 24 || mark.height < 24) problems.push("the mark is smaller than 24 px");
   if (mark.width * mark.height > 0.7 * clip.width * clip.height) {
     problems.push("the mark covers more than 70% of the figure");

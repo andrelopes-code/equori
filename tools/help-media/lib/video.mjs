@@ -9,9 +9,9 @@ import { join } from "node:path";
 import { RATIO, VIEW } from "./app.mjs";
 
 export const FPS = 30;
-// The whole screen, never a zoomed part of it, at one and a half device pixels per CSS pixel:
-// the reader sees where each control stands, and the enlarged player stays sharp.
-const SCALE = 1.5;
+// The whole screen, never a zoomed part of it, at four thirds of a device pixel per CSS pixel:
+// 2560 by 1600, so the text stays sharp in a player as wide as the window.
+const SCALE = 4 / 3;
 const OUT = { width: VIEW.width * SCALE, height: VIEW.height * SCALE };
 
 // Seconds of each part of a beat.
@@ -188,7 +188,7 @@ export async function renderVideo(browser, beats, accent, path) {
   const encoder = spawn(ffmpegPath(), [
     "-loglevel", "error", "-y",
     "-f", "image2pipe", "-framerate", String(FPS), "-c:v", "mjpeg", "-i", "pipe:0",
-    "-c:v", "libvpx-vp9", "-crf", "32", "-b:v", "0", "-g", String(FPS * 2),
+    "-c:v", "libvpx-vp9", "-crf", "24", "-b:v", "0", "-g", String(FPS * 2),
     "-cpu-used", "2",
     // Four column tiles on four threads: the multithreading of VP9 that keeps the output the same
     // on every run (row-mt does not). Exact bit streams: the same frames give the same file.

@@ -701,6 +701,36 @@
     );
   }
 
+  /* The video and, beside it, the steps it shows; under it on a narrow window. */
+  .playerLayout {
+    position: relative;
+    display: grid;
+    align-items: center;
+    gap: var(--slotted-space-5);
+    grid-template-columns: auto 20rem; /* literal: the measure of a step beside a figure */
+  }
+
+  .playerSteps {
+    overflow-y: auto;
+    padding: var(--slotted-space-3) var(--slotted-space-5);
+    border: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    background: var(--slotted-panel-surface, var(--slotted-surface-raised));
+    box-shadow: var(--slotted-panel-shadow, none);
+    max-block-size: 80dvb;
+  }
+
+  @media (max-width: 1023px) {
+    .playerLayout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .playerSteps {
+      max-block-size: 30dvb;
+    }
+  }
+
   .playerPanel {
     position: relative;
     overflow: hidden;
@@ -711,10 +741,26 @@
     background: var(--slotted-surface-sunken);
     box-shadow: var(--slotted-shadow-lg, var(--slotted-panel-shadow, none));
     inline-size: min(
-      94dvi,
+      94dvi - 20rem - var(--slotted-space-5),
       147dvb
-    ); /* literal: the widest 8:5 box that leaves 3% of the window on each side */
+    ); /* literal: the widest 8:5 box that leaves the steps their column and 3% of the window on each side */
     transform-origin: center;
+  }
+
+  @media (max-width: 1023px) {
+    .playerPanel {
+      inline-size: min(
+        94dvi,
+        96dvb
+      ); /* literal: the widest 8:5 box that leaves 30% of the height to the steps */
+    }
+  }
+
+  /* The keys of the video (space, arrows) focus it; the owner wants no ring around the picture
+     (2026-11-18). Its controls keep their own focus marks. */
+  .playerVideo:focus,
+  .playerVideo:focus-visible {
+    outline: none;
   }
 
   .playerVideo {
@@ -723,10 +769,19 @@
     inline-size: 100%;
   }
 
+  /* At the corner of the player, above the steps: clear of the picture, whose own corner holds
+     the primary action of most screens. */
   .playerClose {
     position: absolute;
-    inset-block-start: var(--slotted-space-3);
-    inset-inline-end: var(--slotted-space-3);
+    inset-block-start: 0;
+    inset-inline-end: 0;
+  }
+
+  @media (max-width: 1023px) {
+    .playerClose {
+      inset-block-start: var(--slotted-space-3);
+      inset-inline-end: var(--slotted-space-3);
+    }
   }
 
   .clipPlay {

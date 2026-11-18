@@ -2,202 +2,202 @@
   "figures": {
     "pay-cards": {
       "pt": {
-        "spot": [3.59, 22.65, 53.1, 54.67]
+        "spot": [2.5, 31.27, 35.74, 37.53]
       },
       "en": {
-        "spot": [3.59, 22.65, 53.1, 54.67]
+        "spot": [2.5, 31.27, 35.74, 37.53]
       }
     },
     "statement-total": {
       "pt": {
-        "spot": [55, 34.23, 12.97, 12.53]
+        "spot": [36.04, 15.99, 9.9, 10.35]
       },
       "en": {
-        "spot": [55, 25.48, 12.34, 12.53]
+        "spot": [36.04, 15.99, 9.48, 10.35]
       }
     },
     "pay-open": {
       "pt": {
-        "spot": [40.94, 19.98, 10.78, 10]
+        "spot": [89.01, 4.71, 8.44, 8.67]
       },
       "en": {
-        "spot": [87.66, 8.56, 8.75, 10]
+        "spot": [90.36, 4.71, 7.09, 8.67]
       }
     },
     "pay-amount": {
       "pt": {
-        "spot": [5.31, 27.01, 89.38, 15.21]
+        "spot": [19.58, 33.67, 60.84, 12.14]
       },
       "en": {
-        "spot": [5.31, 27.01, 89.38, 15.21]
+        "spot": [19.58, 33.67, 60.84, 12.14]
       }
     },
     "pay-account": {
       "pt": {
-        "spot": [5.31, 44.47, 89.38, 32.67]
+        "spot": [19.58, 45.31, 60.84, 23.78]
       },
       "en": {
-        "spot": [5.31, 44.47, 89.38, 32.67]
+        "spot": [19.58, 45.31, 60.84, 23.78]
       }
     },
     "pay-confirm": {
       "pt": {
-        "spot": [77.97, 81.39, 16.72, 10]
+        "spot": [68.02, 69.93, 12.4, 8.66]
       },
       "en": {
-        "spot": [76.41, 81.39, 18.28, 10]
+        "spot": [66.98, 69.93, 13.44, 8.66]
       }
     },
     "rule-new": {
       "pt": {
-        "spot": [78.36, 4, 18.05, 7.25]
+        "spot": [84.17, 3.5, 13.28, 6.67]
       },
       "en": {
-        "spot": [80.55, 4, 15.86, 7.25]
+        "spot": [85.63, 3.5, 11.82, 6.67]
       }
     },
     "rule-conditions": {
       "pt": {
-        "spot": [2.5, 33.02, 90.47, 33.9]
+        "spot": [18.83, 28.18, 62.29, 24.6]
       },
       "en": {
-        "spot": [2.5, 34.77, 90.47, 30.4]
+        "spot": [18.83, 28.18, 62.29, 22.27]
       }
     },
     "rule-actions": {
       "pt": {
-        "spot": [2.5, 34.92, 90.47, 30.39]
+        "spot": [18.83, 38.95, 62.29, 22.26]
       },
       "en": {
-        "spot": [2.5, 34.92, 90.47, 30.39]
+        "spot": [18.83, 38.95, 62.29, 22.26]
       }
     },
     "rule-preview": {
       "pt": {
-        "spot": [3.59, 17.33, 89.38, 65.31]
+        "spot": [22.47, 27.26, 55, 45.54]
       },
       "en": {
-        "spot": [3.59, 17.33, 89.38, 65.31]
+        "spot": [22.47, 27.26, 55, 45.54]
       }
     },
     "rule-save": {
       "pt": {
-        "spot": [78.2, 87.63, 16.57, 8.37]
+        "spot": [57.11, 89.25, 12.29, 6.75]
       },
       "en": {
-        "spot": [81.02, 87.63, 13.75, 8.37]
+        "spot": [58.98, 89.25, 10.42, 6.75]
       }
     },
     "check-account": {
       "pt": {
-        "spot": [11.76, 40.93, 84.49, 18.05]
+        "spot": [13.62, 45.63, 13.44, 8.65]
       },
       "en": {
-        "spot": [11.76, 40.93, 84.49, 18.05]
+        "spot": [13.62, 45.63, 13.44, 8.65]
       }
     },
     "check-open": {
       "pt": {
-        "spot": [22.5, 22.31, 18.13, 10]
+        "spot": [67.19, 4.71, 13.33, 8.67]
       },
       "en": {
-        "spot": [23.28, 22.31, 19.22, 10]
+        "spot": [66.15, 4.71, 14.06, 8.67]
       }
     },
     "check-values": {
       "pt": {
-        "spot": [16.8, 37.97, 66.4, 35.89]
+        "spot": [27.24, 40.98, 45.52, 25.93]
       },
       "en": {
-        "spot": [16.8, 37.97, 66.4, 35.89]
+        "spot": [27.24, 40.98, 45.52, 25.93]
       }
     },
     "check-compare": {
       "pt": {
-        "spot": [62.42, 76.36, 20.78, 10]
+        "spot": [57.66, 66.58, 15.1, 8.66]
       },
       "en": {
-        "spot": [57.11, 76.36, 26.09, 10]
+        "spot": [54.11, 66.58, 18.65, 8.66]
       }
     },
     "check-difference": {
       "pt": {
-        "spot": [5.78, 30.74, 88.44, 38.75]
+        "spot": [6.98, 43.91, 62.19, 8.33]
       },
       "en": {
-        "spot": [5.78, 30.74, 88.44, 38.75]
+        "spot": [6.98, 43.91, 59.79, 8.33]
       }
     },
     "connect-settings": {
       "pt": {
-        "spot": [4.14, 44.9, 27.03, 10]
+        "spot": [2.5, 45.6, 22.14, 8.67]
       },
       "en": {
-        "spot": [4.14, 44.9, 27.03, 10]
+        "spot": [2.5, 45.6, 22.14, 8.67]
       }
     },
     "connect-add": {
       "pt": {
-        "spot": [34.77, 45.35, 23.43, 9.5]
+        "spot": [26.56, 34.08, 16.88, 8.33]
       },
       "en": {
-        "spot": [34.77, 45.35, 18.43, 9.5]
+        "spot": [26.56, 34.08, 13.54, 8.33]
       }
     },
     "connect-credentials": {
       "pt": {
-        "spot": [16.8, 16.28, 66.4, 70.81]
+        "spot": [27.24, 26.68, 45.52, 49.22]
       },
       "en": {
-        "spot": [16.8, 16.28, 66.4, 70.81]
+        "spot": [27.24, 26.68, 45.52, 49.22]
       }
     },
     "connect-create": {
       "pt": {
-        "spot": [73.36, 89.59, 9.84, 6.41]
+        "spot": [64.95, 75.56, 7.81, 8.67]
       },
       "en": {
-        "spot": [71.8, 89.59, 11.4, 6.41]
+        "spot": [63.91, 75.56, 8.85, 8.67]
       }
     },
     "import-account": {
       "pt": {
-        "spot": [11.76, 40.93, 84.49, 18.05]
+        "spot": [13.62, 45.63, 13.44, 8.65]
       },
       "en": {
-        "spot": [11.76, 40.93, 84.49, 18.05]
+        "spot": [13.62, 45.63, 13.44, 8.65]
       }
     },
     "import-open": {
       "pt": {
-        "spot": [3.59, 22.31, 19.85, 10]
+        "spot": [54.58, 4.71, 14.48, 8.67]
       },
       "en": {
-        "spot": [3.59, 22.31, 20.63, 10]
+        "spot": [53.02, 4.71, 15, 8.67]
       }
     },
     "import-csv": {
       "pt": {
-        "spot": [3.59, 33.71, 89.38, 32.67]
+        "spot": [19.56, 38.14, 60.83, 23.78]
       },
       "en": {
-        "spot": [3.59, 33.71, 89.38, 32.67]
+        "spot": [19.56, 38.14, 60.83, 23.78]
       }
     },
     "import-confirm": {
       "pt": {
-        "spot": [81.8, 87.63, 12.97, 8.37]
+        "spot": [59.51, 89.25, 9.89, 6.75]
       },
       "en": {
-        "spot": [83.67, 87.63, 11.1, 8.37]
+        "spot": [60.76, 89.25, 8.64, 6.75]
       }
     },
     "import-lines": {
       "pt": {
-        "spot": [3.59, 45.25, 85.86, 9.5]
+        "spot": [2.5, 36.02, 58.49, 8.34]
       },
       "en": {
-        "spot": [3.59, 45.25, 74.93, 9.5]
+        "spot": [2.5, 36.02, 51.2, 8.34]
       }
     }
   },
@@ -220,128 +220,70 @@
     }
   },
   "files": {
-    "category-rule/rule-new.pt.dark.png": "810771d32dccb948b90d46298a8e641441edb8df2168939aec1aac3ec989da83",
-    "category-rule/rule-conditions.pt.dark.png": "6b0adc86b069658b0c94bd148102e3f0d30c13520ab42af80321ca2dc15ab293",
-    "category-rule/rule-actions.pt.dark.png": "f3d60e0d59d8ccc99388bc6d73e0011d9449f02aa41890a937beb8e9288946f2",
-    "category-rule/rule-preview.pt.dark.png": "755fe76cc446b4ecf44811de16a2376bc759ccc99ea9a37c7569c93096587885",
-    "category-rule/rule-save.pt.dark.png": "b20e427c28f00336ecb74b2fdd2871d1704209dcea4eca6d6e95fa79e1fb73ca",
-    "category-rule/rule-new.en.light.png": "301ef15037b9c97665ad66167b7941d00a18bc7721e8618f716334bf5603f622",
-    "category-rule/rule-conditions.en.light.png": "9e9deefd85463db6099709654aedb004c49d7acd7a4e525cce4c1ec5fab391f1",
-    "category-rule/rule-actions.en.light.png": "54845917844629aed49747b023d42b3fe1aab3243e29f890aeaec80a9bb35dfe",
-    "category-rule/rule-preview.en.light.png": "f448c3c4372636ebfef67e8467f629479a87e67fd2d070c8a037518f26aaef6f",
-    "category-rule/rule-save.en.light.png": "838c3c1fd97562169392796d20d4b7bbd9d8b9610632c41da71f7c1e3e0ac02a",
-    "category-rule/rule-new.pt.light.png": "470ba685c032bc5ca75d376fb30231a9220a7001644f0b5304d8917afded7a34",
-    "category-rule/rule-conditions.pt.light.png": "bb69993d85032927bb0c7a41c35e5d494178ff30c6fdcad7f8a3984271da74e9",
-    "category-rule/rule-actions.pt.light.png": "7a23216ceb380d480106e7df3af3e0aa852a0124a1994ccded824d855736d8dd",
-    "category-rule/rule-preview.pt.light.png": "9ffd0b3ca005cf8f79ff79a3f99713b22486953504a9124d8efb1c25c75e89f7",
-    "category-rule/rule-save.pt.light.png": "0d8360e5cbcff91c15728ab7b4031023a218777c50bd48690ef9bd0af6bb4280",
-    "category-rule/rule-new.en.dark.png": "667c828bfb2c959e011e9398aed1a3d885c8c21153f3dbdf752c710fd8e82cec",
-    "category-rule/rule-conditions.en.dark.png": "1eb029e3b8eeace3d1809c403c02bb0a84003401d58e9b2b827c1f29fd8beb5c",
-    "category-rule/rule-actions.en.dark.png": "0b8dd80bd38afefbb1386cc1e340319f2c1b8e1360802c1c392f77020035ae96",
-    "category-rule/rule-preview.en.dark.png": "c1d9af1b3350248906df76fa83cf50edebbcfb0c0146453b6b84a8a01ea62e11",
-    "category-rule/rule-save.en.dark.png": "29430c2cd78aac4e5a35a888f17d125942390b3585a8595fe65257624c87625b",
-    "category-rule/category-rule.en.dark.webm": "b8b5ed46bad191e1107db615f2d60eb25a9dfa2a56b483c99031370f3d6f82a2",
-    "category-rule/category-rule.pt.dark.webm": "2448aae17da246e8adb94c650dfccac613b1b71dbd5dc0076a98c05f5c39820b",
-    "category-rule/category-rule.en.light.webm": "ca281e0c4201d5612dd7259956b89fe9e7a8c57a1e101c456a4bab9b284b2038",
-    "category-rule/category-rule.pt.light.webm": "d214591c3be8da51781843122a6650be2938972e23f4a35ec24f9ee5afd73c4e",
-    "check-balance/check-account.pt.dark.png": "91fe859c552fbe17cc726f992965bff715c69d7da764499aac01543f094638f5",
-    "check-balance/check-open.pt.dark.png": "8e4455df602cd141bc9de2fb8d88e375c0ecdd2475c17ac17f37a9caea302a86",
-    "check-balance/check-values.pt.dark.png": "e5e5447c3421626c164aa0bddd3a502d7fe3414e9bddcc5ae8b2f0541c6df342",
-    "check-balance/check-compare.pt.dark.png": "e5e5447c3421626c164aa0bddd3a502d7fe3414e9bddcc5ae8b2f0541c6df342",
-    "check-balance/check-difference.pt.dark.png": "8f02427572927ac077c766c26c3a8cf427620f6f6a236c55797a20db3bfb0cf8",
-    "check-balance/check-account.pt.light.png": "51aa3755eb766a556cd291c717030b989298034a960be6cb51a7be2577609cda",
-    "check-balance/check-open.pt.light.png": "933dd157217dea890f19371c1e933df47b076fba8b986cd3319e515952fce335",
-    "check-balance/check-values.pt.light.png": "df2ee86c271f2c0e854c038eff190d3489f466ce040f9b0600acb2924c2e3c39",
-    "check-balance/check-compare.pt.light.png": "df2ee86c271f2c0e854c038eff190d3489f466ce040f9b0600acb2924c2e3c39",
-    "check-balance/check-difference.pt.light.png": "db262d34a3f5e32fc16fd5bd3730be828ee0894556ddd0ccad2c17c286c44e1a",
-    "check-balance/check-account.en.dark.png": "7bafa689d8841c65776d3e237a65fe20b4679b0bcdce42efb3d35a59a44f66b4",
-    "check-balance/check-open.en.dark.png": "a2a348c96b2b95129524b9d617c82812931c453bb419ced0da85246db0868c06",
-    "check-balance/check-values.en.dark.png": "a62a0e3973cb0023ced8e8582828a65f76913a283d2bf5d6904070e45c0accaa",
-    "check-balance/check-compare.en.dark.png": "a62a0e3973cb0023ced8e8582828a65f76913a283d2bf5d6904070e45c0accaa",
-    "check-balance/check-difference.en.dark.png": "d59496dc3d4bab806427acf4a6fa7ca1f31148f94db4c67687733cc0dbae81a3",
-    "check-balance/check-account.en.light.png": "693fbb7e7cc54046ec0ce80dc1d9047034db1c3414a469f81a9ccf0843d3983f",
-    "check-balance/check-open.en.light.png": "a42c2910954ee07edf77a33ee72d6f687c6aeaa16e9a7f0a5496d43a7b93b70c",
-    "check-balance/check-values.en.light.png": "e93ee5692bf0587c1c66a497dee3d1679b7f335b0d22b3130c6815756ff7e4f7",
-    "check-balance/check-compare.en.light.png": "e93ee5692bf0587c1c66a497dee3d1679b7f335b0d22b3130c6815756ff7e4f7",
-    "check-balance/check-difference.en.light.png": "285a87cc1d15dc01742ced2321a11dcadcff763335c22b553f6e94bb1986962b",
-    "check-balance/check-balance.pt.dark.webm": "47ec9322e04d0c0edb96b1b93c010ebcb961d7a42a12967d93c004abdace9c97",
-    "check-balance/check-balance.en.dark.webm": "62fc9ca78b8392af922da0b98bdaa289053b7115b99f9807f157ac4666f4944b",
-    "connect-bank/connect-settings.pt.dark.png": "36a4479eb658e53963f2a6d9a7b39b03b4f93544659aef7a19046c99ec9e11e6",
-    "connect-bank/connect-add.pt.dark.png": "523faa0b3b32316f306e22afbc62334baad4b5001022aa11ae1d8d008c00c435",
-    "connect-bank/connect-credentials.pt.dark.png": "ef6768005d13d82cca24b00d957f262c4399140b67fcc8aea239623f269fbeb3",
-    "connect-bank/connect-create.pt.dark.png": "ef6768005d13d82cca24b00d957f262c4399140b67fcc8aea239623f269fbeb3",
-    "check-balance/check-balance.pt.light.webm": "983b50e4563d7d8e99621d1e895814ab558389558503623ecd19df5394532243",
-    "check-balance/check-balance.en.light.webm": "a8ca1e5384a9dd3f5ebd2befcdd49498147e12bc4db389ae5b05db92da60c5b0",
-    "connect-bank/connect-settings.pt.light.png": "22e0a48d6ee60a0f068e0f9486c3ccb206117e704ee33d3d19fec1ef634404e1",
-    "connect-bank/connect-add.pt.light.png": "0d6895275ab9911feabe1b305ccc7d7dca3754e1def954a683a5ff7b01bd9dab",
-    "connect-bank/connect-credentials.pt.light.png": "2023306081c6e06b8109ddfd1110e5604aa50affb77d081fe329248d1c5fc845",
-    "connect-bank/connect-create.pt.light.png": "2023306081c6e06b8109ddfd1110e5604aa50affb77d081fe329248d1c5fc845",
-    "connect-bank/connect-settings.en.dark.png": "9a88f16f119cf7ba7296154f6df2f60c10fb8f26830c8642ce23b1971eb59bc2",
-    "connect-bank/connect-add.en.dark.png": "9c2dae10f4dee47ef3fc7db0aa09922bccf5ae4c7cad8732b5b1eb6bb09249a0",
-    "connect-bank/connect-credentials.en.dark.png": "ecf0c2040439d103c018f48d2255f8b7bafea376c330fee2a971cd65c7847bd1",
-    "connect-bank/connect-create.en.dark.png": "ecf0c2040439d103c018f48d2255f8b7bafea376c330fee2a971cd65c7847bd1",
-    "connect-bank/connect-settings.en.light.png": "bcbb296dbc27426e30fcb9c32062c12ce36a05c07e0ce0e90adebae82965094a",
-    "connect-bank/connect-add.en.light.png": "055c1211c9c194a3884ac4aee78117f9013a58f5c8967b31ae5d98f67ff68e23",
-    "connect-bank/connect-credentials.en.light.png": "c1d86bbfccacf4bfc72ca2d175b1671c0e0c11026ffcd79e63eca1f83935c922",
-    "connect-bank/connect-create.en.light.png": "c1d86bbfccacf4bfc72ca2d175b1671c0e0c11026ffcd79e63eca1f83935c922",
-    "import-statement/import-account.pt.dark.png": "91fe859c552fbe17cc726f992965bff715c69d7da764499aac01543f094638f5",
-    "import-statement/import-open.pt.dark.png": "8e4455df602cd141bc9de2fb8d88e375c0ecdd2475c17ac17f37a9caea302a86",
-    "import-statement/import-csv.pt.dark.png": "b31dc18fab098840ada0f07d4559670828ac7882a2e13229207d11f968c06cb6",
-    "import-statement/import-confirm.pt.dark.png": "45c8a5b630c11b1f1c991b84be5d29f12cb65c31087e0462a8d2d5f2a4d78f1d",
-    "import-statement/import-lines.pt.dark.png": "abc2395cc980bb4700b5dbc2f9c1d9013656ef2852315eaec60c457263795217",
-    "import-statement/import-account.pt.light.png": "51aa3755eb766a556cd291c717030b989298034a960be6cb51a7be2577609cda",
-    "import-statement/import-open.pt.light.png": "933dd157217dea890f19371c1e933df47b076fba8b986cd3319e515952fce335",
-    "import-statement/import-csv.pt.light.png": "fe8839e04feb6b0aa8a5380b286047d510c2bf0b0c3926b56c9d1385d39aaed3",
-    "import-statement/import-confirm.pt.light.png": "07b225cb1b9723f91d91f792471f8289184f31074dda49614d7731a7ffd96b11",
-    "import-statement/import-lines.pt.light.png": "847dc7fead4416984b85b950b42f0f4a9da7d0ceb1c5511131c8ee4cd3d3d806",
-    "import-statement/import-account.en.dark.png": "7bafa689d8841c65776d3e237a65fe20b4679b0bcdce42efb3d35a59a44f66b4",
-    "import-statement/import-open.en.dark.png": "a2a348c96b2b95129524b9d617c82812931c453bb419ced0da85246db0868c06",
-    "import-statement/import-csv.en.dark.png": "aeee447431fcb419fae261e28287e04b9014567faf319a941cf35338c43718a8",
-    "import-statement/import-confirm.en.dark.png": "fb3da642bc839309a51615c5697c5b060fadd447d1622a904cc2454ce6dee517",
-    "import-statement/import-lines.en.dark.png": "a7486eb1cd0d28615c0eeef436552c7293ee1e316cdef4251f983ab2641c92a1",
-    "import-statement/import-account.en.light.png": "693fbb7e7cc54046ec0ce80dc1d9047034db1c3414a469f81a9ccf0843d3983f",
-    "import-statement/import-open.en.light.png": "a42c2910954ee07edf77a33ee72d6f687c6aeaa16e9a7f0a5496d43a7b93b70c",
-    "import-statement/import-csv.en.light.png": "6797e884fdaf0fd41d8d6c1ae0072b7f670208b092f09fb6a7b07722cb59bebb",
-    "import-statement/import-confirm.en.light.png": "404250ca720bdcf1a64ded8830a6123dec2295ad536ed51a2d4a436439cdfc1f",
-    "import-statement/import-lines.en.light.png": "fa25a57ae6c7c271c6808d1786ef2b3afa87b3154788cd02f693df843a87425a",
-    "import-statement/import-statement.pt.dark.webm": "655fa07d41d9839b1d01e622ad3c60824e78315ba0a4195069cf2ef477a8bc79",
-    "import-statement/import-statement.pt.light.webm": "51473a4fb80402df861b167de3af873d2dba7503b5481420b2542bc6a4fbe0ed",
-    "import-statement/import-statement.en.dark.webm": "d7660579063a120729cacf0684bb131a1842009c96788dfa1cf9d905484b8190",
-    "import-statement/import-statement.en.light.webm": "eec25fbeff1363d909c7ff9450906e3e4e1bd52957c6ef70be1fd7551bd52146",
-    "pay-statement/pay-cards.pt.dark.png": "c4e456e43afc24ca50d53ee1e70b4589ecd269225c91e67dd7418f4e64cd8995",
-    "pay-statement/statement-total.pt.dark.png": "c2e8596923f53cc7069f43796e87bc50fc082c9381c5d99c70caa229b9594fc8",
-    "pay-statement/pay-open.pt.dark.png": "c2e8596923f53cc7069f43796e87bc50fc082c9381c5d99c70caa229b9594fc8",
-    "pay-statement/pay-amount.pt.dark.png": "9ec8c5be97bd33f90381a484f028df489cb3ad404c4eff4f874f478ea375c380",
-    "pay-statement/pay-account.pt.dark.png": "9ec8c5be97bd33f90381a484f028df489cb3ad404c4eff4f874f478ea375c380",
-    "pay-statement/pay-confirm.pt.dark.png": "9ec8c5be97bd33f90381a484f028df489cb3ad404c4eff4f874f478ea375c380",
-    "pay-statement/pay-cards.pt.light.png": "7d0101ca45ea870b7096fda815d9c51544cd2a96c0bd70e65864df4a6c2390f1",
-    "pay-statement/statement-total.pt.light.png": "11e77b07a4544089dfcd79f81dde08b8b3817284c8efedea5fb3c808e76b4a2f",
-    "pay-statement/pay-open.pt.light.png": "11e77b07a4544089dfcd79f81dde08b8b3817284c8efedea5fb3c808e76b4a2f",
-    "pay-statement/pay-amount.pt.light.png": "055371cb5dde30c7c064707cac4fe4d429616f6e2da7af0f66607778833aca25",
-    "pay-statement/pay-account.pt.light.png": "055371cb5dde30c7c064707cac4fe4d429616f6e2da7af0f66607778833aca25",
-    "pay-statement/pay-confirm.pt.light.png": "055371cb5dde30c7c064707cac4fe4d429616f6e2da7af0f66607778833aca25",
-    "pay-statement/pay-cards.en.dark.png": "7cbbcac44fffc7a9f8a74a8d41fe77395742be6f707d5234ed4a7ca632c3446a",
-    "pay-statement/statement-total.en.dark.png": "a8157afc10184d1f0f8f3f2e169ae58b47ade716f7171c53725513fe40981252",
-    "pay-statement/pay-open.en.dark.png": "a8157afc10184d1f0f8f3f2e169ae58b47ade716f7171c53725513fe40981252",
-    "pay-statement/pay-amount.en.dark.png": "dc3bc3536df5615b7bd0c71c6bf992fe71d603b88c0581ab1b3b0fa736b7a2f7",
-    "pay-statement/pay-account.en.dark.png": "dc3bc3536df5615b7bd0c71c6bf992fe71d603b88c0581ab1b3b0fa736b7a2f7",
-    "pay-statement/pay-confirm.en.dark.png": "dc3bc3536df5615b7bd0c71c6bf992fe71d603b88c0581ab1b3b0fa736b7a2f7",
-    "pay-statement/pay-cards.en.light.png": "f9532b1dec3702525c092baa7dbfd5b13d7f1a008dec493e0aef3d012b2cfb04",
-    "pay-statement/statement-total.en.light.png": "3356a82dc35485ae4f3c7688d2450b02f3216334932b7709eaf1ae60cdc3c14c",
-    "pay-statement/pay-open.en.light.png": "3356a82dc35485ae4f3c7688d2450b02f3216334932b7709eaf1ae60cdc3c14c",
-    "pay-statement/pay-amount.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
-    "pay-statement/pay-account.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
-    "pay-statement/pay-confirm.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
-    "pay-statement/pay-statement.pt.dark.webm": "6306e31b94e5cd8109174d369f8b393c48052be977dbab59775d8629ed0f2c30",
-    "pay-statement/pay-statement.en.dark.webm": "8f3e6d521150217168ef4ccfb9a33fa3d75cf2d0c86bd5cf1dec327dbebc98ee",
-    "pay-statement/pay-statement.pt.light.webm": "3fc9626ca768779a5cb95969ef2ecaa819e68e4c7b5bef8a28a7a4106f29f11c",
-    "pay-statement/pay-statement.en.light.webm": "cf3a57e3404a7baadaa8e49daf187e9229c1b60e1c7ab0534664e3d45f7a8701"
+    "category-rule/rule-new.pt.dark.png": "d2cfc9b62ad696d5ee84fe70c29a99f9f2e111d8088469ebf8aa053edd553d0d",
+    "category-rule/rule-conditions.pt.dark.png": "08a2ca6f25f76b4de3d7f50696c431fb74a4e4d1432008190d869dc7b265e26e",
+    "category-rule/rule-actions.pt.dark.png": "5a74d3de270e2b3244d4b1ced9c8caf4fdccd0587c91b25fae2dff1d0da350ad",
+    "category-rule/rule-preview.pt.dark.png": "81ec139bd521daf264f8304fc817b63ad8ce3701a4950df5c87fcbe3c96b830d",
+    "category-rule/rule-save.pt.dark.png": "1243276728e3e1fb240ab427a9d852024faa475a6b10e37348109b98a4e1c920",
+    "category-rule/rule-new.en.dark.png": "a96ddc91be199a9647712ebf2e75fe3b8207dfff702d1345f43d3ff425eb3e2d",
+    "category-rule/rule-conditions.en.dark.png": "b732c534b5cbdc63aeb9b2a0087d2152c08d5634ce93e5127e10dec7a65b5266",
+    "category-rule/rule-actions.en.dark.png": "4cf91041e8d6ae4636b21ea1ab5a48032a113c49918d5158bc4938676d50cb33",
+    "category-rule/rule-preview.en.dark.png": "1f681c0fabc19fb25ee15717cc3aaab18ce186c99da5f48ac60859cdbccd5913",
+    "category-rule/rule-save.en.dark.png": "1e29fab6c632b2729207404e48d31712fdd2f01fa17bc99012d007e85e71a9f9",
+    "category-rule/category-rule.en.dark.webm": "12cae2ef0be044a9de0967a25199e9926f06d8228be915e028465a7a26e084a5",
+    "category-rule/category-rule.pt.dark.webm": "6bfe4bc24738f4977d564e9e6b0a6b5506be4212120283c4641274bcaaf1e772",
+    "check-balance/check-account.pt.dark.png": "be45b98cdee607098fe8dd68f4e05f45add206dd11ec95d7ae16b11f55575899",
+    "check-balance/check-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
+    "check-balance/check-values.pt.dark.png": "30ed8150a3da083867fdfd242f98ac98004e77aae237b83b2a61710206c90d66",
+    "check-balance/check-compare.pt.dark.png": "30ed8150a3da083867fdfd242f98ac98004e77aae237b83b2a61710206c90d66",
+    "check-balance/check-difference.pt.dark.png": "90ba7efed58584f91a4c4c3d80d13aa76cc77bfad1be078d85bf305234882185",
+    "check-balance/check-account.en.dark.png": "368389ce4012f0dd45330d79e3fedd8ad6e1c6734c562389cf28b89ee391cf58",
+    "check-balance/check-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
+    "check-balance/check-values.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
+    "check-balance/check-compare.en.dark.png": "61e68f5722043258b26ccd80baded6c5c656bd2764b67541f7b780885de96e04",
+    "check-balance/check-difference.en.dark.png": "72c3f6731e7d835bf74aa0100cbb987bc517df9ad3deb6d647643eabc5a79800",
+    "check-balance/check-balance.pt.dark.webm": "2914dc71cc1c85695d8dabc5e97b11a028e0c6a996ca9e04d28527f900dc987f",
+    "check-balance/check-balance.en.dark.webm": "90eadd1aafbb05ae000e8eca046c01f3164d5f16bd211d7a34b6658d4d9432d8",
+    "connect-bank/connect-settings.pt.dark.png": "6ecaa802273dbbd6ee097d69f4defe205f40833342fba9d4262409a815f2ff39",
+    "connect-bank/connect-add.pt.dark.png": "26deac138b36d0927e554ec1ef9aede44ba82420b20302bf3ab17e776d7e4f97",
+    "connect-bank/connect-credentials.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
+    "connect-bank/connect-create.pt.dark.png": "699a3ea81f96029f04795c2640deec3ad1379cf29369bc032a11f340f86c6ca2",
+    "connect-bank/connect-settings.en.dark.png": "9e50736c40eaa7ac8cef4ac778942780309fcc969e084a2c61b6a2f8afed7844",
+    "connect-bank/connect-add.en.dark.png": "f93e83f4962acf02056ce09e6748e1c698b37771dd6e57e61063aaa4ee0065f8",
+    "connect-bank/connect-credentials.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
+    "connect-bank/connect-create.en.dark.png": "19f6356290b6426f2be1bd91a01ca7944f4039770494b940d7d9b78e82b7c56b",
+    "import-statement/import-account.pt.dark.png": "be45b98cdee607098fe8dd68f4e05f45add206dd11ec95d7ae16b11f55575899",
+    "import-statement/import-open.pt.dark.png": "9d23613db25caab86204332fa3c091dfba3f3fcff72e904d1dd7ca63f0dd30f4",
+    "import-statement/import-csv.pt.dark.png": "0a5d43a3af671b351df7e772d068795ea823f1256972974ac432fd01fc5961e4",
+    "import-statement/import-confirm.pt.dark.png": "1726789463326ed31382a0df7fcd5d1de4d7fa202da529a17919b2d11fd9a790",
+    "import-statement/import-lines.pt.dark.png": "bb04c335433a1d05f687e9087c7acf86668702e0210daf5ed4f746ed10d8e7d3",
+    "import-statement/import-account.en.dark.png": "368389ce4012f0dd45330d79e3fedd8ad6e1c6734c562389cf28b89ee391cf58",
+    "import-statement/import-open.en.dark.png": "67e3a2e6f71e599d82ff8997415eb4229c5ea0bf6078a366681cad293d6c19aa",
+    "import-statement/import-csv.en.dark.png": "11b999a4fbb4757a77b964a9fdd9b7a2f082529aa8dbe8155f244c92718be9e0",
+    "import-statement/import-confirm.en.dark.png": "63498ca50bcad03db81760f2dc39f33c277d02056419b29c8c447e43ea851d85",
+    "import-statement/import-lines.en.dark.png": "f52ed63dc3182edefb5916a37a3ab53c608d347bc2ad97cae306737eef081f3d",
+    "import-statement/import-statement.pt.dark.webm": "2a689c8b0d1c556f0c704224df13ca261e3676b255ddbd0c1e2def49f8a6ae22",
+    "import-statement/import-statement.en.dark.webm": "3aef22112d760bb8435bb0f369d533f67f3d1001a1bc234b9dc984e3992fd8be",
+    "pay-statement/pay-cards.pt.dark.png": "91dcc049540d023a6d5a9341789f009246c65911311b3aea0ca812e70d13cacc",
+    "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88",
+    "pay-statement/pay-open.pt.dark.png": "f804e9b6e638ae1084eedcd350e83bddb5c30f18c636a048adf3372a188d2779",
+    "pay-statement/pay-amount.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
+    "pay-statement/pay-account.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
+    "pay-statement/pay-confirm.pt.dark.png": "4b72ce4577db2cf10f38213258e40fd7492915edb3de117e101316cfaca6fdcf",
+    "pay-statement/pay-cards.en.dark.png": "7d3c3a6c04b89e2089e8dbf35497d20d9aa474c80951e68a9a81c8082b26a862",
+    "pay-statement/statement-total.en.dark.png": "80c691e1f917c3215e1de9224519246039f65ba0f181de98be4c0ade21cf6436",
+    "pay-statement/pay-open.en.dark.png": "4380cc823332037f05317ecbd42e1dbda7e2a24e044ac8550cf45bdf6d2396a4",
+    "pay-statement/pay-amount.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
+    "pay-statement/pay-account.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
+    "pay-statement/pay-confirm.en.dark.png": "e9baa66f2887152374e3d4f6692eb35ef344add1e64e2f1daa0b54e9aeeea243",
+    "pay-statement/pay-statement.pt.dark.webm": "fe132a43b12ab4605ae0c02f54e89614849e524ebfef5c95c1806299136bcd66",
+    "pay-statement/pay-statement.en.dark.webm": "53ef619a29aa7f0151755f60ccb5cf27e118fd5d0fc7b7b0b73778cf3a3f9757"
   },
   "inputs": {
-    "category-rule": "ee3fc1180b11ac4e598211e4d122ac552a9c3531dcb6f19f6188254ebfe3c714",
-    "check-balance": "9676e6be5d240774c4ae55e57bdecf2a37e4f9ffdf064d7f89ae5b182db4caa2",
-    "connect-bank": "811a8c69e53d2d6af947918a6a0fe57d1559b4f6fea69dfd574de2aacce72d7e",
-    "import-statement": "714915042077d5a00c1ffdbdd07dd272f3a674b7de0cc4d80557275dd1af9085",
-    "pay-statement": "686a0d6d8a78e9b55eb6c01981ab072804f608027c0ac310b45de9e43d84e4bb"
+    "check-balance": "0f6b9be2efc22c35fe3c905f78036d5b68fb669cc9bb60157e53a876d978c9da",
+    "category-rule": "255982654f6f72333c0129bfc4ee58cc105534ce8d413f5e17e6352df08419fe",
+    "connect-bank": "cd077a9b8968de7e8e8dec68ffaa6fe5edc89348d79bfce4d18b3725b547852b",
+    "import-statement": "bf3105e37fff9535afe10f1c95b0c49000a339a087bb9e5b51c93d822c778133",
+    "pay-statement": "46b20b70e355ac4306b772f6ce57513edb1886105831f61a71431cafbdd02d50"
   }
 }

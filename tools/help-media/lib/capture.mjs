@@ -1,7 +1,7 @@
 // Runs the beats of a tutorial on one page and returns, for each, the still of the page, the
 // window of its figure and the place of its mark.
-import { RATIO, settle } from "./app.mjs";
-import { CLIP, clipAround, markIn, markProblems, regionWidth, union } from "./geometry.mjs";
+import { settle } from "./app.mjs";
+import { clipAround, markIn, markOnScreen, markProblems, union } from "./geometry.mjs";
 
 // How long an element may take to appear. A recording reads a development server that compiles
 // each screen on its first visit; beside other work on the machine that passed 15 s.
@@ -17,9 +17,8 @@ export async function captureBeats(page, tape, tutorial, { language, scheme }) {
     const what = `${tutorial.id} beat ${index + 1}${beat.figure ? ` (${beat.figure})` : ""}`;
     const at = { page, tape, scheme, beat, words, what };
 
-    // The video shows the whole screen: its still and its mark come from the page as it opens.
-    // A beat outside the video needs that mark only when its figure is cut from the whole screen.
-    const whole = await place(at, beat.only !== "figure");
+    // A beat that yields no figure and stays out of the video needs no sound mark.
+    const whole = await place(at, beat.figure !== undefined || beat.only !== "figure");
     const still = await page.screenshot({ type: "png", scale: "device" });
     const figure = beat.figure ? await figureOf(at, whole) : undefined;
 
@@ -30,9 +29,9 @@ export async function captureBeats(page, tape, tutorial, { language, scheme }) {
       still,
       figureImage: figure?.image,
       figureMark: figure?.mark,
-      clip: whole.clip,
-      mark: whole.mark,
-      size: { width: whole.clip.width * RATIO, height: whole.clip.height * RATIO },
+      // What the video draws: the mark on the whole screen.
+      clip: { x: 0, y: 0 },
+      mark: whole.onScreen,
     });
 
     if (beat.act) await beat.act(page, words);
@@ -45,55 +44,17 @@ export async function captureBeats(page, tape, tutorial, { language, scheme }) {
   return beats;
 }
 
-// The figure of a beat. A frame of its own (a dialog) is cut from the screen as it stands. Any
-// other figure is cut from the page region held at the width of a figure: the page reflows as
-// it does beside the assistant pane, and the figure shows its whole width at full scale. An
-// element that fills the narrowed page, or does not fit in it, is cut from the page as it stands.
+// The figure of a beat: the window of the screen around its element, as the screen stands.
 async function figureOf(at, whole) {
-  const { page, beat } = at;
-  const cut = async ({ clip, mark }) => ({
-    image: await page.screenshot({ type: "png", scale: "device", clip }),
-    mark,
-  });
+  const { clip, mark } = sound(whole, at.what);
 
-  if (beat.frame) return cut(sound(whole, at.what));
-
-  await narrow(page, true);
-  const narrowed = await place(at, false);
-  const figure = narrowed.problems.length === 0 ? await cut(narrowed) : undefined;
-  await narrow(page, false);
-
-  if (figure !== undefined) return figure;
-
-  await place(at);
-
-  return cut(sound(whole, at.what));
+  return { image: await at.page.screenshot({ type: "png", scale: "device", clip }), mark };
 }
 
 function sound(placed, what) {
   if (placed.problems.length > 0) throw new Error(`${what}: ${placed.problems.join("; ")}`);
 
   return placed;
-}
-
-async function narrow(page, on) {
-  const region = page.locator("[data-ui='app-shell'] > [data-part='main']");
-  const ask = (width) =>
-    page.evaluate(
-      ([value, set]) => {
-        document.documentElement.style.setProperty("--help-figure-width", `${value}px`);
-        document.documentElement.toggleAttribute("data-help-figure", set);
-      },
-      [width, on],
-    );
-
-  await ask(CLIP.width);
-  if (!on) return;
-
-  const box = await region.boundingBox();
-  if (box === null) throw new Error("the application has no page region");
-
-  await ask(regionWidth(box.width));
 }
 
 // Brings the target of a beat to rest in view and returns the window of its figure and the
@@ -114,7 +75,7 @@ async function place({ page, tape, scheme, beat, words, what }, strict = true) {
   const clip = clipAround(target, frame);
   const mark = markIn(target, clip);
   const problems = markProblems(target, clip, mark);
-  const placed = { clip, mark, problems };
+  const placed = { clip, mark, problems, onScreen: markOnScreen(target) };
 
   return strict ? sound(placed, what) : placed;
 }
