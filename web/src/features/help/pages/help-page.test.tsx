@@ -197,24 +197,50 @@ describe("help", () => {
     expect(screen.getByText("Step 3 of 5")).toBeInTheDocument();
     expect(
       screen.getAllByAltText(
-        "The payment dialog, with the Valor (Amount) field marked",
+        "The payment dialog, with the Amount field marked",
       ),
     ).toHaveLength(2);
   });
 
-  it("offers the video of the steps without starting it (HP6)", async () => {
+  // Spec HP6, amended on 2026-11-18: the video waits behind its first figure and opens in a
+  // player that grows over the page.
+  it("opens the video of the steps in a player, only when asked (HP6)", async () => {
     const user = userEvent.setup();
     await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
 
     await user.click(
-      await screen.findByRole("radio", { name: "Video · 18 s" }),
+      await screen.findByRole("radio", { name: /^Video · \d+ s$/ }),
+    );
+    expect(document.querySelector("video")).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: /^Watch the video · \d+ s$/ }),
     );
 
-    const video = document.querySelector("video");
-    expect(video).toHaveAttribute("preload", "none");
+    const player = screen.getByRole("dialog", {
+      name: "Video: the payment of a statement from start to end",
+    });
+    const video = player.querySelector("video");
     expect(video).toHaveAttribute("controls");
-    expect(video).not.toHaveAttribute("autoplay");
     expect(video?.muted).toBe(true);
+    expect(video?.getAttribute("src")).toMatch(/pay-statement\.en\./);
+
+    await user.click(
+      within(player).getByRole("button", {
+        name: catalogEn["help.video.close"],
+      }),
+    );
+    expect(document.querySelector("video")).toBeNull();
+  });
+
+  it("draws the figures of the reader's language", async () => {
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    const [figure] = await screen.findAllByAltText(
+      "The list of cards, with the card to open marked",
+    );
+
+    expect(figure?.getAttribute("src")).toMatch(/pay-cards\.en\.dark/);
   });
 
   it("ends a task with its symptoms, the assistant and the related pages (HP16)", async () => {
@@ -278,7 +304,7 @@ describe("help", () => {
       ),
     ).toHaveLength(2);
     expect(
-      screen.getByRole("button", { name: "Watch the video · 18 s" }),
+      screen.getByRole("button", { name: /^Watch the video · \d+ s$/ }),
     ).toBeInTheDocument();
   });
 

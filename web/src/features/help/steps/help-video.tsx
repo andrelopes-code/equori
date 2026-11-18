@@ -1,58 +1,73 @@
-import { helpFigure, helpVideo } from "@/features/help/media/help-media";
+import { Button } from "@slotted/react/button";
+import { Icon } from "@slotted/react/icon";
+import { useRef, useState } from "react";
+
+import { HelpShot } from "@/features/help/figure/help-shot";
+import { HelpIcon } from "@/features/help/icon/help-icon";
+import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type { HelpFigure } from "@/features/help/model/parse-help-page";
+import { HelpPlayer } from "@/features/help/steps/help-player";
 import styles from "@/features/help/styles/help.module.css";
+import { numberFormatter } from "@/i18n/format";
+import { useAppLocale, useT } from "@/i18n/i18n-provider";
 
 interface HelpVideoProps {
   video: HelpFigure;
-  // The capture shown until the reader starts the video.
+  // The capture the video waits behind.
   poster?: HelpFigure | undefined;
-  // Set after the reader asked for the video by its own button: it starts, in this scheme alone.
-  playing?: "dark" | "light";
 }
 
-// The steps as a muted video with controls; it loads nothing and never starts alone, and the
-// steps beside it are its text (help spec, HP6).
-export function HelpVideo({ video, poster, playing }: HelpVideoProps) {
-  const media = helpVideo(video.id);
-  const still = poster === undefined ? undefined : helpFigure(poster.id);
+// The video of the steps waits behind a capture; pressed, it opens in a player that grows over
+// the page and plays muted, with controls. It never starts alone and loads nothing before the
+// press, and the steps are its text (help spec, HP6).
+export function HelpVideo({ video, poster }: HelpVideoProps) {
+  const t = useT();
+  const [locale] = useAppLocale();
+  const media = useHelpMedia().video(video.id);
+  const [playing, setPlaying] = useState<string | null>(null);
+  const frame = useRef<HTMLElement>(null);
+  const [origin, setOrigin] = useState<DOMRect | null>(null);
+
   if (media === undefined) return null;
 
+  const seconds = numberFormatter(locale).format(media.seconds);
+
+  const handlePlay = () => {
+    const scheme = document.documentElement.getAttribute("data-slotted-scheme");
+
+    setOrigin(frame.current?.getBoundingClientRect() ?? null);
+    setPlaying(scheme === "light" ? media.light : media.dark);
+  };
+
   return (
-    <span className={styles.shot}>
-      {playing !== "light" && (
-        <video
-          className={
-            playing === undefined
-              ? [styles.shotImage, styles.shotDark].join(" ")
-              : styles.shotImage
+    <figure className={[styles.figure, styles.clipFrame].join(" ")} ref={frame}>
+      {poster !== undefined && <HelpShot figure={poster} marked={false} />}
+
+      <span className={styles.clipPlay}>
+        <Button
+          variant="solid"
+          tone="accent"
+          start={
+            <Icon size="sm">
+              <HelpIcon name="play" />
+            </Icon>
           }
-          src={media.dark}
-          poster={still?.dark}
-          aria-label={video.alt}
-          preload="none"
-          autoPlay={playing !== undefined}
-          controls
-          muted
-          playsInline
+          onClick={handlePlay}
+        >
+          {t("help.steps.watch", { seconds })}
+        </Button>
+      </span>
+
+      {playing !== null && (
+        <HelpPlayer
+          src={playing}
+          label={video.alt}
+          origin={origin}
+          onClose={() => {
+            setPlaying(null);
+          }}
         />
       )}
-      {playing !== "dark" && (
-        <video
-          className={
-            playing === undefined
-              ? [styles.shotImage, styles.shotLight].join(" ")
-              : styles.shotImage
-          }
-          src={media.light}
-          poster={still?.light}
-          aria-label={video.alt}
-          preload="none"
-          autoPlay={playing !== undefined}
-          controls
-          muted
-          playsInline
-        />
-      )}
-    </span>
+    </figure>
   );
 }

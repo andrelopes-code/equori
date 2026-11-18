@@ -147,6 +147,7 @@ export const catalogPtBR: Catalog = {
   "help.steps.previous": "Passo anterior",
   "help.steps.next": "Próximo passo",
   "help.figure.enlarge": "Ampliar",
+  "help.video.close": "Fechar o vídeo",
   "help.after.title": "Se algo saiu diferente",
   "help.after.symptoms": "Sintomas desta tarefa",
   "help.after.cause": "Causa e passos",

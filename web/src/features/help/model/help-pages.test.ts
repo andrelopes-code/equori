@@ -182,16 +182,19 @@ describe("helpNeighbours", () => {
       expect(videos).toEqual(["pay-statement"]);
 
       for (const id of figures) {
-        const figure = helpFigure(id);
+        const figure = helpFigure(id, language);
 
-        expect(figure?.dark, id).toMatch(/\.png/);
-        expect(figure?.light, id).toMatch(/\.png/);
+        // Each language has its own captures (tools/help-media): none borrows another's.
+        expect(figure?.dark, id).toContain(`${id}.${language}.dark`);
+        expect(figure?.light, id).toContain(`${id}.${language}.light`);
         expect(figure?.spot, id).toHaveLength(4);
       }
 
       for (const id of videos) {
-        expect(helpVideo(id)?.dark, id).toMatch(/\.webm/);
-        expect(helpVideo(id)?.seconds, id).toBeGreaterThan(0);
+        expect(helpVideo(id, language)?.dark, id).toContain(
+          `${id}.${language}.dark`,
+        );
+        expect(helpVideo(id, language)?.seconds, id).toBeGreaterThan(0);
       }
     },
   );

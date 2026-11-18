@@ -1,13 +1,88 @@
 {
   "figures": {
-    "pay-cards": { "capture": "cards", "spot": [4, 4, 51.5, 53] },
-    "pay-open": { "capture": "statement", "spot": [91.6, 5.25, 7.7, 7.25] },
-    "pay-amount": { "capture": "pay-dialog", "spot": [4.25, 21.5, 91.5, 21] },
-    "pay-account": { "capture": "pay-dialog", "spot": [4.25, 41.5, 91.5, 37] },
-    "pay-confirm": { "capture": "pay-dialog", "spot": [76.1, 84, 18.3, 10.5] },
-    "statement-total": { "capture": "statement", "spot": [32, 16.5, 8.5, 8] }
+    "pay-cards": {
+      "pt": {
+        "spot": [3.59, 22.9, 52.79, 54.36]
+      },
+      "en": {
+        "spot": [3.59, 22.9, 52.79, 54.36]
+      }
+    },
+    "statement-total": {
+      "pt": {
+        "spot": [43.59, 25.48, 12.81, 12.53]
+      },
+      "en": {
+        "spot": [43.75, 25.48, 12.34, 12.53]
+      }
+    },
+    "pay-open": {
+      "pt": {
+        "spot": [84.14, 8.56, 12.19, 11.5]
+      },
+      "en": {
+        "spot": [86.33, 8.56, 10, 11.5]
+      }
+    },
+    "pay-amount": {
+      "pt": {
+        "spot": [5.31, 23.52, 89.38, 17.04]
+      },
+      "en": {
+        "spot": [5.31, 23.52, 89.38, 17.04]
+      }
+    },
+    "pay-account": {
+      "pt": {
+        "spot": [5.31, 42.81, 89.38, 36.32]
+      },
+      "en": {
+        "spot": [5.31, 42.81, 89.38, 36.32]
+      }
+    },
+    "pay-confirm": {
+      "pt": {
+        "spot": [75.78, 83.38, 18.91, 11.5]
+      },
+      "en": {
+        "spot": [73.59, 83.38, 21.09, 11.5]
+      }
+    }
   },
   "videos": {
-    "pay-statement": { "seconds": 18 }
+    "pay-statement": {
+      "seconds": 17,
+      "frames": 505
+    }
+  },
+  "files": {
+    "pay-cards.pt.dark.png": "15fdc1c4fbeea133f4a73f6efb077c8c13537b01e601bd7de2c45d695d0f7395",
+    "statement-total.pt.dark.png": "761f6e490ec12b6462a81fb548ca36196d5a9cdbf097d1029ee0bb3ba65d5e69",
+    "pay-open.pt.dark.png": "a4c5b4f2158c99a001c0fed2a34c43611e88285264b9535f4f3102aabd3a4198",
+    "pay-amount.pt.dark.png": "aae8f7a56b7aaae717106565a07bcd0404e7002eeb83b3e83046adeba622d940",
+    "pay-account.pt.dark.png": "aae8f7a56b7aaae717106565a07bcd0404e7002eeb83b3e83046adeba622d940",
+    "pay-confirm.pt.dark.png": "aae8f7a56b7aaae717106565a07bcd0404e7002eeb83b3e83046adeba622d940",
+    "pay-statement.pt.dark.webm": "5d79740a02867138f7d08866957bfbc9c486afb43134fc242a1b0c8ce8bdf2e3",
+    "pay-cards.pt.light.png": "6fe266c825251ebfb90950607a5dd57dad024065c24af81eb62b3087bf581420",
+    "statement-total.pt.light.png": "d75263b23a74893f2c2c9bb7e153c83586068d0a1e0b3c7061f2596afdf36a9a",
+    "pay-open.pt.light.png": "fb359377a3611f432fd475e021163a08b83c31c497d046a47346623e73f4e63a",
+    "pay-amount.pt.light.png": "43a6a1816c67dec695839fd90bc5cdf631b9d19f98980ebd05169b2ad16407a8",
+    "pay-account.pt.light.png": "43a6a1816c67dec695839fd90bc5cdf631b9d19f98980ebd05169b2ad16407a8",
+    "pay-confirm.pt.light.png": "43a6a1816c67dec695839fd90bc5cdf631b9d19f98980ebd05169b2ad16407a8",
+    "pay-statement.pt.light.webm": "937a35943976e2be11f8e32affa43a044b541cf29f02c8856017778d83f7c45d",
+    "pay-cards.en.dark.png": "e7b511b7078dbf36779e3dcb61afb2303e6c8979d6be6da7f07813285629b5a8",
+    "statement-total.en.dark.png": "16bdac175b10c22d56a8b948b898ec5426eeddf198d441016a0e0e4c499bc4ae",
+    "pay-open.en.dark.png": "3b196c946ef97bda980778ed4ab0d4a4cb3c9734e69052a8f783e61c03489223",
+    "pay-amount.en.dark.png": "26dc6c0506b77c98898d96fc531a44538b538b1159c7b896b3308f17f7e97f89",
+    "pay-account.en.dark.png": "26dc6c0506b77c98898d96fc531a44538b538b1159c7b896b3308f17f7e97f89",
+    "pay-confirm.en.dark.png": "26dc6c0506b77c98898d96fc531a44538b538b1159c7b896b3308f17f7e97f89",
+    "pay-statement.en.dark.webm": "1abd62c83ef04f36a607a637d33c943e5eaf406a0b2f7cfebeac32698f784733",
+    "pay-cards.en.light.png": "c501701ec0fa46024a663dce572b45aa8213b3ea35fb23c947b869f32535e971",
+    "statement-total.en.light.png": "1db4ad3d07fbfcc21feb0b93908c7ebae551ec64c6aaedf875f6ef101bc7744e",
+    "pay-open.en.light.png": "f1f1f1fe61c573001eb796d4fbd53751c9c0b1e690d3370b95f8925b37ecc86c",
+    "pay-amount.en.light.png": "1e81289aa6f4a67966e0c79023422c287cf6837a41983da641993aca250e8281",
+    "pay-account.en.light.png": "1e81289aa6f4a67966e0c79023422c287cf6837a41983da641993aca250e8281",
+    "pay-confirm.en.light.png": "1e81289aa6f4a67966e0c79023422c287cf6837a41983da641993aca250e8281",
+    "pay-statement.en.light.webm": "1f326c85bb8360c9f9aa651d9322cbd9836e2aca5d855977d4058ebf52752844"
   }
 }

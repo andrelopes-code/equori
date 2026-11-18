@@ -1,4 +1,4 @@
-import { helpFigure } from "@/features/help/media/help-media";
+import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type { HelpFigure } from "@/features/help/model/parse-help-page";
 import styles from "@/features/help/styles/help.module.css";
 
@@ -13,7 +13,7 @@ interface HelpShotProps {
 // Families read: image (no mark over the picture). A capture of the app in the active scheme,
 // with the place of a step outlined and the rest dimmed (help spec, HP4); this screen's form.
 export function HelpShot({ figure, number, marked = true }: HelpShotProps) {
-  const media = helpFigure(figure.id);
+  const media = useHelpMedia().figure(figure.id);
   if (media === undefined) return null;
 
   const [start = 0, top = 0, width = 0, height = 0] = media.spot;

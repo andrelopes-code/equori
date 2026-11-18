@@ -9,13 +9,13 @@ A statement gathers the purchases of one card cycle. It closes on a date and is 
 1. Open the card in [Cards](/cards).
    ![The list of cards, with the card to open marked](pay-cards)
 2. Choose **Pay statement**, or **Pay** on the statement's page.
-   ![The statement page, with the Pagar (Pay) button marked](pay-open)
+   ![The statement page, with the Pay button marked](pay-open)
 3. Choose how much to pay: **Open** pays everything still due; **Minimum** pays the minimum payment. You can also type another amount.
-   ![The payment dialog, with the Valor (Amount) field marked](pay-amount)
+   ![The payment dialog, with the Amount field marked](pay-amount)
 4. In **Paid from**, choose the account the money leaves, and enter the payment date.
    ![The payment dialog, with the account and the date marked](pay-account)
 5. Choose **Pay statement**.
-   ![The payment dialog, with the Pagar fatura (Pay statement) button marked](pay-confirm)
+   ![The payment dialog, with the Pay statement button marked](pay-confirm)
 
 **After the payment.** The payment leaves the chosen account and shows as a credit on the next statement. A payment below the total leaves the rest open, and the screen says how much stays.
 

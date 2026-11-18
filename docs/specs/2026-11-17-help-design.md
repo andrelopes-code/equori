@@ -89,4 +89,15 @@ The approved mock is the contract of the form: `docs/specs/assets/2026-11-17-hel
 | `pay-statement` | the five steps of "Record the payment"; the total of the statement | the payment, start to end |
 | `troubleshooting` | the total of the statement, under "The amount of a statement differs" | none |
 
-The captures come from the demo book in pt-BR, 1280 by 800, in both schemes, written by `docs/specs/assets/2026-11-17-help-media/capture.mjs` (Playwright is not a dependency of `web/`; the script runs with the Playwright of the machine). Every other page keeps its text and gains its figures in later changes of content, without code.
+Every other page keeps its text and gains its figures in later changes of content, without code.
+
+## 7. Amendment of 2026-11-18 (owner review of the first media)
+
+The owner rejected the first figures and video: blurred captures, marks beside their element, a video with cuts and scroll jumps, shown zoomed.
+
+| ID | Change |
+|---|---|
+| HP3 | Files are per language and scheme: `<id>.<language>.<scheme>.png` and `.webm`. `media.json` holds the mark of each figure per language. Every file and the manifest are written by `tools/help-media` (ADR 037); none is made by hand. |
+| HP4 | A figure is a 640 by 400 CSS pixel window of the screen at two device pixels per CSS pixel, cut and never scaled. Its mark is the box of the element as the browser reports it. |
+| HP6 | A video shows the whole screen, composed frame by frame from the stills of the steps at 1920 by 1200. On the page it waits behind the figure of the first step; pressed, it opens in a player that grows from that place to the size of the window and plays muted with controls. The Figures/Video control and the button "Watch the video" lead to the same player. |
+| R5 | A figure shows the application in the language of the page. |

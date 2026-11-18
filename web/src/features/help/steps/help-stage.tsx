@@ -6,7 +6,7 @@ import { Text } from "@slotted/react/typography";
 
 import { HelpEnlarge } from "@/features/help/figure/help-enlarge";
 import { HelpShot } from "@/features/help/figure/help-shot";
-import { helpFigure, helpVideo } from "@/features/help/media/help-media";
+import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type {
   HelpFigure,
   HelpStep,
@@ -44,8 +44,9 @@ export function HelpStage({
 
   const step = steps[current];
   const figure = step?.figure;
-  const clip = video === undefined ? undefined : helpVideo(video.id);
-  const shown = mode === "video" ? clip : figure && helpFigure(figure.id);
+  const media = useHelpMedia();
+  const clip = media.video(video?.id);
+  const shown = mode === "figures" ? media.figure(figure?.id) : undefined;
   const number = numberFormatter(locale, {});
   // What the step asks for, without the choices that follow a colon.
   const what = plainText(step?.markdown ?? "").replace(/:.*/, ".");
@@ -73,8 +74,8 @@ export function HelpStage({
           <HelpEnlarge
             dark={shown.dark}
             light={shown.light}
-            name={(mode === "video" ? video?.alt : figure?.alt) ?? ""}
-            type={mode === "video" ? "video/webm" : "image/png"}
+            name={figure?.alt ?? ""}
+            type="image/png"
           />
         )}
       </div>

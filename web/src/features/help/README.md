@@ -41,7 +41,7 @@ None. `model/help-pages.ts` loads the Markdown through `import.meta.glob` with t
 - `icon/`: the marks the glyph set does not hold.
 - `model/`: the page list, the guides (area, screen, symptoms, related), the Markdown loader and parser, the library of every page.
 - `styles/`: the stylesheet of the approved mock.
-- `media/`: captures (`<capture>.<scheme>.png`), videos (`<id>.<scheme>.webm`) and `media.json` (the mark of each figure, the length of each video).
+- `media/`: figures (`<id>.<language>.<scheme>.png`), videos (`<id>.<language>.<scheme>.webm`) and `media.json` (the mark of each figure, the length of each video, the hash of each file), all written by `tools/help-media` (`docs/contributing/help.md`, "Figures and videos"); `help-media.ts` and `use-help-media.ts` resolve them.
 - `content/`: Markdown sources, `<language>/<page id>.md` and `regions/<region>/<language>/<page id>.md`.
 
 ## Writing a page
@@ -50,4 +50,4 @@ None. `model/help-pages.ts` loads the Markdown through `import.meta.glob` with t
 - An ordered list is drawn as numbered steps. `![alternative text](figure-id)` on an indented line under a step is the figure of that step.
 - `![alternative text](video-id.webm)` in its own paragraph before the list is the video of those steps.
 - `![alternative text](figure-id "caption")` in its own paragraph is a figure in the text.
-- A figure id is a key of `media/media.json`.
+- A figure id is a beat of a tutorial of `tools/help-media`; `make help-media` builds its files.

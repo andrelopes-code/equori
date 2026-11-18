@@ -3,7 +3,7 @@ import type {
   HelpFigure,
   HelpStep,
 } from "@/features/help/model/parse-help-page";
-import { HelpClip } from "@/features/help/steps/help-clip";
+import { HelpVideo } from "@/features/help/steps/help-video";
 import { HelpStepLine } from "@/features/help/steps/help-step-line";
 import styles from "@/features/help/styles/help.module.css";
 
@@ -18,7 +18,9 @@ export function HelpWalkStacked({ steps, video }: HelpWalkStackedProps) {
   return (
     <div className={styles.walk} data-part="walk">
       {video !== undefined && (
-        <HelpClip video={video} poster={steps[0]?.figure} />
+        <div className={styles.clip}>
+          <HelpVideo video={video} poster={steps[0]?.figure} />
+        </div>
       )}
 
       <ol className={styles.steps}>

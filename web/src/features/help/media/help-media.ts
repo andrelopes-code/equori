@@ -13,37 +13,47 @@ export interface HelpVideoMedia {
   seconds: number;
 }
 
-interface FigureEntry {
-  capture: string;
-  spot: number[];
-}
+type Marks = Partial<Record<string, { spot: number[] }>>;
+
+// The language whose captures stand in for a language without its own.
+const FALLBACK = "pt";
 
 // The URL of each file; the browser fetches a capture or a video when its element asks for it.
+// Every file and media.json are written by tools/help-media (docs/contributing/help-media.md).
 const files = import.meta.glob<string>("./*.{png,webm}", {
   query: "?url",
   import: "default",
   eager: true,
 });
 
-const figures: Record<string, FigureEntry | undefined> = media.figures;
-const videos: Record<string, { seconds: number } | undefined> = media.videos;
+const figures: Partial<Record<string, Marks>> = media.figures;
+const videos: Partial<Record<string, { seconds: number }>> = media.videos;
 
-// The captures of a figure a page names, in both schemes, and its mark (help spec, HP3).
-export function helpFigure(id: string): HelpFigureMedia | undefined {
-  const entry = figures[id];
-  if (entry === undefined) return undefined;
+// The captures of a figure in the reader's language, in both schemes, and its mark.
+export function helpFigure(
+  id: string,
+  language: string,
+): HelpFigureMedia | undefined {
+  const used = figures[id]?.[language] === undefined ? FALLBACK : language;
+  const mark = figures[id]?.[used];
+  const dark = files[`./${id}.${used}.dark.png`];
+  const light = files[`./${id}.${used}.light.png`];
+  if (mark === undefined || dark === undefined || light === undefined) {
+    return undefined;
+  }
 
-  const dark = files[`./${entry.capture}.dark.png`];
-  const light = files[`./${entry.capture}.light.png`];
-  if (dark === undefined || light === undefined) return undefined;
-
-  return { dark, light, spot: entry.spot };
+  return { dark, light, spot: mark.spot };
 }
 
-export function helpVideo(id: string): HelpVideoMedia | undefined {
+export function helpVideo(
+  id: string,
+  language: string,
+): HelpVideoMedia | undefined {
+  const own = files[`./${id}.${language}.dark.webm`] !== undefined;
+  const used = own ? language : FALLBACK;
   const entry = videos[id];
-  const dark = files[`./${id}.dark.webm`];
-  const light = files[`./${id}.light.webm`];
+  const dark = files[`./${id}.${used}.dark.webm`];
+  const light = files[`./${id}.${used}.light.webm`];
   if (entry === undefined || dark === undefined || light === undefined) {
     return undefined;
   }

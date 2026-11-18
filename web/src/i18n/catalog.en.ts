@@ -144,6 +144,7 @@ export const catalogEn = {
   "help.steps.previous": "Previous step",
   "help.steps.next": "Next step",
   "help.figure.enlarge": "Enlarge",
+  "help.video.close": "Close the video",
   "help.after.title": "If something went differently",
   "help.after.symptoms": "Symptoms of this task",
   "help.after.cause": "Cause and steps",

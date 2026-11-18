@@ -643,6 +643,64 @@
     position: relative;
   }
 
+  .clipFrame {
+    position: relative;
+  }
+
+  /* The player of a video: the whole screen of the app at the size of the window, over a dimmed
+     ground. It grows from the place of the capture (use-grow.ts). */
+  .player {
+    overflow: visible;
+    max-block-size: none;
+    max-inline-size: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    block-size: 100dvb;
+    inline-size: 100dvi;
+    place-items: center;
+  }
+
+  .player[open] {
+    display: grid;
+  }
+
+  .player::backdrop {
+    background: color-mix(
+      in oklab,
+      var(--slotted-surface-sunken) 78%,
+      transparent
+    );
+  }
+
+  .playerPanel {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid
+      var(--slotted-panel-border-color, var(--slotted-border-subtle));
+    border-radius: var(--slotted-radius-lg);
+    aspect-ratio: 8 / 5; /* literal: every video is composed at 1920 by 1200 */
+    background: var(--slotted-surface-sunken);
+    box-shadow: var(--slotted-shadow-lg, var(--slotted-panel-shadow, none));
+    inline-size: min(
+      94dvi,
+      147dvb
+    ); /* literal: the widest 8:5 box that leaves 3% of the window on each side */
+    transform-origin: center;
+  }
+
+  .playerVideo {
+    display: block;
+    block-size: 100%;
+    inline-size: 100%;
+  }
+
+  .playerClose {
+    position: absolute;
+    inset-block-start: var(--slotted-space-3);
+    inset-inline-end: var(--slotted-space-3);
+  }
+
   .clipPlay {
     position: absolute;
     display: grid;

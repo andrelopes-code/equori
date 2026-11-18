@@ -11,7 +11,7 @@ interface HelpEnlargeProps {
   dark: string;
   light: string;
   name: string;
-  type: "image/png" | "video/webm";
+  type: "image/png";
 }
 
 // The capture or the video at the size of the window.
