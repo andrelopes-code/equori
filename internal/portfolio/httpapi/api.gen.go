@@ -180,16 +180,25 @@ type ContributionClass struct {
 	Cost         *Money               `json:"cost,omitempty"`
 	Members      []ContributionMember `json:"members"`
 	Name         string               `json:"name"`
-	ShareBp      *int                 `json:"share_bp,omitempty"`
-	TargetBp     int                  `json:"target_bp"`
-	Value        Money                `json:"value"`
+
+	// QuestionIdeals True when the group divides its target by the answers and one answer is yes (CQ3).
+	QuestionIdeals bool `json:"question_ideals"`
+
+	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
+	Questions []string `json:"questions"`
+	ShareBp   *int     `json:"share_bp,omitempty"`
+	TargetBp  int      `json:"target_bp"`
+	Value     Money    `json:"value"`
 }
 
 // ContributionClassInput defines model for ContributionClassInput.
 type ContributionClassInput struct {
-	Members  []ContributionMemberInput `json:"members"`
-	Name     string                    `json:"name"`
-	TargetBp int                       `json:"target_bp"`
+	Members []ContributionMemberInput `json:"members"`
+	Name    string                    `json:"name"`
+
+	// Questions The investor's yes-or-no questions of the group (CQ1); empty without them.
+	Questions *[]string `json:"questions,omitempty"`
+	TargetBp  int       `json:"target_bp"`
 }
 
 // ContributionMember defines model for ContributionMember.
@@ -197,20 +206,26 @@ type ContributionMember struct {
 	AccountId    *openapi_types.UUID `json:"account_id,omitempty"`
 	AfterShareBp *int                `json:"after_share_bp,omitempty"`
 	Amount       *Money              `json:"amount,omitempty"`
-	Cost         *Money              `json:"cost,omitempty"`
-	Instrument   *string             `json:"instrument,omitempty"`
-	Quantity     *Money              `json:"quantity,omitempty"`
-	ShareBp      *int                `json:"share_bp,omitempty"`
-	TargetBp     *int                `json:"target_bp,omitempty"`
-	UnitValue    *Money              `json:"unit_value,omitempty"`
-	Value        Money               `json:"value"`
+
+	// Answers One answer per question of the group, true for yes (CQ2); absent in a group without questions.
+	Answers    *[]bool `json:"answers,omitempty"`
+	Cost       *Money  `json:"cost,omitempty"`
+	Instrument *string `json:"instrument,omitempty"`
+	Quantity   *Money  `json:"quantity,omitempty"`
+	ShareBp    *int    `json:"share_bp,omitempty"`
+	TargetBp   *int    `json:"target_bp,omitempty"`
+	UnitValue  *Money  `json:"unit_value,omitempty"`
+	Value      Money   `json:"value"`
 }
 
 // ContributionMemberInput defines model for ContributionMemberInput.
 type ContributionMemberInput struct {
-	AccountId  *openapi_types.UUID `json:"account_id,omitempty"`
-	Instrument *string             `json:"instrument,omitempty"`
-	TargetBp   *int                `json:"target_bp,omitempty"`
+	AccountId *openapi_types.UUID `json:"account_id,omitempty"`
+
+	// Answers One answer per question of the group, true for yes (CQ2); absent in a group without questions.
+	Answers    *[]bool `json:"answers,omitempty"`
+	Instrument *string `json:"instrument,omitempty"`
+	TargetBp   *int    `json:"target_bp,omitempty"`
 }
 
 // ContributionMissing defines model for ContributionMissing.

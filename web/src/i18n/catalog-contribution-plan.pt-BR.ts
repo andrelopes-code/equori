@@ -69,6 +69,10 @@ export const contributionPlanPtBR: Record<
   "problem.contribution_member_invalid":
     "Um ativo do plano não é um investimento.",
   "problem.contribution_amount_invalid": "Informe um aporte maior que zero.",
+  "problem.contribution_question_invalid":
+    "Cada pergunta tem de 1 a 200 caracteres e é diferente das outras do grupo; um grupo tem no máximo 10.",
+  "problem.contribution_answers_invalid":
+    "Cada ativo de um grupo com perguntas responde todas as perguntas, e o ideal vem das respostas.",
   "contributionPlan.leaveBody":
     "Os ideais editados nesta tela não foram salvos.",
   "contributionPlan.intro":

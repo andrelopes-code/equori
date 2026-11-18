@@ -35,6 +35,9 @@ type contributionClassOut struct {
 	Amount       tool.Money              `json:"amount,omitzero"`
 	Cost         tool.Money              `json:"cost,omitzero"           jsonschema:"order cost of a class whose members have no targets"`
 	Members      []contributionMemberOut `json:"members"`
+
+	Questions      []string `json:"questions,omitzero"       jsonschema:"the investor's yes-or-no questions of the group"`
+	QuestionIdeals bool     `json:"question_ideals,omitzero" jsonschema:"true when the member target_bp values derive from the answers and one answer is yes"`
 }
 
 type contributionMemberOut struct {
@@ -48,6 +51,7 @@ type contributionMemberOut struct {
 	Amount       tool.Money `json:"amount,omitzero"`
 	Quantity     tool.Money `json:"quantity,omitzero"       jsonschema:"units to buy, an estimate at the prices of today"`
 	Cost         tool.Money `json:"cost,omitzero"           jsonschema:"cost of the order in the base currency, never above amount"`
+	Answers      []bool     `json:"answers,omitzero"        jsonschema:"one answer per question of the group, true for yes"`
 }
 
 type contributionOutside struct {
@@ -145,6 +149,9 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 		Amount:       optionalMoney(c.Amount),
 		Cost:         optionalMoney(c.Cost),
 		Members:      []contributionMemberOut{},
+
+		Questions:      c.Questions,
+		QuestionIdeals: c.QuestionIdeals,
 	}
 
 	for _, m := range c.Members {
@@ -159,6 +166,7 @@ func contributionClassOf(c app.ContributionClass) contributionClassOut {
 			Amount:       optionalMoney(m.Amount),
 			Quantity:     optionalMoney(m.Quantity),
 			Cost:         optionalMoney(m.Cost),
+			Answers:      m.Answers,
 		})
 	}
 

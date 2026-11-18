@@ -6,6 +6,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/platform/problem"
 	"github.com/andrelopes-code/equori/internal/portfolio/app"
+	"github.com/andrelopes-code/equori/internal/portfolio/domain"
 )
 
 // ToProblem maps the module's errors to the codes declared in api/openapi.yaml (ADR 004);
@@ -83,6 +84,17 @@ var contributionProblems = []struct {
 		app.ErrContributionMemberInvalid, http.StatusUnprocessableEntity,
 		"contribution_member_invalid",
 		"a member is not an investment account or a security of the catalog",
+	},
+	{
+		domain.ErrQuestionInvalid,
+		http.StatusUnprocessableEntity,
+		"contribution_question_invalid",
+		"a question has 1 to 200 characters and differs from the others, and a group holds at most 10",
+	},
+	{
+		domain.ErrAnswersInvalid, http.StatusUnprocessableEntity,
+		"contribution_answers_invalid",
+		"each member of a group with questions answers every question and has no target",
 	},
 	{
 		app.ErrContributionAmountInvalid, http.StatusUnprocessableEntity,

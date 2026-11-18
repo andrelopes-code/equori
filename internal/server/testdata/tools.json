@@ -5752,6 +5752,13 @@
                             "currency"
                           ],
                           "additionalProperties": false
+                        },
+                        "answers": {
+                          "type": "array",
+                          "items": {
+                            "type": "boolean"
+                          },
+                          "description": "one answer per question of the group, true for yes"
                         }
                       },
                       "required": [
@@ -5759,6 +5766,17 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "questions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "the investor's yes-or-no questions of the group"
+                  },
+                  "question_ideals": {
+                    "type": "boolean",
+                    "description": "true when the member target_bp values derive from the answers and one answer is yes"
                   }
                 },
                 "required": [
@@ -10984,11 +11002,25 @@
                     "target_bp": {
                       "type": "integer",
                       "description": "share of the class this member should hold, in basis points; the members of a class add up to 10000, or none of them has a target"
+                    },
+                    "answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "boolean"
+                      },
+                      "description": "one answer per question of the group, true for yes"
                     }
                   },
                   "additionalProperties": false
                 },
                 "description": "what the class holds; a holding belongs to at most one class"
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"
               }
             },
             "required": [
@@ -11275,6 +11307,13 @@
                         "currency"
                       ],
                       "additionalProperties": false
+                    },
+                    "answers": {
+                      "type": "array",
+                      "items": {
+                        "type": "boolean"
+                      },
+                      "description": "one answer per question of the group, true for yes"
                     }
                   },
                   "required": [
@@ -11282,6 +11321,17 @@
                   ],
                   "additionalProperties": false
                 }
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "the investor's yes-or-no questions of the group"
+              },
+              "question_ideals": {
+                "type": "boolean",
+                "description": "true when the member target_bp values derive from the answers and one answer is yes"
               }
             },
             "required": [

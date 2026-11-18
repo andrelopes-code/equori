@@ -66,6 +66,10 @@ export const contributionPlanEn = {
     "An asset of the plan is not an investment.",
   "problem.contribution_amount_invalid":
     "Enter a contribution greater than zero.",
+  "problem.contribution_question_invalid":
+    "Each question has 1 to 200 characters, differs from the others of its group, and a group holds at most 10.",
+  "problem.contribution_answers_invalid":
+    "Each asset of a group with questions answers every question, and its ideal comes from the answers.",
   "contributionPlan.leaveBody":
     "The targets edited on this screen are not saved.",
   "contributionPlan.intro":

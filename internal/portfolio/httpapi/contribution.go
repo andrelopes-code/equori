@@ -95,6 +95,10 @@ func planClasses(in []ContributionClassInput) []domain.PlanClass {
 		members := make([]domain.PlanMember, len(c.Members))
 		for j, m := range c.Members {
 			members[j] = domain.PlanMember{TargetBP: m.TargetBp}
+			if m.Answers != nil {
+				members[j].Answers = *m.Answers
+			}
+
 			if m.AccountId != nil {
 				members[j].AccountID = *m.AccountId
 			}
@@ -105,6 +109,9 @@ func planClasses(in []ContributionClassInput) []domain.PlanClass {
 		}
 
 		out[i] = domain.PlanClass{Name: c.Name, TargetBP: c.TargetBp, Members: members}
+		if c.Questions != nil {
+			out[i].Questions = *c.Questions
+		}
 	}
 
 	return out
@@ -153,14 +160,16 @@ func contributionPlan(v app.ContributionView) ContributionPlan {
 
 func contributionClass(c app.ContributionClass) ContributionClass {
 	out := ContributionClass{
-		Name:         c.Name,
-		TargetBp:     c.TargetBP,
-		Value:        toMoney(c.Value),
-		ShareBp:      c.ShareBP,
-		AfterShareBp: c.AfterShareBP,
-		Amount:       optionalMoney(c.Amount),
-		Cost:         optionalMoney(c.Cost),
-		Members:      make([]ContributionMember, len(c.Members)),
+		Name:           c.Name,
+		TargetBp:       c.TargetBP,
+		Questions:      append([]string{}, c.Questions...),
+		QuestionIdeals: c.QuestionIdeals,
+		Value:          toMoney(c.Value),
+		ShareBp:        c.ShareBP,
+		AfterShareBp:   c.AfterShareBP,
+		Amount:         optionalMoney(c.Amount),
+		Cost:           optionalMoney(c.Cost),
+		Members:        make([]ContributionMember, len(c.Members)),
 	}
 
 	for i, m := range c.Members {
@@ -168,6 +177,7 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 			AccountId:    optionalID(m.AccountID),
 			Instrument:   optional(string(m.Instrument)),
 			TargetBp:     m.TargetBP,
+			Answers:      optionalAnswers(m.Answers),
 			Value:        toMoney(m.Value),
 			ShareBp:      m.ShareBP,
 			AfterShareBp: m.AfterShareBP,
@@ -179,6 +189,14 @@ func contributionClass(c app.ContributionClass) ContributionClass {
 	}
 
 	return out
+}
+
+func optionalAnswers(a []bool) *[]bool {
+	if a == nil {
+		return nil
+	}
+
+	return &a
 }
 
 func optionalMoney(m *money.Money) *Money {

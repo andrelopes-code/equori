@@ -57,7 +57,51 @@ func (r *Repository) ContributionPlan(
 		plan.Classes[i].Members = append(plan.Classes[i].Members, toPlanMember(m))
 	}
 
+	if err := r.attachQuestions(ctx, booksID, plan, index); err != nil {
+		return domain.Plan{}, false, err
+	}
+
 	return plan, true, nil
+}
+
+// attachQuestions sets the questions of each class and the answer of each member to each of them.
+func (r *Repository) attachQuestions(
+	ctx context.Context,
+	booksID int64,
+	plan domain.Plan,
+	index map[uuid.UUID]int,
+) error {
+	questions, err := r.q.ListContributionQuestions(ctx, booksID)
+	if err != nil {
+		return fmt.Errorf("list contribution questions: %w", err)
+	}
+
+	answers, err := r.q.ListContributionAnswers(ctx, booksID)
+	if err != nil {
+		return fmt.Errorf("list contribution answers: %w", err)
+	}
+
+	for _, q := range questions {
+		c := &plan.Classes[index[q.ClassID]]
+		c.Questions = append(c.Questions, q.Text)
+	}
+
+	for _, c := range plan.Classes {
+		if len(c.Questions) == 0 {
+			continue
+		}
+
+		for j := range c.Members {
+			c.Members[j].Answers = make([]bool, len(c.Questions))
+		}
+	}
+
+	for _, a := range answers {
+		c := plan.Classes[index[a.ClassID]]
+		c.Members[a.MemberPosition].Answers[a.QuestionPosition] = a.Yes
+	}
+
+	return nil
 }
 
 // SaveContributionPlan replaces the plan of the book; on a pool it runs in one transaction.
@@ -105,6 +149,51 @@ func saveContributionPlan(ctx context.Context, q *Queries, booksID int64, p doma
 		for j, m := range c.Members {
 			if err := q.InsertContributionMember(ctx, memberParams(booksID, id, j, m)); err != nil {
 				return fmt.Errorf("insert contribution member of %q: %w", c.Name, err)
+			}
+		}
+
+		if err := saveContributionQuestions(ctx, q, booksID, id, c); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// saveContributionQuestions inserts the questions of a class, then the answer of each member to
+// each of them; the members of the class are already stored.
+func saveContributionQuestions(
+	ctx context.Context,
+	q *Queries,
+	booksID int64,
+	classID uuid.UUID,
+	c domain.PlanClass,
+) error {
+	for i, text := range c.Questions {
+		//nolint:gosec // G115: WithIdeals bounds a class to 10 questions
+		err := q.InsertContributionQuestion(ctx, InsertContributionQuestionParams{
+			BooksID:  booksID,
+			ClassID:  classID,
+			Position: int32(i),
+			Text:     text,
+		})
+		if err != nil {
+			return fmt.Errorf("insert contribution question of %q: %w", c.Name, err)
+		}
+	}
+
+	for j, m := range c.Members {
+		for i, yes := range m.Answers {
+			//nolint:gosec // G115: a class holds at most 10 questions and 20 members
+			err := q.InsertContributionAnswer(ctx, InsertContributionAnswerParams{
+				BooksID:          booksID,
+				ClassID:          classID,
+				QuestionPosition: int32(i),
+				MemberPosition:   int32(j),
+				Yes:              yes,
+			})
+			if err != nil {
+				return fmt.Errorf("insert contribution answer of %q: %w", c.Name, err)
 			}
 		}
 	}

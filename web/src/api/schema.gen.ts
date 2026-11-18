@@ -4362,7 +4362,7 @@ export interface paths {
         get: operations["getContributionPlan"];
         /**
          * Replaces the contribution plan and returns it as getContributionPlan does.
-         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid or contribution_amount_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11).
+         * @description 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid or contribution_answers_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3).
          */
         put: operations["saveContributionPlan"];
         post?: never;
@@ -4383,7 +4383,7 @@ export interface paths {
         put?: never;
         /**
          * The split of an amount over the plan in the request, with the drift before and after, without storing either (CN13).
-         * @description The amount is positive and in the base currency, else 422 contribution_amount_invalid. The plan rules are those of saveContributionPlan.
+         * @description The amount is positive and in the base currency, else 422 contribution_amount_invalid; a draft with questions breaks CQ1 to CQ3 with 422 contribution_question_invalid or contribution_answers_invalid. The plan rules are those of saveContributionPlan.
          */
         post: operations["previewContributionPlan"];
         delete?: never;
@@ -8612,6 +8612,10 @@ export interface components {
         ContributionClass: {
             name: string;
             target_bp: number;
+            /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
+            questions: string[];
+            /** @description True when the group divides its target by the answers and one answer is yes (CQ3). */
+            question_ideals: boolean;
             value: components["schemas"]["Money"];
             share_bp?: number;
             after_share_bp?: number;
@@ -8624,6 +8628,8 @@ export interface components {
             account_id?: string;
             instrument?: string;
             target_bp?: number;
+            /** @description One answer per question of the group, true for yes (CQ2); absent in a group without questions. */
+            answers?: boolean[];
             value: components["schemas"]["Money"];
             share_bp?: number;
             after_share_bp?: number;
@@ -8652,6 +8658,8 @@ export interface components {
         ContributionClassInput: {
             name: string;
             target_bp: number;
+            /** @description The investor's yes-or-no questions of the group (CQ1); empty without them. */
+            questions?: string[];
             members: components["schemas"]["ContributionMemberInput"][];
         };
         ContributionMemberInput: {
@@ -8659,6 +8667,8 @@ export interface components {
             account_id?: string;
             instrument?: string;
             target_bp?: number;
+            /** @description One answer per question of the group, true for yes (CQ2); absent in a group without questions. */
+            answers?: boolean[];
         };
         ContributionPreviewInput: {
             amount: components["schemas"]["Money"];

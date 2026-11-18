@@ -833,3 +833,24 @@ func TestAddGoalAllocations(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 28", ArchiveVersion)
 	}
 }
+
+// A version 28 archive holds no question or answer of a contribution group; the step leaves its
+// rows as they are (migration 00124).
+func TestAddContributionQuestions(t *testing.T) {
+	t.Parallel()
+
+	v28 := []ArchiveTable{
+		{Name: "portfolio_contribution_class", Rows: [][]byte{[]byte(`{"id":"a"}`)}},
+	}
+
+	got, err := addContributionQuestions(v28)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertTables(t, got, v28)
+
+	if ArchiveVersion < 29 {
+		t.Fatalf("ArchiveVersion = %d, want at least 29", ArchiveVersion)
+	}
+}

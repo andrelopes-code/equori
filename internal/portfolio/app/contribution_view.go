@@ -65,9 +65,11 @@ func (a *assembler) class(
 	units []*money.Money,
 ) ContributionClass {
 	out := ContributionClass{
-		Name:     c.Name,
-		TargetBP: c.TargetBP,
-		Members:  make([]ContributionMember, len(c.Members)),
+		Name:           c.Name,
+		TargetBP:       c.TargetBP,
+		Questions:      c.Questions,
+		QuestionIdeals: c.QuestionIdeals(),
+		Members:        make([]ContributionMember, len(c.Members)),
 	}
 
 	var sum int64
@@ -79,6 +81,7 @@ func (a *assembler) class(
 			AccountID:  m.AccountID,
 			Instrument: m.Instrument,
 			TargetBP:   m.TargetBP,
+			Answers:    m.Answers,
 			Value:      value,
 			UnitValue:  units[j],
 		}

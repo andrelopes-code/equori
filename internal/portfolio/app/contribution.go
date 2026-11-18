@@ -45,20 +45,23 @@ type ContributionView struct {
 }
 
 type ContributionClass struct {
-	Name         string
-	TargetBP     int
-	Value        money.Money
-	ShareBP      *int
-	AfterShareBP *int
-	Amount       *money.Money
-	Cost         *money.Money // cash-like class: the amount of its order (CN17)
-	Members      []ContributionMember
+	Name           string
+	TargetBP       int
+	Questions      []string // the investor's yes-or-no questions (CQ1)
+	QuestionIdeals bool     // the members' targets come from the answers, one at least true (CQ5)
+	Value          money.Money
+	ShareBP        *int
+	AfterShareBP   *int
+	Amount         *money.Money
+	Cost           *money.Money // cash-like class: the amount of its order (CN17)
+	Members        []ContributionMember
 }
 
 type ContributionMember struct {
 	AccountID    uuid.UUID
 	Instrument   money.Currency
 	TargetBP     *int
+	Answers      []bool // one per question of the class (CQ2); nil without questions
 	Value        money.Money
 	ShareBP      *int // inside its class
 	AfterShareBP *int // inside its class
@@ -111,6 +114,11 @@ func (s *Service) SaveContributionPlan(
 	booksID int64,
 	p domain.Plan,
 ) (ContributionView, error) {
+	p, err := p.WithIdeals()
+	if err != nil {
+		return ContributionView{}, err
+	}
+
 	if err := p.Check(); err != nil {
 		return ContributionView{}, err
 	}
@@ -147,6 +155,11 @@ func (s *Service) PreviewContribution(
 	p domain.Plan,
 	amount money.Money,
 ) (ContributionView, error) {
+	p, err := p.WithIdeals()
+	if err != nil {
+		return ContributionView{}, err
+	}
+
 	if err := p.Check(); err != nil {
 		return ContributionView{}, err
 	}
@@ -188,6 +201,16 @@ func (s *Service) PreviewSavedContribution(
 
 	if !found {
 		return s.ContributionPlan(ctx, booksID)
+	}
+
+	// The stored targets of a class with questions are derived; PreviewContribution derives them
+	// again from the answers.
+	for _, c := range p.Classes {
+		if len(c.Questions) > 0 {
+			for j := range c.Members {
+				c.Members[j].TargetBP = nil
+			}
+		}
 	}
 
 	return s.PreviewContribution(ctx, booksID, p, amount)

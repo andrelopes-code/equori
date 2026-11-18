@@ -16,12 +16,15 @@ type contributionMemberIn struct {
 	AccountID  string `json:"account_id,omitzero" jsonschema:"account that counts whole in the class, such as a fixed income Investment line or a reserve, from list_accounts; instead of instrument"`
 	Instrument string `json:"instrument,omitzero" jsonschema:"code of a security, counted in every Brokerage that holds it, such as BOVA11; instead of account_id"`
 	TargetBP   int    `json:"target_bp,omitzero"  jsonschema:"share of the class this member should hold, in basis points; the members of a class add up to 10000, or none of them has a target"`
+	Answers    []bool `json:"answers,omitzero"    jsonschema:"one answer per question of the group, true for yes"`
 }
 
 type contributionClassIn struct {
 	Name     string                 `json:"name"      jsonschema:"name of the class, 1 to 60 characters, unique in the plan"`
 	TargetBP int                    `json:"target_bp" jsonschema:"share of the portfolio the class should hold, in basis points: 4000 is 40%; the classes add up to 10000"`
 	Members  []contributionMemberIn `json:"members"   jsonschema:"what the class holds; a holding belongs to at most one class"`
+
+	Questions []string `json:"questions,omitzero" jsonschema:"the investor's yes-or-no questions of the group, at most 10, each 1 to 200 characters; with questions, members carry answers and no target_bp"`
 }
 
 type saveContributionPlanIn struct {
@@ -125,13 +128,22 @@ func contributionClasses(in []contributionClassIn) ([]domain.PlanClass, error) {
 				return nil, err
 			}
 
-			members[j] = domain.PlanMember{AccountID: id, Instrument: money.Currency(m.Instrument)}
+			members[j] = domain.PlanMember{
+				AccountID:  id,
+				Instrument: money.Currency(m.Instrument),
+				Answers:    m.Answers,
+			}
 			if targeted {
 				members[j].TargetBP = &m.TargetBP
 			}
 		}
 
-		out[i] = domain.PlanClass{Name: c.Name, TargetBP: c.TargetBP, Members: members}
+		out[i] = domain.PlanClass{
+			Name:      c.Name,
+			TargetBP:  c.TargetBP,
+			Questions: c.Questions,
+			Members:   members,
+		}
 	}
 
 	return out, nil

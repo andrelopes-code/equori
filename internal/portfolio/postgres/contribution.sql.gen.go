@@ -44,6 +44,32 @@ func (q *Queries) GetContributionPlan(ctx context.Context, booksID int64) (GetCo
 	return i, err
 }
 
+const insertContributionAnswer = `-- name: InsertContributionAnswer :exec
+INSERT INTO
+    portfolio_contribution_answer (books_id, class_id, question_position, member_position, yes)
+VALUES
+    ($1, $2, $3, $4, $5)
+`
+
+type InsertContributionAnswerParams struct {
+	BooksID          int64
+	ClassID          uuid.UUID
+	QuestionPosition int32
+	MemberPosition   int32
+	Yes              bool
+}
+
+func (q *Queries) InsertContributionAnswer(ctx context.Context, arg InsertContributionAnswerParams) error {
+	_, err := q.db.Exec(ctx, insertContributionAnswer,
+		arg.BooksID,
+		arg.ClassID,
+		arg.QuestionPosition,
+		arg.MemberPosition,
+		arg.Yes,
+	)
+	return err
+}
+
 const insertContributionClass = `-- name: InsertContributionClass :one
 INSERT INTO
     portfolio_contribution_class (books_id, position, name, target_bp)
@@ -123,6 +149,74 @@ type InsertContributionPlanParams struct {
 func (q *Queries) InsertContributionPlan(ctx context.Context, arg InsertContributionPlanParams) error {
 	_, err := q.db.Exec(ctx, insertContributionPlan, arg.BooksID, arg.Amount, arg.Currency)
 	return err
+}
+
+const insertContributionQuestion = `-- name: InsertContributionQuestion :exec
+INSERT INTO
+    portfolio_contribution_question (books_id, class_id, position, text)
+VALUES
+    ($1, $2, $3, $4)
+`
+
+type InsertContributionQuestionParams struct {
+	BooksID  int64
+	ClassID  uuid.UUID
+	Position int32
+	Text     string
+}
+
+func (q *Queries) InsertContributionQuestion(ctx context.Context, arg InsertContributionQuestionParams) error {
+	_, err := q.db.Exec(ctx, insertContributionQuestion,
+		arg.BooksID,
+		arg.ClassID,
+		arg.Position,
+		arg.Text,
+	)
+	return err
+}
+
+const listContributionAnswers = `-- name: ListContributionAnswers :many
+SELECT
+    class_id,
+    question_position,
+    member_position,
+    yes
+FROM
+    portfolio_contribution_answer
+WHERE
+    books_id = $1
+`
+
+type ListContributionAnswersRow struct {
+	ClassID          uuid.UUID
+	QuestionPosition int32
+	MemberPosition   int32
+	Yes              bool
+}
+
+func (q *Queries) ListContributionAnswers(ctx context.Context, booksID int64) ([]ListContributionAnswersRow, error) {
+	rows, err := q.db.Query(ctx, listContributionAnswers, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContributionAnswersRow
+	for rows.Next() {
+		var i ListContributionAnswersRow
+		if err := rows.Scan(
+			&i.ClassID,
+			&i.QuestionPosition,
+			&i.MemberPosition,
+			&i.Yes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listContributionClasses = `-- name: ListContributionClasses :many
@@ -213,6 +307,48 @@ func (q *Queries) ListContributionMembers(ctx context.Context, booksID int64) ([
 			&i.Instrument,
 			&i.TargetBp,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContributionQuestions = `-- name: ListContributionQuestions :many
+SELECT
+    q.class_id,
+    q.position,
+    q.text
+FROM
+    portfolio_contribution_question AS q
+    JOIN portfolio_contribution_class AS c ON c.books_id = q.books_id
+    AND c.id = q.class_id
+WHERE
+    q.books_id = $1
+ORDER BY
+    c.position,
+    q.position
+`
+
+type ListContributionQuestionsRow struct {
+	ClassID  uuid.UUID
+	Position int32
+	Text     string
+}
+
+func (q *Queries) ListContributionQuestions(ctx context.Context, booksID int64) ([]ListContributionQuestionsRow, error) {
+	rows, err := q.db.Query(ctx, listContributionQuestions, booksID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListContributionQuestionsRow
+	for rows.Next() {
+		var i ListContributionQuestionsRow
+		if err := rows.Scan(&i.ClassID, &i.Position, &i.Text); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

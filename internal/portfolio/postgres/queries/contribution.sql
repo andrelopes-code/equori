@@ -37,6 +37,32 @@ ORDER BY
     c.position,
     m.position;
 
+-- name: ListContributionQuestions :many
+SELECT
+    q.class_id,
+    q.position,
+    q.text
+FROM
+    portfolio_contribution_question AS q
+    JOIN portfolio_contribution_class AS c ON c.books_id = q.books_id
+    AND c.id = q.class_id
+WHERE
+    q.books_id = @books_id
+ORDER BY
+    c.position,
+    q.position;
+
+-- name: ListContributionAnswers :many
+SELECT
+    class_id,
+    question_position,
+    member_position,
+    yes
+FROM
+    portfolio_contribution_answer
+WHERE
+    books_id = @books_id;
+
 -- name: DeleteContributionPlan :exec
 DELETE FROM portfolio_contribution_plan
 WHERE
@@ -68,3 +94,15 @@ VALUES
         sqlc.narg (instrument),
         sqlc.narg (target_bp)
     );
+
+-- name: InsertContributionQuestion :exec
+INSERT INTO
+    portfolio_contribution_question (books_id, class_id, position, text)
+VALUES
+    (@books_id, @class_id, @position, @text);
+
+-- name: InsertContributionAnswer :exec
+INSERT INTO
+    portfolio_contribution_answer (books_id, class_id, question_position, member_position, yes)
+VALUES
+    (@books_id, @class_id, @question_position, @member_position, @yes);

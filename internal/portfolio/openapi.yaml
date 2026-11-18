@@ -354,7 +354,7 @@ paths:
       operationId: saveContributionPlan
       x-book-role: write
       summary: Replaces the contribution plan and returns it as getContributionPlan does.
-      description: 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid or contribution_amount_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11).
+      description: 422 contribution_target_sum, contribution_member_target_sum, contribution_class_name_duplicate, contribution_member_duplicate, contribution_member_invalid, contribution_amount_invalid, contribution_question_invalid or contribution_answers_invalid; 400 invalid_request when the plan breaks a limit (CN2 to CN4, CN11, CQ1 to CQ3).
       requestBody:
         required: true
         content:
@@ -382,7 +382,7 @@ paths:
       operationId: previewContributionPlan
       x-book-role: read
       summary: The split of an amount over the plan in the request, with the drift before and after, without storing either (CN13).
-      description: The amount is positive and in the base currency, else 422 contribution_amount_invalid. The plan rules are those of saveContributionPlan.
+      description: The amount is positive and in the base currency, else 422 contribution_amount_invalid; a draft with questions breaks CQ1 to CQ3 with 422 contribution_question_invalid or contribution_answers_invalid. The plan rules are those of saveContributionPlan.
       requestBody:
         required: true
         content:
@@ -920,12 +920,20 @@ schemas:
         $ref: "#/components/schemas/CurrentQuotes"
   ContributionClass:
     type: object
-    required: [name, target_bp, value, members]
+    required: [name, target_bp, value, questions, question_ideals, members]
     properties:
       name:
         type: string
       target_bp:
         type: integer
+      questions:
+        type: array
+        items:
+          type: string
+        description: The investor's yes-or-no questions of the group (CQ1); empty without them.
+      question_ideals:
+        type: boolean
+        description: True when the group divides its target by the answers and one answer is yes (CQ3).
       value:
         $ref: "#/components/schemas/Money"
       share_bp:
@@ -951,6 +959,11 @@ schemas:
         type: string
       target_bp:
         type: integer
+      answers:
+        type: array
+        items:
+          type: boolean
+        description: One answer per question of the group, true for yes (CQ2); absent in a group without questions.
       value:
         $ref: "#/components/schemas/Money"
       share_bp:
@@ -1010,6 +1023,11 @@ schemas:
         type: integer
         minimum: 0
         maximum: 10000
+      questions:
+        type: array
+        items:
+          type: string
+        description: The investor's yes-or-no questions of the group (CQ1); empty without them.
       members:
         type: array
         items:
@@ -1026,6 +1044,11 @@ schemas:
         type: integer
         minimum: 0
         maximum: 10000
+      answers:
+        type: array
+        items:
+          type: boolean
+        description: One answer per question of the group, true for yes (CQ2); absent in a group without questions.
   ContributionPreviewInput:
     type: object
     required: [classes, amount]
