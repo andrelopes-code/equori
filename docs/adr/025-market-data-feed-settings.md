@@ -62,6 +62,10 @@ The price source `b3_consolidated` reads the B3 consolidated trades file, which 
 
 `docs/specs/2026-11-18-fund-report-design.md` (FR2) adds a sixth kind of feed, `fund_report`: the figures a listed fund reports each month. F1 to F10 apply to it. `br_cvm_fii` is the only source; `SuggestedFeeds("BR")` names it. Its period is a month, its lag 20 days, and its `last` is the latest stored period.
 
+## Amendment of 2026-11-18 (company report)
+
+`docs/specs/2026-11-18-company-report-design.md` (CR2) adds a seventh kind of feed, `company_report`: the statements a listed company files. F1 to F10 apply to it. `br_cvm_cia` is the only source; `SuggestedFeeds("BR")` names it. Its period is a quarter, its lag 90 days, and its `last` is the latest stored period.
+
 ## Revisit criterion
 
 An instance whose users need different feed sets, or a feed whose publication delay varies beyond its `Lag`.

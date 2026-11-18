@@ -16,6 +16,7 @@ describe("feedRegion", () => {
     ["br_tesouro", "BR"],
     ["br_ifdata", "BR"],
     ["br_cvm_fii", "BR"],
+    ["br_cvm_cia", "BR"],
     ["ecb", "EU"],
     ["eu_estr", "EU"],
     ["ea_hicp", "EU"],

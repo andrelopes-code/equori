@@ -49,6 +49,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feed.br_ifdata":
     "Indicadores de instituições do IF.data (Banco Central do Brasil)",
   "marketData.feed.br_cvm_fii": "Informes mensais de fundos imobiliários (CVM)",
+  "marketData.feed.br_cvm_cia": "Demonstrações de companhias abertas (CVM)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
   "settings.feeds.current": "Cotação atual",
   "settings.feeds.currentFailed": "Cotação atual falhou: {error}",
@@ -69,6 +70,7 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.kind.curve": "Curva",
   "marketData.kind.institution": "Instituição",
   "marketData.kind.fund_report": "Informe de fundo",
+  "marketData.kind.company_report": "Demonstrações de companhia",
   "marketData.status.upToDate": "Em dia",
   "marketData.status.overdue": "Atrasada",
   "marketData.status.failed": "Falhou",
@@ -124,6 +126,8 @@ export const marketDataPtBR: Record<keyof typeof marketDataEn, string> = {
   "marketData.feedSource.br_ifdata": "Banco Central do Brasil",
   "marketData.feedName.br_cvm_fii": "Informes mensais de fundos imobiliários",
   "marketData.feedSource.br_cvm_fii": "CVM",
+  "marketData.feedName.br_cvm_cia": "Demonstrações de companhias abertas",
+  "marketData.feedSource.br_cvm_cia": "CVM",
   "marketData.feedName.us_cpi": "CPI-U",
   "marketData.feedSource.us_cpi": "Bureau of Labor Statistics",
 };

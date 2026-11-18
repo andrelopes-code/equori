@@ -45,6 +45,7 @@ export const marketDataEn = {
   "marketData.feed.br_ifdata":
     "IF.data institution indicators (Banco Central do Brasil)",
   "marketData.feed.br_cvm_fii": "Monthly reports of real estate funds (CVM)",
+  "marketData.feed.br_cvm_cia": "Statements of listed companies (CVM)",
   "marketData.feed.us_cpi": "CPI-U (Bureau of Labor Statistics)",
   "settings.feeds.current": "Current quotes",
   "settings.feeds.currentFailed": "Current quotes failed: {error}",
@@ -64,6 +65,7 @@ export const marketDataEn = {
   "marketData.kind.curve": "Curve",
   "marketData.kind.institution": "Institution",
   "marketData.kind.fund_report": "Fund report",
+  "marketData.kind.company_report": "Company report",
   "marketData.status.upToDate": "Up to date",
   "marketData.status.overdue": "Overdue",
   "marketData.status.failed": "Failed",
@@ -119,6 +121,8 @@ export const marketDataEn = {
   "marketData.feedSource.br_ifdata": "Banco Central do Brasil",
   "marketData.feedName.br_cvm_fii": "Monthly reports of real estate funds",
   "marketData.feedSource.br_cvm_fii": "CVM",
+  "marketData.feedName.br_cvm_cia": "Statements of listed companies",
+  "marketData.feedSource.br_cvm_cia": "CVM",
   "marketData.feedName.us_cpi": "CPI-U",
   "marketData.feedSource.us_cpi": "Bureau of Labor Statistics",
 } as const;
