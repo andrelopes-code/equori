@@ -4652,6 +4652,25 @@
                 ],
                 "additionalProperties": false
               },
+              "sovereign_value": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "description": "issued by the state of the region: outside the guarantee, not uncovered credit",
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
               "limit": {
                 "type": "object",
                 "properties": {
@@ -4692,11 +4711,12 @@
             "required": [
               "market_value",
               "covered_value",
-              "uncovered_value"
+              "uncovered_value",
+              "sovereign_value"
             ],
             "additionalProperties": false
           },
-          "description": "for issuer_exposure: fixed income per issuer, with covered value, limit and excess"
+          "description": "for issuer_exposure: fixed income per issuer, with covered, sovereign and uncovered value, limit and excess"
         },
         "guarantee": {
           "type": "object",

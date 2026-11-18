@@ -14659,7 +14659,8 @@ components:
             type: string
     IssuerExposure:
       type: object
-      required: [market_value, covered_value, uncovered_value]
+      description: sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee.
+      required: [market_value, covered_value, uncovered_value, sovereign_value]
       properties:
         key:
           type: string
@@ -14671,6 +14672,8 @@ components:
         covered_value:
           $ref: "#/components/schemas/Money"
         uncovered_value:
+          $ref: "#/components/schemas/Money"
+        sovereign_value:
           $ref: "#/components/schemas/Money"
         limit:
           $ref: "#/components/schemas/Money"

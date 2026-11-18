@@ -194,6 +194,7 @@ const report = {
       market_value: brl(33000000),
       covered_value: brl(30000000),
       uncovered_value: brl(3000000),
+      sovereign_value: brl(0),
       limit: brl(25000000),
       excess: brl(5000000),
     },
@@ -202,6 +203,7 @@ const report = {
       market_value: brl(5000000),
       covered_value: brl(0),
       uncovered_value: brl(5000000),
+      sovereign_value: brl(0),
       limit: brl(25000000),
       excess: brl(0),
     },
@@ -210,6 +212,7 @@ const report = {
       market_value: brl(1230000),
       covered_value: brl(1230000),
       uncovered_value: brl(0),
+      sovereign_value: brl(0),
       limit: brl(25000000),
       excess: brl(0),
     },
@@ -232,6 +235,7 @@ describe("exposureTracks", () => {
         issuer: "Banco X",
         covered: 68.87,
         excess: 13.77,
+        sovereign: 0,
         uncovered: 8.26,
         limit: 68.87,
         figure: "excess",
@@ -241,6 +245,7 @@ describe("exposureTracks", () => {
         issuer: "Debênture Y",
         covered: 0,
         excess: 0,
+        sovereign: 0,
         uncovered: 13.77,
         limit: 68.87,
         figure: "uncovered",
@@ -250,9 +255,40 @@ describe("exposureTracks", () => {
         issuer: "Banco Z",
         covered: 3.39,
         excess: 0,
+        sovereign: 0,
         uncovered: 0,
         limit: 68.87,
         figure: "covered",
+        amount: brl(0),
+      },
+    ]);
+  });
+
+  it("draws a security of the state apart from the uncovered credit", () => {
+    const tracks = exposureTracks({
+      ...report,
+      issuers: [
+        {
+          issuer: "Tesouro Nacional",
+          market_value: brl(2000000),
+          covered_value: brl(0),
+          uncovered_value: brl(0),
+          sovereign_value: brl(2000000),
+          limit: brl(25000000),
+          excess: brl(0),
+        },
+      ],
+    });
+
+    expect(tracks).toEqual([
+      {
+        issuer: "Tesouro Nacional",
+        covered: 0,
+        excess: 0,
+        sovereign: 90.91,
+        uncovered: 0,
+        limit: 1136.36,
+        figure: "sovereign",
         amount: brl(0),
       },
     ]);
@@ -266,6 +302,7 @@ describe("exposureTracks", () => {
           market_value: brl(100000),
           covered_value: brl(0),
           uncovered_value: brl(100000),
+          sovereign_value: brl(0),
         },
       ],
     });
@@ -275,6 +312,7 @@ describe("exposureTracks", () => {
         issuer: "Bund",
         covered: 0,
         excess: 0,
+        sovereign: 0,
         uncovered: 90.91,
         limit: undefined,
         figure: "value",

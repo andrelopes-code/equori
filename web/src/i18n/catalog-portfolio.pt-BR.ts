@@ -163,6 +163,10 @@ export const portfolioPtBR: Record<keyof typeof portfolioEn, string> = {
   "fixedIncome.issuers.period": "Usados {used} de {limit} em {years} anos",
   "fixedIncome.issuers.covered": "Coberto",
   "fixedIncome.issuers.excess": "Acima do limite",
-  "fixedIncome.issuers.uncovered": "Sem garantia",
+  "fixedIncome.issuers.sovereign": "Título público",
+  "fixedIncome.issuers.uncovered": "Sem cobertura",
+  "fixedIncome.panel.minimize": "Minimizar {name}",
+  "fixedIncome.panel.expand": "Expandir {name}",
+  "fixedIncome.panel.more": "Ver mais",
   "fixedIncome.issuers.mark": "Limite por emissor",
 };

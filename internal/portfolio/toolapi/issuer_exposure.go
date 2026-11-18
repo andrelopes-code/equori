@@ -14,6 +14,7 @@ type issuerExposureView struct {
 	MarketValue    tool.Money `json:"market_value"`
 	CoveredValue   tool.Money `json:"covered_value"`
 	UncoveredValue tool.Money `json:"uncovered_value"`
+	SovereignValue tool.Money `json:"sovereign_value" jsonschema:"issued by the state of the region: outside the guarantee, not uncovered credit"`
 	Limit          tool.Money `json:"limit,omitzero"`
 	Excess         tool.Money `json:"excess,omitzero"`
 }
@@ -52,6 +53,7 @@ func issuerExposureResult(
 			MarketValue:    tool.MoneyOf(x.MarketValue),
 			CoveredValue:   tool.MoneyOf(x.CoveredValue),
 			UncoveredValue: tool.MoneyOf(x.UncoveredValue),
+			SovereignValue: tool.MoneyOf(x.SovereignValue),
 		}
 		if x.Limit != nil {
 			v.Limit = tool.MoneyOf(*x.Limit)

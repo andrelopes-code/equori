@@ -11,10 +11,12 @@ export interface ExposureTrack {
   // Percents of the scale, two decimals.
   covered: number;
   excess: number;
+  // Issued by the state of the region: outside the guarantee, not credit of a private issuer.
+  sovereign: number;
   uncovered: number;
   limit: number | undefined;
   // What the end of the row states.
-  figure: "excess" | "covered" | "uncovered" | "value";
+  figure: "excess" | "covered" | "sovereign" | "uncovered" | "value";
   amount: Money;
 }
 
@@ -38,23 +40,27 @@ export function exposureTracks(report: Report): ExposureTrack[] {
       issuer: i.issuer,
       covered: pct(covered),
       excess: pct(excess),
+      sovereign: pct(i.sovereign_value.amount),
       uncovered: pct(uncovered),
       limit: limit === undefined ? undefined : pct(limit),
-      figure: figureOf(limit, excess, i.covered_value.amount),
+      figure: figureOf(limit, excess, i),
       amount:
         limit === undefined ? i.market_value : (i.excess ?? i.market_value),
     };
   });
 }
 
+// A row that mixes kinds states the weakest one it holds: uncovered credit before the rest.
 function figureOf(
   limit: number | undefined,
   excess: number,
-  covered: number,
+  issuer: Report["issuers"][number],
 ): ExposureTrack["figure"] {
   if (limit === undefined) return "value";
   if (excess > 0) return "excess";
-  if (covered === 0) return "uncovered";
+  if (issuer.covered_value.amount > 0) return "covered";
+  if (issuer.uncovered_value.amount > 0) return "uncovered";
+  if (issuer.sovereign_value.amount > 0) return "sovereign";
 
-  return "covered";
+  return "uncovered";
 }

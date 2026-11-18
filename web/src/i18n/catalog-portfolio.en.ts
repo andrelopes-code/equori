@@ -159,6 +159,10 @@ export const portfolioEn = {
   "fixedIncome.issuers.period": "{used} of {limit} used in {years} years",
   "fixedIncome.issuers.covered": "Covered",
   "fixedIncome.issuers.excess": "Above the limit",
-  "fixedIncome.issuers.uncovered": "Not guaranteed",
+  "fixedIncome.issuers.sovereign": "Government security",
+  "fixedIncome.issuers.uncovered": "Not covered",
+  "fixedIncome.panel.minimize": "Minimize {name}",
+  "fixedIncome.panel.expand": "Expand {name}",
+  "fixedIncome.panel.more": "Show more",
   "fixedIncome.issuers.mark": "Limit per issuer",
 } as const;

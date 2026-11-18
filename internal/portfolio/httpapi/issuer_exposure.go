@@ -46,6 +46,7 @@ func issuerExposureReport(e app.Exposure) IssuerExposureReport {
 			MarketValue:    toMoney(x.MarketValue),
 			CoveredValue:   toMoney(x.CoveredValue),
 			UncoveredValue: toMoney(x.UncoveredValue),
+			SovereignValue: toMoney(x.SovereignValue),
 			Limit:          optionalMoney(x.Limit),
 			Excess:         optionalMoney(x.Excess),
 		}

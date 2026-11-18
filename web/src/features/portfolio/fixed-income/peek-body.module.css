@@ -1,0 +1,26 @@
+@layer app {
+  .root {
+    position: relative;
+  }
+
+  /* The closed height holds the verdict and the first lines of the two charts. */
+  .content[data-peek="closed"] {
+    max-block-size: 9rem;
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, #000 25%, transparent 92%);
+  }
+
+  .more {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    display: flex;
+    justify-content: center;
+  }
+
+  @media (forced-colors: active) {
+    .content[data-peek="closed"] {
+      mask-image: none;
+    }
+  }
+}

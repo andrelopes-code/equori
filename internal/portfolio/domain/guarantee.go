@@ -14,6 +14,7 @@ type Guarantee struct {
 	LimitPerPeriod money.Money
 	PeriodYears    int
 	covered        []string
+	sovereign      []string
 }
 
 func NewGuarantee(
@@ -31,8 +32,19 @@ func NewGuarantee(
 	}
 }
 
+// WithSovereign names the subtypes the state of the jurisdiction issues: the guarantee does not
+// cover them and they are not credit of a private issuer.
+func (g Guarantee) WithSovereign(subtypes ...string) Guarantee {
+	g.sovereign = slices.Clone(subtypes)
+
+	return g
+}
+
 // Covered reports whether the guarantee covers a security of subtype.
 func (g Guarantee) Covered(subtype string) bool { return slices.Contains(g.covered, subtype) }
+
+// Sovereign reports whether the state of the jurisdiction issues a security of subtype.
+func (g Guarantee) Sovereign(subtype string) bool { return slices.Contains(g.sovereign, subtype) }
 
 // CoveredSubtypes lists the subtypes the guarantee covers, in declaration order.
 func (g Guarantee) CoveredSubtypes() []string { return slices.Clone(g.covered) }

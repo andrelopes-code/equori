@@ -139,6 +139,18 @@ func TestGuarantee(t *testing.T) {
 	}
 }
 
+func TestGuaranteeSovereign(t *testing.T) {
+	t.Parallel()
+
+	g, _ := New().Guarantee()
+
+	for subtype, want := range map[string]bool{"tesouro": true, "cdb": false, "debenture": false} {
+		if got := g.Sovereign(subtype); got != want {
+			t.Errorf("Sovereign(%q) = %v, want %v", subtype, got, want)
+		}
+	}
+}
+
 func TestUnitTax(t *testing.T) {
 	t.Parallel()
 

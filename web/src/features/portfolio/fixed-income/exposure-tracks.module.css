@@ -48,6 +48,10 @@
     background: var(--slotted-tone-danger-text);
   }
 
+  .sovereign {
+    background: var(--slotted-tone-info-text);
+  }
+
   .uncovered {
     background: color-mix(in oklch, var(--slotted-text-muted) 45%, transparent);
   }
@@ -97,6 +101,7 @@
   @media (forced-colors: active) {
     .covered,
     .excess,
+    .sovereign,
     .uncovered,
     .limit {
       background: CanvasText;

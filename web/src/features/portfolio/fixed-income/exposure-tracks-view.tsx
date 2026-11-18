@@ -80,9 +80,16 @@ export function ExposureTracks({ report, scale }: ExposureTracksProps) {
                   }}
                 />
                 <span
-                  className={styles.uncovered}
+                  className={styles.sovereign}
                   style={{
                     left: `${String(k.covered + k.excess)}%`,
+                    width: `${String(k.sovereign)}%`,
+                  }}
+                />
+                <span
+                  className={styles.uncovered}
+                  style={{
+                    left: `${String(k.covered + k.excess + k.sovereign)}%`,
                     width: `${String(k.uncovered)}%`,
                   }}
                 />
@@ -106,6 +113,7 @@ export function ExposureTracks({ report, scale }: ExposureTracksProps) {
                 {k.figure === "excess" &&
                   fmt.signed(k.amount, scale(k.amount.currency))}
                 {k.figure === "covered" && t("fixedIncome.issuers.covered")}
+                {k.figure === "sovereign" && t("fixedIncome.issuers.sovereign")}
                 {k.figure === "uncovered" && t("fixedIncome.issuers.uncovered")}
                 {k.figure === "value" && money(k.amount)}
               </Text>
@@ -122,6 +130,10 @@ export function ExposureTracks({ report, scale }: ExposureTracksProps) {
             <li>
               <i className={[styles.key, styles.excess].join(" ")} />
               {t("fixedIncome.issuers.excess")}
+            </li>
+            <li>
+              <i className={[styles.key, styles.sovereign].join(" ")} />
+              {t("fixedIncome.issuers.sovereign")}
             </li>
             <li>
               <i className={[styles.key, styles.uncovered].join(" ")} />

@@ -18,13 +18,15 @@ const bvmf = "BVMF"
 // letters LC, LH, LCI, LCA and LCD). Read on 2026-11-17 in the FGC regulation of 2026-06-03
 // (fgc.org.br/normas), the compiled text that carries the four-year limit and the LCD; the BCB
 // original of 2013 (bcb.gov.br, res_4222_v1_O) confirms the R$ 250,000.00 and the other letters.
+// A Tesouro Direto security is federal public debt, issued and paid by the Tesouro Nacional
+// (Lei 10.179/2001, art. 1 and 2): the FGC does not cover it and it carries no bank credit.
 var fgc = domain.NewGuarantee(
 	"FGC",
 	brl(25000000),
 	brl(100000000),
 	4,
 	"cdb", "rdb", "lc", "lh", "lci", "lca", "lcd",
-)
+).WithSovereign("tesouro")
 
 type Jurisdiction struct{}
 

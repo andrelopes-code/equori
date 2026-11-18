@@ -25,6 +25,7 @@ type exposureOut struct {
 		MarketValue    amount  `json:"market_value"`
 		CoveredValue   amount  `json:"covered_value"`
 		UncoveredValue amount  `json:"uncovered_value"`
+		SovereignValue amount  `json:"sovereign_value"`
 		Limit          *amount `json:"limit"`
 		Excess         *amount `json:"excess"`
 	} `json:"issuers"`
@@ -193,6 +194,31 @@ func TestS520ExposureOfOneIssuer(t *testing.T) {
 	if g == nil || g.Name != "FGC" || g.LimitPerIssuer.Amount != 25000000 ||
 		g.LimitPerPeriod.Amount != 100000000 || g.PeriodYears != 4 {
 		t.Fatalf("guarantee = %+v", g)
+	}
+}
+
+// A security the state issues is outside the deposit guarantee and is not uncovered credit.
+func TestExposureOfSovereignSecurity(t *testing.T) {
+	t.Parallel()
+	h := newExposureBook(t, apitest.Brazil(), []exposureHolding{
+		{"LFT.20290301", "tesouro", "Tesouro Nacional", "", "", 4000000, false},
+		{"DEBY", "debenture", "Y", "", "", 1000000, false},
+	})
+
+	got := exposureOf(t, h, h.Client)
+
+	if len(got.Issuers) != 2 {
+		t.Fatalf("issuers = %+v, want 2", got.Issuers)
+	}
+
+	state, credit := got.Issuers[0], got.Issuers[1]
+	if state.SovereignValue.Amount != 4000000 || state.UncoveredValue.Amount != 0 ||
+		state.CoveredValue.Amount != 0 || state.MarketValue.Amount != 4000000 {
+		t.Fatalf("sovereign row = %+v, want 4000000 sovereign and 0 uncovered", state)
+	}
+
+	if credit.SovereignValue.Amount != 0 || credit.UncoveredValue.Amount != 1000000 {
+		t.Fatalf("credit row = %+v, want 0 sovereign and 1000000 uncovered", credit)
 	}
 }
 

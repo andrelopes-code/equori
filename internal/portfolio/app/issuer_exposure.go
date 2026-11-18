@@ -11,11 +11,14 @@ import (
 )
 
 // IssuerExposure is the value held with one issuer; Key is empty for holdings without issuer.
-// Limit and Excess are nil when the book has no guarantee.
+// SovereignValue is the part the state of the jurisdiction issues; UncoveredValue is the rest
+// outside the guarantee. Limit and Excess are nil when the book has no guarantee.
 type IssuerExposure struct {
-	Key, Issuer                               string
-	MarketValue, CoveredValue, UncoveredValue money.Money
-	Limit, Excess                             *money.Money
+	Key, Issuer               string
+	MarketValue, CoveredValue money.Money
+	SovereignValue            money.Money
+	UncoveredValue            money.Money
+	Limit, Excess             *money.Money
 }
 
 // Exposure is the fixed income of a book at Date grouped by issuer (A236 FC23).
@@ -75,8 +78,7 @@ func (s *Service) IssuerExposure(
 				out.MissingPrices = append(out.MissingPrices, p.Instrument)
 			}
 		default:
-			covered := guarantee != nil && guarantee.Covered(info.Subtype)
-			if err := addHolding(groups, base, info, *p.MarketValue, covered); err != nil {
+			if err := addHolding(groups, base, info, *p.MarketValue, guarantee); err != nil {
 				return Exposure{}, err
 			}
 		}
@@ -116,7 +118,7 @@ func addHolding(
 	base money.Currency,
 	info InstrumentInfo,
 	value money.Money,
-	covered bool,
+	guarantee *domain.Guarantee,
 ) error {
 	key := domain.IssuerKey(info.Issuer, info.IssuerScheme, info.IssuerID)
 
@@ -129,7 +131,11 @@ func addHolding(
 
 		g = &issuerGroup{
 			IssuerExposure: IssuerExposure{
-				Key: key, MarketValue: zero, CoveredValue: zero, UncoveredValue: zero,
+				Key:            key,
+				MarketValue:    zero,
+				CoveredValue:   zero,
+				SovereignValue: zero,
+				UncoveredValue: zero,
 			},
 			best: zero,
 		}
@@ -141,10 +147,16 @@ func addHolding(
 		return err
 	}
 
-	if covered {
-		if g.CoveredValue, err = g.CoveredValue.Add(value); err != nil {
-			return err
-		}
+	switch {
+	case guarantee == nil:
+	case guarantee.Covered(info.Subtype):
+		g.CoveredValue, err = g.CoveredValue.Add(value)
+	case guarantee.Sovereign(info.Subtype):
+		g.SovereignValue, err = g.SovereignValue.Add(value)
+	}
+
+	if err != nil {
+		return err
 	}
 
 	if g.Issuer == "" || value.Amount() > g.best.Amount() {
@@ -166,6 +178,10 @@ func issuerRows(
 
 		var err error
 		if row.UncoveredValue, err = row.MarketValue.Sub(row.CoveredValue); err != nil {
+			return nil, err
+		}
+
+		if row.UncoveredValue, err = row.UncoveredValue.Sub(row.SovereignValue); err != nil {
 			return nil, err
 		}
 

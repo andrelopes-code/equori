@@ -347,7 +347,7 @@ type IncomeTypeList struct {
 // InstrumentType defines model for InstrumentType.
 type InstrumentType string
 
-// IssuerExposure defines model for IssuerExposure.
+// IssuerExposure sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee.
 type IssuerExposure struct {
 	CoveredValue Money   `json:"covered_value"`
 	Excess       *Money  `json:"excess,omitempty"`
@@ -357,6 +357,7 @@ type IssuerExposure struct {
 	Key            *string `json:"key,omitempty"`
 	Limit          *Money  `json:"limit,omitempty"`
 	MarketValue    Money   `json:"market_value"`
+	SovereignValue Money   `json:"sovereign_value"`
 	UncoveredValue Money   `json:"uncovered_value"`
 }
 

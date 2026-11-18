@@ -43,6 +43,23 @@ func TestGuaranteeCoveredSubtypes(t *testing.T) {
 	}
 }
 
+func TestGuaranteeSovereign(t *testing.T) {
+	t.Parallel()
+
+	m, _ := money.New(1, "BRL")
+	g := NewGuarantee("FGC", m, m, 4, "cdb").WithSovereign("tesouro")
+
+	for subtype, want := range map[string]bool{"tesouro": true, "cdb": false, "": false} {
+		if got := g.Sovereign(subtype); got != want {
+			t.Errorf("Sovereign(%q) = %v, want %v", subtype, got, want)
+		}
+	}
+
+	if !g.Covered("cdb") || g.Covered("tesouro") {
+		t.Errorf("Covered changed: cdb %v, tesouro %v", g.Covered("cdb"), g.Covered("tesouro"))
+	}
+}
+
 func TestIssuerKey(t *testing.T) {
 	t.Parallel()
 

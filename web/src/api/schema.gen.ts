@@ -8107,6 +8107,7 @@ export interface components {
             period_note: boolean;
             missing_prices: string[];
         };
+        /** @description sovereign_value is the value of the securities the state of the region issues, to which the guarantee does not apply; uncovered_value is the rest outside the guarantee. */
         IssuerExposure: {
             /** @description The issuer identifier or the folded name; absent for holdings without issuer. */
             key?: string;
@@ -8114,6 +8115,7 @@ export interface components {
             market_value: components["schemas"]["Money"];
             covered_value: components["schemas"]["Money"];
             uncovered_value: components["schemas"]["Money"];
+            sovereign_value: components["schemas"]["Money"];
             limit?: components["schemas"]["Money"];
             excess?: components["schemas"]["Money"];
         };

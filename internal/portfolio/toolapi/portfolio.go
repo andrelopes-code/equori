@@ -138,7 +138,7 @@ type getPortfolioOut struct {
 
 	FixedIncomeEvents []fixedIncomeEventView `json:"fixed_income_events,omitzero" jsonschema:"for fixed_income_events: interest, amortization and maturity payments dated in the range, with their state"`
 
-	Issuers       []issuerExposureView `json:"issuers,omitzero"        jsonschema:"for issuer_exposure: fixed income per issuer, with covered value, limit and excess"`
+	Issuers       []issuerExposureView `json:"issuers,omitzero"        jsonschema:"for issuer_exposure: fixed income per issuer, with covered, sovereign and uncovered value, limit and excess"`
 	Guarantee     guaranteeView        `json:"guarantee,omitzero"      jsonschema:"for issuer_exposure: deposit guarantee; absent when none"`
 	PeriodNote    bool                 `json:"period_note,omitzero"    jsonschema:"for issuer_exposure: covered values exceed the period limit"`
 	MissingPrices []string             `json:"missing_prices,omitzero" jsonschema:"for issuer_exposure: instruments without a price"`

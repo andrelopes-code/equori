@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
@@ -42,11 +43,18 @@ const events = [
   event("NTNB35", "2027-02-01", "interest", "upcoming"),
 ];
 
-const issuer = (name: string, market: number, covered: number, excess = 0) => ({
+const issuer = (
+  name: string,
+  market: number,
+  covered: number,
+  excess = 0,
+  sovereign = 0,
+) => ({
   issuer: name,
   market_value: brl(market),
   covered_value: brl(covered),
-  uncovered_value: brl(market - covered),
+  uncovered_value: brl(market - covered - sovereign),
+  sovereign_value: brl(sovereign),
   limit: brl(25000000),
   excess: brl(excess),
 });
@@ -64,7 +72,7 @@ const report = {
   issuers: [
     issuer("Banco X", 33000000, 30000000, 5000000),
     issuer("Debênture Y", 5000000, 0),
-    issuer("Tesouro", 2000000, 0),
+    issuer("Tesouro", 2000000, 0, 0, 2000000),
     issuer("Banco Z", 1230000, 1230000),
   ],
   guarantee,
@@ -127,6 +135,8 @@ function fixedIncomeApi(
   });
 }
 
+const collapsedKey = "equori.portfolio.fixedIncome.collapsed";
+
 const portuguese = JSON.stringify({ language: "pt", region: "BR" });
 
 const panel = async (name: string) => screen.findByRole("region", { name });
@@ -137,6 +147,7 @@ const texts = (nodes: Iterable<Element>) =>
 describe("Fixed income panel", () => {
   afterEach(() => {
     localStorage.removeItem("equori.locale");
+    localStorage.removeItem(collapsedKey);
   });
 
   it("FC36: draws the verdict and the four blocks of the mock, in order", async () => {
@@ -206,8 +217,8 @@ describe("Fixed income panel", () => {
     expect(texts(within(issuers).getAllByRole("listitem")).slice(0, 4)).toEqual(
       [
         "Banco X+R$ 50.000,00",
-        "Debênture YSem garantia",
-        "TesouroSem garantia",
+        "Debênture YSem cobertura",
+        "TesouroTítulo público",
         "Banco ZCoberto",
       ],
     );
@@ -216,6 +227,53 @@ describe("Fixed income panel", () => {
       "Usados R$ 312.300,00 de R$ 1.000.000,00 em 4 anos",
     );
     expect(texts([issuers])[0]).toContain("Limite por emissor");
+  });
+
+  it("minimizes to the heading and the start of the body, and keeps the choice", async () => {
+    localStorage.setItem("equori.locale", portuguese);
+    const first = await renderApp("/portfolio", {
+      today: "2026-11-18",
+      fetch: fixedIncomeApi(),
+    });
+    const root = await panel("Renda fixa");
+    await within(root).findByText("R$ 50.000,00 acima do FGC no Banco X");
+    const body = root.querySelector("[data-peek]");
+
+    expect(body).toHaveAttribute("data-peek", "open");
+    expect(body).not.toHaveAttribute("inert");
+
+    await userEvent.click(
+      within(root).getByRole("button", { name: "Minimizar Renda fixa" }),
+    );
+
+    expect(body).toHaveAttribute("data-peek", "closed");
+    expect(body).toHaveAttribute("inert");
+    expect(
+      within(root).getByRole("heading", { name: "Renda fixa" }),
+    ).toBeInTheDocument();
+    expect(localStorage.getItem(collapsedKey)).toBe("true");
+
+    first.unmount();
+    await renderApp("/portfolio", {
+      today: "2026-11-18",
+      fetch: fixedIncomeApi(),
+    });
+    const again = await panel("Renda fixa");
+
+    expect(again.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "closed",
+    );
+
+    await userEvent.click(
+      within(again).getByRole("button", { name: "Ver mais" }),
+    );
+
+    expect(again.querySelector("[data-peek]")).toHaveAttribute(
+      "data-peek",
+      "open",
+    );
+    expect(localStorage.getItem(collapsedKey)).toBe("false");
   });
 
   it("FC36: draws no panel for a book without fixed income", async () => {
@@ -242,6 +300,7 @@ describe("Fixed income panel", () => {
         market_value: i.market_value,
         covered_value: i.covered_value,
         uncovered_value: i.uncovered_value,
+        sovereign_value: i.sovereign_value,
       })),
     };
     await renderApp("/portfolio", {
