@@ -1,6 +1,6 @@
 # Planning coherence: one rule for money set aside, across budgets, buckets, goals and the contribution plan
 
-- Status: proposed
+- Status: delivered (commits 34357be4 to the commit of this line; section 13 records what delivery settled)
 - Date: 2026-11-17
 - Phase: P7 Planning, amendments A249 to A258; portfolio rule CN20; scenarios S567 to S590
 - Amends: `2026-10-27-budget-plan-design.md` (A129), `2026-11-15-income-buckets-design.md` (A230, A233, A234), `2026-11-16-income-buckets-hardening-design.md` (A235), `2026-11-17-goal-savings-design.md` (A239), `2026-11-17-income-split-versions-design.md` (A243), `2026-11-15-planning-tabs-design.md` (A2), `2026-11-12-contribution-plan-design.md`
@@ -344,3 +344,15 @@ Each row is a set of vertical slices with its own plan.
 - The file split inside `internal/planning` and `web/src/features`, under ADR 033 and `web/CLAUDE.md`.
 - The cost of `covered` over the six months of the history, measured before the slice of A254 is planned.
 - The catalog keys of R5.
+
+## 13. Settled at delivery
+
+- **Migrations.** 00117 (`planning_goal_expense`) and 00118 (`allocated`, `planning_schedule.goal_id`, `planning_goal_allocation`); `ArchiveVersion` 28. `planning_goal_allocation.occurrence_id` references `planning_occurrence` with `ON DELETE CASCADE`.
+- **A251, C3.** A category posting counts when the instrument of the category is the base currency; a category in another instrument counts nothing.
+- **A254.** The bucket that takes goals is judged on `deposited` whether or not it is marked `at_least`. A budget whose subtree spans several buckets covers them in method order, up to its carried balance.
+- **A255.** `createGoalAllocation` answers 200 with the goal. `GoalInput.account_ids` is optional: a goal holds at least one account across `account_ids` and `allocated_account_ids`, and an empty pair is a 422 on `account_ids`. `Goal.over_allocated` sums the negated negative `available` amounts of the goal's accounts in the target currency. A future-dated allocation reserves its amount at once and counts in `current` from its date. Deleting an allocation whose removal brings the goal below zero is a 422 on `allocation_id`. The goal of a schedule is set at creation.
+- **A256.** `spent` of a goal and the amounts of `listGoalExpenses` are in the base currency. An expense category with `system_role` `realized_losses`, `adjustments` or `opening_balances` is no expense a goal pays. A stored link wins over a direct payment. `Goal` carries `unexplained_withdrawal` (`amount`, `since`): the latest withdrawal of the last 12 months from the accounts the goal holds whole into another balance account, less the expenses linked on or after it; the card asks which expenses the goal paid while it is present.
+- **Tools.** `manage_budget_or_goal` gains `link_expense`, `unlink_expense`, `allocate` and the flag `allocated` (the `account_ids` of a goal are held by amount). `deleteGoalAllocation` stays a screen operation.
+- **Web.** The split table of the Plan also draws what is left to distribute as its last row. The Track strip leaves out a part at zero, except the unallocated income, and writes a part below zero in the legend without a segment. Without a withdrawal to explain, the panel of a goal offers the expenses of the last 60 days.
+- **Texts (A249).** en "To distribute", "Earlier installments", "Scheduled savings", "Set aside"; pt-BR "A distribuir", "Parcelas anteriores", "Poupança agendada", "Guardado", "alvo" for the target of a bucket and "depósitos" for money moved to goals.
+- **Not measured.** The cost of `covered` is one ledger read per rollover budget over the months since its first amount; no timing was taken on a large book.

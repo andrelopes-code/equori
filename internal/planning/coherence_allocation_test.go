@@ -190,6 +190,7 @@ func TestS581AllocatedLinkRules(t *testing.T) {
 	b := f.brokerage()
 	whole := f.goal("Whole", 1000000, f.savings)
 	f.allocatedGoal("Part", f.checking)
+
 	create := func(body map[string]any) apitest.Response {
 		body["name"], body["target"], body["due_on"] = "New", apitest.BRL(100), "2027-06-30"
 		return f.h.Do(http.MethodPost, "/api/v1/goals", body)

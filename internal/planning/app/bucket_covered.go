@@ -25,6 +25,7 @@ func (s *Service) coveredSpending(
 	to time.Time,
 ) (map[time.Time][]int64, error) {
 	parents := expenseParents(facts)
+
 	byCategory := make(map[uuid.UUID]domain.Budget, len(budgets))
 	for _, b := range budgets {
 		if _, expense := parents[b.CategoryID]; expense {

@@ -145,6 +145,7 @@ func TestKeptTarget(t *testing.T) {
 	t.Parallel()
 
 	goals := Bucket{TakesGoals: true}
+
 	tests := []struct {
 		name    string
 		bucket  Bucket

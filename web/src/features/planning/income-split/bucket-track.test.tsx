@@ -267,7 +267,7 @@ describe("Entries of a bucket", () => {
     await userEvent.click(screen.getByRole("button", { name: "Needs" }));
     const drawer = await screen.findByRole("dialog");
 
-    expect(await within(drawer).findByText("Savings")).toBeVisible();
+    expect(await within(drawer).findByText("Set aside")).toBeVisible();
     expect(within(drawer).getByText("R$20.00")).toBeVisible();
     expect(within(drawer).getByText("2 entries")).toBeVisible();
     expect(within(drawer).getByText("R$30.00")).toBeVisible();

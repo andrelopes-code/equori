@@ -181,8 +181,13 @@ var uncoveredFields = map[string][]string{
 		"network",
 	}, // the network is drawn on the card face and is set through the API (card faces spec 4.6)
 	"createGoal": {
+		"allocated_account_ids",
 		"target",
-	}, // read as amount
+	}, // allocated_account_ids is read as account_ids with allocated; target as amount
+	"createGoalAllocation": {
+		"account_id",
+		"booked_on",
+	}, // account_id is read as account_ids; booked_on is today (planning coherence A255)
 	"createInstallmentPurchase": {
 		"card_account_id",
 		"first_statement",
@@ -195,8 +200,9 @@ var uncoveredFields = map[string][]string{
 	}, // code is not offered; the identifier is read as scheme and identifier
 	"createSchedule": {
 		"calendar",
+		"goal_id",
 		"recurrence",
-	}, // calendar is the region default; recurrence beyond frequency, interval and day_of_month is not offered
+	}, // calendar is the region default; goal_id is set from the Goals screen (A255); recurrence beyond frequency, interval and day_of_month is not offered
 	"createTransactionBatch": {
 		"entries",
 	}, // a call per transaction
@@ -280,8 +286,9 @@ var uncoveredFields = map[string][]string{
 		"display_name",
 	}, // display_name is not offered; update_profile sets the language
 	"updateGoal": {
+		"allocated_account_ids",
 		"target",
-	}, // read as amount
+	}, // allocated_account_ids is read as account_ids with allocated; target as amount
 	"voidTransactions": {
 		"items",
 	}, // a call per transaction

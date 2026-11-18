@@ -157,3 +157,48 @@ func TestS570UnassignedSubtractsGoalDeposits(t *testing.T) {
 		t.Errorf("unassigned = %d, want 180000", amountOf(got.Unassigned))
 	}
 }
+
+// S587: with installments of earlier purchases and no bucket that takes goals, the planned
+// amounts of the buckets, the figures no bucket takes and what is left to distribute sum to the
+// reference (planning coherence A258).
+func TestS587PlanSumsToTheReference(t *testing.T) {
+	t.Parallel()
+	f := newFixture(t, "2026-12-02")
+	card := f.h.Card("Visa", 3, 10, "next")
+	electronics := f.h.Account("Electronics", "expense", "", nil)
+	trip := f.h.Account("Trip", "asset", "savings", nil)
+	f.goal("Trip", 1000000, trip)
+	f.h.MustDo(http.MethodPost, "/api/v1/installment-purchases", map[string]any{
+		"card_account_id": card,
+		"date":            "2026-10-20",
+		"description":     "Purchase",
+		"splits": []map[string]any{
+			{"account_id": electronics, "amount": apitest.BRL(240000)},
+		},
+		"installment_count": 3,
+	}, http.StatusCreated, nil)
+	f.schedule("savings", f.checking, trip, 50000, monthly("2026-12-01", 10, ""), nil)
+	f.schedule("savings", f.checking, f.savings, 30000, monthly("2026-12-01", 11, ""), nil)
+	f.budget(f.rent, 210000, "2026-12", false)
+	f.budget(electronics, 20000, "2026-12", false)
+	f.saveBuckets(bucket("Needs", 6000, false, f.rent), bucket("Freedom", 4000, true))
+	f.savePlan("2026-12", map[string]any{
+		"source": "fixed", "fixed": apitest.BRL(1000000), "amounts": []any{},
+	})
+
+	got := f.bucketPlan("2026-12")
+
+	if got.Installments.Amount != 80000 || amountOf(got.GoalDeposits) != 50000 ||
+		got.Savings.Amount != 30000 {
+		t.Fatalf("plan = installments %d goal deposits %d savings %d, want 80000 50000 30000",
+			got.Installments.Amount, amountOf(got.GoalDeposits), got.Savings.Amount)
+	}
+
+	// Needs plans the rent, Freedom the savings; the electronics budget is outside the split.
+	sum := got.Buckets[0].Planned.Amount + got.Buckets[1].Planned.Amount +
+		amountOf(got.OutsidePlanned) + got.Installments.Amount + amountOf(got.GoalDeposits) +
+		amountOf(got.Unassigned)
+	if sum != 1000000 {
+		t.Errorf("buckets, outside, installments, goal deposits and rest = %d, want 1000000", sum)
+	}
+}
