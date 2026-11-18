@@ -1203,3 +1203,7 @@ Coverage row E-08, through the HTTP API and the tool `record_corporate_action`. 
 ### S632 Payments of a government bond
 
 Coverage rows T-03 and T-05, through the HTTP API. 2.00 units each of NTNF.20290101, NTNB.20350515 and LTN.20270101 bought on 2026-01-12; the events from 2026-06-01 to 2027-01-31 are the NTNF interest of 97.62 on 2026-07-01 and on 2027-01-04 (2027-01-01 is a holiday), the NTNB interest on 2026-11-16 without an amount, and the LTN maturity of 2,000.00 on 2027-01-04.
+
+### S633 Monthly payments of an RendA+
+
+Coverage rows T-06 and T-07, through the HTTP API. 240.00 units of RENDA.20491215 bought on 2026-01-12; the events from 2030-01-01 to 2030-03-31 are three amortizations on the 15th of 0.98, 1.01 and 1.01 units, without amount.

@@ -79,3 +79,50 @@ func TestS632GovernmentBondEvents(t *testing.T) {
 		t.Fatalf("events = %+v, want %+v", got, want)
 	}
 }
+
+// S633 (coverage rows T-06, T-07): an RendA+ returns its principal in 240 monthly payments on the
+// 15th, the last on its maturity; each amortizes a share of the units left, without amount.
+func TestS633IncomeBondEvents(t *testing.T) {
+	t.Parallel()
+
+	f := newFixture(t, apitest.Today("2026-06-15"))
+	code := "RENDA.20491215"
+	f.h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code": code, "type": "fixed_income", "scale": 2, "name": code, "quote_currency": "BRL",
+	}, http.StatusCreated, nil)
+
+	account := f.h.Account(code, "asset", "brokerage", map[string]any{
+		"institution_id": f.institution, "parent_id": f.xp, "currency": code,
+	})
+	f.h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"account_id": account, "cash_account_id": f.cash, "side": "buy", "date": "2026-01-12",
+		"quantity": units(24000, code), "unit_price": "1.00",
+	}, http.StatusCreated, nil)
+	f.h.Dispatch()
+
+	var out struct {
+		Items []eventOut `json:"items"`
+	}
+	f.h.MustDo(
+		http.MethodGet,
+		"/api/v1/fixed-income-events?from=2030-01-01&to=2030-03-31",
+		nil,
+		http.StatusOK,
+		&out,
+	)
+
+	want := []eventRow{
+		{"2030-01-15", "amortization", 98, 0, "upcoming"},
+		{"2030-02-15", "amortization", 101, 0, "upcoming"},
+		{"2030-03-15", "amortization", 101, 0, "upcoming"},
+	}
+	if got := rowsOf(out.Items); !reflect.DeepEqual(got, want) {
+		t.Fatalf("events = %+v, want %+v", got, want)
+	}
+
+	for _, e := range out.Items {
+		if !e.RateMissing {
+			t.Errorf("event %+v has an amount, want rate_missing", e)
+		}
+	}
+}
