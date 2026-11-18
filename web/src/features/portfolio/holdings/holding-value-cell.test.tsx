@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { HoldingValueCell } from "@/features/portfolio/holdings/holding-value-cell";
 import type { Holding } from "@/features/portfolio/model/portfolio-holdings";
+import { catalogPtBR } from "@/i18n/catalog.pt-BR";
 import { fakeApi } from "@/testing/fake-api";
 import { renderWithProviders } from "@/testing/render-app";
 
@@ -35,7 +36,12 @@ describe("HoldingValueCell", () => {
   it("marks a partial current quote with its hour", async () => {
     renderCell([{ date: "2026-11-03", at, open: true }]);
 
-    expect(await screen.findByText(/^\d{2}:\d{2} · parcial$/)).toBeTruthy();
+    const partial = catalogPtBR["holdings.quote.partial"].replace(
+      "{time}",
+      String.raw`\d{2}:\d{2}`,
+    );
+
+    expect(await screen.findByText(new RegExp(`^${partial}$`))).toBeTruthy();
     expect(screen.queryByText(/Preço de/)).toBeNull();
   });
 

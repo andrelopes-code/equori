@@ -313,7 +313,9 @@ describe("Portfolio page", () => {
     const grid = await list();
 
     expect(
-      await within(grid).findByText(/^Price of 08\/01\/2026$/),
+      await within(grid).findByText(
+        catalogEn["positions.priceOf"].replace("{date}", "08/01/2026"),
+      ),
     ).toBeInTheDocument();
   });
 
