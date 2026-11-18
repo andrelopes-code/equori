@@ -27,6 +27,8 @@ var (
 	ErrClassNameDuplicate = errors.New("duplicate class name")
 	ErrMemberDuplicate    = errors.New("duplicate member")
 	ErrPlanInvalid        = errors.New("invalid contribution plan")
+	ErrQuestionInvalid    = errors.New("invalid contribution question")
+	ErrAnswersInvalid     = errors.New("invalid contribution answers")
 )
 
 // Plan is the target split of a book (CN1 to CN4); Amount is nil without a stored amount.
@@ -38,7 +40,9 @@ type Plan struct {
 type PlanClass struct {
 	Name     string
 	TargetBP int
-	Members  []PlanMember
+	// Questions are the investor's yes-or-no questions (CQ1); empty for a class without them.
+	Questions []string
+	Members   []PlanMember
 }
 
 // PlanMember names exactly one of AccountID and Instrument; TargetBP is nil without member targets.
@@ -46,6 +50,9 @@ type PlanMember struct {
 	AccountID  uuid.UUID
 	Instrument money.Currency
 	TargetBP   *int
+	// Answers holds one answer per question of the class, true for "sim" (CQ2); nil without
+	// questions.
+	Answers []bool
 }
 
 // Slot is one class or one member as the split reads it.
