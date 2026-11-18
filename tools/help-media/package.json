@@ -1,0 +1,14 @@
+{
+  "name": "equori-help-media",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "scripts": {
+    "record": "node run.mjs record",
+    "build": "node run.mjs build",
+    "check": "node run.mjs check"
+  },
+  "dependencies": {
+    "playwright": "1.63.0"
+  }
+}

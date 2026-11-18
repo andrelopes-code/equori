@@ -18,7 +18,7 @@ SQL_FMT := web/node_modules/.bin/sql-formatter
 LOCAL_ENV ?= $(HOME)/.config/equori/local.env
 LOAD_ENV := set -a && . ./dev.env && { [ ! -f "$(LOCAL_ENV)" ] || . "$(LOCAL_ENV)"; } && { [ ! -f .env ] || . ./.env; } && set +a
 
-.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev web-dev-after-api run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset
+.PHONY: check static fmt fmt-check lint tidy-check gen gen-check test test-race perf vuln build dist upgrade-test test-cluster test-exchange standalone-smoke install-smoke formula-test dev db-up db-down db-test-up run-dev web-dev-after-api run-prod hooks tools web-deps web-build web-check web-static web-test web-dev demo demo-user demo-reset help-media help-media-record help-media-check help-media-review
 
 # Everything, the Go tests under -race included: CI runs it on every pull request. The web build
 # comes first: the Go tests compile package web, which embeds web/dist. The web tests come last:
@@ -171,6 +171,26 @@ demo: demo-user
 	go run ./cmd/demoseed -email $(DEMO_EMAIL)
 	@# The rebuilds collide with the dispatcher while it still drains the events of the seeding, so they retry.
 	$(LOAD_ENV) && for i in 1 2 3 4 5 6 7 8 9 10 11 12; do sleep 15; go run ./cmd/equori portfolio rebuild && go run ./cmd/equori reporting rebuild && exit 0; done; exit 1
+
+# The figures and videos of the help (ADR 037, docs/contributing/help.md). Only a contributor who
+# rebuilds them installs the tool; check and CI need Node alone.
+HELP_MEDIA := tools/help-media
+
+$(HELP_MEDIA)/node_modules: $(HELP_MEDIA)/package.json $(HELP_MEDIA)/pnpm-lock.yaml
+	cd $(HELP_MEDIA) && pnpm install --frozen-lockfile && pnpm exec playwright install chromium ffmpeg
+	touch $@
+
+help-media-record: $(HELP_MEDIA)/node_modules
+	cd $(HELP_MEDIA) && node run.mjs record
+
+help-media: web-build $(HELP_MEDIA)/node_modules
+	cd $(HELP_MEDIA) && node --test "lib/*.test.mjs" && node run.mjs build
+
+help-media-check:
+	cd $(HELP_MEDIA) && node run.mjs check
+
+help-media-review:
+	cd $(HELP_MEDIA) && node run.mjs review
 
 # The app and the Vite dev server together; Ctrl-C stops both.
 run-dev: $(WEB_DEPS)

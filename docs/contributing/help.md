@@ -1,6 +1,6 @@
 # Help pages
 
-The help pages are the documentation for people who use equori. They live in `web/src/features/help/content/`, are served inside the application at `/help`, and work offline because the binary embeds them with the web interface. Design: `docs/specs/2026-10-29-ui-clarity-design.md`.
+The help pages are the documentation for people who use equori. They live in `web/src/features/help/content/`, are served inside the application at `/help`, and work offline because the binary embeds them with the web interface. Design: `docs/specs/2026-10-29-ui-clarity-design.md` and `docs/specs/2026-11-17-help-design.md`.
 
 ## Kinds
 
@@ -31,3 +31,35 @@ A page holds one kind only.
 - A label of the interface is written in bold, exactly as the screen shows it in that language.
 - A link to a screen or to another page is a relative path (`/accounts`, `/help/glossary`); it becomes a router link.
 - A neutral page names no regional value: no currency, institution, tax, index, payment system, aggregator or identifier scheme. A fact of one region goes in its passage (`docs/contributing/regions.md`, "Help passages"); the test rejects the names of the known regional systems in a neutral page.
+
+## Figures and videos
+
+A figure or a video is built by `tools/help-media` (ADR 037). No file of `web/src/features/help/media/` is edited, drawn, recorded or placed by hand; `make help-media-check` rejects a file the tool did not write.
+
+| Command | Does | Needs |
+|---|---|---|
+| `make help-media-record` | records the reads of each tutorial on `tutorials/<id>.tape.json` | `make demo`, `make run-dev` |
+| `make help-media` | builds every figure and video from the tapes, in each language and scheme, and checks them | `make web-build` (the target runs it) |
+| `make help-media-check` | checks the written media against `media.json` and the pages, without a browser | nothing |
+| `make help-media-review` | writes `tools/help-media/out/review.html`: every figure under its mark, every video | a build |
+
+### Adding media to a page
+
+1. Write the figures in the Markdown of every language (`web/src/features/help/README.md`, "Writing a page"): a figure id per step, and the video id before the list.
+2. Write `tools/help-media/tutorials/<id>.mjs`. A beat is `{ figure, target, frame, act, only }`:
+   - `target(page, words)` returns the Playwright locator of the element the step points at, or a list of locators whose union is marked. `words(pt, en)` picks a label by language.
+   - `figure` is the id the Markdown names. A beat without one is a click the page does not number; it appears in the video only.
+   - `frame(page)` is the region the figure is cut around when it fits (a dialog). Without it the figure stays inside `main`.
+   - `act(page, words)` is what the reader does after the step: one click. A tutorial never confirms a write.
+   - `only: "figure"` keeps a beat out of the video.
+3. `make help-media-record`, then `make help-media`.
+4. `make help-media-review` and read the page: each mark surrounds its element, each figure shows the words of its language, the video shows each step in order.
+5. Commit the tutorial, its tape, the media and `media.json` together.
+
+### Rules
+
+- A locator names a role, a label or a part of the interface; never a position, an index into unrelated elements or a generated class.
+- A tutorial holds no coordinate, no size and no wait. A beat that needs one is a defect of the tool; fix the tool.
+- A screen whose change moves, renames or removes an element of a tutorial rebuilds the media in the same commit.
+- The tape holds the demo book only (`make demo`); it is never recorded from a book with real data.
+
