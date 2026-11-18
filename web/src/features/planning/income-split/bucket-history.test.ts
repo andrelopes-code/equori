@@ -39,6 +39,7 @@ function month(m: string, received: number, needs: number, free: number) {
     received: brl(received),
     outside: brl(0),
     unallocated: brl(received - needs - free),
+    retained: brl(0),
     buckets: [
       { id: "needs", real: brl(needs) },
       { id: "free", real: brl(free) },
@@ -172,6 +173,7 @@ describe("trackMonth across versions", () => {
         received: brl(100000),
         outside: brl(0),
         unallocated: brl(25000),
+        retained: brl(0),
         buckets: [
           { id: "needs", real: brl(40000) },
           { id: "free", real: brl(30000) },
@@ -220,6 +222,7 @@ describe("trackMonth across versions", () => {
           received: brl(100000),
           outside: brl(0),
           unallocated: brl(100000),
+          retained: brl(0),
           buckets: [],
         },
       ],

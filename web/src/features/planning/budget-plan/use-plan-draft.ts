@@ -96,6 +96,7 @@ export function usePlanDraft(plan: BudgetPlan) {
     reference,
     installments: plan.installments.amount,
     savings: plan.savings.amount,
+    goalDeposits: plan.goal_deposits.amount,
   });
   const changed = rows.filter((r) => r.draft !== r.planned.amount);
   const referenceChanged =

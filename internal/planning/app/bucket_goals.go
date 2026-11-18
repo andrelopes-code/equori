@@ -33,8 +33,9 @@ func (s *Service) goalInflows(
 }
 
 // inflows returns, by first day of month in [from, to), what went into the accounts of held from
-// the book's asset and liability accounts in base outside held. A transaction counts through its
-// postings in those other accounts, so a move out of held counts against its month.
+// the counterparts of A251: the book's other asset and liability accounts in base, an income
+// credited to held and an expense paid from it. A transaction counts through its postings in
+// those counterparts, so a move out of held counts against its month.
 func (s *Service) inflows(
 	ctx context.Context,
 	booksID int64,
@@ -95,11 +96,7 @@ func (s *Service) countedInflows(
 		return nil, err
 	}
 
-	sources := make(map[uuid.UUID]bool)
-	for _, a := range facts {
-		sources[a.ID] = !held[a.ID] && a.Instrument == base &&
-			(a.Class == "asset" || a.Class == "liability")
-	}
+	sources := movementCounterparts(facts, held, base)
 
 	var out []countedInflow
 	for _, tx := range txs {

@@ -175,6 +175,7 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 			Received:    m(month.Received),
 			Outside:     m(month.Outside),
 			Unallocated: m(month.Unallocated),
+			Retained:    m(month.Retained),
 			Buckets:     reals,
 		}
 

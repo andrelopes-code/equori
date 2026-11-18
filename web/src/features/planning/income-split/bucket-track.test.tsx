@@ -39,6 +39,7 @@ function month(m: string, received: number, needs: number, free: number) {
     received: money(received),
     outside: money(m === "2026-10" ? 1500 : 0),
     unallocated: money(received - needs - free - (m === "2026-10" ? 1500 : 0)),
+    retained: money(0),
     buckets: [
       { id: buckets[0]?.id ?? "", real: money(needs) },
       { id: buckets[1]?.id ?? "", real: money(free) },

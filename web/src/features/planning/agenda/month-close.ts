@@ -36,18 +36,19 @@ export interface BalancePoint {
 const weekDays = 7;
 
 // The month's close in one currency (spec A2): a realized row at its charged amount, a pending
-// row at its expected amount, a skipped row and a transfer not at all.
+// row at its expected amount, a skipped row and a movement that leaves the spending set
+// untouched not at all (planning coherence A253).
 export function monthClose(
   rows: readonly AgendaRow[],
   currency: string,
 ): MonthClose {
-  const counted = rows.filter((r) => movesCash(r));
+  const counted = rows.filter((r) => cashSign(r) !== 0);
   const own = counted.filter((r) => r.money.currency === currency);
   const flow = (sign: 1 | -1, state?: "realized") =>
     own
-      .filter((r) => Math.sign(r.money.amount) === sign)
+      .filter((r) => cashSign(r) === sign)
       .filter((r) => state === undefined || r.occurrence.state === state)
-      .reduce((sum, r) => sum + sign * rowAmount(r).amount, 0);
+      .reduce((sum, r) => sum + sign * cashAmount(r).amount, 0);
 
   const inflow = flow(1);
   const outflow = flow(-1);
@@ -65,17 +66,40 @@ export function monthClose(
     leftOut: netOf(
       counted
         .filter((r) => r.money.currency !== currency)
-        .map((r) => ({ ...r, money: rowAmount(r) })),
+        .map((r) => ({ ...r, money: cashAmount(r) })),
     ),
   };
 }
 
-// A skipped row moves nothing; a transfer moves money between two accounts of the owner, so
-// the month neither gains nor loses it (spec A2).
-function movesCash(row: AgendaRow): boolean {
-  return (
-    row.occurrence.state !== "skipped" && row.schedule?.kind !== "transfer"
-  );
+// The effect of a row on the money to spend: 1 adds, -1 takes, 0 leaves it as it is. A skipped
+// row moves nothing. A schedule that moves money between two accounts of the owner counts by
+// the spending set: out of it takes, into it adds, and a movement that keeps both ends inside
+// or outside it changes nothing (planning coherence A253).
+function cashSign(row: AgendaRow): -1 | 0 | 1 {
+  if (row.occurrence.state === "skipped") return 0;
+
+  const moves = row.schedule?.moves;
+  if (moves === undefined) {
+    if (row.schedule?.kind === "transfer") return 0;
+
+    return row.money.amount < 0 ? -1 : 1;
+  }
+
+  const leaves = moves.from === "spending";
+  const enters = moves.to === "spending";
+  if (leaves === enters) return 0;
+
+  return leaves ? -1 : 1;
+}
+
+// What a row adds to or takes from the money to spend, signed by cashSign.
+function cashAmount(row: AgendaRow): Money {
+  const moved = rowAmount(row);
+
+  return {
+    amount: cashSign(row) * Math.abs(moved.amount),
+    currency: moved.currency,
+  };
 }
 
 // What a row moves: the charged amount once realized, signed like the expected one.
@@ -125,11 +149,11 @@ export function runningBalance(
   const flows = new Map<string, number>();
 
   for (const r of rows) {
-    if (!movesCash(r) || r.money.currency !== currency) continue;
+    if (cashSign(r) === 0 || r.money.currency !== currency) continue;
 
     const day =
       r.occurrence.expected_on < first ? first : r.occurrence.expected_on;
-    flows.set(day, (flows.get(day) ?? 0) + rowAmount(r).amount);
+    flows.set(day, (flows.get(day) ?? 0) + cashAmount(r).amount);
   }
 
   const points: BalancePoint[] = [];

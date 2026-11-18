@@ -23,8 +23,11 @@ type Plan struct {
 	Average                                  *int64
 	AverageMonths                            int
 	Received, Installments, Savings, Planned int64
-	Rows                                     []domain.PlanRow
-	Prices                                   []Price
+	// GoalDeposits is what the schedules move into the goal set; the brokerage figures are the
+	// parts of Savings and GoalDeposits whose counterpart is a brokerage account (A253).
+	GoalDeposits, SavingsBrokerage, GoalDepositsBrokerage int64
+	Rows                                                  []domain.PlanRow
+	Prices                                                []Price
 
 	// Buckets is the book's bucket method; nil without one (A229, A230). BucketsFrom is the
 	// start month of its version. OutsideCategories holds the open expense categories that
@@ -60,10 +63,11 @@ func (p Plan) ReferenceAmount() (int64, bool) {
 	return 0, false
 }
 
-// Unassigned is reference − installments − savings − planned; false without a reference.
+// Unassigned is reference − installments − savings − goal deposits − planned; false without a
+// reference (A253).
 func (p Plan) Unassigned() (int64, bool) {
 	ref, ok := p.ReferenceAmount()
-	return ref - p.Installments - p.Savings - p.Planned, ok
+	return ref - p.Installments - p.Savings - p.GoalDeposits - p.Planned, ok
 }
 
 // SavingsRate is savings as basis points of the reference, truncated; false unless the

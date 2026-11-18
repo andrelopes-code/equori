@@ -54,13 +54,15 @@ export function bucketResolver<B extends MethodBucket>(
 
 // Each bucket's target, planned and spent amounts as the draft stands (A230): the targets
 // split the draft reference, planned sums the counted draft rows plus the savings of the
-// bucket that takes them, and spent is the server's figure of the month.
+// bucket that takes them and the goal deposits of the bucket that takes the goals (planning
+// coherence A253), and spent is the server's figure of the month.
 export function bucketFigures(
   buckets: readonly Bucket[],
   entries: readonly CategoryEntry[],
   rows: readonly PlanDraftRow[],
   reference: number | undefined,
   savings: number,
+  goalDeposits: number,
 ): BucketTotals {
   const resolve = bucketResolver(buckets, entries);
   const targets =
@@ -85,7 +87,10 @@ export function bucketFigures(
       shareBp: b.share_bp,
       measure: measureOf(b),
       target: targets?.[i],
-      planned: (planned.get(b.id) ?? 0) + (b.takes_savings ? savings : 0),
+      planned:
+        (planned.get(b.id) ?? 0) +
+        (b.takes_savings ? savings : 0) +
+        (b.takes_goals ? goalDeposits : 0),
       spent: b.spent.amount,
     })),
     outsidePlanned,

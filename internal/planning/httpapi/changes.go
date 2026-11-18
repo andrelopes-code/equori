@@ -90,7 +90,7 @@ func (s *Server) changeScheduleTerms(
 		return Schedule{}, err
 	}
 
-	return toScheduleAPI(sch), nil
+	return s.scheduleAPI(ctx, sch)
 }
 
 func (s *Server) updateScheduleMatching(
@@ -119,7 +119,7 @@ func (s *Server) updateScheduleMatching(
 		return Schedule{}, err
 	}
 
-	return toScheduleAPI(sch), nil
+	return s.scheduleAPI(ctx, sch)
 }
 
 func (s *Server) pauseSchedule(
@@ -137,7 +137,7 @@ func (s *Server) pauseSchedule(
 		return Schedule{}, err
 	}
 
-	return toScheduleAPI(sch), nil
+	return s.scheduleAPI(ctx, sch)
 }
 
 func (s *Server) endSchedule(
@@ -155,5 +155,5 @@ func (s *Server) endSchedule(
 		return Schedule{}, err
 	}
 
-	return toScheduleAPI(sch), nil
+	return s.scheduleAPI(ctx, sch)
 }

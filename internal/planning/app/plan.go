@@ -68,7 +68,7 @@ func (s *Service) addPlanFigures(
 	accounts planAccounts,
 	totals ledgerTotals,
 ) error {
-	if err := s.planOccurrences(ctx, booksID, out); err != nil {
+	if err := s.planOccurrences(ctx, booksID, out, accounts.facts); err != nil {
 		return err
 	}
 
@@ -248,9 +248,19 @@ func (s *Service) resolveReference(ctx context.Context, booksID int64, out *Plan
 	return nil
 }
 
-// planOccurrences adds the month's income and savings occurrences that are expected or
-// realized, valued in the base currency at today's prices (A72).
-func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan) error {
+// planOccurrences adds the month's income occurrences and planned movements that are expected
+// or realized, valued in the base currency at today's prices (A72).
+func (s *Service) planOccurrences(
+	ctx context.Context,
+	booksID int64,
+	out *Plan,
+	facts []Account,
+) error {
+	sets, err := s.accountSets(ctx, booksID, facts)
+	if err != nil {
+		return err
+	}
+
 	schedules, err := s.repo.Schedules(ctx, booksID)
 	if err != nil {
 		return err
@@ -274,16 +284,17 @@ func (s *Service) planOccurrences(ctx context.Context, booksID int64, out *Plan)
 		return err
 	}
 
-	return s.addOccurrences(ctx, out, os, byID, received)
+	return s.addOccurrences(ctx, out, os, byID, received, sets)
 }
 
-// addOccurrences adds the income and savings occurrences of os to the plan.
+// addOccurrences adds the income occurrences and the planned movements of os to the plan.
 func (s *Service) addOccurrences(
 	ctx context.Context,
 	out *Plan,
 	os []domain.Occurrence,
 	byID map[uuid.UUID]domain.Schedule,
 	received map[uuid.UUID]int64,
+	sets accountSets,
 ) error {
 	today := s.clk.Today(ctx)
 
@@ -291,7 +302,7 @@ func (s *Service) addOccurrences(
 	for _, o := range os {
 		sch := byID[o.ScheduleID]
 		if (o.State != domain.Expected && o.State != domain.Realized) ||
-			(sch.Kind != domain.Income && sch.Kind != domain.Savings) {
+			(sch.Kind != domain.Income && !movesMoney(sch.Kind)) {
 			continue
 		}
 
@@ -305,8 +316,8 @@ func (s *Service) addOccurrences(
 			return err
 		}
 
-		if sch.Kind == domain.Savings {
-			out.Savings += amount
+		if movesMoney(sch.Kind) {
+			addPlannedMovement(out, sets, sch, amount)
 			continue
 		}
 

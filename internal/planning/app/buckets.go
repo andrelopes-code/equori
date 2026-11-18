@@ -182,8 +182,38 @@ func (s *Service) planBuckets(
 		out.OutsideSpent += spent
 	}
 
+	if err := s.movementBuckets(ctx, booksID, out, method); err != nil {
+		return err
+	}
+
+	for _, r := range out.Rows {
+		if r.Counted {
+			add(r.CategoryID, r.Planned, 0)
+		}
+	}
+
+	for _, c := range categories {
+		add(c.ID, 0, own[c.ID][out.Month])
+	}
+
+	return nil
+}
+
+// movementBuckets sets the buckets of out from method and gives the bucket that takes goals the
+// goal deposits and the bucket that takes savings the savings, planned and realized; the share of
+// the latter is the savings target (A230, A231, A253).
+func (s *Service) movementBuckets(
+	ctx context.Context,
+	booksID int64,
+	out *Plan,
+	method []domain.Bucket,
+) error {
 	for i, b := range method {
 		out.Buckets[i].Bucket = b
+		if b.TakesGoals {
+			out.Buckets[i].Planned = out.GoalDeposits
+		}
+
 		if !b.TakesSavings {
 			continue
 		}
@@ -195,16 +225,6 @@ func (s *Service) planBuckets(
 
 		out.Buckets[i].Planned, out.Buckets[i].Spent = out.Savings, saved
 		out.Reference.TargetBP, out.Reference.HasTarget = b.ShareBP, true
-	}
-
-	for _, r := range out.Rows {
-		if r.Counted {
-			add(r.CategoryID, r.Planned, 0)
-		}
-	}
-
-	for _, c := range categories {
-		add(c.ID, 0, own[c.ID][out.Month])
 	}
 
 	return nil

@@ -460,9 +460,14 @@ type bucketHistoryView struct {
 		Outside  money   `json:"outside"`
 		// Unallocated is a pointer: a response without the field fails the test.
 		Unallocated *money `json:"unallocated"`
+		Retained    *money `json:"retained"`
 		Buckets     []struct {
-			ID   string `json:"id"`
-			Real money  `json:"real"`
+			ID        string `json:"id"`
+			Real      money  `json:"real"`
+			GoalPaid  *money `json:"goal_paid"`
+			Covered   *money `json:"covered"`
+			Deposited *money `json:"deposited"`
+			Withdrawn *money `json:"withdrawn"`
 		} `json:"buckets"`
 	} `json:"months"`
 }
@@ -551,10 +556,11 @@ func TestS447GoalsBucket(t *testing.T) {
 		apitest.Posting(reserve, 80000),
 		apitest.Posting(f.checking, -80000),
 	)
+	// A251: an income credited to a goal account is a deposit, except a yield.
 	f.h.Record(
 		"2026-10-31",
 		apitest.Posting(reserve, 900),
-		apitest.Posting(f.salary, -900),
+		apitest.Posting(f.systemCategory("yield"), -900),
 	)
 	f.pay("2026-10-12", 100000, f.savings, "")
 
@@ -581,8 +587,8 @@ func TestS447GoalsBucket(t *testing.T) {
 	var got bucketHistoryView
 	f.h.MustDo(http.MethodGet, bucketsPath+"/history?month=2026-11", nil, http.StatusOK, &got)
 
-	// Received 5000.00 and the 9.00 yield; 1300.00 spent; 800.00 into the goal and 1000.00 into
-	// savings, outside the goal.
+	// Received 5000.00, the 9.00 yield retained (A252); 1300.00 spent; 800.00 into the goal and
+	// 1000.00 into savings, outside the goal.
 	october := got.Months[4]
 
 	want := []int64{100000, 80000, 30000, 100000}

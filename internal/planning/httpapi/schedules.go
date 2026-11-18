@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -87,7 +89,17 @@ func toRecurrenceAPI(rule domain.Rule) Recurrence {
 	return out
 }
 
-func toScheduleAPI(s domain.Schedule) Schedule {
+// scheduleAPI returns the schedule with the sets it moves money between (A253).
+func (s *Server) scheduleAPI(ctx context.Context, sch domain.Schedule) (Schedule, error) {
+	moves, err := s.svc.ScheduleMoves(ctx, auth.MustBooksID(ctx), []domain.Schedule{sch})
+	if err != nil {
+		return Schedule{}, err
+	}
+
+	return toScheduleAPI(sch, moves), nil
+}
+
+func toScheduleAPI(s domain.Schedule, moves map[uuid.UUID]app.Moves) Schedule {
 	out := Schedule{
 		Id:               s.ID,
 		Kind:             ScheduleKind(s.Kind),
@@ -115,6 +127,10 @@ func toScheduleAPI(s domain.Schedule) Schedule {
 		out.Pauses[i] = SchedulePause{From: apiDate(p.From), To: apiDate(p.To)}
 	}
 
+	if m, ok := moves[s.ID]; ok {
+		out.Moves = &ScheduleMoves{From: AccountSet(m.From), To: AccountSet(m.To)}
+	}
+
 	return out
 }
 
@@ -126,7 +142,9 @@ func (s *Server) createSchedule(
 		return Schedule{}, "", err
 	}
 
-	return toScheduleAPI(created), BaseURL + "/schedules/" + created.ID.String(), nil
+	out, err := s.scheduleAPI(ctx, created)
+
+	return out, BaseURL + "/schedules/" + created.ID.String(), err
 }
 
 func (s *Server) getSchedule(
@@ -144,7 +162,7 @@ func (s *Server) getSchedule(
 		return Schedule{}, err
 	}
 
-	return toScheduleAPI(sch), nil
+	return s.scheduleAPI(ctx, sch)
 }
 
 func (s *Server) listSchedules(
@@ -167,9 +185,14 @@ func (s *Server) listSchedules(
 		return SchedulePage{}, err
 	}
 
+	moves, err := s.svc.ScheduleMoves(ctx, auth.MustBooksID(ctx), ss)
+	if err != nil {
+		return SchedulePage{}, err
+	}
+
 	out := SchedulePage{Items: make([]Schedule, len(ss))}
 	for i, sch := range ss {
-		out.Items[i] = toScheduleAPI(sch)
+		out.Items[i] = toScheduleAPI(sch, moves)
 	}
 
 	out.NextCursor, err = page.Next(next)

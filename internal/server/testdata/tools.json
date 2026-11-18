@@ -1261,7 +1261,7 @@
   },
   {
     "name": "get_budgets_and_goals",
-    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. With kind plan it returns the month's budget plan instead: the reference income, the installments and savings it pays, the budgets and the unassigned rest. Use it for how a budget or goal is going, or how much income still has no budget. Do not use it for spending by category without a budget: get_category_totals does.",
+    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. With kind plan it returns the month's budget plan instead: the reference income, the installments, savings and goal deposits it pays, the budgets and the unassigned rest. Use it for how a budget or goal is going, or how much income still has no budget. Do not use it for spending by category without a budget: get_category_totals does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -1580,6 +1580,24 @@
               ],
               "additionalProperties": false
             },
+            "goal_deposits": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
             "planned": {
               "type": "object",
               "properties": {
@@ -1852,6 +1870,24 @@
                 "additionalProperties": false
               },
               "unallocated": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "retained": {
                 "type": "object",
                 "properties": {
                   "amount": {

@@ -43,8 +43,15 @@ export function usePlanFigures(
     room:
       reference === undefined
         ? undefined
-        : reference - plan.installments.amount - plan.savings.amount,
-    committed: plan.installments.amount + plan.savings.amount + draft.planned,
+        : reference -
+          plan.installments.amount -
+          plan.savings.amount -
+          plan.goal_deposits.amount,
+    committed:
+      plan.installments.amount +
+      plan.savings.amount +
+      plan.goal_deposits.amount +
+      draft.planned,
     groups,
     buckets:
       plan.buckets === undefined
@@ -55,6 +62,7 @@ export function usePlanFigures(
             draft.rows,
             reference,
             plan.savings.amount,
+            plan.goal_deposits.amount,
           ),
     lastMonth: format.monthName(previousMonth(month)),
     figure:
@@ -64,11 +72,13 @@ export function usePlanFigures(
     segments: planSegments(
       plan.installments.amount,
       plan.savings.amount,
+      plan.goal_deposits.amount,
       groups,
       unassigned,
       {
         installments: t("plan.installments"),
         savings: t("plan.savings"),
+        goalDeposits: t("plan.goalDeposits"),
         rest: t("plan.unassigned"),
       },
     ),

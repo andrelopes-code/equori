@@ -87,7 +87,7 @@ describe("bucketFigures", () => {
       row("gym", 50),
     ];
 
-    const got = bucketFigures(buckets, entries, rows, 100001, 200);
+    const got = bucketFigures(buckets, entries, rows, 100001, 200, 0);
 
     expect(
       got.buckets.map((b) => [b.id, b.target, b.planned, b.spent]),
@@ -100,7 +100,7 @@ describe("bucketFigures", () => {
   });
 
   it("leaves the targets out without a reference", () => {
-    const got = bucketFigures(buckets, entries, [], undefined, 0);
+    const got = bucketFigures(buckets, entries, [], undefined, 0, 0);
 
     expect(got.buckets.map((b) => b.target)).toEqual([
       undefined,

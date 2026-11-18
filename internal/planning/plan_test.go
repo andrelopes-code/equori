@@ -24,8 +24,12 @@ type planView struct {
 	Reference      *money `json:"reference"`
 	Installments   money  `json:"installments"`
 	Savings        money  `json:"savings"`
-	Planned        money  `json:"planned"`
-	Unassigned     *money `json:"unassigned"`
+	// The figures of A253 are pointers: a response without the field fails the test.
+	GoalDeposits          *money `json:"goal_deposits"`
+	SavingsBrokerage      *money `json:"savings_brokerage"`
+	GoalDepositsBrokerage *money `json:"goal_deposits_brokerage"`
+	Planned               money  `json:"planned"`
+	Unassigned            *money `json:"unassigned"`
 
 	SavingsTargetBP *int   `json:"savings_target_bp"`
 	SavingsRateBP   *int   `json:"savings_rate_bp"`

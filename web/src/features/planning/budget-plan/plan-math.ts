@@ -85,6 +85,8 @@ export interface PlanBase {
   reference: number | undefined;
   installments: number;
   savings: number;
+  // What the schedules move into the goal set (planning coherence A253).
+  goalDeposits: number;
 }
 
 // The counted drafts and what the reference leaves after them and the commitments.
@@ -98,7 +100,11 @@ export function planTotals(
     unassigned:
       base.reference === undefined
         ? undefined
-        : base.reference - base.installments - base.savings - planned,
+        : base.reference -
+          base.installments -
+          base.savings -
+          base.goalDeposits -
+          planned,
   };
 }
 

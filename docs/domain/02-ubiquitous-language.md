@@ -199,6 +199,17 @@ classDiagram
 | Budget | Orçamento | Planned amount for a category over a period. | Food: 1,800.00 per month |
 | Income split | Divisão da renda | Named buckets that each take a share of the amount to distribute and the expense categories placed in them. | Needs 50%, Wants 30%, Savings 20% |
 | Goal | Meta | Target balance for an account or group of accounts by a date. | Emergency fund 30,000.00 by 2027-06 |
+| Target | Alvo | The amount a bucket of the income split must keep to (planning coherence A249). | Needs: at most 2,500.00 |
+| Deposit | Depósito | Money moved or allocated to a goal. | 500.00 into the trip goal |
+| Contribution | Aporte | Money that buys assets by the contribution plan. | 1,000.00 a month |
+| Month plan | Plano do mês | The Plan view of the budgets of a month. | |
+| To distribute | A distribuir | Reference income without a destination: the reference minus earlier installments, scheduled savings, goal deposits and budgets. | |
+| Outside the split | Fora da divisão | A category that no bucket holds. | |
+| Savings rate | Taxa de poupança | Income minus expenses over income, in the reports. | |
+| Set aside | Guardado | Money moved into the savings set, in the income split. | |
+| Scheduled savings | Poupança agendada | Movements into the savings set that schedules plan. | |
+| Account set | Conjunto de contas | The set of an asset or liability account (A250): goals, savings or spending. | A checking account is in the spending set |
+| Retained income | Renda retida | A yield or a realized gain whose transaction touches no account of the spending set; left out of the income received (A252). | A fund yield reinvested |
 | Accrual view | Regime de competência | Income and expenses on their transaction date. An installment purchase counts in full on the purchase date. | |
 | Cash view | Regime de caixa | Income and expenses on the date money left or entered a balance account. A card expense counts when its statement is paid, in proportion to the payment. | |
 | Committed amount | Valor comprometido | Sum of installments not yet billed and expected occurrences in a future period. | 2,340.00 already committed for 2026-12 |

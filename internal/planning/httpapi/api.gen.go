@@ -9,6 +9,27 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for AccountSet.
+const (
+	AccountSetGoals    AccountSet = "goals"
+	AccountSetSavings  AccountSet = "savings"
+	AccountSetSpending AccountSet = "spending"
+)
+
+// Valid indicates whether the value is a known member of the AccountSet enum.
+func (e AccountSet) Valid() bool {
+	switch e {
+	case AccountSetGoals:
+		return true
+	case AccountSetSavings:
+		return true
+	case AccountSetSpending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for BudgetBucketEntryKind.
 const (
 	BudgetBucketEntryKindExpense BudgetBucketEntryKind = "expense"
@@ -183,6 +204,11 @@ func (e ScheduleKind) Valid() bool {
 	}
 }
 
+// AccountSet The set of an asset or liability account (A250): goals holds the accounts of the goals that do not count as
+// savings; savings holds the savings, reserve and brokerage accounts outside it and the accounts of the goals that
+// count as savings; spending holds every other account.
+type AccountSet string
+
 // Budget defines model for Budget.
 type Budget struct {
 	// Amounts Versions by month.
@@ -259,7 +285,9 @@ type BudgetBucketInput struct {
 	TakesSavings bool `json:"takes_savings"`
 }
 
-// BudgetBucketMonth defines model for BudgetBucketMonth.
+// BudgetBucketMonth received is the income of the month without retained, the yields and realized gains whose transaction has no
+// posting in an account of the spending set (A252). unallocated is received minus the expenses by transaction date
+// and the money set aside: an accrual figure, not money left in accounts (A235).
 type BudgetBucketMonth struct {
 	Buckets []BudgetBucketReal `json:"buckets"`
 
@@ -268,6 +296,7 @@ type BudgetBucketMonth struct {
 	Month       string  `json:"month"`
 	Outside     Money   `json:"outside"`
 	Received    Money   `json:"received"`
+	Retained    Money   `json:"retained"`
 	Unallocated Money   `json:"unallocated"`
 }
 
@@ -320,21 +349,25 @@ type BudgetPage struct {
 	NextCursor *string `json:"next_cursor,omitempty"`
 }
 
-// BudgetPlan installments are those billed on the month's statements for purchases booked before it; savings are the month's
-// occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
-// reference, which is absent when the source has no figure.
+// BudgetPlan installments are those billed on the month's statements for purchases booked before it. savings is what the
+// month's occurrences of savings and transfer schedules move into the savings set, minus what they move out of it;
+// goal_deposits is the same over the goal set; savings_brokerage and goal_deposits_brokerage are their parts whose
+// counterpart is a brokerage account (A253). unassigned is reference - installments - savings - goal_deposits -
+// planned and is absent with reference, which is absent when the source has no figure.
 type BudgetPlan struct {
 	AverageIncome *Money `json:"average_income,omitempty"`
 	AverageMonths *int   `json:"average_months,omitempty"`
 
 	// Buckets The book's income bucket method; absent without one (A229).
-	Buckets        *[]BudgetPlanBucket `json:"buckets,omitempty"`
-	Currency       string              `json:"currency"`
-	ExpectedIncome *Money              `json:"expected_income,omitempty"`
-	ExpectedItems  *[]BudgetPlanIncome `json:"expected_items,omitempty"`
-	Fixed          *Money              `json:"fixed,omitempty"`
-	Installments   Money               `json:"installments"`
-	Month          string              `json:"month"`
+	Buckets               *[]BudgetPlanBucket `json:"buckets,omitempty"`
+	Currency              string              `json:"currency"`
+	ExpectedIncome        *Money              `json:"expected_income,omitempty"`
+	ExpectedItems         *[]BudgetPlanIncome `json:"expected_items,omitempty"`
+	Fixed                 *Money              `json:"fixed,omitempty"`
+	GoalDeposits          Money               `json:"goal_deposits"`
+	GoalDepositsBrokerage Money               `json:"goal_deposits_brokerage"`
+	Installments          Money               `json:"installments"`
+	Month                 string              `json:"month"`
 
 	// OutsideCategoryIds The open expense categories, the uncategorized one excepted, that resolve to no bucket of the method of the month,
 	// by name; present with `buckets` (A236).
@@ -344,12 +377,13 @@ type BudgetPlan struct {
 	Planned            Money                 `json:"planned"`
 
 	// Prices Prices that value occurrences in another currency at today (P8 amendment A72).
-	Prices         *[]Price        `json:"prices,omitempty"`
-	ReceivedIncome Money           `json:"received_income"`
-	Reference      *Money          `json:"reference,omitempty"`
-	Rows           []BudgetPlanRow `json:"rows"`
-	Savings        Money           `json:"savings"`
-	SavingsGap     *Money          `json:"savings_gap,omitempty"`
+	Prices           *[]Price        `json:"prices,omitempty"`
+	ReceivedIncome   Money           `json:"received_income"`
+	Reference        *Money          `json:"reference,omitempty"`
+	Rows             []BudgetPlanRow `json:"rows"`
+	Savings          Money           `json:"savings"`
+	SavingsBrokerage Money           `json:"savings_brokerage"`
+	SavingsGap       *Money          `json:"savings_gap,omitempty"`
 
 	// SavingsRateBp savings as basis points of reference, truncated; absent without a reference above zero (A188).
 	SavingsRateBp *int   `json:"savings_rate_bp,omitempty"`
@@ -368,8 +402,9 @@ type BudgetPlanAmount struct {
 }
 
 // BudgetPlanBucket A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
-// with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
-// the month's own postings of its categories, plus the realized savings when it takes savings.
+// with reference; planned sums the counted budgets of its categories, plus savings when it takes savings and
+// goal_deposits when it takes goals (A253); spent sums the month's own postings of its categories, plus the realized
+// savings when it takes savings.
 type BudgetPlanBucket struct {
 	AtLeast      bool                 `json:"at_least"`
 	CategoryIds  []openapi_types.UUID `json:"category_ids"`
@@ -690,8 +725,12 @@ type Schedule struct {
 	Kind             ScheduleKind        `json:"kind"`
 	MatchToleranceBp int                 `json:"match_tolerance_bp"`
 	MatchWindowDays  int                 `json:"match_window_days"`
-	Pauses           []SchedulePause     `json:"pauses"`
-	PayeeId          *openapi_types.UUID `json:"payee_id,omitempty"`
+
+	// Moves The sets a schedule of kind savings or transfer moves money between (A253): from is the set of its account and
+	// to the set of its counterpart. Absent for the other kinds.
+	Moves   *ScheduleMoves      `json:"moves,omitempty"`
+	Pauses  []SchedulePause     `json:"pauses"`
+	PayeeId *openapi_types.UUID `json:"payee_id,omitempty"`
 
 	// Terms Versions by effective date.
 	Terms []ScheduleTerms `json:"terms"`
@@ -719,6 +758,20 @@ type ScheduleInput struct {
 
 // ScheduleKind defines model for ScheduleKind.
 type ScheduleKind string
+
+// ScheduleMoves The sets a schedule of kind savings or transfer moves money between (A253): from is the set of its account and
+// to the set of its counterpart. Absent for the other kinds.
+type ScheduleMoves struct {
+	// From The set of an asset or liability account (A250): goals holds the accounts of the goals that do not count as
+	// savings; savings holds the savings, reserve and brokerage accounts outside it and the accounts of the goals that
+	// count as savings; spending holds every other account.
+	From AccountSet `json:"from"`
+
+	// To The set of an asset or liability account (A250): goals holds the accounts of the goals that do not count as
+	// savings; savings holds the savings, reserve and brokerage accounts outside it and the accounts of the goals that
+	// count as savings; spending holds every other account.
+	To AccountSet `json:"to"`
+}
 
 // SchedulePage defines model for SchedulePage.
 type SchedulePage struct {

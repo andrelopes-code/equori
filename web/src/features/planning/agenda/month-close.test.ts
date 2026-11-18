@@ -59,6 +59,18 @@ function rowsWithTransfer(): AgendaRow[] {
   return [...view.overdue, ...view.days.flatMap((d) => d.rows)];
 }
 
+// The transfer of 5,000.00 with the sets it moves between (planning coherence A253).
+function rowsMoving(from: string, to: string): AgendaRow[] {
+  const view = agenda(
+    [rentOctober, streaming, salary, transfer],
+    [rentSeptember, rentOctober],
+    [...schedules, { ...transferSchedule, moves: { from, to } } as Schedule],
+    {},
+  );
+
+  return [...view.overdue, ...view.days.flatMap((d) => d.rows)];
+}
+
 const usd: Occurrence = {
   ...salary,
   id: "f1000000-0000-4000-8000-0000000000aa",
@@ -145,6 +157,23 @@ describe("monthClose", () => {
   ])("$name", ({ input, want }) => {
     expect(monthClose(input, "BRL")).toEqual({ currency: "BRL", ...want });
   });
+
+  it.each([
+    { from: "spending", to: "savings", inflow: 500000, outflow: 923990 },
+    { from: "spending", to: "goals", inflow: 500000, outflow: 923990 },
+    { from: "savings", to: "spending", inflow: 1000000, outflow: 423990 },
+    { from: "savings", to: "goals", inflow: 500000, outflow: 423990 },
+    { from: "spending", to: "spending", inflow: 500000, outflow: 423990 },
+  ])(
+    "a movement from $from to $to counts by the spending set",
+    ({ from, to, inflow, outflow }) => {
+      const close = monthClose(rowsMoving(from, to), "BRL");
+
+      expect(close.inflow).toBe(inflow);
+      expect(close.outflow).toBe(outflow);
+      expect(close.close).toBe(inflow - outflow);
+    },
+  );
 });
 
 describe("pendingGroups", () => {
@@ -186,6 +215,16 @@ describe("runningBalance", () => {
     const series = runningBalance(rowsWithTransfer(), "2026-10", "BRL");
 
     expect(series[30]).toEqual({ date: "2026-10-31", amount: 76010 });
+  });
+
+  it("counts a movement into the spending set as an inflow", () => {
+    const series = runningBalance(
+      rowsMoving("savings", "spending"),
+      "2026-10",
+      "BRL",
+    );
+
+    expect(series[30]).toEqual({ date: "2026-10-31", amount: 576010 });
   });
 
   it("leaves another currency out", () => {

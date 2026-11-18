@@ -24,13 +24,15 @@ type BucketHistory struct {
 // BucketMonth holds the income received in a month, the real amount of each bucket in the order
 // of the month's method and the spending outside the split. From is zero without a split.
 // Unallocated is the income that no bucket and no spending took: with Real and Outside it sums
-// to Received (A235).
+// to Received (A235). Retained is the yield and the realized gain that stayed in the investments,
+// left out of Received (planning coherence A252).
 type BucketMonth struct {
 	Month             time.Time
 	From              time.Time
 	HasMethod         bool
 	Received, Outside int64
 	Unallocated       int64
+	Retained          int64
 	Real              []int64
 }
 
@@ -89,19 +91,14 @@ func (s *Service) addBucketMonths(
 	months := windowMethods(versions, from, to)
 	out.Methods = distinctMethods(months)
 
-	var goals, savings map[time.Time]int64
-	if holdsBucket(out.Methods, func(b domain.Bucket) bool { return b.TakesGoals }) {
-		goals, err = s.goalInflows(ctx, booksID, facts, out.Currency, from, to)
-		if err != nil {
-			return err
-		}
+	goals, savings, err := s.windowInflows(ctx, booksID, facts, *out, from, to)
+	if err != nil {
+		return err
 	}
 
-	if holdsBucket(out.Methods, func(b domain.Bucket) bool { return b.TakesSavings }) {
-		savings, err = s.savingsInflows(ctx, booksID, facts, out.Currency, from, to)
-		if err != nil {
-			return err
-		}
+	retained, err := s.retainedIncome(ctx, booksID, facts, from, to)
+	if err != nil {
+		return err
 	}
 
 	parents := expenseParents(facts)
@@ -109,6 +106,8 @@ func (s *Service) addBucketMonths(
 		resolve := domain.BucketResolver(wm.method.Buckets, parents)
 		month := bucketMonth(wm.month, wm.method.Buckets, resolve, expense, income)
 		month.HasMethod = wm.ok
+		month.Retained = retained[wm.month]
+		month.Received -= month.Retained
 
 		if wm.ok {
 			month.From = wm.method.From
@@ -119,6 +118,32 @@ func (s *Service) addBucketMonths(
 	}
 
 	return nil
+}
+
+// windowInflows returns what went into the goal set and into the savings set by month, each read
+// only when a method of the window holds a bucket that takes it.
+func (s *Service) windowInflows(
+	ctx context.Context,
+	booksID int64,
+	facts []Account,
+	history BucketHistory,
+	from, to time.Time,
+) (goals, savings map[time.Time]int64, err error) {
+	if holdsBucket(history.Methods, func(b domain.Bucket) bool { return b.TakesGoals }) {
+		goals, err = s.goalInflows(ctx, booksID, facts, history.Currency, from, to)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	if holdsBucket(history.Methods, func(b domain.Bucket) bool { return b.TakesSavings }) {
+		savings, err = s.savingsInflows(ctx, booksID, facts, history.Currency, from, to)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return goals, savings, nil
 }
 
 // windowMethod is the method in force in one month of the window; ok is false without a split.

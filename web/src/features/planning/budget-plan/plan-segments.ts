@@ -18,6 +18,7 @@ const groupTones: readonly SegmentTone[] = [
 export interface SegmentNames {
   installments: string;
   savings: string;
+  goalDeposits: string;
   rest: string;
 }
 
@@ -26,6 +27,7 @@ export interface SegmentNames {
 export function planSegments(
   installments: number,
   savings: number,
+  goalDeposits: number,
   groups: readonly PlanGroup[],
   unassigned: number | undefined,
   names: SegmentNames,
@@ -43,6 +45,13 @@ export function planSegments(
       key: "savings",
       name: names.savings,
       amount: savings,
+      tone: "commitment",
+    });
+  if (goalDeposits > 0)
+    segments.push({
+      key: "goalDeposits",
+      name: names.goalDeposits,
+      amount: goalDeposits,
       tone: "commitment",
     });
   [...groups]

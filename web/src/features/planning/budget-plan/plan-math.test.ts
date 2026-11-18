@@ -130,8 +130,24 @@ describe("planTotals", () => {
       row("market", 110000, { counted: false }),
     ];
     expect(
-      planTotals(rows, { reference: 850000, installments: 64000, savings: 0 }),
+      planTotals(rows, {
+        reference: 850000,
+        installments: 64000,
+        savings: 0,
+        goalDeposits: 0,
+      }),
     ).toEqual({ planned: 570000, unassigned: 216000 });
+  });
+
+  it("subtracts the savings and the goal deposits", () => {
+    expect(
+      planTotals([row("a", 1000)], {
+        reference: 10000,
+        installments: 500,
+        savings: 2000,
+        goalDeposits: 3000,
+      }),
+    ).toEqual({ planned: 1000, unassigned: 3500 });
   });
 
   it("has no unassigned amount without a reference", () => {
@@ -140,6 +156,7 @@ describe("planTotals", () => {
         reference: undefined,
         installments: 0,
         savings: 0,
+        goalDeposits: 0,
       }),
     ).toEqual({ planned: 1, unassigned: undefined });
   });

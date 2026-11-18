@@ -7502,7 +7502,23 @@ export interface components {
             /** @description Versions by effective date. */
             terms: components["schemas"]["ScheduleTerms"][];
             pauses: components["schemas"]["SchedulePause"][];
+            moves?: components["schemas"]["ScheduleMoves"];
         };
+        /**
+         * @description The sets a schedule of kind savings or transfer moves money between (A253): from is the set of its account and
+         *     to the set of its counterpart. Absent for the other kinds.
+         */
+        ScheduleMoves: {
+            from: components["schemas"]["AccountSet"];
+            to: components["schemas"]["AccountSet"];
+        };
+        /**
+         * @description The set of an asset or liability account (A250): goals holds the accounts of the goals that do not count as
+         *     savings; savings holds the savings, reserve and brokerage accounts outside it and the accounts of the goals that
+         *     count as savings; spending holds every other account.
+         * @enum {string}
+         */
+        AccountSet: "spending" | "savings" | "goals";
         SchedulePage: {
             items: components["schemas"]["Schedule"][];
             /** @description Absent on the last page. */
@@ -7682,6 +7698,11 @@ export interface components {
             methods: components["schemas"]["BudgetBucketVersion"][];
             months: components["schemas"]["BudgetBucketMonth"][];
         };
+        /**
+         * @description received is the income of the month without retained, the yields and realized gains whose transaction has no
+         *     posting in an account of the spending set (A252). unallocated is received minus the expenses by transaction date
+         *     and the money set aside: an accrual figure, not money left in accounts (A235).
+         */
         BudgetBucketMonth: {
             month: string;
             /** @description First month of the version that is the method of this month; absent without a split. */
@@ -7689,6 +7710,7 @@ export interface components {
             received: components["schemas"]["Money"];
             outside: components["schemas"]["Money"];
             unallocated: components["schemas"]["Money"];
+            retained: components["schemas"]["Money"];
             buckets: components["schemas"]["BudgetBucketReal"][];
         };
         BudgetBucketReal: {
@@ -7698,8 +7720,9 @@ export interface components {
         };
         /**
          * @description A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent
-         *     with reference; planned sums the counted budgets of its categories, plus savings when it takes savings; spent sums
-         *     the month's own postings of its categories, plus the realized savings when it takes savings.
+         *     with reference; planned sums the counted budgets of its categories, plus savings when it takes savings and
+         *     goal_deposits when it takes goals (A253); spent sums the month's own postings of its categories, plus the realized
+         *     savings when it takes savings.
          */
         BudgetPlanBucket: {
             /** Format: uuid */
@@ -7715,9 +7738,11 @@ export interface components {
             spent: components["schemas"]["Money"];
         };
         /**
-         * @description installments are those billed on the month's statements for purchases booked before it; savings are the month's
-         *     occurrences of savings schedules; unassigned is reference - installments - savings - planned and is absent with
-         *     reference, which is absent when the source has no figure.
+         * @description installments are those billed on the month's statements for purchases booked before it. savings is what the
+         *     month's occurrences of savings and transfer schedules move into the savings set, minus what they move out of it;
+         *     goal_deposits is the same over the goal set; savings_brokerage and goal_deposits_brokerage are their parts whose
+         *     counterpart is a brokerage account (A253). unassigned is reference - installments - savings - goal_deposits -
+         *     planned and is absent with reference, which is absent when the source has no figure.
          */
         BudgetPlan: {
             month: string;
@@ -7732,6 +7757,9 @@ export interface components {
             reference?: components["schemas"]["Money"];
             installments: components["schemas"]["Money"];
             savings: components["schemas"]["Money"];
+            goal_deposits: components["schemas"]["Money"];
+            savings_brokerage: components["schemas"]["Money"];
+            goal_deposits_brokerage: components["schemas"]["Money"];
             planned: components["schemas"]["Money"];
             unassigned?: components["schemas"]["Money"];
             /** @description The stored savings target in basis points of the reference; absent without one (A187). */

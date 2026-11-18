@@ -55,6 +55,7 @@ describe("usePlanDraft", () => {
       reference: 850000,
       installments: 64000,
       savings: 0,
+      goalDeposits: 0,
     });
     expect(unassigned).toBe(0);
     expect(result.current.unassigned).toBe(0);

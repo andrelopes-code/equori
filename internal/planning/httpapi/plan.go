@@ -53,6 +53,7 @@ func toBudgetPlanAPI(p app.Plan) BudgetPlan {
 	}
 
 	setPlanSettings(&out, p)
+	setPlanMovements(&out, p, m)
 	setPlanSavings(&out, p, optional)
 	setPlanReference(&out, p, optional)
 	setPlanBuckets(&out, p, m)
@@ -85,6 +86,13 @@ func planIncomeAPI(items []app.PlanIncome, m func(int64) Money) []BudgetPlanInco
 	}
 
 	return out
+}
+
+// setPlanMovements sets the figures of the planned movements beside the savings (A253).
+func setPlanMovements(out *BudgetPlan, p app.Plan, m func(int64) Money) {
+	out.GoalDeposits = m(p.GoalDeposits)
+	out.SavingsBrokerage = m(p.SavingsBrokerage)
+	out.GoalDepositsBrokerage = m(p.GoalDepositsBrokerage)
 }
 
 func setPlanSavings(out *BudgetPlan, p app.Plan, optional func(*int64) *Money) {
