@@ -47,12 +47,176 @@
       "en": {
         "spot": [76.41, 81.39, 18.28, 10]
       }
+    },
+    "rule-new": {
+      "pt": {
+        "spot": [78.36, 4, 18.05, 7.25]
+      },
+      "en": {
+        "spot": [80.55, 4, 15.86, 7.25]
+      }
+    },
+    "rule-conditions": {
+      "pt": {
+        "spot": [2.5, 33.02, 90.47, 33.9]
+      },
+      "en": {
+        "spot": [2.5, 34.77, 90.47, 30.4]
+      }
+    },
+    "rule-actions": {
+      "pt": {
+        "spot": [2.5, 34.92, 90.47, 30.39]
+      },
+      "en": {
+        "spot": [2.5, 34.92, 90.47, 30.39]
+      }
+    },
+    "rule-preview": {
+      "pt": {
+        "spot": [3.59, 17.33, 89.38, 65.31]
+      },
+      "en": {
+        "spot": [3.59, 17.33, 89.38, 65.31]
+      }
+    },
+    "rule-save": {
+      "pt": {
+        "spot": [78.2, 87.63, 16.57, 8.37]
+      },
+      "en": {
+        "spot": [81.02, 87.63, 13.75, 8.37]
+      }
+    },
+    "check-account": {
+      "pt": {
+        "spot": [11.76, 40.93, 84.49, 18.05]
+      },
+      "en": {
+        "spot": [11.76, 40.93, 84.49, 18.05]
+      }
+    },
+    "check-open": {
+      "pt": {
+        "spot": [22.5, 22.31, 18.13, 10]
+      },
+      "en": {
+        "spot": [23.28, 22.31, 19.22, 10]
+      }
+    },
+    "check-values": {
+      "pt": {
+        "spot": [16.8, 37.97, 66.4, 35.89]
+      },
+      "en": {
+        "spot": [16.8, 37.97, 66.4, 35.89]
+      }
+    },
+    "check-compare": {
+      "pt": {
+        "spot": [62.42, 76.36, 20.78, 10]
+      },
+      "en": {
+        "spot": [57.11, 76.36, 26.09, 10]
+      }
+    },
+    "check-difference": {
+      "pt": {
+        "spot": [5.78, 30.74, 88.44, 38.75]
+      },
+      "en": {
+        "spot": [5.78, 30.74, 88.44, 38.75]
+      }
+    },
+    "connect-settings": {
+      "pt": {
+        "spot": [4.14, 44.9, 27.03, 10]
+      },
+      "en": {
+        "spot": [4.14, 44.9, 27.03, 10]
+      }
+    },
+    "connect-add": {
+      "pt": {
+        "spot": [34.77, 45.35, 23.43, 9.5]
+      },
+      "en": {
+        "spot": [34.77, 45.35, 18.43, 9.5]
+      }
+    },
+    "connect-credentials": {
+      "pt": {
+        "spot": [16.8, 16.28, 66.4, 70.81]
+      },
+      "en": {
+        "spot": [16.8, 16.28, 66.4, 70.81]
+      }
+    },
+    "connect-create": {
+      "pt": {
+        "spot": [73.36, 89.59, 9.84, 6.41]
+      },
+      "en": {
+        "spot": [71.8, 89.59, 11.4, 6.41]
+      }
+    },
+    "import-account": {
+      "pt": {
+        "spot": [11.76, 40.93, 84.49, 18.05]
+      },
+      "en": {
+        "spot": [11.76, 40.93, 84.49, 18.05]
+      }
+    },
+    "import-open": {
+      "pt": {
+        "spot": [3.59, 22.31, 19.85, 10]
+      },
+      "en": {
+        "spot": [3.59, 22.31, 20.63, 10]
+      }
+    },
+    "import-csv": {
+      "pt": {
+        "spot": [3.59, 33.71, 89.38, 32.67]
+      },
+      "en": {
+        "spot": [3.59, 33.71, 89.38, 32.67]
+      }
+    },
+    "import-confirm": {
+      "pt": {
+        "spot": [81.8, 87.63, 12.97, 8.37]
+      },
+      "en": {
+        "spot": [83.67, 87.63, 11.1, 8.37]
+      }
+    },
+    "import-lines": {
+      "pt": {
+        "spot": [3.59, 45.25, 85.86, 9.5]
+      },
+      "en": {
+        "spot": [3.59, 45.25, 74.93, 9.5]
+      }
     }
   },
   "videos": {
     "pay-statement": {
       "seconds": 18,
       "frames": 528
+    },
+    "category-rule": {
+      "seconds": 23,
+      "frames": 690
+    },
+    "check-balance": {
+      "seconds": 13,
+      "frames": 390
+    },
+    "import-statement": {
+      "seconds": 15,
+      "frames": 450
     }
   },
   "files": {
@@ -83,9 +247,101 @@
     "pay-amount.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
     "pay-account.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
     "pay-confirm.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
-    "pay-statement.en.light.webm": "db59051c0fb300ec77c1dbe4fb18989e4cec81749145ed984ae73ea4a8b96216"
+    "pay-statement.en.light.webm": "db59051c0fb300ec77c1dbe4fb18989e4cec81749145ed984ae73ea4a8b96216",
+    "rule-new.pt.light.png": "470ba685c032bc5ca75d376fb30231a9220a7001644f0b5304d8917afded7a34",
+    "rule-conditions.pt.light.png": "bb69993d85032927bb0c7a41c35e5d494178ff30c6fdcad7f8a3984271da74e9",
+    "rule-actions.pt.light.png": "7a23216ceb380d480106e7df3af3e0aa852a0124a1994ccded824d855736d8dd",
+    "rule-preview.pt.light.png": "9ffd0b3ca005cf8f79ff79a3f99713b22486953504a9124d8efb1c25c75e89f7",
+    "rule-save.pt.light.png": "0d8360e5cbcff91c15728ab7b4031023a218777c50bd48690ef9bd0af6bb4280",
+    "rule-new.pt.dark.png": "810771d32dccb948b90d46298a8e641441edb8df2168939aec1aac3ec989da83",
+    "rule-conditions.pt.dark.png": "6b0adc86b069658b0c94bd148102e3f0d30c13520ab42af80321ca2dc15ab293",
+    "rule-actions.pt.dark.png": "f3d60e0d59d8ccc99388bc6d73e0011d9449f02aa41890a937beb8e9288946f2",
+    "rule-preview.pt.dark.png": "755fe76cc446b4ecf44811de16a2376bc759ccc99ea9a37c7569c93096587885",
+    "rule-save.pt.dark.png": "b20e427c28f00336ecb74b2fdd2871d1704209dcea4eca6d6e95fa79e1fb73ca",
+    "rule-new.en.dark.png": "667c828bfb2c959e011e9398aed1a3d885c8c21153f3dbdf752c710fd8e82cec",
+    "rule-conditions.en.dark.png": "1eb029e3b8eeace3d1809c403c02bb0a84003401d58e9b2b827c1f29fd8beb5c",
+    "rule-actions.en.dark.png": "0b8dd80bd38afefbb1386cc1e340319f2c1b8e1360802c1c392f77020035ae96",
+    "rule-preview.en.dark.png": "c1d9af1b3350248906df76fa83cf50edebbcfb0c0146453b6b84a8a01ea62e11",
+    "rule-save.en.dark.png": "29430c2cd78aac4e5a35a888f17d125942390b3585a8595fe65257624c87625b",
+    "category-rule.en.dark.webm": "b8b5ed46bad191e1107db615f2d60eb25a9dfa2a56b483c99031370f3d6f82a2",
+    "category-rule.pt.dark.webm": "2448aae17da246e8adb94c650dfccac613b1b71dbd5dc0076a98c05f5c39820b",
+    "category-rule.pt.light.webm": "d5b77bb3d8f20a91c86dd1382b64c8e29631c9587872b4d522a227e0dc30c848",
+    "check-account.pt.dark.png": "91fe859c552fbe17cc726f992965bff715c69d7da764499aac01543f094638f5",
+    "check-open.pt.dark.png": "8e4455df602cd141bc9de2fb8d88e375c0ecdd2475c17ac17f37a9caea302a86",
+    "check-values.pt.dark.png": "e5e5447c3421626c164aa0bddd3a502d7fe3414e9bddcc5ae8b2f0541c6df342",
+    "check-compare.pt.dark.png": "e5e5447c3421626c164aa0bddd3a502d7fe3414e9bddcc5ae8b2f0541c6df342",
+    "check-difference.pt.dark.png": "8f02427572927ac077c766c26c3a8cf427620f6f6a236c55797a20db3bfb0cf8",
+    "check-account.pt.light.png": "51aa3755eb766a556cd291c717030b989298034a960be6cb51a7be2577609cda",
+    "check-open.pt.light.png": "933dd157217dea890f19371c1e933df47b076fba8b986cd3319e515952fce335",
+    "check-values.pt.light.png": "df2ee86c271f2c0e854c038eff190d3489f466ce040f9b0600acb2924c2e3c39",
+    "check-compare.pt.light.png": "df2ee86c271f2c0e854c038eff190d3489f466ce040f9b0600acb2924c2e3c39",
+    "check-difference.pt.light.png": "db262d34a3f5e32fc16fd5bd3730be828ee0894556ddd0ccad2c17c286c44e1a",
+    "rule-new.en.light.png": "301ef15037b9c97665ad66167b7941d00a18bc7721e8618f716334bf5603f622",
+    "rule-conditions.en.light.png": "9e9deefd85463db6099709654aedb004c49d7acd7a4e525cce4c1ec5fab391f1",
+    "rule-actions.en.light.png": "54845917844629aed49747b023d42b3fe1aab3243e29f890aeaec80a9bb35dfe",
+    "rule-preview.en.light.png": "f448c3c4372636ebfef67e8467f629479a87e67fd2d070c8a037518f26aaef6f",
+    "rule-save.en.light.png": "838c3c1fd97562169392796d20d4b7bbd9d8b9610632c41da71f7c1e3e0ac02a",
+    "check-balance.pt.dark.webm": "47ec9322e04d0c0edb96b1b93c010ebcb961d7a42a12967d93c004abdace9c97",
+    "check-balance.pt.light.webm": "983b50e4563d7d8e99621d1e895814ab558389558503623ecd19df5394532243",
+    "check-account.en.dark.png": "7bafa689d8841c65776d3e237a65fe20b4679b0bcdce42efb3d35a59a44f66b4",
+    "check-open.en.dark.png": "a2a348c96b2b95129524b9d617c82812931c453bb419ced0da85246db0868c06",
+    "check-values.en.dark.png": "a62a0e3973cb0023ced8e8582828a65f76913a283d2bf5d6904070e45c0accaa",
+    "check-compare.en.dark.png": "a62a0e3973cb0023ced8e8582828a65f76913a283d2bf5d6904070e45c0accaa",
+    "check-difference.en.dark.png": "d59496dc3d4bab806427acf4a6fa7ca1f31148f94db4c67687733cc0dbae81a3",
+    "check-account.en.light.png": "693fbb7e7cc54046ec0ce80dc1d9047034db1c3414a469f81a9ccf0843d3983f",
+    "check-open.en.light.png": "a42c2910954ee07edf77a33ee72d6f687c6aeaa16e9a7f0a5496d43a7b93b70c",
+    "check-values.en.light.png": "e93ee5692bf0587c1c66a497dee3d1679b7f335b0d22b3130c6815756ff7e4f7",
+    "check-compare.en.light.png": "e93ee5692bf0587c1c66a497dee3d1679b7f335b0d22b3130c6815756ff7e4f7",
+    "check-difference.en.light.png": "285a87cc1d15dc01742ced2321a11dcadcff763335c22b553f6e94bb1986962b",
+    "category-rule.en.light.webm": "bf7bc8292ac6ff0b939e5410800a5508493656c54912f95d040c4b181ad15e27",
+    "connect-settings.pt.dark.png": "36a4479eb658e53963f2a6d9a7b39b03b4f93544659aef7a19046c99ec9e11e6",
+    "connect-add.pt.dark.png": "523faa0b3b32316f306e22afbc62334baad4b5001022aa11ae1d8d008c00c435",
+    "connect-credentials.pt.dark.png": "ef6768005d13d82cca24b00d957f262c4399140b67fcc8aea239623f269fbeb3",
+    "connect-create.pt.dark.png": "ef6768005d13d82cca24b00d957f262c4399140b67fcc8aea239623f269fbeb3",
+    "connect-settings.pt.light.png": "13f98ff7e7e0abb27f49dedf6964fba9f48eff2ed7d535d6a5548f560cb5df11",
+    "connect-add.pt.light.png": "0d6895275ab9911feabe1b305ccc7d7dca3754e1def954a683a5ff7b01bd9dab",
+    "connect-credentials.pt.light.png": "2023306081c6e06b8109ddfd1110e5604aa50affb77d081fe329248d1c5fc845",
+    "connect-create.pt.light.png": "2023306081c6e06b8109ddfd1110e5604aa50affb77d081fe329248d1c5fc845",
+    "connect-settings.en.dark.png": "9a88f16f119cf7ba7296154f6df2f60c10fb8f26830c8642ce23b1971eb59bc2",
+    "connect-add.en.dark.png": "9c2dae10f4dee47ef3fc7db0aa09922bccf5ae4c7cad8732b5b1eb6bb09249a0",
+    "connect-credentials.en.dark.png": "ecf0c2040439d103c018f48d2255f8b7bafea376c330fee2a971cd65c7847bd1",
+    "connect-create.en.dark.png": "ecf0c2040439d103c018f48d2255f8b7bafea376c330fee2a971cd65c7847bd1",
+    "connect-settings.en.light.png": "b3d82e816ef1bda0808f0774efbe7774494dfb807159ebb4d72ec1cabaa84b18",
+    "connect-add.en.light.png": "055c1211c9c194a3884ac4aee78117f9013a58f5c8967b31ae5d98f67ff68e23",
+    "connect-credentials.en.light.png": "c1d86bbfccacf4bfc72ca2d175b1671c0e0c11026ffcd79e63eca1f83935c922",
+    "connect-create.en.light.png": "c1d86bbfccacf4bfc72ca2d175b1671c0e0c11026ffcd79e63eca1f83935c922",
+    "check-balance.en.dark.webm": "62fc9ca78b8392af922da0b98bdaa289053b7115b99f9807f157ac4666f4944b",
+    "check-balance.en.light.webm": "6a4582d0e52c8ecf8a894615e5899e08ca3be66652d7c78f58e69d6670fd7675",
+    "import-account.pt.dark.png": "91fe859c552fbe17cc726f992965bff715c69d7da764499aac01543f094638f5",
+    "import-open.pt.dark.png": "8e4455df602cd141bc9de2fb8d88e375c0ecdd2475c17ac17f37a9caea302a86",
+    "import-csv.pt.dark.png": "b31dc18fab098840ada0f07d4559670828ac7882a2e13229207d11f968c06cb6",
+    "import-confirm.pt.dark.png": "45c8a5b630c11b1f1c991b84be5d29f12cb65c31087e0462a8d2d5f2a4d78f1d",
+    "import-lines.pt.dark.png": "abc2395cc980bb4700b5dbc2f9c1d9013656ef2852315eaec60c457263795217",
+    "import-account.pt.light.png": "51aa3755eb766a556cd291c717030b989298034a960be6cb51a7be2577609cda",
+    "import-open.pt.light.png": "933dd157217dea890f19371c1e933df47b076fba8b986cd3319e515952fce335",
+    "import-csv.pt.light.png": "fe8839e04feb6b0aa8a5380b286047d510c2bf0b0c3926b56c9d1385d39aaed3",
+    "import-confirm.pt.light.png": "07b225cb1b9723f91d91f792471f8289184f31074dda49614d7731a7ffd96b11",
+    "import-lines.pt.light.png": "847dc7fead4416984b85b950b42f0f4a9da7d0ceb1c5511131c8ee4cd3d3d806",
+    "import-account.en.dark.png": "7bafa689d8841c65776d3e237a65fe20b4679b0bcdce42efb3d35a59a44f66b4",
+    "import-open.en.dark.png": "a2a348c96b2b95129524b9d617c82812931c453bb419ced0da85246db0868c06",
+    "import-csv.en.dark.png": "aeee447431fcb419fae261e28287e04b9014567faf319a941cf35338c43718a8",
+    "import-confirm.en.dark.png": "fb3da642bc839309a51615c5697c5b060fadd447d1622a904cc2454ce6dee517",
+    "import-lines.en.dark.png": "a7486eb1cd0d28615c0eeef436552c7293ee1e316cdef4251f983ab2641c92a1",
+    "import-statement.pt.dark.webm": "655fa07d41d9839b1d01e622ad3c60824e78315ba0a4195069cf2ef477a8bc79",
+    "import-statement.pt.light.webm": "56ddb3f6f4fa6adfa92fcf2cded05389f3b24c64560b2083474cbf8a4d1fc593",
+    "import-statement.en.dark.webm": "d7660579063a120729cacf0684bb131a1842009c96788dfa1cf9d905484b8190",
+    "import-account.en.light.png": "693fbb7e7cc54046ec0ce80dc1d9047034db1c3414a469f81a9ccf0843d3983f",
+    "import-open.en.light.png": "a42c2910954ee07edf77a33ee72d6f687c6aeaa16e9a7f0a5496d43a7b93b70c",
+    "import-csv.en.light.png": "6797e884fdaf0fd41d8d6c1ae0072b7f670208b092f09fb6a7b07722cb59bebb",
+    "import-confirm.en.light.png": "404250ca720bdcf1a64ded8830a6123dec2295ad536ed51a2d4a436439cdfc1f",
+    "import-lines.en.light.png": "fa25a57ae6c7c271c6808d1786ef2b3afa87b3154788cd02f693df843a87425a",
+    "import-statement.en.light.webm": "18a371dfdb7dd105fe705fe865aeb85ef322e53d6ed92221a67c332f3728e813"
   },
   "inputs": {
-    "pay-statement": "11ea108e47d14fcd78c6f2cf55d8bb0c13592874a370aa01de94ee0e95cb99c3"
+    "pay-statement": "e854a834b50be0fcfdf10acbf70ec4d6f2303169cc1dc224b17e45901874fdb6",
+    "category-rule": "a32c86cf7caa47b36d4ca294fe880259ce16806f44dd0366508baf0988b2bfa5",
+    "check-balance": "61af39936900843ce9591f303787c1c12962c092f6eca8c00c84dbcbaa561a4d",
+    "connect-bank": "a0498429cb762f14661e72f633a1b6348253e78874114069d0b0d32a86cb702f",
+    "import-statement": "c35fc03e8648f413d2cd6038214065332d1d0810a27306fb2455c92e09bdf3aa"
   }
 }

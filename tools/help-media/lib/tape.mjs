@@ -1,13 +1,8 @@
 // The API as a tape: recorded once from the demo book, replayed on every build, so a figure
 // depends on the tutorial and on the application code alone, never on the day or on the data of
 // the instance that happens to run.
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-
-const key = (request) => {
-  const url = new URL(request.url());
-
-  return `${request.method()} ${url.pathname}${url.search}`;
-};
 
 export function loadTape(path) {
   if (!existsSync(path)) throw new Error(`no tape at ${path}: run "record" first`);
@@ -16,18 +11,17 @@ export function loadTape(path) {
 }
 
 // Passes every read to the instance and keeps its answer. A write other than the sign-in is
-// refused: a tutorial never changes the book it is recorded from.
-export async function recordTape(context, path, clock) {
-  const tape = { clock, entries: {} };
+// refused: a tutorial never changes the book it is recorded from. A tutorial declares in `reads`
+// the requests with a body that change nothing (a preview); each is kept under its body.
+export async function recordTape(context, path, clock, reads = []) {
+  const tape = { clock, reads, entries: {} };
   const state = { pending: 0, missed: new Set() };
 
   await context.route("**/api/**", async (route) => {
     const request = route.request();
     const stream = (request.headers().accept ?? "").includes("text/event-stream");
-    const signIn = request.method() === "POST" && /\/(session|login)/.test(request.url());
 
-    if (stream) return route.abort();
-    if (request.method() !== "GET" && !signIn) return route.abort();
+    if (stream || !passes(request, reads)) return route.abort();
 
     state.pending += 1;
     let response, body;
@@ -38,7 +32,7 @@ export async function recordTape(context, path, clock) {
       state.pending -= 1;
     }
 
-    if (request.method() === "GET") {
+    if (!signIn(request)) {
       tape.entries[key(request)] = {
         status: response.status(),
         type: response.headers()["content-type"] ?? "application/json",
@@ -72,7 +66,7 @@ export async function replayTape(context, tape, variant) {
 
     if (entry === undefined) {
       // A write is refused in silence: the application saves preferences on its own.
-      if (!stream && request.method() === "GET") state.missed.add(key(request));
+      if (!stream && !signIn(request) && passes(request, tape.reads ?? [])) state.missed.add(key(request));
 
       return route.abort();
     }
@@ -90,4 +84,28 @@ export async function replayTape(context, tape, variant) {
   });
 
   return state;
+}
+
+// The name of a request on the tape: its method, path and query, and for a request with a body
+// the hash of the body, so the answer to one preview never serves another.
+export function key(request) {
+  const url = new URL(request.url());
+  const name = `${request.method()} ${url.pathname}${url.search}`;
+  const body = request.postData();
+
+  if (request.method() === "GET" || body === null) return name;
+
+  return `${name} ${createHash("sha256").update(body).digest("hex")}`;
+}
+
+// What reaches the instance during a recording: a read, the sign-in, and a read with a body
+// that the tutorial declares.
+export function passes(request, reads) {
+  if (request.method() === "GET" || signIn(request)) return true;
+
+  return reads.includes(`${request.method()} ${new URL(request.url()).pathname}`);
+}
+
+function signIn(request) {
+  return request.method() === "POST" && /\/(session|login)/.test(request.url());
 }

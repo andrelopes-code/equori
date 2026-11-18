@@ -4,10 +4,16 @@ A statement file is the file your bank or card offers for download. equori reads
 
 ## Send the file
 
+![Video: importing a CSV statement, up to sending it](import-statement.webm)
+
 1. Open the account in [Accounts](/accounts).
+   ![The list of accounts, with the account to open marked](import-account)
 2. Choose **Import statement** and select the file.
+   ![The account page, with the Import statement button marked](import-open)
 3. For a CSV, say how it is read: the separator, how many header rows it has, the date format, and how many rows under the data to skip, and which columns hold the date, the description and the amount. When a column holds a mark for debits and credits, choose it as **Column with the debit or credit mark** and enter the **Mark of a debit**; lines with that mark become money out. **Identify columns with AI** sends the header and 12 lines to the configured model, with digits and names masked, and fills the columns. The first lines show as they will be read, so you can check before importing.
+   ![The import form, with the date and description columns marked](import-csv)
 4. Choose **Import**.
+   ![The import form, with the Import button marked](import-confirm)
 
 Lines that came in an earlier import are recognised and skipped. Importing the same file twice duplicates nothing.
 
@@ -19,6 +25,8 @@ The import page shows the state of each line:
 - **Created**: the line became a new transaction, still without a category.
 - **To review**: the line looks like one or more transactions, but not enough to decide on its own.
 - **Discarded**: you chose to leave the line out of your records.
+
+![The page of an import, with the filter by state marked](import-lines "The filter by state stands above the lines of the file.")
 
 ## Review a line
 

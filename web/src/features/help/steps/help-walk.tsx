@@ -1,3 +1,4 @@
+import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type {
   HelpFigure,
   HelpStep,
@@ -16,12 +17,16 @@ interface HelpWalkProps {
 // and the numbered list alone when no step has a figure.
 export function HelpWalk({ steps, video }: HelpWalkProps) {
   const wide = usePageWide();
+  const media = useHelpMedia();
+
+  // A video the browser cannot play is left out; its steps and figures stay.
+  const shown = media.video(video?.id) === undefined ? undefined : video;
 
   if (!steps.some((step) => step.figure !== undefined)) {
     return <HelpSteps steps={steps} />;
   }
 
-  if (wide) return <HelpWalkBeside steps={steps} video={video} />;
+  if (wide) return <HelpWalkBeside steps={steps} video={shown} />;
 
-  return <HelpWalkStacked steps={steps} video={video} />;
+  return <HelpWalkStacked steps={steps} video={shown} />;
 }

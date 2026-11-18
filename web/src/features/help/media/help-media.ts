@@ -1,3 +1,4 @@
+import { helpMediaFiles as files } from "@/features/help/media/help-media-files.gen";
 import media from "@/features/help/media/media.json";
 
 export interface HelpFigureMedia {
@@ -19,13 +20,8 @@ type Marks = Partial<Record<string, { spot: number[] }>>;
 const FALLBACK = "pt";
 
 // The URL of each file; the browser fetches a capture or a video when its element asks for it.
-// Every file and media.json are written by tools/help-media (docs/contributing/help-media.md).
-const files = import.meta.glob<string>("./*.{png,webm}", {
-  query: "?url",
-  import: "default",
-  eager: true,
-});
-
+// Every file, media.json and the list of files are written by tools/help-media
+// (docs/contributing/help.md).
 const figures: Partial<Record<string, Marks>> = media.figures;
 const videos: Partial<Record<string, { seconds: number }>> = media.videos;
 
@@ -36,8 +32,8 @@ export function helpFigure(
 ): HelpFigureMedia | undefined {
   const used = figures[id]?.[language] === undefined ? FALLBACK : language;
   const mark = figures[id]?.[used];
-  const dark = files[`./${id}.${used}.dark.png`];
-  const light = files[`./${id}.${used}.light.png`];
+  const dark = files[`${id}.${used}.dark.png`];
+  const light = files[`${id}.${used}.light.png`];
   if (mark === undefined || dark === undefined || light === undefined) {
     return undefined;
   }
@@ -45,18 +41,28 @@ export function helpFigure(
   return { dark, light, spot: mark.spot };
 }
 
+// A browser that does not play WebM VP9 gets no video: the steps and their figures are the
+// same content (ADR 037).
 export function helpVideo(
   id: string,
   language: string,
 ): HelpVideoMedia | undefined {
-  const own = files[`./${id}.${language}.dark.webm`] !== undefined;
+  if (!playsVideo()) return undefined;
+
+  const own = files[`${id}.${language}.dark.webm`] !== undefined;
   const used = own ? language : FALLBACK;
   const entry = videos[id];
-  const dark = files[`./${id}.${used}.dark.webm`];
-  const light = files[`./${id}.${used}.light.webm`];
+  const dark = files[`${id}.${used}.dark.webm`];
+  const light = files[`${id}.${used}.light.webm`];
   if (entry === undefined || dark === undefined || light === undefined) {
     return undefined;
   }
 
   return { dark, light, seconds: entry.seconds };
+}
+
+function playsVideo(): boolean {
+  const probe = document.createElement("video");
+
+  return probe.canPlayType('video/webm; codecs="vp9"') !== "";
 }

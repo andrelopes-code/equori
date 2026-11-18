@@ -4,10 +4,16 @@ O extrato é o arquivo que o banco ou o cartão oferece para baixar. O equori l�
 
 ## Enviar o arquivo
 
+![Vídeo: a importação de um extrato em CSV, até o envio](import-statement.webm)
+
 1. Abra a conta em [Contas](/accounts).
+   ![A lista de contas, com a conta a abrir marcada](import-account)
 2. Escolha **Importar extrato** e selecione o arquivo.
+   ![A página da conta, com o botão Importar extrato marcado](import-open)
 3. Para um CSV, diga como ele é lido: o separador, quantas linhas de cabeçalho ele tem, o formato da data quantas linhas abaixo dos dados ignorar e quais colunas trazem a data, a descrição e o valor. Quando uma coluna traz a marca de débito ou crédito, escolha-a em **Coluna com a marca de débito ou crédito** e informe a **Marca de débito**; as linhas com essa marca viram saídas. **Identificar colunas com IA** envia o cabeçalho e 12 linhas ao modelo configurado, com números e nomes mascarados, e preenche as colunas. As primeiras linhas aparecem como serão lidas, para conferir antes de importar.
+   ![O formulário de importação, com as colunas da data e da descrição marcadas](import-csv)
 4. Escolha **Importar**.
+   ![O formulário de importação, com o botão Importar marcado](import-confirm)
 
 Linhas que já vieram numa importação anterior são reconhecidas e ignoradas. Importar o mesmo arquivo duas vezes não duplica nada.
 
@@ -19,6 +25,8 @@ A página da importação mostra a situação de cada linha:
 - **Criada**: a linha virou uma transação nova, ainda sem categoria.
 - **Para revisar**: a linha se parece com uma ou mais transações, mas não o bastante para decidir sozinha.
 - **Descartada**: você decidiu deixar a linha fora dos seus registros.
+
+![A página de uma importação, com o filtro por situação marcado](import-lines "O filtro por situação fica acima das linhas do arquivo.")
 
 ## Revisar uma linha
 

@@ -18,24 +18,29 @@ export function union(boxes) {
   return { x, y, width: right - x, height: bottom - y };
 }
 
-// The window of a figure. Centred on the frame when the frame fits in it (a dialog), else on the
-// target and held inside the frame (the page beside the navigation), so no figure shows a slice
-// of a neighbouring region; always inside the screen.
+// The window of a figure, placed in each direction on its own. Where the frame fits in the figure
+// (a dialog), the window is centred on the frame. Where it does not (the page beside the
+// navigation), the window is centred on the target and held inside the frame, so no figure shows
+// a slice of a neighbouring region. It is always inside the screen.
 export function clipAround(target, frame) {
-  const fits = frame && frame.width <= CLIP.width && frame.height <= CLIP.height;
-  const centre = fits ? frame : target;
-  const hold = (value, low, high) => Math.round(Math.max(low, Math.min(Math.max(low, high), value)));
-  const within = frame && !fits ? frame : { x: 0, y: 0, width: VIEW.width, height: VIEW.height };
-  const left = Math.max(0, within.x);
-  const top = Math.max(0, within.y);
-  const right = Math.min(VIEW.width, within.x + within.width);
-  const bottom = Math.min(VIEW.height, within.y + within.height);
-
   return {
-    x: hold(centre.x + centre.width / 2 - CLIP.width / 2, left, right - CLIP.width),
-    y: hold(centre.y + centre.height / 2 - CLIP.height / 2, top, bottom - CLIP.height),
+    x: along(target.x, target.width, frame?.x, frame?.width, CLIP.width, VIEW.width),
+    y: along(target.y, target.height, frame?.y, frame?.height, CLIP.height, VIEW.height),
     ...CLIP,
   };
+}
+
+function along(targetStart, targetSize, frameStart, frameSize, clip, view) {
+  const hold = (value, low, high) => Math.round(Math.max(low, Math.min(Math.max(low, high), value)));
+  const centred = (start, size) => start + size / 2 - clip / 2;
+
+  if (frameStart === undefined) return hold(centred(targetStart, targetSize), 0, view - clip);
+  if (frameSize <= clip) return hold(centred(frameStart, frameSize), 0, view - clip);
+
+  const low = Math.max(0, frameStart);
+  const high = Math.min(view, frameStart + frameSize) - clip;
+
+  return hold(centred(targetStart, targetSize), low, high);
 }
 
 // The width to ask of the page region so that its box, borders included, is as wide as a figure:
@@ -73,14 +78,18 @@ export function markProblems(target, clip, mark) {
   return problems;
 }
 
-// Percent of the figure, two decimals: what the page positions the mark with.
+// Percent of the figure, two decimals: what the page positions the mark with. Each side is
+// rounded on its own and the size is their difference, so a mark at the margin stays inside it.
 export function percent(mark) {
   const round = (value) => Math.round(value * 100) / 100;
+  const side = (value, whole) => round((value / whole) * 100);
+  const left = side(mark.x, CLIP.width);
+  const top = side(mark.y, CLIP.height);
 
   return [
-    round((mark.x / CLIP.width) * 100),
-    round((mark.y / CLIP.height) * 100),
-    round((mark.width / CLIP.width) * 100),
-    round((mark.height / CLIP.height) * 100),
+    left,
+    top,
+    round(side(mark.x + mark.width, CLIP.width) - left),
+    round(side(mark.y + mark.height, CLIP.height) - top),
   ];
 }

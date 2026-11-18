@@ -5,7 +5,7 @@
 //   node run.mjs check               check the written media without a browser
 //   node run.mjs review              write out/review.html: every figure under its mark, every video
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -13,11 +13,14 @@ const here = dirname(fileURLToPath(import.meta.url));
 const MEDIA = join(here, "../../web/src/features/help/media");
 const CONTENT = join(here, "../../web/src/features/help/content");
 const MANIFEST = join(MEDIA, "media.json");
+const MODULE = join(MEDIA, "help-media-files.gen.ts");
 // The instance the tape is recorded from (make demo, make run-dev). A build needs none.
 const LIVE = process.env.HELP_MEDIA_BASE ?? "http://127.0.0.1:5173";
 const DIST = join(here, "../../web/dist");
 const SIZE = { width: 1280, height: 800 };
 const MAX_VIDEO_BYTES = 2_500_000;
+// The media is embedded in the binary: the folder as a whole has a ceiling too.
+const MAX_MEDIA_BYTES = 40_000_000;
 // Variants built at once; each takes one core for its encoder and part of one for its page.
 const JOBS = Number(process.env.HELP_MEDIA_JOBS ?? 4);
 const FORCE = process.argv.includes("--force");
@@ -51,7 +54,7 @@ async function record() {
     for (const tutorial of await tutorials(LIVE)) {
       const clock = `${new Date().toISOString().slice(0, 10)}T15:00:00.000Z`;
       const { context, page } = await openApp(browser, { language: "pt", scheme: "dark", clock });
-      const tape = await recordTape(context, tapePath(tutorial.id), clock);
+      const tape = await recordTape(context, tapePath(tutorial.id), clock, tutorial.reads);
 
       await page.goto(`${LIVE}/login`);
       await page.locator('input[type="email"]').fill(process.env.HELP_MEDIA_USER ?? "demo@equori.local");
@@ -167,7 +170,27 @@ async function build() {
     (_, body) => `[${body.split(/,\s*/).join(", ")}]`,
   );
   writeFileSync(MANIFEST, `${text}\n`);
+  writeFileSync(MODULE, moduleOf(next));
   check();
+}
+
+// The module the application reads the address of each file from. A list written here changes
+// with the files; a pattern read by the bundler does not, and a cached transform of it keeps the
+// files of an earlier build.
+function moduleOf(manifest) {
+  const names = Object.keys(manifest.files).sort();
+  const imports = names.map((name, index) => `import f${index} from "./${name}?url";`);
+  const entries = names.map((name, index) => `  "${name}": f${index},`);
+
+  return [
+    "// Written by tools/help-media (docs/contributing/help.md). Never edited by hand.",
+    ...imports,
+    "",
+    "export const helpMediaFiles: Partial<Record<string, string>> = {",
+    ...entries,
+    "};",
+    "",
+  ].join("\n");
 }
 
 // The figures a page names, read from its Markdown: ![alt](id) and ![alt](id.webm).
@@ -226,17 +249,25 @@ function check() {
     }
   }
 
+  if (!existsSync(MODULE) || readFileSync(MODULE, "utf8") !== moduleOf(manifest)) {
+    problems.push("help-media-files.gen.ts: differs from the manifest; build again");
+  }
+
   const known = new Set(Object.keys(manifest.files));
-  for (const name of readdirSync(MEDIA).filter((f) => /\.(png|webm)$/.test(f))) {
+  // The folder holds the manifest and the two modules that read it; any other file is media.
+  for (const name of readdirSync(MEDIA).filter((f) => !/\.(json|ts)$/.test(f))) {
     if (!known.has(name)) problems.push(`${name}: not made by this tool`);
   }
+
+  const bytes = [...known].reduce((sum, name) => sum + (existsSync(join(MEDIA, name)) ? statSync(join(MEDIA, name)).size : 0), 0);
+  if (bytes > MAX_MEDIA_BYTES) problems.push(`the media weighs ${bytes} bytes, above the ${MAX_MEDIA_BYTES} of the folder`);
 
   if (problems.length > 0) {
     console.error(problems.join("\n"));
     process.exit(1);
   }
 
-  console.log(`help media: ${known.size} files checked`);
+  console.log(`help media: ${known.size} files checked, ${(bytes / 1e6).toFixed(1)} MB`);
 }
 
 // A page with every figure under its mark, placed as the application places it, and every video:

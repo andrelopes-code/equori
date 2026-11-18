@@ -7,9 +7,13 @@ A bank connection brings the accounts and transactions of an institution without
 The administrator of the installation does this once.
 
 1. Open [Settings](/settings) and choose **Integrations**.
+   ![The settings, with the Integrations section marked](connect-settings)
 2. Choose **Add integration**.
+   ![The Integrations section, with the Add integration button marked](connect-add)
 3. Choose the **Aggregator**, give a **Name** and enter the credentials the aggregator supplies.
+   ![The Add integration dialog, with the aggregator, the name and the credentials marked](connect-credentials)
 4. Choose **Create**.
+   ![The Add integration dialog, with the Create button marked](connect-create)
 
 equori stores the credentials sealed and never shows them again. To change them, choose **Replace credentials**.
 

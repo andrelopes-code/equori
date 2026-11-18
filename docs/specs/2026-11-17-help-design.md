@@ -88,6 +88,12 @@ The approved mock is the contract of the form: `docs/specs/assets/2026-11-17-hel
 |---|---|---|
 | `pay-statement` | the five steps of "Record the payment"; the total of the statement | the payment, start to end |
 | `troubleshooting` | the total of the statement, under "The amount of a statement differs" | none |
+| `import-statement` | the four steps of "Send the file"; the filter by state of an import | the import of a CSV file, up to sending it |
+| `check-balance` | the four steps of "How to reconcile"; an open difference | the check, up to the comparison |
+| `category-rule` | the five steps of "Build the rule" | the rule, up to saving it |
+| `connect-bank` | the four steps of "Add the credentials" | none |
+
+A tutorial stops before the request that writes (ADR 037). The demo book holds no bank connection and no line to review, and its user is no administrator: the linking steps of `connect-bank`, "Review a line" of `import-statement` and the Backup panel of `installation` have no figure.
 
 Every other page keeps its text and gains its figures in later changes of content, without code.
 
@@ -102,3 +108,4 @@ The owner rejected the first figures and video: blurred captures, marks beside t
 | HP6 | A video shows the whole screen, composed frame by frame from the stills of the steps at 1920 by 1200. On the page it waits behind the figure of the first step; pressed, it opens in a player that grows from that place to the size of the window and plays muted with controls. The Figures/Video control and the button "Watch the video" lead to the same player. |
 | R5 | A figure shows the application in the language of the page. |
 | HP4 | Second amendment, 2026-11-18: a figure outside a dialog is cut from the page region held at 640 CSS pixels, so it spans the page's width at full scale (ADR 037, 4). |
+| HP6 | Second amendment, 2026-11-18: the player travels back to the place it grew from before it closes, at once under reduced motion, and the focus returns to the button "Watch the video". A browser that does not play WebM VP9 is offered no video: no control, no button, no word "video" in the index; the steps and their figures stay. |

@@ -14,7 +14,8 @@ export async function captureBeats(page, tape, tutorial, { language, scheme }) {
     const at = { page, tape, scheme, beat, words, what };
 
     // The video shows the whole screen: its still and its mark come from the page as it opens.
-    const whole = await place(at);
+    // A beat outside the video needs that mark only when its figure is cut from the whole screen.
+    const whole = await place(at, beat.only !== "figure");
     const still = await page.screenshot({ type: "png", scale: "device" });
     const figure = beat.figure ? await figureOf(at, whole) : undefined;
 
@@ -51,7 +52,7 @@ async function figureOf(at, whole) {
     mark,
   });
 
-  if (beat.frame) return cut(whole);
+  if (beat.frame) return cut(sound(whole, at.what));
 
   await narrow(page, true);
   const narrowed = await place(at, false);
@@ -62,7 +63,13 @@ async function figureOf(at, whole) {
 
   await place(at);
 
-  return cut(whole);
+  return cut(sound(whole, at.what));
+}
+
+function sound(placed, what) {
+  if (placed.problems.length > 0) throw new Error(`${what}: ${placed.problems.join("; ")}`);
+
+  return placed;
 }
 
 async function narrow(page, on) {
@@ -103,9 +110,9 @@ async function place({ page, tape, scheme, beat, words, what }, strict = true) {
   const clip = clipAround(target, frame);
   const mark = markIn(target, clip);
   const problems = markProblems(target, clip, mark);
-  if (strict && problems.length > 0) throw new Error(`${what}: ${problems.join("; ")}`);
+  const placed = { clip, mark, problems };
 
-  return { clip, mark, problems };
+  return strict ? sound(placed, what) : placed;
 }
 
 async function boxOf(page, locators, what) {

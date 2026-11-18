@@ -1,5 +1,6 @@
 import { Skeleton } from "@slotted/react/skeleton";
 
+import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type { HelpArea as Area } from "@/features/help/model/help-guides";
 import { helpGuides } from "@/features/help/model/help-guides";
 import type { HelpLibrary } from "@/features/help/model/help-library";
@@ -18,6 +19,7 @@ interface HelpAreaProps {
 // name is text alone (owner, 2026-11-17: no icon in the directory).
 export function HelpArea({ area, library }: HelpAreaProps) {
   const t = useT();
+  const media = useHelpMedia();
 
   const name = t(`help.area.${area}`);
   const pages = helpPages.filter((p) => helpGuides[p.id]?.area === area);
@@ -31,7 +33,10 @@ export function HelpArea({ area, library }: HelpAreaProps) {
           const document = library?.find((p) => p.id === page.id)?.document;
           const video = document?.sections
             .flatMap((s) => s.blocks)
-            .some((b) => b.type === "steps" && b.video !== undefined);
+            .some(
+              (b) =>
+                b.type === "steps" && media.video(b.video?.id) !== undefined,
+            );
 
           return (
             <HelpRow

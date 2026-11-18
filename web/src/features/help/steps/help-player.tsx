@@ -2,7 +2,7 @@ import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
 import { useEffect, useRef } from "react";
 
-import { useGrow } from "@/features/help/steps/use-grow";
+import { shrinkTo, useGrow } from "@/features/help/steps/use-grow";
 import styles from "@/features/help/styles/help.module.css";
 import { useT } from "@/i18n/i18n-provider";
 
@@ -34,15 +34,34 @@ export function HelpPlayer({ src, label, origin, onClose }: HelpPlayerProps) {
 
   useGrow(panel, origin);
 
+  // The player returns to the place it grew from, then leaves the page. The page behind a modal
+  // dialog is inert: the browser returns the focus to the button that opened it when it closes.
+  const handleClose = () => {
+    void shrinkTo(panel.current, origin).then(() => {
+      const element = dialog.current;
+
+      if (element?.open === true && typeof element.close === "function") {
+        element.close();
+      } else {
+        onClose();
+      }
+    });
+  };
+
   return (
     <dialog
       ref={dialog}
       className={styles.player}
       aria-label={label}
       onClose={onClose}
+      onCancel={(event) => {
+        // Escape closes the dialog at once; the player travels back first.
+        event.preventDefault();
+        handleClose();
+      }}
       onClick={(event) => {
         // A press on the dimmed ground around the player closes it.
-        if (event.target === dialog.current) onClose();
+        if (event.target === dialog.current) handleClose();
       }}
     >
       <div className={styles.playerPanel} ref={panel}>
@@ -60,7 +79,7 @@ export function HelpPlayer({ src, label, origin, onClose }: HelpPlayerProps) {
             variant="solid"
             tone="secondary"
             aria-label={t("help.video.close")}
-            onClick={onClose}
+            onClick={handleClose}
           >
             <Icon>
               <Glyph name="x" />

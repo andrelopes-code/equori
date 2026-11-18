@@ -1,14 +1,20 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { catalogEn } from "@/i18n/catalog.en";
 import { fakeApi } from "@/testing/fake-api";
 import { renderApp } from "@/testing/render-app";
 import { sharedRoutes } from "@/testing/transaction-api";
 
+// jsdom plays no media; the browser of these tests plays the videos of the help.
+function plays(answer: CanPlayTypeResult) {
+  vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue(answer);
+}
+
 beforeEach(() => {
   localStorage.clear();
+  plays("probably");
 });
 
 function inRegion(region: string) {
@@ -250,6 +256,55 @@ describe("help", () => {
     expect(document.querySelector("video")).toBeNull();
   });
 
+  it("returns the focus to the button of the video when the player closes", async () => {
+    const user = userEvent.setup();
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    await user.click(
+      await screen.findByRole("radio", { name: /^Video · \d+ s$/ }),
+    );
+    const watch = screen.getByRole("button", {
+      name: /^Watch the video · \d+ s$/,
+    });
+    await user.click(watch);
+    await user.click(
+      screen.getByRole("button", { name: catalogEn["help.video.close"] }),
+    );
+
+    await waitFor(() => {
+      expect(document.querySelector("video")).toBeNull();
+    });
+    expect(watch).toHaveFocus();
+  });
+
+  // ADR 037: the steps and their figures are the content for a browser without WebM VP9.
+  it("keeps the figures and offers no video to a browser that cannot play it", async () => {
+    plays("");
+    await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
+
+    expect(
+      await screen.findAllByAltText(
+        "The list of cards, with the card to open marked",
+      ),
+    ).toHaveLength(2);
+    expect(screen.queryByRole("radio", { name: /^Video/ })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /^Watch the video/ }),
+    ).toBeNull();
+  });
+
+  it("names no video in the index for a browser that cannot play it", async () => {
+    plays("");
+    await renderApp("/help", { fetch: fakeApi(sharedRoutes) });
+
+    const cards = await screen.findByRole("list", {
+      name: catalogEn["help.area.cards"],
+    });
+    const link = within(cards).getByRole("link", { name: /Pay a statement/ });
+
+    expect(link).not.toHaveTextContent(catalogEn["help.media.video"]);
+  });
+
   it("draws the figures of the reader's language", async () => {
     await renderApp("/help/pay-statement", { fetch: fakeApi(sharedRoutes) });
 
@@ -326,19 +381,18 @@ describe("help", () => {
   });
 
   it("draws a page with its title and router links to screens and pages", async () => {
-    await renderApp("/help/check-balance", { fetch: fakeApi(sharedRoutes) });
+    // A page without figures: beside a figure a step is a button and holds no link (HP5).
+    await renderApp("/help/portfolio", { fetch: fakeApi(sharedRoutes) });
 
     expect(
-      await screen.findByRole("heading", {
-        level: 1,
-        name: "Check an account's balance",
-      }),
+      await screen.findByRole("heading", { level: 1, name: "The portfolio" }),
     ).toBeInTheDocument();
     // The page's text, apart from the shell's navigation, which links the same screen.
     const text = [...document.querySelectorAll("article a")];
-    expect(
-      text.find((link) => link.textContent === "Accounts"),
-    ).toHaveAttribute("href", "/accounts");
+    expect(text.find((link) => link.textContent === "Quotes")).toHaveAttribute(
+      "href",
+      "/instruments",
+    );
   });
 
   it("adds the passage of the reader's region", async () => {

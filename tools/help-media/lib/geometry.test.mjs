@@ -63,3 +63,19 @@ test("a figure spans a page region as wide as itself", () => {
 
   assert.deepEqual(clipAround(button, region), { x: 201, y: 10, width: 640, height: 400 });
 });
+
+test("a mark at the margin of the figure stays inside it after rounding", () => {
+  // 87.625% and 8.375% each round up; their sum would pass the 96% the margin allows.
+  const [, y, , height] = percent({ x: 100, y: 350.5, width: 80, height: 33.5 });
+
+  assert.equal(y, 87.63);
+  assert.ok(y + height <= 96, `${y} + ${height}`);
+});
+
+test("a figure is centred across a frame that fits in one direction only", () => {
+  // A dialog 2 px taller than the figure: it is centred across, and held to the target down.
+  const dialog = { x: 415, y: 199, width: 450, height: 402 };
+  const button = { x: 796, y: 565, width: 51, height: 28 };
+
+  assert.deepEqual(clipAround(button, dialog), { x: 320, y: 201, width: 640, height: 400 });
+});

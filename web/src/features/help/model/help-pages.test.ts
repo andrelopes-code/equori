@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { helpFigure, helpVideo } from "@/features/help/media/help-media";
 import { helpGuides } from "@/features/help/model/help-guides";
@@ -178,8 +178,18 @@ describe("helpNeighbours", () => {
         block.type === "steps" && block.video ? [block.video.id] : [],
       );
 
+      // The media shipped (help spec, section 6).
       expect(figures).toContain("pay-amount");
-      expect(videos).toEqual(["pay-statement"]);
+      expect(videos).toEqual([
+        "import-statement",
+        "pay-statement",
+        "check-balance",
+        "category-rule",
+      ]);
+      // jsdom plays no media; a browser that does not play the video gets none.
+      vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue(
+        "probably",
+      );
 
       for (const id of figures) {
         const figure = helpFigure(id, language);

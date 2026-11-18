@@ -27,6 +27,7 @@ export function HelpVideo({ video, poster }: HelpVideoProps) {
   const [playing, setPlaying] = useState<string | null>(null);
   const frame = useRef<HTMLElement>(null);
   const [origin, setOrigin] = useState<DOMRect | null>(null);
+  const watch = useRef<HTMLButtonElement>(null);
 
   if (media === undefined) return null;
 
@@ -39,12 +40,19 @@ export function HelpVideo({ video, poster }: HelpVideoProps) {
     setPlaying(scheme === "light" ? media.light : media.dark);
   };
 
+  // The focus returns to the button that opened the player (WCAG 2.4.3).
+  const handleClose = () => {
+    setPlaying(null);
+    watch.current?.focus();
+  };
+
   return (
     <figure className={[styles.figure, styles.clipFrame].join(" ")} ref={frame}>
       {poster !== undefined && <HelpShot figure={poster} marked={false} />}
 
       <span className={styles.clipPlay}>
         <Button
+          ref={watch}
           variant="solid"
           tone="accent"
           start={
@@ -63,9 +71,7 @@ export function HelpVideo({ video, poster }: HelpVideoProps) {
           src={playing}
           label={video.alt}
           origin={origin}
-          onClose={() => {
-            setPlaying(null);
-          }}
+          onClose={handleClose}
         />
       )}
     </figure>

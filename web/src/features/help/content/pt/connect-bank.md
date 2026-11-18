@@ -7,9 +7,13 @@ Uma conexão bancária traz as contas e as transações de uma instituição sem
 A pessoa que administra a instalação faz isso uma vez.
 
 1. Abra [Configurações](/settings) e escolha **Integrações**.
+   ![As configurações, com a seção Integrações marcada](connect-settings)
 2. Escolha **Adicionar integração**.
+   ![A seção Integrações, com o botão Adicionar integração marcado](connect-add)
 3. Escolha o **Agregador**, dê um **Nome** e informe as credenciais que o agregador fornece.
+   ![O diálogo Adicionar integração, com o agregador, o nome e as credenciais marcados](connect-credentials)
 4. Escolha **Criar**.
+   ![O diálogo Adicionar integração, com o botão Criar marcado](connect-create)
 
 O equori guarda as credenciais cifradas e nunca as mostra de novo. Para trocá-las, escolha **Trocar credenciais**.
 
