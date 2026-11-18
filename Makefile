@@ -28,7 +28,7 @@ check: static web-build
 	$(MAKE) --no-print-directory test-cluster
 	$(MAKE) --no-print-directory web-test
 
-static: fmt-check tidy-check gen-check lint formula-test
+static: fmt-check tidy-check gen-check lint formula-test help-media-check
 
 fmt: $(TOOLS) $(WEB_DEPS)
 	$(BIN)/golangci-lint fmt

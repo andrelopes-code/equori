@@ -71,6 +71,14 @@ pre-push:
       glob: "web/**/*.{ts,tsx}"
       run: pnpm typecheck
 
+    # Node alone: the figures and videos of the help against their manifest and the pages (ADR 037).
+    - name: help-media-check
+      glob:
+        - "web/src/features/help/media/**"
+        - "web/src/features/help/content/**"
+        - "tools/help-media/**"
+      run: make help-media-check
+
     - name: web-node-test
       root: web/
       glob: "web/src/**"
