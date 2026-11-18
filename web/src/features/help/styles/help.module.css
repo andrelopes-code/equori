@@ -569,6 +569,7 @@
     aspect-ratio: 8 / 5; /* literal: every capture is cut at 640 by 400 */
     background: var(--slotted-panel-surface, var(--slotted-surface-raised));
     box-shadow: var(--slotted-panel-shadow, none);
+    container-type: inline-size;
   }
 
   .shotImage {
@@ -607,8 +608,10 @@
     font-variant-numeric: tabular-nums;
     font-weight: var(--slotted-font-weight-semibold);
     inline-size: 1.5rem; /* literal: the 21 px number of the step it repeats */
-    inset-block-start: -0.75rem; /* literal: centred on the mark's corner */
-    inset-inline-start: -0.75rem; /* literal: centred on the mark's corner */
+    /* Centred on the mark's corner, moved inside the figure when the mark stands at its edge:
+       1cqi is 1% of the figure's width, and its height is 0.625 of its width (8:5). */
+    inset-block-start: max(-0.75rem, var(--spot-top, 0) * -0.625cqi);
+    inset-inline-start: max(-0.75rem, var(--spot-start, 0) * -1cqi);
     place-items: center;
   }
 
@@ -693,6 +696,13 @@
     display: grid;
   }
 
+  /* The dialog holds the focus when it opens and while space plays or pauses the video; its
+     controls draw their own rings, the dialog none (owner, 2026-11-19). */
+  .player:focus,
+  .player:focus-visible {
+    outline: none;
+  }
+
   .player::backdrop {
     background: color-mix(
       in oklab,
@@ -731,8 +741,10 @@
     }
   }
 
+  /* Above the steps and the close button: the player travels over them, never under. */
   .playerPanel {
     position: relative;
+    z-index: 1;
     overflow: hidden;
     border: 1px solid
       var(--slotted-panel-border-color, var(--slotted-border-subtle));
@@ -765,8 +777,10 @@
   }
 
   /* The picture keeps the 8:5 of the 1920 by 1200 screen the stills were taken of. */
+  /* A press on the picture plays or pauses it. */
   .videoPicture {
     position: relative;
+    cursor: pointer;
     display: grid;
     flex: 1;
     min-block-size: 0;
@@ -786,7 +800,7 @@
   .videoBar {
     display: flex;
     align-items: center;
-    padding-inline: var(--slotted-space-2) var(--slotted-space-3);
+    padding-inline: var(--slotted-space-3);
     border-block-start: 1px solid
       var(--slotted-panel-border-color, var(--slotted-border-subtle));
     gap: var(--slotted-space-3);

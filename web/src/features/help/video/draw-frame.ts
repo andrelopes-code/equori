@@ -77,15 +77,18 @@ function drawMark(
   ctx.stroke();
 
   if (frame.number > 0) {
+    const bx = frame.badge.x * R;
+    const by = frame.badge.y * R;
+
     ctx.beginPath();
-    ctx.arc(x, y, 10.5 * R, 0, Math.PI * 2);
+    ctx.arc(bx, by, 10.5 * R, 0, Math.PI * 2);
     ctx.fillStyle = style.accent;
     ctx.fill();
     ctx.fillStyle = "#fff";
     ctx.font = `600 ${String(11 * R)}px ${style.font}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(String(frame.number), x, y + R * 0.5);
+    ctx.fillText(String(frame.number), bx, by + R * 0.5);
   }
 
   ctx.globalAlpha = 1;

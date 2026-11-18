@@ -60,6 +60,12 @@ The length shown on the page ("Video · 15 s") is `Math.round(duration)`.
 
 The video is offered in every browser with a 2D canvas: the condition "plays WebM VP9" is removed, so Safari before 14.1 and iOS before 17.4 get the video.
 
+## Amendment of 2026-11-19 (owner)
+
+- A press on the picture plays or pauses the video. Space and the arrows listen on the document while the player is open: the dialog holds the focus when it opens, outside the controls (`video/use-video-keys.ts`). The dialog draws no outline.
+- The player stands above the steps and the close button. On the way back the steps and the button fade out in 120 ms before the player travels, and on the way out they fade in once it nearly reaches its place (`steps/use-grow.ts`); nothing moves under reduced motion.
+- A mark keeps one distance from its element on every side: the pad of 12 px shrinks alike on all four sides when the element stands near the edge of the figure or of the screen (`tools/help-media/lib/geometry.mjs`). Before, the margin of the number cut the pad on one side only, and the marks of `rule-new`, `rule-save` and `import-confirm` stood 12 px from their button on one side and on its edge on the other. The number of a mark moves inside the figure, and inside the screen in the video, when its corner stands closer to the edge than its radius.
+
 ## Measurements
 
 Weight per tutorial and language, the `.webm` of commit `8ef3d0a8` against the distinct stills of this build:

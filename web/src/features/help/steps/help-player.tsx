@@ -1,6 +1,6 @@
 import { IconButton } from "@slotted/react/button";
 import { Glyph, Icon } from "@slotted/react/icon";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import type { HelpVideoMedia } from "@/features/help/media/help-media";
 import type { HelpStep } from "@/features/help/model/parse-help-page";
@@ -34,6 +34,9 @@ export function HelpPlayer({
   const t = useT();
   const dialog = useRef<HTMLDialogElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLOListElement>(null);
+  const close = useRef<HTMLSpanElement>(null);
+  const aside = useMemo(() => [list, close], []);
 
   useEffect(() => {
     const element = dialog.current;
@@ -44,20 +47,22 @@ export function HelpPlayer({
     else element.setAttribute("open", "");
   }, []);
 
-  useGrow(panel, origin);
+  useGrow(panel, origin, aside);
 
   // The player returns to the place it grew from, then leaves the page. The page behind a modal
   // dialog is inert: the browser returns the focus to the button that opened it when it closes.
   const handleClose = () => {
-    void shrinkTo(panel.current, origin).then(() => {
-      const element = dialog.current;
+    void shrinkTo(panel.current, origin, [list.current, close.current]).then(
+      () => {
+        const element = dialog.current;
 
-      if (element?.open === true && typeof element.close === "function") {
-        element.close();
-      } else {
-        onClose();
-      }
-    });
+        if (element?.open === true && typeof element.close === "function") {
+          element.close();
+        } else {
+          onClose();
+        }
+      },
+    );
   };
 
   return (
@@ -82,6 +87,7 @@ export function HelpPlayer({
         </div>
 
         <ol
+          ref={list}
           className={[styles.steps, styles.playerSteps].join(" ")}
           aria-label={t("help.video.steps")}
         >
@@ -98,7 +104,7 @@ export function HelpPlayer({
           ))}
         </ol>
 
-        <span className={styles.playerClose}>
+        <span className={styles.playerClose} ref={close}>
           <IconButton
             variant="solid"
             tone="secondary"

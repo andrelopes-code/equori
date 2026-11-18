@@ -92,6 +92,23 @@ describe("the canvas of the help video", () => {
     expect(pause).toHaveAccessibleName(catalogEn["help.video.play"]);
   });
 
+  // Owner, 2026-11-19: a press on the video and the space bar did not pause it. The dialog
+  // holds the focus when it opens, outside the controls.
+  it("pauses on a press on the picture and on space with the focus on the dialog", async () => {
+    decodes("now");
+    draw();
+
+    const button = await screen.findByRole("button", {
+      name: catalogEn["help.video.pause"],
+    });
+
+    fireEvent.click(screen.getByRole("img", { name: "Video: a task" }));
+    expect(button).toHaveAccessibleName(catalogEn["help.video.play"]);
+
+    fireEvent.keyDown(document.body, { key: " " });
+    expect(button).toHaveAccessibleName(catalogEn["help.video.pause"]);
+  });
+
   it("goes to the start of the next and the previous step with the arrows", async () => {
     decodes("never");
     draw();

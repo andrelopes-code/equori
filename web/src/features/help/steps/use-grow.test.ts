@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { growFrames, shrinkTo } from "@/features/help/steps/use-grow";
+import {
+  fadeAside,
+  growFrames,
+  shrinkTo,
+} from "@/features/help/steps/use-grow";
 
 const origin = new DOMRect(100, 200, 320, 200);
 const own = new DOMRect(40, 50, 1280, 800);
@@ -69,5 +73,59 @@ describe("the player's travel", () => {
     await shrinkTo(element, null);
 
     expect(animate).not.toHaveBeenCalled();
+  });
+
+  // Owner, 2026-11-19: the video travelled back under the steps, which stood still over it.
+  it("fades the steps out before the player travels back, and waits for both", async () => {
+    motion(false);
+    let arrive: () => void = () => undefined;
+    const { animate: travel, element } = panel(
+      new Promise<void>((resolve) => {
+        arrive = resolve;
+      }),
+    );
+    const steps = panel(Promise.resolve());
+    const closed = vi.fn();
+
+    const leaving = shrinkTo(element, origin, [steps.element]).then(closed);
+    await Promise.resolve();
+
+    expect(travel).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(travel).toHaveBeenCalledOnce();
+    });
+    expect(steps.animate).toHaveBeenCalledWith(
+      [{ opacity: 1 }, { opacity: 0 }],
+      expect.objectContaining({ fill: "forwards" }),
+    );
+    expect(closed).not.toHaveBeenCalled();
+
+    arrive();
+    await leaving;
+
+    expect(closed).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the steps beside the player", () => {
+  it("appear once the player has grown to its place", () => {
+    motion(false);
+    const steps = panel(Promise.resolve());
+
+    void fadeAside(steps.element, "in");
+
+    expect(steps.animate).toHaveBeenCalledWith(
+      [{ opacity: 0 }, { opacity: 1 }],
+      expect.objectContaining({ delay: expect.any(Number) as number }),
+    );
+  });
+
+  it("stand still under reduced motion", () => {
+    motion(true);
+    const steps = panel(Promise.resolve());
+
+    void fadeAside(steps.element, "in");
+
+    expect(steps.animate).not.toHaveBeenCalled();
   });
 });

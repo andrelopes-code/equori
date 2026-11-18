@@ -7,9 +7,12 @@ import { VIEW } from "./app.mjs";
 // layout it shows is the one of the whole screen.
 export const CLIP = { width: 960, height: 600 };
 // A figure is drawn at two thirds of its size, so 3 px here are 2 px on the page.
-// The number of a mark is a 21 px circle of the page centred on its corner, 32 px here; this
-// margin keeps it whole.
+// The window of a figure leaves this room around the mark of its element when the screen allows
+// it: the number of a mark is a 21 px circle of the page centred on its corner, 32 px here.
 export const MARGIN = 24;
+// The outline of a mark, 2 px on the page: a mark stands at least this far inside its figure. Its
+// number moves inside the figure on its own (help.module.css, .spotNumber).
+const EDGE = 3;
 // The mark stands this far from the element it points at: 8 px on the page, which keeps most
 // of the number clear of a label at the corner of the element.
 const PAD = 12;
@@ -53,28 +56,29 @@ function along(targetStart, targetSize, frameStart, frameSize, clip, view) {
   return whole(roomy(between(centred(targetStart, targetSize), low, high)));
 }
 
-// The mark in CSS pixels of the clip: the element grown by the pad. The margin holds it only as
-// far as the edge of the element, so a mark never stands on what it surrounds.
+// The mark in CSS pixels of the clip: the element grown by the pad. Near the edge of the figure
+// the pad shrinks on every side alike: the mark keeps one distance from its element and never
+// stands on it (owner, 2026-11-19).
 export function markIn(target, clip) {
   const x = target.x - clip.x;
   const y = target.y - clip.y;
-  const left = Math.min(x, Math.max(MARGIN, x - PAD));
-  const top = Math.min(y, Math.max(MARGIN, y - PAD));
-  const right = Math.max(x + target.width, Math.min(clip.width - MARGIN, x + target.width + PAD));
-  const bottom = Math.max(y + target.height, Math.min(clip.height - MARGIN, y + target.height + PAD));
+  const pad = Math.min(
+    padWithin(x, target.width, EDGE, clip.width - EDGE),
+    padWithin(y, target.height, EDGE, clip.height - EDGE),
+  );
 
-  return { x: left, y: top, width: right - left, height: bottom - top };
+  return grown({ x, y, width: target.width, height: target.height }, pad);
 }
 
 // The mark of the video: the element grown by its pad on the whole screen. No window of a
-// figure bounds it.
+// figure bounds it; the edge of the screen holds the pad as the margin holds a figure's.
 export function markOnScreen(target) {
-  const left = Math.max(0, target.x - PAD);
-  const top = Math.max(0, target.y - PAD);
-  const right = Math.min(VIEW.width, target.x + target.width + PAD);
-  const bottom = Math.min(VIEW.height, target.y + target.height + PAD);
+  const pad = Math.min(
+    padWithin(target.x, target.width, 0, VIEW.width),
+    padWithin(target.y, target.height, 0, VIEW.height),
+  );
 
-  return { x: left, y: top, width: right - left, height: bottom - top };
+  return grown(target, pad);
 }
 
 // The failures that would draw a wrong mark: a target outside the clip, a mark too small to
@@ -116,4 +120,13 @@ export function percent(mark) {
     round(side(mark.x + mark.width, CLIP.width) - left),
     round(side(mark.y + mark.height, CLIP.height) - top),
   ];
+}
+
+// The pad an element can take on both of its sides between two bounds of one axis.
+function padWithin(start, size, low, high) {
+  return Math.max(0, Math.min(PAD, start - low, high - (start + size)));
+}
+
+function grown(box, pad) {
+  return { x: box.x - pad, y: box.y - pad, width: box.width + 2 * pad, height: box.height + 2 * pad };
 }

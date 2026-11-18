@@ -39,6 +39,8 @@ export interface VideoFrame {
   fade: number;
   mark: VideoMark;
   number: number;
+  // The centre of the number: the corner of the mark, moved inside the screen.
+  badge: VideoPoint;
   markOpacity: number;
   pointer: VideoPoint;
   // The progress of the click from 0 to 1; -1 outside it.
@@ -52,6 +54,8 @@ export const VIDEO_VIEW = { width: 1920, height: 1200 };
 
 // Seconds the mark takes to appear once the pointer rests.
 const MARK_IN = 0.25;
+// The radius of the number of a mark, in CSS pixels: the 21 px circle of the figure.
+const BADGE = 10.5;
 
 const ease = (x: number) =>
   x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
@@ -80,6 +84,10 @@ export function frameAt(line: VideoTimeline, t: number): VideoFrame {
     fade: fading ? clamp(local / line.fade) : 1,
     mark: part.mark,
     number: part.number,
+    badge: {
+      x: Math.max(part.mark.x, BADGE),
+      y: Math.max(part.mark.y, BADGE),
+    },
     markOpacity: held > 0 ? clamp(held / MARK_IN) : 0,
     pointer: { x: mix(from.x, to.x, k), y: mix(from.y, to.y, k) },
     click,

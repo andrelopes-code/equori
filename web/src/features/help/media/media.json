@@ -50,10 +50,10 @@
     },
     "rule-new": {
       "pt": {
-        "spot": [84.17, 3.5, 13.28, 6.67]
+        "spot": [84.17, 1.5, 13.28, 8.67]
       },
       "en": {
-        "spot": [85.63, 3.5, 11.82, 6.67]
+        "spot": [85.63, 1.5, 11.82, 8.67]
       }
     },
     "rule-conditions": {
@@ -82,10 +82,10 @@
     },
     "rule-save": {
       "pt": {
-        "spot": [57.11, 89.25, 12.29, 6.75]
+        "spot": [57.11, 89.25, 12.29, 8.67]
       },
       "en": {
-        "spot": [58.98, 89.25, 10.42, 6.75]
+        "spot": [58.98, 89.25, 10.42, 8.67]
       }
     },
     "check-account": {
@@ -130,10 +130,10 @@
     },
     "connect-settings": {
       "pt": {
-        "spot": [2.5, 45.6, 22.14, 8.67]
+        "spot": [2.45, 45.6, 22.19, 8.67]
       },
       "en": {
-        "spot": [2.5, 45.6, 22.14, 8.67]
+        "spot": [2.45, 45.6, 22.19, 8.67]
       }
     },
     "connect-add": {
@@ -186,10 +186,10 @@
     },
     "import-confirm": {
       "pt": {
-        "spot": [59.51, 89.25, 9.89, 6.75]
+        "spot": [59.51, 89.25, 9.89, 8.67]
       },
       "en": {
-        "spot": [60.76, 89.25, 8.64, 6.75]
+        "spot": [60.76, 89.25, 8.64, 8.67]
       }
     },
     "import-lines": {
@@ -202,138 +202,6 @@
     }
   },
   "videos": {
-    "check-balance": {
-      "pt": {
-        "parts": [
-          {
-            "start": 0,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 1,
-            "mark": {
-              "x": 331.75,
-              "y": 391.796875,
-              "width": 129,
-              "height": 51.90625
-            }
-          },
-          {
-            "start": 3.2,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 2,
-            "mark": {
-              "x": 1596,
-              "y": 38.25,
-              "width": 128,
-              "height": 52
-            }
-          },
-          {
-            "start": 6.4,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0,
-            "number": 3,
-            "mark": {
-              "x": 741.5,
-              "y": 545.875,
-              "width": 437,
-              "height": 155.578125
-            }
-          },
-          {
-            "start": 9,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0,
-            "number": 4,
-            "mark": {
-              "x": 1033.5,
-              "y": 699.453125,
-              "width": 145,
-              "height": 52
-            }
-          }
-        ],
-        "duration": 13,
-        "fade": 0.3,
-        "stills": [
-          "check-balance/ec86090899a5.png",
-          "check-balance/091ce79e09c1.png",
-          "check-balance/dac10eb31a17.png",
-          "check-balance/dac10eb31a17.png"
-        ],
-        "accent": "oklch(0.537962 0.124573 215.224)"
-      },
-      "en": {
-        "parts": [
-          {
-            "start": 0,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 1,
-            "mark": {
-              "x": 331.75,
-              "y": 391.796875,
-              "width": 129,
-              "height": 51.90625
-            }
-          },
-          {
-            "start": 3.2,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0.6,
-            "number": 2,
-            "mark": {
-              "x": 1586,
-              "y": 38.25,
-              "width": 135,
-              "height": 52
-            }
-          },
-          {
-            "start": 6.4,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0,
-            "number": 3,
-            "mark": {
-              "x": 741.5,
-              "y": 545.875,
-              "width": 437,
-              "height": 155.578125
-            }
-          },
-          {
-            "start": 9,
-            "travel": 0.9,
-            "hold": 1.7,
-            "click": 0,
-            "number": 4,
-            "mark": {
-              "x": 999.5,
-              "y": 699.453125,
-              "width": 179,
-              "height": 52
-            }
-          }
-        ],
-        "duration": 13,
-        "fade": 0.3,
-        "stills": [
-          "check-balance/cb34c2357d3b.png",
-          "check-balance/d77d407a0056.png",
-          "check-balance/b48ac10c2711.png",
-          "check-balance/b48ac10c2711.png"
-        ],
-        "accent": "oklch(0.537962 0.124573 215.224)"
-      }
-    },
     "category-rule": {
       "pt": {
         "parts": [
@@ -602,6 +470,138 @@
           "category-rule/72f1f12a2566.png",
           "category-rule/72f1f12a2566.png",
           "category-rule/72f1f12a2566.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
+    },
+    "check-balance": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 331.75,
+              "y": 391.796875,
+              "width": 129,
+              "height": 51.90625
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1596,
+              "y": 38.25,
+              "width": 128,
+              "height": 52
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 741.5,
+              "y": 545.875,
+              "width": 437,
+              "height": 155.578125
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 1033.5,
+              "y": 699.453125,
+              "width": 145,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 13,
+        "fade": 0.3,
+        "stills": [
+          "check-balance/ec86090899a5.png",
+          "check-balance/091ce79e09c1.png",
+          "check-balance/dac10eb31a17.png",
+          "check-balance/dac10eb31a17.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 1,
+            "mark": {
+              "x": 331.75,
+              "y": 391.796875,
+              "width": 129,
+              "height": 51.90625
+            }
+          },
+          {
+            "start": 3.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 1586,
+              "y": 38.25,
+              "width": 135,
+              "height": 52
+            }
+          },
+          {
+            "start": 6.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 3,
+            "mark": {
+              "x": 741.5,
+              "y": 545.875,
+              "width": 437,
+              "height": 155.578125
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 4,
+            "mark": {
+              "x": 999.5,
+              "y": 699.453125,
+              "width": 179,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 13,
+        "fade": 0.3,
+        "stills": [
+          "check-balance/cb34c2357d3b.png",
+          "check-balance/d77d407a0056.png",
+          "check-balance/b48ac10c2711.png",
+          "check-balance/b48ac10c2711.png"
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
@@ -1044,10 +1044,10 @@
     "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88"
   },
   "inputs": {
-    "check-balance": "85365426a6c9ea3051feea52a44a213e9ec85663e15b5ac3f41a270efb258e39",
-    "category-rule": "cb3d1751133537d3a8c21fbc111d3eddd39d09e5446d17b12b0322ff8500910a",
-    "connect-bank": "fd43aaa34039ef73d0ee03b1f41cd5a813a586824adb2d3cb3e3eefdd9c88160",
-    "import-statement": "bf46e0fcec88d52534b32eddb7dafeaf1efd8bd442a334978e0d3a76abf15fe9",
-    "pay-statement": "0231a4b2617579e7af3a97b57f0103ee03c21591580f9f6affd416ac671ba361"
+    "check-balance": "568cd260d08793d5664a754aa3628cee7f61880f6ac8d29dab2683c67abb3d9f",
+    "category-rule": "08b7ae5cc813e7f1056b7ed0b288fa9ca3c31129b948a1c9f6e18b7e31a7879b",
+    "connect-bank": "0a7f48c4e2f49fda35675ea2d92828957e234b99d5bd395ead2a8409fe814f9d",
+    "import-statement": "2a81f9c31d641b756f3c172eb3586cd57a2f01b8b75272479dd4bd7df3b36805",
+    "pay-statement": "d5d73636d7edc665ced513b08ebd73c0ff2f86f294f6fc9e90275ea3d3d3bf35"
   }
 }

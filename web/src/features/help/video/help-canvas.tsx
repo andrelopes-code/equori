@@ -1,10 +1,9 @@
 import { Fullscreen, FullscreenContent } from "@slotted/react/fullscreen";
 import { useRef } from "react";
-import type { KeyboardEvent } from "react";
 
 import type { HelpVideoMedia } from "@/features/help/media/help-media";
 import styles from "@/features/help/styles/help.module.css";
-import { stepFrom, VIDEO_VIEW } from "@/features/help/video/compose-frame";
+import { VIDEO_VIEW } from "@/features/help/video/compose-frame";
 import { VIDEO_RATIO } from "@/features/help/video/draw-frame";
 import { HelpVideoBar } from "@/features/help/video/help-video-bar";
 import {
@@ -12,6 +11,7 @@ import {
   useStills,
 } from "@/features/help/video/use-video-canvas";
 import { useVideoClock } from "@/features/help/video/use-video-clock";
+import { useVideoKeys } from "@/features/help/video/use-video-keys";
 import { useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface HelpCanvasProps {
@@ -32,35 +32,14 @@ export function HelpCanvas({ video, label }: HelpCanvasProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useDrawFrame(canvas, stills, video, clock.time, reduced);
+  useVideoKeys(clock, video);
 
   const ready = stills !== null;
 
-  // Space plays or pauses and the arrows go from step to step; a button answers its own space
-  // and the slider its own arrows.
-  const handleKeyDown = (event: KeyboardEvent) => {
-    const target = event.target;
-    const arrow = event.key === "ArrowLeft" || event.key === "ArrowRight";
-
-    if (event.key === " " && !(target instanceof HTMLButtonElement)) {
-      event.preventDefault();
-      clock.toggle();
-    }
-
-    if (arrow && !(target instanceof HTMLInputElement)) {
-      event.preventDefault();
-      clock.seek(
-        stepFrom(video, clock.time, event.key === "ArrowRight" ? 1 : -1),
-      );
-    }
-  };
-
   return (
     <Fullscreen className={styles.videoScreen}>
-      <FullscreenContent
-        className={styles.videoContent}
-        onKeyDown={handleKeyDown}
-      >
-        <div className={styles.videoPicture}>
+      <FullscreenContent className={styles.videoContent}>
+        <div className={styles.videoPicture} onClick={clock.toggle}>
           <canvas
             ref={canvas}
             className={styles.videoCanvas}

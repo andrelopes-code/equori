@@ -58,14 +58,14 @@ test("a target outside the figure is a failure, never a mark off its place", () 
   assert.match(markProblems(far, clip, markIn(far, clip)).join(), /does not fit/);
 });
 
-test("a mark keeps the margin its number needs, as far as the edge of its element", () => {
+test("a mark keeps its outline inside the figure, as far as the edge of its element", () => {
   const clip = { x: 960, y: 0, width: 960, height: 600 };
   const inside = markIn({ x: 1870, y: 30, width: 26, height: 26 }, clip);
   const corner = markIn({ x: 1890, y: 4, width: 26, height: 26 }, clip);
 
-  assert.deepEqual([inside.x + inside.width, inside.y], [936, 24]);
-  // An element inside the margin: the mark stops at the element, never on it.
-  assert.deepEqual([corner.x + corner.width, corner.y], [956, 4]);
+  assert.deepEqual([inside.x + inside.width, inside.y], [948, 18]);
+  // An element at the edge of the figure: the mark stops at the element, never on it.
+  assert.deepEqual([corner.x + corner.width, corner.y], [957, 3]);
 });
 
 test("a mark at the margin of the figure stays inside it after rounding", () => {
@@ -87,12 +87,12 @@ test("a figure leaves the mark its room around an element at the top of the page
   assert.deepEqual(markProblems(button, clip, mark), []);
 });
 
-test("a mark held by the margin stops at the edge of its element", () => {
+test("a mark held by the edge of the figure keeps one distance on every side", () => {
   const clip = { x: 960, y: 9, width: 960, height: 600 };
   const button = { x: 1790, y: 21, width: 100, height: 28 };
   const mark = markIn(button, clip);
 
-  assert.equal(mark.y, 12);
+  assert.equal(mark.y, 3);
   assert.deepEqual(markProblems(button, clip, mark), []);
 });
 
@@ -100,5 +100,27 @@ test("the mark of the video is the element grown by its pad, whatever the figure
   const button = { x: 1790, y: 21, width: 100, height: 28 };
 
   assert.deepEqual(markOnScreen(button), { x: 1778, y: 9, width: 124, height: 52 });
-  assert.deepEqual(markOnScreen({ x: 2, y: 3, width: 50, height: 20 }), { x: 0, y: 0, width: 64, height: 35 });
+  // At the edge of the screen the pad shrinks on every side alike (owner, 2026-11-19).
+  assert.deepEqual(markOnScreen({ x: 2, y: 3, width: 50, height: 20 }), { x: 0, y: 1, width: 54, height: 24 });
+});
+
+// Owner, 2026-11-19: the marks of "Create a category rule", steps 1 and 5, stood 12 px from
+// their button on one side and on its edge on the other, and read as shifted.
+test("a mark near the edge of the figure keeps one distance from its element on every side", () => {
+  const clip = { x: 960, y: 0, width: 960, height: 600 };
+  const top = { x: 1768, y: 30, width: 128, height: 32 };
+  const bottom = { x: 1500, y: 540, width: 118, height: 32 };
+
+  for (const target of [top, bottom]) {
+    const mark = markIn(target, clip);
+    const x = target.x - clip.x;
+    const y = target.y - clip.y;
+
+    const pad = x - mark.x;
+
+    assert.equal(mark.x + mark.width - (x + target.width), pad);
+    assert.equal(y - mark.y, pad);
+    assert.equal(mark.y + mark.height - (y + target.height), pad);
+    assert.deepEqual(markProblems(target, clip, mark), []);
+  }
 });

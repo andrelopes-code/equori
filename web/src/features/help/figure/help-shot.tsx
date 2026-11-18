@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { useHelpMedia } from "@/features/help/media/use-help-media";
 import type { HelpFigure } from "@/features/help/model/parse-help-page";
 import styles from "@/features/help/styles/help.module.css";
@@ -40,12 +42,17 @@ export function HelpShot({ figure, number, marked = true }: HelpShotProps) {
         <span
           className={styles.spot}
           aria-hidden="true"
-          style={{
-            insetInlineStart: `${String(start)}%`,
-            insetBlockStart: `${String(top)}%`,
-            inlineSize: `${String(width)}%`,
-            blockSize: `${String(height)}%`,
-          }}
+          style={
+            {
+              insetInlineStart: `${String(start)}%`,
+              insetBlockStart: `${String(top)}%`,
+              inlineSize: `${String(width)}%`,
+              blockSize: `${String(height)}%`,
+              // The number reads the place of the mark to stay inside the figure.
+              "--spot-start": String(start),
+              "--spot-top": String(top),
+            } as CSSProperties
+          }
         >
           <span className={styles.spotNumber}>{number}</span>
         </span>

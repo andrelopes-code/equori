@@ -73,6 +73,26 @@ describe("the frame of the help video at a second", () => {
     expect(frameAt(line, 5).pointer).toEqual(restSecond);
   });
 
+  // Owner, 2026-11-19: a mark at the edge of the screen keeps its number whole.
+  it("puts the number on the corner of the mark, inside the screen", () => {
+    expect(frameAt(line, 2).badge).toEqual({ x: 100, y: 200 });
+
+    const edge = {
+      ...line,
+      parts: [
+        {
+          start: 0,
+          travel: 0.9,
+          hold: 1.7,
+          click: 0.6,
+          number: 1,
+          mark: { x: 3, y: 0, width: 50, height: 20 },
+        },
+      ],
+    };
+    expect(frameAt(edge, 2).badge).toEqual({ x: 10.5, y: 10.5 });
+  });
+
   it("keeps the last part after its end", () => {
     const frame = frameAt(line, 6);
 
