@@ -154,4 +154,6 @@ export const contributionPlanPtBR: Record<
   "contributionPlan.removeMember": "Remover ativo",
   "contributionPlan.compareIndexers": "comparar indexadores",
   "contributionPlan.compareIndexers.title": "Comparar indexadores",
+  "contributionPlan.fundReport": "ver informe",
+  "contributionPlan.fundReport.title": "Informe do fundo",
 };

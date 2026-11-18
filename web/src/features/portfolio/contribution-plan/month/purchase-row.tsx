@@ -6,6 +6,7 @@ import type { ComponentPropsWithRef } from "react";
 
 import type { ShoppingEntry } from "@/features/portfolio/contribution-plan/model/shopping-list";
 import { shareText } from "@/features/portfolio/contribution-plan/model/share-text";
+import { FundReportLink } from "@/features/portfolio/contribution-plan/month/fund-report-link";
 import { GroupDot } from "@/features/portfolio/contribution-plan/month/group-dot";
 import { orderText } from "@/features/portfolio/contribution-plan/month/order-text";
 import styles from "@/features/portfolio/contribution-plan/month/purchase-row.module.css";
@@ -23,6 +24,8 @@ interface PurchaseRowProps {
   onSplit: (group: number) => void;
   // Opens the indexer comparison for a row bought by value; undefined when none is offered.
   onCompare?: ((entry: ShoppingEntry) => void) | undefined;
+  // Opens the fund report of a row that names an instrument; undefined when none is offered.
+  onReport?: ((entry: ShoppingEntry) => void) | undefined;
   // The key of the row under the pointer, or undefined when it leaves.
   onPointer: (key: string | undefined) => void;
 }
@@ -35,6 +38,7 @@ export function PurchaseRow({
   base,
   onSplit,
   onCompare,
+  onReport,
   onPointer,
 }: PurchaseRowProps) {
   const t = useT();
@@ -115,6 +119,15 @@ export function PurchaseRow({
           >
             {t("contributionPlan.compareIndexers")}
           </Link>
+        )}
+
+        {entry.code !== undefined && onReport !== undefined && (
+          <FundReportLink
+            code={entry.code}
+            onOpen={() => {
+              onReport(entry);
+            }}
+          />
         )}
       </TableCell>
 

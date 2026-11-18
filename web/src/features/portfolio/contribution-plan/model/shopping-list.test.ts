@@ -55,6 +55,7 @@ describe("shoppingList", () => {
     expect(shoppingList(view, names)).toEqual([
       {
         name: "PETR4",
+        code: "PETR4",
         cost: brl(100000),
         quantity: "25",
         unit: brl(4000),
@@ -72,6 +73,7 @@ describe("shoppingList", () => {
     expect(shoppingList(view, names)).toEqual([
       {
         name: "PETR4",
+        code: "PETR4",
         cost: brl(99033),
         quantity: "33",
         unit: brl(4000),
@@ -137,6 +139,41 @@ describe("shoppingList", () => {
     ]);
   });
 
+  it("names the instrument of a member row and no code for an account member", () => {
+    const view: Plan = {
+      ...plan,
+      classes: [
+        {
+          name: "Mixed",
+          target_bp: 10000,
+          value: brl(0),
+          amount: brl(100000),
+          members: [
+            {
+              instrument: "HGLG11",
+              target_bp: 5000,
+              value: brl(0),
+              amount: brl(50000),
+            },
+            {
+              account_id: "acc-1",
+              target_bp: 5000,
+              value: brl(0),
+              amount: brl(50000),
+            },
+          ],
+        },
+      ],
+    };
+
+    const got = shoppingList(view, names);
+
+    expect(got.map((e) => [e.name, e.code])).toEqual([
+      ["acc-1", undefined],
+      ["HGLG11", "HGLG11"],
+    ]);
+  });
+
   it("marks an instrument member without a unit value as unpriced", () => {
     const view = withPetr4({});
     delete view.classes[1]?.members[1]?.unit_value;
@@ -150,7 +187,9 @@ describe("shoppingList", () => {
   it("lists a member without a quantity by its amount", () => {
     const got = shoppingList(withPetr4({}), names);
 
-    expect(got).toEqual([{ name: "PETR4", cost: brl(100000), group: 1 }]);
+    expect(got).toEqual([
+      { name: "PETR4", code: "PETR4", cost: brl(100000), group: 1 },
+    ]);
   });
 
   it("lists a member with a cost and no planned amount", () => {

@@ -24,6 +24,8 @@ export interface ShoppingEntry {
   unpriced?: boolean;
   // A class without member targets that holds an instrument: the units wait for a split.
   splitToSee?: boolean;
+  // The instrument of a member row: the key of its fund report.
+  code?: string;
   // The position of the entry's class in the plan: it picks the class colour.
   group: number;
 }
@@ -68,6 +70,7 @@ export function receivingEntries(
           entry,
           orderOf(member.quantity, member.unit_value, scaleOf),
         );
+      if (member.instrument !== undefined) entry.code = member.instrument;
       if (member.instrument === undefined) entry.byValue = true;
       else if (member.unit_value === undefined) entry.unpriced = true;
       entries.push(entry);

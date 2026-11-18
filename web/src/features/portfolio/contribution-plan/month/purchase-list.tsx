@@ -22,11 +22,13 @@ import {
 } from "@/features/portfolio/contribution-plan/model/shopping-list";
 import { CompareIndexersDialog } from "@/features/portfolio/contribution-plan/month/compare-indexers-dialog";
 import { CopyListButton } from "@/features/portfolio/contribution-plan/month/copy-list-button";
+import { FundReportDialog } from "@/features/portfolio/contribution-plan/month/fund-report-dialog";
 import { LeftoverRow } from "@/features/portfolio/contribution-plan/month/leftover-row";
 import { PurchaseBar } from "@/features/portfolio/contribution-plan/month/purchase-bar";
 import type { PurchaseSegment } from "@/features/portfolio/contribution-plan/month/purchase-bar";
 import { PurchaseRow } from "@/features/portfolio/contribution-plan/month/purchase-row";
 import { useCompareIndexers } from "@/features/portfolio/contribution-plan/month/use-compare-indexers";
+import { useFundReportDialog } from "@/features/portfolio/contribution-plan/month/use-fund-report-dialog";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -57,6 +59,7 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
   const leftover = positive(view.leftover) ? view.leftover : undefined;
   const base = contributionOf(entries, leftover);
   const compare = useCompareIndexers(base.currency);
+  const report = useFundReportDialog();
   const money = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
   const shareOf = (m: Money) => shareText(m.amount / base.amount, locale);
   const groupOf = (name: string, group: number) => {
@@ -156,6 +159,7 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
                   base={base.amount}
                   onSplit={onSplit}
                   onCompare={compare.onCompare}
+                  onReport={report.onReport}
                   onPointer={setActive}
                 />
               ))}
@@ -178,6 +182,15 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
           amount={compare.opened.cost}
           open
           onClose={compare.close}
+        />
+      )}
+
+      {report.opened?.code !== undefined && (
+        <FundReportDialog
+          code={report.opened.code}
+          quote={report.opened.cost.currency}
+          open
+          onClose={report.close}
         />
       )}
     </Stack>

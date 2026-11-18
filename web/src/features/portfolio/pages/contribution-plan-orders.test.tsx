@@ -337,3 +337,132 @@ describe("Contribution plan, indexer comparison (S409)", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+const fundPlan = {
+  ...plan,
+  classes: [
+    {
+      name: "FIIs",
+      target_bp: 10000,
+      value: brl(300000),
+      share_bp: 10000,
+      amount: brl(100000),
+      members: [
+        {
+          instrument: "HGLG11",
+          target_bp: 5000,
+          value: brl(300000),
+          amount: brl(50000),
+        },
+        {
+          account_id: "acc-1",
+          target_bp: 5000,
+          value: brl(0),
+          amount: brl(50000),
+        },
+      ],
+    },
+  ],
+};
+
+const fundReport = {
+  source: "br_cvm_fii",
+  source_url: "https://dados.cvm.gov.br/dataset/fii-doc-inf_mensal",
+  exchange: "B3SA",
+  code: "HGLG11",
+  currency: "BRL",
+  identifier: "11728688000147",
+  name: "CSHG Logística FII",
+  segment: "Logística",
+  periods: [
+    {
+      period: "2026-10-01",
+      delivered: "2026-11-13",
+      net_assets: 765689937148,
+      holders: 633787,
+      units: null,
+      unit_book_value: "110.000000000000",
+      admin_fee: "0.000465000000",
+      month_yield: "0.010000000000",
+      month_amortization: null,
+    },
+  ],
+};
+
+async function openFunds(stored = true) {
+  localStorage.setItem(
+    "equori.locale",
+    JSON.stringify({ language: "pt", region: "BR" }),
+  );
+  await renderApp("/portfolio/contribution-plan", {
+    fetch: portfolioApi({
+      "GET /api/v1/contribution-plan": () => json(200, fundPlan),
+      "POST /api/v1/contribution-plan/preview": () => json(200, fundPlan),
+      "GET /api/v1/fund-reports": (req) =>
+        json(200, {
+          items:
+            stored && new URL(req.url).searchParams.get("code") === "HGLG11"
+              ? [fundReport]
+              : [],
+        }),
+      "GET /api/v1/curves": () => json(200, { items: [] }),
+      "GET /api/v1/prices": () => json(200, { interval: "day", items: [] }),
+    }),
+  });
+
+  return screen.findByRole("table", { name: "Lista de compras" });
+}
+
+describe("Contribution plan, fund report", () => {
+  afterEach(() => {
+    localStorage.removeItem("equori.locale");
+  });
+
+  it("offers the report on the row of a fund with a stored report only", async () => {
+    const list = await openFunds();
+
+    const button = await within(list).findByRole("button", {
+      name: "ver informe",
+    });
+
+    expect(
+      within(list).getAllByRole("button", { name: "ver informe" }),
+    ).toHaveLength(1);
+    expect(text(within(list).getAllByRole("row")[2] ?? list)).toContain(
+      "HGLG11",
+    );
+    expect(button.closest("tr")).toBe(within(list).getAllByRole("row")[2]);
+  });
+
+  it("opens the report in a dialog and removes the dialog on close", async () => {
+    const list = await openFunds();
+    const user = userEvent.setup();
+
+    await user.click(
+      await within(list).findByRole("button", { name: "ver informe" }),
+    );
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Informe do fundo",
+    });
+    expect(
+      await within(dialog).findByText("Valor patrimonial da cota"),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("draws no button when no code has a stored report", async () => {
+    const list = await openFunds(false);
+
+    await waitFor(() => {
+      expect(within(list).getAllByRole("row").length).toBeGreaterThan(1);
+    });
+    expect(
+      within(list).queryByRole("button", { name: "ver informe" }),
+    ).not.toBeInTheDocument();
+  });
+});

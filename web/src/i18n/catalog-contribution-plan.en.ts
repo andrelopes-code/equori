@@ -153,4 +153,6 @@ export const contributionPlanEn = {
   "contributionPlan.removeMember": "Remove asset",
   "contributionPlan.compareIndexers": "compare indexers",
   "contributionPlan.compareIndexers.title": "Compare indexers",
+  "contributionPlan.fundReport": "see report",
+  "contributionPlan.fundReport.title": "Fund report",
 } as const;
