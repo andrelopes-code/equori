@@ -17,10 +17,10 @@ Source status:
 
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
-| F-01 | CDB, percent of CDI, daily liquidity | supported | `TestRecordFixedIncomeS479`; accrual in `internal/marketdata/domain/accrual.go` | none | tax table and IOF: in code (`internal/ledger/region_defaults.go`, Lei 11.033/2004 art. 1, Decreto 6.306/2007 art. 32) |
+| F-01 | CDB, percent of CDI, daily liquidity | supported | `TestRecordFixedIncomeS479`; accrual in `internal/marketdata/domain/accrual.go`; `TestBRProductMatrix` row F-01: 100% of the CDI of January 2025 (BCB SGS 12), 101,013.20 after 22 rates | none | tax table and IOF: in code (`internal/ledger/region_defaults.go`, Lei 11.033/2004 art. 1, Decreto 6.306/2007 art. 32); accrual window: B3 Caderno de Fórmulas of CDBs, 6.1.2, read 2026-11-18 |
 | F-02 | CDB, pre-fixed | supported | `TestBRProductMatrix` row F-02, through HTTP and tools: value 1,000,000.00, income tax 37,002.70, FGC excess 750,000.00 | none | LTN example of the Metodologia de Cálculo of the Tesouro Nacional (14.36% a.a., 532 business days, 753.315323 for 1,000.00), read 2026-11-18; Lei 11.033/2004 art. 1, IV |
 | F-03 | CDB, IPCA plus spread | partial | `TestRecordFixedIncomeRates`, case "index plus spread" | the monthly index enters by published month without pro rata (`accrual.go`); issuers accrue pro rata by business day with a projected index | to read |
-| F-04 | CDI plus spread (debenture, CRI, CRA, CDB) | supported | `TestRecordFixedIncomeCDIPlusSpread` | none | to read |
+| F-04 | CDI plus spread (debenture, CRI, CRA, CDB) | supported | `TestRecordFixedIncomeCDIPlusSpread`; `TestBRProductMatrix` row F-04: CDI + 1.5%, 101,144.58 after 22 rates | none | to read |
 | F-05 | CDB with a rate that rises with the holding period | unsupported | terms hold one rate (`domain.Terms`) | a rate schedule by holding period | to read |
 | F-06 | RDB | supported | subtype `rdb` in `internal/portfolio/jurisdiction/br/br.go`; FGC list; `TestBRProductMatrix` row F-06 against the LTN example of the Tesouro Nacional | none | FGC: in code (Resolução CMN 4.222/2013, annex II, art. 2) |
 | F-07 | LCI, LCA, percent of CDI, minimum term | partial | subtypes `lci`, `lca`, exempt class; `redeemable_from` | the minimum term of the norm is typed by the user, not derived | exemption: in code (Lei 11.033/2004 art. 3); minimum term: to read |

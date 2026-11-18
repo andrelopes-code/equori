@@ -15,6 +15,10 @@ type BRProduct struct {
 	Contract map[string]any
 	Args     map[string]any
 
+	// CDI is the published daily rate of the CDI (BCB SGS series 12) of each business day the row
+	// accrues, as the SGS answers it: date as dd/MM/yyyy and percent a day.
+	CDI [][2]string
+
 	AppliedOn, Amount string
 	// ValuedOn is the date the position, the tax estimate and the issuer exposure are read.
 	ValuedOn string
@@ -56,6 +60,72 @@ func BRProducts() []BRProduct {
 			unguaranteed,
 		),
 		earlyRedemption(),
+		cdiRow("F-01", "CDB 100% do CDI, liquidez diária", map[string]any{
+			"index_id": "cdi", "percent_of_index_bp": 10000, "daily_liquidity": true,
+		}, map[string]any{
+			"index_id": "cdi", "percent_of_index": "100", "daily_liquidity": true,
+		}, "101013.20", "227.97", "100785.23"),
+		cdiRow("F-04", "CDB CDI + 1,5%", map[string]any{
+			"index_id": "cdi", "percent_of_index_bp": 10000, "spread_bp": 150,
+		}, map[string]any{
+			"index_id": "cdi", "percent_of_index": "100", "spread": "1.5",
+		}, "101144.58", "257.53", "100887.05"),
+	}
+}
+
+// cdiJanuary2025 is the CDI of the business days of January 2025 and of 2025-02-03 as BCB SGS
+// series 12 publishes it (api.bcb.gov.br/dados/serie/bcdata.sgs.12, fetched 2026-11-18). The rate
+// of 2025-02-03 accrues to the next day, so it gives the price of 2025-02-03 without entering it.
+var cdiJanuary2025 = [][2]string{
+	{"02/01/2025", "0.045513"}, {"03/01/2025", "0.045513"}, {"06/01/2025", "0.045513"},
+	{"07/01/2025", "0.045513"}, {"08/01/2025", "0.045513"}, {"09/01/2025", "0.045513"},
+	{"10/01/2025", "0.045513"}, {"13/01/2025", "0.045513"}, {"14/01/2025", "0.045513"},
+	{"15/01/2025", "0.045513"}, {"16/01/2025", "0.045513"}, {"17/01/2025", "0.045513"},
+	{"20/01/2025", "0.045513"}, {"21/01/2025", "0.045513"}, {"22/01/2025", "0.045513"},
+	{"23/01/2025", "0.045513"}, {"24/01/2025", "0.045513"}, {"27/01/2025", "0.045513"},
+	{"28/01/2025", "0.045513"}, {"29/01/2025", "0.045513"}, {"30/01/2025", "0.049037"},
+	{"31/01/2025", "0.049037"}, {"03/02/2025", "0.049037"},
+}
+
+// cdiRow is a CDB applied on 2025-01-02 and read on 2025-02-03, after the 22 published rates of
+// January 2025, from the issue date inclusive (B3, Caderno de Fórmulas of CDBs, 6.1.2). The value is 100,000.00 times the product of 1 + rate × percent of each day, and
+// a spread multiplies each day by (1 + spread)^(1/252); computed independently with 80-digit
+// decimals. Held 32 days: no IOF, and income tax 22.5% (Lei 11.033/2004 art. 1, I).
+func cdiRow(id, name string, contract, args map[string]any, value, tax, net string) BRProduct {
+	terms := func(extra map[string]any) map[string]any {
+		m := map[string]any{
+			"subtype":    "cdb",
+			"issuer":     "Banco Matriz",
+			"issued_on":  "2025-01-02",
+			"matures_on": "2027-01-04",
+			"day_count":  "bus252",
+		}
+		for k, v := range extra {
+			m[k] = v
+		}
+
+		return m
+	}
+
+	return BRProduct{
+		ID:      id,
+		Name:    name,
+		Subtype: "cdb",
+		Source: "BCB SGS series 12 (CDI, percent a day), January 2025, fetched 2026-11-18; " +
+			"income tax 22.5% up to 180 days, Lei 11.033/2004 art. 1, I, read 2026-11-18",
+		Contract:      terms(contract),
+		Args:          terms(args),
+		CDI:           cdiJanuary2025,
+		AppliedOn:     "2025-01-02",
+		Amount:        "100000.00",
+		ValuedOn:      "2025-02-03",
+		WantValue:     value,
+		WantIncomeTax: tax,
+		WantIOF:       "0.00",
+		WantNet:       net,
+		WantExcess:    "0.00",
+		WantUncovered: "0.00",
+		WantSovereign: "0.00",
 	}
 }
 

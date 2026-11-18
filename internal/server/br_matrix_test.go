@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -22,7 +25,7 @@ func TestBRProductMatrix(t *testing.T) {
 			t.Run(row.ID+"/"+path, func(t *testing.T) {
 				t.Parallel()
 
-				h := apitest.New(t, apitest.As(apitest.Brazil()), apitest.Today(row.ValuedOn))
+				h := apitest.New(t, matrixOptions(t, row)...)
 				brokerage, cash := matrixBrokerage(t, h)
 
 				var got matrixFigures
@@ -321,3 +324,45 @@ func minorBRL(t *testing.T, s string) int64 {
 }
 
 func decimalBRL(cents int64) string { return fmt.Sprintf("%d.%02d", cents/100, cents%100) }
+
+// matrixOptions are the harness options of a row: a Brazilian book on ValuedOn and, for a row
+// with CDI rates, an SGS that answers them.
+func matrixOptions(t *testing.T, row apitest.BRProduct) []apitest.Option {
+	t.Helper()
+
+	opts := []apitest.Option{apitest.As(apitest.Brazil()), apitest.Today(row.ValuedOn)}
+	if row.CDI == nil {
+		return opts
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/dados/serie/bcdata.sgs.12/dados" {
+			http.NotFound(w, r)
+			return
+		}
+
+		from, _ := time.Parse("02/01/2006", r.URL.Query().Get("dataInicial"))
+		to, _ := time.Parse("02/01/2006", r.URL.Query().Get("dataFinal"))
+
+		var items []string
+		for _, rate := range row.CDI {
+			d, _ := time.Parse("02/01/2006", rate[0])
+			if !d.Before(from) && !d.After(to) {
+				items = append(items, fmt.Sprintf(`{"data":%q,"valor":%q}`, rate[0], rate[1]))
+			}
+		}
+
+		if len(items) == 0 {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		_, _ = fmt.Fprintf(w, "[%s]", strings.Join(items, ","))
+	}))
+	t.Cleanup(srv.Close)
+
+	return append(
+		opts,
+		apitest.IndexFeeds([]string{"br_cdi"}, map[string]string{"br_cdi": srv.URL}),
+	)
+}
