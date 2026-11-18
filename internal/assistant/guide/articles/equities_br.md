@@ -36,3 +36,5 @@ Dividend. Exempt up to R$ 50,000.00 a month paid by one source to one individual
 JCP. 15% at source up to 2025-12-31 and 17.5% from 2026-01-01, by the payment date (Lei Complementar 224/2025, art. 8 and 14).
 
 Fund report. The report of a listed FII on the instrument page comes from the CVM (Informe Mensal de FII, feed br_cvm_fii); the break-even is read against the Tesouro IPCA+ curve (feed br_tesouro).
+
+Company statements. The statements of a listed company on the instrument page come from the CVM files DFP, ITR and FCA (feed br_cvm_cia).

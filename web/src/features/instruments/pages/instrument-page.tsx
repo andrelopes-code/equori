@@ -16,6 +16,7 @@ import { useState } from "react";
 import { useApi } from "@/api/api-context";
 import { instrumentQuery, termsQuery } from "@/features/instruments/api";
 import { InstrumentPagePlaceholder } from "@/features/instruments/pages/instrument-page-placeholder";
+import { CompanyReport } from "@/features/instruments/company-report/company-report";
 import { FundReport } from "@/features/instruments/fund-report/fund-report";
 import { FundReportChoice } from "@/features/instruments/fund-report/fund-report-choice";
 import { InstrumentPositions } from "@/features/instruments/positions/instrument-positions";
@@ -157,6 +158,8 @@ export function InstrumentPage() {
           <FundReport code={i.code} quote={quote} />
 
           <FundReportChoice instrument={i} />
+
+          <CompanyReport code={i.code} />
 
           {fixedIncome && terms.isError && (
             <QueryError
