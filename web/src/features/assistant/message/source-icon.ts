@@ -43,6 +43,7 @@ const actions: Record<string, AssistantIconName> = {
   record_corporate_action: "trend",
   manage_instrument: "trend",
   manage_card: "card",
+  set_card_face: "card",
   handle_card_purchase: "card",
   manage_accounts_and_payees: "wallet",
   reconcile_account: "wallet",

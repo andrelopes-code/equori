@@ -42,6 +42,7 @@ func Tools(svc *app.Service) []tool.Tool {
 		recordBrokerageNote(svc),
 		setBaseCurrency(svc),
 		getHoldingLots(svc),
+		setCardFace(svc),
 		estimateRedemption(svc),
 	}
 }

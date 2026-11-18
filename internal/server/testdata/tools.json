@@ -6596,7 +6596,7 @@
   },
   {
     "name": "list_payees_and_tags",
-    "description": "Lists the book's payees, the tags in use or the institutions, by name, with IDs. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
+    "description": "Lists the book's payees, the tags in use or the institutions, by name, with IDs; kind tag_usage counts the transactions of one tag. Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. Do not use it for transactions of a payee: search_transactions with query does that.",
     "effect": "read_only",
     "idempotent": false,
     "input_schema": {
@@ -6608,12 +6608,13 @@
           "enum": [
             "payees",
             "tags",
-            "institutions"
+            "institutions",
+            "tag_usage"
           ]
         },
         "query": {
           "type": "string",
-          "description": "case-insensitive text the name must contain"
+          "description": "case-insensitive text the name must contain; for tag_usage, the exact tag name"
         },
         "limit": {
           "type": "integer",
@@ -6656,6 +6657,23 @@
           "items": {
             "type": "string"
           }
+        },
+        "tag_usage": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "transactions": {
+              "type": "integer",
+              "description": "non-voided transactions that carry the tag"
+            }
+          },
+          "required": [
+            "name",
+            "transactions"
+          ],
+          "additionalProperties": false
         },
         "institutions": {
           "type": "array",
@@ -10293,6 +10311,71 @@
       },
       "required": [
         "base_currency"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "set_card_face",
+    "description": "Proposes how a credit card is drawn in the app: its colour, pattern, chip, orientation and the mark of the institution. It replaces the whole face: a value left out returns to the default, and a call with only account_id clears the face. Use it when the user asks to change the look of a card. Do not use it for the limit, the cycle or the plastic cards: manage_card does. The user confirms first.",
+    "effect": "write",
+    "idempotent": false,
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string",
+          "description": "credit card account, from list_accounts"
+        },
+        "color": {
+          "type": "string",
+          "description": "colour of the card as lower case #rrggbb, such as #820ad1"
+        },
+        "art": {
+          "type": "string",
+          "description": "pattern drawn on the card: plain, aurora, waves, orbits, band, contour, dots, carbon, brushed or holo"
+        },
+        "chip": {
+          "type": "string",
+          "description": "colour of the chip",
+          "enum": [
+            "gold",
+            "silver"
+          ]
+        },
+        "orientation": {
+          "type": "string",
+          "description": "how the card is drawn",
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
+        },
+        "brand": {
+          "type": "string",
+          "description": "how the institution appears: auto picks, plate draws its mark, name writes its name, none hides it",
+          "enum": [
+            "auto",
+            "plate",
+            "name",
+            "none"
+          ]
+        }
+      },
+      "required": [
+        "account_id"
+      ],
+      "additionalProperties": false
+    },
+    "output_schema": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id"
       ],
       "additionalProperties": false
     }

@@ -12,12 +12,12 @@ import (
 type listPayeesAndTagsKind string
 
 func (listPayeesAndTagsKind) Values() []string {
-	return []string{"payees", "tags", "institutions"}
+	return []string{"payees", "tags", "institutions", "tag_usage"}
 }
 
 type listPayeesAndTagsIn struct {
 	Kind  listPayeesAndTagsKind `json:"kind"           jsonschema:"what to list"`
-	Query string                `json:"query,omitzero" jsonschema:"case-insensitive text the name must contain"`
+	Query string                `json:"query,omitzero" jsonschema:"case-insensitive text the name must contain; for tag_usage, the exact tag name"`
 	tool.PageArgs
 }
 
@@ -31,9 +31,15 @@ type institutionView struct {
 	Name          string `json:"name"`
 }
 
+type tagUsageView struct {
+	Name         string `json:"name"`
+	Transactions int    `json:"transactions" jsonschema:"non-voided transactions that carry the tag"`
+}
+
 type listPayeesAndTagsOut struct {
 	Payees       []payeeView       `json:"payees,omitzero"`
 	Tags         []string          `json:"tags,omitzero"`
+	TagUsage     tagUsageView      `json:"tag_usage,omitzero"`
 	Institutions []institutionView `json:"institutions,omitzero"`
 	NextCursor   string            `json:"next_cursor,omitzero"  jsonschema:"present when more items follow; pass it as cursor"`
 }
@@ -41,7 +47,7 @@ type listPayeesAndTagsOut struct {
 func listPayeesAndTags(svc *app.Service) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "list_payees_and_tags",
-		Description: "Lists the book's payees, the tags in use or the institutions, by name, with IDs. " +
+		Description: "Lists the book's payees, the tags in use or the institutions, by name, with IDs; kind tag_usage counts the transactions of one tag. " +
 			"Use it to find the payee_id a write takes or to check whether a payee, tag or institution exists. " +
 			"Do not use it for transactions of a payee: search_transactions with query does that.",
 		Effect: tool.ReadOnly,
@@ -66,6 +72,8 @@ func runListPayeesAndTags(
 		err = listPayees(ctx, svc, booksID, in, match, &out)
 	case "tags":
 		err = listTags(ctx, svc, booksID, in, match, &out)
+	case "tag_usage":
+		err = tagUsage(ctx, svc, booksID, in, &out)
 	default:
 		err = listInstitutions(ctx, svc, booksID, in, match, &out)
 	}
@@ -172,4 +180,21 @@ func pageMatched[R, V any](
 	}
 
 	return tool.PageOf(views, key, args)
+}
+
+func tagUsage(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	in listPayeesAndTagsIn,
+	out *listPayeesAndTagsOut,
+) error {
+	if in.Query == "" {
+		return tool.InvalidArgument("query", "is required for tag_usage")
+	}
+
+	t, err := svc.Tag(ctx, booksID, in.Query)
+	out.TagUsage = tagUsageView{Name: t.Name, Transactions: t.Transactions}
+
+	return err
 }

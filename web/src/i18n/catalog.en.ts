@@ -1882,6 +1882,7 @@ export const catalogEn = {
   "assistant.step.reconcile_account": "Preparing a reconciliation",
   "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.transfer_custody": "Preparing a custody transfer",
+  "assistant.step.set_card_face": "Preparing the look of a card",
   "assistant.step.get_holding_lots": "Reading the purchases of a holding",
   "assistant.step.set_base_currency": "Preparing the base currency change",
   "assistant.step.save_contribution_plan": "Preparing the contribution plan",
@@ -1954,6 +1955,7 @@ export const catalogEn = {
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
   "assistant.action.transfer_custody": "Transfer custody",
+  "assistant.action.set_card_face": "Change the look of the card",
   "assistant.action.set_base_currency": "Change base currency",
   "assistant.action.save_contribution_plan": "Save contribution plan",
   "assistant.action.review_investment_movement.confirm":
