@@ -18,7 +18,7 @@ const OUT = { width: VIEW.width * SCALE, height: VIEW.height * SCALE };
 const TRAVEL = 0.9;
 const HOLD_STEP = 1.7;
 const HOLD_BRIDGE = 0.5;
-const CLICK = 0.35;
+const CLICK = 0.6;
 const FADE = 0.3;
 const END = 1.4;
 
@@ -55,10 +55,17 @@ const R = ${SCALE}, S = ${RATIO}, W = ${OUT.width}, H = ${OUT.height}, VW = ${VI
 const ctx = document.getElementById("c").getContext("2d");
 ctx.imageSmoothingQuality = "high";
 let stills = [], line = null, accent = "#7c5cff";
+// Lucide mouse-pointer-2 (ISC licence) on its 24-unit grid; its tip stands at 4.04, 4.04.
+const ARROW = new Path2D("M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z");
 const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const mix = (a, b, k) => a + (b - a) * k;
 const clamp = (x) => Math.max(0, Math.min(1, x));
-const centre = (p) => ({ x: p.clip.x + p.mark.x + p.mark.width / 2, y: p.clip.y + p.mark.y + p.mark.height / 2 });
+// Where the pointer rests on a target: below and after its centre, so the tip is inside the
+// element and the arrow leaves its label readable.
+const centre = (p) => ({
+  x: p.clip.x + p.mark.x + p.mark.width / 2 + Math.min(p.mark.width * 0.18, 24),
+  y: p.clip.y + p.mark.y + p.mark.height / 2 + Math.min(p.mark.height * 0.2, 10),
+});
 
 window.load = async (urls, timeline, colour) => {
   line = timeline; accent = colour;
@@ -111,22 +118,40 @@ window.render = (t) => {
     ctx.globalAlpha = 1;
   }
 
-  // The click: a ring that opens from the pointer.
   const px = (pointer.x - cam.x) * R, py = (pointer.y - cam.y) * R;
   const clicked = local - part.travel - part.hold;
-  if (part.click > 0 && clicked > 0) {
-    const c = clamp(clicked / part.click);
-    ctx.beginPath(); ctx.arc(px, py, (6 + 18 * c) * R, 0, Math.PI * 2);
-    ctx.lineWidth = 2 * R; ctx.strokeStyle = accent; ctx.globalAlpha = 1 - c; ctx.stroke(); ctx.globalAlpha = 1;
+  const c = part.click > 0 && clicked > 0 ? clamp(clicked / part.click) : -1;
+  const out = (x) => 1 - Math.pow(1 - x, 3);
+
+  // The click, in three beats the eye can follow: a disc lights the place, two rings open from
+  // it one after the other, and the pointer presses down and comes back.
+  if (c >= 0) {
+    ctx.beginPath(); ctx.arc(px, py, (12 + 14 * out(c)) * R, 0, Math.PI * 2);
+    ctx.fillStyle = accent; ctx.globalAlpha = 0.32 * (1 - c); ctx.fill();
+
+    // A white edge under the first ring keeps it visible on a ground of the accent itself.
+    ctx.beginPath(); ctx.arc(px, py, (10 + 30 * out(c)) * R, 0, Math.PI * 2);
+    ctx.lineWidth = 6 * R; ctx.strokeStyle = "#fff"; ctx.globalAlpha = 0.55 * (1 - c); ctx.stroke();
+    ctx.lineWidth = 3 * R; ctx.strokeStyle = accent; ctx.globalAlpha = 1 - c; ctx.stroke();
+
+    const late = clamp((c - 0.22) / 0.78);
+    ctx.beginPath(); ctx.arc(px, py, (10 + 46 * out(late)) * R, 0, Math.PI * 2);
+    ctx.lineWidth = 2 * R; ctx.globalAlpha = c > 0.22 ? 0.65 * (1 - late) : 0; ctx.stroke();
+    ctx.globalAlpha = 1;
   }
 
-  // The pointer: an arrow with a white body and a dark edge, legible on both schemes.
-  ctx.save(); ctx.translate(px, py); ctx.scale(R * 1.4, R * 1.4);
-  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 17); ctx.lineTo(4.6, 13); ctx.lineTo(7.6, 19.6);
-  ctx.lineTo(10.2, 18.4); ctx.lineTo(7.3, 12); ctx.lineTo(13, 12); ctx.closePath();
-  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
-  ctx.fillStyle = "#fff"; ctx.fill(); ctx.shadowColor = "transparent";
-  ctx.lineWidth = 1.2; ctx.strokeStyle = "#111"; ctx.lineJoin = "round"; ctx.stroke(); ctx.restore();
+  // The pointer: a rounded arrow in the accent of the theme, edged in white, over a soft glow of
+  // the same colour, so it reads as part of the application and stands out on both schemes.
+  const glow = ctx.createRadialGradient(px, py, 0, px, py, 26 * R);
+  glow.addColorStop(0, accent); glow.addColorStop(1, "transparent");
+  ctx.globalAlpha = 0.22; ctx.fillStyle = glow;
+  ctx.beginPath(); ctx.arc(px, py, 26 * R, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+
+  const press = c >= 0 ? 1 - 0.2 * Math.sin(Math.PI * clamp(c * 1.8)) : 1;
+  ctx.save(); ctx.translate(px, py); ctx.scale(R * 1.25 * press, R * 1.25 * press); ctx.translate(-4.04, -4.04);
+  ctx.shadowColor = "rgba(0,0,0,.4)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = accent; ctx.fill(ARROW); ctx.shadowColor = "transparent";
+  ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.lineJoin = "round"; ctx.stroke(ARROW); ctx.restore();
 
   return document.getElementById("c").toDataURL("image/jpeg", 1);
 };

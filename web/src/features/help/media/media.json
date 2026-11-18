@@ -51,8 +51,8 @@
   },
   "videos": {
     "pay-statement": {
-      "seconds": 17,
-      "frames": 505
+      "seconds": 18,
+      "frames": 528
     }
   },
   "files": {
@@ -62,30 +62,30 @@
     "pay-amount.pt.dark.png": "9ec8c5be97bd33f90381a484f028df489cb3ad404c4eff4f874f478ea375c380",
     "pay-account.pt.dark.png": "9ec8c5be97bd33f90381a484f028df489cb3ad404c4eff4f874f478ea375c380",
     "pay-confirm.pt.dark.png": "9ec8c5be97bd33f90381a484f028df489cb3ad404c4eff4f874f478ea375c380",
-    "pay-statement.pt.dark.webm": "2e9727d12657ed04d56e27bcd577a64101628178852f0e4e2758ae977ba5d95e",
+    "pay-statement.pt.dark.webm": "d444467cdca2bd2db541fc69bfb275b3ae1c0a063c24c535b513e01be3ffcb2a",
     "pay-cards.pt.light.png": "0514ec334a9d7a81c1fb4f0bb0eb0c175a494267943108b7b4550f01d19c8963",
     "statement-total.pt.light.png": "18568eea4fcaf2ef06b2c727e6b2d449624406bf1c7cea968d3b49c4b04b951f",
     "pay-open.pt.light.png": "277e363110bf751effdc3de9765f4ac9f67aecd304be4f04bfe0793a89e4981c",
     "pay-amount.pt.light.png": "055371cb5dde30c7c064707cac4fe4d429616f6e2da7af0f66607778833aca25",
     "pay-account.pt.light.png": "055371cb5dde30c7c064707cac4fe4d429616f6e2da7af0f66607778833aca25",
     "pay-confirm.pt.light.png": "055371cb5dde30c7c064707cac4fe4d429616f6e2da7af0f66607778833aca25",
-    "pay-statement.pt.light.webm": "a6e5f2e25f534fbca11f9086699b73dd4957e3cdc42af6ec1330320a19c815a6",
+    "pay-statement.pt.light.webm": "b6e2ec791f69a3fd41ef778272cec660a855dce3306645e0e4e7b09021dd8ebb",
     "pay-cards.en.dark.png": "72f733529ad4fb0aabc2b3ff2ae013d1128ba1d7096b49e95b83fb8b797dee30",
     "statement-total.en.dark.png": "f1510cc7ec7edac8e6fbe53d15285a43b00830974d7199348aac6583cf176768",
     "pay-open.en.dark.png": "2f14e23fe313460997de5d402c797590c51fd8b741c40cd0b08b31db321c51e8",
     "pay-amount.en.dark.png": "dc3bc3536df5615b7bd0c71c6bf992fe71d603b88c0581ab1b3b0fa736b7a2f7",
     "pay-account.en.dark.png": "dc3bc3536df5615b7bd0c71c6bf992fe71d603b88c0581ab1b3b0fa736b7a2f7",
     "pay-confirm.en.dark.png": "dc3bc3536df5615b7bd0c71c6bf992fe71d603b88c0581ab1b3b0fa736b7a2f7",
-    "pay-statement.en.dark.webm": "3a1ca49883d590f9e20b5c486f37a4e817f6c686d5ec3f2b701276d257227dcf",
+    "pay-statement.en.dark.webm": "028313c65a30f86c7036b5036c485ccb196afe513602260a9b3b8253067be4ae",
     "pay-cards.en.light.png": "4d8cb92ac5bddc695b757980b8717094e279ec7f667cac2964f2eb6eb40d57ac",
     "statement-total.en.light.png": "94351051b55a27ac4060cdbc4f2a240eb9d2e27686bb2fd8c5ab972280dca5c9",
     "pay-open.en.light.png": "3d85697c7e807eef826fdf73fd4b8a52d029f1c2e2a4330e455762e507d55136",
     "pay-amount.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
     "pay-account.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
     "pay-confirm.en.light.png": "65e736888a011fb9335311ba51b1a52b414e76b5b2bb3e6d61e2b5b6fced2246",
-    "pay-statement.en.light.webm": "301ac89f7ccf2226736ae42f7c64b875f0520c50ac28028d59f2901545ff5b22"
+    "pay-statement.en.light.webm": "63d9bd4bc68cc27587fa27da7682a7c2fa5eac0215fafbae2ab64c0f1ff844bd"
   },
   "inputs": {
-    "pay-statement": "3e9c8117df5ae140bf0f90ccdb8039212688178a1e2471afbc5d76283a1c456f"
+    "pay-statement": "f16ac53d38f7e154d67b5f2c14a609a9eeadf63b9d356e875ebc174a5689c2d3"
   }
 }
