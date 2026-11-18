@@ -27,6 +27,8 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 		err = required(name, fields, []string{"buckets"}, "month")
 	case "move_category":
 		err = required(name, fields, []string{"category_id", "bucket"})
+	case "delete_bucket_version":
+		err = required(name, fields, []string{"month"})
 	}
 
 	return err

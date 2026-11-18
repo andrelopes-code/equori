@@ -53,6 +53,9 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 		previewGoalExpense(&pv, in, p)
 	case "allocate":
 		previewAllocation(&pv, p)
+	case "delete_bucket_version":
+		pv.Destructive = true
+		pv.Changes = []tool.Change{{Field: "date", Before: tool.DateValue(p.month)}}
 	}
 
 	return pv, nil

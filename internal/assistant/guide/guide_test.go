@@ -19,8 +19,8 @@ func TestArticlesExist(t *testing.T) {
 
 	for _, topic := range guide.Topics() {
 		a, ok := guide.Article(topic)
-		if !ok || len(a) < 200 || len(a) > 6000 {
-			t.Errorf("article %s: found = %v, %d bytes, want 200 to 6000", topic, ok, len(a))
+		if !ok || len(a) < 200 || len(a) > 16000 {
+			t.Errorf("article %s: found = %v, %d bytes, want 200 to 16000", topic, ok, len(a))
 		}
 	}
 

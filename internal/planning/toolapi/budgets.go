@@ -16,12 +16,13 @@ import (
 type getBudgetsAndGoalsKind string
 
 func (getBudgetsAndGoalsKind) Values() []string {
-	return []string{"budgets", "goals", "both", "plan", "split"}
+	return []string{"budgets", "goals", "both", "plan", "split", "bucket_entries"}
 }
 
 type getBudgetsAndGoalsIn struct {
-	Month string                 `json:"month,omitzero" jsonschema:"month of the budget progress; the current month when absent; written YYYY-MM"`
-	Kind  getBudgetsAndGoalsKind `json:"kind,omitzero"  jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan; split the income split of the month and the five before"`
+	Month  string                 `json:"month,omitzero"  jsonschema:"month of the budget progress; the current month when absent; written YYYY-MM"`
+	Kind   getBudgetsAndGoalsKind `json:"kind,omitzero"   jsonschema:"budgets, goals or both; both when absent; plan returns only the month's budget plan; split the income split of the month and the five before; bucket_entries the entries that add up to the real amount of bucket in the month"`
+	Bucket string                 `json:"bucket,omitzero" jsonschema:"for bucket_entries: bucket name from kind split, or none for the spending outside the split"`
 }
 
 type budgetView struct {
@@ -77,6 +78,8 @@ type getBudgetsAndGoalsOut struct {
 	Split   []splitMonth `json:"split,omitzero"`
 	// Versions lists every version of the bucket method with kind split (A240).
 	Versions []bucketVersionView `json:"versions,omitzero"`
+
+	BucketEntries bucketEntriesView `json:"bucket_entries,omitzero"`
 }
 
 // planBucketsFrom returns the first month of the plan's bucket method; empty without one.
@@ -166,6 +169,7 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 		Name: "get_budgets_and_goals",
 		Description: "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. " +
 			"With kind plan it returns the month's budget plan instead: the reference income, the installments, savings and goal deposits it pays, the budgets and the unassigned rest. " +
+			"With kind split it returns the income split of six months and its versions; with kind bucket_entries, the transactions behind the real amount of one bucket. " +
 			"Use it for how a budget or goal is going, or how much income still has no budget. " +
 			"Do not use it for spending by category without a budget: get_category_totals does.",
 		Effect:     tool.ReadOnly,
@@ -181,21 +185,15 @@ func getBudgetsAndGoals(svc *app.Service, l Ledger, clk clock.Clock) tool.Tool {
 			Budgets: []budgetView{},
 			Goals:   []goalView{},
 		}
-		if in.Kind == "plan" {
-			err := fillPlan(ctx, svc, l, booksID, month, &out)
+		switch in.Kind {
+		case "plan":
+			return out, fillPlan(ctx, svc, l, booksID, month, &out)
+		case "bucket_entries":
+			out.BucketEntries, err = bucketEntries(ctx, svc, l, booksID, month, in.Bucket)
 
 			return out, err
-		}
-
-		if in.Kind == "split" {
-			out.Split, err = splitMonths(ctx, svc, booksID, month)
-			if err != nil {
-				return out, err
-			}
-
-			out.Versions, err = bucketVersionViews(ctx, svc, booksID)
-
-			return out, err
+		case "split":
+			return out, fillSplit(ctx, svc, booksID, month, &out)
 		}
 
 		if in.Kind != "goals" {
@@ -309,6 +307,24 @@ func toBudgetView(
 	}
 
 	return v, nil
+}
+
+// fillSplit sets the income split of the month and the five before, and every version.
+func fillSplit(
+	ctx context.Context,
+	svc *app.Service,
+	booksID int64,
+	month time.Time,
+	out *getBudgetsAndGoalsOut,
+) error {
+	var err error
+	if out.Split, err = splitMonths(ctx, svc, booksID, month); err != nil {
+		return err
+	}
+
+	out.Versions, err = bucketVersionViews(ctx, svc, booksID)
+
+	return err
 }
 
 func fillGoals(

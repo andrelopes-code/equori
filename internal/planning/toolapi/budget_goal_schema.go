@@ -27,6 +27,7 @@ func (manageBudgetOrGoalAction) Values() []string {
 		"link_expense",
 		"unlink_expense",
 		"allocate",
+		"delete_bucket_version",
 	}
 }
 

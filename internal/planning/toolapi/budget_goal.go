@@ -292,6 +292,8 @@ func runBudgetOrGoal(
 		return manageBudgetOrGoalOut{}, svc.SaveBudgetBuckets(ctx, booksID, from, p.buckets)
 	case "update_goal":
 		return updateGoal(ctx, svc, booksID, in, p)
+	case "delete_bucket_version":
+		return manageBudgetOrGoalOut{Deleted: true}, svc.DeleteBucketVersion(ctx, booksID, p.month)
 	case "link_expense", "unlink_expense":
 		return runGoalExpense(ctx, svc, booksID, in, p)
 	}

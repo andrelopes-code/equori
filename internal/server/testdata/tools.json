@@ -1261,7 +1261,7 @@
   },
   {
     "name": "get_budgets_and_goals",
-    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. With kind plan it returns the month's budget plan instead: the reference income, the installments, savings and goal deposits it pays, the budgets and the unassigned rest. Use it for how a budget or goal is going, or how much income still has no budget. Do not use it for spending by category without a budget: get_category_totals does.",
+    "description": "Returns the monthly budgets with planned, carried, spent and available amounts for a month, and the goals with their target, current value, progress and trailing return. With kind plan it returns the month's budget plan instead: the reference income, the installments, savings and goal deposits it pays, the budgets and the unassigned rest. With kind split it returns the income split of six months and its versions; with kind bucket_entries, the transactions behind the real amount of one bucket. Use it for how a budget or goal is going, or how much income still has no budget. Do not use it for spending by category without a budget: get_category_totals does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -1273,14 +1273,19 @@
         },
         "kind": {
           "type": "string",
-          "description": "budgets, goals or both; both when absent; plan returns only the month's budget plan; split the income split of the month and the five before",
+          "description": "budgets, goals or both; both when absent; plan returns only the month's budget plan; split the income split of the month and the five before; bucket_entries the entries that add up to the real amount of bucket in the month",
           "enum": [
             "budgets",
             "goals",
             "both",
             "plan",
-            "split"
+            "split",
+            "bucket_entries"
           ]
+        },
+        "bucket": {
+          "type": "string",
+          "description": "for bucket_entries: bucket name from kind split, or none for the spending outside the split"
         }
       },
       "additionalProperties": false
@@ -2173,6 +2178,93 @@
             ],
             "additionalProperties": false
           }
+        },
+        "bucket_entries": {
+          "type": "object",
+          "properties": {
+            "bucket": {
+              "type": "string"
+            },
+            "total": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string",
+                  "description": "decimal amount in the instrument's scale, such as -1234.56"
+                },
+                "currency": {
+                  "type": "string",
+                  "description": "currency or instrument code"
+                }
+              },
+              "description": "sum of the entries: the real amount of the bucket in the month",
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "additionalProperties": false
+            },
+            "entries": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "transaction_id": {
+                    "type": "string"
+                  },
+                  "category_name": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "payee": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "description": "expense, savings or goals"
+                  },
+                  "amount": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "string",
+                        "description": "decimal amount in the instrument's scale, such as -1234.56"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "description": "currency or instrument code"
+                      }
+                    },
+                    "required": [
+                      "amount",
+                      "currency"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "transaction_id",
+                  "date",
+                  "kind",
+                  "amount"
+                ],
+                "additionalProperties": false
+              },
+              "description": "latest first"
+            }
+          },
+          "required": [
+            "bucket",
+            "total",
+            "entries"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -7199,7 +7291,8 @@
             "move_category",
             "link_expense",
             "unlink_expense",
-            "allocate"
+            "allocate",
+            "delete_bucket_version"
           ]
         },
         "budget_id": {
