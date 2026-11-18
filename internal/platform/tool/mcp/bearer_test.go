@@ -58,6 +58,7 @@ func TestIdentified(t *testing.T) {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			member, books = auth.MustMemberID(r.Context()), auth.MustBooksID(r.Context())
 			role, _ = auth.CurrentRole(r.Context())
+
 			w.WriteHeader(http.StatusCreated)
 		}),
 	)
