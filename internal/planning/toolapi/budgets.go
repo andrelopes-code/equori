@@ -46,6 +46,17 @@ type goalView struct {
 	CountsAsSavings  bool       `json:"counts_as_savings,omitzero"`
 	// Spent sums the expenses the goal paid; absent at zero (planning coherence A256).
 	Spent tool.Money `json:"spent,omitzero"`
+	// AllocatedAccounts lists the shared accounts with what the goal holds in each and what each
+	// has available; OverAllocated and SharedWith are absent when empty (A255).
+	AllocatedAccounts []allocatedAccountView `json:"allocated_accounts,omitzero"`
+	OverAllocated     tool.Money             `json:"over_allocated,omitzero"`
+	SharedWith        []string               `json:"shared_with,omitzero"`
+}
+
+type allocatedAccountView struct {
+	AccountID string     `json:"account_id"`
+	Allocated tool.Money `json:"allocated"`
+	Available tool.Money `json:"available"`
 }
 
 type planRowView struct {
@@ -115,6 +126,22 @@ func toGoalView(g app.GoalView) (goalView, error) {
 	}
 	if g.Spent.Amount() != 0 {
 		v.Spent = tool.MoneyOf(g.Spent)
+	}
+
+	for _, a := range g.AllocatedAccounts {
+		v.AllocatedAccounts = append(v.AllocatedAccounts, allocatedAccountView{
+			AccountID: a.AccountID.String(),
+			Allocated: tool.MoneyOf(a.Allocated),
+			Available: tool.MoneyOf(a.Available),
+		})
+	}
+
+	if g.OverAllocated != nil {
+		v.OverAllocated = tool.MoneyOf(*g.OverAllocated)
+	}
+
+	for _, id := range g.SharedWith {
+		v.SharedWith = append(v.SharedWith, id.String())
 	}
 
 	for _, f := range []struct {

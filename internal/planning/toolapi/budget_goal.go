@@ -45,7 +45,12 @@ func prepareBudgetOrGoal(
 	}
 
 	if in.Amount != "" {
-		if p.amount, err = parseBudgetGoalAmount(in.Amount, currency); err != nil {
+		parse := parseBudgetGoalAmount
+		if in.Action == "allocate" {
+			parse = parseAllocationAmount
+		}
+
+		if p.amount, err = parse(in.Amount, currency); err != nil {
 			return budgetGoalPlan{}, err
 		}
 	}
@@ -149,6 +154,8 @@ func resolveBudgetGoalCurrency(
 		}
 	case "link_expense", "unlink_expense":
 		err = loadGoalExpense(ctx, svc, l, booksID, p)
+	case "allocate":
+		return loadAllocation(ctx, svc, booksID, p, accounts)
 	}
 
 	return currency, err
@@ -224,7 +231,8 @@ func manageBudgetOrGoal(svc *app.Service, l Ledger, _ clock.Clock) tool.Tool {
 	return tool.NewWrite(tool.Spec{
 		Name: "manage_budget_or_goal",
 		Description: "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. " +
-			"link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket; unlink_expense undoes it. " +
+			"link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket. " +
+			"allocate sets aside part of a shared account for a goal; a negative amount releases it. " +
 			"Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. " +
 			"Deleting a budget or a goal cannot be undone; the user confirms every change.",
 		Effect: tool.Destructive,
@@ -263,17 +271,15 @@ func runBudgetOrGoal(
 		out := manageBudgetOrGoalOut{BudgetID: p.budgetID.String(), Deleted: true}
 		return out, svc.DeleteBudget(ctx, booksID, p.budgetID)
 	case "create_goal":
+		whole, allocated := goalAccountLists(in, p)
 		g, err := svc.CreateGoal(
-			ctx,
-			booksID,
-			in.Name,
-			*p.amount,
-			in.DueOn.Time,
-			p.accountIDs,
-			in.CountsAsSavings.B,
+			ctx, booksID, in.Name, *p.amount, in.DueOn.Time, whole, allocated, in.CountsAsSavings.B,
 		)
 
 		return manageBudgetOrGoalOut{GoalID: g.ID.String()}, err
+	case "allocate":
+		_, err := svc.CreateGoalAllocation(ctx, booksID, p.goalID, p.accountIDs[0], *p.amount, nil)
+		return manageBudgetOrGoalOut{GoalID: p.goalID.String()}, err
 	case "save_plan":
 		return savePlan(ctx, svc, booksID, in, p)
 	case "save_buckets", "move_category":
@@ -358,7 +364,8 @@ func updateGoal(
 	}
 
 	if len(p.accountIDs) > 0 {
-		patch.AccountIDs = &p.accountIDs
+		whole, allocated := goalAccountLists(in, p)
+		patch.AccountIDs, patch.AllocatedAccountIDs = &whole, &allocated
 	}
 
 	if in.CountsAsSavings.Set {

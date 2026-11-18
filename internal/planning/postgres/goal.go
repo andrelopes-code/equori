@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -42,14 +43,34 @@ func (r *Repository) InsertGoal(
 		return domain.Goal{}, fmt.Errorf("insert goal: %w", err)
 	}
 
-	if err := r.q.InsertGoalAccounts(
-		ctx,
-		InsertGoalAccountsParams{BooksID: booksID, GoalID: row.ID, AccountIds: g.AccountIDs},
-	); err != nil {
-		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
+	g.ID = row.ID
+	if err := r.upsertGoalAccounts(ctx, booksID, g); err != nil {
+		return domain.Goal{}, err
 	}
 
 	return r.oneGoal(ctx, row, nil)
+}
+
+// upsertGoalAccounts stores the whole and the allocated links of g; an account that is whole now
+// loses the allocations it had (planning coherence A255).
+func (r *Repository) upsertGoalAccounts(ctx context.Context, booksID int64, g domain.Goal) error {
+	for allocated, ids := range map[bool][]uuid.UUID{false: g.AccountIDs, true: g.AllocatedAccountIDs} {
+		err := r.q.UpsertGoalAccounts(ctx, UpsertGoalAccountsParams{
+			BooksID: booksID, GoalID: g.ID, AccountIds: ids, Allocated: allocated,
+		})
+		if err != nil {
+			return fmt.Errorf("upsert goal accounts: %w", err)
+		}
+	}
+
+	err := r.q.DeleteAllocationsOfAccounts(ctx, DeleteAllocationsOfAccountsParams{
+		BooksID: booksID, GoalID: g.ID, AccountIds: g.AccountIDs,
+	})
+	if err != nil {
+		return fmt.Errorf("delete allocations of whole accounts: %w", err)
+	}
+
+	return nil
 }
 
 func (r *Repository) UpdateGoal(
@@ -81,18 +102,16 @@ func (r *Repository) UpdateGoal(
 		return r.oneGoal(ctx, row, err)
 	}
 
-	if err := r.q.DeleteGoalAccounts(
-		ctx,
-		DeleteGoalAccountsParams{BooksID: booksID, GoalID: g.ID},
-	); err != nil {
+	// The links the goal keeps stay in place: deleting one would delete its allocations (A255).
+	err = r.q.DeleteGoalAccountsExcept(ctx, DeleteGoalAccountsExceptParams{
+		BooksID: booksID, GoalID: g.ID, Keep: slices.Concat(g.AccountIDs, g.AllocatedAccountIDs),
+	})
+	if err != nil {
 		return domain.Goal{}, fmt.Errorf("delete goal accounts: %w", err)
 	}
 
-	if err := r.q.InsertGoalAccounts(
-		ctx,
-		InsertGoalAccountsParams{BooksID: booksID, GoalID: g.ID, AccountIds: g.AccountIDs},
-	); err != nil {
-		return domain.Goal{}, fmt.Errorf("insert goal accounts: %w", err)
+	if err := r.upsertGoalAccounts(ctx, booksID, g); err != nil {
+		return domain.Goal{}, err
 	}
 
 	return r.oneGoal(ctx, row, nil)
@@ -146,7 +165,11 @@ func (r *Repository) completeGoals(
 
 	for _, a := range accounts {
 		g := byID[a.GoalID]
-		g.AccountIDs = append(g.AccountIDs, a.AccountID)
+		if a.Allocated {
+			g.AllocatedAccountIDs = append(g.AllocatedAccountIDs, a.AccountID)
+		} else {
+			g.AccountIDs = append(g.AccountIDs, a.AccountID)
+		}
 	}
 
 	return out, nil

@@ -14,6 +14,7 @@ func toSchedule(row PlanningSchedule) domain.Schedule {
 		AccountID:     row.AccountID,
 		CounterpartID: row.CounterpartID,
 		PayeeID:       row.PayeeID.UUID,
+		GoalID:        row.GoalID.UUID,
 		Description:   row.Description,
 		Currency:      money.Currency(row.Currency),
 		ToleranceBP: int(

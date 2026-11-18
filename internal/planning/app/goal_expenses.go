@@ -147,7 +147,14 @@ func (s *Service) withSpent(ctx context.Context, booksID int64, views ...*GoalVi
 		spent[p.goalID] += p.amount
 	}
 
+	all, err := s.allGoals(ctx, booksID)
+	if err != nil {
+		return err
+	}
+
 	for _, v := range views {
+		v.SharedWith = sharedWith(v.Goal, all)
+
 		if v.Spent, err = money.New(spent[v.ID], base); err != nil {
 			return err
 		}

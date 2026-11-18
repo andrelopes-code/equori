@@ -14,7 +14,7 @@ import (
 
 const getSchedule = `-- name: GetSchedule :one
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 FROM
     planning_schedule
 WHERE
@@ -47,6 +47,7 @@ func (q *Queries) GetSchedule(ctx context.Context, arg GetScheduleParams) (Plann
 		&i.UpdatedAt,
 		&i.Calendar,
 		&i.MatchWindowDays,
+		&i.GoalID,
 	)
 	return i, err
 }
@@ -123,7 +124,8 @@ INSERT INTO
         match_window_days,
         generated_until,
         calendar,
-        created_at
+        created_at,
+        goal_id
     )
 VALUES
     (
@@ -139,10 +141,11 @@ VALUES
         $10,
         $11,
         $12,
-        $13
+        $13,
+        $14
     )
 RETURNING
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 `
 
 type InsertScheduleParams struct {
@@ -159,6 +162,7 @@ type InsertScheduleParams struct {
 	GeneratedUntil   time.Time
 	Calendar         string
 	CreatedAt        time.Time
+	GoalID           uuid.NullUUID
 }
 
 func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) (PlanningSchedule, error) {
@@ -176,6 +180,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 		arg.GeneratedUntil,
 		arg.Calendar,
 		arg.CreatedAt,
+		arg.GoalID,
 	)
 	var i PlanningSchedule
 	err := row.Scan(
@@ -195,6 +200,7 @@ func (q *Queries) InsertSchedule(ctx context.Context, arg InsertScheduleParams) 
 		&i.UpdatedAt,
 		&i.Calendar,
 		&i.MatchWindowDays,
+		&i.GoalID,
 	)
 	return i, err
 }
@@ -471,7 +477,7 @@ func (q *Queries) ListPauses(ctx context.Context, arg ListPausesParams) ([]ListP
 
 const listSchedules = `-- name: ListSchedules :many
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 FROM
     planning_schedule
 WHERE
@@ -518,6 +524,7 @@ func (q *Queries) ListSchedules(ctx context.Context, arg ListSchedulesParams) ([
 			&i.UpdatedAt,
 			&i.Calendar,
 			&i.MatchWindowDays,
+			&i.GoalID,
 		); err != nil {
 			return nil, err
 		}
@@ -586,7 +593,7 @@ func (q *Queries) ListTerms(ctx context.Context, arg ListTermsParams) ([]Plannin
 
 const lockSchedule = `-- name: LockSchedule :one
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 FROM
     planning_schedule
 WHERE
@@ -620,6 +627,7 @@ func (q *Queries) LockSchedule(ctx context.Context, arg LockScheduleParams) (Pla
 		&i.UpdatedAt,
 		&i.Calendar,
 		&i.MatchWindowDays,
+		&i.GoalID,
 	)
 	return i, err
 }
@@ -756,7 +764,7 @@ func (q *Queries) SchedulesBehind(ctx context.Context, horizon time.Time) ([]Sch
 
 const schedulesOfBooks = `-- name: SchedulesOfBooks :many
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 FROM
     planning_schedule
 WHERE
@@ -791,6 +799,7 @@ func (q *Queries) SchedulesOfBooks(ctx context.Context, booksID int64) ([]Planni
 			&i.UpdatedAt,
 			&i.Calendar,
 			&i.MatchWindowDays,
+			&i.GoalID,
 		); err != nil {
 			return nil, err
 		}
@@ -873,7 +882,7 @@ WHERE
     books_id = $2
     AND id = $3
 RETURNING
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 `
 
 type UpdateScheduleDescriptionParams struct {
@@ -902,6 +911,7 @@ func (q *Queries) UpdateScheduleDescription(ctx context.Context, arg UpdateSched
 		&i.UpdatedAt,
 		&i.Calendar,
 		&i.MatchWindowDays,
+		&i.GoalID,
 	)
 	return i, err
 }
@@ -916,7 +926,7 @@ WHERE
     books_id = $4
     AND id = $5
 RETURNING
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 `
 
 type UpdateScheduleMatchingParams struct {
@@ -953,6 +963,7 @@ func (q *Queries) UpdateScheduleMatching(ctx context.Context, arg UpdateSchedule
 		&i.UpdatedAt,
 		&i.Calendar,
 		&i.MatchWindowDays,
+		&i.GoalID,
 	)
 	return i, err
 }

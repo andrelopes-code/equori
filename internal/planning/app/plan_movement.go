@@ -47,6 +47,11 @@ func (a accountSets) moves(sch domain.Schedule) (Moves, bool) {
 	from, okFrom := a.of(sch.AccountID)
 	to, okTo := a.of(sch.CounterpartID)
 
+	// A schedule with a goal moves into the set that takes that goal's allocations (A253, A255).
+	if set, ok := a.byGoal[sch.GoalID]; ok && okTo {
+		to = set
+	}
+
 	return Moves{From: from, To: to}, movesMoney(sch.Kind) && okFrom && okTo
 }
 

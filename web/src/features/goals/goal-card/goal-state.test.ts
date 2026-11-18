@@ -14,6 +14,8 @@ const goal = (remaining: number, due_on: string) => ({
   remaining: money(remaining),
   progress_bp: 0,
   spent: money(0),
+  allocated_accounts: [],
+  shared_with: [],
 });
 
 describe("goal state", () => {

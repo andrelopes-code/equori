@@ -21,7 +21,14 @@ type goalView struct {
 	Remaining struct {
 		Amount int64 `json:"amount"`
 	} `json:"remaining"`
-	ProgressBP int `json:"progress_bp"`
+	ProgressBP        int `json:"progress_bp"`
+	AllocatedAccounts []struct {
+		AccountID string `json:"account_id"`
+		Allocated money  `json:"allocated"`
+		Available money  `json:"available"`
+	} `json:"allocated_accounts"`
+	OverAllocated *money   `json:"over_allocated"`
+	SharedWith    []string `json:"shared_with"`
 	// Spent is a pointer: a response without the field fails the test (A256).
 	Spent *money `json:"spent"`
 	// UnexplainedWithdrawal is absent without a withdrawal that linked expenses do not cover.
@@ -114,7 +121,13 @@ func TestGoalErrors(t *testing.T) {
 		"validation_failed",
 		"account_ids",
 	)
-	f.h.ExpectProblem(post(body(100)), http.StatusBadRequest, "invalid_request", "account_ids")
+	// A255: a goal holds whole or allocated accounts, so the count is checked across both lists.
+	f.h.ExpectProblem(
+		post(body(100)),
+		http.StatusUnprocessableEntity,
+		"validation_failed",
+		"account_ids",
+	)
 	f.h.ExpectProblem(
 		post(body(0, f.savings)),
 		http.StatusUnprocessableEntity,

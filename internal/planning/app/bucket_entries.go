@@ -169,29 +169,41 @@ func (s *Service) inflowEntries(
 		return nil, err
 	}
 
-	var out []BucketEntry
-
-	if bucket.TakesSavings {
-		held, err := s.savingsAccounts(ctx, booksID, facts)
-		if err != nil {
-			return nil, err
-		}
-
-		out, err = s.kindEntries(ctx, booksID, facts, base, month, held, "savings", out)
-		if err != nil {
-			return nil, err
-		}
+	sets, err := s.accountSets(ctx, booksID, facts)
+	if err != nil {
+		return nil, err
 	}
 
-	if bucket.TakesGoals {
-		held, _, err := s.goalAccounts(ctx, booksID, facts)
+	moves, err := s.allocationMoves(ctx, booksID, sets, base, month, month.AddDate(0, 1, 0))
+	if err != nil {
+		return nil, err
+	}
+
+	var out []BucketEntry
+
+	for _, takes := range []struct {
+		taken bool
+		set   AccountSet
+		held  map[uuid.UUID]bool
+	}{{bucket.TakesSavings, SetSavings, sets.savings}, {bucket.TakesGoals, SetGoals, sets.goals}} {
+		if !takes.taken {
+			continue
+		}
+
+		kind := string(takes.set)
+
+		out, err = s.kindEntries(ctx, booksID, facts, base, month, takes.held, kind, out)
 		if err != nil {
 			return nil, err
 		}
 
-		out, err = s.kindEntries(ctx, booksID, facts, base, month, held, "goals", out)
-		if err != nil {
-			return nil, err
+		// An allocation is an entry without a transaction, named after its goal (A255).
+		for _, m := range moves {
+			if gain := m.gain(takes.set); gain != 0 {
+				out = append(out, BucketEntry{
+					Date: m.alloc.BookedOn, Description: m.goal, Kind: kind, Amount: gain,
+				})
+			}
 		}
 	}
 

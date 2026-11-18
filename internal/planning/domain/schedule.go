@@ -39,9 +39,12 @@ type Schedule struct {
 	Kind                     Kind
 	AccountID, CounterpartID uuid.UUID
 	PayeeID                  uuid.UUID // uuid.Nil without payee
-	Description              string
-	Currency                 money.Currency
-	ToleranceBP, GraceDays   int
+	// GoalID names the goal that holds the counterpart as an allocated account: realizing an
+	// occurrence allocates its amount to that goal (planning coherence A255). uuid.Nil without one.
+	GoalID                 uuid.UUID
+	Description            string
+	Currency               money.Currency
+	ToleranceBP, GraceDays int
 	// WindowDays bounds the distance between a transaction and the occurrence it realizes.
 	WindowDays int
 	// Calendar is the business-day calendar id, fixed at creation.

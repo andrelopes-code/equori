@@ -70,6 +70,12 @@ func (s *Server) Register(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.updateGoal))
 	mux.HandleFunc("DELETE "+BaseURL+"/goals/{id}",
 		httpserver.Handle(s.errs, http.StatusOK, s.deleteGoal))
+	mux.HandleFunc("GET "+BaseURL+"/goals/{id}/allocations",
+		httpserver.Handle(s.errs, http.StatusOK, s.listGoalAllocations))
+	mux.HandleFunc("POST "+BaseURL+"/goals/{id}/allocations",
+		httpserver.Handle(s.errs, http.StatusOK, s.createGoalAllocation))
+	mux.HandleFunc("DELETE "+BaseURL+"/goals/{id}/allocations/{allocation_id}",
+		httpserver.Handle(s.errs, http.StatusNoContent, s.deleteGoalAllocation))
 	mux.HandleFunc("GET "+BaseURL+"/goals/{id}/expenses",
 		httpserver.Handle(s.errs, http.StatusOK, s.listGoalExpenses))
 	mux.HandleFunc("PUT "+BaseURL+"/goals/{id}/expenses/{transaction_id}",

@@ -23,12 +23,12 @@ func (s *Service) goalInflows(
 	base money.Currency,
 	from, to time.Time,
 ) (map[time.Time]flow, error) {
-	held, _, err := s.goalAccounts(ctx, booksID, facts)
+	sets, err := s.accountSets(ctx, booksID, facts)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.inflows(ctx, booksID, facts, base, held, from, to)
+	return s.setFlows(ctx, booksID, facts, base, sets, SetGoals, from, to)
 }
 
 // inflows returns, by first day of month in [from, to), what went into the accounts of held from
@@ -134,20 +134,12 @@ func (s *Service) countedInflows(
 	return out, nil
 }
 
-// goalAccounts returns two disjoint sets with their sub-accounts: the accounts of the goals that
-// do not count as savings, and the accounts held only by goals that do (income buckets A239). An
-// account of both kinds of goal is in the first set, so its deposits count once.
-func (s *Service) goalAccounts(
-	ctx context.Context,
-	booksID int64,
-	facts []Account,
-) (goals, savings map[uuid.UUID]bool, err error) {
+// goalAccounts returns two disjoint sets with their sub-accounts: the accounts held whole by the
+// goals that do not count as savings, and the accounts held whole only by goals that do (income
+// buckets A239). An account of both kinds of goal is in the first set, so its deposits count once.
+// An account held by allocations keeps the set of its own kind (planning coherence A255).
+func goalAccounts(all []domain.Goal, facts []Account) (goals, savings map[uuid.UUID]bool) {
 	goals, savings = make(map[uuid.UUID]bool), make(map[uuid.UUID]bool)
-
-	all, err := s.allGoals(ctx, booksID)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	for _, g := range all {
 		into := goals
@@ -164,7 +156,7 @@ func (s *Service) goalAccounts(
 	withSubAccounts(savings, facts)
 	maps.DeleteFunc(savings, func(id uuid.UUID, _ bool) bool { return goals[id] })
 
-	return goals, savings, nil
+	return goals, savings
 }
 
 // withSubAccounts adds to held every account under one of its accounts, at any depth; facts come

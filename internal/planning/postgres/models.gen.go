@@ -46,6 +46,16 @@ type PlanningGoal struct {
 	CountsAsSavings bool
 }
 
+type PlanningGoalAllocation struct {
+	ID           uuid.UUID
+	BooksID      int64
+	GoalID       uuid.UUID
+	AccountID    uuid.UUID
+	BookedOn     time.Time
+	Amount       int64
+	OccurrenceID uuid.NullUUID
+}
+
 type PlanningOccurrence struct {
 	ID                    uuid.UUID
 	BooksID               int64
@@ -78,6 +88,7 @@ type PlanningSchedule struct {
 	UpdatedAt        time.Time
 	Calendar         string
 	MatchWindowDays  int32
+	GoalID           uuid.NullUUID
 }
 
 type PlanningScheduleTerm struct {

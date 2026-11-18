@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -26,6 +25,12 @@ type GoalView struct {
 	Spent money.Money
 	// Withdrawal is nil when linked expenses cover the latest withdrawal, or the goal had none.
 	Withdrawal *GoalWithdrawal
+	// AllocatedAccounts holds the accounts the goal holds by allocations; OverAllocated is the
+	// amount its allocations stand above the balance of those accounts, in the goal's currency,
+	// nil at zero; SharedWith names the other goals that hold one of its accounts (A255).
+	AllocatedAccounts []AllocatedAccount
+	OverAllocated     *money.Money
+	SharedWith        []uuid.UUID
 }
 
 // TrailingReturn is a return in basis points a year over a window of whole months.
@@ -44,6 +49,11 @@ func (s *Service) withReturn(ctx context.Context, booksID int64, v GoalView) (Go
 }
 
 func (s *Service) withTrailing(ctx context.Context, booksID int64, v GoalView) (GoalView, error) {
+	// A yield of an allocated account belongs to no goal: the return reads the whole accounts.
+	if len(v.AccountIDs) == 0 {
+		return v, nil
+	}
+
 	bp, months, ok, err := s.returns.TrailingReturn(
 		ctx,
 		booksID,
@@ -67,6 +77,8 @@ type GoalPatch struct {
 	DueOn           *time.Time
 	AccountIDs      *[]uuid.UUID
 	CountsAsSavings *bool
+	// AllocatedAccountIDs replaces the accounts held by allocations (A255).
+	AllocatedAccountIDs *[]uuid.UUID
 }
 
 // vetGoal validates g and measures it, so a goal that cannot be measured is never stored.
@@ -83,37 +95,8 @@ func (s *Service) vetGoal(ctx context.Context, booksID int64, g domain.Goal) (Go
 		}
 	}
 
-	facts, err := s.ledger.AccountFacts(ctx, booksID)
-	if err != nil {
+	if err := s.checkGoalAccounts(ctx, booksID, g); err != nil {
 		return GoalView{}, err
-	}
-
-	byID := make(map[uuid.UUID]Account, len(facts))
-	for _, a := range facts {
-		byID[a.ID] = a
-	}
-
-	for _, id := range g.AccountIDs {
-		a, ok := byID[id]
-		if !ok || (a.Class != "asset" && a.Class != "liability") {
-			return GoalView{}, &domain.FieldError{
-				Field:   "account_ids",
-				Message: "must be balance accounts of the book",
-				Err:     domain.ErrValidation,
-			}
-		}
-	}
-
-	for _, id := range g.AccountIDs {
-		for parent := byID[id].ParentID; parent != uuid.Nil; parent = byID[parent].ParentID {
-			if slices.Contains(g.AccountIDs, parent) {
-				return GoalView{}, &domain.FieldError{
-					Field:   "account_ids",
-					Message: "must not hold an account and one of its sub-accounts",
-					Err:     domain.ErrValidation,
-				}
-			}
-		}
 	}
 
 	return s.measure(ctx, booksID, g)
@@ -125,16 +108,17 @@ func (s *Service) CreateGoal(
 	name string,
 	target money.Money,
 	dueOn time.Time,
-	accounts []uuid.UUID,
+	accounts, allocated []uuid.UUID,
 	countsAsSavings bool,
 ) (GoalView, error) {
 	g := domain.Goal{
-		Name:            name,
-		Target:          target.Amount(),
-		Currency:        target.Currency(),
-		DueOn:           dueOn,
-		AccountIDs:      accounts,
-		CountsAsSavings: countsAsSavings,
+		Name:                name,
+		Target:              target.Amount(),
+		Currency:            target.Currency(),
+		DueOn:               dueOn,
+		AccountIDs:          accounts,
+		AllocatedAccountIDs: allocated,
+		CountsAsSavings:     countsAsSavings,
 	}
 
 	view, err := s.vetGoal(ctx, booksID, g)
@@ -180,6 +164,10 @@ func (s *Service) UpdateGoal(
 
 	if patch.AccountIDs != nil {
 		g.AccountIDs = *patch.AccountIDs
+	}
+
+	if patch.AllocatedAccountIDs != nil {
+		g.AllocatedAccountIDs = *patch.AllocatedAccountIDs
 	}
 
 	if patch.CountsAsSavings != nil {
@@ -230,7 +218,16 @@ func (s *Service) measure(ctx context.Context, booksID int64, g domain.Goal) (Go
 		parts = append(parts, v.Parts...)
 	}
 
-	return GoalView{Goal: g, Progress: g.Measure(current), Prices: prices, Parts: parts}, nil
+	view := GoalView{Goal: g, Prices: prices, Parts: parts}
+
+	allocated, err := s.measureAllocated(ctx, booksID, &view, today)
+	if err != nil {
+		return GoalView{}, err
+	}
+
+	view.Progress = g.Measure(current + allocated)
+
+	return view, nil
 }
 
 func (s *Service) Goal(ctx context.Context, booksID int64, id uuid.UUID) (GoalView, error) {

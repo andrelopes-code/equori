@@ -16,7 +16,8 @@ interface BucketEntryRowProps {
 }
 
 // One entry on one line, a link to its transaction: the day, the payee (the description
-// without one, the group's name without either) and the amount.
+// without one, the group's name without either) and the amount. An allocation to a goal has no
+// transaction and links to the goals (planning coherence A255).
 export function BucketEntryRow({
   entry,
   fallback,
@@ -34,10 +35,14 @@ export function BucketEntryRow({
       variant="neutral"
       underline="hover"
       className={styles.entryRow}
-      render={routeTo({
-        to: "/transactions/$id",
-        params: { id: entry.transaction_id },
-      })}
+      render={
+        entry.transaction_id === undefined
+          ? routeTo({ to: "/goals" })
+          : routeTo({
+              to: "/transactions/$id",
+              params: { id: entry.transaction_id },
+            })
+      }
     >
       <Text size="sm" tone="muted">
         {day}

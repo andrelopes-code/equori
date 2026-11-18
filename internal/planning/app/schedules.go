@@ -56,9 +56,12 @@ type ScheduleInput struct {
 	Kind                     domain.Kind
 	AccountID, CounterpartID uuid.UUID
 	PayeeID                  uuid.UUID
-	Description              string
-	Amount                   money.Money
-	Rule                     domain.Rule
+	// GoalID names the goal that holds the counterpart by allocations; uuid.Nil without one
+	// (planning coherence A255).
+	GoalID      uuid.UUID
+	Description string
+	Amount      money.Money
+	Rule        domain.Rule
 	// Calendar defaults to the calendar of the owner's region when empty.
 	Calendar string
 	// ToleranceBP, GraceDays and WindowDays take their defaults when nil.
@@ -159,6 +162,7 @@ func newSchedule(in ScheduleInput) domain.Schedule {
 		AccountID:     in.AccountID,
 		CounterpartID: in.CounterpartID,
 		PayeeID:       in.PayeeID,
+		GoalID:        in.GoalID,
 		Description:   in.Description,
 		Currency:      in.Amount.Currency(),
 		ToleranceBP:   domain.DefaultToleranceBP,
@@ -277,6 +281,10 @@ func (s *Service) checkAccounts(ctx context.Context, booksID int64, sch domain.S
 	}
 
 	if err := checkCounterpart(accounts, sch, account); err != nil {
+		return err
+	}
+
+	if err := s.checkScheduleGoal(ctx, booksID, sch); err != nil {
 		return err
 	}
 

@@ -11,15 +11,27 @@ import (
 
 // Goal is a target balance over balance accounts by a date (P7 amendment A55). CountsAsSavings
 // sends what goes into its accounts to the bucket that takes savings instead of the one that takes
-// goals (income buckets A239).
+// goals (income buckets A239). AccountIDs are the accounts it holds whole; AllocatedAccountIDs
+// the accounts it holds by allocated amounts, which other goals may hold too (planning coherence
+// A255).
 type Goal struct {
-	ID              uuid.UUID
-	Name            string
-	Target          int64
-	Currency        money.Currency
-	DueOn           time.Time
-	AccountIDs      []uuid.UUID
-	CountsAsSavings bool
+	ID                  uuid.UUID
+	Name                string
+	Target              int64
+	Currency            money.Currency
+	DueOn               time.Time
+	AccountIDs          []uuid.UUID
+	AllocatedAccountIDs []uuid.UUID
+	CountsAsSavings     bool
+}
+
+// Allocation assigns a signed amount of an allocated account to a goal on a date; it never
+// changes a balance (A255). OccurrenceID is uuid.Nil unless an occurrence created it.
+type Allocation struct {
+	ID, GoalID, AccountID uuid.UUID
+	BookedOn              time.Time
+	Amount                int64
+	OccurrenceID          uuid.UUID
 }
 
 func (g Goal) Validate() error {

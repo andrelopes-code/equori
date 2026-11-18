@@ -6,13 +6,17 @@ VALUES
 RETURNING
     *;
 
--- name: InsertGoalAccounts :exec
+-- name: UpsertGoalAccounts :exec
 INSERT INTO
-    planning_goal_account (books_id, goal_id, account_id)
+    planning_goal_account (books_id, goal_id, account_id, allocated)
 SELECT
     @books_id::bigint,
     @goal_id::uuid,
-    unnest(@account_ids::UUID[]);
+    unnest(@account_ids::UUID[]),
+    @allocated::boolean
+ON CONFLICT (goal_id, account_id) DO UPDATE
+SET
+    allocated = EXCLUDED.allocated;
 
 -- name: GetGoal :one
 SELECT
@@ -42,7 +46,8 @@ LIMIT
 -- name: ListGoalAccounts :many
 SELECT
     goal_id,
-    account_id
+    account_id,
+    allocated
 FROM
     planning_goal_account
 WHERE
@@ -66,11 +71,19 @@ WHERE
 RETURNING
     *;
 
--- name: DeleteGoalAccounts :exec
+-- name: DeleteGoalAccountsExcept :exec
 DELETE FROM planning_goal_account
 WHERE
     books_id = @books_id
-    AND goal_id = @goal_id;
+    AND goal_id = @goal_id
+    AND NOT (account_id = ANY (@keep::UUID[]));
+
+-- name: DeleteAllocationsOfAccounts :exec
+DELETE FROM planning_goal_allocation
+WHERE
+    books_id = @books_id
+    AND goal_id = @goal_id
+    AND account_id = ANY (@account_ids::UUID[]);
 
 -- name: DeleteGoal :execrows
 DELETE FROM planning_goal
@@ -104,3 +117,59 @@ WHERE
     books_id = @books_id
 ORDER BY
     transaction_id;
+
+-- name: InsertGoalAllocation :one
+INSERT INTO
+    planning_goal_allocation (books_id, goal_id, account_id, booked_on, amount)
+VALUES
+    (@books_id, @goal_id, @account_id, @booked_on, @amount)
+RETURNING
+    *;
+
+-- name: UpsertOccurrenceAllocation :exec
+INSERT INTO
+    planning_goal_allocation (books_id, goal_id, account_id, booked_on, amount, occurrence_id)
+VALUES
+    (@books_id, @goal_id, @account_id, @booked_on, @amount, @occurrence_id::uuid)
+ON CONFLICT (books_id, occurrence_id)
+WHERE
+    occurrence_id IS NOT NULL DO UPDATE
+SET
+    goal_id = EXCLUDED.goal_id,
+    account_id = EXCLUDED.account_id,
+    booked_on = EXCLUDED.booked_on,
+    amount = EXCLUDED.amount;
+
+-- name: DeleteOccurrenceAllocation :exec
+DELETE FROM planning_goal_allocation
+WHERE
+    books_id = @books_id
+    AND occurrence_id = @occurrence_id::uuid;
+
+-- name: GetGoalAllocation :one
+SELECT
+    *
+FROM
+    planning_goal_allocation
+WHERE
+    books_id = @books_id
+    AND goal_id = @goal_id
+    AND id = @id;
+
+-- name: DeleteGoalAllocation :execrows
+DELETE FROM planning_goal_allocation
+WHERE
+    books_id = @books_id
+    AND goal_id = @goal_id
+    AND id = @id;
+
+-- name: ListAllocations :many
+SELECT
+    *
+FROM
+    planning_goal_allocation
+WHERE
+    books_id = @books_id
+ORDER BY
+    booked_on DESC,
+    id DESC;

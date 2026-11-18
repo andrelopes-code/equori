@@ -30,6 +30,27 @@ type GoalRepository interface {
 	UnlinkGoalExpense(ctx context.Context, booksID int64, goalID, txID uuid.UUID) (bool, error)
 	// GoalExpenseLinks returns every stored link of the book.
 	GoalExpenseLinks(ctx context.Context, booksID int64) ([]GoalExpenseLink, error)
+
+	// InsertGoalAllocation stores an allocation and returns it with its id (planning coherence
+	// A255).
+	InsertGoalAllocation(
+		ctx context.Context,
+		booksID int64,
+		a domain.Allocation,
+	) (domain.Allocation, error)
+	// GoalAllocation returns an allocation of the goal; ErrNotFound when it is not the goal's.
+	GoalAllocation(
+		ctx context.Context,
+		booksID int64,
+		goalID, id uuid.UUID,
+	) (domain.Allocation, error)
+	DeleteGoalAllocation(ctx context.Context, booksID int64, goalID, id uuid.UUID) error
+	// Allocations returns every allocation of the book, the latest first.
+	Allocations(ctx context.Context, booksID int64) ([]domain.Allocation, error)
+	// SetOccurrenceAllocation stores the allocation an occurrence creates, in place of the one
+	// it had.
+	SetOccurrenceAllocation(ctx context.Context, booksID int64, a domain.Allocation) error
+	DeleteOccurrenceAllocation(ctx context.Context, booksID int64, occurrenceID uuid.UUID) error
 }
 
 // GoalExpenseLink states that a goal pays a transaction (planning coherence A256).

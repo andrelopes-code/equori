@@ -51,6 +51,8 @@ func previewBudgetOrGoal(in manageBudgetOrGoalIn, p budgetGoalPlan) (tool.Previe
 		previewMove(&pv, p)
 	case "link_expense", "unlink_expense":
 		previewGoalExpense(&pv, in, p)
+	case "allocate":
+		previewAllocation(&pv, p)
 	}
 
 	return pv, nil

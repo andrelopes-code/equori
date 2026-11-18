@@ -3773,6 +3773,51 @@ export interface paths {
         patch: operations["updateGoal"];
         trace?: never;
     };
+    "/goals/{id}/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The allocations of a goal, the latest first (planning coherence A255). */
+        get: operations["listGoalAllocations"];
+        put?: never;
+        /**
+         * Assign a signed amount of an allocated account to a goal; no balance changes (planning coherence A255).
+         * @description `account_id` is an account the goal holds by allocations; any other is a 422 on `account_id`. `amount` is in
+         *     the currency of the account and is not zero: a positive amount sets money aside for the goal, a negative
+         *     one releases it. An amount above what the account has available, or one that brings the goal's allocation
+         *     in the account below zero, is a 422 on `amount`.
+         */
+        post: operations["createGoalAllocation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/goals/{id}/allocations/{allocation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete an allocation of a goal.
+         * @description An allocation an occurrence created is a 422 on `allocation_id`: unrealizing the occurrence deletes it. So is
+         *     one whose removal brings the goal's allocation in the account below zero.
+         */
+        delete: operations["deleteGoalAllocation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/goals/{id}/expenses": {
         parameters: {
             query?: never;
@@ -7497,6 +7542,12 @@ export interface components {
             counterpart_id: string;
             /** Format: uuid */
             payee_id?: string;
+            /**
+             * Format: uuid
+             * @description For the kinds savings and transfer: the goal that holds counterpart_id by allocations. Realizing an
+             *     occurrence allocates its amount to that goal; unrealizing deletes that allocation (A255).
+             */
+            goal_id?: string;
             description: string;
             amount: components["schemas"]["Money"];
             recurrence: components["schemas"]["Recurrence"];
@@ -7535,6 +7586,12 @@ export interface components {
             counterpart_id: string;
             /** Format: uuid */
             payee_id?: string;
+            /**
+             * Format: uuid
+             * @description For the kinds savings and transfer: the goal that holds counterpart_id by allocations. Realizing an
+             *     occurrence allocates its amount to that goal; unrealizing deletes that allocation (A255).
+             */
+            goal_id?: string;
             description: string;
             match_tolerance_bp: number;
             grace_days: number;
@@ -7724,8 +7781,11 @@ export interface components {
             versions: components["schemas"]["BudgetBucketVersion"][];
         };
         BudgetBucketEntry: {
-            /** Format: uuid */
-            transaction_id: string;
+            /**
+             * Format: uuid
+             * @description Absent for an allocation to a goal, whose description is the goal's name (A255).
+             */
+            transaction_id?: string;
             /** Format: uuid */
             category_id?: string;
             /** Format: date */
@@ -7839,12 +7899,19 @@ export interface components {
              */
             outside_category_ids?: string[];
         };
+        /**
+         * @description A goal holds at least one account. account_ids are held whole: their balance counts. allocated_account_ids
+         *     are held by allocated amounts, so several goals can share one account (planning coherence A255): an asset
+         *     account without sub-accounts whose instrument is a currency. An account is held whole or by allocations
+         *     across the goals of the book, never both.
+         */
         GoalInput: {
             name: string;
             target: components["schemas"]["Money"];
             /** Format: date */
             due_on: string;
-            account_ids: string[];
+            account_ids?: string[];
+            allocated_account_ids?: string[];
             /**
              * @description What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
              *     takes goals (income buckets A239). False when absent.
@@ -7857,6 +7924,8 @@ export interface components {
             /** Format: date */
             due_on?: string;
             account_ids?: string[];
+            /** @description Replaces the accounts held by allocations; an account that leaves the list loses its allocations. */
+            allocated_account_ids?: string[];
             /**
              * @description What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
              *     takes goals (income buckets A239).
@@ -7864,8 +7933,9 @@ export interface components {
             counts_as_savings?: boolean;
         };
         /**
-         * @description current is the sum of the booked balances of the accounts today, valued in the target currency with
-         *     stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
+         * @description current is the sum of the booked balances of the whole accounts today plus the amounts allocated to the goal
+         *     in its allocated accounts (planning coherence A255), valued in the target currency with stored prices (P8
+         *     amendment A72); remaining is max(target - current, 0); progress_bp is current / target
          *     in basis points, rounded down, between 0 and 10000. spent sums the expense postings of the transactions the
          *     goal pays, in the base currency (planning coherence A256).
          */
@@ -7887,6 +7957,10 @@ export interface components {
             progress_bp: number;
             spent: components["schemas"]["Money"];
             unexplained_withdrawal?: components["schemas"]["GoalWithdrawal"];
+            allocated_accounts: components["schemas"]["GoalAllocatedAccount"][];
+            over_allocated?: components["schemas"]["Money"];
+            /** @description The other goals that hold one of this goal's accounts. */
+            shared_with: string[];
             /** @description Prices that value accounts in another currency (P8 amendment A72). */
             prices?: components["schemas"]["Price"][];
             /**
@@ -7911,6 +7985,45 @@ export interface components {
             instrument: string;
             quantity: components["schemas"]["Money"];
             value: components["schemas"]["Money"];
+        };
+        /**
+         * @description An account the goal holds by allocations (A255): allocated is the sum of this goal's allocations booked up to
+         *     today; available is the booked balance of the account minus the allocations of every goal, negative when a
+         *     withdrawal left the account over-allocated. Both are in the currency of the account. The goal's
+         *     over_allocated sums the negated negative available amounts of its accounts, in the target currency.
+         */
+        GoalAllocatedAccount: {
+            /** Format: uuid */
+            account_id: string;
+            allocated: components["schemas"]["Money"];
+            available: components["schemas"]["Money"];
+        };
+        GoalAllocationInput: {
+            /** Format: uuid */
+            account_id: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * Format: date
+             * @description Today when absent.
+             */
+            booked_on?: string;
+        };
+        GoalAllocation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            account_id: string;
+            /** Format: date */
+            booked_on: string;
+            amount: components["schemas"]["Money"];
+            /**
+             * Format: uuid
+             * @description The occurrence that created the allocation; such an allocation is deleted by unrealizing it.
+             */
+            occurrence_id?: string;
+        };
+        GoalAllocations: {
+            items: components["schemas"]["GoalAllocation"][];
         };
         /**
          * @description The latest withdrawal of the last 12 months from the accounts the goal holds whole into another balance
@@ -15258,6 +15371,83 @@ export interface operations {
                 };
             };
             400: components["responses"]["Problem"];
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listGoalAllocations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GoalAllocations"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+        };
+    };
+    createGoalAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoalAllocationInput"];
+            };
+        };
+        responses: {
+            /** @description The goal after the allocation. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Goal"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    deleteGoalAllocation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["ID"];
+                allocation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             401: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
             422: components["responses"]["Problem"];

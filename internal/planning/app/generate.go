@@ -215,7 +215,7 @@ func (s *Service) realizeFirst(
 		return err
 	}
 
-	_, err = repo.Realize(ctx, booksID, os[0].ID, txID, realizedManual)
+	_, err = s.realize(ctx, repo, booksID, sch, os[0].ID, txID, realizedManual)
 
 	return err
 }

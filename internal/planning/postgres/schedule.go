@@ -26,6 +26,7 @@ func (r *Repository) InsertSchedule(
 		AccountID:     s.AccountID,
 		CounterpartID: s.CounterpartID,
 		PayeeID:       nullUUID(s.PayeeID),
+		GoalID:        nullUUID(s.GoalID),
 		Description:   s.Description,
 		Currency:      string(s.Currency),
 		MatchToleranceBp: int32(

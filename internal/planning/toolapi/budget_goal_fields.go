@@ -12,26 +12,8 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 		err = required(name, fields, []string{"budget_id", "amount", "month"})
 	case "delete_budget":
 		err = required(name, fields, []string{"budget_id"})
-	case "create_goal":
-		err = required(
-			name,
-			fields,
-			[]string{"name", "amount", "due_on", "account_ids"},
-			"counts_as_savings",
-		)
-	case "update_goal":
-		err = required(
-			name,
-			fields,
-			[]string{"goal_id"},
-			"name",
-			"amount",
-			"due_on",
-			"account_ids",
-			"counts_as_savings",
-		)
-	case "delete_goal":
-		err = required(name, fields, []string{"goal_id"})
+	case "create_goal", "update_goal", "delete_goal", "link_expense", "unlink_expense", "allocate":
+		err = checkGoalFields(name, fields)
 	case "save_plan":
 		err = required(
 			name,
@@ -45,8 +27,42 @@ func checkBudgetGoalFields(in manageBudgetOrGoalIn) error {
 		err = required(name, fields, []string{"buckets"}, "month")
 	case "move_category":
 		err = required(name, fields, []string{"category_id", "bucket"})
+	}
+
+	return err
+}
+
+// checkGoalFields checks the fields of the actions over a goal.
+func checkGoalFields(name string, fields []field) error {
+	var err error
+
+	switch name {
+	case "create_goal":
+		err = required(
+			name,
+			fields,
+			[]string{"name", "amount", "due_on", "account_ids"},
+			"counts_as_savings",
+			"allocated",
+		)
+	case "update_goal":
+		err = required(
+			name,
+			fields,
+			[]string{"goal_id"},
+			"name",
+			"amount",
+			"due_on",
+			"account_ids",
+			"counts_as_savings",
+			"allocated",
+		)
+	case "delete_goal":
+		err = required(name, fields, []string{"goal_id"})
 	case "link_expense", "unlink_expense":
 		err = required(name, fields, []string{"goal_id", "transaction_id"})
+	case "allocate":
+		err = required(name, fields, []string{"goal_id", "account_ids", "amount"})
 	}
 
 	return err
@@ -71,6 +87,7 @@ func budgetGoalFields(in manageBudgetOrGoalIn) []field {
 		{"due_on", !in.DueOn.IsZero()},
 		{"account_ids", len(in.AccountIDs) > 0},
 		{"counts_as_savings", in.CountsAsSavings.Set},
+		{"allocated", in.Allocated},
 		{
 			"source",
 			in.Source != "",

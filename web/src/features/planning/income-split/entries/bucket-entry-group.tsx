@@ -50,7 +50,7 @@ export function BucketEntryGroup({
       </div>
       {group.entries.map((entry) => (
         <BucketEntryRow
-          key={`${entry.transaction_id}-${entry.date}-${String(entry.amount.amount)}`}
+          key={`${entry.transaction_id ?? entry.description}-${entry.date}-${String(entry.amount.amount)}`}
           entry={entry}
           fallback={name}
           money={money}

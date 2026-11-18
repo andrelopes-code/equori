@@ -808,3 +808,28 @@ func TestAddGoalExpenses(t *testing.T) {
 		t.Fatalf("ArchiveVersion = %d, want at least 27", ArchiveVersion)
 	}
 }
+
+// A version 27 archive holds goals over whole accounts and schedules without a goal: the step
+// writes allocated false and goal_id null (migration 00118).
+func TestAddGoalAllocations(t *testing.T) {
+	t.Parallel()
+
+	v27 := []ArchiveTable{
+		{Name: "planning_goal_account", Rows: [][]byte{[]byte(`{"account_id":"a"}`)}},
+		{Name: "planning_schedule", Rows: [][]byte{[]byte(`{"kind":"savings"}`)}},
+	}
+
+	got, err := addGoalAllocations(v27)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if string(got[0].Rows[0]) != `{"account_id":"a","allocated":false}` ||
+		string(got[1].Rows[0]) != `{"goal_id":null,"kind":"savings"}` {
+		t.Fatalf("rows = %s and %s", got[0].Rows[0], got[1].Rows[0])
+	}
+
+	if ArchiveVersion < 28 {
+		t.Fatalf("ArchiveVersion = %d, want at least 28", ArchiveVersion)
+	}
+}

@@ -244,13 +244,15 @@ type BudgetBucketEntries struct {
 
 // BudgetBucketEntry defines model for BudgetBucketEntry.
 type BudgetBucketEntry struct {
-	Amount        Money                 `json:"amount"`
-	CategoryId    *openapi_types.UUID   `json:"category_id,omitempty"`
-	Date          openapi_types.Date    `json:"date"`
-	Description   string                `json:"description"`
-	Kind          BudgetBucketEntryKind `json:"kind"`
-	Payee         *string               `json:"payee,omitempty"`
-	TransactionId openapi_types.UUID    `json:"transaction_id"`
+	Amount      Money                 `json:"amount"`
+	CategoryId  *openapi_types.UUID   `json:"category_id,omitempty"`
+	Date        openapi_types.Date    `json:"date"`
+	Description string                `json:"description"`
+	Kind        BudgetBucketEntryKind `json:"kind"`
+	Payee       *string               `json:"payee,omitempty"`
+
+	// TransactionId Absent for an allocation to a goal, whose description is the goal's name (A255).
+	TransactionId *openapi_types.UUID `json:"transaction_id,omitempty"`
 }
 
 // BudgetBucketEntryKind defines model for BudgetBucketEntry.Kind.
@@ -495,12 +497,14 @@ type FieldError struct {
 	Message string `json:"message"`
 }
 
-// Goal current is the sum of the booked balances of the accounts today, valued in the target currency with
-// stored prices (P8 amendment A72); remaining is max(target - current, 0); progress_bp is current / target
+// Goal current is the sum of the booked balances of the whole accounts today plus the amounts allocated to the goal
+// in its allocated accounts (planning coherence A255), valued in the target currency with stored prices (P8
+// amendment A72); remaining is max(target - current, 0); progress_bp is current / target
 // in basis points, rounded down, between 0 and 10000. spent sums the expense postings of the transactions the
 // goal pays, in the base currency (planning coherence A256).
 type Goal struct {
-	AccountIds []openapi_types.UUID `json:"account_ids"`
+	AccountIds        []openapi_types.UUID   `json:"account_ids"`
+	AllocatedAccounts []GoalAllocatedAccount `json:"allocated_accounts"`
 
 	// CountsAsSavings What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
 	// takes goals (income buckets A239).
@@ -509,6 +513,7 @@ type Goal struct {
 	DueOn           openapi_types.Date `json:"due_on"`
 	Id              openapi_types.UUID `json:"id"`
 	Name            string             `json:"name"`
+	OverAllocated   *Money             `json:"over_allocated,omitempty"`
 
 	// Parts What current is made of: for each goal account, each instrument held in it and its sub-accounts with a
 	// non-zero quantity, in instrument order, valued in the target currency (P8 amendment A121).
@@ -518,8 +523,11 @@ type Goal struct {
 	Prices     *[]Price `json:"prices,omitempty"`
 	ProgressBp int      `json:"progress_bp"`
 	Remaining  Money    `json:"remaining"`
-	Spent      Money    `json:"spent"`
-	Target     Money    `json:"target"`
+
+	// SharedWith The other goals that hold one of this goal's accounts.
+	SharedWith []openapi_types.UUID `json:"shared_with"`
+	Spent      Money                `json:"spent"`
+	Target     Money                `json:"target"`
 
 	// TrailingReturn The money-weighted return of the goal's accounts, taken as one tree, over the last 12 months or since their
 	// first posting if shorter, valued in the target currency (investments design 4.4). Absent with less than three
@@ -530,6 +538,41 @@ type Goal struct {
 	// account, less the expenses linked to the goal dated on or after it; absent when they cover it (planning
 	// coherence A256). The screen asks which expenses the goal paid.
 	UnexplainedWithdrawal *GoalWithdrawal `json:"unexplained_withdrawal,omitempty"`
+}
+
+// GoalAllocatedAccount An account the goal holds by allocations (A255): allocated is the sum of this goal's allocations booked up to
+// today; available is the booked balance of the account minus the allocations of every goal, negative when a
+// withdrawal left the account over-allocated. Both are in the currency of the account. The goal's
+// over_allocated sums the negated negative available amounts of its accounts, in the target currency.
+type GoalAllocatedAccount struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Allocated Money              `json:"allocated"`
+	Available Money              `json:"available"`
+}
+
+// GoalAllocation defines model for GoalAllocation.
+type GoalAllocation struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
+	BookedOn  openapi_types.Date `json:"booked_on"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// OccurrenceId The occurrence that created the allocation; such an allocation is deleted by unrealizing it.
+	OccurrenceId *openapi_types.UUID `json:"occurrence_id,omitempty"`
+}
+
+// GoalAllocationInput defines model for GoalAllocationInput.
+type GoalAllocationInput struct {
+	AccountId openapi_types.UUID `json:"account_id"`
+	Amount    Money              `json:"amount"`
+
+	// BookedOn Today when absent.
+	BookedOn *openapi_types.Date `json:"booked_on,omitempty"`
+}
+
+// GoalAllocations defines model for GoalAllocations.
+type GoalAllocations struct {
+	Items []GoalAllocation `json:"items"`
 }
 
 // GoalExpense defines model for GoalExpense.
@@ -548,9 +591,13 @@ type GoalExpenses struct {
 	Items []GoalExpense `json:"items"`
 }
 
-// GoalInput defines model for GoalInput.
+// GoalInput A goal holds at least one account. account_ids are held whole: their balance counts. allocated_account_ids
+// are held by allocated amounts, so several goals can share one account (planning coherence A255): an asset
+// account without sub-accounts whose instrument is a currency. An account is held whole or by allocations
+// across the goals of the book, never both.
 type GoalInput struct {
-	AccountIds []openapi_types.UUID `json:"account_ids"`
+	AccountIds          *[]openapi_types.UUID `json:"account_ids,omitempty"`
+	AllocatedAccountIds *[]openapi_types.UUID `json:"allocated_account_ids,omitempty"`
 
 	// CountsAsSavings What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
 	// takes goals (income buckets A239). False when absent.
@@ -579,6 +626,9 @@ type GoalPart struct {
 // GoalPatch defines model for GoalPatch.
 type GoalPatch struct {
 	AccountIds *[]openapi_types.UUID `json:"account_ids,omitempty"`
+
+	// AllocatedAccountIds Replaces the accounts held by allocations; an account that leaves the list loses its allocations.
+	AllocatedAccountIds *[]openapi_types.UUID `json:"allocated_account_ids,omitempty"`
 
 	// CountsAsSavings What goes into the goal's accounts counts in the bucket that takes savings instead of the bucket that
 	// takes goals (income buckets A239).
@@ -759,7 +809,11 @@ type Schedule struct {
 	Description   string             `json:"description"`
 
 	// EndsOn No occurrence on or after this date; absent while the schedule has no end.
-	EndsOn           *openapi_types.Date `json:"ends_on,omitempty"`
+	EndsOn *openapi_types.Date `json:"ends_on,omitempty"`
+
+	// GoalId For the kinds savings and transfer: the goal that holds counterpart_id by allocations. Realizing an
+	// occurrence allocates its amount to that goal; unrealizing deletes that allocation (A255).
+	GoalId           *openapi_types.UUID `json:"goal_id,omitempty"`
 	GraceDays        int                 `json:"grace_days"`
 	Id               openapi_types.UUID  `json:"id"`
 	Kind             ScheduleKind        `json:"kind"`
@@ -782,9 +836,13 @@ type ScheduleInput struct {
 	Amount    Money              `json:"amount"`
 
 	// Calendar Business-day calendar id from GET /calendars; defaults to the calendar of the owner's region.
-	Calendar         *string             `json:"calendar,omitempty"`
-	CounterpartId    openapi_types.UUID  `json:"counterpart_id"`
-	Description      string              `json:"description"`
+	Calendar      *string            `json:"calendar,omitempty"`
+	CounterpartId openapi_types.UUID `json:"counterpart_id"`
+	Description   string             `json:"description"`
+
+	// GoalId For the kinds savings and transfer: the goal that holds counterpart_id by allocations. Realizing an
+	// occurrence allocates its amount to that goal; unrealizing deletes that allocation (A255).
+	GoalId           *openapi_types.UUID `json:"goal_id,omitempty"`
 	GraceDays        *int                `json:"grace_days,omitempty"`
 	Kind             ScheduleKind        `json:"kind"`
 	MatchToleranceBp *int                `json:"match_tolerance_bp,omitempty"`
@@ -975,6 +1033,9 @@ type CreateGoalJSONRequestBody = GoalInput
 
 // UpdateGoalJSONRequestBody defines body for UpdateGoal for application/json ContentType.
 type UpdateGoalJSONRequestBody = GoalPatch
+
+// CreateGoalAllocationJSONRequestBody defines body for CreateGoalAllocation for application/json ContentType.
+type CreateGoalAllocationJSONRequestBody = GoalAllocationInput
 
 // MoveOccurrenceJSONRequestBody defines body for MoveOccurrence for application/json ContentType.
 type MoveOccurrenceJSONRequestBody = MoveInput

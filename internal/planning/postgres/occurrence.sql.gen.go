@@ -424,7 +424,7 @@ func (q *Queries) ReopenOccurrence(ctx context.Context, arg ReopenOccurrencePara
 
 const schedulesTouching = `-- name: SchedulesTouching :many
 SELECT
-    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days
+    id, books_id, kind, account_id, counterpart_id, payee_id, description, currency, match_tolerance_bp, grace_days, ends_on, generated_until, created_at, updated_at, calendar, match_window_days, goal_id
 FROM
     planning_schedule
 WHERE
@@ -469,6 +469,7 @@ func (q *Queries) SchedulesTouching(ctx context.Context, arg SchedulesTouchingPa
 			&i.UpdatedAt,
 			&i.Calendar,
 			&i.MatchWindowDays,
+			&i.GoalID,
 		); err != nil {
 			return nil, err
 		}

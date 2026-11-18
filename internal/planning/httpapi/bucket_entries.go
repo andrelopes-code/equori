@@ -48,7 +48,7 @@ func toBucketEntriesAPI(e app.BucketEntries) BudgetBucketEntries {
 
 	for i, entry := range e.Entries {
 		item := BudgetBucketEntry{
-			TransactionId: entry.TransactionID,
+			TransactionId: apiOptUUID(entry.TransactionID),
 			Date:          apiDate(entry.Date),
 			Description:   entry.Description,
 			Kind:          BudgetBucketEntryKind(entry.Kind),

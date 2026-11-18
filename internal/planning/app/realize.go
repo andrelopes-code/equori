@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/google/uuid"
 
@@ -57,7 +58,7 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 			return nil
 		}
 
-		if _, err := repo.Release(ctx, e.BooksID, current.ID, false); err != nil {
+		if _, err := release(ctx, repo, e.BooksID, current.ID, false); err != nil {
 			return err
 		}
 	}
@@ -66,7 +67,10 @@ func (s *Service) reevaluate(ctx context.Context, repo Repository, e Transaction
 		return nil
 	}
 
-	_, err = repo.Realize(ctx, e.BooksID, best.Occurrence.ID, t.ID, realizedAuto)
+	sch := schedules[slices.IndexFunc(schedules, func(sch domain.Schedule) bool {
+		return sch.ID == best.Occurrence.ScheduleID
+	})]
+	_, err = s.realize(ctx, repo, e.BooksID, sch, best.Occurrence.ID, t.ID, realizedAuto)
 
 	return err
 }
@@ -110,7 +114,7 @@ func releaseManual(
 		return nil
 	}
 
-	_, err := repo.Release(ctx, booksID, current.ID, false)
+	_, err := release(ctx, repo, booksID, current.ID, false)
 
 	return err
 }
@@ -180,7 +184,7 @@ func (s *Service) Realize(
 			return err
 		}
 
-		realized, err := repo.Realize(ctx, booksID, id, txID, realizedManual)
+		realized, err := s.realize(ctx, repo, booksID, sch, id, txID, realizedManual)
 		if err != nil {
 			return err
 		}
@@ -255,7 +259,7 @@ func (s *Service) Unrealize(
 			return err
 		}
 
-		released, err := repo.Release(ctx, booksID, id, true)
+		released, err := release(ctx, repo, booksID, id, true)
 		if err != nil {
 			return err
 		}

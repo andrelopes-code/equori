@@ -1485,6 +1485,83 @@
                   "currency"
                 ],
                 "additionalProperties": false
+              },
+              "allocated_accounts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "account_id": {
+                      "type": "string"
+                    },
+                    "allocated": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "available": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "account_id",
+                    "allocated",
+                    "available"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "over_allocated": {
+                "type": "object",
+                "properties": {
+                  "amount": {
+                    "type": "string",
+                    "description": "decimal amount in the instrument's scale, such as -1234.56"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "description": "currency or instrument code"
+                  }
+                },
+                "required": [
+                  "amount",
+                  "currency"
+                ],
+                "additionalProperties": false
+              },
+              "shared_with": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             },
             "required": [
@@ -6846,7 +6923,7 @@
   },
   {
     "name": "manage_budget_or_goal",
-    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket; unlink_expense undoes it. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
+    "description": "Proposes creating, changing or deleting a monthly budget or a goal, saving a month's budget plan or the income split into buckets (50/30/20 and others), or moving one category to another bucket. link_expense states that a goal paid an expense, which then counts against neither its budget nor its bucket. allocate sets aside part of a shared account for a goal; a negative amount releases it. Use it when the user sets a spending limit or a savings target. Do not use it for recurring payments: manage_schedule does. Deleting a budget or a goal cannot be undone; the user confirms every change.",
     "effect": "destructive",
     "idempotent": false,
     "input_schema": {
@@ -6866,12 +6943,13 @@
             "save_buckets",
             "move_category",
             "link_expense",
-            "unlink_expense"
+            "unlink_expense",
+            "allocate"
           ]
         },
         "budget_id": {
           "type": "string",
-          "description": "for set_budget_amount and delete_budget: budget from get_budgets_and_goals"
+          "description": "budget from get_budgets_and_goals"
         },
         "goal_id": {
           "type": "string",
@@ -6879,11 +6957,11 @@
         },
         "transaction_id": {
           "type": "string",
-          "description": "for link_expense and unlink_expense: the expense transaction"
+          "description": "the expense transaction"
         },
         "category_id": {
           "type": "string",
-          "description": "for create_budget and move_category: expense category from list_accounts"
+          "description": "expense category from list_accounts"
         },
         "amount": {
           "type": "string",
@@ -6951,6 +7029,10 @@
         "counts_as_savings": {
           "type": "boolean",
           "description": "goals: deposits count in the savings bucket"
+        },
+        "allocated": {
+          "type": "boolean",
+          "description": "goals: account_ids are shared, held by amount"
         },
         "buckets": {
           "type": "array",

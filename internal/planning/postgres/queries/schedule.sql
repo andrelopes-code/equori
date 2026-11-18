@@ -13,7 +13,8 @@ INSERT INTO
         match_window_days,
         generated_until,
         calendar,
-        created_at
+        created_at,
+        goal_id
     )
 VALUES
     (
@@ -29,7 +30,8 @@ VALUES
         @match_window_days,
         @generated_until,
         @calendar,
-        @created_at
+        @created_at,
+        sqlc.narg (goal_id)
     )
 RETURNING
     *;

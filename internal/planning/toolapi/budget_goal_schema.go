@@ -26,6 +26,7 @@ func (manageBudgetOrGoalAction) Values() []string {
 		"move_category",
 		"link_expense",
 		"unlink_expense",
+		"allocate",
 	}
 }
 
@@ -46,10 +47,10 @@ type planAmountIn struct {
 
 type manageBudgetOrGoalIn struct {
 	Action          manageBudgetOrGoalAction `json:"action"                     jsonschema:"operation to propose"`
-	BudgetID        string                   `json:"budget_id,omitzero"         jsonschema:"for set_budget_amount and delete_budget: budget from get_budgets_and_goals"`
+	BudgetID        string                   `json:"budget_id,omitzero"         jsonschema:"budget from get_budgets_and_goals"`
 	GoalID          string                   `json:"goal_id,omitzero"           jsonschema:"goal from get_budgets_and_goals"`
-	TransactionID   string                   `json:"transaction_id,omitzero"    jsonschema:"for link_expense and unlink_expense: the expense transaction"`
-	CategoryID      string                   `json:"category_id,omitzero"       jsonschema:"for create_budget and move_category: expense category from list_accounts"`
+	TransactionID   string                   `json:"transaction_id,omitzero"    jsonschema:"the expense transaction"`
+	CategoryID      string                   `json:"category_id,omitzero"       jsonschema:"expense category from list_accounts"`
 	Amount          string                   `json:"amount,omitzero"            jsonschema:"positive monthly amount (budgets), target (goals) or fixed reference income (save_plan)"`
 	Month           string                   `json:"month,omitzero"             jsonschema:"first month it applies, YYYY-MM"`
 	Source          planSource               `json:"source,omitzero"            jsonschema:"for save_plan: reference income; the stored one when absent"`
@@ -60,6 +61,7 @@ type manageBudgetOrGoalIn struct {
 	DueOn           tool.Date                `json:"due_on,omitzero"            jsonschema:"goals: target date"`
 	AccountIDs      []string                 `json:"account_ids,omitzero"       jsonschema:"goals: accounts whose balance counts toward it"`
 	CountsAsSavings tool.OptionalBool        `json:"counts_as_savings,omitzero" jsonschema:"goals: deposits count in the savings bucket"`
+	Allocated       bool                     `json:"allocated,omitzero"         jsonschema:"goals: account_ids are shared, held by amount"`
 	Buckets         []bucketIn               `json:"buckets,omitzero"           jsonschema:"for save_buckets: whole split; empty removes it"`
 	Bucket          string                   `json:"bucket,omitzero"            jsonschema:"for move_category: bucket name of the current split, or none"`
 }

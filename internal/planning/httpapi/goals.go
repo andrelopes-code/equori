@@ -18,7 +18,8 @@ func toGoalAPI(g app.GoalView) Goal {
 		Name:            g.Name,
 		Target:          toMoneyAPI(g.Target, g.Currency),
 		DueOn:           apiDate(g.DueOn),
-		AccountIds:      g.AccountIDs,
+		AccountIds:      idsOrEmpty(g.AccountIDs),
+		SharedWith:      idsOrEmpty(g.SharedWith),
 		CountsAsSavings: g.CountsAsSavings,
 		Current: toMoneyAPI(
 			g.Progress.Current,
@@ -30,6 +31,8 @@ func toGoalAPI(g app.GoalView) Goal {
 		Prices:     toPricesAPI(g.Prices),
 		Parts:      toGoalPartsAPI(g.Parts),
 	}
+	setGoalAllocations(&out, g)
+
 	if g.Withdrawal != nil {
 		out.UnexplainedWithdrawal = &GoalWithdrawal{
 			Amount: toMoneyAPI(g.Withdrawal.Amount.Amount(), g.Withdrawal.Amount.Currency()),
@@ -90,9 +93,10 @@ func (s *Server) updateGoal(
 	}
 
 	patch := app.GoalPatch{
-		Name:            in.Name,
-		AccountIDs:      in.AccountIds,
-		CountsAsSavings: in.CountsAsSavings,
+		Name:                in.Name,
+		AccountIDs:          in.AccountIds,
+		AllocatedAccountIDs: in.AllocatedAccountIds,
+		CountsAsSavings:     in.CountsAsSavings,
 	}
 	if in.Target != nil {
 		target, err := fromMoneyAPI("target", *in.Target)
@@ -188,7 +192,8 @@ func (s *Server) addGoal(ctx context.Context, in CreateGoalJSONRequestBody) (app
 		in.Name,
 		target,
 		in.DueOn.Time,
-		in.AccountIds,
+		idsOf(in.AccountIds),
+		idsOf(in.AllocatedAccountIds),
 		in.CountsAsSavings != nil && *in.CountsAsSavings,
 	)
 }

@@ -55,18 +55,7 @@ func (s *Service) unexplainedWithdrawal(
 		return nil, err
 	}
 
-	spending := spendingCategories(facts, base)
-
-	var latest *countedInflow
-	for i, c := range counted {
-		direct := slices.ContainsFunc(c.tx.Postings, func(p domain.Posting) bool {
-			return spending[p.AccountID]
-		})
-		if c.amount < 0 && !direct && (latest == nil || c.tx.Date.After(latest.tx.Date)) {
-			latest = &counted[i]
-		}
-	}
-
+	latest := latestWithdrawal(counted, spendingCategories(facts, base))
 	if latest == nil {
 		return nil, nil
 	}
@@ -85,4 +74,21 @@ func (s *Service) unexplainedWithdrawal(
 	amount, err := money.New(rest, base)
 
 	return &GoalWithdrawal{Amount: amount, Since: latest.tx.Date}, err
+}
+
+// latestWithdrawal returns the latest counted movement out of a goal that pays no expense
+// directly; nil without one.
+func latestWithdrawal(counted []countedInflow, spending map[uuid.UUID]bool) *countedInflow {
+	var latest *countedInflow
+
+	for i, c := range counted {
+		direct := slices.ContainsFunc(c.tx.Postings, func(p domain.Posting) bool {
+			return spending[p.AccountID]
+		})
+		if c.amount < 0 && !direct && (latest == nil || c.tx.Date.After(latest.tx.Date)) {
+			latest = &counted[i]
+		}
+	}
+
+	return latest
 }

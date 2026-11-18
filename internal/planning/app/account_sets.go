@@ -22,6 +22,10 @@ const (
 type accountSets struct {
 	goals, savings map[uuid.UUID]bool
 	facts          map[uuid.UUID]Account
+	// byGoal is the set that takes what is allocated to each goal: the goal set, or the savings
+	// set for a goal that counts as savings (A255).
+	byGoal map[uuid.UUID]AccountSet
+	names  map[uuid.UUID]string
 }
 
 // accountSets returns the sets of the book's accounts.
@@ -30,12 +34,27 @@ func (s *Service) accountSets(
 	booksID int64,
 	facts []Account,
 ) (accountSets, error) {
-	goals, savings, err := s.goalAccounts(ctx, booksID, facts)
+	all, err := s.allGoals(ctx, booksID)
 	if err != nil {
 		return accountSets{}, err
 	}
 
-	out := accountSets{goals: goals, savings: savings, facts: make(map[uuid.UUID]Account)}
+	goals, savings := goalAccounts(all, facts)
+	out := accountSets{
+		goals:   goals,
+		savings: savings,
+		facts:   make(map[uuid.UUID]Account),
+		byGoal:  make(map[uuid.UUID]AccountSet, len(all)),
+		names:   make(map[uuid.UUID]string, len(all)),
+	}
+
+	for _, g := range all {
+		out.byGoal[g.ID], out.names[g.ID] = SetGoals, g.Name
+		if g.CountsAsSavings {
+			out.byGoal[g.ID] = SetSavings
+		}
+	}
+
 	for _, a := range facts {
 		out.facts[a.ID] = a
 		if a.Class == "asset" && isSavingsKind(a.Kind) && !goals[a.ID] {
