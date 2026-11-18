@@ -339,12 +339,6 @@
     flex: none;
   }
 
-  .hit {
-    border-radius: var(--slotted-radius-xs);
-    background: var(--slotted-tone-accent-surface);
-    color: inherit;
-  }
-
   .none {
     display: grid;
     gap: var(--slotted-space-3);
@@ -406,6 +400,9 @@
 
   .partTitle {
     margin: 0;
+    scroll-margin-block-start: calc(
+      var(--slotted-page-sticky-top, 0px) + var(--slotted-space-9)
+    );
     font-size: var(--slotted-font-size-xl);
     font-weight: var(--slotted-font-weight-semibold);
     line-height: var(--slotted-line-height-xl);
@@ -641,6 +638,37 @@
 
   .clip .figure {
     position: relative;
+  }
+
+  /* A capture that waits under the button of a video steps back: dimmed and out of focus, so
+     the button is the one thing to read. The scale hides the soft edge the blur leaves. */
+  .shot[data-poster] .shotImage {
+    filter: blur(3px) brightness(0.45) saturate(0.8); /* literal: enough to lose the text of the capture and keep its shapes */
+    transform: scale(1.04); /* literal: covers the 3 px soft edge of the blur */
+  }
+
+  /* A term of the glossary: the word in the strong ink, its meaning under it, and room above
+     the anchor so a link to the term lands clear of the page header. */
+  .gloss {
+    display: grid;
+    max-inline-size: 44rem; /* literal: the reading measure of the help text */
+    gap: var(--slotted-space-1);
+    scroll-margin-block-start: calc(
+      var(--slotted-page-sticky-top, 0px) + var(--slotted-space-9)
+    );
+  }
+
+  .glossWord {
+    margin: 0;
+    color: var(--slotted-text);
+    font-size: var(--slotted-font-size-lg);
+    font-weight: var(--slotted-font-weight-semibold);
+    line-height: var(--slotted-line-height-lg);
+  }
+
+  .glossText {
+    margin: 0;
+    color: var(--slotted-text-muted);
   }
 
   .clipFrame {

@@ -34,6 +34,7 @@ Tools are pinned in `tools/go.mod` and built into `bin/`; `web/` tools are pinne
 | `make upgrade-test` | A database seeded by one image keeps every fact under another (ADR 022, R7) |
 | `make test-cluster` | Managed-mode tests (build tag `cluster`) inside `postgres:18`; `make check` runs it |
 | `make standalone-smoke` | Builds and checks the standalone image |
+| `make help-media` / `make help-media-check` | Rebuild the figures and videos of the help from their tutorials; check them without a browser (ADR 037) |
 | `make demo` / `make demo-reset` | Create or delete the demo user of the local instance (`make dev` running) |
 
 A commit runs format, lint and the generated-code check on its staged files. A push runs lint, typecheck, the Go tests of the changed packages and the Node tests of the theme; the web suite runs in CI.
@@ -110,6 +111,7 @@ Everything is in English: identifiers, files, packages, comments, log messages, 
 - Every business table has `books_id`; every query on it filters by `books_id` (ADR 003, ADR 029).
 - `golangci-lint fmt` runs gofmt, goimports and golines (`.golangci.yml`): a line holds at most 100 columns, a tab counts as 4. golines breaks a long call, signature or literal one element per line; a comment, a string and a struct tag stay as written. A `//nolint` directive sits on its own line above the statement it covers, never at the end of a wrapped line.
 - Web code follows `docs/contributing/web.md`.
+- A figure, a mark or a video of the help is built by `tools/help-media` from a tutorial (ADR 037; `docs/contributing/help.md`, "Figures and videos"). None is captured, drawn, placed or recorded by hand, and `make help-media-check` rejects a file the tool did not write.
 
 ## Feature design
 

@@ -78,6 +78,23 @@ describe("help", () => {
     expect(
       screen.queryByRole("heading", { name: "Your first month in equori" }),
     ).not.toBeInTheDocument();
+    // The matched words are marked by the Highlight family.
+    expect(best.querySelector('[data-ui="highlight"] mark')).toHaveTextContent(
+      "statement",
+    );
+  });
+
+  it("draws a glossary term as a word above its meaning, with its anchor", async () => {
+    await renderApp("/help/glossary", { fetch: fakeApi(sharedRoutes) });
+
+    const word = await screen.findByRole("heading", {
+      level: 3,
+      name: "Category",
+    });
+
+    expect(word.parentElement).toHaveAttribute("id", "category");
+    expect(word.parentElement).toHaveTextContent(/Category.+expense/);
+    expect(screen.queryByText(/^Category:/)).not.toBeInTheDocument();
   });
 
   it("moves through the results and opens one with the keys (HP10)", async () => {

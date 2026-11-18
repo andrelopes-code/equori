@@ -130,8 +130,8 @@
 
   .assistantAsk[data-size="sm"] {
     max-inline-size: 19rem; /* literal: the mark, the title and the key */
-    padding: var(--slotted-space-2) var(--slotted-space-4)
-      var(--slotted-space-2) var(--slotted-space-3);
+    padding: var(--slotted-space-3) var(--slotted-space-5)
+      var(--slotted-space-3) var(--slotted-space-4);
   }
 
   @media (prefers-reduced-motion: reduce) {

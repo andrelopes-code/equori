@@ -1,5 +1,6 @@
 import { Markdown } from "@slotted/react/markdown";
 
+import { HelpTerm } from "@/features/help/article/help-term";
 import { HelpFigure } from "@/features/help/figure/help-figure";
 import type { HelpBlock as Block } from "@/features/help/model/parse-help-page";
 import { HelpWalk } from "@/features/help/steps/help-walk";
@@ -22,13 +23,7 @@ export function HelpBlock({ block, outcome = false }: HelpBlockProps) {
 
   if (block.type === "term") {
     return (
-      <div id={block.id}>
-        <Markdown
-          source={`**${block.term}**: ${block.markdown}`}
-          size="lg"
-          renderers={screenLinks}
-        />
-      </div>
+      <HelpTerm id={block.id} term={block.term} markdown={block.markdown} />
     );
   }
 

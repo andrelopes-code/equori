@@ -6,7 +6,7 @@ interface HelpShotProps {
   figure: HelpFigure;
   // The number of the step the figure belongs to, drawn on its mark.
   number?: number;
-  // A poster draws the capture alone.
+  // A poster draws the capture alone, dimmed and out of focus under the button over it.
   marked?: boolean;
 }
 
@@ -19,7 +19,7 @@ export function HelpShot({ figure, number, marked = true }: HelpShotProps) {
   const [start = 0, top = 0, width = 0, height = 0] = media.spot;
 
   return (
-    <span className={styles.shot}>
+    <span className={styles.shot} data-poster={marked ? undefined : ""}>
       <img
         className={[styles.shotImage, styles.shotDark].join(" ")}
         src={media.dark}
