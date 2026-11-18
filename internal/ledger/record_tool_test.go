@@ -3,8 +3,11 @@ package ledger_test
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"slices"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -392,6 +395,78 @@ func TestRecordTransactionTransferInAnotherCurrency(t *testing.T) {
 	})
 }
 
+// TestS561AFactOfTodayUsesTheClose: a conversion that records a fact keeps the stored price
+// while a read of the same instant takes the current quote (A248 CQ20, S561).
+func TestS561AFactOfTodayUsesTheClose(t *testing.T) {
+	t.Parallel()
+	feed := newQuoteFeed(t)
+	f := newFixture(
+		t,
+		apitest.Clock(func() time.Time { return time.Date(2026, 11, 3, 15, 13, 0, 0, time.UTC) }),
+		apitest.PriceFeeds([]string{"yahoo_chart"}, map[string]string{"yahoo_chart": feed.url}),
+	)
+	wise := f.h.Account("Wise USD", "asset", "checking", map[string]any{"currency": "USD"})
+	vault := f.h.Account("Vault USD", "asset", "savings", map[string]any{"currency": "USD"})
+	cash := f.h.Account("Cash", "asset", "checking", nil)
+	f.h.MustDo(
+		http.MethodPost,
+		"/api/v1/prices",
+		map[string]any{
+			"instrument":       "USD",
+			"quote_instrument": "BRL",
+			"date":             "2026-10-14",
+			"value":            "5.4830",
+		},
+		http.StatusCreated,
+		nil,
+	)
+	f.h.Record(
+		"2026-10-30",
+		f.h.Posting(cash, -10966),
+		map[string]any{
+			"account_id": wise,
+			"amount":     map[string]any{"amount": 2000, "currency": "USD"},
+			"weight":     apitest.BRL(10966),
+		},
+	)
+	args := map[string]any{
+		"date":            "2026-11-03",
+		"description":     "To the vault",
+		"amount":          "10.00",
+		"from_account_id": wise,
+		"to_account_id":   vault,
+	}
+
+	balance := "/api/v1/accounts/" + wise + "/balance?date=2026-11-03&value_in=BRL"
+	f.h.MustDo(http.MethodGet, balance, nil, http.StatusOK, nil)
+
+	if !slices.Contains(feed.paths(), "/yahoo/BRLUSD=X") {
+		t.Fatalf("feed paths after the first read = %v, want /yahoo/BRLUSD=X", feed.paths())
+	}
+
+	var out writeOut
+	toolOutput(t, f.h, "record_transaction", args, &out)
+
+	wantWeights(t, f.h, out.TransactionID, []postingWeight{
+		{wise, -1000, "USD", -5483},
+		{vault, 1000, "USD", 5483},
+	})
+
+	var after struct {
+		Prices []struct {
+			Instrument      string  `json:"instrument"`
+			QuoteInstrument string  `json:"quote_instrument"`
+			At              *string `json:"at"`
+		} `json:"prices"`
+	}
+	f.h.MustDo(http.MethodGet, balance, nil, http.StatusOK, &after)
+
+	if len(after.Prices) != 1 || after.Prices[0].Instrument != "BRL" ||
+		after.Prices[0].QuoteInstrument != "USD" || after.Prices[0].At == nil {
+		t.Errorf("prices of the read after the fact = %+v, want BRL/USD with at", after.Prices)
+	}
+}
+
 type postingWeight struct {
 	account  string
 	amount   int64
@@ -427,4 +502,48 @@ func wantWeights(t *testing.T, h *apitest.Harness, id string, want []postingWeig
 	if !slices.Equal(got, want) {
 		t.Errorf("postings = %v, want %v", got, want)
 	}
+}
+
+// quoteFeed answers /yahoo/BRLUSD=X with a current quote of USD per BRL and 404 for any other
+// path, and records the paths it was asked.
+type quoteFeed struct {
+	url string
+
+	mu   sync.Mutex
+	seen []string
+}
+
+func newQuoteFeed(t *testing.T) *quoteFeed {
+	t.Helper()
+	q := &quoteFeed{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q.mu.Lock()
+		q.seen = append(q.seen, r.URL.Path)
+		q.mu.Unlock()
+
+		if r.URL.Path != "/yahoo/BRLUSD=X" {
+			http.NotFound(w, r)
+
+			return
+		}
+
+		_, _ = w.Write([]byte(
+			`{"chart":{"result":[{"meta":{"currency":"USD",` +
+				`"exchangeTimezoneName":"Europe/London","regularMarketPrice":0.1729,` +
+				`"regularMarketTime":1793717880,` +
+				`"currentTradingPeriod":{"regular":{"start":1793664000,"end":1793750340}}},` +
+				`"timestamp":[],"indicators":{"quote":[{}]}}]}}`,
+		))
+	}))
+	t.Cleanup(srv.Close)
+	q.url = srv.URL + "/yahoo"
+
+	return q
+}
+
+func (q *quoteFeed) paths() []string {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	return slices.Clone(q.seen)
 }
