@@ -12,8 +12,9 @@ interface HelpIconProps {
   name: HelpIconName;
 }
 
-// Families read: icon. The glyph set holds no magnifier, enlarge, play or open-elsewhere mark, so
-// the help draws them on Lucide's grid like the shell's own marks.
+// Families read: icon.
+// Workaround for Slotted issue #141: the glyph set holds no magnifier, enlarge, play or
+// open-elsewhere mark, so the help draws them on Lucide's grid like the shell's own marks.
 export function HelpIcon({ name }: HelpIconProps) {
   return (
     <svg

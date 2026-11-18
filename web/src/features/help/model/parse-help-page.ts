@@ -150,6 +150,8 @@ function readBlocks(chunks: readonly string[]): HelpBlock[] {
   return blocks;
 }
 
+// Workaround for Slotted issue #142: Markdown `source` reads no image, so the page parser takes
+// the figures out of the text and the help draws them.
 function readFigure(line: string): HelpFigure | null {
   const image = IMAGE.exec(line.trim());
   if (image === null) return null;
