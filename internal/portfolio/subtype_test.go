@@ -104,6 +104,7 @@ func TestInstrumentSubtypesList(t *testing.T) {
 		"lcd",
 		"lci",
 		"lf",
+		"lf_subordinated",
 		"lh",
 		"lig",
 		"nota_comercial",
