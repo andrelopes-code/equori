@@ -300,10 +300,17 @@ type BudgetBucketMonth struct {
 	Unallocated Money   `json:"unallocated"`
 }
 
-// BudgetBucketReal defines model for BudgetBucketReal.
+// BudgetBucketReal The figures of a bucket in a month (A254). goal_paid is the spending of its categories that a goal paid; covered
+// is the spending that the accumulated balance of its rollover budgets paid. A ceiling bucket kept its target when
+// real - goal_paid - covered is at most the target. deposited and withdrawn are present for the bucket that takes
+// goals: what went into the goal set and what left it; it kept its target when deposited is at least the target.
 type BudgetBucketReal struct {
-	Id   openapi_types.UUID `json:"id"`
-	Real Money              `json:"real"`
+	Covered   Money              `json:"covered"`
+	Deposited *Money             `json:"deposited,omitempty"`
+	GoalPaid  Money              `json:"goal_paid"`
+	Id        openapi_types.UUID `json:"id"`
+	Real      Money              `json:"real"`
+	Withdrawn *Money             `json:"withdrawn,omitempty"`
 }
 
 // BudgetBucketVersion defines model for BudgetBucketVersion.

@@ -258,7 +258,7 @@ func (s *Service) monthSavings(
 
 	got, err := s.savingsInflows(ctx, booksID, facts, base, month, month.AddDate(0, 1, 0))
 
-	return got[month], err
+	return got[month].net(), err
 }
 
 // expenseCategories returns the expense categories of the book by id.

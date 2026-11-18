@@ -10,6 +10,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/planning/app"
 	"github.com/andrelopes-code/equori/internal/planning/domain"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -241,11 +242,19 @@ type splitMonth struct {
 	Buckets     []splitBucket `json:"buckets"`
 }
 
+// splitBucket holds the figures of a bucket in a month. Covered is the spending the accumulated
+// balance of rollover budgets paid and GoalPaid the spending a goal paid: a ceiling bucket is
+// judged on real less both. Deposited and Withdrawn belong to the bucket that takes goals, judged
+// on Deposited (planning coherence A254). Each is absent at zero.
 type splitBucket struct {
-	Name   string     `json:"name"`
-	Target tool.Money `json:"target"`
-	Real   tool.Money `json:"real"`
-	Kept   bool       `json:"kept"`
+	Name      string     `json:"name"`
+	Target    tool.Money `json:"target"`
+	Real      tool.Money `json:"real"`
+	Covered   tool.Money `json:"covered,omitzero"`
+	GoalPaid  tool.Money `json:"goal_paid,omitzero"`
+	Deposited tool.Money `json:"deposited,omitzero"`
+	Withdrawn tool.Money `json:"withdrawn,omitzero"`
+	Kept      bool       `json:"kept"`
 }
 
 // splitMonths returns the income split of month and the five before, each month read through the
@@ -292,12 +301,8 @@ func splitMonths(
 		targets := domain.BucketTargets(m.Received, buckets)
 
 		for j, b := range buckets {
-			v := splitBucket{Name: b.Name, Kept: domain.KeptTarget(b, m.Real[j], targets[j])}
-			if v.Target, err = moneyOf(targets[j], h.Currency); err != nil {
-				return nil, err
-			}
-
-			if v.Real, err = moneyOf(m.Real[j], h.Currency); err != nil {
+			v, err := toSplitBucket(b, m, j, targets[j], h.Currency)
+			if err != nil {
 				return nil, err
 			}
 
@@ -306,6 +311,42 @@ func splitMonths(
 	}
 
 	return out, nil
+}
+
+// toSplitBucket returns the figures of bucket j of the month and its verdict against target.
+func toSplitBucket(
+	b domain.Bucket,
+	m app.BucketMonth,
+	j int,
+	target int64,
+	currency money.Currency,
+) (splitBucket, error) {
+	verdict := domain.Verdict{Real: m.Real[j], Covered: m.Covered[j]}
+	figures := []int64{target, m.Real[j], m.Covered[j], 0, 0, 0}
+
+	if b.TakesGoals {
+		verdict.Deposited = m.Deposited
+		figures[4], figures[5] = m.Deposited, m.Withdrawn
+	}
+
+	v := splitBucket{Name: b.Name, Kept: domain.KeptTarget(b, verdict, target)}
+	into := []*tool.Money{&v.Target, &v.Real, &v.Covered, &v.GoalPaid, &v.Deposited, &v.Withdrawn}
+
+	for k, amount := range figures {
+		// The target and the real amount are written at zero; the others are absent.
+		if amount == 0 && k > 1 {
+			continue
+		}
+
+		got, err := moneyOf(amount, currency)
+		if err != nil {
+			return splitBucket{}, err
+		}
+
+		*into[k] = got
+	}
+
+	return v, nil
 }
 
 // methodBuckets returns the buckets of the method that starts at from; none for a zero from.

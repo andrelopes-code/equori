@@ -168,6 +168,14 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.saved": "guardou {amount}",
   "track.short": "faltou {amount}",
   "track.real": "{amount} · {share} da renda",
+  "track.realPlain": "{amount}",
+  "track.realCovered": "{amount} · {covered} do saldo acumulado",
+  "track.realGoalPaid": "{amount} · {paid} pagos por metas",
+  "track.realBoth": "{amount} · {covered} do saldo, {paid} por metas",
+  "track.deposited": "{deposited} depositados",
+  "track.depositedWithdrawn": "{deposited} depositados · {withdrawn} sacados",
+  "track.retained":
+    "{amount} de rendimentos ficaram nos investimentos e estão fora da divisão.",
   "track.gauge": "{name}: {real} contra uma meta de {target}",
   "track.cell.kept": "{month}: dentro da meta",
   "track.cell.missed": "{month}: fora da meta",
@@ -183,9 +191,9 @@ export const budgetPlanPtBR: Record<keyof typeof budgetPlanEn, string> = {
   "track.legend.target": "meta",
   "track.outside": "{amount} gastos fora da divisão em {month}.",
   "track.unallocated":
-    "{amount} ficaram nas contas em {month}, fora de todos os potes.",
+    "{amount} da renda de {month} não foram para nenhum pote, pela data da compra.",
   "track.unallocatedNegative":
-    "{amount} foram pagos com saldo em {month}, além da renda recebida.",
+    "{amount} acima da renda de {month} foram gastos ou guardados, pela data da compra.",
   "buckets.plan.description":
     "A fatia de cada pote no valor a distribuir e quanto os orçamentos planejam para ele. A aba Acompanhar compara com o que foi gasto.",
   "buckets.plan.toPlan": "{amount} a planejar",

@@ -7713,10 +7713,20 @@ export interface components {
             retained: components["schemas"]["Money"];
             buckets: components["schemas"]["BudgetBucketReal"][];
         };
+        /**
+         * @description The figures of a bucket in a month (A254). goal_paid is the spending of its categories that a goal paid; covered
+         *     is the spending that the accumulated balance of its rollover budgets paid. A ceiling bucket kept its target when
+         *     real - goal_paid - covered is at most the target. deposited and withdrawn are present for the bucket that takes
+         *     goals: what went into the goal set and what left it; it kept its target when deposited is at least the target.
+         */
         BudgetBucketReal: {
             /** Format: uuid */
             id: string;
             real: components["schemas"]["Money"];
+            goal_paid: components["schemas"]["Money"];
+            covered: components["schemas"]["Money"];
+            deposited?: components["schemas"]["Money"];
+            withdrawn?: components["schemas"]["Money"];
         };
         /**
          * @description A bucket of the method with its figures of the month (A230): target splits the reference by share and is absent

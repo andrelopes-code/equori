@@ -150,6 +150,11 @@ export function BucketTrack({ month }: BucketTrackProps) {
             </Button>
           </Inline>
         )}
+        {track.retained > 0 && (
+          <Text size="sm" tone="muted">
+            {t("track.retained", { amount: money(track.retained) })}
+          </Text>
+        )}
         {track.unallocated > 0 && (
           <Text size="sm" tone="muted">
             {t("track.unallocated", {

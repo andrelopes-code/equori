@@ -3,7 +3,10 @@ import { Glyph, Icon } from "@slotted/react/icon";
 import { Text } from "@slotted/react/typography";
 
 import { BucketGauge } from "@/features/planning/income-split/bucket-gauge";
-import { targetKey } from "@/features/planning/income-split/bucket-history";
+import {
+  targetKey,
+  trackDetail,
+} from "@/features/planning/income-split/bucket-history";
 import type { TrackRow } from "@/features/planning/income-split/bucket-history";
 import { BucketMonthStrip } from "@/features/planning/income-split/bucket-month-strip";
 import styles from "@/features/planning/income-split/bucket-track.module.css";
@@ -37,10 +40,16 @@ export function BucketTrackRow({
     row.status === undefined
       ? t("plan.dash")
       : t(`track.${row.status.kind}`, { amount: money(row.status.amount) });
-  const real =
-    row.shareBp === undefined
-      ? money(row.real)
-      : t("track.real", { amount: money(row.real), share: share(row.shareBp) });
+  const detail = trackDetail(row);
+  const real = t(detail.key, {
+    ...Object.fromEntries(
+      Object.entries(detail.amounts).map(([name, amount]) => [
+        name,
+        money(amount),
+      ]),
+    ),
+    share: detail.shareBp === undefined ? "" : share(detail.shareBp),
+  });
 
   return (
     <div className={styles.row}>
@@ -67,7 +76,7 @@ export function BucketTrackRow({
           real: money(row.real),
           target: row.target === undefined ? t("plan.dash") : money(row.target),
         })}
-        real={row.real}
+        real={row.cell.counted}
         target={row.target}
         missed={missed}
       />

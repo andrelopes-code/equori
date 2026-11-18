@@ -19,7 +19,7 @@ func (s *Service) savingsInflows(
 	facts []Account,
 	base money.Currency,
 	from, to time.Time,
-) (map[time.Time]int64, error) {
+) (map[time.Time]flow, error) {
 	held, err := s.savingsAccounts(ctx, booksID, facts)
 	if err != nil {
 		return nil, err

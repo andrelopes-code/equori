@@ -191,12 +191,23 @@ func checkBucket(b *Bucket, prefix string, names map[string]bool) error {
 	return nil
 }
 
-// KeptTarget reports whether a month's real amount kept to its target: a bucket at or below it,
-// the bucket that takes savings or one marked AtLeast at or above it (income buckets A233, A234).
-func KeptTarget(b Bucket, real, target int64) bool {
-	if b.TakesSavings || b.AtLeast {
-		return real >= target
-	}
+// Verdict holds the figures of a bucket in a month that decide whether it kept its target: the
+// real amount, the spending a goal paid, the spending the accumulated balance of rollover budgets
+// paid and, for the bucket that takes goals, what was deposited (planning coherence A254).
+type Verdict struct{ Real, GoalPaid, Covered, Deposited int64 }
 
-	return real <= target
+// KeptTarget reports whether a bucket kept to its target in a month (income buckets A233, A234;
+// planning coherence A254). The bucket that takes goals kept it when the deposits reach it: a
+// goal is built to be spent, so a withdrawal does not miss the floor. The bucket that takes
+// savings or one marked AtLeast kept it at or above it. A ceiling bucket kept it when the real
+// amount, less what a goal and the accumulated balance paid, is at or below it.
+func KeptTarget(b Bucket, v Verdict, target int64) bool {
+	switch {
+	case b.TakesGoals:
+		return v.Deposited >= target
+	case b.TakesSavings || b.AtLeast:
+		return v.Real >= target
+	default:
+		return v.Real-v.GoalPaid-v.Covered <= target
+	}
 }

@@ -144,23 +144,31 @@ func TestCheckBucketsTrimsNames(t *testing.T) {
 func TestKeptTarget(t *testing.T) {
 	t.Parallel()
 
+	goals := Bucket{TakesGoals: true}
 	tests := []struct {
-		name         string
-		bucket       Bucket
-		real, target int64
-		want         bool
+		name    string
+		bucket  Bucket
+		verdict Verdict
+		target  int64
+		want    bool
 	}{
-		{"expense below", Bucket{}, 900, 1000, true},
-		{"expense at", Bucket{}, 1000, 1000, true},
-		{"expense above", Bucket{}, 1001, 1000, false},
-		{"savings above", Bucket{TakesSavings: true}, 1200, 1000, true},
-		{"savings below", Bucket{TakesSavings: true}, -50, 1000, false},
-		{"at least below", Bucket{AtLeast: true}, 0, 1000, false},
-		{"at least at", Bucket{AtLeast: true}, 1000, 1000, true},
-		{"at least above", Bucket{AtLeast: true}, 1500, 1000, true},
+		{"expense below", Bucket{}, Verdict{Real: 900}, 1000, true},
+		{"expense at", Bucket{}, Verdict{Real: 1000}, 1000, true},
+		{"expense above", Bucket{}, Verdict{Real: 1001}, 1000, false},
+		{"savings above", Bucket{TakesSavings: true}, Verdict{Real: 1200}, 1000, true},
+		{"savings below", Bucket{TakesSavings: true}, Verdict{Real: 999}, 1000, false},
+		{"at least below", Bucket{AtLeast: true}, Verdict{Real: 999}, 1000, false},
+		{"at least above", Bucket{AtLeast: true}, Verdict{Real: 1500}, 1000, true},
+		// A254: 2,400.00 spent, 2,200.00 from the accumulated balance (S575).
+		{"covered by the balance", Bucket{}, Verdict{Real: 240000, Covered: 220000}, 25000, true},
+		{"covered short", Bucket{}, Verdict{Real: 240000, Covered: 200000}, 25000, false},
+		{"paid by a goal", Bucket{}, Verdict{Real: 500000, GoalPaid: 500000}, 0, true},
+		// A254: a withdrawal does not miss the floor of the goals bucket (S577).
+		{"goals withdrawn", goals, Verdict{Real: -450000, Deposited: 50000}, 50000, true},
+		{"goals short", goals, Verdict{Real: 60000, Deposited: 40000}, 50000, false},
 	}
 	for _, tt := range tests {
-		if got := KeptTarget(tt.bucket, tt.real, tt.target); got != tt.want {
+		if got := KeptTarget(tt.bucket, tt.verdict, tt.target); got != tt.want {
 			t.Errorf("%s: KeptTarget = %t, want %t", tt.name, got, tt.want)
 		}
 	}

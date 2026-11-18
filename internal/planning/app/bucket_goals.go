@@ -23,7 +23,7 @@ func (s *Service) goalInflows(
 	facts []Account,
 	base money.Currency,
 	from, to time.Time,
-) (map[time.Time]int64, error) {
+) (map[time.Time]flow, error) {
 	held, _, err := s.goalAccounts(ctx, booksID, facts)
 	if err != nil {
 		return nil, err
@@ -43,18 +43,36 @@ func (s *Service) inflows(
 	base money.Currency,
 	held map[uuid.UUID]bool,
 	from, to time.Time,
-) (map[time.Time]int64, error) {
+) (map[time.Time]flow, error) {
 	counted, err := s.countedInflows(ctx, booksID, facts, base, held, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	out := make(map[time.Time]int64)
+	out := make(map[time.Time]flow)
 	for _, c := range counted {
-		out[domain.MonthOf(c.tx.Date)] += c.amount
+		month := domain.MonthOf(c.tx.Date)
+		out[month] = out[month].add(c.amount)
 	}
 
 	return out, nil
+}
+
+// flow is what went into a set in a month and what left it, each a sum of whole transactions
+// (planning coherence A254).
+type flow struct{ deposited, withdrawn int64 }
+
+func (f flow) net() int64 { return f.deposited - f.withdrawn }
+
+// add counts a signed amount as a deposit or as a withdrawal.
+func (f flow) add(amount int64) flow {
+	if amount > 0 {
+		f.deposited += amount
+	} else {
+		f.withdrawn -= amount
+	}
+
+	return f
 }
 
 // countedInflow is a transaction and the amount `inflows` counts for it.

@@ -45,6 +45,30 @@ func (b Budget) planned(month time.Time) (int64, bool) {
 	return amount, ok
 }
 
+// CountedBudget reports whether b counts in the plan of month: it has an amount in force and no
+// category above it has a budget in force (budget plan A129). budgets is keyed by category and
+// parents maps each category to its parent.
+func CountedBudget(
+	b Budget,
+	month time.Time,
+	budgets map[uuid.UUID]Budget,
+	parents map[uuid.UUID]uuid.UUID,
+) bool {
+	if _, ok := b.planned(month); !ok {
+		return false
+	}
+
+	for p := parents[b.CategoryID]; p != uuid.Nil; p = parents[p] {
+		if above, ok := budgets[p]; ok {
+			if _, inForce := above.planned(month); inForce {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 type Progress struct {
 	Month                              time.Time
 	Planned, Carried, Spent, Available int64

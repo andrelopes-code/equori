@@ -24,6 +24,16 @@ export interface TrackCell {
   month: string;
   target: number | undefined;
   real: number;
+  // The amount judged against the target (planning coherence A254): a ceiling bucket's real
+  // amount less what goals and the accumulated balance of its budgets paid, the deposits of the
+  // goals bucket, the real amount of any other.
+  counted: number;
+  // Spending paid by the accumulated balance of rollover budgets and by goals.
+  covered: number;
+  goalPaid: number;
+  // What went into the goals and what left them; undefined outside the goals bucket.
+  deposited: number | undefined;
+  withdrawn: number | undefined;
   // Undefined in a month without income: no target to keep.
   kept: boolean | undefined;
   state: "kept" | "missed" | "none" | "absent";
@@ -38,6 +48,8 @@ export interface TrackRow {
   measure: BucketMeasure;
   target: number | undefined;
   real: number;
+  // The cell of the month on screen, with the figures of its verdict.
+  cell: TrackCell;
   // The real amount as basis points of the income received; undefined without income.
   shareBp: number | undefined;
   status: TrackStatus | undefined;
@@ -48,6 +60,8 @@ export interface TrackMonth {
   received: number;
   // The income that no bucket and no spending took; negative when balances paid spending (A235).
   unallocated: number;
+  // Yields that stayed in the investments, outside the income received (A252).
+  retained: number;
   rows: TrackRow[];
   // Buckets that missed their target; undefined without income.
   missed: number | undefined;
@@ -68,11 +82,13 @@ export function trackMonth(
   const entry = history.months[at];
   const received = entry?.received.amount ?? 0;
   const unallocated = entry?.unallocated.amount ?? 0;
+  const retained = entry?.retained.amount ?? 0;
   const method = entry === undefined ? undefined : methodOf(history, entry);
   if (method === undefined)
     return {
       received,
       unallocated,
+      retained,
       rows: [],
       missed: undefined,
       since: undefined,
@@ -89,6 +105,7 @@ export function trackMonth(
       measure: measureOf(b),
       target: cell.target,
       real: cell.real,
+      cell,
       shareBp:
         received > 0 ? Math.round((cell.real * 10000) / received) : undefined,
       status: cellStatus(measureOf(b), cell),
@@ -98,6 +115,7 @@ export function trackMonth(
   return {
     received,
     unallocated,
+    retained,
     rows,
     missed:
       received > 0
@@ -131,14 +149,34 @@ function monthCell(
           method.buckets.map((b) => b.share_bp),
         )[i]
       : undefined;
-  const real = m.buckets.find((x) => x.id === id)?.real.amount ?? 0;
-  const kept = keptOf(measureOf(bucket), real, target);
+  const figures = m.buckets.find((x) => x.id === id);
+  const real = figures?.real.amount ?? 0;
+  const covered = figures?.covered.amount ?? 0;
+  const goalPaid = figures?.goal_paid.amount ?? 0;
+  const measure = measureOf(bucket);
+  const deposited =
+    measure === "goals" ? figures?.deposited?.amount : undefined;
+  const counted =
+    measure === "ceiling" ? real - goalPaid - covered : (deposited ?? real);
+  const kept = keptOf(measure, counted, target);
   // Without the list of versions the first one is unknown: no month is marked.
   const changed =
     firstFrom !== undefined &&
     m.month === method.from &&
     method.from !== firstFrom;
-  return { month: m.month, target, real, kept, state: stateOf(kept), changed };
+  return {
+    month: m.month,
+    target,
+    real,
+    counted,
+    covered,
+    goalPaid,
+    deposited,
+    withdrawn: measure === "goals" ? figures?.withdrawn?.amount : undefined,
+    kept,
+    state: stateOf(kept),
+    changed,
+  };
 }
 
 // The line under a bucket's name: its target share and what the bucket draws besides its
@@ -147,14 +185,49 @@ export function targetKey(measure: BucketMeasure): MessageKey {
   return targetKeys[measure];
 }
 
-// A ceiling bucket keeps its target at or below it; any other at or above it.
+// A ceiling bucket keeps its target with its counted amount at or below it; any other at or
+// above it (planning coherence A254).
 function keptOf(
   measure: BucketMeasure,
-  real: number,
+  counted: number,
   target: number | undefined,
 ): boolean | undefined {
   if (target === undefined) return undefined;
-  return measure === "ceiling" ? real <= target : real >= target;
+  return measure === "ceiling" ? counted <= target : counted >= target;
+}
+
+export interface TrackDetail {
+  key:
+    | "track.real"
+    | "track.realPlain"
+    | "track.realCovered"
+    | "track.realGoalPaid"
+    | "track.realBoth"
+    | "track.deposited"
+    | "track.depositedWithdrawn";
+  // The amounts the text names, by placeholder.
+  amounts: Record<string, number>;
+  shareBp?: number;
+}
+
+// The second line of a bucket's figures: what the goals received and returned, what the
+// accumulated balance or a goal paid of a ceiling bucket, else the real amount and its share of
+// the income (planning coherence A254).
+export function trackDetail(row: TrackRow): TrackDetail {
+  const { cell, real: amount } = row;
+  const { covered, goalPaid: paid, deposited, withdrawn = 0 } = cell;
+  if (deposited !== undefined)
+    return withdrawn > 0
+      ? { key: "track.depositedWithdrawn", amounts: { deposited, withdrawn } }
+      : { key: "track.deposited", amounts: { deposited } };
+  if (covered > 0 && paid > 0)
+    return { key: "track.realBoth", amounts: { amount, covered, paid } };
+  if (covered > 0)
+    return { key: "track.realCovered", amounts: { amount, covered } };
+  if (paid > 0) return { key: "track.realGoalPaid", amounts: { amount, paid } };
+  if (row.shareBp === undefined)
+    return { key: "track.realPlain", amounts: { amount } };
+  return { key: "track.real", amounts: { amount }, shareBp: row.shareBp };
 }
 
 // What a bucket left, spent over, saved or still owes in the month of a cell; undefined without a
@@ -165,16 +238,16 @@ export function cellStatus(
 ): TrackStatus | undefined {
   if (cell.target === undefined) return undefined;
   if (measure === "savings")
-    return cell.real >= cell.target
-      ? { kind: "saved", amount: cell.real }
-      : { kind: "short", amount: cell.target - cell.real };
+    return cell.counted >= cell.target
+      ? { kind: "saved", amount: cell.counted }
+      : { kind: "short", amount: cell.target - cell.counted };
   if (measure !== "ceiling")
-    return cell.real >= cell.target
-      ? { kind: "reached", amount: cell.real }
-      : { kind: "toGo", amount: cell.target - cell.real };
-  return cell.real <= cell.target
-    ? { kind: "left", amount: cell.target - cell.real }
-    : { kind: "over", amount: cell.real - cell.target };
+    return cell.counted >= cell.target
+      ? { kind: "reached", amount: cell.counted }
+      : { kind: "toGo", amount: cell.target - cell.counted };
+  return cell.counted <= cell.target
+    ? { kind: "left", amount: cell.target - cell.counted }
+    : { kind: "over", amount: cell.counted - cell.target };
 }
 
 function stateOf(kept: boolean | undefined): TrackCell["state"] {
@@ -187,6 +260,11 @@ function absentCell(month: string): TrackCell {
     month,
     target: undefined,
     real: 0,
+    counted: 0,
+    covered: 0,
+    goalPaid: 0,
+    deposited: undefined,
+    withdrawn: undefined,
     kept: undefined,
     state: "absent",
     changed: false,
@@ -198,6 +276,11 @@ function emptyCell(): TrackCell {
     month: "",
     target: undefined,
     real: 0,
+    counted: 0,
+    covered: 0,
+    goalPaid: 0,
+    deposited: undefined,
+    withdrawn: undefined,
     kept: undefined,
     state: "none",
     changed: false,

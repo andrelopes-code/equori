@@ -1949,6 +1949,78 @@
                       ],
                       "additionalProperties": false
                     },
+                    "covered": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "goal_paid": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "deposited": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "withdrawn": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": "string",
+                          "description": "decimal amount in the instrument's scale, such as -1234.56"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "description": "currency or instrument code"
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    },
                     "kept": {
                       "type": "boolean"
                     }

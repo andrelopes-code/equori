@@ -167,7 +167,18 @@ func toBucketHistoryAPI(h app.BucketHistory) BudgetBucketHistory {
 	for i, month := range h.Months {
 		reals := make([]BudgetBucketReal, len(month.Real))
 		for j, real := range month.Real {
-			reals[j] = BudgetBucketReal{Id: buckets[month.From][j].ID, Real: m(real)}
+			b := buckets[month.From][j]
+			reals[j] = BudgetBucketReal{
+				Id:       b.ID,
+				Real:     m(real),
+				GoalPaid: m(0),
+				Covered:  m(month.Covered[j]),
+			}
+
+			if b.TakesGoals {
+				deposited, withdrawn := m(month.Deposited), m(month.Withdrawn)
+				reals[j].Deposited, reals[j].Withdrawn = &deposited, &withdrawn
+			}
 		}
 
 		out.Months[i] = BudgetBucketMonth{

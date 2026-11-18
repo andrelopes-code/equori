@@ -4,6 +4,7 @@ import type { components } from "@/api/schema.gen";
 import {
   cellStatus,
   targetKey,
+  trackDetail,
   trackMonth,
   trackVerdict,
 } from "@/features/planning/income-split/bucket-history";
@@ -41,8 +42,8 @@ function month(m: string, received: number, needs: number, free: number) {
     unallocated: brl(received - needs - free),
     retained: brl(0),
     buckets: [
-      { id: "needs", real: brl(needs) },
-      { id: "free", real: brl(free) },
+      { id: "needs", real: brl(needs), goal_paid: brl(0), covered: brl(0) },
+      { id: "free", real: brl(free), goal_paid: brl(0), covered: brl(0) },
     ],
   };
 }
@@ -175,9 +176,9 @@ describe("trackMonth across versions", () => {
         unallocated: brl(25000),
         retained: brl(0),
         buckets: [
-          { id: "needs", real: brl(40000) },
-          { id: "free", real: brl(30000) },
-          { id: "extra", real: brl(5000) },
+          { id: "needs", real: brl(40000), goal_paid: brl(0), covered: brl(0) },
+          { id: "free", real: brl(30000), goal_paid: brl(0), covered: brl(0) },
+          { id: "extra", real: brl(5000), goal_paid: brl(0), covered: brl(0) },
         ],
       },
       { ...month("2026-10", 100000, 0, 0), from: "2026-09" },
@@ -198,6 +199,11 @@ describe("trackMonth across versions", () => {
       month: "2026-06",
       target: undefined,
       real: 0,
+      counted: 0,
+      covered: 0,
+      goalPaid: 0,
+      deposited: undefined,
+      withdrawn: undefined,
       kept: undefined,
       state: "absent",
       changed: false,
@@ -231,6 +237,7 @@ describe("trackMonth across versions", () => {
     expect(trackMonth(ended, "2026-11", "2026-06")).toEqual({
       received: 100000,
       unallocated: 100000,
+      retained: 0,
       rows: [],
       missed: undefined,
     });
@@ -248,6 +255,94 @@ describe("trackMonth unallocated", () => {
 
     expect(trackMonth(rest, "2026-10", "2026-06").unallocated).toBe(-21300);
     expect(trackMonth(rest, "2026-11", "2026-06").unallocated).toBe(0);
+  });
+});
+
+// Planning coherence A254: a ceiling bucket is judged without what its accumulated balance and
+// the goals paid, the goals bucket on its deposits.
+describe("trackMonth verdict figures", () => {
+  const goalsBucket = {
+    ...buckets[1],
+    id: "goals",
+    name: "Goals",
+    takes_savings: false,
+    takes_goals: true,
+  } as (typeof buckets)[number];
+  const withGoals: History = {
+    currency: "BRL",
+    methods: [
+      {
+        from: "2026-06",
+        buckets: [
+          { ...buckets[0], share_bp: 5000 } as (typeof buckets)[number],
+          { ...goalsBucket, share_bp: 5000 },
+        ],
+      },
+    ],
+    months: [
+      {
+        month: "2026-10",
+        from: "2026-06",
+        received: brl(100000),
+        outside: brl(0),
+        unallocated: brl(0),
+        retained: brl(3000),
+        buckets: [
+          {
+            id: "needs",
+            real: brl(240000),
+            goal_paid: brl(10000),
+            covered: brl(190000),
+          },
+          {
+            id: "goals",
+            real: brl(-450000),
+            goal_paid: brl(0),
+            covered: brl(0),
+            deposited: brl(50000),
+            withdrawn: brl(500000),
+          },
+        ],
+      },
+    ],
+  };
+
+  it("judges a ceiling bucket without the covered and goal-paid spending", () => {
+    const needs = trackMonth(withGoals, "2026-10", "2026-06").rows[0];
+
+    // 2,400.00 − 100.00 − 1,900.00 = 400.00 against a target of 500.00.
+    expect(needs?.cell.counted).toBe(40000);
+    expect(needs?.status).toEqual({ kind: "left", amount: 10000 });
+    expect(needs?.months[0]?.state).toBe("kept");
+    expect(needs === undefined ? undefined : trackDetail(needs)).toEqual({
+      key: "track.realBoth",
+      amounts: { amount: 240000, covered: 190000, paid: 10000 },
+    });
+  });
+
+  it("judges the goals bucket on its deposits", () => {
+    const track = trackMonth(withGoals, "2026-10", "2026-06");
+    const goals = track.rows[1];
+
+    expect(goals?.real).toBe(-450000);
+    expect(goals?.status).toEqual({ kind: "reached", amount: 50000 });
+    expect(goals?.months[0]?.state).toBe("kept");
+    expect(goals === undefined ? undefined : trackDetail(goals)).toEqual({
+      key: "track.depositedWithdrawn",
+      amounts: { deposited: 50000, withdrawn: 500000 },
+    });
+    expect(track.retained).toBe(3000);
+    expect(track.missed).toBe(0);
+  });
+
+  it("writes the real amount and its share without other figures", () => {
+    const needs = trackMonth(history, "2026-10", "2026-06").rows[0];
+
+    expect(needs === undefined ? undefined : trackDetail(needs)).toEqual({
+      key: "track.real",
+      amounts: { amount: 90000 },
+      shareBp: 9000,
+    });
   });
 });
 
@@ -307,6 +402,7 @@ describe("trackVerdict", () => {
       trackVerdict({
         received: 1,
         unallocated: 0,
+        retained: 0,
         rows: [],
         missed: 1,
         since: undefined,
@@ -322,6 +418,11 @@ describe("cellStatus", () => {
     month: "2026-10",
     target,
     real,
+    counted: real,
+    covered: 0,
+    goalPaid: 0,
+    deposited: undefined,
+    withdrawn: undefined,
     kept: undefined,
     state: "none" as const,
     changed: false,

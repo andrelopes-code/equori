@@ -1461,12 +1461,25 @@ schemas:
           $ref: "#/components/schemas/BudgetBucketReal"
   BudgetBucketReal:
     type: object
-    required: [id, real]
+    required: [id, real, goal_paid, covered]
+    description: |
+      The figures of a bucket in a month (A254). goal_paid is the spending of its categories that a goal paid; covered
+      is the spending that the accumulated balance of its rollover budgets paid. A ceiling bucket kept its target when
+      real - goal_paid - covered is at most the target. deposited and withdrawn are present for the bucket that takes
+      goals: what went into the goal set and what left it; it kept its target when deposited is at least the target.
     properties:
       id:
         type: string
         format: uuid
       real:
+        $ref: "#/components/schemas/Money"
+      goal_paid:
+        $ref: "#/components/schemas/Money"
+      covered:
+        $ref: "#/components/schemas/Money"
+      deposited:
+        $ref: "#/components/schemas/Money"
+      withdrawn:
         $ref: "#/components/schemas/Money"
   BudgetPlanBucket:
     type: object

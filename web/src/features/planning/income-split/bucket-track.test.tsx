@@ -41,8 +41,18 @@ function month(m: string, received: number, needs: number, free: number) {
     unallocated: money(received - needs - free - (m === "2026-10" ? 1500 : 0)),
     retained: money(0),
     buckets: [
-      { id: buckets[0]?.id ?? "", real: money(needs) },
-      { id: buckets[1]?.id ?? "", real: money(free) },
+      {
+        id: buckets[0]?.id ?? "",
+        real: money(needs),
+        goal_paid: money(0),
+        covered: money(0),
+      },
+      {
+        id: buckets[1]?.id ?? "",
+        real: money(free),
+        goal_paid: money(0),
+        covered: money(0),
+      },
     ],
   };
 }
@@ -124,7 +134,7 @@ describe("Income split in Track", () => {
 
     expect(
       screen.getByText(
-        "R$1,200.00 stayed in the accounts in October, outside every bucket.",
+        "R$1,200.00 of the income of October went to no bucket, by purchase date.",
       ),
     ).toBeVisible();
     view.unmount();
@@ -139,7 +149,7 @@ describe("Income split in Track", () => {
 
     expect(
       screen.getByText(
-        "R$213.00 was paid from balances in October, beyond the income received.",
+        "R$213.00 above the income of October was spent or set aside, by purchase date.",
       ),
     ).toBeVisible();
     negative.unmount();
