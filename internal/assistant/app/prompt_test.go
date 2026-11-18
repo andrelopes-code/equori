@@ -178,3 +178,32 @@ func TestPromptNamesAccountsWithAWarning(t *testing.T) {
 		t.Error("the MCP instructions name accounts with a warning")
 	}
 }
+
+// Assistant parity design A1: before an investment write in a Brazilian book the assistant reads
+// the regional article of the product in the same turn; a book of another region is not told to.
+func TestPromptReadsTheRegionalArticleBeforeAnInvestmentWrite(t *testing.T) {
+	t.Parallel()
+
+	const rule = "in the same turn, before a write of an investment, call get_help with the article " +
+		"of the product: fixed_income_br, government_bonds_br, equities_br or funds_br"
+
+	br := app.Prompt(app.PromptInput{
+		Today:  time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC),
+		Locale: locale.Locale{Language: "pt", Region: "BR"},
+	})
+	if !strings.Contains(br, rule) {
+		t.Errorf("the prompt of a Brazilian book lacks %q", rule)
+	}
+
+	de := app.Prompt(app.PromptInput{
+		Today:  time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC),
+		Locale: locale.Locale{Language: "en", Region: "DE"},
+	})
+	if strings.Contains(de, "equities_br") {
+		t.Error("the prompt of a German book names a Brazilian article")
+	}
+
+	if !strings.Contains(app.Instructions(), rule) {
+		t.Errorf("the MCP instructions lack %q", rule)
+	}
+}
