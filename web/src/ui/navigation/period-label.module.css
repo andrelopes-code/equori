@@ -5,7 +5,8 @@
   .period-label {
     display: flex;
     align-items: center;
-    padding-inline: var(--slotted-space-3);
+    /* The mark's gap plus its 6 px: the button's label clips what overflows it. */
+    padding-inline: calc(var(--slotted-space-3) + 6px);
   }
 
   .text {
