@@ -46,7 +46,7 @@ Source status:
 | ID | Product | Verdict | Evidence | Missing | Source |
 |---|---|---|---|---|---|
 | T-01 | Tesouro Selic (LFT) | supported | source `tesourodireto`; subtype `tesouro`; codes in `government_bonds_br` | none | to read |
-| T-02 | Tesouro Prefixado (LTN) | supported | as T-01 | none | to read |
+| T-02 | Tesouro Prefixado (LTN) | supported | as T-01; `TestBRProductMatrix` row T-02: LTN of the Metodologia de Cálculo example, 37,002.70 of income tax, sovereign 1,000,000.00 | none | Metodologia de Cálculo of the Tesouro Nacional, LTN example, read 2026-11-18 |
 | T-03 | Tesouro Prefixado with half-yearly interest (NTNF) | partial | as T-01; a coupon is an income of type coupon | the coupon is recorded by the user: no schedule comes from the source | to read |
 | T-04 | Tesouro IPCA+ (NTNBP) | supported | as T-01 | none | to read |
 | T-05 | Tesouro IPCA+ with half-yearly interest (NTNB) | partial | as T-03 | as T-03 | to read |

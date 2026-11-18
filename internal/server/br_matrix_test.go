@@ -29,12 +29,21 @@ func TestBRProductMatrix(t *testing.T) {
 				brokerage, cash := matrixBrokerage(t, h)
 
 				var got matrixFigures
-				if path == "http" {
+				switch {
+				case row.Code != "" && path == "http":
+					buyHTTP(t, h, row, brokerage, cash)
+					h.Dispatch()
+					got = figuresHTTP(t, h, row, row.Code)
+				case row.Code != "":
+					buyTool(t, h, row, brokerage, cash)
+					h.Dispatch()
+					got = figuresTool(t, h, row, row.Code)
+				case path == "http":
 					instrument := applyHTTP(t, h, row, brokerage, cash)
 					h.App.Marketdata.TickFeeds(t.Context())
 					h.Dispatch()
 					got = figuresHTTP(t, h, row, instrument)
-				} else {
+				default:
 					instrument := applyTool(t, h, row, brokerage, cash)
 					h.App.Marketdata.TickFeeds(t.Context())
 					h.Dispatch()
@@ -365,4 +374,63 @@ func matrixOptions(t *testing.T, row apitest.BRProduct) []apitest.Option {
 		opts,
 		apitest.IndexFeeds([]string{"br_cdi"}, map[string]string{"br_cdi": srv.URL}),
 	)
+}
+
+// buyHTTP defines the security of a row, buys its units and records its price on ValuedOn.
+func buyHTTP(t *testing.T, h *apitest.Harness, row apitest.BRProduct, brokerage, cash string) {
+	t.Helper()
+
+	h.MustDo(http.MethodPost, "/api/v1/instruments", map[string]any{
+		"code":           row.Code,
+		"name":           row.Name,
+		"type":           "fixed_income",
+		"subtype":        row.Subtype,
+		"scale":          2,
+		"quote_currency": "BRL",
+	}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/trades", map[string]any{
+		"brokerage_id":    brokerage,
+		"cash_account_id": cash,
+		"instrument":      row.Code,
+		"side":            "buy",
+		"date":            row.AppliedOn,
+		"quantity":        map[string]any{"amount": minorBRL(t, row.Units), "currency": row.Code},
+		"unit_price":      row.UnitPrice,
+	}, http.StatusCreated, nil)
+	h.MustDo(http.MethodPost, "/api/v1/prices", map[string]any{
+		"instrument":       row.Code,
+		"quote_instrument": "BRL",
+		"date":             row.ValuedOn,
+		"value":            row.Price,
+	}, http.StatusCreated, nil)
+}
+
+// buyTool does what buyHTTP does through the tools.
+func buyTool(t *testing.T, h *apitest.Harness, row apitest.BRProduct, brokerage, cash string) {
+	t.Helper()
+
+	matrixTool(t, h, "manage_instrument", map[string]any{
+		"action":         "define",
+		"code":           row.Code,
+		"name":           row.Name,
+		"type":           "fixed_income",
+		"subtype":        row.Subtype,
+		"scale":          2,
+		"quote_currency": "BRL",
+	}, &struct{}{})
+	matrixTool(t, h, "record_investment", map[string]any{
+		"kind":            "buy",
+		"brokerage_id":    brokerage,
+		"cash_account_id": cash,
+		"instrument":      row.Code,
+		"date":            row.AppliedOn,
+		"quantity":        row.Units,
+		"unit_price":      row.UnitPrice,
+	}, &struct{}{})
+	matrixTool(t, h, "manage_instrument", map[string]any{
+		"action": "record_price",
+		"code":   row.Code,
+		"date":   row.ValuedOn,
+		"price":  row.Price,
+	}, &struct{}{})
 }

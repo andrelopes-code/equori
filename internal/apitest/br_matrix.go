@@ -15,6 +15,10 @@ type BRProduct struct {
 	Contract map[string]any
 	Args     map[string]any
 
+	// Code, Units and UnitPrice name a security bought on AppliedOn, such as a Tesouro Direto
+	// bond; Price is its price on ValuedOn. A row with Code is bought, not applied as a contract.
+	Code, Units, UnitPrice, Price string
+
 	// CDI is the published daily rate of the CDI (BCB SGS series 12) of each business day the row
 	// accrues, as the SGS answers it: date as dd/MM/yyyy and percent a day.
 	CDI [][2]string
@@ -60,6 +64,7 @@ func BRProducts() []BRProduct {
 			unguaranteed,
 		),
 		earlyRedemption(),
+		ltn(),
 		cdiRow("F-01", "CDB 100% do CDI, liquidez diária", map[string]any{
 			"index_id": "cdi", "percent_of_index_bp": 10000, "daily_liquidity": true,
 		}, map[string]any{
@@ -217,5 +222,32 @@ func preFixed(id, name, subtype string, tax rowTax, g rowGuarantee) BRProduct {
 		WantExcess:    g.excess,
 		WantUncovered: g.uncovered,
 		WantSovereign: "0.00",
+	}
+}
+
+// ltn is row T-02: 1,000 units of the LTN of the example of the Metodologia de Cálculo, bought at
+// the published unit price on 2008-05-21 and priced at the face value of 1,000.00 on maturity, as
+// the Tesouro Direto prices a pre-fixed bond (Precificação dos títulos públicos: the face value of
+// an LTN is always 1,000.00). Federal public debt has no FGC limit (Lei 10.179/2001).
+func ltn() BRProduct {
+	return BRProduct{
+		ID:      "T-02",
+		Name:    "Tesouro Prefixado",
+		Subtype: "tesouro",
+		Source: ltnExample + "; " + taxed.source + "; federal public debt, Lei 10.179/2001 " +
+			"art. 1 and 2",
+		Code:          "LTN.20100701",
+		Units:         "1000.00",
+		UnitPrice:     "753.315323",
+		Price:         "1000.00",
+		AppliedOn:     "2008-05-21",
+		ValuedOn:      "2010-07-01",
+		WantValue:     "1000000.00",
+		WantIncomeTax: taxed.tax,
+		WantIOF:       taxed.iof,
+		WantNet:       taxed.net,
+		WantExcess:    "0.00",
+		WantUncovered: "0.00",
+		WantSovereign: "1000000.00",
 	}
 }
