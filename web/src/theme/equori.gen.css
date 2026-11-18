@@ -2067,5 +2067,22 @@
       margin-inline-start: var(--slotted-space-2);
       margin-block: calc((1.5rem - var(--slotted-font-size-md, 0.8125rem) * var(--slotted-line-height-md, 1.5)) / -2);
     }
+
+    [data-ui="switch"][data-invalid] > [data-part="track"] {
+      box-shadow: none;
+    }
+
+    [data-ui="switch"][data-invalid] > [data-part="track"] > [data-part="thumb"] {
+      border-color: var(--slotted-switch-thumb-border-color, var(--slotted-control-border-color));
+      box-shadow: var(--slotted-switch-thumb-shadow, var(--slotted-control-shadow, none));
+    }
+
+    [data-ui="switch"][data-invalid][data-checked] > [data-part="track"] > [data-part="thumb"] {
+      border-color: var(--slotted-switch-checked-thumb-border-color, var(--slotted-tone-accent-solid));
+    }
+
+    [data-ui="switch"][data-invalid][data-readonly] > [data-part="track"] > [data-part="thumb"] {
+      border-color: var(--slotted-switch-readonly-border-color, var(--slotted-control-border-color));
+    }
   }
 }

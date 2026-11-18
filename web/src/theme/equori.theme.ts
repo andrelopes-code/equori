@@ -236,6 +236,27 @@ const stickyColumnRule = `
 }
 `;
 
+// Workaround for Slotted issue #145: an invalid switch paints the thumb and the inside of the track
+// in the danger tone. Only the outer border of the track keeps it; the thumb keeps its own border.
+const invalidSwitchRule = `
+[data-ui="switch"][data-invalid] > [data-part="track"] {
+  box-shadow: none;
+}
+
+[data-ui="switch"][data-invalid] > [data-part="track"] > [data-part="thumb"] {
+  border-color: var(--slotted-switch-thumb-border-color, var(--slotted-control-border-color));
+  box-shadow: var(--slotted-switch-thumb-shadow, var(--slotted-control-shadow, none));
+}
+
+[data-ui="switch"][data-invalid][data-checked] > [data-part="track"] > [data-part="thumb"] {
+  border-color: var(--slotted-switch-checked-thumb-border-color, var(--slotted-tone-accent-solid));
+}
+
+[data-ui="switch"][data-invalid][data-readonly] > [data-part="track"] > [data-part="thumb"] {
+  border-color: var(--slotted-switch-readonly-border-color, var(--slotted-control-border-color));
+}
+`;
+
 const tagInsetRule = `
 [data-ui="tag"] {
   --slotted-tag-inset-inline: calc(var(--slotted-space-4) + var(--slotted-space-1));
@@ -527,6 +548,7 @@ export default extendTheme(
       collapsibleCornerRule,
       dangerButtonRule,
       widgetHelpRule,
+      invalidSwitchRule,
     ],
   },
   { name: "equori" },
