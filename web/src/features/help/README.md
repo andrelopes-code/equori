@@ -41,7 +41,7 @@ None. `model/help-pages.ts` loads the Markdown through `import.meta.glob` with t
 - `icon/`: the marks the glyph set does not hold.
 - `model/`: the page list, the guides (area, screen, symptoms, related), the Markdown loader and parser, the library of every page.
 - `styles/`: the stylesheet of the approved mock.
-- `media/`: figures (`<id>.<language>.<scheme>.png`), videos (`<id>.<language>.<scheme>.webm`) and `media.json` (the mark of each figure, the length of each video, the hash of each file), all written by `tools/help-media` (`docs/contributing/help.md`, "Figures and videos"); `help-media-files.gen.ts` lists the files for the bundler, written by the same tool; `help-media.ts` and `use-help-media.ts` resolve them.
+- `media/`: one folder per tutorial with its figures (`<id>.<language>.<scheme>.png`) and videos (`<id>.<language>.<scheme>.webm`), and `media.json` (the mark of each figure, the length of each video, the hash of each file), all written by `tools/help-media` (`docs/contributing/help.md`, "Figures and videos"); `help-media-files.gen.ts` lists the files for the bundler, written by the same tool; `help-media.ts` and `use-help-media.ts` resolve them.
 - `content/`: Markdown sources, `<language>/<page id>.md` and `regions/<region>/<language>/<page id>.md`.
 
 ## Writing a page

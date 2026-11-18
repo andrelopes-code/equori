@@ -34,7 +34,7 @@ A page holds one kind only.
 
 ## Figures and videos
 
-A figure or a video is built by `tools/help-media` (ADR 037). No file of `web/src/features/help/media/` is edited, drawn, recorded or placed by hand; `make help-media-check` rejects a file the tool did not write.
+A figure or a video is built by `tools/help-media` (ADR 037). No file of `web/src/features/help/media/` (one folder per tutorial) is edited, drawn, recorded or placed by hand; `make help-media-check` rejects a file the tool did not write.
 
 | Command | Does | Needs |
 |---|---|---|

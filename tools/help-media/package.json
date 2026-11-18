@@ -9,6 +9,6 @@
     "check": "node run.mjs check"
   },
   "dependencies": {
-    "playwright": "1.63.0"
+    "playwright": "1.64.0"
   }
 }

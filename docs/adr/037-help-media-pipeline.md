@@ -34,7 +34,7 @@ Alternatives read:
 6. **A frame is taken at rest.** Transitions, animations and the caret are off. A capture is taken when no answer is pending and two captures in a row are equal byte for byte.
 7. **A video is composed, not recorded.** Each frame is drawn from the stills of the beats and a timeline: the whole screen, a pointer that travels to the element, the mark of the step, a ring on the click, a cross-fade to the next still. Frame n is a function of the tutorial. The frames are encoded as VP9 at constant quality, 1920 by 1200, 30 frames per second, by the ffmpeg that Playwright installs.
 8. **A build refuses a wrong result.** It fails, and writes no manifest, when: an element is missing, hidden or covered; the element does not fit in the figure; the mark is smaller than 24 px or larger than 70% of the figure; the mark differs between the two schemes; a read is missing from the tape; a video exceeds 2.5 MB; the folder of the media exceeds 40 MB.
-9. **Every variant is built.** Each figure and video exists per language and per scheme (`<id>.<language>.<scheme>.png`). A page in English shows the application in English.
+9. **Every variant is built.** Each figure and video exists per language and per scheme (`<id>.<language>.<scheme>.png`). The files of a tutorial stand in a folder of its name, since a folder of `web/src` holds at most 40 files (amended 2026-11-18). A page in English shows the application in English.
 10. **The result is checked without a browser.** `check` compares every file with the hash in `media.json`, the size of every figure, the bounds of every mark, and the figures each Markdown page names. `help-pages.test.ts` holds the same link between pages and media.
 
 ## Consequences
@@ -42,5 +42,6 @@ Alternatives read:
 - A change of a screen is followed by `make help-media`; a change of the data a tutorial reads, by `make help-media-record`.
 - A build on the same machine and the same Chromium yields the same figures, byte for byte. Another machine can differ in font rasterization; the hashes of `media.json` show it.
 - The media grows the binary: about 100 KB per figure variant and 1.7 MB per video variant; 38 MB for the five pages of 2026-11-18. `check` holds the folder under 40 MB.
+- Playwright is pinned at a release whose ffmpeg encodes VP9: 1.64.0, ffmpeg 1013. The ffmpeg of 1.63.0 encodes VP8 only; the first videos were encoded by an ffmpeg that another installation had left in the cache of the machine, which a clean installation showed on 2026-11-18. A change of the pin is followed by a build in a clean checkout.
 - A video is VP9 in WebM. Safari plays it from 14.1 on macOS and from 17.4 on iOS and iPadOS. The steps and their figures are the same content for a browser that does not.
 - Playwright and its Chromium are needed only by a contributor who rebuilds help media. CI and the release build do not install them; `make help-media-check` runs in `make static`, in the CI job `static` and before a push.

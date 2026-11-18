@@ -6,7 +6,7 @@
 //   node run.mjs review              write out/review.html: every figure under its mark, every video
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -24,6 +24,10 @@ const MAX_MEDIA_BYTES = 40_000_000;
 // Variants built at once; each takes one core for its encoder and part of one for its page.
 const JOBS = Number(process.env.HELP_MEDIA_JOBS ?? 4);
 const FORCE = process.argv.includes("--force");
+
+// A tutorial keeps its files in a folder of its own: the layout guard holds a folder of web/src
+// under 40 files. The manifest names a file by that folder and its name.
+const placed = (tutorial, name) => `${tutorial.id}/${name}`;
 
 const [command, only] = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 
@@ -107,6 +111,7 @@ async function build() {
       }
 
       next.inputs[tutorial.id] = inputs;
+      mkdirSync(join(MEDIA, tutorial.id), { recursive: true });
       for (const language of LANGUAGES) for (const scheme of SCHEMES) jobs.push({ tutorial, tape, language, scheme });
     }
 
@@ -137,19 +142,19 @@ async function build() {
         }
 
         spots[key] = spot;
-        writeFileSync(join(MEDIA, name), beat.figureImage);
-        next.files[name] = sha(beat.figureImage);
+        writeFileSync(join(MEDIA, placed(tutorial, name)), beat.figureImage);
+        next.files[placed(tutorial, name)] = sha(beat.figureImage);
         next.figures[beat.figure] = { ...next.figures[beat.figure], [language]: { spot } };
       }
 
       if (tutorial.video) {
         const name = `${tutorial.id}.${language}.${scheme}.webm`;
-        const video = await renderVideo(browser, beats, accent, join(MEDIA, name));
-        const bytes = readFileSync(join(MEDIA, name));
+        const video = await renderVideo(browser, beats, accent, join(MEDIA, placed(tutorial, name)));
+        const bytes = readFileSync(join(MEDIA, placed(tutorial, name)));
 
         if (bytes.length > MAX_VIDEO_BYTES) throw new Error(`${name}: ${bytes.length} bytes, above the limit`);
 
-        next.files[name] = sha(bytes);
+        next.files[placed(tutorial, name)] = sha(bytes);
         next.videos[tutorial.id] = { seconds: video.seconds, frames: video.frames };
       }
 
@@ -180,7 +185,7 @@ async function build() {
 function moduleOf(manifest) {
   const names = Object.keys(manifest.files).sort();
   const imports = names.map((name, index) => `import f${index} from "./${name}?url";`);
-  const entries = names.map((name, index) => `  "${name}": f${index},`);
+  const entries = names.map((name, index) => `  "${basename(name)}": f${index},`);
 
   return [
     "// Written by tools/help-media (docs/contributing/help.md). Never edited by hand.",
@@ -211,7 +216,9 @@ function named(language) {
 function check() {
   const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
   const problems = [];
-  const file = (name) => {
+  const folders = foldersOf(manifest);
+  const file = (base) => {
+    const name = folders[base] ?? base;
     const path = join(MEDIA, name);
     if (!existsSync(path)) return problems.push(`${name}: missing`), null;
 
@@ -255,7 +262,8 @@ function check() {
 
   const known = new Set(Object.keys(manifest.files));
   // The folder holds the manifest and the two modules that read it; any other file is media.
-  for (const name of readdirSync(MEDIA).filter((f) => !/\.(json|ts)$/.test(f))) {
+  const found = filesUnder(MEDIA).map((path) => relative(MEDIA, path).replaceAll("\\", "/"));
+  for (const name of found.filter((f) => f.includes("/") || !/\.(json|ts)$/.test(f))) {
     if (!known.has(name)) problems.push(`${name}: not made by this tool`);
   }
 
@@ -270,15 +278,21 @@ function check() {
   console.log(`help media: ${known.size} files checked, ${(bytes / 1e6).toFixed(1)} MB`);
 }
 
+// The place of each file in the folder of the media, by its name.
+function foldersOf(manifest) {
+  return Object.fromEntries(Object.keys(manifest.files).map((name) => [basename(name), name]));
+}
+
 // A page with every figure under its mark, placed as the application places it, and every video:
 // what a person reads before the media is committed.
 function review() {
   const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
+  const folders = foldersOf(manifest);
   const figures = Object.entries(manifest.figures).flatMap(([id, languages]) =>
     Object.entries(languages).flatMap(([language, { spot }]) =>
       ["dark", "light"].map(
         (scheme) =>
-          `<figure><div class="shot"><img src="${MEDIA}/${id}.${language}.${scheme}.png">` +
+          `<figure><div class="shot"><img src="${MEDIA}/${folders[`${id}.${language}.${scheme}.png`]}">` +
           `<i style="left:${spot[0]}%;top:${spot[1]}%;width:${spot[2]}%;height:${spot[3]}%"><b>n</b></i></div>` +
           `<figcaption>${id} · ${language} · ${scheme}</figcaption></figure>`,
       ),
@@ -286,7 +300,7 @@ function review() {
   );
   const videos = Object.keys(manifest.files)
     .filter((name) => name.endsWith(".webm"))
-    .map((name) => `<figure><video src="${MEDIA}/${name}" controls muted></video><figcaption>${name}</figcaption></figure>`);
+    .map((name) => `<figure><video src="${MEDIA}/${name}" controls muted></video><figcaption>${basename(name)}</figcaption></figure>`);
 
   mkdirSync(join(here, "out"), { recursive: true });
   writeFileSync(
