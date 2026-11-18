@@ -326,7 +326,9 @@ func marketFundReports(
 		}
 		for j, p := range r.Periods {
 			v.Periods[j] = fundReportPeriodView{
-				Period: tool.DateOf(p.Period),
+				Period:    tool.DateOf(p.Period),
+				NetAssets: optionalInt(p.NetAssets),
+				Holders:   optionalInt(p.Holders),
 			}
 			fillFundReportFigures(&v.Periods[j], p)
 			if p.Delivered != nil {
@@ -340,16 +342,17 @@ func marketFundReports(
 	return out, nil
 }
 
-// fillFundReportFigures copies the figures the period holds; a nil figure stays absent.
+// optionalInt keeps a figure of zero apart from a blank figure (ADR 012 T4 has no null).
+func optionalInt(p *int64) tool.OptionalInt {
+	if p == nil {
+		return tool.OptionalInt{}
+	}
+
+	return tool.OptionalInt{N: int(*p), Set: true}
+}
+
+// fillFundReportFigures copies the decimal figures the period holds; a nil figure stays absent.
 func fillFundReportFigures(v *fundReportPeriodView, p domain.FundReportPeriod) {
-	if p.NetAssets != nil {
-		v.NetAssets = *p.NetAssets
-	}
-
-	if p.Holders != nil {
-		v.Holders = *p.Holders
-	}
-
 	for _, f := range []struct {
 		from *string
 		into *string

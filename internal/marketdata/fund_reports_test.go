@@ -306,6 +306,42 @@ func TestFundReportsTool(t *testing.T) {
 	}
 }
 
+// A figure of zero reaches the assistant as zero; only a blank figure is absent.
+func TestFundReportsToolKeepsZero(t *testing.T) {
+	t.Parallel()
+
+	h := fundReportHarness(t, "2026-11-18")
+	setFundReportFeed(t, h, true)
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	_, err := h.Pool.Exec(
+		t.Context(),
+		`UPDATE marketdata_fund_report SET holders = 0, net_assets = 0 WHERE code = 'XPTO11'`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var out struct {
+		FundReports []struct {
+			Periods []map[string]any `json:"periods"`
+		} `json:"fund_reports"`
+	}
+
+	toolOutput(
+		t,
+		h,
+		"get_market_data",
+		map[string]any{"view": "fund_reports", "code": "XPTO11"},
+		&out,
+	)
+
+	want := `[{"periods":[{"delivered":"2026-11-12","holders":0,"net_assets":0,"period":"2026-10-01"}]}]`
+	if g := asJSON(t, out.FundReports); g != want {
+		t.Fatalf("fund reports = %s, want %s", g, want)
+	}
+}
+
 func assertNoFundReports(t *testing.T, h *apitest.Harness, code string) {
 	t.Helper()
 

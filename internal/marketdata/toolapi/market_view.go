@@ -140,15 +140,15 @@ type fundReportView struct {
 }
 
 type fundReportPeriodView struct {
-	Period            tool.Date `json:"period"`
-	Delivered         tool.Date `json:"delivered,omitzero"`
-	NetAssets         int64     `json:"net_assets,omitzero"`
-	Holders           int64     `json:"holders,omitzero"`
-	Units             string    `json:"units,omitzero"`
-	UnitBookValue     string    `json:"unit_book_value,omitzero"`
-	AdminFee          string    `json:"admin_fee,omitzero"`
-	MonthYield        string    `json:"month_yield,omitzero"`
-	MonthAmortization string    `json:"month_amortization,omitzero"`
+	Period            tool.Date        `json:"period"`
+	Delivered         tool.Date        `json:"delivered,omitzero"`
+	NetAssets         tool.OptionalInt `json:"net_assets,omitzero"`
+	Holders           tool.OptionalInt `json:"holders,omitzero"`
+	Units             string           `json:"units,omitzero"`
+	UnitBookValue     string           `json:"unit_book_value,omitzero"`
+	AdminFee          string           `json:"admin_fee,omitzero"`
+	MonthYield        string           `json:"month_yield,omitzero"`
+	MonthAmortization string           `json:"month_amortization,omitzero"`
 }
 
 type curvePointView struct {
