@@ -21,6 +21,8 @@ interface PurchaseRowProps {
   base: number;
   // Enters edit mode with the assets of the entry's group open.
   onSplit: (group: number) => void;
+  // Opens the indexer comparison for a row bought by value; undefined when none is offered.
+  onCompare?: ((entry: ShoppingEntry) => void) | undefined;
   // The key of the row under the pointer, or undefined when it leaves.
   onPointer: (key: string | undefined) => void;
 }
@@ -32,6 +34,7 @@ export function PurchaseRow({
   groupName,
   base,
   onSplit,
+  onCompare,
   onPointer,
 }: PurchaseRowProps) {
   const t = useT();
@@ -93,6 +96,25 @@ export function PurchaseRow({
           <Text size="sm" tone="muted">
             {order}
           </Text>
+        )}
+
+        {entry.byValue === true && onCompare !== undefined && (
+          // Workaround for Slotted issue #97, as the button above.
+          <Link
+            size="sm"
+            render={(props) => (
+              <button
+                {...buttonProps(props)}
+                type="button"
+                className={styles.compare}
+                onClick={() => {
+                  onCompare(entry);
+                }}
+              />
+            )}
+          >
+            {t("contributionPlan.compareIndexers")}
+          </Link>
         )}
       </TableCell>
 

@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { calculatorApiRoutes, cdiFixture } from "@/testing/calculator-api";
 import { json } from "@/testing/fake-api";
 import { brl } from "@/testing/investment-api";
 import { portfolioApi } from "@/testing/portfolio-api";
@@ -190,4 +191,149 @@ describe("Contribution plan, executable orders (CN17, CN18)", () => {
       ).toBeVisible();
     },
   );
+});
+
+// A group without members is bought by value; PETR4 has a quantity.
+const comparablePlan = {
+  ...plan,
+  classes: [
+    {
+      name: "Reserva",
+      target_bp: 5000,
+      value: brl(300000),
+      share_bp: 5000,
+      amount: brl(100000),
+      cost: brl(100000),
+      members: [],
+    },
+    plan.classes[0],
+  ],
+};
+
+const expectedCdi = {
+  ...cdiFixture(),
+  expectations: {
+    survey_date: "2026-10-16",
+    items: [{ date: "2026-11-18", rate: "0.1" }],
+  },
+};
+
+// The index and curve routes of the calculators, to offer the comparison.
+function indexRoutes(withExpected: boolean) {
+  const routes = calculatorApiRoutes(
+    withExpected ? [expectedCdi] : [cdiFixture()],
+  );
+
+  return Object.fromEntries(
+    Object.entries(routes).filter(
+      ([key]) => key.includes("/indexes") || key.includes("/curves"),
+    ),
+  );
+}
+
+async function openComparable(withExpected = true) {
+  const previews = { count: 0 };
+  localStorage.setItem(
+    "equori.locale",
+    JSON.stringify({ language: "pt", region: "BR" }),
+  );
+  await renderApp("/portfolio/contribution-plan", {
+    fetch: portfolioApi({
+      ...indexRoutes(withExpected),
+      "GET /api/v1/contribution-plan": () => json(200, comparablePlan),
+      "POST /api/v1/contribution-plan/preview": () => {
+        previews.count += 1;
+
+        return json(200, comparablePlan);
+      },
+    }),
+  });
+  const list = await screen.findByRole("table", { name: "Lista de compras" });
+
+  return { list, previews };
+}
+
+describe("Contribution plan, indexer comparison (S409)", () => {
+  afterEach(() => {
+    localStorage.removeItem("equori.locale");
+  });
+
+  it("offers the comparison on a row bought by value and not on a row with units", async () => {
+    const { list } = await openComparable();
+
+    const buttons = await within(list).findAllByRole("button", {
+      name: "comparar indexadores",
+    });
+
+    expect(buttons).toHaveLength(1);
+    const rows = within(list).getAllByRole("row");
+    expect(text(rows[1] ?? list)).toContain("Reserva");
+    expect(
+      within(rows[1] ?? list).getByRole("button", {
+        name: "comparar indexadores",
+      }),
+    ).toBeInTheDocument();
+    expect(text(rows[2] ?? list)).toContain("PETR4");
+    expect(
+      within(rows[2] ?? list).queryByRole("button"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens a dialog with the amount of the row", async () => {
+    const { list } = await openComparable();
+    const user = userEvent.setup();
+
+    await user.click(
+      await within(list).findByRole("button", { name: "comparar indexadores" }),
+    );
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Comparar indexadores",
+    });
+    const amount = await within(dialog).findByRole("textbox", {
+      name: "Valor aplicado",
+    });
+    expect(
+      (amount as HTMLInputElement).value.replaceAll(
+        String.fromCharCode(160),
+        " ",
+      ),
+    ).toBe("1.000,00");
+  });
+
+  it("closes without changing the list or asking the preview again", async () => {
+    const { list, previews } = await openComparable();
+    const user = userEvent.setup();
+    const before = within(list)
+      .getAllByRole("row")
+      .map((r) => text(r));
+    const requests = previews.count;
+
+    await user.click(
+      await within(list).findByRole("button", { name: "comparar indexadores" }),
+    );
+    await screen.findByRole("dialog", { name: "Comparar indexadores" });
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(
+      within(list)
+        .getAllByRole("row")
+        .map((r) => text(r)),
+    ).toEqual(before);
+    expect(previews.count).toBe(requests);
+  });
+
+  it("draws no button when no index has an expected path", async () => {
+    const { list } = await openComparable(false);
+
+    await waitFor(() => {
+      expect(within(list).getAllByRole("row")).toHaveLength(4);
+    });
+    expect(
+      within(list).queryByRole("button", { name: "comparar indexadores" }),
+    ).not.toBeInTheDocument();
+  });
 });

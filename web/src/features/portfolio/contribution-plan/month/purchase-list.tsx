@@ -20,11 +20,13 @@ import {
   positive,
   shoppingList,
 } from "@/features/portfolio/contribution-plan/model/shopping-list";
+import { CompareIndexersDialog } from "@/features/portfolio/contribution-plan/month/compare-indexers-dialog";
 import { CopyListButton } from "@/features/portfolio/contribution-plan/month/copy-list-button";
 import { LeftoverRow } from "@/features/portfolio/contribution-plan/month/leftover-row";
 import { PurchaseBar } from "@/features/portfolio/contribution-plan/month/purchase-bar";
 import type { PurchaseSegment } from "@/features/portfolio/contribution-plan/month/purchase-bar";
 import { PurchaseRow } from "@/features/portfolio/contribution-plan/month/purchase-row";
+import { useCompareIndexers } from "@/features/portfolio/contribution-plan/month/use-compare-indexers";
 import { useScale } from "@/features/setup";
 import { useAppLocale, useT } from "@/i18n/i18n-provider";
 import { useMoneyFormat } from "@/privacy/use-money-format";
@@ -54,6 +56,7 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
   const entries = shoppingList(view, memberName, scale ?? undefined);
   const leftover = positive(view.leftover) ? view.leftover : undefined;
   const base = contributionOf(entries, leftover);
+  const compare = useCompareIndexers(base.currency);
   const money = (m: Money) => fmt.money(m, scale?.(m.currency) ?? 0);
   const shareOf = (m: Money) => shareText(m.amount / base.amount, locale);
   const groupOf = (name: string, group: number) => {
@@ -152,6 +155,7 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
                   groupName={groupOf(entry.name, entry.group)}
                   base={base.amount}
                   onSplit={onSplit}
+                  onCompare={compare.onCompare}
                   onPointer={setActive}
                 />
               ))}
@@ -168,6 +172,14 @@ export function PurchaseList({ view, memberName, onSplit }: PurchaseListProps) {
           </TableContent>
         </Table>
       </div>
+
+      {compare.opened !== undefined && (
+        <CompareIndexersDialog
+          amount={compare.opened.cost}
+          open
+          onClose={compare.close}
+        />
+      )}
     </Stack>
   );
 }

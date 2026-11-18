@@ -148,4 +148,6 @@ export const contributionPlanPtBR: Record<
     "Nenhum ativo neste grupo. Adicione os ativos que você compra para ele.",
   "contributionPlan.removeGroup": "Remover grupo",
   "contributionPlan.removeMember": "Remover ativo",
+  "contributionPlan.compareIndexers": "comparar indexadores",
+  "contributionPlan.compareIndexers.title": "Comparar indexadores",
 };

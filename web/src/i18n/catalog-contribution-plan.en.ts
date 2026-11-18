@@ -147,4 +147,6 @@ export const contributionPlanEn = {
     "No asset in this group. Add the assets you buy for it.",
   "contributionPlan.removeGroup": "Remove group",
   "contributionPlan.removeMember": "Remove asset",
+  "contributionPlan.compareIndexers": "compare indexers",
+  "contributionPlan.compareIndexers.title": "Compare indexers",
 } as const;

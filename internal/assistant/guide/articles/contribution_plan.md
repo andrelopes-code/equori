@@ -13,3 +13,5 @@ A position that no group holds is listed under Outside the plan, with a selector
 Without a plan, the screen explains how it works and offers Start from my portfolio, which makes one group per instrument type held with each target equal to its share today, and Start from scratch, which opens one group at 100% to name.
 
 An asset with no price or no exchange rate today makes the plan incomplete. The sentence in This month names each such asset as a link to its instrument page, and the screen keeps the targets. No amount to contribute shows until the price or rate is recorded.
+
+A row of the Shopping list bought by value, with no quantity, has the button "compare indexers" in its order cell when an index of the base currency has an expected path. It opens a dialog that holds the indexer comparison with the cost of the row as the amount. The comparison shows the yield after tax of two to six fixed income securities held to one maturity and gives no recommendation. Closing the dialog changes nothing in the plan, the split or the Shopping list.
