@@ -6787,11 +6787,15 @@ export interface components {
         /**
          * @description conversion exchanges the whole holding for units of new_instrument and moves its whole cost
          *     (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
-         *     moves cost_bp of its cost to them, the share the company's notice states.
+         *     moves cost_bp of its cost to them, the share the company's notice states. right_issue keeps
+         *     the holding and gives units of the subscription right new_instrument at no cost;
+         *     right_exercise turns the whole holding of a right into units of new_instrument (the share or
+         *     the subscription receipt), whose cost is the cost of the right plus amount, paid from the
+         *     cash account.
          * @enum {string}
          */
-        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax" | "conversion" | "spin_off";
-        /** @description A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. */
+        CorporateActionKind: "split" | "reverse_split" | "bonus" | "unit_tax" | "conversion" | "spin_off" | "right_issue" | "right_exercise";
+        /** @description A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. A right_exercise takes amount, the subscription price paid in base currency. */
         CorporateActionInput: {
             /**
              * Format: uuid
@@ -6827,6 +6831,11 @@ export interface components {
             new_instrument?: string;
             /** @description Basis points of the cost a spin-off moves to new_instrument; required with spin_off only. */
             cost_bp?: number;
+            /**
+             * Format: uuid
+             * @description The account a right_exercise pays amount from; absent, the cash account of the brokerage.
+             */
+            cash_account_id?: string;
         };
         CustodyTransferInput: {
             /**

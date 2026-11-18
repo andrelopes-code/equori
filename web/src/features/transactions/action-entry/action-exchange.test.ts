@@ -31,7 +31,7 @@ describe("exchange fields", () => {
   };
 
   it("sends the code received and the cost of a spin-off", () => {
-    expect(exchangeFields(spinOff)).toEqual({
+    expect(exchangeFields(spinOff, "BRL")).toEqual({
       new_instrument: "NOVA3",
       cost_bp: 2500,
     });
@@ -51,7 +51,29 @@ describe("exchange fields", () => {
   });
 
   it("adds nothing to another kind", () => {
-    expect(exchangeFields({ ...spinOff, kind: "split" })).toEqual({});
+    expect(exchangeFields({ ...spinOff, kind: "split" }, "BRL")).toEqual({});
     expect(exchangeProblems({ ...spinOff, kind: "split" })).toEqual({});
+  });
+
+  // Coverage row E-06: a right issue takes the code of the right; an exercise adds the price paid.
+  it("sends the price an exercise pays and no cost share", () => {
+    const exercise = {
+      ...spinOff,
+      kind: "right_exercise" as const,
+      newInstrument: "petr10",
+      amount: 8000,
+    };
+
+    expect(exchangeFields(exercise, "BRL")).toEqual({
+      new_instrument: "PETR10",
+      amount: { amount: 8000, currency: "BRL" },
+    });
+    expect(exchangeProblems(exercise)).toEqual({});
+    expect(exchangeProblems({ ...exercise, amount: 0 })).toEqual({
+      amount: "entry.required.amount",
+    });
+    expect(exchangeFields({ ...exercise, kind: "right_issue" }, "BRL")).toEqual(
+      { new_instrument: "PETR10" },
+    );
   });
 });

@@ -10259,7 +10259,7 @@
   },
   {
     "name": "record_corporate_action",
-    "description": "Proposes a corporate action on one Investment: a split, a reverse split, a bonus of units or the units a fund cancels for income tax (unit_tax). The quantity changes and the cost of the holding stays; a bonus with unit_cost adds that cost and records an exempt income. A conversion moves the whole cost to new_instrument; a spin_off moves cost_percent of it. A fraction of a unit leaves the position; its auction cash is recorded with record_investment kind income when it arrives. Use it when the user reports one of these events on a holding. An action is not corrected: void_transaction removes it and it is recorded again. Do not use it for a dividend or other cash income: record_investment does. The user confirms first.",
+    "description": "Proposes a corporate action on one Investment: a split, a reverse split, a bonus of units or the units a fund cancels for income tax (unit_tax). The quantity changes and the cost of the holding stays; a bonus with unit_cost adds that cost and records an exempt income. A conversion moves the whole cost to new_instrument; a spin_off moves cost_percent of it. A right is sold with record_investment sell. A fraction of a unit leaves the position; its auction cash is recorded with record_investment kind income when it arrives. Use it when the user reports one of these events on a holding. An action is not corrected: void_transaction removes it and it is recorded again. Do not use it for a dividend or other cash income: record_investment does. The user confirms first.",
     "effect": "write",
     "idempotent": false,
     "input_schema": {
@@ -10267,14 +10267,16 @@
       "properties": {
         "kind": {
           "type": "string",
-          "description": "split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding",
+          "description": "split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding; right_issue: subscription rights new_instrument beside the holding, at no cost; right_exercise: the rights become new_instrument (share or receipt) for amount",
           "enum": [
             "split",
             "reverse_split",
             "bonus",
             "unit_tax",
             "conversion",
-            "spin_off"
+            "spin_off",
+            "right_issue",
+            "right_exercise"
           ]
         },
         "account_id": {
@@ -10316,7 +10318,11 @@
         },
         "amount": {
           "type": "string",
-          "description": "unit_tax: income tax withheld, in the base currency"
+          "description": "unit_tax: income tax withheld; right_exercise: subscription price paid in total; in the base currency"
+        },
+        "cash_account_id": {
+          "type": "string",
+          "description": "right_exercise: account that pays amount, from list_accounts; the cash account of the brokerage when empty"
         },
         "description": {
           "type": "string",

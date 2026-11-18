@@ -23,6 +23,12 @@ const (
 	// ActionSpinOff keeps the holding and receives units of another security, which take CostBP
 	// of its cost, the share the company's notice states (coverage row E-07).
 	ActionSpinOff ActionKind = "spin_off"
+	// ActionRightIssue keeps the holding and receives units of a subscription right at no cost
+	// (coverage row E-06).
+	ActionRightIssue ActionKind = "right_issue"
+	// ActionRightExercise turns a whole holding of a right into units of the subscribed security;
+	// their cost is the cost of the right plus Amount, paid from CashAccountID (coverage row E-06).
+	ActionRightExercise ActionKind = "right_exercise"
 )
 
 const maxActionRatio = 1000000
@@ -43,6 +49,9 @@ type ActionOrder struct {
 	// the cost a spin-off moves to it.
 	NewInstrument money.Currency
 	CostBP        int
+
+	// CashAccountID pays Amount, the subscription price of a right exercise.
+	CashAccountID uuid.UUID
 }
 
 // CorporateAction is the D1 detail of an action (A228 IO26).
@@ -62,7 +71,17 @@ type CorporateAction struct {
 }
 
 // IsExchange reports whether the action gives units of another security.
-func (k ActionKind) IsExchange() bool { return k == ActionConversion || k == ActionSpinOff }
+func (k ActionKind) IsExchange() bool {
+	switch k {
+	case ActionConversion, ActionSpinOff, ActionRightIssue, ActionRightExercise:
+		return true
+	}
+
+	return false
+}
+
+// keepsHolding reports whether the holding stays beside the units received.
+func (k ActionKind) keepsHolding() bool { return k == ActionSpinOff || k == ActionRightIssue }
 
 // BuildCorporateAction returns the postings and the detail of o on holding h, the holding at
 // the end of the day before o.Date, in base currency (A228 IO23 to IO25).
@@ -204,7 +223,7 @@ func BuildExchange(
 		return nil, CorporateAction{}, err
 	}
 
-	zero, err := money.NewOf(0, h.CostBasis.Currency(), h.CostBasis.Scale())
+	value, err := exchangeValue(o, h.CostBasis)
 	if err != nil {
 		return nil, CorporateAction{}, err
 	}
@@ -222,7 +241,7 @@ func BuildExchange(
 		Held:              h.Quantity,
 		Received:          received,
 		FractionRemainder: remainder,
-		Value:             zero,
+		Value:             value,
 		NewAccountID:      newAccount,
 		CostBP:            o.CostBP,
 	}, nil
@@ -240,7 +259,7 @@ func exchangePostings(
 		{AccountID: o.AccountID, Amount: h.Quantity.Neg(), Weight: h.CostBasis.Neg()},
 	}
 
-	if o.Kind == ActionSpinOff {
+	if o.Kind.keepsHolding() {
 		kept, err := h.CostBasis.Sub(moved)
 		if err != nil {
 			return nil, err
@@ -252,13 +271,30 @@ func exchangePostings(
 		)
 	}
 
-	return append(postings, Posting{AccountID: newAccount, Amount: received, Weight: moved}), nil
+	postings = append(postings, Posting{AccountID: newAccount, Amount: received, Weight: moved})
+	if o.Kind == ActionRightExercise {
+		postings = append(
+			postings,
+			Posting{AccountID: o.CashAccountID, Amount: o.Amount.Neg(), Weight: o.Amount.Neg()},
+		)
+	}
+
+	return postings, nil
+}
+
+// exchangeValue is the subscription price a right exercise paid; zero for another exchange.
+func exchangeValue(o ActionOrder, cost money.Money) (money.Money, error) {
+	if o.Kind == ActionRightExercise {
+		return o.Amount, nil
+	}
+
+	return money.NewOf(0, cost.Currency(), cost.Scale())
 }
 
 func checkExchange(o ActionOrder) error {
 	switch {
 	case !o.Kind.IsExchange():
-		return invalid("kind", "must be conversion or spin_off")
+		return invalid("kind", "must be conversion, spin_off, right_issue or right_exercise")
 	case o.NewInstrument == "":
 		return invalid("new_instrument", "is required")
 	case o.NewInstrument == o.Instrument:
@@ -269,8 +305,12 @@ func checkExchange(o ActionOrder) error {
 		return invalid("ratio_to", "must be from 1 to 1000000")
 	case o.Kind == ActionSpinOff && (o.CostBP < 1 || o.CostBP > 9999):
 		return invalid("cost_bp", "must be from 1 to 9999 for a spin-off")
-	case o.Kind == ActionConversion && o.CostBP != 0:
+	case o.Kind != ActionSpinOff && o.CostBP != 0:
 		return invalid("cost_bp", "is for a spin-off only")
+	case o.Kind == ActionRightExercise && (o.Amount.IsZero() || o.Amount.IsNegative()):
+		return invalid("amount", "is required with right_exercise and must be positive")
+	case o.Kind != ActionRightExercise && !o.Amount.IsZero():
+		return invalid("amount", "is for a right_exercise only")
 	case o.UnitCost != nil:
 		return invalid("unit_cost", "is for a bonus only")
 	}
@@ -304,8 +344,17 @@ func exchangeQuantity(o ActionOrder, held money.Money, scale int) (money.Money, 
 // movedCost is the cost a conversion or a spin-off moves to the new security, rounded half to even
 // to the minor unit of the base currency.
 func movedCost(o ActionOrder, cost money.Money) (money.Money, error) {
-	if o.Kind == ActionConversion {
+	switch o.Kind {
+	case ActionConversion:
 		return cost, nil
+	case ActionRightIssue:
+		return money.NewOf(0, cost.Currency(), cost.Scale())
+	case ActionRightExercise:
+		if o.Amount.Currency() != cost.Currency() {
+			return money.Money{}, invalid("amount", "must be in the base currency")
+		}
+
+		return cost.Add(o.Amount)
 	}
 
 	return money.Fraction(cost, int64(o.CostBP), 10000)

@@ -752,12 +752,14 @@ func (e CategoryIcon) Valid() bool {
 
 // Defines values for CorporateActionKind.
 const (
-	CorporateActionKindBonus        CorporateActionKind = "bonus"
-	CorporateActionKindConversion   CorporateActionKind = "conversion"
-	CorporateActionKindReverseSplit CorporateActionKind = "reverse_split"
-	CorporateActionKindSpinOff      CorporateActionKind = "spin_off"
-	CorporateActionKindSplit        CorporateActionKind = "split"
-	CorporateActionKindUnitTax      CorporateActionKind = "unit_tax"
+	CorporateActionKindBonus         CorporateActionKind = "bonus"
+	CorporateActionKindConversion    CorporateActionKind = "conversion"
+	CorporateActionKindReverseSplit  CorporateActionKind = "reverse_split"
+	CorporateActionKindRightExercise CorporateActionKind = "right_exercise"
+	CorporateActionKindRightIssue    CorporateActionKind = "right_issue"
+	CorporateActionKindSpinOff       CorporateActionKind = "spin_off"
+	CorporateActionKindSplit         CorporateActionKind = "split"
+	CorporateActionKindUnitTax       CorporateActionKind = "unit_tax"
 )
 
 // Valid indicates whether the value is a known member of the CorporateActionKind enum.
@@ -768,6 +770,10 @@ func (e CorporateActionKind) Valid() bool {
 	case CorporateActionKindConversion:
 		return true
 	case CorporateActionKindReverseSplit:
+		return true
+	case CorporateActionKindRightExercise:
+		return true
+	case CorporateActionKindRightIssue:
 		return true
 	case CorporateActionKindSpinOff:
 		return true
@@ -1672,7 +1678,11 @@ type CorporateAction struct {
 
 	// Kind conversion exchanges the whole holding for units of new_instrument and moves its whole cost
 	// (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
-	// moves cost_bp of its cost to them, the share the company's notice states.
+	// moves cost_bp of its cost to them, the share the company's notice states. right_issue keeps
+	// the holding and gives units of the subscription right new_instrument at no cost;
+	// right_exercise turns the whole holding of a right into units of new_instrument (the share or
+	// the subscription receipt), whose cost is the cost of the right plus amount, paid from the
+	// cash account.
 	Kind CorporateActionKind `json:"kind"`
 
 	// NewAccountId The holding of the security a conversion or a spin-off gave; received is in it.
@@ -1688,12 +1698,15 @@ type CorporateAction struct {
 	Value    Money `json:"value"`
 }
 
-// CorporateActionInput A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it.
+// CorporateActionInput A unit tax takes quantity (units of the fund cancelled, below the units held) and amount (income tax withheld, base currency), both required with it. A right_exercise takes amount, the subscription price paid in base currency.
 type CorporateActionInput struct {
 	// AccountId The holding account. Exactly one of account_id or the pair brokerage_id and instrument.
 	AccountId   *openapi_types.UUID `json:"account_id,omitempty"`
 	Amount      *Money              `json:"amount,omitempty"`
 	BrokerageId *openapi_types.UUID `json:"brokerage_id,omitempty"`
+
+	// CashAccountId The account a right_exercise pays amount from; absent, the cash account of the brokerage.
+	CashAccountId *openapi_types.UUID `json:"cash_account_id,omitempty"`
 
 	// CategoryId Income category of a bonus with unit_cost; required with it.
 	CategoryId *openapi_types.UUID `json:"category_id,omitempty"`
@@ -1708,7 +1721,11 @@ type CorporateActionInput struct {
 
 	// Kind conversion exchanges the whole holding for units of new_instrument and moves its whole cost
 	// (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
-	// moves cost_bp of its cost to them, the share the company's notice states.
+	// moves cost_bp of its cost to them, the share the company's notice states. right_issue keeps
+	// the holding and gives units of the subscription right new_instrument at no cost;
+	// right_exercise turns the whole holding of a right into units of new_instrument (the share or
+	// the subscription receipt), whose cost is the cost of the right plus amount, paid from the
+	// cash account.
 	Kind CorporateActionKind `json:"kind"`
 
 	// NewInstrument The security a conversion or a spin-off gives; required with them. Its holding under the brokerage is created when absent.
@@ -1727,7 +1744,11 @@ type CorporateActionInput struct {
 
 // CorporateActionKind conversion exchanges the whole holding for units of new_instrument and moves its whole cost
 // (a merger or a ticker change); spin_off keeps the holding, gives units of new_instrument and
-// moves cost_bp of its cost to them, the share the company's notice states.
+// moves cost_bp of its cost to them, the share the company's notice states. right_issue keeps
+// the holding and gives units of the subscription right new_instrument at no cost;
+// right_exercise turns the whole holding of a right into units of new_instrument (the share or
+// the subscription receipt), whose cost is the cost of the right plus amount, paid from the
+// cash account.
 type CorporateActionKind string
 
 // CorrectionInput defines model for CorrectionInput.

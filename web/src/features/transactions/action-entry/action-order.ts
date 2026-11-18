@@ -50,7 +50,7 @@ export function actionOrder(
     ...(bonus && draft.categoryId !== null
       ? { category_id: draft.categoryId }
       : {}),
-    ...exchangeFields(draft),
+    ...exchangeFields(draft, target.base),
     ...described,
   };
 }

@@ -172,6 +172,8 @@ export function ActionForm({
       {exchangeKinds.includes(draft.kind) && (
         <ActionExchangeFields
           draft={draft}
+          base={view.base}
+          scale={scale}
           errors={errors}
           onChange={handleChange}
         />

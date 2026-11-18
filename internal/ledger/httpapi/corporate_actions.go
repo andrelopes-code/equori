@@ -63,6 +63,8 @@ func (s *Server) actionOrderFromInput(
 		o.CostBP = *b.CostBp
 	}
 
+	o.CashAccountID = optUUID(b.CashAccountId)
+
 	if b.UnitCost != nil {
 		cost, err := money.ParseRate(*b.UnitCost)
 		if err != nil {

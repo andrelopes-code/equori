@@ -254,7 +254,8 @@ func soldCost(o TradeOrder, h Holding, day *Day) (lot soldLot, err error) {
 		return soldLot{}, err
 	}
 
-	if lot.Cost.IsZero() || lot.Cost.IsNegative() {
+	// A holding of rights received at no cost sells at zero cost (coverage row E-06).
+	if lot.Cost.IsNegative() || (lot.Cost.IsZero() && !h.CostBasis.IsZero()) {
 		return soldLot{}, invalid("quantity", "the held quantity has no cost basis")
 	}
 

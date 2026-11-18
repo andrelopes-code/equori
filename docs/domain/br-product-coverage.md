@@ -64,7 +64,7 @@ Source status:
 | E-03 | Day trade | partial | `SeparatesDayTrades` (IN RFB 1.585/2015 art. 65); result kind `day_trade` | as E-02 | separation: IN RFB 1.585/2015 art. 65, in code; rate: Lei 11.033/2004 art. 2, I (20%), read on 2026-11-18; withholding of a day trade: art. 2, § 3 refers to the law in force, to read |
 | E-04 | Dividend, JCP | supported | income types; `Treatment` in `br.go`; rules in `equities_br` | none | Lei 15.270/2025 and Lei Complementar 224/2025 art. 8 and 14, read on 2026-11-18 (planalto.gov.br); article `equities_br` |
 | E-05 | Bonus, split, reverse split, fraction | supported | `record_corporate_action`; `TestRecordCorporateActionToolS431` | none | to read |
-| E-06 | Subscription right and receipt | unsupported | `ActionKind` holds split, reverse_split, bonus and unit_tax | a right as a holding, its exercise and its sale | to read |
+| E-06 | Subscription right and receipt | supported | `record_corporate_action` kinds `right_issue` (rights at no cost) and `right_exercise` (rights into the share or the receipt for the price paid); a right is sold with `record_investment` sell; the receipt becomes shares through `conversion`; `TestRightIssueAndExercise`, `TestRightExerciseTool`; the corporate action entry offers both | the expiry of an unexercised right is not recorded; a partial exercise sells the rest first | IN RFB 1.585/2015, art. 58: a right received free has cost zero (owner decision 2026-11-18: zero weight on its units, migration 00126) |
 | E-07 | Merger, spin-off, ticker change | supported | `record_corporate_action` kinds `conversion` and `spin_off`; `TestConversionMovesTheCost`, `TestSpinOffToolSplitsTheCost`; the corporate action entry offers both | the tax of an exchange is not computed; the cost moved by a spin-off is the percent of the notice of the company | IN RFB 1.585/2015 not readable at normas.receita.fazenda.gov.br on 2026-11-18 (the page needs a browser); the percent comes from the notice of the company |
 | E-08 | FII, Fiagro: distribution, amortization, sale | partial | type `reit`; tax class `fii`; exempt distribution | an amortization that lowers the cost has no event; the tax of a sale is not computed | distribution: Lei 11.033/2004 art. 3, III and § 1 (100 holders, below 10%); sale: Lei 8.668/1993 art. 18 (20%); both read on 2026-11-18 (planalto.gov.br) |
 | E-09 | ETF of stocks, ETF of a foreign index | partial | type `etf` | as E-02 | Lei 11.033/2004 art. 2, II and art. 3, I (the exemption names stocks only), read on 2026-11-18 |
@@ -90,9 +90,9 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 17 |
+| supported | 19 |
 | partial | 25 |
-| unsupported | 11 |
+| unsupported | 8 |
 
 ## What the assistant says
 

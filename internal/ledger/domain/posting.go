@@ -80,6 +80,18 @@ func checkPosting(
 	return checkPostingDetails(p, a, t, field)
 }
 
+// freeRight reports whether p may hold a zero weight: the units a right issue gives at no cost,
+// or an outflow, which takes the cost of the units it removes and finds none on such units
+// (coverage row E-06).
+func freeRight(p Posting, t Transaction) bool {
+	if p.Amount.IsNegative() {
+		return true
+	}
+
+	return t.CorporateAction != nil && t.CorporateAction.Kind == ActionRightIssue &&
+		p.AccountID == t.CorporateAction.NewAccountID
+}
+
 func checkPostingWeight(
 	p Posting,
 	a Account,
@@ -103,6 +115,7 @@ func checkPostingWeight(
 				field("weight"),
 				"is required in the balancing currency "+string(t.BalancingCurrency),
 			)
+		case p.Weight.IsZero() && freeRight(p, t):
 		case p.Weight.IsZero() || p.Weight.IsNegative() != p.Amount.IsNegative():
 			return Posting{}, invalid(
 				field("weight"),

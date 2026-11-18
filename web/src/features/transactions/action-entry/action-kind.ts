@@ -10,10 +10,17 @@ export const actionKinds = [
   "unit_tax",
   "conversion",
   "spin_off",
+  "right_issue",
+  "right_exercise",
 ] as const;
 
-// The kinds that give units of another security (coverage row E-07).
-export const exchangeKinds: readonly ActionKind[] = ["conversion", "spin_off"];
+// The kinds that give units of another security (coverage rows E-06 and E-07).
+export const exchangeKinds: readonly ActionKind[] = [
+  "conversion",
+  "spin_off",
+  "right_issue",
+  "right_exercise",
+];
 
 // The unit tax cancels units of a fund (FC25); a conversion and a spin-off exchange the shares of
 // a company, which a fund holding offers neither.
@@ -30,4 +37,6 @@ export const actionKindKeys = {
   unit_tax: "action.kind.unit_tax",
   conversion: "action.kind.conversion",
   spin_off: "action.kind.spin_off",
+  right_issue: "action.kind.right_issue",
+  right_exercise: "action.kind.right_exercise",
 } satisfies Record<ActionKind, MessageKey>;

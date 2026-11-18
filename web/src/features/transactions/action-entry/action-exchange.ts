@@ -20,7 +20,7 @@ export function costBP(typed: string): number | null {
   return bp >= 1 && bp <= 9999 ? bp : null;
 }
 
-// The problems of the fields of a conversion or a spin-off, by request field.
+// The problems of the fields of a conversion, a spin-off or a right, by request field.
 export function exchangeProblems(
   draft: ActionDraft,
 ): Record<string, MessageKey> {
@@ -31,20 +31,26 @@ export function exchangeProblems(
     problems.new_instrument = "action.required.newInstrument";
   if (draft.kind === "spin_off" && costBP(draft.costPercent) === null)
     problems.cost_bp = "action.required.costPercent";
+  if (draft.kind === "right_exercise" && draft.amount <= 0)
+    problems.amount = "entry.required.amount";
 
   return problems;
 }
 
-// The fields a conversion or a spin-off adds to the request.
+// The fields a conversion, a spin-off or a right adds to the request; a right exercise pays its
+// price in the base currency of the book.
 export function exchangeFields(
   draft: ActionDraft,
+  base: string,
 ): Partial<CorporateActionInput> {
   if (!exchangeKinds.includes(draft.kind)) return {};
 
   const bp = draft.kind === "spin_off" ? costBP(draft.costPercent) : null;
+  const paid = draft.kind === "right_exercise";
 
   return {
     new_instrument: draft.newInstrument.trim().toUpperCase(),
     ...(bp === null ? {} : { cost_bp: bp }),
+    ...(paid ? { amount: { amount: draft.amount, currency: base } } : {}),
   };
 }

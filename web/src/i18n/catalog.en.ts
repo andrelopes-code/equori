@@ -1096,6 +1096,9 @@ export const catalogEn = {
   "action.kind.unit_tax": "Unit tax (come-cotas)",
   "action.kind.conversion": "Conversion",
   "action.kind.spin_off": "Spin-off",
+  "action.kind.right_issue": "Subscription right",
+  "action.kind.right_exercise": "Right exercise",
+  "action.rightExercise.amount": "Price paid",
   "action.newInstrument": "Security received",
   "action.costPercent": "Cost moved (%)",
   "action.costPercentHelp":

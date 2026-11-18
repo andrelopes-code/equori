@@ -15,24 +15,28 @@ import (
 type corporateActionKind string
 
 func (corporateActionKind) Values() []string {
-	return []string{"split", "reverse_split", "bonus", "unit_tax", "conversion", "spin_off"}
+	return []string{
+		"split", "reverse_split", "bonus", "unit_tax", "conversion", "spin_off", "right_issue",
+		"right_exercise",
+	}
 }
 
 type recordCorporateActionIn struct {
-	Kind          corporateActionKind `json:"kind"                    jsonschema:"split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding"`
-	AccountID     string              `json:"account_id,omitzero"     jsonschema:"Investment line, from list_accounts; instead of brokerage_id and instrument"`
-	BrokerageID   string              `json:"brokerage_id,omitzero"   jsonschema:"Brokerage that holds the Investment; with instrument, instead of account_id"`
-	Instrument    string              `json:"instrument,omitzero"     jsonschema:"code of the Investment, such as PETR4"`
-	Date          tool.Date           `json:"date"                    jsonschema:"first day without the right; for unit_tax, the day the units were cancelled"`
-	RatioFrom     int64               `json:"ratio_from,omitzero"     jsonschema:"split, reverse_split and bonus: units held, the For each of the notice, from 1 to 1000000"`
-	RatioTo       int64               `json:"ratio_to,omitzero"       jsonschema:"split, reverse_split and bonus: units received for each ratio_from held; a split of 1 into 10 is ratio_from 1 and ratio_to 10, a reverse split of 10 into 1 is 10 and 1, a bonus of 1 for each 10 is 10 and 1"`
-	UnitCost      string              `json:"unit_cost,omitzero"      jsonschema:"bonus: cost per unit received that the company states, added to the cost of the holding and recorded as exempt income"`
-	CategoryID    string              `json:"category_id,omitzero"    jsonschema:"bonus with unit_cost: income category, from list_accounts"`
-	Quantity      string              `json:"quantity,omitzero"       jsonschema:"unit_tax: positive quantity of units cancelled, below the units held"`
-	Amount        string              `json:"amount,omitzero"         jsonschema:"unit_tax: income tax withheld, in the base currency"`
-	Description   string              `json:"description,omitzero"    jsonschema:"description of the transaction; a title derived from the kind and the investment when empty"`
-	NewInstrument string              `json:"new_instrument,omitzero" jsonschema:"conversion and spin_off: code of the security received"`
-	CostPercent   string              `json:"cost_percent,omitzero"   jsonschema:"spin_off: percent of the cost moved to new_instrument, as the company's notice states"`
+	Kind          corporateActionKind `json:"kind"                     jsonschema:"split: more units for each one held; reverse_split: fewer units; bonus: units received for free; unit_tax: units of a fund cancelled for income tax; conversion: the holding becomes new_instrument (merger, ticker change); spin_off: units of new_instrument beside the holding; right_issue: subscription rights new_instrument beside the holding, at no cost; right_exercise: the rights become new_instrument (share or receipt) for amount"`
+	AccountID     string              `json:"account_id,omitzero"      jsonschema:"Investment line, from list_accounts; instead of brokerage_id and instrument"`
+	BrokerageID   string              `json:"brokerage_id,omitzero"    jsonschema:"Brokerage that holds the Investment; with instrument, instead of account_id"`
+	Instrument    string              `json:"instrument,omitzero"      jsonschema:"code of the Investment, such as PETR4"`
+	Date          tool.Date           `json:"date"                     jsonschema:"first day without the right; for unit_tax, the day the units were cancelled"`
+	RatioFrom     int64               `json:"ratio_from,omitzero"      jsonschema:"split, reverse_split and bonus: units held, the For each of the notice, from 1 to 1000000"`
+	RatioTo       int64               `json:"ratio_to,omitzero"        jsonschema:"split, reverse_split and bonus: units received for each ratio_from held; a split of 1 into 10 is ratio_from 1 and ratio_to 10, a reverse split of 10 into 1 is 10 and 1, a bonus of 1 for each 10 is 10 and 1"`
+	UnitCost      string              `json:"unit_cost,omitzero"       jsonschema:"bonus: cost per unit received that the company states, added to the cost of the holding and recorded as exempt income"`
+	CategoryID    string              `json:"category_id,omitzero"     jsonschema:"bonus with unit_cost: income category, from list_accounts"`
+	Quantity      string              `json:"quantity,omitzero"        jsonschema:"unit_tax: positive quantity of units cancelled, below the units held"`
+	Amount        string              `json:"amount,omitzero"          jsonschema:"unit_tax: income tax withheld; right_exercise: subscription price paid in total; in the base currency"`
+	CashAccountID string              `json:"cash_account_id,omitzero" jsonschema:"right_exercise: account that pays amount, from list_accounts; the cash account of the brokerage when empty"`
+	Description   string              `json:"description,omitzero"     jsonschema:"description of the transaction; a title derived from the kind and the investment when empty"`
+	NewInstrument string              `json:"new_instrument,omitzero"  jsonschema:"conversion and spin_off: code of the security received"`
+	CostPercent   string              `json:"cost_percent,omitzero"    jsonschema:"spin_off: percent of the cost moved to new_instrument, as the company's notice states"`
 }
 
 func recordCorporateAction(svc *app.Service) tool.Tool {
@@ -41,6 +45,7 @@ func recordCorporateAction(svc *app.Service) tool.Tool {
 		Description: "Proposes a corporate action on one Investment: a split, a reverse split, a bonus of units or the units a fund cancels for income tax (unit_tax). " +
 			"The quantity changes and the cost of the holding stays; a bonus with unit_cost adds that cost and records an exempt income. " +
 			"A conversion moves the whole cost to new_instrument; a spin_off moves cost_percent of it. " +
+			"A right is sold with record_investment sell. " +
 			"A fraction of a unit leaves the position; its auction cash is recorded with record_investment kind income when it arrives. " +
 			"Use it when the user reports one of these events on a holding. " +
 			"An action is not corrected: void_transaction removes it and it is recorded again. " +
@@ -84,9 +89,12 @@ func planCorporateAction(
 	o.Description = in.Description
 	pv.Target = holding.name
 
-	if in.Kind == "unit_tax" {
+	switch {
+	case in.Kind == "unit_tax":
 		err = planUnitTax(ctx, svc, booksID, in, holding.instrument, &o, &pv)
-	} else {
+	case in.NewInstrument != "":
+		err = planExchange(ctx, svc, booksID, in, &o, &pv)
+	default:
 		err = planRatio(in, &o, &pv)
 	}
 
@@ -110,6 +118,8 @@ func checkCorporateActionFields(in recordCorporateActionIn) error {
 		"description":    in.Description != "",
 		"new_instrument": in.NewInstrument != "",
 		"cost_percent":   in.CostPercent != "",
+
+		"cash_account_id": in.CashAccountID != "",
 	}
 	target := []string{"account_id", "brokerage_id", "instrument", "description"}
 
@@ -117,13 +127,18 @@ func checkCorporateActionFields(in recordCorporateActionIn) error {
 		return checkFields("unit_tax", given, []string{"date", "quantity", "amount"}, target...)
 	}
 
+	exchange := []string{"date", "ratio_from", "ratio_to", "new_instrument"}
+
 	switch in.Kind {
-	case "conversion":
+	case "conversion", "right_issue":
+		return checkFields(string(in.Kind), given, exchange, target...)
+	case "right_exercise":
 		return checkFields(
-			"conversion",
+			"right_exercise",
 			given,
-			[]string{"date", "ratio_from", "ratio_to", "new_instrument"},
-			target...)
+			append(exchange, "amount"),
+			append(target, "cash_account_id")...,
+		)
 	case "spin_off":
 		return checkFields(
 			"spin_off",
@@ -198,10 +213,6 @@ func planRatio(in recordCorporateActionIn, o *domain.ActionOrder, pv *tool.Previ
 	o.RatioFrom, o.RatioTo = in.RatioFrom, in.RatioTo
 	ratio := strconv.FormatInt(in.RatioFrom, 10) + " : " + strconv.FormatInt(in.RatioTo, 10)
 	pv.Changes = append(pv.Changes, tool.Change{Field: "ratio", After: tool.TextValue(ratio)})
-
-	if in.NewInstrument != "" {
-		return planExchange(in, o, pv)
-	}
 
 	if in.UnitCost == "" {
 		return nil
@@ -365,35 +376,4 @@ func custodyAccounts(
 	brokerage, err := svc.Account(ctx, booksID, brokerageID)
 
 	return holding, brokerage, err
-}
-
-// planExchange names the security a conversion or a spin-off gives and the share of the cost a
-// spin-off moves to it, as basis points of a percent with at most two decimals.
-func planExchange(in recordCorporateActionIn, o *domain.ActionOrder, pv *tool.Preview) error {
-	o.NewInstrument = money.Currency(in.NewInstrument)
-	pv.Changes = append(
-		pv.Changes,
-		tool.Change{Field: "instrument", After: tool.TextValue(in.NewInstrument)},
-	)
-
-	if in.CostPercent == "" {
-		return nil
-	}
-
-	bp, ok := percentBP(in.CostPercent)
-	if !ok || bp < 1 || bp > 9999 {
-		return tool.InvalidArgument(
-			"cost_percent",
-			"must be above 0 and below 100, with at most 2 decimals",
-		)
-	}
-
-	o.CostBP = bp
-
-	pv.Changes = append(
-		pv.Changes,
-		tool.Change{Field: "rate", After: tool.TextValue(in.CostPercent + "%")},
-	)
-
-	return nil
 }

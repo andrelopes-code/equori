@@ -123,6 +123,12 @@ func (s *Service) buildExchange(
 		return domain.Transaction{}, err
 	}
 
+	if o.Kind == domain.ActionRightExercise && o.CashAccountID == uuid.Nil {
+		if o.CashAccountID, err = defaultCash(ctx, r, brokerage, base); err != nil {
+			return domain.Transaction{}, err
+		}
+	}
+
 	postings, action, err := domain.BuildExchange(o, h, holding.ID, in.Scale)
 	if err != nil {
 		return domain.Transaction{}, err

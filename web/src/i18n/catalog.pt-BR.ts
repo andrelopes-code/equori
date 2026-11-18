@@ -1105,6 +1105,9 @@ export const catalogPtBR: Catalog = {
   "action.kind.unit_tax": "Come-cotas",
   "action.kind.conversion": "Conversão",
   "action.kind.spin_off": "Cisão",
+  "action.kind.right_issue": "Direito de subscrição",
+  "action.kind.right_exercise": "Exercício de direito",
+  "action.rightExercise.amount": "Valor pago",
   "action.newInstrument": "Ativo recebido",
   "action.costPercent": "Custo transferido (%)",
   "action.costPercentHelp":
