@@ -124,7 +124,7 @@ var exposure = map[string]string{
 	"getNetWorthDays":                  "-visual",
 	"getContributionPlan":              "get_portfolio",
 	"previewContributionPlan":          "get_portfolio",
-	"saveContributionPlan":             "-visual",
+	"saveContributionPlan":             "save_contribution_plan",
 	"getStatementAnalytics":            "-visual",
 	"listCategoryCashPayments":         "-visual",
 	"getCardStatementAnalytics":        "-visual",

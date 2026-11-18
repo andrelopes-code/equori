@@ -1881,6 +1881,7 @@ export const catalogEn = {
   "assistant.step.reconcile_account": "Preparing a reconciliation",
   "assistant.step.record_investment": "Preparing an investment transaction",
   "assistant.step.transfer_custody": "Preparing a custody transfer",
+  "assistant.step.save_contribution_plan": "Preparing the contribution plan",
   "assistant.step.review_investment_movement":
     "Preparing the review of an investment movement",
   "assistant.step.record_brokerage_note": "Preparing a brokerage note",
@@ -1950,6 +1951,7 @@ export const catalogEn = {
   "assistant.action.record_investment.sell": "Record sale of security",
   "assistant.action.record_investment.income": "Record investment income",
   "assistant.action.transfer_custody": "Transfer custody",
+  "assistant.action.save_contribution_plan": "Save contribution plan",
   "assistant.action.review_investment_movement.confirm":
     "Confirm investment movement",
   "assistant.action.review_investment_movement.dismiss":

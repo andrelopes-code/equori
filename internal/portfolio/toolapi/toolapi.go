@@ -20,7 +20,11 @@ func Tools(
 	names AccountNames,
 	today func(context.Context) time.Time,
 ) []tool.Tool {
-	return []tool.Tool{getPortfolio(svc, names, today), getTaxYear(svc, names)}
+	return []tool.Tool{
+		getPortfolio(svc, names, today),
+		getTaxYear(svc, names),
+		saveContributionPlan(svc),
+	}
 }
 
 func optionalID(s, field string) (uuid.UUID, error) {

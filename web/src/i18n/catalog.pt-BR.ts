@@ -1894,6 +1894,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.record_investment":
     "Preparando o registro de um investimento",
   "assistant.step.transfer_custody": "Preparando uma transferência de custódia",
+  "assistant.step.save_contribution_plan": "Preparando o plano de aportes",
   "assistant.step.review_investment_movement":
     "Preparando a revisão de um movimento de investimento",
   "assistant.step.record_brokerage_note": "Preparando uma nota de corretagem",
@@ -1970,6 +1971,7 @@ export const catalogPtBR: Catalog = {
   "assistant.action.record_investment.sell": "Registrar venda de ativo",
   "assistant.action.record_investment.income": "Registrar provento",
   "assistant.action.transfer_custody": "Transferir custódia",
+  "assistant.action.save_contribution_plan": "Salvar plano de aportes",
   "assistant.action.review_investment_movement.confirm":
     "Confirmar movimento de investimento",
   "assistant.action.review_investment_movement.dismiss":
