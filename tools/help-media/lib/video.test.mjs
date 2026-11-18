@@ -26,6 +26,14 @@ test("the timeline holds the beats of the video in order, numbered by figure", (
   assert.equal(line.fade, 0.3);
 });
 
+test("a beat with a point keeps it in its part; a beat without one writes none", () => {
+  const point = { x: 120, y: 205, width: 100, height: 30 };
+  const line = timeline([{ ...beats[0], point }, beats[1]]);
+
+  assert.deepEqual(line.parts[0].point, point);
+  assert.equal("point" in line.parts[1], false);
+});
+
 test("a still is named by the first 12 digits of its SHA-256", () => {
   assert.equal(stillName("pay-statement", Buffer.from("x")), "pay-statement/2d711642b726.png");
 });
@@ -51,6 +59,10 @@ test("a timeline that the tool did not write is refused", () => {
     [
       { parts: [{ ...line.parts[0], mark: { ...mark, x: 1900 } }, ...line.parts.slice(1)] },
       "t pt part 1: the mark leaves the screen",
+    ],
+    [
+      { parts: [{ ...line.parts[0], point: { x: 600, y: 200, width: 10, height: 10 } }, ...line.parts.slice(1)] },
+      "t pt part 1: the point leaves the mark",
     ],
   ];
 

@@ -18,6 +18,8 @@ export interface VideoPart {
   number: number;
   // The element of the step, in CSS pixels of the screen.
   mark: VideoMark;
+  // The element the reader acts on, inside the mark, when the mark surrounds more than it.
+  point?: VideoMark;
 }
 
 export interface VideoTimeline {
@@ -139,7 +141,7 @@ function start(): VideoPoint {
 // Where the pointer rests on a target: below and after its centre, so the tip is inside the
 // element and the arrow leaves its label readable.
 function rest(part: VideoPart): VideoPoint {
-  const { x, y, width, height } = part.mark;
+  const { x, y, width, height } = part.point ?? part.mark;
 
   return {
     x: x + width / 2 + Math.min(width * 0.18, 24),

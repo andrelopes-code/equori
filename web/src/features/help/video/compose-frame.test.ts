@@ -100,6 +100,31 @@ describe("the frame of the help video at a second", () => {
     expect(frame.click).toBe(-1);
     expect(frame.markOpacity).toBe(1);
   });
+
+  // Help catalog spec, slice 2: a mark around two fields keeps the click on the field acted on.
+  it("rests the pointer on the point of a part, when it has one, inside its mark", () => {
+    const point = { x: 120, y: 205, width: 100, height: 30 };
+    const pointed: VideoTimeline = {
+      ...line,
+      parts: [
+        {
+          start: 0,
+          travel: 0.9,
+          hold: 1.7,
+          click: 0.6,
+          number: 1,
+          mark: first,
+          point,
+        },
+        ...line.parts.slice(1),
+      ],
+    };
+
+    const frame = frameAt(pointed, 2);
+
+    expect(frame.pointer).toEqual({ x: 120 + 50 + 18, y: 205 + 15 + 6 });
+    expect(frame.mark).toEqual(first);
+  });
 });
 
 describe("the parts of the help video", () => {

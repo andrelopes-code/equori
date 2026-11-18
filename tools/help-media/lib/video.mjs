@@ -31,6 +31,8 @@ export function timeline(beats) {
       click: beat.clicks ? CLICK : 0,
       number: beat.figure ? ++number : 0,
       mark: beat.mark,
+      // The element the reader acts on, when the mark surrounds more than it.
+      ...(beat.point ? { point: beat.point } : {}),
     };
 
     at = seconds(at + TRAVEL + hold + part.click);
@@ -96,6 +98,14 @@ function partProblems(what, part, start) {
 
   const inside = x >= 0 && y >= 0 && x + width <= VIEW.width && y + height <= VIEW.height;
   if (!inside || !(width >= 1 && height >= 1)) problems.push(`${what}: the mark leaves the screen`);
+
+  const point = part.point;
+  if (
+    point !== undefined &&
+    !(point.x >= x && point.y >= y && point.x + point.width <= x + width && point.y + point.height <= y + height)
+  ) {
+    problems.push(`${what}: the point leaves the mark`);
+  }
 
   return problems;
 }

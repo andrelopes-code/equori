@@ -19,6 +19,9 @@ export async function captureBeats(page, tape, tutorial, { language, scheme }) {
 
     // A beat that yields no figure and stays out of the video needs no sound mark.
     const whole = await place(at, beat.figure !== undefined || beat.only !== "figure");
+    // The element the reader acts on, when the mark surrounds more than it: the pointer of the
+    // video rests on it.
+    const point = beat.point ? await pointOf(beat.point(page, words), what) : undefined;
     const still = await page.screenshot({ type: "png", scale: "device" });
     const figure = beat.figure ? await figureOf(at, whole) : undefined;
 
@@ -32,6 +35,7 @@ export async function captureBeats(page, tape, tutorial, { language, scheme }) {
       // What the video draws: the mark on the whole screen.
       clip: { x: 0, y: 0 },
       mark: whole.onScreen,
+      ...(point ? { point } : {}),
     });
 
     if (beat.act) await beat.act(page, words);
@@ -104,6 +108,15 @@ async function boxOf(page, locators, what) {
   }
 
   return union(boxes);
+}
+
+// The box of the element a beat acts on, read where the page rests: no scroll moves the mark
+// measured before it.
+async function pointOf(locator, what) {
+  const box = await locator.first().boundingBox();
+  if (box === null) throw new Error(`${what}: the point has no box`);
+
+  return box;
 }
 
 // The element under the centre of the target is the target or inside it: nothing covers it.

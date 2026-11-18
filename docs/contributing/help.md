@@ -52,11 +52,12 @@ The figures show the application as it ships: its default theme and density. A p
 ### Adding media to a page
 
 1. Write the figures in the Markdown of every language (`web/src/features/help/README.md`, "Writing a page"): a figure id per step, and the video id with the suffix `.video` before the list.
-2. Write `tools/help-media/tutorials/<id>.mjs`. A beat is `{ figure, target, frame, act, only }`:
+2. Write `tools/help-media/tutorials/<id>.mjs`. A beat is `{ figure, target, point, frame, act, only }`:
    - `target(page, words)` returns the Playwright locator of the element the step points at, or a list of locators whose union is marked. `words(pt, en)` picks a label by language.
    - `figure` is the id the Markdown names. A beat without one is a click the page does not number; it appears in the video only.
    - `frame(page)` is the region the figure is cut around when it fits (a dialog). Without it the figure stays inside the page region of the 1920 px screen (ADR 037, 4). An element wider than 912 px does not fit in a figure: point at its parts.
    - `act(page, words)` is what the reader does after the step: one click, a text typed in a field, or a file of `tutorials/files/` chosen. A tutorial never confirms a write: it stops before the button that sends.
+   - `point(page, words)` is the element `act` uses, when `target` marks more than it (a field and its neighbour): the pointer of the video rests on it, inside the mark. Without it the pointer rests on the centre of the mark.
    - `only: "figure"` keeps a beat out of the video. A beat with `only: "figure"` and no `figure` appears nowhere: it is a click that leads to the next figure.
    - `reads` at the top of the tutorial lists the requests with a body that change nothing, as `"POST /api/v1/rules/preview"`. `record` sends them and keeps their answers; any other write is refused. A text typed before such a request is the same in every language, so one recorded answer serves both.
 3. `make help-media-record`, then `make help-media`.
