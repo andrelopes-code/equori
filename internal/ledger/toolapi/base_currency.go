@@ -44,6 +44,6 @@ func setBaseCurrency(svc *app.Service) tool.Tool {
 	}, func(ctx context.Context, booksID int64, in setBaseCurrencyIn) (setBaseCurrencyOut, error) {
 		err := svc.SetBaseCurrency(ctx, booksID, money.Currency(in.BaseCurrency))
 
-		return setBaseCurrencyOut{BaseCurrency: in.BaseCurrency}, err
+		return setBaseCurrencyOut(in), err
 	})
 }

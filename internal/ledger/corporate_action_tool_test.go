@@ -73,6 +73,7 @@ func TestRecordCorporateActionToolErrors(t *testing.T) {
 	t.Parallel()
 	f := newInvestFixture(t)
 	f.buyPETR4(t, "2026-11-01", map[string]any{"unit_price": "10.00"})
+
 	args := func(extra map[string]any) map[string]any {
 		m := map[string]any{
 			"account_id": f.petr4,

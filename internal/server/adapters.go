@@ -109,6 +109,7 @@ func linkAdapters(m *modules) {
 	m.assistant.UseNotices(accountNotices(m.ledger, m.ingestion))
 	m.assistant.UseFileSummary(ingestion.FileSummary)
 	m.ingestion.UseConversationFiles(statementFiles(m.assistant))
+	m.ledger.UseConversationFiles(attachmentFiles(m.assistant))
 	m.reporting.OnImport(m.portfolio.RebuildBooks)
 	m.reporting.UseCredentials(credentialSource{m.ingestion, m.assistant})
 	m.reporting.UseIndicatorSources(m.planning, m.portfolio)
@@ -270,5 +271,22 @@ func statementFiles(a *assistant.Module) func(
 		name, kind, content, found, err := a.ConversationFile(ctx, booksID, memberID, id)
 
 		return ingestion.StatementFile{Name: name, Kind: kind, Content: content}, found, err
+	}
+}
+
+// attachmentFiles reads a file the member attached to a conversation for a ledger tool.
+func attachmentFiles(a *assistant.Module) func(
+	ctx context.Context,
+	booksID, memberID int64,
+	id uuid.UUID,
+) (string, []byte, bool, error) {
+	return func(
+		ctx context.Context,
+		booksID, memberID int64,
+		id uuid.UUID,
+	) (string, []byte, bool, error) {
+		name, _, content, found, err := a.ConversationFile(ctx, booksID, memberID, id)
+
+		return name, content, found, err
 	}
 }

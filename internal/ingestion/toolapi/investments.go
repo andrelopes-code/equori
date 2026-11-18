@@ -174,6 +174,7 @@ func investments(
 
 func toInvestmentView(v app.InvestmentView) (investmentView, error) {
 	src := v.Source
+
 	out := investmentView{
 		InvestmentID: v.ID.String(),
 		Name:         src.Name,

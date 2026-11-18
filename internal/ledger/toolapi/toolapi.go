@@ -13,8 +13,10 @@ import (
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
-func Tools(svc *app.Service) []tool.Tool {
+func Tools(svc *app.Service, files ConversationFile) []tool.Tool {
 	return []tool.Tool{
+		attachFile(svc, files),
+		detachAttachment(svc),
 		listAccounts(
 			svc,
 		),
@@ -109,4 +111,27 @@ func allPages[T, K any](list func(page.Request[K]) ([]T, *K, error)) ([]T, error
 func minorMoney(unit money.Money, amount int64) (tool.Money, error) {
 	m, err := money.NewOf(amount, unit.Currency(), unit.Scale())
 	return tool.MoneyOf(m), err
+}
+
+// itemOf describes t by its first non-category posting and its first named category.
+func itemOf(t domain.Transaction, accounts map[uuid.UUID]domain.Account) tool.Item {
+	it := tool.Item{Description: t.Description, Date: tool.DateValue(t.Date).Date}
+
+	for _, p := range t.Postings {
+		a := accounts[p.AccountID]
+
+		switch {
+		case !a.IsCategory() && it.Account == "":
+			it.Account, it.Amount = a.Name, tool.MoneyValue(p.Amount)
+		case a.IsCategory() && it.Category == "" && !isUncategorizedRole(a):
+			it.Category = a.Name
+		}
+	}
+
+	return it
+}
+
+func isUncategorizedRole(a domain.Account) bool {
+	return a.SystemRole == domain.RoleUncategorizedExpense ||
+		a.SystemRole == domain.RoleUncategorizedIncome
 }

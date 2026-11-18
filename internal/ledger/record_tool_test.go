@@ -515,7 +515,9 @@ type quoteFeed struct {
 
 func newQuoteFeed(t *testing.T) *quoteFeed {
 	t.Helper()
+
 	q := &quoteFeed{}
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q.mu.Lock()
 		q.seen = append(q.seen, r.URL.Path)

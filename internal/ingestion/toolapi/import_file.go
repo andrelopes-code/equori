@@ -51,23 +51,8 @@ func importStatementFile(svc *app.Service, names AccountNames, files Conversatio
 			"profile of the account. Use it when the user attaches a statement and asks to import it. " +
 			"Do not use it for a PDF or an image: read it and propose record_transaction. The user confirms first.",
 		Effect: tool.Write,
-	}, func(ctx context.Context, booksID int64, in importStatementFileIn) (tool.Preview, error) {
-		f, account, err := statementInput(ctx, booksID, files, in)
-		if err != nil {
-			return tool.Preview{}, err
-		}
-
-		byID, err := names(ctx, booksID)
-		if err != nil {
-			return tool.Preview{}, err
-		}
-
-		return tool.Preview{Action: "import_statement_file", Changes: []tool.Change{
-			{Field: "source", After: tool.TextValue(f.Name)},
-			{Field: "account", After: tool.TextValue(byID[account])},
-			{Field: "count", After: tool.TextValue(strconv.Itoa(statementLines(f)))},
-		}}, nil
-	}, func(ctx context.Context, booksID int64, in importStatementFileIn) (importStatementFileOut, error) {
+		Role:   auth.RoleWrite,
+	}, previewStatementFile(names, files), func(ctx context.Context, booksID int64, in importStatementFileIn) (importStatementFileOut, error) {
 		f, account, err := statementInput(ctx, booksID, files, in)
 		if err != nil {
 			return importStatementFileOut{}, err
@@ -93,6 +78,30 @@ func importStatementFile(svc *app.Service, names AccountNames, files Conversatio
 			Ignored:     b.Counts.Ignored,
 		}, nil
 	})
+}
+
+// previewStatementFile names the file, the account and the line count of an import (F8).
+func previewStatementFile(
+	names AccountNames,
+	files ConversationFile,
+) func(context.Context, int64, importStatementFileIn) (tool.Preview, error) {
+	return func(ctx context.Context, booksID int64, in importStatementFileIn) (tool.Preview, error) {
+		f, account, err := statementInput(ctx, booksID, files, in)
+		if err != nil {
+			return tool.Preview{}, err
+		}
+
+		byID, err := names(ctx, booksID)
+		if err != nil {
+			return tool.Preview{}, err
+		}
+
+		return tool.Preview{Action: "import_statement_file", Changes: []tool.Change{
+			{Field: "source", After: tool.TextValue(f.Name)},
+			{Field: "account", After: tool.TextValue(byID[account])},
+			{Field: "count", After: tool.TextValue(strconv.Itoa(statementLines(f)))},
+		}}, nil
+	}
 }
 
 // statementInput reads the file and the account of a call: the file is an ofx or csv file of the

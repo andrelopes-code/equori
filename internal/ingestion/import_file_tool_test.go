@@ -75,6 +75,13 @@ func TestImportStatementFileTool(t *testing.T) {
 		"file_id",
 	)
 
+	h.JoinAs("reader@example.com", h.OwnerID(), "read")
+	h.ExpectToolError(
+		h.ToolAs("reader@example.com", auth.RoleRead, "import_statement_file", args),
+		"book_role_required",
+		"",
+	)
+
 	pdf := attachToConversation(t, h, "nota.pdf", []byte("%PDF-1.7\n1 0 obj"))
 	h.ExpectToolError(
 		h.Tool("import_statement_file", map[string]any{"file_id": pdf, "account_id": checking}),
