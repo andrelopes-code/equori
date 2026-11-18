@@ -48,6 +48,8 @@ var ChangeFields = []string{
 	"reference",
 	"decision",
 	"from",
+	"until",
+	"instruments",
 	"exchange",
 	"subtype",
 	"symbols",

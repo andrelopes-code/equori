@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrelopes-code/equori/internal/marketdata/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/money"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
 
@@ -47,10 +48,15 @@ func importPriceFile(svc Service, files ConversationFile) tool.Tool {
 			return tool.Preview{}, err
 		}
 
-		return tool.Preview{Action: "import_price_file", Changes: []tool.Change{
+		changes := []tool.Change{
 			{Field: "source", After: tool.TextValue(name)},
 			{Field: "count", After: tool.TextValue(strconv.Itoa(len(prices)))},
-		}}, nil
+		}
+
+		return tool.Preview{
+			Action:  "import_price_file",
+			Changes: append(changes, priceSpan(prices)...),
+		}, nil
 	}, func(ctx context.Context, booksID int64, in importPriceFileIn) (importPriceFileOut, error) {
 		_, content, err := priceFile(ctx, booksID, files, in)
 		if err != nil {
@@ -84,4 +90,33 @@ func priceFile(
 	}
 
 	return name, content, nil
+}
+
+// priceSpan is how many instruments a price file prices and the first and last day it covers
+// (F8).
+func priceSpan(prices []domain.Price) []tool.Change {
+	if len(prices) == 0 {
+		return nil
+	}
+
+	instruments := map[money.Currency]bool{}
+	first, last := prices[0].Date, prices[0].Date
+
+	for _, p := range prices {
+		instruments[p.Instrument] = true
+
+		if p.Date.Before(first) {
+			first = p.Date
+		}
+
+		if p.Date.After(last) {
+			last = p.Date
+		}
+	}
+
+	return []tool.Change{
+		{Field: "instruments", After: tool.TextValue(strconv.Itoa(len(instruments)))},
+		{Field: "from", After: tool.DateValue(first)},
+		{Field: "until", After: tool.DateValue(last)},
+	}
 }

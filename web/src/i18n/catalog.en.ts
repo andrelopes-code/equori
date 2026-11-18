@@ -1793,6 +1793,21 @@ export const catalogEn = {
   "assistant.welcome.body":
     "Ask about balances, spending and statements, have a transaction recorded or fixed, or ask where something is in the app. Nothing changes until you confirm it.",
   "assistant.composer.hint": "Enter sends · Shift+Enter adds a line",
+  "assistant.files.group": "Files of the message",
+  "assistant.files.sent": "Files sent",
+  "assistant.files.retry": "Send {name} again",
+  "assistant.files.line.summary":
+    "Only a summary of the statement goes to {provider}.",
+  "assistant.files.line.whole": "The whole file goes to {provider}.",
+  "assistant.files.line.mixed":
+    "Statements go as a summary; PDFs and images go whole to {provider}.",
+  "assistant.files.line.unread":
+    "This model reads no PDF or image; it sees only the name.",
+  "assistant.files.failed.kind": "Type not accepted",
+  "assistant.files.failed.size": "Larger than 10 MB",
+  "assistant.files.failed.full": "The conversation holds 50 MB of files",
+  "assistant.files.failed.count": "At most 5 files per message",
+  "assistant.files.failed.network": "The upload failed",
   "assistant.suggestion.overview.1": "What are my account balances?",
   "assistant.suggestion.overview.2":
     "How much did I spend by category this month?",
@@ -1935,6 +1950,11 @@ export const catalogEn = {
   "assistant.step.get_book_access": "Reading the access to the book",
   "assistant.step.manage_book": "Preparing a book change",
   "assistant.step.get_help": "Reading the guide",
+  "assistant.action.import_statement_file": "Import statement",
+  "assistant.action.import_price_file": "Import prices",
+  "assistant.action.attach_file": "Attach file",
+  "assistant.action.detach_attachment": "Remove attachment",
+  "assistant.action.save_csv_profile": "Save CSV profile",
   "assistant.action.record_transaction": "Record transaction",
   "assistant.action.categorize_transactions": "Categorize transactions",
   "assistant.action.void_transaction": "Void transaction",
@@ -2044,6 +2064,8 @@ export const catalogEn = {
   "assistant.field.category": "Category",
   "assistant.field.date": "Date",
   "assistant.field.from": "Since",
+  "assistant.field.until": "Until",
+  "assistant.field.instruments": "Instruments",
   "assistant.field.description": "Description",
   "assistant.field.payee": "Payee",
   "assistant.field.tags": "Tags",

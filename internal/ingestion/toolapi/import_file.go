@@ -96,11 +96,16 @@ func previewStatementFile(
 			return tool.Preview{}, err
 		}
 
-		return tool.Preview{Action: "import_statement_file", Changes: []tool.Change{
+		changes := []tool.Change{
 			{Field: "source", After: tool.TextValue(f.Name)},
 			{Field: "account", After: tool.TextValue(byID[account])},
 			{Field: "count", After: tool.TextValue(strconv.Itoa(statementLines(f)))},
-		}}, nil
+		}
+
+		return tool.Preview{
+			Action:  "import_statement_file",
+			Changes: append(changes, statementPeriod(f)...),
+		}, nil
 	}
 }
 
@@ -141,6 +146,25 @@ func statementInput(
 	}
 
 	return f, account, nil
+}
+
+// statementPeriod is the period an ofx file declares; a csv file declares none, since its date
+// column is known only through the profile of the account.
+func statementPeriod(f StatementFile) []tool.Change {
+	if f.Kind != "ofx" {
+		return nil
+	}
+
+	// The scale only rounds amounts, which a period does not read.
+	st, err := ofx.Parse(f.Content, 2)
+	if err != nil || st.From == nil || st.To == nil {
+		return nil
+	}
+
+	return []tool.Change{
+		{Field: "from", After: tool.DateValue(*st.From)},
+		{Field: "until", After: tool.DateValue(*st.To)},
+	}
 }
 
 // statementLines counts the lines of a statement file: the transactions of an ofx file, the rows

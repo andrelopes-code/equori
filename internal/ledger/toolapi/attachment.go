@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/andrelopes-code/equori/internal/ledger/app"
+	"github.com/andrelopes-code/equori/internal/ledger/domain"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
 	"github.com/andrelopes-code/equori/internal/platform/tool"
 )
@@ -47,14 +48,15 @@ func attachFile(svc *app.Service, files ConversationFile) tool.Tool {
 		Effect: tool.Write,
 		Role:   auth.RoleWrite,
 	}, func(ctx context.Context, booksID int64, in attachFileIn) (tool.Preview, error) {
-		name, _, transaction, err := attachInput(ctx, booksID, svc, files, in)
+		name, _, t, err := attachInput(ctx, booksID, svc, files, in)
 		if err != nil {
 			return tool.Preview{}, err
 		}
 
 		return tool.Preview{Action: "attach_file", Changes: []tool.Change{
 			{Field: "source", After: tool.TextValue(name)},
-			{Field: "transaction", After: tool.TextValue(transaction)},
+			{Field: "date", After: tool.DateValue(t.Date)},
+			{Field: "transaction", After: tool.TextValue(t.Description)},
 		}}, nil
 	}, func(ctx context.Context, booksID int64, in attachFileIn) (attachFileOut, error) {
 		name, content, _, err := attachInput(ctx, booksID, svc, files, in)
@@ -122,30 +124,36 @@ func attachInput(
 	svc *app.Service,
 	files ConversationFile,
 	in attachFileIn,
-) (string, []byte, string, error) {
+) (string, []byte, domain.Transaction, error) {
 	fileID, err := uuid.Parse(in.FileID)
 	if err != nil {
-		return "", nil, "", tool.InvalidArgument("file_id", "is not a UUID")
+		return "", nil, domain.Transaction{}, tool.InvalidArgument("file_id", "is not a UUID")
 	}
 
 	transactionID, err := uuid.Parse(in.TransactionID)
 	if err != nil {
-		return "", nil, "", tool.InvalidArgument("transaction_id", "is not a UUID")
+		return "", nil, domain.Transaction{}, tool.InvalidArgument(
+			"transaction_id",
+			"is not a UUID",
+		)
 	}
 
 	name, content, found, err := files(ctx, booksID, auth.MustMemberID(ctx), fileID)
 	if err != nil {
-		return "", nil, "", err
+		return "", nil, domain.Transaction{}, err
 	}
 
 	if !found {
-		return "", nil, "", tool.InvalidArgument("file_id", "is not a file of this conversation")
+		return "", nil, domain.Transaction{}, tool.InvalidArgument(
+			"file_id",
+			"is not a file of this conversation",
+		)
 	}
 
 	t, err := svc.Transaction(ctx, booksID, transactionID)
 	if err != nil {
-		return "", nil, "", err
+		return "", nil, domain.Transaction{}, err
 	}
 
-	return name, content, t.Date.Format("2006-01-02") + " " + t.Description, nil
+	return name, content, t, nil
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -50,6 +51,9 @@ func TestImportStatementFileTool(t *testing.T) {
 		{Field: "source", After: tool.TextValue("extrato.ofx")},
 		{Field: "account", After: tool.TextValue("Nubank checking")},
 		{Field: "count", After: tool.TextValue("2")},
+		// F8: the period of the statement, as the file declares it.
+		{Field: "from", After: tool.DateValue(time.Date(2026, 10, 1, 0, 0, 0, 0, time.UTC))},
+		{Field: "until", After: tool.DateValue(time.Date(2026, 10, 31, 0, 0, 0, 0, time.UTC))},
 	}}
 	if !reflect.DeepEqual(p, want) {
 		t.Errorf("preview = %+v, want %+v", p, want)

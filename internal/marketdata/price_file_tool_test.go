@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/andrelopes-code/equori/internal/apitest"
 	"github.com/andrelopes-code/equori/internal/platform/auth"
@@ -55,6 +56,10 @@ func TestImportPriceFileTool(t *testing.T) {
 	want := tool.Preview{Action: "import_price_file", Changes: []tool.Change{
 		{Field: "source", After: tool.TextValue("precos.csv")},
 		{Field: "count", After: tool.TextValue("2")},
+		// F8: how many instruments the file prices, and over which days.
+		{Field: "instruments", After: tool.TextValue("1")},
+		{Field: "from", After: tool.DateValue(time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC))},
+		{Field: "until", After: tool.DateValue(time.Date(2026, 11, 3, 0, 0, 0, 0, time.UTC))},
 	}}
 	if !reflect.DeepEqual(p, want) {
 		t.Errorf("preview = %+v, want %+v", p, want)
