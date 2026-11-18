@@ -3,6 +3,10 @@
 import { RATIO, settle } from "./app.mjs";
 import { CLIP, clipAround, markIn, markProblems, regionWidth, union } from "./geometry.mjs";
 
+// How long an element may take to appear. A recording reads a development server that compiles
+// each screen on its first visit; beside other work on the machine that passed 15 s.
+const APPEAR = 60_000;
+
 export async function captureBeats(page, tape, tutorial, { language, scheme }) {
   const words = (pt, en) => (language === "pt" ? pt : en);
   const beats = [];
@@ -119,7 +123,7 @@ async function boxOf(page, locators, what) {
   const boxes = [];
 
   for (const locator of [locators].flat()) {
-    await locator.first().waitFor({ state: "visible", timeout: 15000 });
+    await locator.first().waitFor({ state: "visible", timeout: APPEAR });
     // The centre of the page, clear of a sticky header or footer; the same place on every run.
     await locator.first().evaluate((element) => element.scrollIntoView({ block: "center", inline: "center" }));
   }

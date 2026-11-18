@@ -338,10 +338,10 @@
     "pay-statement/pay-statement.en.light.webm": "cf3a57e3404a7baadaa8e49daf187e9229c1b60e1c7ab0534664e3d45f7a8701"
   },
   "inputs": {
-    "category-rule": "3df417b8a5a70a901e0ff39c2bec71586161e97be06a28a191a12f375e04aa48",
-    "check-balance": "f5b1c49bd4135a4c84b37afaf692da3ffc49dbb1af96638a7b2a1b2b2d6e5fb5",
-    "connect-bank": "e8f68c6e7cbb9f3a22395c81ef72409d447c207ceb7290fdf36e382c3f1024d6",
-    "import-statement": "fba482d4d2fa132f822d5f65c588adcf87dc3cfd38223b06fef02ec65d80d586",
-    "pay-statement": "d9c85fe9bf3630ee69cb0346f823b33148e01d5de088c8b26d42e8604c66f63a"
+    "category-rule": "ee3fc1180b11ac4e598211e4d122ac552a9c3531dcb6f19f6188254ebfe3c714",
+    "check-balance": "9676e6be5d240774c4ae55e57bdecf2a37e4f9ffdf064d7f89ae5b182db4caa2",
+    "connect-bank": "811a8c69e53d2d6af947918a6a0fe57d1559b4f6fea69dfd574de2aacce72d7e",
+    "import-statement": "714915042077d5a00c1ffdbdd07dd272f3a674b7de0cc4d80557275dd1af9085",
+    "pay-statement": "686a0d6d8a78e9b55eb6c01981ab072804f608027c0ac310b45de9e43d84e4bb"
   }
 }
