@@ -25,6 +25,10 @@ type fileForm struct {
 	content      []byte
 }
 
+// FileUpload is createAssistantFile for a caller that sets the identity itself: /mcp/files
+// authenticates with an access token (ADR 024 X20).
+func (s *Server) FileUpload() http.Handler { return http.HandlerFunc(s.createAssistantFile) }
+
 // createAssistantFile is a custom handler: the request body is multipart.
 func (s *Server) createAssistantFile(w http.ResponseWriter, r *http.Request) {
 	reader, err := r.MultipartReader()

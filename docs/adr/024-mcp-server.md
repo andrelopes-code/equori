@@ -26,6 +26,7 @@ A user who pays for an agent (Claude Code, Codex, claude.ai, any MCP client) con
 | X18 | Three prompts: `monthly_review`, `categorize_pending`, `reconcile_account`. |
 | X19 | One log line `mcp call` per call with token ID, user ID, tool, effect, outcome, duration and size; never arguments, results or the token. |
 | X20 | The instructions are the `mcp` rendering of the assistant's guide (design E8 to E10). |
+| X21 | `POST /mcp/files` stores a file the client passes to a tool as `file_id` (assistant parity design, F11). It sits beside `/mcp` under X3 and X11: the bearer token sets the member, the book and the role, as for a tool call, and the session cookie is not accepted. It runs the handler of `createAssistantFile`, with its body limit of 11 MiB and its problems. `/api/` keeps refusing access tokens: the token gate stays outside the single authorization point of `/api/` (HA9). |
 
 The SDK's DNS rebinding check (`DisableLocalhostProtection` false) refuses a request that arrives on a loopback listener with another `Host`, which is every request behind a reverse proxy on the same host. The adapter disables it; X3 and the bearer token guard the endpoint instead.
 

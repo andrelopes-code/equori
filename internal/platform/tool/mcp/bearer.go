@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/andrelopes-code/equori/internal/platform/auth"
+	"github.com/andrelopes-code/equori/internal/platform/clock"
 )
 
 type grantKey struct{}
@@ -45,6 +48,21 @@ func authenticate(verify Verify, next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), grantKey{}, g)))
 	})
+}
+
+// Identified serves next beside /mcp for a request that authenticate accepts, with the member,
+// the book, the role and the location of the token's grant, as a tool call has them (ADR 024
+// X20).
+func Identified(verify Verify, next http.Handler) http.Handler {
+	return authenticate(verify, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		g, _ := grantFrom(r.Context())
+		ctx := clock.WithLocation(
+			auth.WithIdentity(r.Context(), g.MemberID, g.BooksID, g.Role),
+			g.Location,
+		)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}))
 }
 
 func unauthorized(w http.ResponseWriter) {

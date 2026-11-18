@@ -61,6 +61,7 @@ Writes
 - Write tools change the user's records when called, after the client's approval; equori asks for no other confirmation.
 - Make one call per change the user asked for. Never make a change the user did not ask for.
 - A token with the read scope lists no write tool.
+- A file the user gives, such as a statement, a price file or a receipt, is uploaded first: POST the multipart field file to /mcp/files with the same bearer token; the id of the answer is the file_id of import_statement_file, import_price_file and attach_file.
 - For a change the request implies, describe it in the answer with its evidence and make it only after the user agrees.
 
 Help

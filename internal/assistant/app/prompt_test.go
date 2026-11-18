@@ -103,6 +103,7 @@ func TestInstructions(t *testing.T) {
 		"relative to the address of the MCP endpoint",
 		"Amounts in tool inputs are decimal strings",
 		"Never invent a step, a screen or a setting.",
+		"POST the multipart field file to /mcp/files",
 	} {
 		if !strings.Contains(got, want) {
 			t.Errorf("instructions lack %q", want)

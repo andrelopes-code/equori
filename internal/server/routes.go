@@ -33,6 +33,8 @@ func newHandler(
 	// (ADR 024).
 	root := http.NewServeMux()
 	root.Handle("/mcp", mcpHandler(m, log))
+	// An MCP client uploads a conversation file with the same token (ADR 024 X20).
+	root.Handle("POST /mcp/files", mcp.Identified(mcpGrant(m.identity), m.assistant.FileUpload()))
 	root.Handle("/", m.identity.Authorize(
 		validator.Middleware(mux),
 		func(r *http.Request) (string, bool) {

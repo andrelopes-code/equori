@@ -147,7 +147,7 @@ A conversation file is a file a member attaches to a message. A descriptor is wh
 | F8 | A tool that writes from a file is a proposal (P3). The card shows the file name, the target and what the file holds: account, period and line count for an import; instrument count and line count for prices. The card of a record read from a document shows every field read, editable before confirmation, and attaches the document to the transaction it creates. |
 | F9 | The same content attached twice to one conversation returns the stored file. Importing the same file twice creates nothing (I10). |
 | F10 | Text read from a file is untrusted (ADR 012): it never changes the rules of the assistant, and no write skips confirmation. |
-| F11 | Over MCP the same tools take a `file_id` created through `createAssistantFile` with the access token of the client. |
+| F11 | Over MCP the same tools take a `file_id` created through `POST /mcp/files` with the access token of the client (Q7, ADR 024 X21). |
 
 Composer (web and phone):
 
@@ -297,6 +297,7 @@ Funds and others:
 | Q4 | Phase 6 implements the unsupported products in this order: F-04 (CDI plus spread), F-16 and F-14 (coupons with amortization), E-06 and E-07 (subscription, merger), U-05 (pension plans), F-13 and F-18 (missing subtypes), E-12 (derivatives), then the remaining rows by issue number. The order follows how many retail investors hold each product; phase 1 corrects it with the figures of B3 and ANBIMA it reads. | session, 2026-11-18 |
 | Q5 | The eval set of A4 is written in phase 3 and is not run by an agent. It calls a paid model; the owner names the model and the request budget in the message that asks for a run. | project rule |
 | Q6 | A file not yet sent has no conversation: `createAssistantFile` takes an optional `conversation_id`, and the turn that sends a file without one binds it to its conversation. The limit of 50 MiB of F3 counts the files of the conversation named, or the unsent files of the member when none is named. `createAssistantFile` first deletes the unsent files of the member created more than 24 hours earlier; no background job is added. | session, 2026-11-18 |
+| Q7 | F11 uploads through `POST /mcp/files`, the handler of `createAssistantFile` behind the MCP token gate, rather than through access tokens on `/api/`. Tokens on `/api/` would add a second authentication path to the single authorization point of every operation (HA9) for one upload; the route beside `/mcp` keeps the token inside the boundary ADR 024 drew (X4, X11). | session, 2026-11-18 |
 
 ## 9. Cross-cutting questions
 

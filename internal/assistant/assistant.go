@@ -89,8 +89,13 @@ func (m *Module) RegisterRoutes(mux *http.ServeMux) { m.http.Register(mux) }
 func (m *Module) BodyLimits() []httpserver.BodyLimit {
 	return []httpserver.BodyLimit{
 		{Pattern: "POST /api/v1/assistant/files", Bytes: 11 << 20},
+		{Pattern: "POST /mcp/files", Bytes: 11 << 20},
 	}
 }
+
+// FileUpload stores a conversation file for the identity of the request's context: the server
+// mounts it on /mcp/files behind the access token (assistant parity design, F11).
+func (m *Module) FileUpload() http.Handler { return m.http.FileUpload() }
 
 func newSealer(cfg Config) (app.Sealer, error) {
 	var box app.Sealer
