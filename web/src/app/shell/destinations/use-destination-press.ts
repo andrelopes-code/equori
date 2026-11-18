@@ -23,6 +23,12 @@ export interface DestinationPress {
   // The view drawn as current, when the location is on one.
   selectedView: string | undefined;
   press: (destination: Destination) => (event: MouseEvent) => void;
+  // The press on a row that also opens the views of its destination; open tells that the
+  // views are on screen.
+  pressGroup: (
+    destination: Destination,
+    open: boolean,
+  ) => (event: MouseEvent) => void;
   pressView: (view: DestinationView) => (event: MouseEvent) => void;
 }
 
@@ -53,6 +59,15 @@ export function useDestinationPress(onReselect: () => void): DestinationPress {
         onReselect();
         return;
       }
+
+      select(target.key, () => void navigate({ to: target.to }));
+    },
+    pressGroup: (target, open) => (event) => {
+      // On one of its views, the press only opens or closes them: the row's own part.
+      if (view?.key.startsWith(`${target.key}.`) === true) return;
+
+      // An open group stays open; a closed one opens with the navigation.
+      if (open) event.preventDefault();
 
       select(target.key, () => void navigate({ to: target.to }));
     },

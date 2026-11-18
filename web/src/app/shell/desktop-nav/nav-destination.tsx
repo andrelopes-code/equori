@@ -21,35 +21,44 @@ import { useT } from "@/i18n/i18n-provider";
 interface NavDestinationProps {
   destination: Destination;
   count?: string | undefined;
-  // The reader opened the views of this destination.
+  // The views of this destination are on screen.
   expanded: boolean;
-  // The reader is on a view of this destination that the column does not show.
-  holdsHidden: boolean;
+  // The location is on this destination and on none of its views.
+  current: boolean;
   onPress: (destination: Destination) => (event: MouseEvent) => void;
+  onPressGroup: (
+    destination: Destination,
+    open: boolean,
+  ) => (event: MouseEvent) => void;
   onPressView: (view: DestinationView) => (event: MouseEvent) => void;
 }
 
-// A row of the desktop column: the destination and, when its page has tabs, a trigger that
-// opens them as rows of their own. The rows of a closed group are not rendered: the stylesheet
-// alone hides them, and a reader of the markup would still meet them.
+// A row of the desktop column. A destination whose page has tabs is one button: its press goes
+// to the page and opens the tabs as rows of their own; on the page, it opens or closes them.
 export function NavDestination({
   destination,
   count,
   expanded,
-  holdsHidden,
+  current,
   onPress,
+  onPressGroup,
   onPressView,
 }: NavDestinationProps) {
   const t = useT();
   const views = destinationViews[destination.key];
+  const Row = views === undefined ? SideNavigationLink : SideNavigationTrigger;
+  const rowProps =
+    views === undefined
+      ? { href: destination.to, onClick: onPress(destination) }
+      : { onClick: onPressGroup(destination, expanded) };
 
   return (
-    <SideNavigationItem value={destination.key}>
-      <SideNavigationLink
-        href={destination.to}
-        current={holdsHidden || undefined}
-        onClick={onPress(destination)}
-      >
+    <SideNavigationItem
+      value={destination.key}
+      // Workaround for Slotted issue #144: an item whose row is a trigger is never marked.
+      data-current={views !== undefined && current ? "" : undefined}
+    >
+      <Row {...rowProps}>
         <SideNavigationIcon>
           <ShellIcon name={destination.icon} />
         </SideNavigationIcon>
@@ -57,23 +66,20 @@ export function NavDestination({
         {count !== undefined && (
           <SideNavigationCount>{count}</SideNavigationCount>
         )}
-      </SideNavigationLink>
-
-      {views !== undefined && <SideNavigationTrigger />}
+      </Row>
 
       {views !== undefined && (
         <SideNavigationGroup>
-          {expanded &&
-            views.map((view) => (
-              <SideNavigationItem key={view.key} value={view.key}>
-                <SideNavigationLink
-                  href={viewHref(view)}
-                  onClick={onPressView(view)}
-                >
-                  <SideNavigationLabel>{t(view.label)}</SideNavigationLabel>
-                </SideNavigationLink>
-              </SideNavigationItem>
-            ))}
+          {views.map((view) => (
+            <SideNavigationItem key={view.key} value={view.key}>
+              <SideNavigationLink
+                href={viewHref(view)}
+                onClick={onPressView(view)}
+              >
+                <SideNavigationLabel>{t(view.label)}</SideNavigationLabel>
+              </SideNavigationLink>
+            </SideNavigationItem>
+          ))}
         </SideNavigationGroup>
       )}
     </SideNavigationItem>

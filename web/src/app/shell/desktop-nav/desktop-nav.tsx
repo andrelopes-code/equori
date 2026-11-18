@@ -51,7 +51,7 @@ export function DesktopNav({
   const { open } = useAppShell();
   const openEntry = useEntry();
   const count = useUncategorizedCount();
-  const { selected, selectedView, press, pressView } =
+  const { selected, selectedView, press, pressGroup, pressView } =
     useDestinationPress(onReselect);
   const [groups, setGroups] = useNavGroups();
   const entryKey = t("nav.entry.key");
@@ -129,13 +129,12 @@ export function DesktopNav({
                 key={destination.key}
                 destination={destination}
                 count={destination.key === "transactions" ? count : undefined}
-                expanded={groups.includes(destination.key)}
-                holdsHidden={
-                  selectedView !== undefined &&
-                  selected === destination.key &&
-                  !(open && groups.includes(destination.key))
+                expanded={open && groups.includes(destination.key)}
+                current={
+                  selected === destination.key && selectedView === undefined
                 }
                 onPress={press}
+                onPressGroup={pressGroup}
                 onPressView={pressView}
               />
             ))}
