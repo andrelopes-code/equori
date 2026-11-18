@@ -75,6 +75,17 @@ describe("NewTransactionPage", () => {
     ).toEqual([catalogEn["entry.discard"], catalogEn["entry.saveAnother"]]);
   });
 
+  // Help catalog spec, HC3: the screen links the page that describes it.
+  it("links its help page from the header", async () => {
+    await renderApp("/transactions/new", { fetch: api([]) });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/record-transaction");
+  });
+
   it("records an expense and returns to the list", async () => {
     const sent: unknown[] = [];
     const { router } = await renderApp("/transactions/new", {

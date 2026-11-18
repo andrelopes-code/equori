@@ -179,3 +179,14 @@ Each page has a table "claim → source" in section 9, written in its slice. A c
 ### Finding: the module cache of Vitest
 
 Vitest 5 keeps transformed modules in `node_modules/.vitest-cache` (`fsModuleCache`, default on), keyed by the module's source. A Markdown file added under `content/` is not seen by the cached `import.meta.glob` of `help-pages.ts`: the BR passage of `portfolio` was missing until the run passed `--experimental.fsModuleCache=false`. Decision: the flag is documented in `docs/contributing/help.md` for the first run after adding a page; the cache stays on for the other suites of the shared machine. CI starts without a cache and is not affected.
+
+### Slice 1: record-transaction
+
+| Claim | Source |
+|---|---|
+| The navigation button and the key N open the form used last, this one or the text entry | `web/src/app/shell/frame-state/use-entry.ts:11-21`, `:58-60` |
+| Kind of transaction offers Expense, Income, Transfer and Other kinds | `catalog.pt-BR.ts:939-943`, `catalog.en.ts:929-933`; figure `entry-kind` |
+| The account field reads Pay with, Receive in, From account and To account by kind | `transaction-form/simple-entry-fields.tsx:15-17`, `:87`; screen, demo book |
+| The list of accounts holds "Leaves the balance now" and "Goes to the statement"; a card names its statement | `catalog.pt-BR.ts:1388,1390,1419`; aria tree of the sheet, demo book; figure `entry-sheet` |
+| Save opens the list and shows "Transaction recorded" with View; Save and add another keeps kind, account and date | `new-entry/use-submit-entry.ts:52-82`, `new-entry/use-announce.tsx:13-25` |
+| Other kinds opens the investment, foreign purchase and exchange forms; Write as text opens the text entry | menu of the screen, demo book; `new-entry/new-entry-header.tsx` |

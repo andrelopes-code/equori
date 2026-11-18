@@ -23,6 +23,7 @@ export const helpPages: readonly HelpPageEntry[] = [
   { id: "pay-statement", kind: "howto" },
   { id: "check-balance", kind: "howto" },
   { id: "category-rule", kind: "howto" },
+  { id: "record-transaction", kind: "howto" },
   { id: "installation", kind: "howto" },
   { id: "connect-bank", kind: "howto" },
   { id: "glossary", kind: "reference" },

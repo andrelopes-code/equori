@@ -9,6 +9,7 @@ import {
 } from "@slotted/react/page-header";
 import { Link } from "@tanstack/react-router";
 
+import { HelpLink } from "@/features/help";
 import { useT } from "@/i18n/i18n-provider";
 import { PageBack } from "@/ui/navigation/page-back";
 import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
@@ -33,6 +34,7 @@ export function NewEntryHeader() {
           </PageHeaderTitle>
 
           <PageHeaderActions>
+            <HelpLink page="record-transaction" />
             <ButtonLink
               variant="outline"
               tone="secondary"

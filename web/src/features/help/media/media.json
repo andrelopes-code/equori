@@ -199,6 +199,54 @@
       "en": {
         "spot": [2.5, 36.02, 51.2, 8.34]
       }
+    },
+    "entry-kind": {
+      "pt": {
+        "spot": [26.64, 14.21, 46.72, 12.14]
+      },
+      "en": {
+        "spot": [29.45, 14.21, 36.62, 12.14]
+      }
+    },
+    "entry-amount": {
+      "pt": {
+        "spot": [19.56, 25.85, 60.83, 19.81]
+      },
+      "en": {
+        "spot": [19.56, 25.85, 60.83, 19.81]
+      }
+    },
+    "entry-account": {
+      "pt": {
+        "spot": [19.56, 43.99, 60.83, 12.14]
+      },
+      "en": {
+        "spot": [19.56, 43.99, 60.83, 12.14]
+      }
+    },
+    "entry-sheet": {
+      "pt": {
+        "spot": [42.71, 21.88, 56.35, 14.33]
+      },
+      "en": {
+        "spot": [42.71, 21.88, 56.35, 14.33]
+      }
+    },
+    "entry-category": {
+      "pt": {
+        "spot": [19.56, 38.13, 60.83, 23.78]
+      },
+      "en": {
+        "spot": [19.56, 38.13, 60.83, 23.78]
+      }
+    },
+    "entry-save": {
+      "pt": {
+        "spot": [60.76, 89.25, 8.64, 8.67]
+      },
+      "en": {
+        "spot": [61.59, 89.25, 7.81, 8.67]
+      }
     }
   },
   "videos": {
@@ -953,6 +1001,194 @@
         ],
         "accent": "oklch(0.537962 0.124573 215.224)"
       }
+    },
+    "record-transaction": {
+      "pt": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 95.25,
+              "width": 448.5,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 2.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 165.09375,
+              "width": 584,
+              "height": 118.84375
+            }
+          },
+          {
+            "start": 5.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 280.9375,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 1370,
+              "y": 131.25,
+              "width": 541,
+              "height": 86
+            }
+          },
+          {
+            "start": 12.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 5,
+            "mark": {
+              "x": 483.75,
+              "y": 355.78125,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 15.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 6,
+            "mark": {
+              "x": 1534.25,
+              "y": 1135.5,
+              "width": 83,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 19.4,
+        "fade": 0.3,
+        "stills": [
+          "record-transaction/5559a6c3b771.png",
+          "record-transaction/5559a6c3b771.png",
+          "record-transaction/beadf63e3bca.png",
+          "record-transaction/29a9a18e4f20.png",
+          "record-transaction/2c1f056d7725.png",
+          "record-transaction/6f883593fe5a.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      },
+      "en": {
+        "parts": [
+          {
+            "start": 0,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 1,
+            "mark": {
+              "x": 483.75,
+              "y": 95.25,
+              "width": 351.5,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 2.6,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 2,
+            "mark": {
+              "x": 483.75,
+              "y": 165.09375,
+              "width": 584,
+              "height": 118.84375
+            }
+          },
+          {
+            "start": 5.8,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 3,
+            "mark": {
+              "x": 483.75,
+              "y": 280.9375,
+              "width": 584,
+              "height": 72.84375
+            }
+          },
+          {
+            "start": 9,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 4,
+            "mark": {
+              "x": 1370,
+              "y": 131.25,
+              "width": 541,
+              "height": 86
+            }
+          },
+          {
+            "start": 12.2,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0.6,
+            "number": 5,
+            "mark": {
+              "x": 483.75,
+              "y": 355.78125,
+              "width": 584,
+              "height": 142.6875
+            }
+          },
+          {
+            "start": 15.4,
+            "travel": 0.9,
+            "hold": 1.7,
+            "click": 0,
+            "number": 6,
+            "mark": {
+              "x": 1542.25,
+              "y": 1135.5,
+              "width": 75,
+              "height": 52
+            }
+          }
+        ],
+        "duration": 19.4,
+        "fade": 0.3,
+        "stills": [
+          "record-transaction/dd266dd55898.png",
+          "record-transaction/dd266dd55898.png",
+          "record-transaction/a99b26a09781.png",
+          "record-transaction/ada0f9ea82d6.png",
+          "record-transaction/23857cd69019.png",
+          "record-transaction/26f8417d29b7.png"
+        ],
+        "accent": "oklch(0.537962 0.124573 215.224)"
+      }
     }
   },
   "files": {
@@ -1041,13 +1277,36 @@
     "pay-statement/pay-open.en.dark.png": "4380cc823332037f05317ecbd42e1dbda7e2a24e044ac8550cf45bdf6d2396a4",
     "pay-statement/pay-open.pt.dark.png": "f804e9b6e638ae1084eedcd350e83bddb5c30f18c636a048adf3372a188d2779",
     "pay-statement/statement-total.en.dark.png": "80c691e1f917c3215e1de9224519246039f65ba0f181de98be4c0ade21cf6436",
-    "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88"
+    "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88",
+    "record-transaction/23857cd69019.png": "23857cd69019262c79d615f4f60eba506d5fd6fbb788f1976d81675a0d39bb70",
+    "record-transaction/26f8417d29b7.png": "26f8417d29b7fac98db4bf21aa9535aef256d14c01300f5f1b5ffdb768467078",
+    "record-transaction/29a9a18e4f20.png": "29a9a18e4f208ea3806e31faab2140ec29ca1ae5bd8ac1ddb9bd91d116460150",
+    "record-transaction/2c1f056d7725.png": "2c1f056d7725bb6105ff5c5f4d81ba801c6da21a951d649742c0d74e591af647",
+    "record-transaction/5559a6c3b771.png": "5559a6c3b771f7dee0eca1f542203a5feb33e70727780245af4b5206c53532ee",
+    "record-transaction/6f883593fe5a.png": "6f883593fe5a359e75ed168a83f7e76249647c4c31a62ff236b104bd0f0cf124",
+    "record-transaction/a99b26a09781.png": "a99b26a09781589949cac01473e46db10cdbc74e1cf89011f026dd4de7e3d106",
+    "record-transaction/ada0f9ea82d6.png": "ada0f9ea82d6274a397890f2a8327612117a2d7c791d2991291989b5c5eb2b77",
+    "record-transaction/beadf63e3bca.png": "beadf63e3bcac141f8d329a32c5f383c13d887c1ce65f1ea61ab38e91a7d17d4",
+    "record-transaction/dd266dd55898.png": "dd266dd5589876ad582775428650505bfc42ead9c0f1d17c0ddd32652b374dc3",
+    "record-transaction/entry-account.en.dark.png": "ead75823373f2b4ab2312f570ee5254d3d1f1bfe265ffe22cd76ae5a0e01d388",
+    "record-transaction/entry-account.pt.dark.png": "da8e45173c1ea7e982975c1497044f273c4152430c3a3998e9486dc437fe759d",
+    "record-transaction/entry-amount.en.dark.png": "f31dbd0edaf3328371c2974c05cbebe54ece89c4f0422889e1fabeff2ad36c95",
+    "record-transaction/entry-amount.pt.dark.png": "88eb5b51849e9963d57a89f49caffb3c973750a320137a7031a128ee68644d7c",
+    "record-transaction/entry-category.en.dark.png": "e0bcd201c5cc47214c58506d6abad237b1c3558ef4b1e65dd3f7113f36310b85",
+    "record-transaction/entry-category.pt.dark.png": "4a965e2033dddbe5ea415d9568a0a0e4cc9f9241d96adab29f11693a1b65696c",
+    "record-transaction/entry-kind.en.dark.png": "a1e86ad028754ca0364e54477dc9f149bcca4bba9408c0c3526de75b12d5279e",
+    "record-transaction/entry-kind.pt.dark.png": "5e6508ef6a971863b25cedaa61aa51bd16a58b8b56179204cd18e16659c9cdef",
+    "record-transaction/entry-save.en.dark.png": "558b210969367dd0ddd85a0cb52b26c8d9503877459b91b6143be90b439c8723",
+    "record-transaction/entry-save.pt.dark.png": "d8de24801d0377cee4ccf5723247e87bc975d9e5eed250324dd6fc65cfc6b3ea",
+    "record-transaction/entry-sheet.en.dark.png": "81895c3c9c29baa1aef145c9685b2f8e1276580c9d41b2f519d42e7863c4058c",
+    "record-transaction/entry-sheet.pt.dark.png": "c4b767c488941b6da28b9779b500ccb4cb7eb5b6a7005213ebe28c5488af1d9d"
   },
   "inputs": {
     "check-balance": "568cd260d08793d5664a754aa3628cee7f61880f6ac8d29dab2683c67abb3d9f",
     "category-rule": "08b7ae5cc813e7f1056b7ed0b288fa9ca3c31129b948a1c9f6e18b7e31a7879b",
     "connect-bank": "0a7f48c4e2f49fda35675ea2d92828957e234b99d5bd395ead2a8409fe814f9d",
     "import-statement": "2a81f9c31d641b756f3c172eb3586cd57a2f01b8b75272479dd4bd7df3b36805",
-    "pay-statement": "d5d73636d7edc665ced513b08ebd73c0ff2f86f294f6fc9e90275ea3d3d3bf35"
+    "pay-statement": "d5d73636d7edc665ced513b08ebd73c0ff2f86f294f6fc9e90275ea3d3d3bf35",
+    "record-transaction": "a128e16c214ac822b89d6848568836e8e0f28ba762e3fce5d0eb470af8497468"
   }
 }

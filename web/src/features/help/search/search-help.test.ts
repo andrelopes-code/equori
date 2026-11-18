@@ -136,6 +136,18 @@ describe("common searches", () => {
   });
 });
 
+// Help catalog spec, HC5: a process is found by the words a reader types.
+describe("the words of a reader", () => {
+  it.each([
+    ["pt", "registrar despesa", "record-transaction"],
+    ["en", "record expense", "record-transaction"],
+  ] as const)("in %s, %s opens %s", async (language, query, page) => {
+    const pages = await loadHelpLibrary(language, "US");
+
+    expect(searchHelp(pages, query).best?.page).toBe(page);
+  });
+});
+
 describe("hitRanges", () => {
   it("returns the words of a text that match the query", () => {
     expect(hitRanges("A Fatura e a instituição", "fatura instituicao")).toEqual(
