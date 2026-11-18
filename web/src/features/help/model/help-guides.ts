@@ -60,6 +60,12 @@ export const helpGuides: Readonly<Record<string, HelpGuide | undefined>> = {
     screen: "/transactions/capture",
     related: ["record-transaction", "installments"],
   },
+  "correct-transaction": {
+    area: "transactions",
+    screen: "/transactions",
+    symptoms: ["transaction-twice"],
+    related: ["check-balance"],
+  },
   installation: {
     area: "installation",
     symptoms: ["second-factor", "backup-late", "copy-late", "not-opening"],

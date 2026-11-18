@@ -227,3 +227,22 @@ The pointer of a video rested on the centre of the mark. A mark that surrounds t
 | After recording, a notice gives the count and View opens the list | `capture-submit/use-capture-submit.tsx:67-81` |
 
 The step "Edit" has no figure of its own: a mark around one draft or its button crossed the text of the neighbouring draft (the rows stand 6 px apart, the mark keeps 12 px). The figure of the drafts marks the list and the pointer of the video rests on Edit.
+
+### Slice 4: correct-transaction
+
+| Claim | Source |
+|---|---|
+| A double press opens the transaction in a panel beside the list | `transactions-grid/transactions-grid.tsx:249-252` (`activatable`); Slotted `data-grid.md:178`; `transactions-listing.tsx:89-100` |
+| The panel's menu "Transaction actions" holds Correct, Mark as transfer, Record reimbursement received, Open as a page, Void | aria tree of the menu, demo book; figure `correct-choose` |
+| The correction asks for a reason, kept in the history | `correct.reason`, `correct.reasonHint`, `correct.reasonRequired`; `correction/correction-form.tsx` (`send`) |
+| Saving shows "Correction saved" and opens the transaction | `correction/correction-form.tsx` (`toast`, `navigate`) |
+| A voided transaction stays in history and leaves balances and reports; reason up to 500 characters | `void.description`, `void.reasonHint` |
+| The list hides voided transactions unless "Show voided" | `transactions.showVoided`; screen, demo book |
+
+### Reorganization: the correction header
+
+`CorrectionForm` (`correction-form.tsx`, 260 lines) and `CorrectionPage` drew the same header. It moved to `correction/correction-header.tsx`, which gains the help link. Correction tests: 28 before, 30 after (the help link and the date and version of the header). A defect injected in the header (version + 1) failed no test before the new test of the subtitle; it fails that test now. Line counts: `correction-form.tsx` 221, `correction-page.tsx` 79, `correction-header.tsx` 71. `CorrectionForm` holds 175 lines of component (203 before), above the limit of 150; the slice adds no code to it, and its send logic is the next split.
+
+### Decision: the resting cursor of the grid
+
+After the double press, the description cell of the list keeps a muted ring. It is the resting cursor of the Slotted grid (`--_cursor-rest`, 60 % alpha), drawn on purpose, not a focus ring: the stills show it as the reader sees it. Issue andrelopes-code/slotted#148, opened on the first reading, was corrected and closed.

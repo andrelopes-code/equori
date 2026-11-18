@@ -5,18 +5,10 @@ import {
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderHeading,
-  PageHeaderSubheading,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
 import { toast } from "@slotted/react/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { useApi } from "@/api/api-context";
@@ -27,6 +19,7 @@ import {
   useCorrectTransaction,
 } from "@/features/transactions/api";
 import { CorrectionConflict } from "@/features/transactions/correction/correction-conflict";
+import { CorrectionHeader } from "@/features/transactions/correction/correction-header";
 import { ReasonField } from "@/features/transactions/correction/reason-field";
 import {
   draftFromTransaction,
@@ -38,11 +31,8 @@ import { movedFields } from "@/features/transactions/correction/moved-fields";
 import type { MovedField } from "@/features/transactions/correction/moved-fields";
 import { fieldOf } from "@/features/transactions/entry-model/field-of";
 import { TransactionForm } from "@/features/transactions/transaction-form/transaction-form";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
-import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
-import { PageBack } from "@/ui/navigation/page-back";
 
 type Account = components["schemas"]["Account"];
 type Payee = components["schemas"]["Payee"];
@@ -70,11 +60,9 @@ export function CorrectionForm({
   scale: (code: string) => number;
 }) {
   const t = useT();
-  const [locale] = useAppLocale();
   const api = useApi();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const wide = useMediaQuery(wideQuery);
   const correct = useCorrectTransaction();
   const accountsById = useMemo(
     () => new Map(accounts.map((a) => [a.id, a])),
@@ -188,34 +176,7 @@ export function CorrectionForm({
         </PageFooter>
       }
     >
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          {wide && (
-            <PageBack
-              render={(props) => (
-                <Link
-                  {...props}
-                  to="/transactions/$id"
-                  params={{ id: transaction.id }}
-                />
-              )}
-            >
-              {transaction.description || t("detail.title")}
-            </PageBack>
-          )}
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>{t("correct.title")}</PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t("correct.subtitle", {
-                  date: formatDate(transaction.date, locale),
-                  version: version,
-                })}
-              </PageHeaderSubheading>
-            </PageHeaderTitle>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
+      <CorrectionHeader transaction={transaction} version={version} />
       <PageBody>
         <Stack gap={5}>
           {conflict !== null && (

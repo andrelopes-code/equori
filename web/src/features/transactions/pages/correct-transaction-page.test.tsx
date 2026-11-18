@@ -113,6 +113,29 @@ describe("CorrectTransactionPage", () => {
     });
   });
 
+  // Help catalog spec, HC3: the correction links the page of the task.
+  it("links its help page from the header", async () => {
+    await renderApp(`/transactions/${txID}/correct`, { fetch: api([], []) });
+
+    const link = await screen.findByRole("link", {
+      name: catalogEn["help.screen"],
+    });
+
+    expect(link.getAttribute("href")).toBe("/help/correct-transaction");
+  });
+
+  it("states the date and the version the correction starts from", async () => {
+    await renderApp(`/transactions/${txID}/correct`, { fetch: api([], []) });
+
+    expect(
+      await screen.findByText(
+        catalogEn["correct.subtitle"]
+          .replace("{date}", "10/10/2026")
+          .replace("{version}", "3"),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("asks for a reason before sending", async () => {
     const sent: unknown[] = [];
     await renderApp(`/transactions/${txID}/correct`, { fetch: api(sent, []) });

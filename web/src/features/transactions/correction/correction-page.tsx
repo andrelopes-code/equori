@@ -5,24 +5,14 @@ import {
 } from "@slotted/react/action-bar";
 import { Button } from "@slotted/react/button";
 import { Page, PageBody, PageFooter } from "@slotted/react/page";
-import {
-  PageHeader,
-  PageHeaderHeading,
-  PageHeaderSubheading,
-  PageHeaderTitle,
-  PageHeaderTitleArea,
-  PageHeaderTitleRow,
-} from "@slotted/react/page-header";
 import { Stack } from "@slotted/react/stack";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import type { components } from "@/api/schema.gen";
-import { formatDate } from "@/i18n/format";
-import { useAppLocale, useT } from "@/i18n/i18n-provider";
+import { CorrectionHeader } from "@/features/transactions/correction/correction-header";
+import { useT } from "@/i18n/i18n-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
-import { PageBack } from "@/ui/navigation/page-back";
-import { useMediaQuery, wideQuery } from "@/ui/runtime/use-media-query";
 
 type Transaction = components["schemas"]["Transaction"];
 
@@ -43,9 +33,7 @@ export function CorrectionPage({
   children,
 }: CorrectionPageProps) {
   const t = useT();
-  const [locale] = useAppLocale();
   const navigate = useNavigate();
-  const wide = useMediaQuery(wideQuery);
 
   return (
     <Page
@@ -78,34 +66,10 @@ export function CorrectionPage({
         </PageFooter>
       }
     >
-      <PageHeader size="lg">
-        <PageHeaderTitleArea>
-          {wide && (
-            <PageBack
-              render={(props) => (
-                <Link
-                  {...props}
-                  to="/transactions/$id"
-                  params={{ id: transaction.id }}
-                />
-              )}
-            >
-              {transaction.description || t("detail.title")}
-            </PageBack>
-          )}
-          <PageHeaderTitleRow>
-            <PageHeaderTitle>
-              <PageHeaderHeading>{t("correct.title")}</PageHeaderHeading>
-              <PageHeaderSubheading>
-                {t("correct.subtitle", {
-                  date: formatDate(transaction.date, locale),
-                  version: transaction.version,
-                })}
-              </PageHeaderSubheading>
-            </PageHeaderTitle>
-          </PageHeaderTitleRow>
-        </PageHeaderTitleArea>
-      </PageHeader>
+      <CorrectionHeader
+        transaction={transaction}
+        version={transaction.version}
+      />
 
       <PageBody>
         <Stack gap={5}>
