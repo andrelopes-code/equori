@@ -10,6 +10,8 @@ Escolha **de onde vem o valor**:
 - **Média de receitas**: a média do que entrou nos meses anteriores.
 - **Valor fixo**: um valor que você digita.
 
+![A visão Planejar, com a escolha de onde vem o valor marcada](budget-plan-source "As três origens do valor a distribuir.")
+
 A barra no topo mostra quanto desse valor já tem destino e quanto fica em **A distribuir**. Parcelas e poupança programada entram na barra como compromissos.
 
 ## Planejar cada categoria
@@ -23,6 +25,8 @@ As colunas ao lado ajudam a decidir:
 - **Sugerido**: o valor que o histórico sugere.
 
 **Sugerir pelo histórico** preenche as categorias com a sugestão. **Distribuir o restante** envia o que falta para uma categoria ou divide na proporção do plano.
+
+![Os botões Distribuir o restante e Sugerir pelo histórico, marcados](budget-plan-tools "Os dois botões que preenchem o plano.")
 
 ## Salvar
 

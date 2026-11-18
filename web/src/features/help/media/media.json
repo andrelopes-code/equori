@@ -599,6 +599,46 @@
       "en": {
         "spot": [78.7, 4.71, 18.75, 8.67]
       }
+    },
+    "portfolio-summary": {
+      "pt": {
+        "spot": [2.5, 11.11, 58.87, 17.09]
+      },
+      "en": {
+        "spot": [2.5, 11.11, 58.87, 17.09]
+      }
+    },
+    "portfolio-return": {
+      "pt": {
+        "spot": [37.81, 30.37, 24.43, 6]
+      },
+      "en": {
+        "spot": [37.81, 30.37, 24.43, 6]
+      }
+    },
+    "portfolio-columns": {
+      "pt": {
+        "spot": [45.1, 45.73, 9.69, 8.67]
+      },
+      "en": {
+        "spot": [44.9, 45.73, 10.1, 8.67]
+      }
+    },
+    "budget-plan-source": {
+      "en": {
+        "spot": [55.57, 28.45, 40.52, 6.33]
+      },
+      "pt": {
+        "spot": [55.57, 28.45, 40.52, 6.33]
+      }
+    },
+    "budget-plan-tools": {
+      "en": {
+        "spot": [68.13, 47.14, 28.48, 5.66]
+      },
+      "pt": {
+        "spot": [66.98, 47.14, 29.63, 5.66]
+      }
     }
   },
   "videos": {
@@ -3064,6 +3104,10 @@
     }
   },
   "files": {
+    "budget-plan/budget-plan-source.en.dark.png": "d0db8f485d418a8d9cc79ff2d4300a89e2280813478654501199992ab83ef79b",
+    "budget-plan/budget-plan-source.pt.dark.png": "4fa30578c33f6c0b59b8fa48f202b2d75888d2e4c6fae43066a0d2d994f6d82d",
+    "budget-plan/budget-plan-tools.en.dark.png": "41df4af89a8415c30aeab6a479933782719515c38e3155632bdb7b74a3eafddd",
+    "budget-plan/budget-plan-tools.pt.dark.png": "c839e8be3f83246f9f72e82c26b63855d4ec466aee213bad7e60196360cc7806",
     "buy-investment/36cad1a09d4c.png": "36cad1a09d4c0d16597e9822b70d6697e42d5194f126c48028b60ca009da253b",
     "buy-investment/454a3c99cd4c.png": "454a3c99cd4ccf5fe4678082d02e062ca521fd41bf264f340fa070995784ddd4",
     "buy-investment/5559a6c3b771.png": "5559a6c3b771f7dee0eca1f542203a5feb33e70727780245af4b5206c53532ee",
@@ -3246,6 +3290,12 @@
     "pay-statement/pay-open.pt.dark.png": "f804e9b6e638ae1084eedcd350e83bddb5c30f18c636a048adf3372a188d2779",
     "pay-statement/statement-total.en.dark.png": "80c691e1f917c3215e1de9224519246039f65ba0f181de98be4c0ade21cf6436",
     "pay-statement/statement-total.pt.dark.png": "fe3317dc1797675c7198d73630967bd003c1ad94ea5e2f03dc95fec57bea1b88",
+    "portfolio/portfolio-columns.en.dark.png": "b51f2bdd969c3ab68a913b53bffdb23a8180e1574ae7975dfd6b490c897f1e01",
+    "portfolio/portfolio-columns.pt.dark.png": "217736d3926c1c848064a4950aa7b3b1cc10a9befdd0bc5a1250fbf17fdedd79",
+    "portfolio/portfolio-return.en.dark.png": "4395c2448c4d0fce317a4f5214f22675fe0fabe60f1aa6f51c9c60bc0abdb275",
+    "portfolio/portfolio-return.pt.dark.png": "d6210fbc97bd5fc06c8a23584dd622f67b7835c4d5dc2465e5cfb54823a7937c",
+    "portfolio/portfolio-summary.en.dark.png": "a5857f482015cbbf7be02f8ac00a5a6dd2c4d587be48aee67e615f517f7a1f9e",
+    "portfolio/portfolio-summary.pt.dark.png": "c0208a4ff8d6491ef4483fa27ab54a56f54ae81d5ceffc773843cd0a40166c82",
     "record-transaction/23857cd69019.png": "23857cd69019262c79d615f4f60eba506d5fd6fbb788f1976d81675a0d39bb70",
     "record-transaction/26f8417d29b7.png": "26f8417d29b7fac98db4bf21aa9535aef256d14c01300f5f1b5ffdb768467078",
     "record-transaction/29a9a18e4f20.png": "29a9a18e4f208ea3806e31faab2140ec29ca1ae5bd8ac1ddb9bd91d116460150",
@@ -3343,6 +3393,8 @@
     "create-budget": "56b8c568a91b9e5c98f729c036baab29fda7c96fb8eaa78e9ce969e52531a196",
     "buy-investment": "5e1bf05fa61d7bfcc7196161c79cbc27aaf4e21b557421fe1e21c1453614ca89",
     "reimbursement": "8f1fbdb25d9556fd56da4b21f310df901196d54302735588d87c198bde607f13",
-    "contribution-plan": "fbd9bf71f8151502a9a54d9259543917701bf83753d8f77263a743395c3f306a"
+    "contribution-plan": "fbd9bf71f8151502a9a54d9259543917701bf83753d8f77263a743395c3f306a",
+    "portfolio": "4d99ed4510bc60dfd3b927b21e8a038127e2bfebd66ad37295fe0ec7e5a7b465",
+    "budget-plan": "8025753a59473371c837a62975a7252f594e5c3af1b5a19d9a3bd3e5051fcef7"
   }
 }

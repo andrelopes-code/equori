@@ -318,3 +318,15 @@ A mark of 12 px around a row of a list whose rows stand 6 px apart crossed the t
 The book of the isolated instance lacked its plan (the seed stopped at the goals); it was saved through `PUT /api/v1/contribution-plan` with the groups and targets of `cmd/demoseed/groups_data.go` and the contracts of the book not redeemed. The tutorial declares the preview of the month as a read. `ContributionPlanPage` held 156 lines: its header moved to `contribution-plan/header/plan-header.tsx`, with the help link (136 lines). Portfolio page tests: 132 before, 133 after; the edit button inverted in the new header failed 27 tests.
 
 The English title of `buy-investment` became "Buy an investment": "buy investment" found the contribution plan first, whose lead says the plan only buys.
+
+### Slice 10: figures of the reference pages
+
+| Page | Figures | Source of the captions |
+|---|---|---|
+| statement | `statement-total` (built by `pay-statement`) | the figure, as in `pay-statement` and `troubleshooting` |
+| portfolio | `portfolio-summary`, `portfolio-return`, `portfolio-columns` | `holdings.value`, the period control of `holdings.return`, `holdings.columns`; screen of the isolated book |
+| budget-plan | `budget-plan-source`, `budget-plan-tools` | `plan.source` and its three choices, `plan.distribute`, `plan.suggest` |
+
+Left out, each wider than the 912 px a figure holds: the summary band of the portfolio as a whole, the bar of the distribution of the month's plan, the sentence of the month of the contribution plan.
+
+The review line of `import-statement` keeps no figure: the only batch line waiting for review in the demo book belongs to the Nubank card, and the card page lists no imports (its tabs are statements, installment plans, cards and settings), so no sequence of presses reaches the batch.

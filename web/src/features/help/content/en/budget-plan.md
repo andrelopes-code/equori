@@ -10,6 +10,8 @@ Choose **where the amount comes from**:
 - **Average income**: the average of what came in over the previous months.
 - **Fixed amount**: an amount you type.
 
+![The Plan view, with the choice of where the amount comes from marked](budget-plan-source "The three sources of the amount to distribute.")
+
 The bar at the top shows how much of that amount already has a destination and how much stays under **To distribute**. Installments and scheduled saving enter the bar as commitments.
 
 ## Plan each category
@@ -23,6 +25,8 @@ The columns beside it help you decide:
 - **Suggested**: the amount the history suggests.
 
 **Suggest from history** fills the categories with the suggestion. **Distribute the rest** sends what is left to one category or splits it in the proportion of the plan.
+
+![The Distribute the rest and Suggest from history buttons, marked](budget-plan-tools "The two buttons that fill the plan.")
 
 ## Save
 

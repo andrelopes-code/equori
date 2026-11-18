@@ -8,6 +8,8 @@ The [portfolio](/portfolio) answers three questions: how much you have invested,
 - **Gain or loss**: market value minus cost, without income. It only becomes a real gain or loss when you sell.
 - **Income in …**: dividends, interest and other payments received in the year, net of the tax withheld.
 
+![The summary of the portfolio, with the portfolio value marked](portfolio-summary "The portfolio value opens the summary, beside the gain or loss and the income.")
+
 ## Where the money is
 
 Splits the portfolio by type, currency or institution. The same choice groups the list of investments. The brokerage cash goes below zero when a purchase was recorded without the transfer of the money to the brokerage: that row shows a dash in place of the share, the others add up to 100%, and recording the transfer corrects the balance. Your whole net worth, with banks and savings, is on [Reports](/reports).
@@ -22,11 +24,15 @@ The list shows the name, the market value, the gain or loss in money and in perc
 - **Price** and **Price date**: the latest price recorded up to the date.
 - **Account**: the brokerage account that holds the investment.
 
+![The list of investments, with the Columns button marked](portfolio-columns "Columns adds the columns of the list.")
+
 A price older than 7 days shows beside the value. An investment without a price stays out of the total and the percentage: record a price on the investment's page, under [Quotes](/instruments), or import a file of prices.
 
 Record buys, sales and income with the buttons above the list.
 
 ## How it performed
+
+![The How it performed section, with the period marked](portfolio-return "The arrows of the period change the span compared.")
 
 Under **How it performed**, choose the whole portfolio or one account and a period of up to 366 days. The section opens with the **Gain in the period** in money, beside one sentence that states the result, such as "In the period, the portfolio returned 4.20%.". Two comparisons follow, each a pair of bars on one axis with a chip:
 

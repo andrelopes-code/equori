@@ -11,6 +11,8 @@ A página de uma fatura mostra o que ela cobra, como o total foi formado e o que
 - **Total**: o saldo do cartão no fechamento. A conta é: saldo anterior + compras − créditos − pagamentos.
 - **Em aberto**: o que os pagamentos feitos depois do fechamento ainda não cobriram.
 
+![A página da fatura, com o total do ciclo marcado](statement-total "O total do ciclo fica no alto da página da fatura.")
+
 ## As situações
 
 Uma fatura pode estar **aberta** (ainda recebe compras), **fechada** (aguarda pagamento), **paga**, **paga em parte**, **vencida** ou **financiada**.

@@ -8,6 +8,8 @@ A [carteira](/portfolio) responde a três perguntas: quanto você tem investido,
 - **Lucro ou prejuízo**: valor de mercado menos custo, sem contar proventos. Só vira lucro ou prejuízo de fato quando você vende.
 - **Proventos em …**: dividendos, juros e outros pagamentos recebidos no ano, líquidos do imposto retido.
 
+![O resumo da carteira, com o valor da carteira marcado](portfolio-summary "O valor da carteira abre o resumo, ao lado do lucro ou prejuízo e dos proventos.")
+
 ## Onde está o dinheiro
 
 Divide a carteira por tipo, moeda ou instituição. A mesma escolha agrupa a lista de investimentos. O saldo de corretora fica negativo quando uma compra ou aplicação foi registrada sem a transferência do dinheiro para a corretora: essa linha mostra um traço no lugar da participação, as demais somam 100%, e registrar a transferência corrige o saldo. O patrimônio inteiro, com bancos e poupança, fica em [Relatórios](/reports).
@@ -22,11 +24,15 @@ A lista mostra o nome, o valor de mercado, o lucro ou prejuízo em dinheiro e em
 - **Preço** e **Data do preço**: o último preço registrado até a data.
 - **Conta**: a conta de corretora que guarda o investimento.
 
+![A lista de investimentos, com o botão Colunas marcado](portfolio-columns "Colunas acrescenta as colunas da lista.")
+
 Um preço com mais de 7 dias aparece ao lado do valor. Um investimento sem preço fica fora do total e da porcentagem: registre um preço na página do investimento, em [Cotações](/instruments), ou importe um arquivo de preços.
 
 Registre compras, vendas e proventos pelos botões acima da lista.
 
 ## Como rendeu
+
+![A seção Como rendeu, com o período marcado](portfolio-return "As setas do período mudam o intervalo comparado.")
 
 Em **Como rendeu**, escolha a carteira inteira ou uma conta e um período de até 366 dias. A seção abre com o **Rendimento no período** em dinheiro, ao lado de uma frase que diz o resultado, como "No período, a carteira rendeu 4,20%.". Duas comparações vêm em seguida, cada uma com um par de barras no mesmo eixo e uma etiqueta:
 

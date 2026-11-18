@@ -11,6 +11,8 @@ A statement's page shows what it bills, how the total was built and what is stil
 - **Total**: the card's balance at closing. The sum is: previous balance + purchases − credits − payments.
 - **Open**: what the payments made after closing have not covered yet.
 
+![The statement page, with the total of the cycle marked](statement-total "The total of the cycle stands at the top of the statement page.")
+
 ## The states
 
 A statement can be **open** (still taking purchases), **closed** (waiting for payment), **paid**, **partly paid**, **overdue** or **financed**.
