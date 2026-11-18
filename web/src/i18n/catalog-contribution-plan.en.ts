@@ -6,6 +6,10 @@ export const contributionPlanEn = {
   "contributionPlan.open": "Contribution plan",
   "contributionPlan.edit": "Edit groups and targets",
   "contributionPlan.amount": "Contribution",
+  "contributionPlan.planHint":
+    "The month plan sends {savings} of scheduled savings and {goals} of goal deposits to the brokerage.",
+  "contributionPlan.usePlan": "Use {amount}",
+  "contributionPlan.reservedFor": "reserved for {goal}",
   "contributionPlan.colTarget": "Target",
   "contributionPlan.colGroup": "Group",
   "contributionPlan.colGets": "Gets",

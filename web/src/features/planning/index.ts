@@ -1,4 +1,5 @@
 export {
+  budgetPlanQuery,
   budgetProgressQuery,
   calendarsQuery,
   holidaysQuery,

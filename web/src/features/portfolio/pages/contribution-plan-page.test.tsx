@@ -88,6 +88,42 @@ describe("Contribution plan page", () => {
     await renderApp("/portfolio/contribution-plan", { fetch: api() });
   }
 
+  // CN20: the amount field offers what the month plan already sends to the brokerage.
+  it("CN20: offers the amount the month plan sends to the brokerage", async () => {
+    localStorage.setItem(
+      "equori.locale",
+      JSON.stringify({ language: "pt", region: "BR" }),
+    );
+    await renderApp("/portfolio/contribution-plan", {
+      fetch: portfolioApi({
+        "GET /api/v1/contribution-plan": () => json(200, saved),
+        "POST /api/v1/contribution-plan/preview": () => json(200, preview),
+        "GET /api/v1/budget-plan": () =>
+          json(200, {
+            savings_brokerage: brl(100000),
+            goal_deposits_brokerage: brl(50000),
+          }),
+      }),
+    });
+
+    const use = await screen.findByRole("button", {
+      name: /^Usar R\$\s1\.500,00$/u,
+    });
+    expect(
+      screen.getByText(/R\$\s1\.000,00 de poupança agendada/u),
+    ).toBeVisible();
+
+    await userEvent.click(use);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", {
+          name: catalogPtBR["contributionPlan.amount"],
+        }),
+      ).toHaveValue("1.500,00");
+    });
+  });
+
   it("S400: writes what each group receives in words, never a dash", async () => {
     await open();
     const list = await planList();

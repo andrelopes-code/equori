@@ -11,6 +11,7 @@ import { Text } from "@slotted/react/typography";
 
 import type { components } from "@/api/schema.gen";
 import { IncompleteVerdict } from "@/features/portfolio/contribution-plan/month/incomplete-verdict";
+import { MonthPlanHint } from "@/features/portfolio/contribution-plan/month/month-plan-hint";
 import { PurchaseList } from "@/features/portfolio/contribution-plan/month/purchase-list";
 import { monthVerdict } from "@/features/portfolio/contribution-plan/model/month-verdict";
 import { useScale } from "@/features/setup";
@@ -96,6 +97,8 @@ export function MonthSection({
               {portfolio}
             </Text>
           </Inline>
+
+          <MonthPlanHint currency={currency} money={money} onUse={onAmount} />
 
           {!editing && incomplete && <IncompleteVerdict view={view} />}
 

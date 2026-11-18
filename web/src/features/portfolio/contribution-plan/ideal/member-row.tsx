@@ -4,6 +4,7 @@ import { EntryStatus } from "@/features/portfolio/contribution-plan/ideal/entry-
 import styles from "@/features/portfolio/contribution-plan/ideal/ideal-grid.module.css";
 import { NameCell } from "@/features/portfolio/contribution-plan/ideal/name-cell";
 import { ShareBar } from "@/features/portfolio/contribution-plan/ideal/share-bar";
+import { useReservedFor } from "@/features/portfolio/contribution-plan/ideal/use-reserved-for";
 import { positive } from "@/features/portfolio/contribution-plan/model/shopping-list";
 
 type Member = components["schemas"]["ContributionMember"];
@@ -26,12 +27,13 @@ export function MemberRow({
   hasAmount,
   waiting,
 }: MemberRowProps) {
+  const reserved = useReservedFor(member);
   const today = member.share_bp ?? 0;
   const after = positive(member.amount) ? member.after_share_bp : undefined;
 
   return (
     <div role="listitem" id={id} className={styles.row}>
-      <NameCell name={name} position={position} />
+      <NameCell name={name} position={position} reserved={reserved} />
 
       <ShareBar
         name={name}
