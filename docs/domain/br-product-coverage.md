@@ -81,7 +81,7 @@ Source status:
 | U-02 | Equity fund | partial | subtype `equity_fund`, class `fund_equity`, no come-cotas | the tax at redemption is not estimated | to read |
 | U-03 | Exempt funds (FI-Infra, incentivized debenture fund) | unsupported | no subtype | a subtype with an exempt class | to read |
 | U-04 | FIDC, FIP, closed funds | unsupported | no subtype | subtypes and their tax class | to read |
-| U-05 | Pension plan PGBL, VGBL | unsupported | no instrument type | an instrument type, the two tax tables and the contribution deduction | to read |
+| U-05 | Pension plan PGBL, VGBL | supported | fund subtypes `pgbl` and `vgbl`, tax classes `pension_pgbl` (taxed on the whole redemption) and `pension_vgbl` (on the gain), no come-cotas; contributions are purchases of quotas, redemptions sales with the tax withheld, portability a custody transfer; `get_tax_year` returns `deductible_contributions` of PGBL plans; `TestPensionContributions`, `TestPensionPlans`, `TestYearContributions` | the tax of a redemption is the one the insurer withholds: the progressive and the regressive tables are not computed; the 12% limit of the deduction needs the taxable income, which equori does not hold | Lei 11.053/2004 art. 1 and Lei 9.532/1997 art. 11 as cited; Lei 14.803/2024 checked 2026-11-18 at camara.leg.br |
 | U-06 | COE | unsupported | no instrument type | an instrument type | to read |
 | U-07 | Crypto asset | partial | type `crypto`; source `coinbase` | no tax class for Brazil | to read |
 | U-08 | Stock and ETF held abroad | partial | types `stock`, `etf` in another currency | the annual tax of Lei 14.754/2023 and the rate date of the conversion are not computed | to read |
@@ -90,9 +90,9 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 19 |
+| supported | 20 |
 | partial | 25 |
-| unsupported | 8 |
+| unsupported | 7 |
 
 ## What the assistant says
 

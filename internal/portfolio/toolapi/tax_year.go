@@ -44,12 +44,17 @@ type getTaxYearOut struct {
 	To     tool.Date    `json:"to"`
 	Sales  []saleView   `json:"sales,omitzero"`
 	Income []incomeView `json:"income,omitzero"`
+
+	// DeductibleContributions is the base of the deduction of pension contributions.
+	DeductibleContributions tool.Money `json:"deductible_contributions,omitzero"`
 }
 
 func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 	return tool.New(tool.Spec{
 		Name: "get_tax_year",
 		Description: "Returns a tax year of investments: realized results of sales at average cost with their tax class, and investment income with its tax treatment. " +
+			"deductible_contributions is what the year paid into plans whose contributions are deducted from taxable income (PGBL in Brazil, up to 12% of it); " +
+			"a pension_pgbl redemption is taxed on its whole proceeds, a pension_vgbl one on its result. " +
 			"Use it to prepare a tax return or answer what was gained or received in a year. " +
 			"Do not use it for current positions: get_portfolio does.",
 		Effect:     tool.ReadOnly,
@@ -78,7 +83,12 @@ func getTaxYear(svc *app.Service, names AccountNames) tool.Tool {
 			}
 		}
 
-		return out, nil
+		paid, ok, err := svc.DeductibleContributions(ctx, booksID, in.Year)
+		if ok && !paid.IsZero() {
+			out.DeductibleContributions = tool.MoneyOf(paid)
+		}
+
+		return out, err
 	})
 }
 

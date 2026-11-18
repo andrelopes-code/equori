@@ -29,6 +29,9 @@ func TestBR(t *testing.T) {
 		{"fixed_income", "xyz_bond", "", "fixed_income"},
 		{"fund", "equity_fund", "", "fund_equity"},
 		{"fund", "multimarket", "", "fund"},
+		// Coverage row U-05: a PGBL is taxed on the whole redemption, a VGBL on its gain.
+		{"fund", "pgbl", "", "pension_pgbl"},
+		{"fund", "vgbl", "", "pension_vgbl"},
 		{"stock", "cri", "BVMF", "stock"},
 	} {
 		if got := j.TaxClass(c.instrumentType, c.subtype, c.exchange); got != c.want {
@@ -77,6 +80,8 @@ func TestBR(t *testing.T) {
 		"equity_fund",
 		"fixed_income_fund",
 		"multimarket",
+		"pgbl",
+		"vgbl",
 	}; !slices.Equal(
 		got,
 		want,
@@ -169,5 +174,26 @@ func TestUnitTax(t *testing.T) {
 
 	if !slices.Equal(u.Subtypes, []string{"fixed_income_fund", "multimarket"}) {
 		t.Errorf("Subtypes = %v", u.Subtypes)
+	}
+}
+
+// Coverage row U-05: the contributions of a PGBL are deducted from taxable income (Lei 9.532/1997,
+// art. 11), those of a VGBL are not, and no pension plan pays come-cotas.
+func TestPensionPlans(t *testing.T) {
+	t.Parallel()
+
+	j := New()
+
+	if got := j.DeductibleContributions(); !slices.Equal(got, []string{"pension_pgbl"}) {
+		t.Errorf("DeductibleContributions = %v, want [pension_pgbl]", got)
+	}
+
+	if got := j.Subtypes("fund"); !slices.Contains(got, "pgbl") || !slices.Contains(got, "vgbl") {
+		t.Errorf("Subtypes(fund) = %v, want pgbl and vgbl", got)
+	}
+
+	rule, _ := j.UnitTax()
+	if slices.Contains(rule.Subtypes, "pgbl") || slices.Contains(rule.Subtypes, "vgbl") {
+		t.Errorf("UnitTax subtypes = %v, want no pension plan", rule.Subtypes)
 	}
 }

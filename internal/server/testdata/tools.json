@@ -6710,7 +6710,7 @@
   },
   {
     "name": "get_tax_year",
-    "description": "Returns a tax year of investments: realized results of sales at average cost with their tax class, and investment income with its tax treatment. Use it to prepare a tax return or answer what was gained or received in a year. Do not use it for current positions: get_portfolio does.",
+    "description": "Returns a tax year of investments: realized results of sales at average cost with their tax class, and investment income with its tax treatment. deductible_contributions is what the year paid into plans whose contributions are deducted from taxable income (PGBL in Brazil, up to 12% of it); a pension_pgbl redemption is taxed on its whole proceeds, a pension_vgbl one on its result. Use it to prepare a tax return or answer what was gained or received in a year. Do not use it for current positions: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -6917,6 +6917,24 @@
             ],
             "additionalProperties": false
           }
+        },
+        "deductible_contributions": {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "description": "decimal amount in the instrument's scale, such as -1234.56"
+            },
+            "currency": {
+              "type": "string",
+              "description": "currency or instrument code"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [

@@ -50,11 +50,17 @@ func (Jurisdiction) UnitTax() (domain.UnitTax, bool) {
 
 func (Jurisdiction) IncomeTypes() []string { return []string{"jcp"} }
 
+// DeductibleContributions: the contributions of a PGBL are deducted up to 12% of the taxable
+// income of an individual who contributes to the public pension (Lei 9.532/1997, art. 11).
+func (Jurisdiction) DeductibleContributions() []string { return []string{"pension_pgbl"} }
+
 // subtypeClass maps the subtypes of an instrument type to the tax class they have for an
 // individual: the interest of the incentivized fixed income securities is exempt (Lei 11.033/2004
 // art. 3 and Lei 12.431/2011 art. 2, I). A letter of exchange, a financial letter and a common
 // debenture are taxed like a CDB (Lei 11.033/2004 art. 1). The LH, the LCD and the CDCA are
-// incentivized like the LCI and the LCA; a LIG is taxed like a CDB.
+// incentivized like the LCI and the LCA; a LIG is taxed like a CDB. A pension plan is the quotas of
+// the fund of its insurer: a PGBL is taxed on the whole redemption, a VGBL on its gain (Lei
+// 11.053/2004), by the progressive or the regressive table the participant chose.
 var subtypeClass = map[string]map[string]string{
 	"fixed_income": {
 		"cdb": "fixed_income", "rdb": "fixed_income", "tesouro": "fixed_income",
@@ -66,6 +72,7 @@ var subtypeClass = map[string]map[string]string{
 	},
 	"fund": {
 		"fixed_income_fund": "fund", "multimarket": "fund", "equity_fund": "fund_equity",
+		"pgbl": "pension_pgbl", "vgbl": "pension_vgbl",
 	},
 }
 

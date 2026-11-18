@@ -35,6 +35,8 @@ func (fixtureJurisdiction) TaxClass(instrumentType, _, exchange string) string {
 	return instrumentType
 }
 
+func (fixtureJurisdiction) DeductibleContributions() []string { return nil }
+
 func (fixtureJurisdiction) Treatment(incomeType, _ string) string {
 	if incomeType == "dividend" {
 		return "exempt"

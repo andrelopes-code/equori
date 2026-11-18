@@ -23,6 +23,9 @@ type Jurisdiction interface {
 	Guarantee() (Guarantee, bool)
 	// UnitTax is the unit tax calendar of the funds of the jurisdiction; false when it has none.
 	UnitTax() (UnitTax, bool)
+	// DeductibleContributions lists the tax classes whose contributions an individual deducts
+	// from taxable income: a pension plan of the jurisdiction; empty when none.
+	DeductibleContributions() []string
 }
 
 // UnitTax is when a fund of the listed subtypes cancels units to withhold income tax: on the last
