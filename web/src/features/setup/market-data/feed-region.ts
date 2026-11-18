@@ -13,6 +13,7 @@ export function feedRegion(id: string): string {
     case "br_focus_ipca":
     case "br_tesouro":
     case "br_ifdata":
+    case "br_cvm_fii":
       return "BR";
     case "ecb":
     case "eu_estr":

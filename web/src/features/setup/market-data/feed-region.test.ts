@@ -15,6 +15,7 @@ describe("feedRegion", () => {
     ["br_focus_ipca", "BR"],
     ["br_tesouro", "BR"],
     ["br_ifdata", "BR"],
+    ["br_cvm_fii", "BR"],
     ["ecb", "EU"],
     ["eu_estr", "EU"],
     ["ea_hicp", "EU"],

@@ -58,6 +58,10 @@ The price source `b3_consolidated` reads the B3 consolidated trades file, which 
 
 `docs/specs/2026-11-17-indexer-comparison-design.md` (IC10) adds a fifth kind of feed, `curve`: the annual rates a market pays by maturity on a base date. F1 to F10 apply to it. `br_tesouro` is the only source; `SuggestedFeeds("BR")` names it. Its period is a day, its lag 5 days, and its `last` is the base date of the stored points.
 
+## Amendment of 2026-11-18 (fund report)
+
+`docs/specs/2026-11-18-fund-report-design.md` (FR2) adds a sixth kind of feed, `fund_report`: the figures a listed fund reports each month. F1 to F10 apply to it. `br_cvm_fii` is the only source; `SuggestedFeeds("BR")` names it. Its period is a month, its lag 20 days, and its `last` is the latest stored period.
+
 ## Revisit criterion
 
 An instance whose users need different feed sets, or a feed whose publication delay varies beyond its `Lag`.
