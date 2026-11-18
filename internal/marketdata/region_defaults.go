@@ -64,6 +64,8 @@ func SuggestedFeeds(region string) []string {
 			"cvm_funds",
 			"br_cdi",
 			"br_ipca",
+			"br_selic",
+			"br_igpm",
 			"br_focus",
 			"br_focus_ipca",
 			"br_ifdata",

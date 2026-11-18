@@ -17,10 +17,13 @@ import (
 const (
 	dateLayout       = "02/01/2006"
 	maxResponseBytes = 16 << 20
-	// SGS series: 12 is the CDI in percent a day, 433 the IPCA in percent a month.
-	seriesCDI  = 12
-	seriesIPCA = 433
-	decimals   = 12
+	// SGS series: 12 is the CDI in percent a day, 433 the IPCA in percent a month, 11 the Selic
+	// in percent a day and 189 the IGP-M in percent a month.
+	seriesCDI   = 12
+	seriesIPCA  = 433
+	seriesSelic = 11
+	seriesIGPM  = 189
+	decimals    = 12
 )
 
 // Source is one SGS series seen as an index source.
@@ -52,6 +55,28 @@ func IPCA(hc *http.Client, base string) Source {
 		id:     "br_ipca",
 		index:  "ipca",
 		series: seriesIPCA,
+		period: index.PeriodMonth,
+	}
+}
+
+// Selic is the daily Selic rate (identifier br_selic, index selic), the rate of the Tesouro Selic
+// (LFT). It compounds by business day.
+func Selic(hc *http.Client, base string) Source {
+	return Source{
+		hc: hc, base: base, id: "br_selic", index: "selic", series: seriesSelic,
+		period: index.PeriodDay, businessDay: true,
+	}
+}
+
+// IGPM is the monthly IGP-M variation (identifier br_igpm, index igpm), the index of the
+// Tesouro IGP-M+ (NTN-C) and of rents.
+func IGPM(hc *http.Client, base string) Source {
+	return Source{
+		hc:     hc,
+		base:   base,
+		id:     "br_igpm",
+		index:  "igpm",
+		series: seriesIGPM,
 		period: index.PeriodMonth,
 	}
 }

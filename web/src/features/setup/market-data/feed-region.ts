@@ -9,6 +9,8 @@ export function feedRegion(id: string): string {
     case "cvm_funds":
     case "br_cdi":
     case "br_ipca":
+    case "br_selic":
+    case "br_igpm":
     case "br_focus":
     case "br_focus_ipca":
     case "br_tesouro":

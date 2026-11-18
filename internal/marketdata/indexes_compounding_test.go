@@ -10,7 +10,7 @@ import (
 func TestBusinessDayIndexes(t *testing.T) {
 	got := businessDayIndexes()
 
-	if want := (domain.BusinessDayIndexes{"cdi"}); !slices.Equal(got, want) {
+	if want := (domain.BusinessDayIndexes{"cdi", "selic"}); !slices.Equal(got, want) {
 		t.Fatalf("businessDayIndexes() = %v, want %v", got, want)
 	}
 }

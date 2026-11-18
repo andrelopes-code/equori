@@ -4,7 +4,7 @@ Subtypes of fixed_income (get_portfolio view subtypes). Taxed at source: cdb, rd
 
 Income tax of a taxed security, on the gain, by days since each purchase: 22.5% up to 180, 20% from 181 to 360, 17.5% from 361 to 720, 15% above (Lei 11.033/2004, art. 1). A coupon follows the same table. IOF applies to a redemption within 30 days: 96% of the gain on day 1, falling to 3% on day 29, 0 from day 30; the income tax base is the gain less the IOF (Decreto 6.306/2007). A sale removes the cost of the oldest purchase first. estimate_redemption covers the taxed subtypes.
 
-Terms. Indexes: cdi (business days, bus252) and ipca (monthly, act365). A pre-fixed rate and the spread over IPCA count the business days of calendar br_banking: day_count bus252 with calendar_id br_banking. The statement of the issuer is recorded with record_price.
+Terms. Indexes: cdi and selic (business days, bus252), ipca and igpm (monthly, act365); each comes from its BCB SGS series (12, 11, 433 and 189) once the administrator enables its feed (br_cdi, br_selic, br_ipca, br_igpm). A pre-fixed rate and the spread over IPCA count the business days of calendar br_banking: day_count bus252 with calendar_id br_banking. The statement of the issuer is recorded with record_price.
 
 Indexer comparison. The sources are the CDI and the IPCA of the instance, the Focus survey of the Banco Central do Brasil for the expected rates, and the curves of Tesouro Direto for the market rate of the term and the inflation implied by government bonds. The tax follows the table of the income tax above, and an exempt security pays none. The screen gives no recommendation and no verdict.
 

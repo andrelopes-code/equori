@@ -52,6 +52,18 @@ func indexEntries() []indexEntry {
 			func(hc *http.Client, url string) index.Source { return brsgs.IPCA(hc, url) },
 		},
 		{
+			"br_selic",
+			sgs,
+			5,
+			func(hc *http.Client, url string) index.Source { return brsgs.Selic(hc, url) },
+		},
+		{
+			"br_igpm",
+			sgs,
+			20,
+			func(hc *http.Client, url string) index.Source { return brsgs.IGPM(hc, url) },
+		},
+		{
 			"eu_estr",
 			"https://data-api.ecb.europa.eu",
 			5,

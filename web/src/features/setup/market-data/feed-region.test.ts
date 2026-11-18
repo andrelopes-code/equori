@@ -11,6 +11,8 @@ describe("feedRegion", () => {
     ["cvm_funds", "BR"],
     ["br_cdi", "BR"],
     ["br_ipca", "BR"],
+    ["br_selic", "BR"],
+    ["br_igpm", "BR"],
     ["br_focus", "BR"],
     ["br_focus_ipca", "BR"],
     ["br_tesouro", "BR"],

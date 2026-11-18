@@ -23,6 +23,8 @@ type sgsServer struct {
 	fail     bool
 	cdi      [][2]string // date as dd/MM/yyyy, percent
 	ipca     [][2]string
+	selic    [][2]string
+	igpm     [][2]string
 }
 
 func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +44,10 @@ func (s *sgsServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		rows = s.cdi
 	case "/dados/serie/bcdata.sgs.433/dados":
 		rows = s.ipca
+	case "/dados/serie/bcdata.sgs.11/dados":
+		rows = s.selic
+	case "/dados/serie/bcdata.sgs.189/dados":
+		rows = s.igpm
 	default:
 		http.NotFound(w, r)
 		return
@@ -85,7 +91,12 @@ func (s *sgsServer) setFail(v bool) {
 }
 
 func indexURLs(srv *httptest.Server) map[string]string {
-	return map[string]string{"br_cdi": srv.URL, "br_ipca": srv.URL}
+	return map[string]string{
+		"br_cdi":   srv.URL,
+		"br_ipca":  srv.URL,
+		"br_selic": srv.URL,
+		"br_igpm":  srv.URL,
+	}
 }
 
 // cdiWeek is five business days of January 2026 at 0.055131 percent a day.
@@ -229,12 +240,61 @@ func TestIndexFeedsIPCA(t *testing.T) {
 	}
 }
 
+// Coverage row F-21: the Selic (SGS series 11, percent a day) and the IGP-M (SGS series 189,
+// percent a month) are stored like the CDI and the IPCA for the terms that name them.
+func TestIndexFeedsSelicAndIGPM(t *testing.T) {
+	t.Parallel()
+
+	s := &sgsServer{
+		selic: [][2]string{{"02/01/2026", "0.055131"}, {"05/01/2026", "0.055131"}},
+		igpm:  [][2]string{{"01/12/2025", "0.27"}},
+	}
+	srv := httptest.NewServer(s)
+	t.Cleanup(srv.Close)
+	h := apitest.New(
+		t,
+		apitest.Today("2026-01-06"),
+		apitest.IndexFeeds([]string{"br_selic", "br_igpm"}, indexURLs(srv)),
+	)
+
+	for code, index := range map[string]string{"LFTXPTO": "selic", "NTNCXPTO": "igpm"} {
+		defineFixedIncome(t, h, code)
+		h.MustDo(http.MethodPut, "/api/v1/instruments/"+code+"/terms", map[string]any{
+			"issued_on":  "2025-12-01",
+			"matures_on": "2031-01-01",
+			"index_id":   index,
+			"day_count":  "act365",
+			"face_value": 100000,
+		}, http.StatusOK, nil)
+	}
+	h.App.Marketdata.TickFeeds(t.Context())
+
+	if got := indexRates(t, h, "selic"); len(got) != 2 ||
+		got[0] != (indexRateRow{"2026-01-02", "0.000551310000", "br_selic"}) {
+		t.Errorf("selic = %+v", got)
+	}
+
+	if got := indexRates(t, h, "igpm"); len(got) != 1 ||
+		got[0] != (indexRateRow{"2025-12-01", "0.002700000000", "br_igpm"}) {
+		t.Errorf("igpm = %+v", got)
+	}
+}
+
 func TestNewIndexSources(t *testing.T) {
 	t.Parallel()
 
 	if got := marketdata.IndexSourceIDs(); !slices.Equal(
 		got,
-		[]string{"br_cdi", "br_ipca", "eu_estr", "ea_hicp", "us_sofr", "us_cpi"},
+		[]string{
+			"br_cdi",
+			"br_ipca",
+			"br_selic",
+			"br_igpm",
+			"eu_estr",
+			"ea_hicp",
+			"us_sofr",
+			"us_cpi",
+		},
 	) {
 		t.Fatalf("IndexSourceIDs = %v", got)
 	}

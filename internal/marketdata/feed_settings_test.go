@@ -51,6 +51,8 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		"yahoo_chart",
 		"br_cdi",
 		"br_ipca",
+		"br_selic",
+		"br_igpm",
 		"eu_estr",
 		"ea_hicp",
 		"us_sofr",
