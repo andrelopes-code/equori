@@ -70,7 +70,8 @@ Source status:
 | E-09 | ETF of stocks, ETF of a foreign index | partial | type `etf` | as E-02 | Lei 11.033/2004 art. 2, II and art. 3, I (the exemption names stocks only), read on 2026-11-18 |
 | E-10 | ETF of fixed income | partial | type `etf` | no tax class for the rate by the term of the portfolio | to read |
 | E-11 | BDR | partial | tax class `bdr` | the foreign tax of a dividend has no field of its own; as E-02 for a sale | sale: Lei 11.033/2004 art. 2, read on 2026-11-18; tax of a foreign dividend: to read |
-| E-12 | Option, forward, future, securities lending | unsupported | no instrument type | four instrument types with their events | to read |
+| E-12 | Option, forward, future | unsupported | no instrument type; a sale above the units held is refused, so no short position | instrument types with their terms (underlying, strike, expiry), exercise and expiry events, short positions and the daily settlement of a future | to read |
+| E-12b | Securities lending (BTC), lender | supported | income type `lending_fee`, treatment `exclusive`; the units and the cost stay in the holding; `TestJurisdictionBRTreatments`, `TestBR` | the borrower side (a short sale of borrowed shares) is not modeled | the lender fee is withheld at source by the fixed income table (IN RFB 1.585/2015; broker statements), to read in the norm |
 | E-13 | Brokerage note | supported | `record_brokerage_note`; `TestRecordBrokerageNoteToolS427` | none | to read |
 
 ## Funds and others
@@ -90,7 +91,7 @@ Source status:
 
 | Verdict | Rows |
 |---|---|
-| supported | 22 |
+| supported | 23 |
 | partial | 25 |
 | unsupported | 5 |
 

@@ -1201,6 +1201,7 @@ export const catalogPtBR: Catalog = {
   "income.typePlaceholder": "Escolha o tipo",
   "income.type.dividend": "Dividendo",
   "income.type.jcp": "Juros sobre capital próprio",
+  "income.type.lending_fee": "Aluguel de ações",
   "income.type.interest": "Juros",
   "income.type.coupon": "Cupom",
   "income.type.bonus_shares": "Bonificação em ações",

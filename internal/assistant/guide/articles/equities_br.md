@@ -35,6 +35,8 @@ Dividend. Exempt up to R$ 50,000.00 a month paid by one source to one individual
 
 JCP. 15% at source up to 2025-12-31 and 17.5% from 2026-01-01, by the payment date (Lei Complementar 224/2025, art. 8 and 14).
 
+Securities lending (BTC). Shares lent at B3 stay in the holding: the lender keeps their units and their cost, and receives the dividends as a refund from the borrower. The fee of the loan is recorded with record_investment kind income and income_type lending_fee, with the tax the broker withheld at source by the table of the fixed income gains; get_tax_year lists it with the treatment exclusive. Options, forwards and futures are not recorded: equori has no instrument type for them.
+
 Fund report. The report of a listed FII on the instrument page comes from the CVM (Informe Mensal de FII, feed br_cvm_fii); the break-even is read against the Tesouro IPCA+ curve (feed br_tesouro).
 
 Company statements. The statements of a listed company on the instrument page come from the CVM files DFP, ITR and FCA (feed br_cvm_cia).

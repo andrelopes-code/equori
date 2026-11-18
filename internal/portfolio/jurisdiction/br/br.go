@@ -52,7 +52,9 @@ func (Jurisdiction) UnitTax() (domain.UnitTax, bool) {
 	}, true
 }
 
-func (Jurisdiction) IncomeTypes() []string { return []string{"jcp"} }
+// IncomeTypes: lending_fee is what the lender of securities receives at B3 (BTC); the holding keeps
+// its units (coverage row E-12).
+func (Jurisdiction) IncomeTypes() []string { return []string{"jcp", "lending_fee"} }
 
 // DeductibleContributions: the contributions of a PGBL are deducted up to 12% of the taxable
 // income of an individual who contributes to the public pension (Lei 9.532/1997, art. 11).
@@ -130,6 +132,10 @@ func (Jurisdiction) Treatment(incomeType, taxClass string) string {
 
 		return "exclusive"
 	case "jcp":
+		return "exclusive"
+	case "lending_fee":
+		// The fee of a securities lending is withheld at source by the table of the fixed
+		// income gains (IN RFB 1.585/2015, securities lending).
 		return "exclusive"
 	}
 

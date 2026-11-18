@@ -1191,6 +1191,7 @@ export const catalogEn = {
   "income.typePlaceholder": "Choose the type",
   "income.type.dividend": "Dividend",
   "income.type.jcp": "Interest on equity",
+  "income.type.lending_fee": "Securities lending fee",
   "income.type.interest": "Interest",
   "income.type.coupon": "Coupon",
   "income.type.bonus_shares": "Bonus shares",

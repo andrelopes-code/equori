@@ -55,6 +55,8 @@ func TestBR(t *testing.T) {
 		"dividend": "exempt", "jcp": "exclusive", "interest": "exclusive",
 		"coupon": "exclusive", "distribution": "exclusive", "bonus_shares": "exempt",
 		"other": "",
+		// Coverage row E-12: the fee of a securities lending is withheld at source like interest.
+		"lending_fee": "exclusive",
 	} {
 		if got := j.Treatment(incomeType, ""); got != want {
 			t.Errorf("Treatment(%q) = %q, want %q", incomeType, got, want)
@@ -75,7 +77,7 @@ func TestBR(t *testing.T) {
 		}
 	}
 
-	if j.ID() != "br" || len(j.IncomeTypes()) != 1 || j.IncomeTypes()[0] != "jcp" {
+	if j.ID() != "br" || !slices.Equal(j.IncomeTypes(), []string{"jcp", "lending_fee"}) {
 		t.Errorf("ID = %q, IncomeTypes = %v", j.ID(), j.IncomeTypes())
 	}
 

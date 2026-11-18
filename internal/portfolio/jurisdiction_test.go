@@ -63,11 +63,13 @@ func TestJurisdictionBRTreatments(t *testing.T) {
 	f := newFixture(t)
 	f.income(t, f.mxrf11, "dividend", 1000, f.dividends)
 	f.income(t, f.petr4, "jcp", 4500, f.jcp)
+	f.income(t, f.petr4, "lending_fee", 300, f.jcp)
 
 	es := f.incomeEvents(t)
-	if len(es) != 2 || es[0].TaxTreatment == nil || *es[0].TaxTreatment != "exempt" ||
-		es[1].TaxTreatment == nil ||
-		*es[1].TaxTreatment != "exclusive" {
+	if len(es) != 3 || es[0].TaxTreatment == nil || *es[0].TaxTreatment != "exempt" ||
+		es[1].TaxTreatment == nil || *es[1].TaxTreatment != "exclusive" ||
+		es[2].IncomeType != "lending_fee" || es[2].TaxTreatment == nil ||
+		*es[2].TaxTreatment != "exclusive" {
 		t.Fatalf("events = %+v", es)
 	}
 
@@ -79,6 +81,7 @@ func TestJurisdictionBRTreatments(t *testing.T) {
 		"dividend",
 		"interest",
 		"jcp",
+		"lending_fee",
 	}; !slices.Equal(
 		got,
 		want,
