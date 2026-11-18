@@ -7,12 +7,16 @@ import (
 )
 
 type capital struct {
-	version  int
 	issued   *int64
 	treasury *int64
 }
 
-func readCapital(zr *zip.Reader, member string) (map[company]capital, error) {
+// readCapital keeps the row whose version is the one the general member filed.
+func readCapital(
+	zr *zip.Reader,
+	member string,
+	filings map[company]filed,
+) (map[company]capital, error) {
 	required := []string{
 		"CNPJ_CIA", "DT_REFER", "VERSAO", "QT_ACAO_TOTAL_CAP_INTEGR", "QT_ACAO_TOTAL_TESOURO",
 	}
@@ -27,14 +31,13 @@ func readCapital(zr *zip.Reader, member string) (map[company]capital, error) {
 		}
 
 		k := company{identifierReplacer.Replace(r.get("CNPJ_CIA")), ref}
-		if old, ok := out[k]; ok && old.version >= version {
+		if filings[k].version != version {
 			return
 		}
 
 		issued, issuedErr := strconv.ParseInt(r.get("QT_ACAO_TOTAL_CAP_INTEGR"), 10, 64)
 		treasury, treasuryErr := strconv.ParseInt(r.get("QT_ACAO_TOTAL_TESOURO"), 10, 64)
 		out[k] = capital{
-			version:  version,
 			issued:   pointerIf(issuedErr == nil, issued),
 			treasury: pointerIf(treasuryErr == nil, treasury),
 		}

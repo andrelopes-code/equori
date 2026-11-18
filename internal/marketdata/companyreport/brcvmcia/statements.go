@@ -99,7 +99,7 @@ func readStatements(f *os.File, size int64, a archive) ([]companyreport.Report, 
 		}
 	}
 
-	capitals, err := readCapital(zr, base+"composicao_capital_"+year+".csv")
+	capitals, err := readCapital(zr, base+"composicao_capital_"+year+".csv", filings)
 	if err != nil {
 		return nil, err
 	}
