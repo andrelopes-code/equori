@@ -80,6 +80,7 @@ func families() config.Families {
 			marketdata.CurveSourceIDs(),
 			marketdata.InstitutionSourceIDs(),
 			marketdata.FundReportSourceIDs(),
+			marketdata.CompanyReportSourceIDs(),
 		),
 	}
 }

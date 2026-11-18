@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/andrelopes-code/equori/internal/marketdata/companyreport"
 	"github.com/andrelopes-code/equori/internal/marketdata/curve"
 	"github.com/andrelopes-code/equori/internal/marketdata/expectation"
 	"github.com/andrelopes-code/equori/internal/marketdata/feed"
@@ -33,6 +34,8 @@ type FeedConfig struct {
 	Institutions []institution.Source
 	// FundReports are the fund report sources (fund report FR2).
 	FundReports []fundreport.Source
+	// CompanyReports are the company report sources (company report CR2).
+	CompanyReports []companyreport.Source
 	// Seed names the sources enabled while no setting is stored; tests set it through
 	// server.Config, production passes none (ADR 025 F2, ADR 029 BK25).
 	Seed []string

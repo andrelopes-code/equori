@@ -3262,6 +3262,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/company-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The statements the enabled company report sources stored for an instrument, newest period first (company report CR6). */
+        get: operations["listCompanyReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/market-data/institution-indicators": {
         parameters: {
             query?: never;
@@ -7228,6 +7245,105 @@ export interface components {
              */
             net_income: number | null;
         };
+        CompanyReportList: {
+            items: components["schemas"]["CompanyReport"][];
+        };
+        CompanyReport: {
+            source: string;
+            source_url: string;
+            /** @description The company's identifier at the regulator. */
+            identifier: string;
+            name: string;
+            /** @description True when the newest period reads the consolidated statements (CR3). */
+            consolidated: boolean;
+            /** @description standard, or other for a chart of accounts without the standard lines (CR5). */
+            plan: string;
+            currency: string;
+            /** @description Newest first by period, then by months. */
+            periods: components["schemas"]["CompanyReportPeriod"][];
+        };
+        /** @description A null account is a line the filing lacks or the chart of accounts does not hold; it is never zero. */
+        CompanyReportPeriod: {
+            /**
+             * Format: date
+             * @description Last day of the fiscal year or quarter.
+             */
+            period: string;
+            /** @description 12 for a fiscal year; 3, 6 or 9 for the year to date of a quarter. */
+            months: number;
+            /** Format: date */
+            delivered: string | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            total_assets: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            current_assets: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            cash: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            short_investments: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            current_liabilities: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            short_debt: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            long_debt: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            equity: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            revenue: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            gross_profit: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            net_income: number | null;
+            /**
+             * Format: int64
+             * @description Minor units of the report's currency.
+             */
+            operating_cash_flow: number | null;
+            /**
+             * Format: int64
+             * @description Count of shares.
+             */
+            shares_issued: number | null;
+            /**
+             * Format: int64
+             * @description Count of shares held in treasury.
+             */
+            shares_treasury: number | null;
+        };
         FundReportList: {
             items: components["schemas"]["FundReport"][];
             /** @description FR15. For each enabled source whose report set for the instrument is empty, the funds that share the instrument's exchange and code; a link by symbol picks one. */
@@ -7306,7 +7422,7 @@ export interface components {
         MarketDataFeed: {
             id: string;
             /** @enum {string} */
-            kind: "price" | "index" | "expectation" | "curve" | "institution" | "fund_report";
+            kind: "price" | "index" | "expectation" | "curve" | "institution" | "fund_report" | "company_report";
             enabled: boolean;
             /** @description Suggested for the calling book's region (ADR 025 F3); a suggestion enables nothing. */
             suggested: boolean;
@@ -14406,6 +14522,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FundReportList"];
+                };
+            };
+            401: components["responses"]["Problem"];
+            422: components["responses"]["Problem"];
+        };
+    };
+    listCompanyReports: {
+        parameters: {
+            query: {
+                /** @description The instrument code, such as a ticker. */
+                code: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompanyReportList"];
                 };
             };
             401: components["responses"]["Problem"];

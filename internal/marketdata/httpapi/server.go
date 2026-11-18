@@ -56,6 +56,7 @@ type Service interface {
 	Expectations(ctx context.Context, id string) (domain.IndexExpectations, error)
 	Curves(ctx context.Context) ([]domain.Curve, error)
 	FundReports(ctx context.Context, code string) (domain.FundReportList, error)
+	CompanyReports(ctx context.Context, code string) ([]domain.CompanyReport, error)
 	InstitutionIndicators(
 		ctx context.Context, scheme, identifier string,
 	) (domain.InstitutionIndicators, error)
@@ -140,7 +141,8 @@ func (s *Server) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST "+BaseURL+"/prices/import", s.importPrices)
 }
 
-// registerRates adds the routes of the indexes, the curves and the fund reports.
+// registerRates adds the routes of the indexes, the curves, the fund reports and the
+// company reports.
 func (s *Server) registerRates(mux *http.ServeMux) {
 	mux.HandleFunc("GET "+BaseURL+"/indexes",
 		httpserver.Handle(s.errs, http.StatusOK, s.listIndexes))
@@ -152,6 +154,8 @@ func (s *Server) registerRates(mux *http.ServeMux) {
 		httpserver.Handle(s.errs, http.StatusOK, s.listCurves))
 	mux.HandleFunc("GET "+BaseURL+"/fund-reports",
 		httpserver.Handle(s.errs, http.StatusOK, s.listFundReports))
+	mux.HandleFunc("GET "+BaseURL+"/company-reports",
+		httpserver.Handle(s.errs, http.StatusOK, s.listCompanyReports))
 }
 
 // visible returns the instrument of code when the book of ctx may read it (A236 FC1).

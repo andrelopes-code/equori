@@ -325,18 +325,19 @@ func newFeedConfig(
 	}
 
 	return marketdata.FeedConfig{
-		Sources:      sources,
-		Indexes:      indexSources,
-		Expectations: marketdata.NewExpectationSources(cfg.FeedURLs, feedClient),
-		Curves:       marketdata.NewCurveSources(cfg.FeedURLs, feedClient),
-		FundReports:  marketdata.NewFundReportSources(cfg.FeedURLs, feedClient),
-		Institutions: marketdata.NewInstitutionSources(cfg.FeedURLs, feedClient),
-		Seed:         slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
-		Client:       feedClient,
-		Clock:        clk,
-		Log:          log,
-		CatalogBound: cfg.CatalogBound,
-		ProbeBound:   cfg.ProbeBound,
-		CurrentBound: cfg.CurrentBound,
+		Sources:        sources,
+		Indexes:        indexSources,
+		Expectations:   marketdata.NewExpectationSources(cfg.FeedURLs, feedClient),
+		Curves:         marketdata.NewCurveSources(cfg.FeedURLs, feedClient),
+		FundReports:    marketdata.NewFundReportSources(cfg.FeedURLs, feedClient),
+		CompanyReports: marketdata.NewCompanyReportSources(cfg.FeedURLs, feedClient),
+		Institutions:   marketdata.NewInstitutionSources(cfg.FeedURLs, feedClient),
+		Seed:           slices.Concat(cfg.PriceFeeds, cfg.IndexFeeds),
+		Client:         feedClient,
+		Clock:          clk,
+		Log:            log,
+		CatalogBound:   cfg.CatalogBound,
+		ProbeBound:     cfg.ProbeBound,
+		CurrentBound:   cfg.CurrentBound,
 	}, nil
 }

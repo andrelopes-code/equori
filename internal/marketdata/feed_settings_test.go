@@ -60,6 +60,7 @@ func feedsOf(t *testing.T, h *apitest.Harness) map[string]feedAPI {
 		"br_tesouro",
 		"br_ifdata",
 		"br_cvm_fii",
+		"br_cvm_cia",
 	}
 	if !slices.Equal(ids, want) {
 		t.Fatalf("feeds = %v, want %v", ids, want)

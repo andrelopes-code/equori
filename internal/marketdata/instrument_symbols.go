@@ -43,7 +43,7 @@ func (m *Module) checkSymbolSources(symbols map[string]string) error {
 			_, ok := src.(feed.SymbolOverride)
 			return ok && src.ID() == key
 		})
-		if !reads && !m.isFundReportSource(key) {
+		if !reads && !m.isFundReportSource(key) && !m.isCompanyReportSource(key) {
 			return &domain.FieldError{
 				Field:   "symbols." + key,
 				Message: "is not a source that reads a symbol",

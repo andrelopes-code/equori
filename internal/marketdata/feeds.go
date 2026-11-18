@@ -88,9 +88,15 @@ func (m *Module) TickFeeds(ctx context.Context) {
 		}
 	}
 
-	m.tickFundReports(ctx, on)
+	m.tickReports(ctx, on)
 
 	m.TickAccrual(ctx)
+}
+
+// tickReports runs the fund report and the company report sources.
+func (m *Module) tickReports(ctx context.Context, on map[string]bool) {
+	m.tickFundReports(ctx, on)
+	m.tickCompanyReports(ctx, on)
 }
 
 func (m *Module) tick(ctx context.Context, src feed.Source) error {

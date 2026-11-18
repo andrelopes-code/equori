@@ -19,6 +19,7 @@ func getMarketData(svc Service, cals Calendars) tool.Tool {
 			"The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. " +
 			"The fund_reports view returns the monthly reports a listed fund filed, or the funds that share its code; " +
 			"manage_instrument links one by the symbol of the source set to its identifier. " +
+			"The company_reports view returns the accounts a listed company filed for its fiscal years and quarters. " +
 			"Use it for prices, securities, holidays and index rates. " +
 			"Do not use it for the book's holdings: get_portfolio does.",
 		Effect:     tool.ReadOnly,
@@ -58,6 +59,8 @@ func readMarketData(
 		return marketCurves(ctx, svc)
 	case "fund_reports":
 		return marketFundReports(ctx, svc, in)
+	case "company_reports":
+		return marketCompanyReports(ctx, svc, in)
 	case "calendars":
 		out := getMarketDataOut{Calendars: []calendarView{}}
 		for _, c := range cals.List() {
@@ -98,7 +101,7 @@ func checkMarketDataArgs(in getMarketDataIn) error {
 
 	var err error
 	switch in.View {
-	case "instrument", "fund_reports":
+	case "instrument", "fund_reports", "company_reports":
 		err = required(name, fields, "code")
 	case "prices":
 		err = required(name, fields, "code", "quote", "from", "to")

@@ -3817,7 +3817,7 @@
   },
   {
     "name": "get_market_data",
-    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. The fund_reports view returns the monthly reports a listed fund filed, or the funds that share its code; manage_instrument links one by the symbol of the source set to its identifier. Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
+    "description": "Returns market data of the instance: instruments with their type and scale, one instrument with its fixed income terms, prices of an instrument in a period, business-day calendars, a calendar's holidays in a year, the stored economic indexes, the rates of one index in a period, or the annual rates a market survey expects for one index (where the indexes view says expected). The catalog view searches, by code or name, the instruments the enabled price sources can quote, to define one with manage_instrument. The fund_reports view returns the monthly reports a listed fund filed, or the funds that share its code; manage_instrument links one by the symbol of the source set to its identifier. The company_reports view returns the accounts a listed company filed for its fiscal years and quarters. Use it for prices, securities, holidays and index rates. Do not use it for the book's holdings: get_portfolio does.",
     "effect": "read_only",
     "idempotent": true,
     "input_schema": {
@@ -3837,12 +3837,13 @@
             "index_rates",
             "index_expectations",
             "curves",
-            "fund_reports"
+            "fund_reports",
+            "company_reports"
           ]
         },
         "code": {
           "type": "string",
-          "description": "for instrument, prices and fund_reports: instrument code, such as a ticker or currency code"
+          "description": "for instrument, prices, fund_reports and company_reports: instrument code, such as a ticker or currency code"
         },
         "quote": {
           "type": "string",
@@ -4596,6 +4597,112 @@
               "identifier",
               "name",
               "segment"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "company_reports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "source_url": {
+                "type": "string"
+              },
+              "identifier": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "consolidated": {
+                "type": "boolean"
+              },
+              "plan": {
+                "type": "string"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "periods": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "period": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "months": {
+                      "type": "integer"
+                    },
+                    "delivered": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "total_assets": {
+                      "type": "integer"
+                    },
+                    "current_assets": {
+                      "type": "integer"
+                    },
+                    "cash": {
+                      "type": "integer"
+                    },
+                    "short_investments": {
+                      "type": "integer"
+                    },
+                    "current_liabilities": {
+                      "type": "integer"
+                    },
+                    "short_debt": {
+                      "type": "integer"
+                    },
+                    "long_debt": {
+                      "type": "integer"
+                    },
+                    "equity": {
+                      "type": "integer"
+                    },
+                    "revenue": {
+                      "type": "integer"
+                    },
+                    "gross_profit": {
+                      "type": "integer"
+                    },
+                    "net_income": {
+                      "type": "integer"
+                    },
+                    "operating_cash_flow": {
+                      "type": "integer"
+                    },
+                    "shares_issued": {
+                      "type": "integer"
+                    },
+                    "shares_treasury": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "period",
+                    "months"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "source",
+              "source_url",
+              "identifier",
+              "name",
+              "consolidated",
+              "plan",
+              "currency",
+              "periods"
             ],
             "additionalProperties": false
           }

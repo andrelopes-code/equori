@@ -140,17 +140,20 @@ func (e InstrumentType) Valid() bool {
 
 // Defines values for MarketDataFeedKind.
 const (
-	MarketDataFeedKindCurve       MarketDataFeedKind = "curve"
-	MarketDataFeedKindExpectation MarketDataFeedKind = "expectation"
-	MarketDataFeedKindFundReport  MarketDataFeedKind = "fund_report"
-	MarketDataFeedKindIndex       MarketDataFeedKind = "index"
-	MarketDataFeedKindInstitution MarketDataFeedKind = "institution"
-	MarketDataFeedKindPrice       MarketDataFeedKind = "price"
+	MarketDataFeedKindCompanyReport MarketDataFeedKind = "company_report"
+	MarketDataFeedKindCurve         MarketDataFeedKind = "curve"
+	MarketDataFeedKindExpectation   MarketDataFeedKind = "expectation"
+	MarketDataFeedKindFundReport    MarketDataFeedKind = "fund_report"
+	MarketDataFeedKindIndex         MarketDataFeedKind = "index"
+	MarketDataFeedKindInstitution   MarketDataFeedKind = "institution"
+	MarketDataFeedKindPrice         MarketDataFeedKind = "price"
 )
 
 // Valid indicates whether the value is a known member of the MarketDataFeedKind enum.
 func (e MarketDataFeedKind) Valid() bool {
 	switch e {
+	case MarketDataFeedKindCompanyReport:
+		return true
 	case MarketDataFeedKindCurve:
 		return true
 	case MarketDataFeedKindExpectation:
@@ -230,6 +233,82 @@ type CatalogSearch struct {
 
 	// Unavailable The enabled sources that failed or passed their bound.
 	Unavailable []string `json:"unavailable"`
+}
+
+// CompanyReport defines model for CompanyReport.
+type CompanyReport struct {
+	// Consolidated True when the newest period reads the consolidated statements (CR3).
+	Consolidated bool   `json:"consolidated"`
+	Currency     string `json:"currency"`
+
+	// Identifier The company's identifier at the regulator.
+	Identifier string `json:"identifier"`
+	Name       string `json:"name"`
+
+	// Periods Newest first by period, then by months.
+	Periods []CompanyReportPeriod `json:"periods"`
+
+	// Plan standard, or other for a chart of accounts without the standard lines (CR5).
+	Plan      string `json:"plan"`
+	Source    string `json:"source"`
+	SourceUrl string `json:"source_url"`
+}
+
+// CompanyReportList defines model for CompanyReportList.
+type CompanyReportList struct {
+	Items []CompanyReport `json:"items"`
+}
+
+// CompanyReportPeriod A null account is a line the filing lacks or the chart of accounts does not hold; it is never zero.
+type CompanyReportPeriod struct {
+	// Cash Minor units of the report's currency.
+	Cash *int64 `json:"cash"`
+
+	// CurrentAssets Minor units of the report's currency.
+	CurrentAssets *int64 `json:"current_assets"`
+
+	// CurrentLiabilities Minor units of the report's currency.
+	CurrentLiabilities *int64              `json:"current_liabilities"`
+	Delivered          *openapi_types.Date `json:"delivered"`
+
+	// Equity Minor units of the report's currency.
+	Equity *int64 `json:"equity"`
+
+	// GrossProfit Minor units of the report's currency.
+	GrossProfit *int64 `json:"gross_profit"`
+
+	// LongDebt Minor units of the report's currency.
+	LongDebt *int64 `json:"long_debt"`
+
+	// Months 12 for a fiscal year; 3, 6 or 9 for the year to date of a quarter.
+	Months int `json:"months"`
+
+	// NetIncome Minor units of the report's currency.
+	NetIncome *int64 `json:"net_income"`
+
+	// OperatingCashFlow Minor units of the report's currency.
+	OperatingCashFlow *int64 `json:"operating_cash_flow"`
+
+	// Period Last day of the fiscal year or quarter.
+	Period openapi_types.Date `json:"period"`
+
+	// Revenue Minor units of the report's currency.
+	Revenue *int64 `json:"revenue"`
+
+	// SharesIssued Count of shares.
+	SharesIssued *int64 `json:"shares_issued"`
+
+	// SharesTreasury Count of shares held in treasury.
+	SharesTreasury *int64 `json:"shares_treasury"`
+
+	// ShortDebt Minor units of the report's currency.
+	ShortDebt *int64 `json:"short_debt"`
+
+	// ShortInvestments Minor units of the report's currency.
+	ShortInvestments *int64 `json:"short_investments"`
+
+	// TotalAssets Minor units of the report's currency.
+	TotalAssets *int64 `json:"total_assets"`
 }
 
 // Curve defines model for Curve.
@@ -899,6 +978,12 @@ type TagName = string
 // ListHolidaysParams defines parameters for ListHolidays.
 type ListHolidaysParams struct {
 	Year int `form:"year" json:"year"`
+}
+
+// ListCompanyReportsParams defines parameters for ListCompanyReports.
+type ListCompanyReportsParams struct {
+	// Code The instrument code, such as a ticker.
+	Code string `form:"code" json:"code"`
 }
 
 // ListFundReportsParams defines parameters for ListFundReports.

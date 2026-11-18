@@ -166,6 +166,30 @@ paths:
           $ref: "#/components/responses/Problem"
         "422":
           $ref: "#/components/responses/Problem"
+  /company-reports:
+    get:
+      tags: [marketdata]
+      operationId: listCompanyReports
+      x-book-role: read
+      summary: The statements the enabled company report sources stored for an instrument, newest period first (company report CR6).
+      parameters:
+        - name: code
+          in: query
+          required: true
+          description: The instrument code, such as a ticker.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanyReportList"
+        "401":
+          $ref: "#/components/responses/Problem"
+        "422":
+          $ref: "#/components/responses/Problem"
   /market-data/institution-indicators:
     get:
       tags: [marketdata]
@@ -916,6 +940,132 @@ schemas:
         format: int64
         nullable: true
         description: The net income of the period in minor units of currency; null when not informed.
+  CompanyReportList:
+    type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: "#/components/schemas/CompanyReport"
+  CompanyReport:
+    type: object
+    additionalProperties: false
+    required: [source, source_url, identifier, name, consolidated, plan, currency, periods]
+    properties:
+      source:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+      source_url:
+        type: string
+      identifier:
+        type: string
+        description: The company's identifier at the regulator.
+      name:
+        type: string
+      consolidated:
+        type: boolean
+        description: True when the newest period reads the consolidated statements (CR3).
+      plan:
+        type: string
+        pattern: "^[a-z0-9_]{2,40}$"
+        description: standard, or other for a chart of accounts without the standard lines (CR5).
+      currency:
+        type: string
+      periods:
+        type: array
+        description: Newest first by period, then by months.
+        items:
+          $ref: "#/components/schemas/CompanyReportPeriod"
+  CompanyReportPeriod:
+    type: object
+    additionalProperties: false
+    description: A null account is a line the filing lacks or the chart of accounts does not hold; it is never zero.
+    required: [period, months, delivered, total_assets, current_assets, cash, short_investments, current_liabilities, short_debt, long_debt, equity, revenue, gross_profit, net_income, operating_cash_flow, shares_issued, shares_treasury]
+    properties:
+      period:
+        type: string
+        format: date
+        description: Last day of the fiscal year or quarter.
+      months:
+        type: integer
+        minimum: 1
+        maximum: 12
+        description: 12 for a fiscal year; 3, 6 or 9 for the year to date of a quarter.
+      delivered:
+        type: string
+        format: date
+        nullable: true
+      total_assets:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      current_assets:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      cash:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      short_investments:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      current_liabilities:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      short_debt:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      long_debt:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      equity:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      revenue:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      gross_profit:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      net_income:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      operating_cash_flow:
+        type: integer
+        format: int64
+        nullable: true
+        description: Minor units of the report's currency.
+      shares_issued:
+        type: integer
+        format: int64
+        nullable: true
+        description: Count of shares.
+      shares_treasury:
+        type: integer
+        format: int64
+        nullable: true
+        description: Count of shares held in treasury.
   FundReportList:
     type: object
     required: [items, candidates]
@@ -1062,7 +1212,7 @@ schemas:
         pattern: "^[a-z0-9_]{2,40}$"
       kind:
         type: string
-        enum: [price, index, expectation, curve, institution, fund_report]
+        enum: [price, index, expectation, curve, institution, fund_report, company_report]
       enabled:
         type: boolean
       suggested:

@@ -24,12 +24,13 @@ func (getMarketDataView) Values() []string {
 		"index_expectations",
 		"curves",
 		"fund_reports",
+		"company_reports",
 	}
 }
 
 type getMarketDataIn struct {
 	View     getMarketDataView `json:"view"              jsonschema:"what to return"`
-	Code     string            `json:"code,omitzero"     jsonschema:"for instrument, prices and fund_reports: instrument code, such as a ticker or currency code"`
+	Code     string            `json:"code,omitzero"     jsonschema:"for instrument, prices, fund_reports and company_reports: instrument code, such as a ticker or currency code"`
 	Quote    string            `json:"quote,omitzero"    jsonschema:"for prices: code of the currency the price is quoted in"`
 	From     tool.Date         `json:"from,omitzero"     jsonschema:"for prices and index_rates: first date"`
 	To       tool.Date         `json:"to,omitzero"       jsonschema:"for prices and index_rates: last date; at most 18300 days after from for prices, 7320 for index_rates"`
@@ -158,6 +159,38 @@ type fundReportCandidateView struct {
 	Segment    string `json:"segment"`
 }
 
+type companyReportView struct {
+	Source       string                    `json:"source"`
+	SourceURL    string                    `json:"source_url"`
+	Identifier   string                    `json:"identifier"`
+	Name         string                    `json:"name"`
+	Consolidated bool                      `json:"consolidated"`
+	Plan         string                    `json:"plan"`
+	Currency     string                    `json:"currency"`
+	Periods      []companyReportPeriodView `json:"periods"`
+}
+
+type companyReportPeriodView struct {
+	Period    tool.Date `json:"period"`
+	Months    int       `json:"months"`
+	Delivered tool.Date `json:"delivered,omitzero"`
+
+	TotalAssets        tool.OptionalInt `json:"total_assets,omitzero"`
+	CurrentAssets      tool.OptionalInt `json:"current_assets,omitzero"`
+	Cash               tool.OptionalInt `json:"cash,omitzero"`
+	ShortInvestments   tool.OptionalInt `json:"short_investments,omitzero"`
+	CurrentLiabilities tool.OptionalInt `json:"current_liabilities,omitzero"`
+	ShortDebt          tool.OptionalInt `json:"short_debt,omitzero"`
+	LongDebt           tool.OptionalInt `json:"long_debt,omitzero"`
+	Equity             tool.OptionalInt `json:"equity,omitzero"`
+	Revenue            tool.OptionalInt `json:"revenue,omitzero"`
+	GrossProfit        tool.OptionalInt `json:"gross_profit,omitzero"`
+	NetIncome          tool.OptionalInt `json:"net_income,omitzero"`
+	OperatingCashFlow  tool.OptionalInt `json:"operating_cash_flow,omitzero"`
+	SharesIssued       tool.OptionalInt `json:"shares_issued,omitzero"`
+	SharesTreasury     tool.OptionalInt `json:"shares_treasury,omitzero"`
+}
+
 type curvePointView struct {
 	Maturity tool.Date `json:"maturity"`
 	Rate     string    `json:"rate"`
@@ -197,6 +230,8 @@ type getMarketDataOut struct {
 	// FundReportCandidates holds, for a source without a report of the code, the funds that share
 	// the code; the instrument's symbol for the source, set to an identifier, links one (FR15).
 	FundReportCandidates []fundReportCandidateView `json:"fund_report_candidates,omitzero"`
+	// CompanyReports holds the statements the enabled company report sources stored for the code.
+	CompanyReports []companyReportView `json:"company_reports,omitzero"`
 }
 
 func toInstrumentView(in domain.Instrument) instrumentView {
