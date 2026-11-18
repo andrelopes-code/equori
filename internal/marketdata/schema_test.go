@@ -182,6 +182,35 @@ func TestSchemaRejectsInvalidCurvePoints(t *testing.T) {
 	}
 }
 
+func TestSchemaRejectsInvalidFundReports(t *testing.T) {
+	t.Parallel()
+
+	const row = `INSERT INTO marketdata_fund_report ` +
+		`(source, exchange, code, period, currency, identifier, name, segment) VALUES `
+
+	pool := pgtest.New(t)
+	if _, err := pool.Exec(
+		t.Context(),
+		row+`('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '11728688000147', 'FII', 'Logistics')`,
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, sql := range map[string]string{
+		"source outside the pattern": row + `('BR_CVM', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '1', 'FII', '')`,
+		"exchange in lower case":     row + `('br_cvm_fii', 'bvmf', 'HGLG11', '2026-10-01', 'BRL', '1', 'FII', '')`,
+		"period not the first day":   row + `('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-02', 'BRL', '1', 'FII', '')`,
+		"empty identifier":           row + `('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '', 'FII', '')`,
+		"duplicate of a stored fund": row + `('br_cvm_fii', 'BVMF', 'HGLG11', '2026-10-01', 'BRL', '1', 'FII', '')`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := pool.Exec(t.Context(), sql); err == nil {
+				t.Fatal("accepted")
+			}
+		})
+	}
+}
+
 // A237 I5.
 func TestSchemaRejectsInvalidInstitutionIndicators(t *testing.T) {
 	t.Parallel()
