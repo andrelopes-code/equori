@@ -1,0 +1,79 @@
+@layer app {
+  /* The thread above the composer: the sent message and the decision sheet of its answer. */
+  .thread {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-4);
+    padding-block-end: var(--slotted-space-4);
+  }
+
+  /* FU4: one line under the chips names what leaves the instance. */
+  .leaves {
+    /* Slotted gap: no public token names the inset of the input's text; issue filed at build. */
+    padding-inline: var(--_padding-inline, var(--slotted-control-padding-inline-md));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* F8: an operation that writes from a file shows the file, where it goes and what it holds. */
+  .fileOp {
+    display: grid;
+    min-inline-size: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-2);
+  }
+
+  .route {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--slotted-space-2);
+    min-block-size: var(--slotted-control-height-sm);
+  }
+
+  .arrow {
+    display: grid;
+    place-items: center;
+    inline-size: 16px; /* literal: icon box of 14 px text, docs/contributing/web.md "Icons with care" */
+    block-size: 16px; /* literal: same box */
+    color: var(--slotted-text-muted);
+  }
+
+  .target,
+  .holds {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .holds {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+  }
+
+  .holds > :last-child {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer app {
+  /* FU2: the chips stand in rows inside the frame of the composer, clear of its edge, one to a
+     row at the width of the panel and of a phone; a long name shortens inside its chip. */
+  .files {
+    --slotted-attachment-grid-min: 15rem; /* literal: one chip to a row up to 480 px of composer */
+    --slotted-attachment-padding-sm: var(--slotted-space-4); /* the tile and the close button clear the chip's curve */
+    box-sizing: border-box;
+    inline-size: 100%;
+    /* The chips keep the inset of the input's text from the frame (Slotted gap, as .leaves). */
+    padding-block-start: var(--_padding-inline, var(--slotted-control-padding-inline-md));
+    padding-inline: var(--_padding-inline, var(--slotted-control-padding-inline-md));
+  }
+
+  /* FU5: the files of a sent message stand above its text, aligned to its end. */
+  .sentFiles {
+    justify-self: end;
+    max-inline-size: 80%;
+  }
+}

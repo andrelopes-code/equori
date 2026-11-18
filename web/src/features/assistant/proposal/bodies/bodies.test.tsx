@@ -49,6 +49,25 @@ describe("OperationBody", () => {
     expect(screen.getByText("iFood")).toBeVisible();
   });
 
+  // F8: a statement import draws the file, the account it goes to, its lines and its period.
+  it("draws a statement import as a file going to an account", () => {
+    drawBody({
+      action: "import_statement_file",
+      changes: [
+        { field: "source", after: { text: "extrato.ofx" } },
+        { field: "account", after: { text: "Nubank" } },
+        { field: "count", after: { text: "48" } },
+        { field: "from", after: { date: "2026-10-01" } },
+        { field: "until", after: { date: "2026-10-31" } },
+      ],
+    });
+
+    expect(screen.getByText("extrato.ofx")).toBeVisible();
+    expect(screen.getByText("Nubank")).toBeVisible();
+    expect(screen.getByText("48 lines")).toBeVisible();
+    expect(screen.getByText("10/01 to 10/31/2026")).toBeVisible();
+  });
+
   it("names the uncategorized label when no moved row has a category", () => {
     drawBody({
       action: "categorize_transactions",

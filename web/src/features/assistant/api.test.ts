@@ -51,6 +51,22 @@ describe("sendMessage", () => {
     );
   });
 
+  it("sends the ids of the files the message carries", async () => {
+    const fetchImpl = vi.fn(() => Promise.resolve(stream()));
+    await sendMessage(
+      { text: "", fileIds: ["f1", "f2"] },
+      () => undefined,
+      new AbortController().signal,
+      fetchImpl,
+    );
+    expect(fetchImpl).toHaveBeenCalledWith(
+      "/api/v1/assistant/turns",
+      expect.objectContaining({
+        body: JSON.stringify({ text: "", file_ids: ["f1", "f2"] }),
+      }),
+    );
+  });
+
   it("delivers turn, step and answer in order", async () => {
     const message = {
       id: "m2",

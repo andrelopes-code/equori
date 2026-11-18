@@ -25,6 +25,7 @@ function message(content: string) {
     content,
     created_at: "2026-10-23T10:00:01Z",
     proposals: [],
+    files: [],
   };
 }
 
@@ -41,6 +42,7 @@ function detail(content: string) {
         content: "How much?",
         created_at: "2026-10-23T10:00:00Z",
         proposals: [],
+        files: [],
       },
       message(content),
     ],

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { components } from "@/api/schema.gen";
 import { assistantKeys, sendMessage } from "@/features/assistant/api";
+import type { AssistantFile } from "@/features/assistant/api";
 import {
   readOpenConversation,
   writeOpenConversation,
@@ -19,6 +20,8 @@ export interface AssistantTurn {
   conversationId: string | undefined;
   // The text of the message being answered, shown until the stored conversation holds it.
   pending: string | null;
+  // The files of the message being answered (FU5).
+  pendingFiles: AssistantFile[];
   // The steps of the running turn, in order (P5).
   steps: string[];
   // The steps of each answer this session received, by answer message ID.
@@ -26,7 +29,7 @@ export interface AssistantTurn {
   // The answer's text since the last step (E4).
   draft: string;
   error: AssistantProblem | null;
-  send: (text: string) => void;
+  send: (text: string, files?: AssistantFile[]) => void;
   stop: () => void;
   // The reader stopped the last turn; the stored stop may arrive after the refetch (P3).
   stopped: boolean;
@@ -38,6 +41,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
   const queryClient = useQueryClient();
   const [conversationId, setConversationId] = useState(readOpenConversation);
   const [pending, setPending] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<AssistantFile[]>([]);
   const [draft, setDraft] = useState("");
   const [stopped, setStopped] = useState(false);
   const [steps, setSteps] = useState<string[]>([]);
@@ -81,10 +85,11 @@ export function useAssistantTurn(page: string): AssistantTurn {
   );
 
   const send = useCallback(
-    (text: string) => {
+    (text: string, files: AssistantFile[] = []) => {
       const controller = new AbortController();
       abort.current = controller;
       setPending(text);
+      setPendingFiles(files);
       setDraft("");
       setSteps([]);
       setStopped(false);
@@ -114,6 +119,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
             content: text,
             created_at: now,
             proposals: [],
+            files,
           };
           queryClient.setQueryData<ConversationDetail>(
             assistantKeys.conversation(id),
@@ -145,6 +151,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
         {
           text,
           page,
+          ...(files.length === 0 ? {} : { fileIds: files.map((f) => f.id) }),
           ...(current.current === undefined
             ? {}
             : { conversationId: current.current }),
@@ -172,6 +179,7 @@ export function useAssistantTurn(page: string): AssistantTurn {
   return {
     conversationId,
     pending,
+    pendingFiles,
     steps,
     activity,
     draft,

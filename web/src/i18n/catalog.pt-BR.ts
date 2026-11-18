@@ -1810,7 +1810,7 @@ export const catalogPtBR: Catalog = {
     "Só um resumo do extrato vai para {provider}.",
   "assistant.files.line.whole": "O arquivo vai inteiro para {provider}.",
   "assistant.files.line.mixed":
-    "Extrato vai como resumo; PDF e imagem vão inteiros ao {provider}.",
+    "Extrato vai como resumo; PDF e imagem vão inteiros para {provider}.",
   "assistant.files.line.unread":
     "Este modelo não lê PDF nem imagem; vê só o nome.",
   "assistant.files.failed.kind": "Tipo não aceito",
@@ -2167,6 +2167,13 @@ export const catalogPtBR: Catalog = {
   "assistant.body.price": "preço",
   "assistant.body.total": "total",
   "assistant.body.paid_from": "Sai de {account}",
+  "assistant.body.lines.one": "{count} linha",
+  "assistant.body.lines.other": "{count} linhas",
+  "assistant.body.prices.one": "{count} preço",
+  "assistant.body.prices.other": "{count} preços",
+  "assistant.body.instruments.one": "{count} ativo",
+  "assistant.body.instruments.other": "{count} ativos",
+  "assistant.body.period": "{from} a {until}",
   "assistant.body.current": "Atual",
   "assistant.body.requested": "Pedido",
   "assistant.body.reason": "Motivo: {reason}",

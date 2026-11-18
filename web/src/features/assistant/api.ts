@@ -2,8 +2,8 @@ import { queryOptions, useMutation } from "@tanstack/react-query";
 import type { Client } from "openapi-fetch";
 
 import { useApi } from "@/api/api-context";
-import { parseProblem, unwrap } from "@/api/problem";
-import type { paths } from "@/api/schema.gen";
+import { parseProblem, ProblemError, unwrap } from "@/api/problem";
+import type { components, paths } from "@/api/schema.gen";
 import { parseEvents } from "@/features/assistant/model/sse";
 import type { AssistantEvent } from "@/features/assistant/model/sse";
 
@@ -76,6 +76,50 @@ export async function deleteConversations(api: Client<paths>) {
   await unwrap(await api.DELETE("/assistant/conversations"));
 }
 
+export type AssistantFile = components["schemas"]["AssistantFile"];
+
+// The upload of a conversation file reports its progress, which fetch does not read (FU2).
+export function uploadAssistantFile(
+  file: File,
+  onProgress: (percent: number) => void,
+  signal: AbortSignal,
+): Promise<AssistantFile> {
+  const body = new FormData();
+  body.append("file", file);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/v1/assistant/files");
+    xhr.responseType = "json";
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable)
+        onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status === 201) resolve(xhr.response as AssistantFile);
+      else reject(new ProblemError(parseProblem(xhr.status, xhr.response)));
+    };
+    xhr.onerror = () => {
+      reject(new ProblemError(parseProblem(0, null)));
+    };
+    signal.addEventListener("abort", () => {
+      xhr.abort();
+    });
+    xhr.send(body);
+  });
+}
+
+export async function deleteAssistantFile(api: Client<paths>, id: string) {
+  await unwrap(
+    await api.DELETE("/assistant/files/{id}", { params: { path: { id } } }),
+  );
+}
+
+// The address that opens a sent file in a new tab (FU5).
+export function assistantFileUrl(id: string): string {
+  return `/api/v1/assistant/files/${id}/content`;
+}
+
 function useApiMutation<V, R>(fn: (api: Client<paths>, vars: V) => Promise<R>) {
   const api = useApi();
   return useMutation({ mutationFn: (vars: V) => fn(api, vars) });
@@ -91,7 +135,12 @@ export function useDeleteConversations() {
 
 // The turn is a Server-Sent Events stream, which the generated client does not read.
 export async function sendMessage(
-  input: { conversationId?: string; text: string; page?: string },
+  input: {
+    conversationId?: string;
+    text: string;
+    fileIds?: string[];
+    page?: string;
+  },
   onEvent: (e: AssistantEvent) => void,
   signal: AbortSignal,
   fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
@@ -99,6 +148,7 @@ export async function sendMessage(
   const body = JSON.stringify({
     conversation_id: input.conversationId,
     text: input.text,
+    file_ids: input.fileIds,
     page: input.page,
   });
   const response = await fetchImpl("/api/v1/assistant/turns", {

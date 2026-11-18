@@ -442,6 +442,7 @@ function renderAnswer(proposals: Proposal[], fetch: typeof globalThis.fetch) {
         outcome: "answered",
         created_at: "2026-10-23T10:00:01Z",
         proposals,
+        files: [],
       }}
     />,
     { fetch },

@@ -1,0 +1,203 @@
+{
+  "title": "Assistente · compositor com arquivos",
+  "slug": "assistant-composer-files",
+  "status": "draft",
+  "round": 1,
+  "approved": "",
+  "source": {
+    "url": "http://127.0.0.1:5173/ (painel do assistente, tecla A)",
+    "root": "[data-ui=\"prompt-composer\"]",
+    "commit": "0eedd936"
+  },
+  "schemeAttr": "data-slotted-scheme",
+  "schemes": [
+    "dark",
+    "light"
+  ],
+  "themeAttr": "",
+  "themes": [],
+  "widths": {
+    "desktop": 1440,
+    "phone": 390
+  },
+  "stageBackground": "var(--slotted-surface)",
+  "concepts": [
+    {
+      "id": "a",
+      "name": "Faixa e uma linha",
+      "organizes": "os arquivos como uma faixa de chips acima do campo e o destino resumido em uma linha",
+      "answers": "o que vai junto da mensagem e o que sai da instância, sem crescer o compositor",
+      "costs": "a linha agrega os tipos: o destino de cada arquivo não fica escrito nele",
+      "recommended": true
+    },
+    {
+      "id": "b",
+      "name": "Lista com destino por arquivo",
+      "organizes": "cada arquivo em uma linha com o destino no próprio detalhe",
+      "answers": "para onde vai cada arquivo, um por um",
+      "costs": "cinco arquivos ocupam cinco linhas e empurram o histórico para cima"
+    }
+  ],
+  "chosen": "",
+  "states": [
+    {
+      "id": "data",
+      "name": "Com arquivos"
+    },
+    {
+      "id": "loading",
+      "name": "Enviando"
+    },
+    {
+      "id": "empty",
+      "name": "Sem arquivos"
+    },
+    {
+      "id": "error",
+      "name": "Falha no envio"
+    },
+    {
+      "id": "hard",
+      "name": "Cinco arquivos, modelo sem leitura",
+      "hard": true
+    }
+  ],
+  "overlays": [],
+  "notes": {
+    "priority": {
+      "order": [
+        "chips dos arquivos no compositor, com progresso e erro",
+        "linha do que sai da instância (FU4)",
+        "cartões F8 de importação e anexo",
+        "chips na mensagem enviada"
+      ],
+      "confirmed": "dono, 2026-11-19"
+    },
+    "questions": [
+      {
+        "question": "Quais arquivos vão com esta mensagem?",
+        "decision": "enviar, remover ou tentar de novo",
+        "block": "chips"
+      },
+      {
+        "question": "O que sai da minha instância e para quem?",
+        "decision": "enviar o arquivo ao provedor ou não",
+        "block": "linha de destino"
+      },
+      {
+        "question": "O que o assistente vai fazer com o arquivo?",
+        "decision": "confirmar a importação ou o anexo",
+        "block": "cartões F8"
+      }
+    ],
+    "inventory": [
+      {
+        "datum": "campo de texto",
+        "now": "compositor",
+        "destination": "compositor, sem mudança",
+        "reason": ""
+      },
+      {
+        "datum": "dica Enter envia · Shift+Enter quebra a linha",
+        "now": "rodapé",
+        "destination": "rodapé, à direita do clipe",
+        "reason": ""
+      },
+      {
+        "datum": "botão enviar e parar",
+        "now": "rodapé",
+        "destination": "rodapé, sem mudança",
+        "reason": ""
+      }
+    ],
+    "responsive": [
+      {
+        "block": "chips",
+        "desktop": "faixa de uma linha que rola na horizontal (A) ou lista (B)",
+        "phone": "a mesma faixa, 355 px; o clipe abre o seletor com a câmera",
+        "leaves": "nada"
+      },
+      {
+        "block": "linha de destino",
+        "desktop": "uma linha",
+        "phone": "uma linha, cortada com reticências quando não cabe",
+        "leaves": "nada"
+      },
+      {
+        "block": "cartões F8",
+        "desktop": "arquivo, seta e alvo, e o que o arquivo contém",
+        "phone": "o mesmo, em 355 px",
+        "leaves": "nada"
+      }
+    ],
+    "reused": [
+      {
+        "component": "prompt-composer",
+        "draws": "moldura com anel, campo, rodapé",
+        "nesting": "os chips ficam dentro da moldura, sem moldura própria em A"
+      },
+      {
+        "component": "attachment",
+        "draws": "chip com prévia, nome, tamanho, remover, progresso",
+        "nesting": "cada chip tem borda própria dentro do compositor: uma superfície no nível 2"
+      },
+      {
+        "component": "decision-sheet",
+        "draws": "cabeçalho, prazo, linhas com marca e rodapé",
+        "nesting": "a linha F8 não tem moldura própria"
+      }
+    ],
+    "decisions": [
+      {
+        "decision": "os cartões F8 substituem a lista genérica de campos (\"Base de referência\")",
+        "reason": "web.md: uma forma por tipo; a lista é só o recuo de um tipo desconhecido"
+      },
+      {
+        "decision": "o título da operação usa as chaves assistant.action.* novas",
+        "reason": "hoje aparece o nome cru da ferramenta"
+      },
+      {
+        "decision": "um chip com falha ou em envio vai para o início da faixa",
+        "reason": "a faixa rola na horizontal; no fim, a causa e o reenvio ficariam fora da vista a 355 px"
+      },
+      {
+        "decision": "reenviar é uma ação de ícone (upload) com nome 'Enviar de novo <arquivo>'",
+        "reason": "um botão de texto deixava 8 px para o nome e quebrava a causa em 8 linhas"
+      },
+      {
+        "decision": "a folha F8 fica dentro do turno (_turn_), como no app",
+        "reason": "no telefone a folha ocupa a coluna de 38 px do trilho (decision-sheet.module.css)"
+      }
+    ],
+    "derivations": [
+      {
+        "value": "linha de destino",
+        "rule": "FU4: ofx e csv vão como resumo; pdf, imagem e texto vão inteiros ao provedor do modelo; sem image_input, 'este modelo não lê'",
+        "test": "função pura com teste por combinação de tipos"
+      },
+      {
+        "value": "período do extrato",
+        "rule": "F8: a prévia de import_statement_file passa a trazer o período lido do OFX",
+        "test": "teste Go da prévia"
+      }
+    ],
+    "dismissed": [
+      {
+        "measure": "overlap e truncated entre nome e extensão do chip",
+        "reason": "partes internas da família attachment; a captura mostra 'extrato-nubank-... .ofx' legível"
+      },
+      {
+        "measure": "overflow de li e ul dentro da faixa",
+        "reason": "a faixa (layout strip) rola na horizontal por desenho"
+      },
+      {
+        "measure": "uneven-circle 23,5 px nos botões do compositor",
+        "reason": "vem da família prompt-composer na raiz de 14 px e já existe na tela atual; achado do Slotted a reportar"
+      },
+      {
+        "measure": "uneven-rows em path",
+        "reason": "traços de ícones svg, não linhas"
+      }
+    ]
+  }
+}

@@ -4,6 +4,8 @@ The assistant sends your question and the data its tools read to the language mo
 
 The assistant never changes data by itself: each change is a proposal you confirm. Conversations stay until you delete them.
 
+Files in the conversation. The paperclip of the assistant's composer, a paste or a drop on the composer attaches up to 5 files to a message: OFX, CSV, PDF, JPEG, PNG, WebP or text, at most 10 MB each and 50 MB per conversation. A line under the files says what leaves the instance: of an OFX or CSV statement only a summary goes to the provider, with the CSV lines masked as below; a PDF, an image or a text file goes whole when the model reads files, and otherwise the model sees only its name. A sent PDF, image or text file opens from its chip in the message. Importing a statement or prices from a file, or attaching a file to a transaction, is a proposal that names the file, where it goes and what it holds.
+
 Identify columns with AI, on Import statement, sends the header and up to 12 lines of the CSV file to the language model of the use ingestion.csv_columns. Each digit in a line is replaced by 9. A run of three or more letters is replaced by A for each letter; a run of one or two letters is kept. A header cell with a digit is masked the same way.
 
 The assistant also suggests changes your request implies, such as a category that does not exist yet or a rule for a payee you categorize often. A suggestion shows the label Suggestion and the reason. A card that uses what another card creates waits until you confirm that card; Confirm all confirms the group in order.

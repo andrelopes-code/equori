@@ -20,6 +20,8 @@ export type AssistantIconName =
   | "check"
   | "corner"
   | "link"
+  | "fileDown"
+  | "paperclip"
   | "dot";
 
 // Lucide geometry (ISC licence) on its 24-unit grid: square-pen, history, sparkles, and the marks
@@ -89,6 +91,15 @@ const PATHS: Record<AssistantIconName, readonly string[]> = {
   check: ["M20 6 9 17l-5-5"],
   corner: ["m15 10 5 5-5 5", "M4 4v7a4 4 0 0 0 4 4h12"],
   link: ["M7 7h10v10", "M7 17 17 7"],
+  fileDown: [
+    "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z",
+    "M14 2v6h6",
+    "M12 18v-6",
+    "m9 15 3 3 3-3",
+  ],
+  paperclip: [
+    "m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48",
+  ],
   dot: ["M12 12h.01"],
 };
 

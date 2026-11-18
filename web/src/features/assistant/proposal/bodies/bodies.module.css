@@ -374,3 +374,44 @@
     border-inline-end: 0;
   }
 }
+
+@layer app {
+  /* F8: an operation that writes from a file shows the file, where it goes and what it holds. */
+  .fileOp {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--slotted-space-2);
+    min-inline-size: 0;
+  }
+
+  .route {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--slotted-space-2);
+    min-block-size: var(--slotted-control-height-sm);
+    color: var(--slotted-text-muted);
+  }
+
+  .route > :only-child {
+    grid-column: 1 / -1;
+  }
+
+  .ellipsis {
+    color: var(--slotted-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .holds {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--slotted-space-3);
+    white-space: nowrap;
+  }
+
+  .figure {
+    font-variant-numeric: tabular-nums;
+  }
+}

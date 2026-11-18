@@ -1,0 +1,7 @@
+@layer app {
+  /* FU5: the files of a sent message stand above its text, aligned to its end. */
+  .files {
+    justify-self: end;
+    max-inline-size: 80%;
+  }
+}

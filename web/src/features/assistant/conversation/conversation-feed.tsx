@@ -60,6 +60,7 @@ export function ConversationFeed({
                   outcome: turn.stopped ? "canceled" : "failed",
                   created_at: last.created_at,
                   proposals: [],
+                  files: [],
                 }}
                 onRetry={onRetry}
               />
@@ -69,6 +70,7 @@ export function ConversationFeed({
           {turn.pending !== null && (
             <PendingTurn
               question={turn.pending}
+              files={turn.pendingFiles}
               steps={turn.steps}
               answer={turn.draft}
             />

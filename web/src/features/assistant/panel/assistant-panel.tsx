@@ -5,6 +5,7 @@ import type { RefObject } from "react";
 
 import { useApi } from "@/api/api-context";
 import { ProblemError } from "@/api/problem";
+import type { AssistantFile } from "@/features/assistant/api";
 import {
   assistantKeys,
   chatStateQuery,
@@ -29,6 +30,7 @@ import { useAssistantTurn } from "@/features/assistant/conversation/use-assistan
 import { usePanelFocus } from "@/features/assistant/panel/use-panel-focus";
 import { usePanelTitle } from "@/features/assistant/panel/use-panel-title";
 import { useRetryAt } from "@/features/assistant/panel/use-retry-at";
+import { useAssistantFiles } from "@/features/assistant/panel/use-composer-files";
 import { compactQuery, useMediaQuery } from "@/ui/runtime/use-media-query";
 
 interface AssistantPanelProps {
@@ -63,6 +65,8 @@ export function AssistantPanel({
   const [listing, setListing] = useState(false);
   // The composer's text lives here so that a move between the drawer and the pane keeps it.
   const [draftText, setDraftText] = useState("");
+  // The files of the next message, kept across a move between the drawer and the pane.
+  const files = useAssistantFiles();
   const composerRef = useRef<HTMLTextAreaElement>(null);
   useAssistantAsk(setDraftText);
   // The element that holds the feed; the dock watches its sheets.
@@ -105,11 +109,11 @@ export function AssistantPanel({
     onOpenChange(false);
   }
 
-  function send(text: string) {
+  function send(text: string, sent: AssistantFile[] = []) {
     if (turn.pending !== null) return;
 
     setListing(false);
-    turn.send(text);
+    turn.send(text, sent);
   }
 
   function startNew() {
@@ -200,6 +204,8 @@ export function AssistantPanel({
         <AssistantComposer
           disabled={blocked || !ready}
           busy={turn.pending !== null}
+          chat={chat.data}
+          files={files}
           onSend={send}
           onStop={turn.stop}
           inputRef={composerRef}

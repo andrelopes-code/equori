@@ -7,6 +7,7 @@ export type BodyKind =
   | "investment"
   | "limit"
   | "payment"
+  | "file"
   | "fields";
 
 const BODY_KINDS = new Map<string, BodyKind>(
@@ -23,6 +24,9 @@ const BODY_KINDS = new Map<string, BodyKind>(
     "record_investment.sell": "investment",
     "manage_card.set_credit_limit": "limit",
     "settle_statement.pay": "payment",
+    import_statement_file: "file",
+    import_price_file: "file",
+    attach_file: "file",
   } satisfies Record<string, BodyKind>),
 );
 

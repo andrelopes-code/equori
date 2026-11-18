@@ -1,26 +1,33 @@
 import {
   Bubble,
-  BubbleContent,
   BubbleTyping,
   Message,
   MessageBody,
 } from "@slotted/react/message";
 import { MessageScrollerItem } from "@slotted/react/message-scroller";
 
+import type { AssistantFile } from "@/features/assistant/api";
 import { MessageItem } from "@/features/assistant/message/message-item";
+import { UserMessage } from "@/features/assistant/message/user-message";
 import { AssistantTurn } from "@/features/assistant/message/assistant-turn";
 import { TurnActivity } from "@/features/assistant/message/turn-activity";
 import { useFrameValue } from "@/features/assistant/conversation/use-frame-value";
 
 interface PendingTurnProps {
   question: string;
+  files: AssistantFile[];
   steps: string[];
   // The answer's text since the last step (E4).
   answer: string;
 }
 
 // The running turn: the question sent, then its steps or a typing bubble, then the answer so far.
-export function PendingTurn({ question, steps, answer }: PendingTurnProps) {
+export function PendingTurn({
+  question,
+  files,
+  steps,
+  answer,
+}: PendingTurnProps) {
   const framed = useFrameValue(answer);
 
   // A step clears the text at once (E4); only its growth waits for a frame.
@@ -29,13 +36,7 @@ export function PendingTurn({ question, steps, answer }: PendingTurnProps) {
   return (
     <>
       <MessageScrollerItem messageId="pending" anchor>
-        <Message align="end">
-          <MessageBody>
-            <Bubble variant="soft" tone="accent">
-              <BubbleContent>{question}</BubbleContent>
-            </Bubble>
-          </MessageBody>
-        </Message>
+        <UserMessage text={question} files={files} />
       </MessageScrollerItem>
 
       {(steps.length > 0 || draft === "") && (
@@ -62,6 +63,7 @@ export function PendingTurn({ question, steps, answer }: PendingTurnProps) {
             content: draft,
             created_at: "",
             proposals: [],
+            files: [],
           }}
           streaming
         />

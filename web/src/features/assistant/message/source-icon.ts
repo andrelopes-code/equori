@@ -54,6 +54,10 @@ const actions: Record<string, AssistantIconName> = {
   manage_accounts_and_payees: "wallet",
   reconcile_account: "wallet",
   manage_budget_or_goal: "calendar",
+  import_statement_file: "fileDown",
+  import_price_file: "chart",
+  attach_file: "paperclip",
+  detach_attachment: "paperclip",
 };
 
 export function sourceIcon(tool: string): AssistantIconName {

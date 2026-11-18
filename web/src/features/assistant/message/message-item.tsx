@@ -1,9 +1,4 @@
-import {
-  Bubble,
-  BubbleContent,
-  Message,
-  MessageBody,
-} from "@slotted/react/message";
+import { Message, MessageBody } from "@slotted/react/message";
 import { Stack } from "@slotted/react/stack";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -27,6 +22,7 @@ import { useAnswerSheet } from "@/features/assistant/proposal/use-answer-sheet";
 import type { Decision } from "@/features/assistant/proposal/use-sheet-decisions";
 import type { AssistantMessage } from "@/features/assistant/model/sse";
 import { TurnActivity } from "@/features/assistant/message/turn-activity";
+import { UserMessage } from "@/features/assistant/message/user-message";
 import { useT } from "@/i18n/i18n-provider";
 import { usePrivacy } from "@/privacy/privacy-provider";
 import { FormNotice } from "@/ui/form-layout/form-notice";
@@ -79,15 +75,7 @@ export function MessageItem({
   }
 
   if (own) {
-    return (
-      <Message align="end">
-        <MessageBody>
-          <Bubble variant="soft" tone="accent">
-            <BubbleContent>{message.content}</BubbleContent>
-          </Bubble>
-        </MessageBody>
-      </Message>
-    );
+    return <UserMessage text={message.content} files={message.files} />;
   }
 
   return (

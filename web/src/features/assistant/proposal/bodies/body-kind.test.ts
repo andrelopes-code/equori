@@ -19,6 +19,9 @@ describe("bodyKind", () => {
     ["record_investment.sell", "investment"],
     ["manage_card.set_credit_limit", "limit"],
     ["settle_statement.pay", "payment"],
+    ["import_statement_file", "file"],
+    ["import_price_file", "file"],
+    ["attach_file", "file"],
     ["manage_card.add_card", "fields"],
   ];
 
