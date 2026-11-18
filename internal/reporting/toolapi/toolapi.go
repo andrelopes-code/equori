@@ -11,5 +11,6 @@ func Tools(svc *app.Service, clk app.Clock) []tool.Tool {
 		getCategoryTotals(svc),
 		getAccountHistory(svc),
 		getFinancialIndicators(svc, clk),
+		getStatementAnalytics(svc, clk),
 	}
 }

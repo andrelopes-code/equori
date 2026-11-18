@@ -1895,6 +1895,7 @@ export const catalogPtBR: Catalog = {
   "assistant.step.record_investment":
     "Preparando o registro de um investimento",
   "assistant.step.transfer_custody": "Preparando uma transferência de custódia",
+  "assistant.step.get_statement_analytics": "Lendo a composição da fatura",
   "assistant.step.set_card_face": "Preparando a aparência de um cartão",
   "assistant.step.get_holding_lots": "Lendo as compras de uma posição",
   "assistant.step.set_base_currency": "Preparando a troca da moeda base",
